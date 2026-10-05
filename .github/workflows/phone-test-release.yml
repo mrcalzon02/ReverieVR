@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: reverievr-phone-test-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build-and-release:
