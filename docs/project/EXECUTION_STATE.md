@@ -450,6 +450,13 @@ Additional Stage B integration now implemented:
 - quick-overlay actions provide Resume, Recenter, media-volume down/up, Home and Exit VR;
 - the active hosted binding-profile name is shown in the overlay while the shell retains control of recovery.
 
+Current-environment verification:
+
+- phone-test run #8 exposed two stale AudioTrack references to the removed single `paused` flag and failed Java compilation as intended;
+- commit `7133b3b40bbf6853b7fb2d5e4ba7eb1970bc26cd` replaced both stale references with the pause gate and source readback confirmed no `paused` variable references remain;
+- phone-test run #9 passed JVM tests, `:app:assembleDebug`, `:controller-app:assembleDebug`, dual-ABI native-library APK presence checks and APK signature verification;
+- run #9 published prerelease `phone-test-9-1` from commit `ba362cffed915f179c8a794803d05993239d6db6`.
+
 Remaining gates:
 
 - reference-device validation of DOS run cadence, audio latency/underruns, guest texture orientation/colors and resolution changes;
@@ -568,13 +575,13 @@ Automatic convenience behaviors remain user-toggleable unless required for recov
 
 The interactive execution environment still does not expose a local Android SDK/NDK/ADB stack. Explicitly authorized GitHub Actions now supplies the reproducible cloud Android build environment instead.
 
-Phone-test run #7 completed successfully from commit `2977ed04af0513d4b72c164058f7dd9677fcd89e` and published prerelease `phone-test-7-1`. The headset APK is a debug-signed sideload build for reference-device validation, not a production signing identity. Future phone-test builds may require uninstall/reinstall until persistent protected test/release signing is configured.
+Phone-test run #9 completed successfully from commit `ba362cffed915f179c8a794803d05993239d6db6` and published prerelease `phone-test-9-1`. The headset APK is a debug-signed sideload build for reference-device validation, not a production signing identity. Future phone-test builds may require uninstall/reinstall until persistent protected test/release signing is configured.
 
 No Galaxy S9, headset, optical, Bluetooth, thermal, or comfort validation has yet been claimed.
 
 ## Next exact action
 
-1. install the headset APK from GitHub prerelease `phone-test-7-1` on the Galaxy S9;
+1. install the headset APK from GitHub prerelease `phone-test-9-1` on the Galaxy S9;
 2. launch Stage A and confirm ordinary Android startup before entering the headset;
 7. test Stage A physical Daydream pairing and live controller input;
 8. install the companion APK on a second Android phone and validate paired-phone RFCOMM control plus controller-phone battery telemetry;

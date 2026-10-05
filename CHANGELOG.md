@@ -15,6 +15,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Corrected the stripped Cardboard linker configuration so Vulkan/Unity can remain disabled while both reference ABIs link successfully.
 - Made ReverieLog inert before initialization so pure-JVM binding tests do not call Android's unmocked Log stub.
 - GitHub Actions run #6 passed the complete test/build/verify pipeline and published prerelease `phone-test-6-1` with headset APK, controller APK and SHA-256 checksums.
+- Phone-test run #8 correctly rejected the first DOS pause-gate integration because two AudioTrack paths still referenced the removed single `paused` flag; those stale references were repaired at the authoritative source.
+- Phone-test run #9 then passed the complete test/build/verify pipeline and published prerelease `phone-test-9-1` with the DOS quick overlay and pause interlock present.
 
 
 ### Native procedural modules
