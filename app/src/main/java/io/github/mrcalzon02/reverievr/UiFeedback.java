@@ -64,6 +64,10 @@ final class UiFeedback implements AutoCloseable {
     }
 
     void activation() {
+        mainHandler.post(this::playActivationNow);
+    }
+
+    private void playActivationNow() {
         if (toneGenerator != null) {
             try {
                 toneGenerator.startTone(
