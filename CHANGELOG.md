@@ -17,6 +17,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 - GitHub Actions run #6 passed the complete test/build/verify pipeline and published prerelease `phone-test-6-1` with headset APK, controller APK and SHA-256 checksums.
 - Phone-test run #8 correctly rejected the first DOS pause-gate integration because two AudioTrack paths still referenced the removed single `paused` flag; those stale references were repaired at the authoritative source.
 - Phone-test run #9 then passed the complete test/build/verify pipeline and published prerelease `phone-test-9-1` with the DOS quick overlay and pause interlock present.
+- Phone-test run #10 passed the complete test/build/verify pipeline with per-module DOS profile selection/tuning present and published prerelease `phone-test-10-1`.
 
 
 ### Native procedural modules
