@@ -72,9 +72,13 @@ The first implementation uses a Cloudflare Worker in `diagnostic-intake/`:
 
 - private R2 binding `DIAGNOSTIC_BUNDLES`;
 - SQLite-backed Durable Object `RATE_LIMITER`;
-- scheduled raw-bundle expiry after the configured retention window;
+- canonical ZIP structure validation across local headers and the central directory;
+- scheduled raw-bundle and private-receipt expiry after the configured retention window;
+- a private pending receipt written immediately after durable bundle storage;
+- `POST /v1/diagnostics/finalize`, authenticated by the diagnostic ID plus exact SHA-256, to retry GitHub issue creation without transferring the ZIP again;
+- restart-safe handset state containing only diagnostic ID, SHA-256 and receipt reference for pending-finalize recovery;
 - GitHub App JWT/install-token exchange at runtime;
-- public issue creation containing sanitized metadata only.
+- public issue creation containing sanitized metadata only, with private R2 object keys and pending metadata excluded from public responses.
 
 The protected GitHub environment `diagnostic-intake` supplies:
 
