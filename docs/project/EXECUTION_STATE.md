@@ -397,7 +397,6 @@ Remaining gates:
 - explicit pause/resume quick overlay plus binding/profile editor;
 - integer-scale staging policy beyond nearest-neighbor guest sampling;
 - directory-tree import;
-- per-module binding/profile editing and the in-game quick overlay;
 - run the verified DOOM Shareware installer/autostart path and exercise E1M1 on the Galaxy S9.
 
 ### RV-0007 — Standard/development logging and manual diagnostic bundles
