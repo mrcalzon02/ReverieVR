@@ -41,6 +41,23 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_SETUP = 0;
     private static final int MODE_HOME = 1;
 
+    private static final int[][] HOME_BUTTONS = new int[][] {
+        {160, 300, 864, 390},
+        {160, 410, 864, 500},
+        {160, 520, 864, 610}
+    };
+
+    private static final int[][] THREE_BUTTONS = new int[][] {
+        {110, 500, 390, 590},
+        {405, 500, 685, 590},
+        {700, 500, 914, 590}
+    };
+
+    private static final int[][] TWO_BUTTONS = new int[][] {
+        {160, 500, 500, 590},
+        {524, 500, 864, 590}
+    };
+
     private final ReveriePreferences preferences;
     private final Host host;
     private final float viewerInterLensMeters;
@@ -56,6 +73,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] yawMatrix = new float[16];
     private final float[] headEuler = new float[3];
     private final float[] headForward = new float[3];
+    private final float[] adjustedHeadForward = new float[3];
 
     private final AtomicBoolean selectRequested = new AtomicBoolean();
     private final AtomicBoolean backRequested = new AtomicBoolean();
@@ -69,6 +87,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private int program;
     private int texture;
+    private Bitmap uiBitmap;
+    private Canvas uiCanvas;
+    private Paint uiPaint;
+    private boolean textureStorageInitialized;
     private int positionHandle;
     private int uvHandle;
     private int matrixHandle;
@@ -171,8 +193,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
         Matrix.multiplyMM(adjustedHeadView, 0, yawMatrix, 0, rawHeadView, 0);
 
-        float[] adjustedForward = rotateYaw(headForward, -yawOffsetRadians);
-        int newHover = calculateHoveredButton(adjustedForward);
+        rotateYaw(headForward, -yawOffsetRadians, adjustedHeadForward);
+        int newHover = calculateHoveredButton(adjustedHeadForward);
         if (newHover != hoveredButton) {
             hoveredButton = newHover;
             textureDirty = true;
@@ -286,6 +308,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         int[] textures = new int[1];
         GLES20.glGenTextures(1, textures, 0);
         texture = textures[0];
+        textureStorageInitialized = false;
+        ensureUiBitmap();
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
         GLES20.glTexParameteri(
             GLES20.GL_TEXTURE_2D,
@@ -320,6 +344,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.glDeleteProgram(program);
             program = 0;
         }
+
+        textureStorageInitialized = false;
+        if (uiBitmap != null && !uiBitmap.isRecycled()) {
+            uiBitmap.recycle();
+        }
+        uiBitmap = null;
+        uiCanvas = null;
+        uiPaint = null;
     }
 
     private int calculateHoveredButton(float[] forward) {
@@ -476,36 +508,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private int[][] activeButtons() {
         if (mode == MODE_HOME) {
-            return new int[][] {
-                {160, 300, 864, 390},
-                {160, 410, 864, 500},
-                {160, 520, 864, 610}
-            };
+            return HOME_BUTTONS;
         }
 
         if (setupStep == 1 || setupStep == 2 || setupStep == 3) {
-            return new int[][] {
-                {110, 500, 390, 590},
-                {405, 500, 685, 590},
-                {700, 500, 914, 590}
-            };
+            return THREE_BUTTONS;
         }
 
-        return new int[][] {
-            {160, 500, 500, 590},
-            {524, 500, 864, 590}
-        };
+        return TWO_BUTTONS;
     }
 
     private void rebuildTexture() {
-        Bitmap bitmap = Bitmap.createBitmap(
-            TEXTURE_WIDTH,
-            TEXTURE_HEIGHT,
-            Bitmap.Config.ARGB_8888
-        );
-        Canvas canvas = new Canvas(bitmap);
+        ensureUiBitmap();
 
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        Canvas canvas = uiCanvas;
+        Paint paint = uiPaint;
+        paint.reset();
+        paint.setAntiAlias(true);
+
         canvas.drawColor(Color.rgb(9, 12, 16));
 
         paint.setColor(Color.rgb(24, 29, 36));
@@ -529,9 +549,38 @@ final class VrShellRenderer implements CardboardView.Renderer {
         drawPowerHud(canvas, paint);
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-        bitmap.recycle();
+        if (textureStorageInitialized) {
+            GLUtils.texSubImage2D(
+                GLES20.GL_TEXTURE_2D,
+                0,
+                0,
+                0,
+                uiBitmap
+            );
+        } else {
+            GLUtils.texImage2D(
+                GLES20.GL_TEXTURE_2D,
+                0,
+                uiBitmap,
+                0
+            );
+            textureStorageInitialized = true;
+        }
         textureDirty = false;
+    }
+
+    private void ensureUiBitmap() {
+        if (uiBitmap != null && !uiBitmap.isRecycled()) {
+            return;
+        }
+
+        uiBitmap = Bitmap.createBitmap(
+            TEXTURE_WIDTH,
+            TEXTURE_HEIGHT,
+            Bitmap.Config.ARGB_8888
+        );
+        uiCanvas = new Canvas(uiBitmap);
+        uiPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     }
 
     private void drawHome(Canvas canvas, Paint paint) {
@@ -710,14 +759,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
     }
 
-    private static float[] rotateYaw(float[] vector, float radians) {
+    private static void rotateYaw(
+        float[] vector,
+        float radians,
+        float[] destination
+    ) {
         float cos = (float) Math.cos(radians);
         float sin = (float) Math.sin(radians);
-        return new float[] {
-            cos * vector[0] + sin * vector[2],
-            vector[1],
-            -sin * vector[0] + cos * vector[2]
-        };
+
+        destination[0] = cos * vector[0] + sin * vector[2];
+        destination[1] = vector[1];
+        destination[2] = -sin * vector[0] + cos * vector[2];
     }
 
     private static FloatBuffer allocate(float[] values) {
