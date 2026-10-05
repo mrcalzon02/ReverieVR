@@ -35,6 +35,7 @@
 - RV-0203 — audio settings.
 - RV-0204 — player defaults.
 - RV-0205 — developer/diagnostic settings.
+- RV-0206 — Implement user optical/IPD calibration separately from the physical viewer profile: persistent user IPD, live per-eye alignment correction, binocular fusion test pattern, safe reset/default, and device-validated limits.
 
 ## P4 — Performance baseline
 

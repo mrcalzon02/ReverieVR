@@ -69,7 +69,14 @@ The menu is not ornamental. It is the control plane for the platform.
 Settings should be local, inspectable, persistent, and grouped at minimum into:
 
 ### VR/display
+
 - render scale/quality;
+- physical viewer profile and optical geometry;
+- **user IPD in physical units, stored separately from the viewer's fixed lens separation**;
+- live user eye-alignment calibration while wearing the headset;
+- optional per-eye horizontal correction and, if device testing proves useful, vertical correction;
+- binocular fusion/alignment test target with large readable geometry;
+- one-action reset to known-safe viewer/user defaults;
 - eye/display/viewer parameters supported by the chosen runtime;
 - UI scale;
 - brightness guidance/control where Android permits;
@@ -78,6 +85,10 @@ Settings should be local, inspectable, persistent, and grouped at minimum into:
 - optional comfort vignette/turning behavior where relevant;
 - global status-HUD visibility mode;
 - gaze-adaptive HUD enable/disable and comfort behavior.
+
+The physical viewer profile describes hardware and distortion. The user eye profile describes the wearer. Do not overwrite headset lens geometry merely to simulate user IPD.
+
+Software IPD correction cannot physically move fixed lenses. The interface must therefore describe the control as alignment/comfort calibration, avoid claiming it can repair every optical mismatch, and retain a fast reset if an adjustment makes fusion worse.
 
 ### Performance
 - quality preset;
@@ -119,7 +130,7 @@ Settings should be local, inspectable, persistent, and grouped at minimum into:
 - logs/export where safe;
 - reset configuration.
 
-**Gate:** settings persist correctly, invalid values fail safely, and the user cannot permanently trap themselves in an unusable configuration.
+**Gate:** settings persist correctly, invalid values fail safely, and the user cannot permanently trap themselves in an unusable configuration. User-IPD calibration must modify the intended user-eye transform without corrupting the stored physical viewer profile.
 
 ## Phase 4 — Seated reference input profile
 

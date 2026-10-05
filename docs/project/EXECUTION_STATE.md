@@ -87,6 +87,19 @@ The reference power HUD uses two compact upper-right percentage/progress indicat
 
 The stored look-up-reveal preference controls an optional adaptive presentation: normal forward viewing may retract the status HUD, while a deliberate upward look reveals/drops it into comfortable view. Turning this feature off must retain a predictable persistent/manual presentation. Automatic quality-of-life behaviors follow the same opt-out principle.
 
+## Captured user optical calibration contract
+
+ReverieVR must support software user-IPD/alignment calibration because the Daydream View has fixed physical lenses.
+
+The project now explicitly separates:
+
+- **physical viewer geometry** — fixed lens separation/distortion/viewer parameters;
+- **user eye geometry** — wearer IPD and user-specific rendered-eye alignment.
+
+Cardboard's current source exposes a physical `inter_lens_distance` and uses it to construct eye-from-head matrices. ReverieVR will retain that value as viewer hardware data and apply user calibration as a separate transform layer rather than corrupting the viewer profile.
+
+RV-0206 now owns live in-headset calibration, persistent user IPD, bounded per-eye correction, binocular test targets, and safe reset behavior. Exact adjustment limits remain a reference-device validation decision rather than an invented desktop assumption.
+
 ## Environment limitation observed
 
 The current execution environment has Java but does not have Gradle, Android SDK/build tools, or ADB. Therefore no APK build or device/runtime claim was made.
