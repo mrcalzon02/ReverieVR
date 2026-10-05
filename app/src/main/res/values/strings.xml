@@ -75,6 +75,20 @@ Available: %2$s</string>
     <string name="log_export_complete">Diagnostic bundle exported.</string>
     <string name="log_export_failed_format">Diagnostic export failed: %1$s</string>
     <string name="log_export_unavailable">No Android document provider is available for diagnostic export.</string>
+    <string name="submit_diagnostic_bundle">Submit diagnostics to GitHub</string>
+    <string name="diagnostic_submit_title">Submit diagnostic report?</string>
+    <string name="diagnostic_submit_privacy">ReverieVR will create a private diagnostic ZIP, upload it to the configured secure intake service, and create a public GitHub issue containing sanitized metadata only. The raw ZIP is not attached publicly.</string>
+    <string name="diagnostic_summary_hint">What happened? (required)</string>
+    <string name="diagnostic_expected_hint">What did you expect to happen?</string>
+    <string name="diagnostic_include_logs">Include ReverieVR log files</string>
+    <string name="diagnostic_submit_confirm">Build &amp; submit</string>
+    <string name="diagnostic_summary_required">Describe what happened before submitting.</string>
+    <string name="diagnostic_submission_in_progress">Building and securely submitting diagnostic bundle…</string>
+    <string name="diagnostic_submission_success_title">Diagnostic issue created</string>
+    <string name="diagnostic_submission_success_format">Diagnostic %1$s was accepted. Receipt: %2$s</string>
+    <string name="diagnostic_open_issue">Open GitHub issue</string>
+    <string name="diagnostic_submission_failed_title">Diagnostic submission failed</string>
+    <string name="diagnostic_submission_failed_format">Submission failed: %1$s\n\nThe private diagnostic ZIP was retained locally for investigation. Manual Export diagnostic bundle remains available.</string>
 
     <string name="qol_section">Quality of life</string>
     <string name="battery_hud_label">Show phone + controller battery HUD in VR</string>
