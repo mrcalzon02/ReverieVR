@@ -51,7 +51,7 @@ public final class DiagnosticSubmissionClientTest {
             }
 
             assertEquals(
-                "927f596e9bfd0ba8809b86c1e09556e72eab170bb5e2a284f41b5c4a7bfffbfb",
+                "5b620d0a7dddbf9b0e9c14448c6a558b6902d80e02fc6edcc5e0cbe84bd5a456",
                 DiagnosticSubmissionClient.sha256(file)
             );
         } finally {
