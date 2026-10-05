@@ -299,11 +299,6 @@
                 android:id="@+id/show_percentages_switch"
                 style="@style/ReverieSwitch"
                 android:text="@string/show_percentages_label" />
-
-            <Switch
-                android:id="@+id/retro_mode_switch"
-                style="@style/ReverieSwitch"
-                android:text="@string/retro_mode_label" />
         </LinearLayout>
 
         <LinearLayout
