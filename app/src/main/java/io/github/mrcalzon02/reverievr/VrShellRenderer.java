@@ -29,6 +29,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onExitToPhoneRequested();
         void onSetupCompleted();
         void onControllerRecenterRequested();
+        void onUiActionRejected();
         PerformanceEnvironmentSnapshot
             getPerformanceEnvironmentSnapshot();
         void onVideoSurfaceTextureReady(SurfaceTexture surfaceTexture);
@@ -203,7 +204,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private volatile int mode;
     private int setupStep;
-    private int hoveredButton = -1;
+    private volatile int hoveredButton = -1;
     private float yawOffsetRadians;
     private float userIpdMeters;
     private float uiScale;
@@ -270,6 +271,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         Matrix.setIdentityM(yawMatrix, 0);
         Matrix.setIdentityM(hudIdentity, 0);
         cachedShowPercentages = preferences.isShowPercentagesEnabled();
+    }
+
+    boolean handlesSelectAsShellAction() {
+        int currentMode = mode;
+        return currentMode != MODE_DOS
+            && currentMode != MODE_NATIVE;
+    }
+
+    boolean canActivateSelect() {
+        return mode == MODE_VIDEO
+            || hoveredButton >= 0;
     }
 
     void requestSelect() {
@@ -955,6 +967,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                             return;
                         }
                     }
+                    host.onUiActionRejected();
                     break;
                 case 5:
                     host.onExitToPhoneRequested();
@@ -997,11 +1010,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 hoveredButton = -1;
                 return;
             }
+            host.onUiActionRejected();
         } else if (button == 3) {
             if (pageCount > 1) {
                 dosLibraryPage =
                     (dosLibraryPage + 1)
                         % pageCount;
+            } else {
+                host.onUiActionRejected();
             }
         } else if (button == 4) {
             mode = MODE_HOME;
