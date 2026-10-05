@@ -90,6 +90,7 @@ android {
 
 dependencies {
     implementation project(":cardboard")
+    implementation "com.google.protobuf:protobuf-javalite:3.19.4"
     testImplementation "junit:junit:4.13.2"
 }
 
