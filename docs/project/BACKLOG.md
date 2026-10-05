@@ -9,6 +9,7 @@
 - RV-0003 — Create Android/Gradle APK skeleton with reproducible local build instructions.
 - RV-0004 — Establish device capability/diagnostic reporting.
 - RV-0005 — Establish performance instrumentation and sustained-test procedure.
+- RV-0006 — Establish scrcpy/ADB developer-mirroring compatibility: Stage A remote operation, Stage B observability/recording, USB-debug coexistence with Daydream BLE, Android-version-aware audio expectations, and a strict rule that scrcpy-assisted sessions are not performance/thermal acceptance evidence.
 
 ## P1 — Pre-VR boot and controller readiness
 

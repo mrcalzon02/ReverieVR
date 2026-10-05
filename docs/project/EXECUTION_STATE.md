@@ -185,6 +185,27 @@ Not yet implemented/accepted:
 
 Remaining gate: successful build plus physical flat-video and mono-360 playback tests on the reference hardware.
 
+### RV-0006 — scrcpy / ADB diagnostic compatibility
+
+State: **draft**
+
+ReverieVR now treats scrcpy compatibility as a first-class developer requirement rather than an incidental convenience.
+
+The compatibility contract requires:
+
+- Stage A must remain operable through normal scrcpy-injected mouse/keyboard/touch input;
+- Stage B must remain mirrorable/recordable while the phone display stays on in the headset;
+- no blanket Android `FLAG_SECURE` policy may be introduced on ReverieVR's normal app windows;
+- the reference runtime must not seize the USB data path in a way that prevents normal ADB/scrcpy use;
+- Daydream BLE controller transport must coexist with wired USB debugging;
+- scrcpy host-audio absence on Android 10-or-earlier reference software is not treated as a ReverieVR audio failure;
+- `--turn-screen-off` is prohibited for in-headset testing because the physical phone display is the VR display;
+- scrcpy-assisted runs are valid for functional observation, capture, Stage A control, crash reproduction, and UI debugging, but are **not** valid sustained performance/thermal acceptance runs because mirroring/encoding adds workload.
+
+Helper launchers are provided in `scripts/scrcpy-reverie.sh` and `scripts/scrcpy-reverie.bat`.
+
+Remaining gate: verify USB debugging + scrcpy against the real Galaxy S9 while Daydream BLE is connected and Stage B is actively rendering.
+
 ## Performance posture
 
 The Stage B shell deliberately avoids a general-purpose game engine. Cardboard is configured for OpenGL ES with Vulkan and Unity integration disabled. The shell avoids per-frame gaze/button-geometry allocation and reuses its UI bitmap/texture storage instead of allocating a new 1024×768 bitmap for every hover change.
@@ -218,4 +239,8 @@ On a local Android development environment:
 9. walk through the first-run calibration pages;
 10. choose and play a known-good local flat video, verify play/pause/back, then repeat with a mono equirectangular 360° sample;
 11. background/resume during playback to exercise SurfaceTexture/decoder reattachment;
-12. capture any build, controller-axis, optical, media-orientation, decode, UI-scale, frame-pacing, or thermal defects for the next repair pass.
+12. launch `scripts/scrcpy-reverie.sh` or `scripts\\scrcpy-reverie.bat` over USB and verify Stage A can be operated remotely while the Daydream controller remains connected;
+13. enter Stage B and verify the stereoscopic output remains visible in scrcpy while the physical phone display stays on in the headset;
+14. repeat a representative media/control flow under scrcpy for diagnostic capture, then close scrcpy;
+15. perform sustained frame-pacing/thermal acceptance **without scrcpy running**;
+16. capture any build, controller-axis, optical, scrcpy, media-orientation, decode, UI-scale, frame-pacing, or thermal defects for the next repair pass.

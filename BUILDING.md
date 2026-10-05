@@ -72,6 +72,41 @@ Install:
 
 On Windows, use `gradlew.bat test :app:assembleDebug`.
 
+## scrcpy diagnostic workflow
+
+scrcpy is an optional developer tool, not a ReverieVR runtime dependency.
+
+Requirements:
+
+- enable Android USB debugging on the Galaxy S9;
+- keep the phone connected over USB for the standard reference workflow;
+- keep the physical phone display **on** while the device is in the Daydream View;
+- do not use scrcpy's `--turn-screen-off` option during VR testing;
+- do not treat scrcpy mirroring/recording sessions as performance or thermal acceptance evidence.
+
+ReverieVR provides two convenience launchers:
+
+    ./scripts/scrcpy-reverie.sh
+
+or on Windows:
+
+    scripts\scrcpy-reverie.bat
+
+Both use:
+
+    scrcpy --stay-awake --no-audio
+
+and pass through any additional scrcpy arguments supplied by the developer.
+
+`--no-audio` is intentional for the Galaxy S9 Android-10-era reference path: current scrcpy only forwards device audio on Android 11 or newer. Validate ReverieVR audio from the phone/headphones instead of treating silent host mirroring as an application failure.
+
+Useful optional examples:
+
+    ./scripts/scrcpy-reverie.sh --show-touches
+    ./scripts/scrcpy-reverie.sh --record=reverie-debug.mkv
+
+The mirror is intended for Stage A remote control, Stage B observation, recordings, UI review, crash reproduction, and controller/calibration debugging. Daydream BLE remains the authoritative headset input path.
+
 ## Reference-device validation order
 
 On the Galaxy S9:
@@ -95,6 +130,11 @@ On the Galaxy S9:
 17. repeat with a known-good mono equirectangular 360° video and verify head-look orientation, seam placement, and absence of horizontal mirroring;
 18. background/resume ReverieVR during playback and verify the decoder reattaches if Android recreates the GL surface;
 19. confirm swipe polarity matches left = backward and right = forward; if hardware reports the opposite X orientation, capture that as a controller-axis defect rather than silently swapping protocol semantics;
-20. run a sustained playback session and record frame pacing, decoder failures, battery drain, temperature/throttling, and audio/video sync.
+20. start the scrcpy helper over USB and verify Stage A mouse/keyboard/touch control;
+21. keep scrcpy running, enter Stage B, and verify stereo/head-tracked output remains observable while Daydream BLE input continues working;
+22. confirm the phone display remains illuminated in the headset and that USB debugging does not disturb controller pairing;
+23. where useful, capture a short scrcpy recording for defect evidence;
+24. close scrcpy before sustained performance/thermal measurements;
+25. run a sustained playback session without scrcpy and record frame pacing, decoder failures, battery drain, temperature/throttling, and audio/video sync.
 
 Do not mark RV-0003, RV-0091, RV-0092, RV-0100, RV-0500 or RV-0501 device-accepted until the relevant checks have actually run.

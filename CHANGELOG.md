@@ -28,6 +28,13 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Removed avoidable per-frame VR-shell allocations and switched shell UI texture refreshes to persistent bitmap storage plus texture sub-image updates.
 
 
+### Developer diagnostics
+
+- Added first-class scrcpy/ADB compatibility requirements for Galaxy S9 development.
+- Added Windows and POSIX scrcpy launch helpers using stay-awake and Android-10-safe no-audio defaults.
+- Defined Stage A remote-control and Stage B mirror/record validation while Daydream BLE remains active.
+- Prohibited treating scrcpy-assisted sessions as performance/thermal acceptance evidence.
+
 ### Android bootstrap
 
 - Added a native Java/XML Android application skeleton for the Stage A pre-headset setup surface.
