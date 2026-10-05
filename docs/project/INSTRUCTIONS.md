@@ -180,6 +180,9 @@ No hidden stubs, swallowed failures, no-op compatibility shims, dummy success re
 ### No inert user controls
 Every user-facing button, switch, menu item, setting, or action must invoke implemented, observable behavior at the time it is exposed. Do not ship placebo controls that only persist state, display a label, or suggest a capability without changing actual application behavior. Planned controls remain in design/backlog documentation until their behavior is wired. If an inert control is discovered, remove the exposed control and its orphaned preference/state wiring unless the underlying behavior is implemented in the same scoped change.
 
+### Responsive interaction feedback
+Every actionable button/control must provide an immediate visible responsive state and audible activation feedback appropriate to its interaction surface. Touch buttons require clear pressed and disabled presentation; in-headset controls require clear focus/hover presentation before activation. A rejected or failed requested action must produce a clearly different failure sound from the normal activation sound, and failure feedback must not hide or replace the real error/status information. Feedback code is platform behavior and should be centralized rather than duplicated ad hoc per screen.
+
 ### Root-cause repair
 Repair authoritative source and architecture rather than generated output or layered compensating hacks.
 
