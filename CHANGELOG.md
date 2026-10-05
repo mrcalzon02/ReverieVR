@@ -14,7 +14,11 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Vendored the minimal public-domain OpenKTG texture generator from pinned upstream revision `72f7697c8b5be6fadae41f9ca6312cd5f88fdc4c` with provenance.
 - Added the separate Procedural Test Chamber shared library. It expands an OpenKTG texture from recipe/seed data, renders a low-complexity GLES2 room, consumes normalized movement/primary input and restores host GL state after rendering.
 - Added explicit GL-context release to the module lifecycle so destructors do not depend on Android teardown happening on a render thread.
-- Added the Java native-module runtime bridge and built-in descriptor enumeration. Stage B launcher wiring and actual Android NDK/device validation remain.
+- Added the Java native-module runtime bridge and built-in descriptor enumeration.
+- Added a dedicated native-test binding profile: touchpad X/Y feed virtual joystick movement and Select feeds primary action.
+- Added a sixth VR Home action that launches the packaged Procedural Test Chamber without leaving the shell Activity.
+- Native modules now receive user-IPD-corrected Cardboard per-eye view/projection matrices, Activity pause/resume, normalized movement/action input, host-owned Back escape, render-thread GL release and the shell-global battery HUD.
+- Android NDK compile/link and Galaxy S9 stereo/input/lifecycle/performance validation remain.
 
 ### Bundled DOOM Shareware sample
 

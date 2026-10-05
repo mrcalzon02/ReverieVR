@@ -36,6 +36,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVideoStopRequested();
         boolean onDosPlaybackRequested(String moduleId);
         void onDosStopRequested();
+        boolean onNativeModulePlaybackRequested(
+            String moduleId
+        );
+        void onNativeModuleStopRequested();
         void onHeadBindingDelta(
             float yawDeltaRadians,
             float pitchDeltaRadians
@@ -60,8 +64,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_VIDEO = 2;
     private static final int MODE_DOS = 3;
     private static final int MODE_DOS_LIBRARY = 4;
+    private static final int MODE_NATIVE = 5;
 
     private static final int[][] HOME_BUTTONS = new int[][] {
+        {140, 225, 884, 280},
+        {140, 295, 884, 350},
+        {140, 365, 884, 420},
+        {140, 435, 884, 490},
+        {140, 505, 884, 560},
+        {140, 575, 884, 630}
+    };
+
+    private static final int[][] DOS_LIBRARY_BUTTONS = new int[][] {
         {140, 235, 884, 300},
         {140, 315, 884, 380},
         {140, 395, 884, 460},
@@ -86,6 +100,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final VideoSurfaceRenderer videoRenderer;
     private final DosSession dosSession;
     private final DosSurfaceRenderer dosRenderer;
+    private final NativeModuleRuntime nativeModuleRuntime;
+    private final List<NativeModuleRuntime.Descriptor> nativeModules;
 
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer uvBuffer;
@@ -121,6 +137,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile String[] dosModuleIds = new String[0];
     private volatile String[] dosModuleNames = new String[0];
     private int dosLibraryPage;
+    private boolean nativeSurfaceReady;
 
     private int program;
     private int texture;
@@ -155,12 +172,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         ReveriePreferences preferences,
         float viewerInterLensMeters,
         DosSession dosSession,
+        NativeModuleRuntime nativeModuleRuntime,
         Host host
     ) {
         this.preferences = preferences;
         this.viewerInterLensMeters = clamp(viewerInterLensMeters, 0.050f, 0.080f);
         this.host = host;
         this.dosSession = dosSession;
+        this.nativeModuleRuntime =
+            nativeModuleRuntime;
+        nativeModules =
+            NativeModuleRuntime.listBuiltIns();
         videoRenderer = new VideoSurfaceRenderer(host::onVideoSurfaceTextureReady);
         dosRenderer = new DosSurfaceRenderer(dosSession);
 
@@ -370,6 +392,47 @@ final class VrShellRenderer implements CardboardView.Renderer {
             hudDroppedDown = newHudDroppedDown;
         }
 
+        if (mode == MODE_NATIVE) {
+            selectRequested.set(false);
+
+            if (backRequested.getAndSet(false)) {
+                if (nativeSurfaceReady
+                    && nativeModuleRuntime != null) {
+                    nativeModuleRuntime.releaseSurface();
+                }
+                nativeSurfaceReady = false;
+                host.onNativeModuleStopRequested();
+                mode = MODE_HOME;
+                hoveredButton = -1;
+                textureDirty = true;
+                return;
+            }
+
+            if (nativeModuleRuntime == null
+                || !nativeModuleRuntime.isRunning()) {
+                nativeSurfaceReady = false;
+                mode = MODE_HOME;
+                hoveredButton = -1;
+                textureDirty = true;
+                return;
+            }
+
+            if (!nativeSurfaceReady) {
+                nativeSurfaceReady =
+                    nativeModuleRuntime.onSurfaceCreated();
+                if (!nativeSurfaceReady) {
+                    host.onNativeModuleStopRequested();
+                    mode = MODE_HOME;
+                    hoveredButton = -1;
+                    textureDirty = true;
+                    return;
+                }
+            }
+
+            nativeModuleRuntime.update();
+            return;
+        }
+
         if (mode == MODE_DOS) {
             dosRenderer.updateFrame();
             selectRequested.set(false);
@@ -457,6 +520,59 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        if (mode == MODE_NATIVE) {
+            System.arraycopy(
+                eye.getEyeView(),
+                0,
+                eyeView,
+                0,
+                16
+            );
+
+            Matrix.translateM(
+                tempMatrix,
+                0,
+                eyeView,
+                0,
+                eyeCorrection,
+                0.0f,
+                0.0f
+            );
+
+            int eyeIndex =
+                eye.getEyeType()
+                    == CardboardView.Eye.LEFT
+                    ? 0
+                    : 1;
+
+            boolean rendered =
+                nativeModuleRuntime != null
+                    && nativeSurfaceReady
+                    && nativeModuleRuntime.renderEye(
+                        eyeIndex,
+                        tempMatrix,
+                        eye.getPerspective(
+                            Z_NEAR,
+                            Z_FAR
+                        )
+                    );
+
+            if (!rendered) {
+                if (nativeSurfaceReady
+                    && nativeModuleRuntime != null) {
+                    nativeModuleRuntime.releaseSurface();
+                }
+                nativeSurfaceReady = false;
+                host.onNativeModuleStopRequested();
+                mode = MODE_HOME;
+                hoveredButton = -1;
+                textureDirty = true;
+            }
+
+            drawPowerHudOverlay();
+            return;
+        }
+
         if (textureDirty) {
             rebuildTexture();
         }
@@ -536,6 +652,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     public void onSurfaceCreated(EGLConfig config) {
         videoRenderer.onSurfaceCreated();
         dosRenderer.onSurfaceCreated();
+        nativeSurfaceReady = false;
 
         program = buildProgram(VERTEX_SHADER, FRAGMENT_SHADER);
         positionHandle = GLES20.glGetAttribLocation(program, "a_Position");
@@ -603,6 +720,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
     public void onRendererShutdown() {
         videoRenderer.shutdown();
         dosRenderer.shutdown();
+
+        if (nativeSurfaceReady
+            && nativeModuleRuntime != null
+            && nativeModuleRuntime.isRunning()) {
+            nativeModuleRuntime.releaseSurface();
+        }
+        nativeSurfaceReady = false;
 
         if (texture != 0) {
             GLES20.glDeleteTextures(1, new int[] {texture}, 0);
@@ -709,6 +833,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     mode = MODE_DOS_LIBRARY;
                     break;
                 case 4:
+                    if (NativeModuleRuntime.isAvailable()
+                        && !nativeModules.isEmpty()) {
+                        NativeModuleRuntime.Descriptor module =
+                            nativeModules.get(0);
+                        if (host.onNativeModulePlaybackRequested(
+                            module.id
+                        )) {
+                            nativeSurfaceReady = false;
+                            mode = MODE_NATIVE;
+                            hoveredButton = -1;
+                            return;
+                        }
+                    }
+                    break;
+                case 5:
                     host.onExitToPhoneRequested();
                     return;
                 default:
@@ -880,9 +1019,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private int[][] activeButtons() {
-        if (mode == MODE_HOME
-            || mode == MODE_DOS_LIBRARY) {
+        if (mode == MODE_HOME) {
             return HOME_BUTTONS;
+        }
+
+        if (mode == MODE_DOS_LIBRARY) {
+            return DOS_LIBRARY_BUTTONS;
         }
 
         if (setupStep == 2 || setupStep == 3 || setupStep == 4) {
@@ -983,6 +1125,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     + ")";
         }
 
+        String nativeLabel;
+        if (!NativeModuleRuntime.isAvailable()) {
+            nativeLabel =
+                "NATIVE MODULE HOST UNAVAILABLE";
+        } else if (nativeModules.isEmpty()) {
+            nativeLabel =
+                "NO NATIVE MODULES BUILT";
+        } else {
+            nativeLabel =
+                "NATIVE: "
+                    + shorten(
+                        nativeModules
+                            .get(0)
+                            .displayName,
+                        30
+                    );
+        }
+
         String[] labels = new String[] {
             "RUN VR SETUP",
             "OPTICAL / DISPLAY CALIBRATION",
@@ -990,6 +1150,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 ? "PLAY SELECTED VIDEO"
                 : "SELECT VIDEO ON PHONE",
             dosLabel,
+            nativeLabel,
             "EXIT TO PHONE"
         };
         drawButtons(canvas, paint, labels, activeButtons());

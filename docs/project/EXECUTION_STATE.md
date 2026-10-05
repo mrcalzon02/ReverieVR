@@ -360,12 +360,23 @@ Implemented foundation:
 - the proof module accepts normalized movement plus primary/secondary input and restores GL program/buffer/texture and enable-state ownership after each eye render;
 - no Win32, Direct3D, DirectSound, kkrunchy/YASM runtime or arbitrary downloaded native code was introduced.
 
+Stage B integration now implemented:
+
+- VR Home exposes the packaged Procedural Test Chamber as a sixth shell-owned action;
+- module launch activates a dedicated hosted profile mapping touchpad axes to virtual joystick X/Y and Select to virtual joystick button 0;
+- native update executes on the Cardboard render thread using the existing normalized virtual input bus;
+- each eye receives Cardboard's eye view plus ReverieVR user-IPD correction and Cardboard projection;
+- Back is consumed by the shell, releases module GL resources on the render thread, stops the module and restores the previous binding profile;
+- Activity pause/resume is forwarded without creating a second Activity or EGL context;
+- renderer shutdown explicitly releases module GL resources before Java/native destruction;
+- the shell-global power/status HUD renders after native module content.
+
 Remaining gates:
 
-- Stage B Home/launch/return integration;
-- hosted binding profile for the proof module;
-- Android NDK compile/link for both target ABIs;
-- Galaxy S9 stereo/head-tracking/input/HUD/pause-resume/frame-pacing/thermal validation.
+- actual Android NDK compile/link for both target ABIs;
+- Galaxy S9 stereo/head-tracking/movement/Select/Back/HUD/pause-resume validation;
+- sustained frame-pacing, battery and thermal validation;
+- shared module settings/audio/save/performance-budget services beyond the proof ABI.
 
 ### RV-0410 / RV-0411 — DOS runtime baseline and modules
 

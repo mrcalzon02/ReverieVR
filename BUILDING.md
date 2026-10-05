@@ -168,6 +168,27 @@ Useful optional examples:
 
 The mirror is intended for Stage A remote control, Stage B observation, recordings, UI review, crash reproduction, and controller/calibration debugging. Daydream BLE remains the authoritative headset input path.
 
+## Native procedural module validation
+
+The Procedural Test Chamber is built into the headset APK and does not require
+DOSBox Pure to be fetched.
+
+On the Galaxy S9, after basic Stage B shell validation:
+
+1. launch **NATIVE: Procedural Test Chamber** from VR Home;
+2. verify both eyes show the same generated chamber with correct stereo/head tracking and no eye swap;
+3. verify the chamber texture is present without any packaged bitmap dependency;
+4. verify touchpad/stick movement drives the normalized X/Y movement path;
+5. verify Select toggles the module's chamber tint;
+6. verify the PHONE/CTRL shell HUD remains visible over the module;
+7. background/resume the Activity and confirm the module resumes without creating a second Activity or EGL context;
+8. press Back and confirm GL resources release, the prior binding profile returns, and VR Home remains alive;
+9. repeat launch/exit several times to catch lifecycle or packaged-library loader leaks;
+10. run the sustained performance/thermal test with Standard logging, not Development logging.
+
+Do not mark RV-0400, RV-0401 or RV-0402 device-accepted until the relevant
+checks have actually run on the reference handset/headset.
+
 ## Reference-device validation order
 
 On the Galaxy S9:

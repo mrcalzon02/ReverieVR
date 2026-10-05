@@ -9,6 +9,8 @@ final class BuiltInBindingProfiles {
     static final String ID_DOS_DOOM_SHAREWARE = "dos-doom-shareware";
     static final String ID_DOS_FPS_HEAD_MOUSE = "dos-fps-head-mouse";
     static final String ID_DOS_CURSOR = "dos-cursor";
+    static final String ID_NATIVE_TEST_CHAMBER =
+        "native-test-chamber";
 
     private static final List<BindingProfile> PROFILES =
         buildProfiles();
@@ -180,6 +182,38 @@ final class BuiltInBindingProfiles {
                 ID_DOS_CURSOR,
                 "DOS cursor — touchpad pointer",
                 cursor
+            )
+        );
+
+        List<InputBinding> nativeTest =
+            new ArrayList<>();
+        nativeTest.add(
+            InputBinding.analog(
+                BindingInput.TOUCHPAD_X,
+                VirtualOutput.joystickAxisX(),
+                1.0f,
+                0.12f
+            )
+        );
+        nativeTest.add(
+            InputBinding.analog(
+                BindingInput.TOUCHPAD_Y,
+                VirtualOutput.joystickAxisY(),
+                1.0f,
+                0.12f
+            )
+        );
+        nativeTest.add(
+            InputBinding.digital(
+                BindingInput.SELECT,
+                VirtualOutput.joystickButton(0)
+            )
+        );
+        profiles.add(
+            new BindingProfile(
+                ID_NATIVE_TEST_CHAMBER,
+                "Native test chamber",
+                nativeTest
             )
         );
 

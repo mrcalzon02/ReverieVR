@@ -45,6 +45,7 @@ public final class VrActivity extends Activity
     private StandardHidInputRouter standardHidInputRouter;
     private DosModuleRepository dosModuleRepository;
     private DosSession dosSession;
+    private NativeModuleRuntime nativeModuleRuntime;
 
     private boolean inputDeviceListenerRegistered;
     private volatile String controllerConnectionMessage =
@@ -81,6 +82,10 @@ public final class VrActivity extends Activity
                 virtualInputBus,
                 this
             );
+        nativeModuleRuntime =
+            new NativeModuleRuntime(
+                virtualInputBus
+            );
         inputManager =
             (InputManager) getSystemService(Context.INPUT_SERVICE);
         inputRouter = new VrInputRouter(this);
@@ -97,6 +102,7 @@ public final class VrActivity extends Activity
                 preferences,
                 viewerIpd,
                 dosSession,
+                nativeModuleRuntime,
                 this
             );
         renderer.setPhoneBattery(readPhoneBattery());
@@ -140,6 +146,9 @@ public final class VrActivity extends Activity
         if (dosSession != null) {
             dosSession.resumeForLifecycle();
         }
+        if (nativeModuleRuntime != null) {
+            nativeModuleRuntime.resumeForLifecycle();
+        }
 
         refreshInputSourceStatus();
         refreshDosModuleStatus();
@@ -160,6 +169,9 @@ public final class VrActivity extends Activity
         }
         if (dosSession != null) {
             dosSession.pauseForLifecycle();
+        }
+        if (nativeModuleRuntime != null) {
+            nativeModuleRuntime.pauseForLifecycle();
         }
         if (cardboardView != null) {
             cardboardView.onPause();
@@ -185,6 +197,9 @@ public final class VrActivity extends Activity
         }
         if (cardboardView != null) {
             cardboardView.onDestroy();
+        }
+        if (nativeModuleRuntime != null) {
+            nativeModuleRuntime.close();
         }
         super.onDestroy();
     }
@@ -578,6 +593,53 @@ public final class VrActivity extends Activity
                 videoPlayer.attachSurfaceTexture(surfaceTexture);
             }
         });
+    }
+
+    @Override
+    public boolean onNativeModulePlaybackRequested(
+        String moduleId
+    ) {
+        if (nativeModuleRuntime == null
+            || inputBindingManager == null) {
+            return false;
+        }
+
+        inputBindingManager.beginHostedProfile(
+            BuiltInBindingProfiles.ID_NATIVE_TEST_CHAMBER
+        );
+
+        if (!nativeModuleRuntime.start(moduleId)) {
+            inputBindingManager.endHostedProfile();
+            String message =
+                nativeModuleRuntime.getLastError();
+            runOnUiThread(() ->
+                Toast.makeText(
+                    this,
+                    message.isEmpty()
+                        ? "Could not start the native module."
+                        : message,
+                    Toast.LENGTH_LONG
+                ).show()
+            );
+            return false;
+        }
+
+        ReverieLog.milestone(
+            "NATIVE_MODULE",
+            "Stage B launched module="
+                + moduleId
+        );
+        return true;
+    }
+
+    @Override
+    public void onNativeModuleStopRequested() {
+        if (nativeModuleRuntime != null) {
+            nativeModuleRuntime.stop();
+        }
+        if (inputBindingManager != null) {
+            inputBindingManager.endHostedProfile();
+        }
     }
 
     @Override
