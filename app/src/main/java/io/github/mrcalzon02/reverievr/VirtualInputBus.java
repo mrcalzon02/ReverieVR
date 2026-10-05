@@ -107,6 +107,49 @@ final class VirtualInputBus {
         generation++;
     }
 
+    synchronized void capture(
+        VirtualInputSnapshot target
+    ) {
+        if (target == null) {
+            return;
+        }
+
+        System.arraycopy(
+            keys,
+            0,
+            target.keys,
+            0,
+            keys.length
+        );
+        System.arraycopy(
+            mouseButtons,
+            0,
+            target.mouseButtons,
+            0,
+            mouseButtons.length
+        );
+        System.arraycopy(
+            joystickButtons,
+            0,
+            target.joystickButtons,
+            0,
+            joystickButtons.length
+        );
+
+        target.mouseRelativeX = mouseRelativeX;
+        target.mouseRelativeY = mouseRelativeY;
+        target.mouseAbsoluteX = mouseAbsoluteX;
+        target.mouseAbsoluteY = mouseAbsoluteY;
+        target.mouseWheel = mouseWheel;
+        target.joystickAxisX = joystickAxisX;
+        target.joystickAxisY = joystickAxisY;
+        target.generation = generation;
+
+        mouseRelativeX = 0.0f;
+        mouseRelativeY = 0.0f;
+        mouseWheel = 0.0f;
+    }
+
     synchronized boolean isKeyDown(VirtualKey key) {
         return key != null && keys[key.ordinal()];
     }
