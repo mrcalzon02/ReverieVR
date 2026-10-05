@@ -10,6 +10,11 @@ def excludeDoomShareware =
 def bundleDoomShareware =
     !excludeDoomShareware && doomSharewareArchive.isFile()
 
+def dosboxPureAndroidMk = rootProject.file(
+    "third_party/dosbox-pure/src/jni/Android.mk"
+)
+def dosRuntimeBuilt = dosboxPureAndroidMk.isFile()
+
 android {
     namespace = "io.github.mrcalzon02.reverievr"
     compileSdk = 36
@@ -20,7 +25,25 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0-dev"
-        buildConfigField "boolean", "DOS_RUNTIME_BUILT", "false"
+        buildConfigField(
+            "boolean",
+            "DOS_RUNTIME_BUILT",
+            dosRuntimeBuilt.toString()
+        )
+
+        if (dosRuntimeBuilt) {
+            ndk {
+                abiFilters "armeabi-v7a", "arm64-v8a"
+            }
+            externalNativeBuild {
+                ndkBuild {
+                    arguments(
+                        "APP_PLATFORM=android-26",
+                        "APP_STL=c++_static"
+                    )
+                }
+            }
+        }
         buildConfigField(
             "boolean",
             "DOOM_SHAREWARE_BUNDLED",
@@ -47,6 +70,14 @@ android {
                         "third_party/doom-shareware/payload"
                     )
                 )
+            }
+        }
+    }
+
+    if (dosRuntimeBuilt) {
+        externalNativeBuild {
+            ndkBuild {
+                path = file("src/main/jni/Android.mk")
             }
         }
     }

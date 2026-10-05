@@ -365,17 +365,29 @@ Implemented module foundation:
 - pinned upstream fetch scripts with dirty-checkout refusal and post-checkout SHA verification;
 - DOSBox Pure source checkout excluded from ReverieVR git history while the pin/provenance stays committed.
 
+Implemented native host foundation:
+
+- conditional Gradle/ndk-build activation when the pinned DOSBox Pure checkout exists;
+- upstream DOSBox Pure built as `libretro.so` for `armeabi-v7a` and `arm64-v8a`, with ReverieVR's JNI frontend built as `libreverie_dos_host.so`;
+- libretro init/load/run/unload/deinit lifecycle behind the existing `DosNativeRuntime` Java contract;
+- app-private system, save and content-directory environment callbacks;
+- legacy core-option default capture, with 48 kHz audio and software-multithreaded Voodoo forced until a hardware-render callback exists;
+- XRGB8888 framebuffer capture into a tightly packed host buffer;
+- bounded two-second stereo PCM ring buffer;
+- synchronized virtual keyboard, mouse, pointer and joystick polling from the existing virtual input bus;
+- core shutdown request propagation and Android log forwarding;
+- bootstrap verification rejects a fetched DOSBox Pure checkout whose commit does not match the project pin;
+- host-side C++ syntax/type checking and JNI descriptor verification passed.
+
 Remaining gates:
 
-- native libretro frontend;
-- DOSBox Pure shared-core build integration;
-- framebuffer/audio bridge;
-- core environment/options/save directories;
-- virtual input polling;
-- module selection in VR Home;
+- actual Android NDK compile/link for both supported ABIs;
+- Stage B DOS module selection, launch/pause/resume/unload ownership and safe shell return;
+- upload the captured guest framebuffer into the VR guest texture and apply RV-0414 aspect/integer-scaling policy;
+- Android audio playback sink and measured latency/underrun behavior;
 - directory-tree import;
-- per-module binding/profile editing;
-- first legal test content, with Doom shareware as one suitable validation candidate rather than a hard-coded dependency.
+- per-module binding/profile editing and the in-game quick overlay;
+- run the verified DOOM Shareware installer/autostart path and exercise E1M1 on the Galaxy S9.
 
 ### RV-0007 — Standard/development logging and manual diagnostic bundles
 
@@ -469,6 +481,8 @@ No Galaxy S9, headset, optical, Bluetooth, thermal, or comfort validation has be
 ## Next exact action
 
 On a local Android development environment:
+
+For the DOS-enabled reference build, run `./scripts/fetch-dosbox-pure.sh` (or the Windows `.bat` helper) before the bootstrap/build steps below. The bootstrap verifier rejects the fetched core if it is not at the pinned commit.
 
 1. `git submodule update --init --recursive`;
 2. verify Cardboard submodule SHA `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`;

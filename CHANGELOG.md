@@ -41,7 +41,13 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Added persistent DOS module metadata/listing and library clearing without deleting the user's original source files.
 - Accepted GPLv2/GPLv2+ for the embedded DOS runtime and pinned DOSBox Pure `1.0-preview6` / `a4a0bab7f8931433588f2fcad9045c85b277373d`.
 - Added verified DOSBox Pure fetch scripts and recorded corresponding-source/release obligations.
-- Left the native libretro frontend, framebuffer/audio bridge, in-game binding overlay and directory-tree import as the next DOS-host implementation gates.
+- Added conditional Android NDK integration for the pinned DOSBox Pure checkout; shell/media-only builds still work when the checkout is absent, while DOS-enabled builds now emit the upstream `libretro.so` core plus ReverieVR's `libreverie_dos_host.so`.
+- Added the JNI/libretro DOS frontend with real core init/load/run/unload/deinit lifecycle, app-private system/save/content directories, legacy core-option defaults, shutdown handling and Android log forwarding.
+- Added tightly packed XRGB8888 framebuffer capture, bounded stereo PCM buffering, and synchronized virtual keyboard/mouse/joystick polling behind the existing `DosNativeRuntime` API.
+- Forced the initial Voodoo path to DOSBox Pure's software multithreaded renderer until ReverieVR implements a libretro hardware-render callback.
+- Changed `DOS_RUNTIME_BUILT` from a hard-coded false value to the actual presence of the verified pinned source checkout at Gradle configuration time, and extended bootstrap verification to reject a fetched checkout at the wrong commit.
+- Host-side C++ syntax/type checking and JNI descriptor verification passed locally; Android NDK compile/link, Stage B framebuffer/audio consumption, and Galaxy S9 runtime validation remain required.
+- Left the in-game binding overlay, directory-tree import, VR Home DOS launch surface, Android audio sink and guest-texture presentation as the next DOS-host integration gates.
 
 
 

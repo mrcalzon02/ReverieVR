@@ -1,20 +1,23 @@
 LOCAL_PATH := $(call my-dir)
-REVERIE_JNI_DIR := $(LOCAL_PATH)
-REVERIE_ROOT := $(abspath $(REVERIE_JNI_DIR)/../../../..)
-DOSBOX_PURE_DIR := $(REVERIE_ROOT)/third_party/dosbox-pure/src
+REVERIE_JNI_PATH := $(LOCAL_PATH)
+REVERIE_ROOT := $(abspath $(REVERIE_JNI_PATH)/../../../..)
+DOSBOX_PURE_ROOT := $(REVERIE_ROOT)/third_party/dosbox-pure/src
 
-ifneq ($(wildcard $(DOSBOX_PURE_DIR)/dosbox_pure_libretro.cpp),)
-include $(DOSBOX_PURE_DIR)/jni/Android.mk
-else
-$(error DOSBox Pure source is missing. Run scripts/fetch-dosbox-pure.sh or scripts\fetch-dosbox-pure.bat)
+ifeq ($(wildcard $(DOSBOX_PURE_ROOT)/jni/Android.mk),)
+$(error DOSBox Pure source is missing. Run scripts/fetch-dosbox-pure.sh or the Windows .bat helper.)
 endif
 
-LOCAL_PATH := $(REVERIE_JNI_DIR)
+include $(DOSBOX_PURE_ROOT)/jni/Android.mk
 
+LOCAL_PATH := $(REVERIE_JNI_PATH)
 include $(CLEAR_VARS)
+
 LOCAL_MODULE := reverie_dos_host
 LOCAL_SRC_FILES := reverie_dos_host.cpp
-LOCAL_C_INCLUDES := $(DOSBOX_PURE_DIR)/libretro-common/include
-LOCAL_CPPFLAGS := -std=c++17 -fexceptions -frtti -Wall -Wextra
-LOCAL_LDLIBS := -llog -ldl
+LOCAL_C_INCLUDES := $(DOSBOX_PURE_ROOT)/libretro-common/include
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -llog
+LOCAL_SHARED_LIBRARIES := retro
+
 include $(BUILD_SHARED_LIBRARY)

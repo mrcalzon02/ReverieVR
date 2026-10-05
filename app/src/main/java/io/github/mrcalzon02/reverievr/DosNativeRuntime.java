@@ -13,6 +13,7 @@ final class DosNativeRuntime implements AutoCloseable {
         boolean loaded = false;
         if (BuildConfig.DOS_RUNTIME_BUILT) {
             try {
+                System.loadLibrary("retro");
                 System.loadLibrary("reverie_dos_host");
                 loaded = true;
             } catch (UnsatisfiedLinkError ignored) {

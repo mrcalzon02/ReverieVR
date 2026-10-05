@@ -54,7 +54,11 @@ Expected commit:
 
 The checkout lives at `third_party/dosbox-pure/src` and is intentionally ignored by ReverieVR git. The committed pin/provenance record is `third_party/dosbox-pure/README.md`.
 
-The normal Android build does not yet require this checkout until the native libretro frontend is activated. Once DOSBox Pure binaries are distributed, GPL corresponding-source/rebuild material becomes a release acceptance requirement.
+The Android app can still be built without this checkout; in that case `BuildConfig.DOS_RUNTIME_BUILT` is false and the DOS host remains unavailable. When the verified checkout is present, Gradle automatically activates the NDK build for the pinned DOSBox Pure `libretro.so` core and ReverieVR's `libreverie_dos_host.so` JNI frontend for `armeabi-v7a` and `arm64-v8a`.
+
+The first native host deliberately uses DOSBox Pure's software XRGB8888 output path. Until ReverieVR implements the libretro hardware-render callback, the host forces Voodoo performance to software multithreaded mode rather than allowing the core's Auto setting to request OpenGL behind the shell's back.
+
+Once DOSBox Pure binaries are distributed, GPL corresponding-source/rebuild material becomes a release acceptance requirement.
 
 ## Local setup
 
@@ -74,7 +78,15 @@ The downloaded Gradle 9.6.1 binary distribution is pinned to:
 
     9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14
 
-After cloning and initializing submodules, verify the bootstrap:
+For the DOS-enabled reference build, fetch the pinned core first:
+
+    ./scripts/fetch-dosbox-pure.sh
+
+Windows:
+
+    scripts\fetch-dosbox-pure.bat
+
+The bootstrap verifier checks the DOSBox Pure commit when that checkout is present, while still allowing a shell/media-only build when it has not been fetched:
 
     ./scripts/verify-build-bootstrap.sh
 
