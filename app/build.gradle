@@ -25,6 +25,44 @@ def diagnosticIntakeUrlEscaped =
         .replace("\\", "\\\\")
         .replace("\"", "\\\"")
 
+def phoneTestRunNumber =
+    (project.findProperty("phoneTestRunNumber") ?: "0")
+        .toString()
+        .toInteger()
+def phoneTestRunAttempt =
+    (project.findProperty("phoneTestRunAttempt") ?: "0")
+        .toString()
+        .toInteger()
+def sourceRevision =
+    (project.findProperty("sourceRevision") ?: "local")
+        .toString()
+        .replaceAll("[^A-Za-z0-9._-]", "")
+def sourceRevisionEscaped =
+    sourceRevision
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+
+def phoneTestKeystorePath =
+    (project.findProperty("phoneTestKeystorePath") ?: "")
+        .toString()
+def phoneTestStorePassword =
+    (project.findProperty("phoneTestStorePassword") ?: "")
+        .toString()
+def phoneTestKeyAlias =
+    (project.findProperty("phoneTestKeyAlias") ?: "")
+        .toString()
+def phoneTestKeyPassword =
+    (project.findProperty("phoneTestKeyPassword") ?: "")
+        .toString()
+def phoneTestSigningConfigured =
+    !phoneTestKeystorePath.isEmpty()
+        && !phoneTestStorePassword.isEmpty()
+        && !phoneTestKeyAlias.isEmpty()
+        && !phoneTestKeyPassword.isEmpty()
+        && file(phoneTestKeystorePath).isFile()
+def updateChannelEnabled =
+    phoneTestSigningConfigured && phoneTestRunNumber > 0
+
 android {
     namespace = "io.github.mrcalzon02.reverievr"
     compileSdk = 36
@@ -33,7 +71,9 @@ android {
         applicationId = "io.github.mrcalzon02.reverievr"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = phoneTestRunNumber > 0
+            ? phoneTestRunNumber
+            : 1
         versionName = "0.1.0-dev"
         buildConfigField(
             "boolean",
@@ -62,9 +102,45 @@ android {
             "DIAGNOSTIC_INTAKE_URL",
             "\"${diagnosticIntakeUrlEscaped}\""
         )
+        buildConfigField(
+            "int",
+            "PHONE_TEST_RUN_NUMBER",
+            phoneTestRunNumber.toString()
+        )
+        buildConfigField(
+            "int",
+            "PHONE_TEST_RUN_ATTEMPT",
+            phoneTestRunAttempt.toString()
+        )
+        buildConfigField(
+            "String",
+            "SOURCE_REVISION",
+            "\"${sourceRevisionEscaped}\""
+        )
+        buildConfigField(
+            "boolean",
+            "UPDATE_CHANNEL_ENABLED",
+            updateChannelEnabled.toString()
+        )
+    }
+
+    signingConfigs {
+        if (phoneTestSigningConfigured) {
+            phoneTest {
+                storeFile = file(phoneTestKeystorePath)
+                storePassword = phoneTestStorePassword
+                keyAlias = phoneTestKeyAlias
+                keyPassword = phoneTestKeyPassword
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            if (phoneTestSigningConfigured) {
+                signingConfig = signingConfigs.phoneTest
+            }
+        }
         release {
             minifyEnabled = true
             shrinkResources = true
