@@ -158,12 +158,13 @@ final class DaydreamControllerProvider implements ControllerProvider {
                 } else if (bondState == BluetoothDevice.BOND_BONDING) {
                     emitConnection(
                         ConnectionState.BONDING,
-                        "Waiting for Android pairing…"
+                        "Waiting for pairing. Hold the Daydream/Home button if needed…"
                     );
                 } else {
                     emitConnection(
                         ConnectionState.BONDING,
-                        "Controller found. Confirm Android's pairing prompt if shown."
+                        "Controller found. Hold the Daydream/Home button to finish pairing "
+                            + "and confirm Android's prompt if shown."
                     );
                     if (!device.createBond()) {
                         emitConnection(
