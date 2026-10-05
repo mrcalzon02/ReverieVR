@@ -152,6 +152,25 @@ async function handleDiagnosticSubmission(request, env) {
   }
 
   const now = new Date();
+  const metadata = {
+    diagnosticId,
+    sha256,
+    byteLength: bytes.byteLength,
+    createdAt: now.toISOString(),
+    appVersion: textField(form, "app_version", 120),
+    buildType: textField(form, "build_type", 80),
+    device: textField(form, "device", 180),
+    android: textField(form, "android", 120),
+    loggingMode: textField(form, "logging_mode", 40),
+    summary: textField(form, "summary", 2000),
+    expected: textField(form, "expected", 2000),
+    receiptReference: diagnosticId
+  };
+
+  if (!metadata.summary) {
+    return json({error: "summary_required"}, 400);
+  }
+
   const year = String(now.getUTCFullYear());
   const month = String(now.getUTCMonth() + 1).padStart(2, "0");
   const objectKey = `${BUNDLE_PREFIX}${year}/${month}/${diagnosticId}.zip`;
@@ -171,25 +190,6 @@ async function handleDiagnosticSubmission(request, env) {
         createdAt: now.toISOString()
       }
     });
-  }
-
-  const metadata = {
-    diagnosticId,
-    sha256,
-    byteLength: bytes.byteLength,
-    createdAt: now.toISOString(),
-    appVersion: textField(form, "app_version", 120),
-    buildType: textField(form, "build_type", 80),
-    device: textField(form, "device", 180),
-    android: textField(form, "android", 120),
-    loggingMode: textField(form, "logging_mode", 40),
-    summary: textField(form, "summary", 2000),
-    expected: textField(form, "expected", 2000),
-    receiptReference: diagnosticId
-  };
-
-  if (!metadata.summary) {
-    return json({error: "summary_required"}, 400);
   }
 
   let issue;
@@ -358,6 +358,7 @@ function inspectZip(bytes, limits) {
   const decoder = new TextDecoder("utf-8", {fatal: false});
   let cursor = directoryOffset;
   let expanded = 0;
+  let manifestSeen = false;
 
   for (let entry = 0; entry < totalEntries; entry++) {
     if (cursor + 46 > bytes.length || readU32(bytes, cursor) !== 0x02014b50) {
@@ -389,6 +390,12 @@ function inspectZip(bytes, limits) {
       return {ok: false, reason: "unsafe_zip_path"};
     }
 
+    if (name === "manifest.txt") {
+      manifestSeen = true;
+    } else if (!/^logs\/reverie-[^/]+$/.test(name)) {
+      return {ok: false, reason: "unexpected_zip_entry"};
+    }
+
     expanded += uncompressedSize;
     if (expanded > limits.maxExpandedBytes) {
       return {ok: false, reason: "zip_expanded_size_exceeded"};
@@ -399,6 +406,9 @@ function inspectZip(bytes, limits) {
 
   if (cursor > directoryOffset + directorySize) {
     return {ok: false, reason: "central_directory_size_mismatch"};
+  }
+  if (!manifestSeen) {
+    return {ok: false, reason: "missing_manifest"};
   }
 
   return {ok: true, entries: totalEntries, expandedBytes: expanded};
@@ -446,6 +456,15 @@ async function createGitHubIssue(env, metadata) {
     }
   );
 
+  const existingIssue = await findExistingDiagnosticIssue(
+    env,
+    tokenResponse.token,
+    metadata.diagnosticId
+  );
+  if (existingIssue) {
+    return existingIssue;
+  }
+
   const titleSummary = publicText(metadata.summary, 90);
   const title = `[Diagnostic] ${metadata.diagnosticId} — ${titleSummary || "Runtime report"}`;
   const body = buildIssueBody(metadata);
@@ -458,6 +477,43 @@ async function createGitHubIssue(env, metadata) {
       body: JSON.stringify({title, body})
     }
   );
+}
+
+async function findExistingDiagnosticIssue(
+  env,
+  token,
+  diagnosticId
+) {
+  const marker = `[Diagnostic] ${diagnosticId}`;
+
+  for (let page = 1; page <= 3; page++) {
+    const issues = await githubJson(
+      `${GITHUB_API}/repos/${env.GITHUB_REPOSITORY}/issues`
+        + `?state=all&sort=created&direction=desc&per_page=100&page=${page}`,
+      {
+        headers: githubHeaders(token)
+      }
+    );
+
+    if (!Array.isArray(issues)) {
+      return null;
+    }
+
+    const match = issues.find(
+      issue =>
+        !issue.pull_request
+          && typeof issue.title === "string"
+          && issue.title.startsWith(marker)
+    );
+    if (match) {
+      return match;
+    }
+    if (issues.length < 100) {
+      break;
+    }
+  }
+
+  return null;
 }
 
 function buildIssueBody(metadata) {
