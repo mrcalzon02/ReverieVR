@@ -1,13 +1,19 @@
 package io.github.mrcalzon02.reverievr;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.graphics.SurfaceTexture;
 import android.hardware.input.InputManager;
 import android.media.AudioManager;
 import android.os.BatteryManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,6 +25,8 @@ import com.google.cardboard.proto.CardboardDevice;
 import com.google.cardboard.sdk.CardboardView;
 import com.google.cardboard.sdk.QrCode;
 import com.google.cardboard.sdk.deviceparams.DeviceParamsUtils;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class VrActivity extends Activity
     implements ControllerManager.Listener,
@@ -47,6 +55,23 @@ public final class VrActivity extends Activity
     private DosSession dosSession;
     private NativeModuleRuntime nativeModuleRuntime;
 
+    private final AtomicInteger batteryTemperatureTenthsC =
+        new AtomicInteger(
+            PerformanceEnvironmentSnapshot.BATTERY_TEMPERATURE_UNAVAILABLE
+        );
+    private final AtomicInteger thermalStatus =
+        new AtomicInteger(
+            PerformanceEnvironmentSnapshot.THERMAL_STATUS_UNAVAILABLE
+        );
+    private final BroadcastReceiver batteryTemperatureReceiver =
+        new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                updateBatteryTemperature(intent);
+            }
+        };
+    private boolean batteryTemperatureReceiverRegistered;
+    private Api29ThermalMonitor api29ThermalMonitor;
     private boolean inputDeviceListenerRegistered;
     private volatile String controllerConnectionMessage =
         "Controller is not connected.";
@@ -132,6 +157,7 @@ public final class VrActivity extends Activity
     protected void onResume() {
         super.onResume();
         registerInputDeviceListener();
+        registerPerformanceEnvironmentMonitoring();
         enterImmersiveMode();
 
         if (cardboardView != null) {
@@ -176,6 +202,7 @@ public final class VrActivity extends Activity
         if (cardboardView != null) {
             cardboardView.onPause();
         }
+        unregisterPerformanceEnvironmentMonitoring();
         super.onPause();
     }
 
@@ -585,6 +612,15 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public PerformanceEnvironmentSnapshot
+        getPerformanceEnvironmentSnapshot() {
+        return new PerformanceEnvironmentSnapshot(
+            batteryTemperatureTenthsC.get(),
+            thermalStatus.get()
+        );
+    }
+
+    @Override
     public void onVideoSurfaceTextureReady(
         SurfaceTexture surfaceTexture
     ) {
@@ -832,6 +868,134 @@ public final class VrActivity extends Activity
             return value;
         } catch (RuntimeException exception) {
             return SAFE_VIEWER_FALLBACK_IPD_METERS;
+        }
+    }
+
+    private void registerPerformanceEnvironmentMonitoring() {
+        if (!batteryTemperatureReceiverRegistered) {
+            try {
+                Intent sticky = registerReceiver(
+                    batteryTemperatureReceiver,
+                    new IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+                );
+                batteryTemperatureReceiverRegistered = true;
+                updateBatteryTemperature(sticky);
+            } catch (RuntimeException exception) {
+                batteryTemperatureTenthsC.set(
+                    PerformanceEnvironmentSnapshot
+                        .BATTERY_TEMPERATURE_UNAVAILABLE
+                );
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (api29ThermalMonitor == null) {
+                api29ThermalMonitor =
+                    new Api29ThermalMonitor(this, thermalStatus);
+            }
+            api29ThermalMonitor.start();
+        } else {
+            thermalStatus.set(
+                PerformanceEnvironmentSnapshot.THERMAL_STATUS_UNAVAILABLE
+            );
+        }
+    }
+
+    private void unregisterPerformanceEnvironmentMonitoring() {
+        if (batteryTemperatureReceiverRegistered) {
+            try {
+                unregisterReceiver(batteryTemperatureReceiver);
+            } catch (RuntimeException ignored) {
+                // Receiver state is already being discarded.
+            }
+            batteryTemperatureReceiverRegistered = false;
+        }
+
+        if (api29ThermalMonitor != null) {
+            api29ThermalMonitor.stop();
+        }
+    }
+
+    private void updateBatteryTemperature(Intent intent) {
+        if (intent == null
+            || !Intent.ACTION_BATTERY_CHANGED.equals(intent.getAction())) {
+            batteryTemperatureTenthsC.set(
+                PerformanceEnvironmentSnapshot
+                    .BATTERY_TEMPERATURE_UNAVAILABLE
+            );
+            return;
+        }
+
+        int value = intent.getIntExtra(
+            BatteryManager.EXTRA_TEMPERATURE,
+            PerformanceEnvironmentSnapshot.BATTERY_TEMPERATURE_UNAVAILABLE
+        );
+        if (value < -500 || value > 1000) {
+            value =
+                PerformanceEnvironmentSnapshot
+                    .BATTERY_TEMPERATURE_UNAVAILABLE;
+        }
+        batteryTemperatureTenthsC.set(value);
+    }
+
+    @TargetApi(Build.VERSION_CODES.Q)
+    private static final class Api29ThermalMonitor {
+        private final AtomicInteger destination;
+        private final PowerManager powerManager;
+        private final PowerManager.OnThermalStatusChangedListener listener;
+        private boolean started;
+
+        Api29ThermalMonitor(
+            Context context,
+            AtomicInteger destination
+        ) {
+            this.destination = destination;
+            powerManager =
+                (PowerManager) context.getSystemService(
+                    Context.POWER_SERVICE
+                );
+            listener = destination::set;
+        }
+
+        void start() {
+            if (started) {
+                return;
+            }
+            if (powerManager == null) {
+                destination.set(
+                    PerformanceEnvironmentSnapshot
+                        .THERMAL_STATUS_UNAVAILABLE
+                );
+                return;
+            }
+
+            try {
+                destination.set(
+                    powerManager.getCurrentThermalStatus()
+                );
+                powerManager.addThermalStatusListener(listener);
+                started = true;
+            } catch (RuntimeException exception) {
+                destination.set(
+                    PerformanceEnvironmentSnapshot
+                        .THERMAL_STATUS_UNAVAILABLE
+                );
+            }
+        }
+
+        void stop() {
+            if (started && powerManager != null) {
+                try {
+                    powerManager.removeThermalStatusListener(listener);
+                } catch (RuntimeException ignored) {
+                    // The Activity is leaving VR; stale callbacks are ignored.
+                }
+            }
+            started = false;
+            destination.set(
+                PerformanceEnvironmentSnapshot
+                    .THERMAL_STATUS_UNAVAILABLE
+            );
         }
     }
 

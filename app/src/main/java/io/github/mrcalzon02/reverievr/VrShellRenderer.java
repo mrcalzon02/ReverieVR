@@ -29,6 +29,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onExitToPhoneRequested();
         void onSetupCompleted();
         void onControllerRecenterRequested();
+        PerformanceEnvironmentSnapshot
+            getPerformanceEnvironmentSnapshot();
         void onVideoSurfaceTextureReady(SurfaceTexture surfaceTexture);
         void onVideoPlaybackRequested();
         void onVideoTogglePauseRequested();
@@ -332,9 +334,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
         } else if (frameNanos - lastPerformanceLogNanos >= 60000000000L) {
             FramePerformanceTracker.Snapshot snapshot =
                 performanceTracker.snapshot();
+            PerformanceEnvironmentSnapshot environment =
+                host.getPerformanceEnvironmentSnapshot();
+            if (environment == null) {
+                environment =
+                    PerformanceEnvironmentSnapshot.unavailable();
+            }
             ReverieLog.milestone(
                 "VR_PERFORMANCE",
-                "mode=" + mode + " " + snapshot.toLogString()
+                "mode="
+                    + mode
+                    + " "
+                    + environment.toLogString()
+                    + " "
+                    + snapshot.toLogString()
             );
             lastPerformanceLogNanos = frameNanos;
         }

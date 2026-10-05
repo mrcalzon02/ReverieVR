@@ -536,11 +536,15 @@ Implemented:
 - lifecycle/background gaps over one second are excluded rather than misreported as catastrophic frames;
 - one-minute Standard-log summaries report average, p95 and maximum frame interval plus counts above 1.5x and 2x the 60 Hz target interval;
 - instrumentation is driven from Stage B `onNewFrame`, so shell, media, DOS and native-module modes use the same cadence evidence path;
-- deterministic JVM coverage verifies cadence math, slow/severe classification, lifecycle-gap rejection and bounded storage.
+- deterministic JVM coverage verifies cadence math, slow/severe classification, lifecycle-gap rejection and bounded storage;
+- Stage B now keeps the latest battery-temperature broadcast reading and Android 10+ PowerManager thermal-status state outside the render loop;
+- the once-per-minute `VR_PERFORMANCE` record correlates those thermal observations with the same cadence snapshot;
+- Android versions without thermal-status support and failed/unavailable sensor reads are logged explicitly as `unavailable`, never fabricated;
+- pure-Java coverage verifies battery-temperature formatting, thermal-status labels and unknown/unavailable behavior.
 
-Interpretation boundary: these measurements are headset callback cadence, not GPU timer-query results. They are suitable for sustained regression evidence but must not be described as direct GPU render time. Development logging remains disallowed for acceptance evidence because its intentionally heavy diagnostics perturb timing.
+Interpretation boundary: these measurements are headset callback cadence, not GPU timer-query results. Battery temperature is the handset battery sensor reported by Android and must not be described as direct SoC, CPU or GPU junction temperature. Android thermal status is a platform throttling/severity signal, not a temperature reading. They are suitable for sustained regression evidence but must not be described as direct GPU render time. Development logging remains disallowed for acceptance evidence because its intentionally heavy diagnostics perturb timing.
 
-Remaining gate: cloud Android compile/test, then sustained Galaxy S9 headset runs without scrcpy to establish measured acceptance thresholds and correlate cadence degradation with device thermal behavior.
+Remaining gate: cloud Android compile/test, then sustained Galaxy S9 headset runs without scrcpy to establish measured acceptance thresholds and observe whether cadence degradation correlates with battery temperature and Android thermal-status escalation.
 
 ## Performance posture
 
