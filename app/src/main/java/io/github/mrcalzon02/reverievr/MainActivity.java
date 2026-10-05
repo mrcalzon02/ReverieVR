@@ -91,6 +91,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         refreshStaticStatus();
         refreshPhoneBattery();
         refreshControllerPermissionState();
+        refreshMediaStatus();
         enterVrButton.setEnabled(controllerManager.isReady());
     }
 
