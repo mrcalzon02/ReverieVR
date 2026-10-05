@@ -32,7 +32,13 @@ interface ControllerProvider extends AutoCloseable {
 
     void disconnect();
 
-    void recenter();
+    /**
+     * Requests a hardware/provider recenter when that transport supports it.
+     *
+     * @return true when a provider-specific recenter command was accepted;
+     *         false when recenter is software-only for this provider.
+     */
+    boolean recenter();
 
     boolean isReady();
 

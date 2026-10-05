@@ -514,12 +514,13 @@ final class DaydreamControllerProvider implements ControllerProvider {
     }
 
     @Override
-    public void recenter() {
+    public boolean recenter() {
         if (!ready || gatt == null || controlCharacteristic == null) {
-            return;
+            return false;
         }
 
         queueWrite(gatt, controlCharacteristic, new byte[] {0x00});
+        return true;
     }
 
     @Override
