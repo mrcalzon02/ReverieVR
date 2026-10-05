@@ -26,7 +26,8 @@ public final class VrActivity extends Activity
         LocalVideoPlayer.Listener,
         InputManager.InputDeviceListener,
         VrInputRouter.Listener,
-        VrInputRouter.BindingListener {
+        VrInputRouter.BindingListener,
+        StandardHidInputRouter.Listener {
 
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
 
@@ -39,6 +40,8 @@ public final class VrActivity extends Activity
     private VrInputRouter inputRouter;
     private InputBindingManager inputBindingManager;
     private InputBindingEngine inputBindingEngine;
+    private VirtualInputBus virtualInputBus;
+    private StandardHidInputRouter standardHidInputRouter;
 
     private boolean inputDeviceListenerRegistered;
     private volatile String controllerConnectionMessage =
@@ -61,6 +64,10 @@ public final class VrActivity extends Activity
             application.getInputBindingManager();
         inputBindingEngine =
             inputBindingManager.getEngine();
+        virtualInputBus =
+            inputBindingManager.getBus();
+        standardHidInputRouter =
+            new StandardHidInputRouter(this);
         preferences = new ReveriePreferences(this);
         videoPlayer = new LocalVideoPlayer(this, this);
         inputManager =
@@ -123,6 +130,9 @@ public final class VrActivity extends Activity
         if (inputBindingEngine != null) {
             inputBindingEngine.releaseAll();
         }
+        if (standardHidInputRouter != null) {
+            standardHidInputRouter.reset();
+        }
         if (videoPlayer != null) {
             videoPlayer.pauseForLifecycle();
         }
@@ -153,6 +163,10 @@ public final class VrActivity extends Activity
         if (inputRouter != null && inputRouter.onKeyEvent(event)) {
             return true;
         }
+        if (standardHidInputRouter != null
+            && standardHidInputRouter.onKeyboardEvent(event)) {
+            return true;
+        }
         return super.dispatchKeyEvent(event);
     }
 
@@ -162,6 +176,23 @@ public final class VrActivity extends Activity
             && inputRouter.onGenericMotionEvent(event)) {
             return true;
         }
+
+        int width = cardboardView == null
+            ? 0
+            : cardboardView.getWidth();
+        int height = cardboardView == null
+            ? 0
+            : cardboardView.getHeight();
+
+        if (standardHidInputRouter != null
+            && standardHidInputRouter.onMouseEvent(
+                event,
+                width,
+                height
+            )) {
+            return true;
+        }
+
         return super.onGenericMotionEvent(event);
     }
 
@@ -306,6 +337,84 @@ public final class VrActivity extends Activity
         );
     }
 
+    @Override
+    public void onVirtualKey(
+        VirtualKey key,
+        boolean down,
+        String source
+    ) {
+        if (virtualInputBus != null && key != null) {
+            virtualInputBus.applyDigital(
+                VirtualOutput.key(key),
+                down
+            );
+        }
+    }
+
+    @Override
+    public void onVirtualMouseButton(
+        int button,
+        boolean down,
+        String source
+    ) {
+        if (virtualInputBus != null) {
+            virtualInputBus.applyDigital(
+                VirtualOutput.mouseButton(button),
+                down
+            );
+        }
+    }
+
+    @Override
+    public void onVirtualMouseRelative(
+        float deltaX,
+        float deltaY,
+        String source
+    ) {
+        if (virtualInputBus == null) {
+            return;
+        }
+
+        virtualInputBus.applyAnalog(
+            VirtualOutput.mouseRelativeX(),
+            deltaX
+        );
+        virtualInputBus.applyAnalog(
+            VirtualOutput.mouseRelativeY(),
+            deltaY
+        );
+    }
+
+    @Override
+    public void onVirtualMouseAbsolute(
+        float normalizedX,
+        float normalizedY,
+        String source
+    ) {
+        if (virtualInputBus == null) {
+            return;
+        }
+
+        virtualInputBus.applyAnalog(
+            VirtualOutput.mouseAbsoluteX(),
+            (normalizedX * 2.0f) - 1.0f
+        );
+        virtualInputBus.applyAnalog(
+            VirtualOutput.mouseAbsoluteY(),
+            (normalizedY * 2.0f) - 1.0f
+        );
+    }
+
+    @Override
+    public void onVirtualMouseWheel(
+        float delta,
+        String source
+    ) {
+        if (virtualInputBus != null) {
+            virtualInputBus.applyMouseWheel(delta);
+        }
+    }
+
     private void adjustMediaVolume(int direction) {
         AudioManager audio =
             (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -341,6 +450,9 @@ public final class VrActivity extends Activity
     public void onInputDeviceRemoved(int deviceId) {
         if (inputBindingEngine != null) {
             inputBindingEngine.releaseAll();
+        }
+        if (standardHidInputRouter != null) {
+            standardHidInputRouter.reset();
         }
         refreshInputSourceStatus();
     }

@@ -247,6 +247,18 @@ final class StandardHidInputRouter {
                 return VirtualKey.ENTER;
             case KeyEvent.KEYCODE_SPACE:
                 return VirtualKey.SPACE;
+            case KeyEvent.KEYCODE_DEL:
+                return VirtualKey.BACKSPACE;
+            case KeyEvent.KEYCODE_CAPS_LOCK:
+                return VirtualKey.CAPS_LOCK;
+            case KeyEvent.KEYCODE_NUM_LOCK:
+                return VirtualKey.NUM_LOCK;
+            case KeyEvent.KEYCODE_SCROLL_LOCK:
+                return VirtualKey.SCROLL_LOCK;
+            case KeyEvent.KEYCODE_SYSRQ:
+                return VirtualKey.PRINT_SCREEN;
+            case KeyEvent.KEYCODE_BREAK:
+                return VirtualKey.PAUSE;
             case KeyEvent.KEYCODE_CTRL_LEFT:
             case KeyEvent.KEYCODE_CTRL_RIGHT:
                 return VirtualKey.CTRL;
@@ -329,6 +341,34 @@ final class StandardHidInputRouter {
             case KeyEvent.KEYCODE_F10: return VirtualKey.F10;
             case KeyEvent.KEYCODE_F11: return VirtualKey.F11;
             case KeyEvent.KEYCODE_F12: return VirtualKey.F12;
+
+            case KeyEvent.KEYCODE_MINUS: return VirtualKey.MINUS;
+            case KeyEvent.KEYCODE_EQUALS: return VirtualKey.EQUALS;
+            case KeyEvent.KEYCODE_LEFT_BRACKET: return VirtualKey.LEFT_BRACKET;
+            case KeyEvent.KEYCODE_RIGHT_BRACKET: return VirtualKey.RIGHT_BRACKET;
+            case KeyEvent.KEYCODE_BACKSLASH: return VirtualKey.BACKSLASH;
+            case KeyEvent.KEYCODE_SEMICOLON: return VirtualKey.SEMICOLON;
+            case KeyEvent.KEYCODE_APOSTROPHE: return VirtualKey.APOSTROPHE;
+            case KeyEvent.KEYCODE_GRAVE: return VirtualKey.GRAVE;
+            case KeyEvent.KEYCODE_COMMA: return VirtualKey.COMMA;
+            case KeyEvent.KEYCODE_PERIOD: return VirtualKey.PERIOD;
+            case KeyEvent.KEYCODE_SLASH: return VirtualKey.SLASH;
+
+            case KeyEvent.KEYCODE_NUMPAD_0: return VirtualKey.NUMPAD_0;
+            case KeyEvent.KEYCODE_NUMPAD_1: return VirtualKey.NUMPAD_1;
+            case KeyEvent.KEYCODE_NUMPAD_2: return VirtualKey.NUMPAD_2;
+            case KeyEvent.KEYCODE_NUMPAD_3: return VirtualKey.NUMPAD_3;
+            case KeyEvent.KEYCODE_NUMPAD_4: return VirtualKey.NUMPAD_4;
+            case KeyEvent.KEYCODE_NUMPAD_5: return VirtualKey.NUMPAD_5;
+            case KeyEvent.KEYCODE_NUMPAD_6: return VirtualKey.NUMPAD_6;
+            case KeyEvent.KEYCODE_NUMPAD_7: return VirtualKey.NUMPAD_7;
+            case KeyEvent.KEYCODE_NUMPAD_8: return VirtualKey.NUMPAD_8;
+            case KeyEvent.KEYCODE_NUMPAD_9: return VirtualKey.NUMPAD_9;
+            case KeyEvent.KEYCODE_NUMPAD_DIVIDE: return VirtualKey.NUMPAD_DIVIDE;
+            case KeyEvent.KEYCODE_NUMPAD_MULTIPLY: return VirtualKey.NUMPAD_MULTIPLY;
+            case KeyEvent.KEYCODE_NUMPAD_SUBTRACT: return VirtualKey.NUMPAD_SUBTRACT;
+            case KeyEvent.KEYCODE_NUMPAD_ADD: return VirtualKey.NUMPAD_ADD;
+            case KeyEvent.KEYCODE_NUMPAD_DOT: return VirtualKey.NUMPAD_DOT;
 
             default:
                 return null;
