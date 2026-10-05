@@ -34,6 +34,7 @@ public final class ControllerActivity extends Activity
     private static final int BLUETOOTH_PERMISSION_REQUEST = 2301;
 
     private ControllerServer server;
+    private ControllerUiFeedback uiFeedback;
     private SensorManager sensorManager;
     private Sensor rotationVector;
     private Sensor gyroscope;
@@ -44,6 +45,7 @@ public final class ControllerActivity extends Activity
     private TextView batteryStatus;
     private Button startButton;
     private Button stopButton;
+    private Button bluetoothButton;
     private ControllerTouchpadView touchpad;
 
     private boolean resumed;
@@ -81,10 +83,13 @@ public final class ControllerActivity extends Activity
             findViewById(R.id.start_server_button);
         stopButton =
             findViewById(R.id.stop_server_button);
+        bluetoothButton =
+            findViewById(R.id.bluetooth_settings_button);
         touchpad =
             findViewById(R.id.controller_touchpad);
 
         server = new ControllerServer(this, this);
+        uiFeedback = new ControllerUiFeedback(this);
 
         sensorManager =
             (SensorManager) getSystemService(
@@ -156,22 +161,25 @@ public final class ControllerActivity extends Activity
         if (server != null) {
             server.close();
         }
+        if (uiFeedback != null) {
+            uiFeedback.close();
+        }
 
         super.onDestroy();
     }
 
     private void configureUi() {
-        startButton.setOnClickListener(
-            view -> startControllerServer()
+        uiFeedback.bind(
+            startButton,
+            this::startControllerServer
         );
-        stopButton.setOnClickListener(
-            view -> server.stop()
+        uiFeedback.bind(
+            stopButton,
+            () -> server.stop()
         );
-
-        Button bluetoothButton =
-            findViewById(R.id.bluetooth_settings_button);
-        bluetoothButton.setOnClickListener(
-            view -> openBluetoothSettings()
+        uiFeedback.bind(
+            bluetoothButton,
+            this::openBluetoothSettings
         );
 
         touchpad.setListener(
@@ -209,14 +217,18 @@ public final class ControllerActivity extends Activity
         Button button,
         int keyCode
     ) {
+        uiFeedback.prepareMomentary(button);
         button.setOnTouchListener((view, event) -> {
             if (server == null || !server.isConnected()) {
-                return false;
+                uiFeedback.failure(view);
+                return true;
             }
 
+            uiFeedback.animatePressState(view, event);
             int action = event.getActionMasked();
             if (action == MotionEvent.ACTION_DOWN) {
                 view.setPressed(true);
+                uiFeedback.activation();
                 server.sendControl(
                     ControllerProtocolWriter.key(
                         ControllerProtocolWriter.ACTION_DOWN,
@@ -248,6 +260,7 @@ public final class ControllerActivity extends Activity
 
     private void startControllerServer() {
         if (rotationVector == null) {
+            uiFeedback.failure(startButton);
             connectionStatus.setText(
                 R.string.orientation_sensor_required
             );
@@ -293,6 +306,7 @@ public final class ControllerActivity extends Activity
         if (granted) {
             server.start();
         } else {
+            uiFeedback.failure(startButton);
             Toast.makeText(
                 this,
                 R.string.bluetooth_permission_denied,
@@ -400,6 +414,10 @@ public final class ControllerActivity extends Activity
             updateControls();
             updateSensorRegistration();
 
+            if (state == ControllerServer.State.ERROR) {
+                uiFeedback.failure(startButton);
+            }
+
             if (state == ControllerServer.State.CONNECTED
                 && batteryPercentage >= 0) {
                 server.sendControl(
@@ -465,11 +483,11 @@ public final class ControllerActivity extends Activity
     private void updateControls() {
         boolean connected =
             server != null && server.isConnected();
+        boolean running =
+            server != null && server.isRunning();
 
-        startButton.setEnabled(!connected && rotationVector != null);
-        stopButton.setEnabled(
-            server != null
-        );
+        startButton.setEnabled(!running && rotationVector != null);
+        stopButton.setEnabled(running);
         touchpad.setEnabled(connected);
 
         findViewById(R.id.select_button)
@@ -536,6 +554,7 @@ public final class ControllerActivity extends Activity
                 )
             );
         } catch (ActivityNotFoundException exception) {
+            uiFeedback.failure(bluetoothButton);
             Toast.makeText(
                 this,
                 R.string.bluetooth_settings_unavailable,
