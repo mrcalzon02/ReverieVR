@@ -13,3 +13,11 @@ third_party/dosbox-pure/src/
 
 # Original third-party DOOM shareware archive fetched for packaging
 third_party/doom-shareware/payload/default-content/doom19s.zip
+
+# Diagnostic intake local tooling/state and secrets
+diagnostic-intake/node_modules/
+diagnostic-intake/.wrangler/
+diagnostic-intake/.dev.vars
+diagnostic-intake/.dev.vars.*
+diagnostic-intake/.env
+diagnostic-intake/.env.*
