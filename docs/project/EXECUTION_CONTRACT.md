@@ -48,6 +48,7 @@ Use exact states: drafted, worktree edit, staged, committed, pushed/remote, devi
 - Do not weaken validators/tests/gates to obtain a pass.
 - Do not silently swallow failures.
 - Do not add or retain inert user-facing controls. A button, switch, menu item, setting, or action must reach implemented, observable behavior when exposed; planned behavior stays in the backlog until wired. Remove the control and orphaned preference/state wiring when no behavior exists.
+- Verify actionable controls have visible focus/pressed/disabled states as appropriate, a normal activation sound, and a distinct rejection/failure sound when the requested action cannot complete.
 - Large-file edits require exact targeting and post-edit integrity checks.
 
 ## 5. Dependency/framework discipline
