@@ -6,12 +6,11 @@ on:
 permissions:
   contents: read
 
-environment:
-  name: diagnostic-intake
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: diagnostic-intake
     timeout-minutes: 15
     steps:
       - name: Checkout
