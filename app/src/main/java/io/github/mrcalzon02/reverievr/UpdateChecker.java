@@ -189,9 +189,7 @@ final class UpdateChecker implements AutoCloseable {
         }
 
         return normalized.startsWith("reverievr-")
-            || normalized.equals("reverievr.apk")
-            || normalized.equals("app-release.apk")
-            || normalized.equals("app-debug.apk");
+            || normalized.equals("reverievr.apk");
     }
 
     private static boolean isTrustedReleaseAssetUrl(String value) {

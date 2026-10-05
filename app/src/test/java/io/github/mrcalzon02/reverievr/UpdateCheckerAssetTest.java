@@ -10,7 +10,6 @@ public final class UpdateCheckerAssetTest {
     public void acceptsHeadsetApkNames() {
         assertTrue(UpdateChecker.isHeadsetApkAssetName("ReverieVR-v0.2.0.apk"));
         assertTrue(UpdateChecker.isHeadsetApkAssetName("ReverieVR.apk"));
-        assertTrue(UpdateChecker.isHeadsetApkAssetName("app-release.apk"));
     }
 
     @Test
@@ -23,6 +22,11 @@ public final class UpdateCheckerAssetTest {
         assertFalse(
             UpdateChecker.isHeadsetApkAssetName(
                 "controller-app-release.apk"
+            )
+        );
+        assertFalse(
+            UpdateChecker.isHeadsetApkAssetName(
+                "app-release.apk"
             )
         );
     }
