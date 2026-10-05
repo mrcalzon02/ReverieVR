@@ -517,7 +517,7 @@ Implemented on `main`:
 - broker deployment is isolated behind the protected GitHub environment `diagnostic-intake`, while the non-secret public endpoint is supplied separately through the `DIAGNOSTIC_INTAKE_URL` Actions variable;
 - GitHub Issue #1 tracks the end-to-end acceptance work and ADR-0017 remains the governing security boundary.
 
-Current verification: source implementation and deployment contract are committed. Phone-test run #13 is the Android compile/package gate for the client and conditional Stage A UI.
+Current verification: phone-test run #13 completed successfully against commit `61a1f8f81ded61fe4fba7b7123958ec454a69cc8`, passing JVM tests, Android/native/DOS build, APK-content verification, signature verification, staging and prerelease publication with the credential-free diagnostic client and conditional Stage A submission UI present. Run #14 is the stronger latest-tree gate because it additionally includes deterministic diagnostic-ID/SHA-256 tests and a Worker `node --check` step for the subsequently hardened broker.
 
 Remaining gates before RV-0208 can be accepted:
 
