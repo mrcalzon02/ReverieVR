@@ -93,6 +93,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private volatile boolean controllerConnected;
     private volatile String controllerMessage = "Controller";
+    private volatile String lastInputAction = "Waiting for input";
+    private volatile String lastInputSource = "No action received yet";
     private volatile boolean textureDirty = true;
 
     private int program;
@@ -131,7 +133,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             setupStep = 0;
         } else {
             mode = MODE_SETUP;
-            setupStep = clampInt(preferences.getVrSetupStep(), 0, 4);
+            setupStep = clampInt(preferences.getVrSetupStep(), 0, 5);
         }
 
         float[] vertices = new float[] {
@@ -184,6 +186,23 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     void setVideoAspectRatio(float aspectRatio) {
         videoRenderer.setVideoAspectRatio(aspectRatio);
+    }
+
+    void noteInputAction(VrInputAction action, String source) {
+        if (action == null) {
+            return;
+        }
+
+        lastInputAction = action.name().replace('_', ' ');
+        lastInputSource =
+            source == null || source.trim().isEmpty()
+                ? "Unknown input source"
+                : source.trim();
+        textureDirty = true;
+    }
+
+    boolean consumeBackDuringInputTraining() {
+        return mode == MODE_SETUP && setupStep == 1;
     }
 
     void requestVideoExit() {
@@ -462,8 +481,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     break;
                 case 1:
                     mode = MODE_SETUP;
-                    setupStep = 1;
-                    preferences.setVrSetupStep(1);
+                    setupStep = 2;
+                    preferences.setVrSetupStep(2);
                     break;
                 case 2:
                     if (!preferences.hasSelectedVideo()) {
@@ -505,24 +524,26 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 1:
-                if (button == 0) {
-                    userIpdMeters = clamp(userIpdMeters - 0.001f, 0.050f, 0.080f);
-                    preferences.setUserIpdMeters(userIpdMeters);
-                } else if (button == 1) {
-                    userIpdMeters = clamp(userIpdMeters + 0.001f, 0.050f, 0.080f);
-                    preferences.setUserIpdMeters(userIpdMeters);
-                } else if (button == 2) {
+                if (button == 0 || button == 1) {
                     advanceSetup();
                 }
                 break;
 
             case 2:
                 if (button == 0) {
-                    uiScale = clamp(uiScale - 0.05f, 0.75f, 1.50f);
-                    preferences.setUiScale(uiScale);
+                    userIpdMeters = clamp(
+                        userIpdMeters - 0.001f,
+                        0.050f,
+                        0.080f
+                    );
+                    preferences.setUserIpdMeters(userIpdMeters);
                 } else if (button == 1) {
-                    uiScale = clamp(uiScale + 0.05f, 0.75f, 1.50f);
-                    preferences.setUiScale(uiScale);
+                    userIpdMeters = clamp(
+                        userIpdMeters + 0.001f,
+                        0.050f,
+                        0.080f
+                    );
+                    preferences.setUserIpdMeters(userIpdMeters);
                 } else if (button == 2) {
                     advanceSetup();
                 }
@@ -530,15 +551,39 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
             case 3:
                 if (button == 0) {
-                    preferences.setBatteryHudEnabled(!preferences.isBatteryHudEnabled());
+                    uiScale = clamp(
+                        uiScale - 0.05f,
+                        0.75f,
+                        1.50f
+                    );
+                    preferences.setUiScale(uiScale);
                 } else if (button == 1) {
-                    preferences.setLookUpRevealEnabled(!preferences.isLookUpRevealEnabled());
+                    uiScale = clamp(
+                        uiScale + 0.05f,
+                        0.75f,
+                        1.50f
+                    );
+                    preferences.setUiScale(uiScale);
                 } else if (button == 2) {
                     advanceSetup();
                 }
                 break;
 
             case 4:
+                if (button == 0) {
+                    preferences.setBatteryHudEnabled(
+                        !preferences.isBatteryHudEnabled()
+                    );
+                } else if (button == 1) {
+                    preferences.setLookUpRevealEnabled(
+                        !preferences.isLookUpRevealEnabled()
+                    );
+                } else if (button == 2) {
+                    advanceSetup();
+                }
+                break;
+
+            case 5:
                 if (button == 0) {
                     preferences.markVrSetupCurrent();
                     mode = MODE_HOME;
@@ -557,7 +602,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void advanceSetup() {
-        setupStep = Math.min(4, setupStep + 1);
+        setupStep = Math.min(5, setupStep + 1);
+        if (setupStep == 1) {
+            lastInputAction = "Waiting for input";
+            lastInputSource = "Try your controller controls below";
+        }
         preferences.setVrSetupStep(setupStep);
         hoveredButton = -1;
         textureDirty = true;
@@ -585,7 +634,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return HOME_BUTTONS;
         }
 
-        if (setupStep == 1 || setupStep == 2 || setupStep == 3) {
+        if (setupStep == 2 || setupStep == 3 || setupStep == 4) {
             return THREE_BUTTONS;
         }
 
@@ -686,7 +735,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(31.0f * uiScale);
         canvas.drawText(
-            String.format(Locale.US, "SETUP  %d / 5", setupStep + 1),
+            String.format(
+                Locale.US,
+                "SETUP  %d / 6",
+                setupStep + 1
+            ),
             90,
             175,
             paint
@@ -698,17 +751,78 @@ final class VrShellRenderer implements CardboardView.Renderer {
         String[] labels;
         switch (setupStep) {
             case 0:
-                canvas.drawText("Face forward in a comfortable seated position.", 90, 255, paint);
-                canvas.drawText("Set this as your neutral direction.", 90, 300, paint);
-                labels = new String[] {"RECENTER + NEXT", "SKIP"};
+                canvas.drawText(
+                    "Face forward in a comfortable seated position.",
+                    90,
+                    255,
+                    paint
+                );
+                canvas.drawText(
+                    "Set this as your neutral direction.",
+                    90,
+                    300,
+                    paint
+                );
+                labels =
+                    new String[] {"RECENTER + NEXT", "SKIP"};
                 break;
 
             case 1:
-                canvas.drawText("Virtual eye spacing", 90, 245, paint);
+                canvas.drawText(
+                    "Controller familiarization",
+                    90,
+                    235,
+                    paint
+                );
+                paint.setTextSize(19.0f * uiScale);
+                canvas.drawText(
+                    "Try Select, Back, Home/Recenter, directional input and volume.",
+                    90,
+                    275,
+                    paint
+                );
+                canvas.drawText(
+                    "Back is captured on this page so you can test it safely.",
+                    90,
+                    308,
+                    paint
+                );
+
+                paint.setColor(Color.WHITE);
+                paint.setTextSize(32.0f * uiScale);
+                canvas.drawText(
+                    "Last action: " + shorten(lastInputAction, 28),
+                    90,
+                    365,
+                    paint
+                );
+
+                paint.setColor(Color.rgb(184, 194, 207));
+                paint.setTextSize(20.0f * uiScale);
+                canvas.drawText(
+                    "Source: " + shorten(lastInputSource, 52),
+                    90,
+                    405,
+                    paint
+                );
+                labels = new String[] {"CONTINUE", "SKIP"};
+                break;
+
+            case 2:
+                canvas.drawText(
+                    "Virtual eye spacing",
+                    90,
+                    245,
+                    paint
+                );
                 paint.setColor(Color.WHITE);
                 paint.setTextSize(58.0f * uiScale);
                 canvas.drawText(
-                    String.format(Locale.US, "%.0f mm", userIpdMeters * 1000.0f),
+                    String.format(
+                        Locale.US,
+                        "%.0f mm",
+                        userIpdMeters * 1000.0f
+                    ),
                     90,
                     340,
                     paint
@@ -725,52 +839,104 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     390,
                     paint
                 );
-                canvas.drawText("Adjust for easiest binocular fusion; reset later in Settings.", 90, 430, paint);
-                labels = new String[] {"NARROWER", "WIDER", "NEXT"};
+                canvas.drawText(
+                    "Adjust for easiest binocular fusion; reset later in Settings.",
+                    90,
+                    430,
+                    paint
+                );
+                labels =
+                    new String[] {"NARROWER", "WIDER", "NEXT"};
                 break;
 
-            case 2:
-                canvas.drawText("Readability", 90, 245, paint);
+            case 3:
+                canvas.drawText(
+                    "Readability",
+                    90,
+                    245,
+                    paint
+                );
                 paint.setColor(Color.WHITE);
                 paint.setTextSize(48.0f * uiScale);
                 canvas.drawText(
-                    String.format(Locale.US, "UI scale  %.0f%%", uiScale * 100.0f),
+                    String.format(
+                        Locale.US,
+                        "UI scale  %.0f%%",
+                        uiScale * 100.0f
+                    ),
                     90,
                     335,
                     paint
                 );
                 paint.setColor(Color.rgb(184, 194, 207));
                 paint.setTextSize(22.0f * uiScale);
-                canvas.drawText("This text should be easy to read without leaning.", 90, 405, paint);
-                labels = new String[] {"SMALLER", "LARGER", "NEXT"};
+                canvas.drawText(
+                    "This text should be easy to read without leaning.",
+                    90,
+                    405,
+                    paint
+                );
+                labels =
+                    new String[] {"SMALLER", "LARGER", "NEXT"};
                 break;
 
-            case 3:
-                canvas.drawText("Status HUD", 90, 245, paint);
+            case 4:
                 canvas.drawText(
-                    "Battery HUD: " + onOff(preferences.isBatteryHudEnabled()),
+                    "Status HUD",
+                    90,
+                    245,
+                    paint
+                );
+                canvas.drawText(
+                    "Battery HUD: "
+                        + onOff(preferences.isBatteryHudEnabled()),
                     90,
                     315,
                     paint
                 );
                 canvas.drawText(
-                    "Look-up reveal: " + onOff(preferences.isLookUpRevealEnabled()),
+                    "Look-up reveal: "
+                        + onOff(preferences.isLookUpRevealEnabled()),
                     90,
                     365,
                     paint
                 );
-                labels = new String[] {"BATTERY HUD", "LOOK-UP MODE", "NEXT"};
+                labels =
+                    new String[] {
+                        "BATTERY HUD",
+                        "LOOK-UP MODE",
+                        "NEXT"
+                    };
                 break;
 
-            case 4:
+            case 5:
             default:
-                canvas.drawText("Core setup is ready.", 90, 255, paint);
-                canvas.drawText("More calibration tools remain available from Settings.", 90, 305, paint);
-                labels = new String[] {"SAVE + HOME", "HOME WITHOUT SAVING"};
+                canvas.drawText(
+                    "Core setup is ready.",
+                    90,
+                    255,
+                    paint
+                );
+                canvas.drawText(
+                    "More calibration tools remain available from Settings.",
+                    90,
+                    305,
+                    paint
+                );
+                labels =
+                    new String[] {
+                        "SAVE + HOME",
+                        "HOME WITHOUT SAVING"
+                    };
                 break;
         }
 
-        drawButtons(canvas, paint, labels, activeButtons());
+        drawButtons(
+            canvas,
+            paint,
+            labels,
+            activeButtons()
+        );
     }
 
     private void drawPowerHud(Canvas canvas, Paint paint) {
@@ -834,6 +1000,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
             canvas.drawText(labels[index], x, y, paint);
             paint.setFakeBoldText(false);
         }
+    }
+
+    private static String shorten(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+
+        String trimmed = value.trim();
+        if (trimmed.length() <= maxLength) {
+            return trimmed;
+        }
+        return trimmed.substring(0, Math.max(0, maxLength - 1)) + "…";
     }
 
     private static void rotateYaw(

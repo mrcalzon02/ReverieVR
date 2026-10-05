@@ -200,13 +200,17 @@ public final class VrActivity extends Activity
             return;
         }
 
+        renderer.noteInputAction(action, source);
+
         switch (action) {
             case SELECT:
                 renderer.requestSelect();
                 break;
 
             case BACK:
-                renderer.requestBack();
+                if (!renderer.consumeBackDuringInputTraining()) {
+                    renderer.requestBack();
+                }
                 break;
 
             case RECENTER:

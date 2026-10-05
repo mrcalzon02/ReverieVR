@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 final class ReveriePreferences {
-    static final int CURRENT_VR_SETUP_VERSION = 1;
+    static final int CURRENT_VR_SETUP_VERSION = 2;
 
     private static final String FILE_NAME = "reverie_settings";
 
