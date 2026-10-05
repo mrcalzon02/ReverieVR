@@ -28,7 +28,10 @@ ReverieVR should:
 7. support local VR video playback;
 8. host small self-contained VR applications/games as subprojects/modules;
 9. expose a documented integration surface rather than binding every experience directly to one device;
-10. remain buildable, understandable, testable, and recoverable.
+10. keep shell-level status, settings, recovery, and navigation available across the home, player, and hosted games/modules;
+11. provide a shell-global power/status HUD for the handset and currently bound controller when battery telemetry is available;
+12. make automatic quality-of-life behavior optional and locally configurable;
+13. remain buildable, understandable, testable, and recoverable.
 
 ## 3. Reference interaction model
 
@@ -63,9 +66,31 @@ After the user enters VR, the baseline seated interaction model is:
 
 Touchscreen interaction is expected and supported in Stage A. It must not be required for ordinary Stage B operation once VR has been entered successfully.
 
+The Stage B shell owns platform-global UI and behavior that must survive transitions between the home, media player, and hosted modules. Experiences may supply their own content UI, but they do not replace shell recovery, global settings access, or the global status layer.
+
+The reference global status presentation includes two compact percentage/progress indicators in the upper-right region of the VR view: handset battery and the currently bound controller battery. If controller battery telemetry is unavailable, ReverieVR reports an honest unavailable/unknown state rather than inventing a percentage.
+
+A user-selectable adaptive HUD mode may retract the status layer during ordinary forward viewing and bring it down into comfortable view when a deliberate look-up gesture is detected. Head pitch is the baseline signal; controller orientation may participate only if the selected controller stack exposes it reliably. Thresholds, hysteresis, and animation require comfort testing. Disabling adaptive mode must preserve a simple persistent/manual presentation.
+
 Bindings in Stage B must be represented by a configurable input-action layer rather than permanently hard-coded into application logic.
 
-### 3.3 Recovery invariant
+### 3.3 Shell continuity invariant
+
+The ReverieVR shell is not merely the first 3D scene. It is the persistent platform layer around hosted experiences.
+
+At minimum the shell owns:
+
+- return-to-home and recovery routing;
+- access to global settings;
+- global input-action policy;
+- handset/controller power status;
+- platform diagnostics/status access;
+- module pause/exit boundaries;
+- safe transition back to Stage A.
+
+A game or player module must not silently remove those capabilities. Deliberate suppression of noncritical HUD elements must be explicit, reversible, and user-configurable; recovery controls remain reachable.
+
+### 3.4 Recovery invariant
 
 The user must never be permanently trapped by a bad controller state, broken binding, or unusable VR setting.
 
@@ -169,6 +194,12 @@ The 2D setup surface and 3D VR shell are distinct application modes with an expl
 
 ### Performance is correctness
 Performance, thermal behavior, frame pacing, decoder behavior, tracking latency, and input latency are acceptance criteria.
+
+### Shell owns cross-module platform behavior
+Global status, recovery, settings access, and common navigation live in the shell/platform layer. Hosted modules consume platform services and input actions instead of cloning or bypassing them.
+
+### Quality-of-life features remain optional
+Automatic HUD reveal/retract, gaze-triggered behavior, comfort helpers, and similar convenience systems require local toggles when they materially change presentation or interaction. Turning an enhancement off must leave a predictable usable baseline.
 
 ## 9. Provenance and reverse engineering
 

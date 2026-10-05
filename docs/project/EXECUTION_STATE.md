@@ -12,6 +12,7 @@
   - `64d00d48d49ec75fcd95f4c29d76d21970fdf070` — native Android Stage A setup menu
   - `a4b4db3679fc768c4b32e40c2efb04183bf73056` — controller Pair / Sync and Test actions exposed in the setup UI
 - Remote readback confirmed the Android project, manifest, Java source, XML layout/resources, build instructions, and ADR-0003 are present on `main`.
+- Current verified remote bookkeeping HEAD before this shell-intent capture: `41dfe89bd2675c2e7171edb9558bc7bf5c7479fc`.
 
 ## Last completed target
 
@@ -75,6 +76,16 @@ Stage A is now deliberately independent of this decision. RV-0002 remains respon
 - head tracking;
 - 2D-to-VR transition;
 - recovery from Stage B back to Stage A.
+
+## Captured Stage B shell contract
+
+The previously implemented Stage A preferences for **VR battery HUD**, **look-up reveal**, and **numeric battery percentages** are now tied to an explicit Stage B architecture requirement rather than remaining orphaned UI toggles.
+
+Stage B is a persistent platform shell around the home, video player, and hosted games/modules. The shell owns global navigation/recovery, global settings access, input policy, diagnostics/status access, and the power/status HUD.
+
+The reference power HUD uses two compact upper-right percentage/progress indicators: handset battery and the currently bound controller battery. If controller battery telemetry is unavailable, the UI reports an unavailable/unknown state rather than manufacturing a value.
+
+The stored look-up-reveal preference controls an optional adaptive presentation: normal forward viewing may retract the status HUD, while a deliberate upward look reveals/drops it into comfortable view. Turning this feature off must retain a predictable persistent/manual presentation. Automatic quality-of-life behaviors follow the same opt-out principle.
 
 ## Environment limitation observed
 

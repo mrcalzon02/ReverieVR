@@ -53,6 +53,11 @@ Required capabilities:
 - settings persistence;
 - safe return to 2D setup/recovery mode;
 - clear diagnostics/status page;
+- shell-global handset battery percentage/progress indicator;
+- shell-global bound-controller battery percentage/progress indicator when telemetry is available, with an honest unavailable state otherwise;
+- upper-right HUD placement as the reference presentation;
+- optional gaze-adaptive status mode that retracts during ordinary forward viewing and reveals/drops into view on a deliberate look-up gesture;
+- a settings toggle that can disable adaptive HUD behavior and preserve a simple persistent/manual presentation;
 - return-to-home behavior for ReverieVR-hosted modules.
 
 The menu is not ornamental. It is the control plane for the platform.
@@ -70,7 +75,9 @@ Settings should be local, inspectable, persistent, and grouped at minimum into:
 - brightness guidance/control where Android permits;
 - orientation/recenter behavior;
 - seated mode options;
-- optional comfort vignette/turning behavior where relevant.
+- optional comfort vignette/turning behavior where relevant;
+- global status-HUD visibility mode;
+- gaze-adaptive HUD enable/disable and comfort behavior.
 
 ### Performance
 - quality preset;
@@ -162,7 +169,9 @@ Define how experiences live inside ReverieVR:
 - asset/resource boundaries;
 - save/config storage;
 - performance budget declaration;
-- capability requirements.
+- capability requirements;
+- shell-global HUD/status continuity contract;
+- prohibition on replacing or bypassing shell recovery/global-settings routes.
 
 Modules must not bypass platform settings or silently replace global controls.
 

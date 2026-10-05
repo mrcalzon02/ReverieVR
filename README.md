@@ -42,6 +42,10 @@ See [CHANGELOG.md](CHANGELOG.md) for verified project changes.
 
 **Capability honesty:** unsupported behavior is reported as unsupported; no fake-success stubs, no-op compatibility layers, or hidden server dependencies.
 
+**Shell-owned platform UX:** the Stage B ReverieVR shell remains the platform control plane around the home, media player, and hosted games/modules. Global status, recovery, settings, and navigation behavior belong to the shell rather than being reimplemented independently by every experience.
+
+**Configurable quality of life:** convenience behavior that automatically moves, hides, reveals, recenters, or changes persistent UI must be locally configurable. A conservative predictable behavior remains available when automation is disabled.
+
 ## Legal and provenance boundary
 
 Do not commit or redistribute proprietary Google binaries, applications, SDK payloads, firmware, signing material, credentials, private keys, copyrighted media/assets, or other third-party material without redistribution rights. Reverse-engineering notes, independently written compatibility code, public specifications, hashes, metadata, and user-supplied local test artifacts must remain clearly separated according to provenance and license.

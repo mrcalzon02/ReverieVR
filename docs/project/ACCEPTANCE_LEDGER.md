@@ -20,5 +20,7 @@ Acceptance states:
 | RV-0091 | Controller pairing/readiness workflow | planned | Pair / Sync and Test actions exist in the UI but remain disabled until the verified Daydream controller stack is implemented. |
 | RV-0092 | 2D-to-VR transition/recovery | planned | Enter VR exists but is disabled until Stage B is implemented and verified. |
 | RV-0100 | VR home/menu | planned | Must be operable in headset without touchscreen dependency after successful VR entry. |
+| RV-0106 | Shell-global handset/controller power HUD | planned | Stage A already stores the user preference; Stage B must keep real handset/controller battery status available across home/player/modules and represent unavailable controller telemetry honestly. |
+| RV-0107 | Optional gaze-adaptive status HUD/QoL toggles | planned | Stage A already stores the look-up-reveal preference; Stage B must implement user-toggleable adaptive reveal/retract and preserve a predictable persistent/manual fallback when disabled. |
 | RV-0300 | Retro performance fixture | planned | Requires on-device sustained performance evidence. |
 | RV-0500 | Local VR media player | planned | Requires on-device playback and thermal validation. |

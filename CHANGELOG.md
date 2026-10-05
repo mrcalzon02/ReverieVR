@@ -25,4 +25,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Defined the Galaxy S9 + Daydream View seated head-look/controller interaction baseline.
 - Adopted performance-first, retro-first VR rendering doctrine and sustained-device performance as an acceptance concern.
 - Established backlog, execution-state, acceptance-ledger, and architecture-decision record structure.
+- Formalized the persistent Stage B platform-shell contract so home, media player, and hosted games/modules share one global status/settings/recovery layer.
+- Defined the future VR power HUD as two shell-global percentage/progress indicators for handset and bound-controller battery, with honest unavailable state when controller telemetry cannot be read.
+- Defined the reference HUD position as the upper-right region and recorded optional look-up-triggered reveal/retract behavior as a user-toggleable quality-of-life feature with persistent/manual fallback.
 - Removed the initial placeholder `test` file.

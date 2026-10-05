@@ -24,6 +24,8 @@
 - RV-0103 — Implement VR-operable menu.
 - RV-0104 — Implement persistent settings model and safe-reset path.
 - RV-0105 — Implement in-headset diagnostics/performance display.
+- RV-0106 — Implement shell-global handset/controller power HUD with percentage/progress presentation and honest unavailable states.
+- RV-0107 — Implement optional gaze-adaptive status reveal/retract plus persistent/manual fallback and local QoL toggles.
 
 ## P3 — Settings and controls
 
