@@ -231,7 +231,7 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
             }
 
             try {
-                adapter.cancelDiscovery();
+                cancelDiscoveryWhenPermitted();
                 localSocket =
                     device.createRfcommSocketToServiceRecord(EMULATOR_RFCOMM_UUID);
                 socket = localSocket;
@@ -444,6 +444,24 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
             menu = false;
             home = false;
             click = false;
+        }
+    }
+
+    private void cancelDiscoveryWhenPermitted() {
+        if (adapter == null) {
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            && context.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN)
+                != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        try {
+            adapter.cancelDiscovery();
+        } catch (SecurityException ignored) {
+            // Discovery cancellation is only a connection optimization here.
         }
     }
 
