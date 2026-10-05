@@ -6,13 +6,16 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.provider.Settings;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,6 +24,7 @@ import java.util.Locale;
 
 public final class MainActivity extends Activity implements ControllerManager.Listener {
     private static final int CONTROLLER_PERMISSION_REQUEST = 1201;
+    private static final int MEDIA_PICK_REQUEST = 1202;
 
     private ReveriePreferences preferences;
     private UpdateChecker updateChecker;
@@ -34,6 +38,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
     private TextView controllerInputTestText;
     private TextView deviceStatusText;
     private TextView updateStatusText;
+    private TextView selectedVideoText;
 
     private ProgressBar phoneBatteryBar;
     private ProgressBar controllerBatteryBar;
@@ -49,6 +54,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
     private Button checkUpdateButton;
     private Button installUpdateButton;
     private Button enterVrButton;
+    private Button chooseVideoButton;
+    private Button clearVideoButton;
+    private RadioGroup videoProjectionGroup;
 
     private boolean controllerTestEnabled;
 
@@ -69,6 +77,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         refreshStaticStatus();
         refreshPhoneBattery();
         refreshControllerPermissionState();
+        refreshMediaStatus();
         controllerManager.addListener(this);
 
         if (preferences.isAutoUpdateCheckEnabled()) {
@@ -106,6 +115,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         controllerInputTestText = findViewById(R.id.controller_input_test);
         deviceStatusText = findViewById(R.id.device_status);
         updateStatusText = findViewById(R.id.update_status);
+        selectedVideoText = findViewById(R.id.selected_video_status);
 
         phoneBatteryBar = findViewById(R.id.phone_battery_bar);
         controllerBatteryBar = findViewById(R.id.controller_battery_bar);
@@ -121,6 +131,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         checkUpdateButton = findViewById(R.id.check_update_button);
         installUpdateButton = findViewById(R.id.install_update_button);
         enterVrButton = findViewById(R.id.enter_vr_button);
+        chooseVideoButton = findViewById(R.id.choose_video_button);
+        clearVideoButton = findViewById(R.id.clear_video_button);
+        videoProjectionGroup = findViewById(R.id.video_projection_group);
     }
 
     private void configurePersistentControls() {
@@ -141,6 +154,14 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         autoUpdateCheckSwitch.setOnCheckedChangeListener(
             (button, checked) -> preferences.setAutoUpdateCheckEnabled(checked)
         );
+
+        videoProjectionGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.video_projection_360) {
+                preferences.setVideoProjection(VideoProjection.MONO_EQUIRECTANGULAR_360);
+            } else if (checkedId == R.id.video_projection_flat) {
+                preferences.setVideoProjection(VideoProjection.FLAT_CINEMA);
+            }
+        });
     }
 
     private void configureActions() {
@@ -168,6 +189,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         installUpdateButton.setEnabled(false);
         installUpdateButton.setOnClickListener(view -> confirmInstallAvailableUpdate());
 
+        chooseVideoButton.setOnClickListener(view -> chooseLocalVideo());
+        clearVideoButton.setOnClickListener(view -> clearSelectedVideo());
+
         Button resetButton = findViewById(R.id.reset_settings_button);
         resetButton.setOnClickListener(view -> confirmReset());
 
@@ -175,6 +199,133 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         enterVrButton.setOnClickListener(
             view -> startActivity(new Intent(this, VrActivity.class))
         );
+    }
+
+    private void chooseLocalVideo() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("video/*");
+        intent.addFlags(
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+        );
+
+        try {
+            startActivityForResult(intent, MEDIA_PICK_REQUEST);
+        } catch (ActivityNotFoundException exception) {
+            Toast.makeText(
+                this,
+                R.string.video_picker_unavailable,
+                Toast.LENGTH_LONG
+            ).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(
+        int requestCode,
+        int resultCode,
+        Intent data
+    ) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode != MEDIA_PICK_REQUEST
+            || resultCode != RESULT_OK
+            || data == null
+            || data.getData() == null) {
+            return;
+        }
+
+        Uri uri = data.getData();
+        int offeredFlags = data.getFlags();
+        int persistFlags =
+            offeredFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION;
+
+        try {
+            getContentResolver().takePersistableUriPermission(uri, persistFlags);
+        } catch (SecurityException exception) {
+            Toast.makeText(
+                this,
+                R.string.video_permission_persist_failed,
+                Toast.LENGTH_LONG
+            ).show();
+            return;
+        }
+
+        releaseSelectedVideoPermission();
+        preferences.setSelectedVideo(uri.toString(), resolveDisplayName(uri));
+        refreshMediaStatus();
+    }
+
+    private String resolveDisplayName(Uri uri) {
+        if (uri == null) {
+            return getString(R.string.selected_video_unknown_name);
+        }
+
+        try (Cursor cursor = getContentResolver().query(
+            uri,
+            new String[] {OpenableColumns.DISPLAY_NAME},
+            null,
+            null,
+            null
+        )) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (column >= 0) {
+                    String value = cursor.getString(column);
+                    if (value != null && !value.trim().isEmpty()) {
+                        return value;
+                    }
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // The persisted URI remains usable even if a provider hides metadata.
+        }
+
+        String last = uri.getLastPathSegment();
+        return last == null || last.trim().isEmpty()
+            ? getString(R.string.selected_video_unknown_name)
+            : last;
+    }
+
+    private void refreshMediaStatus() {
+        if (!preferences.hasSelectedVideo()) {
+            selectedVideoText.setText(R.string.selected_video_none);
+            clearVideoButton.setEnabled(false);
+            return;
+        }
+
+        String name = preferences.getSelectedVideoDisplayName();
+        if (name.trim().isEmpty()) {
+            name = getString(R.string.selected_video_unknown_name);
+        }
+
+        selectedVideoText.setText(
+            getString(R.string.selected_video_format, name)
+        );
+        clearVideoButton.setEnabled(true);
+    }
+
+    private void clearSelectedVideo() {
+        releaseSelectedVideoPermission();
+        preferences.clearSelectedVideo();
+        refreshMediaStatus();
+    }
+
+    private void releaseSelectedVideoPermission() {
+        String value = preferences.getSelectedVideoUri();
+        if (value.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+            getContentResolver().releasePersistableUriPermission(
+                Uri.parse(value),
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            );
+        } catch (SecurityException ignored) {
+            // The provider may already have revoked or discarded the grant.
+        }
     }
 
     private void beginControllerPairing() {
@@ -229,6 +380,13 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         showPercentagesSwitch.setChecked(preferences.isShowPercentagesEnabled());
         retroModeSwitch.setChecked(preferences.isRetroModeEnabled());
         autoUpdateCheckSwitch.setChecked(preferences.isAutoUpdateCheckEnabled());
+
+        VideoProjection projection = preferences.getVideoProjection();
+        videoProjectionGroup.check(
+            projection == VideoProjection.MONO_EQUIRECTANGULAR_360
+                ? R.id.video_projection_360
+                : R.id.video_projection_flat
+        );
     }
 
     private void refreshStaticStatus() {
@@ -482,8 +640,10 @@ public final class MainActivity extends Activity implements ControllerManager.Li
             .setPositiveButton(
                 R.string.reset_settings_confirm,
                 (dialog, which) -> {
+                    releaseSelectedVideoPermission();
                     preferences.reset();
                     applyPreferencesToControls();
+                    refreshMediaStatus();
                     Toast.makeText(
                         this,
                         R.string.settings_reset_complete,

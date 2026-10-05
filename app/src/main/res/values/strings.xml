@@ -60,6 +60,18 @@ Available: %2$s</string>
     <string name="show_percentages_label">Show numeric battery percentages</string>
     <string name="retro_mode_label">Prefer retro performance-first quality</string>
 
+    <string name="media_section">Local media</string>
+    <string name="selected_video_none">No local video selected.</string>
+    <string name="selected_video_format">Selected: %1$s</string>
+    <string name="selected_video_unknown_name">Selected local video</string>
+    <string name="choose_local_video">Choose local video</string>
+    <string name="clear_local_video">Clear selected video</string>
+    <string name="video_projection_label">Projection</string>
+    <string name="video_projection_flat">Flat cinema screen</string>
+    <string name="video_projection_360">Mono equirectangular 360°</string>
+    <string name="video_picker_unavailable">No Android document picker is available.</string>
+    <string name="video_permission_persist_failed">Android did not grant persistent read access to that video. Choose it again from a provider that supports persistent document access.</string>
+
     <string name="vr_section">VR readiness</string>
     <string name="vr_runtime_not_ready">Stage B is intentionally disabled until the VR renderer and controller path are implemented and verified.</string>
     <string name="enter_vr">Enter VR</string>

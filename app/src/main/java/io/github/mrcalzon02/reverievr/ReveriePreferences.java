@@ -17,6 +17,9 @@ final class ReveriePreferences {
     private static final String KEY_VR_SETUP_STEP = "vr_setup_step";
     private static final String KEY_USER_IPD_METERS = "user_ipd_meters";
     private static final String KEY_UI_SCALE = "ui_scale";
+    private static final String KEY_VIDEO_URI = "video_uri";
+    private static final String KEY_VIDEO_DISPLAY_NAME = "video_display_name";
+    private static final String KEY_VIDEO_PROJECTION = "video_projection";
 
     private final SharedPreferences preferences;
 
@@ -101,6 +104,58 @@ final class ReveriePreferences {
     void setUiScale(float scale) {
         preferences.edit()
             .putFloat(KEY_UI_SCALE, clamp(scale, 0.75f, 1.50f))
+            .apply();
+    }
+
+    boolean hasSelectedVideo() {
+        String value = preferences.getString(KEY_VIDEO_URI, "");
+        return value != null && !value.trim().isEmpty();
+    }
+
+    String getSelectedVideoUri() {
+        String value = preferences.getString(KEY_VIDEO_URI, "");
+        return value == null ? "" : value;
+    }
+
+    String getSelectedVideoDisplayName() {
+        String value = preferences.getString(KEY_VIDEO_DISPLAY_NAME, "");
+        return value == null ? "" : value;
+    }
+
+    void setSelectedVideo(String uri, String displayName) {
+        if (uri == null || uri.trim().isEmpty()) {
+            clearSelectedVideo();
+            return;
+        }
+
+        preferences.edit()
+            .putString(KEY_VIDEO_URI, uri)
+            .putString(
+                KEY_VIDEO_DISPLAY_NAME,
+                displayName == null ? "" : displayName
+            )
+            .apply();
+    }
+
+    void clearSelectedVideo() {
+        preferences.edit()
+            .remove(KEY_VIDEO_URI)
+            .remove(KEY_VIDEO_DISPLAY_NAME)
+            .apply();
+    }
+
+    VideoProjection getVideoProjection() {
+        return VideoProjection.fromPreference(
+            preferences.getString(KEY_VIDEO_PROJECTION, null)
+        );
+    }
+
+    void setVideoProjection(VideoProjection projection) {
+        VideoProjection safe = projection == null
+            ? VideoProjection.FLAT_CINEMA
+            : projection;
+        preferences.edit()
+            .putString(KEY_VIDEO_PROJECTION, safe.name())
             .apply();
     }
 
