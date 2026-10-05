@@ -519,7 +519,7 @@ Implemented on `main`:
 - broker deployment is isolated behind the protected GitHub environment `diagnostic-intake`, while the non-secret public endpoint is supplied separately through the `DIAGNOSTIC_INTAKE_URL` Actions variable;
 - GitHub Issue #1 tracks the end-to-end acceptance work and ADR-0017 remains the governing security boundary.
 
-Current verification: phone-test run #13 completed successfully against commit `61a1f8f81ded61fe4fba7b7123958ec454a69cc8`, passing JVM tests, Android/native/DOS build, APK-content verification, signature verification, staging and prerelease publication for the initial credential-free client/UI snapshot. Run #14 was cancelled rather than failing a compiler/test assertion; superseded runs #15 and #16 were intentionally cancelled after the phone-test concurrency policy was changed to stop wasting Actions minutes on stale source. Run #17 is the authoritative latest-tree gate and now includes deterministic diagnostic ID/SHA-256 tests, stored-receipt retry state coverage, Worker syntax validation and persistent broker ZIP/public-receipt smoke tests.
+Current verification: phone-test run #19 completed successfully against commit `5a35615691fbdce4f9a73a5fdbf97df2f66de91d`. It passed Worker syntax and broker smoke validation, JVM tests (including diagnostic ID/SHA-256 and stored-receipt retry state), Android/native/DOS assembly, APK-content verification, signature verification, release staging and prerelease publication. The published tag is `phone-test-19-1`. Earlier runs #15-#18 were superseded/cancelled under the new latest-build-wins concurrency policy rather than treated as acceptance evidence.
 
 Remaining gates before RV-0208 can be accepted:
 
