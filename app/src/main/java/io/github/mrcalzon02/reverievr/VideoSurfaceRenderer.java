@@ -91,6 +91,8 @@ final class VideoSurfaceRenderer {
     }
 
     void onSurfaceCreated() {
+        shutdown();
+
         program = buildProgram(VERTEX_SHADER, FRAGMENT_SHADER);
         positionHandle = GLES20.glGetAttribLocation(program, "a_Position");
         uvHandle = GLES20.glGetAttribLocation(program, "a_TexCoord");

@@ -31,6 +31,7 @@ final class LocalVideoPlayer {
     }
 
     void attachSurfaceTexture(SurfaceTexture surfaceTexture) {
+        releasePlayer();
         releaseSurface();
 
         if (surfaceTexture == null) {
@@ -38,7 +39,7 @@ final class LocalVideoPlayer {
         }
 
         surface = new Surface(surfaceTexture);
-        if (requestedUri != null && player == null) {
+        if (requestedUri != null) {
             openRequestedUri();
         }
     }
@@ -195,8 +196,11 @@ final class LocalVideoPlayer {
         player = null;
 
         if (active != null) {
-            active.reset();
-            active.release();
+            try {
+                active.release();
+            } catch (RuntimeException ignored) {
+                // Decoder teardown can race Android's media service during shutdown.
+            }
         }
     }
 

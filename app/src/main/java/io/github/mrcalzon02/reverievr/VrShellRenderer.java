@@ -450,14 +450,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     preferences.setVrSetupStep(1);
                     break;
                 case 2:
-                    if (preferences.hasSelectedVideo()) {
-                        videoRenderer.setProjection(
-                            preferences.getVideoProjection()
-                        );
-                        mode = MODE_VIDEO;
-                        hoveredButton = -1;
-                        host.onVideoPlaybackRequested();
+                    if (!preferences.hasSelectedVideo()) {
+                        host.onExitToPhoneRequested();
+                        return;
                     }
+
+                    videoRenderer.setProjection(
+                        preferences.getVideoProjection()
+                    );
+                    mode = MODE_VIDEO;
+                    hoveredButton = -1;
+                    host.onVideoPlaybackRequested();
                     return;
                 case 3:
                     host.onExitToPhoneRequested();
@@ -656,7 +659,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "OPTICAL / DISPLAY CALIBRATION",
             preferences.hasSelectedVideo()
                 ? "PLAY SELECTED VIDEO"
-                : "NO VIDEO SELECTED",
+                : "SELECT VIDEO ON PHONE",
             "EXIT TO PHONE"
         };
         drawButtons(canvas, paint, labels, activeButtons());
