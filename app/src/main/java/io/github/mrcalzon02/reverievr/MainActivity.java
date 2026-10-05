@@ -972,7 +972,7 @@ public final class MainActivity extends Activity
                         includeLogs.isChecked();
 
                     dialog.dismiss();
-                    submitDiagnosticBundle(
+                    prepareDiagnosticSubmission(
                         summaryText,
                         expectedText,
                         logs
@@ -982,7 +982,7 @@ public final class MainActivity extends Activity
         dialog.show();
     }
 
-    private void submitDiagnosticBundle(
+    private void prepareDiagnosticSubmission(
         String summary,
         String expected,
         boolean includeLogs
@@ -999,7 +999,7 @@ public final class MainActivity extends Activity
 
         submitDiagnosticsButton.setEnabled(false);
         loggingStatusText.setText(
-            R.string.diagnostic_submission_in_progress
+            R.string.diagnostic_preparing_preview
         );
 
         diagnosticExecutor.execute(() -> {
@@ -1007,7 +1007,7 @@ public final class MainActivity extends Activity
             try {
                 ReverieLog.milestone(
                     "DIAGNOSTICS",
-                    "Secure diagnostic submission started: "
+                    "Preparing diagnostic submission preview: "
                         + diagnosticId
                         + ", includeLogs="
                         + includeLogs
@@ -1020,6 +1020,242 @@ public final class MainActivity extends Activity
                             includeLogs
                         );
 
+                String sha256 =
+                    DiagnosticSubmissionClient
+                        .sha256(bundle);
+                long byteLength =
+                    bundle.length();
+
+                ReverieLog.milestone(
+                    "DIAGNOSTICS",
+                    "Diagnostic submission preview prepared: "
+                        + diagnosticId
+                        + ", bytes="
+                        + byteLength
+                        + ", sha256="
+                        + sha256
+                );
+
+                File preparedBundle = bundle;
+                runOnUiThread(() -> {
+                    refreshLoggingStatus();
+                    showDiagnosticSubmissionPreview(
+                        preparedBundle,
+                        diagnosticId,
+                        sha256,
+                        summary,
+                        expected,
+                        includeLogs
+                    );
+                });
+            } catch (Exception exception) {
+                boolean retained =
+                    bundle != null
+                        && bundle.isFile();
+
+                ReverieLog.error(
+                    "DIAGNOSTICS",
+                    "Diagnostic submission preview preparation failed: "
+                        + diagnosticId
+                        + ", retained="
+                        + retained,
+                    exception
+                );
+
+                String message =
+                    exception.getMessage() == null
+                        ? exception.getClass()
+                            .getSimpleName()
+                        : exception.getMessage();
+
+                runOnUiThread(() -> {
+                    submitDiagnosticsButton.setEnabled(true);
+                    refreshLoggingStatus();
+                    uiFeedback.failure(
+                        submitDiagnosticsButton
+                    );
+                    showDiagnosticSubmissionFailure(
+                        message,
+                        retained
+                    );
+                });
+            }
+        });
+    }
+
+    private void showDiagnosticSubmissionPreview(
+        File bundle,
+        String diagnosticId,
+        String sha256,
+        String summary,
+        String expected,
+        boolean includeLogs
+    ) {
+        if (bundle == null
+            || !bundle.isFile()
+            || submitDiagnosticsButton == null) {
+            submitDiagnosticsButton.setEnabled(true);
+            refreshLoggingStatus();
+            return;
+        }
+
+        String expectedText =
+            expected == null
+                    || expected.trim().isEmpty()
+                ? getString(
+                    R.string.diagnostic_expected_not_supplied
+                )
+                : expected.trim();
+
+        String logsText =
+            getString(
+                includeLogs
+                    ? R.string.diagnostic_logs_yes
+                    : R.string.diagnostic_logs_no
+            );
+
+        String device =
+            Build.MANUFACTURER
+                + " "
+                + Build.MODEL
+                + " ("
+                + Build.DEVICE
+                + ")";
+        String android =
+            "Android "
+                + Build.VERSION.RELEASE
+                + " / API "
+                + Build.VERSION.SDK_INT;
+
+        AlertDialog preview =
+            new AlertDialog.Builder(this)
+                .setTitle(
+                    R.string.diagnostic_preview_title
+                )
+                .setMessage(
+                    getString(
+                        R.string.diagnostic_preview_format,
+                        diagnosticId,
+                        bundle.length(),
+                        sha256,
+                        logsText,
+                        BuildConfig.VERSION_NAME,
+                        BuildConfig.BUILD_TYPE,
+                        device,
+                        android,
+                        summary,
+                        expectedText
+                    )
+                )
+                .setNegativeButton(
+                    android.R.string.cancel,
+                    (dialog, which) ->
+                        cancelPreparedDiagnostic(
+                            bundle,
+                            diagnosticId
+                        )
+                )
+                .setPositiveButton(
+                    R.string.diagnostic_preview_submit,
+                    (dialog, which) ->
+                        uploadPreparedDiagnostic(
+                            bundle,
+                            diagnosticId,
+                            sha256,
+                            summary,
+                            expectedText
+                        )
+                )
+                .create();
+
+        preview.setOnCancelListener(
+            dialog ->
+                cancelPreparedDiagnostic(
+                    bundle,
+                    diagnosticId
+                )
+        );
+        preview.show();
+    }
+
+    private void cancelPreparedDiagnostic(
+        File bundle,
+        String diagnosticId
+    ) {
+        boolean removed =
+            bundle == null
+                || !bundle.isFile()
+                || bundle.delete();
+
+        if (!removed) {
+            ReverieLog.incident(
+                "DIAGNOSTICS",
+                "Cancelled diagnostic preview bundle could not be "
+                    + "removed from private outbox: "
+                    + bundle.getAbsolutePath()
+            );
+        } else {
+            ReverieLog.milestone(
+                "DIAGNOSTICS",
+                "Diagnostic submission cancelled before upload: "
+                    + diagnosticId
+            );
+        }
+
+        submitDiagnosticsButton.setEnabled(true);
+        refreshLoggingStatus();
+        Toast.makeText(
+            this,
+            R.string.diagnostic_preview_cancelled,
+            Toast.LENGTH_SHORT
+        ).show();
+    }
+
+    private void uploadPreparedDiagnostic(
+        File bundle,
+        String diagnosticId,
+        String preparedSha256,
+        String summary,
+        String expected
+    ) {
+        if (diagnosticSubmissionClient == null
+            || bundle == null
+            || !bundle.isFile()
+            || submitDiagnosticsButton == null) {
+            submitDiagnosticsButton.setEnabled(true);
+            refreshLoggingStatus();
+            return;
+        }
+
+        submitDiagnosticsButton.setEnabled(false);
+        loggingStatusText.setText(
+            R.string.diagnostic_submission_in_progress
+        );
+
+        diagnosticExecutor.execute(() -> {
+            try {
+                String currentSha256 =
+                    DiagnosticSubmissionClient
+                        .sha256(bundle);
+                if (!preparedSha256.equals(
+                        currentSha256
+                    )) {
+                    throw new java.io.IOException(
+                        "Prepared diagnostic bundle changed "
+                            + "after preview."
+                    );
+                }
+
+                ReverieLog.milestone(
+                    "DIAGNOSTICS",
+                    "Secure diagnostic submission started: "
+                        + diagnosticId
+                        + ", bytes="
+                        + bundle.length()
+                        + ", sha256="
+                        + preparedSha256
+                );
+
                 DiagnosticSubmissionClient.Result result =
                     diagnosticSubmissionClient.submit(
                         bundle,
@@ -1027,6 +1263,15 @@ public final class MainActivity extends Activity
                         summary,
                         expected
                     );
+
+                if (!preparedSha256.equals(
+                        result.sha256
+                    )) {
+                    throw new java.io.IOException(
+                        "Diagnostic intake returned a different "
+                            + "hash than the reviewed bundle."
+                    );
+                }
 
                 if (bundle.isFile()
                     && !bundle.delete()) {
@@ -1055,8 +1300,7 @@ public final class MainActivity extends Activity
                 });
             } catch (Exception exception) {
                 boolean retained =
-                    bundle != null
-                        && bundle.isFile();
+                    bundle.isFile();
 
                 ReverieLog.error(
                     "DIAGNOSTICS",
@@ -1076,7 +1320,9 @@ public final class MainActivity extends Activity
                 runOnUiThread(() -> {
                     submitDiagnosticsButton.setEnabled(true);
                     refreshLoggingStatus();
-                    uiFeedback.failure(submitDiagnosticsButton);
+                    uiFeedback.failure(
+                        submitDiagnosticsButton
+                    );
                     showDiagnosticSubmissionFailure(
                         message,
                         retained
