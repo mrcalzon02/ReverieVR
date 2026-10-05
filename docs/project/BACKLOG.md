@@ -83,6 +83,9 @@
 - RV-0600 — Define first tiny retro VR gameplay prototype.
 - RV-0601 — Implement and device-test first playable module.
 - RV-0602 — Add further experiences only after regression/thermal gates remain healthy.
+- RV-0610 — **Planned:** prototype **Between Deliveries: The Red Ledger VR** as the first full native-game track after the tiny gameplay proof; start with the one-room bar economy and controller-at-arm's-length interaction slice defined in `NATIVE_GAME_PROJECT_POINTERS.md`.
+- RV-0620 — **Planned:** prototype **Ministry of Intelligence: Lantern Desk VR** as a seated intelligence-analysis native game; preserve strict World Truth vs Ministry Knowledge separation and prove one complete reconnaissance-photo-to-report cycle before expanding the war simulation.
+- RV-0630 — **Planned:** prototype **Iron Sight: Forward Detachment VR** as a compact reconnaissance/patrol native game; begin with one sector, one small detachment, route/identification/reporting pressure, and deliberately constrained combat rather than the full campaign.
 
 ## Deferred
 
