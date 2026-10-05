@@ -383,7 +383,7 @@ Additional Stage B integration now implemented:
 
 - a dedicated Java DOS session worker owns native run cadence without executing DOSBox Pure on the Cardboard GL thread;
 - lifecycle pause/resume releases guest input and pauses/resumes audio;
-- the latest available DOS module can be launched from a fifth VR Home action;
+- a fifth VR Home action opens a paged in-headset DOS library and can launch any imported/bundled module without returning to the touchscreen;
 - module launch temporarily activates that module's binding profile and restores the prior profile when the session ends;
 - a nearest-filtered OpenGL guest texture consumes the native XRGB8888 frame, corrects byte-channel order in the shader, flips libretro's top-down image, and applies RV-0414 intended display aspect;
 - Android AudioTrack consumes stereo 16-bit PCM on the DOS worker thread;
@@ -393,7 +393,7 @@ Remaining gates:
 
 - actual Android NDK compile/link for both supported ABIs;
 - reference-device validation of DOS run cadence, audio latency/underruns, guest texture orientation/colors and resolution changes;
-- richer Stage B DOS module selection instead of launching only the newest module;
+- richer library management such as sorting/filtering/favorites beyond the current paged launcher;
 - explicit pause/resume quick overlay plus binding/profile editor;
 - integer-scale staging policy beyond nearest-neighbor guest sampling;
 - directory-tree import;

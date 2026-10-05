@@ -17,6 +17,7 @@ import com.google.cardboard.sdk.Viewport;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +34,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVideoTogglePauseRequested();
         void onVideoSeekRequested(int deltaMillis);
         void onVideoStopRequested();
-        boolean onDosPlaybackRequested();
+        boolean onDosPlaybackRequested(String moduleId);
         void onDosStopRequested();
         void onHeadBindingDelta(
             float yawDeltaRadians,
@@ -58,6 +59,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_HOME = 1;
     private static final int MODE_VIDEO = 2;
     private static final int MODE_DOS = 3;
+    private static final int MODE_DOS_LIBRARY = 4;
 
     private static final int[][] HOME_BUTTONS = new int[][] {
         {140, 235, 884, 300},
@@ -116,8 +118,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile String lastInputSource = "No action received yet";
     private volatile boolean textureDirty = true;
     private volatile boolean dosRuntimeAvailable;
-    private volatile boolean dosModuleAvailable;
-    private volatile String dosModuleName = "";
+    private volatile String[] dosModuleIds = new String[0];
+    private volatile String[] dosModuleNames = new String[0];
+    private int dosLibraryPage;
 
     private int program;
     private int texture;
@@ -260,15 +263,30 @@ final class VrShellRenderer implements CardboardView.Renderer {
         dosExitRequested.set(true);
     }
 
-    void setDosModuleState(
+    void setDosModules(
         boolean runtimeAvailable,
-        boolean moduleAvailable,
-        String moduleName
+        List<DosGameModule> modules
     ) {
         dosRuntimeAvailable = runtimeAvailable;
-        dosModuleAvailable = moduleAvailable;
-        dosModuleName =
-            moduleName == null ? "" : moduleName.trim();
+
+        int count = modules == null ? 0 : modules.size();
+        String[] ids = new String[count];
+        String[] names = new String[count];
+
+        for (int index = 0; index < count; index++) {
+            DosGameModule module = modules.get(index);
+            ids[index] = module.id;
+            names[index] = module.displayName;
+        }
+
+        dosModuleIds = ids;
+        dosModuleNames = names;
+
+        int pageCount = Math.max(1, (count + 2) / 3);
+        if (dosLibraryPage >= pageCount) {
+            dosLibraryPage = pageCount - 1;
+        }
+
         textureDirty = true;
     }
 
@@ -682,12 +700,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     host.onVideoPlaybackRequested();
                     return;
                 case 3:
-                    if (host.onDosPlaybackRequested()) {
-                        dosExitRequested.set(false);
-                        mode = MODE_DOS;
-                        hoveredButton = -1;
+                    if (!dosRuntimeAvailable
+                        || dosModuleIds.length == 0) {
+                        host.onExitToPhoneRequested();
                         return;
                     }
+                    dosLibraryPage = 0;
+                    mode = MODE_DOS_LIBRARY;
                     break;
                 case 4:
                     host.onExitToPhoneRequested();
@@ -695,8 +714,41 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 default:
                     break;
             }
+        } else if (mode == MODE_DOS_LIBRARY) {
+            handleDosLibrarySelection(hoveredButton);
         } else {
             handleSetupSelection(hoveredButton);
+        }
+
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
+    private void handleDosLibrarySelection(int button) {
+        String[] ids = dosModuleIds;
+        int pageCount =
+            Math.max(1, (ids.length + 2) / 3);
+
+        if (button >= 0 && button <= 2) {
+            int moduleIndex =
+                dosLibraryPage * 3 + button;
+            if (moduleIndex < ids.length
+                && host.onDosPlaybackRequested(
+                    ids[moduleIndex]
+                )) {
+                dosExitRequested.set(false);
+                mode = MODE_DOS;
+                hoveredButton = -1;
+                return;
+            }
+        } else if (button == 3) {
+            if (pageCount > 1) {
+                dosLibraryPage =
+                    (dosLibraryPage + 1)
+                        % pageCount;
+            }
+        } else if (button == 4) {
+            mode = MODE_HOME;
         }
 
         hoveredButton = -1;
@@ -809,6 +861,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        if (mode == MODE_DOS_LIBRARY) {
+            mode = MODE_HOME;
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
+
         if (setupStep > 0) {
             setupStep--;
             preferences.setVrSetupStep(setupStep);
@@ -821,7 +880,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private int[][] activeButtons() {
-        if (mode == MODE_HOME) {
+        if (mode == MODE_HOME
+            || mode == MODE_DOS_LIBRARY) {
             return HOME_BUTTONS;
         }
 
@@ -856,6 +916,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_HOME) {
             drawHome(canvas, paint);
+        } else if (mode == MODE_DOS_LIBRARY) {
+            drawDosLibrary(canvas, paint);
         } else {
             drawSetup(canvas, paint);
         }
@@ -912,12 +974,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         String dosLabel;
         if (!dosRuntimeAvailable) {
             dosLabel = "DOS RUNTIME NOT BUILT";
-        } else if (!dosModuleAvailable) {
+        } else if (dosModuleIds.length == 0) {
             dosLabel = "IMPORT DOS MODULE ON PHONE";
         } else {
             dosLabel =
-                "PLAY DOS: "
-                    + shorten(dosModuleName, 28);
+                "DOS LIBRARY  ("
+                    + dosModuleIds.length
+                    + ")";
         }
 
         String[] labels = new String[] {
@@ -930,6 +993,68 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "EXIT TO PHONE"
         };
         drawButtons(canvas, paint, labels, activeButtons());
+    }
+
+    private void drawDosLibrary(
+        Canvas canvas,
+        Paint paint
+    ) {
+        String[] names = dosModuleNames;
+        int count = names.length;
+        int pageCount =
+            Math.max(1, (count + 2) / 3);
+        int page =
+            Math.min(dosLibraryPage, pageCount - 1);
+        int start = page * 3;
+
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31.0f * uiScale);
+        canvas.drawText(
+            "DOS LIBRARY",
+            90,
+            175,
+            paint
+        );
+
+        paint.setColor(Color.rgb(150, 162, 177));
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            String.format(
+                Locale.US,
+                "%d modules  •  page %d / %d",
+                count,
+                page + 1,
+                pageCount
+            ),
+            90,
+            215,
+            paint
+        );
+
+        String[] labels = new String[5];
+        for (int slot = 0; slot < 3; slot++) {
+            int index = start + slot;
+            labels[slot] =
+                index < count
+                    ? shorten(
+                        names[index],
+                        42
+                    )
+                    : "—";
+        }
+
+        labels[3] =
+            pageCount > 1
+                ? "NEXT PAGE"
+                : "ONLY PAGE";
+        labels[4] = "BACK TO HOME";
+
+        drawButtons(
+            canvas,
+            paint,
+            labels,
+            activeButtons()
+        );
     }
 
     private void drawSetup(Canvas canvas, Paint paint) {

@@ -581,27 +581,29 @@ public final class VrActivity extends Activity
     }
 
     @Override
-    public boolean onDosPlaybackRequested() {
+    public boolean onDosPlaybackRequested(
+        String moduleId
+    ) {
         if (dosModuleRepository == null
             || dosSession == null
             || inputBindingManager == null) {
             return false;
         }
 
-        java.util.List<DosGameModule> modules =
-            dosModuleRepository.list();
-        if (modules.isEmpty()) {
+        DosGameModule module =
+            dosModuleRepository.findById(moduleId);
+        if (module == null || !module.isContentPresent()) {
             runOnUiThread(() ->
                 Toast.makeText(
                     this,
-                    "Import a DOS module from the phone setup screen first.",
+                    "That DOS module is no longer available.",
                     Toast.LENGTH_LONG
                 ).show()
             );
+            refreshDosModuleStatus();
             return false;
         }
 
-        DosGameModule module = modules.get(0);
         inputBindingManager.beginHostedProfile(
             module.bindingProfileId
         );
@@ -676,13 +678,10 @@ public final class VrActivity extends Activity
 
         java.util.List<DosGameModule> modules =
             dosModuleRepository.list();
-        DosGameModule latest =
-            modules.isEmpty() ? null : modules.get(0);
 
-        renderer.setDosModuleState(
+        renderer.setDosModules(
             DosNativeRuntime.isAvailable(),
-            latest != null,
-            latest == null ? "" : latest.displayName
+            modules
         );
     }
 
