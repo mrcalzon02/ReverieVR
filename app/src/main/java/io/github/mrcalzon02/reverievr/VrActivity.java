@@ -391,6 +391,9 @@ public final class VrActivity extends Activity
         boolean down,
         String source
     ) {
+        if (isGuestInputSuppressed()) {
+            return;
+        }
         if (inputBindingEngine != null) {
             inputBindingEngine.submitDigital(
                 input,
@@ -405,6 +408,9 @@ public final class VrActivity extends Activity
         float value,
         String source
     ) {
+        if (isGuestInputSuppressed()) {
+            return;
+        }
         if (inputBindingEngine != null) {
             inputBindingEngine.submitAxis(
                 input,
@@ -418,7 +424,8 @@ public final class VrActivity extends Activity
         float yawDeltaRadians,
         float pitchDeltaRadians
     ) {
-        if (inputBindingEngine == null) {
+        if (inputBindingEngine == null
+            || isGuestInputSuppressed()) {
             return;
         }
 
@@ -438,6 +445,9 @@ public final class VrActivity extends Activity
         boolean down,
         String source
     ) {
+        if (isGuestInputSuppressed()) {
+            return;
+        }
         if (virtualInputBus != null && key != null) {
             virtualInputBus.applyDigital(
                 VirtualOutput.key(key),
@@ -452,6 +462,9 @@ public final class VrActivity extends Activity
         boolean down,
         String source
     ) {
+        if (isGuestInputSuppressed()) {
+            return;
+        }
         if (virtualInputBus != null) {
             virtualInputBus.applyDigital(
                 VirtualOutput.mouseButton(button),
@@ -466,7 +479,8 @@ public final class VrActivity extends Activity
         float deltaY,
         String source
     ) {
-        if (virtualInputBus == null) {
+        if (virtualInputBus == null
+            || isGuestInputSuppressed()) {
             return;
         }
 
@@ -486,7 +500,8 @@ public final class VrActivity extends Activity
         float normalizedY,
         String source
     ) {
-        if (virtualInputBus == null) {
+        if (virtualInputBus == null
+            || isGuestInputSuppressed()) {
             return;
         }
 
@@ -505,9 +520,17 @@ public final class VrActivity extends Activity
         float delta,
         String source
     ) {
+        if (isGuestInputSuppressed()) {
+            return;
+        }
         if (virtualInputBus != null) {
             virtualInputBus.applyMouseWheel(delta);
         }
+    }
+
+    private boolean isGuestInputSuppressed() {
+        return renderer != null
+            && renderer.isHostedInputSuppressed();
     }
 
     private void adjustMediaVolume(int direction) {
@@ -729,6 +752,47 @@ public final class VrActivity extends Activity
                 + module.bindingProfileId
         );
         return true;
+    }
+
+    @Override
+    public void onDosOverlayPauseRequested() {
+        if (inputBindingEngine != null) {
+            inputBindingEngine.releaseAll();
+        }
+        if (standardHidInputRouter != null) {
+            standardHidInputRouter.reset();
+        }
+        if (dosSession != null) {
+            dosSession.pauseForOverlay();
+        }
+    }
+
+    @Override
+    public void onDosOverlayResumeRequested() {
+        if (dosSession != null) {
+            dosSession.resumeFromOverlay();
+        }
+    }
+
+    @Override
+    public void onVolumeAdjustRequested(int direction) {
+        if (direction < 0) {
+            adjustMediaVolume(AudioManager.ADJUST_LOWER);
+        } else if (direction > 0) {
+            adjustMediaVolume(AudioManager.ADJUST_RAISE);
+        }
+    }
+
+    @Override
+    public String getActiveBindingProfileName() {
+        if (inputBindingManager == null) {
+            return "No binding profile";
+        }
+        BindingProfile profile =
+            inputBindingManager.getProfile();
+        return profile == null
+            ? "No binding profile"
+            : profile.displayName;
     }
 
     @Override

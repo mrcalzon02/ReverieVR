@@ -25,11 +25,11 @@ final class DosSession implements AutoCloseable {
     private final Object lifecycleLock = new Object();
     private final Object runtimeAccessLock = new Object();
     private final Object audioLock = new Object();
+    private final DosPauseGate pauseGate = new DosPauseGate();
 
     private volatile DosNativeRuntime runtime;
     private volatile Thread worker;
     private volatile boolean stopRequested;
-    private volatile boolean paused;
     private volatile boolean running;
     private volatile String lastError = "";
     private volatile DosGameModule activeModule;
@@ -107,7 +107,7 @@ final class DosSession implements AutoCloseable {
             runtime = created;
             activeModule = module;
             stopRequested = false;
-            paused = false;
+            pauseGate.clear();
             running = true;
             lastError = "";
 
@@ -132,8 +132,36 @@ final class DosSession implements AutoCloseable {
     }
 
     void pauseForLifecycle() {
-        paused = true;
+        pauseGate.setLifecyclePaused(true);
+        releaseGuestInput();
+        applyAudioPauseState();
+    }
 
+    void resumeForLifecycle() {
+        pauseGate.setLifecyclePaused(false);
+        applyAudioPauseState();
+    }
+
+    void pauseForOverlay() {
+        pauseGate.setOverlayPaused(true);
+        releaseGuestInput();
+        applyAudioPauseState();
+        ReverieLog.milestone(
+            "DOS_SESSION",
+            "Paused for VR quick overlay."
+        );
+    }
+
+    void resumeFromOverlay() {
+        pauseGate.setOverlayPaused(false);
+        applyAudioPauseState();
+        ReverieLog.milestone(
+            "DOS_SESSION",
+            "Resumed from VR quick overlay."
+        );
+    }
+
+    private void releaseGuestInput() {
         DosNativeRuntime active = runtime;
         if (active != null) {
             try {
@@ -141,27 +169,25 @@ final class DosSession implements AutoCloseable {
             } catch (RuntimeException ignored) {
             }
         }
-
-        synchronized (audioLock) {
-            if (audioTrack != null
-                && audioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
-                try {
-                    audioTrack.pause();
-                } catch (IllegalStateException ignored) {
-                }
-            }
-        }
     }
 
-    void resumeForLifecycle() {
-        paused = false;
+    private void applyAudioPauseState() {
+        boolean shouldPause = pauseGate.isPaused();
+
         synchronized (audioLock) {
-            if (audioTrack != null
-                && audioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
-                try {
+            if (audioTrack == null
+                || audioTrack.getState()
+                    != AudioTrack.STATE_INITIALIZED) {
+                return;
+            }
+
+            try {
+                if (shouldPause) {
+                    audioTrack.pause();
+                } else {
                     audioTrack.play();
-                } catch (IllegalStateException ignored) {
                 }
+            } catch (IllegalStateException ignored) {
             }
         }
     }
@@ -226,7 +252,7 @@ final class DosSession implements AutoCloseable {
         Thread thread;
         synchronized (lifecycleLock) {
             stopRequested = true;
-            paused = false;
+            pauseGate.clear();
             thread = worker;
         }
 
@@ -270,7 +296,7 @@ final class DosSession implements AutoCloseable {
 
         try {
             while (!stopRequested) {
-                if (paused) {
+                if (pauseGate.isPaused()) {
                     LockSupport.parkNanos(10_000_000L);
                     nextFrameNanos = System.nanoTime();
                     continue;

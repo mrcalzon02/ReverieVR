@@ -79,8 +79,12 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Added a nearest-filtered guest framebuffer renderer that uploads the native XRGB8888 frame, shader-swizzles host byte order, flips the libretro image vertically, and applies the RV-0414 intended display aspect.
 - Added a fifth VR Home action that opens a paged in-headset DOS library, with honest runtime/module-unavailable labels and direct launch of any imported/bundled module.
 - Added temporary hosted binding-profile activation/restoration so a module profile does not permanently overwrite the user's prior active binding profile.
-- Reserved Back as the current host escape path from a DOS session; Select and movement remain available to the guest binding bus.
-- Left the full in-game overlay/editor, directory-tree import, module browser, installer/autostart completion and reference-device validation as the next DOS-host gates.
+- Replaced the temporary Back = immediate DOS exit behavior with an in-headset DOS quick overlay rendered translucently over the paused guest framebuffer.
+- The quick overlay now provides Resume, Recenter, volume down/up, Home, and Exit VR recovery actions and displays the active hosted binding profile.
+- Added independent lifecycle and overlay pause reasons so Android background/resume cannot unpause a DOS guest behind the quick menu.
+- Opening the overlay releases existing guest input and suppresses controller bindings, head-mouse deltas, keyboard, mouse buttons, pointer motion, and wheel events from accumulating stale guest state while paused.
+- Added deterministic pause-gate tests covering overlay/lifecycle interlock behavior.
+- Left binding-profile selection/editing, directory-tree import, richer module browsing, installer/autostart completion and reference-device validation as the next DOS-host gates.
 
 
 

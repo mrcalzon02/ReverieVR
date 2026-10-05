@@ -443,14 +443,18 @@ Additional Stage B integration now implemented:
 - module launch temporarily activates that module's binding profile and restores the prior profile when the session ends;
 - a nearest-filtered OpenGL guest texture consumes the native XRGB8888 frame, corrects byte-channel order in the shader, flips libretro's top-down image, and applies RV-0414 intended display aspect;
 - Android AudioTrack consumes stereo 16-bit PCM on the DOS worker thread;
-- Back is currently a shell-reserved DOS escape route so the guest cannot strand the user.
+- Back now opens a shell-owned DOS quick overlay rather than terminating the guest immediately;
+- opening the overlay pauses DOS execution/audio, releases current guest input and suppresses new controller/head/HID guest signals until Resume;
+- overlay pause and Activity lifecycle pause are tracked independently, preventing Activity resume from silently resuming a guest behind the menu;
+- the paused guest framebuffer remains visible behind a translucent shell panel;
+- quick-overlay actions provide Resume, Recenter, media-volume down/up, Home and Exit VR;
+- the active hosted binding-profile name is shown in the overlay while the shell retains control of recovery.
 
 Remaining gates:
 
-- actual Android NDK compile/link for both supported ABIs;
 - reference-device validation of DOS run cadence, audio latency/underruns, guest texture orientation/colors and resolution changes;
+- binding-profile selection and in-VR binding editing from the quick-overlay path;
 - richer library management such as sorting/filtering/favorites beyond the current paged launcher;
-- explicit pause/resume quick overlay plus binding/profile editor;
 - integer-scale staging policy beyond nearest-neighbor guest sampling;
 - directory-tree import;
 - run the verified DOOM Shareware installer/autostart path and exercise E1M1 on the Galaxy S9.

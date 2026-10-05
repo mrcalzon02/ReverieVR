@@ -37,6 +37,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVideoSeekRequested(int deltaMillis);
         void onVideoStopRequested();
         boolean onDosPlaybackRequested(String moduleId);
+        void onDosOverlayPauseRequested();
+        void onDosOverlayResumeRequested();
+        void onVolumeAdjustRequested(int direction);
+        String getActiveBindingProfileName();
         void onDosStopRequested();
         boolean onNativeModulePlaybackRequested(
             String moduleId
@@ -67,6 +71,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_DOS = 3;
     private static final int MODE_DOS_LIBRARY = 4;
     private static final int MODE_NATIVE = 5;
+    private static final int MODE_DOS_OVERLAY = 6;
 
     private static final int[][] HOME_BUTTONS = new int[][] {
         {140, 225, 884, 280},
@@ -83,6 +88,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {140, 395, 884, 460},
         {140, 475, 884, 540},
         {140, 555, 884, 620}
+    };
+
+    private static final int[][] DOS_OVERLAY_BUTTONS = new int[][] {
+        {100, 260, 480, 330},
+        {544, 260, 924, 330},
+        {100, 360, 480, 430},
+        {544, 360, 924, 430},
+        {100, 460, 480, 530},
+        {544, 460, 924, 530}
     };
 
     private static final int[][] THREE_BUTTONS = new int[][] {
@@ -140,6 +154,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile boolean dosRuntimeAvailable;
     private volatile String[] dosModuleIds = new String[0];
     private volatile String[] dosModuleNames = new String[0];
+    private volatile String activeDosModuleName = "";
     private int dosLibraryPage;
     private boolean nativeSurfaceReady;
 
@@ -288,6 +303,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     void requestDosExit() {
         dosExitRequested.set(true);
+    }
+
+    boolean isHostedInputSuppressed() {
+        return mode == MODE_DOS_OVERLAY;
     }
 
     void setDosModules(
@@ -468,6 +487,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             selectRequested.set(false);
 
             if (dosExitRequested.getAndSet(false)) {
+                activeDosModuleName = "";
                 mode = MODE_HOME;
                 hoveredButton = -1;
                 textureDirty = true;
@@ -475,12 +495,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
 
             if (backRequested.getAndSet(false)) {
-                host.onDosStopRequested();
-                mode = MODE_HOME;
+                host.onDosOverlayPauseRequested();
+                mode = MODE_DOS_OVERLAY;
                 hoveredButton = -1;
                 textureDirty = true;
             }
             return;
+        }
+
+        if (mode == MODE_DOS_OVERLAY) {
+            dosRenderer.updateFrame();
+
+            if (dosExitRequested.getAndSet(false)) {
+                activeDosModuleName = "";
+                mode = MODE_HOME;
+                hoveredButton = -1;
+                textureDirty = true;
+                return;
+            }
         }
 
         if (mode == MODE_VIDEO) {
@@ -550,6 +582,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        if (mode == MODE_DOS_OVERLAY) {
+            dosRenderer.drawEye(eye, eyeCorrection);
+            drawUiPanel(eye, eyeCorrection, true);
+            drawPowerHudOverlay();
+            return;
+        }
+
         if (mode == MODE_NATIVE) {
             System.arraycopy(
                 eye.getEyeView(),
@@ -601,6 +640,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
             drawPowerHudOverlay();
             return;
+        }
+
+        drawUiPanel(eye, eyeCorrection, false);
+        drawPowerHudOverlay();
+    }
+
+    private void drawUiPanel(
+        CardboardView.Eye eye,
+        float eyeCorrection,
+        boolean forceForeground
+    ) {
+        if (forceForeground) {
+            GLES20.glDisable(GLES20.GL_DEPTH_TEST);
         }
 
         if (textureDirty) {
@@ -666,7 +718,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         GLES20.glDisableVertexAttribArray(positionHandle);
         GLES20.glDisableVertexAttribArray(uvHandle);
 
-        drawPowerHudOverlay();
+
     }
 
     @Override
@@ -885,6 +937,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
         } else if (mode == MODE_DOS_LIBRARY) {
             handleDosLibrarySelection(hoveredButton);
+        } else if (mode == MODE_DOS_OVERLAY) {
+            handleDosOverlaySelection(hoveredButton);
         } else {
             handleSetupSelection(hoveredButton);
         }
@@ -905,6 +959,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 && host.onDosPlaybackRequested(
                     ids[moduleIndex]
                 )) {
+                activeDosModuleName =
+                    moduleIndex < dosModuleNames.length
+                        ? dosModuleNames[moduleIndex]
+                        : "DOS session";
                 dosExitRequested.set(false);
                 mode = MODE_DOS;
                 hoveredButton = -1;
@@ -918,6 +976,40 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
         } else if (button == 4) {
             mode = MODE_HOME;
+        }
+
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
+    private void handleDosOverlaySelection(int button) {
+        switch (button) {
+            case 0:
+                host.onDosOverlayResumeRequested();
+                mode = MODE_DOS;
+                break;
+            case 1:
+                requestRecenter();
+                break;
+            case 2:
+                host.onVolumeAdjustRequested(-1);
+                break;
+            case 3:
+                host.onVolumeAdjustRequested(1);
+                break;
+            case 4:
+                activeDosModuleName = "";
+                host.onDosStopRequested();
+                mode = MODE_HOME;
+                break;
+            case 5:
+                activeDosModuleName = "";
+                host.onDosStopRequested();
+                mode = MODE_HOME;
+                host.onExitToPhoneRequested();
+                break;
+            default:
+                return;
         }
 
         hoveredButton = -1;
@@ -1037,6 +1129,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        if (mode == MODE_DOS_OVERLAY) {
+            host.onDosOverlayResumeRequested();
+            mode = MODE_DOS;
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
+
         if (setupStep > 0) {
             setupStep--;
             preferences.setVrSetupStep(setupStep);
@@ -1057,6 +1157,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return DOS_LIBRARY_BUTTONS;
         }
 
+        if (mode == MODE_DOS_OVERLAY) {
+            return DOS_OVERLAY_BUTTONS;
+        }
+
         if (setupStep == 2 || setupStep == 3 || setupStep == 4) {
             return THREE_BUTTONS;
         }
@@ -1072,9 +1176,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.reset();
         paint.setAntiAlias(true);
 
-        canvas.drawColor(Color.rgb(9, 12, 16));
-
-        paint.setColor(Color.rgb(24, 29, 36));
+        if (mode == MODE_DOS_OVERLAY) {
+            canvas.drawColor(
+                Color.TRANSPARENT,
+                PorterDuff.Mode.CLEAR
+            );
+            paint.setColor(Color.argb(224, 16, 20, 26));
+        } else {
+            canvas.drawColor(Color.rgb(9, 12, 16));
+            paint.setColor(Color.rgb(24, 29, 36));
+        }
         canvas.drawRoundRect(42, 42, 982, 726, 28, 28, paint);
 
         paint.setColor(Color.rgb(56, 214, 200));
@@ -1090,6 +1201,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawHome(canvas, paint);
         } else if (mode == MODE_DOS_LIBRARY) {
             drawDosLibrary(canvas, paint);
+        } else if (mode == MODE_DOS_OVERLAY) {
+            drawDosOverlay(canvas, paint);
         } else {
             drawSetup(canvas, paint);
         }
@@ -1245,6 +1358,55 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint,
             labels,
             activeButtons()
+        );
+    }
+
+    private void drawDosOverlay(
+        Canvas canvas,
+        Paint paint
+    ) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31.0f * uiScale);
+        canvas.drawText(
+            "DOS QUICK MENU",
+            90,
+            175,
+            paint
+        );
+
+        paint.setColor(Color.rgb(184, 194, 207));
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            "Paused: "
+                + shorten(activeDosModuleName, 42),
+            90,
+            210,
+            paint
+        );
+        canvas.drawText(
+            "Bindings: "
+                + shorten(
+                    host.getActiveBindingProfileName(),
+                    46
+                ),
+            90,
+            238,
+            paint
+        );
+
+        String[] labels = new String[] {
+            "RESUME",
+            "RECENTER",
+            "VOLUME -",
+            "VOLUME +",
+            "HOME",
+            "EXIT VR"
+        };
+        drawButtons(
+            canvas,
+            paint,
+            labels,
+            DOS_OVERLAY_BUTTONS
         );
     }
 
