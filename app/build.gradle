@@ -2,6 +2,14 @@ plugins {
     id "com.android.application"
 }
 
+def doomSharewareArchive = rootProject.file(
+    "third_party/doom-shareware/payload/default-content/doom19s.zip"
+)
+def excludeDoomShareware =
+    project.hasProperty("excludeDoomShareware")
+def bundleDoomShareware =
+    !excludeDoomShareware && doomSharewareArchive.isFile()
+
 android {
     namespace = "io.github.mrcalzon02.reverievr"
     compileSdk = 36
@@ -13,6 +21,11 @@ android {
         versionCode = 1
         versionName = "0.1.0-dev"
         buildConfigField "boolean", "DOS_RUNTIME_BUILT", "false"
+        buildConfigField(
+            "boolean",
+            "DOOM_SHAREWARE_BUNDLED",
+            bundleDoomShareware.toString()
+        )
     }
 
     buildTypes {
@@ -23,6 +36,18 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+
+    sourceSets {
+        main {
+            if (bundleDoomShareware) {
+                assets.srcDir(
+                    rootProject.file(
+                        "third_party/doom-shareware/payload"
+                    )
+                )
+            }
         }
     }
 
@@ -39,4 +64,22 @@ android {
 dependencies {
     implementation project(":cardboard")
     testImplementation "junit:junit:4.13.2"
+}
+
+
+tasks.configureEach { task ->
+    if (task.name == "preReleaseBuild") {
+        task.doFirst {
+            if (!excludeDoomShareware
+                && !doomSharewareArchive.isFile()) {
+                throw new GradleException(
+                    "Release builds include DOOM Shareware v1.9 by default. "
+                        + "Run scripts/fetch-doom-shareware.sh "
+                        + "(or .bat), or pass "
+                        + "-PexcludeDoomShareware for a build that "
+                        + "intentionally omits the shareware content."
+                )
+            }
+        }
+    }
 }

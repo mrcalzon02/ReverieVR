@@ -121,6 +121,7 @@ public final class MainActivity extends Activity
                 this,
                 dosModuleRepository
             );
+        installBundledDosContent();
         diagnosticBundleExporter =
             new DiagnosticBundleExporter(this);
 
@@ -820,6 +821,36 @@ public final class MainActivity extends Activity
                 ? R.string.logging_status_development
                 : R.string.logging_status_standard
         );
+    }
+
+    private void installBundledDosContent() {
+        if (!BuildConfig.DOOM_SHAREWARE_BUNDLED) {
+            ReverieLog.milestone(
+                "BUNDLED_CONTENT",
+                "DOOM Shareware is not bundled in this build."
+            );
+            return;
+        }
+
+        dosImportExecutor.execute(() -> {
+            try {
+                DosGameModule module =
+                    new BundledDosContentInstaller(
+                        this,
+                        dosModuleRepository
+                    ).ensureBundledDoom();
+
+                if (module != null) {
+                    runOnUiThread(this::refreshDosModuleStatus);
+                }
+            } catch (Exception exception) {
+                ReverieLog.error(
+                    "BUNDLED_CONTENT",
+                    "Default DOOM Shareware module could not be installed.",
+                    exception
+                );
+            }
+        });
     }
 
     private void chooseDosContent() {

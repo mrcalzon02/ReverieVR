@@ -10,3 +10,6 @@ captures/
 
 # Pinned third-party source fetched locally for native DOS builds
 third_party/dosbox-pure/src/
+
+# Original third-party DOOM shareware archive fetched for packaging
+third_party/doom-shareware/payload/default-content/doom19s.zip
