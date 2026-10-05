@@ -98,6 +98,13 @@ Available: %2$s</string>
     <string name="diagnostic_submission_failed_title">Diagnostic submission failed</string>
     <string name="diagnostic_submission_failed_format">Submission failed: %1$s\n\nThe private diagnostic ZIP was retained locally for investigation. Manual Export diagnostic bundle remains available.</string>
     <string name="diagnostic_submission_failed_no_bundle_format">Submission failed before a private ZIP could be retained: %1$s\n\nManual Export diagnostic bundle remains available.</string>
+    <string name="diagnostic_stored_pending_title">Diagnostic bundle stored</string>
+    <string name="diagnostic_stored_pending_format">The diagnostic ZIP is already stored privately, but GitHub issue creation failed: %1$s\n\nReceipt: %2$s\n\nRetrying creates the GitHub issue from the stored receipt without uploading the ZIP again.</string>
+    <string name="diagnostic_retry_issue">Retry issue creation</string>
+    <string name="diagnostic_retrying_issue">Retrying GitHub issue creation from the stored diagnostic…</string>
+    <string name="diagnostic_pending_found_title">Stored diagnostic is waiting</string>
+    <string name="diagnostic_pending_found_format">Diagnostic %1$s is already stored privately and still needs its GitHub issue. Retry that receipt without re-uploading the ZIP?</string>
+    <string name="diagnostic_start_new_report">Start new report</string>
 
     <string name="qol_section">Quality of life</string>
     <string name="battery_hud_label">Show phone + controller battery HUD in VR</string>
