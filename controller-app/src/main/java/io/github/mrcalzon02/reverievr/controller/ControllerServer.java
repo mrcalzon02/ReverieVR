@@ -18,6 +18,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 final class ControllerServer implements AutoCloseable {
     interface Listener {
@@ -35,7 +36,7 @@ final class ControllerServer implements AutoCloseable {
         UUID.fromString("ab001ac1-d740-4abb-a8e6-1cb5a49628fa");
 
     private static final String SERVICE_NAME = "ReverieVR Controller";
-    private static final int MAX_QUEUED_MESSAGES = 64;
+    private static final int MAX_QUEUED_CONTROL_MESSAGES = 128;
 
     private final Context context;
     private final BluetoothAdapter adapter;
@@ -44,8 +45,14 @@ final class ControllerServer implements AutoCloseable {
         Executors.newSingleThreadExecutor();
     private final ExecutorService writeExecutor =
         Executors.newSingleThreadExecutor();
-    private final ArrayBlockingQueue<byte[]> sendQueue =
-        new ArrayBlockingQueue<>(MAX_QUEUED_MESSAGES);
+    private final ArrayBlockingQueue<byte[]> controlQueue =
+        new ArrayBlockingQueue<>(MAX_QUEUED_CONTROL_MESSAGES);
+    private final AtomicReference<byte[]> latestOrientation =
+        new AtomicReference<>();
+    private final AtomicReference<byte[]> latestGyroscope =
+        new AtomicReference<>();
+    private final AtomicReference<byte[]> latestAccelerometer =
+        new AtomicReference<>();
 
     private final Object connectionLock = new Object();
 
@@ -123,21 +130,43 @@ final class ControllerServer implements AutoCloseable {
     void stop() {
         running = false;
         connected = false;
-        sendQueue.clear();
+        clearPendingMessages();
         closeServerSocket();
         closeClient();
         emit(State.STOPPED, "Controller server stopped.");
     }
 
-    void send(byte[] payload) {
+    void sendControl(byte[] payload) {
         if (!connected || payload == null || payload.length == 0) {
             return;
         }
 
-        if (!sendQueue.offer(payload)) {
-            sendQueue.poll();
-            sendQueue.offer(payload);
+        if (!controlQueue.offer(payload)) {
+            controlQueue.poll();
+            controlQueue.offer(payload);
         }
+    }
+
+    void sendOrientation(byte[] payload) {
+        setLatestSensor(latestOrientation, payload);
+    }
+
+    void sendGyroscope(byte[] payload) {
+        setLatestSensor(latestGyroscope, payload);
+    }
+
+    void sendAccelerometer(byte[] payload) {
+        setLatestSensor(latestAccelerometer, payload);
+    }
+
+    private void setLatestSensor(
+        AtomicReference<byte[]> slot,
+        byte[] payload
+    ) {
+        if (!connected || payload == null || payload.length == 0) {
+            return;
+        }
+        slot.set(payload);
     }
 
     private void acceptLoop() {
@@ -244,10 +273,13 @@ final class ControllerServer implements AutoCloseable {
     private void writeLoop() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                byte[] payload = sendQueue.poll(
-                    1,
-                    TimeUnit.SECONDS
-                );
+                byte[] payload = nextPayload();
+                if (payload == null) {
+                    payload = controlQueue.poll(
+                        10,
+                        TimeUnit.MILLISECONDS
+                    );
+                }
                 if (payload == null) {
                     continue;
                 }
@@ -273,6 +305,32 @@ final class ControllerServer implements AutoCloseable {
                 return;
             }
         }
+    }
+
+    private byte[] nextPayload() {
+        byte[] payload = controlQueue.poll();
+        if (payload != null) {
+            return payload;
+        }
+
+        payload = latestOrientation.getAndSet(null);
+        if (payload != null) {
+            return payload;
+        }
+
+        payload = latestGyroscope.getAndSet(null);
+        if (payload != null) {
+            return payload;
+        }
+
+        return latestAccelerometer.getAndSet(null);
+    }
+
+    private void clearPendingMessages() {
+        controlQueue.clear();
+        latestOrientation.set(null);
+        latestGyroscope.set(null);
+        latestAccelerometer.set(null);
     }
 
     private void handleWriteFailure(IOException exception) {

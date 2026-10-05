@@ -90,6 +90,11 @@ public final class ControllerActivity extends Activity
             rotationVector = sensorManager.getDefaultSensor(
                 Sensor.TYPE_ROTATION_VECTOR
             );
+            if (rotationVector == null) {
+                rotationVector = sensorManager.getDefaultSensor(
+                    Sensor.TYPE_GAME_ROTATION_VECTOR
+                );
+            }
             gyroscope = sensorManager.getDefaultSensor(
                 Sensor.TYPE_GYROSCOPE
             );
@@ -102,10 +107,21 @@ public final class ControllerActivity extends Activity
         updateSensorStatus();
         updateControls();
 
-        Intent battery = registerReceiver(
-            batteryReceiver,
-            new IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-        );
+        IntentFilter batteryFilter =
+            new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        Intent battery;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            battery = registerReceiver(
+                batteryReceiver,
+                batteryFilter,
+                Context.RECEIVER_NOT_EXPORTED
+            );
+        } else {
+            battery = registerReceiver(
+                batteryReceiver,
+                batteryFilter
+            );
+        }
         if (battery != null) {
             updateBattery(battery);
         }
@@ -227,6 +243,13 @@ public final class ControllerActivity extends Activity
     }
 
     private void startControllerServer() {
+        if (rotationVector == null) {
+            connectionStatus.setText(
+                R.string.orientation_sensor_required
+            );
+            return;
+        }
+
         if (!server.hasConnectPermission()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 requestPermissions(
@@ -439,7 +462,7 @@ public final class ControllerActivity extends Activity
         boolean connected =
             server != null && server.isConnected();
 
-        startButton.setEnabled(!connected);
+        startButton.setEnabled(!connected && rotationVector != null);
         stopButton.setEnabled(
             server != null
         );

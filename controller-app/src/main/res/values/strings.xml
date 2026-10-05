@@ -11,6 +11,7 @@
     <string name="home_button">HOME / RECENTER</string>
     <string name="battery_format">Controller phone battery: %1$d%%</string>
     <string name="battery_unknown">Controller phone battery unavailable.</string>
+    <string name="orientation_sensor_required">This phone does not expose a usable rotation-vector orientation sensor and cannot act as a 3DoF ReverieVR controller.</string>
     <string name="bluetooth_permission_denied">Bluetooth permission is required to host the controller connection.</string>
     <string name="bluetooth_settings_unavailable">Android Bluetooth settings could not be opened.</string>
 </resources>
