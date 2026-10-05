@@ -19,9 +19,9 @@ bucket_name = "reverievr-diagnostics"
 name = "RATE_LIMITER"
 class_name = "DiagnosticRateLimiter"
 
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["DiagnosticRateLimiter"]
+[exports.DiagnosticRateLimiter]
+type = "durable-object"
+storage = "sqlite"
 
 [triggers]
 crons = ["17 4 * * *"]
