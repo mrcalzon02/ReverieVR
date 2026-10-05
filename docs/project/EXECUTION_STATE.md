@@ -7,7 +7,7 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current verified remote implementation baseline: `105b8d5d8d282a9025ce737cff79daa57995b89d`.
+- Current verified remote implementation baseline before this documentation commit: `e7dd8774eff6d411ca8b4170eb511d1d6b9c2608`.
 - Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
