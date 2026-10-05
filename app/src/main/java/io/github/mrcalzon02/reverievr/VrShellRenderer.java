@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
@@ -36,6 +37,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private static final int TEXTURE_WIDTH = 1024;
     private static final int TEXTURE_HEIGHT = 768;
+    private static final int HUD_TEXTURE_WIDTH = 512;
+    private static final int HUD_TEXTURE_HEIGHT = 128;
+    private static final float HUD_LOOK_UP_THRESHOLD = 0.72f;
 
     private static final float PANEL_HALF_WIDTH = 1.70f;
     private static final float PANEL_HALF_HEIGHT = 1.20f;
@@ -73,12 +77,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer uvBuffer;
+    private final FloatBuffer hudVertexBuffer;
+    private final FloatBuffer hudUvBuffer;
 
     private final float[] rawHeadView = new float[16];
     private final float[] adjustedHeadView = new float[16];
     private final float[] eyeView = new float[16];
     private final float[] modelViewProjection = new float[16];
     private final float[] tempMatrix = new float[16];
+    private final float[] hudIdentity = new float[16];
     private final float[] yawMatrix = new float[16];
     private final float[] headEuler = new float[3];
     private final float[] headForward = new float[3];
@@ -99,10 +106,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private int program;
     private int texture;
+    private int hudTexture;
     private Bitmap uiBitmap;
     private Canvas uiCanvas;
     private Paint uiPaint;
+    private Bitmap hudBitmap;
+    private Canvas hudCanvas;
+    private Paint hudPaint;
     private boolean textureStorageInitialized;
+    private boolean hudTextureStorageInitialized;
+    private volatile boolean hudTextureDirty = true;
+    private volatile boolean hudDroppedDown;
+    private boolean cachedShowPercentages;
     private int positionHandle;
     private int uvHandle;
     private int matrixHandle;
@@ -152,8 +167,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         vertexBuffer = allocate(vertices);
         uvBuffer = allocate(uvs);
+
+        hudVertexBuffer = allocate(new float[12]);
+        hudUvBuffer = allocate(new float[] {
+            0.0f, 1.0f,
+            1.0f, 1.0f,
+            0.0f, 0.0f,
+            1.0f, 0.0f
+        });
+
         Matrix.setIdentityM(adjustedHeadView, 0);
         Matrix.setIdentityM(yawMatrix, 0);
+        Matrix.setIdentityM(hudIdentity, 0);
+        cachedShowPercentages = preferences.isShowPercentagesEnabled();
     }
 
     void requestSelect() {
@@ -170,12 +196,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     void setPhoneBattery(int percentage) {
         phoneBattery.set(percentage);
-        textureDirty = true;
+        hudTextureDirty = true;
     }
 
     void setControllerBattery(int percentage) {
         controllerBattery.set(percentage);
-        textureDirty = true;
+        hudTextureDirty = true;
     }
 
     void setControllerState(boolean connected, String message) {
@@ -239,6 +265,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
         Matrix.multiplyMM(adjustedHeadView, 0, yawMatrix, 0, rawHeadView, 0);
 
+        boolean showPercentages = preferences.isShowPercentagesEnabled();
+        if (showPercentages != cachedShowPercentages) {
+            cachedShowPercentages = showPercentages;
+            hudTextureDirty = true;
+        }
+
+        boolean newHudDroppedDown =
+            preferences.isLookUpRevealEnabled()
+                && headForward[1] >= HUD_LOOK_UP_THRESHOLD;
+        if (newHudDroppedDown != hudDroppedDown) {
+            hudDroppedDown = newHudDroppedDown;
+        }
+
         if (mode == MODE_VIDEO) {
             videoRenderer.updateFrame();
 
@@ -296,6 +335,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_VIDEO) {
             videoRenderer.drawEye(eye, eyeCorrection);
+            drawPowerHudOverlay();
             return;
         }
 
@@ -361,6 +401,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         GLES20.glDisableVertexAttribArray(positionHandle);
         GLES20.glDisableVertexAttribArray(uvHandle);
+
+        drawPowerHudOverlay();
     }
 
     @Override
@@ -382,11 +424,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         matrixHandle = GLES20.glGetUniformLocation(program, "u_Mvp");
         textureHandle = GLES20.glGetUniformLocation(program, "u_Texture");
 
-        int[] textures = new int[1];
-        GLES20.glGenTextures(1, textures, 0);
+        int[] textures = new int[2];
+        GLES20.glGenTextures(2, textures, 0);
         texture = textures[0];
+        hudTexture = textures[1];
         textureStorageInitialized = false;
+        hudTextureStorageInitialized = false;
         ensureUiBitmap();
+        ensureHudBitmap();
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
         GLES20.glTexParameteri(
             GLES20.GL_TEXTURE_2D,
@@ -408,7 +453,31 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.GL_TEXTURE_WRAP_T,
             GLES20.GL_CLAMP_TO_EDGE
         );
+
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, hudTexture);
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MIN_FILTER,
+            GLES20.GL_LINEAR
+        );
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MAG_FILTER,
+            GLES20.GL_LINEAR
+        );
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_S,
+            GLES20.GL_CLAMP_TO_EDGE
+        );
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_T,
+            GLES20.GL_CLAMP_TO_EDGE
+        );
+
         textureDirty = true;
+        hudTextureDirty = true;
     }
 
     @Override
@@ -419,18 +488,30 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.glDeleteTextures(1, new int[] {texture}, 0);
             texture = 0;
         }
+        if (hudTexture != 0) {
+            GLES20.glDeleteTextures(1, new int[] {hudTexture}, 0);
+            hudTexture = 0;
+        }
         if (program != 0) {
             GLES20.glDeleteProgram(program);
             program = 0;
         }
 
         textureStorageInitialized = false;
+        hudTextureStorageInitialized = false;
         if (uiBitmap != null && !uiBitmap.isRecycled()) {
             uiBitmap.recycle();
         }
         uiBitmap = null;
         uiCanvas = null;
         uiPaint = null;
+
+        if (hudBitmap != null && !hudBitmap.isRecycled()) {
+            hudBitmap.recycle();
+        }
+        hudBitmap = null;
+        hudCanvas = null;
+        hudPaint = null;
     }
 
     private int calculateHoveredButton(float[] forward) {
@@ -668,8 +749,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         } else {
             drawSetup(canvas, paint);
         }
-
-        drawPowerHud(canvas, paint);
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
         if (textureStorageInitialized) {
@@ -939,23 +1018,236 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
     }
 
-    private void drawPowerHud(Canvas canvas, Paint paint) {
-        if (!preferences.isBatteryHudEnabled()) {
+    private void drawPowerHudOverlay() {
+        if (!preferences.isBatteryHudEnabled()
+            || program == 0
+            || hudTexture == 0) {
             return;
         }
 
-        paint.setTextSize(18.0f);
-        paint.setColor(Color.rgb(154, 166, 180));
+        if (hudTextureDirty) {
+            rebuildPowerHudTexture();
+        }
 
-        String phone = phoneBattery.get() >= 0
-            ? "P " + phoneBattery.get() + "%"
-            : "P --";
-        String controller = controllerBattery.get() >= 0
-            ? "H " + controllerBattery.get() + "%"
-            : "H --";
+        updateHudVertices();
 
-        canvas.drawText(phone, 820, 92, paint);
-        canvas.drawText(controller, 900, 92, paint);
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        GLES20.glUseProgram(program);
+
+        hudVertexBuffer.position(0);
+        GLES20.glVertexAttribPointer(
+            positionHandle,
+            3,
+            GLES20.GL_FLOAT,
+            false,
+            0,
+            hudVertexBuffer
+        );
+        GLES20.glEnableVertexAttribArray(positionHandle);
+
+        hudUvBuffer.position(0);
+        GLES20.glVertexAttribPointer(
+            uvHandle,
+            2,
+            GLES20.GL_FLOAT,
+            false,
+            0,
+            hudUvBuffer
+        );
+        GLES20.glEnableVertexAttribArray(uvHandle);
+
+        GLES20.glUniformMatrix4fv(
+            matrixHandle,
+            1,
+            false,
+            hudIdentity,
+            0
+        );
+
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(
+            GLES20.GL_TEXTURE_2D,
+            hudTexture
+        );
+        GLES20.glUniform1i(textureHandle, 0);
+
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(
+            GLES20.GL_SRC_ALPHA,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA
+        );
+        GLES20.glDrawArrays(
+            GLES20.GL_TRIANGLE_STRIP,
+            0,
+            4
+        );
+        GLES20.glDisable(GLES20.GL_BLEND);
+
+        GLES20.glDisableVertexAttribArray(positionHandle);
+        GLES20.glDisableVertexAttribArray(uvHandle);
+    }
+
+    private void updateHudVertices() {
+        float left = 0.30f;
+        float right = 0.96f;
+        float top = hudDroppedDown ? 0.60f : 0.96f;
+        float bottom = hudDroppedDown ? 0.32f : 0.70f;
+
+        hudVertexBuffer.position(0);
+        hudVertexBuffer.put(new float[] {
+            left, bottom, 0.0f,
+            right, bottom, 0.0f,
+            left, top, 0.0f,
+            right, top, 0.0f
+        });
+        hudVertexBuffer.position(0);
+    }
+
+    private void ensureHudBitmap() {
+        if (hudBitmap != null && !hudBitmap.isRecycled()) {
+            return;
+        }
+
+        hudBitmap = Bitmap.createBitmap(
+            HUD_TEXTURE_WIDTH,
+            HUD_TEXTURE_HEIGHT,
+            Bitmap.Config.ARGB_8888
+        );
+        hudCanvas = new Canvas(hudBitmap);
+        hudPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    }
+
+    private void rebuildPowerHudTexture() {
+        ensureHudBitmap();
+
+        Canvas canvas = hudCanvas;
+        Paint paint = hudPaint;
+        paint.reset();
+        paint.setAntiAlias(true);
+
+        canvas.drawColor(
+            Color.TRANSPARENT,
+            PorterDuff.Mode.CLEAR
+        );
+
+        paint.setColor(Color.argb(218, 16, 20, 26));
+        canvas.drawRoundRect(
+            0.0f,
+            0.0f,
+            HUD_TEXTURE_WIDTH,
+            HUD_TEXTURE_HEIGHT,
+            18.0f,
+            18.0f,
+            paint
+        );
+
+        drawBatteryRow(
+            canvas,
+            paint,
+            "PHONE",
+            phoneBattery.get(),
+            18.0f,
+            20.0f
+        );
+        drawBatteryRow(
+            canvas,
+            paint,
+            "CTRL",
+            controllerBattery.get(),
+            18.0f,
+            74.0f
+        );
+
+        GLES20.glBindTexture(
+            GLES20.GL_TEXTURE_2D,
+            hudTexture
+        );
+
+        if (hudTextureStorageInitialized) {
+            GLUtils.texSubImage2D(
+                GLES20.GL_TEXTURE_2D,
+                0,
+                0,
+                0,
+                hudBitmap
+            );
+        } else {
+            GLUtils.texImage2D(
+                GLES20.GL_TEXTURE_2D,
+                0,
+                hudBitmap,
+                0
+            );
+            hudTextureStorageInitialized = true;
+        }
+
+        hudTextureDirty = false;
+    }
+
+    private void drawBatteryRow(
+        Canvas canvas,
+        Paint paint,
+        String label,
+        int percentage,
+        float x,
+        float y
+    ) {
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(220, 226, 234));
+        paint.setTextSize(21.0f);
+        paint.setFakeBoldText(true);
+        canvas.drawText(label, x, y + 24.0f, paint);
+        paint.setFakeBoldText(false);
+
+        float barLeft = 104.0f;
+        float barTop = y + 8.0f;
+        float barRight = 404.0f;
+        float barBottom = y + 34.0f;
+
+        paint.setColor(Color.rgb(49, 58, 69));
+        canvas.drawRoundRect(
+            barLeft,
+            barTop,
+            barRight,
+            barBottom,
+            8.0f,
+            8.0f,
+            paint
+        );
+
+        if (percentage >= 0 && percentage <= 100) {
+            float fillRight =
+                barLeft
+                    + ((barRight - barLeft)
+                        * (percentage / 100.0f));
+            if (fillRight > barLeft) {
+                paint.setColor(Color.rgb(56, 214, 200));
+                canvas.drawRoundRect(
+                    barLeft,
+                    barTop,
+                    fillRight,
+                    barBottom,
+                    8.0f,
+                    8.0f,
+                    paint
+                );
+            }
+        }
+
+        if (cachedShowPercentages) {
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(20.0f);
+            String value =
+                percentage >= 0 && percentage <= 100
+                    ? percentage + "%"
+                    : "--";
+            canvas.drawText(
+                value,
+                426.0f,
+                y + 28.0f,
+                paint
+            );
+        }
     }
 
     private void drawReticle(Canvas canvas, Paint paint) {
