@@ -44,15 +44,23 @@ Install:
 2. Android SDK Platform 36 and Build Tools 36.x.
 3. Android NDK 29.0.14206865.
 4. CMake 3.22.1 or compatible newer installed through Android SDK Manager.
-5. Gradle 9.6.1.
+5. No system Gradle installation is required.
 
-Generate the standard wrapper once from a verified Gradle 9.6.1 environment:
+ReverieVR commits the Gradle 9.6.1 wrapper. The wrapper JAR is pinned to Gradle's published SHA-256:
 
-    gradle wrapper --gradle-version 9.6.1 --distribution-type bin
+    497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7
 
-Then build:
+The downloaded Gradle 9.6.1 binary distribution is pinned to:
 
-    ./gradlew :app:assembleDebug
+    9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14
+
+After cloning and initializing submodules, verify the bootstrap:
+
+    ./scripts/verify-build-bootstrap.sh
+
+Then test and build:
+
+    ./gradlew test :app:assembleDebug
 
 Expected debug APK:
 
@@ -61,6 +69,8 @@ Expected debug APK:
 Install:
 
     adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+On Windows, use `gradlew.bat test :app:assembleDebug`.
 
 ## Reference-device validation order
 

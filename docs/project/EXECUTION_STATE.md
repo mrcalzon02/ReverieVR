@@ -53,7 +53,7 @@ Cardboard introduces its required AndroidX/native build dependencies; Stage A it
 Remaining gate:
 
 - initialize submodule in a local checkout;
-- generate/verify Gradle 9.6.1 wrapper;
+- run the committed wrapper/bootstrap verifier;
 - run unit tests and `:app:assembleDebug`;
 - inspect resulting APK;
 - install and launch on the Galaxy S9.
@@ -178,8 +178,8 @@ On a local Android development environment:
 
 1. `git submodule update --init --recursive`;
 2. verify Cardboard submodule SHA `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`;
-3. install JDK 17, Android SDK 36, NDK 29.0.14206865, CMake, and Gradle 9.6.1;
-4. generate the Gradle wrapper;
+3. install JDK 17, Android SDK 36, NDK 29.0.14206865, and CMake;
+4. run `./scripts/verify-build-bootstrap.sh`;
 5. run `./gradlew test :app:assembleDebug`;
 6. install the APK on the Galaxy S9;
 7. test Stage A pairing and live controller input;
