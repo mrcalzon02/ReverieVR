@@ -59,11 +59,11 @@ final class DaydreamControllerProvider implements ControllerProvider {
 
     private Listener listener;
     private BluetoothLeScanner scanner;
-    private BluetoothDevice pendingDevice;
-    private BluetoothGatt gatt;
-    private BluetoothGattCharacteristic controlCharacteristic;
-    private BluetoothGattCharacteristic batteryCharacteristic;
-    private BluetoothGattCharacteristic voltageCharacteristic;
+    private volatile BluetoothDevice pendingDevice;
+    private volatile BluetoothGatt gatt;
+    private volatile BluetoothGattCharacteristic controlCharacteristic;
+    private volatile BluetoothGattCharacteristic batteryCharacteristic;
+    private volatile BluetoothGattCharacteristic voltageCharacteristic;
 
     private boolean operationInFlight;
     private volatile boolean ready;
@@ -71,8 +71,8 @@ final class DaydreamControllerProvider implements ControllerProvider {
     private volatile boolean poseNotificationsConfigured;
     private int batteryPercentage = -1;
     private int batteryMillivolts = -1;
-    private int scanGeneration;
-    private int poseWaitGeneration;
+    private volatile int scanGeneration;
+    private volatile int poseWaitGeneration;
 
     private final BroadcastReceiver bondReceiver = new BroadcastReceiver() {
         @Override
@@ -164,6 +164,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
 
         @Override
         public void onScanFailed(int errorCode) {
+            stopScan();
             emitConnection(
                 ConnectionState.ERROR,
                 "Bluetooth LE scan failed (" + errorCode + ")."
@@ -213,8 +214,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
         @Override
         public void onServicesDiscovered(BluetoothGatt callbackGatt, int status) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                emitConnection(
-                    ConnectionState.ERROR,
+                failSetup(
                     "Controller service discovery failed (" + status + ")."
                 );
                 return;
@@ -223,8 +223,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
             BluetoothGattService daydreamService =
                 callbackGatt.getService(DAYDREAM_SERVICE);
             if (daydreamService == null) {
-                emitConnection(
-                    ConnectionState.ERROR,
+                failSetup(
                     "Connected device does not expose the Daydream controller service."
                 );
                 return;
@@ -238,10 +237,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
                 daydreamService.getCharacteristic(VOLTAGE_CHARACTERISTIC);
 
             if (pose == null) {
-                emitConnection(
-                    ConnectionState.ERROR,
-                    "Daydream pose characteristic is missing."
-                );
+                failSetup("Daydream pose characteristic is missing.");
                 return;
             }
 
@@ -840,7 +836,13 @@ final class DaydreamControllerProvider implements ControllerProvider {
         poseNotificationsConfigured = false;
         poseWaitGeneration++;
         clearGattQueue();
+
+        controlCharacteristic = null;
+        batteryCharacteristic = null;
+        voltageCharacteristic = null;
+
         emitConnection(ConnectionState.ERROR, message);
+        closeGatt();
     }
 
     private void handleBluetoothPermissionLoss() {
