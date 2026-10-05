@@ -98,14 +98,20 @@ Development logs may include device names, local filenames, imported module
 names, controller/input state and timing. The UI warns the user to review the
 bundle before sharing it.
 
-Future one-tap GitHub/error submission is deferred. If implemented, it must:
+Secure GitHub issue submission is now governed by
+`ADR-0017-SECURE-DIAGNOSTIC-ISSUE-INTAKE.md`.
+
+The submission path must:
 
 - be explicit opt-in;
-- never embed a personal GitHub token in the APK;
+- never embed a personal GitHub token, GitHub App private key, upload-broker
+  credential, or repository secret in the APK;
 - show what data is being submitted;
 - support redaction;
 - preserve the manual-export path;
-- fail safely without losing the local diagnostic bundle.
+- fail safely without losing the local diagnostic bundle;
+- keep raw diagnostic bundles out of the public issue body and public
+  repository unless the user explicitly chooses otherwise.
 
 ## Consequences
 
