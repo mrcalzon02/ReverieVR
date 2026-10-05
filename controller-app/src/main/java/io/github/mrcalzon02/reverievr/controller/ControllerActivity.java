@@ -180,7 +180,7 @@ public final class ControllerActivity extends Activity
                     return;
                 }
 
-                server.send(
+                server.sendControl(
                     ControllerProtocolWriter.motion(
                         System.nanoTime(),
                         action,
@@ -217,7 +217,7 @@ public final class ControllerActivity extends Activity
             int action = event.getActionMasked();
             if (action == MotionEvent.ACTION_DOWN) {
                 view.setPressed(true);
-                server.send(
+                server.sendControl(
                     ControllerProtocolWriter.key(
                         ControllerProtocolWriter.ACTION_DOWN,
                         keyCode
@@ -229,7 +229,7 @@ public final class ControllerActivity extends Activity
             if (action == MotionEvent.ACTION_UP
                 || action == MotionEvent.ACTION_CANCEL) {
                 view.setPressed(false);
-                server.send(
+                server.sendControl(
                     ControllerProtocolWriter.key(
                         ControllerProtocolWriter.ACTION_UP,
                         keyCode
@@ -320,7 +320,7 @@ public final class ControllerActivity extends Activity
                     event.getAction() == KeyEvent.ACTION_DOWN
                         ? ControllerProtocolWriter.ACTION_DOWN
                         : ControllerProtocolWriter.ACTION_UP;
-                server.send(
+                server.sendControl(
                     ControllerProtocolWriter.key(
                         action,
                         protocolCode
@@ -350,7 +350,7 @@ public final class ControllerActivity extends Activity
                 event.values
             );
 
-            server.send(
+            server.sendOrientation(
                 ControllerProtocolWriter.orientation(
                     timestamp,
                     quaternion[1],
@@ -361,7 +361,7 @@ public final class ControllerActivity extends Activity
             );
         } else if (event.sensor.getType()
             == Sensor.TYPE_GYROSCOPE) {
-            server.send(
+            server.sendGyroscope(
                 ControllerProtocolWriter.gyroscope(
                     timestamp,
                     event.values[0],
@@ -371,7 +371,7 @@ public final class ControllerActivity extends Activity
             );
         } else if (event.sensor.getType()
             == Sensor.TYPE_ACCELEROMETER) {
-            server.send(
+            server.sendAccelerometer(
                 ControllerProtocolWriter.accelerometer(
                     timestamp,
                     event.values[0],
@@ -402,7 +402,7 @@ public final class ControllerActivity extends Activity
 
             if (state == ControllerServer.State.CONNECTED
                 && batteryPercentage >= 0) {
-                server.send(
+                server.sendControl(
                     ControllerProtocolWriter.batteryStatus(
                         batteryPercentage
                     )
@@ -514,7 +514,7 @@ public final class ControllerActivity extends Activity
             );
 
             if (server != null && server.isConnected()) {
-                server.send(
+                server.sendControl(
                     ControllerProtocolWriter.batteryStatus(
                         batteryPercentage
                     )
