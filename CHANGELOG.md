@@ -6,6 +6,11 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### UI integrity
+
+- Removed the inert **Prefer retro performance-first quality** Quality of Life switch and its orphaned stored-preference wiring. ReverieVR remains performance-first and retro-first by project doctrine; this is a product baseline, not a placebo user toggle.
+- Added an explicit project-management rule forbidding user-facing controls that do not reach implemented, observable behavior.
+
 ### Phone-test cloud build and prerelease
 
 - Added an explicitly authorized GitHub Actions phone-test workflow with manual dispatch, pinned Android/NDK inputs, third-party verification, tests, dual-APK assembly, APK content/signature checks, SHA-256 output, and GitHub prerelease publication.
