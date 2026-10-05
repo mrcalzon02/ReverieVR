@@ -356,46 +356,66 @@ final class DiagnosticSubmissionClient {
             );
         }
 
-        String serverHash =
-            json.optString("sha256", "")
-                .trim()
-                .toLowerCase(
-                    java.util.Locale.US
-                );
-        if (!serverHash.isEmpty()
-            && !serverHash.equals(
-                expectedSha256
-            )) {
+        return validateSuccessEvidence(
+            diagnosticId,
+            expectedSha256,
+            json.optString("sha256", ""),
+            json.optString("receiptReference", ""),
+            json.optString("issueUrl", ""),
+            json.optInt("issueNumber", -1)
+        );
+    }
+
+    static Result validateSuccessEvidence(
+        String diagnosticId,
+        String expectedSha256,
+        String serverHash,
+        String receiptReference,
+        String issueUrl,
+        int issueNumber
+    ) throws IOException {
+        String expected = expectedSha256 == null ? "" :
+            expectedSha256.trim().toLowerCase(java.util.Locale.US);
+        String actual = serverHash == null ? "" :
+            serverHash.trim().toLowerCase(java.util.Locale.US);
+        if (!expected.matches(SHA256_PATTERN)
+            || !actual.matches(SHA256_PATTERN)
+            || !actual.equals(expected)) {
             throw new IOException(
                 "Diagnostic intake hash verification failed."
             );
         }
 
-        String issueUrl =
-            json.optString(
-                "issueUrl",
-                ""
-            ).trim();
-        if (!issueUrl.startsWith(
-                "https://github.com/mrcalzon02/ReverieVR/issues/"
-            )) {
+        String receipt =
+            receiptReference == null ? "" : receiptReference.trim();
+        if (!diagnosticId.equals(receipt)) {
             throw new IOException(
-                "Diagnostic intake did not return a valid issue URL."
+                "Diagnostic intake receipt verification failed."
+            );
+        }
+        if (issueNumber <= 0) {
+            throw new IOException(
+                "Diagnostic intake did not return a valid issue number."
+            );
+        }
+
+        String canonicalIssueUrl =
+            "https://github.com/mrcalzon02/ReverieVR/issues/"
+                + issueNumber;
+        String returnedIssueUrl =
+            issueUrl == null ? "" : issueUrl.trim();
+        if (!canonicalIssueUrl.equals(returnedIssueUrl)) {
+            throw new IOException(
+                "Diagnostic intake did not return the expected issue URL."
             );
         }
 
         return new Result(
             diagnosticId,
-            expectedSha256,
-            json.optString(
-                "receiptReference",
-                diagnosticId
-            ),
-            issueUrl,
-            json.optInt(
-                "issueNumber",
-                -1
-            )
+            expected,
+            receipt,
+            returnedIssueUrl,
+            issueNumber
         );
     }
 
