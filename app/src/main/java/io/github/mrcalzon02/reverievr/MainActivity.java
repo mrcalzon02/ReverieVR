@@ -1091,9 +1091,11 @@ public final class MainActivity extends Activity
         String expected,
         boolean includeLogs
     ) {
+        if (submitDiagnosticsButton == null) {
+            return;
+        }
         if (bundle == null
-            || !bundle.isFile()
-            || submitDiagnosticsButton == null) {
+            || !bundle.isFile()) {
             submitDiagnosticsButton.setEnabled(true);
             refreshLoggingStatus();
             return;
@@ -1121,7 +1123,7 @@ public final class MainActivity extends Activity
                 + " ("
                 + Build.DEVICE
                 + ")";
-        String android =
+        String androidVersion =
             "Android "
                 + Build.VERSION.RELEASE
                 + " / API "
@@ -1142,7 +1144,7 @@ public final class MainActivity extends Activity
                         BuildConfig.VERSION_NAME,
                         BuildConfig.BUILD_TYPE,
                         device,
-                        android,
+                        androidVersion,
                         summary,
                         expectedText
                     )
