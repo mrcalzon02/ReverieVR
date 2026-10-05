@@ -50,6 +50,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
         UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     private static final long SCAN_TIMEOUT_MILLIS = 15000L;
+    private static final long POSE_STREAM_TIMEOUT_MILLIS = 8000L;
 
     private final Context context;
     private final BluetoothAdapter adapter;
@@ -65,10 +66,13 @@ final class DaydreamControllerProvider implements ControllerProvider {
     private BluetoothGattCharacteristic voltageCharacteristic;
 
     private boolean operationInFlight;
-    private boolean ready;
+    private volatile boolean ready;
+    private volatile boolean setupFailed;
+    private volatile boolean poseNotificationsConfigured;
     private int batteryPercentage = -1;
     private int batteryMillivolts = -1;
     private int scanGeneration;
+    private int poseWaitGeneration;
 
     private final BroadcastReceiver bondReceiver = new BroadcastReceiver() {
         @Override
@@ -88,7 +92,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
             }
 
             if (device == null || pendingDevice == null
-                || !device.getAddress().equals(pendingDevice.getAddress())) {
+                || !device.equals(pendingDevice)) {
                 return;
             }
 
@@ -128,23 +132,33 @@ final class DaydreamControllerProvider implements ControllerProvider {
                 return;
             }
 
-            int bondState = device.getBondState();
-            if (bondState == BluetoothDevice.BOND_BONDED) {
-                emitConnection(ConnectionState.CONNECTING, "Controller found. Connecting…");
-                connect(device);
-            } else if (bondState == BluetoothDevice.BOND_BONDING) {
-                emitConnection(ConnectionState.BONDING, "Waiting for Android pairing…");
-            } else {
-                emitConnection(
-                    ConnectionState.BONDING,
-                    "Controller found. Confirm Android's pairing prompt if shown."
-                );
-                if (!device.createBond()) {
+            try {
+                int bondState = device.getBondState();
+                if (bondState == BluetoothDevice.BOND_BONDED) {
                     emitConnection(
-                        ConnectionState.ERROR,
-                        "Android could not start controller bonding."
+                        ConnectionState.CONNECTING,
+                        "Controller found. Connecting…"
                     );
+                    connect(device);
+                } else if (bondState == BluetoothDevice.BOND_BONDING) {
+                    emitConnection(
+                        ConnectionState.BONDING,
+                        "Waiting for Android pairing…"
+                    );
+                } else {
+                    emitConnection(
+                        ConnectionState.BONDING,
+                        "Controller found. Confirm Android's pairing prompt if shown."
+                    );
+                    if (!device.createBond()) {
+                        emitConnection(
+                            ConnectionState.ERROR,
+                            "Android could not start controller bonding."
+                        );
+                    }
                 }
+            } catch (SecurityException exception) {
+                handleBluetoothPermissionLoss();
             }
         }
 
@@ -179,11 +193,12 @@ final class DaydreamControllerProvider implements ControllerProvider {
                     ConnectionState.DISCOVERING,
                     "Connected. Reading controller services…"
                 );
-                if (!callbackGatt.discoverServices()) {
-                    emitConnection(
-                        ConnectionState.ERROR,
-                        "Android could not start service discovery."
-                    );
+                try {
+                    if (!callbackGatt.discoverServices()) {
+                        failSetup("Android could not start controller service discovery.");
+                    }
+                } catch (SecurityException exception) {
+                    handleBluetoothPermissionLoss();
                 }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 ready = false;
@@ -236,27 +251,24 @@ final class DaydreamControllerProvider implements ControllerProvider {
                 ? null
                 : batteryService.getCharacteristic(BATTERY_LEVEL_CHARACTERISTIC);
 
+            ready = false;
+            setupFailed = false;
+            poseNotificationsConfigured = false;
+            poseWaitGeneration++;
             clearGattQueue();
-            queueEnableNotifications(callbackGatt, pose);
+
+            if (!queueEnableNotifications(callbackGatt, pose, true)) {
+                return;
+            }
 
             if (batteryCharacteristic != null) {
-                queueEnableNotifications(callbackGatt, batteryCharacteristic);
+                queueEnableNotifications(callbackGatt, batteryCharacteristic, false);
                 queueRead(callbackGatt, batteryCharacteristic);
             }
 
             if (voltageCharacteristic != null) {
                 queueRead(callbackGatt, voltageCharacteristic);
             }
-
-            queueOperation(() -> {
-                ready = true;
-                emitConnection(
-                    ConnectionState.READY,
-                    "Daydream controller connected and streaming."
-                );
-                emitBattery();
-                return false;
-            });
         }
 
         @Override
@@ -265,11 +277,28 @@ final class DaydreamControllerProvider implements ControllerProvider {
             BluetoothGattDescriptor descriptor,
             int status
         ) {
-            if (status != BluetoothGatt.GATT_SUCCESS) {
-                emitConnection(
-                    ConnectionState.ERROR,
-                    "Controller notification setup failed (" + status + ")."
-                );
+            boolean poseDescriptor =
+                descriptor != null
+                    && descriptor.getCharacteristic() != null
+                    && POSE_CHARACTERISTIC.equals(
+                        descriptor.getCharacteristic().getUuid()
+                    );
+
+            if (poseDescriptor) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    poseNotificationsConfigured = true;
+                    emitConnection(
+                        ConnectionState.DISCOVERING,
+                        "Pose channel subscribed. Waiting for controller data…"
+                    );
+                    schedulePoseStreamTimeout();
+                } else {
+                    failSetup(
+                        "Controller pose notification setup failed ("
+                            + status
+                            + ")."
+                    );
+                }
             }
             completeGattOperation();
         }
@@ -402,11 +431,16 @@ final class DaydreamControllerProvider implements ControllerProvider {
             return;
         }
 
-        if (!adapter.isEnabled()) {
-            emitConnection(
-                ConnectionState.BLUETOOTH_DISABLED,
-                "Bluetooth is turned off."
-            );
+        try {
+            if (!adapter.isEnabled()) {
+                emitConnection(
+                    ConnectionState.BLUETOOTH_DISABLED,
+                    "Bluetooth is turned off."
+                );
+                return;
+            }
+        } catch (SecurityException exception) {
+            handleBluetoothPermissionLoss();
             return;
         }
 
@@ -430,11 +464,17 @@ final class DaydreamControllerProvider implements ControllerProvider {
         );
 
         final int generation = ++scanGeneration;
-        scanner.startScan(
-            new ArrayList<>(),
-            settings,
-            scanCallback
-        );
+        try {
+            scanner.startScan(
+                new ArrayList<>(),
+                settings,
+                scanCallback
+            );
+        } catch (SecurityException exception) {
+            scanner = null;
+            handleBluetoothPermissionLoss();
+            return;
+        }
 
         mainHandler.postDelayed(
             () -> {
@@ -458,10 +498,19 @@ final class DaydreamControllerProvider implements ControllerProvider {
 
         BluetoothGatt activeGatt = gatt;
         if (activeGatt != null) {
-            activeGatt.disconnect();
-            activeGatt.close();
-            gatt = null;
+            try {
+                activeGatt.disconnect();
+            } catch (SecurityException ignored) {
+                // Permission may have been revoked while the connection was active.
+            } finally {
+                activeGatt.close();
+                gatt = null;
+            }
         }
+
+        setupFailed = false;
+        poseNotificationsConfigured = false;
+        poseWaitGeneration++;
 
         controlCharacteristic = null;
         batteryCharacteristic = null;
@@ -483,13 +532,28 @@ final class DaydreamControllerProvider implements ControllerProvider {
     }
 
     private void connect(BluetoothDevice device) {
+        if (!hasConnectPermission()) {
+            handleBluetoothPermissionLoss();
+            return;
+        }
+
         closeGatt();
-        gatt = device.connectGatt(
-            context,
-            false,
-            gattCallback,
-            BluetoothDevice.TRANSPORT_LE
-        );
+        try {
+            gatt = device.connectGatt(
+                context,
+                false,
+                gattCallback,
+                BluetoothDevice.TRANSPORT_LE
+            );
+            if (gatt == null) {
+                emitConnection(
+                    ConnectionState.ERROR,
+                    "Android did not create a controller GATT connection."
+                );
+            }
+        } catch (SecurityException exception) {
+            handleBluetoothPermissionLoss();
+        }
     }
 
     private boolean isDaydreamCandidate(ScanResult result) {
@@ -548,40 +612,65 @@ final class DaydreamControllerProvider implements ControllerProvider {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
-    private void queueEnableNotifications(
+    private boolean queueEnableNotifications(
         BluetoothGatt callbackGatt,
-        BluetoothGattCharacteristic characteristic
+        BluetoothGattCharacteristic characteristic,
+        boolean requiredForReady
     ) {
-        if (!callbackGatt.setCharacteristicNotification(characteristic, true)) {
-            emitConnection(
-                ConnectionState.ERROR,
-                "Android rejected controller notification setup."
-            );
-            return;
+        try {
+            if (!callbackGatt.setCharacteristicNotification(characteristic, true)) {
+                if (requiredForReady) {
+                    failSetup("Android rejected controller pose notification setup.");
+                }
+                return false;
+            }
+        } catch (SecurityException exception) {
+            handleBluetoothPermissionLoss();
+            return false;
         }
 
         BluetoothGattDescriptor descriptor =
             characteristic.getDescriptor(CLIENT_CONFIG_DESCRIPTOR);
         if (descriptor == null) {
-            emitConnection(
-                ConnectionState.ERROR,
-                "Controller notification descriptor is missing."
-            );
-            return;
+            if (requiredForReady) {
+                failSetup("Controller pose notification descriptor is missing.");
+            }
+            return false;
         }
 
-        queueOperation(() -> writeDescriptor(
-            callbackGatt,
-            descriptor,
-            BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        ));
+        queueOperation(() -> {
+            try {
+                boolean started = writeDescriptor(
+                    callbackGatt,
+                    descriptor,
+                    BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                );
+                if (!started && requiredForReady) {
+                    failSetup(
+                        "Android could not start controller pose notification setup."
+                    );
+                }
+                return started;
+            } catch (SecurityException exception) {
+                handleBluetoothPermissionLoss();
+                return false;
+            }
+        });
+        return true;
     }
 
     private void queueRead(
         BluetoothGatt callbackGatt,
         BluetoothGattCharacteristic characteristic
     ) {
-        queueOperation(() -> callbackGatt.readCharacteristic(characteristic));
+        queueOperation(() -> {
+            try {
+                return callbackGatt.readCharacteristic(characteristic);
+            } catch (SecurityException exception) {
+                handleBluetoothPermissionLoss();
+                return false;
+            }
+        });
     }
 
     private void queueWrite(
@@ -589,7 +678,14 @@ final class DaydreamControllerProvider implements ControllerProvider {
         BluetoothGattCharacteristic characteristic,
         byte[] value
     ) {
-        queueOperation(() -> writeCharacteristic(callbackGatt, characteristic, value));
+        queueOperation(() -> {
+            try {
+                return writeCharacteristic(callbackGatt, characteristic, value);
+            } catch (SecurityException exception) {
+                handleBluetoothPermissionLoss();
+                return false;
+            }
+        });
     }
 
     private boolean writeDescriptor(
@@ -697,6 +793,17 @@ final class DaydreamControllerProvider implements ControllerProvider {
 
             try {
                 ControllerSnapshot snapshot = DaydreamControllerPacket.parse(value);
+
+                if (!ready && poseNotificationsConfigured && !setupFailed) {
+                    ready = true;
+                    poseWaitGeneration++;
+                    emitConnection(
+                        ConnectionState.READY,
+                        "Daydream controller connected and streaming."
+                    );
+                    emitBattery();
+                }
+
                 Listener target = listener;
                 if (target != null) {
                     target.onControllerStateChanged(snapshot);
@@ -708,6 +815,45 @@ final class DaydreamControllerProvider implements ControllerProvider {
             batteryPercentage = Math.max(0, Math.min(100, value[0] & 0xff));
             emitBattery();
         }
+    }
+
+    private void schedulePoseStreamTimeout() {
+        final int generation = ++poseWaitGeneration;
+        mainHandler.postDelayed(
+            () -> {
+                if (!ready
+                    && poseNotificationsConfigured
+                    && !setupFailed
+                    && generation == poseWaitGeneration) {
+                    failSetup(
+                        "Controller pose channel was enabled, but no pose packets arrived."
+                    );
+                }
+            },
+            POSE_STREAM_TIMEOUT_MILLIS
+        );
+    }
+
+    private void failSetup(String message) {
+        ready = false;
+        setupFailed = true;
+        poseNotificationsConfigured = false;
+        poseWaitGeneration++;
+        clearGattQueue();
+        emitConnection(ConnectionState.ERROR, message);
+    }
+
+    private void handleBluetoothPermissionLoss() {
+        ready = false;
+        setupFailed = true;
+        poseNotificationsConfigured = false;
+        poseWaitGeneration++;
+        clearGattQueue();
+        emitConnection(
+            ConnectionState.PERMISSION_REQUIRED,
+            "Bluetooth permission was removed while the controller was active."
+        );
+        closeGatt();
     }
 
     private void emitBattery() {

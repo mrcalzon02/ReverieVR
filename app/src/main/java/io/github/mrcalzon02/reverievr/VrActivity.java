@@ -11,7 +11,8 @@ import android.view.WindowManager;
 
 import com.google.cardboard.proto.CardboardDevice;
 import com.google.cardboard.sdk.CardboardView;
-import com.google.cardboard.sdk.CardboardViewApi;
+import com.google.cardboard.sdk.QrCode;
+import com.google.cardboard.sdk.deviceparams.DeviceParamsUtils;
 
 public final class VrActivity extends Activity
     implements ControllerManager.Listener, VrShellRenderer.Host {
@@ -39,11 +40,12 @@ public final class VrActivity extends Activity
             ((ReverieApplication) getApplication()).getControllerManager();
 
         ReveriePreferences preferences = new ReveriePreferences(this);
-        float viewerIpd = readViewerInterLensDistance();
 
         CardboardView.setUseCardboardGlSurfaceView(true);
         cardboardView = new CardboardView(this);
         cardboardView.setStereoRenderMode(true);
+
+        float viewerIpd = readViewerInterLensDistance();
 
         renderer = new VrShellRenderer(preferences, viewerIpd, this);
         renderer.setPhoneBattery(readPhoneBattery());
@@ -169,13 +171,14 @@ public final class VrActivity extends Activity
     }
 
     private float readViewerInterLensDistance() {
-        CardboardViewApi api = new CardboardViewApi(this);
         try {
-            if (!api.hasSavedDeviceParams()) {
+            byte[] savedParams = QrCode.getSavedDeviceParams();
+            if (savedParams == null) {
                 return SAFE_VIEWER_FALLBACK_IPD_METERS;
             }
 
-            CardboardDevice.DeviceParams params = api.getSavedDeviceParams();
+            CardboardDevice.DeviceParams params =
+                DeviceParamsUtils.parseCardboardDeviceParams(savedParams);
             if (params == null || !params.hasInterLensDistance()) {
                 return SAFE_VIEWER_FALLBACK_IPD_METERS;
             }
@@ -187,8 +190,6 @@ public final class VrActivity extends Activity
             return value;
         } catch (RuntimeException exception) {
             return SAFE_VIEWER_FALLBACK_IPD_METERS;
-        } finally {
-            api.close();
         }
     }
 
