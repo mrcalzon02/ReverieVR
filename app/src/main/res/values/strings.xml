@@ -60,6 +60,22 @@ Available: %2$s</string>
     <string name="update_digest_failed">Update integrity check failed. The APK will not be installed.</string>
     <string name="update_installer_unavailable">Android could not open the package installer.</string>
 
+    <string name="diagnostics_section">Diagnostics &amp; logging</string>
+    <string name="logging_status_standard">Standard logging: incidents and milestone events only.</string>
+    <string name="logging_status_development">Development logging: heavy diagnostic capture is enabled. Do not use this mode for performance or thermal acceptance.</string>
+    <string name="logging_standard_label">Standard — incidents + milestones</string>
+    <string name="logging_development_label">Development — diagnostic / high-volume</string>
+    <string name="logging_privacy_note">Logs stay in ReverieVR private storage until you explicitly export them. Development logs may contain device names, local filenames, module names, controller/input state and timing data. Review the ZIP before sharing it.</string>
+    <string name="export_diagnostic_bundle">Export diagnostic bundle</string>
+    <string name="clear_logs">Clear local logs</string>
+    <string name="clear_logs_title">Clear ReverieVR logs?</string>
+    <string name="clear_logs_message">This deletes ReverieVR&apos;s local standard/development log history. It does not affect imported games or settings.</string>
+    <string name="clear_logs_confirm">Clear logs</string>
+    <string name="log_export_in_progress">Building diagnostic ZIP…</string>
+    <string name="log_export_complete">Diagnostic bundle exported.</string>
+    <string name="log_export_failed_format">Diagnostic export failed: %1$s</string>
+    <string name="log_export_unavailable">No Android document provider is available for diagnostic export.</string>
+
     <string name="qol_section">Quality of life</string>
     <string name="battery_hud_label">Show phone + controller battery HUD in VR</string>
     <string name="look_up_reveal_label">Auto-reveal / expand HUD when looking upward</string>

@@ -218,6 +218,71 @@
 
             <TextView
                 style="@style/ReverieSectionTitle"
+                android:text="@string/diagnostics_section" />
+
+            <TextView
+                android:id="@+id/logging_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/logging_status_standard"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <RadioGroup
+                android:id="@+id/logging_mode_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/logging_standard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/logging_standard_label"
+                    android:textColor="@color/text_primary" />
+
+                <RadioButton
+                    android:id="@+id/logging_development"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/logging_development_label"
+                    android:textColor="@color/text_primary" />
+            </RadioGroup>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/logging_privacy_note"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/export_logs_button"
+                style="@style/ReveriePrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/export_diagnostic_bundle" />
+
+            <Button
+                android:id="@+id/clear_logs_button"
+                style="@style/ReverieSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/clear_logs" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/ReveriePanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/ReverieSectionTitle"
                 android:text="@string/qol_section" />
 
             <Switch

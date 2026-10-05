@@ -23,6 +23,8 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +38,7 @@ public final class MainActivity extends Activity
     private static final int CONTROLLER_PERMISSION_REQUEST = 1201;
     private static final int MEDIA_PICK_REQUEST = 1202;
     private static final int DOS_PICK_REQUEST = 1203;
+    private static final int LOG_EXPORT_REQUEST = 1204;
 
     private static final int PENDING_CONTROLLER_NONE = 0;
     private static final int PENDING_CONTROLLER_DAYDREAM = 1;
@@ -50,7 +53,10 @@ public final class MainActivity extends Activity
     private VrInputRouter inputRouter;
     private DosModuleRepository dosModuleRepository;
     private DosModuleImporter dosModuleImporter;
+    private DiagnosticBundleExporter diagnosticBundleExporter;
     private final ExecutorService dosImportExecutor =
+        Executors.newSingleThreadExecutor();
+    private final ExecutorService diagnosticExecutor =
         Executors.newSingleThreadExecutor();
 
     private TextView phoneBatteryText;
@@ -61,6 +67,7 @@ public final class MainActivity extends Activity
     private TextView updateStatusText;
     private TextView selectedVideoText;
     private TextView dosModuleStatusText;
+    private TextView loggingStatusText;
 
     private ProgressBar phoneBatteryBar;
     private ProgressBar controllerBatteryBar;
@@ -81,7 +88,10 @@ public final class MainActivity extends Activity
     private Button clearVideoButton;
     private Button importDosButton;
     private Button clearDosModulesButton;
+    private Button exportLogsButton;
+    private Button clearLogsButton;
     private RadioGroup videoProjectionGroup;
+    private RadioGroup loggingModeGroup;
 
     private boolean controllerTestEnabled;
     private boolean inputDeviceListenerRegistered;
@@ -111,6 +121,8 @@ public final class MainActivity extends Activity
                 this,
                 dosModuleRepository
             );
+        diagnosticBundleExporter =
+            new DiagnosticBundleExporter(this);
 
         bindViews();
         configurePersistentControls();
@@ -122,6 +134,11 @@ public final class MainActivity extends Activity
         refreshDosModuleStatus();
         controllerManager.addListener(this);
         refreshInputReadiness();
+
+        ReverieLog.milestone(
+            "STAGE_A",
+            "Stage A setup screen ready."
+        );
 
         if (preferences.isAutoUpdateCheckEnabled()) {
             checkForUpdates(false);
@@ -159,6 +176,7 @@ public final class MainActivity extends Activity
             updateInstaller.close();
         }
         dosImportExecutor.shutdownNow();
+        diagnosticExecutor.shutdownNow();
         super.onDestroy();
     }
 
@@ -191,6 +209,7 @@ public final class MainActivity extends Activity
         updateStatusText = findViewById(R.id.update_status);
         selectedVideoText = findViewById(R.id.selected_video_status);
         dosModuleStatusText = findViewById(R.id.dos_module_status);
+        loggingStatusText = findViewById(R.id.logging_status);
 
         phoneBatteryBar = findViewById(R.id.phone_battery_bar);
         controllerBatteryBar = findViewById(R.id.controller_battery_bar);
@@ -212,7 +231,10 @@ public final class MainActivity extends Activity
         importDosButton = findViewById(R.id.import_dos_button);
         clearDosModulesButton =
             findViewById(R.id.clear_dos_modules_button);
+        exportLogsButton = findViewById(R.id.export_logs_button);
+        clearLogsButton = findViewById(R.id.clear_logs_button);
         videoProjectionGroup = findViewById(R.id.video_projection_group);
+        loggingModeGroup = findViewById(R.id.logging_mode_group);
     }
 
     private void configurePersistentControls() {
@@ -232,6 +254,18 @@ public final class MainActivity extends Activity
         );
         autoUpdateCheckSwitch.setOnCheckedChangeListener(
             (button, checked) -> preferences.setAutoUpdateCheckEnabled(checked)
+        );
+
+        loggingModeGroup.setOnCheckedChangeListener(
+            (group, checkedId) -> {
+                LoggingMode mode =
+                    checkedId == R.id.logging_development
+                        ? LoggingMode.DEVELOPMENT
+                        : LoggingMode.STANDARD;
+                preferences.setLoggingMode(mode);
+                ReverieLog.setMode(mode);
+                refreshLoggingStatus();
+            }
         );
 
         videoProjectionGroup.setOnCheckedChangeListener((group, checkedId) -> {
@@ -283,6 +317,13 @@ public final class MainActivity extends Activity
         );
         clearDosModulesButton.setOnClickListener(
             view -> clearDosModules()
+        );
+
+        exportLogsButton.setOnClickListener(
+            view -> chooseDiagnosticExportDestination()
+        );
+        clearLogsButton.setOnClickListener(
+            view -> confirmClearLogs()
         );
 
         Button resetButton = findViewById(R.id.reset_settings_button);
@@ -490,6 +531,11 @@ public final class MainActivity extends Activity
 
         if (requestCode == DOS_PICK_REQUEST) {
             handleSelectedDosContent(data);
+            return;
+        }
+
+        if (requestCode == LOG_EXPORT_REQUEST) {
+            handleDiagnosticExport(data.getData());
         }
     }
 
@@ -560,6 +606,14 @@ public final class MainActivity extends Activity
                         displayName
                     );
 
+                ReverieLog.milestone(
+                    "DOS_IMPORT",
+                    "Imported module "
+                        + module.displayName
+                        + " from "
+                        + module.originalFileName
+                );
+
                 runOnUiThread(() -> {
                     importDosButton.setEnabled(true);
                     refreshDosModuleStatus();
@@ -573,6 +627,12 @@ public final class MainActivity extends Activity
                     ).show();
                 });
             } catch (Exception exception) {
+                ReverieLog.error(
+                    "DOS_IMPORT",
+                    "DOS content import failed.",
+                    exception
+                );
+
                 String message =
                     exception.getMessage() == null
                         ? exception.getClass().getSimpleName()
@@ -632,6 +692,134 @@ public final class MainActivity extends Activity
         return last == null || last.trim().isEmpty()
             ? safeFallback
             : last;
+    }
+
+    private void chooseDiagnosticExportDestination() {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+
+        String stamp =
+            LocalDateTime.now().format(
+                DateTimeFormatter.ofPattern(
+                    "yyyyMMdd-HHmmss",
+                    Locale.US
+                )
+            );
+        intent.putExtra(
+            Intent.EXTRA_TITLE,
+            "ReverieVR-diagnostics-"
+                + stamp
+                + ".zip"
+        );
+
+        try {
+            startActivityForResult(
+                intent,
+                LOG_EXPORT_REQUEST
+            );
+        } catch (ActivityNotFoundException exception) {
+            ReverieLog.error(
+                "DIAGNOSTICS",
+                "No document provider available for log export.",
+                exception
+            );
+            Toast.makeText(
+                this,
+                R.string.log_export_unavailable,
+                Toast.LENGTH_LONG
+            ).show();
+        }
+    }
+
+    private void handleDiagnosticExport(Uri destination) {
+        if (destination == null) {
+            return;
+        }
+
+        exportLogsButton.setEnabled(false);
+        loggingStatusText.setText(
+            R.string.log_export_in_progress
+        );
+
+        diagnosticExecutor.execute(() -> {
+            try {
+                ReverieLog.milestone(
+                    "DIAGNOSTICS",
+                    "Manual diagnostic export started."
+                );
+                diagnosticBundleExporter.export(
+                    destination
+                );
+                ReverieLog.milestone(
+                    "DIAGNOSTICS",
+                    "Manual diagnostic export completed."
+                );
+
+                runOnUiThread(() -> {
+                    exportLogsButton.setEnabled(true);
+                    refreshLoggingStatus();
+                    Toast.makeText(
+                        this,
+                        R.string.log_export_complete,
+                        Toast.LENGTH_SHORT
+                    ).show();
+                });
+            } catch (Exception exception) {
+                ReverieLog.error(
+                    "DIAGNOSTICS",
+                    "Manual diagnostic export failed.",
+                    exception
+                );
+
+                runOnUiThread(() -> {
+                    exportLogsButton.setEnabled(true);
+                    refreshLoggingStatus();
+                    Toast.makeText(
+                        this,
+                        getString(
+                            R.string.log_export_failed_format,
+                            exception.getMessage() == null
+                                ? exception.getClass().getSimpleName()
+                                : exception.getMessage()
+                        ),
+                        Toast.LENGTH_LONG
+                    ).show();
+                });
+            }
+        });
+    }
+
+    private void confirmClearLogs() {
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.clear_logs_title)
+            .setMessage(R.string.clear_logs_message)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(
+                R.string.clear_logs_confirm,
+                (dialog, which) -> {
+                    ReverieLog.clearLogs();
+                    refreshLoggingStatus();
+                }
+            )
+            .show();
+    }
+
+    private void refreshLoggingStatus() {
+        if (loggingStatusText == null) {
+            return;
+        }
+
+        LoggingMode mode =
+            preferences == null
+                ? ReverieLog.getMode()
+                : preferences.getLoggingMode();
+
+        loggingStatusText.setText(
+            mode == LoggingMode.DEVELOPMENT
+                ? R.string.logging_status_development
+                : R.string.logging_status_standard
+        );
     }
 
     private void chooseDosContent() {
@@ -793,6 +981,15 @@ public final class MainActivity extends Activity
             preferences.isAutoUpdateCheckEnabled()
         );
 
+        LoggingMode loggingMode =
+            preferences.getLoggingMode();
+        loggingModeGroup.check(
+            loggingMode == LoggingMode.DEVELOPMENT
+                ? R.id.logging_development
+                : R.id.logging_standard
+        );
+        refreshLoggingStatus();
+
         VideoProjection projection = preferences.getVideoProjection();
         videoProjectionGroup.check(
             projection == VideoProjection.MONO_EQUIRECTANGULAR_360
@@ -842,6 +1039,15 @@ public final class MainActivity extends Activity
         controllerConnectionState = state;
         controllerConnectionMessage =
             message == null ? "" : message;
+
+        ReverieLog.milestone(
+            "CONTROLLER",
+            "State="
+                + state
+                + " message="
+                + controllerConnectionMessage
+        );
+
         runOnUiThread(this::refreshInputReadiness);
     }
 
