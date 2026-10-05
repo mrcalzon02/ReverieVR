@@ -210,7 +210,7 @@ final class ControllerServer implements AutoCloseable {
                         localClient.getOutputStream()
                     );
                     connected = true;
-                    sendQueue.clear();
+                    clearPendingMessages();
                 }
 
                 closeServerSocket();
@@ -243,7 +243,7 @@ final class ControllerServer implements AutoCloseable {
                 }
             } finally {
                 connected = false;
-                sendQueue.clear();
+                clearPendingMessages();
 
                 synchronized (connectionLock) {
                     output = null;
@@ -335,7 +335,7 @@ final class ControllerServer implements AutoCloseable {
 
     private void handleWriteFailure(IOException exception) {
         connected = false;
-        sendQueue.clear();
+        clearPendingMessages();
         closeClient();
 
         if (running) {
