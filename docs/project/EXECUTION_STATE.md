@@ -75,6 +75,7 @@ Implemented:
 - live Android gamepad/joystick readiness detection;
 - update status/check controls;
 - local reset/recovery;
+- centralized pressed/disabled/failure button states with ACK/NACK audio feedback across Stage A, Stage B shell selection/rejection, and the controller companion;
 - Enter VR gated on a ready controller.
 
 Remaining gate: build and reference-device interaction test.
