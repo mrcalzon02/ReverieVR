@@ -140,22 +140,24 @@ On the Galaxy S9:
    - connect a standard Bluetooth or USB Android gamepad and verify Stage A reports it as ready without pretending controller battery telemetry exists;
 8. tap **Enter VR**;
 9. verify stereo distortion/head tracking;
-10. verify the first-run VR setup page is readable;
-11. verify head gaze + Select navigation using each available input source;
-12. verify Daydream/phone-emulator Home and generic-gamepad Start/Mode recenter software heading;
-13. verify App/B/Back returns/backtracks and Exit returns to Stage A;
-14. from Stage A, choose a known-good local video through the Android document picker;
-15. verify the selected URI survives leaving and returning to Stage A;
-16. enter VR and launch the selected video in **Flat cinema screen** mode;
-17. verify Select toggles play/pause, Daydream/phone-emulator horizontal swipes or generic-gamepad left/right navigation seek by 10 seconds, and Back returns to the VR home without killing the shell;
-18. repeat with a known-good mono equirectangular 360° video and verify head-look orientation, seam placement, and absence of horizontal mirroring;
-19. background/resume ReverieVR during playback and verify the decoder reattaches if Android recreates the GL surface;
-20. confirm swipe/axis polarity matches left = backward and right = forward; if hardware reports the opposite X orientation, capture that as a controller-axis defect rather than silently swapping protocol semantics;
-21. start the scrcpy helper over USB and verify Stage A mouse/keyboard/touch control;
-22. keep scrcpy running, enter Stage B, and verify stereo/head-tracked output remains observable while Daydream BLE input continues working;
-23. confirm the phone display remains illuminated in the headset and that USB debugging does not disturb controller pairing;
-24. where useful, capture a short scrcpy recording for defect evidence;
-25. close scrcpy before sustained performance/thermal measurements;
-26. run a sustained playback session without scrcpy and record frame pacing, decoder failures, battery drain, temperature/throttling, and audio/video sync.
+10. verify setup schema v2 appears and all six pages are readable;
+11. on the controller familiarization page, verify the active source and last-action display update for Select, Back, Recenter, directional input and volume where supported;
+12. verify Back is captured on the familiarization page instead of navigating away, then repeat the familiarization test with each available input source;
+13. verify head gaze + Select navigation using each available input source;
+14. verify Daydream/phone-emulator Home and generic-gamepad Start/Mode recenter software heading;
+15. verify App/B/Back returns/backtracks and Exit returns to Stage A;
+16. from Stage A, choose a known-good local video through the Android document picker;
+17. verify the selected URI survives leaving and returning to Stage A;
+18. enter VR and launch the selected video in **Flat cinema screen** mode;
+19. verify Select toggles play/pause, Daydream/phone-emulator horizontal swipes or generic-gamepad left/right navigation seek by 10 seconds, and Back returns to the VR home without killing the shell;
+20. repeat with a known-good mono equirectangular 360° video and verify head-look orientation, seam placement, and absence of horizontal mirroring;
+21. background/resume ReverieVR during playback and verify the decoder reattaches if Android recreates the GL surface;
+22. confirm swipe/axis polarity matches left = backward and right = forward; if hardware reports the opposite X orientation, capture that as a controller-axis defect rather than silently swapping protocol semantics;
+23. start the scrcpy helper over USB and verify Stage A mouse/keyboard/touch control;
+24. keep scrcpy running, enter Stage B, and verify stereo/head-tracked output remains observable while Daydream BLE input continues working;
+25. confirm the phone display remains illuminated in the headset and that USB debugging does not disturb controller pairing;
+26. where useful, capture a short scrcpy recording for defect evidence;
+27. close scrcpy before sustained performance/thermal measurements;
+28. run a sustained playback session without scrcpy and record frame pacing, decoder failures, battery drain, temperature/throttling, and audio/video sync.
 
 Do not mark RV-0003, RV-0006, RV-0091, RV-0092, RV-0100, RV-0102, RV-0500 or RV-0501 device-accepted until the relevant checks have actually run.
