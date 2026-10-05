@@ -13,7 +13,7 @@ Acceptance states:
 
 | Target | Description | State | Evidence / remaining gate |
 |---|---|---|---|
-| RV-0001 | Project governance/bootstrap | draft | Must verify committed remote files and resulting `main` SHA. |
+| RV-0001 | Project governance/bootstrap | **static accepted** | Governance baseline committed and independently read back from remote `main` at `542a6d14121ba986f73b5b940c5debbeb0a0f057`. |
 | RV-0002 | Framework/runtime selection | planned | Requires research, license/provenance review, and recorded architecture decision. |
 | RV-0003 | Android APK skeleton | planned | Must build and install/launch on reference device. |
 | RV-0100 | VR shell/menu | planned | Must be operable in headset without touchscreen dependency. |

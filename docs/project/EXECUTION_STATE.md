@@ -7,31 +7,51 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Session starting remote HEAD: `0e071ad98e3a180ea336cc67bee0bb0afbbdd118`
-- Starting tree contained only `README.md` and `test`.
+- Governance session starting remote HEAD: `0e071ad98e3a180ea336cc67bee0bb0afbbdd118`
+- Governance baseline commit: `542a6d14121ba986f73b5b940c5debbeb0a0f057`
+- Remote readback confirmed `main` contained the governance baseline commit and its expected project/record files.
 
-## Active target
+## Last completed target
 
 **RV-0001 — Governance/bootstrap adoption**
 
-Intent: establish durable project rules, APK construction order, performance doctrine, input baseline, backlog, execution state, acceptance ledger, and decision-record structure before implementation begins.
+Result:
 
-## Last verified state before this document
+- AI Project Manager-compatible project roles established;
+- main-only/no-GitHub-Actions repository policy established;
+- APK construction order established;
+- seated head-look/controller input baseline recorded;
+- performance-first retro VR doctrine accepted;
+- backlog, execution state, acceptance ledger, and ADR structure established;
+- meaningless initial `test` placeholder removed.
 
-Remote `main` was freshly read and matched the starting SHA above. No concurrent repository changes were observed before the governance mutation began.
+Acceptance: **static accepted**. No device/runtime validation is required for the governance target itself.
 
-## Validation required for RV-0001
+## Active target
 
-- new governance files present on remote `main`;
-- README routes maintainers to authoritative documents;
-- no branch other than the existing policy is created by this work;
-- resulting commit is independently read back;
-- acceptance ledger records the governance baseline accurately.
+**RV-0002 — Framework/runtime selection research**
 
-## Next eligible target after RV-0001
+Select the smallest sustainable Android VR/rendering stack that can support the Galaxy S9 + Daydream View reference path offline.
 
-**RV-0002 — Framework/runtime selection research** for the smallest sustainable Android VR stack that can support the Galaxy S9 + Daydream View reference path offline.
+Required decision evidence:
+
+- candidate frameworks/runtimes;
+- current source/maintenance state;
+- license and redistribution implications;
+- Android API/ABI compatibility;
+- rendering/head-tracking/viewer support;
+- ability to operate without discontinued Daydream services;
+- controller/input integration implications;
+- APK/runtime size and performance implications;
+- build reproducibility;
+- selected baseline and rejected alternatives.
+
+The decision must be persisted as an architecture/decision record before implementation commits depend on it.
+
+## Next after RV-0002
+
+**RV-0003 — Android APK skeleton**, followed by the Phase 1 ReverieVR shell/menu work defined in `APK_BUILD_ORDER.md`.
 
 ## Blocker
 
-None at session start.
+None.
