@@ -177,39 +177,6 @@ public final class MainActivity extends Activity
         }
     }
 
-    @Override
-    protected void onActivityResult(
-        int requestCode,
-        int resultCode,
-        Intent data
-    ) {
-        super.onActivityResult(
-            requestCode,
-            resultCode,
-            data
-        );
-
-        if (requestCode != VR_LAUNCH_REQUEST) {
-            return;
-        }
-
-        String failure =
-            data == null
-                ? ""
-                : data.getStringExtra(
-                    VrActivity.EXTRA_STARTUP_ERROR
-                );
-
-        if (failure == null
-            || failure.trim().isEmpty()) {
-            return;
-        }
-
-        VrStartupGuard.clear(this);
-        uiFeedback.failure(enterVrButton);
-        showVrStartupFailure(failure);
-    }
-
     private void launchVr() {
         VrStartupGuard.begin(this);
 
@@ -687,6 +654,23 @@ public final class MainActivity extends Activity
         Intent data
     ) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == VR_LAUNCH_REQUEST) {
+            String failure =
+                data == null
+                    ? ""
+                    : data.getStringExtra(
+                        VrActivity.EXTRA_STARTUP_ERROR
+                    );
+
+            if (failure != null
+                && !failure.trim().isEmpty()) {
+                VrStartupGuard.clear(this);
+                uiFeedback.failure(enterVrButton);
+                showVrStartupFailure(failure);
+            }
+            return;
+        }
 
         if (resultCode != RESULT_OK
             || data == null
