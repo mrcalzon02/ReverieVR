@@ -13,6 +13,7 @@ final class VirtualInputBus {
     private float mouseRelativeY;
     private float mouseAbsoluteX = 0.5f;
     private float mouseAbsoluteY = 0.5f;
+    private float mouseWheel;
     private float joystickAxisX;
     private float joystickAxisY;
     private long generation;
@@ -98,6 +99,14 @@ final class VirtualInputBus {
         }
     }
 
+    synchronized void applyMouseWheel(float delta) {
+        if (delta == 0.0f) {
+            return;
+        }
+        mouseWheel += delta;
+        generation++;
+    }
+
     synchronized boolean isKeyDown(VirtualKey key) {
         return key != null && keys[key.ordinal()];
     }
@@ -123,6 +132,12 @@ final class VirtualInputBus {
     synchronized float consumeMouseRelativeY() {
         float value = mouseRelativeY;
         mouseRelativeY = 0.0f;
+        return value;
+    }
+
+    synchronized float consumeMouseWheel() {
+        float value = mouseWheel;
+        mouseWheel = 0.0f;
         return value;
     }
 
@@ -159,6 +174,7 @@ final class VirtualInputBus {
 
         mouseRelativeX = 0.0f;
         mouseRelativeY = 0.0f;
+        mouseWheel = 0.0f;
         joystickAxisX = 0.0f;
         joystickAxisY = 0.0f;
         generation++;
