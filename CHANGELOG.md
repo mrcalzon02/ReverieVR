@@ -10,6 +10,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 - Removed the inert **Prefer retro performance-first quality** Quality of Life switch and its orphaned stored-preference wiring. ReverieVR remains performance-first and retro-first by project doctrine; this is a product baseline, not a placebo user toggle.
 - Added an explicit project-management rule forbidding user-facing controls that do not reach implemented, observable behavior.
+- Added centralized activation and rejection/failure sounds for Stage A buttons, Stage B shell selections, and the controller-phone application's buttons.
+- Added explicit pressed, disabled, and temporary failure-flash visual states to the touchscreen button styles while preserving Stage B gaze-hover highlighting.
+- Made the controller companion's Start/Stop availability reflect actual server running state so the buttons cannot present an enabled no-op.
+- Added project doctrine requiring responsive visual states, normal activation sound, and a distinct failure/rejection sound for actionable controls.
 
 ### Phone-test cloud build and prerelease
 
