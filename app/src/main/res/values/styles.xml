@@ -35,19 +35,19 @@
     </style>
 
     <style name="ReveriePrimaryButton" parent="@android:style/Widget.Material.Button">
-        <item name="android:backgroundTint">@color/accent</item>
+        <item name="android:backgroundTint">@color/button_primary_tint</item>
         <item name="android:textColor">@color/button_text_dark</item>
         <item name="android:textAllCaps">false</item>
     </style>
 
     <style name="ReverieSecondaryButton" parent="@android:style/Widget.Material.Button">
-        <item name="android:backgroundTint">@color/accent_dark</item>
+        <item name="android:backgroundTint">@color/button_secondary_tint</item>
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textAllCaps">false</item>
     </style>
 
     <style name="ReverieDangerButton" parent="@android:style/Widget.Material.Button">
-        <item name="android:backgroundTint">@color/danger</item>
+        <item name="android:backgroundTint">@color/button_danger_tint</item>
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textAllCaps">false</item>
     </style>
