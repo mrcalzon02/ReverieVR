@@ -380,7 +380,7 @@ async function createGitHubIssue(env, metadata) {
     {
       method: "POST",
       headers: githubHeaders(tokenResponse.token),
-      body: JSON.stringify({title, body, labels: ["bug"]})
+      body: JSON.stringify({title, body})
     }
   );
 }
