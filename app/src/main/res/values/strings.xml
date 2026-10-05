@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReverieVR</string>
+    <string name="stage_a_title">Stage A — Headset setup</string>
+    <string name="stage_a_description">Prepare the phone and controller here, then enter the headset when the VR runtime reports ready.</string>
+
+    <string name="device_section">Device &amp; power</string>
+    <string name="phone_battery_format">Phone battery: %1$d%%</string>
+    <string name="phone_battery_unknown">Phone battery: --</string>
+    <string name="controller_battery_unknown">Controller battery: --</string>
+
+    <string name="controller_section">Controller</string>
+    <string name="controller_status_unavailable">Controller integration is not available in this build.</string>
+    <string name="controller_status_explanation">The menu is real; controller discovery, pairing, orientation and battery reporting remain gated on the verified controller stack. Android Bluetooth settings are available for inspection without claiming that generic Bluetooth pairing is sufficient.</string>
+    <string name="open_bluetooth_settings">Open Android Bluetooth settings</string>
+    <string name="bluetooth_settings_unavailable">Bluetooth settings are not available on this device.</string>
+
+    <string name="qol_section">Quality of life</string>
+    <string name="battery_hud_label">Show phone + controller battery HUD in VR</string>
+    <string name="look_up_reveal_label">Auto-reveal / expand HUD when looking upward</string>
+    <string name="show_percentages_label">Show numeric battery percentages</string>
+    <string name="retro_mode_label">Prefer retro performance-first quality</string>
+
+    <string name="vr_section">VR readiness</string>
+    <string name="vr_runtime_not_ready">Stage B is intentionally disabled until the VR renderer and controller path are implemented and verified.</string>
+    <string name="enter_vr">Enter VR</string>
+
+    <string name="recovery_section">Recovery</string>
+    <string name="recovery_description">This 2D screen remains the safe recovery authority if VR settings or controller bindings become unusable.</string>
+    <string name="reset_local_settings">Reset local settings</string>
+    <string name="reset_settings_title">Reset ReverieVR settings?</string>
+    <string name="reset_settings_message">This restores the local quality-of-life toggles to their defaults. It does not alter Android system settings.</string>
+    <string name="reset_settings_confirm">Reset</string>
+    <string name="settings_reset_complete">Local ReverieVR settings reset.</string>
+</resources>
