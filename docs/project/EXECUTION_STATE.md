@@ -73,7 +73,8 @@ Implemented:
 - controller Pair / Sync and live Test Controller flow;
 - paired-phone controller chooser for historical Daydream-compatible controller emulator apps;
 - live Android gamepad/joystick readiness detection;
-- update status/check controls;
+- visible installed version/build identity;
+- update status/check controls only when the build has a persistent signing identity;
 - local reset/recovery;
 - centralized pressed/disabled/failure button states with ACK/NACK audio feedback across Stage A, Stage B shell selection/rejection, and the controller companion;
 - Enter VR gated on a ready controller.
@@ -236,13 +237,24 @@ Implemented:
 - optional check on Stage A launch;
 - manual check;
 - authoritative source restricted to `mrcalzon02/ReverieVR` GitHub Releases;
+- release discovery reads the repository release list rather than GitHub's `/releases/latest` endpoint so phone-test prereleases are actually visible;
+- phone-test tags are ordered numerically as `phone-test-<run>-<attempt>` rather than being misparsed as semantic version zero;
+- each CI package receives an increasing Android `versionCode` from its workflow run number;
+- Stage A displays the exact installed app version, Android versionCode, phone-test run/attempt and short source revision;
 - explicit Update / Not now choice;
 - release notes;
 - trusted repository APK asset filtering;
 - Android Download Manager/package-installer handoff;
-- SHA-256 verification when GitHub publishes an asset digest.
+- SHA-256 verification when GitHub publishes an asset digest;
+- updater controls are omitted entirely unless the APK was built with a persistent phone-test signing identity.
 
-There are currently no published ReverieVR GitHub Releases, so the expected live result is that no published release exists.
+Root-cause evidence from published packages proved that the previous updater could not work end-to-end: phone-test releases are prereleases (and were invisible to `/releases/latest`), while phone-test #19 and #21 were signed by different ephemeral Android debug certificates. Android correctly refuses an in-place replacement signed by a different key.
+
+The release workflow now supports a persistent signing keystore through four protected secrets: `PHONE_TEST_KEYSTORE_BASE64`, `PHONE_TEST_STORE_PASSWORD`, `PHONE_TEST_KEY_ALIAS`, and `PHONE_TEST_KEY_PASSWORD`. Partial configuration fails closed. When no persistent signer is configured, the package remains manually installable but the updater panel is hidden rather than exposing placebo controls.
+
+One transition install is unavoidable: an already-installed ephemeral-debug build cannot update itself into the first persistently signed build. That first stable-signer package must be installed manually and may require uninstalling the older package because Android will not permit signature replacement. Once the stable signer is established, later packages can use the in-app update path.
+
+Remaining gates: verify the persistent signer is provisioned, install the first stable-signer package on the Galaxy S9, then prove one subsequent phone-test update downloads, verifies and installs over it without uninstalling.
 
 ### RV-0500 / RV-0501 — local flat video and mono 360 video
 
