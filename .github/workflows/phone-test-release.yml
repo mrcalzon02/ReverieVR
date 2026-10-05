@@ -126,6 +126,8 @@ jobs:
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_module_test_chamber.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_dos_host.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_dos_host.so"
+          unzip -l "$APK" | grep -F "lib/armeabi-v7a/libcardboard_sdk_jni.so"
+          unzip -l "$APK" | grep -F "lib/arm64-v8a/libcardboard_sdk_jni.so"
           APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/apksigner"
           VERIFY_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs "$APK")"
           printf '%s\n' "$VERIFY_OUTPUT"
