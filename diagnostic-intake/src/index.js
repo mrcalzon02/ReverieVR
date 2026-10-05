@@ -340,6 +340,11 @@ function inspectZip(bytes, limits) {
   const totalEntries = readU16(bytes, eocd + 10);
   const directorySize = readU32(bytes, eocd + 12);
   const directoryOffset = readU32(bytes, eocd + 16);
+  const archiveCommentLength = readU16(bytes, eocd + 20);
+
+  if (eocd + 22 + archiveCommentLength !== bytes.length) {
+    return {ok: false, reason: "trailing_zip_data"};
+  }
 
   if (diskEntries === 0xffff || totalEntries === 0xffff ||
       directorySize === 0xffffffff || directoryOffset === 0xffffffff) {
@@ -351,7 +356,7 @@ function inspectZip(bytes, limits) {
   if (totalEntries <= 0 || totalEntries > limits.maxEntries) {
     return {ok: false, reason: "zip_entry_count_invalid"};
   }
-  if (directoryOffset + directorySize > eocd || directoryOffset < 0) {
+  if (directoryOffset + directorySize !== eocd || directoryOffset < 0) {
     return {ok: false, reason: "central_directory_bounds_invalid"};
   }
 
@@ -371,6 +376,7 @@ function inspectZip(bytes, limits) {
     const nameLength = readU16(bytes, cursor + 28);
     const extraLength = readU16(bytes, cursor + 30);
     const commentLength = readU16(bytes, cursor + 32);
+    const localHeaderOffset = readU32(bytes, cursor + 42);
 
     if ((flags & 0x0001) !== 0) {
       return {ok: false, reason: "encrypted_zip_not_supported"};
@@ -390,6 +396,27 @@ function inspectZip(bytes, limits) {
       return {ok: false, reason: "unsafe_zip_path"};
     }
 
+    if (localHeaderOffset + 30 > directoryOffset
+        || readU32(bytes, localHeaderOffset) !== 0x04034b50) {
+      return {ok: false, reason: "local_header_invalid"};
+    }
+
+    const localNameLength = readU16(bytes, localHeaderOffset + 26);
+    const localExtraLength = readU16(bytes, localHeaderOffset + 28);
+    const localNameStart = localHeaderOffset + 30;
+    const localNameEnd = localNameStart + localNameLength;
+    const localDataStart = localNameEnd + localExtraLength;
+    if (localDataStart > directoryOffset
+        || localDataStart + compressedSize > directoryOffset) {
+      return {ok: false, reason: "local_entry_bounds_invalid"};
+    }
+
+    const localName =
+      decoder.decode(bytes.slice(localNameStart, localNameEnd)).replace(/\\/g, "/");
+    if (localName !== name) {
+      return {ok: false, reason: "local_name_mismatch"};
+    }
+
     if (name === "manifest.txt") {
       manifestSeen = true;
     } else if (!/^logs\/reverie-[^/]+$/.test(name)) {
@@ -404,7 +431,7 @@ function inspectZip(bytes, limits) {
     cursor = nameEnd + extraLength + commentLength;
   }
 
-  if (cursor > directoryOffset + directorySize) {
+  if (cursor !== directoryOffset + directorySize) {
     return {ok: false, reason: "central_directory_size_mismatch"};
   }
   if (!manifestSeen) {
