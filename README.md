@@ -15,7 +15,7 @@ The first product path is:
 3. transition into the stereoscopic ReverieVR home space;
 4. operate normal platform functions from inside the headset using head-look plus the controller.
 
-The VR home then provides full local settings control, performance diagnostics, module launching, and eventually video playback and small VR experiences.
+The VR home is the shell-owned control plane for settings, recovery, media, and later hosted experiences. A first draft local-media path now exists: Android document-picker selection, persisted local read access, flat virtual-screen playback, and mono equirectangular 360° playback. That path is source-complete but remains unaccepted until it builds and is exercised on the Galaxy S9 + Daydream View.
 
 ## Project authority
 

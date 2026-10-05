@@ -7,8 +7,8 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current verified remote implementation HEAD: `5bce34f4865e017c22d960cb1c995ec5eec910db`
-- Remote readback confirmed the Stage A application, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, unit-test sources, build instructions, and ADR-0007 are all present on `main`.
+- Current verified remote implementation baseline: `105b8d5d8d282a9025ce737cff79daa57995b89d`.
+- Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
 ## Last completed governance target
@@ -86,6 +86,8 @@ Implemented:
 - Android bonding flow;
 - GATT connection/service discovery;
 - pose notification subscription;
+- READY gating on receipt of the first valid pose packet rather than descriptor-write success alone;
+- bounded error if the pose notification channel subscribes but produces no usable packets;
 - 20-byte pose/touch/button packet decode;
 - controller battery percentage and voltage reads;
 - controller recenter command;
@@ -111,7 +113,8 @@ Implemented:
 - Menu/back navigation;
 - Home controller + software-yaw recenter request;
 - Exit to Stage A;
-- no dead Media button or fake-success module entries.
+- shell entry to the real local-video path rather than a dead Media placeholder;
+- no fake-success module entries.
 
 Remaining gate: build and in-headset validation.
 
@@ -154,9 +157,36 @@ Implemented:
 
 There are currently no published ReverieVR GitHub Releases, so the expected live result is that no published release exists.
 
+### RV-0500 / RV-0501 — local flat video and mono 360 video
+
+State: **draft**
+
+Implemented as an intentionally early vertical slice (see ADR-0008):
+
+- Stage A local-video selection through Android `ACTION_OPEN_DOCUMENT`;
+- persisted read permission scoped to the selected document rather than broad media/storage access;
+- remembered display name and projection mode;
+- Android `MediaPlayer` asynchronous decode;
+- decoder output through `SurfaceTexture` / `GL_TEXTURE_EXTERNAL_OES`;
+- flat virtual-screen geometry with decoder-reported aspect ratio;
+- mono equirectangular 360° sphere geometry;
+- Daydream click play/pause;
+- Menu/back stop-and-return to the shell;
+- GL-surface recreation path that releases the old decoder surface and reopens the selected URI against the replacement surface.
+
+Not yet implemented/accepted:
+
+- stereoscopic SBS/over-under media layouts;
+- seeking/library browser/subtitles;
+- shell-global player HUD polish;
+- codec-coverage matrix;
+- sustained decode, thermal, A/V sync, seam/orientation, and comfort validation on the Galaxy S9.
+
+Remaining gate: successful build plus physical flat-video and mono-360 playback tests on the reference hardware.
+
 ## Performance posture
 
-The Stage B shell deliberately avoids a general-purpose game engine. Cardboard is configured for OpenGL ES with Vulkan and Unity integration disabled. The first shell is a single simple world-space panel plus stereo/head-tracking work.
+The Stage B shell deliberately avoids a general-purpose game engine. Cardboard is configured for OpenGL ES with Vulkan and Unity integration disabled. The shell avoids per-frame gaze/button-geometry allocation and reuses its UI bitmap/texture storage instead of allocating a new 1024×768 bitmap for every hover change.
 
 No performance/thermal acceptance claim exists until sustained Galaxy S9 testing is performed.
 
@@ -185,4 +215,6 @@ On a local Android development environment:
 7. test Stage A pairing and live controller input;
 8. enter the Daydream View and validate stereo/head tracking/gaze/click navigation;
 9. walk through the first-run calibration pages;
-10. capture any build, controller-axis, optical, UI-scale, or thermal defects for the next repair pass.
+10. choose and play a known-good local flat video, verify play/pause/back, then repeat with a mono equirectangular 360° sample;
+11. background/resume during playback to exercise SurfaceTexture/decoder reattachment;
+12. capture any build, controller-axis, optical, media-orientation, decode, UI-scale, frame-pacing, or thermal defects for the next repair pass.

@@ -87,6 +87,13 @@ On the Galaxy S9:
 9. verify the first-run VR setup page is readable;
 10. verify head gaze + touchpad click navigation;
 11. verify Home recenters controller/software heading;
-12. verify Menu returns/backtracks and Exit returns to Stage A.
+12. verify Menu returns/backtracks and Exit returns to Stage A;
+13. from Stage A, choose a known-good local video through the Android document picker;
+14. verify the selected URI survives leaving and returning to Stage A;
+15. enter VR and launch the selected video in **Flat cinema screen** mode;
+16. verify Daydream click toggles play/pause and Menu/back returns to the VR home without killing the shell;
+17. repeat with a known-good mono equirectangular 360° video and verify head-look orientation, seam placement, and absence of horizontal mirroring;
+18. background/resume ReverieVR during playback and verify the decoder reattaches if Android recreates the GL surface;
+19. run a sustained playback session and record frame pacing, decoder failures, battery drain, temperature/throttling, and audio/video sync.
 
-Do not mark RV-0003, RV-0091, RV-0092 or RV-0100 device-accepted until those checks have actually run.
+Do not mark RV-0003, RV-0091, RV-0092, RV-0100, RV-0500 or RV-0501 device-accepted until the relevant checks have actually run.

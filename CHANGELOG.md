@@ -4,6 +4,15 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Local media
+
+- Added Android Storage Access Framework local-video selection with persisted per-document read access instead of broad storage permission.
+- Added explicit flat-cinema and mono equirectangular-360 projection choices.
+- Added a platform MediaPlayer decoder backed by an OpenGL ES external OES SurfaceTexture.
+- Added shell-owned video entry, Daydream click play/pause, Menu/back return to VR home, and decoder reattachment across GL-surface recreation.
+- Added an inward-viewed equirectangular sphere renderer for mono 360 video.
+- Kept stereoscopic layouts, seeking/library UI, subtitle work, and sustained thermal acceptance as later media work.
+
 ### VR runtime and controller integration
 
 - Added an independent Android BLE backend for the Daydream controller: discovery, bonding, GATT connection, pose/input packet decoding, battery/voltage telemetry, recenter command, and a live Stage A input test.
@@ -14,6 +23,9 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Added the first Cardboard Stage B activity and world-space VR shell with head-gaze selection, Daydream click activation, back/recenter handling, power status, and resumable first-run setup pages.
 - Added functional initial setup controls for neutral forward direction, virtual user eye spacing, UI scale, and HUD preferences.
 - Added pure-Java unit tests for the Daydream packet decoder and updater version comparison.
+- Hardened controller readiness so READY is not emitted until a valid pose packet is actually received.
+- Hardened failed BLE setup/permission paths to close dead GATT sessions rather than leave zombie connections.
+- Removed avoidable per-frame VR-shell allocations and switched shell UI texture refreshes to persistent bitmap storage plus texture sub-image updates.
 
 
 ### Android bootstrap
@@ -26,6 +38,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Added local settings reset/recovery behavior.
 - Added an Enter VR control that remains disabled until the Stage B runtime exists.
 - Added build instructions and ADR-0003 establishing a lightweight native Android Stage A boundary.
+- Added the verified Gradle 9.6.1 wrapper and pinned both wrapper-JAR and distribution SHA-256 values.
 - No APK build or reference-device validation has yet been claimed.
 
 ### Project foundation

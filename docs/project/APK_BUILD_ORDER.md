@@ -230,6 +230,8 @@ Modules must not bypass platform settings or silently replace global controls.
 
 Implement local media playback after the shell is stable.
 
+**Recorded early-slice exception:** ADR-0008 authorizes a bounded draft of RV-0500/RV-0501 before earlier device-acceptance gates close. The purpose is to exercise the same OpenGL ES/Cardboard surface lifecycle, local file ownership, Android hardware-decoder path, and sustained-device thermal behavior that the reference-hardware pass must validate anyway. This exception does **not** waive Phase 0–6 gates and does not make media device-accepted.
+
 Target capabilities:
 
 - ordinary flat video in virtual-screen mode;
