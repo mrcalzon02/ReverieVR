@@ -56,6 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           node --check diagnostic-intake/src/index.js
+          node diagnostic-intake/test/worker-validation-smoke.cjs
 
       - name: Test and build
         shell: bash
