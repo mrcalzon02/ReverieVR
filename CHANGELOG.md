@@ -4,6 +4,15 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Setup and input familiarization
+
+- Bumped the resumable first-run setup schema to v2.
+- Added an in-VR controller familiarization page showing the active input source and most recent normalized action.
+- Captured Back locally on the familiarization page so it can be tested safely without leaving the page.
+- Preserved the Optical / Display Calibration Home shortcut so it still jumps directly to IPD.
+
+
+
 ### ReverieVR Controller companion
 
 - Added a second lightweight Android application module, `controller-app`, with application ID `io.github.mrcalzon02.reverievr.controller`.
