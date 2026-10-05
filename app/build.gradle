@@ -31,17 +31,15 @@ android {
             dosRuntimeBuilt.toString()
         )
 
-        if (dosRuntimeBuilt) {
-            ndk {
-                abiFilters "armeabi-v7a", "arm64-v8a"
-            }
-            externalNativeBuild {
-                ndkBuild {
-                    arguments(
-                        "APP_PLATFORM=android-26",
-                        "APP_STL=c++_static"
-                    )
-                }
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
+        externalNativeBuild {
+            ndkBuild {
+                arguments(
+                    "APP_PLATFORM=android-26",
+                    "APP_STL=c++_static"
+                )
             }
         }
         buildConfigField(
@@ -74,11 +72,9 @@ android {
         }
     }
 
-    if (dosRuntimeBuilt) {
-        externalNativeBuild {
-            ndkBuild {
-                path = file("src/main/jni/Android.mk")
-            }
+    externalNativeBuild {
+        ndkBuild {
+            path = file("src/main/jni/Android.mk")
         }
     }
 

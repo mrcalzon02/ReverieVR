@@ -340,6 +340,33 @@ Remaining gates:
 - relative pointer capture while a hosted DOS session owns the mouse;
 - in-VR binding overlay/editor and host-reserved escape path.
 
+### RV-0400 / RV-0401 — native procedural module foundation
+
+State: **draft**
+
+ADR-0015 now governs the native-game path.
+
+Implemented foundation:
+
+- native module ABI v1 uses fixed-width C structures with explicit structure sizes and ABI versions rather than exposing C++ classes across module boundaries;
+- packaged modules are selected through a compile-time allowlist and loaded with `dlopen` / a fixed entry symbol;
+- unknown module ids, missing symbols, descriptor/id mismatches, unsupported ABI versions, unsupported GLES major requirements and missing callbacks fail closed with diagnostics;
+- lifecycle includes create/destroy, GL-context creation, explicit GL-context release, resume/pause, update and per-eye render callbacks;
+- the host owns Cardboard, Activity lifecycle, shell recovery and the active GL context;
+- the NDK build is now unconditional for the headset app while DOSBox Pure remains an optional additional native target;
+- both `armeabi-v7a` and `arm64-v8a` remain target ABIs;
+- OpenKTG is vendored from `jaromil/kkrieger-werkkzeug3` revision `72f7697c8b5be6fadae41f9ca6312cd5f88fdc4c` with its public-domain provenance;
+- the separate `libreverie_module_test_chamber.so` expands an OpenKTG procedural texture at module creation and renders a deliberately simple GLES2 chamber;
+- the proof module accepts normalized movement plus primary/secondary input and restores GL program/buffer/texture and enable-state ownership after each eye render;
+- no Win32, Direct3D, DirectSound, kkrunchy/YASM runtime or arbitrary downloaded native code was introduced.
+
+Remaining gates:
+
+- Stage B Home/launch/return integration;
+- hosted binding profile for the proof module;
+- Android NDK compile/link for both target ABIs;
+- Galaxy S9 stereo/head-tracking/input/HUD/pause-resume/frame-pacing/thermal validation.
+
 ### RV-0410 / RV-0411 — DOS runtime baseline and modules
 
 State: **draft**

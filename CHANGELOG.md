@@ -6,6 +6,16 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Native procedural modules
+
+- Added ABI v1 for trusted APK-packaged native game modules with explicit structure/version validation and shell-owned lifecycle/render boundaries.
+- Added a compile-time module allowlist and fail-closed `dlopen`/entry-symbol validation instead of loading arbitrary native code from writable storage.
+- Made the headset application's NDK build independent of optional DOSBox Pure while preserving both `armeabi-v7a` and `arm64-v8a`.
+- Vendored the minimal public-domain OpenKTG texture generator from pinned upstream revision `72f7697c8b5be6fadae41f9ca6312cd5f88fdc4c` with provenance.
+- Added the separate Procedural Test Chamber shared library. It expands an OpenKTG texture from recipe/seed data, renders a low-complexity GLES2 room, consumes normalized movement/primary input and restores host GL state after rendering.
+- Added explicit GL-context release to the module lifecycle so destructors do not depend on Android teardown happening on a render thread.
+- Added the Java native-module runtime bridge and built-in descriptor enumeration. Stage B launcher wiring and actual Android NDK/device validation remain.
+
 ### Bundled DOOM Shareware sample
 
 - Added a checksum-pinned build path for the original `doom19s.zip` DOOM Shareware v1.9 archive.

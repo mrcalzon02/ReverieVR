@@ -7,7 +7,9 @@ ReverieVR now combines:
 - native Java/XML Android Stage A;
 - direct Android BLE Daydream-controller backend;
 - Google Cardboard SDK v1.35.0 pinned at commit `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`;
-- OpenGL ES Cardboard rendering only.
+- OpenGL ES Cardboard rendering only;
+- an APK-packaged native-module host plus the built-in Procedural Test Chamber;
+- pinned public-domain OpenKTG source for procedural module texture generation.
 
 Pinned build baseline:
 
@@ -54,7 +56,7 @@ Expected commit:
 
 The checkout lives at `third_party/dosbox-pure/src` and is intentionally ignored by ReverieVR git. The committed pin/provenance record is `third_party/dosbox-pure/README.md`.
 
-The Android app can still be built without this checkout; in that case `BuildConfig.DOS_RUNTIME_BUILT` is false and the DOS host remains unavailable. When the verified checkout is present, Gradle automatically activates the NDK build for the pinned DOSBox Pure `libretro.so` core and ReverieVR's `libreverie_dos_host.so` JNI frontend for `armeabi-v7a` and `arm64-v8a`.
+The Android app can still be built without this checkout; in that case `BuildConfig.DOS_RUNTIME_BUILT` is false and the DOS host remains unavailable. The Android NDK build itself is no longer conditional on DOSBox Pure because ReverieVR's native-module host and Procedural Test Chamber are always packaged. When the verified DOSBox Pure checkout is present, the same NDK build additionally emits the pinned `libretro.so` core and ReverieVR's `libreverie_dos_host.so` JNI frontend for `armeabi-v7a` and `arm64-v8a`.
 
 The first native host deliberately uses DOSBox Pure's software XRGB8888 output path. Until ReverieVR implements the libretro hardware-render callback, the host forces Voodoo performance to software multithreaded mode rather than allowing the core's Auto setting to request OpenGL behind the shell's back.
 
