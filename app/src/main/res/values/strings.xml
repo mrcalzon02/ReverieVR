@@ -89,6 +89,7 @@ Available: %2$s</string>
     <string name="diagnostic_open_issue">Open GitHub issue</string>
     <string name="diagnostic_submission_failed_title">Diagnostic submission failed</string>
     <string name="diagnostic_submission_failed_format">Submission failed: %1$s\n\nThe private diagnostic ZIP was retained locally for investigation. Manual Export diagnostic bundle remains available.</string>
+    <string name="diagnostic_submission_failed_no_bundle_format">Submission failed before a private ZIP could be retained: %1$s\n\nManual Export diagnostic bundle remains available.</string>
 
     <string name="qol_section">Quality of life</string>
     <string name="battery_hud_label">Show phone + controller battery HUD in VR</string>
