@@ -106,7 +106,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int matrixHandle;
     private int textureHandle;
 
-    private int mode;
+    private volatile int mode;
     private int setupStep;
     private int hoveredButton = -1;
     private float yawOffsetRadians;
@@ -191,7 +191,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     void requestVideoSeek(int deltaMillis) {
-        if (deltaMillis == 0) {
+        if (deltaMillis == 0 || mode != MODE_VIDEO) {
+            videoSeekRequestedMillis.set(0);
             return;
         }
         videoSeekRequestedMillis.set(deltaMillis);
@@ -224,6 +225,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
             if (backRequested.getAndSet(false)) {
                 host.onVideoStopRequested();
+                videoSeekRequestedMillis.set(0);
                 mode = MODE_HOME;
                 hoveredButton = -1;
                 textureDirty = true;
@@ -472,6 +474,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     videoRenderer.setProjection(
                         preferences.getVideoProjection()
                     );
+                    videoSeekRequestedMillis.set(0);
                     mode = MODE_VIDEO;
                     hoveredButton = -1;
                     host.onVideoPlaybackRequested();

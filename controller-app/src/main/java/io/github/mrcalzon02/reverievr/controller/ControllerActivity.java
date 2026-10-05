@@ -196,22 +196,33 @@ public final class ControllerActivity extends Activity
 
             int action = event.getActionMasked();
             if (action == MotionEvent.ACTION_DOWN) {
+                view.setPressed(true);
                 server.send(
                     ControllerProtocolWriter.key(
                         ControllerProtocolWriter.ACTION_DOWN,
                         keyCode
                     )
                 );
-            } else if (action == MotionEvent.ACTION_UP
+                return true;
+            }
+
+            if (action == MotionEvent.ACTION_UP
                 || action == MotionEvent.ACTION_CANCEL) {
+                view.setPressed(false);
                 server.send(
                     ControllerProtocolWriter.key(
                         ControllerProtocolWriter.ACTION_UP,
                         keyCode
                     )
                 );
+
+                if (action == MotionEvent.ACTION_UP) {
+                    view.performClick();
+                }
+                return true;
             }
-            return false;
+
+            return true;
         });
     }
 

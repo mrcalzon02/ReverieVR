@@ -2,6 +2,7 @@ package io.github.mrcalzon02.reverievr.controller;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
@@ -160,6 +161,20 @@ final class ControllerServer implements AutoCloseable {
                     break;
                 }
 
+                if (!isBondedClient(localClient)) {
+                    emit(
+                        State.ERROR,
+                        "Rejected an unpaired Bluetooth client. Pair the headset phone first."
+                    );
+                    try {
+                        localClient.close();
+                    } catch (IOException ignored) {
+                        // Rejected client already closed.
+                    }
+                    localClient = null;
+                    continue;
+                }
+
                 synchronized (connectionLock) {
                     clientSocket = localClient;
                     output = new DataOutputStream(
@@ -270,6 +285,24 @@ final class ControllerServer implements AutoCloseable {
                 State.ERROR,
                 "Headset connection lost: " + safeMessage(exception)
             );
+        }
+    }
+
+    private boolean isBondedClient(BluetoothSocket socket) {
+        if (socket == null) {
+            return false;
+        }
+
+        try {
+            BluetoothDevice device = socket.getRemoteDevice();
+            return device != null
+                && device.getBondState() == BluetoothDevice.BOND_BONDED;
+        } catch (SecurityException exception) {
+            emit(
+                State.ERROR,
+                "Bluetooth permission was removed before the client could be verified."
+            );
+            return false;
         }
     }
 
