@@ -7,3 +7,6 @@ app/build/
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Pinned third-party source fetched locally for native DOS builds
+third_party/dosbox-pure/src/
