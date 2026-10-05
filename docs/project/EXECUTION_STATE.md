@@ -88,7 +88,10 @@ Implemented:
 **Physical Daydream controller**
 
 - Android-version-correct Bluetooth permissions;
-- BLE scan with Daydream service/name candidate matching and bounded timeout;
+- BLE discovery handles the Android 8–11 Location-services gate explicitly instead of silently returning zero results;
+- already-bonded Daydream controllers are attempted before a new scan;
+- low-latency BLE scan uses explicit FE55 service and `Daydream controller` name filters with a bounded timeout;
+- Development logging records observed BLE advertisements and scan-result counts for handset diagnosis;
 - Android bonding flow;
 - GATT connection/service discovery;
 - pose notification subscription;
@@ -129,10 +132,12 @@ Implemented:
 - volume actions adjust the Android music stream;
 - raw Daydream button interpretation is no longer embedded directly in `VrActivity`.
 
+Current verification: phone-test run #12 successfully built, tested, packaged, signature-verified and published the BLE discovery hardening from commit `6b886b3574a609b101fa9d65040a818179f84892`. GitHub Issue #2 tracks the Galaxy S9 symptom where Android sees the controller but ReverieVR has not yet proven the physical GATT/pose path.
+
 Remaining gates:
 
-- build/unit-test execution;
-- physical Daydream-controller validation;
+- physical Galaxy S9 + Daydream-controller discovery, FE55 service discovery, pose subscription and live packet-stream validation;
+- capture Development diagnostics and link the resulting RV-0208 diagnostic issue/receipt to Issue #2 if the physical path still fails;
 - actual second-phone emulator RFCOMM validation;
 - generic Bluetooth/USB gamepad validation;
 - axis/polarity/comfort verification;
