@@ -1,0 +1,114 @@
+name: Build phone test release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/phone-test-release.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reverievr-phone-test-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then SDKMANAGER="$(command -v sdkmanager || true)"; fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" "ndk;29.0.14206865" "cmake;3.22.1"
+
+      - name: Fetch pinned third-party build inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew scripts/fetch-dosbox-pure.sh scripts/fetch-doom-shareware.sh scripts/verify-build-bootstrap.sh
+          ./scripts/fetch-dosbox-pure.sh
+          ./scripts/fetch-doom-shareware.sh
+          ./scripts/verify-build-bootstrap.sh
+
+      - name: Test and build
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon test :app:assembleDebug :controller-app:assembleDebug
+
+      - name: Verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -f "$APK"
+          unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_native_host.so"
+          unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_native_host.so"
+          unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_module_test_chamber.so"
+          unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_module_test_chamber.so"
+          unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_dos_host.so"
+          unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_dos_host.so"
+          APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/apksigner"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+
+      - name: Stage release
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          TAG="phone-test-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          HEADSET="ReverieVR-phone-test-${GITHUB_RUN_NUMBER}-${SHORT_SHA}.apk"
+          CONTROLLER="ReverieVR-Controller-phone-test-${GITHUB_RUN_NUMBER}-${SHORT_SHA}.apk"
+          mkdir -p release
+          cp app/build/outputs/apk/debug/app-debug.apk "release/$HEADSET"
+          cp controller-app/build/outputs/apk/debug/controller-app-debug.apk "release/$CONTROLLER"
+          (cd release && sha256sum "$HEADSET" "$CONTROLLER" > SHA256SUMS.txt)
+          {
+            echo "ReverieVR development phone-test build."
+            echo
+            echo "Commit: $GITHUB_SHA"
+            echo "Run: $GITHUB_RUN_NUMBER attempt $GITHUB_RUN_ATTEMPT"
+            echo
+            echo "Debug-signed for sideload/reference-device testing; not production signing."
+            echo "Includes the native Procedural Test Chamber, DOSBox Pure, and verified DOOM Shareware sample."
+          } > release/RELEASE-NOTES.md
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "headset=$HEADSET" >> "$GITHUB_OUTPUT"
+          echo "controller=$CONTROLLER" >> "$GITHUB_OUTPUT"
+
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "${{ steps.release.outputs.tag }}" \
+            "release/${{ steps.release.outputs.headset }}" \
+            "release/${{ steps.release.outputs.controller }}" \
+            release/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "ReverieVR Phone Test #$GITHUB_RUN_NUMBER" \
+            --notes-file release/RELEASE-NOTES.md \
+            --prerelease
