@@ -90,7 +90,7 @@ Available: %2$s</string>
     <string name="diagnostic_logs_no">no</string>
     <string name="diagnostic_expected_not_supplied">Not supplied.</string>
     <string name="diagnostic_preview_submit">Submit securely</string>
-    <string name="diagnostic_preview_cancelled">Diagnostic submission cancelled; the prepared temporary bundle was removed.</string>
+    <string name="diagnostic_preview_cancelled">Diagnostic submission cancelled.</string>
     <string name="diagnostic_submission_in_progress">Building and securely submitting diagnostic bundle…</string>
     <string name="diagnostic_submission_success_title">Diagnostic issue created</string>
     <string name="diagnostic_submission_success_format">Diagnostic %1$s was accepted. Receipt: %2$s</string>
