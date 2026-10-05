@@ -58,17 +58,63 @@ jobs:
           node --check diagnostic-intake/src/index.js
           node diagnostic-intake/test/worker-validation-smoke.cjs
 
+      - name: Prepare persistent phone-test signing
+        id: signing
+        shell: bash
+        env:
+          PHONE_TEST_KEYSTORE_BASE64: ${{ secrets.PHONE_TEST_KEYSTORE_BASE64 }}
+          PHONE_TEST_STORE_PASSWORD: ${{ secrets.PHONE_TEST_STORE_PASSWORD }}
+          PHONE_TEST_KEY_ALIAS: ${{ secrets.PHONE_TEST_KEY_ALIAS }}
+          PHONE_TEST_KEY_PASSWORD: ${{ secrets.PHONE_TEST_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          present=0
+          for value in             "$PHONE_TEST_KEYSTORE_BASE64"             "$PHONE_TEST_STORE_PASSWORD"             "$PHONE_TEST_KEY_ALIAS"             "$PHONE_TEST_KEY_PASSWORD"; do
+            if [[ -n "$value" ]]; then
+              present=$((present + 1))
+            fi
+          done
+
+          if [[ "$present" -eq 0 ]]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "keystore_path=" >> "$GITHUB_OUTPUT"
+            echo "Persistent phone-test signing is not configured; updater UI will be omitted."
+            exit 0
+          fi
+
+          if [[ "$present" -ne 4 ]]; then
+            echo "Phone-test signing is partially configured. Set all four signing secrets or none." >&2
+            exit 1
+          fi
+
+          KEYSTORE="$RUNNER_TEMP/reverievr-phone-test.jks"
+          printf '%s' "$PHONE_TEST_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          test -s "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+          echo "keystore_path=$KEYSTORE" >> "$GITHUB_OUTPUT"
+
       - name: Test and build
         shell: bash
         env:
           DIAGNOSTIC_INTAKE_URL: ${{ vars.DIAGNOSTIC_INTAKE_URL }}
+          ORG_GRADLE_PROJECT_phoneTestKeystorePath: ${{ steps.signing.outputs.keystore_path }}
+          ORG_GRADLE_PROJECT_phoneTestStorePassword: ${{ secrets.PHONE_TEST_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_phoneTestKeyAlias: ${{ secrets.PHONE_TEST_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_phoneTestKeyPassword: ${{ secrets.PHONE_TEST_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           ./gradlew --no-daemon \
             -PdiagnosticIntakeUrl="$DIAGNOSTIC_INTAKE_URL" \
+            -PphoneTestRunNumber="$GITHUB_RUN_NUMBER" \
+            -PphoneTestRunAttempt="$GITHUB_RUN_ATTEMPT" \
+            -PsourceRevision="$GITHUB_SHA" \
             test :app:assembleDebug :controller-app:assembleDebug
 
       - name: Verify APK
+        id: verify
         shell: bash
         run: |
           set -euo pipefail
@@ -81,7 +127,11 @@ jobs:
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_dos_host.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_dos_host.so"
           APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/apksigner"
-          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          VERIFY_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs "$APK")"
+          printf '%s\n' "$VERIFY_OUTPUT"
+          SIGNER_SHA="$(printf '%s\n' "$VERIFY_OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1)"
+          test -n "$SIGNER_SHA"
+          echo "signer_sha=$SIGNER_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Stage release
         id: release
@@ -101,8 +151,17 @@ jobs:
             echo
             echo "Commit: $GITHUB_SHA"
             echo "Run: $GITHUB_RUN_NUMBER attempt $GITHUB_RUN_ATTEMPT"
+            echo "Android versionCode: $GITHUB_RUN_NUMBER"
+            echo "APK signer SHA-256: ${{ steps.verify.outputs.signer_sha }}"
             echo
-            echo "Debug-signed for sideload/reference-device testing; not production signing."
+            if [[ "${{ steps.signing.outputs.configured }}" == "true" ]]; then
+              echo "Persistent phone-test signing: enabled."
+              echo "In-app update channel: enabled."
+            else
+              echo "Ephemeral debug signing: enabled."
+              echo "In-app update channel: disabled; manual install only."
+            fi
+            echo "This is reference-device/test signing, not production signing."
             echo "Includes the native Procedural Test Chamber, DOSBox Pure, and verified DOOM Shareware sample."
           } > release/RELEASE-NOTES.md
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
