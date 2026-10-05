@@ -4,6 +4,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Bundled DOOM Shareware sample
+
+- Added a checksum-pinned build path for the original `doom19s.zip` DOOM Shareware v1.9 archive.
+- Added POSIX and Windows fetch helpers using the known SHA-256 `cacf0142b31ca1af00796b4a0339e07992ac5f21bc3f81e7532fe1b5e1b486e6`.
+- Kept the third-party binary outside ReverieVR git while allowing it to be packaged unchanged as a nested Android asset.
+- Made free release packaging expect the shareware archive by default, with an explicit `-PexcludeDoomShareware` escape hatch.
+- Added runtime SHA-256 re-verification and automatic registration of **DOOM Shareware v1.9** with the built-in Doom binding profile.
+- Recorded the legal boundary: shareware is copyrighted and not GPL/public-domain; paid/commercial distributions require appropriate permission or omission of the payload.
+- Left first-run DOS installer/autostart automation as the remaining runtime step rather than repacking the distributed archive.
+
+
+
 ### Diagnostics and retro framebuffer geometry
 
 - Added Standard and Development logging modes.

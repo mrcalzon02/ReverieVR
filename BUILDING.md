@@ -235,3 +235,55 @@ For hosted retro content, validate at least:
 Where integer scaling fits the intermediate guest surface, verify nearest/integer presentation remains pixel-stable. The VR shell/HUD should remain readable and independent of guest resolution.
 
 Do not hard-code a generic 1.4x distortion factor or arbitrary 640x720/800x900/1280x1024 per-eye buffer. Cardboard remains authoritative for eye viewports/projection/distortion; render-scale changes require measured Galaxy S9 evidence.
+
+
+## Bundled DOOM Shareware v1.9
+
+Free/noncommercial ReverieVR releases include the original DOOM Shareware v1.9
+archive by default.
+
+Fetch and checksum-verify it before a release build:
+
+    ./scripts/fetch-doom-shareware.sh
+
+Windows:
+
+    scripts\fetch-doom-shareware.bat
+
+Expected file:
+
+    third_party/doom-shareware/payload/default-content/doom19s.zip
+
+Expected size:
+
+    2450688 bytes
+
+Expected SHA-256:
+
+    cacf0142b31ca1af00796b4a0339e07992ac5f21bc3f81e7532fe1b5e1b486e6
+
+A normal release build intentionally fails when the default shareware payload is
+missing.
+
+To create a distribution that deliberately omits DOOM Shareware:
+
+    ./gradlew :app:assembleRelease -PexcludeDoomShareware
+
+or on Windows:
+
+    gradlew.bat :app:assembleRelease -PexcludeDoomShareware
+
+Use the exclusion path for a commercial/paid distribution unless appropriate
+shareware redistribution permission has been obtained for that distribution.
+
+Do not replace the expected archive with:
+
+- DOOM.WAD;
+- DOOM2.WAD;
+- Ultimate DOOM data;
+- another commercial IWAD;
+- an independently repacked shareware directory.
+
+On-device validation must confirm that the packaged asset is re-verified,
+registered as **DOOM Shareware v1.9**, and reaches the DOSBox Pure installer /
+autostart flow without network access.

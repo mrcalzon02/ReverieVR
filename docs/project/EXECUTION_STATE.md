@@ -7,7 +7,7 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current implementation baseline immediately below this documentation update: `26ea93f627fc897fd755eedd6634842f9f05dc90`.
+- Current implementation baseline immediately below this documentation update: `71089323a15a1659bff1c6109f24d1a04070adcb`.
 - Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
@@ -415,6 +415,38 @@ Implemented:
 - Cardboard remains authoritative for actual per-eye viewport/projection/distortion rather than hard-coding generic 8:9/5:4 eye buffers or a universal supersampling factor.
 
 Remaining gate: connect this geometry to the DOS framebuffer texture renderer and validate pixel/aspect/readability behavior in the Daydream View.
+
+### RV-0415 — bundled DOOM Shareware
+
+State: **draft**
+
+Default-content baseline:
+
+- DOOM Shareware v1.9;
+- authoritative distributed payload: original `doom19s.zip`;
+- expected byte size: 2,450,688;
+- SHA-1 `8d0fbbbeba5ecb692a99f97e55dfb5365cfe5b77`;
+- SHA-256 `cacf0142b31ca1af00796b4a0339e07992ac5f21bc3f81e7532fe1b5e1b486e6`;
+- fetch helper uses an idgames archival mirror and refuses an unexpected digest;
+- fetched binary is ignored by ReverieVR git;
+- free release builds include it by default when fetched;
+- release builds refuse an accidentally missing archive unless `-PexcludeDoomShareware` is explicitly supplied;
+- Android packages the original archive unchanged as `assets/default-content/doom19s.zip`;
+- Stage A startup re-verifies the archive and registers the built-in `DOOM Shareware v1.9` DOS module using the `dos-doom-shareware` binding profile;
+- registered/full DOOM data is not bundled;
+- the engine GPL and shareware-data license remain separate licensing domains.
+
+Distribution rule:
+
+DOOM shareware is copyrighted shareware, not public domain. The default bundled-content path is for free/noncommercial ReverieVR releases. A paid/commercial distribution must obtain appropriate permission or deliberately omit the shareware archive.
+
+Remaining gates:
+
+- actually fetch and package the verified archive in a release build;
+- build/install on the Galaxy S9;
+- finish DOSBox Pure host;
+- implement local first-run installer/autostart behavior so the original archive can reach a ready-to-play shareware installation without redistributing a modified payload;
+- verify E1M1 launch, saves, 320x200-to-4:3 presentation, input bindings, overlay/recovery and sustained thermal behavior.
 
 ## Performance posture
 
