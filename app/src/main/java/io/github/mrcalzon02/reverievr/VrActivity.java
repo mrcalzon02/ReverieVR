@@ -171,12 +171,38 @@ public final class VrActivity extends Activity
     }
 
     @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
         if (inputRouter != null
             && inputRouter.onGenericMotionEvent(event)) {
             return true;
         }
 
+        if (routeStandardMouseEvent(event)) {
+            return true;
+        }
+
+        return super.dispatchGenericMotionEvent(event);
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if (event != null) {
+            int source = event.getSource();
+            boolean mouse =
+                (source & android.view.InputDevice.SOURCE_MOUSE)
+                    == android.view.InputDevice.SOURCE_MOUSE
+                || (source & android.view.InputDevice.SOURCE_MOUSE_RELATIVE)
+                    == android.view.InputDevice.SOURCE_MOUSE_RELATIVE;
+
+            if (mouse && routeStandardMouseEvent(event)) {
+                return true;
+            }
+        }
+
+        return super.dispatchTouchEvent(event);
+    }
+
+    private boolean routeStandardMouseEvent(MotionEvent event) {
         int width = cardboardView == null
             ? 0
             : cardboardView.getWidth();
@@ -184,16 +210,12 @@ public final class VrActivity extends Activity
             ? 0
             : cardboardView.getHeight();
 
-        if (standardHidInputRouter != null
+        return standardHidInputRouter != null
             && standardHidInputRouter.onMouseEvent(
                 event,
                 width,
                 height
-            )) {
-            return true;
-        }
-
-        return super.onGenericMotionEvent(event);
+            );
     }
 
     @Override

@@ -524,7 +524,12 @@ public final class MainActivity extends Activity
         }
         preferences.setSelectedVideo(
             uri.toString(),
-            resolveDisplayName(uri)
+            resolveDisplayName(
+                uri,
+                getString(
+                    R.string.selected_video_unknown_name
+                )
+            )
         );
         refreshMediaStatus();
     }
@@ -535,7 +540,10 @@ public final class MainActivity extends Activity
             return;
         }
 
-        String displayName = resolveDisplayName(uri);
+        String displayName = resolveDisplayName(
+            uri,
+            "dos-content"
+        );
         importDosButton.setEnabled(false);
         dosModuleStatusText.setText(
             getString(
@@ -586,9 +594,17 @@ public final class MainActivity extends Activity
         });
     }
 
-    private String resolveDisplayName(Uri uri) {
+    private String resolveDisplayName(
+        Uri uri,
+        String fallback
+    ) {
+        String safeFallback =
+            fallback == null || fallback.trim().isEmpty()
+                ? "selected-content"
+                : fallback.trim();
+
         if (uri == null) {
-            return getString(R.string.selected_video_unknown_name);
+            return safeFallback;
         }
 
         try (Cursor cursor = getContentResolver().query(
@@ -609,12 +625,12 @@ public final class MainActivity extends Activity
                 }
             }
         } catch (RuntimeException ignored) {
-            // The persisted URI remains usable even if metadata is hidden.
+            // The selected document may still be readable without metadata.
         }
 
         String last = uri.getLastPathSegment();
         return last == null || last.trim().isEmpty()
-            ? getString(R.string.selected_video_unknown_name)
+            ? safeFallback
             : last;
     }
 
