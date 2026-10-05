@@ -30,6 +30,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVideoSurfaceTextureReady(SurfaceTexture surfaceTexture);
         void onVideoPlaybackRequested();
         void onVideoTogglePauseRequested();
+        void onVideoSeekRequested(int deltaMillis);
         void onVideoStopRequested();
     }
 

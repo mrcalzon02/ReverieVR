@@ -37,6 +37,8 @@ public final class VrActivity extends Activity
     private boolean previousTouching;
     private int touchStartX;
     private int touchStartY;
+    private int touchLastX;
+    private int touchLastY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,12 +161,16 @@ public final class VrActivity extends Activity
         boolean homeEdge =
             snapshot.homePressed && !previousHomePressed;
 
-        if (snapshot.touching && !previousTouching) {
-            touchStartX = snapshot.touchX;
-            touchStartY = snapshot.touchY;
-        } else if (!snapshot.touching && previousTouching) {
-            int deltaX = snapshot.touchX - touchStartX;
-            int deltaY = snapshot.touchY - touchStartY;
+        if (snapshot.touching) {
+            if (!previousTouching) {
+                touchStartX = snapshot.touchX;
+                touchStartY = snapshot.touchY;
+            }
+            touchLastX = snapshot.touchX;
+            touchLastY = snapshot.touchY;
+        } else if (previousTouching) {
+            int deltaX = touchLastX - touchStartX;
+            int deltaY = touchLastY - touchStartY;
             if (Math.abs(deltaX) >= VIDEO_SWIPE_THRESHOLD
                 && Math.abs(deltaX) > Math.abs(deltaY)) {
                 renderer.requestVideoSeek(deltaX > 0 ? 10000 : -10000);
