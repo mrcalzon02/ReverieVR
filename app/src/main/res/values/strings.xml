@@ -88,6 +88,7 @@ Available: %2$s</string>
     <string name="diagnostic_preview_format">Diagnostic ID: %1$s\nBundle: %2$d bytes\nSHA-256: %3$s\nLogs included: %4$s\nBuild: %5$s / %6$s\nDevice: %7$s\nAndroid: %8$s\n\nPUBLIC ISSUE TEXT\n\nWhat happened:\n%9$s\n\nExpected behavior:\n%10$s\n\nThe issue text and device/build metadata above will be public. The ZIP itself remains private.</string>
     <string name="diagnostic_logs_yes">yes</string>
     <string name="diagnostic_logs_no">no</string>
+    <string name="diagnostic_expected_not_supplied">Not supplied.</string>
     <string name="diagnostic_preview_submit">Submit securely</string>
     <string name="diagnostic_preview_cancelled">Diagnostic submission cancelled; the prepared temporary bundle was removed.</string>
     <string name="diagnostic_submission_in_progress">Building and securely submitting diagnostic bundle…</string>
