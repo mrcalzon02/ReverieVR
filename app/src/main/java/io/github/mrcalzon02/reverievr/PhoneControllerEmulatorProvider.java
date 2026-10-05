@@ -212,6 +212,7 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
     private void connectAndRead(String address, int currentGeneration) {
         BluetoothSocket localSocket = null;
         boolean connectedOnce = false;
+        boolean terminalStateReported = false;
 
         try {
             BluetoothDevice device = adapter.getRemoteDevice(address);
@@ -269,7 +270,9 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
 
                 PhoneControllerProtocol.Event event =
                     PhoneControllerProtocol.parse(payload);
-                applyEvent(event);
+                if (!applyEvent(event)) {
+                    continue;
+                }
 
                 if (!ready) {
                     ready = true;
@@ -282,6 +285,7 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
             }
         } catch (EOFException exception) {
             if (currentGeneration == generation) {
+                terminalStateReported = true;
                 emitConnection(
                     ConnectionState.DISCONNECTED,
                     "Controller phone disconnected."
@@ -289,6 +293,7 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
             }
         } catch (IOException | IllegalArgumentException exception) {
             if (currentGeneration == generation) {
+                terminalStateReported = true;
                 emitConnection(
                     ConnectionState.ERROR,
                     "Phone controller connection failed: "
@@ -309,7 +314,7 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
                 ready = false;
                 resetState();
 
-                if (connectedOnce) {
+                if (connectedOnce && !terminalStateReported) {
                     emitConnection(
                         ConnectionState.DISCONNECTED,
                         "Phone controller emulator disconnected."
@@ -319,9 +324,11 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
         }
     }
 
-    private synchronized void applyEvent(PhoneControllerProtocol.Event event) {
+    private synchronized boolean applyEvent(
+        PhoneControllerProtocol.Event event
+    ) {
         if (event == null) {
-            return;
+            return false;
         }
 
         switch (event.type) {
@@ -380,7 +387,7 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
                 break;
 
             default:
-                return;
+                return false;
         }
 
         packetIndex = (packetIndex + 1) & 0x1f;
@@ -414,6 +421,7 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
         if (target != null) {
             target.onControllerStateChanged(snapshot);
         }
+        return true;
     }
 
     private void resetState() {
