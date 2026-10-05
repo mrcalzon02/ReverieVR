@@ -428,7 +428,7 @@ final class DosSession implements AutoCloseable {
         synchronized (audioLock) {
             if (audioTrack != null && audioSampleRate == sampleRate) {
                 if (audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING
-                    && !paused) {
+                    && !pauseGate.isPaused()) {
                     audioTrack.play();
                 }
                 return;
@@ -477,7 +477,7 @@ final class DosSession implements AutoCloseable {
 
             audioTrack = created;
             audioSampleRate = sampleRate;
-            if (!paused) {
+            if (!pauseGate.isPaused()) {
                 created.play();
             }
         }
