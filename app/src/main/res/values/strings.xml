@@ -80,7 +80,6 @@ Available: %2$s</string>
     <string name="battery_hud_label">Show phone + controller battery HUD in VR</string>
     <string name="look_up_reveal_label">Auto-reveal / expand HUD when looking upward</string>
     <string name="show_percentages_label">Show numeric battery percentages</string>
-    <string name="retro_mode_label">Prefer retro performance-first quality</string>
 
     <string name="media_section">Local media</string>
     <string name="selected_video_none">No local video selected.</string>
