@@ -11,7 +11,6 @@ final class ReveriePreferences {
     private static final String KEY_BATTERY_HUD = "battery_hud";
     private static final String KEY_LOOK_UP_REVEAL = "look_up_reveal";
     private static final String KEY_SHOW_PERCENTAGES = "show_percentages";
-    private static final String KEY_RETRO_MODE = "retro_mode";
     private static final String KEY_AUTO_UPDATE_CHECK = "auto_update_check";
     private static final String KEY_LOGGING_MODE = "logging_mode";
     private static final String KEY_VR_SETUP_VERSION = "vr_setup_version";
@@ -50,14 +49,6 @@ final class ReveriePreferences {
 
     void setShowPercentagesEnabled(boolean enabled) {
         preferences.edit().putBoolean(KEY_SHOW_PERCENTAGES, enabled).apply();
-    }
-
-    boolean isRetroModeEnabled() {
-        return preferences.getBoolean(KEY_RETRO_MODE, true);
-    }
-
-    void setRetroModeEnabled(boolean enabled) {
-        preferences.edit().putBoolean(KEY_RETRO_MODE, enabled).apply();
     }
 
     boolean isAutoUpdateCheckEnabled() {
