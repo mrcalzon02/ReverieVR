@@ -69,7 +69,7 @@ Available: %2$s</string>
     <string name="export_diagnostic_bundle">Export diagnostic bundle</string>
     <string name="clear_logs">Clear local logs</string>
     <string name="clear_logs_title">Clear ReverieVR logs?</string>
-    <string name="clear_logs_message">This deletes ReverieVR\\'s local standard/development log history. It does not affect imported games or settings.</string>
+    <string name="clear_logs_message">This deletes ReverieVR\'s local standard/development log history. It does not affect imported games or settings.</string>
     <string name="clear_logs_confirm">Clear logs</string>
     <string name="log_export_in_progress">Building diagnostic ZIP…</string>
     <string name="log_export_complete">Diagnostic bundle exported.</string>
@@ -101,7 +101,7 @@ Available: %2$s</string>
     <string name="import_dos_content">Import DOS game / content</string>
     <string name="clear_dos_modules">Clear imported DOS modules</string>
     <string name="clear_dos_modules_title">Clear imported DOS modules?</string>
-    <string name="clear_dos_modules_message">This deletes ReverieVR\\'s private copies of imported DOS content. It does not delete the original files you selected.</string>
+    <string name="clear_dos_modules_message">This deletes ReverieVR\'s private copies of imported DOS content. It does not delete the original files you selected.</string>
     <string name="clear_dos_modules_confirm">Clear modules</string>
     <string name="dos_picker_unavailable">No Android document picker is available for DOS content.</string>
     <string name="dos_import_copying_format">Importing %1$s into ReverieVR storage…</string>
