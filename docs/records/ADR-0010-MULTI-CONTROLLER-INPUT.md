@@ -69,11 +69,13 @@ ReverieVR does not redistribute Google's deprecated Controller Emulator APK.
 
 ## Future companion application
 
-RV-0094 reserves an independently authored **ReverieVR Controller** companion APK for a spare Android phone.
+RV-0094 now has a draft independently authored **ReverieVR Controller** companion APK for a spare Android phone.
 
-The intended UI is deliberately close to the physical-controller interaction model—orientation from phone sensors, one touchpad surface, Select, App/Back, Home/Recenter—without requiring Google VR Services.
+Its UI deliberately follows the physical-controller interaction model—orientation from phone sensors, one touchpad surface, Select, App/Back, Home/Recenter, plus physical volume forwarding—without requiring Google VR Services.
 
-The headset-side historical compatibility receiver should be validated before that companion app is considered stable.
+The companion speaks the same independently implemented RFCOMM/framing contract used by the historical compatibility receiver. ReverieVR adds one optional extension event for real companion-phone battery percentage; receivers/emulators that do not send the extension remain compatible and report battery as unknown.
+
+The companion remains draft until the two-phone hardware path is built and validated.
 
 ## Acceptance
 

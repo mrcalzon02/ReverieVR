@@ -66,3 +66,16 @@ ReverieVR connects only after the user explicitly chooses an already-paired Blue
 The phone-controller path does not scan arbitrary nearby classic Bluetooth devices and does not make the headset phone an open RFCOMM server.
 
 A failed or malformed stream must produce a visible error/disconnect state and must not block the physical Daydream or Android-gamepad recovery paths.
+
+
+## ReverieVR-compatible extension
+
+ReverieVR Controller may send a top-level event type `100` with nested field `8`.
+
+The nested message currently defines:
+
+- field 1, varint: controller-phone battery percentage, clamped to 0–100.
+
+This extension is optional and ignored by historical implementations that do not understand it. Headset-side ReverieVR treats absence of this event as **battery unknown**, never as 0%.
+
+The extension does not alter historical event framing, RFCOMM UUID, or existing event type meanings.

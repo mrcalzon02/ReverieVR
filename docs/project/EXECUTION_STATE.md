@@ -138,7 +138,40 @@ Remaining gates:
 - axis/polarity/comfort verification;
 - user-remapping UI remains RV-0202.
 
-A follow-on RV-0094 reserves an independently authored ReverieVR Controller companion APK so the long-term phone-controller fallback does not depend on Google's deprecated utility.
+### RV-0094 — ReverieVR Controller companion APK
+
+State: **draft**
+
+Implemented:
+
+- independent Android application module `controller-app`;
+- application ID `io.github.mrcalzon02.reverievr.controller`;
+- portrait spare-phone controller surface with large touchpad plus Select, App/Back, and Home/Recenter controls;
+- physical controller-phone volume keys forwarded as controller volume actions while connected;
+- rotation-vector orientation with `TYPE_GAME_ROTATION_VECTOR` fallback;
+- gyroscope and accelerometer transport when available;
+- explicit refusal to start 3DoF control when no usable rotation-vector sensor exists;
+- classic Bluetooth RFCOMM server using the historical controller-emulator UUID;
+- bonded-client verification before accepting the headset session;
+- 4-byte big-endian framing and independently authored protobuf-wire event writer;
+- separate discrete-control queue plus coalesced orientation/gyro/accelerometer lanes;
+- keep-screen-on behavior during companion use;
+- backward-compatible ReverieVR status event exposing the real controller-phone battery percentage to the headset HUD;
+- pure-Java protocol writer tests;
+- headset updater asset filtering that rejects controller APKs.
+
+Remaining gates:
+
+- build `:controller-app:assembleDebug`;
+- install on a second Android phone;
+- pair both phones through Android Bluetooth;
+- verify headset selection, RFCOMM connection, orientation/touch/button mapping, reconnect behavior, battery HUD, and long-session stability;
+- validate that historical third-party/Google-compatible emulator traffic still works with the battery extension absent;
+- measure sensor/update cadence and latency before claiming controller-comfort acceptance.
+
+The companion is optional. Physical Daydream BLE and Android gamepad recovery paths remain independent.
+
+
 
 ### RV-0092 / RV-0100 — Stage A -> Stage B and VR shell
 
@@ -275,15 +308,16 @@ On a local Android development environment:
 2. verify Cardboard submodule SHA `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`;
 3. install JDK 17, Android SDK 36, NDK 29.0.14206865, and CMake;
 4. run `./scripts/verify-build-bootstrap.sh`;
-5. run `./gradlew test :app:assembleDebug`;
+5. run `./gradlew test :app:assembleDebug :controller-app:assembleDebug`;
 6. install the APK on the Galaxy S9;
-7. test Stage A pairing and live controller input;
-8. enter the Daydream View and validate stereo/head tracking/gaze/click navigation;
-9. walk through the first-run calibration pages;
-10. choose and play a known-good local flat video, verify play/pause/back, then repeat with a mono equirectangular 360° sample;
-11. background/resume during playback to exercise SurfaceTexture/decoder reattachment;
-12. launch `scripts/scrcpy-reverie.sh` or `scripts\\scrcpy-reverie.bat` over USB and verify Stage A can be operated remotely while the Daydream controller remains connected;
-13. enter Stage B and verify the stereoscopic output remains visible in scrcpy while the physical phone display stays on in the headset;
-14. repeat a representative media/control flow under scrcpy for diagnostic capture, then close scrcpy;
-15. perform sustained frame-pacing/thermal acceptance **without scrcpy running**;
-16. capture any build, controller-axis, optical, scrcpy, media-orientation, decode, UI-scale, frame-pacing, or thermal defects for the next repair pass.
+7. test Stage A physical Daydream pairing and live controller input;
+8. install the companion APK on a second Android phone and validate paired-phone RFCOMM control plus controller-phone battery telemetry;
+9. enter the Daydream View and validate stereo/head tracking/gaze/Select navigation with each available input source;
+10. walk through the first-run calibration pages;
+11. choose and play a known-good local flat video, verify play/pause/back, then repeat with a mono equirectangular 360° sample;
+12. background/resume during playback to exercise SurfaceTexture/decoder reattachment;
+13. launch `scripts/scrcpy-reverie.sh` or `scripts\\scrcpy-reverie.bat` over USB and verify Stage A can be operated remotely while a controller source remains connected;
+14. enter Stage B and verify the stereoscopic output remains visible in scrcpy while the physical phone display stays on in the headset;
+15. repeat a representative media/control flow under scrcpy for diagnostic capture, then close scrcpy;
+16. perform sustained frame-pacing/thermal acceptance **without scrcpy running**;
+17. capture any build, controller-axis, phone-controller, optical, scrcpy, media-orientation, decode, UI-scale, frame-pacing, or thermal defects for the next repair pass.

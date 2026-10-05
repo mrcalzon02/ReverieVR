@@ -4,6 +4,20 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### ReverieVR Controller companion
+
+- Added a second lightweight Android application module, `controller-app`, with application ID `io.github.mrcalzon02.reverievr.controller`.
+- Added a spare-phone controller UI with a large touchpad, Select, App/Back, Home/Recenter, and physical volume-button forwarding.
+- Added rotation-vector orientation, gyroscope, and accelerometer transmission over the historical Daydream controller-emulator RFCOMM framing.
+- Added a bonded-client-only RFCOMM server using UUID `ab001ac1-d740-4abb-a8e6-1cb5a49628fa`.
+- Added separate prioritized control and coalesced sensor queues so high-rate pose traffic cannot strand button-up events.
+- Added a backward-compatible ReverieVR status extension carrying the companion phone battery percentage; historical emulators that omit it continue to report battery as unknown.
+- Added pure-Java companion protocol-writer tests and headset-side parser coverage for the battery extension.
+- Hardened the headset updater so it cannot accidentally select a controller companion APK from a multi-APK GitHub Release.
+- The companion app remains draft pending build and two-phone hardware validation.
+
+
+
 ### Local media
 
 - Added Android Storage Access Framework local-video selection with persisted per-document read access instead of broad storage permission.

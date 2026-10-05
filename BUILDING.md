@@ -58,19 +58,36 @@ After cloning and initializing submodules, verify the bootstrap:
 
     ./scripts/verify-build-bootstrap.sh
 
-Then test and build:
+Then test and build both applications:
 
-    ./gradlew test :app:assembleDebug
+    ./gradlew test :app:assembleDebug :controller-app:assembleDebug
 
-Expected debug APK:
+Expected debug APKs:
 
     app/build/outputs/apk/debug/app-debug.apk
+    controller-app/build/outputs/apk/debug/controller-app-debug.apk
 
-Install:
+Install the headset application on the Galaxy S9:
 
     adb install -r app/build/outputs/apk/debug/app-debug.apk
 
-On Windows, use `gradlew.bat test :app:assembleDebug`.
+Install the optional companion controller on a second Android phone:
+
+    adb install -r controller-app/build/outputs/apk/debug/controller-app-debug.apk
+
+On Windows, use:
+
+    gradlew.bat test :app:assembleDebug :controller-app:assembleDebug
+
+The two APKs have different application IDs:
+
+- headset: `io.github.mrcalzon02.reverievr`
+- companion: `io.github.mrcalzon02.reverievr.controller`
+
+GitHub Release assets must keep unambiguous package names. The headset updater only accepts assets named `ReverieVR.apk` or beginning with `ReverieVR-` and explicitly rejects names containing `controller`. Recommended release names:
+
+    ReverieVR-v<version>.apk
+    ReverieVR-Controller-v<version>.apk
 
 ## scrcpy diagnostic workflow
 
@@ -118,7 +135,8 @@ On the Galaxy S9:
 5. run the live controller input test;
 6. verify touchpad, click, Menu, Home, volume-button bits and controller battery;
 7. return to Stage A and validate the alternate input sources:
-   - pair a second Android phone in Android Bluetooth settings, start a compatible Daydream controller-emulator app, tap **Use paired phone as controller**, select that phone, and verify touch/click/App/Home events;
+   - install the ReverieVR Controller companion APK on a second Android phone, pair both phones in Android Bluetooth settings, start the companion server, tap **Use paired phone as controller**, select that phone, and verify orientation, touch/click, App/Home, physical volume forwarding, reconnect behavior, and real companion-phone battery telemetry;
+   - optionally repeat with a historical compatible Daydream controller-emulator app and verify the same headset-side RFCOMM receiver works while battery correctly remains unknown;
    - connect a standard Bluetooth or USB Android gamepad and verify Stage A reports it as ready without pretending controller battery telemetry exists;
 8. tap **Enter VR**;
 9. verify stereo distortion/head tracking;

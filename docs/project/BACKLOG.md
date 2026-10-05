@@ -15,7 +15,7 @@
 
 - RV-0090 — Implement conventional 2D touchscreen boot/setup surface.
 - RV-0091 — Implement controller pairing/sync, readiness state, battery telemetry where available, pose/button/touch decoding, recenter behavior, and controller test workflow. Reference sources are physical Daydream BLE, a paired Android phone using the historical controller-emulator RFCOMM protocol, and ordinary Android gamepads/joysticks through the normalized action layer.
-- RV-0094 — Implement an optional independently authored **ReverieVR Controller** companion APK for a spare Android phone: gyroscope/orientation, touchpad surface, primary/App/Home controls, RFCOMM compatibility transport, clear connection state, and no dependency on Google VR Services.
+- RV-0094 — **Draft implementation present.** Finish and validate the optional independently authored **ReverieVR Controller** companion APK for a spare Android phone: orientation/gyro/accelerometer transport, touchpad surface, primary/App/Home/volume controls, bonded RFCOMM compatibility transport, real controller-phone battery telemetry, reconnect behavior, clear connection state, and no dependency on Google VR Services.
 - RV-0092 — Implement explicit 2D-to-VR entry plus safe fallback/recovery to 2D setup.
 - RV-0093 — Implement optional authoritative GitHub Release update checking, user-notified Update/Not now choice, APK integrity validation when a digest is published, and Android package-installer handoff.
 
