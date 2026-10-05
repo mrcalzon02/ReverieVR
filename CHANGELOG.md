@@ -4,6 +4,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### VR runtime and controller integration
+
+- Added an independent Android BLE backend for the Daydream controller: discovery, bonding, GATT connection, pose/input packet decoding, battery/voltage telemetry, recenter command, and a live Stage A input test.
+- Added a generic controller-provider/manager boundary so later controller types do not require rewriting the VR shell.
+- Pinned Google Cardboard SDK v1.35.0 at commit `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`.
+- Disabled Cardboard Vulkan and Unity-plugin native paths; ReverieVR uses the OpenGL ES path.
+- Added an application-scoped controller lifetime across Stage A and Stage B.
+- Added the first Cardboard Stage B activity and world-space VR shell with head-gaze selection, Daydream click activation, back/recenter handling, power status, and resumable first-run setup pages.
+- Added functional initial setup controls for neutral forward direction, virtual user eye spacing, UI scale, and HUD preferences.
+- Added pure-Java unit tests for the Daydream packet decoder and updater version comparison.
+
+
 ### Android bootstrap
 
 - Added a native Java/XML Android application skeleton for the Stage A pre-headset setup surface.

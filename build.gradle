@@ -6,9 +6,9 @@ plugins {
 
 project(":cardboard") {
     afterEvaluate {
-        android.defaultConfig.externalNativeBuild.cmake.arguments(
+        android.defaultConfig.externalNativeBuild.cmake.arguments.addAll([
             "-DCARDBOARDSDK_UNITY_PLUGIN=OFF",
             "-DCARDBOARDSDK_RENDERING_VULKAN=OFF"
-        )
+        ])
     }
 }
