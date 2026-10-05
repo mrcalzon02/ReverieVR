@@ -14,15 +14,21 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.provider.Settings;
+import android.text.InputType;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -54,6 +60,7 @@ public final class MainActivity extends Activity
     private DosModuleRepository dosModuleRepository;
     private DosModuleImporter dosModuleImporter;
     private DiagnosticBundleExporter diagnosticBundleExporter;
+    private DiagnosticSubmissionClient diagnosticSubmissionClient;
     private final ExecutorService dosImportExecutor =
         Executors.newSingleThreadExecutor();
     private final ExecutorService diagnosticExecutor =
@@ -88,6 +95,7 @@ public final class MainActivity extends Activity
     private Button importDosButton;
     private Button clearDosModulesButton;
     private Button exportLogsButton;
+    private Button submitDiagnosticsButton;
     private Button clearLogsButton;
     private RadioGroup videoProjectionGroup;
     private RadioGroup loggingModeGroup;
@@ -123,6 +131,8 @@ public final class MainActivity extends Activity
         installBundledDosContent();
         diagnosticBundleExporter =
             new DiagnosticBundleExporter(this);
+        diagnosticSubmissionClient =
+            new DiagnosticSubmissionClient();
 
         bindViews();
         configurePersistentControls();
@@ -231,6 +241,8 @@ public final class MainActivity extends Activity
         clearDosModulesButton =
             findViewById(R.id.clear_dos_modules_button);
         exportLogsButton = findViewById(R.id.export_logs_button);
+        submitDiagnosticsButton =
+            findViewById(R.id.submit_diagnostics_button);
         clearLogsButton = findViewById(R.id.clear_logs_button);
         videoProjectionGroup = findViewById(R.id.video_projection_group);
         loggingModeGroup = findViewById(R.id.logging_mode_group);
@@ -318,6 +330,21 @@ public final class MainActivity extends Activity
         exportLogsButton.setOnClickListener(
             view -> chooseDiagnosticExportDestination()
         );
+
+        boolean diagnosticSubmissionConfigured =
+            diagnosticSubmissionClient != null
+                && diagnosticSubmissionClient.isConfigured();
+        submitDiagnosticsButton.setVisibility(
+            diagnosticSubmissionConfigured
+                ? View.VISIBLE
+                : View.GONE
+        );
+        if (diagnosticSubmissionConfigured) {
+            submitDiagnosticsButton.setOnClickListener(
+                view -> beginDiagnosticSubmission()
+            );
+        }
+
         clearLogsButton.setOnClickListener(
             view -> confirmClearLogs()
         );
@@ -784,6 +811,310 @@ public final class MainActivity extends Activity
                 });
             }
         });
+    }
+
+    private void beginDiagnosticSubmission() {
+        if (diagnosticSubmissionClient == null
+            || !diagnosticSubmissionClient.isConfigured()) {
+            return;
+        }
+
+        int padding =
+            Math.round(
+                16f
+                    * getResources()
+                        .getDisplayMetrics()
+                        .density
+            );
+
+        LinearLayout form = new LinearLayout(this);
+        form.setOrientation(LinearLayout.VERTICAL);
+        form.setPadding(
+            padding,
+            padding / 2,
+            padding,
+            0
+        );
+
+        TextView privacy = new TextView(this);
+        privacy.setText(
+            R.string.diagnostic_submit_privacy
+        );
+        privacy.setTextSize(14f);
+        form.addView(privacy);
+
+        EditText summary = new EditText(this);
+        summary.setHint(
+            R.string.diagnostic_summary_hint
+        );
+        summary.setInputType(
+            InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                | InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        );
+        summary.setMinLines(3);
+        summary.setMaxLines(8);
+        form.addView(summary);
+
+        EditText expected = new EditText(this);
+        expected.setHint(
+            R.string.diagnostic_expected_hint
+        );
+        expected.setInputType(
+            InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                | InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        );
+        expected.setMinLines(2);
+        expected.setMaxLines(6);
+        form.addView(expected);
+
+        CheckBox includeLogs = new CheckBox(this);
+        includeLogs.setText(
+            R.string.diagnostic_include_logs
+        );
+        includeLogs.setChecked(true);
+        form.addView(includeLogs);
+
+        AlertDialog dialog =
+            new AlertDialog.Builder(this)
+                .setTitle(
+                    R.string.diagnostic_submit_title
+                )
+                .setView(form)
+                .setNegativeButton(
+                    android.R.string.cancel,
+                    null
+                )
+                .setPositiveButton(
+                    R.string.diagnostic_submit_confirm,
+                    null
+                )
+                .create();
+
+        dialog.setOnShowListener(
+            ignored ->
+                dialog.getButton(
+                    AlertDialog.BUTTON_POSITIVE
+                ).setOnClickListener(view -> {
+                    String summaryText =
+                        summary.getText()
+                            .toString()
+                            .trim();
+                    if (summaryText.isEmpty()) {
+                        summary.setError(
+                            getString(
+                                R.string.diagnostic_summary_required
+                            )
+                        );
+                        return;
+                    }
+
+                    String expectedText =
+                        expected.getText()
+                            .toString()
+                            .trim();
+                    boolean logs =
+                        includeLogs.isChecked();
+
+                    dialog.dismiss();
+                    submitDiagnosticBundle(
+                        summaryText,
+                        expectedText,
+                        logs
+                    );
+                })
+        );
+        dialog.show();
+    }
+
+    private void submitDiagnosticBundle(
+        String summary,
+        String expected,
+        boolean includeLogs
+    ) {
+        if (diagnosticSubmissionClient == null
+            || diagnosticBundleExporter == null
+            || submitDiagnosticsButton == null) {
+            return;
+        }
+
+        final String diagnosticId =
+            DiagnosticSubmissionClient
+                .newDiagnosticId();
+
+        submitDiagnosticsButton.setEnabled(false);
+        loggingStatusText.setText(
+            R.string.diagnostic_submission_in_progress
+        );
+
+        diagnosticExecutor.execute(() -> {
+            File bundle = null;
+            try {
+                ReverieLog.milestone(
+                    "DIAGNOSTICS",
+                    "Secure diagnostic submission started: "
+                        + diagnosticId
+                        + ", includeLogs="
+                        + includeLogs
+                );
+
+                bundle =
+                    diagnosticBundleExporter
+                        .createSubmissionBundle(
+                            diagnosticId,
+                            includeLogs
+                        );
+
+                DiagnosticSubmissionClient.Result result =
+                    diagnosticSubmissionClient.submit(
+                        bundle,
+                        diagnosticId,
+                        summary,
+                        expected
+                    );
+
+                if (bundle.isFile()
+                    && !bundle.delete()) {
+                    ReverieLog.dev(
+                        "DIAGNOSTICS",
+                        "Submitted diagnostic bundle could not be "
+                            + "removed from private outbox: "
+                            + bundle.getAbsolutePath()
+                    );
+                }
+
+                ReverieLog.milestone(
+                    "DIAGNOSTICS",
+                    "Secure diagnostic submission completed: "
+                        + result.diagnosticId
+                        + " issue="
+                        + result.issueUrl
+                );
+
+                runOnUiThread(() -> {
+                    submitDiagnosticsButton.setEnabled(true);
+                    refreshLoggingStatus();
+                    showDiagnosticSubmissionSuccess(
+                        result
+                    );
+                });
+            } catch (Exception exception) {
+                boolean retained =
+                    bundle != null
+                        && bundle.isFile();
+
+                ReverieLog.error(
+                    "DIAGNOSTICS",
+                    "Secure diagnostic submission failed: "
+                        + diagnosticId
+                        + ", retained="
+                        + retained,
+                    exception
+                );
+
+                String message =
+                    exception.getMessage() == null
+                        ? exception.getClass()
+                            .getSimpleName()
+                        : exception.getMessage();
+
+                runOnUiThread(() -> {
+                    submitDiagnosticsButton.setEnabled(true);
+                    refreshLoggingStatus();
+                    showDiagnosticSubmissionFailure(
+                        message,
+                        retained
+                    );
+                });
+            }
+        });
+    }
+
+    private void showDiagnosticSubmissionSuccess(
+        DiagnosticSubmissionClient.Result result
+    ) {
+        if (result == null) {
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle(
+                R.string.diagnostic_submission_success_title
+            )
+            .setMessage(
+                getString(
+                    R.string.diagnostic_submission_success_format,
+                    result.diagnosticId,
+                    result.receiptReference
+                )
+            )
+            .setNegativeButton(
+                android.R.string.ok,
+                null
+            )
+            .setPositiveButton(
+                R.string.diagnostic_open_issue,
+                (dialog, which) ->
+                    openDiagnosticIssue(
+                        result.issueUrl
+                    )
+            )
+            .show();
+    }
+
+    private void showDiagnosticSubmissionFailure(
+        String failure,
+        boolean retained
+    ) {
+        int format =
+            retained
+                ? R.string.diagnostic_submission_failed_format
+                : R.string.diagnostic_submission_failed_no_bundle_format;
+
+        new AlertDialog.Builder(this)
+            .setTitle(
+                R.string.diagnostic_submission_failed_title
+            )
+            .setMessage(
+                getString(
+                    format,
+                    failure == null
+                        ? "Unknown error"
+                        : failure
+                )
+            )
+            .setPositiveButton(
+                android.R.string.ok,
+                null
+            )
+            .show();
+    }
+
+    private void openDiagnosticIssue(
+        String issueUrl
+    ) {
+        if (issueUrl == null
+            || !issueUrl.startsWith(
+                "https://github.com/mrcalzon02/ReverieVR/issues/"
+            )) {
+            return;
+        }
+
+        try {
+            startActivity(
+                new Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(issueUrl)
+                )
+            );
+        } catch (ActivityNotFoundException exception) {
+            Toast.makeText(
+                this,
+                issueUrl,
+                Toast.LENGTH_LONG
+            ).show();
+        }
     }
 
     private void confirmClearLogs() {
