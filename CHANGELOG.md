@@ -6,6 +6,17 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Phone-test cloud build and prerelease
+
+- Added an explicitly authorized GitHub Actions phone-test workflow with manual dispatch, pinned Android/NDK inputs, third-party verification, tests, dual-APK assembly, APK content/signature checks, SHA-256 output, and GitHub prerelease publication.
+- Repaired Android resource apostrophe escaping exposed by the first real AAPT build.
+- Completed the controller companion priority/coalesced-send refactor exposed by javac.
+- Added the Cardboard protobuf-lite runtime explicitly to the headset app compile classpath.
+- Corrected the stripped Cardboard linker configuration so Vulkan/Unity can remain disabled while both reference ABIs link successfully.
+- Made ReverieLog inert before initialization so pure-JVM binding tests do not call Android's unmocked Log stub.
+- GitHub Actions run #6 passed the complete test/build/verify pipeline and published prerelease `phone-test-6-1` with headset APK, controller APK and SHA-256 checksums.
+
+
 ### Native procedural modules
 
 - Added ABI v1 for trusted APK-packaged native game modules with explicit structure/version validation and shell-owned lifecycle/render boundaries.

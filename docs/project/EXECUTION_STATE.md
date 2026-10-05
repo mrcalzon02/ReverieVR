@@ -7,7 +7,7 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current implementation baseline immediately below this documentation update: `d5bfeaaa20cbdeee8bf7d2230348f868fd31a5a8`.
+- Current implementation baseline immediately below this documentation update: `c70026f8e5bd307bd5f53d46c862a87b629bff20`.
 - Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
@@ -379,11 +379,15 @@ Current-environment verification completed:
 - static source checks confirm unknown native-module ids fail closed, ABI/descriptor/callback validation is present, and only the compile-time allowlisted packaged test library is named;
 - the proof module source contains no Win32, Direct3D, DirectSound or x86 inline-assembly path;
 - Java/C++ structural brace checks passed for the new host/runtime/module and Stage B integration sources;
-- no Android SDK/NDK compile, APK install or device runtime claim is made from this environment.
+- GitHub Actions phone-test run #6 successfully executed the committed bootstrap verifier, JVM tests, headset and controller APK builds;
+- Cardboard native code compiled and linked for both `arm64-v8a` and `armeabi-v7a` with Vulkan/Unity disabled;
+- the headset APK passed an explicit package check for both ABIs of `libreverie_native_host.so`, `libreverie_module_test_chamber.so`, and `libreverie_dos_host.so`;
+- `apksigner verify --verbose --print-certs` passed for the published headset APK;
+- GitHub prerelease `phone-test-6-1` was published from commit `c70026f8e5bd307bd5f53d46c862a87b629bff20`;
+- no Galaxy S9/device-runtime claim is made until the APK is installed and exercised on the reference hardware.
 
 Remaining gates:
 
-- actual Android NDK compile/link for both target ABIs;
 - Galaxy S9 stereo/head-tracking/movement/Select/Back/HUD/pause-resume validation;
 - sustained frame-pacing, battery and thermal validation;
 - shared module settings/audio/save/performance-budget services beyond the proof ABI.
@@ -534,24 +538,18 @@ The project backlog includes remembered global comfort preferences, universal re
 
 Automatic convenience behaviors remain user-toggleable unless required for recoverability.
 
-## Environment limitation
+## Build environment and phone-test release
 
-This execution environment does not provide a verified Android SDK/NDK/Gradle/ADB toolchain, so the current source has **not** been claimed as successfully assembled into an APK.
+The interactive execution environment still does not expose a local Android SDK/NDK/ADB stack. Explicitly authorized GitHub Actions now supplies the reproducible cloud Android build environment instead.
 
-No Galaxy S9, headset, optical, Bluetooth, thermal, or comfort validation has been performed from this environment.
+Phone-test run #6 completed successfully and published prerelease `phone-test-6-1`. The headset APK is a debug-signed sideload build for reference-device validation, not a production signing identity. Future phone-test builds may require uninstall/reinstall until persistent protected test/release signing is configured.
+
+No Galaxy S9, headset, optical, Bluetooth, thermal, or comfort validation has yet been claimed.
 
 ## Next exact action
 
-On a local Android development environment:
-
-For the DOS-enabled reference build, run `./scripts/fetch-dosbox-pure.sh` (or the Windows `.bat` helper) before the bootstrap/build steps below. The bootstrap verifier rejects the fetched core if it is not at the pinned commit.
-
-1. `git submodule update --init --recursive`;
-2. verify Cardboard submodule SHA `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`;
-3. install JDK 17, Android SDK 36, NDK 29.0.14206865, and CMake;
-4. run `./scripts/verify-build-bootstrap.sh`;
-5. run `./gradlew test :app:assembleDebug :controller-app:assembleDebug`;
-6. install the APK on the Galaxy S9;
+1. install the headset APK from GitHub prerelease `phone-test-6-1` on the Galaxy S9;
+2. launch Stage A and confirm ordinary Android startup before entering the headset;
 7. test Stage A physical Daydream pairing and live controller input;
 8. install the companion APK on a second Android phone and validate paired-phone RFCOMM control plus controller-phone battery telemetry;
 9. enter the Daydream View and validate stereo/head tracking/gaze/Select navigation with each available input source;
