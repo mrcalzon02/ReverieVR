@@ -133,7 +133,7 @@ Implemented:
 - volume actions adjust the Android music stream;
 - raw Daydream button interpretation is no longer embedded directly in `VrActivity`.
 
-Current verification: phone-test run #12 successfully built the first BLE discovery hardening. Subsequent source now adds broad foreground discovery, privacy-bounded scan diagnostics, explicit physical Daydream/Home pairing guidance, and manifest capture of Bluetooth/Location/permission prerequisites. GitHub Issue #2 tracks the Galaxy S9 symptom; these newest discovery changes still require a fresh phone-test build and physical S9 validation before the GATT/pose path can be claimed.
+Current verification: phone-test #21 completed successfully against `f1ccc93963bbcf18b81169626f45877a4c33f3e9` and published prerelease `phone-test-21-1`. This package includes broad foreground discovery, privacy-bounded scan diagnostics, explicit physical Daydream/Home pairing guidance, and manifest capture of Bluetooth/Location/permission prerequisites. GitHub Issue #2 tracks the remaining physical Galaxy S9 validation; FE55 discovery and live GATT/pose streaming still require handset evidence before acceptance.
 
 Remaining gates:
 
