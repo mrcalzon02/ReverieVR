@@ -369,14 +369,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     preferences.setVrSetupStep(0);
                     break;
                 case 1:
-                    // Media player is a real future module; keep the shell in place.
+                    mode = MODE_SETUP;
+                    setupStep = 1;
+                    preferences.setVrSetupStep(1);
                     break;
                 case 2:
-                    mode = MODE_SETUP;
-                    setupStep = 2;
-                    preferences.setVrSetupStep(2);
-                    break;
-                case 3:
                     host.onExitToPhoneRequested();
                     return;
                 default:
@@ -480,10 +477,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int[][] activeButtons() {
         if (mode == MODE_HOME) {
             return new int[][] {
-                {160, 270, 864, 350},
-                {160, 365, 864, 445},
-                {160, 460, 864, 540},
-                {160, 555, 864, 635}
+                {160, 300, 864, 390},
+                {160, 410, 864, 500},
+                {160, 520, 864, 610}
             };
         }
 
@@ -531,7 +527,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         drawPowerHud(canvas, paint);
-        drawReticle(canvas, paint);
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
@@ -554,9 +549,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
 
         String[] labels = new String[] {
-            "VR SETUP",
-            "MEDIA",
-            "SETTINGS",
+            "RUN VR SETUP",
+            "OPTICAL / DISPLAY CALIBRATION",
             "EXIT TO PHONE"
         };
         drawButtons(canvas, paint, labels, activeButtons());
