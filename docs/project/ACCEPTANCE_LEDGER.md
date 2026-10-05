@@ -13,12 +13,12 @@ Acceptance states:
 
 | Target | Description | State | Evidence / remaining gate |
 |---|---|---|---|
-| RV-0001 | Project governance/bootstrap | **static accepted** | Governance baseline committed and independently read back from remote `main` at `542a6d14121ba986f73b5b940c5debbeb0a0f057`. |
-| RV-0002 | Framework/runtime/controller-stack selection | planned | Requires research, license/provenance review, 2D-to-VR transition support, controller pairing path, and recorded architecture decision. |
-| RV-0003 | Android APK skeleton | planned | Must build and install/launch on reference device. |
-| RV-0090 | 2D touchscreen boot/setup surface | planned | Must launch conventionally outside VR and remain usable for setup/recovery. |
-| RV-0091 | Controller pairing/readiness workflow | planned | Must pair/sync or reconnect the reference controller and visibly verify input readiness without Google service dependency. |
-| RV-0092 | 2D-to-VR transition/recovery | planned | Must enter stereoscopic VR deliberately and return safely to 2D setup after failure or user request. |
+| RV-0001 | Project governance/bootstrap | **static accepted** | Governance baseline committed and independently read back from remote `main`. |
+| RV-0002 | Framework/runtime/controller-stack selection | planned | Requires research, license/provenance review, controller pairing path, renderer selection, and recorded architecture decision. |
+| RV-0003 | Android APK skeleton | **draft** | Android/Gradle/Java source is on remote `main` at `a4b4db3679fc768c4b32e40c2efb04183bf73056`; build not run because this environment lacks Gradle/Android SDK. |
+| RV-0090 | 2D touchscreen boot/setup surface | **draft** | UI source, real phone battery reporting, persisted QoL toggles, recovery reset, and honest readiness gates are on remote `main`; APK/device launch still required. |
+| RV-0091 | Controller pairing/readiness workflow | planned | Pair / Sync and Test actions exist in the UI but remain disabled until the verified Daydream controller stack is implemented. |
+| RV-0092 | 2D-to-VR transition/recovery | planned | Enter VR exists but is disabled until Stage B is implemented and verified. |
 | RV-0100 | VR home/menu | planned | Must be operable in headset without touchscreen dependency after successful VR entry. |
 | RV-0300 | Retro performance fixture | planned | Requires on-device sustained performance evidence. |
 | RV-0500 | Local VR media player | planned | Requires on-device playback and thermal validation. |

@@ -4,6 +4,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Android bootstrap
+
+- Added a native Java/XML Android application skeleton for the Stage A pre-headset setup surface.
+- Added a conventional touchscreen setup menu with device identification and real phone-battery reporting.
+- Added persistent quality-of-life toggles for the future VR battery HUD, look-up reveal behavior, numeric battery percentages, and retro performance-first mode.
+- Added visible controller Pair / Sync and Test actions; they remain disabled until the controller stack is genuinely implemented.
+- Added an Android Bluetooth-settings shortcut without claiming generic Bluetooth pairing is sufficient for the Daydream controller.
+- Added local settings reset/recovery behavior.
+- Added an Enter VR control that remains disabled until the Stage B runtime exists.
+- Added build instructions and ADR-0003 establishing a lightweight native Android Stage A boundary.
+- No APK build or reference-device validation has yet been claimed.
+
 ### Project foundation
 
 - Adopted AI Project Manager-compatible project governance and repository execution rules.

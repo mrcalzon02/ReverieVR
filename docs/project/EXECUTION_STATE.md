@@ -7,10 +7,11 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Governance session starting remote HEAD: `0e071ad98e3a180ea336cc67bee0bb0afbbdd118`
-- Governance baseline commit: `542a6d14121ba986f73b5b940c5debbeb0a0f057`
-- Governance acceptance/bookkeeping commit: `125b5061e22d57151f7803e37a3f7efd5734508d`
-- Remote readback confirmed `main` contained the governance baseline and project state.
+- Current verified remote implementation HEAD: `a4b4db3679fc768c4b32e40c2efb04183bf73056`
+- Stage A implementation commits:
+  - `64d00d48d49ec75fcd95f4c29d76d21970fdf070` — native Android Stage A setup menu
+  - `a4b4db3679fc768c4b32e40c2efb04183bf73056` — controller Pair / Sync and Test actions exposed in the setup UI
+- Remote readback confirmed the Android project, manifest, Java source, XML layout/resources, build instructions, and ADR-0003 are present on `main`.
 
 ## Last completed target
 
@@ -18,45 +19,75 @@
 
 Acceptance: **static accepted**.
 
-## Newly accepted architecture requirement
+## Current implementation state
 
-The product boot path is now explicitly two-stage:
+### RV-0003 — Android APK skeleton
 
-1. **Stage A — 2D touchscreen setup:** launch outside VR, pair/sync and verify the controller, expose pre-VR diagnostics/recovery, then deliberately enter VR.
-2. **Stage B — 3D VR home:** transition into stereoscopic seated VR and operate the normal shell using head-look plus the controller.
+State: **draft**
 
-A reliable recovery route from Stage B back to Stage A is required.
+Implemented:
 
-The underlying controller pairing transport/stack is not assumed yet; RV-0002 must verify and record the implementation path.
+- Gradle Android application structure;
+- application ID `io.github.mrcalzon02.reverievr`;
+- minimum SDK 26;
+- compile/target SDK 36;
+- Java 17 source;
+- no AndroidX/Compose/game-engine dependency;
+- no Internet permission;
+- documented local build path.
 
-## Active target
+Remaining gate:
 
-**RV-0002 — Framework/runtime selection research**
+- generate/verify standard Gradle wrapper;
+- run `:app:assembleDebug`;
+- inspect resulting APK;
+- install and launch on the Galaxy S9.
 
-Select the smallest sustainable Android VR/rendering and controller-integration stack that can support the Galaxy S9 + Daydream View reference path offline.
+### RV-0090 — 2D touchscreen boot/setup surface
 
-Required decision evidence:
+State: **draft**
 
-- candidate frameworks/runtimes;
-- current source/maintenance state;
-- license and redistribution implications;
-- Android API/ABI compatibility;
-- conventional 2D Android UI support before VR entry;
-- clean 2D-to-stereoscopic-VR mode transition;
-- rendering/head-tracking/viewer support;
-- controller discovery/pairing/sync/readiness path;
-- ability to operate without discontinued Daydream services;
-- controller/input integration implications;
-- APK/runtime size and performance implications;
-- build reproducibility;
-- selected baseline and rejected alternatives.
+Implemented source:
 
-The decision must be persisted as an architecture/decision record before implementation commits depend on it.
+- conventional portrait Android launch screen;
+- device/model/API reporting;
+- real phone battery percentage/bar;
+- honest unknown controller battery state;
+- visible Pair / Sync and Test Controller actions, disabled until the controller stack exists;
+- live shortcut to Android Bluetooth settings;
+- persisted QoL toggles for VR battery HUD, look-up reveal, numeric percentages, and retro performance mode;
+- local settings reset/recovery control;
+- Enter VR visibly disabled until Stage B exists.
 
-## Next after RV-0002
+Remaining gate:
 
-**RV-0003 — Android APK skeleton**, then **RV-0090 through RV-0092 — pre-VR boot/pairing/transition**, followed by the Phase 2 ReverieVR 3D home/menu work defined in `APK_BUILD_ORDER.md`.
+- successful APK build;
+- install/launch and touchscreen interaction test on reference hardware.
 
-## Blocker
+## Active architecture target
 
-None.
+**RV-0002 — Framework/runtime/controller-stack selection**
+
+Stage A is now deliberately independent of this decision. RV-0002 remains responsible for:
+
+- Daydream controller discovery/pairing/input/battery;
+- stereoscopic rendering;
+- head tracking;
+- 2D-to-VR transition;
+- recovery from Stage B back to Stage A.
+
+## Environment limitation observed
+
+The current execution environment has Java but does not have Gradle, Android SDK/build tools, or ADB. Therefore no APK build or device/runtime claim was made.
+
+## Next exact action
+
+From a verified JDK 17 + Android SDK 36 + Gradle 9.6.1 environment:
+
+1. generate the Gradle 9.6.1 wrapper;
+2. run `./gradlew :app:assembleDebug`;
+3. inspect the APK;
+4. install on the Galaxy S9;
+5. validate Stage A launch, persistence, battery display, Bluetooth shortcut, reset behavior, and disabled readiness gates.
+
+In parallel, RV-0002 controller/runtime research may proceed without changing the Stage A UI boundary.
