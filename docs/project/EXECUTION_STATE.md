@@ -7,7 +7,7 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current implementation baseline immediately below this documentation update: `2e1fb3f88f79e17f3c22b19bc6a2273a2e895ad0`.
+- Current implementation baseline immediately below this documentation update: `83e20d381043d8b6a3739604aa76e42a34945620`.
 - Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
@@ -286,6 +286,30 @@ The compatibility contract requires:
 Helper launchers are provided in `scripts/scrcpy-reverie.sh` and `scripts/scrcpy-reverie.bat`.
 
 Remaining gate: verify USB debugging + scrcpy against the real Galaxy S9 while Daydream BLE is connected and Stage B is actively rendering.
+
+### RV-0106 / RV-0107 — global power HUD and look-up reveal
+
+State: **draft**
+
+Implemented:
+
+- separate transparent HUD texture rather than battery text baked into the menu panel;
+- two always-available status rows while the HUD feature is enabled: PHONE and CTRL;
+- real progress-bar fill from 0–100%;
+- optional numeric percentage display using the existing Show Percentages preference;
+- honest controller/phone unknown state shown as an empty bar plus `--`, never fabricated 0%;
+- overlay rendered after both the normal VR shell and local video scene so media playback does not hide battery status;
+- compact upper-right placement during normal forward viewing;
+- optional look-up reveal using the player head-forward vector; above the current provisional threshold the HUD drops lower into the view;
+- Battery HUD and Look-up Reveal remain user-toggleable QoL features;
+- HUD geometry and texture storage are reused without per-eye allocation.
+
+Remaining gates:
+
+- Galaxy S9 / Daydream View legibility and binocular-comfort validation;
+- verify the provisional look-up threshold feels natural;
+- validate controller orientation axes before adding controller-pointing-up as an alternate reveal trigger;
+- confirm no meaningful frame-time or thermal regression.
 
 ## Performance posture
 
