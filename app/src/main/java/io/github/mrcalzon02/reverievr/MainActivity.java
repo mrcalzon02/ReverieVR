@@ -53,6 +53,7 @@ public final class MainActivity extends Activity
     private ReveriePreferences preferences;
     private UpdateChecker updateChecker;
     private UpdateInstaller updateInstaller;
+    private UiFeedback uiFeedback;
     private UpdateChecker.Release availableUpdate;
     private ControllerManager controllerManager;
     private InputManager inputManager;
@@ -97,6 +98,7 @@ public final class MainActivity extends Activity
     private Button exportLogsButton;
     private Button submitDiagnosticsButton;
     private Button clearLogsButton;
+    private Button controllerActionButton;
     private RadioGroup videoProjectionGroup;
     private RadioGroup loggingModeGroup;
 
@@ -115,8 +117,8 @@ public final class MainActivity extends Activity
         setContentView(R.layout.activity_main);
 
         preferences = new ReveriePreferences(this);
+        uiFeedback = new UiFeedback(this);
         updateChecker = new UpdateChecker();
-        updateInstaller = new UpdateInstaller(this);
         controllerManager =
             ((ReverieApplication) getApplication()).getControllerManager();
         inputManager =
@@ -135,6 +137,11 @@ public final class MainActivity extends Activity
             new DiagnosticSubmissionClient();
 
         bindViews();
+        updateInstaller =
+            new UpdateInstaller(
+                this,
+                () -> uiFeedback.failure(installUpdateButton)
+            );
         configurePersistentControls();
         configureActions();
         refreshStaticStatus();
@@ -184,6 +191,9 @@ public final class MainActivity extends Activity
         }
         if (updateInstaller != null) {
             updateInstaller.close();
+        }
+        if (uiFeedback != null) {
+            uiFeedback.close();
         }
         dosImportExecutor.shutdownNow();
         diagnosticExecutor.shutdownNow();
@@ -286,49 +296,71 @@ public final class MainActivity extends Activity
     }
 
     private void configureActions() {
-        pairControllerButton.setOnClickListener(
-            view -> beginControllerPairing()
+        uiFeedback.bind(
+            pairControllerButton,
+            this::beginControllerPairing
         );
-        phoneEmulatorButton.setOnClickListener(
-            view -> beginPhoneController()
+        uiFeedback.bind(
+            phoneEmulatorButton,
+            this::beginPhoneController
         );
 
         testControllerButton.setEnabled(false);
-        testControllerButton.setOnClickListener(view -> {
-            controllerTestEnabled = !controllerTestEnabled;
-            testControllerButton.setText(
-                controllerTestEnabled
-                    ? R.string.stop_controller_test
-                    : R.string.test_controller
-            );
-            controllerInputTestText.setText(
-                controllerTestEnabled
-                    ? R.string.controller_test_waiting
-                    : R.string.controller_test_inactive
-            );
-        });
+        uiFeedback.bind(
+            testControllerButton,
+            () -> {
+                controllerTestEnabled = !controllerTestEnabled;
+                testControllerButton.setText(
+                    controllerTestEnabled
+                        ? R.string.stop_controller_test
+                        : R.string.test_controller
+                );
+                controllerInputTestText.setText(
+                    controllerTestEnabled
+                        ? R.string.controller_test_waiting
+                        : R.string.controller_test_inactive
+                );
+            }
+        );
 
-        Button bluetoothButton = findViewById(R.id.bluetooth_settings_button);
-        bluetoothButton.setOnClickListener(view -> openBluetoothSettings());
+        Button bluetoothButton =
+            findViewById(R.id.bluetooth_settings_button);
+        uiFeedback.bind(
+            bluetoothButton,
+            this::openBluetoothSettings
+        );
 
-        checkUpdateButton.setOnClickListener(view -> checkForUpdates(true));
+        uiFeedback.bind(
+            checkUpdateButton,
+            () -> checkForUpdates(true)
+        );
         installUpdateButton.setEnabled(false);
-        installUpdateButton.setOnClickListener(
-            view -> confirmInstallAvailableUpdate()
+        uiFeedback.bind(
+            installUpdateButton,
+            this::confirmInstallAvailableUpdate
         );
 
-        chooseVideoButton.setOnClickListener(view -> chooseLocalVideo());
-        clearVideoButton.setOnClickListener(view -> clearSelectedVideo());
-
-        importDosButton.setOnClickListener(
-            view -> chooseDosContent()
+        uiFeedback.bind(
+            chooseVideoButton,
+            this::chooseLocalVideo
         );
-        clearDosModulesButton.setOnClickListener(
-            view -> clearDosModules()
+        uiFeedback.bind(
+            clearVideoButton,
+            this::clearSelectedVideo
         );
 
-        exportLogsButton.setOnClickListener(
-            view -> chooseDiagnosticExportDestination()
+        uiFeedback.bind(
+            importDosButton,
+            this::chooseDosContent
+        );
+        uiFeedback.bind(
+            clearDosModulesButton,
+            this::clearDosModules
+        );
+
+        uiFeedback.bind(
+            exportLogsButton,
+            this::chooseDiagnosticExportDestination
         );
 
         boolean diagnosticSubmissionConfigured =
@@ -340,24 +372,35 @@ public final class MainActivity extends Activity
                 : View.GONE
         );
         if (diagnosticSubmissionConfigured) {
-            submitDiagnosticsButton.setOnClickListener(
-                view -> beginDiagnosticSubmission()
+            uiFeedback.bind(
+                submitDiagnosticsButton,
+                this::beginDiagnosticSubmission
             );
         }
 
-        clearLogsButton.setOnClickListener(
-            view -> confirmClearLogs()
+        uiFeedback.bind(
+            clearLogsButton,
+            this::confirmClearLogs
         );
 
-        Button resetButton = findViewById(R.id.reset_settings_button);
-        resetButton.setOnClickListener(view -> confirmReset());
+        Button resetButton =
+            findViewById(R.id.reset_settings_button);
+        uiFeedback.bind(
+            resetButton,
+            this::confirmReset
+        );
 
-        enterVrButton.setOnClickListener(
-            view -> startActivity(new Intent(this, VrActivity.class))
+        uiFeedback.bind(
+            enterVrButton,
+            () ->
+                startActivity(
+                    new Intent(this, VrActivity.class)
+                )
         );
     }
 
     private void beginControllerPairing() {
+        controllerActionButton = pairControllerButton;
         pendingControllerPermissionAction = PENDING_CONTROLLER_DAYDREAM;
         String[] missing = controllerManager.getMissingRuntimePermissions();
         if (missing.length > 0) {
@@ -370,6 +413,7 @@ public final class MainActivity extends Activity
     }
 
     private void beginPhoneController() {
+        controllerActionButton = phoneEmulatorButton;
         pendingControllerPermissionAction = PENDING_CONTROLLER_PHONE;
         String[] missing =
             controllerManager.getMissingPhoneEmulatorPermissions();
@@ -388,6 +432,8 @@ public final class MainActivity extends Activity
             controllerManager.getPairedPhoneTargets();
 
         if (targets.isEmpty()) {
+            uiFeedback.failure(phoneEmulatorButton);
+            controllerActionButton = null;
             new AlertDialog.Builder(this)
                 .setTitle(R.string.phone_controller_no_devices_title)
                 .setMessage(R.string.phone_controller_no_devices_message)
@@ -405,10 +451,12 @@ public final class MainActivity extends Activity
             labels[index] = targets.get(index).label();
         }
 
+        controllerActionButton = null;
         new AlertDialog.Builder(this)
             .setTitle(R.string.phone_controller_choose_title)
             .setItems(labels, (dialog, which) -> {
                 if (which >= 0 && which < targets.size()) {
+                    controllerActionButton = phoneEmulatorButton;
                     controllerManager.connectPhoneEmulator(
                         targets.get(which)
                     );
@@ -525,6 +573,7 @@ public final class MainActivity extends Activity
         try {
             startActivityForResult(intent, MEDIA_PICK_REQUEST);
         } catch (ActivityNotFoundException exception) {
+            uiFeedback.failure(chooseVideoButton);
             Toast.makeText(
                 this,
                 R.string.video_picker_unavailable,
@@ -580,6 +629,7 @@ public final class MainActivity extends Activity
                 persistFlags
             );
         } catch (SecurityException exception) {
+            uiFeedback.failure(chooseVideoButton);
             Toast.makeText(
                 this,
                 R.string.video_permission_persist_failed,
@@ -664,6 +714,7 @@ public final class MainActivity extends Activity
                 runOnUiThread(() -> {
                     importDosButton.setEnabled(true);
                     refreshDosModuleStatus();
+                    uiFeedback.failure(importDosButton);
                     Toast.makeText(
                         this,
                         getString(
@@ -747,6 +798,7 @@ public final class MainActivity extends Activity
                 "No document provider available for log export.",
                 exception
             );
+            uiFeedback.failure(exportLogsButton);
             Toast.makeText(
                 this,
                 R.string.log_export_unavailable,
@@ -798,6 +850,7 @@ public final class MainActivity extends Activity
                 runOnUiThread(() -> {
                     exportLogsButton.setEnabled(true);
                     refreshLoggingStatus();
+                    uiFeedback.failure(exportLogsButton);
                     Toast.makeText(
                         this,
                         getString(
@@ -902,6 +955,7 @@ public final class MainActivity extends Activity
                             .toString()
                             .trim();
                     if (summaryText.isEmpty()) {
+                        uiFeedback.failure(view);
                         summary.setError(
                             getString(
                                 R.string.diagnostic_summary_required
@@ -1022,6 +1076,7 @@ public final class MainActivity extends Activity
                 runOnUiThread(() -> {
                     submitDiagnosticsButton.setEnabled(true);
                     refreshLoggingStatus();
+                    uiFeedback.failure(submitDiagnosticsButton);
                     showDiagnosticSubmissionFailure(
                         message,
                         retained
@@ -1193,6 +1248,7 @@ public final class MainActivity extends Activity
                 DOS_PICK_REQUEST
             );
         } catch (ActivityNotFoundException exception) {
+            uiFeedback.failure(importDosButton);
             Toast.makeText(
                 this,
                 R.string.dos_picker_unavailable,
@@ -1314,6 +1370,12 @@ public final class MainActivity extends Activity
         refreshControllerPermissionState();
 
         if (!granted) {
+            Button failedButton =
+                pending == PENDING_CONTROLLER_PHONE
+                    ? phoneEmulatorButton
+                    : pairControllerButton;
+            uiFeedback.failure(failedButton);
+            controllerActionButton = null;
             controllerStatusText.setText(
                 R.string.controller_permission_denied
             );
@@ -1404,7 +1466,21 @@ public final class MainActivity extends Activity
                 + controllerConnectionMessage
         );
 
-        runOnUiThread(this::refreshInputReadiness);
+        runOnUiThread(() -> {
+            if (state == ControllerProvider.ConnectionState.READY) {
+                controllerActionButton = null;
+            } else if (
+                state == ControllerProvider.ConnectionState.ERROR
+                    || state
+                        == ControllerProvider.ConnectionState.BLUETOOTH_DISABLED
+            ) {
+                if (controllerActionButton != null) {
+                    uiFeedback.failure(controllerActionButton);
+                    controllerActionButton = null;
+                }
+            }
+            refreshInputReadiness();
+        });
     }
 
     @Override
@@ -1521,6 +1597,9 @@ public final class MainActivity extends Activity
                 break;
 
             case RELEASE_WITHOUT_APK:
+                if (userInitiated) {
+                    uiFeedback.failure(checkUpdateButton);
+                }
                 updateStatusText.setText(
                     getString(
                         R.string.update_release_without_apk_format,
@@ -1533,6 +1612,9 @@ public final class MainActivity extends Activity
 
             case ERROR:
             default:
+                if (userInitiated) {
+                    uiFeedback.failure(checkUpdateButton);
+                }
                 updateStatusText.setText(
                     getString(
                         R.string.update_error_format,
@@ -1614,6 +1696,7 @@ public final class MainActivity extends Activity
                 )
             );
         } catch (ActivityNotFoundException exception) {
+            uiFeedback.failure();
             Toast.makeText(
                 this,
                 R.string.update_release_page_unavailable,
@@ -1628,6 +1711,7 @@ public final class MainActivity extends Activity
                 new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
             );
         } catch (ActivityNotFoundException exception) {
+            uiFeedback.failure();
             Toast.makeText(
                 this,
                 R.string.bluetooth_settings_unavailable,
