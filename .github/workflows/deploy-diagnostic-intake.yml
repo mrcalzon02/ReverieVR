@@ -30,7 +30,16 @@ jobs:
           test -n "$DIAGNOSTIC_GITHUB_APP_ID"
           test -n "$DIAGNOSTIC_GITHUB_APP_PRIVATE_KEY"
 
+      - name: Verify private R2 bucket
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: diagnostic-intake
+          command: r2 bucket info reverievr-diagnostics --json
+
       - name: Deploy Worker and runtime secrets
+        id: deploy
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -43,3 +52,33 @@ jobs:
         env:
           DIAGNOSTIC_GITHUB_APP_ID: ${{ secrets.DIAGNOSTIC_GITHUB_APP_ID }}
           DIAGNOSTIC_GITHUB_APP_PRIVATE_KEY: ${{ secrets.DIAGNOSTIC_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: Verify deployed health endpoint
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOYMENT_URL"
+          HEALTH_URL="${DEPLOYMENT_URL%/}/healthz"
+
+          response=""
+          for attempt in 1 2 3 4 5 6; do
+            if response="$(curl --fail --silent --show-error --max-time 10 "$HEALTH_URL")"; then
+              break
+            fi
+            sleep 2
+          done
+
+          python3 - "$response" <<'PY'
+          import json
+          import sys
+
+          payload = json.loads(sys.argv[1])
+          if payload.get("ok") is not True:
+              raise SystemExit("health endpoint did not report ok=true")
+          if payload.get("service") != "reverievr-diagnostic-intake":
+              raise SystemExit("unexpected health endpoint service identity")
+          PY
+
+          echo "Diagnostic intake health check passed."
