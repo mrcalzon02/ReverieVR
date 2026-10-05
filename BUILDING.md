@@ -140,4 +140,4 @@ On the Galaxy S9:
 25. close scrcpy before sustained performance/thermal measurements;
 26. run a sustained playback session without scrcpy and record frame pacing, decoder failures, battery drain, temperature/throttling, and audio/video sync.
 
-Do not mark RV-0003, RV-0091, RV-0092, RV-0100, RV-0500 or RV-0501 device-accepted until the relevant checks have actually run.
+Do not mark RV-0003, RV-0006, RV-0091, RV-0092, RV-0100, RV-0102, RV-0500 or RV-0501 device-accepted until the relevant checks have actually run.
