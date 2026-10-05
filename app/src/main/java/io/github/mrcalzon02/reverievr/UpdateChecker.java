@@ -122,7 +122,7 @@ final class UpdateChecker implements AutoCloseable {
 
                     String name = asset.optString("name", "");
                     String browserDownloadUrl = asset.optString("browser_download_url", "");
-                    if (name.toLowerCase().endsWith(".apk")
+                    if (isHeadsetApkAssetName(name)
                         && isTrustedReleaseAssetUrl(browserDownloadUrl)) {
                         apkUrl = browserDownloadUrl;
                         apkDigest = asset.optString("digest", "");
@@ -172,6 +172,26 @@ final class UpdateChecker implements AutoCloseable {
                 connection.disconnect();
             }
         }
+    }
+
+    static boolean isHeadsetApkAssetName(String value) {
+        if (value == null) {
+            return false;
+        }
+
+        String normalized = value.trim().toLowerCase();
+        if (!normalized.endsWith(".apk")) {
+            return false;
+        }
+
+        if (normalized.contains("controller")) {
+            return false;
+        }
+
+        return normalized.startsWith("reverievr-")
+            || normalized.equals("reverievr.apk")
+            || normalized.equals("app-release.apk")
+            || normalized.equals("app-debug.apk");
     }
 
     private static boolean isTrustedReleaseAssetUrl(String value) {
