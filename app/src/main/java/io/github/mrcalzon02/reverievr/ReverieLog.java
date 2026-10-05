@@ -25,7 +25,7 @@ final class ReverieLog {
     private static final int DEVELOPMENT_ARCHIVES = 4;
 
     private static final LinkedBlockingQueue<Record> QUEUE =
-        new LinkedBlockingQueue<>();
+        new LinkedBlockingQueue<>(8192);
     private static final AtomicLong SEQUENCE =
         new AtomicLong();
 

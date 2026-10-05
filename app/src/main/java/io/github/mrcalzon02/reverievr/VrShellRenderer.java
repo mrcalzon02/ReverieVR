@@ -270,6 +270,30 @@ final class VrShellRenderer implements CardboardView.Renderer {
         previousBindingYaw = bindingYaw;
         previousBindingPitch = bindingPitch;
 
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "VR_FRAME",
+                "mode="
+                    + mode
+                    + " yaw="
+                    + bindingYaw
+                    + " pitch="
+                    + bindingPitch
+                    + " forwardX="
+                    + headForward[0]
+                    + " forwardY="
+                    + headForward[1]
+                    + " forwardZ="
+                    + headForward[2]
+                    + " hudDropped="
+                    + hudDroppedDown
+                    + " phoneBattery="
+                    + phoneBattery.get()
+                    + " controllerBattery="
+                    + controllerBattery.get()
+            );
+        }
+
         if (recenterRequested.getAndSet(false)) {
             yawOffsetRadians = headEuler[1];
             host.onControllerRecenterRequested();

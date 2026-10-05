@@ -59,6 +59,22 @@ final class StandardHidInputRouter {
         }
 
         VirtualKey key = mapKey(event.getKeyCode());
+
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "HID_KEYBOARD",
+                "source="
+                    + sourceName(event)
+                    + " action="
+                    + event.getAction()
+                    + " keyCode="
+                    + event.getKeyCode()
+                    + " mapped="
+                    + key
+                    + " repeat="
+                    + event.getRepeatCount()
+            );
+        }
         if (key == null) {
             return false;
         }
@@ -98,6 +114,35 @@ final class StandardHidInputRouter {
         }
 
         String sourceName = sourceName(event);
+
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "HID_MOUSE",
+                "source="
+                    + sourceName
+                    + " action="
+                    + event.getActionMasked()
+                    + " buttons="
+                    + event.getButtonState()
+                    + " x="
+                    + event.getX()
+                    + " y="
+                    + event.getY()
+                    + " relX="
+                    + event.getAxisValue(
+                        MotionEvent.AXIS_RELATIVE_X
+                    )
+                    + " relY="
+                    + event.getAxisValue(
+                        MotionEvent.AXIS_RELATIVE_Y
+                    )
+                    + " wheel="
+                    + event.getAxisValue(
+                        MotionEvent.AXIS_VSCROLL
+                    )
+            );
+        }
+
         emitMouseButtons(event.getButtonState(), sourceName);
 
         float relativeX =

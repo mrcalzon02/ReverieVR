@@ -48,6 +48,16 @@ final class DosModuleImporter {
         }
 
         String id = UUID.randomUUID().toString();
+
+        ReverieLog.milestone(
+            "DOS_IMPORT",
+            "Import start name="
+                + safeName
+                + " uriScheme="
+                + (uri.getScheme() == null
+                    ? "unknown"
+                    : uri.getScheme())
+        );
         File directory =
             new File(repository.rootDirectory(), id);
         File contentDirectory =
@@ -84,8 +94,26 @@ final class DosModuleImporter {
                 );
 
             repository.save(module);
+
+            ReverieLog.milestone(
+                "DOS_IMPORT",
+                "Import complete id="
+                    + module.id
+                    + " name="
+                    + module.displayName
+                    + " bytes="
+                    + destination.length()
+                    + " path="
+                    + destination.getAbsolutePath()
+            );
+
             return module;
         } catch (IOException exception) {
+            ReverieLog.error(
+                "DOS_IMPORT",
+                "Import failed for " + safeName,
+                exception
+            );
             deleteRecursively(directory);
             throw exception;
         }

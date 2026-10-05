@@ -31,6 +31,16 @@ final class InputBindingEngine {
 
         this.profile = profile;
         thresholdStates = new boolean[profile.bindings.size()];
+
+        ReverieLog.milestone(
+            "BINDING",
+            "Active binding profile="
+                + profile.id
+                + " name="
+                + profile.displayName
+                + " bindings="
+                + profile.bindings.size()
+        );
     }
 
     synchronized void submitDigital(
@@ -41,12 +51,34 @@ final class InputBindingEngine {
             return;
         }
 
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "BINDING_INPUT",
+                "digital input="
+                    + input
+                    + " down="
+                    + down
+            );
+        }
+
         List<InputBinding> bindings = profile.bindings;
         for (int index = 0; index < bindings.size(); index++) {
             InputBinding binding = bindings.get(index);
             if (binding.input != input
                 || binding.transform != BindingTransform.DIGITAL) {
                 continue;
+            }
+
+            if (ReverieLog.isDevelopment()) {
+                ReverieLog.dev(
+                    "BINDING_OUTPUT",
+                    "digital "
+                        + input
+                        + " -> "
+                        + binding.output
+                        + " down="
+                        + down
+                );
             }
 
             bus.applyDigital(binding.output, down);
@@ -62,6 +94,18 @@ final class InputBindingEngine {
         }
 
         float safeValue = clampAxis(value);
+
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "BINDING_INPUT",
+                "axis input="
+                    + input
+                    + " raw="
+                    + value
+                    + " clamped="
+                    + safeValue
+            );
+        }
         List<InputBinding> bindings = profile.bindings;
 
         for (int index = 0; index < bindings.size(); index++) {
@@ -76,6 +120,21 @@ final class InputBindingEngine {
                         Math.abs(safeValue) < binding.deadzone
                             ? 0.0f
                             : safeValue * binding.scale;
+                    if (ReverieLog.isDevelopment()) {
+                        ReverieLog.dev(
+                            "BINDING_OUTPUT",
+                            "analog "
+                                + input
+                                + " -> "
+                                + binding.output
+                                + " value="
+                                + analog
+                                + " scale="
+                                + binding.scale
+                                + " deadzone="
+                                + binding.deadzone
+                        );
+                    }
                     bus.applyAnalog(binding.output, analog);
                     break;
 
@@ -110,6 +169,16 @@ final class InputBindingEngine {
             return;
         }
 
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "BINDING_INPUT",
+                "relative input="
+                    + input
+                    + " delta="
+                    + delta
+            );
+        }
+
         List<InputBinding> bindings = profile.bindings;
         for (int index = 0; index < bindings.size(); index++) {
             InputBinding binding = bindings.get(index);
@@ -123,6 +192,17 @@ final class InputBindingEngine {
                     ? 0.0f
                     : delta * binding.scale;
             if (value != 0.0f) {
+                if (ReverieLog.isDevelopment()) {
+                    ReverieLog.dev(
+                        "BINDING_OUTPUT",
+                        "relative "
+                            + input
+                            + " -> "
+                            + binding.output
+                            + " value="
+                            + value
+                    );
+                }
                 bus.applyAnalog(binding.output, value);
             }
         }
@@ -150,6 +230,19 @@ final class InputBindingEngine {
         }
 
         thresholdStates[index] = active;
+
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "BINDING_OUTPUT",
+                "threshold index="
+                    + index
+                    + " output="
+                    + output
+                    + " active="
+                    + active
+            );
+        }
+
         bus.applyDigital(output, active);
     }
 

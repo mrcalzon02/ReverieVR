@@ -60,6 +60,16 @@ final class VrInputRouter {
             return;
         }
 
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "INPUT_RAW",
+                "controller source="
+                    + safeSource(source)
+                    + " "
+                    + snapshot.toDiagnosticString()
+            );
+        }
+
         emitBindingDigitalEdge(
             BindingInput.SELECT,
             snapshot.touchpadPressed,
@@ -199,6 +209,20 @@ final class VrInputRouter {
 
         String source = gamepadSource(event);
 
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "INPUT_RAW",
+                "gamepad-key source="
+                    + source
+                    + " action="
+                    + event.getAction()
+                    + " keyCode="
+                    + event.getKeyCode()
+                    + " repeat="
+                    + event.getRepeatCount()
+            );
+        }
+
         if (binding != null) {
             if (event.getAction() == KeyEvent.ACTION_DOWN
                 && event.getRepeatCount() == 0) {
@@ -257,6 +281,22 @@ final class VrInputRouter {
             event.getAxisValue(MotionEvent.AXIS_RZ);
 
         String sourceName = gamepadSource(event);
+
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "INPUT_RAW",
+                "gamepad-axis source="
+                    + sourceName
+                    + " x="
+                    + horizontal
+                    + " y="
+                    + vertical
+                    + " rx="
+                    + rightX
+                    + " ry="
+                    + rightY
+            );
+        }
 
         emitBindingAxis(
             BindingInput.GAMEPAD_X,
@@ -354,6 +394,18 @@ final class VrInputRouter {
         boolean down,
         String source
     ) {
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "INPUT_NORMALIZED",
+                "digital input="
+                    + input
+                    + " down="
+                    + down
+                    + " source="
+                    + safeSource(source)
+            );
+        }
+
         BindingListener target = bindingListener;
         if (target != null) {
             target.onBindingDigital(
@@ -369,6 +421,18 @@ final class VrInputRouter {
         float value,
         String source
     ) {
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "INPUT_NORMALIZED",
+                "axis input="
+                    + input
+                    + " value="
+                    + value
+                    + " source="
+                    + safeSource(source)
+            );
+        }
+
         BindingListener target = bindingListener;
         if (target != null) {
             target.onBindingAxis(
@@ -383,6 +447,16 @@ final class VrInputRouter {
         VrInputAction action,
         String source
     ) {
+        if (ReverieLog.isDevelopment()) {
+            ReverieLog.dev(
+                "INPUT_ACTION",
+                "action="
+                    + action
+                    + " source="
+                    + safeSource(source)
+            );
+        }
+
         if (listener != null) {
             listener.onInputAction(
                 action,
