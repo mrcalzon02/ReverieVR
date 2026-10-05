@@ -22,11 +22,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelUuid;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
@@ -48,8 +49,11 @@ final class DaydreamControllerProvider implements ControllerProvider {
     private static final UUID CLIENT_CONFIG_DESCRIPTOR =
         UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
+    private static final long SCAN_TIMEOUT_MILLIS = 15000L;
+
     private final Context context;
     private final BluetoothAdapter adapter;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Queue<GattOperation> operationQueue = new ArrayDeque<>();
 
     private Listener listener;
@@ -64,6 +68,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
     private boolean ready;
     private int batteryPercentage = -1;
     private int batteryMillivolts = -1;
+    private int scanGeneration;
 
     private final BroadcastReceiver bondReceiver = new BroadcastReceiver() {
         @Override
@@ -108,7 +113,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             BluetoothDevice device = result == null ? null : result.getDevice();
-            if (device == null) {
+            if (device == null || !isDaydreamCandidate(result)) {
                 return;
             }
 
@@ -415,9 +420,6 @@ final class DaydreamControllerProvider implements ControllerProvider {
             return;
         }
 
-        ScanFilter filter = new ScanFilter.Builder()
-            .setServiceUuid(new ParcelUuid(DAYDREAM_SERVICE))
-            .build();
         ScanSettings settings = new ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build();
@@ -426,10 +428,25 @@ final class DaydreamControllerProvider implements ControllerProvider {
             ConnectionState.SCANNING,
             "Scanning for the Daydream controller…"
         );
+
+        final int generation = ++scanGeneration;
         scanner.startScan(
-            Arrays.asList(filter),
+            new ArrayList<>(),
             settings,
             scanCallback
+        );
+
+        mainHandler.postDelayed(
+            () -> {
+                if (scanner != null && generation == scanGeneration) {
+                    stopScan();
+                    emitConnection(
+                        ConnectionState.ERROR,
+                        "No Daydream controller was found. Wake it and try again."
+                    );
+                }
+            },
+            SCAN_TIMEOUT_MILLIS
         );
     }
 
@@ -475,7 +492,40 @@ final class DaydreamControllerProvider implements ControllerProvider {
         );
     }
 
+    private boolean isDaydreamCandidate(ScanResult result) {
+        if (result == null) {
+            return false;
+        }
+
+        if (result.getScanRecord() != null) {
+            List<ParcelUuid> advertisedServices = result.getScanRecord().getServiceUuids();
+            if (advertisedServices != null
+                && advertisedServices.contains(new ParcelUuid(DAYDREAM_SERVICE))) {
+                return true;
+            }
+
+            String advertisedName = result.getScanRecord().getDeviceName();
+            if (advertisedName != null
+                && advertisedName.toLowerCase().contains("daydream controller")) {
+                return true;
+            }
+        }
+
+        if (hasConnectPermission()) {
+            try {
+                String name = result.getDevice().getName();
+                return name != null
+                    && name.toLowerCase().contains("daydream controller");
+            } catch (SecurityException ignored) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
     private void stopScan() {
+        scanGeneration++;
         if (scanner != null && hasScanPermission()) {
             try {
                 scanner.stopScan(scanCallback);
