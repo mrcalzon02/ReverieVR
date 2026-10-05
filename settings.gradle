@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "ReverieVR"
 include(":app")
+include(":cardboard")
+project(":cardboard").projectDir = file("third_party/cardboard/sdk")
