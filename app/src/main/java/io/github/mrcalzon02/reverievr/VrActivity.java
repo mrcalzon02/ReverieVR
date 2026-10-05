@@ -29,9 +29,14 @@ public final class VrActivity extends Activity
     private ReveriePreferences preferences;
     private LocalVideoPlayer videoPlayer;
 
+    private static final int VIDEO_SWIPE_THRESHOLD = 48;
+
     private boolean previousTouchpadPressed;
     private boolean previousMenuPressed;
     private boolean previousHomePressed;
+    private boolean previousTouching;
+    private int touchStartX;
+    private int touchStartY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,6 +159,19 @@ public final class VrActivity extends Activity
         boolean homeEdge =
             snapshot.homePressed && !previousHomePressed;
 
+        if (snapshot.touching && !previousTouching) {
+            touchStartX = snapshot.touchX;
+            touchStartY = snapshot.touchY;
+        } else if (!snapshot.touching && previousTouching) {
+            int deltaX = snapshot.touchX - touchStartX;
+            int deltaY = snapshot.touchY - touchStartY;
+            if (Math.abs(deltaX) >= VIDEO_SWIPE_THRESHOLD
+                && Math.abs(deltaX) > Math.abs(deltaY)) {
+                renderer.requestVideoSeek(deltaX > 0 ? 10000 : -10000);
+            }
+        }
+
+        previousTouching = snapshot.touching;
         previousTouchpadPressed = snapshot.touchpadPressed;
         previousMenuPressed = snapshot.menuPressed;
         previousHomePressed = snapshot.homePressed;
@@ -209,6 +227,15 @@ public final class VrActivity extends Activity
         runOnUiThread(() -> {
             if (videoPlayer != null) {
                 videoPlayer.togglePause();
+            }
+        });
+    }
+
+    @Override
+    public void onVideoSeekRequested(int deltaMillis) {
+        runOnUiThread(() -> {
+            if (videoPlayer != null) {
+                videoPlayer.seekRelative(deltaMillis);
             }
         });
     }

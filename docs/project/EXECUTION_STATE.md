@@ -171,13 +171,14 @@ Implemented as an intentionally early vertical slice (see ADR-0008):
 - flat virtual-screen geometry with decoder-reported aspect ratio;
 - mono equirectangular 360° sphere geometry;
 - Daydream click play/pause;
+- horizontal touchpad swipe seek requests mapped to ±10 seconds;
 - Menu/back stop-and-return to the shell;
 - GL-surface recreation path that releases the old decoder surface and reopens the selected URI against the replacement surface.
 
 Not yet implemented/accepted:
 
 - stereoscopic SBS/over-under media layouts;
-- seeking/library browser/subtitles;
+- richer seeking UI/scrubber, library browser, and subtitles;
 - shell-global player HUD polish;
 - codec-coverage matrix;
 - sustained decode, thermal, A/V sync, seam/orientation, and comfort validation on the Galaxy S9.

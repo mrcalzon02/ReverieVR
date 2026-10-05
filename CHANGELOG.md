@@ -9,7 +9,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Added Android Storage Access Framework local-video selection with persisted per-document read access instead of broad storage permission.
 - Added explicit flat-cinema and mono equirectangular-360 projection choices.
 - Added a platform MediaPlayer decoder backed by an OpenGL ES external OES SurfaceTexture.
-- Added shell-owned video entry, Daydream click play/pause, Menu/back return to VR home, and decoder reattachment across GL-surface recreation.
+- Added shell-owned video entry, Daydream click play/pause, horizontal touchpad-swipe ±10-second seeking, Menu/back return to VR home, and decoder reattachment across GL-surface recreation.
 - Added an inward-viewed equirectangular sphere renderer for mono 360 video.
 - Kept stereoscopic layouts, seeking/library UI, subtitle work, and sustained thermal acceptance as later media work.
 

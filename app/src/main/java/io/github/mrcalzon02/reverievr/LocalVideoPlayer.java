@@ -80,6 +80,34 @@ final class LocalVideoPlayer {
         }
     }
 
+    void seekRelative(int deltaMillis) {
+        MediaPlayer active = player;
+        if (!prepared || active == null || deltaMillis == 0) {
+            return;
+        }
+
+        try {
+            long duration = active.getDuration();
+            long current = active.getCurrentPosition();
+            if (duration <= 0L) {
+                return;
+            }
+
+            long target = Math.max(
+                0L,
+                Math.min(duration, current + (long) deltaMillis)
+            );
+            active.seekTo(target, MediaPlayer.SEEK_CLOSEST);
+            listener.onVideoStateChanged(
+                deltaMillis > 0
+                    ? "Skipped forward 10 seconds."
+                    : "Skipped back 10 seconds."
+            );
+        } catch (IllegalStateException exception) {
+            listener.onVideoError("Video seeking is unavailable right now.");
+        }
+    }
+
     void pauseForLifecycle() {
         MediaPlayer active = player;
         resumeAfterLifecyclePause = false;

@@ -88,6 +88,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final AtomicBoolean recenterRequested = new AtomicBoolean();
     private final AtomicInteger phoneBattery = new AtomicInteger(-1);
     private final AtomicInteger controllerBattery = new AtomicInteger(-1);
+    private final AtomicInteger videoSeekRequestedMillis = new AtomicInteger();
 
     private volatile boolean controllerConnected;
     private volatile String controllerMessage = "Controller";
@@ -188,6 +189,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         backRequested.set(true);
     }
 
+    void requestVideoSeek(int deltaMillis) {
+        if (deltaMillis == 0) {
+            return;
+        }
+        videoSeekRequestedMillis.set(deltaMillis);
+    }
+
     @Override
     public void onNewFrame(HeadTransform headTransform) {
         headTransform.getHeadView(rawHeadView, 0);
@@ -219,6 +227,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 hoveredButton = -1;
                 textureDirty = true;
                 return;
+            }
+
+            int seekMillis = videoSeekRequestedMillis.getAndSet(0);
+            if (seekMillis != 0) {
+                host.onVideoSeekRequested(seekMillis);
             }
 
             if (selectRequested.getAndSet(false)) {
