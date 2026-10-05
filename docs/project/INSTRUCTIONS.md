@@ -20,28 +20,62 @@ Additional compatible Android phones and simple 3DoF viewers are desirable when 
 ReverieVR should:
 
 1. boot and operate without discontinued Google Daydream servers;
-2. provide a local in-headset VR shell/launcher;
-3. expose complete local settings for the virtual environment and device behavior;
-4. provide seated head-look navigation with configurable physical input;
-5. support local VR video playback;
-6. host small self-contained VR applications/games as subprojects/modules;
-7. expose a documented integration surface rather than binding every experience directly to one device;
-8. remain buildable, understandable, testable, and recoverable.
+2. provide a conventional touchscreen boot/setup surface before VR entry;
+3. pair/sync, verify, and recover the reference controller from that touchscreen surface;
+4. transition into a local in-headset VR shell/launcher after controller readiness;
+5. expose complete local settings for the virtual environment and device behavior;
+6. provide seated head-look navigation with configurable physical input;
+7. support local VR video playback;
+8. host small self-contained VR applications/games as subprojects/modules;
+9. expose a documented integration surface rather than binding every experience directly to one device;
+10. remain buildable, understandable, testable, and recoverable.
 
 ## 3. Reference interaction model
 
-The baseline seated interaction model is:
+ReverieVR has two intentional interaction stages.
+
+### 3.1 Stage A — pre-VR touchscreen setup
+
+Before the phone is placed in the headset, ReverieVR launches into a conventional 2D Android touchscreen interface.
+
+This stage is responsible for:
+
+- first-run setup;
+- controller pairing/sync;
+- controller connection/state verification;
+- controller test/calibration where required;
+- device/runtime diagnostics needed before entering VR;
+- recovery when the VR input path or settings become unusable;
+- an explicit **Enter VR** transition once required readiness checks pass.
+
+The exact controller transport/pairing implementation is an engineering decision to be verified during framework/runtime and controller-stack research. The user-facing requirement is stable even if the underlying transport changes.
+
+### 3.2 Stage B — in-headset seated VR
+
+After the user enters VR, the baseline seated interaction model is:
 
 - **head orientation/head-look** for view direction and reticle pointing;
 - **controller trackpad/touch area** for directional navigation, scrolling, and context-sensitive analog input;
 - **primary click/select** for activation;
 - **secondary/app/back control** for backing out or context actions;
-- **Home** for returning/recentering according to configurable behavior;
+- **Home** for returning/recentering according to configurable behavior where accessible;
 - **two handset side volume buttons** for volume by default, with remapping only where Android/device behavior safely permits it.
 
-Touchscreen interaction must not be required for ordinary in-headset use after launch.
+Touchscreen interaction is expected and supported in Stage A. It must not be required for ordinary Stage B operation once VR has been entered successfully.
 
-Bindings must be represented by a configurable input-action layer rather than permanently hard-coded into application logic.
+Bindings in Stage B must be represented by a configurable input-action layer rather than permanently hard-coded into application logic.
+
+### 3.3 Recovery invariant
+
+The user must never be permanently trapped by a bad controller state, broken binding, or unusable VR setting.
+
+A reliable route back to Stage A must exist so the user can:
+
+- reconnect/re-pair the controller;
+- reset bindings;
+- reset VR/display settings;
+- inspect diagnostics;
+- retry entry into VR.
 
 ## 4. Performance doctrine
 
@@ -129,6 +163,9 @@ Missing optional hardware/capabilities should disable only the dependent feature
 
 ### Inspectable local configuration
 Headset parameters, render settings, controls, comfort settings, and compatibility decisions must be represented by local inspectable configuration/code with provenance.
+
+### Recoverable mode transition
+The 2D setup surface and 3D VR shell are distinct application modes with an explicit, testable transition. Failure to enter VR must return cleanly to a usable 2D state instead of leaving a black screen, crash loop, or unusable stereoscopic UI.
 
 ### Performance is correctness
 Performance, thermal behavior, frame pacing, decoder behavior, tracking latency, and input latency are acceptance criteria.

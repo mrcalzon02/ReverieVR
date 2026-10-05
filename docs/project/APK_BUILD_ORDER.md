@@ -11,6 +11,7 @@ Establish:
 - Android/Gradle project skeleton;
 - supported Android/API/ABI range;
 - rendering/runtime framework decision;
+- controller transport/pairing integration decision;
 - dependency provenance/license inventory;
 - reproducible local build instructions;
 - APK install/launch path for the Galaxy S9;
@@ -18,26 +19,47 @@ Establish:
 
 **Gate:** a minimal signed/debuggable APK builds, installs, launches locally, and does not require discontinued Daydream servers.
 
-## Phase 1 — ReverieVR shell and VR menu
+## Phase 1 — 2D boot, setup, and controller pairing
 
-Build the product shell before games.
+The APK must begin in a conventional non-VR Android interface that can be operated directly on the phone before it is inserted into the headset.
 
 Required capabilities:
 
-- stereoscopic VR shell;
+- first-run/setup screen;
+- controller pairing/sync workflow;
+- current controller connection/readiness state;
+- controller input test surface;
+- clear retry/reconnect/re-pair controls;
+- pre-VR device/runtime diagnostics;
+- explicit **Enter VR** action;
+- safe fallback if VR initialization fails;
+- persistent route back to this setup mode for recovery.
+
+The setup surface must remain intentionally lightweight. It exists to make VR entry reliable, not to become a second full launcher.
+
+**Gate:** from a clean launch, the user can establish/verify controller readiness and deliberately enter VR without requiring any unavailable Google service.
+
+## Phase 2 — ReverieVR 3D home and VR menu
+
+After successful pre-VR setup, transition into the stereoscopic product shell.
+
+Required capabilities:
+
+- clean 2D-to-VR mode transition;
+- stereoscopic VR home space;
 - head-tracked seated viewpoint;
 - head-look reticle;
 - controller-driven menu navigation;
 - settings persistence;
-- safe reset/recovery path if a bad setting makes VR navigation unusable;
+- safe return to 2D setup/recovery mode;
 - clear diagnostics/status page;
-- return-to-shell behavior for ReverieVR-hosted modules.
+- return-to-home behavior for ReverieVR-hosted modules.
 
 The menu is not ornamental. It is the control plane for the platform.
 
-**Gate:** all essential shell functions can be operated while the phone is in the headset without touching the screen.
+**Gate:** all essential VR-shell functions can be operated while the phone is in the headset without touching the screen, and the user can intentionally recover to the 2D setup mode when necessary.
 
-## Phase 2 — Full settings control
+## Phase 3 — Full settings control
 
 Settings should be local, inspectable, persistent, and grouped at minimum into:
 
@@ -59,7 +81,9 @@ Settings should be local, inspectable, persistent, and grouped at minimum into:
 - debug frame-time overlay;
 - developer performance logging.
 
-### Input
+### Input/controller
+- controller connection/readiness status;
+- re-pair/reconnect route back through Stage A setup;
 - trackpad behavior/sensitivity;
 - primary/select mapping;
 - secondary/back/context mapping;
@@ -90,7 +114,7 @@ Settings should be local, inspectable, persistent, and grouped at minimum into:
 
 **Gate:** settings persist correctly, invalid values fail safely, and the user cannot permanently trap themselves in an unusable configuration.
 
-## Phase 3 — Seated reference input profile
+## Phase 4 — Seated reference input profile
 
 Reference controls:
 
@@ -103,9 +127,9 @@ Reference controls:
 
 Implement through named input actions, not direct raw-key checks scattered through modules.
 
-**Gate:** the shell and a test scene can be fully navigated using the seated profile.
+**Gate:** the VR home and a test scene can be fully navigated using the seated profile after the controller is prepared in the 2D setup stage.
 
-## Phase 4 — Performance/thermal baseline scene
+## Phase 5 — Performance/thermal baseline scene
 
 Create a deliberately simple representative VR environment used as a performance calibration fixture.
 
@@ -125,7 +149,7 @@ This fixture becomes a regression target.
 
 **Gate:** sustained reference-device operation remains stable enough for comfortable use under the project's measured target.
 
-## Phase 5 — Module/subproject host API
+## Phase 6 — Module/subproject host API
 
 Define how experiences live inside ReverieVR:
 
@@ -133,7 +157,8 @@ Define how experiences live inside ReverieVR:
 - input actions;
 - render context;
 - settings access;
-- pause/resume/return-to-shell;
+- pause/resume/return-to-home;
+- recovery/exit to 2D setup where required;
 - asset/resource boundaries;
 - save/config storage;
 - performance budget declaration;
@@ -141,9 +166,9 @@ Define how experiences live inside ReverieVR:
 
 Modules must not bypass platform settings or silently replace global controls.
 
-**Gate:** at least one internal sample module loads, runs, pauses, resumes, returns to shell, and respects platform settings.
+**Gate:** at least one internal sample module loads, runs, pauses, resumes, returns to VR home, and respects platform settings.
 
-## Phase 6 — Local VR video player
+## Phase 7 — Local VR video player
 
 Implement local media playback after the shell is stable.
 
@@ -160,7 +185,7 @@ Target capabilities:
 
 **Gate:** sustained local playback on reference hardware without depending on Google Daydream services.
 
-## Phase 7 — First playable retro VR experiences
+## Phase 8 — First playable retro VR experiences
 
 Build deliberately small experiences around the proven platform budget.
 
@@ -176,7 +201,7 @@ Initial content should validate:
 
 Graphical ambition stays subordinate to stable VR.
 
-## Phase 8 — Compatibility expansion
+## Phase 9 — Compatibility expansion
 
 Only after the reference path works:
 

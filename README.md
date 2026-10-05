@@ -8,7 +8,14 @@ The initial reference target is a Samsung Galaxy S9 used with a Daydream View he
 
 **Pre-alpha / foundation bootstrap.**
 
-The first deliverable is the ReverieVR shell: an installable APK with an in-headset menu, full local settings control, seated head-look interaction, configurable physical controls, performance instrumentation, and a framework into which video playback and small VR experiences can be added.
+The first product path is:
+
+1. launch into a conventional 2D touchscreen setup screen;
+2. pair/sync and verify the controller;
+3. transition into the stereoscopic ReverieVR home space;
+4. operate normal platform functions from inside the headset using head-look plus the controller.
+
+The VR home then provides full local settings control, performance diagnostics, module launching, and eventually video playback and small VR experiences.
 
 ## Project authority
 
@@ -28,6 +35,8 @@ See [CHANGELOG.md](CHANGELOG.md) for verified project changes.
 ## Core principles
 
 **Offline-first:** core VR operation must not require discontinued Google servers.
+
+**Recoverable boot:** touchscreen setup exists outside VR so controller pairing, recovery, diagnostics, and re-entry remain possible even when the VR control path is broken.
 
 **Performance-first:** steady frame pacing, low latency, and thermal sustainability outrank graphical fidelity. ReverieVR intentionally targets a restrained retro visual budget rather than trying to turn an older phone into a modern desktop VR GPU.
 
