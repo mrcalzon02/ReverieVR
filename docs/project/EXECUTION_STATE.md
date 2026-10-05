@@ -188,7 +188,8 @@ Implemented:
 
 - Enter VR enabled after either a dedicated controller provider is ready or an Android gamepad/joystick is attached;
 - application-scoped controller connection survives Activity transition by design;
-- landscape immersive `VrActivity`;
+- landscape immersive non-resizable `VrActivity`;
+- explicit GLES2, accelerometer and gyroscope hardware requirements;
 - Cardboard stereoscopic/head-tracked rendering;
 - deliberately simple OpenGL ES world-space menu panel;
 - head-gaze target selection;
@@ -197,9 +198,18 @@ Implemented:
 - Home controller + software-yaw recenter request;
 - Exit to Stage A;
 - shell entry to the real local-video path rather than a dead Media placeholder;
-- no fake-success module entries.
+- no fake-success module entries;
+- persistent VR-startup phase marker armed at Enter VR and cleared only after the renderer completes its first frame;
+- recoverable Java/JNI/GL startup failures return to Stage A with explicit failure feedback rather than silently dropping the user;
+- interrupted process-level launches are reported on the next Stage A start with the last persisted startup phase;
+- renderer surface/new-frame/draw-eye callbacks contain recoverable RuntimeException/LinkageError failures and report the failing phase;
+- phone-test CI requires Cardboard JNI `libcardboard_sdk_jni.so` in both packaged target ABIs.
 
-Remaining gate: build and in-headset validation.
+Reference-device defect: on the Galaxy S9, the previously installed build left/minimized ReverieVR immediately after Enter VR and showed no VR frame or failure explanation. Issue #3 tracks this blocker.
+
+Current validation: phone-test #23 is the first build validating the startup containment and Cardboard-JNI package assertions.
+
+Remaining gate: install the corrected handset package and demonstrate a completed first stereo frame on the physical Galaxy S9. A mere Activity transition is not acceptance.
 
 ### RV-0108 / RV-0206 — first-run setup and user optical calibration
 
