@@ -8,6 +8,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -19,6 +20,8 @@ import java.util.zip.ZipOutputStream;
 
 final class DiagnosticBundleExporter {
     private static final int BUFFER_SIZE = 64 * 1024;
+    private static final long PRIVATE_BUNDLE_RETENTION_MILLIS =
+        30L * 24L * 60L * 60L * 1000L;
 
     private final Context context;
 
@@ -42,25 +45,112 @@ final class DiagnosticBundleExporter {
             );
         }
 
+        writeBundle(
+            raw,
+            "",
+            true
+        );
+    }
+
+    File createSubmissionBundle(
+        String diagnosticId,
+        boolean includeLogs
+    ) throws IOException {
+        String safeId =
+            diagnosticId == null
+                ? ""
+                : diagnosticId.trim();
+        if (!safeId.matches(
+                "^revdiag-[0-9a-fA-F-]{36}$"
+            )) {
+            throw new IOException(
+                "Diagnostic ID is invalid."
+            );
+        }
+
+        File directory =
+            new File(
+                context.getFilesDir(),
+                "diagnostic-outbox"
+            );
+        if (!directory.isDirectory()
+            && !directory.mkdirs()) {
+            throw new IOException(
+                "Could not create diagnostic outbox."
+            );
+        }
+
+        pruneOldSubmissionBundles(directory);
+
+        File bundle =
+            new File(
+                directory,
+                safeId + ".zip"
+            );
+
+        try (FileOutputStream output =
+                 new FileOutputStream(bundle, false)) {
+            writeBundle(
+                output,
+                safeId,
+                includeLogs
+            );
+        } catch (IOException exception) {
+            if (bundle.isFile()
+                && !bundle.delete()) {
+                ReverieLog.incident(
+                    "DIAGNOSTICS",
+                    "Could not remove incomplete submission bundle "
+                        + bundle.getAbsolutePath()
+                );
+            }
+            throw exception;
+        }
+
+        return bundle;
+    }
+
+    private void writeBundle(
+        OutputStream raw,
+        String diagnosticId,
+        boolean includeLogs
+    ) throws IOException {
         try (ZipOutputStream zip =
                  new ZipOutputStream(
                      new BufferedOutputStream(raw)
                  )) {
-            addManifest(zip);
-            addLogFiles(zip);
+            addManifest(
+                zip,
+                diagnosticId,
+                includeLogs
+            );
+            if (includeLogs) {
+                addLogFiles(zip);
+            }
         }
     }
 
-    private void addManifest(ZipOutputStream zip)
-        throws IOException {
+    private void addManifest(
+        ZipOutputStream zip,
+        String diagnosticId,
+        boolean includeLogs
+    ) throws IOException {
         StringBuilder manifest =
-            new StringBuilder(1024);
+            new StringBuilder(1152);
 
         manifest.append("ReverieVR diagnostic bundle\n")
             .append("created=")
             .append(Instant.now())
-            .append('\n')
-            .append("appVersion=")
+            .append('\n');
+
+        if (diagnosticId != null
+            && !diagnosticId.trim().isEmpty()) {
+            manifest.append("diagnosticId=")
+                .append(diagnosticId.trim())
+                .append('\n');
+        }
+
+        manifest.append("appVersion=")
             .append(BuildConfig.VERSION_NAME)
             .append('\n')
             .append("versionCode=")
@@ -74,6 +164,9 @@ final class DiagnosticBundleExporter {
             .append('\n')
             .append("loggingMode=")
             .append(ReverieLog.getMode().name())
+            .append('\n')
+            .append("logsIncluded=")
+            .append(includeLogs)
             .append('\n')
             .append("manufacturer=")
             .append(Build.MANUFACTURER)
@@ -157,6 +250,36 @@ final class DiagnosticBundleExporter {
             }
 
             zip.closeEntry();
+        }
+    }
+
+    private void pruneOldSubmissionBundles(
+        File directory
+    ) {
+        File[] files =
+            directory.listFiles(
+                file ->
+                    file.isFile()
+                        && file.getName().startsWith("revdiag-")
+                        && file.getName().endsWith(".zip")
+            );
+        if (files == null) {
+            return;
+        }
+
+        long cutoff =
+            System.currentTimeMillis()
+                - PRIVATE_BUNDLE_RETENTION_MILLIS;
+        for (File file : files) {
+            if (file.lastModified() > 0
+                && file.lastModified() < cutoff
+                && !file.delete()) {
+                ReverieLog.dev(
+                    "DIAGNOSTICS",
+                    "Could not prune expired private diagnostic bundle "
+                        + file.getAbsolutePath()
+                );
+            }
         }
     }
 }
