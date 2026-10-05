@@ -2,6 +2,8 @@
 <resources>
     <string name="app_name">ReverieVR</string>
     <string name="stage_a_title">Stage A — Headset setup</string>
+    <string name="app_version_unknown">Version information unavailable</string>
+    <string name="app_version_format">Version %1$s (%2$d) • %3$s</string>
     <string name="stage_a_description">Prepare the phone and controller here, then enter the headset when the VR runtime reports ready.</string>
 
     <string name="device_section">Device &amp; power</string>
