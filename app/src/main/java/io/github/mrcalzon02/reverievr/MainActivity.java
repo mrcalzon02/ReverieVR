@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,11 +20,15 @@ import java.util.Locale;
 
 public final class MainActivity extends Activity {
     private ReveriePreferences preferences;
+    private UpdateChecker updateChecker;
+    private UpdateInstaller updateInstaller;
+    private UpdateChecker.Release availableUpdate;
 
     private TextView phoneBatteryText;
     private TextView controllerBatteryText;
     private TextView controllerStatusText;
     private TextView deviceStatusText;
+    private TextView updateStatusText;
 
     private ProgressBar phoneBatteryBar;
     private ProgressBar controllerBatteryBar;
@@ -32,6 +37,10 @@ public final class MainActivity extends Activity {
     private Switch lookUpRevealSwitch;
     private Switch showPercentagesSwitch;
     private Switch retroModeSwitch;
+    private Switch autoUpdateCheckSwitch;
+
+    private Button checkUpdateButton;
+    private Button installUpdateButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,12 +48,18 @@ public final class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         preferences = new ReveriePreferences(this);
+        updateChecker = new UpdateChecker();
+        updateInstaller = new UpdateInstaller(this);
 
         bindViews();
         configurePersistentControls();
         configureActions();
         refreshStaticStatus();
         refreshPhoneBattery();
+
+        if (preferences.isAutoUpdateCheckEnabled()) {
+            checkForUpdates(false);
+        }
     }
 
     @Override
@@ -54,11 +69,23 @@ public final class MainActivity extends Activity {
         refreshPhoneBattery();
     }
 
+    @Override
+    protected void onDestroy() {
+        if (updateChecker != null) {
+            updateChecker.close();
+        }
+        if (updateInstaller != null) {
+            updateInstaller.close();
+        }
+        super.onDestroy();
+    }
+
     private void bindViews() {
         phoneBatteryText = findViewById(R.id.phone_battery_text);
         controllerBatteryText = findViewById(R.id.controller_battery_text);
         controllerStatusText = findViewById(R.id.controller_status);
         deviceStatusText = findViewById(R.id.device_status);
+        updateStatusText = findViewById(R.id.update_status);
 
         phoneBatteryBar = findViewById(R.id.phone_battery_bar);
         controllerBatteryBar = findViewById(R.id.controller_battery_bar);
@@ -67,6 +94,10 @@ public final class MainActivity extends Activity {
         lookUpRevealSwitch = findViewById(R.id.look_up_reveal_switch);
         showPercentagesSwitch = findViewById(R.id.show_percentages_switch);
         retroModeSwitch = findViewById(R.id.retro_mode_switch);
+        autoUpdateCheckSwitch = findViewById(R.id.auto_update_check_switch);
+
+        checkUpdateButton = findViewById(R.id.check_update_button);
+        installUpdateButton = findViewById(R.id.install_update_button);
     }
 
     private void configurePersistentControls() {
@@ -84,6 +115,9 @@ public final class MainActivity extends Activity {
         retroModeSwitch.setOnCheckedChangeListener(
             (button, checked) -> preferences.setRetroModeEnabled(checked)
         );
+        autoUpdateCheckSwitch.setOnCheckedChangeListener(
+            (button, checked) -> preferences.setAutoUpdateCheckEnabled(checked)
+        );
     }
 
     private void configureActions() {
@@ -95,6 +129,10 @@ public final class MainActivity extends Activity {
 
         Button bluetoothButton = findViewById(R.id.bluetooth_settings_button);
         bluetoothButton.setOnClickListener(view -> openBluetoothSettings());
+
+        checkUpdateButton.setOnClickListener(view -> checkForUpdates(true));
+        installUpdateButton.setEnabled(false);
+        installUpdateButton.setOnClickListener(view -> confirmInstallAvailableUpdate());
 
         Button resetButton = findViewById(R.id.reset_settings_button);
         resetButton.setOnClickListener(view -> confirmReset());
@@ -108,6 +146,7 @@ public final class MainActivity extends Activity {
         lookUpRevealSwitch.setChecked(preferences.isLookUpRevealEnabled());
         showPercentagesSwitch.setChecked(preferences.isShowPercentagesEnabled());
         retroModeSwitch.setChecked(preferences.isRetroModeEnabled());
+        autoUpdateCheckSwitch.setChecked(preferences.isAutoUpdateCheckEnabled());
     }
 
     private void refreshStaticStatus() {
@@ -142,6 +181,146 @@ public final class MainActivity extends Activity {
         } else {
             phoneBatteryBar.setProgress(0);
             phoneBatteryText.setText(R.string.phone_battery_unknown);
+        }
+    }
+
+    private void checkForUpdates(boolean userInitiated) {
+        checkUpdateButton.setEnabled(false);
+        updateStatusText.setText(R.string.update_checking);
+
+        updateChecker.check(BuildConfig.VERSION_NAME, result ->
+            runOnUiThread(() -> {
+                checkUpdateButton.setEnabled(true);
+                handleUpdateResult(result, userInitiated);
+            })
+        );
+    }
+
+    private void handleUpdateResult(UpdateChecker.Result result, boolean userInitiated) {
+        availableUpdate = null;
+        installUpdateButton.setEnabled(false);
+
+        switch (result.state) {
+            case UPDATE_AVAILABLE:
+                availableUpdate = result.release;
+                updateStatusText.setText(
+                    getString(
+                        R.string.update_available_format,
+                        BuildConfig.VERSION_NAME,
+                        result.release.version
+                    )
+                );
+                installUpdateButton.setEnabled(true);
+                showUpdateAvailableDialog(result.release);
+                break;
+
+            case UP_TO_DATE:
+                updateStatusText.setText(
+                    getString(
+                        R.string.update_current_format,
+                        BuildConfig.VERSION_NAME
+                    )
+                );
+                if (userInitiated) {
+                    Toast.makeText(
+                        this,
+                        R.string.update_already_current,
+                        Toast.LENGTH_SHORT
+                    ).show();
+                }
+                break;
+
+            case NO_RELEASES:
+                updateStatusText.setText(R.string.update_no_releases);
+                break;
+
+            case RELEASE_WITHOUT_APK:
+                updateStatusText.setText(
+                    getString(
+                        R.string.update_release_without_apk_format,
+                        result.release == null ? "?" : result.release.version
+                    )
+                );
+                break;
+
+            case ERROR:
+            default:
+                updateStatusText.setText(
+                    getString(R.string.update_error_format, result.message)
+                );
+                break;
+        }
+    }
+
+    private void showUpdateAvailableDialog(UpdateChecker.Release release) {
+        String title = getString(
+            R.string.update_dialog_title,
+            release.version
+        );
+        String message = buildUpdateDialogMessage(release);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(
+                R.string.update_now,
+                (whichDialog, which) -> updateInstaller.downloadAndInstall(release)
+            )
+            .setNegativeButton(R.string.update_not_now, null)
+            .setNeutralButton(
+                R.string.update_view_release,
+                (whichDialog, which) -> openReleasePage(release)
+            )
+            .create();
+
+        dialog.show();
+    }
+
+    private String buildUpdateDialogMessage(UpdateChecker.Release release) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(
+            getString(
+                R.string.update_dialog_versions,
+                BuildConfig.VERSION_NAME,
+                release.version
+            )
+        );
+
+        if (release.notes != null && !release.notes.trim().isEmpty()) {
+            builder.append("\n\n");
+            String notes = release.notes.trim();
+            if (notes.length() > 1200) {
+                notes = notes.substring(0, 1200) + "…";
+            }
+            builder.append(notes);
+        }
+
+        return builder.toString();
+    }
+
+    private void confirmInstallAvailableUpdate() {
+        if (availableUpdate == null) {
+            return;
+        }
+        showUpdateAvailableDialog(availableUpdate);
+    }
+
+    private void openReleasePage(UpdateChecker.Release release) {
+        if (release == null || release.releasePageUrl == null
+            || release.releasePageUrl.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+            startActivity(
+                new Intent(Intent.ACTION_VIEW, Uri.parse(release.releasePageUrl))
+            );
+        } catch (ActivityNotFoundException exception) {
+            Toast.makeText(
+                this,
+                R.string.update_release_page_unavailable,
+                Toast.LENGTH_LONG
+            ).show();
         }
     }
 

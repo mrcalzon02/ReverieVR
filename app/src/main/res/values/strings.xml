@@ -17,6 +17,34 @@
     <string name="open_bluetooth_settings">Open Android Bluetooth settings</string>
     <string name="bluetooth_settings_unavailable">Bluetooth settings are not available on this device.</string>
 
+    <string name="update_section">Updates</string>
+    <string name="update_not_checked">Update status has not been checked.</string>
+    <string name="auto_update_check_label">Check authoritative GitHub Releases at launch</string>
+    <string name="check_for_updates">Check for updates</string>
+    <string name="install_available_update">Update</string>
+    <string name="update_checking">Checking mrcalzon02/ReverieVR releases…</string>
+    <string name="update_available_format">Installed: %1$s  •  Available: %2$s</string>
+    <string name="update_current_format">Installed %1$s is current.</string>
+    <string name="update_no_releases">No published ReverieVR release exists yet.</string>
+    <string name="update_release_without_apk_format">Release %1$s exists, but it has no APK asset.</string>
+    <string name="update_error_format">Update check failed: %1$s</string>
+    <string name="update_already_current">ReverieVR is already current.</string>
+    <string name="update_dialog_title">ReverieVR %1$s available</string>
+    <string name="update_dialog_versions">Installed: %1$s
+Available: %2$s</string>
+    <string name="update_now">Update</string>
+    <string name="update_not_now">Not now</string>
+    <string name="update_view_release">Release notes</string>
+    <string name="update_release_page_unavailable">No browser is available for the release page.</string>
+    <string name="update_install_permission_needed">Android must allow ReverieVR to request package installs. Grant permission, return here, and tap Update again.</string>
+    <string name="update_download_service_unavailable">Android Download Manager is unavailable.</string>
+    <string name="update_download_title">ReverieVR update</string>
+    <string name="update_download_description">Downloading the selected GitHub release APK.</string>
+    <string name="update_download_started">Update download started.</string>
+    <string name="update_download_failed">The update download did not produce an installable file.</string>
+    <string name="update_digest_failed">Update integrity check failed. The APK will not be installed.</string>
+    <string name="update_installer_unavailable">Android could not open the package installer.</string>
+
     <string name="qol_section">Quality of life</string>
     <string name="battery_hud_label">Show phone + controller battery HUD in VR</string>
     <string name="look_up_reveal_label">Auto-reveal / expand HUD when looking upward</string>

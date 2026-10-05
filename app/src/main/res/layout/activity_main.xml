@@ -159,6 +159,47 @@
 
             <TextView
                 style="@style/ReverieSectionTitle"
+                android:text="@string/update_section" />
+
+            <TextView
+                android:id="@+id/update_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/update_not_checked"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <Switch
+                android:id="@+id/auto_update_check_switch"
+                style="@style/ReverieSwitch"
+                android:layout_marginTop="8dp"
+                android:text="@string/auto_update_check_label" />
+
+            <Button
+                android:id="@+id/check_update_button"
+                style="@style/ReverieSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/check_for_updates" />
+
+            <Button
+                android:id="@+id/install_update_button"
+                style="@style/ReveriePrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/install_available_update" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/ReveriePanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/ReverieSectionTitle"
                 android:text="@string/qol_section" />
 
             <Switch

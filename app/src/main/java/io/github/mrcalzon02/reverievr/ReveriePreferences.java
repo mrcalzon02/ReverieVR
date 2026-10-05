@@ -10,6 +10,7 @@ final class ReveriePreferences {
     private static final String KEY_LOOK_UP_REVEAL = "look_up_reveal";
     private static final String KEY_SHOW_PERCENTAGES = "show_percentages";
     private static final String KEY_RETRO_MODE = "retro_mode";
+    private static final String KEY_AUTO_UPDATE_CHECK = "auto_update_check";
 
     private final SharedPreferences preferences;
 
@@ -47,6 +48,14 @@ final class ReveriePreferences {
 
     void setRetroModeEnabled(boolean enabled) {
         preferences.edit().putBoolean(KEY_RETRO_MODE, enabled).apply();
+    }
+
+    boolean isAutoUpdateCheckEnabled() {
+        return preferences.getBoolean(KEY_AUTO_UPDATE_CHECK, true);
+    }
+
+    void setAutoUpdateCheckEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_AUTO_UPDATE_CHECK, enabled).apply();
     }
 
     void reset() {
