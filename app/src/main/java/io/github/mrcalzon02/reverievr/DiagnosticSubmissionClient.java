@@ -25,6 +25,12 @@ final class DiagnosticSubmissionClient {
     private static final int READ_TIMEOUT_MILLIS = 60000;
     private static final int BUFFER_SIZE = 64 * 1024;
     private static final long MAX_UPLOAD_BYTES = 25L * 1024L * 1024L;
+    private static final String DIAGNOSTIC_ID_PATTERN =
+        "^revdiag-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-"
+            + "[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-"
+            + "[0-9a-fA-F]{12}$";
+    private static final String SHA256_PATTERN =
+        "^[0-9a-fA-F]{64}$";
 
     private final String endpoint;
 
@@ -69,10 +75,7 @@ final class DiagnosticSubmissionClient {
                 "Diagnostic bundle is outside the allowed upload size."
             );
         }
-        if (diagnosticId == null
-            || !diagnosticId.matches(
-                "^revdiag-[0-9a-fA-F-]{36}$"
-            )) {
+        if (!isDiagnosticId(diagnosticId)) {
             throw new IOException("Diagnostic ID is invalid.");
         }
 
@@ -189,66 +192,10 @@ final class DiagnosticSubmissionClient {
                 output.flush();
             }
 
-            int status = connection.getResponseCode();
-            String body = readResponse(
-                status >= 200 && status < 300
-                    ? connection.getInputStream()
-                    : connection.getErrorStream()
-            );
-
-            JSONObject json;
-            try {
-                json = body.isEmpty()
-                    ? new JSONObject()
-                    : new JSONObject(body);
-            } catch (JSONException exception) {
-                throw new IOException(
-                    "Diagnostic intake returned an invalid response.",
-                    exception
-                );
-            }
-
-            if (status < 200 || status >= 300) {
-                String error = json.optString("error", "upload_failed");
-                String receipt =
-                    json.optString("receiptReference", "");
-                throw new SubmissionException(
-                    "Diagnostic submission failed ("
-                        + status
-                        + "): "
-                        + error,
-                    receipt
-                );
-            }
-
-            String serverHash =
-                json.optString("sha256", "").trim().toLowerCase();
-            if (!serverHash.isEmpty()
-                && !serverHash.equals(sha256)) {
-                throw new IOException(
-                    "Diagnostic intake hash verification failed."
-                );
-            }
-
-            String issueUrl =
-                json.optString("issueUrl", "").trim();
-            if (!issueUrl.startsWith(
-                    "https://github.com/mrcalzon02/ReverieVR/issues/"
-                )) {
-                throw new IOException(
-                    "Diagnostic intake did not return a valid issue URL."
-                );
-            }
-
-            return new Result(
+            return parseResult(
+                connection,
                 diagnosticId,
-                sha256,
-                json.optString(
-                    "receiptReference",
-                    diagnosticId
-                ),
-                issueUrl,
-                json.optInt("issueNumber", -1)
+                sha256
             );
         } finally {
             connection.disconnect();
@@ -257,6 +204,208 @@ final class DiagnosticSubmissionClient {
 
     static String newDiagnosticId() {
         return "revdiag-" + UUID.randomUUID();
+    }
+
+    Result finalizeStored(
+        String diagnosticId,
+        String sha256
+    ) throws IOException {
+        if (!isConfigured()) {
+            throw new IOException(
+                "Secure diagnostic intake is not configured in this build."
+            );
+        }
+        if (!isDiagnosticId(diagnosticId)) {
+            throw new IOException("Diagnostic ID is invalid.");
+        }
+        if (sha256 == null
+            || !sha256.matches(SHA256_PATTERN)) {
+            throw new IOException(
+                "Diagnostic bundle hash is invalid."
+            );
+        }
+
+        JSONObject payload = new JSONObject();
+        try {
+            payload.put(
+                "diagnostic_id",
+                diagnosticId
+            );
+            payload.put(
+                "bundle_sha256",
+                sha256.toLowerCase(
+                    java.util.Locale.US
+                )
+            );
+        } catch (JSONException exception) {
+            throw new IOException(
+                "Could not prepare diagnostic finalize request.",
+                exception
+            );
+        }
+
+        byte[] requestBody =
+            payload.toString()
+                .getBytes(StandardCharsets.UTF_8);
+
+        String finalizeUrl =
+            endpoint.endsWith("/")
+                ? endpoint + "finalize"
+                : endpoint + "/finalize";
+
+        HttpURLConnection connection =
+            (HttpURLConnection)
+                new URL(finalizeUrl).openConnection();
+        connection.setRequestMethod("POST");
+        connection.setConnectTimeout(
+            CONNECT_TIMEOUT_MILLIS
+        );
+        connection.setReadTimeout(
+            READ_TIMEOUT_MILLIS
+        );
+        connection.setDoOutput(true);
+        connection.setUseCaches(false);
+        connection.setFixedLengthStreamingMode(
+            requestBody.length
+        );
+        connection.setRequestProperty(
+            "Content-Type",
+            "application/json; charset=UTF-8"
+        );
+        connection.setRequestProperty(
+            "Accept",
+            "application/json"
+        );
+        connection.setRequestProperty(
+            "User-Agent",
+            "ReverieVR/" + BuildConfig.VERSION_NAME
+        );
+
+        try {
+            try (DataOutputStream output =
+                     new DataOutputStream(
+                         new BufferedOutputStream(
+                             connection.getOutputStream()
+                         )
+                     )) {
+                output.write(requestBody);
+                output.flush();
+            }
+
+            return parseResult(
+                connection,
+                diagnosticId,
+                sha256.toLowerCase(
+                    java.util.Locale.US
+                )
+            );
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private static Result parseResult(
+        HttpURLConnection connection,
+        String diagnosticId,
+        String expectedSha256
+    ) throws IOException {
+        int status =
+            connection.getResponseCode();
+        String body =
+            readResponse(
+                status >= 200 && status < 300
+                    ? connection.getInputStream()
+                    : connection.getErrorStream()
+            );
+
+        JSONObject json;
+        try {
+            json =
+                body.isEmpty()
+                    ? new JSONObject()
+                    : new JSONObject(body);
+        } catch (JSONException exception) {
+            throw new IOException(
+                "Diagnostic intake returned an invalid response.",
+                exception
+            );
+        }
+
+        if (status < 200 || status >= 300) {
+            String error =
+                json.optString(
+                    "error",
+                    "upload_failed"
+                );
+            throw new SubmissionException(
+                "Diagnostic submission failed ("
+                    + status
+                    + "): "
+                    + error,
+                json.optString(
+                    "receiptReference",
+                    ""
+                ),
+                diagnosticId,
+                expectedSha256,
+                json.optBoolean("stored", false),
+                json.optBoolean(
+                    "canFinalize",
+                    false
+                )
+            );
+        }
+
+        String serverHash =
+            json.optString("sha256", "")
+                .trim()
+                .toLowerCase(
+                    java.util.Locale.US
+                );
+        if (!serverHash.isEmpty()
+            && !serverHash.equals(
+                expectedSha256
+            )) {
+            throw new IOException(
+                "Diagnostic intake hash verification failed."
+            );
+        }
+
+        String issueUrl =
+            json.optString(
+                "issueUrl",
+                ""
+            ).trim();
+        if (!issueUrl.startsWith(
+                "https://github.com/mrcalzon02/ReverieVR/issues/"
+            )) {
+            throw new IOException(
+                "Diagnostic intake did not return a valid issue URL."
+            );
+        }
+
+        return new Result(
+            diagnosticId,
+            expectedSha256,
+            json.optString(
+                "receiptReference",
+                diagnosticId
+            ),
+            issueUrl,
+            json.optInt(
+                "issueNumber",
+                -1
+            )
+        );
+    }
+
+    private static boolean isDiagnosticId(
+        String diagnosticId
+    ) {
+        return diagnosticId != null
+            && diagnosticId.matches(
+                DIAGNOSTIC_ID_PATTERN
+            );
     }
 
     static String sha256(File file) throws IOException {
@@ -418,16 +567,36 @@ final class DiagnosticSubmissionClient {
 
     static final class SubmissionException extends IOException {
         final String receiptReference;
+        final String diagnosticId;
+        final String sha256;
+        final boolean storedRemotely;
+        final boolean canFinalize;
 
         SubmissionException(
             String message,
-            String receiptReference
+            String receiptReference,
+            String diagnosticId,
+            String sha256,
+            boolean storedRemotely,
+            boolean canFinalize
         ) {
             super(message);
             this.receiptReference =
                 receiptReference == null
                     ? ""
                     : receiptReference;
+            this.diagnosticId =
+                diagnosticId == null
+                    ? ""
+                    : diagnosticId;
+            this.sha256 =
+                sha256 == null
+                    ? ""
+                    : sha256;
+            this.storedRemotely =
+                storedRemotely;
+            this.canFinalize =
+                canFinalize;
         }
     }
 }
