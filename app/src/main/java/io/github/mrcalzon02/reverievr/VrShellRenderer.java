@@ -86,6 +86,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] modelViewProjection = new float[16];
     private final float[] tempMatrix = new float[16];
     private final float[] hudIdentity = new float[16];
+    private final float[] hudVertices = new float[12];
     private final float[] yawMatrix = new float[16];
     private final float[] headEuler = new float[3];
     private final float[] headForward = new float[3];
@@ -1093,13 +1094,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
         float top = hudDroppedDown ? 0.60f : 0.96f;
         float bottom = hudDroppedDown ? 0.32f : 0.70f;
 
+        hudVertices[0] = left;
+        hudVertices[1] = bottom;
+        hudVertices[2] = 0.0f;
+        hudVertices[3] = right;
+        hudVertices[4] = bottom;
+        hudVertices[5] = 0.0f;
+        hudVertices[6] = left;
+        hudVertices[7] = top;
+        hudVertices[8] = 0.0f;
+        hudVertices[9] = right;
+        hudVertices[10] = top;
+        hudVertices[11] = 0.0f;
+
         hudVertexBuffer.position(0);
-        hudVertexBuffer.put(new float[] {
-            left, bottom, 0.0f,
-            right, bottom, 0.0f,
-            left, top, 0.0f,
-            right, top, 0.0f
-        });
+        hudVertexBuffer.put(hudVertices);
         hudVertexBuffer.position(0);
     }
 
