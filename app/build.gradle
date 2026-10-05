@@ -15,6 +15,16 @@ def dosboxPureAndroidMk = rootProject.file(
 )
 def dosRuntimeBuilt = dosboxPureAndroidMk.isFile()
 
+def diagnosticIntakeUrl =
+    (project.findProperty("diagnosticIntakeUrl") ?: "")
+        .toString()
+        .replace("\r", "")
+        .replace("\n", "")
+def diagnosticIntakeUrlEscaped =
+    diagnosticIntakeUrl
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+
 android {
     namespace = "io.github.mrcalzon02.reverievr"
     compileSdk = 36
@@ -46,6 +56,11 @@ android {
             "boolean",
             "DOOM_SHAREWARE_BUNDLED",
             bundleDoomShareware.toString()
+        )
+        buildConfigField(
+            "String",
+            "DIAGNOSTIC_INTAKE_URL",
+            "\"${diagnosticIntakeUrlEscaped}\""
         )
     }
 
