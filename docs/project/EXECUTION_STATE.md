@@ -91,8 +91,8 @@ Implemented:
 - Android-version-correct Bluetooth permissions;
 - BLE discovery handles the Android 8–11 Location-services gate explicitly instead of silently returning zero results;
 - already-bonded Daydream controllers are attempted before a new scan;
-- low-latency BLE scan uses explicit FE55 service and `Daydream controller` name filters with a bounded timeout;
-- Development logging records observed BLE advertisements and scan-result counts for handset diagnosis;
+- low-latency foreground BLE scan is intentionally broad, then Daydream FE55/name matching occurs inside ReverieVR so Android cannot discard a controller merely because FE55 or the exact local name was absent from the initial advertisement;
+- Development logging records aggregate advertisement/named/FE55 counts and detailed information only for a matched Daydream candidate, avoiding arbitrary nearby-device address/name capture;
 - Android bonding flow;
 - GATT connection/service discovery;
 - pose notification subscription;
@@ -133,7 +133,7 @@ Implemented:
 - volume actions adjust the Android music stream;
 - raw Daydream button interpretation is no longer embedded directly in `VrActivity`.
 
-Current verification: phone-test run #12 successfully built, tested, packaged, signature-verified and published the BLE discovery hardening from commit `6b886b3574a609b101fa9d65040a818179f84892`. GitHub Issue #2 tracks the Galaxy S9 symptom where Android sees the controller but ReverieVR has not yet proven the physical GATT/pose path.
+Current verification: phone-test run #12 successfully built the first BLE discovery hardening. Subsequent source now adds broad foreground discovery, privacy-bounded scan diagnostics, explicit physical Daydream/Home pairing guidance, and manifest capture of Bluetooth/Location/permission prerequisites. GitHub Issue #2 tracks the Galaxy S9 symptom; these newest discovery changes still require a fresh phone-test build and physical S9 validation before the GATT/pose path can be claimed.
 
 Remaining gates:
 
