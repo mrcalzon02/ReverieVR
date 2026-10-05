@@ -75,3 +75,51 @@ show a dead Submit diagnostics control.
 - `bundle` (ZIP)
 
 `GET /healthz` is credential-free and returns service health only.
+
+### Stored-receipt finalize
+
+If the ZIP is durably written to R2 but GitHub issue creation fails, the Worker
+writes a private pending receipt before returning the error. The Android client
+remembers only the diagnostic ID, SHA-256 and receipt reference.
+
+It may then call:
+
+`POST /v1/diagnostics/finalize`
+
+with JSON:
+
+```json
+{
+  "diagnostic_id": "revdiag-...",
+  "bundle_sha256": "<64 hex characters>"
+}
+```
+
+The Worker verifies the pending receipt and stored object, then retries GitHub
+issue creation without accepting or transferring the ZIP a second time. The
+diagnostic ID plus exact SHA-256 acts as proof of the already-stored receipt.
+Completed and pending receipts are retained only for the configured retention
+window.
+
+## Retrieving a private diagnostic bundle
+
+There is intentionally no public bundle-download endpoint.
+
+For maintainer investigation, use the Cloudflare dashboard (or an authorized R2
+administrative client) and open the private `reverievr-diagnostics` bucket.
+Raw bundles use:
+
+`diagnostics/YYYY/MM/<diagnostic-id>.zip`
+
+The GitHub issue contains the diagnostic ID, submission timestamp and SHA-256,
+so the object path can be located without publishing a storage credential.
+Before inspecting a downloaded bundle, recompute SHA-256 and require it to match
+the value recorded in the issue.
+
+Private receipt records use:
+
+`receipts/<diagnostic-id>.json`
+
+Do not copy the raw ZIP into a public issue, release asset, gist, repository
+commit or Actions log. Preserve a bundle beyond the normal retention window only
+when an active investigation actually requires it.
