@@ -60,9 +60,9 @@
 
 ## P5 — Module host
 
-- RV-0400 — Define module lifecycle/API.
-- RV-0401 — Implement sample internal module.
-- RV-0402 — Enforce platform settings/input/performance contracts.
+- RV-0400 — Define and implement versioned native module ABI/lifecycle with a compile-time allowlist, packaged native-library loading, shell-owned GL/lifecycle/input/recovery services, and fail-closed ABI validation. ADR-0015 governs the first implementation.
+- RV-0401 — Implement the built-in Procedural Test Chamber as a separate packaged native module using pinned OpenKTG-generated content, simple GLES rendering, movement input, lifecycle logging, and clean shell return.
+- RV-0402 — Enforce platform settings/input/performance contracts for native modules: host-reserved recovery controls, shell-global HUD continuity, Activity pause/resume, bounded capability surface, and reference-device performance/thermal validation.
 - RV-0410 — Integrate pinned DOSBox Pure as a ReverieVR-hosted libretro DOS runtime under the accepted GPLv2+ distribution policy.
 - RV-0411 — Implement generic DOS game-module import/library for DOSBox Pure content, with app-private full-path copies, per-module launch state, saves/configuration, and binding-profile association.
 - RV-0412 — Implement hosted DOS video/audio/input bridge and lifecycle: core load/run/pause/resume/unload, framebuffer/audio delivery, virtual keyboard/mouse/joystick polling, save directory, and safe return to ReverieVR Home.

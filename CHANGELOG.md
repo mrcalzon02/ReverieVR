@@ -1,5 +1,7 @@
 # Changelog
 
+- Adopted ADR-0015 for a focused native procedural game-module path: a versioned ReverieVR C ABI, packaged trusted modules, OpenKTG-first procedural content, a built-in Procedural Test Chamber, and an explicit rejection of wholesale Win32/.kkrieger runtime porting before the proof module passes device gates.
+
 All entries describe verified project/repository changes. Planned work belongs in the backlog, not here.
 
 ## Unreleased
