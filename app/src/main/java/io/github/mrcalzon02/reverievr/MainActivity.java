@@ -7,12 +7,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.hardware.input.InputManager;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.provider.Settings;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
@@ -20,17 +23,28 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.List;
 import java.util.Locale;
 
-public final class MainActivity extends Activity implements ControllerManager.Listener {
+public final class MainActivity extends Activity
+    implements ControllerManager.Listener,
+        InputManager.InputDeviceListener,
+        VrInputRouter.Listener {
+
     private static final int CONTROLLER_PERMISSION_REQUEST = 1201;
     private static final int MEDIA_PICK_REQUEST = 1202;
+
+    private static final int PENDING_CONTROLLER_NONE = 0;
+    private static final int PENDING_CONTROLLER_DAYDREAM = 1;
+    private static final int PENDING_CONTROLLER_PHONE = 2;
 
     private ReveriePreferences preferences;
     private UpdateChecker updateChecker;
     private UpdateInstaller updateInstaller;
     private UpdateChecker.Release availableUpdate;
     private ControllerManager controllerManager;
+    private InputManager inputManager;
+    private VrInputRouter inputRouter;
 
     private TextView phoneBatteryText;
     private TextView controllerBatteryText;
@@ -50,6 +64,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
     private Switch autoUpdateCheckSwitch;
 
     private Button pairControllerButton;
+    private Button phoneEmulatorButton;
     private Button testControllerButton;
     private Button checkUpdateButton;
     private Button installUpdateButton;
@@ -59,6 +74,13 @@ public final class MainActivity extends Activity implements ControllerManager.Li
     private RadioGroup videoProjectionGroup;
 
     private boolean controllerTestEnabled;
+    private boolean inputDeviceListenerRegistered;
+    private int pendingControllerPermissionAction = PENDING_CONTROLLER_NONE;
+
+    private volatile ControllerProvider.ConnectionState controllerConnectionState =
+        ControllerProvider.ConnectionState.IDLE;
+    private volatile String controllerConnectionMessage =
+        "Controller is not connected.";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +92,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         updateInstaller = new UpdateInstaller(this);
         controllerManager =
             ((ReverieApplication) getApplication()).getControllerManager();
+        inputManager =
+            (InputManager) getSystemService(Context.INPUT_SERVICE);
+        inputRouter = new VrInputRouter(this);
 
         bindViews();
         configurePersistentControls();
@@ -79,6 +104,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         refreshControllerPermissionState();
         refreshMediaStatus();
         controllerManager.addListener(this);
+        refreshInputReadiness();
 
         if (preferences.isAutoUpdateCheckEnabled()) {
             checkForUpdates(false);
@@ -88,15 +114,23 @@ public final class MainActivity extends Activity implements ControllerManager.Li
     @Override
     protected void onResume() {
         super.onResume();
+        registerInputDeviceListener();
         refreshStaticStatus();
         refreshPhoneBattery();
         refreshControllerPermissionState();
         refreshMediaStatus();
-        enterVrButton.setEnabled(controllerManager.isReady());
+        refreshInputReadiness();
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterInputDeviceListener();
+        super.onPause();
     }
 
     @Override
     protected void onDestroy() {
+        unregisterInputDeviceListener();
         if (controllerManager != null) {
             controllerManager.removeListener(this);
         }
@@ -107,6 +141,26 @@ public final class MainActivity extends Activity implements ControllerManager.Li
             updateInstaller.close();
         }
         super.onDestroy();
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (controllerTestEnabled
+            && inputRouter != null
+            && inputRouter.onKeyEvent(event)) {
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (controllerTestEnabled
+            && inputRouter != null
+            && inputRouter.onGenericMotionEvent(event)) {
+            return true;
+        }
+        return super.onGenericMotionEvent(event);
     }
 
     private void bindViews() {
@@ -128,6 +182,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         autoUpdateCheckSwitch = findViewById(R.id.auto_update_check_switch);
 
         pairControllerButton = findViewById(R.id.pair_controller_button);
+        phoneEmulatorButton = findViewById(R.id.phone_emulator_button);
         testControllerButton = findViewById(R.id.test_controller_button);
         checkUpdateButton = findViewById(R.id.check_update_button);
         installUpdateButton = findViewById(R.id.install_update_button);
@@ -166,7 +221,12 @@ public final class MainActivity extends Activity implements ControllerManager.Li
     }
 
     private void configureActions() {
-        pairControllerButton.setOnClickListener(view -> beginControllerPairing());
+        pairControllerButton.setOnClickListener(
+            view -> beginControllerPairing()
+        );
+        phoneEmulatorButton.setOnClickListener(
+            view -> beginPhoneController()
+        );
 
         testControllerButton.setEnabled(false);
         testControllerButton.setOnClickListener(view -> {
@@ -188,7 +248,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
 
         checkUpdateButton.setOnClickListener(view -> checkForUpdates(true));
         installUpdateButton.setEnabled(false);
-        installUpdateButton.setOnClickListener(view -> confirmInstallAvailableUpdate());
+        installUpdateButton.setOnClickListener(
+            view -> confirmInstallAvailableUpdate()
+        );
 
         chooseVideoButton.setOnClickListener(view -> chooseLocalVideo());
         clearVideoButton.setOnClickListener(view -> clearSelectedVideo());
@@ -196,9 +258,164 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         Button resetButton = findViewById(R.id.reset_settings_button);
         resetButton.setOnClickListener(view -> confirmReset());
 
-        enterVrButton.setEnabled(controllerManager.isReady());
         enterVrButton.setOnClickListener(
             view -> startActivity(new Intent(this, VrActivity.class))
+        );
+    }
+
+    private void beginControllerPairing() {
+        pendingControllerPermissionAction = PENDING_CONTROLLER_DAYDREAM;
+        String[] missing = controllerManager.getMissingRuntimePermissions();
+        if (missing.length > 0) {
+            requestPermissions(missing, CONTROLLER_PERMISSION_REQUEST);
+            return;
+        }
+
+        pendingControllerPermissionAction = PENDING_CONTROLLER_NONE;
+        controllerManager.pairDaydreamController();
+    }
+
+    private void beginPhoneController() {
+        pendingControllerPermissionAction = PENDING_CONTROLLER_PHONE;
+        String[] missing =
+            controllerManager.getMissingPhoneEmulatorPermissions();
+
+        if (missing.length > 0) {
+            requestPermissions(missing, CONTROLLER_PERMISSION_REQUEST);
+            return;
+        }
+
+        pendingControllerPermissionAction = PENDING_CONTROLLER_NONE;
+        showPhoneControllerChooser();
+    }
+
+    private void showPhoneControllerChooser() {
+        List<PhoneControllerTarget> targets =
+            controllerManager.getPairedPhoneTargets();
+
+        if (targets.isEmpty()) {
+            new AlertDialog.Builder(this)
+                .setTitle(R.string.phone_controller_no_devices_title)
+                .setMessage(R.string.phone_controller_no_devices_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(
+                    R.string.open_bluetooth_settings,
+                    (dialog, which) -> openBluetoothSettings()
+                )
+                .show();
+            return;
+        }
+
+        String[] labels = new String[targets.size()];
+        for (int index = 0; index < targets.size(); index++) {
+            labels[index] = targets.get(index).label();
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.phone_controller_choose_title)
+            .setItems(labels, (dialog, which) -> {
+                if (which >= 0 && which < targets.size()) {
+                    controllerManager.connectPhoneEmulator(
+                        targets.get(which)
+                    );
+                }
+            })
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
+    }
+
+    private void refreshControllerPermissionState() {
+        String[] missing = controllerManager.getMissingRuntimePermissions();
+        pairControllerButton.setText(
+            missing.length > 0
+                ? R.string.grant_and_pair_controller
+                : R.string.pair_controller
+        );
+    }
+
+    private void refreshInputReadiness() {
+        boolean providerReady =
+            controllerManager != null && controllerManager.isReady();
+        String gamepadName =
+            AndroidGamepadSupport.firstConnectedGamepadName();
+        boolean gamepadReady = gamepadName != null;
+
+        if (enterVrButton != null) {
+            enterVrButton.setEnabled(providerReady || gamepadReady);
+        }
+        if (testControllerButton != null) {
+            testControllerButton.setEnabled(providerReady || gamepadReady);
+        }
+
+        if (controllerStatusText == null) {
+            return;
+        }
+
+        if (providerReady) {
+            controllerStatusText.setText(controllerConnectionMessage);
+        } else if (gamepadReady) {
+            controllerStatusText.setText(
+                getString(
+                    R.string.generic_gamepad_ready_format,
+                    gamepadName
+                )
+            );
+        } else {
+            controllerStatusText.setText(controllerConnectionMessage);
+        }
+
+        if (!providerReady && !gamepadReady && controllerTestEnabled) {
+            controllerTestEnabled = false;
+            testControllerButton.setText(R.string.test_controller);
+            controllerInputTestText.setText(
+                R.string.controller_test_inactive
+            );
+        }
+    }
+
+    private void registerInputDeviceListener() {
+        if (inputManager != null && !inputDeviceListenerRegistered) {
+            inputManager.registerInputDeviceListener(this, null);
+            inputDeviceListenerRegistered = true;
+        }
+    }
+
+    private void unregisterInputDeviceListener() {
+        if (inputManager != null && inputDeviceListenerRegistered) {
+            inputManager.unregisterInputDeviceListener(this);
+            inputDeviceListenerRegistered = false;
+        }
+    }
+
+    @Override
+    public void onInputDeviceAdded(int deviceId) {
+        runOnUiThread(this::refreshInputReadiness);
+    }
+
+    @Override
+    public void onInputDeviceRemoved(int deviceId) {
+        runOnUiThread(this::refreshInputReadiness);
+    }
+
+    @Override
+    public void onInputDeviceChanged(int deviceId) {
+        runOnUiThread(this::refreshInputReadiness);
+    }
+
+    @Override
+    public void onInputAction(VrInputAction action, String source) {
+        if (!controllerTestEnabled || action == null) {
+            return;
+        }
+
+        runOnUiThread(() ->
+            controllerInputTestText.setText(
+                getString(
+                    R.string.controller_action_test_format,
+                    action.name(),
+                    source
+                )
+            )
         );
     }
 
@@ -245,7 +462,10 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         String previousUri = preferences.getSelectedVideoUri();
 
         try {
-            getContentResolver().takePersistableUriPermission(uri, persistFlags);
+            getContentResolver().takePersistableUriPermission(
+                uri,
+                persistFlags
+            );
         } catch (SecurityException exception) {
             Toast.makeText(
                 this,
@@ -258,7 +478,10 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         if (!previousUri.equals(uri.toString())) {
             releaseSelectedVideoPermission();
         }
-        preferences.setSelectedVideo(uri.toString(), resolveDisplayName(uri));
+        preferences.setSelectedVideo(
+            uri.toString(),
+            resolveDisplayName(uri)
+        );
         refreshMediaStatus();
     }
 
@@ -275,7 +498,8 @@ public final class MainActivity extends Activity implements ControllerManager.Li
             null
         )) {
             if (cursor != null && cursor.moveToFirst()) {
-                int column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                int column =
+                    cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
                 if (column >= 0) {
                     String value = cursor.getString(column);
                     if (value != null && !value.trim().isEmpty()) {
@@ -284,7 +508,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
                 }
             }
         } catch (RuntimeException ignored) {
-            // The persisted URI remains usable even if a provider hides metadata.
+            // The persisted URI remains usable even if metadata is hidden.
         }
 
         String last = uri.getLastPathSegment();
@@ -329,27 +553,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
                 Intent.FLAG_GRANT_READ_URI_PERMISSION
             );
         } catch (SecurityException ignored) {
-            // The provider may already have revoked or discarded the grant.
-        }
-    }
-
-    private void beginControllerPairing() {
-        String[] missing = controllerManager.getMissingRuntimePermissions();
-        if (missing.length > 0) {
-            requestPermissions(missing, CONTROLLER_PERMISSION_REQUEST);
-            return;
-        }
-
-        controllerManager.pairDaydreamController();
-    }
-
-    private void refreshControllerPermissionState() {
-        String[] missing = controllerManager.getMissingRuntimePermissions();
-        if (missing.length > 0) {
-            pairControllerButton.setText(R.string.grant_and_pair_controller);
-            controllerStatusText.setText(R.string.controller_permission_needed);
-        } else {
-            pairControllerButton.setText(R.string.pair_controller);
+            // The provider may already have revoked the grant.
         }
     }
 
@@ -359,7 +563,11 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         String[] permissions,
         int[] grantResults
     ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        super.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        );
 
         if (requestCode != CONTROLLER_PERMISSION_REQUEST) {
             return;
@@ -370,21 +578,34 @@ public final class MainActivity extends Activity implements ControllerManager.Li
             granted &= result == PackageManager.PERMISSION_GRANTED;
         }
 
+        int pending = pendingControllerPermissionAction;
+        pendingControllerPermissionAction = PENDING_CONTROLLER_NONE;
         refreshControllerPermissionState();
 
-        if (granted) {
+        if (!granted) {
+            controllerStatusText.setText(
+                R.string.controller_permission_denied
+            );
+            return;
+        }
+
+        if (pending == PENDING_CONTROLLER_DAYDREAM) {
             controllerManager.pairDaydreamController();
-        } else {
-            controllerStatusText.setText(R.string.controller_permission_denied);
+        } else if (pending == PENDING_CONTROLLER_PHONE) {
+            showPhoneControllerChooser();
         }
     }
 
     private void applyPreferencesToControls() {
         batteryHudSwitch.setChecked(preferences.isBatteryHudEnabled());
         lookUpRevealSwitch.setChecked(preferences.isLookUpRevealEnabled());
-        showPercentagesSwitch.setChecked(preferences.isShowPercentagesEnabled());
+        showPercentagesSwitch.setChecked(
+            preferences.isShowPercentagesEnabled()
+        );
         retroModeSwitch.setChecked(preferences.isRetroModeEnabled());
-        autoUpdateCheckSwitch.setChecked(preferences.isAutoUpdateCheckEnabled());
+        autoUpdateCheckSwitch.setChecked(
+            preferences.isAutoUpdateCheckEnabled()
+        );
 
         VideoProjection projection = preferences.getVideoProjection();
         videoProjectionGroup.check(
@@ -412,7 +633,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
 
         int percentage = batteryManager == null
             ? -1
-            : batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+            : batteryManager.getIntProperty(
+                BatteryManager.BATTERY_PROPERTY_CAPACITY
+            );
 
         if (percentage >= 0 && percentage <= 100) {
             phoneBatteryBar.setProgress(percentage);
@@ -430,18 +653,10 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         ControllerProvider.ConnectionState state,
         String message
     ) {
-        runOnUiThread(() -> {
-            controllerStatusText.setText(message);
-            boolean ready = state == ControllerProvider.ConnectionState.READY;
-            testControllerButton.setEnabled(ready);
-            enterVrButton.setEnabled(ready);
-
-            if (!ready && controllerTestEnabled) {
-                controllerTestEnabled = false;
-                testControllerButton.setText(R.string.test_controller);
-                controllerInputTestText.setText(R.string.controller_test_inactive);
-            }
-        });
+        controllerConnectionState = state;
+        controllerConnectionMessage =
+            message == null ? "" : message;
+        runOnUiThread(this::refreshInputReadiness);
     }
 
     @Override
@@ -459,30 +674,49 @@ public final class MainActivity extends Activity implements ControllerManager.Li
                     );
                 } else {
                     controllerBatteryText.setText(
-                        getString(R.string.controller_battery_format, percentage)
+                        getString(
+                            R.string.controller_battery_format,
+                            percentage
+                        )
                     );
                 }
             } else if (millivolts > 0) {
                 controllerBatteryBar.setProgress(0);
                 controllerBatteryText.setText(
-                    getString(R.string.controller_voltage_format, millivolts)
+                    getString(
+                        R.string.controller_voltage_format,
+                        millivolts
+                    )
                 );
             } else {
                 controllerBatteryBar.setProgress(0);
-                controllerBatteryText.setText(R.string.controller_battery_unknown);
+                controllerBatteryText.setText(
+                    R.string.controller_battery_unknown
+                );
             }
         });
     }
 
     @Override
     public void onControllerStateChanged(ControllerSnapshot snapshot) {
-        if (!controllerTestEnabled || snapshot == null) {
+        if (snapshot == null) {
             return;
         }
 
-        runOnUiThread(() ->
-            controllerInputTestText.setText(snapshot.toDiagnosticString())
-        );
+        if (inputRouter != null) {
+            inputRouter.onControllerSnapshot(
+                snapshot,
+                controllerManager.getActiveProviderDisplayName()
+            );
+        }
+
+        if (controllerTestEnabled) {
+            runOnUiThread(() ->
+                controllerInputTestText.setText(
+                    snapshot.toDiagnosticString()
+                )
+            );
+        }
     }
 
     private void checkForUpdates(boolean userInitiated) {
@@ -497,7 +731,10 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         );
     }
 
-    private void handleUpdateResult(UpdateChecker.Result result, boolean userInitiated) {
+    private void handleUpdateResult(
+        UpdateChecker.Result result,
+        boolean userInitiated
+    ) {
         availableUpdate = null;
         installUpdateButton.setEnabled(false);
 
@@ -539,7 +776,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
                 updateStatusText.setText(
                     getString(
                         R.string.update_release_without_apk_format,
-                        result.release == null ? "?" : result.release.version
+                        result.release == null
+                            ? "?"
+                            : result.release.version
                     )
                 );
                 break;
@@ -547,37 +786,43 @@ public final class MainActivity extends Activity implements ControllerManager.Li
             case ERROR:
             default:
                 updateStatusText.setText(
-                    getString(R.string.update_error_format, result.message)
+                    getString(
+                        R.string.update_error_format,
+                        result.message
+                    )
                 );
                 break;
         }
     }
 
-    private void showUpdateAvailableDialog(UpdateChecker.Release release) {
+    private void showUpdateAvailableDialog(
+        UpdateChecker.Release release
+    ) {
         String title = getString(
             R.string.update_dialog_title,
             release.version
         );
         String message = buildUpdateDialogMessage(release);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
             .setTitle(title)
             .setMessage(message)
             .setPositiveButton(
                 R.string.update_now,
-                (whichDialog, which) -> updateInstaller.downloadAndInstall(release)
+                (dialog, which) ->
+                    updateInstaller.downloadAndInstall(release)
             )
             .setNegativeButton(R.string.update_not_now, null)
             .setNeutralButton(
                 R.string.update_view_release,
-                (whichDialog, which) -> openReleasePage(release)
+                (dialog, which) -> openReleasePage(release)
             )
-            .create();
-
-        dialog.show();
+            .show();
     }
 
-    private String buildUpdateDialogMessage(UpdateChecker.Release release) {
+    private String buildUpdateDialogMessage(
+        UpdateChecker.Release release
+    ) {
         StringBuilder builder = new StringBuilder();
         builder.append(
             getString(
@@ -587,7 +832,8 @@ public final class MainActivity extends Activity implements ControllerManager.Li
             )
         );
 
-        if (release.notes != null && !release.notes.trim().isEmpty()) {
+        if (release.notes != null
+            && !release.notes.trim().isEmpty()) {
             builder.append("\n\n");
             String notes = release.notes.trim();
             if (notes.length() > 1200) {
@@ -600,21 +846,24 @@ public final class MainActivity extends Activity implements ControllerManager.Li
     }
 
     private void confirmInstallAvailableUpdate() {
-        if (availableUpdate == null) {
-            return;
+        if (availableUpdate != null) {
+            showUpdateAvailableDialog(availableUpdate);
         }
-        showUpdateAvailableDialog(availableUpdate);
     }
 
     private void openReleasePage(UpdateChecker.Release release) {
-        if (release == null || release.releasePageUrl == null
+        if (release == null
+            || release.releasePageUrl == null
             || release.releasePageUrl.trim().isEmpty()) {
             return;
         }
 
         try {
             startActivity(
-                new Intent(Intent.ACTION_VIEW, Uri.parse(release.releasePageUrl))
+                new Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(release.releasePageUrl)
+                )
             );
         } catch (ActivityNotFoundException exception) {
             Toast.makeText(
@@ -627,7 +876,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
 
     private void openBluetoothSettings() {
         try {
-            startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+            startActivity(
+                new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+            );
         } catch (ActivityNotFoundException exception) {
             Toast.makeText(
                 this,

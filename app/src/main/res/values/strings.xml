@@ -11,8 +11,14 @@
 
     <string name="controller_section">Controller</string>
     <string name="controller_status_unavailable">Controller is not connected.</string>
-    <string name="controller_status_explanation">ReverieVR can scan, bond and connect directly to the Daydream controller over Bluetooth LE. Later controller types will plug into the same controller-provider layer.</string>
+    <string name="controller_status_explanation">ReverieVR can use the physical Daydream BLE controller, a paired Android phone speaking the historical Daydream controller-emulator protocol, or an Android gamepad/joystick. All are normalized into the same VR action layer.</string>
     <string name="pair_controller">Pair / Sync Daydream controller</string>
+    <string name="use_phone_controller">Use paired phone as controller</string>
+    <string name="phone_controller_choose_title">Choose controller phone</string>
+    <string name="phone_controller_no_devices_title">No paired Bluetooth devices</string>
+    <string name="phone_controller_no_devices_message">Pair the second Android phone in Android Bluetooth settings first, start its Daydream-compatible controller emulator, then return here.</string>
+    <string name="generic_gamepad_ready_format">Android gamepad ready: %1$s</string>
+    <string name="controller_action_test_format">Action: %1$s\nSource: %2$s</string>
     <string name="grant_and_pair_controller">Grant Bluetooth access &amp; pair</string>
     <string name="controller_permission_needed">Bluetooth permission is required before ReverieVR can scan for the controller.</string>
     <string name="controller_permission_denied">Bluetooth permission was denied. Pairing cannot start.</string>

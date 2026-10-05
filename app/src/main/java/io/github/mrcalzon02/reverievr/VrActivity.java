@@ -4,8 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.SurfaceTexture;
+import android.hardware.input.InputManager;
+import android.media.AudioManager;
 import android.os.BatteryManager;
 import android.os.Bundle;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -19,7 +23,9 @@ import com.google.cardboard.sdk.deviceparams.DeviceParamsUtils;
 public final class VrActivity extends Activity
     implements ControllerManager.Listener,
         VrShellRenderer.Host,
-        LocalVideoPlayer.Listener {
+        LocalVideoPlayer.Listener,
+        InputManager.InputDeviceListener,
+        VrInputRouter.Listener {
 
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
 
@@ -28,17 +34,12 @@ public final class VrActivity extends Activity
     private ControllerManager controllerManager;
     private ReveriePreferences preferences;
     private LocalVideoPlayer videoPlayer;
+    private InputManager inputManager;
+    private VrInputRouter inputRouter;
 
-    private static final int VIDEO_SWIPE_THRESHOLD = 48;
-
-    private boolean previousTouchpadPressed;
-    private boolean previousMenuPressed;
-    private boolean previousHomePressed;
-    private boolean previousTouching;
-    private int touchStartX;
-    private int touchStartY;
-    private int touchLastX;
-    private int touchLastY;
+    private boolean inputDeviceListenerRegistered;
+    private volatile String controllerConnectionMessage =
+        "Controller is not connected.";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,9 +52,11 @@ public final class VrActivity extends Activity
 
         controllerManager =
             ((ReverieApplication) getApplication()).getControllerManager();
-
         preferences = new ReveriePreferences(this);
         videoPlayer = new LocalVideoPlayer(this, this);
+        inputManager =
+            (InputManager) getSystemService(Context.INPUT_SERVICE);
+        inputRouter = new VrInputRouter(this);
 
         CardboardView.setUseCardboardGlSurfaceView(true);
         cardboardView = new CardboardView(this);
@@ -63,27 +66,33 @@ public final class VrActivity extends Activity
 
         renderer = new VrShellRenderer(preferences, viewerIpd, this);
         renderer.setPhoneBattery(readPhoneBattery());
-        renderer.setControllerBattery(controllerManager.getBatteryPercentage());
-        renderer.setControllerState(
-            controllerManager.isReady(),
-            controllerManager.isReady()
-                ? "Controller ready"
-                : "Controller disconnected"
-        );
 
         cardboardView.setRenderer(renderer);
         cardboardView.setOnBackButtonClick(this::finish);
-        cardboardView.setOnSettingsButtonClick(renderer::requestBack);
-        cardboardView.setOnTriggerEvent(renderer::requestSelect);
+        cardboardView.setOnSettingsButtonClick(
+            () -> inputRouter.submitAction(
+                VrInputAction.BACK,
+                "Cardboard system control"
+            )
+        );
+        cardboardView.setOnTriggerEvent(
+            () -> inputRouter.submitAction(
+                VrInputAction.SELECT,
+                "Cardboard trigger"
+            )
+        );
 
         setContentView(cardboardView);
         controllerManager.addListener(this);
+        refreshInputSourceStatus();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        registerInputDeviceListener();
         enterImmersiveMode();
+
         if (cardboardView != null) {
             cardboardView.onResume();
         }
@@ -93,10 +102,14 @@ public final class VrActivity extends Activity
         if (videoPlayer != null) {
             videoPlayer.resumeForLifecycle();
         }
+
+        refreshInputSourceStatus();
     }
 
     @Override
     protected void onPause() {
+        unregisterInputDeviceListener();
+
         if (videoPlayer != null) {
             videoPlayer.pauseForLifecycle();
         }
@@ -108,6 +121,8 @@ public final class VrActivity extends Activity
 
     @Override
     protected void onDestroy() {
+        unregisterInputDeviceListener();
+
         if (controllerManager != null) {
             controllerManager.removeListener(this);
         }
@@ -118,6 +133,23 @@ public final class VrActivity extends Activity
             cardboardView.onDestroy();
         }
         super.onDestroy();
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (inputRouter != null && inputRouter.onKeyEvent(event)) {
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (inputRouter != null
+            && inputRouter.onGenericMotionEvent(event)) {
+            return true;
+        }
+        return super.onGenericMotionEvent(event);
     }
 
     @Override
@@ -133,63 +165,152 @@ public final class VrActivity extends Activity
         ControllerProvider.ConnectionState state,
         String message
     ) {
-        if (renderer == null) {
-            return;
-        }
-
-        boolean ready = state == ControllerProvider.ConnectionState.READY;
-        renderer.setControllerState(ready, message);
+        controllerConnectionMessage =
+            message == null ? "" : message;
+        refreshInputSourceStatus();
     }
 
     @Override
     public void onBatteryChanged(int percentage, int millivolts) {
-        if (renderer != null) {
+        if (renderer != null && controllerManager.isReady()) {
             renderer.setControllerBattery(percentage);
         }
     }
 
     @Override
-    public void onControllerStateChanged(ControllerSnapshot snapshot) {
-        if (renderer == null || snapshot == null) {
+    public void onControllerStateChanged(
+        ControllerSnapshot snapshot
+    ) {
+        if (inputRouter == null || snapshot == null) {
             return;
         }
 
-        boolean selectEdge =
-            snapshot.touchpadPressed && !previousTouchpadPressed;
-        boolean menuEdge =
-            snapshot.menuPressed && !previousMenuPressed;
-        boolean homeEdge =
-            snapshot.homePressed && !previousHomePressed;
+        inputRouter.onControllerSnapshot(
+            snapshot,
+            controllerManager.getActiveProviderDisplayName()
+        );
+    }
 
-        if (snapshot.touching) {
-            if (!previousTouching) {
-                touchStartX = snapshot.touchX;
-                touchStartY = snapshot.touchY;
-            }
-            touchLastX = snapshot.touchX;
-            touchLastY = snapshot.touchY;
-        } else if (previousTouching) {
-            int deltaX = touchLastX - touchStartX;
-            int deltaY = touchLastY - touchStartY;
-            if (Math.abs(deltaX) >= VIDEO_SWIPE_THRESHOLD
-                && Math.abs(deltaX) > Math.abs(deltaY)) {
-                renderer.requestVideoSeek(deltaX > 0 ? 10000 : -10000);
-            }
+    @Override
+    public void onInputAction(
+        VrInputAction action,
+        String source
+    ) {
+        if (renderer == null || action == null) {
+            return;
         }
 
-        previousTouching = snapshot.touching;
-        previousTouchpadPressed = snapshot.touchpadPressed;
-        previousMenuPressed = snapshot.menuPressed;
-        previousHomePressed = snapshot.homePressed;
+        switch (action) {
+            case SELECT:
+                renderer.requestSelect();
+                break;
 
-        if (selectEdge) {
-            renderer.requestSelect();
+            case BACK:
+                renderer.requestBack();
+                break;
+
+            case RECENTER:
+                renderer.requestRecenter();
+                break;
+
+            case NAV_LEFT:
+                renderer.requestVideoSeek(-10000);
+                break;
+
+            case NAV_RIGHT:
+                renderer.requestVideoSeek(10000);
+                break;
+
+            case VOLUME_UP:
+                adjustMediaVolume(AudioManager.ADJUST_RAISE);
+                break;
+
+            case VOLUME_DOWN:
+                adjustMediaVolume(AudioManager.ADJUST_LOWER);
+                break;
+
+            case NAV_UP:
+            case NAV_DOWN:
+            default:
+                break;
         }
-        if (menuEdge) {
-            renderer.requestBack();
+    }
+
+    private void adjustMediaVolume(int direction) {
+        AudioManager audio =
+            (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (audio != null) {
+            audio.adjustStreamVolume(
+                AudioManager.STREAM_MUSIC,
+                direction,
+                AudioManager.FLAG_SHOW_UI
+            );
         }
-        if (homeEdge) {
-            renderer.requestRecenter();
+    }
+
+    private void registerInputDeviceListener() {
+        if (inputManager != null && !inputDeviceListenerRegistered) {
+            inputManager.registerInputDeviceListener(this, null);
+            inputDeviceListenerRegistered = true;
+        }
+    }
+
+    private void unregisterInputDeviceListener() {
+        if (inputManager != null && inputDeviceListenerRegistered) {
+            inputManager.unregisterInputDeviceListener(this);
+            inputDeviceListenerRegistered = false;
+        }
+    }
+
+    @Override
+    public void onInputDeviceAdded(int deviceId) {
+        refreshInputSourceStatus();
+    }
+
+    @Override
+    public void onInputDeviceRemoved(int deviceId) {
+        refreshInputSourceStatus();
+    }
+
+    @Override
+    public void onInputDeviceChanged(int deviceId) {
+        refreshInputSourceStatus();
+    }
+
+    private void refreshInputSourceStatus() {
+        if (renderer == null || controllerManager == null) {
+            return;
+        }
+
+        if (controllerManager.isReady()) {
+            String provider =
+                controllerManager.getActiveProviderDisplayName();
+            renderer.setControllerState(
+                true,
+                provider == null || provider.trim().isEmpty()
+                    ? controllerConnectionMessage
+                    : provider + " ready"
+            );
+            renderer.setControllerBattery(
+                controllerManager.getBatteryPercentage()
+            );
+            return;
+        }
+
+        String gamepad =
+            AndroidGamepadSupport.firstConnectedGamepadName();
+        if (gamepad != null) {
+            renderer.setControllerState(
+                true,
+                "Android gamepad ready: " + gamepad
+            );
+            renderer.setControllerBattery(-1);
+        } else {
+            renderer.setControllerState(
+                false,
+                controllerConnectionMessage
+            );
+            renderer.setControllerBattery(-1);
         }
     }
 
@@ -211,7 +332,9 @@ public final class VrActivity extends Activity
     }
 
     @Override
-    public void onVideoSurfaceTextureReady(SurfaceTexture surfaceTexture) {
+    public void onVideoSurfaceTextureReady(
+        SurfaceTexture surfaceTexture
+    ) {
         runOnUiThread(() -> {
             if (videoPlayer != null) {
                 videoPlayer.attachSurfaceTexture(surfaceTexture);
@@ -270,7 +393,11 @@ public final class VrActivity extends Activity
     @Override
     public void onVideoError(String message) {
         runOnUiThread(() -> {
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            Toast.makeText(
+                this,
+                message,
+                Toast.LENGTH_LONG
+            ).show();
             if (renderer != null) {
                 renderer.requestVideoExit();
             }
@@ -285,8 +412,11 @@ public final class VrActivity extends Activity
             }
 
             CardboardDevice.DeviceParams params =
-                DeviceParamsUtils.parseCardboardDeviceParams(savedParams);
-            if (params == null || !params.hasInterLensDistance()) {
+                DeviceParamsUtils.parseCardboardDeviceParams(
+                    savedParams
+                );
+            if (params == null
+                || !params.hasInterLensDistance()) {
                 return SAFE_VIEWER_FALLBACK_IPD_METERS;
             }
 
@@ -302,14 +432,20 @@ public final class VrActivity extends Activity
 
     private int readPhoneBattery() {
         BatteryManager batteryManager =
-            (BatteryManager) getSystemService(Context.BATTERY_SERVICE);
+            (BatteryManager) getSystemService(
+                Context.BATTERY_SERVICE
+            );
         if (batteryManager == null) {
             return -1;
         }
 
         int percentage =
-            batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
-        return percentage >= 0 && percentage <= 100 ? percentage : -1;
+            batteryManager.getIntProperty(
+                BatteryManager.BATTERY_PROPERTY_CAPACITY
+            );
+        return percentage >= 0 && percentage <= 100
+            ? percentage
+            : -1;
     }
 
     private void enterImmersiveMode() {

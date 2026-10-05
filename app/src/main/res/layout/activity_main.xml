@@ -135,6 +135,14 @@
                 android:text="@string/pair_controller" />
 
             <Button
+                android:id="@+id/phone_emulator_button"
+                style="@style/ReverieSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/use_phone_controller" />
+
+            <Button
                 android:id="@+id/test_controller_button"
                 style="@style/ReverieSecondaryButton"
                 android:layout_width="match_parent"
