@@ -530,6 +530,14 @@ Default-content baseline:
 - release builds refuse an accidentally missing archive unless `-PexcludeDoomShareware` is explicitly supplied;
 - Android packages the original archive unchanged as `assets/default-content/doom19s.zip`;
 - Stage A startup re-verifies the archive and registers the built-in `DOOM Shareware v1.9` DOS module using the `dos-doom-shareware` binding profile;
+- the original archive remains under the module's `content/` directory as the checksum-verifiable authoritative payload;
+- a separate `runtime/` directory is regenerated from the verified ZIP with bounded extraction and canonical-path traversal rejection;
+- the runtime adds generated `DOS.YML`, `DOSBOX.BAT` and `REVERIE.CFG` files without modifying/repacking the distributed archive;
+- first launch uses DOSBox Pure `run_path` / `run_input` metadata to run DEICE with the C-drive/default-directory/confirmation sequence, then `DOOMS_19.EXE -d`, then `DOOM.EXE`;
+- once `DOOMS/DOOM.EXE` exists, launch preparation deletes the bootstrap batch and rewrites `DOS.YML` to start Doom directly with no installer keystrokes;
+- the generated first-run config enables mouse and SB16 SFX at 0x220 / IRQ 7 / DMA 1 while leaving music disabled until separate music validation;
+- directory content is now an accepted DOS module content root so DOSBox Pure can mount the generated working tree directly;
+- pure-Java tests cover ZIP extraction bounds/path traversal and the first-install/direct-play metadata plans;
 - registered/full DOOM data is not bundled;
 - the engine GPL and shareware-data license remain separate licensing domains.
 
@@ -542,7 +550,8 @@ Remaining gates:
 - actually fetch and package the verified archive in a release build;
 - build/install on the Galaxy S9;
 - finish DOSBox Pure host;
-- implement local first-run installer/autostart behavior so the original archive can reach a ready-to-play shareware installation without redistributing a modified payload;
+- validate the DEICE prompt timing and generated runtime installation on the Galaxy S9;
+- validate Sound Blaster SFX and decide the later music path without reintroducing SETUP.EXE as a mandatory first-run gate;
 - verify E1M1 launch, saves, 320x200-to-4:3 presentation, input bindings, overlay/recovery and sustained thermal behavior.
 
 ### RV-0005 — Stage B frame cadence instrumentation

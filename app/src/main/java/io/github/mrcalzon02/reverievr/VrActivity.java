@@ -53,6 +53,7 @@ public final class VrActivity extends Activity
     private VirtualInputBus virtualInputBus;
     private StandardHidInputRouter standardHidInputRouter;
     private DosModuleRepository dosModuleRepository;
+    private BundledDosContentInstaller bundledDosContentInstaller;
     private DosSession dosSession;
     private NativeModuleRuntime nativeModuleRuntime;
 
@@ -103,6 +104,11 @@ public final class VrActivity extends Activity
         videoPlayer = new LocalVideoPlayer(this, this);
         dosModuleRepository =
             new DosModuleRepository(this);
+        bundledDosContentInstaller =
+            new BundledDosContentInstaller(
+                this,
+                dosModuleRepository
+            );
         dosSession =
             new DosSession(
                 this,
@@ -715,6 +721,26 @@ public final class VrActivity extends Activity
 
         DosGameModule module =
             dosModuleRepository.findById(moduleId);
+
+        if (module != null
+            && BundledDosContentInstaller.DOOM_MODULE_ID.equals(
+                module.id
+            )
+            && bundledDosContentInstaller != null) {
+            try {
+                module =
+                    bundledDosContentInstaller
+                        .prepareForLaunch(module);
+            } catch (java.io.IOException exception) {
+                ReverieLog.error(
+                    "BUNDLED_CONTENT",
+                    "Could not prepare bundled DOOM for launch.",
+                    exception
+                );
+                module = null;
+            }
+        }
+
         if (module == null || !module.isContentPresent()) {
             runOnUiThread(() ->
                 Toast.makeText(

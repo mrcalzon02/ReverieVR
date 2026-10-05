@@ -97,12 +97,26 @@ registers a built-in module:
 - module id: `bundled-doom-shareware-1.9`
 - binding profile: `dos-doom-shareware`
 
-The current archive is the original installer distribution. Until DOSBox Pure
-install/autostart behavior is completed, first launch may enter the original
-shareware installer rather than immediately starting E1M1.
+The current archive remains the original installer distribution. ReverieVR
+creates a separate app-private runtime working directory on the end user's
+device, safely expands the verified outer ZIP there, and generates only
+Reverie-owned launch metadata/configuration alongside the extracted installer.
 
-ReverieVR will solve that as a runtime installation/autostart workflow rather
-than by repacking the copyrighted distribution payload.
+The generated runtime uses DOSBox Pure's own `DOS.YML` `run_path` /
+`run_input` mechanism to start a small bootstrap batch and supply the original
+DEICE install prompts. The batch then invokes the generated
+`DOOMS_19.EXE -d`, installs a Reverie-generated `DEFAULT.CFG`, and launches
+`DOOM.EXE`. Once `DOOMS/DOOM.EXE` exists, launch metadata is rewritten to
+start the game directly and installer input automation is removed.
+
+The distributed `doom19s.zip` itself is never rewritten. The generated runtime
+tree is derived local state and is not the authoritative redistributed payload.
+
+For the first bootstrap configuration, Sound Blaster SFX target DOSBox's
+standard SB16 base 0x220 / IRQ 7 / DMA 1 configuration. Music is deliberately
+disabled in the generated config until the separate music/audio validation pass;
+this avoids forcing the user through the historical SETUP.EXE menu merely to
+reach the first playable frame.
 
 ## Rejected alternatives
 

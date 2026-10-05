@@ -37,7 +37,12 @@ final class DosGameModule {
 
     boolean isContentPresent() {
         File file = contentFile();
-        return file.isFile() && file.canRead();
+        return (file.isFile() || file.isDirectory())
+            && file.canRead();
+    }
+
+    boolean isDirectoryContent() {
+        return contentFile().isDirectory();
     }
 
     private static String required(

@@ -42,7 +42,11 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Made free release packaging expect the shareware archive by default, with an explicit `-PexcludeDoomShareware` escape hatch.
 - Added runtime SHA-256 re-verification and automatic registration of **DOOM Shareware v1.9** with the built-in Doom binding profile.
 - Recorded the legal boundary: shareware is copyrighted and not GPL/public-domain; paid/commercial distributions require appropriate permission or omission of the payload.
-- Left first-run DOS installer/autostart automation as the remaining runtime step rather than repacking the distributed archive.
+- Added bounded, path-traversal-safe extraction of the verified outer shareware ZIP into an app-private runtime working tree while preserving the original asset byte-for-byte.
+- Added generated DOSBox Pure `DOS.YML` metadata and a first-run bootstrap batch that drives DEICE, expands `DOOMS_19.EXE`, installs a Reverie-owned Doom config, and launches `DOOM.EXE`.
+- Added direct post-install launch metadata: once `DOOMS/DOOM.EXE` exists, subsequent launches bypass installer input automation entirely.
+- Added a first-run Doom configuration with mouse input and Sound Blaster SFX matched to DOSBox's 0x220 / IRQ 7 / DMA 1 baseline; music remains deliberately disabled pending audio/music validation.
+- Added pure-Java tests for ZIP extraction bounds/traversal defense and for the install-vs-direct-play bootstrap plans.
 
 
 
