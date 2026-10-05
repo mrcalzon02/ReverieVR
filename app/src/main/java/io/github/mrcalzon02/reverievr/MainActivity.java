@@ -62,7 +62,6 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         updateInstaller = new UpdateInstaller(this);
         controllerManager =
             ((ReverieApplication) getApplication()).getControllerManager();
-        controllerManager.addListener(this);
 
         bindViews();
         configurePersistentControls();
@@ -70,6 +69,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         refreshStaticStatus();
         refreshPhoneBattery();
         refreshControllerPermissionState();
+        controllerManager.addListener(this);
 
         if (preferences.isAutoUpdateCheckEnabled()) {
             checkForUpdates(false);
