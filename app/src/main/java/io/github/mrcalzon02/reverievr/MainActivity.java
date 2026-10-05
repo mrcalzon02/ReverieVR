@@ -1451,6 +1451,9 @@ public final class MainActivity extends Activity
                             + pending.receiptReference
                             + " to start a new report."
                     );
+                    deleteLocalDiagnosticBundle(
+                        pending.diagnosticId
+                    );
                     clearPendingDiagnostic();
                     beginDiagnosticSubmission();
                 }
@@ -1556,6 +1559,11 @@ public final class MainActivity extends Activity
                         });
                         return;
                     }
+
+                    // The server gave a definitive response that this
+                    // receipt can no longer be finalized. Do not trap
+                    // future Submit actions behind a stale marker.
+                    clearPendingDiagnostic();
                 }
 
                 boolean retained =
