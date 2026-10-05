@@ -75,6 +75,8 @@ final class DaydreamControllerProvider implements ControllerProvider {
     private volatile int scanGeneration;
     private volatile int poseWaitGeneration;
     private volatile int scanResultCount;
+    private volatile int scanNamedResultCount;
+    private volatile int scanFe55ResultCount;
 
     private final BroadcastReceiver bondReceiver = new BroadcastReceiver() {
         @Override
@@ -120,13 +122,15 @@ final class DaydreamControllerProvider implements ControllerProvider {
         public void onScanResult(int callbackType, ScanResult result) {
             if (result != null) {
                 scanResultCount++;
-                logScanResult(result);
+                updateScanDiagnostics(result);
             }
 
             BluetoothDevice device = result == null ? null : result.getDevice();
             if (device == null || !isDaydreamCandidate(result)) {
                 return;
             }
+
+            logMatchedScanResult(result);
 
             ReverieLog.milestone(
                 "CONTROLLER_BLE",
@@ -500,29 +504,19 @@ final class DaydreamControllerProvider implements ControllerProvider {
         );
 
         scanResultCount = 0;
+        scanNamedResultCount = 0;
+        scanFe55ResultCount = 0;
         ReverieLog.milestone(
             "CONTROLLER_BLE",
-            "Starting filtered Daydream BLE scan on Android API "
+            "Starting broad foreground Daydream BLE scan on Android API "
                 + Build.VERSION.SDK_INT
-                + "."
-        );
-
-        List<ScanFilter> filters = new ArrayList<>();
-        filters.add(
-            new ScanFilter.Builder()
-                .setServiceUuid(new ParcelUuid(DAYDREAM_SERVICE))
-                .build()
-        );
-        filters.add(
-            new ScanFilter.Builder()
-                .setDeviceName("Daydream controller")
-                .build()
+                + ". Candidate matching occurs inside ReverieVR."
         );
 
         final int generation = ++scanGeneration;
         try {
             scanner.startScan(
-                filters,
+                new ArrayList<>(),
                 settings,
                 scanCallback
             );
@@ -541,7 +535,11 @@ final class DaydreamControllerProvider implements ControllerProvider {
                         "CONTROLLER_BLE",
                         "Daydream BLE scan timed out after observing "
                             + observed
-                            + " advertisement(s)."
+                            + " advertisement(s); named="
+                            + scanNamedResultCount
+                            + ", fe55="
+                            + scanFe55ResultCount
+                            + "."
                     );
                     emitConnection(
                         ConnectionState.ERROR,
@@ -671,29 +669,58 @@ final class DaydreamControllerProvider implements ControllerProvider {
         }
     }
 
-    private void logScanResult(ScanResult result) {
+    private void updateScanDiagnostics(ScanResult result) {
+        if (result == null || result.getScanRecord() == null) {
+            return;
+        }
+
+        String advertisedName =
+            result.getScanRecord().getDeviceName();
+        if (advertisedName != null
+            && !advertisedName.trim().isEmpty()) {
+            scanNamedResultCount++;
+        }
+
+        List<ParcelUuid> services =
+            result.getScanRecord().getServiceUuids();
+        if (services != null
+            && services.contains(
+                new ParcelUuid(DAYDREAM_SERVICE)
+            )) {
+            scanFe55ResultCount++;
+        }
+    }
+
+    private void logMatchedScanResult(ScanResult result) {
         if (!ReverieLog.isDevelopment() || result == null) {
             return;
         }
 
         String name = "";
-        String address = "";
         List<ParcelUuid> services = null;
 
         if (result.getScanRecord() != null) {
-            String advertisedName = result.getScanRecord().getDeviceName();
-            name = advertisedName == null ? "" : advertisedName;
-            services = result.getScanRecord().getServiceUuids();
+            String advertisedName =
+                result.getScanRecord().getDeviceName();
+            name =
+                advertisedName == null
+                    ? ""
+                    : advertisedName;
+            services =
+                result.getScanRecord().getServiceUuids();
         }
 
         BluetoothDevice device = result.getDevice();
-        if (device != null && hasConnectPermission()) {
+        if (device != null
+            && name.isEmpty()
+            && hasConnectPermission()) {
             try {
-                if (name.isEmpty()) {
-                    String deviceName = device.getName();
-                    name = deviceName == null ? "" : deviceName;
-                }
-                address = device.getAddress();
+                String deviceName =
+                    device.getName();
+                name =
+                    deviceName == null
+                        ? ""
+                        : deviceName;
             } catch (SecurityException ignored) {
                 // The diagnostic must not interfere with discovery.
             }
@@ -701,14 +728,16 @@ final class DaydreamControllerProvider implements ControllerProvider {
 
         ReverieLog.dev(
             "CONTROLLER_BLE",
-            "Advertisement name="
-                + (name.isEmpty() ? "<none>" : name)
-                + " address="
-                + (address.isEmpty() ? "<unavailable>" : address)
+            "Matched advertisement name="
+                + (name.isEmpty()
+                    ? "<none>"
+                    : name)
                 + " rssi="
                 + result.getRssi()
                 + " services="
-                + (services == null ? "[]" : services.toString())
+                + (services == null
+                    ? "[]"
+                    : services.toString())
         );
     }
 
