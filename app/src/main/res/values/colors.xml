@@ -6,9 +6,14 @@
     <color name="text_primary">#F2F4F7</color>
     <color name="text_secondary">#AEB6C2</color>
     <color name="accent">#38D6C8</color>
+    <color name="accent_pressed">#2FB5AA</color>
     <color name="accent_dark">#157C75</color>
+    <color name="accent_dark_pressed">#1E9B91</color>
     <color name="warning">#F5B942</color>
     <color name="danger">#D35B65</color>
+    <color name="danger_pressed">#B94852</color>
+    <color name="error_flash">#FF7A86</color>
+    <color name="button_disabled">#3B414A</color>
     <color name="progress_track">#30343C</color>
     <color name="button_text_dark">#07100F</color>
 </resources>
