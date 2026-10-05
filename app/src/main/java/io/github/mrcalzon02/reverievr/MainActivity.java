@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -18,15 +19,19 @@ import android.widget.Toast;
 
 import java.util.Locale;
 
-public final class MainActivity extends Activity {
+public final class MainActivity extends Activity implements ControllerManager.Listener {
+    private static final int CONTROLLER_PERMISSION_REQUEST = 1201;
+
     private ReveriePreferences preferences;
     private UpdateChecker updateChecker;
     private UpdateInstaller updateInstaller;
     private UpdateChecker.Release availableUpdate;
+    private ControllerManager controllerManager;
 
     private TextView phoneBatteryText;
     private TextView controllerBatteryText;
     private TextView controllerStatusText;
+    private TextView controllerInputTestText;
     private TextView deviceStatusText;
     private TextView updateStatusText;
 
@@ -39,8 +44,12 @@ public final class MainActivity extends Activity {
     private Switch retroModeSwitch;
     private Switch autoUpdateCheckSwitch;
 
+    private Button pairControllerButton;
+    private Button testControllerButton;
     private Button checkUpdateButton;
     private Button installUpdateButton;
+
+    private boolean controllerTestEnabled;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,12 +59,15 @@ public final class MainActivity extends Activity {
         preferences = new ReveriePreferences(this);
         updateChecker = new UpdateChecker();
         updateInstaller = new UpdateInstaller(this);
+        controllerManager = new ControllerManager(this);
+        controllerManager.setListener(this);
 
         bindViews();
         configurePersistentControls();
         configureActions();
         refreshStaticStatus();
         refreshPhoneBattery();
+        refreshControllerPermissionState();
 
         if (preferences.isAutoUpdateCheckEnabled()) {
             checkForUpdates(false);
@@ -67,10 +79,14 @@ public final class MainActivity extends Activity {
         super.onResume();
         refreshStaticStatus();
         refreshPhoneBattery();
+        refreshControllerPermissionState();
     }
 
     @Override
     protected void onDestroy() {
+        if (controllerManager != null) {
+            controllerManager.close();
+        }
         if (updateChecker != null) {
             updateChecker.close();
         }
@@ -84,6 +100,7 @@ public final class MainActivity extends Activity {
         phoneBatteryText = findViewById(R.id.phone_battery_text);
         controllerBatteryText = findViewById(R.id.controller_battery_text);
         controllerStatusText = findViewById(R.id.controller_status);
+        controllerInputTestText = findViewById(R.id.controller_input_test);
         deviceStatusText = findViewById(R.id.device_status);
         updateStatusText = findViewById(R.id.update_status);
 
@@ -96,6 +113,8 @@ public final class MainActivity extends Activity {
         retroModeSwitch = findViewById(R.id.retro_mode_switch);
         autoUpdateCheckSwitch = findViewById(R.id.auto_update_check_switch);
 
+        pairControllerButton = findViewById(R.id.pair_controller_button);
+        testControllerButton = findViewById(R.id.test_controller_button);
         checkUpdateButton = findViewById(R.id.check_update_button);
         installUpdateButton = findViewById(R.id.install_update_button);
     }
@@ -121,11 +140,22 @@ public final class MainActivity extends Activity {
     }
 
     private void configureActions() {
-        Button pairControllerButton = findViewById(R.id.pair_controller_button);
-        pairControllerButton.setEnabled(false);
+        pairControllerButton.setOnClickListener(view -> beginControllerPairing());
 
-        Button testControllerButton = findViewById(R.id.test_controller_button);
         testControllerButton.setEnabled(false);
+        testControllerButton.setOnClickListener(view -> {
+            controllerTestEnabled = !controllerTestEnabled;
+            testControllerButton.setText(
+                controllerTestEnabled
+                    ? R.string.stop_controller_test
+                    : R.string.test_controller
+            );
+            controllerInputTestText.setText(
+                controllerTestEnabled
+                    ? R.string.controller_test_waiting
+                    : R.string.controller_test_inactive
+            );
+        });
 
         Button bluetoothButton = findViewById(R.id.bluetooth_settings_button);
         bluetoothButton.setOnClickListener(view -> openBluetoothSettings());
@@ -139,6 +169,52 @@ public final class MainActivity extends Activity {
 
         Button enterVrButton = findViewById(R.id.enter_vr_button);
         enterVrButton.setEnabled(false);
+    }
+
+    private void beginControllerPairing() {
+        String[] missing = controllerManager.getMissingRuntimePermissions();
+        if (missing.length > 0) {
+            requestPermissions(missing, CONTROLLER_PERMISSION_REQUEST);
+            return;
+        }
+
+        controllerManager.pairDaydreamController();
+    }
+
+    private void refreshControllerPermissionState() {
+        String[] missing = controllerManager.getMissingRuntimePermissions();
+        if (missing.length > 0) {
+            pairControllerButton.setText(R.string.grant_and_pair_controller);
+            controllerStatusText.setText(R.string.controller_permission_needed);
+        } else {
+            pairControllerButton.setText(R.string.pair_controller);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+        int requestCode,
+        String[] permissions,
+        int[] grantResults
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode != CONTROLLER_PERMISSION_REQUEST) {
+            return;
+        }
+
+        boolean granted = grantResults.length > 0;
+        for (int result : grantResults) {
+            granted &= result == PackageManager.PERMISSION_GRANTED;
+        }
+
+        refreshControllerPermissionState();
+
+        if (granted) {
+            controllerManager.pairDaydreamController();
+        } else {
+            controllerStatusText.setText(R.string.controller_permission_denied);
+        }
     }
 
     private void applyPreferencesToControls() {
@@ -159,10 +235,6 @@ public final class MainActivity extends Activity {
             Build.VERSION.SDK_INT
         );
         deviceStatusText.setText(deviceText);
-
-        controllerStatusText.setText(R.string.controller_status_unavailable);
-        controllerBatteryText.setText(R.string.controller_battery_unknown);
-        controllerBatteryBar.setProgress(0);
     }
 
     private void refreshPhoneBattery() {
@@ -182,6 +254,65 @@ public final class MainActivity extends Activity {
             phoneBatteryBar.setProgress(0);
             phoneBatteryText.setText(R.string.phone_battery_unknown);
         }
+    }
+
+    @Override
+    public void onConnectionStateChanged(
+        ControllerProvider.ConnectionState state,
+        String message
+    ) {
+        runOnUiThread(() -> {
+            controllerStatusText.setText(message);
+            boolean ready = state == ControllerProvider.ConnectionState.READY;
+            testControllerButton.setEnabled(ready);
+
+            if (!ready && controllerTestEnabled) {
+                controllerTestEnabled = false;
+                testControllerButton.setText(R.string.test_controller);
+                controllerInputTestText.setText(R.string.controller_test_inactive);
+            }
+        });
+    }
+
+    @Override
+    public void onBatteryChanged(int percentage, int millivolts) {
+        runOnUiThread(() -> {
+            if (percentage >= 0) {
+                controllerBatteryBar.setProgress(percentage);
+                if (millivolts > 0) {
+                    controllerBatteryText.setText(
+                        getString(
+                            R.string.controller_battery_voltage_format,
+                            percentage,
+                            millivolts
+                        )
+                    );
+                } else {
+                    controllerBatteryText.setText(
+                        getString(R.string.controller_battery_format, percentage)
+                    );
+                }
+            } else if (millivolts > 0) {
+                controllerBatteryBar.setProgress(0);
+                controllerBatteryText.setText(
+                    getString(R.string.controller_voltage_format, millivolts)
+                );
+            } else {
+                controllerBatteryBar.setProgress(0);
+                controllerBatteryText.setText(R.string.controller_battery_unknown);
+            }
+        });
+    }
+
+    @Override
+    public void onControllerStateChanged(ControllerSnapshot snapshot) {
+        if (!controllerTestEnabled || snapshot == null) {
+            return;
+        }
+
+        runOnUiThread(() ->
+            controllerInputTestText.setText(snapshot.toDiagnosticString())
+        );
     }
 
     private void checkForUpdates(boolean userInitiated) {

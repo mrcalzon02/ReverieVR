@@ -13,7 +13,7 @@
 ## P1 — Pre-VR boot and controller readiness
 
 - RV-0090 — Implement conventional 2D touchscreen boot/setup surface.
-- RV-0091 — Implement controller pairing/sync, readiness state, and controller test workflow.
+- RV-0091 — Implement controller pairing/sync, readiness state, battery telemetry, pose/button/touch decoding, recenter command, and controller test workflow. Daydream BLE is the reference backend; future controller types use the same provider abstraction.
 - RV-0092 — Implement explicit 2D-to-VR entry plus safe fallback/recovery to 2D setup.
 - RV-0093 — Implement optional authoritative GitHub Release update checking, user-notified Update/Not now choice, APK integrity validation when a digest is published, and Android package-installer handoff.
 

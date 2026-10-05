@@ -142,6 +142,16 @@
                 android:layout_marginTop="6dp"
                 android:text="@string/test_controller" />
 
+            <TextView
+                android:id="@+id/controller_input_test"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:fontFamily="monospace"
+                android:text="@string/controller_test_inactive"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
             <Button
                 android:id="@+id/bluetooth_settings_button"
                 style="@style/ReverieSecondaryButton"

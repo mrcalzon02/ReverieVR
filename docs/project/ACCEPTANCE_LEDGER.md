@@ -17,7 +17,7 @@ Acceptance states:
 | RV-0002 | Framework/runtime/controller-stack selection | planned | Requires research, license/provenance review, controller pairing path, renderer selection, and recorded architecture decision. |
 | RV-0003 | Android APK skeleton | **draft** | Android/Gradle/Java source is on remote `main`; build not run because this environment lacks Gradle/Android SDK. |
 | RV-0090 | 2D touchscreen boot/setup surface | **draft** | UI source, real phone battery reporting, persisted QoL toggles, recovery reset, and honest readiness gates are on remote `main`; APK/device launch still required. |
-| RV-0091 | Controller pairing/readiness workflow | planned | Pair / Sync and Test actions exist in the UI but remain disabled until the verified Daydream controller stack is implemented. |
+| RV-0091 | Controller pairing/readiness workflow | **draft** | Direct Android BLE source now scans FE55, requests bonding, connects GATT, subscribes to pose/battery notifications, decodes the 20-byte controller packet, reads battery/voltage, exposes recenter, and feeds a live Stage A test panel. Physical Daydream controller validation remains required. |
 | RV-0092 | 2D-to-VR transition/recovery | planned | Enter VR exists but is disabled until Stage B is implemented and verified. |
 | RV-0093 | GitHub Release updater | **draft** | Source checks only the authoritative repository, supports optional launch checks, user Update/Not now choice, release notes, APK download, optional SHA-256 verification, and Android installer handoff. Build/device verification still required. |
 | RV-0100 | VR home/menu | planned | Must be operable in headset without touchscreen dependency after successful VR entry. |

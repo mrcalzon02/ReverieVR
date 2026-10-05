@@ -10,10 +10,19 @@
     <string name="controller_battery_unknown">Controller battery: --</string>
 
     <string name="controller_section">Controller</string>
-    <string name="controller_status_unavailable">Controller integration is not available in this build.</string>
-    <string name="controller_status_explanation">Pair / Sync and Test are already part of the intended boot flow, but remain disabled until the verified controller stack is connected. Android Bluetooth settings are available for inspection without claiming that generic Bluetooth pairing is sufficient.</string>
+    <string name="controller_status_unavailable">Controller is not connected.</string>
+    <string name="controller_status_explanation">ReverieVR can scan, bond and connect directly to the Daydream controller over Bluetooth LE. Later controller types will plug into the same controller-provider layer.</string>
     <string name="pair_controller">Pair / Sync Daydream controller</string>
+    <string name="grant_and_pair_controller">Grant Bluetooth access &amp; pair</string>
+    <string name="controller_permission_needed">Bluetooth permission is required before ReverieVR can scan for the controller.</string>
+    <string name="controller_permission_denied">Bluetooth permission was denied. Pairing cannot start.</string>
     <string name="test_controller">Test controller input</string>
+    <string name="stop_controller_test">Stop controller test</string>
+    <string name="controller_test_inactive">Input test inactive.</string>
+    <string name="controller_test_waiting">Move the controller, touch the pad, or press a button…</string>
+    <string name="controller_battery_format">Controller battery: %1$d%%</string>
+    <string name="controller_battery_voltage_format">Controller battery: %1$d%%  •  %2$d mV</string>
+    <string name="controller_voltage_format">Controller battery: --  •  %1$d mV</string>
     <string name="open_bluetooth_settings">Open Android Bluetooth settings</string>
     <string name="bluetooth_settings_unavailable">Bluetooth settings are not available on this device.</string>
 
