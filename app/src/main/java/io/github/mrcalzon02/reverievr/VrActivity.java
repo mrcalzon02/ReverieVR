@@ -39,6 +39,9 @@ public final class VrActivity extends Activity
         StandardHidInputRouter.Listener,
         DosSession.Listener {
 
+    static final String EXTRA_STARTUP_ERROR =
+        "io.github.mrcalzon02.reverievr.VR_STARTUP_ERROR";
+
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
 
     private CardboardView cardboardView;
@@ -57,6 +60,8 @@ public final class VrActivity extends Activity
     private BundledDosContentInstaller bundledDosContentInstaller;
     private DosSession dosSession;
     private NativeModuleRuntime nativeModuleRuntime;
+    private boolean cardboardRendererBound;
+    private volatile boolean startupFailed;
 
     private final AtomicInteger batteryTemperatureTenthsC =
         new AtomicInteger(
@@ -84,10 +89,20 @@ public final class VrActivity extends Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        try {
+            VrStartupGuard.setPhase(
+                this,
+                "activity-window"
+            );
+            requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         enterImmersiveMode();
+
+        VrStartupGuard.setPhase(
+            this,
+            "runtime-dependencies"
+        );
 
         ReverieApplication application =
             (ReverieApplication) getApplication();
@@ -126,6 +141,10 @@ public final class VrActivity extends Activity
         inputRouter = new VrInputRouter(this);
         inputRouter.setBindingListener(this);
 
+        VrStartupGuard.setPhase(
+            this,
+            "cardboard-jni-and-view"
+        );
         CardboardView.setUseCardboardGlSurfaceView(true);
         cardboardView = new CardboardView(this);
         cardboardView.setStereoRenderMode(true);
@@ -143,7 +162,12 @@ public final class VrActivity extends Activity
         renderer.setPhoneBattery(readPhoneBattery());
         refreshDosModuleStatus();
 
+        VrStartupGuard.setPhase(
+            this,
+            "cardboard-renderer-bind"
+        );
         cardboardView.setRenderer(renderer);
+        cardboardRendererBound = true;
         cardboardView.setOnBackButtonClick(this::finish);
         cardboardView.setOnSettingsButtonClick(
             () -> inputRouter.submitAction(
@@ -158,14 +182,33 @@ public final class VrActivity extends Activity
             )
         );
 
+        VrStartupGuard.setPhase(
+            this,
+            "waiting-first-frame"
+        );
         setContentView(cardboardView);
         controllerManager.addListener(this);
         refreshInputSourceStatus();
+
+        ReverieLog.milestone(
+            "VR_STARTUP",
+            "VR activity created; waiting for first rendered frame."
+        );
+        } catch (RuntimeException | LinkageError failure) {
+            failVrStartup(
+                "activity-initialization",
+                failure
+            );
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if (startupFailed) {
+            return;
+        }
+
         registerInputDeviceListener();
         registerPerformanceEnvironmentMonitoring();
         enterImmersiveMode();
@@ -209,7 +252,8 @@ public final class VrActivity extends Activity
         if (nativeModuleRuntime != null) {
             nativeModuleRuntime.pauseForLifecycle();
         }
-        if (cardboardView != null) {
+        if (cardboardView != null
+            && cardboardRendererBound) {
             cardboardView.onPause();
         }
         unregisterPerformanceEnvironmentMonitoring();
@@ -232,7 +276,8 @@ public final class VrActivity extends Activity
         if (inputBindingManager != null) {
             inputBindingManager.endHostedProfile();
         }
-        if (cardboardView != null) {
+        if (cardboardView != null
+            && cardboardRendererBound) {
             cardboardView.onDestroy();
         }
         if (nativeModuleRuntime != null) {
@@ -242,6 +287,109 @@ public final class VrActivity extends Activity
             uiFeedback.close();
         }
         super.onDestroy();
+    }
+
+    @Override
+    public void onVrFirstFrameRendered() {
+        if (startupFailed) {
+            return;
+        }
+
+        runOnUiThread(() -> {
+            if (startupFailed) {
+                return;
+            }
+
+            VrStartupGuard.markFirstFrame(this);
+            ReverieLog.milestone(
+                "VR_STARTUP",
+                "First VR frame rendered successfully."
+            );
+        });
+    }
+
+    @Override
+    public void onVrRendererFailure(
+        String phase,
+        Throwable throwable
+    ) {
+        String safePhase =
+            phase == null
+                || phase.trim().isEmpty()
+                ? "renderer"
+                : "renderer-" + phase.trim();
+
+        runOnUiThread(
+            () -> failVrStartup(
+                safePhase,
+                throwable
+            )
+        );
+    }
+
+    private void failVrStartup(
+        String phase,
+        Throwable throwable
+    ) {
+        if (startupFailed) {
+            return;
+        }
+        startupFailed = true;
+
+        String safePhase =
+            phase == null
+                || phase.trim().isEmpty()
+                ? "unknown"
+                : phase.trim();
+
+        VrStartupGuard.recordFailure(
+            this,
+            safePhase,
+            throwable
+        );
+        ReverieLog.error(
+            "VR_STARTUP",
+            "VR startup failed during "
+                + safePhase
+                + ".",
+            throwable
+        );
+
+        String detail =
+            throwable == null
+                ? ""
+                : throwable.getClass().getSimpleName()
+                    + (
+                        throwable.getMessage() == null
+                            || throwable.getMessage()
+                                .trim()
+                                .isEmpty()
+                            ? ""
+                            : ": "
+                                + throwable.getMessage()
+                                    .trim()
+                    );
+
+        String message =
+            "VR startup failed during "
+                + safePhase
+                + "."
+                + (
+                    detail.isEmpty()
+                        ? ""
+                        : "\n\n" + detail
+                );
+
+        Intent result = new Intent();
+        result.putExtra(
+            EXTRA_STARTUP_ERROR,
+            message
+        );
+        setResult(
+            Activity.RESULT_CANCELED,
+            result
+        );
+        finish();
     }
 
     @Override
