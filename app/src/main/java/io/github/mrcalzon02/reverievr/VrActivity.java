@@ -45,6 +45,7 @@ public final class VrActivity extends Activity
     private VrShellRenderer renderer;
     private ControllerManager controllerManager;
     private ReveriePreferences preferences;
+    private UiFeedback uiFeedback;
     private LocalVideoPlayer videoPlayer;
     private InputManager inputManager;
     private VrInputRouter inputRouter;
@@ -101,6 +102,7 @@ public final class VrActivity extends Activity
         standardHidInputRouter =
             new StandardHidInputRouter(this);
         preferences = new ReveriePreferences(this);
+        uiFeedback = new UiFeedback(this);
         videoPlayer = new LocalVideoPlayer(this, this);
         dosModuleRepository =
             new DosModuleRepository(this);
@@ -236,6 +238,9 @@ public final class VrActivity extends Activity
         if (nativeModuleRuntime != null) {
             nativeModuleRuntime.close();
         }
+        if (uiFeedback != null) {
+            uiFeedback.close();
+        }
         super.onDestroy();
     }
 
@@ -357,6 +362,13 @@ public final class VrActivity extends Activity
 
         switch (action) {
             case SELECT:
+                if (renderer.handlesSelectAsShellAction()) {
+                    if (renderer.canActivateSelect()) {
+                        uiFeedback.activation();
+                    } else {
+                        uiFeedback.failure();
+                    }
+                }
                 renderer.requestSelect();
                 break;
 
@@ -628,6 +640,11 @@ public final class VrActivity extends Activity
     @Override
     public void onExitToPhoneRequested() {
         runOnUiThread(this::finish);
+    }
+
+    @Override
+    public void onUiActionRejected() {
+        runOnUiThread(() -> uiFeedback.failure());
     }
 
     @Override
@@ -1055,6 +1072,7 @@ public final class VrActivity extends Activity
             refreshDosModuleStatus();
 
             if (error) {
+                uiFeedback.failure();
                 Toast.makeText(
                     this,
                     message == null || message.trim().isEmpty()
@@ -1132,6 +1150,7 @@ public final class VrActivity extends Activity
     @Override
     public void onVideoError(String message) {
         runOnUiThread(() -> {
+            uiFeedback.failure();
             Toast.makeText(
                 this,
                 message,
