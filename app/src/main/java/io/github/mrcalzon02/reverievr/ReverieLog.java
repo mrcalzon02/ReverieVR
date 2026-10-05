@@ -118,10 +118,12 @@ final class ReverieLog {
             false,
             null
         );
-        Log.i(
-            LOGCAT_TAG,
-            compact(area, message)
-        );
+        if (initialized) {
+            Log.i(
+                        LOGCAT_TAG,
+                        compact(area, message)
+                    );
+        }
     }
 
     static void incident(String area, String message) {
@@ -132,10 +134,12 @@ final class ReverieLog {
             false,
             null
         );
-        Log.w(
-            LOGCAT_TAG,
-            compact(area, message)
-        );
+        if (initialized) {
+            Log.w(
+                        LOGCAT_TAG,
+                        compact(area, message)
+                    );
+        }
     }
 
     static void error(
@@ -150,11 +154,13 @@ final class ReverieLog {
             false,
             throwable
         );
-        Log.e(
-            LOGCAT_TAG,
-            compact(area, message),
-            throwable
-        );
+        if (initialized) {
+            Log.e(
+                        LOGCAT_TAG,
+                        compact(area, message),
+                        throwable
+                    );
+        }
     }
 
     static void fatal(
@@ -176,11 +182,13 @@ final class ReverieLog {
             writeBatch(urgent);
         }
 
-        Log.e(
-            LOGCAT_TAG,
-            compact(area, message),
-            throwable
-        );
+        if (initialized) {
+            Log.e(
+                        LOGCAT_TAG,
+                        compact(area, message),
+                        throwable
+                    );
+        }
     }
 
     static void dev(String area, String message) {
@@ -195,10 +203,12 @@ final class ReverieLog {
             true,
             null
         );
-        Log.v(
-            LOGCAT_TAG,
-            compact(area, message)
-        );
+        if (initialized) {
+            Log.v(
+                        LOGCAT_TAG,
+                        compact(area, message)
+                    );
+        }
     }
 
     static String getLogDirectoryPath() {
