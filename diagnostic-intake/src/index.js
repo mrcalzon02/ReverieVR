@@ -80,7 +80,8 @@ async function handleDiagnosticSubmission(request, env) {
 
   const contentLength = Number(request.headers.get("content-length") || "0");
   const maxBundleBytes = positiveInt(env.MAX_BUNDLE_BYTES, 25 * 1024 * 1024);
-  if (contentLength > 0 && contentLength > maxBundleBytes + 512 * 1024) {
+  const maxRequestBytes = maxBundleBytes + 512 * 1024;
+  if (contentLength > 0 && contentLength > maxRequestBytes) {
     return json({error: "request_too_large"}, 413);
   }
 
@@ -94,9 +95,20 @@ async function handleDiagnosticSubmission(request, env) {
     return json({error: "multipart_required"}, 415);
   }
 
+  const boundedBody = await readBodyBounded(request, maxRequestBytes);
+  if (!boundedBody.ok) {
+    return json(
+      {error: boundedBody.error},
+      boundedBody.status
+    );
+  }
+
   let form;
   try {
-    form = await request.formData();
+    form = await new Response(
+      boundedBody.bytes,
+      {headers: {"content-type": contentType}}
+    ).formData();
   } catch (error) {
     return json({error: "invalid_multipart"}, 400);
   }
@@ -231,6 +243,69 @@ async function enforceRateLimit(request, env) {
   const id = env.RATE_LIMITER.idFromName(digest);
   const stub = env.RATE_LIMITER.get(id);
   return await stub.fetch("https://rate-limit.local/check", {method: "POST"});
+}
+
+async function readBodyBounded(request, maxBytes) {
+  if (!request.body) {
+    return {
+      ok: false,
+      error: "request_body_required",
+      status: 400
+    };
+  }
+
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+
+  try {
+    while (true) {
+      const part = await reader.read();
+      if (part.done) {
+        break;
+      }
+
+      const value = part.value;
+      if (!value || value.byteLength === 0) {
+        continue;
+      }
+
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel("request_too_large");
+        return {
+          ok: false,
+          error: "request_too_large",
+          status: 413
+        };
+      }
+
+      chunks.push(value);
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      error: "request_body_read_failed",
+      status: 400
+    };
+  }
+
+  if (total === 0) {
+    return {
+      ok: false,
+      error: "request_body_required",
+      status: 400
+    };
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return {ok: true, bytes};
 }
 
 function textField(form, name, maxLength) {
