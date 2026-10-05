@@ -44,6 +44,14 @@ final class InputBindingManager {
         );
     }
 
+    synchronized void selectHostedProfile(String id) {
+        if (hostedPreviousProfile == null) {
+            throw new IllegalStateException("No hosted binding session is active.");
+        }
+        engine.releaseAll();
+        engine.setProfile(BuiltInBindingProfiles.byId(id));
+    }
+
     synchronized void endHostedProfile() {
         if (hostedPreviousProfile == null) {
             return;
