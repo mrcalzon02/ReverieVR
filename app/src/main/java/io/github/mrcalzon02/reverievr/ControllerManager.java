@@ -2,6 +2,8 @@ package io.github.mrcalzon02.reverievr;
 
 import android.content.Context;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+
 final class ControllerManager implements ControllerProvider.Listener, AutoCloseable {
     interface Listener {
         void onConnectionStateChanged(
@@ -15,15 +17,38 @@ final class ControllerManager implements ControllerProvider.Listener, AutoClosea
     }
 
     private final ControllerProvider daydreamProvider;
-    private Listener listener;
+    private final CopyOnWriteArrayList<Listener> listeners =
+        new CopyOnWriteArrayList<>();
+
+    private volatile ControllerProvider.ConnectionState connectionState =
+        ControllerProvider.ConnectionState.IDLE;
+    private volatile String connectionMessage = "Controller is not connected.";
+    private volatile int batteryPercentage = -1;
+    private volatile int batteryMillivolts = -1;
+    private volatile ControllerSnapshot lastSnapshot;
 
     ControllerManager(Context context) {
         daydreamProvider = new DaydreamControllerProvider(context);
         daydreamProvider.setListener(this);
     }
 
-    void setListener(Listener listener) {
-        this.listener = listener;
+    void addListener(Listener listener) {
+        if (listener == null) {
+            return;
+        }
+
+        listeners.addIfAbsent(listener);
+        listener.onConnectionStateChanged(connectionState, connectionMessage);
+        listener.onBatteryChanged(batteryPercentage, batteryMillivolts);
+
+        ControllerSnapshot snapshot = lastSnapshot;
+        if (snapshot != null) {
+            listener.onControllerStateChanged(snapshot);
+        }
+    }
+
+    void removeListener(Listener listener) {
+        listeners.remove(listener);
     }
 
     String[] getMissingRuntimePermissions() {
@@ -34,7 +59,7 @@ final class ControllerManager implements ControllerProvider.Listener, AutoClosea
         daydreamProvider.startPairing();
     }
 
-    void recenter() {
+    void recenterController() {
         daydreamProvider.recenter();
     }
 
@@ -42,35 +67,50 @@ final class ControllerManager implements ControllerProvider.Listener, AutoClosea
         return daydreamProvider.isReady();
     }
 
+    int getBatteryPercentage() {
+        return batteryPercentage;
+    }
+
+    int getBatteryMillivolts() {
+        return batteryMillivolts;
+    }
+
+    ControllerSnapshot getLastSnapshot() {
+        return lastSnapshot;
+    }
+
     @Override
     public void onConnectionStateChanged(
         ControllerProvider.ConnectionState state,
         String message
     ) {
-        Listener target = listener;
-        if (target != null) {
-            target.onConnectionStateChanged(state, message);
+        connectionState = state;
+        connectionMessage = message == null ? "" : message;
+        for (Listener listener : listeners) {
+            listener.onConnectionStateChanged(state, connectionMessage);
         }
     }
 
     @Override
     public void onBatteryChanged(int percentage, int millivolts) {
-        Listener target = listener;
-        if (target != null) {
-            target.onBatteryChanged(percentage, millivolts);
+        batteryPercentage = percentage;
+        batteryMillivolts = millivolts;
+        for (Listener listener : listeners) {
+            listener.onBatteryChanged(percentage, millivolts);
         }
     }
 
     @Override
     public void onControllerStateChanged(ControllerSnapshot snapshot) {
-        Listener target = listener;
-        if (target != null) {
-            target.onControllerStateChanged(snapshot);
+        lastSnapshot = snapshot;
+        for (Listener listener : listeners) {
+            listener.onControllerStateChanged(snapshot);
         }
     }
 
     @Override
     public void close() {
+        listeners.clear();
         daydreamProvider.close();
     }
 }

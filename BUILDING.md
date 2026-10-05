@@ -2,61 +2,81 @@
 
 ## Bootstrap toolchain
 
-The current Stage A Android shell intentionally uses only the platform Android SDK and Java.
+ReverieVR now combines:
 
-Pinned bootstrap versions:
+- native Java/XML Android Stage A;
+- direct Android BLE Daydream-controller backend;
+- Google Cardboard SDK v1.35.0 pinned at commit `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`;
+- OpenGL ES Cardboard rendering only.
 
-- Android Gradle Plugin: 9.4.1
-- Gradle: 9.6.1
-- JDK: 17
-- compileSdk: 36
-- targetSdk: 36
-- minSdk: 26
-- external runtime libraries: none
+Pinned build baseline:
 
-The project does not currently require AndroidX, Compose, a game engine, Google VR Services, or network permission.
+- Android Gradle Plugin: **9.2.0**
+- Gradle: **9.6.1**
+- JDK: **17**
+- compileSdk: **36**
+- targetSdk: **36**
+- minSdk: **26**
+- Cardboard NDK: **29.0.14206865**
+- CMake: **3.22.1+**
 
-## First local setup
+Cardboard Vulkan and Unity-plugin build paths are explicitly disabled.
+
+## Clone
+
+The Cardboard SDK is a pinned Git submodule. Clone recursively or initialize it after cloning:
+
+    git submodule update --init --recursive
+
+Verify:
+
+    git -C third_party/cardboard rev-parse HEAD
+
+Expected:
+
+    5969239e7c87f4cd64c8ec170ce1e7f4eb559e37
+
+## Local setup
 
 Install:
 
 1. JDK 17.
 2. Android SDK Platform 36 and Build Tools 36.x.
-3. Gradle 9.6.1.
+3. Android NDK 29.0.14206865.
+4. CMake 3.22.1 or compatible newer installed through Android SDK Manager.
+5. Gradle 9.6.1.
 
-From the repository root:
-
-    gradle :app:assembleDebug
-
-The debug APK is expected at:
-
-    app/build/outputs/apk/debug/app-debug.apk
-
-Install to an attached Android device with:
-
-    adb install -r app/build/outputs/apk/debug/app-debug.apk
-
-## Gradle wrapper
-
-The repository bootstrap does not yet contain a generated Gradle wrapper binary. Once a verified Gradle 9.6.1 environment is available, generate and commit the standard wrapper with:
+Generate the standard wrapper once from a verified Gradle 9.6.1 environment:
 
     gradle wrapper --gradle-version 9.6.1 --distribution-type bin
 
-Then subsequent builds should use:
+Then build:
 
     ./gradlew :app:assembleDebug
 
-Do not substitute an unverified third-party wrapper binary.
+Expected debug APK:
 
-## Current runtime boundary
+    app/build/outputs/apk/debug/app-debug.apk
 
-The Stage A touchscreen activity is implemented independently of Stage B VR.
+Install:
 
-Enter VR is deliberately disabled until RV-0002/RV-0091/RV-0092 establish and verify:
+    adb install -r app/build/outputs/apk/debug/app-debug.apk
 
-- the VR renderer/runtime;
-- Daydream controller discovery/pairing/input;
-- the 2D-to-VR transition;
-- the recovery transition back to Stage A.
+## Reference-device validation order
 
-This is capability honesty, not a placeholder success path.
+On the Galaxy S9:
+
+1. launch Stage A;
+2. grant Bluetooth permissions;
+3. wake the Daydream controller and run Pair / Sync;
+4. verify Android bond/GATT connection;
+5. run the live controller input test;
+6. verify touchpad, click, Menu, Home, volume-button bits and controller battery;
+7. tap **Enter VR**;
+8. verify stereo distortion/head tracking;
+9. verify the first-run VR setup page is readable;
+10. verify head gaze + touchpad click navigation;
+11. verify Home recenters controller/software heading;
+12. verify Menu returns/backtracks and Exit returns to Stage A.
+
+Do not mark RV-0003, RV-0091, RV-0092 or RV-0100 device-accepted until those checks have actually run.

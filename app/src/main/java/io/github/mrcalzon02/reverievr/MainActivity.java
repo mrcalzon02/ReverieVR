@@ -48,6 +48,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
     private Button testControllerButton;
     private Button checkUpdateButton;
     private Button installUpdateButton;
+    private Button enterVrButton;
 
     private boolean controllerTestEnabled;
 
@@ -59,8 +60,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         preferences = new ReveriePreferences(this);
         updateChecker = new UpdateChecker();
         updateInstaller = new UpdateInstaller(this);
-        controllerManager = new ControllerManager(this);
-        controllerManager.setListener(this);
+        controllerManager =
+            ((ReverieApplication) getApplication()).getControllerManager();
+        controllerManager.addListener(this);
 
         bindViews();
         configurePersistentControls();
@@ -80,12 +82,13 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         refreshStaticStatus();
         refreshPhoneBattery();
         refreshControllerPermissionState();
+        enterVrButton.setEnabled(controllerManager.isReady());
     }
 
     @Override
     protected void onDestroy() {
         if (controllerManager != null) {
-            controllerManager.close();
+            controllerManager.removeListener(this);
         }
         if (updateChecker != null) {
             updateChecker.close();
@@ -117,6 +120,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         testControllerButton = findViewById(R.id.test_controller_button);
         checkUpdateButton = findViewById(R.id.check_update_button);
         installUpdateButton = findViewById(R.id.install_update_button);
+        enterVrButton = findViewById(R.id.enter_vr_button);
     }
 
     private void configurePersistentControls() {
@@ -167,8 +171,10 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         Button resetButton = findViewById(R.id.reset_settings_button);
         resetButton.setOnClickListener(view -> confirmReset());
 
-        Button enterVrButton = findViewById(R.id.enter_vr_button);
-        enterVrButton.setEnabled(false);
+        enterVrButton.setEnabled(controllerManager.isReady());
+        enterVrButton.setOnClickListener(
+            view -> startActivity(new Intent(this, VrActivity.class))
+        );
     }
 
     private void beginControllerPairing() {
@@ -265,6 +271,7 @@ public final class MainActivity extends Activity implements ControllerManager.Li
             controllerStatusText.setText(message);
             boolean ready = state == ControllerProvider.ConnectionState.READY;
             testControllerButton.setEnabled(ready);
+            enterVrButton.setEnabled(ready);
 
             if (!ready && controllerTestEnabled) {
                 controllerTestEnabled = false;

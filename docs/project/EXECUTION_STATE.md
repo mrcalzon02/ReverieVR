@@ -158,6 +158,25 @@ High-priority requirements now include:
 
 Automatic convenience behaviors remain user-toggleable unless disabling them would destroy recoverability.
 
+## Stage B implementation candidate
+
+The repository now has a concrete Stage B candidate layered on Cardboard v1.35.0:
+
+- Cardboard pinned to exact commit `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`;
+- Unity plugin and Vulkan disabled; OpenGL ES retained;
+- controller manager moved to application scope so the BLE session survives Stage A -> Stage B;
+- Enter VR becomes available only when the reference controller backend is ready;
+- `VrActivity` provides landscape immersive Cardboard stereo/head tracking;
+- `VrShellRenderer` draws a deliberately simple world-space VR shell;
+- head gaze selects shell buttons; Daydream touchpad click activates;
+- Menu/back navigates back; Home requests controller + software yaw recenter;
+- the first run enters resumable setup rather than normal Home;
+- initial functional setup pages cover forward/recenter, virtual user eye spacing, UI scale, and battery/HUD behavior;
+- user eye spacing is applied as a render-view correction on top of the viewer profile rather than replacing the physical viewer profile;
+- a fallback 60 mm physical viewer spacing is used only when no saved Cardboard viewer profile exists, and remains a device-validation concern.
+
+This remains **draft**, not device-accepted, until the Android project builds and the S9/headset/controller path is exercised physically.
+
 ## Environment limitation observed
 
 The current execution environment has Java but does not have Gradle, Android SDK/build tools, or ADB. Therefore no APK build or device/runtime claim was made.
