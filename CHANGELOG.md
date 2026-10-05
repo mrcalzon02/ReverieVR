@@ -86,7 +86,13 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Added independent lifecycle and overlay pause reasons so Android background/resume cannot unpause a DOS guest behind the quick menu.
 - Opening the overlay releases existing guest input and suppresses controller bindings, head-mouse deltas, keyboard, mouse buttons, pointer motion, and wheel events from accumulating stale guest state while paused.
 - Added deterministic pause-gate tests covering overlay/lifecycle interlock behavior.
-- Left binding-profile selection/editing, directory-tree import, richer module browsing, installer/autostart completion and reference-device validation as the next DOS-host gates.
+- Added a second paused DOS binding page reached from the quick overlay.
+- Profile Previous/Next now cycles only DOS-capable built-in profiles and persists the selected profile in that module's metadata for future launches.
+- Analog sensitivity can be adjusted by 10% steps and deadzone by 0.02 steps; edits are stored as a bounded module-local custom profile without overwriting the user's global binding profile.
+- Reset Tuning deletes only that module's custom override and restores its selected built-in profile.
+- Hosted-profile replacement preserves the pre-game global profile for restoration when DOS exits.
+- Added pure-Java tuning tests for signed analog sensitivity, deadzone clamping and no-op behavior on digital-only profiles.
+- Left full arbitrary per-binding remapping, directory-tree import, richer module browsing, installer/autostart completion and reference-device validation as the next DOS-host gates.
 
 
 

@@ -448,7 +448,13 @@ Additional Stage B integration now implemented:
 - overlay pause and Activity lifecycle pause are tracked independently, preventing Activity resume from silently resuming a guest behind the menu;
 - the paused guest framebuffer remains visible behind a translucent shell panel;
 - quick-overlay actions provide Resume, Recenter, media-volume down/up, Home and Exit VR;
-- the active hosted binding-profile name is shown in the overlay while the shell retains control of recovery.
+- the active hosted binding-profile name is shown in the overlay while the shell retains control of recovery;
+- the quick overlay now opens a dedicated paused DOS binding page;
+- profile Previous/Next cycles DOS-capable built-ins, immediately swaps the hosted profile, persists the module's selected profile ID and clears any stale custom override;
+- analog sensitivity and deadzone can be tuned in-headset while paused, with edits saved as a bounded module-local RVBIND1 override;
+- Reset Tuning deletes the module-local override and restores the selected built-in profile;
+- hosted-profile replacement never overwrites the user's pre-game global profile, which still restores on DOS exit;
+- deterministic JVM coverage exercises signed analog sensitivity changes, deadzone bounds and digital-only no-op behavior.
 
 Current-environment verification:
 
@@ -460,7 +466,7 @@ Current-environment verification:
 Remaining gates:
 
 - reference-device validation of DOS run cadence, audio latency/underruns, guest texture orientation/colors and resolution changes;
-- binding-profile selection and in-VR binding editing from the quick-overlay path;
+- full arbitrary per-binding remapping beyond the current profile selection plus analog sensitivity/deadzone tuning;
 - richer library management such as sorting/filtering/favorites beyond the current paged launcher;
 - integer-scale staging policy beyond nearest-neighbor guest sampling;
 - directory-tree import;

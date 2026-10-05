@@ -36,20 +36,40 @@ final class InputBindingManager {
     }
 
     synchronized void beginHostedProfile(String id) {
-        if (hostedPreviousProfile == null) {
-            hostedPreviousProfile = engine.getProfile();
-        }
-        engine.setProfile(
+        beginHostedProfile(
             BuiltInBindingProfiles.byId(id)
         );
     }
 
-    synchronized void selectHostedProfile(String id) {
+    synchronized void beginHostedProfile(
+        BindingProfile profile
+    ) {
         if (hostedPreviousProfile == null) {
-            throw new IllegalStateException("No hosted binding session is active.");
+            hostedPreviousProfile = engine.getProfile();
+        }
+        engine.setProfile(profile);
+    }
+
+    synchronized void selectHostedProfile(String id) {
+        setHostedProfile(
+            BuiltInBindingProfiles.byId(id)
+        );
+    }
+
+    synchronized void setHostedProfile(
+        BindingProfile profile
+    ) {
+        if (hostedPreviousProfile == null) {
+            throw new IllegalStateException(
+                "No hosted binding session is active."
+            );
         }
         engine.releaseAll();
-        engine.setProfile(BuiltInBindingProfiles.byId(id));
+        engine.setProfile(profile);
+    }
+
+    synchronized boolean isHostedProfileActive() {
+        return hostedPreviousProfile != null;
     }
 
     synchronized void endHostedProfile() {

@@ -26,6 +26,7 @@ import com.google.cardboard.sdk.CardboardView;
 import com.google.cardboard.sdk.QrCode;
 import com.google.cardboard.sdk.deviceparams.DeviceParamsUtils;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class VrActivity extends Activity
@@ -73,6 +74,7 @@ public final class VrActivity extends Activity
     private boolean batteryTemperatureReceiverRegistered;
     private Api29ThermalMonitor api29ThermalMonitor;
     private boolean inputDeviceListenerRegistered;
+    private volatile String activeDosModuleId = "";
     private volatile String controllerConnectionMessage =
         "Controller is not connected.";
 
@@ -725,11 +727,15 @@ public final class VrActivity extends Activity
             return false;
         }
 
+        BindingProfile hostedProfile =
+            dosModuleRepository.resolveBindingProfile(module);
         inputBindingManager.beginHostedProfile(
-            module.bindingProfileId
+            hostedProfile
         );
+        activeDosModuleId = module.id;
 
         if (!dosSession.start(module)) {
+            activeDosModuleId = "";
             inputBindingManager.endHostedProfile();
             String message = dosSession.getLastError();
             runOnUiThread(() ->
@@ -796,7 +802,208 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public String getActiveBindingTuningSummary() {
+        if (inputBindingManager == null) {
+            return "No active profile";
+        }
+
+        BindingProfile profile =
+            inputBindingManager.getProfile();
+        String summary =
+            BindingProfileTuner.describeAnalog(profile);
+        boolean custom =
+            dosModuleRepository != null
+                && dosModuleRepository.hasCustomBindingProfile(
+                    activeDosModuleId
+                );
+        return summary
+            + (custom ? " • CUSTOM" : " • BUILT-IN");
+    }
+
+    @Override
+    public void onDosBindingProfileCycleRequested(
+        int direction
+    ) {
+        if (direction == 0
+            || dosModuleRepository == null
+            || inputBindingManager == null
+            || !inputBindingManager.isHostedProfileActive()) {
+            return;
+        }
+
+        DosGameModule module =
+            activeDosModule();
+        if (module == null) {
+            return;
+        }
+
+        List<BindingProfile> profiles =
+            BuiltInBindingProfiles.dosProfiles();
+        if (profiles.isEmpty()) {
+            return;
+        }
+
+        int current = 0;
+        for (int index = 0; index < profiles.size(); index++) {
+            if (profiles.get(index).id.equals(
+                module.bindingProfileId
+            )) {
+                current = index;
+                break;
+            }
+        }
+
+        int step = direction < 0 ? -1 : 1;
+        int next =
+            (current + step + profiles.size())
+                % profiles.size();
+        BindingProfile selected = profiles.get(next);
+
+        if (!dosModuleRepository.updateBindingProfileId(
+            module.id,
+            selected.id
+        )) {
+            return;
+        }
+
+        inputBindingManager.setHostedProfile(selected);
+        ReverieLog.milestone(
+            "DOS_BINDING",
+            "Module="
+                + module.id
+                + " selected profile="
+                + selected.id
+        );
+    }
+
+    @Override
+    public void onDosBindingSensitivityAdjustRequested(
+        int direction
+    ) {
+        if (direction == 0) {
+            return;
+        }
+        tuneActiveDosProfile(
+            direction < 0 ? 0.9f : 1.1f,
+            0.0f,
+            "sensitivity"
+        );
+    }
+
+    @Override
+    public void onDosBindingDeadzoneAdjustRequested(
+        int direction
+    ) {
+        if (direction == 0) {
+            return;
+        }
+        tuneActiveDosProfile(
+            1.0f,
+            direction < 0 ? -0.02f : 0.02f,
+            "deadzone"
+        );
+    }
+
+    @Override
+    public void onDosBindingResetRequested() {
+        if (dosModuleRepository == null
+            || inputBindingManager == null
+            || !inputBindingManager.isHostedProfileActive()) {
+            return;
+        }
+
+        DosGameModule module = activeDosModule();
+        if (module == null) {
+            return;
+        }
+
+        dosModuleRepository.clearCustomBindingProfile(
+            module.id
+        );
+        BindingProfile selected =
+            BuiltInBindingProfiles.byId(
+                module.bindingProfileId
+            );
+        inputBindingManager.setHostedProfile(selected);
+        ReverieLog.milestone(
+            "DOS_BINDING",
+            "Module="
+                + module.id
+                + " reset profile="
+                + selected.id
+        );
+    }
+
+    private void tuneActiveDosProfile(
+        float scaleFactor,
+        float deadzoneDelta,
+        String label
+    ) {
+        if (dosModuleRepository == null
+            || inputBindingManager == null
+            || !inputBindingManager.isHostedProfileActive()) {
+            return;
+        }
+
+        DosGameModule module = activeDosModule();
+        BindingProfile current =
+            inputBindingManager.getProfile();
+        if (module == null || current == null) {
+            return;
+        }
+
+        BindingProfile tuned = current;
+        if (scaleFactor != 1.0f) {
+            tuned =
+                BindingProfileTuner.adjustAnalogScale(
+                    tuned,
+                    scaleFactor
+                );
+        }
+        if (deadzoneDelta != 0.0f) {
+            tuned =
+                BindingProfileTuner.adjustAnalogDeadzone(
+                    tuned,
+                    deadzoneDelta
+                );
+        }
+        if (tuned == current) {
+            return;
+        }
+
+        if (!dosModuleRepository.saveCustomBindingProfile(
+            module.id,
+            tuned
+        )) {
+            return;
+        }
+
+        inputBindingManager.setHostedProfile(tuned);
+        ReverieLog.milestone(
+            "DOS_BINDING",
+            "Module="
+                + module.id
+                + " tuned "
+                + label
+                + " "
+                + BindingProfileTuner.describeAnalog(tuned)
+        );
+    }
+
+    private DosGameModule activeDosModule() {
+        if (dosModuleRepository == null
+            || activeDosModuleId == null
+            || activeDosModuleId.trim().isEmpty()) {
+            return null;
+        }
+        return dosModuleRepository.findById(
+            activeDosModuleId
+        );
+    }
+
+    @Override
     public void onDosStopRequested() {
+        activeDosModuleId = "";
         if (dosSession != null) {
             dosSession.stop();
         }
@@ -812,6 +1019,7 @@ public final class VrActivity extends Activity
         boolean error
     ) {
         runOnUiThread(() -> {
+            activeDosModuleId = "";
             if (inputBindingManager != null) {
                 inputBindingManager.endHostedProfile();
             }

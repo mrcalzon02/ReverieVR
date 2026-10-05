@@ -14,6 +14,8 @@ final class BuiltInBindingProfiles {
 
     private static final List<BindingProfile> PROFILES =
         buildProfiles();
+    private static final List<BindingProfile> DOS_PROFILES =
+        buildDosProfiles();
 
     private BuiltInBindingProfiles() {
     }
@@ -31,6 +33,32 @@ final class BuiltInBindingProfiles {
             }
         }
         return PROFILES.get(0);
+    }
+
+    static List<BindingProfile> dosProfiles() {
+        return DOS_PROFILES;
+    }
+
+    static boolean isDosProfileId(String id) {
+        if (id == null) {
+            return false;
+        }
+        for (BindingProfile profile : DOS_PROFILES) {
+            if (profile.id.equals(id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<BindingProfile> buildDosProfiles() {
+        List<BindingProfile> result = new ArrayList<>();
+        for (BindingProfile profile : PROFILES) {
+            if (!ID_NATIVE_TEST_CHAMBER.equals(profile.id)) {
+                result.add(profile);
+            }
+        }
+        return Collections.unmodifiableList(result);
     }
 
     private static List<BindingProfile> buildProfiles() {

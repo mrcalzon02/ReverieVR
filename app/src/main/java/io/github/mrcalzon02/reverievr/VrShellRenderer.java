@@ -41,6 +41,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onDosOverlayResumeRequested();
         void onVolumeAdjustRequested(int direction);
         String getActiveBindingProfileName();
+        String getActiveBindingTuningSummary();
+        void onDosBindingProfileCycleRequested(
+            int direction
+        );
+        void onDosBindingSensitivityAdjustRequested(
+            int direction
+        );
+        void onDosBindingDeadzoneAdjustRequested(
+            int direction
+        );
+        void onDosBindingResetRequested();
         void onDosStopRequested();
         boolean onNativeModulePlaybackRequested(
             String moduleId
@@ -72,6 +83,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_DOS_LIBRARY = 4;
     private static final int MODE_NATIVE = 5;
     private static final int MODE_DOS_OVERLAY = 6;
+    private static final int MODE_DOS_BINDINGS = 7;
 
     private static final int[][] HOME_BUTTONS = new int[][] {
         {140, 225, 884, 280},
@@ -91,12 +103,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
     };
 
     private static final int[][] DOS_OVERLAY_BUTTONS = new int[][] {
-        {100, 260, 480, 330},
-        {544, 260, 924, 330},
-        {100, 360, 480, 430},
-        {544, 360, 924, 430},
-        {100, 460, 480, 530},
-        {544, 460, 924, 530}
+        {100, 260, 480, 325},
+        {544, 260, 924, 325},
+        {100, 345, 480, 410},
+        {544, 345, 924, 410},
+        {100, 430, 480, 495},
+        {544, 430, 924, 495},
+        {220, 520, 804, 590}
+    };
+
+    private static final int[][] DOS_BINDING_BUTTONS = new int[][] {
+        {100, 280, 480, 345},
+        {544, 280, 924, 345},
+        {100, 365, 480, 430},
+        {544, 365, 924, 430},
+        {100, 450, 480, 515},
+        {544, 450, 924, 515},
+        {100, 535, 480, 600},
+        {544, 535, 924, 600}
     };
 
     private static final int[][] THREE_BUTTONS = new int[][] {
@@ -306,7 +330,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     boolean isHostedInputSuppressed() {
-        return mode == MODE_DOS_OVERLAY;
+        return mode == MODE_DOS_OVERLAY
+            || mode == MODE_DOS_BINDINGS;
     }
 
     void setDosModules(
@@ -503,7 +528,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        if (mode == MODE_DOS_OVERLAY) {
+        if (mode == MODE_DOS_OVERLAY
+            || mode == MODE_DOS_BINDINGS) {
             dosRenderer.updateFrame();
 
             if (dosExitRequested.getAndSet(false)) {
@@ -582,7 +608,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        if (mode == MODE_DOS_OVERLAY) {
+        if (mode == MODE_DOS_OVERLAY
+            || mode == MODE_DOS_BINDINGS) {
             dosRenderer.drawEye(eye, eyeCorrection);
             drawUiPanel(eye, eyeCorrection, true);
             drawPowerHudOverlay();
@@ -939,6 +966,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             handleDosLibrarySelection(hoveredButton);
         } else if (mode == MODE_DOS_OVERLAY) {
             handleDosOverlaySelection(hoveredButton);
+        } else if (mode == MODE_DOS_BINDINGS) {
+            handleDosBindingSelection(hoveredButton);
         } else {
             handleSetupSelection(hoveredButton);
         }
@@ -992,21 +1021,58 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 requestRecenter();
                 break;
             case 2:
-                host.onVolumeAdjustRequested(-1);
+                mode = MODE_DOS_BINDINGS;
                 break;
             case 3:
-                host.onVolumeAdjustRequested(1);
+                host.onVolumeAdjustRequested(-1);
                 break;
             case 4:
-                activeDosModuleName = "";
-                host.onDosStopRequested();
-                mode = MODE_HOME;
+                host.onVolumeAdjustRequested(1);
                 break;
             case 5:
                 activeDosModuleName = "";
                 host.onDosStopRequested();
                 mode = MODE_HOME;
+                break;
+            case 6:
+                activeDosModuleName = "";
+                host.onDosStopRequested();
+                mode = MODE_HOME;
                 host.onExitToPhoneRequested();
+                break;
+            default:
+                return;
+        }
+
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
+    private void handleDosBindingSelection(int button) {
+        switch (button) {
+            case 0:
+                host.onDosBindingProfileCycleRequested(-1);
+                break;
+            case 1:
+                host.onDosBindingProfileCycleRequested(1);
+                break;
+            case 2:
+                host.onDosBindingSensitivityAdjustRequested(-1);
+                break;
+            case 3:
+                host.onDosBindingSensitivityAdjustRequested(1);
+                break;
+            case 4:
+                host.onDosBindingDeadzoneAdjustRequested(-1);
+                break;
+            case 5:
+                host.onDosBindingDeadzoneAdjustRequested(1);
+                break;
+            case 6:
+                host.onDosBindingResetRequested();
+                break;
+            case 7:
+                mode = MODE_DOS_OVERLAY;
                 break;
             default:
                 return;
@@ -1129,6 +1195,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        if (mode == MODE_DOS_BINDINGS) {
+            mode = MODE_DOS_OVERLAY;
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
+
         if (mode == MODE_DOS_OVERLAY) {
             host.onDosOverlayResumeRequested();
             mode = MODE_DOS;
@@ -1161,6 +1234,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return DOS_OVERLAY_BUTTONS;
         }
 
+        if (mode == MODE_DOS_BINDINGS) {
+            return DOS_BINDING_BUTTONS;
+        }
+
         if (setupStep == 2 || setupStep == 3 || setupStep == 4) {
             return THREE_BUTTONS;
         }
@@ -1176,7 +1253,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.reset();
         paint.setAntiAlias(true);
 
-        if (mode == MODE_DOS_OVERLAY) {
+        if (mode == MODE_DOS_OVERLAY
+            || mode == MODE_DOS_BINDINGS) {
             canvas.drawColor(
                 Color.TRANSPARENT,
                 PorterDuff.Mode.CLEAR
@@ -1203,6 +1281,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawDosLibrary(canvas, paint);
         } else if (mode == MODE_DOS_OVERLAY) {
             drawDosOverlay(canvas, paint);
+        } else if (mode == MODE_DOS_BINDINGS) {
+            drawDosBindingEditor(canvas, paint);
         } else {
             drawSetup(canvas, paint);
         }
@@ -1397,6 +1477,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         String[] labels = new String[] {
             "RESUME",
             "RECENTER",
+            "BINDINGS",
             "VOLUME -",
             "VOLUME +",
             "HOME",
@@ -1407,6 +1488,60 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint,
             labels,
             DOS_OVERLAY_BUTTONS
+        );
+    }
+
+    private void drawDosBindingEditor(
+        Canvas canvas,
+        Paint paint
+    ) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31.0f * uiScale);
+        canvas.drawText(
+            "DOS BINDINGS",
+            90,
+            175,
+            paint
+        );
+
+        paint.setColor(Color.rgb(184, 194, 207));
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            "Profile: "
+                + shorten(
+                    host.getActiveBindingProfileName(),
+                    48
+                ),
+            90,
+            210,
+            paint
+        );
+        canvas.drawText(
+            shorten(
+                host.getActiveBindingTuningSummary(),
+                60
+            ),
+            90,
+            240,
+            paint
+        );
+
+        String[] labels = new String[] {
+            "PROFILE PREV",
+            "PROFILE NEXT",
+            "SENSITIVITY -10%",
+            "SENSITIVITY +10%",
+            "DEADZONE -0.02",
+            "DEADZONE +0.02",
+            "RESET TUNING",
+            "BACK"
+        };
+
+        drawButtons(
+            canvas,
+            paint,
+            labels,
+            DOS_BINDING_BUTTONS
         );
     }
 
