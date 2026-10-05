@@ -77,6 +77,7 @@ public final class MainActivity extends Activity
     private final ExecutorService diagnosticExecutor =
         Executors.newSingleThreadExecutor();
 
+    private TextView appVersionText;
     private TextView phoneBatteryText;
     private TextView controllerBatteryText;
     private TextView controllerStatusText;
@@ -109,6 +110,7 @@ public final class MainActivity extends Activity
     private Button submitDiagnosticsButton;
     private Button clearLogsButton;
     private Button controllerActionButton;
+    private View updatePanel;
     private RadioGroup videoProjectionGroup;
     private RadioGroup loggingModeGroup;
 
@@ -167,7 +169,8 @@ public final class MainActivity extends Activity
             "Stage A setup screen ready."
         );
 
-        if (preferences.isAutoUpdateCheckEnabled()) {
+        if (BuildConfig.UPDATE_CHANNEL_ENABLED
+            && preferences.isAutoUpdateCheckEnabled()) {
             checkForUpdates(false);
         }
     }
@@ -231,6 +234,7 @@ public final class MainActivity extends Activity
     }
 
     private void bindViews() {
+        appVersionText = findViewById(R.id.app_version);
         phoneBatteryText = findViewById(R.id.phone_battery_text);
         controllerBatteryText = findViewById(R.id.controller_battery_text);
         controllerStatusText = findViewById(R.id.controller_status);
@@ -240,6 +244,12 @@ public final class MainActivity extends Activity
         selectedVideoText = findViewById(R.id.selected_video_status);
         dosModuleStatusText = findViewById(R.id.dos_module_status);
         loggingStatusText = findViewById(R.id.logging_status);
+        updatePanel = findViewById(R.id.update_panel);
+        updatePanel.setVisibility(
+            BuildConfig.UPDATE_CHANNEL_ENABLED
+                ? View.VISIBLE
+                : View.GONE
+        );
 
         phoneBatteryBar = findViewById(R.id.phone_battery_bar);
         controllerBatteryBar = findViewById(R.id.controller_battery_bar);
@@ -2043,6 +2053,40 @@ public final class MainActivity extends Activity
             Build.VERSION.SDK_INT
         );
         deviceStatusText.setText(deviceText);
+
+        appVersionText.setText(
+            getString(
+                R.string.app_version_format,
+                BuildConfig.VERSION_NAME,
+                BuildConfig.VERSION_CODE,
+                buildIdentityLabel()
+            )
+        );
+    }
+
+    private String buildIdentityLabel() {
+        String revision =
+            BuildConfig.SOURCE_REVISION == null
+                ? ""
+                : BuildConfig.SOURCE_REVISION.trim();
+        if (revision.length() > 7) {
+            revision = revision.substring(0, 7);
+        }
+        if (revision.isEmpty()) {
+            revision = "unknown";
+        }
+
+        if (BuildConfig.PHONE_TEST_RUN_NUMBER > 0) {
+            return String.format(
+                Locale.US,
+                "phone-test-%d-%d • %s",
+                BuildConfig.PHONE_TEST_RUN_NUMBER,
+                BuildConfig.PHONE_TEST_RUN_ATTEMPT,
+                revision
+            );
+        }
+
+        return "local/dev • " + revision;
     }
 
     private void refreshPhoneBattery() {
@@ -2164,11 +2208,15 @@ public final class MainActivity extends Activity
         checkUpdateButton.setEnabled(false);
         updateStatusText.setText(R.string.update_checking);
 
-        updateChecker.check(BuildConfig.VERSION_NAME, result ->
-            runOnUiThread(() -> {
-                checkUpdateButton.setEnabled(true);
-                handleUpdateResult(result, userInitiated);
-            })
+        updateChecker.check(
+            BuildConfig.VERSION_NAME,
+            BuildConfig.PHONE_TEST_RUN_NUMBER,
+            BuildConfig.PHONE_TEST_RUN_ATTEMPT,
+            result ->
+                runOnUiThread(() -> {
+                    checkUpdateButton.setEnabled(true);
+                    handleUpdateResult(result, userInitiated);
+                })
         );
     }
 
