@@ -102,6 +102,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final DosSurfaceRenderer dosRenderer;
     private final NativeModuleRuntime nativeModuleRuntime;
     private final List<NativeModuleRuntime.Descriptor> nativeModules;
+    private final FramePerformanceTracker performanceTracker =
+        new FramePerformanceTracker();
 
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer uvBuffer;
@@ -165,6 +167,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private float userIpdMeters;
     private float uiScale;
     private boolean bindingHeadInitialized;
+    private long lastPerformanceLogNanos;
     private float previousBindingYaw;
     private float previousBindingPitch;
 
@@ -322,6 +325,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     @Override
     public void onNewFrame(HeadTransform headTransform) {
+        long frameNanos = System.nanoTime();
+        performanceTracker.recordFrame(frameNanos);
+        if (lastPerformanceLogNanos == 0L) {
+            lastPerformanceLogNanos = frameNanos;
+        } else if (frameNanos - lastPerformanceLogNanos >= 60000000000L) {
+            FramePerformanceTracker.Snapshot snapshot =
+                performanceTracker.snapshot();
+            ReverieLog.milestone(
+                "VR_PERFORMANCE",
+                "mode=" + mode + " " + snapshot.toLogString()
+            );
+            lastPerformanceLogNanos = frameNanos;
+        }
+
         headTransform.getHeadView(rawHeadView, 0);
         headTransform.getEulerAngles(headEuler, 0);
         headTransform.getForwardVector(headForward, 0);

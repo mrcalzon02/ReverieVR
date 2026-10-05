@@ -526,6 +526,22 @@ Remaining gates:
 - implement local first-run installer/autostart behavior so the original archive can reach a ready-to-play shareware installation without redistributing a modified payload;
 - verify E1M1 launch, saves, 320x200-to-4:3 presentation, input bindings, overlay/recovery and sustained thermal behavior.
 
+### RV-0005 — Stage B frame cadence instrumentation
+
+State: **draft**
+
+Implemented:
+
+- allocation-bounded rolling window of the latest 600 Cardboard frame intervals;
+- lifecycle/background gaps over one second are excluded rather than misreported as catastrophic frames;
+- one-minute Standard-log summaries report average, p95 and maximum frame interval plus counts above 1.5x and 2x the 60 Hz target interval;
+- instrumentation is driven from Stage B `onNewFrame`, so shell, media, DOS and native-module modes use the same cadence evidence path;
+- deterministic JVM coverage verifies cadence math, slow/severe classification, lifecycle-gap rejection and bounded storage.
+
+Interpretation boundary: these measurements are headset callback cadence, not GPU timer-query results. They are suitable for sustained regression evidence but must not be described as direct GPU render time. Development logging remains disallowed for acceptance evidence because its intentionally heavy diagnostics perturb timing.
+
+Remaining gate: cloud Android compile/test, then sustained Galaxy S9 headset runs without scrcpy to establish measured acceptance thresholds and correlate cadence degradation with device thermal behavior.
+
 ## Performance posture
 
 The Stage B shell deliberately avoids a general-purpose game engine. Cardboard is configured for OpenGL ES with Vulkan and Unity integration disabled. The shell avoids per-frame gaze/button-geometry allocation and reuses its UI bitmap/texture storage instead of allocating a new 1024×768 bitmap for every hover change.
