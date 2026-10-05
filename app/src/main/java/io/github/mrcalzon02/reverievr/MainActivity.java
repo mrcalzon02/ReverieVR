@@ -25,6 +25,8 @@ import android.widget.Toast;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public final class MainActivity extends Activity
     implements ControllerManager.Listener,
@@ -33,6 +35,7 @@ public final class MainActivity extends Activity
 
     private static final int CONTROLLER_PERMISSION_REQUEST = 1201;
     private static final int MEDIA_PICK_REQUEST = 1202;
+    private static final int DOS_PICK_REQUEST = 1203;
 
     private static final int PENDING_CONTROLLER_NONE = 0;
     private static final int PENDING_CONTROLLER_DAYDREAM = 1;
@@ -45,6 +48,10 @@ public final class MainActivity extends Activity
     private ControllerManager controllerManager;
     private InputManager inputManager;
     private VrInputRouter inputRouter;
+    private DosModuleRepository dosModuleRepository;
+    private DosModuleImporter dosModuleImporter;
+    private final ExecutorService dosImportExecutor =
+        Executors.newSingleThreadExecutor();
 
     private TextView phoneBatteryText;
     private TextView controllerBatteryText;
@@ -53,6 +60,7 @@ public final class MainActivity extends Activity
     private TextView deviceStatusText;
     private TextView updateStatusText;
     private TextView selectedVideoText;
+    private TextView dosModuleStatusText;
 
     private ProgressBar phoneBatteryBar;
     private ProgressBar controllerBatteryBar;
@@ -71,6 +79,8 @@ public final class MainActivity extends Activity
     private Button enterVrButton;
     private Button chooseVideoButton;
     private Button clearVideoButton;
+    private Button importDosButton;
+    private Button clearDosModulesButton;
     private RadioGroup videoProjectionGroup;
 
     private boolean controllerTestEnabled;
@@ -95,6 +105,12 @@ public final class MainActivity extends Activity
         inputManager =
             (InputManager) getSystemService(Context.INPUT_SERVICE);
         inputRouter = new VrInputRouter(this);
+        dosModuleRepository = new DosModuleRepository(this);
+        dosModuleImporter =
+            new DosModuleImporter(
+                this,
+                dosModuleRepository
+            );
 
         bindViews();
         configurePersistentControls();
@@ -103,6 +119,7 @@ public final class MainActivity extends Activity
         refreshPhoneBattery();
         refreshControllerPermissionState();
         refreshMediaStatus();
+        refreshDosModuleStatus();
         controllerManager.addListener(this);
         refreshInputReadiness();
 
@@ -119,6 +136,7 @@ public final class MainActivity extends Activity
         refreshPhoneBattery();
         refreshControllerPermissionState();
         refreshMediaStatus();
+        refreshDosModuleStatus();
         refreshInputReadiness();
     }
 
@@ -140,6 +158,7 @@ public final class MainActivity extends Activity
         if (updateInstaller != null) {
             updateInstaller.close();
         }
+        dosImportExecutor.shutdownNow();
         super.onDestroy();
     }
 
@@ -171,6 +190,7 @@ public final class MainActivity extends Activity
         deviceStatusText = findViewById(R.id.device_status);
         updateStatusText = findViewById(R.id.update_status);
         selectedVideoText = findViewById(R.id.selected_video_status);
+        dosModuleStatusText = findViewById(R.id.dos_module_status);
 
         phoneBatteryBar = findViewById(R.id.phone_battery_bar);
         controllerBatteryBar = findViewById(R.id.controller_battery_bar);
@@ -189,6 +209,9 @@ public final class MainActivity extends Activity
         enterVrButton = findViewById(R.id.enter_vr_button);
         chooseVideoButton = findViewById(R.id.choose_video_button);
         clearVideoButton = findViewById(R.id.clear_video_button);
+        importDosButton = findViewById(R.id.import_dos_button);
+        clearDosModulesButton =
+            findViewById(R.id.clear_dos_modules_button);
         videoProjectionGroup = findViewById(R.id.video_projection_group);
     }
 
@@ -254,6 +277,13 @@ public final class MainActivity extends Activity
 
         chooseVideoButton.setOnClickListener(view -> chooseLocalVideo());
         clearVideoButton.setOnClickListener(view -> clearSelectedVideo());
+
+        importDosButton.setOnClickListener(
+            view -> chooseDosContent()
+        );
+        clearDosModulesButton.setOnClickListener(
+            view -> clearDosModules()
+        );
 
         Button resetButton = findViewById(R.id.reset_settings_button);
         resetButton.setOnClickListener(view -> confirmReset());
@@ -447,14 +477,28 @@ public final class MainActivity extends Activity
     ) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode != MEDIA_PICK_REQUEST
-            || resultCode != RESULT_OK
+        if (resultCode != RESULT_OK
             || data == null
             || data.getData() == null) {
             return;
         }
 
+        if (requestCode == MEDIA_PICK_REQUEST) {
+            handleSelectedVideo(data);
+            return;
+        }
+
+        if (requestCode == DOS_PICK_REQUEST) {
+            handleSelectedDosContent(data);
+        }
+    }
+
+    private void handleSelectedVideo(Intent data) {
         Uri uri = data.getData();
+        if (uri == null) {
+            return;
+        }
+
         int offeredFlags = data.getFlags();
         int persistFlags =
             offeredFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION;
@@ -483,6 +527,63 @@ public final class MainActivity extends Activity
             resolveDisplayName(uri)
         );
         refreshMediaStatus();
+    }
+
+    private void handleSelectedDosContent(Intent data) {
+        Uri uri = data.getData();
+        if (uri == null) {
+            return;
+        }
+
+        String displayName = resolveDisplayName(uri);
+        importDosButton.setEnabled(false);
+        dosModuleStatusText.setText(
+            getString(
+                R.string.dos_import_copying_format,
+                displayName
+            )
+        );
+
+        dosImportExecutor.execute(() -> {
+            try {
+                DosGameModule module =
+                    dosModuleImporter.importDocument(
+                        uri,
+                        displayName
+                    );
+
+                runOnUiThread(() -> {
+                    importDosButton.setEnabled(true);
+                    refreshDosModuleStatus();
+                    Toast.makeText(
+                        this,
+                        getString(
+                            R.string.dos_import_complete_format,
+                            module.displayName
+                        ),
+                        Toast.LENGTH_SHORT
+                    ).show();
+                });
+            } catch (Exception exception) {
+                String message =
+                    exception.getMessage() == null
+                        ? exception.getClass().getSimpleName()
+                        : exception.getMessage();
+
+                runOnUiThread(() -> {
+                    importDosButton.setEnabled(true);
+                    refreshDosModuleStatus();
+                    Toast.makeText(
+                        this,
+                        getString(
+                            R.string.dos_import_failed_format,
+                            message
+                        ),
+                        Toast.LENGTH_LONG
+                    ).show();
+                });
+            }
+        });
     }
 
     private String resolveDisplayName(Uri uri) {
@@ -515,6 +616,75 @@ public final class MainActivity extends Activity
         return last == null || last.trim().isEmpty()
             ? getString(R.string.selected_video_unknown_name)
             : last;
+    }
+
+    private void chooseDosContent() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.addFlags(
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+        );
+
+        try {
+            startActivityForResult(
+                intent,
+                DOS_PICK_REQUEST
+            );
+        } catch (ActivityNotFoundException exception) {
+            Toast.makeText(
+                this,
+                R.string.dos_picker_unavailable,
+                Toast.LENGTH_LONG
+            ).show();
+        }
+    }
+
+    private void refreshDosModuleStatus() {
+        if (dosModuleStatusText == null
+            || dosModuleRepository == null) {
+            return;
+        }
+
+        List<DosGameModule> modules =
+            dosModuleRepository.list();
+
+        if (modules.isEmpty()) {
+            dosModuleStatusText.setText(
+                R.string.dos_modules_none
+            );
+            clearDosModulesButton.setEnabled(false);
+            return;
+        }
+
+        DosGameModule latest = modules.get(0);
+        dosModuleStatusText.setText(
+            getString(
+                R.string.dos_modules_status_format,
+                modules.size(),
+                latest.displayName
+            )
+        );
+        clearDosModulesButton.setEnabled(true);
+    }
+
+    private void clearDosModules() {
+        if (dosModuleRepository == null) {
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.clear_dos_modules_title)
+            .setMessage(R.string.clear_dos_modules_message)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(
+                R.string.clear_dos_modules_confirm,
+                (dialog, which) -> {
+                    dosModuleRepository.clearAll();
+                    refreshDosModuleStatus();
+                }
+            )
+            .show();
     }
 
     private void refreshMediaStatus() {

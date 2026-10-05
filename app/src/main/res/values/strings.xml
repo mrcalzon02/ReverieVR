@@ -78,6 +78,20 @@ Available: %2$s</string>
     <string name="video_picker_unavailable">No Android document picker is available.</string>
     <string name="video_permission_persist_failed">Android did not grant persistent read access to that video. Choose it again from a provider that supports persistent document access.</string>
 
+    <string name="dos_section">DOS game modules</string>
+    <string name="dos_modules_none">No DOS game modules imported yet.</string>
+    <string name="dos_modules_status_format">Imported modules: %1$d  •  Latest: %2$s</string>
+    <string name="dos_import_explanation">Import DOSBox Pure content as a reusable ReverieVR module. Supported: ZIP/DOSZ, EXE/COM/BAT, ISO/CHD/CUE, IMG/IMA/VHD/JRC, M3U/M3U8 and CONF. Multi-file games are best imported as ZIP/DOSZ or, later, a directory tree.</string>
+    <string name="import_dos_content">Import DOS game / content</string>
+    <string name="clear_dos_modules">Clear imported DOS modules</string>
+    <string name="clear_dos_modules_title">Clear imported DOS modules?</string>
+    <string name="clear_dos_modules_message">This deletes ReverieVR&apos;s private copies of imported DOS content. It does not delete the original files you selected.</string>
+    <string name="clear_dos_modules_confirm">Clear modules</string>
+    <string name="dos_picker_unavailable">No Android document picker is available for DOS content.</string>
+    <string name="dos_import_copying_format">Importing %1$s into ReverieVR storage…</string>
+    <string name="dos_import_complete_format">Imported DOS module: %1$s</string>
+    <string name="dos_import_failed_format">DOS import failed: %1$s</string>
+
     <string name="vr_section">VR readiness</string>
     <string name="vr_runtime_not_ready">The independent Cardboard-based VR runtime is wired. Connect a physical Daydream controller, a paired controller phone, or an Android gamepad; optionally select local media above; then enter VR.</string>
     <string name="enter_vr">Enter VR</string>

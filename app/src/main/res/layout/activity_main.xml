@@ -315,6 +315,49 @@
 
             <TextView
                 style="@style/ReverieSectionTitle"
+                android:text="@string/dos_section" />
+
+            <TextView
+                android:id="@+id/dos_module_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/dos_modules_none"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/dos_import_explanation"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/import_dos_button"
+                style="@style/ReveriePrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/import_dos_content" />
+
+            <Button
+                android:id="@+id/clear_dos_modules_button"
+                style="@style/ReverieSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/clear_dos_modules" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/ReveriePanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/ReverieSectionTitle"
                 android:text="@string/vr_section" />
 
             <TextView
