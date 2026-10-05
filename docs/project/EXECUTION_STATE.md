@@ -541,15 +541,20 @@ Default-content baseline:
 - registered/full DOOM data is not bundled;
 - the engine GPL and shareware-data license remain separate licensing domains.
 
+Current-environment verification:
+
+- phone-test run #11 passed the complete JVM/Android/NDK build and verification pipeline with the Doom bootstrap present;
+- the build fetched the checksum-pinned `doom19s.zip` input before assembly and produced the signed headset/controller APK pair;
+- run #11 published prerelease `phone-test-11-1` from commit `a6c06d3b4480b52be6cb6307123f38c4e5f1697d`;
+- the published headset APK is `ReverieVR-phone-test-11-a6c06d3.apk` with release-reported SHA-256 `b43a8ea9047f6d76cba70bab2228633a62232e427a73e6585b48e4100d8e2b23`.
+
 Distribution rule:
 
 DOOM shareware is copyrighted shareware, not public domain. The default bundled-content path is for free/noncommercial ReverieVR releases. A paid/commercial distribution must obtain appropriate permission or deliberately omit the shareware archive.
 
 Remaining gates:
 
-- actually fetch and package the verified archive in a release build;
-- build/install on the Galaxy S9;
-- finish DOSBox Pure host;
+- install phone-test #11 on the Galaxy S9;
 - validate the DEICE prompt timing and generated runtime installation on the Galaxy S9;
 - validate Sound Blaster SFX and decide the later music path without reintroducing SETUP.EXE as a mandatory first-run gate;
 - verify E1M1 launch, saves, 320x200-to-4:3 presentation, input bindings, overlay/recovery and sustained thermal behavior.
@@ -592,14 +597,17 @@ Automatic convenience behaviors remain user-toggleable unless required for recov
 
 The interactive execution environment still does not expose a local Android SDK/NDK/ADB stack. Explicitly authorized GitHub Actions now supplies the reproducible cloud Android build environment instead.
 
-Phone-test run #10 completed successfully from commit `72f2ab623e0993d9531a8b6aa7e333334ae96de0` and published prerelease `phone-test-10-1`. The headset APK is a debug-signed sideload build for reference-device validation, not a production signing identity. Future phone-test builds may require uninstall/reinstall until persistent protected test/release signing is configured.
+Phone-test run #11 completed successfully from commit `a6c06d3b4480b52be6cb6307123f38c4e5f1697d` and published prerelease `phone-test-11-1`. The headset APK is a debug-signed sideload build for reference-device validation, not a production signing identity. Future phone-test builds may require uninstall/reinstall until persistent protected test/release signing is configured.
 
 No Galaxy S9, headset, optical, Bluetooth, thermal, or comfort validation has yet been claimed.
 
 ## Next exact action
 
-1. install the headset APK from GitHub prerelease `phone-test-10-1` on the Galaxy S9;
+1. install the headset APK from GitHub prerelease `phone-test-11-1` on the Galaxy S9;
 2. launch Stage A and confirm ordinary Android startup before entering the headset;
+3. confirm **DOOM Shareware v1.9** appears in the DOS library, launch it once, and observe the automated DEICE/bootstrap path through to `DOOM.EXE`;
+4. exit and relaunch DOOM to verify the second launch bypasses installer automation and starts the installed game directly;
+5. verify Doom mouse/head-turn, movement/fire bindings, Sound Blaster SFX, overlay pause/recovery and E1M1 presentation;
 7. test Stage A physical Daydream pairing and live controller input;
 8. install the companion APK on a second Android phone and validate paired-phone RFCOMM control plus controller-phone battery telemetry;
 9. enter the Daydream View and validate stereo/head tracking/gaze/Select navigation with each available input source;

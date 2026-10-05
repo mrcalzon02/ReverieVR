@@ -47,6 +47,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Added direct post-install launch metadata: once `DOOMS/DOOM.EXE` exists, subsequent launches bypass installer input automation entirely.
 - Added a first-run Doom configuration with mouse input and Sound Blaster SFX matched to DOSBox's 0x220 / IRQ 7 / DMA 1 baseline; music remains deliberately disabled pending audio/music validation.
 - Added pure-Java tests for ZIP extraction bounds/traversal defense and for the install-vs-direct-play bootstrap plans.
+- Phone-test run #11 passed the complete JVM/Android/NDK build/verify pipeline with this bootstrap present and published prerelease `phone-test-11-1`.
 
 
 
