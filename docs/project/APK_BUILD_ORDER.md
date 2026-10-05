@@ -60,9 +60,30 @@ Required capabilities:
 - a settings toggle that can disable adaptive HUD behavior and preserve a simple persistent/manual presentation;
 - return-to-home behavior for ReverieVR-hosted modules.
 
+### First successful VR entry — guided setup
+
+The first successful transition into Stage B does **not** go directly to the normal home space unless the user has already completed or explicitly skipped the current onboarding version.
+
+The in-headset setup wizard should teach controls while calibrating the user profile. Its baseline sequence is:
+
+1. **Seated posture and recenter** — establish the neutral forward direction and teach the recenter action.
+2. **Controller orientation and familiarization** — verify/select dominant hand where applicable and exercise select, back/context, Home/recenter, trackpad/touch, and any safely available handset buttons.
+3. **Viewer confirmation** — identify/confirm the physical viewer profile and provide a route to viewer-profile selection or QR/profile setup when needed.
+4. **User IPD and eye alignment** — live binocular fusion target, user IPD, per-eye alignment correction, reset/default, and confirm/cancel behavior.
+5. **Readability** — choose comfortable UI/text scale and verify that critical labels can be read without leaning or squinting.
+6. **Global HUD** — preview handset/controller battery indicators and choose persistent, adaptive look-up reveal, manual, or hidden behavior.
+7. **Comfort defaults** — configure relevant global motion/turning/vignette/recenter defaults that hosted experiences may honor.
+8. **Audio** — establish a comfortable master level and verify left/right output where useful.
+9. **Performance preference** — choose the default performance-first quality policy, with thermal stability favored over spectacle.
+10. **Summary and recovery** — show what was saved, how to reopen individual calibration tools, and how to return to the 2D recovery surface.
+
+Every step must have a safe default. The user may skip or defer noncritical calibration, but ReverieVR must never strand them because setup was incomplete.
+
+The wizard is **versioned**. New critical setup steps may be offered later without forcing already-completed users through unrelated old steps. Settings must expose both **Run VR Setup Again** and direct access to the individual calibration pages.
+
 The menu is not ornamental. It is the control plane for the platform.
 
-**Gate:** all essential VR-shell functions can be operated while the phone is in the headset without touching the screen, and the user can intentionally recover to the 2D setup mode when necessary.
+**Gate:** all essential VR-shell functions can be operated while the phone is in the headset without touching the screen, the first-run wizard can be completed/skipped/re-entered safely, and the user can intentionally recover to the 2D setup mode when necessary.
 
 ## Phase 3 — Full settings control
 

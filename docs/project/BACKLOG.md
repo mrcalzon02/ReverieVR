@@ -26,6 +26,7 @@
 - RV-0105 — Implement in-headset diagnostics/performance display.
 - RV-0106 — Implement shell-global handset/controller power HUD with percentage/progress presentation and honest unavailable states.
 - RV-0107 — Implement optional gaze-adaptive status reveal/retract plus persistent/manual fallback and local QoL toggles.
+- RV-0108 — Implement versioned first-VR-run onboarding/calibration wizard with resumable progress, safe defaults, skip/defer behavior, completion summary, and **Run VR Setup Again** entry point.
 
 ## P3 — Settings and controls
 

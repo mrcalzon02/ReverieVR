@@ -100,6 +100,25 @@ Cardboard's current source exposes a physical `inter_lens_distance` and uses it 
 
 RV-0206 now owns live in-headset calibration, persistent user IPD, bounded per-eye correction, binocular test targets, and safe reset behavior. Exact adjustment limits remain a reference-device validation decision rather than an invented desktop assumption.
 
+## Captured first-VR-run onboarding contract
+
+On the first successful Stage A -> Stage B transition, ReverieVR enters a **versioned in-headset setup wizard** before the normal home space unless the current onboarding version was completed or explicitly deferred.
+
+The wizard combines teaching with real configuration:
+
+- neutral seated posture and recenter;
+- controller orientation/input familiarization;
+- physical viewer-profile confirmation;
+- user IPD and live per-eye optical alignment;
+- UI/text readability scale;
+- battery/status HUD presentation and look-up behavior;
+- comfort defaults;
+- audio baseline;
+- performance/thermal preference;
+- summary, recovery, and re-entry instructions.
+
+Each page must have a safe default and must not trap the user. Progress is resumable. Settings exposes both **Run VR Setup Again** and direct individual calibration tools. The setup flow is versioned so a future new critical calibration can be introduced without replaying unrelated completed steps.
+
 ## Environment limitation observed
 
 The current execution environment has Java but does not have Gradle, Android SDK/build tools, or ADB. Therefore no APK build or device/runtime claim was made.
