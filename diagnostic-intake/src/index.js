@@ -422,7 +422,7 @@ function githubHeaders(token) {
   return {
     "accept": "application/vnd.github+json",
     "authorization": `Bearer ${token}`,
-    "x-github-api-version": "2022-11-28",
+    "x-github-api-version": "2026-03-10",
     "user-agent": USER_AGENT,
     "content-type": "application/json"
   };
