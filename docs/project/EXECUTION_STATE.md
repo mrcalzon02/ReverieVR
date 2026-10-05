@@ -544,7 +544,9 @@ Implemented:
 
 Interpretation boundary: these measurements are headset callback cadence, not GPU timer-query results. Battery temperature is the handset battery sensor reported by Android and must not be described as direct SoC, CPU or GPU junction temperature. Android thermal status is a platform throttling/severity signal, not a temperature reading. They are suitable for sustained regression evidence but must not be described as direct GPU render time. Development logging remains disallowed for acceptance evidence because its intentionally heavy diagnostics perturb timing.
 
-Remaining gate: cloud Android compile/test, then sustained Galaxy S9 headset runs without scrcpy to establish measured acceptance thresholds and observe whether cadence degradation correlates with battery temperature and Android thermal-status escalation.
+Current-environment verification: phone-test run #7 passed JVM tests, `:app:assembleDebug`, `:controller-app:assembleDebug`, native-library APK presence checks and APK signature verification with the thermal-correlation instrumentation present. The pure-Java formatter was independently compiled from the committed blob and produced the expected available, unavailable and unknown-status forms.
+
+Remaining gate: sustained Galaxy S9 headset runs without scrcpy to establish measured acceptance thresholds and observe whether cadence degradation correlates with battery temperature and Android thermal-status escalation.
 
 ## Performance posture
 
@@ -562,13 +564,13 @@ Automatic convenience behaviors remain user-toggleable unless required for recov
 
 The interactive execution environment still does not expose a local Android SDK/NDK/ADB stack. Explicitly authorized GitHub Actions now supplies the reproducible cloud Android build environment instead.
 
-Phone-test run #6 completed successfully and published prerelease `phone-test-6-1`. The headset APK is a debug-signed sideload build for reference-device validation, not a production signing identity. Future phone-test builds may require uninstall/reinstall until persistent protected test/release signing is configured.
+Phone-test run #7 completed successfully from commit `2977ed04af0513d4b72c164058f7dd9677fcd89e` and published prerelease `phone-test-7-1`. The headset APK is a debug-signed sideload build for reference-device validation, not a production signing identity. Future phone-test builds may require uninstall/reinstall until persistent protected test/release signing is configured.
 
 No Galaxy S9, headset, optical, Bluetooth, thermal, or comfort validation has yet been claimed.
 
 ## Next exact action
 
-1. install the headset APK from GitHub prerelease `phone-test-6-1` on the Galaxy S9;
+1. install the headset APK from GitHub prerelease `phone-test-7-1` on the Galaxy S9;
 2. launch Stage A and confirm ordinary Android startup before entering the headset;
 7. test Stage A physical Daydream pairing and live controller input;
 8. install the companion APK on a second Android phone and validate paired-phone RFCOMM control plus controller-phone battery telemetry;
