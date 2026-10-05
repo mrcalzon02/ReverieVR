@@ -1,8 +1,6 @@
 name: ReverieVR diagnostic report
 description: Report a ReverieVR fault with an optional diagnostic bundle reference.
 title: "[Diagnostic] "
-labels:
-  - bug
 body:
   - type: markdown
     attributes:
