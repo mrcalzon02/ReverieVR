@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.hardware.input.InputManager;
@@ -45,6 +46,15 @@ public final class MainActivity extends Activity
     private static final int MEDIA_PICK_REQUEST = 1202;
     private static final int DOS_PICK_REQUEST = 1203;
     private static final int LOG_EXPORT_REQUEST = 1204;
+
+    private static final String DIAGNOSTIC_PENDING_PREFS =
+        "reverie-diagnostic-pending";
+    private static final String DIAGNOSTIC_PENDING_ID =
+        "diagnostic_id";
+    private static final String DIAGNOSTIC_PENDING_SHA256 =
+        "sha256";
+    private static final String DIAGNOSTIC_PENDING_RECEIPT =
+        "receipt";
 
     private static final int PENDING_CONTROLLER_NONE = 0;
     private static final int PENDING_CONTROLLER_DAYDREAM = 1;
@@ -872,6 +882,15 @@ public final class MainActivity extends Activity
             return;
         }
 
+        PendingDiagnostic pending =
+            loadPendingDiagnostic();
+        if (pending != null) {
+            showPendingDiagnosticChoice(
+                pending
+            );
+            return;
+        }
+
         int padding =
             Math.round(
                 16f
@@ -1295,6 +1314,8 @@ public final class MainActivity extends Activity
                         + result.issueUrl
                 );
 
+                clearPendingDiagnostic();
+
                 runOnUiThread(() -> {
                     submitDiagnosticsButton.setEnabled(true);
                     refreshLoggingStatus();
@@ -1315,6 +1336,33 @@ public final class MainActivity extends Activity
                     exception
                 );
 
+                if (exception
+                    instanceof DiagnosticSubmissionClient.SubmissionException) {
+                    DiagnosticSubmissionClient.SubmissionException
+                        submissionException =
+                            (DiagnosticSubmissionClient.SubmissionException)
+                                exception;
+
+                    if (submissionException.storedRemotely
+                        && submissionException.canFinalize) {
+                        rememberPendingDiagnostic(
+                            submissionException
+                        );
+
+                        runOnUiThread(() -> {
+                            submitDiagnosticsButton.setEnabled(true);
+                            refreshLoggingStatus();
+                            uiFeedback.failure(
+                                submitDiagnosticsButton
+                            );
+                            showStoredDiagnosticPending(
+                                submissionException
+                            );
+                        });
+                        return;
+                    }
+                }
+
                 String message =
                     exception.getMessage() == null
                         ? exception.getClass()
@@ -1334,6 +1382,317 @@ public final class MainActivity extends Activity
                 });
             }
         });
+    }
+
+    private void showStoredDiagnosticPending(
+        DiagnosticSubmissionClient.SubmissionException
+            failure
+    ) {
+        if (failure == null) {
+            return;
+        }
+
+        String receipt =
+            failure.receiptReference == null
+                    || failure.receiptReference.trim().isEmpty()
+                ? failure.diagnosticId
+                : failure.receiptReference;
+
+        new AlertDialog.Builder(this)
+            .setTitle(
+                R.string.diagnostic_stored_pending_title
+            )
+            .setMessage(
+                getString(
+                    R.string.diagnostic_stored_pending_format,
+                    failure.getMessage() == null
+                        ? "GitHub issue creation failed."
+                        : failure.getMessage(),
+                    receipt
+                )
+            )
+            .setNegativeButton(
+                android.R.string.ok,
+                null
+            )
+            .setPositiveButton(
+                R.string.diagnostic_retry_issue,
+                (dialog, which) ->
+                    retryStoredDiagnostic(
+                        new PendingDiagnostic(
+                            failure.diagnosticId,
+                            failure.sha256,
+                            receipt
+                        )
+                    )
+            )
+            .show();
+    }
+
+    private void showPendingDiagnosticChoice(
+        PendingDiagnostic pending
+    ) {
+        new AlertDialog.Builder(this)
+            .setTitle(
+                R.string.diagnostic_pending_found_title
+            )
+            .setMessage(
+                getString(
+                    R.string.diagnostic_pending_found_format,
+                    pending.diagnosticId
+                )
+            )
+            .setNegativeButton(
+                R.string.diagnostic_start_new_report,
+                (dialog, which) -> {
+                    ReverieLog.milestone(
+                        "DIAGNOSTICS",
+                        "User abandoned pending diagnostic receipt "
+                            + pending.receiptReference
+                            + " to start a new report."
+                    );
+                    clearPendingDiagnostic();
+                    beginDiagnosticSubmission();
+                }
+            )
+            .setPositiveButton(
+                R.string.diagnostic_retry_issue,
+                (dialog, which) ->
+                    retryStoredDiagnostic(
+                        pending
+                    )
+            )
+            .show();
+    }
+
+    private void retryStoredDiagnostic(
+        PendingDiagnostic pending
+    ) {
+        if (pending == null
+            || diagnosticSubmissionClient == null
+            || submitDiagnosticsButton == null) {
+            return;
+        }
+
+        submitDiagnosticsButton.setEnabled(false);
+        loggingStatusText.setText(
+            R.string.diagnostic_retrying_issue
+        );
+
+        diagnosticExecutor.execute(() -> {
+            try {
+                ReverieLog.milestone(
+                    "DIAGNOSTICS",
+                    "Retrying GitHub issue creation from stored receipt "
+                        + pending.receiptReference
+                );
+
+                DiagnosticSubmissionClient.Result result =
+                    diagnosticSubmissionClient
+                        .finalizeStored(
+                            pending.diagnosticId,
+                            pending.sha256
+                        );
+
+                if (!pending.sha256.equals(
+                        result.sha256
+                    )) {
+                    throw new java.io.IOException(
+                        "Stored diagnostic finalize returned "
+                            + "a different hash."
+                    );
+                }
+
+                deleteLocalDiagnosticBundle(
+                    pending.diagnosticId
+                );
+                clearPendingDiagnostic();
+
+                ReverieLog.milestone(
+                    "DIAGNOSTICS",
+                    "Stored diagnostic receipt finalized: "
+                        + result.diagnosticId
+                        + " issue="
+                        + result.issueUrl
+                );
+
+                runOnUiThread(() -> {
+                    submitDiagnosticsButton.setEnabled(true);
+                    refreshLoggingStatus();
+                    showDiagnosticSubmissionSuccess(
+                        result
+                    );
+                });
+            } catch (Exception exception) {
+                ReverieLog.error(
+                    "DIAGNOSTICS",
+                    "Stored diagnostic receipt finalize failed: "
+                        + pending.receiptReference,
+                    exception
+                );
+
+                if (exception
+                    instanceof DiagnosticSubmissionClient.SubmissionException) {
+                    DiagnosticSubmissionClient.SubmissionException
+                        submissionException =
+                            (DiagnosticSubmissionClient.SubmissionException)
+                                exception;
+
+                    if (submissionException.storedRemotely
+                        && submissionException.canFinalize) {
+                        rememberPendingDiagnostic(
+                            submissionException
+                        );
+
+                        runOnUiThread(() -> {
+                            submitDiagnosticsButton.setEnabled(true);
+                            refreshLoggingStatus();
+                            uiFeedback.failure(
+                                submitDiagnosticsButton
+                            );
+                            showStoredDiagnosticPending(
+                                submissionException
+                            );
+                        });
+                        return;
+                    }
+                }
+
+                boolean retained =
+                    localDiagnosticBundle(
+                        pending.diagnosticId
+                    ).isFile();
+                String message =
+                    exception.getMessage() == null
+                        ? exception.getClass()
+                            .getSimpleName()
+                        : exception.getMessage();
+
+                runOnUiThread(() -> {
+                    submitDiagnosticsButton.setEnabled(true);
+                    refreshLoggingStatus();
+                    uiFeedback.failure(
+                        submitDiagnosticsButton
+                    );
+                    showDiagnosticSubmissionFailure(
+                        message,
+                        retained
+                    );
+                });
+            }
+        });
+    }
+
+    private void rememberPendingDiagnostic(
+        DiagnosticSubmissionClient.SubmissionException
+            failure
+    ) {
+        if (failure == null
+            || failure.diagnosticId == null
+            || failure.diagnosticId.trim().isEmpty()
+            || failure.sha256 == null
+            || failure.sha256.trim().isEmpty()) {
+            return;
+        }
+
+        getSharedPreferences(
+            DIAGNOSTIC_PENDING_PREFS,
+            MODE_PRIVATE
+        )
+            .edit()
+            .putString(
+                DIAGNOSTIC_PENDING_ID,
+                failure.diagnosticId
+            )
+            .putString(
+                DIAGNOSTIC_PENDING_SHA256,
+                failure.sha256
+            )
+            .putString(
+                DIAGNOSTIC_PENDING_RECEIPT,
+                failure.receiptReference
+            )
+            .apply();
+    }
+
+    private PendingDiagnostic loadPendingDiagnostic() {
+        SharedPreferences pending =
+            getSharedPreferences(
+                DIAGNOSTIC_PENDING_PREFS,
+                MODE_PRIVATE
+            );
+
+        String diagnosticId =
+            pending.getString(
+                DIAGNOSTIC_PENDING_ID,
+                ""
+            );
+        String sha256 =
+            pending.getString(
+                DIAGNOSTIC_PENDING_SHA256,
+                ""
+            );
+        String receipt =
+            pending.getString(
+                DIAGNOSTIC_PENDING_RECEIPT,
+                ""
+            );
+
+        if (diagnosticId == null
+            || diagnosticId.trim().isEmpty()
+            || sha256 == null
+            || sha256.trim().isEmpty()) {
+            return null;
+        }
+
+        return new PendingDiagnostic(
+            diagnosticId.trim(),
+            sha256.trim(),
+            receipt == null
+                || receipt.trim().isEmpty()
+                    ? diagnosticId.trim()
+                    : receipt.trim()
+        );
+    }
+
+    private void clearPendingDiagnostic() {
+        getSharedPreferences(
+            DIAGNOSTIC_PENDING_PREFS,
+            MODE_PRIVATE
+        )
+            .edit()
+            .clear()
+            .apply();
+    }
+
+    private File localDiagnosticBundle(
+        String diagnosticId
+    ) {
+        return new File(
+            new File(
+                getFilesDir(),
+                "diagnostic-outbox"
+            ),
+            diagnosticId + ".zip"
+        );
+    }
+
+    private void deleteLocalDiagnosticBundle(
+        String diagnosticId
+    ) {
+        File bundle =
+            localDiagnosticBundle(
+                diagnosticId
+            );
+        if (bundle.isFile()
+            && !bundle.delete()) {
+            ReverieLog.dev(
+                "DIAGNOSTICS",
+                "Finalized diagnostic bundle could not be "
+                    + "removed from private outbox: "
+                    + bundle.getAbsolutePath()
+            );
+        }
     }
 
     private void showDiagnosticSubmissionSuccess(
@@ -1991,4 +2350,21 @@ public final class MainActivity extends Activity
             )
             .show();
     }
+    private static final class PendingDiagnostic {
+        final String diagnosticId;
+        final String sha256;
+        final String receiptReference;
+
+        PendingDiagnostic(
+            String diagnosticId,
+            String sha256,
+            String receiptReference
+        ) {
+            this.diagnosticId = diagnosticId;
+            this.sha256 = sha256;
+            this.receiptReference =
+                receiptReference;
+        }
+    }
+
 }
