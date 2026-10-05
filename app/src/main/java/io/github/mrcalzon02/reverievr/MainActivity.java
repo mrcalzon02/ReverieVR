@@ -1220,10 +1220,12 @@ public final class MainActivity extends Activity
         String summary,
         String expected
     ) {
+        if (submitDiagnosticsButton == null) {
+            return;
+        }
         if (diagnosticSubmissionClient == null
             || bundle == null
-            || !bundle.isFile()
-            || submitDiagnosticsButton == null) {
+            || !bundle.isFile()) {
             submitDiagnosticsButton.setEnabled(true);
             refreshLoggingStatus();
             return;
