@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -73,6 +74,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
     private int batteryMillivolts = -1;
     private volatile int scanGeneration;
     private volatile int poseWaitGeneration;
+    private volatile int scanResultCount;
 
     private final BroadcastReceiver bondReceiver = new BroadcastReceiver() {
         @Override
@@ -116,11 +118,20 @@ final class DaydreamControllerProvider implements ControllerProvider {
     private final ScanCallback scanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
+            if (result != null) {
+                scanResultCount++;
+                logScanResult(result);
+            }
+
             BluetoothDevice device = result == null ? null : result.getDevice();
             if (device == null || !isDaydreamCandidate(result)) {
                 return;
             }
 
+            ReverieLog.milestone(
+                "CONTROLLER_BLE",
+                "Matched Daydream controller advertisement."
+            );
             stopScan();
             pendingDevice = device;
 
@@ -441,6 +452,35 @@ final class DaydreamControllerProvider implements ControllerProvider {
         }
 
         disconnect();
+
+        BluetoothDevice bondedController = findBondedDaydreamController();
+        if (bondedController != null) {
+            pendingDevice = bondedController;
+            emitConnection(
+                ConnectionState.CONNECTING,
+                "Paired Daydream controller found. Connecting…"
+            );
+            ReverieLog.milestone(
+                "CONTROLLER_BLE",
+                "Using an already-bonded Daydream controller."
+            );
+            connect(bondedController);
+            return;
+        }
+
+        if (!legacyBleLocationServicesEnabled()) {
+            ReverieLog.incident(
+                "CONTROLLER_BLE",
+                "BLE discovery blocked because Android Location services are off."
+            );
+            emitConnection(
+                ConnectionState.ERROR,
+                "Android 8–11 require Location services to be ON for BLE discovery. "
+                    + "Turn on Location, wake the controller, then try Pair again."
+            );
+            return;
+        }
+
         scanner = adapter.getBluetoothLeScanner();
         if (scanner == null) {
             emitConnection(
@@ -459,10 +499,30 @@ final class DaydreamControllerProvider implements ControllerProvider {
             "Scanning for the Daydream controller…"
         );
 
+        scanResultCount = 0;
+        ReverieLog.milestone(
+            "CONTROLLER_BLE",
+            "Starting filtered Daydream BLE scan on Android API "
+                + Build.VERSION.SDK_INT
+                + "."
+        );
+
+        List<ScanFilter> filters = new ArrayList<>();
+        filters.add(
+            new ScanFilter.Builder()
+                .setServiceUuid(new ParcelUuid(DAYDREAM_SERVICE))
+                .build()
+        );
+        filters.add(
+            new ScanFilter.Builder()
+                .setDeviceName("Daydream controller")
+                .build()
+        );
+
         final int generation = ++scanGeneration;
         try {
             scanner.startScan(
-                new ArrayList<>(),
+                filters,
                 settings,
                 scanCallback
             );
@@ -476,9 +536,19 @@ final class DaydreamControllerProvider implements ControllerProvider {
             () -> {
                 if (scanner != null && generation == scanGeneration) {
                     stopScan();
+                    int observed = scanResultCount;
+                    ReverieLog.incident(
+                        "CONTROLLER_BLE",
+                        "Daydream BLE scan timed out after observing "
+                            + observed
+                            + " advertisement(s)."
+                    );
                     emitConnection(
                         ConnectionState.ERROR,
-                        "No Daydream controller was found. Wake it and try again."
+                        observed == 0 && Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+                            ? "Android returned no BLE scan results. Confirm Location is ON, "
+                                + "wake the controller, and try Pair again."
+                            : "No Daydream controller was found. Wake it and try again."
                     );
                 }
             },
@@ -551,6 +621,95 @@ final class DaydreamControllerProvider implements ControllerProvider {
         } catch (SecurityException exception) {
             handleBluetoothPermissionLoss();
         }
+    }
+
+    private BluetoothDevice findBondedDaydreamController() {
+        if (adapter == null || !hasConnectPermission()) {
+            return null;
+        }
+
+        try {
+            for (BluetoothDevice device : adapter.getBondedDevices()) {
+                String name = device.getName();
+                if (name != null
+                    && name.toLowerCase().contains("daydream controller")) {
+                    return device;
+                }
+            }
+        } catch (SecurityException exception) {
+            handleBluetoothPermissionLoss();
+        }
+
+        return null;
+    }
+
+    private boolean legacyBleLocationServicesEnabled() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return true;
+        }
+
+        LocationManager manager =
+            (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        if (manager == null) {
+            return true;
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                return manager.isLocationEnabled();
+            }
+
+            return manager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch (RuntimeException exception) {
+            ReverieLog.dev(
+                "CONTROLLER_BLE",
+                "Could not read legacy Location-services state: "
+                    + exception.getClass().getSimpleName()
+            );
+            return true;
+        }
+    }
+
+    private void logScanResult(ScanResult result) {
+        if (!ReverieLog.isDevelopment() || result == null) {
+            return;
+        }
+
+        String name = "";
+        String address = "";
+        List<ParcelUuid> services = null;
+
+        if (result.getScanRecord() != null) {
+            String advertisedName = result.getScanRecord().getDeviceName();
+            name = advertisedName == null ? "" : advertisedName;
+            services = result.getScanRecord().getServiceUuids();
+        }
+
+        BluetoothDevice device = result.getDevice();
+        if (device != null && hasConnectPermission()) {
+            try {
+                if (name.isEmpty()) {
+                    String deviceName = device.getName();
+                    name = deviceName == null ? "" : deviceName;
+                }
+                address = device.getAddress();
+            } catch (SecurityException ignored) {
+                // The diagnostic must not interfere with discovery.
+            }
+        }
+
+        ReverieLog.dev(
+            "CONTROLLER_BLE",
+            "Advertisement name="
+                + (name.isEmpty() ? "<none>" : name)
+                + " address="
+                + (address.isEmpty() ? "<unavailable>" : address)
+                + " rssi="
+                + result.getRssi()
+                + " services="
+                + (services == null ? "[]" : services.toString())
+        );
     }
 
     private boolean isDaydreamCandidate(ScanResult result) {
