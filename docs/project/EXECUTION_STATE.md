@@ -7,14 +7,11 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current verified remote implementation HEAD: `a4b4db3679fc768c4b32e40c2efb04183bf73056`
-- Stage A implementation commits:
-  - `64d00d48d49ec75fcd95f4c29d76d21970fdf070` — native Android Stage A setup menu
-  - `a4b4db3679fc768c4b32e40c2efb04183bf73056` — controller Pair / Sync and Test actions exposed in the setup UI
-- Remote readback confirmed the Android project, manifest, Java source, XML layout/resources, build instructions, and ADR-0003 are present on `main`.
-- Current verified remote bookkeeping HEAD before this shell-intent capture: `41dfe89bd2675c2e7171edb9558bc7bf5c7479fc`.
+- Current verified remote implementation HEAD: `5bce34f4865e017c22d960cb1c995ec5eec910db`
+- Remote readback confirmed the Stage A application, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, unit-test sources, build instructions, and ADR-0007 are all present on `main`.
+- Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
-## Last completed target
+## Last completed governance target
 
 **RV-0001 — Governance/bootstrap adoption**
 
@@ -22,25 +19,42 @@ Acceptance: **static accepted**.
 
 ## Current implementation state
 
+### RV-0002 — framework/runtime/controller stack
+
+State: **draft**
+
+Selected implementation baseline:
+
+- Google Cardboard SDK v1.35.0 for head tracking, stereo projection, viewer geometry, and lens distortion;
+- OpenGL ES rendering path;
+- Cardboard Vulkan and Unity-plugin native paths disabled;
+- direct Android BLE Daydream-controller provider;
+- controller abstraction kept independent of Cardboard so later Android/gamepad providers can be added without replacing the VR shell.
+
+Remaining gate: successful build plus Galaxy S9/headset/controller validation.
+
 ### RV-0003 — Android APK skeleton
 
 State: **draft**
 
 Implemented:
 
-- Gradle Android application structure;
+- Android application project;
 - application ID `io.github.mrcalzon02.reverievr`;
 - minimum SDK 26;
 - compile/target SDK 36;
-- Java 17 source;
-- no AndroidX/Compose/game-engine dependency;
-- no Internet permission;
-- documented local build path.
+- Java 17 app source;
+- pinned Cardboard Git submodule;
+- JUnit source tests for Daydream packet parsing and updater version comparison;
+- documented Gradle/NDK/CMake build path.
+
+Cardboard introduces its required AndroidX/native build dependencies; Stage A itself remains ordinary lightweight Java/XML Android UI.
 
 Remaining gate:
 
-- generate/verify standard Gradle wrapper;
-- run `:app:assembleDebug`;
+- initialize submodule in a local checkout;
+- generate/verify Gradle 9.6.1 wrapper;
+- run unit tests and `:app:assembleDebug`;
 - inspect resulting APK;
 - install and launch on the Galaxy S9.
 
@@ -48,147 +62,127 @@ Remaining gate:
 
 State: **draft**
 
-Implemented source:
+Implemented:
 
-- conventional portrait Android launch screen;
+- conventional portrait Stage A launcher;
 - device/model/API reporting;
-- real phone battery percentage/bar;
-- honest unknown controller battery state;
-- visible Pair / Sync and Test Controller actions, disabled until the controller stack exists;
-- live shortcut to Android Bluetooth settings;
-- persisted QoL toggles for VR battery HUD, look-up reveal, numeric percentages, and retro performance mode;
-- local settings reset/recovery control;
-- Enter VR visibly disabled until Stage B exists.
+- real phone battery display;
+- persistent QoL/settings controls;
+- controller Pair / Sync and live Test Controller flow;
+- update status/check controls;
+- local reset/recovery;
+- Enter VR gated on a ready controller.
 
-Remaining gate:
+Remaining gate: build and reference-device interaction test.
 
-- successful APK build;
-- install/launch and touchscreen interaction test on reference hardware.
+### RV-0091 — direct Daydream controller
 
-## Active architecture target
+State: **draft**
 
-**RV-0002 — Framework/runtime/controller-stack selection**
+Implemented:
 
-Stage A is now deliberately independent of this decision. RV-0002 remains responsible for:
+- Android-version-correct Bluetooth permissions;
+- BLE scan with Daydream service/name candidate matching and bounded timeout;
+- Android bonding flow;
+- GATT connection/service discovery;
+- pose notification subscription;
+- 20-byte pose/touch/button packet decode;
+- controller battery percentage and voltage reads;
+- controller recenter command;
+- application-scoped controller lifetime;
+- live Stage A controller diagnostics;
+- independent protocol provenance record.
 
-- Daydream controller discovery/pairing/input/battery;
-- stereoscopic rendering;
-- head tracking;
-- 2D-to-VR transition;
-- recovery from Stage B back to Stage A.
+Remaining gate: physical Daydream-controller validation, including button/touch orientation and long-session stability.
 
-## Captured Stage B shell contract
+### RV-0092 / RV-0100 — Stage A -> Stage B and VR shell
 
-The previously implemented Stage A preferences for **VR battery HUD**, **look-up reveal**, and **numeric battery percentages** are now tied to an explicit Stage B architecture requirement rather than remaining orphaned UI toggles.
+State: **draft**
 
-Stage B is a persistent platform shell around the home, video player, and hosted games/modules. The shell owns global navigation/recovery, global settings access, input policy, diagnostics/status access, and the power/status HUD.
+Implemented:
 
-The reference power HUD uses two compact upper-right percentage/progress indicators: handset battery and the currently bound controller battery. If controller battery telemetry is unavailable, the UI reports an unavailable/unknown state rather than manufacturing a value.
+- Enter VR enabled only after controller readiness;
+- application-scoped controller connection survives Activity transition by design;
+- landscape immersive `VrActivity`;
+- Cardboard stereoscopic/head-tracked rendering;
+- deliberately simple OpenGL ES world-space menu panel;
+- head-gaze target selection;
+- Daydream touchpad-click activation;
+- Menu/back navigation;
+- Home controller + software-yaw recenter request;
+- Exit to Stage A;
+- no dead Media button or fake-success module entries.
 
-The stored look-up-reveal preference controls an optional adaptive presentation: normal forward viewing may retract the status HUD, while a deliberate upward look reveals/drops it into comfortable view. Turning this feature off must retain a predictable persistent/manual presentation. Automatic quality-of-life behaviors follow the same opt-out principle.
+Remaining gate: build and in-headset validation.
 
-## Captured user optical calibration contract
+### RV-0108 / RV-0206 — first-run setup and user optical calibration
 
-ReverieVR must support software user-IPD/alignment calibration because the Daydream View has fixed physical lenses.
+State: **draft**
 
-The project now explicitly separates:
+The first successful VR entry routes into a resumable setup flow unless the current setup version is complete.
 
-- **physical viewer geometry** — fixed lens separation/distortion/viewer parameters;
-- **user eye geometry** — wearer IPD and user-specific rendered-eye alignment.
+Current functional pages:
 
-Cardboard's current source exposes a physical `inter_lens_distance` and uses it to construct eye-from-head matrices. ReverieVR will retain that value as viewer hardware data and apply user calibration as a separate transform layer rather than corrupting the viewer profile.
+1. neutral seated forward/recenter;
+2. virtual user eye-spacing/IPD adjustment;
+3. UI/readability scale;
+4. battery HUD / look-up-mode preferences;
+5. save-to-home or return without marking setup complete.
 
-RV-0206 now owns live in-headset calibration, persistent user IPD, bounded per-eye correction, binocular test targets, and safe reset behavior. Exact adjustment limits remain a reference-device validation decision rather than an invented desktop assumption.
+The renderer reads the saved physical Cardboard viewer profile when available and keeps the user eye-spacing value separate. User spacing is applied as a per-eye render-view correction rather than overwriting the physical viewer profile.
 
-## Captured first-VR-run onboarding contract
+Current safety limits clamp user eye spacing to 50–80 mm. These are provisional engineering bounds and remain subject to Galaxy S9 + Daydream View validation.
 
-On the first successful Stage A -> Stage B transition, ReverieVR enters a **versioned in-headset setup wizard** before the normal home space unless the current onboarding version was completed or explicitly deferred.
+If no saved Cardboard viewer profile exists, the draft renderer uses a 60 mm physical inter-lens fallback. That fallback must be replaced or confirmed through reference-headset profiling before optical calibration is considered accepted.
 
-The wizard combines teaching with real configuration:
+The complete planned onboarding remains broader than the current implementation: controller familiarization, viewer confirmation, per-eye fine correction, comfort, audio and performance pages still remain.
 
-- neutral seated posture and recenter;
-- controller orientation/input familiarization;
-- physical viewer-profile confirmation;
-- user IPD and live per-eye optical alignment;
-- UI/text readability scale;
-- battery/status HUD presentation and look-up behavior;
-- comfort defaults;
-- audio baseline;
-- performance/thermal preference;
-- summary, recovery, and re-entry instructions.
+### RV-0093 — updater
 
-Each page must have a safe default and must not trap the user. Progress is resumable. Settings exposes both **Run VR Setup Again** and direct individual calibration tools. The setup flow is versioned so a future new critical calibration can be introduced without replaying unrelated completed steps.
+State: **draft**
 
-## Stage A update system
+Implemented:
 
-RV-0093 now has a draft implementation.
+- optional check on Stage A launch;
+- manual check;
+- authoritative source restricted to `mrcalzon02/ReverieVR` GitHub Releases;
+- explicit Update / Not now choice;
+- release notes;
+- trusted repository APK asset filtering;
+- Android Download Manager/package-installer handoff;
+- SHA-256 verification when GitHub publishes an asset digest.
 
-The Stage A menu:
+There are currently no published ReverieVR GitHub Releases, so the expected live result is that no published release exists.
 
-- optionally checks for updates at launch;
-- can be checked manually;
-- queries only `https://api.github.com/repos/mrcalzon02/ReverieVR/releases/latest`;
-- treats the absence of any published release as a normal state;
-- requires a newer release and a trusted GitHub-hosted APK asset before enabling Update;
-- shows release notes and gives the user **Update / Not now**;
-- never silently installs;
-- uses Android Download Manager and Android's package installer;
-- verifies GitHub's published SHA-256 asset digest when one is present;
-- leaves core VR operation offline-capable when update checks are disabled or unavailable.
+## Performance posture
 
-The repository currently has **no published GitHub Releases**, so the expected live result today is "No published ReverieVR release exists yet."
+The Stage B shell deliberately avoids a general-purpose game engine. Cardboard is configured for OpenGL ES with Vulkan and Unity integration disabled. The first shell is a single simple world-space panel plus stereo/head-tracking work.
 
-## VR quality-of-life research outcome
+No performance/thermal acceptance claim exists until sustained Galaxy S9 testing is performed.
 
-The platform should treat user preferences as **system-level defaults** rather than forcing repetitive setup per module.
+## Quality-of-life baseline
 
-High-priority requirements now include:
+The project backlog includes remembered global comfort preferences, universal recenter/seated recovery, scalable/high-contrast UI, captions/visual audio alternatives, flexible one-controller/remappable input, reduced-motion behavior, controller calibration/reconnect handling, quick access, nonblocking notifications, optional session reminders, and research-only camera peek.
 
-- remembered comfort defaults;
-- universal recenter/seated-height recovery;
-- readable scalable/high-contrast UI;
-- captions and visual alternatives to critical audio;
-- one-controller/remappable input and optional gaze/dwell shell fallback;
-- reduced-motion behavior;
-- controller drift/deadzone/sensitivity calibration and reconnect recovery;
-- a universal quick-access panel;
-- nonblocking notifications that avoid routine center-screen interruption;
-- optional session/break reminders;
-- research-only real-world camera peek, clearly distinguished from true passthrough.
+Automatic convenience behaviors remain user-toggleable unless required for recoverability.
 
-Automatic convenience behaviors remain user-toggleable unless disabling them would destroy recoverability.
+## Environment limitation
 
-## Stage B implementation candidate
+This execution environment does not provide a verified Android SDK/NDK/Gradle/ADB toolchain, so the current source has **not** been claimed as successfully assembled into an APK.
 
-The repository now has a concrete Stage B candidate layered on Cardboard v1.35.0:
-
-- Cardboard pinned to exact commit `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`;
-- Unity plugin and Vulkan disabled; OpenGL ES retained;
-- controller manager moved to application scope so the BLE session survives Stage A -> Stage B;
-- Enter VR becomes available only when the reference controller backend is ready;
-- `VrActivity` provides landscape immersive Cardboard stereo/head tracking;
-- `VrShellRenderer` draws a deliberately simple world-space VR shell;
-- head gaze selects shell buttons; Daydream touchpad click activates;
-- Menu/back navigates back; Home requests controller + software yaw recenter;
-- the first run enters resumable setup rather than normal Home;
-- initial functional setup pages cover forward/recenter, virtual user eye spacing, UI scale, and battery/HUD behavior;
-- user eye spacing is applied as a render-view correction on top of the viewer profile rather than replacing the physical viewer profile;
-- a fallback 60 mm physical viewer spacing is used only when no saved Cardboard viewer profile exists, and remains a device-validation concern.
-
-This remains **draft**, not device-accepted, until the Android project builds and the S9/headset/controller path is exercised physically.
-
-## Environment limitation observed
-
-The current execution environment has Java but does not have Gradle, Android SDK/build tools, or ADB. Therefore no APK build or device/runtime claim was made.
+No Galaxy S9, headset, optical, Bluetooth, thermal, or comfort validation has been performed from this environment.
 
 ## Next exact action
 
-From a verified JDK 17 + Android SDK 36 + Gradle 9.6.1 environment:
+On a local Android development environment:
 
-1. generate the Gradle 9.6.1 wrapper;
-2. run `./gradlew :app:assembleDebug`;
-3. inspect the APK;
-4. install on the Galaxy S9;
-5. validate Stage A launch, persistence, battery display, Bluetooth shortcut, reset behavior, and disabled readiness gates.
-
-In parallel, RV-0002 controller/runtime research may proceed without changing the Stage A UI boundary.
+1. `git submodule update --init --recursive`;
+2. verify Cardboard submodule SHA `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`;
+3. install JDK 17, Android SDK 36, NDK 29.0.14206865, CMake, and Gradle 9.6.1;
+4. generate the Gradle wrapper;
+5. run `./gradlew test :app:assembleDebug`;
+6. install the APK on the Galaxy S9;
+7. test Stage A pairing and live controller input;
+8. enter the Daydream View and validate stereo/head tracking/gaze/click navigation;
+9. walk through the first-run calibration pages;
+10. capture any build, controller-axis, optical, UI-scale, or thermal defects for the next repair pass.
