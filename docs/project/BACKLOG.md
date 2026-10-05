@@ -40,6 +40,7 @@
 - RV-0203 — audio settings.
 - RV-0204 — player defaults.
 - RV-0205 — developer/diagnostic settings.
+- RV-0208 — Implement secure one-tap diagnostic submission: explicit preview/redaction, upload to a private diagnostic store through a credential-free handset intake endpoint, automatic GitHub issue creation with stable diagnostic ID/hash/reference, rate limiting, retention controls, and manual-export fallback. ADR-0017 governs the security boundary.
 - RV-0206 — Implement user optical/IPD calibration separately from the physical viewer profile: persistent user IPD, live per-eye alignment correction, binocular fusion test pattern, safe reset/default, and device-validated limits.
 - RV-0210 — Implement a persistent global comfort-preference profile that hosted modules can consume: seated mode, snap/smooth turning, turn speed, vignette/tunneling preference, movement direction, and related safe defaults.
 - RV-0211 — Implement universal recenter and seated-height/forward-offset recovery accessible from the shell and controller without digging through module menus.
