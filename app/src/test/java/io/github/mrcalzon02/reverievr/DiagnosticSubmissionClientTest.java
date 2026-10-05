@@ -34,6 +34,34 @@ public final class DiagnosticSubmissionClientTest {
     }
 
     @Test
+    public void storedSubmissionFailureCarriesFinalizeState() {
+        DiagnosticSubmissionClient.SubmissionException failure =
+            new DiagnosticSubmissionClient.SubmissionException(
+                "issue failed",
+                "revdiag-receipt",
+                "revdiag-12345678-1234-4123-8123-123456789abc",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                true,
+                true
+            );
+
+        assertEquals(
+            "revdiag-receipt",
+            failure.receiptReference
+        );
+        assertEquals(
+            "revdiag-12345678-1234-4123-8123-123456789abc",
+            failure.diagnosticId
+        );
+        assertEquals(
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            failure.sha256
+        );
+        assertTrue(failure.storedRemotely);
+        assertTrue(failure.canFinalize);
+    }
+
+    @Test
     public void sha256MatchesKnownVector() throws Exception {
         File file =
             File.createTempFile(
