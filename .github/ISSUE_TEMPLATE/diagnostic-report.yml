@@ -1,0 +1,76 @@
+name: ReverieVR diagnostic report
+description: Report a ReverieVR fault with an optional diagnostic bundle reference.
+title: "[Diagnostic] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for ReverieVR runtime/controller/VR/DOS diagnostic reports.
+        Do not paste secrets or raw private logs into the public issue.
+
+  - type: input
+    id: diagnostic_id
+    attributes:
+      label: Diagnostic ID
+      description: The ID returned by ReverieVR diagnostic submission, if available.
+      placeholder: revdiag-...
+    validations:
+      required: false
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe what you were doing and what failed.
+      placeholder: I woke the Daydream controller, tapped Pair, and...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: ReverieVR version/build
+      placeholder: 0.1.0-dev / phone-test-12
+    validations:
+      required: false
+
+  - type: input
+    id: device
+    attributes:
+      label: Device / Android version
+      placeholder: Samsung Galaxy S9 / Android 10
+    validations:
+      required: false
+
+  - type: input
+    id: bundle_hash
+    attributes:
+      label: Diagnostic bundle SHA-256
+      description: Filled automatically by secure diagnostic intake when available.
+    validations:
+      required: false
+
+  - type: input
+    id: bundle_reference
+    attributes:
+      label: Private diagnostic bundle reference
+      description: Receipt/reference only. Do not post a private storage credential.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: I reviewed the diagnostic information I am intentionally sharing.
+          required: true
