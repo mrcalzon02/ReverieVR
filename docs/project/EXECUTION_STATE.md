@@ -7,7 +7,7 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current implementation baseline immediately below this documentation commit: `8241111ad30e44ede41c675f526f8e41f25323f1`.
+- Current implementation baseline immediately below this documentation update: `2e1fb3f88f79e17f3c22b19bc6a2273a2e895ad0`.
 - Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
@@ -200,13 +200,18 @@ State: **draft**
 
 The first successful VR entry routes into a resumable setup flow unless the current setup version is complete.
 
+Current setup schema: **v2**.
+
 Current functional pages:
 
 1. neutral seated forward/recenter;
-2. virtual user eye-spacing/IPD adjustment;
-3. UI/readability scale;
-4. battery HUD / look-up-mode preferences;
-5. save-to-home or return without marking setup complete.
+2. controller familiarization with active source and last normalized action feedback;
+3. virtual user eye-spacing/IPD adjustment;
+4. UI/readability scale;
+5. battery HUD / look-up-mode preferences;
+6. save-to-home or return without marking setup complete.
+
+The familiarization page captures Back locally so it can be tested safely without leaving the page. Select, Recenter, navigation and volume actions remain live and are reported through the normalized action layer. The page is informational rather than a hard capability gate.
 
 The renderer reads the saved physical Cardboard viewer profile when available and keeps the user eye-spacing value separate. User spacing is applied as a per-eye render-view correction rather than overwriting the physical viewer profile.
 
@@ -214,7 +219,7 @@ Current safety limits clamp user eye spacing to 50–80 mm. These are provisiona
 
 If no saved Cardboard viewer profile exists, the draft renderer uses a 60 mm physical inter-lens fallback. That fallback must be replaced or confirmed through reference-headset profiling before optical calibration is considered accepted.
 
-The complete planned onboarding remains broader than the current implementation: controller familiarization, viewer confirmation, per-eye fine correction, comfort, audio and performance pages still remain.
+The complete planned onboarding remains broader than the current implementation: viewer confirmation, per-eye fine correction, comfort, audio and performance pages still remain.
 
 ### RV-0093 — updater
 
