@@ -51,6 +51,12 @@ jobs:
           ./scripts/fetch-doom-shareware.sh
           ./scripts/verify-build-bootstrap.sh
 
+      - name: Validate diagnostic intake source
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check diagnostic-intake/src/index.js
+
       - name: Test and build
         shell: bash
         env:
