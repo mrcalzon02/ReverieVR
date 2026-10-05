@@ -46,6 +46,7 @@ public final class MainActivity extends Activity
     private static final int MEDIA_PICK_REQUEST = 1202;
     private static final int DOS_PICK_REQUEST = 1203;
     private static final int LOG_EXPORT_REQUEST = 1204;
+    private static final int VR_LAUNCH_REQUEST = 1205;
 
     private static final String DIAGNOSTIC_PENDING_PREFS =
         "reverie-diagnostic-pending";
@@ -163,6 +164,7 @@ public final class MainActivity extends Activity
         refreshDosModuleStatus();
         controllerManager.addListener(this);
         refreshInputReadiness();
+        showPreviousVrStartupFailureIfNeeded();
 
         ReverieLog.milestone(
             "STAGE_A",
@@ -173,6 +175,85 @@ public final class MainActivity extends Activity
             && preferences.isAutoUpdateCheckEnabled()) {
             checkForUpdates(false);
         }
+    }
+
+    @Override
+    protected void onActivityResult(
+        int requestCode,
+        int resultCode,
+        Intent data
+    ) {
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        );
+
+        if (requestCode != VR_LAUNCH_REQUEST) {
+            return;
+        }
+
+        String failure =
+            data == null
+                ? ""
+                : data.getStringExtra(
+                    VrActivity.EXTRA_STARTUP_ERROR
+                );
+
+        if (failure == null
+            || failure.trim().isEmpty()) {
+            return;
+        }
+
+        VrStartupGuard.clear(this);
+        uiFeedback.failure(enterVrButton);
+        showVrStartupFailure(failure);
+    }
+
+    private void launchVr() {
+        VrStartupGuard.begin(this);
+
+        try {
+            startActivityForResult(
+                new Intent(this, VrActivity.class),
+                VR_LAUNCH_REQUEST
+            );
+        } catch (RuntimeException exception) {
+            VrStartupGuard.recordFailure(
+                this,
+                "activity-launch",
+                exception
+            );
+            ReverieLog.error(
+                "VR_STARTUP",
+                "Android rejected the VR activity launch.",
+                exception
+            );
+            uiFeedback.failure(enterVrButton);
+            showPreviousVrStartupFailureIfNeeded();
+        }
+    }
+
+    private void showPreviousVrStartupFailureIfNeeded() {
+        String failure =
+            VrStartupGuard.consumePendingFailure(this);
+        if (failure == null
+            || failure.trim().isEmpty()) {
+            return;
+        }
+
+        showVrStartupFailure(failure);
+    }
+
+    private void showVrStartupFailure(String message) {
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.vr_startup_failure_title)
+            .setMessage(message)
+            .setPositiveButton(
+                android.R.string.ok,
+                null
+            )
+            .show();
     }
 
     @Override
@@ -412,10 +493,7 @@ public final class MainActivity extends Activity
 
         uiFeedback.bind(
             enterVrButton,
-            () ->
-                startActivity(
-                    new Intent(this, VrActivity.class)
-                )
+            this::launchVr
         );
     }
 
