@@ -267,6 +267,15 @@
                 android:text="@string/export_diagnostic_bundle" />
 
             <Button
+                android:id="@+id/submit_diagnostics_button"
+                style="@style/ReveriePrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/submit_diagnostic_bundle"
+                android:visibility="gone" />
+
+            <Button
                 android:id="@+id/clear_logs_button"
                 style="@style/ReverieSecondaryButton"
                 android:layout_width="match_parent"
