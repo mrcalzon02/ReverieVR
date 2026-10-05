@@ -67,6 +67,7 @@
 - RV-0411 — Implement generic DOS game-module import/library for DOSBox Pure content, with app-private full-path copies, per-module launch state, saves/configuration, and binding-profile association.
 - RV-0412 — Implement hosted DOS video/audio/input bridge and lifecycle: core load/run/pause/resume/unload, framebuffer/audio delivery, virtual keyboard/mouse/joystick polling, save directory, and safe return to ReverieVR Home.
 - RV-0413 — Implement in-game quick overlay for DOS modules with binding editor, profile selection, pause/resume, recenter, audio, Home, and Exit/Recovery.
+- RV-0414 — Implement retro framebuffer presentation: recognized source modes, intended display/pixel aspect correction, optional integer/nearest scaling, independent high-resolution VR UI, and Cardboard-owned per-eye composition.
 
 ## P6 — Media player
 

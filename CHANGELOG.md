@@ -4,6 +4,20 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Diagnostics and retro framebuffer geometry
+
+- Added Standard and Development logging modes.
+- Added bounded rotating app-private log files with Standard incident/milestone history and intentionally high-volume Development diagnostics.
+- Added uncaught fatal-exception capture while preserving Android's existing crash handler.
+- Added Stage A logging-mode selection, clear-log control, and manual diagnostic ZIP export through Android's document UI.
+- Kept all diagnostic submission manual; no automatic GitHub/network reporting is implemented.
+- Added a retro display-mode catalog that separates source pixel dimensions from intended physical display aspect.
+- Added explicit Mode 13h/VGA/EGA/text/handheld source modes plus integer-scale calculations.
+- Kept Cardboard authoritative for VR eye viewport/projection/distortion rather than hard-coding generic per-eye resolutions or a universal lens supersampling multiplier.
+- Declared Development-logging runs invalid for formal performance/thermal/frame-pacing acceptance.
+
+
+
 ### DOS modules, bindings and standard HID
 
 - Added a stateful virtual input binding engine that maps Daydream/controller/gamepad/head signals into virtual keyboard, mouse and joystick outputs.

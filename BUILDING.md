@@ -194,3 +194,44 @@ On the Galaxy S9:
 31. run a sustained playback session without scrcpy and record frame pacing, decoder failures, battery drain, temperature/throttling, and audio/video sync.
 
 Do not mark RV-0003, RV-0006, RV-0091, RV-0092, RV-0100, RV-0102, RV-0500 or RV-0501 device-accepted until the relevant checks have actually run.
+
+
+## Logging and diagnostic acceptance
+
+ReverieVR has two logging modes.
+
+- **Standard** is suitable for ordinary use and records incidents plus major milestones.
+- **Development** intentionally records high-frequency diagnostics including input, binding and per-frame VR state.
+
+Development logging is diagnostic evidence, **not performance evidence**. Do not use a Development-logging run for frame-pacing, battery or thermal acceptance.
+
+Before a device-debug session:
+
+1. select Development logging in Stage A;
+2. reproduce the issue;
+3. return to Stage A if possible;
+4. choose **Export diagnostic bundle**;
+5. save the ZIP through Android's document provider;
+6. review it before sharing or attaching it to an issue;
+7. return logging to Standard before performance testing.
+
+Fatal/unhandled exceptions are captured locally automatically. Nothing is uploaded automatically.
+
+Validate log rotation during a long Development session and confirm the application remains bounded in memory/storage.
+
+## Retro framebuffer presentation validation
+
+Treat guest/source resolution separately from the Cardboard eye render target.
+
+For hosted retro content, validate at least:
+
+- 320x200 displayed with intended 4:3 geometry;
+- 320x240 square-pixel 4:3;
+- 640x350 and 640x400 with intended 4:3 geometry;
+- 640x480 square-pixel 4:3;
+- 720x400 text mode readability;
+- an unknown/custom source mode falling back to native aspect.
+
+Where integer scaling fits the intermediate guest surface, verify nearest/integer presentation remains pixel-stable. The VR shell/HUD should remain readable and independent of guest resolution.
+
+Do not hard-code a generic 1.4x distortion factor or arbitrary 640x720/800x900/1280x1024 per-eye buffer. Cardboard remains authoritative for eye viewports/projection/distortion; render-scale changes require measured Galaxy S9 evidence.

@@ -7,7 +7,7 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current implementation baseline immediately below this documentation update: `30975c73c1732c3ded2d63ed9256f7170cc564c9`.
+- Current implementation baseline immediately below this documentation update: `26ea93f627fc897fd755eedd6634842f9f05dc90`.
 - Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
@@ -376,6 +376,45 @@ Remaining gates:
 - directory-tree import;
 - per-module binding/profile editing;
 - first legal test content, with Doom shareware as one suitable validation candidate rather than a hard-coded dependency.
+
+### RV-0007 — Standard/development logging and manual diagnostic bundles
+
+State: **draft**
+
+Implemented:
+
+- Standard mode defaults to milestone/incident/warning/error/fatal records;
+- Development mode adds raw controller/gamepad/HID input, normalized inputs, binding transforms/outputs, head motion and per-frame VR diagnostic state;
+- bounded 8192-record in-memory queue;
+- rotating app-private files: Standard 1 MiB + 4 archives, Development 16 MiB + 4 archives;
+- uncaught exceptions are synchronously drained to local logs before delegating to Android's existing crash handler;
+- Stage A logging-mode selector;
+- explicit Clear Local Logs action;
+- explicit Export Diagnostic Bundle action using Android's create-document UI;
+- ZIP manifest includes app/build/device/API/ABI/logging-mode/DOS-runtime-build state;
+- no automatic network submission;
+- privacy warning that Development logs can include device names, local filenames, module names, input state and timing.
+
+Development logging invalidates performance/thermal/frame-pacing acceptance evidence because it intentionally performs high-volume diagnostic work.
+
+Future automatic GitHub/error submission remains deferred and must be opt-in with payload review/redaction and no embedded personal token.
+
+### RV-0414 — retro framebuffer display geometry
+
+State: **draft**
+
+Implemented:
+
+- recognized source modes: 320x200, 320x240, 640x350, 640x400, 640x480, 720x400, 800x600, 1024x768, 1280x1024, 160x144 and 240x160;
+- raw source aspect and intended physical display aspect are represented separately;
+- Mode 13h/640x400/text modes can be presented as intended 4:3 instead of blindly stretching according to raw pixel dimensions;
+- 1280x1024 remains 5:4;
+- unknown modes fall back to native source aspect;
+- integer-scale calculation exists for pixel-stable intermediate presentation;
+- VR shell/HUD resolution remains independent from low-resolution guest content;
+- Cardboard remains authoritative for actual per-eye viewport/projection/distortion rather than hard-coding generic 8:9/5:4 eye buffers or a universal supersampling factor.
+
+Remaining gate: connect this geometry to the DOS framebuffer texture renderer and validate pixel/aspect/readability behavior in the Daydream View.
 
 ## Performance posture
 
