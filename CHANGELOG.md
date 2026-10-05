@@ -47,7 +47,13 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Forced the initial Voodoo path to DOSBox Pure's software multithreaded renderer until ReverieVR implements a libretro hardware-render callback.
 - Changed `DOS_RUNTIME_BUILT` from a hard-coded false value to the actual presence of the verified pinned source checkout at Gradle configuration time, and extended bootstrap verification to reject a fetched checkout at the wrong commit.
 - Host-side C++ syntax/type checking and JNI descriptor verification passed locally; Android NDK compile/link, Stage B framebuffer/audio consumption, and Galaxy S9 runtime validation remain required.
-- Left the in-game binding overlay, directory-tree import, VR Home DOS launch surface, Android audio sink and guest-texture presentation as the next DOS-host integration gates.
+- Added a Stage B DOS session owner that runs the native core on a dedicated worker thread, drives virtual input polling, and stops cleanly on shell/lifecycle exit.
+- Added an Android AudioTrack stereo PCM sink with runtime sample-rate initialization and bounded chunk draining off the Cardboard GL thread.
+- Added a nearest-filtered guest framebuffer renderer that uploads the native XRGB8888 frame, shader-swizzles host byte order, flips the libretro image vertically, and applies the RV-0414 intended display aspect.
+- Added a fifth VR Home action for the latest imported/bundled DOS module, with honest runtime/module-unavailable labels.
+- Added temporary hosted binding-profile activation/restoration so a module profile does not permanently overwrite the user's prior active binding profile.
+- Reserved Back as the current host escape path from a DOS session; Select and movement remain available to the guest binding bus.
+- Left the full in-game overlay/editor, directory-tree import, module browser, installer/autostart completion and reference-device validation as the next DOS-host gates.
 
 
 

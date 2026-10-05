@@ -29,8 +29,29 @@ final class InputBindingManager {
         return bus;
     }
 
+    private BindingProfile hostedPreviousProfile;
+
     BindingProfile getProfile() {
         return engine.getProfile();
+    }
+
+    synchronized void beginHostedProfile(String id) {
+        if (hostedPreviousProfile == null) {
+            hostedPreviousProfile = engine.getProfile();
+        }
+        engine.setProfile(
+            BuiltInBindingProfiles.byId(id)
+        );
+    }
+
+    synchronized void endHostedProfile() {
+        if (hostedPreviousProfile == null) {
+            return;
+        }
+
+        BindingProfile restore = hostedPreviousProfile;
+        hostedPreviousProfile = null;
+        engine.setProfile(restore);
     }
 
     void selectBuiltInProfile(String id) {

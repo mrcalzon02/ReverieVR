@@ -27,7 +27,8 @@ public final class VrActivity extends Activity
         InputManager.InputDeviceListener,
         VrInputRouter.Listener,
         VrInputRouter.BindingListener,
-        StandardHidInputRouter.Listener {
+        StandardHidInputRouter.Listener,
+        DosSession.Listener {
 
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
 
@@ -42,6 +43,8 @@ public final class VrActivity extends Activity
     private InputBindingEngine inputBindingEngine;
     private VirtualInputBus virtualInputBus;
     private StandardHidInputRouter standardHidInputRouter;
+    private DosModuleRepository dosModuleRepository;
+    private DosSession dosSession;
 
     private boolean inputDeviceListenerRegistered;
     private volatile String controllerConnectionMessage =
@@ -70,6 +73,14 @@ public final class VrActivity extends Activity
             new StandardHidInputRouter(this);
         preferences = new ReveriePreferences(this);
         videoPlayer = new LocalVideoPlayer(this, this);
+        dosModuleRepository =
+            new DosModuleRepository(this);
+        dosSession =
+            new DosSession(
+                this,
+                virtualInputBus,
+                this
+            );
         inputManager =
             (InputManager) getSystemService(Context.INPUT_SERVICE);
         inputRouter = new VrInputRouter(this);
@@ -81,8 +92,15 @@ public final class VrActivity extends Activity
 
         float viewerIpd = readViewerInterLensDistance();
 
-        renderer = new VrShellRenderer(preferences, viewerIpd, this);
+        renderer =
+            new VrShellRenderer(
+                preferences,
+                viewerIpd,
+                dosSession,
+                this
+            );
         renderer.setPhoneBattery(readPhoneBattery());
+        refreshDosModuleStatus();
 
         cardboardView.setRenderer(renderer);
         cardboardView.setOnBackButtonClick(this::finish);
@@ -119,8 +137,12 @@ public final class VrActivity extends Activity
         if (videoPlayer != null) {
             videoPlayer.resumeForLifecycle();
         }
+        if (dosSession != null) {
+            dosSession.resumeForLifecycle();
+        }
 
         refreshInputSourceStatus();
+        refreshDosModuleStatus();
     }
 
     @Override
@@ -135,6 +157,9 @@ public final class VrActivity extends Activity
         }
         if (videoPlayer != null) {
             videoPlayer.pauseForLifecycle();
+        }
+        if (dosSession != null) {
+            dosSession.pauseForLifecycle();
         }
         if (cardboardView != null) {
             cardboardView.onPause();
@@ -151,6 +176,12 @@ public final class VrActivity extends Activity
         }
         if (videoPlayer != null) {
             videoPlayer.release();
+        }
+        if (dosSession != null) {
+            dosSession.close();
+        }
+        if (inputBindingManager != null) {
+            inputBindingManager.endHostedProfile();
         }
         if (cardboardView != null) {
             cardboardView.onDestroy();
@@ -547,6 +578,112 @@ public final class VrActivity extends Activity
                 videoPlayer.attachSurfaceTexture(surfaceTexture);
             }
         });
+    }
+
+    @Override
+    public boolean onDosPlaybackRequested() {
+        if (dosModuleRepository == null
+            || dosSession == null
+            || inputBindingManager == null) {
+            return false;
+        }
+
+        java.util.List<DosGameModule> modules =
+            dosModuleRepository.list();
+        if (modules.isEmpty()) {
+            runOnUiThread(() ->
+                Toast.makeText(
+                    this,
+                    "Import a DOS module from the phone setup screen first.",
+                    Toast.LENGTH_LONG
+                ).show()
+            );
+            return false;
+        }
+
+        DosGameModule module = modules.get(0);
+        inputBindingManager.beginHostedProfile(
+            module.bindingProfileId
+        );
+
+        if (!dosSession.start(module)) {
+            inputBindingManager.endHostedProfile();
+            String message = dosSession.getLastError();
+            runOnUiThread(() ->
+                Toast.makeText(
+                    this,
+                    message.isEmpty()
+                        ? "Could not start the DOS module."
+                        : message,
+                    Toast.LENGTH_LONG
+                ).show()
+            );
+            return false;
+        }
+
+        ReverieLog.milestone(
+            "DOS_SESSION",
+            "Stage B launched module="
+                + module.id
+                + " profile="
+                + module.bindingProfileId
+        );
+        return true;
+    }
+
+    @Override
+    public void onDosStopRequested() {
+        if (dosSession != null) {
+            dosSession.stop();
+        }
+        if (inputBindingManager != null) {
+            inputBindingManager.endHostedProfile();
+        }
+        refreshDosModuleStatus();
+    }
+
+    @Override
+    public void onDosSessionEnded(
+        String message,
+        boolean error
+    ) {
+        runOnUiThread(() -> {
+            if (inputBindingManager != null) {
+                inputBindingManager.endHostedProfile();
+            }
+            if (renderer != null) {
+                renderer.requestDosExit();
+            }
+            refreshDosModuleStatus();
+
+            if (error) {
+                Toast.makeText(
+                    this,
+                    message == null || message.trim().isEmpty()
+                        ? "DOS session ended with an error."
+                        : message,
+                    Toast.LENGTH_LONG
+                ).show();
+            }
+        });
+    }
+
+    private void refreshDosModuleStatus() {
+        if (renderer == null
+            || dosModuleRepository == null) {
+            return;
+        }
+
+        java.util.List<DosGameModule> modules =
+            dosModuleRepository.list();
+        DosGameModule latest =
+            modules.isEmpty() ? null : modules.get(0);
+
+        renderer.setDosModuleState(
+            DosNativeRuntime.isAvailable(),
+            latest != null,
+            latest == null ? "" : latest.displayName
+        );
     }
 
     @Override

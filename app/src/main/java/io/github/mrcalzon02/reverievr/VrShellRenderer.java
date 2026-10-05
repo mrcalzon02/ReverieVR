@@ -33,6 +33,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVideoTogglePauseRequested();
         void onVideoSeekRequested(int deltaMillis);
         void onVideoStopRequested();
+        boolean onDosPlaybackRequested();
+        void onDosStopRequested();
         void onHeadBindingDelta(
             float yawDeltaRadians,
             float pitchDeltaRadians
@@ -55,12 +57,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_SETUP = 0;
     private static final int MODE_HOME = 1;
     private static final int MODE_VIDEO = 2;
+    private static final int MODE_DOS = 3;
 
     private static final int[][] HOME_BUTTONS = new int[][] {
-        {140, 270, 884, 345},
-        {140, 360, 884, 435},
-        {140, 450, 884, 525},
-        {140, 540, 884, 615}
+        {140, 235, 884, 300},
+        {140, 315, 884, 380},
+        {140, 395, 884, 460},
+        {140, 475, 884, 540},
+        {140, 555, 884, 620}
     };
 
     private static final int[][] THREE_BUTTONS = new int[][] {
@@ -78,6 +82,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final Host host;
     private final float viewerInterLensMeters;
     private final VideoSurfaceRenderer videoRenderer;
+    private final DosSession dosSession;
+    private final DosSurfaceRenderer dosRenderer;
 
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer uvBuffer;
@@ -102,12 +108,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final AtomicInteger phoneBattery = new AtomicInteger(-1);
     private final AtomicInteger controllerBattery = new AtomicInteger(-1);
     private final AtomicInteger videoSeekRequestedMillis = new AtomicInteger();
+    private final AtomicBoolean dosExitRequested = new AtomicBoolean();
 
     private volatile boolean controllerConnected;
     private volatile String controllerMessage = "Controller";
     private volatile String lastInputAction = "Waiting for input";
     private volatile String lastInputSource = "No action received yet";
     private volatile boolean textureDirty = true;
+    private volatile boolean dosRuntimeAvailable;
+    private volatile boolean dosModuleAvailable;
+    private volatile String dosModuleName = "";
 
     private int program;
     private int texture;
@@ -141,12 +151,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
     VrShellRenderer(
         ReveriePreferences preferences,
         float viewerInterLensMeters,
+        DosSession dosSession,
         Host host
     ) {
         this.preferences = preferences;
         this.viewerInterLensMeters = clamp(viewerInterLensMeters, 0.050f, 0.080f);
         this.host = host;
+        this.dosSession = dosSession;
         videoRenderer = new VideoSurfaceRenderer(host::onVideoSurfaceTextureReady);
+        dosRenderer = new DosSurfaceRenderer(dosSession);
 
         userIpdMeters = preferences.getUserIpdMeters(this.viewerInterLensMeters);
         uiScale = preferences.getUiScale();
@@ -243,6 +256,22 @@ final class VrShellRenderer implements CardboardView.Renderer {
         backRequested.set(true);
     }
 
+    void requestDosExit() {
+        dosExitRequested.set(true);
+    }
+
+    void setDosModuleState(
+        boolean runtimeAvailable,
+        boolean moduleAvailable,
+        String moduleName
+    ) {
+        dosRuntimeAvailable = runtimeAvailable;
+        dosModuleAvailable = moduleAvailable;
+        dosModuleName =
+            moduleName == null ? "" : moduleName.trim();
+        textureDirty = true;
+    }
+
     void requestVideoSeek(int deltaMillis) {
         if (deltaMillis == 0 || mode != MODE_VIDEO) {
             videoSeekRequestedMillis.set(0);
@@ -323,6 +352,26 @@ final class VrShellRenderer implements CardboardView.Renderer {
             hudDroppedDown = newHudDroppedDown;
         }
 
+        if (mode == MODE_DOS) {
+            dosRenderer.updateFrame();
+            selectRequested.set(false);
+
+            if (dosExitRequested.getAndSet(false)) {
+                mode = MODE_HOME;
+                hoveredButton = -1;
+                textureDirty = true;
+                return;
+            }
+
+            if (backRequested.getAndSet(false)) {
+                host.onDosStopRequested();
+                mode = MODE_HOME;
+                hoveredButton = -1;
+                textureDirty = true;
+            }
+            return;
+        }
+
         if (mode == MODE_VIDEO) {
             videoRenderer.updateFrame();
 
@@ -380,6 +429,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_VIDEO) {
             videoRenderer.drawEye(eye, eyeCorrection);
+            drawPowerHudOverlay();
+            return;
+        }
+
+        if (mode == MODE_DOS) {
+            dosRenderer.drawEye(eye, eyeCorrection);
             drawPowerHudOverlay();
             return;
         }
@@ -462,6 +517,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     @Override
     public void onSurfaceCreated(EGLConfig config) {
         videoRenderer.onSurfaceCreated();
+        dosRenderer.onSurfaceCreated();
 
         program = buildProgram(VERTEX_SHADER, FRAGMENT_SHADER);
         positionHandle = GLES20.glGetAttribLocation(program, "a_Position");
@@ -528,6 +584,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     @Override
     public void onRendererShutdown() {
         videoRenderer.shutdown();
+        dosRenderer.shutdown();
 
         if (texture != 0) {
             GLES20.glDeleteTextures(1, new int[] {texture}, 0);
@@ -625,6 +682,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     host.onVideoPlaybackRequested();
                     return;
                 case 3:
+                    if (host.onDosPlaybackRequested()) {
+                        dosExitRequested.set(false);
+                        mode = MODE_DOS;
+                        hoveredButton = -1;
+                        return;
+                    }
+                    break;
+                case 4:
                     host.onExitToPhoneRequested();
                     return;
                 default:
@@ -844,12 +909,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
+        String dosLabel;
+        if (!dosRuntimeAvailable) {
+            dosLabel = "DOS RUNTIME NOT BUILT";
+        } else if (!dosModuleAvailable) {
+            dosLabel = "IMPORT DOS MODULE ON PHONE";
+        } else {
+            dosLabel =
+                "PLAY DOS: "
+                    + shorten(dosModuleName, 28);
+        }
+
         String[] labels = new String[] {
             "RUN VR SETUP",
             "OPTICAL / DISPLAY CALIBRATION",
             preferences.hasSelectedVideo()
                 ? "PLAY SELECTED VIDEO"
                 : "SELECT VIDEO ON PHONE",
+            dosLabel,
             "EXIT TO PHONE"
         };
         drawButtons(canvas, paint, labels, activeButtons());

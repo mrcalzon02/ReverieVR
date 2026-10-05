@@ -379,12 +379,23 @@ Implemented native host foundation:
 - bootstrap verification rejects a fetched DOSBox Pure checkout whose commit does not match the project pin;
 - host-side C++ syntax/type checking and JNI descriptor verification passed.
 
+Additional Stage B integration now implemented:
+
+- a dedicated Java DOS session worker owns native run cadence without executing DOSBox Pure on the Cardboard GL thread;
+- lifecycle pause/resume releases guest input and pauses/resumes audio;
+- the latest available DOS module can be launched from a fifth VR Home action;
+- module launch temporarily activates that module's binding profile and restores the prior profile when the session ends;
+- a nearest-filtered OpenGL guest texture consumes the native XRGB8888 frame, corrects byte-channel order in the shader, flips libretro's top-down image, and applies RV-0414 intended display aspect;
+- Android AudioTrack consumes stereo 16-bit PCM on the DOS worker thread;
+- Back is currently a shell-reserved DOS escape route so the guest cannot strand the user.
+
 Remaining gates:
 
 - actual Android NDK compile/link for both supported ABIs;
-- Stage B DOS module selection, launch/pause/resume/unload ownership and safe shell return;
-- upload the captured guest framebuffer into the VR guest texture and apply RV-0414 aspect/integer-scaling policy;
-- Android audio playback sink and measured latency/underrun behavior;
+- reference-device validation of DOS run cadence, audio latency/underruns, guest texture orientation/colors and resolution changes;
+- richer Stage B DOS module selection instead of launching only the newest module;
+- explicit pause/resume quick overlay plus binding/profile editor;
+- integer-scale staging policy beyond nearest-neighbor guest sampling;
 - directory-tree import;
 - per-module binding/profile editing and the in-game quick overlay;
 - run the verified DOOM Shareware installer/autostart path and exercise E1M1 on the Galaxy S9.
