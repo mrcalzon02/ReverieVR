@@ -489,12 +489,38 @@ Implemented:
 - explicit Clear Local Logs action;
 - explicit Export Diagnostic Bundle action using Android's create-document UI;
 - ZIP manifest includes app/build/device/API/ABI/logging-mode/DOS-runtime-build state;
-- no automatic network submission;
+- manual export remains a permanent offline/private fallback independent of network submission;
 - privacy warning that Development logs can include device names, local filenames, module names, input state and timing.
 
 Development logging invalidates performance/thermal/frame-pacing acceptance evidence because it intentionally performs high-volume diagnostic work.
 
-Future automatic GitHub/error submission remains deferred and must be opt-in with payload review/redaction and no embedded personal token.
+Automatic opt-in issue submission is tracked separately as RV-0208 so the manual logging/export acceptance boundary stays independent.
+
+### RV-0208 — secure one-tap diagnostic issue submission
+
+State: **draft**
+
+Implemented on `main`:
+
+- Stage A exposes **Submit diagnostics to GitHub** only when a valid HTTPS diagnostic-intake endpoint was injected at build time; absent configuration hides the control rather than leaving a dead button;
+- submission requires an explicit privacy/reproduction dialog, a non-empty failure summary, optional expected behavior, and an explicit coarse-redaction choice to include or exclude ReverieVR log files;
+- each submission receives a `revdiag-<UUID>` identifier and a client-side SHA-256 before upload;
+- the Android application contains no GitHub token, GitHub App private key, storage credential, Cloudflare credential, or reusable privileged upload secret;
+- failed submissions retain the generated ZIP in the app-private diagnostic outbox while the existing manual Export Diagnostic Bundle path remains available;
+- the first broker implementation is a Cloudflare Worker under `diagnostic-intake/` with a private R2 bundle store, SQLite-backed Durable Object rate limiter, bounded request/ZIP validation, server-side SHA-256 recomputation, scheduled 30-day raw-bundle expiry, and GitHub App installation-token issue creation;
+- public GitHub issues contain sanitized build/device/reproduction metadata, diagnostic ID, byte length, server hash, and private receipt reference only; the raw ZIP is not automatically published;
+- broker deployment is isolated behind the protected GitHub environment `diagnostic-intake`, while the non-secret public endpoint is supplied separately through the `DIAGNOSTIC_INTAKE_URL` Actions variable;
+- GitHub Issue #1 tracks the end-to-end acceptance work and ADR-0017 remains the governing security boundary.
+
+Current verification: source implementation and deployment contract are committed. Phone-test run #13 is the Android compile/package gate for the client and conditional Stage A UI.
+
+Remaining gates before RV-0208 can be accepted:
+
+1. provision the `reverievr-diagnostics` R2 bucket and least-privilege GitHub App;
+2. populate the protected `diagnostic-intake` environment secrets and deploy the Worker;
+3. set `DIAGNOSTIC_INTAKE_URL` to the deployed HTTPS `/v1/diagnostics` endpoint and produce a phone-test build containing that public URL;
+4. perform a real Galaxy S9 submission and verify the client hash, server hash, private receipt and created GitHub issue agree;
+5. verify failure/retry behavior and that no privileged credential appears in the APK or public issue.
 
 ### RV-0414 — retro framebuffer display geometry
 
