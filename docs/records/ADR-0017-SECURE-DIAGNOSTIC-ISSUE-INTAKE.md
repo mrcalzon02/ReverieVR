@@ -66,6 +66,27 @@ Where the hosting platform has its own secret store, runtime GitHub/storage
 credentials should live there. GitHub Actions should hold only the minimum
 credentials needed to deploy/update that service.
 
+### Accepted first implementation
+
+The first implementation uses a Cloudflare Worker in `diagnostic-intake/`:
+
+- private R2 binding `DIAGNOSTIC_BUNDLES`;
+- SQLite-backed Durable Object `RATE_LIMITER`;
+- scheduled raw-bundle expiry after the configured retention window;
+- GitHub App JWT/install-token exchange at runtime;
+- public issue creation containing sanitized metadata only.
+
+The protected GitHub environment `diagnostic-intake` supplies:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `DIAGNOSTIC_GITHUB_APP_ID`
+- `DIAGNOSTIC_GITHUB_APP_PRIVATE_KEY`
+
+The public endpoint is carried separately as the repository Actions variable
+`DIAGNOSTIC_INTAKE_URL`; it is not a secret. The Android submit control is
+hidden when this variable was not injected into the build.
+
 The GitHub App needs only:
 
 - Metadata: read
