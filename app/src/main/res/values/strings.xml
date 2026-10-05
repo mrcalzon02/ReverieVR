@@ -142,6 +142,7 @@ Available: %2$s</string>
     <string name="vr_section">VR readiness</string>
     <string name="vr_runtime_not_ready">The independent Cardboard-based VR runtime is wired. Connect a physical Daydream controller, a paired controller phone, or an Android gamepad; optionally select local media above; then enter VR.</string>
     <string name="enter_vr">Enter VR</string>
+    <string name="vr_startup_failure_title">VR startup failed</string>
 
     <string name="recovery_section">Recovery</string>
     <string name="recovery_description">This 2D screen remains the safe recovery authority if VR settings or controller bindings become unusable.</string>
