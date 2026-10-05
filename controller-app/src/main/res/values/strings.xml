@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReverieVR Controller</string>
+    <string name="controller_description">Pair this phone with the headset phone in Android Bluetooth settings, start the controller here, then choose this phone from ReverieVR Stage A.</string>
+    <string name="controller_stopped">Controller server stopped.</string>
+    <string name="start_controller">Start controller</string>
+    <string name="stop_controller">Stop</string>
+    <string name="open_bluetooth_settings">Open Bluetooth settings</string>
+    <string name="select_button">SELECT</string>
+    <string name="app_button">APP / BACK</string>
+    <string name="home_button">HOME / RECENTER</string>
+    <string name="battery_format">Controller phone battery: %1$d%%</string>
+    <string name="battery_unknown">Controller phone battery unavailable.</string>
+    <string name="bluetooth_permission_denied">Bluetooth permission is required to host the controller connection.</string>
+    <string name="bluetooth_settings_unavailable">Android Bluetooth settings could not be opened.</string>
+</resources>

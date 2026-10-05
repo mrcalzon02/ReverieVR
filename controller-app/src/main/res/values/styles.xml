@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ControllerTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="ControllerPrimaryButton" parent="@android:style/Widget.Material.Button">
+        <item name="android:backgroundTint">@color/accent</item>
+        <item name="android:textColor">@color/button_text_dark</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="ControllerSecondaryButton" parent="@android:style/Widget.Material.Button">
+        <item name="android:backgroundTint">@color/accent_dark</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+</resources>
