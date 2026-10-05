@@ -53,9 +53,13 @@ jobs:
 
       - name: Test and build
         shell: bash
+        env:
+          DIAGNOSTIC_INTAKE_URL: ${{ vars.DIAGNOSTIC_INTAKE_URL }}
         run: |
           set -euo pipefail
-          ./gradlew --no-daemon test :app:assembleDebug :controller-app:assembleDebug
+          ./gradlew --no-daemon \
+            -PdiagnosticIntakeUrl="$DIAGNOSTIC_INTAKE_URL" \
+            test :app:assembleDebug :controller-app:assembleDebug
 
       - name: Verify APK
         shell: bash
