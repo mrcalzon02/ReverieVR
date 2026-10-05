@@ -270,6 +270,17 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
 
                 PhoneControllerProtocol.Event event =
                     PhoneControllerProtocol.parse(payload);
+
+                if (event.type == PhoneControllerProtocol.TYPE_REVERIE_STATUS) {
+                    if (event.batteryPercentage >= 0) {
+                        emitBattery(
+                            event.batteryPercentage,
+                            -1
+                        );
+                    }
+                    continue;
+                }
+
                 if (!applyEvent(event)) {
                     continue;
                 }
@@ -280,7 +291,7 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
                         ConnectionState.READY,
                         "Phone controller emulator connected and streaming."
                     );
-                    emitBatteryUnknown();
+                    emitBattery(-1, -1);
                 }
             }
         } catch (EOFException exception) {
@@ -465,10 +476,10 @@ final class PhoneControllerEmulatorProvider implements ControllerProvider {
         }
     }
 
-    private void emitBatteryUnknown() {
+    private void emitBattery(int percentage, int millivolts) {
         Listener target = listener;
         if (target != null) {
-            target.onBatteryChanged(-1, -1);
+            target.onBatteryChanged(percentage, millivolts);
         }
     }
 

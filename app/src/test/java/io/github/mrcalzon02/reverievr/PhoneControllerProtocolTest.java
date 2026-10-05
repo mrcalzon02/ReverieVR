@@ -83,6 +83,27 @@ public final class PhoneControllerProtocolTest {
         assertEquals(PhoneControllerProtocol.KEY_CLICK, event.keyCode);
     }
 
+    @Test
+    public void parsesReverieBatteryStatus() {
+        byte[] status = message(
+            varintField(1, 73)
+        );
+
+        byte[] packet = message(
+            varintField(1, PhoneControllerProtocol.TYPE_REVERIE_STATUS),
+            bytesField(8, status)
+        );
+
+        PhoneControllerProtocol.Event event =
+            PhoneControllerProtocol.parse(packet);
+
+        assertEquals(
+            PhoneControllerProtocol.TYPE_REVERIE_STATUS,
+            event.type
+        );
+        assertEquals(73, event.batteryPercentage);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void rejectsTruncatedLengthDelimitedField() {
         PhoneControllerProtocol.parse(

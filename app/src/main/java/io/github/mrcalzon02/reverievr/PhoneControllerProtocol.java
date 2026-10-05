@@ -8,6 +8,7 @@ final class PhoneControllerProtocol {
     static final int TYPE_ACCELEROMETER = 3;
     static final int TYPE_ORIENTATION = 5;
     static final int TYPE_KEY = 6;
+    static final int TYPE_REVERIE_STATUS = 100;
 
     static final int KEY_NONE = 0x00;
     static final int KEY_HOME = 0x03;
@@ -36,6 +37,7 @@ final class PhoneControllerProtocol {
         byte[] accel = null;
         byte[] orientation = null;
         byte[] key = null;
+        byte[] reverieStatus = null;
 
         while (reader.hasRemaining()) {
             int tag = reader.readVarint32();
@@ -44,7 +46,7 @@ final class PhoneControllerProtocol {
 
             if (field == 1 && wire == 0) {
                 type = reader.readVarint32();
-            } else if (field >= 2 && field <= 7 && wire == 2) {
+            } else if (field >= 2 && field <= 8 && wire == 2) {
                 byte[] nested = reader.readBytes();
                 switch (field) {
                     case 2:
@@ -61,6 +63,9 @@ final class PhoneControllerProtocol {
                         break;
                     case 7:
                         key = nested;
+                        break;
+                    case 8:
+                        reverieStatus = nested;
                         break;
                     default:
                         break;
@@ -81,6 +86,8 @@ final class PhoneControllerProtocol {
                 return parseVector(TYPE_ORIENTATION, orientation, true);
             case TYPE_KEY:
                 return parseKey(key);
+            case TYPE_REVERIE_STATUS:
+                return parseReverieStatus(reverieStatus);
             default:
                 return Event.unknown(type);
         }
@@ -211,6 +218,31 @@ final class PhoneControllerProtocol {
         return event;
     }
 
+    private static Event parseReverieStatus(byte[] bytes) {
+        if (bytes == null) {
+            return Event.unknown(TYPE_REVERIE_STATUS);
+        }
+
+        ProtoReader reader = new ProtoReader(bytes);
+        Event event = new Event(TYPE_REVERIE_STATUS);
+        event.batteryPercentage = -1;
+
+        while (reader.hasRemaining()) {
+            int tag = reader.readVarint32();
+            int field = tag >>> 3;
+            int wire = tag & 7;
+
+            if (field == 1 && wire == 0) {
+                event.batteryPercentage =
+                    Math.max(0, Math.min(100, reader.readVarint32()));
+            } else {
+                reader.skip(wire);
+            }
+        }
+
+        return event;
+    }
+
     private static float clamp01(float value) {
         return Math.max(0.0f, Math.min(1.0f, value));
     }
@@ -225,6 +257,7 @@ final class PhoneControllerProtocol {
         float z;
         float w = 1.0f;
         boolean hasPointer;
+        int batteryPercentage = -1;
 
         Event(int type) {
             this.type = type;
