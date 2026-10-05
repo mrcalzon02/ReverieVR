@@ -241,6 +241,8 @@ public final class MainActivity extends Activity implements ControllerManager.Li
         int persistFlags =
             offeredFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION;
 
+        String previousUri = preferences.getSelectedVideoUri();
+
         try {
             getContentResolver().takePersistableUriPermission(uri, persistFlags);
         } catch (SecurityException exception) {
@@ -252,7 +254,9 @@ public final class MainActivity extends Activity implements ControllerManager.Li
             return;
         }
 
-        releaseSelectedVideoPermission();
+        if (!previousUri.equals(uri.toString())) {
+            releaseSelectedVideoPermission();
+        }
         preferences.setSelectedVideo(uri.toString(), resolveDisplayName(uri));
         refreshMediaStatus();
     }

@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
@@ -26,6 +27,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onExitToPhoneRequested();
         void onSetupCompleted();
         void onControllerRecenterRequested();
+        void onVideoSurfaceTextureReady(SurfaceTexture surfaceTexture);
+        void onVideoPlaybackRequested();
+        void onVideoTogglePauseRequested();
+        void onVideoStopRequested();
     }
 
     private static final int TEXTURE_WIDTH = 1024;
@@ -40,11 +45,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private static final int MODE_SETUP = 0;
     private static final int MODE_HOME = 1;
+    private static final int MODE_VIDEO = 2;
 
     private static final int[][] HOME_BUTTONS = new int[][] {
-        {160, 300, 864, 390},
-        {160, 410, 864, 500},
-        {160, 520, 864, 610}
+        {140, 270, 884, 345},
+        {140, 360, 884, 435},
+        {140, 450, 884, 525},
+        {140, 540, 884, 615}
     };
 
     private static final int[][] THREE_BUTTONS = new int[][] {
@@ -61,6 +68,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final ReveriePreferences preferences;
     private final Host host;
     private final float viewerInterLensMeters;
+    private final VideoSurfaceRenderer videoRenderer;
 
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer uvBuffer;
@@ -111,6 +119,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         this.preferences = preferences;
         this.viewerInterLensMeters = clamp(viewerInterLensMeters, 0.050f, 0.080f);
         this.host = host;
+        videoRenderer = new VideoSurfaceRenderer(host::onVideoSurfaceTextureReady);
 
         userIpdMeters = preferences.getUserIpdMeters(this.viewerInterLensMeters);
         uiScale = preferences.getUiScale();
@@ -171,6 +180,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         textureDirty = true;
     }
 
+    void setVideoAspectRatio(float aspectRatio) {
+        videoRenderer.setVideoAspectRatio(aspectRatio);
+    }
+
+    void requestVideoExit() {
+        backRequested.set(true);
+    }
+
     @Override
     public void onNewFrame(HeadTransform headTransform) {
         headTransform.getHeadView(rawHeadView, 0);
@@ -192,6 +209,23 @@ final class VrShellRenderer implements CardboardView.Renderer {
             0.0f
         );
         Matrix.multiplyMM(adjustedHeadView, 0, yawMatrix, 0, rawHeadView, 0);
+
+        if (mode == MODE_VIDEO) {
+            videoRenderer.updateFrame();
+
+            if (backRequested.getAndSet(false)) {
+                host.onVideoStopRequested();
+                mode = MODE_HOME;
+                hoveredButton = -1;
+                textureDirty = true;
+                return;
+            }
+
+            if (selectRequested.getAndSet(false)) {
+                host.onVideoTogglePauseRequested();
+            }
+            return;
+        }
 
         rotateYaw(headForward, -yawOffsetRadians, adjustedHeadForward);
         int newHover = calculateHoveredButton(adjustedHeadForward);
@@ -217,18 +251,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT
         );
 
-        if (textureDirty) {
-            rebuildTexture();
-        }
-
         eye.applyHeadView(adjustedHeadView);
-        System.arraycopy(eye.getEyeView(), 0, eyeView, 0, 16);
 
         float correctionHalf =
             (userIpdMeters - viewerInterLensMeters) * 0.5f;
         float eyeCorrection = eye.getEyeType() == CardboardView.Eye.LEFT
             ? correctionHalf
             : -correctionHalf;
+
+        if (mode == MODE_VIDEO) {
+            videoRenderer.drawEye(eye, eyeCorrection);
+            return;
+        }
+
+        if (textureDirty) {
+            rebuildTexture();
+        }
+
+        System.arraycopy(eye.getEyeView(), 0, eyeView, 0, 16);
 
         Matrix.translateM(
             tempMatrix,
@@ -299,6 +339,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     @Override
     public void onSurfaceCreated(EGLConfig config) {
+        videoRenderer.onSurfaceCreated();
+
         program = buildProgram(VERTEX_SHADER, FRAGMENT_SHADER);
         positionHandle = GLES20.glGetAttribLocation(program, "a_Position");
         uvHandle = GLES20.glGetAttribLocation(program, "a_TexCoord");
@@ -336,6 +378,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     @Override
     public void onRendererShutdown() {
+        videoRenderer.shutdown();
+
         if (texture != 0) {
             GLES20.glDeleteTextures(1, new int[] {texture}, 0);
             texture = 0;
@@ -406,6 +450,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     preferences.setVrSetupStep(1);
                     break;
                 case 2:
+                    if (preferences.hasSelectedVideo()) {
+                        videoRenderer.setProjection(
+                            preferences.getVideoProjection()
+                        );
+                        mode = MODE_VIDEO;
+                        hoveredButton = -1;
+                        host.onVideoPlaybackRequested();
+                    }
+                    return;
+                case 3:
                     host.onExitToPhoneRequested();
                     return;
                 default:
@@ -600,6 +654,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         String[] labels = new String[] {
             "RUN VR SETUP",
             "OPTICAL / DISPLAY CALIBRATION",
+            preferences.hasSelectedVideo()
+                ? "PLAY SELECTED VIDEO"
+                : "NO VIDEO SELECTED",
             "EXIT TO PHONE"
         };
         drawButtons(canvas, paint, labels, activeButtons());

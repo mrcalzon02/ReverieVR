@@ -3,11 +3,13 @@ package io.github.mrcalzon02.reverievr;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.graphics.SurfaceTexture;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import com.google.cardboard.proto.CardboardDevice;
 import com.google.cardboard.sdk.CardboardView;
@@ -15,13 +17,17 @@ import com.google.cardboard.sdk.QrCode;
 import com.google.cardboard.sdk.deviceparams.DeviceParamsUtils;
 
 public final class VrActivity extends Activity
-    implements ControllerManager.Listener, VrShellRenderer.Host {
+    implements ControllerManager.Listener,
+        VrShellRenderer.Host,
+        LocalVideoPlayer.Listener {
 
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
 
     private CardboardView cardboardView;
     private VrShellRenderer renderer;
     private ControllerManager controllerManager;
+    private ReveriePreferences preferences;
+    private LocalVideoPlayer videoPlayer;
 
     private boolean previousTouchpadPressed;
     private boolean previousMenuPressed;
@@ -39,7 +45,8 @@ public final class VrActivity extends Activity
         controllerManager =
             ((ReverieApplication) getApplication()).getControllerManager();
 
-        ReveriePreferences preferences = new ReveriePreferences(this);
+        preferences = new ReveriePreferences(this);
+        videoPlayer = new LocalVideoPlayer(this, this);
 
         CardboardView.setUseCardboardGlSurfaceView(true);
         cardboardView = new CardboardView(this);
@@ -76,10 +83,16 @@ public final class VrActivity extends Activity
         if (renderer != null) {
             renderer.setPhoneBattery(readPhoneBattery());
         }
+        if (videoPlayer != null) {
+            videoPlayer.resumeForLifecycle();
+        }
     }
 
     @Override
     protected void onPause() {
+        if (videoPlayer != null) {
+            videoPlayer.pauseForLifecycle();
+        }
         if (cardboardView != null) {
             cardboardView.onPause();
         }
@@ -90,6 +103,9 @@ public final class VrActivity extends Activity
     protected void onDestroy() {
         if (controllerManager != null) {
             controllerManager.removeListener(this);
+        }
+        if (videoPlayer != null) {
+            videoPlayer.release();
         }
         if (cardboardView != null) {
             cardboardView.onDestroy();
@@ -168,6 +184,64 @@ public final class VrActivity extends Activity
         if (controllerManager != null) {
             controllerManager.recenterController();
         }
+    }
+
+    @Override
+    public void onVideoSurfaceTextureReady(SurfaceTexture surfaceTexture) {
+        runOnUiThread(() -> {
+            if (videoPlayer != null) {
+                videoPlayer.attachSurfaceTexture(surfaceTexture);
+            }
+        });
+    }
+
+    @Override
+    public void onVideoPlaybackRequested() {
+        runOnUiThread(() -> {
+            if (videoPlayer != null && preferences != null) {
+                videoPlayer.play(preferences.getSelectedVideoUri());
+            }
+        });
+    }
+
+    @Override
+    public void onVideoTogglePauseRequested() {
+        runOnUiThread(() -> {
+            if (videoPlayer != null) {
+                videoPlayer.togglePause();
+            }
+        });
+    }
+
+    @Override
+    public void onVideoStopRequested() {
+        runOnUiThread(() -> {
+            if (videoPlayer != null) {
+                videoPlayer.stop();
+            }
+        });
+    }
+
+    @Override
+    public void onVideoPrepared(float aspectRatio) {
+        if (renderer != null) {
+            renderer.setVideoAspectRatio(aspectRatio);
+        }
+    }
+
+    @Override
+    public void onVideoStateChanged(String message) {
+        // Playback state is intentionally quiet inside the headset for now.
+    }
+
+    @Override
+    public void onVideoError(String message) {
+        runOnUiThread(() -> {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            if (renderer != null) {
+                renderer.requestVideoExit();
+            }
+        });
     }
 
     private float readViewerInterLensDistance() {
