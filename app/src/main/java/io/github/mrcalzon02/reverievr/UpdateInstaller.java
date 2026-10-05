@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 final class UpdateInstaller implements AutoCloseable {
     private final Activity activity;
     private final DownloadManager downloadManager;
+    private final Runnable failureFeedback;
     private final ExecutorService verifier = Executors.newSingleThreadExecutor();
 
     private long activeDownloadId = -1L;
@@ -41,6 +42,7 @@ final class UpdateInstaller implements AutoCloseable {
 
             Uri uri = downloadManager.getUriForDownloadedFile(id);
             if (uri == null) {
+                notifyFailure();
                 Toast.makeText(
                     activity,
                     R.string.update_download_failed,
@@ -55,7 +57,15 @@ final class UpdateInstaller implements AutoCloseable {
     };
 
     UpdateInstaller(Activity activity) {
+        this(activity, null);
+    }
+
+    UpdateInstaller(
+        Activity activity,
+        Runnable failureFeedback
+    ) {
         this.activity = activity;
+        this.failureFeedback = failureFeedback;
         this.downloadManager =
             (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
 
@@ -91,10 +101,12 @@ final class UpdateInstaller implements AutoCloseable {
 
     void downloadAndInstall(UpdateChecker.Release release) {
         if (release == null || release.apkUrl == null) {
+            notifyFailure();
             return;
         }
 
         if (!canRequestPackageInstalls()) {
+            notifyFailure();
             Toast.makeText(
                 activity,
                 R.string.update_install_permission_needed,
@@ -105,6 +117,7 @@ final class UpdateInstaller implements AutoCloseable {
         }
 
         if (downloadManager == null) {
+            notifyFailure();
             Toast.makeText(
                 activity,
                 R.string.update_download_service_unavailable,
@@ -136,7 +149,18 @@ final class UpdateInstaller implements AutoCloseable {
         );
 
         activeRelease = release;
-        activeDownloadId = downloadManager.enqueue(request);
+        try {
+            activeDownloadId = downloadManager.enqueue(request);
+        } catch (RuntimeException exception) {
+            clearActiveDownload();
+            notifyFailure();
+            Toast.makeText(
+                activity,
+                R.string.update_download_failed,
+                Toast.LENGTH_LONG
+            ).show();
+            return;
+        }
 
         Toast.makeText(
             activity,
@@ -150,6 +174,7 @@ final class UpdateInstaller implements AutoCloseable {
             boolean digestValid = verifyDigestIfPresent(uri, release.apkDigest);
             activity.runOnUiThread(() -> {
                 if (!digestValid) {
+                    notifyFailure();
                     Toast.makeText(
                         activity,
                         R.string.update_digest_failed,
@@ -205,11 +230,24 @@ final class UpdateInstaller implements AutoCloseable {
         try {
             activity.startActivity(install);
         } catch (Exception exception) {
+            notifyFailure();
             Toast.makeText(
                 activity,
                 R.string.update_installer_unavailable,
                 Toast.LENGTH_LONG
             ).show();
+        }
+    }
+
+    private void notifyFailure() {
+        if (failureFeedback == null) {
+            return;
+        }
+
+        try {
+            failureFeedback.run();
+        } catch (RuntimeException ignored) {
+            // Interaction feedback cannot block updater recovery.
         }
     }
 
