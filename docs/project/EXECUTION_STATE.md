@@ -7,7 +7,7 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current implementation baseline immediately below this documentation update: `71089323a15a1659bff1c6109f24d1a04070adcb`.
+- Current implementation baseline immediately below this documentation update: `d5bfeaaa20cbdeee8bf7d2230348f868fd31a5a8`.
 - Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
@@ -371,12 +371,26 @@ Stage B integration now implemented:
 - renderer shutdown explicitly releases module GL resources before Java/native destruction;
 - the shell-global power/status HUD renders after native module content.
 
+Current-environment verification completed:
+
+- remote `main` readback confirms ADR-0015, the ABI header, native host, separate test-module source/library target, Java runtime bridge, Stage B wiring and OpenKTG provenance are present;
+- the four vendored OpenKTG files have exact Git blob SHA matches to the pinned upstream revision;
+- static source checks confirm the NDK build no longer hard-fails when DOSBox Pure is absent;
+- static source checks confirm unknown native-module ids fail closed, ABI/descriptor/callback validation is present, and only the compile-time allowlisted packaged test library is named;
+- the proof module source contains no Win32, Direct3D, DirectSound or x86 inline-assembly path;
+- Java/C++ structural brace checks passed for the new host/runtime/module and Stage B integration sources;
+- no Android SDK/NDK compile, APK install or device runtime claim is made from this environment.
+
 Remaining gates:
 
 - actual Android NDK compile/link for both target ABIs;
 - Galaxy S9 stereo/head-tracking/movement/Select/Back/HUD/pause-resume validation;
 - sustained frame-pacing, battery and thermal validation;
 - shared module settings/audio/save/performance-budget services beyond the proof ABI.
+
+This is the ADR-0015 validation stop. Do not expand into Kkrieger gameplay,
+Werkkzeug3 mesh/operator porting or V2 audio until the proof module passes the
+reference-device gates above.
 
 ### RV-0410 / RV-0411 — DOS runtime baseline and modules
 
