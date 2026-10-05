@@ -20,14 +20,37 @@ safe way to inject credentials into an APK.
 8. The app displays the issue URL.
 9. If any network step fails, local/manual export remains available.
 
-## Secrets
+## Secrets and deployment values
 
 Do not place runtime credentials in Gradle properties, BuildConfig fields,
 resources, source code, assets, native libraries, or generated APK metadata.
 
-For an Actions-driven deployment, create a protected environment named
-`diagnostic-intake`. The intended secret names and permission boundaries are
-defined in ADR-0017.
+The first broker implementation lives in `diagnostic-intake/` and targets a
+Cloudflare Worker with private R2 storage plus a Durable Object rate limiter.
+
+Create/use a protected GitHub environment named `diagnostic-intake` with these
+environment secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `DIAGNOSTIC_GITHUB_APP_ID`
+- `DIAGNOSTIC_GITHUB_APP_PRIVATE_KEY`
+
+The repository workflow
+`.github/workflows/deploy-diagnostic-intake.yml` deploys the Worker and copies
+only the GitHub App values into the Worker's runtime secret store. The Android
+APK never receives those values.
+
+After the Worker is deployed, set the non-secret GitHub Actions repository
+variable `DIAGNOSTIC_INTAKE_URL` to its HTTPS
+`/v1/diagnostics` endpoint. Phone-test builds pass that public URL into
+`BuildConfig.DIAGNOSTIC_INTAKE_URL`. When the variable is absent or invalid,
+ReverieVR hides the Submit diagnostics button rather than exposing a dead
+control.
+
+The R2 bucket `reverievr-diagnostics` must exist before deployment. Runtime R2
+access is through the Worker binding, so no R2 access key is compiled into the
+Worker or APK.
 
 Where possible, runtime secrets belong in the hosting platform's own secret
 store. GitHub Actions secrets should be used to deploy or rotate them, not copied
