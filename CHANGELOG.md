@@ -4,6 +4,19 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Global VR power HUD
+
+- Added a separate persistent stereo PHONE/CTRL battery HUD with two real progress bars.
+- Kept the HUD visible across the VR shell, setup flow and local video playback when enabled.
+- Added honest unknown-controller presentation instead of treating unavailable telemetry as 0%.
+- Wired the existing Show Percentages preference to numeric HUD values while preserving the bars.
+- Implemented the optional player-look-up reveal: compact upper-right during normal viewing, lower in view when looking steeply upward.
+- Kept Battery HUD and Look-up Reveal as user-toggleable QoL options.
+- Reused HUD texture/geometry storage without per-eye allocation.
+- Left controller-pointing-up reveal pending physical controller-axis validation rather than guessing the quaternion orientation.
+
+
+
 ### Setup and input familiarization
 
 - Bumped the resumable first-run setup schema to v2.
