@@ -13,6 +13,7 @@ final class ReveriePreferences {
     private static final String KEY_SHOW_PERCENTAGES = "show_percentages";
     private static final String KEY_RETRO_MODE = "retro_mode";
     private static final String KEY_AUTO_UPDATE_CHECK = "auto_update_check";
+    private static final String KEY_LOGGING_MODE = "logging_mode";
     private static final String KEY_VR_SETUP_VERSION = "vr_setup_version";
     private static final String KEY_VR_SETUP_STEP = "vr_setup_step";
     private static final String KEY_USER_IPD_METERS = "user_ipd_meters";
@@ -65,6 +66,25 @@ final class ReveriePreferences {
 
     void setAutoUpdateCheckEnabled(boolean enabled) {
         preferences.edit().putBoolean(KEY_AUTO_UPDATE_CHECK, enabled).apply();
+    }
+
+    LoggingMode getLoggingMode() {
+        return LoggingMode.fromPreference(
+            preferences.getString(
+                KEY_LOGGING_MODE,
+                LoggingMode.STANDARD.name()
+            )
+        );
+    }
+
+    void setLoggingMode(LoggingMode mode) {
+        LoggingMode safe =
+            mode == null
+                ? LoggingMode.STANDARD
+                : mode;
+        preferences.edit()
+            .putString(KEY_LOGGING_MODE, safe.name())
+            .apply();
     }
 
     boolean isVrSetupCurrent() {

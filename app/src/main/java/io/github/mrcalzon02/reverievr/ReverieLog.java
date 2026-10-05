@@ -157,6 +157,32 @@ final class ReverieLog {
         );
     }
 
+    static void fatal(
+        String area,
+        String message,
+        Throwable throwable
+    ) {
+        enqueue(
+            "FATAL",
+            area,
+            message,
+            false,
+            throwable
+        );
+
+        List<Record> urgent = new ArrayList<>();
+        QUEUE.drainTo(urgent);
+        if (!urgent.isEmpty()) {
+            writeBatch(urgent);
+        }
+
+        Log.e(
+            LOGCAT_TAG,
+            compact(area, message),
+            throwable
+        );
+    }
+
     static void dev(String area, String message) {
         if (!isDevelopment()) {
             return;
