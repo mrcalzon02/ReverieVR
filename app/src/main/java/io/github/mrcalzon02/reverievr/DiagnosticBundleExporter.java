@@ -1,6 +1,11 @@
 package io.github.mrcalzon02.reverievr;
 
+import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 
@@ -20,6 +25,10 @@ import java.util.zip.ZipOutputStream;
 
 final class DiagnosticBundleExporter {
     private static final int BUFFER_SIZE = 64 * 1024;
+    private static final String DIAGNOSTIC_ID_PATTERN =
+        "^revdiag-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-"
+            + "[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-"
+            + "[0-9a-fA-F]{12}$";
     private static final long PRIVATE_BUNDLE_RETENTION_MILLIS =
         30L * 24L * 60L * 60L * 1000L;
 
@@ -61,7 +70,7 @@ final class DiagnosticBundleExporter {
                 ? ""
                 : diagnosticId.trim();
         if (!safeId.matches(
-                "^revdiag-[0-9a-fA-F-]{36}$"
+                DIAGNOSTIC_ID_PATTERN
             )) {
             throw new IOException(
                 "Diagnostic ID is invalid."
@@ -136,7 +145,7 @@ final class DiagnosticBundleExporter {
         boolean includeLogs
     ) throws IOException {
         StringBuilder manifest =
-            new StringBuilder(1152);
+            new StringBuilder(1600);
 
         manifest.append("ReverieVR diagnostic bundle\n")
             .append("created=")
@@ -190,6 +199,47 @@ final class DiagnosticBundleExporter {
                     : Build.SUPPORTED_ABIS[0]
             )
             .append('\n')
+            .append("bluetoothAdapter=")
+            .append(bluetoothAdapterState())
+            .append('\n')
+            .append("locationServices=")
+            .append(locationServicesState())
+            .append('\n')
+            .append("bleLegacyLocationGate=")
+            .append(legacyBleLocationGateState())
+            .append('\n')
+            .append("permissionBluetoothScan=")
+            .append(
+                permissionState(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Build.VERSION_CODES.S
+                )
+            )
+            .append('\n')
+            .append("permissionBluetoothConnect=")
+            .append(
+                permissionState(
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Build.VERSION_CODES.S
+                )
+            )
+            .append('\n')
+            .append("permissionFineLocation=")
+            .append(
+                permissionState(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Build.VERSION_CODES.M
+                )
+            )
+            .append('\n')
+            .append("permissionCoarseLocation=")
+            .append(
+                permissionState(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Build.VERSION_CODES.M
+                )
+            )
+            .append('\n')
             .append('\n')
             .append("Privacy note: development logs may contain device names, ")
             .append("local filenames, module names, controller state, timing, ")
@@ -203,6 +253,103 @@ final class DiagnosticBundleExporter {
                 .getBytes(StandardCharsets.UTF_8)
         );
         zip.closeEntry();
+    }
+
+    private String bluetoothAdapterState() {
+        BluetoothManager manager =
+            (BluetoothManager) context.getSystemService(
+                Context.BLUETOOTH_SERVICE
+            );
+        if (manager == null) {
+            return "unavailable";
+        }
+
+        BluetoothAdapter adapter =
+            manager.getAdapter();
+        if (adapter == null) {
+            return "unavailable";
+        }
+
+        try {
+            return adapter.isEnabled()
+                ? "enabled"
+                : "disabled";
+        } catch (SecurityException exception) {
+            return "unknown-permission";
+        }
+    }
+
+    private String locationServicesState() {
+        LocationManager manager =
+            (LocationManager) context.getSystemService(
+                Context.LOCATION_SERVICE
+            );
+        if (manager == null) {
+            return "unavailable";
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT
+                >= Build.VERSION_CODES.P) {
+                return manager.isLocationEnabled()
+                    ? "enabled"
+                    : "disabled";
+            }
+
+            boolean enabled =
+                manager.isProviderEnabled(
+                    LocationManager.GPS_PROVIDER
+                )
+                    || manager.isProviderEnabled(
+                        LocationManager.NETWORK_PROVIDER
+                    );
+            return enabled
+                ? "enabled"
+                : "disabled";
+        } catch (RuntimeException exception) {
+            return "unknown";
+        }
+    }
+
+    private String legacyBleLocationGateState() {
+        if (Build.VERSION.SDK_INT
+            >= Build.VERSION_CODES.S) {
+            return "not-applicable";
+        }
+
+        String permission =
+            permissionState(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Build.VERSION_CODES.M
+            );
+        String location =
+            locationServicesState();
+
+        if ("granted".equals(permission)
+            && "enabled".equals(location)) {
+            return "open";
+        }
+        if ("denied".equals(permission)
+            || "disabled".equals(location)) {
+            return "closed";
+        }
+        return "unknown";
+    }
+
+    private String permissionState(
+        String permission,
+        int requiredFromApi
+    ) {
+        if (Build.VERSION.SDK_INT
+            < requiredFromApi) {
+            return "not-required";
+        }
+
+        return context.checkSelfPermission(
+            permission
+        ) == PackageManager.PERMISSION_GRANTED
+            ? "granted"
+            : "denied";
     }
 
     private void addLogFiles(ZipOutputStream zip)
