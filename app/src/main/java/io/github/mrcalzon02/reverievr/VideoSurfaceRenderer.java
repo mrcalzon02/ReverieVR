@@ -91,7 +91,7 @@ final class VideoSurfaceRenderer {
     }
 
     void onSurfaceCreated() {
-        shutdown();
+        abandonStaleContextObjects();
 
         program = buildProgram(VERTEX_SHADER, FRAGMENT_SHADER);
         positionHandle = GLES20.glGetAttribLocation(program, "a_Position");
@@ -174,12 +174,7 @@ final class VideoSurfaceRenderer {
     }
 
     void shutdown() {
-        SurfaceTexture activeSurface = surfaceTexture;
-        surfaceTexture = null;
-        if (activeSurface != null) {
-            activeSurface.setOnFrameAvailableListener(null);
-            activeSurface.release();
-        }
+        releaseSurfaceTexture();
 
         if (texture != 0) {
             GLES20.glDeleteTextures(1, new int[] {texture}, 0);
@@ -188,6 +183,32 @@ final class VideoSurfaceRenderer {
         if (program != 0) {
             GLES20.glDeleteProgram(program);
             program = 0;
+        }
+        frameAvailable.set(false);
+    }
+
+    private void abandonStaleContextObjects() {
+        releaseSurfaceTexture();
+
+        // onSurfaceCreated means a new EGL context. Numeric GL object names
+        // from the previous context are no longer ours to delete here.
+        texture = 0;
+        program = 0;
+        positionHandle = -1;
+        uvHandle = -1;
+        mvpHandle = -1;
+        surfaceTransformHandle = -1;
+        textureHandle = -1;
+        frameAvailable.set(false);
+        Matrix.setIdentityM(surfaceTransform, 0);
+    }
+
+    private void releaseSurfaceTexture() {
+        SurfaceTexture activeSurface = surfaceTexture;
+        surfaceTexture = null;
+        if (activeSurface != null) {
+            activeSurface.setOnFrameAvailableListener(null);
+            activeSurface.release();
         }
         frameAvailable.set(false);
     }
