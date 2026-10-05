@@ -33,6 +33,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVideoTogglePauseRequested();
         void onVideoSeekRequested(int deltaMillis);
         void onVideoStopRequested();
+        void onHeadBindingDelta(
+            float yawDeltaRadians,
+            float pitchDeltaRadians
+        );
     }
 
     private static final int TEXTURE_WIDTH = 1024;
@@ -130,6 +134,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private float yawOffsetRadians;
     private float userIpdMeters;
     private float uiScale;
+    private boolean bindingHeadInitialized;
+    private float previousBindingYaw;
+    private float previousBindingPitch;
 
     VrShellRenderer(
         ReveriePreferences preferences,
@@ -249,6 +256,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
         headTransform.getHeadView(rawHeadView, 0);
         headTransform.getEulerAngles(headEuler, 0);
         headTransform.getForwardVector(headForward, 0);
+
+        float bindingPitch = headEuler[0];
+        float bindingYaw = headEuler[1];
+        if (bindingHeadInitialized) {
+            host.onHeadBindingDelta(
+                wrapAngle(bindingYaw - previousBindingYaw),
+                bindingPitch - previousBindingPitch
+            );
+        } else {
+            bindingHeadInitialized = true;
+        }
+        previousBindingYaw = bindingYaw;
+        previousBindingPitch = bindingPitch;
 
         if (recenterRequested.getAndSet(false)) {
             yawOffsetRadians = headEuler[1];
@@ -1313,6 +1333,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return trimmed;
         }
         return trimmed.substring(0, Math.max(0, maxLength - 1)) + "…";
+    }
+
+    private static float wrapAngle(float value) {
+        float result = value;
+        while (result > Math.PI) {
+            result -= (float) (Math.PI * 2.0);
+        }
+        while (result < -Math.PI) {
+            result += (float) (Math.PI * 2.0);
+        }
+        return result;
     }
 
     private static void rotateYaw(

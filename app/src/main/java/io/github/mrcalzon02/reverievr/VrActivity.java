@@ -25,7 +25,8 @@ public final class VrActivity extends Activity
         VrShellRenderer.Host,
         LocalVideoPlayer.Listener,
         InputManager.InputDeviceListener,
-        VrInputRouter.Listener {
+        VrInputRouter.Listener,
+        VrInputRouter.BindingListener {
 
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
 
@@ -36,6 +37,8 @@ public final class VrActivity extends Activity
     private LocalVideoPlayer videoPlayer;
     private InputManager inputManager;
     private VrInputRouter inputRouter;
+    private InputBindingManager inputBindingManager;
+    private InputBindingEngine inputBindingEngine;
 
     private boolean inputDeviceListenerRegistered;
     private volatile String controllerConnectionMessage =
@@ -50,13 +53,20 @@ public final class VrActivity extends Activity
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         enterImmersiveMode();
 
+        ReverieApplication application =
+            (ReverieApplication) getApplication();
         controllerManager =
-            ((ReverieApplication) getApplication()).getControllerManager();
+            application.getControllerManager();
+        inputBindingManager =
+            application.getInputBindingManager();
+        inputBindingEngine =
+            inputBindingManager.getEngine();
         preferences = new ReveriePreferences(this);
         videoPlayer = new LocalVideoPlayer(this, this);
         inputManager =
             (InputManager) getSystemService(Context.INPUT_SERVICE);
         inputRouter = new VrInputRouter(this);
+        inputRouter.setBindingListener(this);
 
         CardboardView.setUseCardboardGlSurfaceView(true);
         cardboardView = new CardboardView(this);
@@ -110,6 +120,9 @@ public final class VrActivity extends Activity
     protected void onPause() {
         unregisterInputDeviceListener();
 
+        if (inputBindingEngine != null) {
+            inputBindingEngine.releaseAll();
+        }
         if (videoPlayer != null) {
             videoPlayer.pauseForLifecycle();
         }
@@ -167,6 +180,12 @@ public final class VrActivity extends Activity
     ) {
         controllerConnectionMessage =
             message == null ? "" : message;
+
+        if (state != ControllerProvider.ConnectionState.READY
+            && inputBindingEngine != null) {
+            inputBindingEngine.releaseAll();
+        }
+
         refreshInputSourceStatus();
     }
 
@@ -240,6 +259,53 @@ public final class VrActivity extends Activity
         }
     }
 
+    @Override
+    public void onBindingDigital(
+        BindingInput input,
+        boolean down,
+        String source
+    ) {
+        if (inputBindingEngine != null) {
+            inputBindingEngine.submitDigital(
+                input,
+                down
+            );
+        }
+    }
+
+    @Override
+    public void onBindingAxis(
+        BindingInput input,
+        float value,
+        String source
+    ) {
+        if (inputBindingEngine != null) {
+            inputBindingEngine.submitAxis(
+                input,
+                value
+            );
+        }
+    }
+
+    @Override
+    public void onHeadBindingDelta(
+        float yawDeltaRadians,
+        float pitchDeltaRadians
+    ) {
+        if (inputBindingEngine == null) {
+            return;
+        }
+
+        inputBindingEngine.submitRelative(
+            BindingInput.HEAD_YAW_DELTA,
+            yawDeltaRadians
+        );
+        inputBindingEngine.submitRelative(
+            BindingInput.HEAD_PITCH_DELTA,
+            pitchDeltaRadians
+        );
+    }
+
     private void adjustMediaVolume(int direction) {
         AudioManager audio =
             (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -273,6 +339,9 @@ public final class VrActivity extends Activity
 
     @Override
     public void onInputDeviceRemoved(int deviceId) {
+        if (inputBindingEngine != null) {
+            inputBindingEngine.releaseAll();
+        }
         refreshInputSourceStatus();
     }
 
