@@ -86,6 +86,10 @@ final class ControllerServer implements AutoCloseable {
         return connected;
     }
 
+    boolean isRunning() {
+        return running;
+    }
+
     void start() {
         if (running) {
             return;
