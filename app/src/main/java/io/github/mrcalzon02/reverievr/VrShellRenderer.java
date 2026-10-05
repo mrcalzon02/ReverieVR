@@ -26,6 +26,11 @@ import javax.microedition.khronos.egl.EGLConfig;
 
 final class VrShellRenderer implements CardboardView.Renderer {
     interface Host {
+        void onVrFirstFrameRendered();
+        void onVrRendererFailure(
+            String phase,
+            Throwable throwable
+        );
         void onExitToPhoneRequested();
         void onSetupCompleted();
         void onControllerRecenterRequested();
@@ -163,8 +168,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] headForward = new float[3];
     private final float[] adjustedHeadForward = new float[3];
 
-    private final AtomicBoolean selectRequested = new AtomicBoolean();
-    private final AtomicBoolean backRequested = new AtomicBoolean();
+    private final AtomicBoolean firstFrameReported =
+        new AtomicBoolean();
+    private final AtomicBoolean selectRequested =
+        new AtomicBoolean();
+    private final AtomicBoolean backRequested =
+        new AtomicBoolean();
     private final AtomicBoolean recenterRequested = new AtomicBoolean();
     private final AtomicInteger phoneBattery = new AtomicInteger(-1);
     private final AtomicInteger controllerBattery = new AtomicInteger(-1);
@@ -182,6 +191,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile String activeDosModuleName = "";
     private int dosLibraryPage;
     private boolean nativeSurfaceReady;
+    private volatile boolean rendererFailed;
 
     private int program;
     private int texture;
@@ -383,6 +393,23 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     @Override
     public void onNewFrame(HeadTransform headTransform) {
+        if (rendererFailed) {
+            return;
+        }
+
+        try {
+            onNewFrameInternal(headTransform);
+        } catch (RuntimeException | LinkageError failure) {
+            reportRendererFailure(
+                "new-frame",
+                failure
+            );
+        }
+    }
+
+    private void onNewFrameInternal(
+        HeadTransform headTransform
+    ) {
         long frameNanos = System.nanoTime();
         performanceTracker.recordFrame(frameNanos);
         if (lastPerformanceLogNanos == 0L) {
@@ -594,6 +621,23 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     @Override
     public void onDrawEye(CardboardView.Eye eye) {
+        if (rendererFailed) {
+            return;
+        }
+
+        try {
+            onDrawEyeInternal(eye);
+        } catch (RuntimeException | LinkageError failure) {
+            reportRendererFailure(
+                "draw-eye",
+                failure
+            );
+        }
+    }
+
+    private void onDrawEyeInternal(
+        CardboardView.Eye eye
+    ) {
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glClearColor(0.015f, 0.02f, 0.025f, 1.0f);
         GLES20.glClear(
@@ -685,6 +729,28 @@ final class VrShellRenderer implements CardboardView.Renderer {
         drawPowerHudOverlay();
     }
 
+    private void reportRendererFailure(
+        String phase,
+        Throwable throwable
+    ) {
+        if (rendererFailed) {
+            return;
+        }
+        rendererFailed = true;
+
+        ReverieLog.error(
+            "VR_RENDERER",
+            "Renderer failed during "
+                + phase
+                + ".",
+            throwable
+        );
+        host.onVrRendererFailure(
+            phase,
+            throwable
+        );
+    }
+
     private void drawUiPanel(
         CardboardView.Eye eye,
         float eyeCorrection,
@@ -762,6 +828,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     @Override
     public void onFinishFrame(Viewport viewport) {
+        if (!rendererFailed
+            && firstFrameReported.compareAndSet(
+                false,
+                true
+            )) {
+            host.onVrFirstFrameRendered();
+        }
     }
 
     @Override
@@ -771,6 +844,23 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     @Override
     public void onSurfaceCreated(EGLConfig config) {
+        if (rendererFailed) {
+            return;
+        }
+
+        try {
+            initializeSurface(config);
+        } catch (RuntimeException | LinkageError failure) {
+            reportRendererFailure(
+                "surface-create",
+                failure
+            );
+        }
+    }
+
+    private void initializeSurface(
+        EGLConfig config
+    ) {
         videoRenderer.onSurfaceCreated();
         dosRenderer.onSurfaceCreated();
         nativeSurfaceReady = false;
