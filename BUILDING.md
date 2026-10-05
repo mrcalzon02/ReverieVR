@@ -36,6 +36,26 @@ Expected:
 
     5969239e7c87f4cd64c8ec170ce1e7f4eb559e37
 
+## DOSBox Pure source
+
+The DOS runtime is pinned separately from the Cardboard submodule.
+
+Fetch and verify the accepted DOSBox Pure baseline:
+
+    ./scripts/fetch-dosbox-pure.sh
+
+Windows:
+
+    scripts\fetch-dosbox-pure.bat
+
+Expected commit:
+
+    a4a0bab7f8931433588f2fcad9045c85b277373d
+
+The checkout lives at `third_party/dosbox-pure/src` and is intentionally ignored by ReverieVR git. The committed pin/provenance record is `third_party/dosbox-pure/README.md`.
+
+The normal Android build does not yet require this checkout until the native libretro frontend is activated. Once DOSBox Pure binaries are distributed, GPL corresponding-source/rebuild material becomes a release acceptance requirement.
+
 ## Local setup
 
 Install:
@@ -92,6 +112,16 @@ GitHub Release assets must keep unambiguous package names. The headset updater o
 ## scrcpy diagnostic workflow
 
 scrcpy is an optional developer tool, not a ReverieVR runtime dependency.
+
+For DOS keyboard/mouse validation, current scrcpy supports physical-HID presentation:
+
+    scrcpy --keyboard=uhid --mouse=uhid --stay-awake --no-audio
+
+or the short form:
+
+    scrcpy -KM --stay-awake --no-audio
+
+UHID is preferred for DOS because the mouse is relative/captured like a physical HID mouse. The ordinary scrcpy SDK keyboard/mouse modes are also supported where Android delivers their injected key/mouse events, but SDK mouse input is absolute rather than a true captured relative mouse.
 
 Requirements:
 

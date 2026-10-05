@@ -226,6 +226,23 @@ Modules must not bypass platform settings or silently replace global controls.
 
 **Gate:** at least one internal sample module loads, runs, pauses, resumes, returns to VR home, and respects platform settings.
 
+### DOS hosted-runtime vertical slice
+
+After the generic module lifecycle exists, implement the first substantial hosted runtime against that contract:
+
+- pin/fetch DOSBox Pure under the accepted GPLv2+ policy;
+- provide a small ReverieVR libretro frontend rather than launching an external DOSBox Android application;
+- feed DOSBox Pure a stable app-private filesystem path;
+- provide save/system directories owned by ReverieVR;
+- bridge software video frames and audio into the VR host;
+- poll the ReverieVR virtual keyboard/mouse/joystick bus;
+- allow real Bluetooth/USB/scrcpy HID keyboard/mouse passthrough to coexist with Daydream/head-derived bindings;
+- reserve a host-only overlay/recovery input that the guest cannot permanently consume;
+- expose the in-VR binding/profile overlay without terminating the DOS session;
+- keep game content user-provided; do not bundle commercial DOS software.
+
+**Gate:** at least one legally distributable DOS test package boots from a generic imported module, receives configurable controller/head bindings plus real keyboard/mouse input, opens/closes the host overlay safely, saves state/configuration where appropriate, and returns to ReverieVR Home without restarting the application.
+
 ## Phase 7 — Local VR video player
 
 Implement local media playback after the shell is stable.

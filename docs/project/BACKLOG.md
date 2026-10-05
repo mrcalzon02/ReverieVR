@@ -35,7 +35,8 @@
 
 - RV-0200 — VR/display settings.
 - RV-0201 — performance/quality settings and dynamic fallback.
-- RV-0202 — input mapping settings.
+- RV-0202 — Implement persistent input mapping settings and in-VR binding editor over the virtual keyboard/mouse/joystick output bus.
+- RV-0207 — Implement standard Bluetooth/USB/scrcpy keyboard and mouse passthrough into the virtual guest keyboard/mouse, including relative pointer capture for hosted DOS sessions and a host-reserved overlay/recovery control.
 - RV-0203 — audio settings.
 - RV-0204 — player defaults.
 - RV-0205 — developer/diagnostic settings.
@@ -62,6 +63,10 @@
 - RV-0400 — Define module lifecycle/API.
 - RV-0401 — Implement sample internal module.
 - RV-0402 — Enforce platform settings/input/performance contracts.
+- RV-0410 — Integrate pinned DOSBox Pure as a ReverieVR-hosted libretro DOS runtime under the accepted GPLv2+ distribution policy.
+- RV-0411 — Implement generic DOS game-module import/library for DOSBox Pure content, with app-private full-path copies, per-module launch state, saves/configuration, and binding-profile association.
+- RV-0412 — Implement hosted DOS video/audio/input bridge and lifecycle: core load/run/pause/resume/unload, framebuffer/audio delivery, virtual keyboard/mouse/joystick polling, save directory, and safe return to ReverieVR Home.
+- RV-0413 — Implement in-game quick overlay for DOS modules with binding editor, profile selection, pause/resume, recenter, audio, Home, and Exit/Recovery.
 
 ## P6 — Media player
 

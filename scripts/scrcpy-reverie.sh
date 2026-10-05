@@ -11,5 +11,6 @@ echo "ReverieVR scrcpy diagnostic session"
 echo "  baseline: --stay-awake --no-audio"
 echo "  NOTE: do not use --turn-screen-off while the phone is in the VR headset."
 echo "  NOTE: close scrcpy before formal performance/thermal acceptance runs."
+echo "  DOS HID: add --keyboard=uhid --mouse=uhid (or -KM) for physical-HID semantics."
 
 exec scrcpy --stay-awake --no-audio "$@"

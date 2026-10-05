@@ -4,6 +4,21 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### DOS modules, bindings and standard HID
+
+- Added a stateful virtual input binding engine that maps Daydream/controller/gamepad/head signals into virtual keyboard, mouse and joystick outputs.
+- Added press/release lifetime, analog/threshold transforms, deadzones, sensitivity scaling and persistent versioned binding profiles.
+- Added built-in starter profiles for Doom-style DOS control, generic head-mouse FPS control and touchpad absolute-cursor control.
+- Added direct Bluetooth/USB/Android HID keyboard passthrough and mouse buttons, relative/absolute motion and wheel input.
+- Added mouse delivery through both generic-motion and mouse-sourced pointer dispatch to cover Android HID behavior.
+- Added a generic Stage A DOS module importer for DOSBox Pure-supported content, copied into app-private storage with stable full paths.
+- Added persistent DOS module metadata/listing and library clearing without deleting the user's original source files.
+- Accepted GPLv2/GPLv2+ for the embedded DOS runtime and pinned DOSBox Pure `1.0-preview6` / `a4a0bab7f8931433588f2fcad9045c85b277373d`.
+- Added verified DOSBox Pure fetch scripts and recorded corresponding-source/release obligations.
+- Left the native libretro frontend, framebuffer/audio bridge, in-game binding overlay and directory-tree import as the next DOS-host implementation gates.
+
+
+
 ### Global VR power HUD
 
 - Added a separate persistent stereo PHONE/CTRL battery HUD with two real progress bars.

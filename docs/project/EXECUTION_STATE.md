@@ -7,7 +7,7 @@
 
 - Repository: `mrcalzon02/ReverieVR`
 - Branch: `main`
-- Current implementation baseline immediately below this documentation update: `83e20d381043d8b6a3739604aa76e42a34945620`.
+- Current implementation baseline immediately below this documentation update: `30975c73c1732c3ded2d63ed9256f7170cc564c9`.
 - Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
@@ -310,6 +310,72 @@ Remaining gates:
 - verify the provisional look-up threshold feels natural;
 - validate controller orientation axes before adding controller-pointing-up as an alternate reveal trigger;
 - confirm no meaningful frame-time or thermal regression.
+
+### RV-0202 / RV-0207 — virtual bindings and standard HID
+
+State: **draft**
+
+Implemented:
+
+- stateful `InputBindingEngine` distinct from one-shot shell navigation actions;
+- versioned persistent binding-profile codec;
+- source signals for Select/Back/Recenter/volume, navigation, touchpad axes, Android gamepad axes, and head yaw/pitch deltas;
+- transforms for digital, analog, positive-threshold and negative-threshold mappings;
+- configurable scale, deadzone and threshold values;
+- virtual guest keyboard with held-key lifetime;
+- virtual mouse buttons, relative deltas, absolute pointer coordinates and wheel accumulator;
+- virtual joystick axes/buttons;
+- release-all behavior on profile change, Activity pause, controller disconnect and input-device removal;
+- built-in starter profiles for DOS Doom-style control, generic head-mouse FPS control, and touchpad absolute-cursor control;
+- direct Android HID keyboard passthrough for common DOS keys;
+- direct Android HID mouse passthrough for left/right/middle buttons, relative/absolute motion and wheel;
+- mouse events intercepted through both generic-motion and mouse-sourced pointer dispatch;
+- pure-Java tests for held/released keys, threshold release, relative mouse accumulation, profile persistence, DOS content extensions and virtual mouse cleanup.
+
+Remaining gates:
+
+- actual Bluetooth keyboard test;
+- actual Bluetooth/USB mouse test;
+- scrcpy SDK and UHID input validation;
+- relative pointer capture while a hosted DOS session owns the mouse;
+- in-VR binding overlay/editor and host-reserved escape path.
+
+### RV-0410 / RV-0411 — DOS runtime baseline and modules
+
+State: **draft**
+
+Selected runtime:
+
+- DOSBox Pure;
+- tag `1.0-preview6`;
+- pinned commit `a4a0bab7f8931433588f2fcad9045c85b277373d`;
+- GPLv2 or later explicitly accepted for this integration;
+- upstream Android NDK build already supports `armeabi-v7a` and `arm64-v8a`;
+- upstream libretro metadata advertises keyboard/mouse focus and direct content support for ZIP/DOSZ, EXE/COM/BAT, ISO/CHD/CUE, IMG/IMA/VHD/JRC, M3U/M3U8, CONF and directories.
+
+Implemented module foundation:
+
+- Stage A DOS import panel;
+- Android document picker for file/container imports;
+- background copy into `files/dos-modules/<module-id>/content`;
+- sanitized stable native filesystem path;
+- per-module metadata file with display name, original filename, binding-profile id and import timestamp;
+- module listing/deletion repository;
+- explicit warning in design that a bare EXE is insufficient for games that depend on sibling assets;
+- pinned upstream fetch scripts with dirty-checkout refusal and post-checkout SHA verification;
+- DOSBox Pure source checkout excluded from ReverieVR git history while the pin/provenance stays committed.
+
+Remaining gates:
+
+- native libretro frontend;
+- DOSBox Pure shared-core build integration;
+- framebuffer/audio bridge;
+- core environment/options/save directories;
+- virtual input polling;
+- module selection in VR Home;
+- directory-tree import;
+- per-module binding/profile editing;
+- first legal test content, with Doom shareware as one suitable validation candidate rather than a hard-coded dependency.
 
 ## Performance posture
 
