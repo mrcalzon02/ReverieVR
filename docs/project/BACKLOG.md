@@ -15,6 +15,7 @@
 - RV-0090 — Implement conventional 2D touchscreen boot/setup surface.
 - RV-0091 — Implement controller pairing/sync, readiness state, and controller test workflow.
 - RV-0092 — Implement explicit 2D-to-VR entry plus safe fallback/recovery to 2D setup.
+- RV-0093 — Implement optional authoritative GitHub Release update checking, user-notified Update/Not now choice, APK integrity validation when a digest is published, and Android package-installer handoff.
 
 ## P2 — VR shell/menu
 
@@ -37,6 +38,16 @@
 - RV-0204 — player defaults.
 - RV-0205 — developer/diagnostic settings.
 - RV-0206 — Implement user optical/IPD calibration separately from the physical viewer profile: persistent user IPD, live per-eye alignment correction, binocular fusion test pattern, safe reset/default, and device-validated limits.
+- RV-0210 — Implement a persistent global comfort-preference profile that hosted modules can consume: seated mode, snap/smooth turning, turn speed, vignette/tunneling preference, movement direction, and related safe defaults.
+- RV-0211 — Implement universal recenter and seated-height/forward-offset recovery accessible from the shell and controller without digging through module menus.
+- RV-0212 — Implement UI accessibility controls: text/UI scale, contrast, brightness/gamma guidance, dark interface, and no color-only critical states.
+- RV-0213 — Implement audio accessibility defaults: subtitles/captions, caption size/background/position, visual alternatives for critical audio, mono/balance options where practical.
+- RV-0214 — Implement input accessibility and fallback: configurable actions, one-controller navigation, left/right-hand presentation, larger targeting tolerance, optional gaze/dwell selection, and no precision-timing requirement for essential shell actions.
+- RV-0215 — Implement controller-quality controls: gyro recalibration, drift/deadzone settings, touch sensitivity/deadzone, disconnect pause/reconnect overlay, and recovery without losing module state.
+- RV-0216 — Implement a universal quick-access panel for battery, time/session status, volume, brightness, thermal/performance state, recenter, Settings, Home, and Exit/Recovery.
+- RV-0217 — Implement nonblocking notification policy with user-selectable categories, durations, placement, animation/reduced-motion behavior, and no mandatory center-screen modal for routine status.
+- RV-0218 — Implement optional session timer and break reminders with complete opt-out.
+- RV-0219 — Research an optional S9 rear-camera 'real-world peek' mode. Treat it as a convenience view, not room-scale passthrough or a safety boundary, and reject it if latency/distortion is uncomfortable.
 
 ## P4 — Performance baseline
 

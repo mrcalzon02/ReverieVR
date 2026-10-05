@@ -119,6 +119,45 @@ The wizard combines teaching with real configuration:
 
 Each page must have a safe default and must not trap the user. Progress is resumable. Settings exposes both **Run VR Setup Again** and direct individual calibration tools. The setup flow is versioned so a future new critical calibration can be introduced without replaying unrelated completed steps.
 
+## Stage A update system
+
+RV-0093 now has a draft implementation.
+
+The Stage A menu:
+
+- optionally checks for updates at launch;
+- can be checked manually;
+- queries only `https://api.github.com/repos/mrcalzon02/ReverieVR/releases/latest`;
+- treats the absence of any published release as a normal state;
+- requires a newer release and a trusted GitHub-hosted APK asset before enabling Update;
+- shows release notes and gives the user **Update / Not now**;
+- never silently installs;
+- uses Android Download Manager and Android's package installer;
+- verifies GitHub's published SHA-256 asset digest when one is present;
+- leaves core VR operation offline-capable when update checks are disabled or unavailable.
+
+The repository currently has **no published GitHub Releases**, so the expected live result today is "No published ReverieVR release exists yet."
+
+## VR quality-of-life research outcome
+
+The platform should treat user preferences as **system-level defaults** rather than forcing repetitive setup per module.
+
+High-priority requirements now include:
+
+- remembered comfort defaults;
+- universal recenter/seated-height recovery;
+- readable scalable/high-contrast UI;
+- captions and visual alternatives to critical audio;
+- one-controller/remappable input and optional gaze/dwell shell fallback;
+- reduced-motion behavior;
+- controller drift/deadzone/sensitivity calibration and reconnect recovery;
+- a universal quick-access panel;
+- nonblocking notifications that avoid routine center-screen interruption;
+- optional session/break reminders;
+- research-only real-world camera peek, clearly distinguished from true passthrough.
+
+Automatic convenience behaviors remain user-toggleable unless disabling them would destroy recoverability.
+
 ## Environment limitation observed
 
 The current execution environment has Java but does not have Gradle, Android SDK/build tools, or ADB. Therefore no APK build or device/runtime claim was made.

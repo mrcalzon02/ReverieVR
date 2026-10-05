@@ -33,7 +33,11 @@ Required capabilities:
 - pre-VR device/runtime diagnostics;
 - explicit **Enter VR** action;
 - safe fallback if VR initialization fails;
-- persistent route back to this setup mode for recovery.
+- persistent route back to this setup mode for recovery;
+- optional startup update check against **only** the authoritative `mrcalzon02/ReverieVR` GitHub Releases feed;
+- clear installed/current release status;
+- explicit **Update / Not now** choice when a newer stable release with an APK asset exists;
+- no silent install and no update dependency for offline VR use.
 
 The setup surface must remain intentionally lightweight. It exists to make VR entry reliable, not to become a second full launcher.
 
@@ -142,6 +146,19 @@ Software IPD correction cannot physically move fixed lenses. The interface must 
 - stereoscopic layout;
 - subtitle defaults;
 - playback comfort settings.
+
+### Accessibility, comfort, and quality of life
+- persistent global comfort defaults that modules can consume rather than forcing the same choices in every experience;
+- universal recenter and seated-height recovery;
+- scalable/high-contrast UI and no color-only critical information;
+- captions/subtitles and visual alternatives for critical audio cues;
+- one-controller/remappable input and optional gaze/dwell shell fallback;
+- reduced-motion options for UI animation and peripheral motion;
+- controller drift/deadzone/sensitivity calibration;
+- nonblocking status notifications;
+- optional session timer/break reminders;
+- universal quick-access panel for battery, volume, brightness, thermal state, recenter, Home, Settings, and recovery;
+- automatic QoL behaviors must be user-toggleable unless required to preserve safety/recoverability.
 
 ### Developer/diagnostics
 - build/version data;

@@ -19,10 +19,12 @@ Acceptance states:
 | RV-0090 | 2D touchscreen boot/setup surface | **draft** | UI source, real phone battery reporting, persisted QoL toggles, recovery reset, and honest readiness gates are on remote `main`; APK/device launch still required. |
 | RV-0091 | Controller pairing/readiness workflow | planned | Pair / Sync and Test actions exist in the UI but remain disabled until the verified Daydream controller stack is implemented. |
 | RV-0092 | 2D-to-VR transition/recovery | planned | Enter VR exists but is disabled until Stage B is implemented and verified. |
+| RV-0093 | GitHub Release updater | **draft** | Source checks only the authoritative repository, supports optional launch checks, user Update/Not now choice, release notes, APK download, optional SHA-256 verification, and Android installer handoff. Build/device verification still required. |
 | RV-0100 | VR home/menu | planned | Must be operable in headset without touchscreen dependency after successful VR entry. |
 | RV-0106 | Shell-global handset/controller power HUD | planned | Stage A already stores the user preference; Stage B must keep real handset/controller battery status available across home/player/modules and represent unavailable controller telemetry honestly. |
 | RV-0107 | Optional gaze-adaptive status HUD/QoL toggles | planned | Stage A already stores the look-up-reveal preference; Stage B must implement user-toggleable adaptive reveal/retract and preserve a predictable persistent/manual fallback when disabled. |
 | RV-0108 | First-VR-run onboarding/calibration wizard | planned | Must be versioned, resumable, skippable with safe defaults, teach controls while configuring the user profile, and support complete or per-tool re-entry from Settings. |
 | RV-0206 | User optical/IPD calibration | planned | Must preserve the physical viewer profile, expose persistent user IPD/alignment correction with live in-headset calibration and reset, and pass reference-device optical/comfort validation. |
+| RV-0210..0219 | Comfort/accessibility/QoL baseline | planned | Research record identifies system-level preferences, recenter/recovery, readable UI, captions, flexible input, controller calibration, quick access, nonblocking notifications, optional breaks, and camera-peek feasibility. Each feature retains an opt-out where automation is nonessential. |
 | RV-0300 | Retro performance fixture | planned | Requires on-device sustained performance evidence. |
 | RV-0500 | Local VR media player | planned | Requires on-device playback and thermal validation. |
