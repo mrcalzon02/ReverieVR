@@ -75,7 +75,6 @@ public final class MainActivity extends Activity
     private Switch batteryHudSwitch;
     private Switch lookUpRevealSwitch;
     private Switch showPercentagesSwitch;
-    private Switch retroModeSwitch;
     private Switch autoUpdateCheckSwitch;
 
     private Button pairControllerButton;
@@ -218,7 +217,6 @@ public final class MainActivity extends Activity
         batteryHudSwitch = findViewById(R.id.battery_hud_switch);
         lookUpRevealSwitch = findViewById(R.id.look_up_reveal_switch);
         showPercentagesSwitch = findViewById(R.id.show_percentages_switch);
-        retroModeSwitch = findViewById(R.id.retro_mode_switch);
         autoUpdateCheckSwitch = findViewById(R.id.auto_update_check_switch);
 
         pairControllerButton = findViewById(R.id.pair_controller_button);
@@ -249,9 +247,6 @@ public final class MainActivity extends Activity
         );
         showPercentagesSwitch.setOnCheckedChangeListener(
             (button, checked) -> preferences.setShowPercentagesEnabled(checked)
-        );
-        retroModeSwitch.setOnCheckedChangeListener(
-            (button, checked) -> preferences.setRetroModeEnabled(checked)
         );
         autoUpdateCheckSwitch.setOnCheckedChangeListener(
             (button, checked) -> preferences.setAutoUpdateCheckEnabled(checked)
@@ -1007,7 +1002,6 @@ public final class MainActivity extends Activity
         showPercentagesSwitch.setChecked(
             preferences.isShowPercentagesEnabled()
         );
-        retroModeSwitch.setChecked(preferences.isRetroModeEnabled());
         autoUpdateCheckSwitch.setChecked(
             preferences.isAutoUpdateCheckEnabled()
         );
