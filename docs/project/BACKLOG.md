@@ -14,7 +14,8 @@
 ## P1 — Pre-VR boot and controller readiness
 
 - RV-0090 — Implement conventional 2D touchscreen boot/setup surface.
-- RV-0091 — Implement controller pairing/sync, readiness state, battery telemetry, pose/button/touch decoding, recenter command, and controller test workflow. Daydream BLE is the reference backend; future controller types use the same provider abstraction.
+- RV-0091 — Implement controller pairing/sync, readiness state, battery telemetry where available, pose/button/touch decoding, recenter behavior, and controller test workflow. Reference sources are physical Daydream BLE, a paired Android phone using the historical controller-emulator RFCOMM protocol, and ordinary Android gamepads/joysticks through the normalized action layer.
+- RV-0094 — Implement an optional independently authored **ReverieVR Controller** companion APK for a spare Android phone: gyroscope/orientation, touchpad surface, primary/App/Home controls, RFCOMM compatibility transport, clear connection state, and no dependency on Google VR Services.
 - RV-0092 — Implement explicit 2D-to-VR entry plus safe fallback/recovery to 2D setup.
 - RV-0093 — Implement optional authoritative GitHub Release update checking, user-notified Update/Not now choice, APK integrity validation when a digest is published, and Android package-installer handoff.
 
@@ -22,7 +23,7 @@
 
 - RV-0100 — Implement stereoscopic ReverieVR home shell.
 - RV-0101 — Implement seated head-look orientation and reticle.
-- RV-0102 — Implement controller/input action abstraction.
+- RV-0102 — Implement controller/input action abstraction across Daydream BLE, phone-controller emulator input, Cardboard trigger/system controls, and Android gamepad/joystick events.
 - RV-0103 — Implement VR-operable menu.
 - RV-0104 — Implement persistent settings model and safe-reset path.
 - RV-0105 — Implement in-headset diagnostics/performance display.

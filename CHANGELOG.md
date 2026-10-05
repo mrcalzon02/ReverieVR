@@ -16,6 +16,11 @@ All entries describe verified project/repository changes. Planned work belongs i
 ### VR runtime and controller integration
 
 - Added an independent Android BLE backend for the Daydream controller: discovery, bonding, GATT connection, pose/input packet decoding, battery/voltage telemetry, recenter command, and a live Stage A input test.
+- Added a multi-provider controller manager: physical Daydream BLE and historical second-phone Daydream controller-emulator RFCOMM are separate transports.
+- Added paired-phone controller selection using the historical RFCOMM UUID and an independently authored minimal protobuf-wire decoder for touch, orientation, sensor, and key events.
+- Added live Android gamepad/joystick detection as an alternate Stage-B readiness source.
+- Added a normalized `VrInputAction` router so physical Daydream, phone emulator, generic gamepad, and Cardboard trigger/system input share Select/Back/Recenter/navigation/volume semantics rather than leaking raw buttons into the VR activity.
+- Added pure-Java phone-controller protocol parser fixtures.
 - Added a generic controller-provider/manager boundary so later controller types do not require rewriting the VR shell.
 - Pinned Google Cardboard SDK v1.35.0 at commit `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37`.
 - Disabled Cardboard Vulkan and Unity-plugin native paths; ReverieVR uses the OpenGL ES path.
@@ -40,10 +45,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Added a native Java/XML Android application skeleton for the Stage A pre-headset setup surface.
 - Added a conventional touchscreen setup menu with device identification and real phone-battery reporting.
 - Added persistent quality-of-life toggles for the future VR battery HUD, look-up reveal behavior, numeric battery percentages, and retro performance-first mode.
-- Added visible controller Pair / Sync and Test actions; they remain disabled until the controller stack is genuinely implemented.
+- Added visible physical-controller Pair / Sync, paired-phone controller, and Test actions with honest readiness gating.
 - Added an Android Bluetooth-settings shortcut without claiming generic Bluetooth pairing is sufficient for the Daydream controller.
 - Added local settings reset/recovery behavior.
-- Added an Enter VR control that remains disabled until the Stage B runtime exists.
+- Added an Enter VR control gated on a usable dedicated controller source or Android gamepad/joystick.
 - Added build instructions and ADR-0003 establishing a lightweight native Android Stage A boundary.
 - Added the verified Gradle 9.6.1 wrapper and pinned both wrapper-JAR and distribution SHA-256 values.
 - No APK build or reference-device validation has yet been claimed.

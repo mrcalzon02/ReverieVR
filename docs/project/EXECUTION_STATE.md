@@ -29,7 +29,9 @@ Selected implementation baseline:
 - OpenGL ES rendering path;
 - Cardboard Vulkan and Unity-plugin native paths disabled;
 - direct Android BLE Daydream-controller provider;
-- controller abstraction kept independent of Cardboard so later Android/gamepad providers can be added without replacing the VR shell.
+- classic-Bluetooth RFCOMM receiver for a paired Android phone using the historical Daydream controller-emulator framing;
+- Android gamepad/joystick detection and key/axis routing;
+- normalized `VrInputAction` routing kept independent of Cardboard and transport-specific packet formats.
 
 Remaining gate: successful build plus Galaxy S9/headset/controller validation.
 
@@ -69,17 +71,21 @@ Implemented:
 - real phone battery display;
 - persistent QoL/settings controls;
 - controller Pair / Sync and live Test Controller flow;
+- paired-phone controller chooser for historical Daydream-compatible controller emulator apps;
+- live Android gamepad/joystick readiness detection;
 - update status/check controls;
 - local reset/recovery;
 - Enter VR gated on a ready controller.
 
 Remaining gate: build and reference-device interaction test.
 
-### RV-0091 — direct Daydream controller
+### RV-0091 / RV-0102 — controller sources and normalized input
 
 State: **draft**
 
 Implemented:
+
+**Physical Daydream controller**
 
 - Android-version-correct Bluetooth permissions;
 - BLE scan with Daydream service/name candidate matching and bounded timeout;
@@ -95,7 +101,44 @@ Implemented:
 - live Stage A controller diagnostics;
 - independent protocol provenance record.
 
-Remaining gate: physical Daydream-controller validation, including button/touch orientation and long-session stability.
+**Paired Android phone controller**
+
+- user-selectable paired Bluetooth-device chooser in Stage A;
+- classic Bluetooth RFCOMM connection to UUID `ab001ac1-d740-4abb-a8e6-1cb5a49628fa`;
+- independent 4-byte big-endian length framing;
+- independently authored minimal protobuf-wire decoder for motion/touch, gyroscope, accelerometer, orientation, and key events;
+- historical click/App/Home/volume key-code compatibility;
+- controller-phone battery deliberately reported unavailable because the transport does not expose trustworthy battery telemetry;
+- pure-Java protocol parser fixtures for orientation, touch motion, click-key events, and malformed length-delimited input.
+
+**Generic Android controller**
+
+- attached Android `SOURCE_GAMEPAD` / `SOURCE_JOYSTICK` devices can satisfy the Stage-B input-readiness gate;
+- device attach/remove/change notifications refresh Stage A and Stage B live;
+- A/center/Enter -> Select;
+- B/Back -> Back;
+- Start/Mode -> Recenter;
+- D-pad/hat/stick navigation emits normalized directional actions;
+- L1/R1 and left/right navigation can drive player seek;
+- generic gamepad battery remains unavailable unless a future Android/device-specific source exposes it honestly.
+
+**Action layer**
+
+- `VrInputRouter` is now the controller binding boundary;
+- physical Daydream, phone emulator, generic gamepad, Cardboard trigger, and Cardboard system/back controls terminate in named `VrInputAction` values;
+- volume actions adjust the Android music stream;
+- raw Daydream button interpretation is no longer embedded directly in `VrActivity`.
+
+Remaining gates:
+
+- build/unit-test execution;
+- physical Daydream-controller validation;
+- actual second-phone emulator RFCOMM validation;
+- generic Bluetooth/USB gamepad validation;
+- axis/polarity/comfort verification;
+- user-remapping UI remains RV-0202.
+
+A follow-on RV-0094 reserves an independently authored ReverieVR Controller companion APK so the long-term phone-controller fallback does not depend on Google's deprecated utility.
 
 ### RV-0092 / RV-0100 — Stage A -> Stage B and VR shell
 
@@ -103,7 +146,7 @@ State: **draft**
 
 Implemented:
 
-- Enter VR enabled only after controller readiness;
+- Enter VR enabled after either a dedicated controller provider is ready or an Android gamepad/joystick is attached;
 - application-scoped controller connection survives Activity transition by design;
 - landscape immersive `VrActivity`;
 - Cardboard stereoscopic/head-tracked rendering;

@@ -11,7 +11,7 @@ The initial reference target is a Samsung Galaxy S9 used with a Daydream View he
 The first product path is:
 
 1. launch into a conventional 2D touchscreen setup screen;
-2. pair/sync and verify the controller;
+2. pair/sync and verify a controller source — physical Daydream BLE is the reference path, with paired-phone Daydream-emulator compatibility and ordinary Android gamepads as alternate inputs;
 3. transition into the stereoscopic ReverieVR home space;
 4. operate normal platform functions from inside the headset using head-look plus the controller.
 
