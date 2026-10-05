@@ -177,6 +177,9 @@ Core headset/runtime operation must remain useful without an external service.
 ### Capability honesty
 No hidden stubs, swallowed failures, no-op compatibility shims, dummy success responses, or simulated service availability. Clearly marked scaffolding is allowed only when it cannot be mistaken for working behavior and is tracked as incomplete.
 
+### No inert user controls
+Every user-facing button, switch, menu item, setting, or action must invoke implemented, observable behavior at the time it is exposed. Do not ship placebo controls that only persist state, display a label, or suggest a capability without changing actual application behavior. Planned controls remain in design/backlog documentation until their behavior is wired. If an inert control is discovered, remove the exposed control and its orphaned preference/state wiring unless the underlying behavior is implemented in the same scoped change.
+
 ### Root-cause repair
 Repair authoritative source and architecture rather than generated output or layered compensating hacks.
 
