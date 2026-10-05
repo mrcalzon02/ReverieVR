@@ -1,0 +1,27 @@
+name = "reverievr-diagnostic-intake"
+main = "src/index.js"
+compatibility_date = "2026-10-05"
+workers_dev = true
+
+[vars]
+GITHUB_REPOSITORY = "mrcalzon02/ReverieVR"
+MAX_BUNDLE_BYTES = "26214400"
+MAX_EXPANDED_BYTES = "134217728"
+MAX_ZIP_ENTRIES = "128"
+RETENTION_DAYS = "30"
+RATE_LIMIT_PER_HOUR = "6"
+
+[[r2_buckets]]
+binding = "DIAGNOSTIC_BUNDLES"
+bucket_name = "reverievr-diagnostics"
+
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "DiagnosticRateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DiagnosticRateLimiter"]
+
+[triggers]
+crons = ["17 4 * * *"]
