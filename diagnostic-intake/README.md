@@ -45,7 +45,10 @@ the protected GitHub environment `diagnostic-intake` and expects:
 - `DIAGNOSTIC_GITHUB_APP_PRIVATE_KEY`
 
 The Cloudflare API token should be scoped only to the account/resources needed
-to deploy this Worker, its Durable Object, and its R2 binding.
+to deploy this Worker, its Durable Object, and its R2 binding. Cloudflare's
+current **Edit Cloudflare Workers** token template is an appropriate starting
+point; narrow the account/zone resources to the account that hosts this intake
+service rather than granting unrelated accounts. Do not use the Global API Key.
 
 After deployment, set the repository Actions variable `DIAGNOSTIC_INTAKE_URL`
 to the HTTPS endpoint, for example:
