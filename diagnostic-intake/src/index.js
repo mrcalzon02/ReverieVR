@@ -16,11 +16,17 @@ export default {
         return json({ok: true, service: "reverievr-diagnostic-intake"}, 200);
       }
 
-      if (request.method !== "POST" || url.pathname !== "/v1/diagnostics") {
-        return json({error: "not_found"}, 404);
+      if (request.method === "POST"
+          && url.pathname === "/v1/diagnostics") {
+        return await handleDiagnosticSubmission(request, env);
       }
 
-      return await handleDiagnosticSubmission(request, env);
+      if (request.method === "POST"
+          && url.pathname === "/v1/diagnostics/finalize") {
+        return await handleDiagnosticFinalize(request, env);
+      }
+
+      return json({error: "not_found"}, 404);
     } catch (error) {
       console.error("Unhandled intake error", error);
       return json({error: "internal_error"}, 500);
@@ -125,7 +131,7 @@ async function handleDiagnosticSubmission(request, env) {
   const receiptKey = `${RECEIPT_PREFIX}${diagnosticId}.json`;
   const previousReceipt = await readReceipt(env.DIAGNOSTIC_BUNDLES, receiptKey);
   if (previousReceipt && previousReceipt.issueUrl) {
-    return json(previousReceipt, 200);
+    return json(publicReceipt(previousReceipt), 200);
   }
 
   const bundle = form.get("bundle");
@@ -171,9 +177,32 @@ async function handleDiagnosticSubmission(request, env) {
     return json({error: "summary_required"}, 400);
   }
 
-  const year = String(now.getUTCFullYear());
-  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const objectKey = `${BUNDLE_PREFIX}${year}/${month}/${diagnosticId}.zip`;
+  let objectKey =
+    previousReceipt && typeof previousReceipt.objectKey === "string"
+      ? previousReceipt.objectKey
+      : "";
+  let durableMetadata =
+    previousReceipt && previousReceipt.metadata
+      ? previousReceipt.metadata
+      : metadata;
+
+  if (previousReceipt) {
+    if (previousReceipt.sha256
+        && previousReceipt.sha256 !== sha256) {
+      return json({error: "diagnostic_id_collision"}, 409);
+    }
+    if (previousReceipt.byteLength
+        && previousReceipt.byteLength !== bytes.byteLength) {
+      return json({error: "diagnostic_id_collision"}, 409);
+    }
+  }
+
+  if (!objectKey) {
+    const year = String(now.getUTCFullYear());
+    const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+    objectKey =
+      `${BUNDLE_PREFIX}${year}/${month}/${diagnosticId}.zip`;
+  }
 
   const existing = await env.DIAGNOSTIC_BUNDLES.head(objectKey);
   if (existing) {
@@ -192,9 +221,31 @@ async function handleDiagnosticSubmission(request, env) {
     });
   }
 
+  const pendingReceipt = {
+    ok: false,
+    pending: true,
+    status: "stored",
+    diagnosticId,
+    receiptReference: diagnosticId,
+    sha256,
+    byteLength: bytes.byteLength,
+    objectKey,
+    storedAt:
+      previousReceipt && previousReceipt.storedAt
+        ? previousReceipt.storedAt
+        : now.toISOString(),
+    metadata: durableMetadata
+  };
+
+  await writeReceipt(
+    env.DIAGNOSTIC_BUNDLES,
+    receiptKey,
+    pendingReceipt
+  );
+
   let issue;
   try {
-    issue = await createGitHubIssue(env, metadata);
+    issue = await createGitHubIssue(env, durableMetadata);
   } catch (error) {
     console.error("Issue creation failed", error);
     return json({
@@ -202,27 +253,161 @@ async function handleDiagnosticSubmission(request, env) {
       diagnosticId,
       receiptReference: diagnosticId,
       sha256,
-      stored: true
+      stored: true,
+      pending: true,
+      canFinalize: true
     }, 502);
   }
 
   const receipt = {
     ok: true,
+    pending: false,
+    status: "complete",
     diagnosticId,
     receiptReference: diagnosticId,
     sha256,
     byteLength: bytes.byteLength,
+    objectKey,
+    storedAt: pendingReceipt.storedAt,
+    completedAt: new Date().toISOString(),
     issueNumber: issue.number,
     issueUrl: issue.html_url
   };
 
-  await env.DIAGNOSTIC_BUNDLES.put(
+  await writeReceipt(
+    env.DIAGNOSTIC_BUNDLES,
     receiptKey,
-    JSON.stringify(receipt),
-    {httpMetadata: {contentType: "application/json"}}
+    receipt
   );
 
-  return json(receipt, 201);
+  return json(publicReceipt(receipt), 201);
+}
+
+async function handleDiagnosticFinalize(request, env) {
+  requireRuntimeBindings(env);
+
+  const rateResponse = await enforceRateLimit(request, env);
+  if (!rateResponse.ok) {
+    return rateResponse;
+  }
+
+  const contentType =
+    (request.headers.get("content-type") || "").toLowerCase();
+  if (!contentType.startsWith("application/json")) {
+    return json({error: "json_required"}, 415);
+  }
+
+  const boundedBody = await readBodyBounded(request, 16 * 1024);
+  if (!boundedBody.ok) {
+    return json(
+      {error: boundedBody.error},
+      boundedBody.status
+    );
+  }
+
+  let payload;
+  try {
+    payload =
+      JSON.parse(
+        new TextDecoder("utf-8").decode(
+          boundedBody.bytes
+        )
+      );
+  } catch (error) {
+    return json({error: "invalid_json"}, 400);
+  }
+
+  const diagnosticId =
+    String(payload?.diagnostic_id || "").trim();
+  const sha256 =
+    String(payload?.bundle_sha256 || "")
+      .trim()
+      .toLowerCase();
+
+  if (!/^revdiag-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(diagnosticId)) {
+    return json({error: "invalid_diagnostic_id"}, 400);
+  }
+  if (!/^[0-9a-f]{64}$/.test(sha256)) {
+    return json({error: "invalid_bundle_hash"}, 400);
+  }
+
+  const receiptKey =
+    `${RECEIPT_PREFIX}${diagnosticId}.json`;
+  const receipt =
+    await readReceipt(
+      env.DIAGNOSTIC_BUNDLES,
+      receiptKey
+    );
+
+  if (!receipt) {
+    return json({error: "receipt_not_found"}, 404);
+  }
+  if (receipt.sha256 !== sha256) {
+    return json({error: "receipt_hash_mismatch"}, 403);
+  }
+  if (receipt.issueUrl) {
+    return json(publicReceipt(receipt), 200);
+  }
+  if (!receipt.objectKey
+      || !receipt.metadata) {
+    return json({error: "receipt_not_retryable"}, 409);
+  }
+
+  const storedBundle =
+    await env.DIAGNOSTIC_BUNDLES.head(
+      receipt.objectKey
+    );
+  if (!storedBundle) {
+    return json({error: "stored_bundle_expired"}, 410);
+  }
+
+  let issue;
+  try {
+    issue =
+      await createGitHubIssue(
+        env,
+        receipt.metadata
+      );
+  } catch (error) {
+    console.error(
+      "Finalized issue creation failed",
+      error
+    );
+    return json({
+      error: "issue_creation_failed",
+      diagnosticId,
+      receiptReference:
+        receipt.receiptReference,
+      sha256,
+      stored: true,
+      pending: true,
+      canFinalize: true
+    }, 502);
+  }
+
+  const completed = {
+    ok: true,
+    pending: false,
+    status: "complete",
+    diagnosticId,
+    receiptReference:
+      receipt.receiptReference,
+    sha256,
+    byteLength: receipt.byteLength,
+    objectKey: receipt.objectKey,
+    storedAt: receipt.storedAt,
+    completedAt: new Date().toISOString(),
+    issueNumber: issue.number,
+    issueUrl: issue.html_url
+  };
+
+  await writeReceipt(
+    env.DIAGNOSTIC_BUNDLES,
+    receiptKey,
+    completed
+  );
+
+  return json(publicReceipt(completed), 200);
 }
 
 function requireRuntimeBindings(env) {
@@ -724,6 +909,35 @@ async function readReceipt(bucket, key) {
   }
 }
 
+async function writeReceipt(
+  bucket,
+  key,
+  receipt
+) {
+  await bucket.put(
+    key,
+    JSON.stringify(receipt),
+    {
+      httpMetadata: {
+        contentType: "application/json"
+      }
+    }
+  );
+}
+
+function publicReceipt(receipt) {
+  return {
+    ok: true,
+    diagnosticId: receipt.diagnosticId,
+    receiptReference:
+      receipt.receiptReference,
+    sha256: receipt.sha256,
+    byteLength: receipt.byteLength,
+    issueNumber: receipt.issueNumber,
+    issueUrl: receipt.issueUrl
+  };
+}
+
 async function expireOldBundles(env) {
   if (!env.DIAGNOSTIC_BUNDLES) {
     return;
@@ -731,23 +945,47 @@ async function expireOldBundles(env) {
 
   const retentionDays = positiveInt(env.RETENTION_DAYS, 30);
   const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+  await expirePrefix(
+    env.DIAGNOSTIC_BUNDLES,
+    BUNDLE_PREFIX,
+    cutoff
+  );
+  await expirePrefix(
+    env.DIAGNOSTIC_BUNDLES,
+    RECEIPT_PREFIX,
+    cutoff
+  );
+}
+
+async function expirePrefix(
+  bucket,
+  prefix,
+  cutoff
+) {
   let cursor;
 
   do {
-    const page = await env.DIAGNOSTIC_BUNDLES.list({
-      prefix: BUNDLE_PREFIX,
+    const page = await bucket.list({
+      prefix,
       cursor,
       limit: 500
     });
 
     const expired = page.objects
-      .filter(object => object.uploaded && object.uploaded.getTime() < cutoff)
+      .filter(
+        object =>
+          object.uploaded
+            && object.uploaded.getTime() < cutoff
+      )
       .map(object => object.key);
 
     if (expired.length > 0) {
-      await env.DIAGNOSTIC_BUNDLES.delete(expired);
+      await bucket.delete(expired);
     }
-    cursor = page.truncated ? page.cursor : undefined;
+    cursor =
+      page.truncated
+        ? page.cursor
+        : undefined;
   } while (cursor);
 }
 
