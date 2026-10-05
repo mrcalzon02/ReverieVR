@@ -87,6 +87,12 @@ public final class MainActivity extends Activity {
     }
 
     private void configureActions() {
+        Button pairControllerButton = findViewById(R.id.pair_controller_button);
+        pairControllerButton.setEnabled(false);
+
+        Button testControllerButton = findViewById(R.id.test_controller_button);
+        testControllerButton.setEnabled(false);
+
         Button bluetoothButton = findViewById(R.id.bluetooth_settings_button);
         bluetoothButton.setOnClickListener(view -> openBluetoothSettings());
 

@@ -127,11 +127,27 @@
                 android:textSize="14sp" />
 
             <Button
+                android:id="@+id/pair_controller_button"
+                style="@style/ReveriePrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/pair_controller" />
+
+            <Button
+                android:id="@+id/test_controller_button"
+                style="@style/ReverieSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/test_controller" />
+
+            <Button
                 android:id="@+id/bluetooth_settings_button"
                 style="@style/ReverieSecondaryButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="6dp"
                 android:text="@string/open_bluetooth_settings" />
         </LinearLayout>
 
