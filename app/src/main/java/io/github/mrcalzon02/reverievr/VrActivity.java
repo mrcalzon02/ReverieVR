@@ -8,6 +8,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.graphics.SurfaceTexture;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.hardware.input.InputManager;
 import android.media.AudioManager;
 import android.os.BatteryManager;
@@ -37,6 +41,7 @@ public final class VrActivity extends Activity
         VrInputRouter.Listener,
         VrInputRouter.BindingListener,
         StandardHidInputRouter.Listener,
+        SensorEventListener,
         DosSession.Listener {
 
     static final String EXTRA_STARTUP_ERROR =
@@ -70,6 +75,9 @@ public final class VrActivity extends Activity
     private BundledDosContentInstaller bundledDosContentInstaller;
     private DosSession dosSession;
     private NativeModuleRuntime nativeModuleRuntime;
+    private SensorManager sensorManager;
+    private Sensor linearAccelerationSensor;
+    private boolean headMotionSensorRegistered;
     private boolean cardboardRendererBound;
     private volatile boolean startupFailed;
 
@@ -148,6 +156,16 @@ public final class VrActivity extends Activity
             );
         inputManager =
             (InputManager) getSystemService(Context.INPUT_SERVICE);
+        sensorManager =
+            (SensorManager) getSystemService(
+                Context.SENSOR_SERVICE
+            );
+        if (sensorManager != null) {
+            linearAccelerationSensor =
+                sensorManager.getDefaultSensor(
+                    Sensor.TYPE_LINEAR_ACCELERATION
+                );
+        }
         inputRouter = new VrInputRouter(this);
         inputRouter.setBindingListener(this);
 
@@ -163,6 +181,7 @@ public final class VrActivity extends Activity
 
         renderer =
             new VrShellRenderer(
+                this,
                 preferences,
                 viewerIpd,
                 dosSession,
@@ -220,6 +239,7 @@ public final class VrActivity extends Activity
         }
 
         registerInputDeviceListener();
+        registerHeadMotionSensor();
         registerPerformanceEnvironmentMonitoring();
         enterImmersiveMode();
 
@@ -246,6 +266,7 @@ public final class VrActivity extends Activity
     @Override
     protected void onPause() {
         unregisterInputDeviceListener();
+        unregisterHeadMotionSensor();
 
         if (inputBindingEngine != null) {
             inputBindingEngine.releaseAll();
@@ -273,6 +294,7 @@ public final class VrActivity extends Activity
     @Override
     protected void onDestroy() {
         unregisterInputDeviceListener();
+        unregisterHeadMotionSensor();
 
         if (controllerManager != null) {
             controllerManager.removeListener(this);
@@ -297,6 +319,37 @@ public final class VrActivity extends Activity
             uiFeedback.close();
         }
         super.onDestroy();
+    }
+
+    @Override
+    public void onSensorChanged(
+        SensorEvent event
+    ) {
+        if (event == null
+            || event.sensor == null
+            || event.sensor.getType()
+                != Sensor.TYPE_LINEAR_ACCELERATION
+            || event.values == null
+            || event.values.length < 3
+            || renderer == null) {
+            return;
+        }
+
+        renderer.setHeadLinearAcceleration(
+            event.values[0],
+            event.values[1],
+            event.values[2],
+            event.timestamp
+        );
+    }
+
+    @Override
+    public void onAccuracyChanged(
+        Sensor sensor,
+        int accuracy
+    ) {
+        // Linear-acceleration accuracy changes do not alter the bounded
+        // translation contract; samples continue through drift correction.
     }
 
     @Override
@@ -1438,6 +1491,54 @@ public final class VrActivity extends Activity
         } catch (RuntimeException exception) {
             return SAFE_VIEWER_FALLBACK_IPD_METERS;
         }
+    }
+
+    private void registerHeadMotionSensor() {
+        if (headMotionSensorRegistered
+            || sensorManager == null
+            || linearAccelerationSensor == null) {
+            return;
+        }
+
+        try {
+            headMotionSensorRegistered =
+                sensorManager.registerListener(
+                    this,
+                    linearAccelerationSensor,
+                    SensorManager.SENSOR_DELAY_GAME
+                );
+            if (!headMotionSensorRegistered) {
+                ReverieLog.milestone(
+                    "HEAD_MOTION",
+                    "Linear-acceleration sensor registration was rejected; "
+                        + "VR remains rotation-tracked only."
+                );
+            }
+        } catch (RuntimeException exception) {
+            headMotionSensorRegistered = false;
+            ReverieLog.error(
+                "HEAD_MOTION",
+                "Linear-acceleration sensor registration failed.",
+                exception
+            );
+        }
+    }
+
+    private void unregisterHeadMotionSensor() {
+        if (!headMotionSensorRegistered
+            || sensorManager == null) {
+            return;
+        }
+
+        try {
+            sensorManager.unregisterListener(
+                this,
+                linearAccelerationSensor
+            );
+        } catch (RuntimeException ignored) {
+            // Activity teardown owns the listener lifetime.
+        }
+        headMotionSensorRegistered = false;
     }
 
     private void registerPerformanceEnvironmentMonitoring() {
