@@ -332,6 +332,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile boolean rendererFailed;
     private volatile boolean orientationMenuVisible;
     private boolean quickMenuSettingsVisible;
+    private boolean keyboardQuickMenuFocusActive;
     private volatile float orientationMenuYawRadians;
     private boolean shellHeadingInitialized;
     private long initialHeadingStartedNanos;
@@ -561,6 +562,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             !orientationMenuVisible;
         orientationMenuVisible = opening;
         quickMenuSettingsVisible = false;
+        keyboardQuickMenuFocusActive = false;
         hoveredButton = -1;
         selectRequested.set(false);
         backRequested.set(false);
@@ -730,6 +732,117 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return true;
     }
 
+    boolean requestQuickMenuKeyboardNavigation(
+        VrInputAction action
+    ) {
+        if (!orientationMenuVisible
+            || action == null) {
+            return false;
+        }
+
+        int[][] buttons =
+            activeButtons();
+        if (buttons.length == 0) {
+            return false;
+        }
+
+        int current =
+            hoveredButton;
+        if (current < 0
+            || current >= buttons.length
+            || !isButtonEnabled(current)) {
+            current =
+                firstEnabledButton(
+                    buttons.length
+                );
+        }
+        if (current < 0) {
+            return false;
+        }
+
+        int next = current;
+        switch (action) {
+            case NAV_LEFT:
+                if ((current & 1) == 1
+                    && isButtonEnabled(
+                        current - 1
+                    )) {
+                    next = current - 1;
+                }
+                break;
+
+            case NAV_RIGHT:
+                if ((current & 1) == 0
+                    && current + 1
+                        < buttons.length
+                    && isButtonEnabled(
+                        current + 1
+                    )) {
+                    next = current + 1;
+                }
+                break;
+
+            case NAV_UP:
+                next =
+                    findEnabledVerticalButton(
+                        current,
+                        -2,
+                        buttons.length
+                    );
+                break;
+
+            case NAV_DOWN:
+                next =
+                    findEnabledVerticalButton(
+                        current,
+                        2,
+                        buttons.length
+                    );
+                break;
+
+            default:
+                return false;
+        }
+
+        keyboardQuickMenuFocusActive = true;
+        if (next != hoveredButton) {
+            hoveredButton = next;
+            textureDirty = true;
+            host.onUiFocusChanged();
+        }
+        return true;
+    }
+
+    private int firstEnabledButton(
+        int buttonCount
+    ) {
+        for (int index = 0;
+             index < buttonCount;
+             index++) {
+            if (isButtonEnabled(index)) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private int findEnabledVerticalButton(
+        int current,
+        int step,
+        int buttonCount
+    ) {
+        int candidate =
+            current + step;
+        while (candidate >= 0
+            && candidate < buttonCount) {
+            if (isButtonEnabled(candidate)) {
+                return candidate;
+            }
+            candidate += step;
+        }
+        return current;
+    }
+
     void setVideoAspectRatio(float aspectRatio) {
         videoRenderer.setVideoAspectRatio(aspectRatio);
     }
@@ -744,6 +857,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
             source == null || source.trim().isEmpty()
                 ? "Unknown input source"
                 : source.trim();
+
+        if (orientationMenuVisible
+            && !lastInputSource.startsWith(
+                "Keyboard quick menu"
+            )
+            && !lastInputSource.equals(
+                "Keyboard Menu key"
+            )) {
+            keyboardQuickMenuFocusActive = false;
+        }
+
         textureDirty = true;
     }
 
@@ -1116,7 +1240,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 activePointerDirection
             );
         int newHover =
-            hit.buttonIndex;
+            orientationMenuVisible
+                    && keyboardQuickMenuFocusActive
+                ? hoveredButton
+                : hit.buttonIndex;
 
         controllerPointerActive =
             usingControllerPointer;
@@ -2979,6 +3106,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void closeOrientationMenu() {
         orientationMenuVisible = false;
         quickMenuSettingsVisible = false;
+        keyboardQuickMenuFocusActive = false;
         hoveredButton = -1;
         selectRequested.set(false);
         textureDirty = true;
