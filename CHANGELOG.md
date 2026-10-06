@@ -17,6 +17,9 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Phone-test cloud build and prerelease
 
+- Corrected the in-app updater's false certificate-mismatch rejection on Android/OEM builds whose archive parser does not expose APK signing metadata reliably: ReverieVR now uses both signing metadata paths, falls back where available, and delegates final replacement-signer enforcement to Android Package Installer when archive signer metadata is unavailable after all other trust checks pass.
+- Stopped minifying the standalone Cardboard adapter AAR, which could compile successfully and then strip public Java API classes such as `CardboardView` before packaging; the phone-test release gate now inspects the final APK DEX payload and refuses publication unless `com.google.cardboard.sdk.CardboardView` is actually present.
+
 - Added an explicitly authorized GitHub Actions phone-test workflow with manual dispatch, pinned Android/NDK inputs, third-party verification, tests, dual-APK assembly, APK content/signature checks, SHA-256 output, and GitHub prerelease publication.
 - Repaired Android resource apostrophe escaping exposed by the first real AAPT build.
 - Completed the controller companion priority/coalesced-send refactor exposed by javac.
