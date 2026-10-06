@@ -81,7 +81,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int HUD_TEXTURE_WIDTH = 512;
     private static final int HUD_TEXTURE_HEIGHT = 128;
     private static final float HUD_LOOK_UP_THRESHOLD = 0.72f;
-    private static final float SHELL_VIEW_CONTRACTION = 0.90f;
+    private static final float SHELL_VIEW_CONTRACTION = 0.81f;
 
     private static final float PANEL_HALF_WIDTH =
         1.70f * SHELL_VIEW_CONTRACTION;
@@ -1369,6 +1369,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void onDrawEyeInternal(
         CardboardView.Eye eye
     ) {
+        /*
+         * Cardboard normally installs the eye viewport before this callback.
+         * Reassert it here because the legacy Java GL surface path can retain
+         * the previous eye's viewport after renderer state changes on some
+         * Samsung/Android combinations.  Every eye must own a fresh viewport
+         * before it clears or draws anything.
+         */
+        Viewport eyeViewport = eye.getViewport();
+        if (eyeViewport != null) {
+            eyeViewport.setGLViewport();
+        }
         recordStereoEyeDiagnostic(eye);
         eye.applyHeadView(adjustedHeadView);
 
@@ -6141,10 +6152,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
         float rightZ
     ) {
         return new float[] {
-            left, bottom, leftZ,
-            right, bottom, rightZ,
-            left, top, leftZ,
-            right, top, rightZ
+            left * SHELL_VIEW_CONTRACTION,
+            bottom * SHELL_VIEW_CONTRACTION,
+            leftZ,
+            right * SHELL_VIEW_CONTRACTION,
+            bottom * SHELL_VIEW_CONTRACTION,
+            rightZ,
+            left * SHELL_VIEW_CONTRACTION,
+            top * SHELL_VIEW_CONTRACTION,
+            leftZ,
+            right * SHELL_VIEW_CONTRACTION,
+            top * SHELL_VIEW_CONTRACTION,
+            rightZ
         };
     }
 
