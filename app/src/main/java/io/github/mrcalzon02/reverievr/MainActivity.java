@@ -708,6 +708,26 @@ public final class MainActivity extends Activity
                 VrStartupGuard.clear(this);
                 uiFeedback.failure(enterVrButton);
                 showVrStartupFailure(failure);
+                return;
+            }
+
+            if (resultCode == RESULT_OK
+                && data != null) {
+                if (data.getBooleanExtra(
+                        VrActivity.EXTRA_REQUEST_MEDIA_PICKER,
+                        false
+                    )) {
+                    chooseLocalVideo();
+                    return;
+                }
+
+                if (data.getBooleanExtra(
+                        VrActivity.EXTRA_REQUEST_DOS_PICKER,
+                        false
+                    )) {
+                    chooseDosContent();
+                    return;
+                }
             }
             return;
         }
