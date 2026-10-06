@@ -221,7 +221,7 @@ Implemented:
 
 Reference-device startup defect RV-0092 is resolved: the physical Galaxy S9 now reaches the rendered VR shell instead of exiting before frame one. Issue #3 is closed after visible handset evidence of the center interaction marker, close control, phone/controller battery HUD, and settings control.
 
-Current validation: phone-test #38 completed successfully against `5770e6a1addb3635f91cffd1bd58bb391d7197d8`, passing JVM tests, unsigned Android/native build validation, permanent signing preparation, non-debuggable phoneTest assembly, Cardboard JNI package verification, APK signer/versionCode verification, artifact preservation, and prerelease publication as `phone-test-38-1`. This package includes the three-environment seated home shell, three-plane Home dashboard, tracked Daydream and virtual gamepad pointers, simplified in-world controller representation, dedicated in-headset Controller panel, real Pair/Sync/Bluetooth/Update handoffs, persistent validated Resume across Media/DOS/Native activity, paged DOS and Native Apps libraries, contextual Home help, focus/activation/failure feedback, and inert-target suppression.
+Current validation: phone-test #40 completed successfully against `b893297341669922ccea7d6c8858b4e1da091640`, passing JVM tests, unsigned Android/native build validation, permanent signing preparation, non-debuggable phoneTest assembly, Cardboard native-library checks, final-APK DEX verification that `com.google.cardboard.sdk.CardboardView` is actually packaged, APK signer/versionCode verification, artifact preservation, and prerelease publication as `phone-test-40-1`. The release retains signer SHA-256 `464dc2d100c3bb14deac1da680d29418cc22e60e1857852cb54541f7d7787f7c`, matching phone-test #36–#38. It also includes the updater archive-signing compatibility repair that avoids false rejection when Android 10/OEM archive parsing omits candidate signer metadata while preserving Android Package Installer as final signer-continuity authority.
 
 Remaining gate: physical Galaxy S9 validation of the home backgrounds, three-plane readability, Daydream quaternion orientation mapping, controller-model orientation, emitter-ray alignment, gamepad stick/D-pad virtual aim, Controller-panel flows, Resume behavior, environment switching, floating-screen media/DOS composition, and in-headset launcher interactions.
 
@@ -268,7 +268,8 @@ Implemented:
 - exact installed build identity displayed in Stage A;
 - GitHub SHA-256 asset digest required fail-closed;
 - downloaded APK privately parsed before Android's installer sees it;
-- package ID, strictly newer versionCode, phone-test tag/versionCode mapping, installed signer, candidate signer, and pinned permanent signer all verified;
+- package ID, strictly newer versionCode, phone-test tag/versionCode mapping, installed signer, and pinned permanent signer verified in-app;
+- candidate signer verified in-app when Android exposes archive signing metadata; if an OEM/platform archive parser omits that metadata after all other checks pass, final replacement-signer continuity is delegated to Android Package Installer rather than falsely rejecting a valid package;
 - trusted repository release URL filtering;
 - Android Download Manager / package-installer handoff;
 - updater controls omitted entirely outside the persistent signing channel;
@@ -280,6 +281,7 @@ Permanent signer evidence:
 - phone-test #36 / versionCode 36001: first permanent-lineage package;
 - phone-test #37 / versionCode 37001: same signer;
 - phone-test #38 / versionCode 38001: same signer, full signed QoL package;
+- phone-test #40 / versionCode 40001: same signer; updater archive-signer compatibility repair and CardboardView final-APK presence gate passed;
 - CI independently verifies both headset and companion APK signer fingerprints before every release publication.
 
 The old updater failure is fully explained: prereleases were invisible to the original endpoint and historical CI packages used different ephemeral debug signing certificates. Android correctly refused those packages as in-place replacements.
