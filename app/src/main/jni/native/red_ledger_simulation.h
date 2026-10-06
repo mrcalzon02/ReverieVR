@@ -27,6 +27,12 @@ enum class SupplierItem : uint8_t {
     CupSet
 };
 
+enum class DrinkState : uint8_t {
+    None = 0,
+    EmptyCup,
+    FilledCup
+};
+
 struct PatronDefinition {
     PatronKind kind;
     const char *name;
@@ -65,7 +71,7 @@ public:
     static constexpr int32_t kDailyDebtServiceCents = 150;
     static constexpr int32_t kProtectionCostCents = 600;
     static constexpr int32_t kInspectionFineCents = 450;
-    static constexpr size_t kSerializedSize = 152u;
+    static constexpr size_t kSerializedSize = 160u;
 
     Simulation();
 
@@ -80,8 +86,10 @@ public:
     int32_t reputation() const;
     int32_t pressure() const;
     int32_t patrons_remaining() const;
+    int32_t pending_payment_cents() const;
     bool day_open() const;
     EventType current_event() const;
+    DrinkState work_drink_state() const;
     bool protection_paid() const;
 
     const PatronDefinition *current_patron() const;
@@ -97,7 +105,12 @@ public:
         size_t size
     );
 
-    bool ServeNextPatron();
+    bool TakeCleanCup();
+    bool ReturnHeldCup();
+    bool FillHeldCup();
+    bool ServeHeldCup();
+    bool CollectPayment();
+    bool TurnAwayCurrentPatron();
     bool WashOneCup();
     bool BuySupply(SupplierItem item);
     bool PayProtection();
@@ -121,8 +134,10 @@ private:
     int32_t dirty_cups_ = 0;
     int32_t reputation_ = 0;
     int32_t pressure_ = 0;
+    int32_t pending_payment_cents_ = 0;
 
     EventType event_ = EventType::None;
+    DrinkState work_drink_state_ = DrinkState::None;
     bool day_open_ = false;
     bool protection_paid_ = false;
 
