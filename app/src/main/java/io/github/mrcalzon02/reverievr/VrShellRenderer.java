@@ -82,6 +82,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int HUD_TEXTURE_HEIGHT = 128;
     private static final float HUD_LOOK_UP_THRESHOLD = 0.72f;
     private static final float SHELL_VIEW_CONTRACTION = 0.81f;
+    private static final float EYE_CONTENT_VIEWPORT_SCALE = 0.82f;
 
     private static final float PANEL_HALF_WIDTH =
         1.70f * SHELL_VIEW_CONTRACTION;
@@ -1434,36 +1435,148 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         /*
-         * Every eye pass owns only its viewport. glClear ignores glViewport,
-         * so a right-eye clear previously erased the completed left eye.
-         * Scope both clears and draws to the SDK-provided eye rectangle.
+         * Cardboard owns the physical per-eye viewport. Keep that raw rectangle
+         * as the stereo isolation boundary, but render the VR world into a
+         * centered 82% presentation rectangle inside it. This produces the
+         * measured handset/headset inset without changing projection, IPD, or
+         * the SDK's left/right eye ownership.
+         *
+         * The full eye is cleared first so the newly exposed margin is always
+         * black rather than stale framebuffer content. The shell-global power
+         * HUD is drawn after restoring the raw eye viewport so it remains a
+         * stable calibration reference instead of shrinking with the world.
          */
-        int[] previousScissor = new int[4];
         int[] eyeViewport = new int[4];
+        int[] previousScissor = new int[4];
         int[] scissorEnabled = new int[1];
-        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, eyeViewport, 0);
-        GLES20.glGetIntegerv(GLES20.GL_SCISSOR_BOX, previousScissor, 0);
-        GLES20.glGetIntegerv(GLES20.GL_SCISSOR_TEST, scissorEnabled, 0);
-        if (eyeViewport[2] <= 0 || eyeViewport[3] <= 0) {
-            reportRendererFailure("invalid-eye-viewport",
-                new IllegalStateException("Empty eye viewport"));
+        GLES20.glGetIntegerv(
+            GLES20.GL_VIEWPORT,
+            eyeViewport,
+            0
+        );
+        GLES20.glGetIntegerv(
+            GLES20.GL_SCISSOR_BOX,
+            previousScissor,
+            0
+        );
+        GLES20.glGetIntegerv(
+            GLES20.GL_SCISSOR_TEST,
+            scissorEnabled,
+            0
+        );
+
+        if (eyeViewport[2] <= 0
+            || eyeViewport[3] <= 0) {
+            reportRendererFailure(
+                "invalid-eye-viewport",
+                new IllegalStateException(
+                    "Empty eye viewport"
+                )
+            );
             return;
         }
-        GLES20.glEnable(GLES20.GL_SCISSOR_TEST);
-        GLES20.glScissor(eyeViewport[0], eyeViewport[1],
-            eyeViewport[2], eyeViewport[3]);
+
+        recordStereoEyeDiagnostic(eye);
+
+        int contentWidth =
+            Math.max(
+                1,
+                Math.round(
+                    eyeViewport[2]
+                        * EYE_CONTENT_VIEWPORT_SCALE
+                )
+            );
+        int contentHeight =
+            Math.max(
+                1,
+                Math.round(
+                    eyeViewport[3]
+                        * EYE_CONTENT_VIEWPORT_SCALE
+                )
+            );
+        int contentX =
+            eyeViewport[0]
+                + (eyeViewport[2] - contentWidth)
+                    / 2;
+        int contentY =
+            eyeViewport[1]
+                + (eyeViewport[3] - contentHeight)
+                    / 2;
+
+        GLES20.glEnable(
+            GLES20.GL_SCISSOR_TEST
+        );
+        GLES20.glScissor(
+            eyeViewport[0],
+            eyeViewport[1],
+            eyeViewport[2],
+            eyeViewport[3]
+        );
+        GLES20.glClearColor(
+            0.0f,
+            0.0f,
+            0.0f,
+            1.0f
+        );
+        GLES20.glClear(
+            GLES20.GL_COLOR_BUFFER_BIT
+                | GLES20.GL_DEPTH_BUFFER_BIT
+        );
+
         try {
+            GLES20.glViewport(
+                contentX,
+                contentY,
+                contentWidth,
+                contentHeight
+            );
+            GLES20.glScissor(
+                contentX,
+                contentY,
+                contentWidth,
+                contentHeight
+            );
+
             onDrawEyeInternal(eye);
+
+            GLES20.glEnable(
+                GLES20.GL_SCISSOR_TEST
+            );
+            GLES20.glViewport(
+                eyeViewport[0],
+                eyeViewport[1],
+                eyeViewport[2],
+                eyeViewport[3]
+            );
+            GLES20.glScissor(
+                eyeViewport[0],
+                eyeViewport[1],
+                eyeViewport[2],
+                eyeViewport[3]
+            );
+            drawPowerHudOverlay();
         } catch (RuntimeException | LinkageError failure) {
             reportRendererFailure(
                 "draw-eye",
                 failure
             );
         } finally {
-            GLES20.glScissor(previousScissor[0], previousScissor[1],
-                previousScissor[2], previousScissor[3]);
+            GLES20.glViewport(
+                eyeViewport[0],
+                eyeViewport[1],
+                eyeViewport[2],
+                eyeViewport[3]
+            );
+            GLES20.glScissor(
+                previousScissor[0],
+                previousScissor[1],
+                previousScissor[2],
+                previousScissor[3]
+            );
             if (scissorEnabled[0] == 0) {
-                GLES20.glDisable(GLES20.GL_SCISSOR_TEST);
+                GLES20.glDisable(
+                    GLES20.GL_SCISSOR_TEST
+                );
             }
         }
     }
@@ -1472,13 +1585,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         CardboardView.Eye eye
     ) {
         /*
-         * CardboardView owns the per-eye viewport and installs it immediately
-         * before each onDrawEye callback. Keep that SDK-owned state intact here;
-         * the development diagnostic below reads GL_VIEWPORT directly so stereo
-         * viewport ownership remains observable without relying on a non-existent
-         * Eye viewport accessor.
+         * onDrawEye has already established the centered content viewport.
+         * Keep the SDK projection and head-view math unchanged so this remains
+         * a presentation-size correction rather than an IPD/FOV rewrite.
          */
-        recordStereoEyeDiagnostic(eye);
         eye.applyHeadView(adjustedHeadView);
 
         float correctionHalf =
@@ -1523,7 +1633,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     eyeCorrection
                 );
             }
-            drawPowerHudOverlay();
             return;
         }
 
@@ -1543,7 +1652,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     eyeCorrection
                 );
             }
-            drawPowerHudOverlay();
             return;
         }
 
@@ -1555,7 +1663,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 eye,
                 eyeCorrection
             );
-            drawPowerHudOverlay();
             return;
         }
 
@@ -1624,7 +1731,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     eyeCorrection
                 );
             }
-            drawPowerHudOverlay();
             return;
         }
 
@@ -1633,7 +1739,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
             eye,
             eyeCorrection
         );
-        drawPowerHudOverlay();
     }
 
     private void recordStereoEyeDiagnostic(
