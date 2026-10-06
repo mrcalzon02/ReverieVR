@@ -457,6 +457,18 @@ public final class VrActivity extends Activity
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event != null
+            && event.getKeyCode() == KeyEvent.KEYCODE_MENU
+            && event.getAction() == KeyEvent.ACTION_DOWN
+            && event.getRepeatCount() == 0
+            && inputRouter != null) {
+            inputRouter.submitAction(
+                VrInputAction.MENU,
+                "Keyboard Menu key"
+            );
+            return true;
+        }
+
         if (inputRouter != null && inputRouter.onKeyEvent(event)) {
             return true;
         }
