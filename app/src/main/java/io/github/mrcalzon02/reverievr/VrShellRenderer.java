@@ -1255,6 +1255,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     ) {
         homeEnvironmentRenderer.onSurfaceCreated();
         pointerRenderer.onSurfaceCreated();
+        controllerModelRenderer.onSurfaceCreated();
         videoRenderer.onSurfaceCreated();
         dosRenderer.onSurfaceCreated();
         nativeSurfaceReady = false;
@@ -1326,6 +1327,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         videoRenderer.shutdown();
         dosRenderer.shutdown();
         pointerRenderer.shutdown();
+        controllerModelRenderer.shutdown();
         homeEnvironmentRenderer.shutdown();
 
         if (nativeSurfaceReady
@@ -1398,10 +1400,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerOrientationW,
                 controllerForward
             );
-            rotateYaw(
+            System.arraycopy(
                 controllerForward,
-                -yawOffsetRadians,
-                adjustedControllerForward
+                0,
+                adjustedControllerForward,
+                0,
+                3
             );
             normalizeDirection(
                 adjustedControllerForward
