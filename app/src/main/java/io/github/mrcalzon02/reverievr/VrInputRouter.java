@@ -8,11 +8,13 @@ final class VrInputRouter {
     interface Listener {
         void onInputAction(VrInputAction action, String source);
 
-        void onPointerAxis(
+        default void onPointerAxis(
             float horizontal,
             float vertical,
             String source
-        );
+        ) {
+            // Optional: only VR surfaces consume continuous pointer aim.
+        }
     }
 
     interface BindingListener {
