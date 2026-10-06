@@ -215,6 +215,22 @@ Remaining external acceptance work:
 3. Produce the first persistently signed package and perform the one-time manual migration on the Galaxy S9.
 4. Publish one additional build and prove a real in-app update-over-update with settings/data preserved.
 
+## Provisioned distribution identity
+
+The permanent ReverieVR direct-distribution signing identity is now provisioned.
+
+Public certificate SHA-256:
+
+`464dc2d100c3bb14deac1da680d29418cc22e60e1857852cb54541f7d7787f7c`
+
+First proven permanent-lineage package:
+
+- release: `phone-test-36-1`
+- Android versionCode: `36001`
+- headset APK SHA-256: `fd80f4b4b6a4f3864342d593a7aafce03335627bd63fa2f9ba62fecff572738d`
+
+This fingerprint is public identity metadata. The corresponding private key remains outside the repository in the owner's protected backup and GitHub Actions secret storage.
+
 ## Acceptance
 
 Persistent GitHub-hosted updates are accepted only when two consecutively published ReverieVR distribution APKs:
