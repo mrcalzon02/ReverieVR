@@ -529,44 +529,51 @@ public final class VrActivity extends Activity
             return false;
         }
 
-        VrInputAction shellAction;
         switch (event.getKeyCode()) {
             case KeyEvent.KEYCODE_DPAD_LEFT:
-                shellAction = VrInputAction.NAV_LEFT;
-                break;
+                return renderer
+                    .requestQuickMenuKeyboardNavigation(
+                        VrInputAction.NAV_LEFT
+                    );
 
             case KeyEvent.KEYCODE_DPAD_RIGHT:
-                shellAction = VrInputAction.NAV_RIGHT;
-                break;
+                return renderer
+                    .requestQuickMenuKeyboardNavigation(
+                        VrInputAction.NAV_RIGHT
+                    );
 
             case KeyEvent.KEYCODE_DPAD_UP:
-                shellAction = VrInputAction.NAV_UP;
-                break;
+                return renderer
+                    .requestQuickMenuKeyboardNavigation(
+                        VrInputAction.NAV_UP
+                    );
 
             case KeyEvent.KEYCODE_DPAD_DOWN:
-                shellAction = VrInputAction.NAV_DOWN;
-                break;
+                return renderer
+                    .requestQuickMenuKeyboardNavigation(
+                        VrInputAction.NAV_DOWN
+                    );
 
             case KeyEvent.KEYCODE_ENTER:
             case KeyEvent.KEYCODE_NUMPAD_ENTER:
             case KeyEvent.KEYCODE_SPACE:
-                shellAction = VrInputAction.SELECT;
-                break;
+                inputRouter.submitAction(
+                    VrInputAction.SELECT,
+                    "Keyboard quick menu"
+                );
+                return true;
 
             case KeyEvent.KEYCODE_ESCAPE:
             case KeyEvent.KEYCODE_BACK:
-                shellAction = VrInputAction.BACK;
-                break;
+                inputRouter.submitAction(
+                    VrInputAction.BACK,
+                    "Keyboard quick menu"
+                );
+                return true;
 
             default:
                 return false;
         }
-
-        inputRouter.submitAction(
-            shellAction,
-            "Keyboard quick menu"
-        );
-        return true;
     }
 
     @Override
