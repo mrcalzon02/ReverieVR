@@ -99,6 +99,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_MEDIA_LIBRARY = 8;
     private static final int MODE_ENVIRONMENT = 9;
     private static final int MODE_CONTROLLER = 10;
+    private static final int MODE_NATIVE_LIBRARY = 11;
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -137,6 +138,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {780, 512, 982, 560},
         {314, 592, 696, 644},
         {292, 220, 718, 326}
+    };
+
+    private static final int[][] NATIVE_LIBRARY_BUTTONS = new int[][] {
+        {140, 235, 884, 300},
+        {140, 315, 884, 380},
+        {140, 395, 884, 460},
+        {140, 475, 884, 540},
+        {140, 555, 884, 620}
     };
 
     private static final int[][] CONTROLLER_BUTTONS = new int[][] {
@@ -266,6 +275,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile String[] dosModuleNames = new String[0];
     private volatile String activeDosModuleName = "";
     private int dosLibraryPage;
+    private int nativeLibraryPage;
     private boolean nativeSurfaceReady;
     private volatile boolean rendererFailed;
 
@@ -1826,6 +1836,26 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return index < HOME_BUTTONS.length;
         }
 
+        if (mode == MODE_NATIVE_LIBRARY) {
+            int count = nativeModules.size();
+            if (index >= 0 && index <= 2) {
+                int moduleIndex =
+                    nativeLibraryPage * 3 + index;
+                return moduleIndex < count;
+            }
+
+            if (index == 3) {
+                int pageCount =
+                    Math.max(
+                        1,
+                        (count + 2) / 3
+                    );
+                return pageCount > 1;
+            }
+
+            return index == 4;
+        }
+
         if (mode == MODE_DOS_LIBRARY) {
             if (index >= 0 && index <= 2) {
                 int moduleIndex =
@@ -1948,22 +1978,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 2:
                     if (NativeModuleRuntime.isAvailable()
                         && !nativeModules.isEmpty()) {
-                        NativeModuleRuntime.Descriptor module =
-                            nativeModules.get(0);
-                        if (host.onNativeModulePlaybackRequested(
-                            module.id
-                        )) {
-                            preferences.markLastActivityNative(
-                                module.id,
-                                module.displayName
-                            );
-                            nativeSurfaceReady = false;
-                            mode = MODE_NATIVE;
-                            hoveredButton = -1;
-                            return;
-                        }
+                        nativeLibraryPage = 0;
+                        mode = MODE_NATIVE_LIBRARY;
+                    } else {
+                        host.onUiActionRejected();
                     }
-                    host.onUiActionRejected();
                     break;
                 case 3:
                     mode = MODE_ENVIRONMENT;
@@ -2029,6 +2048,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
         } else if (mode == MODE_CONTROLLER) {
             handleControllerSelection(hoveredButton);
+        } else if (mode == MODE_NATIVE_LIBRARY) {
+            handleNativeLibrarySelection(hoveredButton);
         } else if (mode == MODE_MEDIA_LIBRARY) {
             handleMediaSelection(hoveredButton);
         } else if (mode == MODE_ENVIRONMENT) {
@@ -2399,7 +2420,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (mode == MODE_DOS_LIBRARY
             || mode == MODE_MEDIA_LIBRARY
             || mode == MODE_ENVIRONMENT
-            || mode == MODE_CONTROLLER) {
+            || mode == MODE_CONTROLLER
+            || mode == MODE_NATIVE_LIBRARY) {
             mode = MODE_HOME;
             hoveredButton = -1;
             textureDirty = true;
@@ -2444,6 +2466,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_CONTROLLER) {
             return CONTROLLER_BUTTONS;
+        }
+
+        if (mode == MODE_NATIVE_LIBRARY) {
+            return NATIVE_LIBRARY_BUTTONS;
         }
 
         if (mode == MODE_DOS_LIBRARY) {
@@ -2534,6 +2560,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawHome(canvas, paint);
         } else if (mode == MODE_CONTROLLER) {
             drawControllerPanel(canvas, paint);
+        } else if (mode == MODE_NATIVE_LIBRARY) {
+            drawNativeLibrary(canvas, paint);
         } else if (mode == MODE_MEDIA_LIBRARY) {
             drawMediaLibrary(canvas, paint);
         } else if (mode == MODE_ENVIRONMENT) {
