@@ -8,7 +8,7 @@ import org.junit.Test;
 
 public final class BuiltInBindingProfilesTest {
     @Test
-    public void redLedgerUsesSelectOnly() {
+    public void redLedgerUsesControllerButtons() {
         BindingProfile profile =
             BuiltInBindingProfiles.byId(
                 BuiltInBindingProfiles.ID_NATIVE_RED_LEDGER
@@ -19,22 +19,36 @@ public final class BuiltInBindingProfilesTest {
             BuiltInBindingProfiles.ID_NATIVE_RED_LEDGER,
             profile.id
         );
-        assertEquals(1, profile.bindings.size());
+        assertEquals(3, profile.bindings.size());
 
-        InputBinding binding =
-            profile.bindings.get(0);
-        assertEquals(
+        assertDigitalButton(
+            profile.bindings.get(0),
             BindingInput.SELECT,
-            binding.input
+            0
         );
+        assertDigitalButton(
+            profile.bindings.get(1),
+            BindingInput.VOLUME_UP,
+            1
+        );
+        assertDigitalButton(
+            profile.bindings.get(2),
+            BindingInput.VOLUME_DOWN,
+            2
+        );
+    }
+
+    private static void assertDigitalButton(
+        InputBinding binding,
+        BindingInput input,
+        int button
+    ) {
+        assertEquals(input, binding.input);
         assertEquals(
             VirtualOutputKind.JOYSTICK_BUTTON,
             binding.output.kind
         );
-        assertEquals(
-            0,
-            binding.output.code
-        );
+        assertEquals(button, binding.output.code);
     }
 
     @Test
