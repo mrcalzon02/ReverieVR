@@ -2032,6 +2032,22 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return UiRayHit.miss();
         }
 
+        if (orientationMenuVisible) {
+            return hitPanel(
+                origin,
+                direction,
+                -PANEL_HALF_WIDTH,
+                PANEL_HALF_WIDTH,
+                -PANEL_HALF_HEIGHT,
+                PANEL_HALF_HEIGHT,
+                PANEL_Z,
+                0,
+                TEXTURE_WIDTH,
+                0,
+                TEXTURE_HEIGHT
+            );
+        }
+
         if (mode == MODE_HOME) {
             UiRayHit best =
                 hitTiltedPanel(
@@ -2274,6 +2290,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return false;
         }
 
+        if (orientationMenuVisible) {
+            if (index == 1) {
+                return hasFreshControllerPose(
+                    System.nanoTime()
+                );
+            }
+            return index
+                < ORIENTATION_MENU_BUTTONS.length;
+        }
+
         if (mode == MODE_HOME) {
             if (index == 2) {
                 return NativeModuleRuntime.isAvailable()
@@ -2422,6 +2448,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        if (orientationMenuVisible) {
+            handleOrientationMenuSelection(
+                hoveredButton
+            );
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
+
         if (mode == MODE_HOME) {
             switch (hoveredButton) {
                 case 0:
@@ -2521,6 +2556,49 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         hoveredButton = -1;
+        textureDirty = true;
+    }
+
+    private void handleOrientationMenuSelection(
+        int button
+    ) {
+        switch (button) {
+            case 0:
+                recenterOnHeadset(
+                    System.nanoTime()
+                );
+                closeOrientationMenu();
+                break;
+
+            case 1:
+                if (recenterOnController(
+                        System.nanoTime()
+                    )) {
+                    closeOrientationMenu();
+                } else {
+                    host.onUiActionRejected();
+                }
+                break;
+
+            case 2:
+                closeOrientationMenu();
+                backRequested.set(true);
+                break;
+
+            case 3:
+                closeOrientationMenu();
+                break;
+
+            default:
+                host.onUiActionRejected();
+                break;
+        }
+    }
+
+    private void closeOrientationMenu() {
+        orientationMenuVisible = false;
+        hoveredButton = -1;
+        selectRequested.set(false);
         textureDirty = true;
     }
 
@@ -2922,6 +3000,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void handleBack() {
+        if (orientationMenuVisible) {
+            closeOrientationMenu();
+            return;
+        }
+
         if (mode == MODE_HOME) {
             host.onExitToPhoneRequested();
             return;
@@ -2970,6 +3053,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private int[][] activeButtons() {
+        if (orientationMenuVisible) {
+            return ORIENTATION_MENU_BUTTONS;
+        }
+
         if (mode == MODE_HOME) {
             return HOME_BUTTONS;
         }
