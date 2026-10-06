@@ -28,7 +28,10 @@ def phoneTestKeyAlias =
     (project.findProperty("phoneTestKeyAlias") ?: "")
         .toString()
 def phoneTestKeyPassword =
-    (project.findProperty("phoneTestKeyPassword") ?: "")
+    (
+        project.findProperty("phoneTestKeyPassword")
+            ?: phoneTestStorePassword
+    )
         .toString()
 def phoneTestSigningConfigured =
     !phoneTestKeystorePath.isEmpty()
