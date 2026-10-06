@@ -14,10 +14,12 @@ final class UiFeedback implements AutoCloseable {
     private static final long PRESS_IN_MILLIS = 55L;
     private static final long PRESS_OUT_MILLIS = 90L;
     private static final long FAILURE_FLASH_MILLIS = 360L;
+    private static final long FOCUS_SOUND_MIN_INTERVAL_MILLIS = 90L;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final AudioManager audioManager;
     private ToneGenerator toneGenerator;
+    private long lastFocusSoundMillis;
 
     UiFeedback(Context context) {
         audioManager =
@@ -61,6 +63,23 @@ final class UiFeedback implements AutoCloseable {
                 }
             }
         );
+    }
+
+    void focus() {
+        mainHandler.post(() -> {
+            long now =
+                android.os.SystemClock.uptimeMillis();
+            if (now - lastFocusSoundMillis
+                < FOCUS_SOUND_MIN_INTERVAL_MILLIS) {
+                return;
+            }
+            lastFocusSoundMillis = now;
+
+            playSystemEffect(
+                SoundEffectConstants.NAVIGATION_UP,
+                0.18f
+            );
+        });
     }
 
     void activation() {
