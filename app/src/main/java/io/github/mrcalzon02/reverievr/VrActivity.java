@@ -470,6 +470,10 @@ public final class VrActivity extends Activity
             return true;
         }
 
+        if (routeQuickMenuKeyboardEvent(event)) {
+            return true;
+        }
+
         if (inputRouter != null && inputRouter.onKeyEvent(event)) {
             return true;
         }
@@ -478,6 +482,80 @@ public final class VrActivity extends Activity
             return true;
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    private boolean routeQuickMenuKeyboardEvent(
+        KeyEvent event
+    ) {
+        if (event == null
+            || renderer == null
+            || !renderer.isOrientationMenuVisible()
+            || inputRouter == null) {
+            return false;
+        }
+
+        int action = event.getAction();
+        if (action == KeyEvent.ACTION_UP) {
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                case KeyEvent.KEYCODE_DPAD_UP:
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                case KeyEvent.KEYCODE_ENTER:
+                case KeyEvent.KEYCODE_NUMPAD_ENTER:
+                case KeyEvent.KEYCODE_SPACE:
+                case KeyEvent.KEYCODE_ESCAPE:
+                case KeyEvent.KEYCODE_BACK:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        if (action != KeyEvent.ACTION_DOWN
+            || event.getRepeatCount() != 0) {
+            return false;
+        }
+
+        VrInputAction shellAction;
+        switch (event.getKeyCode()) {
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+                shellAction = VrInputAction.NAV_LEFT;
+                break;
+
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+                shellAction = VrInputAction.NAV_RIGHT;
+                break;
+
+            case KeyEvent.KEYCODE_DPAD_UP:
+                shellAction = VrInputAction.NAV_UP;
+                break;
+
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+                shellAction = VrInputAction.NAV_DOWN;
+                break;
+
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+            case KeyEvent.KEYCODE_SPACE:
+                shellAction = VrInputAction.SELECT;
+                break;
+
+            case KeyEvent.KEYCODE_ESCAPE:
+            case KeyEvent.KEYCODE_BACK:
+                shellAction = VrInputAction.BACK;
+                break;
+
+            default:
+                return false;
+        }
+
+        inputRouter.submitAction(
+            shellAction,
+            "Keyboard quick menu"
+        );
+        return true;
     }
 
     @Override
