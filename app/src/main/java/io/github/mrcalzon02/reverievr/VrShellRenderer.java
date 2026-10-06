@@ -34,6 +34,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onExitToPhoneRequested();
         void onSetupCompleted();
         void onControllerRecenterRequested();
+        void onUiFocusChanged();
         void onUiActionRejected();
         PerformanceEnvironmentSnapshot
             getPerformanceEnvironmentSnapshot();
@@ -95,13 +96,39 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_MEDIA_LIBRARY = 8;
     private static final int MODE_ENVIRONMENT = 9;
 
+    private static final int HOME_LEFT_PIXEL_LEFT = 24;
+    private static final int HOME_LEFT_PIXEL_RIGHT = 248;
+    private static final int HOME_CENTER_PIXEL_LEFT = 266;
+    private static final int HOME_CENTER_PIXEL_RIGHT = 744;
+    private static final int HOME_RIGHT_PIXEL_LEFT = 762;
+    private static final int HOME_RIGHT_PIXEL_RIGHT = 1000;
+    private static final int HOME_PIXEL_TOP = 60;
+    private static final int HOME_PIXEL_BOTTOM = 710;
+
+    private static final float HOME_LEFT_WORLD_LEFT = -2.35f;
+    private static final float HOME_LEFT_WORLD_RIGHT = -0.95f;
+    private static final float HOME_CENTER_WORLD_LEFT = -1.15f;
+    private static final float HOME_CENTER_WORLD_RIGHT = 1.15f;
+    private static final float HOME_RIGHT_WORLD_LEFT = 0.95f;
+    private static final float HOME_RIGHT_WORLD_RIGHT = 2.35f;
+    private static final float HOME_WORLD_BOTTOM = -1.20f;
+    private static final float HOME_WORLD_TOP = 1.20f;
+    private static final float HOME_LEFT_WORLD_Z = -3.25f;
+    private static final float HOME_CENTER_WORLD_Z = -3.0f;
+    private static final float HOME_RIGHT_WORLD_Z = -3.25f;
+
     private static final int[][] HOME_BUTTONS = new int[][] {
-        {140, 225, 884, 280},
-        {140, 295, 884, 350},
-        {140, 365, 884, 420},
-        {140, 435, 884, 490},
-        {140, 505, 884, 560},
-        {140, 575, 884, 630}
+        {42, 180, 230, 238},
+        {42, 248, 230, 306},
+        {42, 316, 230, 374},
+        {42, 384, 230, 442},
+        {42, 452, 230, 510},
+        {42, 520, 230, 578},
+        {780, 190, 982, 248},
+        {780, 258, 982, 316},
+        {780, 326, 982, 384},
+        {780, 394, 982, 452},
+        {780, 462, 982, 520}
     };
 
     private static final int[][] DOS_LIBRARY_BUTTONS = new int[][] {
@@ -164,6 +191,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float viewerInterLensMeters;
     private final VideoSurfaceRenderer videoRenderer;
     private final HomeEnvironmentRenderer homeEnvironmentRenderer;
+    private final VrPointerRenderer pointerRenderer;
     private final DosSession dosSession;
     private final DosSurfaceRenderer dosRenderer;
     private final NativeModuleRuntime nativeModuleRuntime;
@@ -173,6 +201,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer uvBuffer;
+    private final FloatBuffer homeLeftVertexBuffer;
+    private final FloatBuffer homeLeftUvBuffer;
+    private final FloatBuffer homeCenterVertexBuffer;
+    private final FloatBuffer homeCenterUvBuffer;
+    private final FloatBuffer homeRightVertexBuffer;
+    private final FloatBuffer homeRightUvBuffer;
     private final FloatBuffer hudVertexBuffer;
     private final FloatBuffer hudUvBuffer;
 
@@ -187,6 +221,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] headEuler = new float[3];
     private final float[] headForward = new float[3];
     private final float[] adjustedHeadForward = new float[3];
+    private final float[] controllerForward = new float[3];
+    private final float[] adjustedControllerForward = new float[3];
+    private final float[] activePointerOrigin = new float[3];
+    private final float[] activePointerDirection = new float[3];
 
     private final AtomicBoolean firstFrameReported =
         new AtomicBoolean();
@@ -235,6 +273,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile int mode;
     private int setupStep;
     private volatile int hoveredButton = -1;
+    private volatile long controllerPoseReceivedAtNanos;
+    private volatile float controllerOrientationX;
+    private volatile float controllerOrientationY;
+    private volatile float controllerOrientationZ;
+    private volatile float controllerOrientationW;
+    private volatile boolean controllerPoseValid;
+    private volatile boolean controllerPointerActive;
+    private volatile float controllerPointerDistance = 6.0f;
+    private volatile boolean controllerPointerHit;
     private float yawOffsetRadians;
     private float userIpdMeters;
     private float uiScale;
@@ -261,6 +308,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         videoRenderer = new VideoSurfaceRenderer(host::onVideoSurfaceTextureReady);
         homeEnvironmentRenderer =
             new HomeEnvironmentRenderer();
+        pointerRenderer = new VrPointerRenderer();
         dosRenderer = new DosSurfaceRenderer(dosSession);
 
         userIpdMeters = preferences.getUserIpdMeters(this.viewerInterLensMeters);
@@ -290,6 +338,64 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         vertexBuffer = allocate(vertices);
         uvBuffer = allocate(uvs);
+
+        homeLeftVertexBuffer =
+            allocate(
+                panelVertices(
+                    HOME_LEFT_WORLD_LEFT,
+                    HOME_LEFT_WORLD_RIGHT,
+                    HOME_WORLD_BOTTOM,
+                    HOME_WORLD_TOP,
+                    HOME_LEFT_WORLD_Z
+                )
+            );
+        homeLeftUvBuffer =
+            allocate(
+                panelUvs(
+                    HOME_LEFT_PIXEL_LEFT,
+                    HOME_LEFT_PIXEL_RIGHT,
+                    HOME_PIXEL_TOP,
+                    HOME_PIXEL_BOTTOM
+                )
+            );
+        homeCenterVertexBuffer =
+            allocate(
+                panelVertices(
+                    HOME_CENTER_WORLD_LEFT,
+                    HOME_CENTER_WORLD_RIGHT,
+                    HOME_WORLD_BOTTOM,
+                    HOME_WORLD_TOP,
+                    HOME_CENTER_WORLD_Z
+                )
+            );
+        homeCenterUvBuffer =
+            allocate(
+                panelUvs(
+                    HOME_CENTER_PIXEL_LEFT,
+                    HOME_CENTER_PIXEL_RIGHT,
+                    HOME_PIXEL_TOP,
+                    HOME_PIXEL_BOTTOM
+                )
+            );
+        homeRightVertexBuffer =
+            allocate(
+                panelVertices(
+                    HOME_RIGHT_WORLD_LEFT,
+                    HOME_RIGHT_WORLD_RIGHT,
+                    HOME_WORLD_BOTTOM,
+                    HOME_WORLD_TOP,
+                    HOME_RIGHT_WORLD_Z
+                )
+            );
+        homeRightUvBuffer =
+            allocate(
+                panelUvs(
+                    HOME_RIGHT_PIXEL_LEFT,
+                    HOME_RIGHT_PIXEL_RIGHT,
+                    HOME_PIXEL_TOP,
+                    HOME_PIXEL_BOTTOM
+                )
+            );
 
         hudVertexBuffer = allocate(new float[12]);
         hudUvBuffer = allocate(new float[] {
