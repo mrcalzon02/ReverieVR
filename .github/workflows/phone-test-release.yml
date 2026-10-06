@@ -168,6 +168,13 @@ jobs:
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libGfxPluginCardboard.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libGfxPluginCardboard.so"
 
+          # Compilation against Cardboard is not sufficient: a minified
+          # library AAR can still strip CardboardView before final packaging.
+          # Verify the actual installable APK contains the runtime class.
+          unzip -p "$APK" 'classes*.dex' \
+            | strings \
+            | grep -Fq 'Lcom/google/cardboard/sdk/CardboardView;'
+
           APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/apksigner"
           AAPT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/aapt"
 
