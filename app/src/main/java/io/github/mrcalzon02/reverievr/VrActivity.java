@@ -200,7 +200,7 @@ public final class VrActivity extends Activity
         cardboardView.setOnBackButtonClick(this::finish);
         cardboardView.setOnSettingsButtonClick(
             () -> inputRouter.submitAction(
-                VrInputAction.BACK,
+                VrInputAction.MENU,
                 "Cardboard system control"
             )
         );
@@ -605,6 +605,11 @@ public final class VrActivity extends Activity
                 if (!renderer.consumeBackDuringInputTraining()) {
                     renderer.requestBack();
                 }
+                break;
+
+            case MENU:
+                uiFeedback.activation();
+                renderer.toggleOrientationMenu();
                 break;
 
             case RECENTER:
