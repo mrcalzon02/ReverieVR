@@ -20,6 +20,7 @@ final class ReveriePreferences {
     private static final String KEY_VIDEO_URI = "video_uri";
     private static final String KEY_VIDEO_DISPLAY_NAME = "video_display_name";
     private static final String KEY_VIDEO_PROJECTION = "video_projection";
+    private static final String KEY_HOME_ENVIRONMENT = "home_environment";
 
     private final SharedPreferences preferences;
 
@@ -167,6 +168,30 @@ final class ReveriePreferences {
             : projection;
         preferences.edit()
             .putString(KEY_VIDEO_PROJECTION, safe.name())
+            .apply();
+    }
+
+    HomeEnvironment getHomeEnvironment() {
+        return HomeEnvironment.fromPreference(
+            preferences.getString(
+                KEY_HOME_ENVIRONMENT,
+                HomeEnvironment.WHITE_ROOM.preferenceValue
+            )
+        );
+    }
+
+    void setHomeEnvironment(
+        HomeEnvironment environment
+    ) {
+        HomeEnvironment safe =
+            environment == null
+                ? HomeEnvironment.WHITE_ROOM
+                : environment;
+        preferences.edit()
+            .putString(
+                KEY_HOME_ENVIRONMENT,
+                safe.preferenceValue
+            )
             .apply();
     }
 
