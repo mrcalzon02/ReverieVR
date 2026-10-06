@@ -291,6 +291,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final AtomicInteger controllerBattery = new AtomicInteger(-1);
     private final AtomicInteger videoSeekRequestedMillis = new AtomicInteger();
     private final AtomicBoolean dosExitRequested = new AtomicBoolean();
+    private final long vrSessionStartedNanos =
+        System.nanoTime();
 
     private volatile boolean controllerConnected;
     private volatile String controllerMessage = "Controller";
@@ -363,6 +365,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean bindingHeadInitialized;
     private boolean controllerTrainingReturn;
     private long lastPerformanceLogNanos;
+    private long lastQuickMenuStatusRefreshNanos;
     private float previousBindingYaw;
     private float previousBindingPitch;
 
@@ -527,6 +530,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         hoveredButton = -1;
         selectRequested.set(false);
         backRequested.set(false);
+        if (orientationMenuVisible) {
+            lastQuickMenuStatusRefreshNanos = 0L;
+        }
         textureDirty = true;
     }
 
@@ -915,6 +921,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (orientationMenuVisible) {
+            if (lastQuickMenuStatusRefreshNanos == 0L
+                || frameNanos
+                    - lastQuickMenuStatusRefreshNanos
+                    >= 1000000000L) {
+                lastQuickMenuStatusRefreshNanos =
+                    frameNanos;
+                textureDirty = true;
+            }
+
             if (mode == MODE_VIDEO) {
                 videoRenderer.updateFrame();
             } else if (
@@ -3470,6 +3485,70 @@ final class VrShellRenderer implements CardboardView.Renderer {
             ORIENTATION_MENU_BUTTONS
         );
 
+        int phonePercent =
+            phoneBattery.get();
+        int controllerPercent =
+            controllerBattery.get();
+        long elapsedSeconds =
+            Math.max(
+                0L,
+                (
+                    System.nanoTime()
+                        - vrSessionStartedNanos
+                ) / 1000000000L
+            );
+        long elapsedMinutes =
+            elapsedSeconds / 60L;
+        long remainingSeconds =
+            elapsedSeconds % 60L;
+
+        PerformanceEnvironmentSnapshot environment =
+            host.getPerformanceEnvironmentSnapshot();
+        if (environment == null) {
+            environment =
+                PerformanceEnvironmentSnapshot
+                    .unavailable();
+        }
+
+        FramePerformanceTracker.Snapshot performance =
+            performanceTracker.snapshot();
+
+        String phoneLabel =
+            phonePercent >= 0
+                ? phonePercent + "%"
+                : "N/A";
+        String controllerPowerLabel =
+            controllerPercent >= 0
+                ? controllerPercent + "%"
+                : "N/A";
+        String sessionLabel =
+            String.format(
+                Locale.US,
+                "%d:%02d",
+                elapsedMinutes,
+                remainingSeconds
+            );
+        String batteryTempLabel =
+            environment.batteryTemperatureTenthsC
+                    == PerformanceEnvironmentSnapshot
+                        .BATTERY_TEMPERATURE_UNAVAILABLE
+                ? "N/A"
+                : String.format(
+                    Locale.US,
+                    "%.1fC",
+                    environment
+                        .batteryTemperatureTenthsC
+                        / 10.0
+                );
+        String performanceLabel =
+            performance.sampleCount > 0
+                ? String.format(
+                    Locale.US,
+                    "P95 %.1fms",
+                    performance.p95Millis
+                )
+                : "P95 N/A";
+
         paint.setColor(
             Color.rgb(
                 144,
@@ -3478,12 +3557,42 @@ final class VrShellRenderer implements CardboardView.Renderer {
             )
         );
         paint.setTextSize(
-            17.0f * uiScale
+            15.0f
+                * Math.min(
+                    uiScale,
+                    1.2f
+                )
+        );
+        canvas.drawText(
+            "PHONE "
+                + phoneLabel
+                + " • CTRL "
+                + controllerPowerLabel
+                + " • SESSION "
+                + sessionLabel,
+            220,
+            574,
+            paint
+        );
+        canvas.drawText(
+            "THERMAL "
+                + PerformanceEnvironmentSnapshot
+                    .thermalStatusLabel(
+                        environment.thermalStatus
+                    )
+                    .toUpperCase(Locale.US)
+                + " • BAT "
+                + batteryTempLabel
+                + " • "
+                + performanceLabel,
+            220,
+            600,
+            paint
         );
         canvas.drawText(
             "Menu/Start toggles this panel anywhere.",
-            250,
-            616,
+            220,
+            626,
             paint
         );
     }
