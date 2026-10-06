@@ -41,6 +41,10 @@ public final class VrActivity extends Activity
 
     static final String EXTRA_STARTUP_ERROR =
         "io.github.mrcalzon02.reverievr.VR_STARTUP_ERROR";
+    static final String EXTRA_REQUEST_MEDIA_PICKER =
+        "io.github.mrcalzon02.reverievr.REQUEST_MEDIA_PICKER";
+    static final String EXTRA_REQUEST_DOS_PICKER =
+        "io.github.mrcalzon02.reverievr.REQUEST_DOS_PICKER";
 
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
 
@@ -788,6 +792,34 @@ public final class VrActivity extends Activity
     @Override
     public void onExitToPhoneRequested() {
         runOnUiThread(this::finish);
+    }
+
+    @Override
+    public void onMediaSelectionRequested() {
+        returnToPhonePicker(
+            EXTRA_REQUEST_MEDIA_PICKER
+        );
+    }
+
+    @Override
+    public void onDosImportRequested() {
+        returnToPhonePicker(
+            EXTRA_REQUEST_DOS_PICKER
+        );
+    }
+
+    private void returnToPhonePicker(
+        String extra
+    ) {
+        runOnUiThread(() -> {
+            Intent result = new Intent();
+            result.putExtra(extra, true);
+            setResult(
+                Activity.RESULT_OK,
+                result
+            );
+            finish();
+        });
     }
 
     @Override
