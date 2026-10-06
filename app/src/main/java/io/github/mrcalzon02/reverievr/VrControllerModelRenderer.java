@@ -1,5 +1,6 @@
 package io.github.mrcalzon02.reverievr;
 
+import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 
@@ -62,6 +63,8 @@ final class VrControllerModelRenderer {
 
     private final FloatBuffer disc =
         buildDisc(20);
+    private final DaydreamControllerAssetRenderer
+        assetRenderer;
 
     private final float[] eyeView = new float[16];
     private final float[] correctedEyeView = new float[16];
@@ -95,6 +98,15 @@ final class VrControllerModelRenderer {
     private int mvpHandle;
     private int colorHandle;
 
+    VrControllerModelRenderer(
+        Context context
+    ) {
+        assetRenderer =
+            new DaydreamControllerAssetRenderer(
+                context
+            );
+    }
+
     void onSurfaceCreated() {
         program =
             buildProgram(
@@ -116,6 +128,17 @@ final class VrControllerModelRenderer {
                 program,
                 "u_Color"
             );
+        assetRenderer.onSurfaceCreated();
+    }
+
+    void setAnchor(
+        float x,
+        float y,
+        float z
+    ) {
+        anchorX = x;
+        anchorY = y;
+        anchorZ = z;
     }
 
     void setTrackedPose(
@@ -234,6 +257,20 @@ final class VrControllerModelRenderer {
 
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
+
+        if (assetRenderer.isAvailable()) {
+            assetRenderer.drawEye(
+                eye,
+                correctedEyeView,
+                root,
+                touchpadPressed,
+                homePressed,
+                appPressed,
+                volumeUpPressed,
+                volumeDownPressed
+            );
+            return;
+        }
 
         drawCube(
             eye,
@@ -499,6 +536,7 @@ final class VrControllerModelRenderer {
     }
 
     void shutdown() {
+        assetRenderer.shutdown();
         if (program != 0) {
             GLES20.glDeleteProgram(program);
             program = 0;
