@@ -22,6 +22,13 @@ final class ReveriePreferences {
     private static final String KEY_VIDEO_PROJECTION = "video_projection";
     private static final String KEY_HOME_ENVIRONMENT = "home_environment";
     private static final String KEY_VR_POINTER_MODE = "vr_pointer_mode";
+    private static final String KEY_LAST_ACTIVITY_TYPE = "last_activity_type";
+    private static final String KEY_LAST_DOS_MODULE_ID = "last_dos_module_id";
+    private static final String KEY_LAST_DOS_MODULE_NAME = "last_dos_module_name";
+
+    static final String LAST_ACTIVITY_NONE = "";
+    static final String LAST_ACTIVITY_MEDIA = "media";
+    static final String LAST_ACTIVITY_DOS = "dos";
 
     private final SharedPreferences preferences;
 
@@ -151,10 +158,21 @@ final class ReveriePreferences {
     }
 
     void clearSelectedVideo() {
-        preferences.edit()
-            .remove(KEY_VIDEO_URI)
-            .remove(KEY_VIDEO_DISPLAY_NAME)
-            .apply();
+        SharedPreferences.Editor editor =
+            preferences.edit()
+                .remove(KEY_VIDEO_URI)
+                .remove(KEY_VIDEO_DISPLAY_NAME);
+
+        if (LAST_ACTIVITY_MEDIA.equals(
+                getLastActivityType()
+            )) {
+            editor
+                .remove(KEY_LAST_ACTIVITY_TYPE)
+                .remove(KEY_LAST_DOS_MODULE_ID)
+                .remove(KEY_LAST_DOS_MODULE_NAME);
+        }
+
+        editor.apply();
     }
 
     VideoProjection getVideoProjection() {
@@ -215,6 +233,90 @@ final class ReveriePreferences {
                 KEY_VR_POINTER_MODE,
                 safe.preferenceValue
             )
+            .apply();
+    }
+
+    String getLastActivityType() {
+        String value =
+            preferences.getString(
+                KEY_LAST_ACTIVITY_TYPE,
+                LAST_ACTIVITY_NONE
+            );
+        if (LAST_ACTIVITY_MEDIA.equals(value)
+            || LAST_ACTIVITY_DOS.equals(value)) {
+            return value;
+        }
+        return LAST_ACTIVITY_NONE;
+    }
+
+    void markLastActivityMedia() {
+        preferences.edit()
+            .putString(
+                KEY_LAST_ACTIVITY_TYPE,
+                LAST_ACTIVITY_MEDIA
+            )
+            .remove(KEY_LAST_DOS_MODULE_ID)
+            .remove(KEY_LAST_DOS_MODULE_NAME)
+            .apply();
+    }
+
+    void markLastActivityDos(
+        String moduleId,
+        String displayName
+    ) {
+        String safeId =
+            moduleId == null
+                ? ""
+                : moduleId.trim();
+        if (safeId.isEmpty()) {
+            return;
+        }
+
+        preferences.edit()
+            .putString(
+                KEY_LAST_ACTIVITY_TYPE,
+                LAST_ACTIVITY_DOS
+            )
+            .putString(
+                KEY_LAST_DOS_MODULE_ID,
+                safeId
+            )
+            .putString(
+                KEY_LAST_DOS_MODULE_NAME,
+                displayName == null
+                    ? ""
+                    : displayName.trim()
+            )
+            .apply();
+    }
+
+    String getLastDosModuleId() {
+        String value =
+            preferences.getString(
+                KEY_LAST_DOS_MODULE_ID,
+                ""
+            );
+        return value == null
+            ? ""
+            : value.trim();
+    }
+
+    String getLastDosModuleName() {
+        String value =
+            preferences.getString(
+                KEY_LAST_DOS_MODULE_NAME,
+                ""
+            );
+        return value == null
+            ? ""
+            : value.trim();
+    }
+
+    void clearLastActivity() {
+        preferences.edit()
+            .remove(KEY_LAST_ACTIVITY_TYPE)
+            .remove(KEY_LAST_DOS_MODULE_ID)
+            .remove(KEY_LAST_DOS_MODULE_NAME)
             .apply();
     }
 
