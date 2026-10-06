@@ -798,6 +798,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
         headTransform.getEulerAngles(headEuler, 0);
         headTransform.getForwardVector(headForward, 0);
 
+        if (!shellHeadingInitialized) {
+            shellHeadingInitialized = true;
+            yawOffsetRadians =
+                wrapAngle(headEuler[1]);
+            controllerModelRenderer
+                .setYawCalibration(
+                    controllerYawCalibrationRadians
+                );
+            ReverieLog.milestone(
+                "VR_HEADING",
+                "Initial shell forward aligned to first stable headset heading."
+            );
+        }
+
         float bindingPitch = headEuler[0];
         float bindingYaw = headEuler[1];
         if (bindingHeadInitialized) {
@@ -843,14 +857,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (recenterRequested.getAndSet(false)) {
-            yawOffsetRadians = headEuler[1];
-            virtualPointerYaw = 0.0f;
-            virtualPointerPitch = 0.0f;
-            virtualPointerLastFrameNanos = 0L;
-            headInertialTranslation.reset();
-            headInertialLastFrameNanos = 0L;
-            host.onControllerRecenterRequested();
-            textureDirty = true;
+            recenterOnHeadset(
+                frameNanos
+            );
         }
 
         Matrix.setRotateM(
@@ -1513,15 +1522,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         VrPointerMode pointerMode =
             preferences.getVrPointerMode();
 
-        long poseAgeNanos =
-            frameNanos
-                - controllerPoseReceivedAtNanos;
         boolean freshControllerPose =
-            controllerConnected
-                && controllerPoseValid
-                && controllerPoseReceivedAtNanos > 0L
-                && poseAgeNanos >= 0L
-                && poseAgeNanos <= 750000000L;
+            hasFreshControllerPose(
+                frameNanos
+            );
 
         boolean useTrackedController =
             freshControllerPose
@@ -1540,12 +1544,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerOrientationW,
                 controllerForward
             );
-            System.arraycopy(
+            rotateYaw(
                 controllerForward,
-                0,
-                adjustedControllerForward,
-                0,
-                3
+                -controllerYawCalibrationRadians,
+                adjustedControllerForward
             );
             normalizeDirection(
                 adjustedControllerForward
@@ -1588,6 +1590,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 3
             );
 
+            controllerModelRenderer
+                .setYawCalibration(
+                    controllerYawCalibrationRadians
+                );
             controllerModelRenderer.setTrackedPose(
                 controllerOrientationX,
                 controllerOrientationY,
@@ -1722,6 +1728,126 @@ final class VrShellRenderer implements CardboardView.Renderer {
             activePointerDirection
         );
         return false;
+    }
+
+    private boolean hasFreshControllerPose(
+        long frameNanos
+    ) {
+        long poseAgeNanos =
+            frameNanos
+                - controllerPoseReceivedAtNanos;
+        return controllerConnected
+            && controllerPoseValid
+            && controllerPoseReceivedAtNanos > 0L
+            && poseAgeNanos >= 0L
+            && poseAgeNanos <= 750000000L;
+    }
+
+    private void recenterOnHeadset(
+        long frameNanos
+    ) {
+        setShellHeading(
+            headEuler[1],
+            hasFreshControllerPose(
+                frameNanos
+            )
+        );
+        ReverieLog.milestone(
+            "VR_HEADING",
+            "Shell forward centered on headset heading."
+        );
+    }
+
+    private boolean recenterOnController(
+        long frameNanos
+    ) {
+        if (!hasFreshControllerPose(
+                frameNanos
+            )) {
+            return false;
+        }
+
+        quaternionForward(
+            controllerOrientationX,
+            controllerOrientationY,
+            controllerOrientationZ,
+            controllerOrientationW,
+            controllerForward
+        );
+        rotateYaw(
+            controllerForward,
+            -controllerYawCalibrationRadians,
+            adjustedControllerForward
+        );
+        normalizeDirection(
+            adjustedControllerForward
+        );
+
+        float horizontalLengthSquared =
+            adjustedControllerForward[0]
+                * adjustedControllerForward[0]
+                + adjustedControllerForward[2]
+                    * adjustedControllerForward[2];
+        if (!Float.isFinite(
+                horizontalLengthSquared
+            )
+            || horizontalLengthSquared
+                < 0.0004f) {
+            return false;
+        }
+
+        float controllerYaw =
+            (float) Math.atan2(
+                adjustedControllerForward[0],
+                -adjustedControllerForward[2]
+            );
+
+        setShellHeading(
+            yawOffsetRadians
+                + controllerYaw,
+            true
+        );
+        ReverieLog.milestone(
+            "VR_HEADING",
+            "Shell forward centered on tracked controller pointing direction."
+        );
+        return true;
+    }
+
+    private void setShellHeading(
+        float requestedYawRadians,
+        boolean preserveControllerDirection
+    ) {
+        float nextYaw =
+            wrapAngle(
+                requestedYawRadians
+            );
+        float delta =
+            wrapAngle(
+                nextYaw
+                    - yawOffsetRadians
+            );
+
+        yawOffsetRadians = nextYaw;
+        if (preserveControllerDirection) {
+            controllerYawCalibrationRadians =
+                wrapAngle(
+                    controllerYawCalibrationRadians
+                        + delta
+                );
+        }
+
+        controllerModelRenderer
+            .setYawCalibration(
+                controllerYawCalibrationRadians
+            );
+
+        virtualPointerYaw = 0.0f;
+        virtualPointerPitch = 0.0f;
+        virtualPointerLastFrameNanos = 0L;
+        headInertialTranslation.reset();
+        headInertialLastFrameNanos = 0L;
+        textureDirty = true;
     }
 
     private void updateHeadInertialTranslation(
