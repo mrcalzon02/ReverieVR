@@ -25,6 +25,15 @@ final class DaydreamControllerAssetRenderer {
     private static final float Z_NEAR = 0.10f;
     private static final float Z_FAR = 30.0f;
 
+    private static final float[] PRESSED_COLOR =
+        new float[] {0.18f, 0.88f, 1.00f};
+    private static final float[] BODY_COLOR =
+        new float[] {0.62f, 0.64f, 0.67f};
+    private static final float[] TOUCHPAD_COLOR =
+        new float[] {0.39f, 0.41f, 0.44f};
+    private static final float[] BUTTON_COLOR =
+        new float[] {0.72f, 0.74f, 0.77f};
+
     private final List<MeshPart> parts;
 
     private final float[] assetModel = new float[16];
@@ -253,33 +262,17 @@ final class DaydreamControllerAssetRenderer {
         boolean pressed
     ) {
         if (pressed) {
-            return new float[] {
-                0.18f,
-                0.88f,
-                1.00f
-            };
+            return PRESSED_COLOR;
         }
 
         if ("MatBody".equals(material)) {
-            return new float[] {
-                0.62f,
-                0.64f,
-                0.67f
-            };
+            return BODY_COLOR;
         }
         if ("MatTouchpad".equals(material)) {
-            return new float[] {
-                0.39f,
-                0.41f,
-                0.44f
-            };
+            return TOUCHPAD_COLOR;
         }
 
-        return new float[] {
-            0.72f,
-            0.74f,
-            0.77f
-        };
+        return BUTTON_COLOR;
     }
 
     private static List<MeshPart> load(
