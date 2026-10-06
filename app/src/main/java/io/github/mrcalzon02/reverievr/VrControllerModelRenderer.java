@@ -70,6 +70,8 @@ final class VrControllerModelRenderer {
     private final float[] correctedEyeView = new float[16];
     private final float[] root = new float[16];
     private final float[] rotation = new float[16];
+    private final float[] yawCalibration = new float[16];
+    private final float[] calibratedRotation = new float[16];
     private final float[] local = new float[16];
     private final float[] model = new float[16];
     private final float[] modelView = new float[16];
@@ -86,6 +88,7 @@ final class VrControllerModelRenderer {
     private volatile float qw = 1.0f;
     private volatile float virtualYaw;
     private volatile float virtualPitch;
+    private volatile float yawCalibrationRadians;
 
     private volatile boolean touchpadPressed;
     private volatile boolean homePressed;
@@ -139,6 +142,12 @@ final class VrControllerModelRenderer {
         anchorX = x;
         anchorY = y;
         anchorZ = z;
+    }
+
+    void setYawCalibration(
+        float radians
+    ) {
+        yawCalibrationRadians = radians;
     }
 
     void setTrackedPose(
@@ -224,6 +233,31 @@ final class VrControllerModelRenderer {
                 qz,
                 qw,
                 rotation
+            );
+            Matrix.setRotateM(
+                yawCalibration,
+                0,
+                (float) Math.toDegrees(
+                    -yawCalibrationRadians
+                ),
+                0.0f,
+                1.0f,
+                0.0f
+            );
+            Matrix.multiplyMM(
+                calibratedRotation,
+                0,
+                yawCalibration,
+                0,
+                rotation,
+                0
+            );
+            System.arraycopy(
+                calibratedRotation,
+                0,
+                rotation,
+                0,
+                16
             );
         } else {
             Matrix.setIdentityM(rotation, 0);
