@@ -14,6 +14,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Vendored and integrated the selected low-poly Daydream controller model with preserved upstream attribution/license files; its separated controls respond to button state and the procedural model remains only as a load-failure fallback.
 - Unified the visible controller anchor and pointer emitter, including the bounded headset/body offset, so the ray begins at the front of the rendered controller instead of its center.
 - Added pure-Java tests for inertial deadzone, bounds, reset, and spring return.
+- Phone-test #42 passed the full JVM/Android/NDK/signing/package-verification pipeline and published `phone-test-42-1`; CI confirmed the final APK contains both `CardboardView` and the vendored Daydream controller OBJ.
 
 ### UI integrity
 
