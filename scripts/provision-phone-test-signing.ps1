@@ -132,7 +132,7 @@ if ((Test-Path $Keystore) -and -not $Force) {
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
 $StorePassword = New-RandomSecret
-$KeyPassword = New-RandomSecret
+$KeyPassword = $StorePassword
 
 if (Test-Path $Keystore) { Remove-Item -Force $Keystore }
 if (Test-Path $Certificate) { Remove-Item -Force $Certificate }
@@ -149,7 +149,7 @@ if ($keytoolPath) {
         "-keysize", "3072",
         "-sigalg", "SHA256withRSA",
         "-validity", "36500",
-        "-storetype", "JKS",
+        "-storetype", "PKCS12",
         "-keystore", $Keystore,
         "-storepass", $StorePassword,
         "-keypass", $KeyPassword,
