@@ -285,6 +285,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] eyeView = new float[16];
     private final float[] modelViewProjection = new float[16];
     private final float[] tempMatrix = new float[16];
+    private final float[] inverseAdjustedHeadView = new float[16];
+    private final float[] controllerAnchorView = new float[4];
+    private final float[] controllerAnchorWorld = new float[4];
     private final float[] hudIdentity = new float[16];
     private final float[] hudVertices = new float[12];
     private final float[] yawMatrix = new float[16];
@@ -2029,15 +2032,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 adjustedControllerForward
             );
 
+            resolveControllerViewAnchor();
             float controllerAnchorX =
-                CONTROLLER_ANCHOR_X
-                    + headInertialTranslation.x();
+                controllerAnchorWorld[0];
             float controllerAnchorY =
-                CONTROLLER_ANCHOR_Y
-                    + headInertialTranslation.y();
+                controllerAnchorWorld[1];
             float controllerAnchorZ =
-                CONTROLLER_ANCHOR_Z
-                    + headInertialTranslation.z();
+                controllerAnchorWorld[2];
 
             controllerModelRenderer.setAnchor(
                 controllerAnchorX,
@@ -2125,15 +2126,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 activePointerDirection
             );
 
+            resolveControllerViewAnchor();
             float controllerAnchorX =
-                CONTROLLER_ANCHOR_X
-                    + headInertialTranslation.x();
+                controllerAnchorWorld[0];
             float controllerAnchorY =
-                CONTROLLER_ANCHOR_Y
-                    + headInertialTranslation.y();
+                controllerAnchorWorld[1];
             float controllerAnchorZ =
-                CONTROLLER_ANCHOR_Z
-                    + headInertialTranslation.z();
+                controllerAnchorWorld[2];
 
             controllerModelRenderer.setAnchor(
                 controllerAnchorX,
@@ -2212,6 +2211,48 @@ final class VrShellRenderer implements CardboardView.Renderer {
             activePointerDirection
         );
         return false;
+    }
+
+    private void resolveControllerViewAnchor() {
+        /*
+         * Keep the handset at a stable local offset from the headset view.
+         * Only its position follows the head/view frame. The controller's
+         * tracked quaternion is still applied independently by
+         * VrControllerModelRenderer, so the user can twist and aim the
+         * handset naturally instead of having it inherit head rotation.
+         */
+        controllerAnchorView[0] = CONTROLLER_ANCHOR_X;
+        controllerAnchorView[1] = CONTROLLER_ANCHOR_Y;
+        controllerAnchorView[2] = CONTROLLER_ANCHOR_Z;
+        controllerAnchorView[3] = 1.0f;
+
+        if (!Matrix.invertM(
+                inverseAdjustedHeadView,
+                0,
+                adjustedHeadView,
+                0
+            )) {
+            controllerAnchorWorld[0] =
+                CONTROLLER_ANCHOR_X
+                    + headInertialTranslation.x();
+            controllerAnchorWorld[1] =
+                CONTROLLER_ANCHOR_Y
+                    + headInertialTranslation.y();
+            controllerAnchorWorld[2] =
+                CONTROLLER_ANCHOR_Z
+                    + headInertialTranslation.z();
+            controllerAnchorWorld[3] = 1.0f;
+            return;
+        }
+
+        Matrix.multiplyMV(
+            controllerAnchorWorld,
+            0,
+            inverseAdjustedHeadView,
+            0,
+            controllerAnchorView,
+            0
+        );
     }
 
     private boolean hasFreshControllerPose(
