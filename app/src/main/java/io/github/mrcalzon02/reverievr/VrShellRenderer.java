@@ -1748,11 +1748,54 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (px >= rect[0]
                 && px <= rect[2]
                 && py >= rect[1]
-                && py <= rect[3]) {
+                && py <= rect[3]
+                && isButtonEnabled(index)) {
                 return index;
             }
         }
         return -1;
+    }
+
+    private boolean isButtonEnabled(
+        int index
+    ) {
+        if (index < 0) {
+            return false;
+        }
+
+        if (mode == MODE_HOME) {
+            if (index == 2) {
+                return NativeModuleRuntime.isAvailable()
+                    && !nativeModules.isEmpty();
+            }
+            return index < HOME_BUTTONS.length;
+        }
+
+        if (mode == MODE_DOS_LIBRARY) {
+            if (index >= 0 && index <= 2) {
+                int moduleIndex =
+                    dosLibraryPage * 3 + index;
+                return moduleIndex < dosModuleIds.length
+                    || (
+                        dosModuleIds.length == 0
+                            && index == 0
+                    );
+            }
+
+            if (index == 3) {
+                int pageCount =
+                    Math.max(
+                        1,
+                        (dosModuleIds.length + 2) / 3
+                    );
+                return pageCount > 1;
+            }
+
+            return index == 4;
+        }
+
+        int[][] buttons = activeButtons();
+        return index < buttons.length;
     }
 
     private static UiRayHit nearer(
@@ -1830,6 +1873,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void activateHoveredButton() {
         if (hoveredButton < 0) {
+            return;
+        }
+
+        if (!isButtonEnabled(hoveredButton)) {
+            host.onUiActionRejected();
             return;
         }
 
@@ -2712,20 +2760,31 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 labels[index - startIndex];
             int[] rect =
                 HOME_BUTTONS[index];
+            boolean enabled =
+                isButtonEnabled(index);
             boolean focused =
-                index == hoveredButton;
+                enabled
+                    && index == hoveredButton;
 
             paint.setColor(
-                focused
+                !enabled
                     ? Color.rgb(
-                        24,
-                        112,
-                        151
+                        28,
+                        32,
+                        38
                     )
-                    : Color.rgb(
-                        25,
-                        37,
-                        50
+                    : (
+                        focused
+                            ? Color.rgb(
+                                24,
+                                112,
+                                151
+                            )
+                            : Color.rgb(
+                                25,
+                                37,
+                                50
+                            )
                     )
             );
             canvas.drawRoundRect(
@@ -2764,7 +2823,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 );
             }
 
-            paint.setColor(Color.WHITE);
+            paint.setColor(
+                enabled
+                    ? Color.WHITE
+                    : Color.rgb(
+                        103,
+                        112,
+                        123
+                    )
+            );
             paint.setTextSize(
                 16.0f * uiScale
             );
@@ -3540,11 +3607,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
     ) {
         for (int index = 0; index < labels.length && index < rectangles.length; index++) {
             int[] rect = rectangles[index];
+            boolean enabled =
+                isButtonEnabled(index);
+            boolean focused =
+                enabled
+                    && index == hoveredButton;
 
             paint.setColor(
-                index == hoveredButton
-                    ? Color.rgb(42, 126, 121)
-                    : Color.rgb(38, 46, 57)
+                !enabled
+                    ? Color.rgb(29, 33, 39)
+                    : (
+                        focused
+                            ? Color.rgb(42, 126, 121)
+                            : Color.rgb(38, 46, 57)
+                    )
             );
             canvas.drawRoundRect(
                 rect[0],
@@ -3556,9 +3632,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 paint
             );
 
-            paint.setColor(Color.WHITE);
+            paint.setColor(
+                enabled
+                    ? Color.WHITE
+                    : Color.rgb(
+                        103,
+                        112,
+                        123
+                    )
+            );
             paint.setTextSize(24.0f * uiScale);
-            paint.setFakeBoldText(index == hoveredButton);
+            paint.setFakeBoldText(focused);
             float textWidth = paint.measureText(labels[index]);
             float x = rect[0] + ((rect[2] - rect[0]) - textWidth) * 0.5f;
             float y = rect[1] + ((rect[3] - rect[1]) * 0.5f)
