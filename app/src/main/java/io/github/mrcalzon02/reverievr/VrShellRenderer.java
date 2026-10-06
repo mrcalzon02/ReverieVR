@@ -2068,6 +2068,60 @@ final class VrShellRenderer implements CardboardView.Renderer {
         textureDirty = true;
     }
 
+    private void handleNativeLibrarySelection(
+        int button
+    ) {
+        int count = nativeModules.size();
+        int pageCount =
+            Math.max(
+                1,
+                (count + 2) / 3
+            );
+
+        if (button >= 0 && button <= 2) {
+            int moduleIndex =
+                nativeLibraryPage * 3 + button;
+
+            if (moduleIndex < count) {
+                NativeModuleRuntime.Descriptor module =
+                    nativeModules.get(
+                        moduleIndex
+                    );
+
+                if (module != null
+                    && host.onNativeModulePlaybackRequested(
+                        module.id
+                    )) {
+                    preferences.markLastActivityNative(
+                        module.id,
+                        module.displayName
+                    );
+                    nativeSurfaceReady = false;
+                    mode = MODE_NATIVE;
+                    hoveredButton = -1;
+                    return;
+                }
+            }
+
+            host.onUiActionRejected();
+        } else if (button == 3) {
+            if (pageCount > 1) {
+                nativeLibraryPage =
+                    (nativeLibraryPage + 1)
+                        % pageCount;
+            } else {
+                host.onUiActionRejected();
+            }
+        } else if (button == 4) {
+            mode = MODE_HOME;
+        } else {
+            host.onUiActionRejected();
+        }
+
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
     private void handleControllerSelection(
         int button
     ) {
@@ -3448,6 +3502,85 @@ final class VrShellRenderer implements CardboardView.Renderer {
     ) {
         return label
             + (enabled ? "  ON" : "  OFF");
+    }
+
+    private void drawNativeLibrary(
+        Canvas canvas,
+        Paint paint
+    ) {
+        int count = nativeModules.size();
+        int pageCount =
+            Math.max(
+                1,
+                (count + 2) / 3
+            );
+        int page =
+            Math.min(
+                nativeLibraryPage,
+                pageCount - 1
+            );
+        int start = page * 3;
+
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31.0f * uiScale);
+        canvas.drawText(
+            "NATIVE APPS",
+            90,
+            175,
+            paint
+        );
+
+        paint.setColor(
+            Color.rgb(
+                150,
+                162,
+                177
+            )
+        );
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            String.format(
+                Locale.US,
+                "%d modules  •  page %d / %d",
+                count,
+                page + 1,
+                pageCount
+            ),
+            90,
+            215,
+            paint
+        );
+
+        String[] labels =
+            new String[5];
+
+        for (int slot = 0;
+             slot < 3;
+             slot++) {
+            int index = start + slot;
+            labels[slot] =
+                index < count
+                    ? shorten(
+                        nativeModules
+                            .get(index)
+                            .displayName,
+                        42
+                    )
+                    : "—";
+        }
+
+        labels[3] =
+            pageCount > 1
+                ? "NEXT PAGE"
+                : "ONLY PAGE";
+        labels[4] = "BACK TO HOME";
+
+        drawButtons(
+            canvas,
+            paint,
+            labels,
+            NATIVE_LIBRARY_BUTTONS
+        );
     }
 
     private void drawControllerPanel(
