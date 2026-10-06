@@ -9,6 +9,7 @@ project(":cardboard") {
         android.defaultConfig.externalNativeBuild.cmake.arguments(
             "-DCARDBOARDSDK_UNITY_PLUGIN=OFF",
             "-DCARDBOARDSDK_RENDERING_VULKAN=OFF",
+            "-DCARDBOARDSDK_RENDERING_GLESv3=OFF",
             "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,--undefined-version"
         )
     }
