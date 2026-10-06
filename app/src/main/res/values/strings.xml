@@ -60,6 +60,9 @@ Available: %2$s</string>
     <string name="update_download_started">Update download started.</string>
     <string name="update_download_failed">The update download did not produce an installable file.</string>
     <string name="update_digest_failed">Update integrity check failed. The APK will not be installed.</string>
+    <string name="update_package_metadata_invalid">The selected release is missing trusted ReverieVR APK metadata and cannot be installed.</string>
+    <string name="update_channel_not_signed">This build is not part of the persistent ReverieVR signing lineage, so self-update is disabled.</string>
+    <string name="update_package_verification_failed_format">Update rejected: %1$s</string>
     <string name="update_installer_unavailable">Android could not open the package installer.</string>
 
     <string name="diagnostics_section">Diagnostics &amp; logging</string>
