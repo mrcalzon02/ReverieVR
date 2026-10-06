@@ -15,7 +15,7 @@ final class VrPointerRenderer {
 
     private final FloatBuffer vertices =
         ByteBuffer
-            .allocateDirect(6 * 4)
+            .allocateDirect(18 * 4)
             .order(ByteOrder.nativeOrder())
             .asFloatBuffer();
 
@@ -134,12 +134,29 @@ final class VrPointerRenderer {
             0
         );
 
+        float markerSize =
+            hitting ? 0.024f : 0.016f;
+
         vertices.position(0);
         vertices.put(originX);
         vertices.put(originY);
         vertices.put(originZ);
         vertices.put(endX);
         vertices.put(endY);
+        vertices.put(endZ);
+
+        vertices.put(endX - markerSize);
+        vertices.put(endY);
+        vertices.put(endZ);
+        vertices.put(endX + markerSize);
+        vertices.put(endY);
+        vertices.put(endZ);
+
+        vertices.put(endX);
+        vertices.put(endY - markerSize);
+        vertices.put(endZ);
+        vertices.put(endX);
+        vertices.put(endY + markerSize);
         vertices.put(endZ);
         vertices.position(0);
 
@@ -189,7 +206,7 @@ final class VrPointerRenderer {
             2
         );
 
-        vertices.position(3);
+        vertices.position(6);
         GLES20.glVertexAttribPointer(
             positionHandle,
             3,
@@ -198,13 +215,10 @@ final class VrPointerRenderer {
             0,
             vertices
         );
-        GLES20.glPointSize(
-            hitting ? 13.0f : 9.0f
-        );
         GLES20.glDrawArrays(
-            GLES20.GL_POINTS,
+            GLES20.GL_LINES,
             0,
-            1
+            4
         );
 
         GLES20.glDisableVertexAttribArray(
