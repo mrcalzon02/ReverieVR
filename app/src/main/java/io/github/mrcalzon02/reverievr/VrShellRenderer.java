@@ -903,6 +903,30 @@ final class VrShellRenderer implements CardboardView.Renderer {
             hudDroppedDown = newHudDroppedDown;
         }
 
+        if (orientationMenuVisible) {
+            if (mode == MODE_VIDEO) {
+                videoRenderer.updateFrame();
+            } else if (
+                mode == MODE_DOS
+                    || mode == MODE_DOS_OVERLAY
+                    || mode == MODE_DOS_BINDINGS
+            ) {
+                dosRenderer.updateFrame();
+            } else if (
+                mode == MODE_NATIVE
+                    && nativeSurfaceReady
+                    && nativeModuleRuntime != null
+                    && nativeModuleRuntime.isRunning()
+            ) {
+                nativeModuleRuntime.update();
+            }
+
+            updateShellInteraction(
+                frameNanos
+            );
+            return;
+        }
+
         if (mode == MODE_NATIVE) {
             selectRequested.set(false);
 
@@ -1001,6 +1025,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        updateShellInteraction(
+            frameNanos
+        );
+    }
+
+    private void updateShellInteraction(
+        long frameNanos
+    ) {
         rotateYaw(
             headForward,
             -yawOffsetRadians,
@@ -1014,7 +1046,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 activePointerOrigin,
                 activePointerDirection
             );
-        int newHover = hit.buttonIndex;
+        int newHover =
+            hit.buttonIndex;
 
         controllerPointerActive =
             usingControllerPointer;
@@ -1042,7 +1075,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (newHover != hoveredButton) {
-            hoveredButton = newHover;
+            hoveredButton =
+                newHover;
             textureDirty = true;
             if (newHover >= 0) {
                 host.onUiFocusChanged();
@@ -1106,13 +1140,41 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_VIDEO) {
-            videoRenderer.drawEye(eye, eyeCorrection);
+            videoRenderer.drawEye(
+                eye,
+                eyeCorrection
+            );
+            if (orientationMenuVisible) {
+                drawUiPanel(
+                    eye,
+                    eyeCorrection,
+                    true
+                );
+                drawPointerOverlay(
+                    eye,
+                    eyeCorrection
+                );
+            }
             drawPowerHudOverlay();
             return;
         }
 
         if (mode == MODE_DOS) {
-            dosRenderer.drawEye(eye, eyeCorrection);
+            dosRenderer.drawEye(
+                eye,
+                eyeCorrection
+            );
+            if (orientationMenuVisible) {
+                drawUiPanel(
+                    eye,
+                    eyeCorrection,
+                    true
+                );
+                drawPointerOverlay(
+                    eye,
+                    eyeCorrection
+                );
+            }
             drawPowerHudOverlay();
             return;
         }
@@ -1178,6 +1240,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 textureDirty = true;
             }
 
+            if (orientationMenuVisible) {
+                drawUiPanel(
+                    eye,
+                    eyeCorrection,
+                    true
+                );
+                drawPointerOverlay(
+                    eye,
+                    eyeCorrection
+                );
+            }
             drawPowerHudOverlay();
             return;
         }
