@@ -2,6 +2,41 @@ plugins {
     id "com.android.application"
 }
 
+def phoneTestRunNumber =
+    (project.findProperty("phoneTestRunNumber") ?: "0")
+        .toString()
+        .toInteger()
+def phoneTestRunAttempt =
+    (project.findProperty("phoneTestRunAttempt") ?: "0")
+        .toString()
+        .toInteger()
+def phoneTestVersionCode =
+    phoneTestRunNumber > 0
+        ? (
+            phoneTestRunNumber * 1000
+                + Math.max(phoneTestRunAttempt, 1)
+        )
+        : 1
+
+def phoneTestKeystorePath =
+    (project.findProperty("phoneTestKeystorePath") ?: "")
+        .toString()
+def phoneTestStorePassword =
+    (project.findProperty("phoneTestStorePassword") ?: "")
+        .toString()
+def phoneTestKeyAlias =
+    (project.findProperty("phoneTestKeyAlias") ?: "")
+        .toString()
+def phoneTestKeyPassword =
+    (project.findProperty("phoneTestKeyPassword") ?: "")
+        .toString()
+def phoneTestSigningConfigured =
+    !phoneTestKeystorePath.isEmpty()
+        && !phoneTestStorePassword.isEmpty()
+        && !phoneTestKeyAlias.isEmpty()
+        && !phoneTestKeyPassword.isEmpty()
+        && file(phoneTestKeystorePath).isFile()
+
 android {
     namespace = "io.github.mrcalzon02.reverievr.controller"
     compileSdk = 36
@@ -10,11 +45,41 @@ android {
         applicationId = "io.github.mrcalzon02.reverievr.controller"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = phoneTestVersionCode
         versionName = "0.1.0-dev"
     }
 
+    signingConfigs {
+        if (phoneTestSigningConfigured) {
+            phoneTest {
+                storeFile = file(phoneTestKeystorePath)
+                storePassword = phoneTestStorePassword
+                keyAlias = phoneTestKeyAlias
+                keyPassword = phoneTestKeyPassword
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            debuggable = true
+        }
+
+        phoneTest {
+            debuggable = false
+            minifyEnabled = false
+            matchingFallbacks = ["release", "debug"]
+
+            if (!phoneTestSigningConfigured) {
+                throw new GradleException(
+                    "phoneTest builds require persistent signing. "
+                        + "Provision the phone-test signing properties first."
+                )
+            }
+
+            signingConfig = signingConfigs.phoneTest
+        }
+
         release {
             minifyEnabled = false
         }
