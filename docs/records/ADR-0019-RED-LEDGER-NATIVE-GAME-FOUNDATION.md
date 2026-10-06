@@ -46,30 +46,73 @@ The event sequence is deterministic for now so tests and early headset observati
 
 The module restores host GL state after each eye render and owns no Android Activity, window, EGL context, Cardboard state or shell recovery action.
 
-## Temporary development-input rule
+## Native interaction and persistence contract
 
-ABI v1 currently exposes only movement plus primary/secondary button state. The hidden module may use those two actions as an internal development harness to advance serving/washing while validating simulation/render plumbing, but those bindings are **not** the product interaction design and are not grounds for exposing the module in VR Home.
+ABI v1 remains the compatibility identity. The interaction/persistence slice
+uses its existing structure-size convention to append fields and services
+rather than introducing a parallel ABI:
 
-The playable Red Ledger interaction contract must instead provide controller-oriented work-surface targeting/reach assistance suitable for a Daydream-class 3DoF controller. It must support real selection/use of the tap, cups, money/ledger and other bar objects without pretending a generic "press button to serve" path is hand interaction.
+- `ReverieNativeInputV1` appends a normalized world-space pointer ray plus a
+  pointer-kind discriminator for tracked controller versus virtual gamepad;
+- controller quaternion interpretation, yaw calibration, stale-pose rejection,
+  controller anchor/emitter placement and virtual-gamepad aim remain owned by
+  the ReverieVR shell;
+- raw Android controller pose is not exposed to modules;
+- `ReverieNativeHostV1` appends module-scoped save read/write callbacks;
+- the host restricts save slots to safe filenames inside the active module's
+  private app-data directory, enforces a 64 KiB payload ceiling and writes by
+  temporary file plus atomic replacement;
+- Red Ledger uses ray/AABB targets for its tap, wash station, ledger,
+  beer-order card, cup-order card and protection envelope;
+- Select continues through the normalized hosted-native binding profile and
+  activates only the currently reached target;
+- Quick Menu input suppression and shell-owned Back/Home/recovery are unchanged.
+
+Red Ledger state is serialized using an explicit versioned 152-byte
+little-endian schema rather than native C++ object memory. The decoder validates
+magic/version, bounded values and deterministic day/event consistency; corrupt
+data is rejected without replacing the fresh opening state.
+
+The module is still **not** in the host's compile-time built-in allowlist.
+Having a compiled interaction path is not evidence that its reach volumes,
+controller alignment or comfort are correct on the physical headset.
 
 ## Verification boundary
 
-This foundation may claim only what has actually been observed:
+Observed static/package evidence now includes:
 
-- strict host-C++ compilation/tests for the simulation core;
-- strict C++ syntax validation of the module against the ABI/GLES surface;
-- source-level NDK target wiring.
+- phone-test #50's Red Ledger C++17 `-Werror` simulation test, including
+  save/restore and corrupt-save rejection;
+- successful full unsigned Android/Java/JNI/NDK assembly;
+- successful persistently signed phone-test package assembly;
+- APK inspection finding `libreverie_module_red_ledger.so` in both
+  `armeabi-v7a` and `arm64-v8a`;
+- staged phone-test artifact and published prerelease `phone-test-50-1` from
+  commit `2e4d14e9e31dde1e1c674049b15dffb181dbcbaa`.
 
-It may **not** claim successful Android/NDK packaging, runtime loading, stereo correctness, controller usability, persistence, thermal safety or Galaxy S9 acceptance until those checks actually run.
+Run #50 was subsequently marked cancelled when newer phone-test #51 started
+under the repository's latest-build-wins concurrency policy. Its relevant
+Red Ledger/build/package/verify/release steps had already completed
+successfully and the release was published, so those completed outputs remain
+static/package evidence. They are not device evidence.
+
+No claim is made yet for runtime loading of Red Ledger, physical ray alignment,
+stereo correctness, real save durability, comfort, sustained frame pacing,
+battery/thermal safety or Galaxy S9 acceptance.
 
 ## Next gate
 
 Before the module can be allowlisted and shown to the user:
 
-1. close the relevant RV-0402 native-module device/runtime gap on the Galaxy S9;
-2. define the smallest backward-compatible native interaction/service extension needed for controller pose/reach and save state;
-3. wire real bar-object selection/use through that contract;
-4. add deterministic save/load coverage for economic state;
-5. build/package both target ABIs and then perform the first headset interaction/thermal pass.
+1. close the relevant RV-0402 Test Chamber/native-host runtime and lifecycle
+   gap on the Galaxy S9;
+2. exercise the Red Ledger controller ray on the real Daydream controller and
+   tune its work-surface targets/reach from headset evidence;
+3. verify Quick Menu, Home, Back and both recenter paths while Red Ledger is
+   active;
+4. verify Red Ledger state survives real exit/re-entry and an in-place APK
+   update;
+5. complete the 15-minute Galaxy S9 frame-pacing/battery/thermal pass.
 
-Only after those gates should Red Ledger become a visible Native Apps entry.
+Only after those gates should Red Ledger enter the trusted native allowlist and
+become a visible Native Apps entry.

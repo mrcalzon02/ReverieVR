@@ -8,7 +8,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
-- Began **Between Deliveries: The Red Ledger VR** as ReverieVR's first full native-game track: added a deterministic one-room bar/economy core, first three pressure events (protection, inspection, supply interruption), day-close accounting, recurring patrons/supplies, a deliberately low-poly GLES2 bar-room module, strict host-C++ smoke coverage, and an NDK shared-library target. The game remains deliberately absent from the Native Apps allowlist until real controller-oriented work-surface interaction, save services, Android build proof, and the Galaxy S9 native-module/runtime gates are satisfied.
+- Began **Between Deliveries: The Red Ledger VR** as ReverieVR's first full native-game track: added a deterministic one-room bar/economy core, first three pressure events (protection, inspection, supply interruption), day-close accounting, recurring patrons/supplies, a deliberately low-poly GLES2 bar-room module, strict host-C++ smoke coverage, and an NDK shared-library target.
+- Extended native ABI v1 append-only with shell-calibrated tracked/virtual-controller pointer rays and bounded module-private save callbacks, then replaced Red Ledger's button-only development harness with ray-targeted tap, wash, ledger, supplier-card and protection-envelope interactions. Red Ledger now uses an explicit versioned save schema with round-trip/corruption tests. Phone-test #50 completed the Red Ledger `-Werror` test, full unsigned and signed Android/NDK builds, dual-ABI APK library checks, artifact staging and `phone-test-50-1` publication before newer #51 superseded the overall workflow under latest-build-wins concurrency. The game remains deliberately outside the Native Apps allowlist pending physical Galaxy S9/Daydream interaction, recovery/recenter, persistence and thermal validation.
 
 ### VR presence and headset comfort
 
