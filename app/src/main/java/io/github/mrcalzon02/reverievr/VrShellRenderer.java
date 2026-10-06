@@ -1540,6 +1540,33 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 5:
                     host.onExitToPhoneRequested();
                     return;
+                case 6:
+                    preferences.setBatteryHudEnabled(
+                        !preferences.isBatteryHudEnabled()
+                    );
+                    hudTextureDirty = true;
+                    break;
+                case 7:
+                    preferences.setShowPercentagesEnabled(
+                        !preferences.isShowPercentagesEnabled()
+                    );
+                    hudTextureDirty = true;
+                    break;
+                case 8:
+                    preferences.setLookUpRevealEnabled(
+                        !preferences.isLookUpRevealEnabled()
+                    );
+                    break;
+                case 9:
+                    preferences.setVrPointerMode(
+                        preferences
+                            .getVrPointerMode()
+                            .next()
+                    );
+                    break;
+                case 10:
+                    requestRecenter();
+                    break;
                 default:
                     break;
             }
@@ -1924,27 +1951,54 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.reset();
         paint.setAntiAlias(true);
 
-        if (mode == MODE_DOS_OVERLAY
+        if (mode == MODE_HOME) {
+            canvas.drawColor(
+                Color.TRANSPARENT,
+                PorterDuff.Mode.CLEAR
+            );
+        } else if (mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS) {
             canvas.drawColor(
                 Color.TRANSPARENT,
                 PorterDuff.Mode.CLEAR
             );
             paint.setColor(Color.argb(224, 16, 20, 26));
+            canvas.drawRoundRect(
+                42,
+                42,
+                982,
+                726,
+                28,
+                28,
+                paint
+            );
         } else {
             canvas.drawColor(Color.rgb(9, 12, 16));
             paint.setColor(Color.rgb(24, 29, 36));
+            canvas.drawRoundRect(
+                42,
+                42,
+                982,
+                726,
+                28,
+                28,
+                paint
+            );
+
+            paint.setColor(Color.rgb(56, 214, 200));
+            paint.setTextSize(46.0f * uiScale);
+            paint.setFakeBoldText(true);
+            canvas.drawText(
+                "REVERIE VR",
+                90,
+                120,
+                paint
+            );
+
+            paint.setFakeBoldText(false);
+            paint.setTextSize(24.0f * uiScale);
+            paint.setColor(Color.rgb(180, 190, 202));
         }
-        canvas.drawRoundRect(42, 42, 982, 726, 28, 28, paint);
-
-        paint.setColor(Color.rgb(56, 214, 200));
-        paint.setTextSize(46.0f * uiScale);
-        paint.setFakeBoldText(true);
-        canvas.drawText("REVERIE VR", 90, 120, paint);
-
-        paint.setFakeBoldText(false);
-        paint.setTextSize(24.0f * uiScale);
-        paint.setColor(Color.rgb(180, 190, 202));
 
         if (mode == MODE_HOME) {
             drawHome(canvas, paint);
