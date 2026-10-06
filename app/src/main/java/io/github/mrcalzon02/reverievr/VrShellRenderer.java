@@ -133,6 +133,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final float HOME_RIGHT_WORLD_Z_INNER = -3.18f;
     private static final float HOME_RIGHT_WORLD_Z_OUTER = -2.92f;
 
+    private static final int[][] ORIENTATION_MENU_BUTTONS =
+        new int[][] {
+            {250, 262, 774, 326},
+            {250, 344, 774, 408},
+            {250, 426, 774, 490},
+            {250, 508, 774, 572}
+        };
+
     private static final int[][] HOME_BUTTONS = new int[][] {
         {42, 180, 230, 238},
         {42, 248, 230, 306},
@@ -294,6 +302,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int nativeLibraryPage;
     private boolean nativeSurfaceReady;
     private volatile boolean rendererFailed;
+    private volatile boolean orientationMenuVisible;
+    private boolean shellHeadingInitialized;
+    private float controllerYawCalibrationRadians;
 
     private int program;
     private int texture;
@@ -481,12 +492,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     boolean handlesSelectAsShellAction() {
+        if (orientationMenuVisible) {
+            return true;
+        }
+
         int currentMode = mode;
         return currentMode != MODE_DOS
             && currentMode != MODE_NATIVE;
     }
 
     boolean canActivateSelect() {
+        if (orientationMenuVisible) {
+            return hoveredButton >= 0;
+        }
+
         return mode == MODE_VIDEO
             || hoveredButton >= 0;
     }
@@ -497,6 +516,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     void requestBack() {
         backRequested.set(true);
+    }
+
+    void toggleOrientationMenu() {
+        orientationMenuVisible =
+            !orientationMenuVisible;
+        hoveredButton = -1;
+        selectRequested.set(false);
+        backRequested.set(false);
+        textureDirty = true;
     }
 
     void requestRecenter() {
@@ -682,7 +710,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     boolean isHostedInputSuppressed() {
-        return mode == MODE_DOS_OVERLAY
+        return orientationMenuVisible
+            || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS;
     }
 
