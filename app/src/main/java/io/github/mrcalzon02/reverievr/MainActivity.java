@@ -650,15 +650,6 @@ public final class MainActivity extends Activity
     }
 
     @Override
-    public void onPointerAxis(
-        float horizontal,
-        float vertical,
-        String source
-    ) {
-        // Stage A does not render a spatial pointer.
-    }
-
-    @Override
     public void onInputAction(VrInputAction action, String source) {
         if (!controllerTestEnabled || action == null) {
             return;
