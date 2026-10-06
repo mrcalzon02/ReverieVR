@@ -2045,6 +2045,53 @@ final class VrShellRenderer implements CardboardView.Renderer {
         textureDirty = true;
     }
 
+    private void handleControllerSelection(
+        int button
+    ) {
+        switch (button) {
+            case 0:
+                preferences.setVrPointerMode(
+                    preferences
+                        .getVrPointerMode()
+                        .next()
+                );
+                break;
+
+            case 1:
+                requestRecenter();
+                break;
+
+            case 2:
+                mode = MODE_SETUP;
+                setupStep = 1;
+                preferences.setVrSetupStep(1);
+                lastInputAction =
+                    "Waiting for input";
+                lastInputSource =
+                    "Try your controller controls below";
+                break;
+
+            case 3:
+                host.onControllerPairingRequested();
+                return;
+
+            case 4:
+                host.onBluetoothSettingsRequested();
+                return;
+
+            case 5:
+                mode = MODE_HOME;
+                break;
+
+            default:
+                host.onUiActionRejected();
+                return;
+        }
+
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
     private void handleMediaSelection(int button) {
         switch (button) {
             case 0:
@@ -2624,7 +2671,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
-        paint.setColor(Color.rgb(34, 45, 58));
+        boolean controllerCardFocused =
+            hoveredButton == 14;
+        paint.setColor(
+            controllerCardFocused
+                ? Color.rgb(
+                    25,
+                    88,
+                    116
+                )
+                : Color.rgb(
+                    34,
+                    45,
+                    58
+                )
+        );
         canvas.drawRoundRect(
             292,
             220,
@@ -2634,6 +2695,31 @@ final class VrShellRenderer implements CardboardView.Renderer {
             18,
             paint
         );
+        if (controllerCardFocused) {
+            paint.setStyle(
+                Paint.Style.STROKE
+            );
+            paint.setStrokeWidth(3.0f);
+            paint.setColor(
+                Color.rgb(
+                    68,
+                    220,
+                    245
+                )
+            );
+            canvas.drawRoundRect(
+                293,
+                221,
+                717,
+                325,
+                17,
+                17,
+                paint
+            );
+            paint.setStyle(
+                Paint.Style.FILL
+            );
+        }
         paint.setColor(Color.WHITE);
         paint.setTextSize(20.0f * uiScale);
         canvas.drawText(
@@ -2990,6 +3076,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return "Return to the phone and open Android Bluetooth settings.";
             case 13:
                 return "Resume the last valid media, DOS, or native activity.";
+            case 14:
+                return "Open controller status, pairing, pointer, and input tools.";
             default:
                 return "Choose a destination or quick option.";
         }
@@ -3316,6 +3404,131 @@ final class VrShellRenderer implements CardboardView.Renderer {
     ) {
         return label
             + (enabled ? "  ON" : "  OFF");
+    }
+
+    private void drawControllerPanel(
+        Canvas canvas,
+        Paint paint
+    ) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31.0f * uiScale);
+        paint.setFakeBoldText(true);
+        canvas.drawText(
+            "CONTROLLER",
+            90,
+            160,
+            paint
+        );
+        paint.setFakeBoldText(false);
+
+        paint.setColor(
+            controllerConnected
+                ? Color.rgb(
+                    93,
+                    224,
+                    177
+                )
+                : Color.rgb(
+                    231,
+                    174,
+                    87
+                )
+        );
+        paint.setTextSize(21.0f * uiScale);
+        canvas.drawText(
+            controllerConnected
+                ? "Connected"
+                : "Not connected",
+            90,
+            205,
+            paint
+        );
+
+        paint.setColor(Color.rgb(184, 194, 207));
+        paint.setTextSize(18.0f * uiScale);
+        canvas.drawText(
+            shorten(
+                controllerMessage,
+                54
+            ),
+            90,
+            238,
+            paint
+        );
+
+        int battery =
+            controllerBattery.get();
+        canvas.drawText(
+            battery >= 0
+                ? "Battery: "
+                    + battery
+                    + "%"
+                : "Battery: unavailable",
+            90,
+            270,
+            paint
+        );
+
+        paint.setColor(Color.rgb(126, 205, 221));
+        canvas.drawText(
+            "Pointer: "
+                + preferences
+                    .getVrPointerMode()
+                    .displayName
+                + " • Active: "
+                + shorten(
+                    activePointerSource,
+                    28
+                ),
+            520,
+            205,
+            paint
+        );
+
+        paint.setColor(Color.rgb(184, 194, 207));
+        canvas.drawText(
+            "Last input: "
+                + shorten(
+                    lastInputAction,
+                    28
+                ),
+            520,
+            238,
+            paint
+        );
+        canvas.drawText(
+            "Source: "
+                + shorten(
+                    lastInputSource,
+                    30
+                ),
+            520,
+            270,
+            paint
+        );
+
+        String[] labels =
+            new String[] {
+                "POINTER: "
+                    + preferences
+                        .getVrPointerMode()
+                        .displayName
+                        .toUpperCase(Locale.US),
+                "RECENTER",
+                "INPUT FAMILIARIZATION",
+                controllerConnected
+                    ? "PAIR / SWITCH CONTROLLER"
+                    : "PAIR / SYNC CONTROLLER",
+                "ANDROID BLUETOOTH",
+                "BACK TO HOME"
+            };
+
+        drawButtons(
+            canvas,
+            paint,
+            labels,
+            CONTROLLER_BUTTONS
+        );
     }
 
     private void drawMediaLibrary(
