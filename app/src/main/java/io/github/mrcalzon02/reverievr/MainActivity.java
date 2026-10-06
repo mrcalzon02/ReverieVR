@@ -88,6 +88,7 @@ public final class MainActivity extends Activity
     private TextView selectedVideoText;
     private TextView dosModuleStatusText;
     private TextView loggingStatusText;
+    private TextView vrRuntimeStatusText;
 
     private ProgressBar phoneBatteryBar;
     private ProgressBar controllerBatteryBar;
@@ -112,6 +113,7 @@ public final class MainActivity extends Activity
     private Button clearLogsButton;
     private Button controllerActionButton;
     private View updatePanel;
+    private VrRuntimePreflight.Result vrRuntimePreflight;
     private RadioGroup videoProjectionGroup;
     private RadioGroup loggingModeGroup;
 
@@ -150,6 +152,15 @@ public final class MainActivity extends Activity
             new DiagnosticSubmissionClient();
 
         bindViews();
+        vrRuntimePreflight =
+            VrRuntimePreflight.check();
+        if (!vrRuntimePreflight.available) {
+            ReverieLog.incident(
+                "VR_STARTUP",
+                "Cardboard native runtime preflight failed: "
+                    + vrRuntimePreflight.detail
+            );
+        }
         updateInstaller =
             new UpdateInstaller(
                 this,
@@ -178,6 +189,28 @@ public final class MainActivity extends Activity
     }
 
     private void launchVr() {
+        if (vrRuntimePreflight == null) {
+            vrRuntimePreflight =
+                VrRuntimePreflight.check();
+        }
+
+        if (!vrRuntimePreflight.available) {
+            ReverieLog.incident(
+                "VR_STARTUP",
+                "Blocked VR launch because Cardboard native runtime is unavailable: "
+                    + vrRuntimePreflight.detail
+            );
+            uiFeedback.failure(enterVrButton);
+            refreshVrRuntimeStatus();
+            showVrStartupFailure(
+                getString(
+                    R.string.vr_runtime_unavailable_format,
+                    vrRuntimePreflight.detail
+                )
+            );
+            return;
+        }
+
         VrStartupGuard.begin(this);
 
         try {
@@ -292,6 +325,7 @@ public final class MainActivity extends Activity
         selectedVideoText = findViewById(R.id.selected_video_status);
         dosModuleStatusText = findViewById(R.id.dos_module_status);
         loggingStatusText = findViewById(R.id.logging_status);
+        vrRuntimeStatusText = findViewById(R.id.vr_runtime_status);
         updatePanel = findViewById(R.id.update_panel);
         updatePanel.setVisibility(
             BuildConfig.UPDATE_CHANNEL_ENABLED
@@ -546,9 +580,15 @@ public final class MainActivity extends Activity
         String gamepadName =
             AndroidGamepadSupport.firstConnectedGamepadName();
         boolean gamepadReady = gamepadName != null;
+        boolean vrRuntimeReady =
+            vrRuntimePreflight != null
+                && vrRuntimePreflight.available;
 
         if (enterVrButton != null) {
-            enterVrButton.setEnabled(providerReady || gamepadReady);
+            enterVrButton.setEnabled(
+                vrRuntimeReady
+                    && (providerReady || gamepadReady)
+            );
         }
         if (testControllerButton != null) {
             testControllerButton.setEnabled(providerReady || gamepadReady);
@@ -2115,6 +2155,7 @@ public final class MainActivity extends Activity
             Build.VERSION.SDK_INT
         );
         deviceStatusText.setText(deviceText);
+        refreshVrRuntimeStatus();
 
         appVersionText.setText(
             getString(
@@ -2124,6 +2165,30 @@ public final class MainActivity extends Activity
                 buildIdentityLabel()
             )
         );
+    }
+
+    private void refreshVrRuntimeStatus() {
+        if (vrRuntimePreflight == null) {
+            vrRuntimePreflight =
+                VrRuntimePreflight.check();
+        }
+
+        if (vrRuntimeStatusText == null) {
+            return;
+        }
+
+        if (vrRuntimePreflight.available) {
+            vrRuntimeStatusText.setText(
+                R.string.vr_runtime_ready
+            );
+        } else {
+            vrRuntimeStatusText.setText(
+                getString(
+                    R.string.vr_runtime_unavailable_format,
+                    vrRuntimePreflight.detail
+                )
+            );
+        }
     }
 
     private String buildIdentityLabel() {
