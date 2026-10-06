@@ -4312,7 +4312,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             20.0f * uiScale
         );
         canvas.drawText(
-            "Forward, volume, brightness and recovery stay shell-owned.",
+            "Forward, brightness and recovery stay shell-owned.",
             250,
             216,
             paint
@@ -4493,7 +4493,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             19.0f * uiScale
         );
         canvas.drawText(
-            "Shell settings apply immediately without leaving hosted content.",
+            "Shell settings apply immediately; controller rocker stays game input.",
             220,
             218,
             paint
