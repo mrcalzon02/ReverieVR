@@ -258,7 +258,7 @@ final class VrControllerModelRenderer {
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
 
-        if (assetRenderer.isAvailable()) {
+        if (assetRenderer.isRenderable()) {
             assetRenderer.drawEye(
                 eye,
                 correctedEyeView,
