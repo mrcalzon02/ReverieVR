@@ -24,7 +24,11 @@ Normal source pushes do not automatically create phone-test releases. Ordinary f
 
 ## Signing boundary
 
-Phone-test APKs are debug-signed for sideload/reference-hardware validation. This is not production/update signing. A persistent protected signing identity must be introduced before reliable in-place upgrades or production distribution. No signing private key is committed to the repository.
+Early phone-test APKs used ephemeral debug signing and therefore could not form a reliable update lineage. Beginning with the persistent phone-test signing cutover, published phone-test APKs are signed by one protected repository-secret-backed distribution identity; the private key is never committed to the repository. GitHub Actions must fail rather than publish if that identity is unavailable, and release verification must read back the signer fingerprint before publication.
+
+Android itself remains the final authority for in-place signer continuity. ReverieVR may preflight a downloaded APK's signer when PackageManager exposes archive-signing metadata correctly, but OEM/platform archive parsers are not allowed to create a false rejection: after trusted GitHub asset URL, release SHA-256, package ID, monotonically newer versionCode, tag/versionCode binding, and installed-app pinned-signer checks pass, missing archive-signer metadata is deferred to Android Package Installer, which independently rejects any APK that is not authorized to replace the installed package.
+
+Builds from the old ephemeral-signing era cannot be upgraded in place to the persistent lineage unless their original private signing key is available. Such builds require a one-time uninstall/reinstall migration.
 
 ## Acceptance boundary
 
