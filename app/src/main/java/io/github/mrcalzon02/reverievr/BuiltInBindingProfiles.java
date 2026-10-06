@@ -242,6 +242,18 @@ final class BuiltInBindingProfiles {
                 VirtualOutput.joystickButton(0)
             )
         );
+        nativeTest.add(
+            InputBinding.digital(
+                BindingInput.VOLUME_UP,
+                VirtualOutput.joystickButton(1)
+            )
+        );
+        nativeTest.add(
+            InputBinding.digital(
+                BindingInput.VOLUME_DOWN,
+                VirtualOutput.joystickButton(2)
+            )
+        );
         profiles.add(
             new BindingProfile(
                 ID_NATIVE_TEST_CHAMBER,
@@ -256,6 +268,18 @@ final class BuiltInBindingProfiles {
             InputBinding.digital(
                 BindingInput.SELECT,
                 VirtualOutput.joystickButton(0)
+            )
+        );
+        redLedger.add(
+            InputBinding.digital(
+                BindingInput.VOLUME_UP,
+                VirtualOutput.joystickButton(1)
+            )
+        );
+        redLedger.add(
+            InputBinding.digital(
+                BindingInput.VOLUME_DOWN,
+                VirtualOutput.joystickButton(2)
             )
         );
         profiles.add(
