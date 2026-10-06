@@ -8,6 +8,12 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### VR presence and headset comfort
 
+- Added a shell-owned floating Orientation menu available from the Daydream App/Menu button, Cardboard system menu control, gamepad Start/Mode, and keyboard Menu key.
+- Added **Center on headset** and **Center on controller** heading choices, plus Back-one-level and Close actions; the controller option is disabled when no fresh tracked pose exists.
+- VR startup now explicitly aligns shell forward to the first headset heading instead of inheriting an arbitrary sensor/world yaw.
+- Separated shell heading changes from the Daydream provider's hardware recenter command. Software controller-yaw calibration now follows shell heading changes so rotating the workspace does not drag the virtual controller away from its physical direction.
+- The Orientation menu remains available as a modal overlay above Media, DOS, Native, setup, and Home surfaces, and suppresses hosted input while open so menu/select actions do not leak into games.
+
 - Added bounded inertial headset translation from the handset linear-acceleration sensor so small real head/body movements produce controlled parallax instead of leaving the VR viewpoint rotationally pinned; the offset is damped, spring-returned, bounded, and reset on recenter rather than pretending to provide drift-free 6DoF tracking.
 - Contracted the shell presentation envelope by roughly 10%, including the fixed power HUD, to bring edge content farther inside the Daydream View's comfortable visible area.
 - Repositioned the three Home planes farther left/right and tilted the side planes so their outer edges come toward the viewer, creating a shallow wrap-around launcher instead of a flat wall.
