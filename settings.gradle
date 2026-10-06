@@ -18,4 +18,4 @@ rootProject.name = "ReverieVR"
 include(":app")
 include(":controller-app")
 include(":cardboard")
-project(":cardboard").projectDir = file("third_party/cardboard/sdk")
+project(":cardboard").projectDir = file("cardboard-adapter")
