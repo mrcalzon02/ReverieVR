@@ -7,6 +7,12 @@ import android.view.MotionEvent;
 final class VrInputRouter {
     interface Listener {
         void onInputAction(VrInputAction action, String source);
+
+        void onPointerAxis(
+            float horizontal,
+            float vertical,
+            String source
+        );
     }
 
     interface BindingListener {
@@ -318,6 +324,14 @@ final class VrInputRouter {
             rightY,
             sourceName
         );
+
+        if (listener != null) {
+            listener.onPointerAxis(
+                clampAxis(rightX),
+                clampAxis(rightY),
+                sourceName
+            );
+        }
 
         int newHorizontal = axisState(horizontal);
         int newVertical = axisState(vertical);
