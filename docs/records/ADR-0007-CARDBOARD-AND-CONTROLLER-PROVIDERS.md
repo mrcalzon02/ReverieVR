@@ -35,6 +35,8 @@ The native Cardboard build is deliberately reduced:
 
 The physical Cardboard viewer profile remains separate from ReverieVR's user optical/IPD profile.
 
+Cardboard remains authoritative for rotational head pose, eye projection, viewer geometry, and lens distortion. ReverieVR additionally consumes Android's linear-acceleration sensor for a deliberately small **bounded inertial translation** layer: acceleration is dead-zoned, damped, spring-returned toward neutral, hard-clamped to a few centimeters, and cleared by recenter. This exists to avoid the perceptual effect of the handset/viewpoint being nailed to one rotational point during small seated head/body motion. It is presentation-scale inertial parallax, not drift-free absolute position and must never be described as true 6DoF tracking.
+
 ### Controller transport
 
 Controller input is independent of Cardboard.
