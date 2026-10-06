@@ -1,0 +1,126 @@
+plugins {
+    id "com.android.library"
+    id "com.google.protobuf"
+}
+
+def cardboardRoot = rootProject.file("third_party/cardboard")
+
+android {
+    namespace = "com.google.cardboard.sdk"
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 26
+        targetSdk = 36
+        ndkVersion = "29.0.14206865"
+
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments(
+                    "-DANDROID_STL=c++_static",
+                    "-DCARDBOARDSDK_UNITY_PLUGIN=OFF",
+                    "-DCARDBOARDSDK_RENDERING_VULKAN=OFF",
+                    "-DCARDBOARDSDK_RENDERING_GLESv3=OFF",
+                    "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,--undefined-version"
+                )
+            }
+        }
+
+        consumerProguardFiles "proguard-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("CMakeLists.txt")
+        }
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile(
+                cardboardRoot.toPath()
+                    .resolve("sdk/qrcode/android/AndroidManifest.xml")
+                    .toFile()
+            )
+            java.srcDirs = [
+                cardboardRoot.toPath()
+                    .resolve("sdk/qrcode/android/java")
+                    .toFile(),
+                cardboardRoot.toPath()
+                    .resolve("sdk/device_params/android/java")
+                    .toFile(),
+                cardboardRoot.toPath()
+                    .resolve("sdk/screen_params/android/java")
+                    .toFile(),
+                cardboardRoot.toPath()
+                    .resolve("sdk/java_utils/android/java")
+                    .toFile(),
+                cardboardRoot.toPath()
+                    .resolve("java_api/src/main/java")
+                    .toFile()
+            ]
+            res.srcDirs = [
+                cardboardRoot.toPath()
+                    .resolve("sdk/qrcode/android/res")
+                    .toFile(),
+                cardboardRoot.toPath()
+                    .resolve("java_api/src/main/res")
+                    .toFile()
+            ]
+            proto.srcDirs = [
+                cardboardRoot.toPath()
+                    .resolve("proto")
+                    .toFile()
+            ]
+            proto.includes = [
+                "cardboard_device.proto"
+            ]
+        }
+    }
+
+    buildFeatures {
+        buildConfig = false
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.19.4"
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java {
+                    option "lite"
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "com.google.android.gms:play-services-vision:20.1.3"
+    implementation "com.google.android.material:material:1.12.0"
+    implementation "com.google.protobuf:protobuf-javalite:3.19.4"
+    implementation "org.jspecify:jspecify:1.0.0"
+}
