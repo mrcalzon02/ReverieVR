@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/reverievr-logo.jpg" alt="ReverieVR — A Daydream Revival Project" width="704">
+</p>
+
 # ReverieVR
 
 ReverieVR is an independent, offline-first Android VR platform intended to restore useful life to Google Daydream-era phone/headset hardware without depending on Google's discontinued Daydream services.
