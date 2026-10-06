@@ -29,6 +29,11 @@ static const BuiltInModuleSpec kBuiltIns[] = {
         "procedural-test-chamber",
         "Procedural Test Chamber",
         "libreverie_module_test_chamber.so"
+    },
+    {
+        "between-deliveries-red-ledger",
+        "Between Deliveries: The Red Ledger VR [DEV]",
+        "libreverie_module_red_ledger.so"
     }
 };
 

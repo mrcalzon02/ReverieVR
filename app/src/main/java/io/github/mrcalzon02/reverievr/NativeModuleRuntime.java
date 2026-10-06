@@ -6,6 +6,9 @@ import java.util.Collections;
 import java.util.List;
 
 final class NativeModuleRuntime implements AutoCloseable {
+    static final String ID_RED_LEDGER =
+        "between-deliveries-red-ledger";
+
     static final int POINTER_NONE = 0;
     static final int POINTER_TRACKED_CONTROLLER = 1;
     static final int POINTER_VIRTUAL_CONTROLLER = 2;
@@ -65,6 +68,12 @@ final class NativeModuleRuntime implements AutoCloseable {
     }
 
     static List<Descriptor> listBuiltIns() {
+        return listBuiltIns(false);
+    }
+
+    static List<Descriptor> listBuiltIns(
+        boolean includeDevelopmentModules
+    ) {
         if (!AVAILABLE) {
             return Collections.emptyList();
         }
@@ -101,10 +110,20 @@ final class NativeModuleRuntime implements AutoCloseable {
                 continue;
             }
 
+            String safeId = id.trim();
+            String safeName = name.trim();
+
+            if (!includeDevelopmentModules
+                && ID_RED_LEDGER.equals(
+                    safeId
+                )) {
+                continue;
+            }
+
             result.add(
                 new Descriptor(
-                    id.trim(),
-                    name.trim()
+                    safeId,
+                    safeName
                 )
             );
         }

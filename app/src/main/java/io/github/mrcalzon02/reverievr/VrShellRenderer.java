@@ -419,7 +419,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
         this.nativeModuleRuntime =
             nativeModuleRuntime;
         nativeModules =
-            NativeModuleRuntime.listBuiltIns();
+            NativeModuleRuntime.listBuiltIns(
+                preferences.getLoggingMode()
+                    == LoggingMode.DEVELOPMENT
+            );
+
+        if (preferences.getLoggingMode()
+            == LoggingMode.DEVELOPMENT
+            && findNativeModule(
+                NativeModuleRuntime.ID_RED_LEDGER
+            ) != null) {
+            ReverieLog.milestone(
+                "NATIVE_MODULE",
+                "Development native module admission enabled."
+            );
+        }
         videoRenderer = new VideoSurfaceRenderer(host::onVideoSurfaceTextureReady);
         homeEnvironmentRenderer =
             new HomeEnvironmentRenderer();
