@@ -96,6 +96,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final float CONTROLLER_ANCHOR_Y = -0.34f;
     private static final float CONTROLLER_ANCHOR_Z = -0.48f;
     private static final float CONTROLLER_EMITTER_FORWARD_METERS = 0.066f;
+    private static final float STANDARD_GRAVITY_METERS_PER_SECOND_SQUARED =
+        9.80665f;
 
     private static final int INITIAL_HEADING_STABLE_FRAME_TARGET = 8;
     private static final float INITIAL_HEADING_STABLE_DELTA_RADIANS =
@@ -301,6 +303,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new BoundedInertialTranslation();
     private final float[] controllerForward = new float[3];
     private final float[] adjustedControllerForward = new float[3];
+    private final float[] controllerAccelerationWorld = new float[3];
+    private final float[] adjustedControllerAccelerationWorld = new float[3];
+    private final float[] controllerAccelerationWorld4 = new float[4];
+    private final float[] controllerAccelerationView4 = new float[4];
+    private final float[] controllerGravityWorld = new float[3];
+    private final ControllerInertialTranslation
+        controllerInertialTranslation =
+            new ControllerInertialTranslation();
     private final float[] activePointerOrigin = new float[3];
     private final float[] activePointerDirection = new float[3];
     private final float[] orientationMenuRayOrigin = new float[3];
@@ -371,6 +381,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile float controllerOrientationY;
     private volatile float controllerOrientationZ;
     private volatile float controllerOrientationW;
+    private volatile float controllerAccelerationX;
+    private volatile float controllerAccelerationY;
+    private volatile float controllerAccelerationZ;
+    private volatile long controllerAccelerationAtNanos;
     private volatile boolean controllerPoseValid;
     private volatile boolean controllerTouchpadPressed;
     private volatile boolean controllerHomePressed;
@@ -394,6 +408,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile float headLinearAccelerationZ;
     private volatile long headLinearAccelerationAtNanos;
     private long headInertialLastFrameNanos;
+    private long controllerInertialLastFrameNanos;
+    private boolean controllerGravityInitialized;
     private float yawOffsetRadians;
     private float userIpdMeters;
     private float uiScale;
@@ -647,6 +663,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (!connected) {
             controllerPoseValid = false;
             controllerPointerActive = false;
+            controllerAccelerationAtNanos = 0L;
+            controllerInertialTranslation.reset();
+            controllerInertialLastFrameNanos = 0L;
+            controllerGravityInitialized = false;
             pointerRenderer.hide();
         }
         textureDirty = true;
@@ -678,10 +698,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         controllerOrientationY = y;
         controllerOrientationZ = z;
         controllerOrientationW = w;
+        controllerAccelerationX = snapshot.accelXG;
+        controllerAccelerationY = snapshot.accelYG;
+        controllerAccelerationZ = snapshot.accelZG;
         controllerPoseReceivedAtNanos =
             snapshot.receivedAtNanos > 0L
                 ? snapshot.receivedAtNanos
                 : System.nanoTime();
+        controllerAccelerationAtNanos =
+            controllerPoseReceivedAtNanos;
         controllerTouchpadPressed =
             snapshot.touchpadPressed;
         controllerHomePressed =
@@ -1096,6 +1121,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             -headInertialTranslation.x(),
             -headInertialTranslation.y(),
             -headInertialTranslation.z()
+        );
+        updateControllerInertialTranslation(
+            frameNanos
         );
 
         boolean showPercentages = preferences.isShowPercentagesEnabled();
@@ -2221,9 +2249,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
          * VrControllerModelRenderer, so the user can twist and aim the
          * handset naturally instead of having it inherit head rotation.
          */
-        controllerAnchorView[0] = CONTROLLER_ANCHOR_X;
-        controllerAnchorView[1] = CONTROLLER_ANCHOR_Y;
-        controllerAnchorView[2] = CONTROLLER_ANCHOR_Z;
+        controllerAnchorView[0] =
+            CONTROLLER_ANCHOR_X
+                + controllerInertialTranslation.x();
+        controllerAnchorView[1] =
+            CONTROLLER_ANCHOR_Y
+                + controllerInertialTranslation.y();
+        controllerAnchorView[2] =
+            CONTROLLER_ANCHOR_Z
+                + controllerInertialTranslation.z();
         controllerAnchorView[3] = 1.0f;
 
         if (!Matrix.invertM(
@@ -2234,12 +2268,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
             )) {
             controllerAnchorWorld[0] =
                 CONTROLLER_ANCHOR_X
+                    + controllerInertialTranslation.x()
                     + headInertialTranslation.x();
             controllerAnchorWorld[1] =
                 CONTROLLER_ANCHOR_Y
+                    + controllerInertialTranslation.y()
                     + headInertialTranslation.y();
             controllerAnchorWorld[2] =
                 CONTROLLER_ANCHOR_Z
+                    + controllerInertialTranslation.z()
                     + headInertialTranslation.z();
             controllerAnchorWorld[3] = 1.0f;
             return;
@@ -2252,6 +2289,140 @@ final class VrShellRenderer implements CardboardView.Renderer {
             0,
             controllerAnchorView,
             0
+        );
+    }
+
+    private void updateControllerInertialTranslation(
+        long frameNanos
+    ) {
+        if (controllerInertialLastFrameNanos <= 0L) {
+            controllerInertialLastFrameNanos =
+                frameNanos;
+            return;
+        }
+
+        float deltaSeconds =
+            clamp(
+                (
+                    frameNanos
+                        - controllerInertialLastFrameNanos
+                ) / 1000000000.0f,
+                0.0f,
+                0.05f
+            );
+        controllerInertialLastFrameNanos =
+            frameNanos;
+
+        long sampleAge =
+            frameNanos
+                - controllerAccelerationAtNanos;
+        boolean freshSample =
+            controllerConnected
+                && controllerPoseValid
+                && controllerAccelerationAtNanos > 0L
+                && sampleAge >= 0L
+                && sampleAge <= 350000000L;
+
+        if (!freshSample) {
+            controllerInertialTranslation.update(
+                0.0f,
+                0.0f,
+                0.0f,
+                deltaSeconds
+            );
+            return;
+        }
+
+        float accelX = controllerAccelerationX;
+        float accelY = controllerAccelerationY;
+        float accelZ = controllerAccelerationZ;
+        float magnitude =
+            (float) Math.sqrt(
+                accelX * accelX
+                    + accelY * accelY
+                    + accelZ * accelZ
+            );
+        if (!Float.isFinite(magnitude)
+            || magnitude < 0.05f) {
+            controllerInertialTranslation.update(
+                0.0f,
+                0.0f,
+                0.0f,
+                deltaSeconds
+            );
+            return;
+        }
+
+        /*
+         * Physical Daydream packets report acceleration in g, while the
+         * companion-phone sensor route reports Android m/s^2. Normalize both
+         * without requiring provider-specific rendering code.
+         */
+        float accelerationScale =
+            magnitude < 4.0f
+                ? STANDARD_GRAVITY_METERS_PER_SECOND_SQUARED
+                : 1.0f;
+
+        quaternionRotateVector(
+            controllerOrientationX,
+            controllerOrientationY,
+            controllerOrientationZ,
+            controllerOrientationW,
+            accelX * accelerationScale,
+            accelY * accelerationScale,
+            accelZ * accelerationScale,
+            controllerAccelerationWorld
+        );
+        rotateYaw(
+            controllerAccelerationWorld,
+            -controllerYawCalibrationRadians,
+            adjustedControllerAccelerationWorld
+        );
+
+        if (!controllerGravityInitialized) {
+            System.arraycopy(
+                adjustedControllerAccelerationWorld,
+                0,
+                controllerGravityWorld,
+                0,
+                3
+            );
+            controllerGravityInitialized = true;
+            return;
+        }
+
+        float gravityBlend =
+            clamp(
+                deltaSeconds * 1.4f,
+                0.01f,
+                0.08f
+            );
+        for (int axis = 0; axis < 3; axis++) {
+            controllerGravityWorld[axis] +=
+                (
+                    adjustedControllerAccelerationWorld[axis]
+                        - controllerGravityWorld[axis]
+                ) * gravityBlend;
+            controllerAccelerationWorld4[axis] =
+                adjustedControllerAccelerationWorld[axis]
+                    - controllerGravityWorld[axis];
+        }
+        controllerAccelerationWorld4[3] = 0.0f;
+
+        Matrix.multiplyMV(
+            controllerAccelerationView4,
+            0,
+            adjustedHeadView,
+            0,
+            controllerAccelerationWorld4,
+            0
+        );
+
+        controllerInertialTranslation.update(
+            controllerAccelerationView4[0],
+            controllerAccelerationView4[1],
+            controllerAccelerationView4[2],
+            deltaSeconds
         );
     }
 
@@ -2999,6 +3170,58 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return first.distance <= second.distance
             ? first
             : second;
+    }
+
+    private static void quaternionRotateVector(
+        float x,
+        float y,
+        float z,
+        float w,
+        float vectorX,
+        float vectorY,
+        float vectorZ,
+        float[] destination
+    ) {
+        float lengthSquared =
+            x * x + y * y + z * z + w * w;
+        if (!Float.isFinite(lengthSquared)
+            || lengthSquared < 0.0001f) {
+            destination[0] = vectorX;
+            destination[1] = vectorY;
+            destination[2] = vectorZ;
+            return;
+        }
+
+        float inverseLength =
+            1.0f
+                / (float) Math.sqrt(lengthSquared);
+        x *= inverseLength;
+        y *= inverseLength;
+        z *= inverseLength;
+        w *= inverseLength;
+
+        float xx = x * x;
+        float yy = y * y;
+        float zz = z * z;
+        float xy = x * y;
+        float xz = x * z;
+        float yz = y * z;
+        float wx = w * x;
+        float wy = w * y;
+        float wz = w * z;
+
+        destination[0] =
+            (1.0f - 2.0f * (yy + zz)) * vectorX
+                + 2.0f * (xy - wz) * vectorY
+                + 2.0f * (xz + wy) * vectorZ;
+        destination[1] =
+            2.0f * (xy + wz) * vectorX
+                + (1.0f - 2.0f * (xx + zz)) * vectorY
+                + 2.0f * (yz - wx) * vectorZ;
+        destination[2] =
+            2.0f * (xz - wy) * vectorX
+                + 2.0f * (yz + wx) * vectorY
+                + (1.0f - 2.0f * (xx + yy)) * vectorZ;
     }
 
     private static void quaternionForward(
