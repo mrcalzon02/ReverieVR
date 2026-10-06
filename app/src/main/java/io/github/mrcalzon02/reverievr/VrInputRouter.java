@@ -84,12 +84,8 @@ final class VrInputRouter {
             previousClick,
             source
         );
-        emitBindingDigitalEdge(
-            BindingInput.BACK,
-            snapshot.menuPressed,
-            previousMenu,
-            source
-        );
+        // The Daydream App/Menu button is shell-owned. Do not leak it into
+        // hosted content as Back before the modal shell menu can intercept it.
         emitBindingDigitalEdge(
             BindingInput.RECENTER,
             snapshot.homePressed,
@@ -118,7 +114,7 @@ final class VrInputRouter {
         emitPressedEdge(
             snapshot.menuPressed,
             previousMenu,
-            VrInputAction.BACK,
+            VrInputAction.MENU,
             source
         );
         emitPressedEdge(
@@ -543,7 +539,8 @@ final class VrInputRouter {
 
             case KeyEvent.KEYCODE_BUTTON_START:
             case KeyEvent.KEYCODE_BUTTON_MODE:
-                return BindingInput.RECENTER;
+            case KeyEvent.KEYCODE_MENU:
+                return null;
 
             case KeyEvent.KEYCODE_DPAD_LEFT:
             case KeyEvent.KEYCODE_BUTTON_L1:
@@ -585,7 +582,8 @@ final class VrInputRouter {
 
             case KeyEvent.KEYCODE_BUTTON_START:
             case KeyEvent.KEYCODE_BUTTON_MODE:
-                return VrInputAction.RECENTER;
+            case KeyEvent.KEYCODE_MENU:
+                return VrInputAction.MENU;
 
             case KeyEvent.KEYCODE_DPAD_LEFT:
             case KeyEvent.KEYCODE_BUTTON_L1:
