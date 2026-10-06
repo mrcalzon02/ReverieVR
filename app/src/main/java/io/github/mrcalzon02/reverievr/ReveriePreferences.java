@@ -25,10 +25,13 @@ final class ReveriePreferences {
     private static final String KEY_LAST_ACTIVITY_TYPE = "last_activity_type";
     private static final String KEY_LAST_DOS_MODULE_ID = "last_dos_module_id";
     private static final String KEY_LAST_DOS_MODULE_NAME = "last_dos_module_name";
+    private static final String KEY_LAST_NATIVE_MODULE_ID = "last_native_module_id";
+    private static final String KEY_LAST_NATIVE_MODULE_NAME = "last_native_module_name";
 
     static final String LAST_ACTIVITY_NONE = "";
     static final String LAST_ACTIVITY_MEDIA = "media";
     static final String LAST_ACTIVITY_DOS = "dos";
+    static final String LAST_ACTIVITY_NATIVE = "native";
 
     private final SharedPreferences preferences;
 
@@ -243,7 +246,8 @@ final class ReveriePreferences {
                 LAST_ACTIVITY_NONE
             );
         if (LAST_ACTIVITY_MEDIA.equals(value)
-            || LAST_ACTIVITY_DOS.equals(value)) {
+            || LAST_ACTIVITY_DOS.equals(value)
+            || LAST_ACTIVITY_NATIVE.equals(value)) {
             return value;
         }
         return LAST_ACTIVITY_NONE;
@@ -257,6 +261,8 @@ final class ReveriePreferences {
             )
             .remove(KEY_LAST_DOS_MODULE_ID)
             .remove(KEY_LAST_DOS_MODULE_NAME)
+            .remove(KEY_LAST_NATIVE_MODULE_ID)
+            .remove(KEY_LAST_NATIVE_MODULE_NAME)
             .apply();
     }
 
@@ -287,6 +293,40 @@ final class ReveriePreferences {
                     ? ""
                     : displayName.trim()
             )
+            .remove(KEY_LAST_NATIVE_MODULE_ID)
+            .remove(KEY_LAST_NATIVE_MODULE_NAME)
+            .apply();
+    }
+
+    void markLastActivityNative(
+        String moduleId,
+        String displayName
+    ) {
+        String safeId =
+            moduleId == null
+                ? ""
+                : moduleId.trim();
+        if (safeId.isEmpty()) {
+            return;
+        }
+
+        preferences.edit()
+            .putString(
+                KEY_LAST_ACTIVITY_TYPE,
+                LAST_ACTIVITY_NATIVE
+            )
+            .putString(
+                KEY_LAST_NATIVE_MODULE_ID,
+                safeId
+            )
+            .putString(
+                KEY_LAST_NATIVE_MODULE_NAME,
+                displayName == null
+                    ? ""
+                    : displayName.trim()
+            )
+            .remove(KEY_LAST_DOS_MODULE_ID)
+            .remove(KEY_LAST_DOS_MODULE_NAME)
             .apply();
     }
 
@@ -312,11 +352,35 @@ final class ReveriePreferences {
             : value.trim();
     }
 
+    String getLastNativeModuleId() {
+        String value =
+            preferences.getString(
+                KEY_LAST_NATIVE_MODULE_ID,
+                ""
+            );
+        return value == null
+            ? ""
+            : value.trim();
+    }
+
+    String getLastNativeModuleName() {
+        String value =
+            preferences.getString(
+                KEY_LAST_NATIVE_MODULE_NAME,
+                ""
+            );
+        return value == null
+            ? ""
+            : value.trim();
+    }
+
     void clearLastActivity() {
         preferences.edit()
             .remove(KEY_LAST_ACTIVITY_TYPE)
             .remove(KEY_LAST_DOS_MODULE_ID)
             .remove(KEY_LAST_DOS_MODULE_NAME)
+            .remove(KEY_LAST_NATIVE_MODULE_ID)
+            .remove(KEY_LAST_NATIVE_MODULE_NAME)
             .apply();
     }
 
