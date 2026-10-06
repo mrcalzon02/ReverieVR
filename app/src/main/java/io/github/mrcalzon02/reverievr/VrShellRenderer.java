@@ -798,6 +798,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     + phoneBattery.get()
                     + " controllerBattery="
                     + controllerBattery.get()
+                    + " headOffset=("
+                    + headInertialTranslation.x()
+                    + ","
+                    + headInertialTranslation.y()
+                    + ","
+                    + headInertialTranslation.z()
+                    + ")"
             );
         }
 
@@ -806,6 +813,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             virtualPointerYaw = 0.0f;
             virtualPointerPitch = 0.0f;
             virtualPointerLastFrameNanos = 0L;
+            headInertialTranslation.reset();
+            headInertialLastFrameNanos = 0L;
             host.onControllerRecenterRequested();
             textureDirty = true;
         }
@@ -818,7 +827,25 @@ final class VrShellRenderer implements CardboardView.Renderer {
             1.0f,
             0.0f
         );
-        Matrix.multiplyMM(adjustedHeadView, 0, yawMatrix, 0, rawHeadView, 0);
+        updateHeadInertialTranslation(
+            frameNanos
+        );
+
+        Matrix.multiplyMM(
+            adjustedHeadView,
+            0,
+            yawMatrix,
+            0,
+            rawHeadView,
+            0
+        );
+        Matrix.translateM(
+            adjustedHeadView,
+            0,
+            -headInertialTranslation.x(),
+            -headInertialTranslation.y(),
+            -headInertialTranslation.z()
+        );
 
         boolean showPercentages = preferences.isShowPercentagesEnabled();
         if (showPercentages != cachedShowPercentages) {
@@ -1594,9 +1621,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         setActivePointerSource("Gaze");
-        activePointerOrigin[0] = 0.0f;
-        activePointerOrigin[1] = 0.0f;
-        activePointerOrigin[2] = 0.0f;
+        activePointerOrigin[0] =
+            headInertialTranslation.x();
+        activePointerOrigin[1] =
+            headInertialTranslation.y();
+        activePointerOrigin[2] =
+            headInertialTranslation.z();
         System.arraycopy(
             adjustedHeadForward,
             0,
@@ -1608,6 +1638,80 @@ final class VrShellRenderer implements CardboardView.Renderer {
             activePointerDirection
         );
         return false;
+    }
+
+    private void updateHeadInertialTranslation(
+        long frameNanos
+    ) {
+        if (headInertialLastFrameNanos <= 0L) {
+            headInertialLastFrameNanos =
+                frameNanos;
+            return;
+        }
+
+        float deltaSeconds =
+            clamp(
+                (
+                    frameNanos
+                        - headInertialLastFrameNanos
+                ) / 1000000000.0f,
+                0.0f,
+                0.05f
+            );
+        headInertialLastFrameNanos =
+            frameNanos;
+
+        long sampleAge =
+            frameNanos
+                - headLinearAccelerationAtNanos;
+        boolean freshSample =
+            headLinearAccelerationAtNanos > 0L
+                && sampleAge >= 0L
+                && sampleAge
+                    <= 250000000L;
+
+        if (!freshSample) {
+            headInertialTranslation.update(
+                0.0f,
+                0.0f,
+                0.0f,
+                deltaSeconds
+            );
+            return;
+        }
+
+        float localX =
+            headLinearAccelerationX;
+        float localY =
+            headLinearAccelerationY;
+        float localZ =
+            headLinearAccelerationZ;
+
+        headMotionWorld[0] =
+            rawHeadView[0] * localX
+                + rawHeadView[1] * localY
+                + rawHeadView[2] * localZ;
+        headMotionWorld[1] =
+            rawHeadView[4] * localX
+                + rawHeadView[5] * localY
+                + rawHeadView[6] * localZ;
+        headMotionWorld[2] =
+            rawHeadView[8] * localX
+                + rawHeadView[9] * localY
+                + rawHeadView[10] * localZ;
+
+        rotateYaw(
+            headMotionWorld,
+            -yawOffsetRadians,
+            adjustedHeadMotionWorld
+        );
+
+        headInertialTranslation.update(
+            adjustedHeadMotionWorld[0],
+            adjustedHeadMotionWorld[1],
+            adjustedHeadMotionWorld[2],
+            deltaSeconds
+        );
     }
 
     private void setActivePointerSource(
