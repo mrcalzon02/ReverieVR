@@ -1194,38 +1194,309 @@ final class VrShellRenderer implements CardboardView.Renderer {
         hudPaint = null;
     }
 
-    private int calculateHoveredButton(float[] forward) {
-        if (forward == null || forward.length < 3 || forward[2] >= -0.05f) {
-            return -1;
+    private boolean updateActivePointer(
+        long frameNanos
+    ) {
+        VrPointerMode pointerMode =
+            preferences.getVrPointerMode();
+
+        long poseAgeNanos =
+            frameNanos
+                - controllerPoseReceivedAtNanos;
+        boolean freshControllerPose =
+            controllerConnected
+                && controllerPoseValid
+                && controllerPoseReceivedAtNanos > 0L
+                && poseAgeNanos >= 0L
+                && poseAgeNanos <= 750000000L;
+
+        boolean useController =
+            freshControllerPose
+                && (
+                    pointerMode
+                        == VrPointerMode.CONTROLLER
+                    || pointerMode
+                        == VrPointerMode.AUTO
+                );
+
+        if (useController) {
+            quaternionForward(
+                controllerOrientationX,
+                controllerOrientationY,
+                controllerOrientationZ,
+                controllerOrientationW,
+                controllerForward
+            );
+            rotateYaw(
+                controllerForward,
+                -yawOffsetRadians,
+                adjustedControllerForward
+            );
+            normalizeDirection(
+                adjustedControllerForward
+            );
+
+            activePointerOrigin[0] = 0.28f;
+            activePointerOrigin[1] = -0.34f;
+            activePointerOrigin[2] = -0.48f;
+
+            System.arraycopy(
+                adjustedControllerForward,
+                0,
+                activePointerDirection,
+                0,
+                3
+            );
+            return true;
         }
 
-        float t = PANEL_Z / forward[2];
-        if (t <= 0.0f) {
-            return -1;
+        if (pointerMode
+            == VrPointerMode.CONTROLLER) {
+            activePointerOrigin[0] = 0.0f;
+            activePointerOrigin[1] = 0.0f;
+            activePointerOrigin[2] = 0.0f;
+            activePointerDirection[0] = 0.0f;
+            activePointerDirection[1] = 0.0f;
+            activePointerDirection[2] = 0.0f;
+            return false;
         }
 
-        float hitX = forward[0] * t;
-        float hitY = forward[1] * t;
+        activePointerOrigin[0] = 0.0f;
+        activePointerOrigin[1] = 0.0f;
+        activePointerOrigin[2] = 0.0f;
+        System.arraycopy(
+            adjustedHeadForward,
+            0,
+            activePointerDirection,
+            0,
+            3
+        );
+        normalizeDirection(
+            activePointerDirection
+        );
+        return false;
+    }
 
-        if (Math.abs(hitX) > PANEL_HALF_WIDTH
-            || Math.abs(hitY) > PANEL_HALF_HEIGHT) {
-            return -1;
+    private UiRayHit calculateUiRayHit(
+        float[] origin,
+        float[] direction
+    ) {
+        if (origin == null
+            || origin.length < 3
+            || direction == null
+            || direction.length < 3
+            || Math.abs(direction[2]) < 0.0001f) {
+            return UiRayHit.miss();
         }
 
-        float px = ((hitX + PANEL_HALF_WIDTH) / (PANEL_HALF_WIDTH * 2.0f))
-            * TEXTURE_WIDTH;
-        float py = ((PANEL_HALF_HEIGHT - hitY) / (PANEL_HALF_HEIGHT * 2.0f))
-            * TEXTURE_HEIGHT;
+        if (mode == MODE_HOME) {
+            UiRayHit best =
+                hitPanel(
+                    origin,
+                    direction,
+                    HOME_LEFT_WORLD_LEFT,
+                    HOME_LEFT_WORLD_RIGHT,
+                    HOME_WORLD_BOTTOM,
+                    HOME_WORLD_TOP,
+                    HOME_LEFT_WORLD_Z,
+                    HOME_LEFT_PIXEL_LEFT,
+                    HOME_LEFT_PIXEL_RIGHT,
+                    HOME_PIXEL_TOP,
+                    HOME_PIXEL_BOTTOM
+                );
 
+            UiRayHit center =
+                hitPanel(
+                    origin,
+                    direction,
+                    HOME_CENTER_WORLD_LEFT,
+                    HOME_CENTER_WORLD_RIGHT,
+                    HOME_WORLD_BOTTOM,
+                    HOME_WORLD_TOP,
+                    HOME_CENTER_WORLD_Z,
+                    HOME_CENTER_PIXEL_LEFT,
+                    HOME_CENTER_PIXEL_RIGHT,
+                    HOME_PIXEL_TOP,
+                    HOME_PIXEL_BOTTOM
+                );
+            best = nearer(best, center);
+
+            UiRayHit right =
+                hitPanel(
+                    origin,
+                    direction,
+                    HOME_RIGHT_WORLD_LEFT,
+                    HOME_RIGHT_WORLD_RIGHT,
+                    HOME_WORLD_BOTTOM,
+                    HOME_WORLD_TOP,
+                    HOME_RIGHT_WORLD_Z,
+                    HOME_RIGHT_PIXEL_LEFT,
+                    HOME_RIGHT_PIXEL_RIGHT,
+                    HOME_PIXEL_TOP,
+                    HOME_PIXEL_BOTTOM
+                );
+            return nearer(best, right);
+        }
+
+        return hitPanel(
+            origin,
+            direction,
+            -PANEL_HALF_WIDTH,
+            PANEL_HALF_WIDTH,
+            -PANEL_HALF_HEIGHT,
+            PANEL_HALF_HEIGHT,
+            PANEL_Z,
+            0,
+            TEXTURE_WIDTH,
+            0,
+            TEXTURE_HEIGHT
+        );
+    }
+
+    private UiRayHit hitPanel(
+        float[] origin,
+        float[] direction,
+        float worldLeft,
+        float worldRight,
+        float worldBottom,
+        float worldTop,
+        float worldZ,
+        int pixelLeft,
+        int pixelRight,
+        int pixelTop,
+        int pixelBottom
+    ) {
+        float t =
+            (worldZ - origin[2])
+                / direction[2];
+        if (!Float.isFinite(t)
+            || t <= 0.0f) {
+            return UiRayHit.miss();
+        }
+
+        float hitX =
+            origin[0]
+                + direction[0] * t;
+        float hitY =
+            origin[1]
+                + direction[1] * t;
+
+        if (hitX < worldLeft
+            || hitX > worldRight
+            || hitY < worldBottom
+            || hitY > worldTop) {
+            return UiRayHit.miss();
+        }
+
+        float px =
+            pixelLeft
+                + (
+                    (hitX - worldLeft)
+                        / (worldRight - worldLeft)
+                ) * (pixelRight - pixelLeft);
+        float py =
+            pixelTop
+                + (
+                    (worldTop - hitY)
+                        / (worldTop - worldBottom)
+                ) * (pixelBottom - pixelTop);
+
+        return new UiRayHit(
+            buttonAtPixel(px, py),
+            t
+        );
+    }
+
+    private int buttonAtPixel(
+        float px,
+        float py
+    ) {
         int[][] buttons = activeButtons();
-        for (int index = 0; index < buttons.length; index++) {
+        for (int index = 0;
+             index < buttons.length;
+             index++) {
             int[] rect = buttons[index];
-            if (px >= rect[0] && px <= rect[2]
-                && py >= rect[1] && py <= rect[3]) {
+            if (px >= rect[0]
+                && px <= rect[2]
+                && py >= rect[1]
+                && py <= rect[3]) {
                 return index;
             }
         }
         return -1;
+    }
+
+    private static UiRayHit nearer(
+        UiRayHit first,
+        UiRayHit second
+    ) {
+        if (first.distance <= 0.0f) {
+            return second;
+        }
+        if (second.distance <= 0.0f) {
+            return first;
+        }
+        return first.distance <= second.distance
+            ? first
+            : second;
+    }
+
+    private static void quaternionForward(
+        float x,
+        float y,
+        float z,
+        float w,
+        float[] destination
+    ) {
+        destination[0] =
+            -2.0f * (x * z + w * y);
+        destination[1] =
+            -2.0f * (y * z - w * x);
+        destination[2] =
+            -(
+                1.0f
+                    - 2.0f * x * x
+                    - 2.0f * y * y
+            );
+    }
+
+    private static void normalizeDirection(
+        float[] direction
+    ) {
+        float length =
+            (float) Math.sqrt(
+                direction[0] * direction[0]
+                    + direction[1] * direction[1]
+                    + direction[2] * direction[2]
+            );
+        if (!Float.isFinite(length)
+            || length < 0.0001f) {
+            direction[0] = 0.0f;
+            direction[1] = 0.0f;
+            direction[2] = 0.0f;
+            return;
+        }
+
+        direction[0] /= length;
+        direction[1] /= length;
+        direction[2] /= length;
+    }
+
+    private static final class UiRayHit {
+        final int buttonIndex;
+        final float distance;
+
+        UiRayHit(
+            int buttonIndex,
+            float distance
+        ) {
+            this.buttonIndex = buttonIndex;
+            this.distance = distance;
+        }
+
+        static UiRayHit miss() {
+            return new UiRayHit(-1, -1.0f);
+        }
     }
 
     private void activateHoveredButton() {
