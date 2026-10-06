@@ -1370,21 +1370,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         CardboardView.Eye eye
     ) {
         /*
-         * Cardboard normally installs the eye viewport before this callback.
-         * Reassert it here because the legacy Java GL surface path can retain
-         * the previous eye's viewport after renderer state changes on some
-         * Samsung/Android combinations.  Every eye must own a fresh viewport
-         * before it clears or draws anything.
+         * CardboardView owns the per-eye viewport and installs it immediately
+         * before each onDrawEye callback. Keep that SDK-owned state intact here;
+         * the development diagnostic below reads GL_VIEWPORT directly so stereo
+         * viewport ownership remains observable without relying on a non-existent
+         * Eye viewport accessor.
          */
-        Viewport eyeViewport = eye.getViewport();
-        if (eyeViewport != null) {
-            GLES20.glViewport(
-                eyeViewport.x,
-                eyeViewport.y,
-                eyeViewport.width,
-                eyeViewport.height
-            );
-        }
         recordStereoEyeDiagnostic(eye);
         eye.applyHeadView(adjustedHeadView);
 

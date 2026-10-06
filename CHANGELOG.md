@@ -38,6 +38,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### UI integrity
 
+- Replaced the canonical ReverieVR branding with the latest user-supplied soft-edged logo revision; the same master now feeds repository/internal branding and the Stage A app header, while both Android apps use a square visor/orbit launcher crop derived from it.
 - Adopted the new user-supplied ReverieVR logo as the Stage A setup header and repository README branding, using a lightweight app-ready copy of the supplied artwork.
 - Derived a square launcher icon from the user-supplied ReverieVR headset/orbit mark and applied it to both the headset APK and the ReverieVR Controller companion so installed builds carry consistent project branding.
 - Phone-test #44 correctly rejected a malformed first launcher-icon payload during AAPT2 resource compilation; both APKs now use the byte-verified 256×256 PNG (`SHA-256 edf2e1d16c991e9f424510609aaf3c1f8f922e9dce883600639f70b52a3a36d3`) generated from that mark.
@@ -50,6 +51,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Phone-test cloud build and prerelease
 
+- Phone-test #55 failed at Java compilation because a viewport-correction patch called the non-existent `CardboardView.Eye.getViewport()` API. The repair restores the pinned Cardboard SDK as the owner of per-eye `glViewport` setup and keeps the existing `GL_VIEWPORT` diagnostic readback, removing the invalid API dependency instead of bypassing the stereo verification.
 - Corrected the in-app updater's false certificate-mismatch rejection on Android/OEM builds whose archive parser does not expose APK signing metadata reliably: ReverieVR now uses both signing metadata paths, falls back where available, and delegates final replacement-signer enforcement to Android Package Installer when archive signer metadata is unavailable after all other trust checks pass.
 - Stopped minifying the standalone Cardboard adapter AAR, which could compile successfully and then strip public Java API classes such as `CardboardView` before packaging; the phone-test release gate now inspects the final APK DEX payload and refuses publication unless `com.google.cardboard.sdk.CardboardView` is actually present.
 
