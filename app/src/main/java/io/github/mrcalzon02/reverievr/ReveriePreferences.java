@@ -21,6 +21,7 @@ final class ReveriePreferences {
     private static final String KEY_VIDEO_DISPLAY_NAME = "video_display_name";
     private static final String KEY_VIDEO_PROJECTION = "video_projection";
     private static final String KEY_HOME_ENVIRONMENT = "home_environment";
+    private static final String KEY_VR_POINTER_MODE = "vr_pointer_mode";
 
     private final SharedPreferences preferences;
 
@@ -190,6 +191,28 @@ final class ReveriePreferences {
         preferences.edit()
             .putString(
                 KEY_HOME_ENVIRONMENT,
+                safe.preferenceValue
+            )
+            .apply();
+    }
+
+    VrPointerMode getVrPointerMode() {
+        return VrPointerMode.fromPreference(
+            preferences.getString(
+                KEY_VR_POINTER_MODE,
+                VrPointerMode.AUTO.preferenceValue
+            )
+        );
+    }
+
+    void setVrPointerMode(VrPointerMode mode) {
+        VrPointerMode safe =
+            mode == null
+                ? VrPointerMode.AUTO
+                : mode;
+        preferences.edit()
+            .putString(
+                KEY_VR_POINTER_MODE,
                 safe.preferenceValue
             )
             .apply();
