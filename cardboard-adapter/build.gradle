@@ -35,11 +35,10 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            // This module is consumed as a library by the unminified phone-test
+            // APK. Minifying the AAR in isolation can strip public Java API
+            // classes that are referenced only by the consuming application.
+            minifyEnabled = false
         }
     }
 
