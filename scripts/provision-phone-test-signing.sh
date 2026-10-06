@@ -76,7 +76,14 @@ keytool \
   -storepass "$STORE_PASSWORD" \
   -file "$CERTIFICATE" >/dev/null
 
-FINGERPRINT="$(sha256sum "$CERTIFICATE" | awk '{print $1}')"
+if command -v sha256sum >/dev/null; then
+  FINGERPRINT="$(sha256sum "$CERTIFICATE" | awk '{print $1}')"
+elif command -v shasum >/dev/null; then
+  FINGERPRINT="$(shasum -a 256 "$CERTIFICATE" | awk '{print $1}')"
+else
+  echo "Neither sha256sum nor shasum is available." >&2
+  exit 1
+fi
 [[ "$FINGERPRINT" =~ ^[0-9a-f]{64}$ ]]
 
 KEYSTORE_BASE64="$(base64 < "$KEYSTORE" | tr -d '\r\n')"
