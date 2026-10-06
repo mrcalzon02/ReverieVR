@@ -396,6 +396,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean bindingHeadInitialized;
     private boolean controllerTrainingReturn;
     private long lastPerformanceLogNanos;
+    private long lastStereoDiagnosticLogNanos;
+    private int stereoEyeMask;
+    private final int[] stereoLeftViewport = new int[4];
+    private final int[] stereoRightViewport = new int[4];
     private long lastQuickMenuStatusRefreshNanos;
     private float previousBindingYaw;
     private float previousBindingPitch;
@@ -1365,6 +1369,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void onDrawEyeInternal(
         CardboardView.Eye eye
     ) {
+        recordStereoEyeDiagnostic(eye);
         eye.applyHeadView(adjustedHeadView);
 
         float correctionHalf =
@@ -1520,6 +1525,30 @@ final class VrShellRenderer implements CardboardView.Renderer {
             eyeCorrection
         );
         drawPowerHudOverlay();
+    }
+
+    private void recordStereoEyeDiagnostic(
+        CardboardView.Eye eye
+    ) {
+        if (!ReverieLog.isDevelopment()) {
+            return;
+        }
+
+        int eyeBit =
+            eye.getEyeType() == CardboardView.Eye.LEFT
+                ? 1
+                : 2;
+        int[] viewport =
+            eyeBit == 1
+                ? stereoLeftViewport
+                : stereoRightViewport;
+
+        GLES20.glGetIntegerv(
+            GLES20.GL_VIEWPORT,
+            viewport,
+            0
+        );
+        stereoEyeMask |= eyeBit;
     }
 
     private void drawPointerOverlay(
@@ -1721,6 +1750,49 @@ final class VrShellRenderer implements CardboardView.Renderer {
             )) {
             host.onVrFirstFrameRendered();
         }
+
+        if (ReverieLog.isDevelopment()) {
+            long now = System.nanoTime();
+            if (lastStereoDiagnosticLogNanos == 0L
+                || now - lastStereoDiagnosticLogNanos
+                    >= 1000000000L) {
+                ReverieLog.dev(
+                    "VR_STEREO",
+                    "eyes="
+                        + stereoEyeMask
+                        + " leftViewport="
+                        + viewportString(stereoLeftViewport)
+                        + " rightViewport="
+                        + viewportString(stereoRightViewport)
+                        + " finishViewport=("
+                        + viewport.x
+                        + ","
+                        + viewport.y
+                        + ","
+                        + viewport.width
+                        + ","
+                        + viewport.height
+                        + ") mode="
+                        + mode
+                );
+                lastStereoDiagnosticLogNanos = now;
+            }
+            stereoEyeMask = 0;
+        }
+    }
+
+    private static String viewportString(
+        int[] viewport
+    ) {
+        return "("
+            + viewport[0]
+            + ","
+            + viewport[1]
+            + ","
+            + viewport[2]
+            + ","
+            + viewport[3]
+            + ")";
     }
 
     @Override
