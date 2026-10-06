@@ -51,7 +51,7 @@ PY
 }
 
 STORE_PASSWORD="$(random_secret)"
-KEY_PASSWORD="$(random_secret)"
+KEY_PASSWORD="$STORE_PASSWORD"
 
 rm -f "$KEYSTORE" "$CERTIFICATE"
 
@@ -62,7 +62,7 @@ keytool \
   -keysize 3072 \
   -sigalg SHA256withRSA \
   -validity 36500 \
-  -storetype JKS \
+  -storetype PKCS12 \
   -keystore "$KEYSTORE" \
   -storepass "$STORE_PASSWORD" \
   -keypass "$KEY_PASSWORD" \
