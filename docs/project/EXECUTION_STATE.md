@@ -485,86 +485,86 @@ This is the ADR-0015 validation stop. Do not expand into Kkrieger gameplay,
 Werkkzeug3 mesh/operator porting or V2 audio until the proof module passes the
 reference-device gates above.
 
-### RV-0610 — Between Deliveries: The Red Ledger VR interaction/persistence foundation
+### RV-0610 — Between Deliveries: The Red Ledger VR manual-service/dev-test foundation
 
 State: **draft**
 
-The first full native-game track is now in implementation, following the
-recorded RV-GAME-01 order rather than skipping ahead to the larger outdoor
-projects.
+The first full native-game track remains deliberately bounded to a one-room
+seated bar loop while the native host and physical Daydream interaction path
+are being proven.
 
 Implemented foundation:
 
-- platform-independent deterministic one-room bar/economy state with cash,
-  debt, beer stock, clean/dirty cups, serving, washing and a day-close ledger;
-- four compact recurring patron archetypes and a deliberately tiny supplier
-  catalogue;
-- protection-demand, inspection/fine and supply-interruption event states;
-- low-complexity GLES2 concrete-room renderer with counter/tap, stool,
-  cup-state proxies, back-room mattress/ledger props, patron proxy, event marker
+- deterministic cash, debt, beer, cup, reputation, pressure, supplier,
+  protection, inspection and supply-interruption simulation;
+- four recurring patron archetypes and day-close accounting;
+- low-complexity GLES2 concrete-room renderer with bar, working tap, wash area,
+  cup rack, supplier cards, ledger, patron proxy, back-room props, event marker
   and flickering light;
-- separate `libreverie_module_red_ledger.so` ndk-build target using the
-  existing native-module ABI without creating Android/EGL/Cardboard ownership;
-- append-only ABI-v1 native input fields for a host-calibrated world-space
-  pointer ray. The host distinguishes tracked Daydream-class controller aim
-  from virtual-gamepad aim and does not expose raw Android controller pose to
-  modules;
-- append-only ABI-v1 module-scoped persistence callbacks. Save slots are bounded
-  to 64 KiB, restricted to safe filenames inside the active module's private
-  app-data directory, and written with temporary-file plus atomic-replace
-  semantics;
-- Red Ledger ray/AABB work-surface interaction for the tap, wash station,
-  ledger, beer-order card, cup-order card and protection envelope. Select still
-  travels through the existing normalized hosted-native binding profile rather
-  than a raw-controller shortcut;
-- successful work-surface actions persist economic state through the host save
-  service, while module creation attempts to restore the versioned save;
-- explicit 152-byte little-endian Red Ledger save schema with magic/version,
-  range validation, event/day consistency checks and corrupt-save rejection;
-- Quick Menu continues to suppress native guest input; Back/Home/recovery stay
-  shell-owned.
+- append-only ABI-v1 host-calibrated tracked/virtual-controller ray input and
+  bounded module-private persistence callbacks;
+- manual service state machine: take/return a clean cup, fill it at the tap,
+  hand a filled cup to the patron, collect payment, wash returned cups, order
+  supplies, handle protection, turn away a patron through the exit target and
+  close the day through the ledger;
+- cash and patron progression occur only when payment is explicitly collected;
+- the game is fixed to its intended seated work position rather than inheriting
+  Test Chamber locomotion;
+- save schema v2 is an explicit 160-byte little-endian format preserving
+  held-drink and pending-payment state with malformed-state rejection;
+- successful work-surface actions persist through the host and valid v2 state
+  is restored on module creation;
+- Red Ledger has a dedicated hosted binding profile containing only Select ->
+  virtual joystick button 0. Controller aim comes from the shell ray, so
+  Test Chamber touchpad movement is not exposed as an inert game control;
+- the trusted native host recognizes Red Ledger solely for device testing.
+  Standard logging filters it out of Native Apps, Development logging exposes
+  it as a `[DEV]` entry, and NativeModuleRuntime separately rejects a Red
+  Ledger start unless the VR session was created in Development mode;
+- Quick Menu suppression and shell-owned Back/Home/recenter/recovery remain in
+  force over the native module.
 
-Current verification:
+Verified evidence:
 
-- phone-test #50's dedicated Red Ledger simulation step compiled and executed
-  the protection -> inspection -> supply-interruption sequence plus
-  save/restore and corrupt-save rejection using C++17 with
-  `-Wall -Wextra -Wpedantic -Werror`;
-- the same run completed the full unsigned Android/Java/NDK tree build with the
-  extended Java/JNI/native ABI contracts present;
-- the persistently signed phone-test package build completed successfully;
-- APK verification explicitly found `libreverie_module_red_ledger.so` for
-  both `armeabi-v7a` and `arm64-v8a`, alongside the established native host,
-  test chamber, DOS and Cardboard libraries;
-- phone-test #50 staged its artifact and published prerelease
-  `phone-test-50-1` from commit
-  `2e4d14e9e31dde1e1c674049b15dffb181dbcbaa`; headset APK SHA-256 is
-  `8201189378bb7d3a4ecaf4ce82a1c251d3eefb9e088e5e462dbb24a91037e5f6`;
-- GitHub subsequently marked run #50 cancelled because newer phone-test #51
-  began under the repository's latest-build-wins concurrency policy. Every
-  Red Ledger/build/package/verify/release job step had already completed
-  successfully and the prerelease exists, so #50 is retained as static/package
-  evidence but not represented as a clean overall workflow-success badge;
-- the module remains intentionally absent from
-  `reverie_native_host.cpp`'s compile-time built-in allowlist, so it is not
-  yet a visible Native Apps entry;
-- no Galaxy S9 stereo, controller-usability, save durability, comfort or thermal
-  acceptance is claimed by this evidence.
+- phone-test #52 completed successfully from commit
+  `48d4f2f1d22c4370bba5caea5a612d06ba2018b2`;
+- its C++17 `-Wall -Wextra -Wpedantic -Werror` Red Ledger test covered cup
+  pickup/return, fill, serve, pending payment, explicit payment collection,
+  washing, protection, day close, mid-transaction save/restore, corrupt-save
+  rejection, inspection, supply interruption and patron turn-away;
+- the same run completed the full unsigned Android/Java/JNI/NDK tree,
+  persistently signed packages, APK verification, artifact preservation and
+  prerelease publication;
+- `phone-test-52-1` published `ReverieVR-phone-test-52-48d4f2f.apk` with
+  SHA-256 `e425419a612752611860674d55f728d6edb11d289c5980a22506527024140fbf`;
+- APK verification continued to require `libreverie_module_red_ledger.so` for
+  both `armeabi-v7a` and `arm64-v8a`;
+- phone-test #60 completed successfully from combined commit
+  `416e866a7c87cf7bb802920afa9f786d73bb1874`, proving the Development-only
+  enumeration, fail-closed Red Ledger runtime gate, dedicated Select-only
+  binding profile/JVM regression test, full Java/JNI/NDK integration, signed
+  packaging and dual-ABI APK verification together with the stereo-isolation
+  repair;
+- `phone-test-60-1` published headset APK
+  `ReverieVR-phone-test-60-416e866.apk` with SHA-256
+  `7a8aa42b47ff684a1393a244582198c9ed0ce3cd7578aa7da7291d72c3ed22ee`;
+- no Galaxy S9 runtime-load, controller-usability, save durability, comfort or
+  thermal acceptance is claimed by static/package evidence.
 
-Remaining gates before user-visible launch:
+Remaining gates before normal user-visible launch:
 
-- close the relevant RV-0402 native-module runtime gap on the Galaxy S9 and
-  prove the existing Test Chamber/native host through the required lifecycle
-  transitions;
-- exercise Red Ledger's tracked-controller ray against the actual tap, wash
-  area, ledger, supplier cards and protection envelope in the Daydream View,
-  then tune target volumes/reach from physical evidence;
-- verify Quick Menu, Home, Back and headset/controller recenter behavior while
-  the module is active, including input suppression while the modal is open;
-- verify save/load across real module exit/re-entry and an in-place APK update;
-- perform the required 15-minute S9 runtime/frame-pacing/battery/thermal pass;
-- only after those gates, add Red Ledger to the trusted native allowlist and
-  expose it in Native Apps.
+- install the current development-admission build on the Galaxy S9, set
+  launcher Logging to Development, enter VR and launch
+  `Between Deliveries: The Red Ledger VR [DEV]` from Native Apps;
+- physically exercise cup rack, tap, patron, payment, wash area, ledger,
+  supplier cards, protection envelope and exit target, then tune reach/volumes
+  from headset evidence;
+- verify held-cup placement along the controller ray;
+- verify Quick Menu, Home, Back and both recenter paths while Red Ledger is
+  active, including hosted-input suppression behind the modal;
+- verify v2 state across real exit/re-entry and an in-place APK update;
+- perform the required 15-minute S9 frame-pacing/battery/thermal pass;
+- only after those gates remove the Development-only filter and `[DEV]` label.
 
 ### RV-0410 / RV-0411 — DOS runtime baseline and modules
 
