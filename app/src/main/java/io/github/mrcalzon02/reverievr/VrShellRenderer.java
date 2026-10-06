@@ -985,8 +985,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             rebuildTexture();
         }
 
-        System.arraycopy(eye.getEyeView(), 0, eyeView, 0, 16);
-
+        System.arraycopy(
+            eye.getEyeView(),
+            0,
+            eyeView,
+            0,
+            16
+        );
         Matrix.translateM(
             tempMatrix,
             0,
@@ -996,55 +1001,112 @@ final class VrShellRenderer implements CardboardView.Renderer {
             0.0f,
             0.0f
         );
-
         Matrix.multiplyMM(
             modelViewProjection,
             0,
-            eye.getPerspective(Z_NEAR, Z_FAR),
+            eye.getPerspective(
+                Z_NEAR,
+                Z_FAR
+            ),
             0,
             tempMatrix,
             0
         );
 
         GLES20.glUseProgram(program);
+        GLES20.glUniformMatrix4fv(
+            matrixHandle,
+            1,
+            false,
+            modelViewProjection,
+            0
+        );
+        GLES20.glActiveTexture(
+            GLES20.GL_TEXTURE0
+        );
+        GLES20.glBindTexture(
+            GLES20.GL_TEXTURE_2D,
+            texture
+        );
+        GLES20.glUniform1i(
+            textureHandle,
+            0
+        );
+        GLES20.glEnable(
+            GLES20.GL_BLEND
+        );
+        GLES20.glBlendFunc(
+            GLES20.GL_SRC_ALPHA,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA
+        );
 
-        vertexBuffer.position(0);
+        if (mode == MODE_HOME) {
+            drawTexturedPanel(
+                homeLeftVertexBuffer,
+                homeLeftUvBuffer
+            );
+            drawTexturedPanel(
+                homeCenterVertexBuffer,
+                homeCenterUvBuffer
+            );
+            drawTexturedPanel(
+                homeRightVertexBuffer,
+                homeRightUvBuffer
+            );
+        } else {
+            drawTexturedPanel(
+                vertexBuffer,
+                uvBuffer
+            );
+        }
+
+        GLES20.glDisable(
+            GLES20.GL_BLEND
+        );
+    }
+
+    private void drawTexturedPanel(
+        FloatBuffer vertices,
+        FloatBuffer uvs
+    ) {
+        vertices.position(0);
         GLES20.glVertexAttribPointer(
             positionHandle,
             3,
             GLES20.GL_FLOAT,
             false,
             0,
-            vertexBuffer
+            vertices
         );
-        GLES20.glEnableVertexAttribArray(positionHandle);
+        GLES20.glEnableVertexAttribArray(
+            positionHandle
+        );
 
-        uvBuffer.position(0);
+        uvs.position(0);
         GLES20.glVertexAttribPointer(
             uvHandle,
             2,
             GLES20.GL_FLOAT,
             false,
             0,
-            uvBuffer
+            uvs
         );
-        GLES20.glEnableVertexAttribArray(uvHandle);
+        GLES20.glEnableVertexAttribArray(
+            uvHandle
+        );
 
-        GLES20.glUniformMatrix4fv(matrixHandle, 1, false, modelViewProjection, 0);
+        GLES20.glDrawArrays(
+            GLES20.GL_TRIANGLE_STRIP,
+            0,
+            4
+        );
 
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
-        GLES20.glUniform1i(textureHandle, 0);
-
-        GLES20.glEnable(GLES20.GL_BLEND);
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        GLES20.glDisable(GLES20.GL_BLEND);
-
-        GLES20.glDisableVertexAttribArray(positionHandle);
-        GLES20.glDisableVertexAttribArray(uvHandle);
-
-
+        GLES20.glDisableVertexAttribArray(
+            positionHandle
+        );
+        GLES20.glDisableVertexAttribArray(
+            uvHandle
+        );
     }
 
     @Override
