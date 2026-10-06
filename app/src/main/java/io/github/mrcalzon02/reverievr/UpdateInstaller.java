@@ -12,8 +12,9 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.security.MessageDigest;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,39 +23,61 @@ final class UpdateInstaller implements AutoCloseable {
     private final Activity activity;
     private final DownloadManager downloadManager;
     private final Runnable failureFeedback;
-    private final ExecutorService verifier = Executors.newSingleThreadExecutor();
+    private final ExecutorService verifier =
+        Executors.newSingleThreadExecutor();
 
     private long activeDownloadId = -1L;
     private UpdateChecker.Release activeRelease;
     private boolean receiverRegistered;
 
-    private final BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (!DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) {
-                return;
-            }
+    private final BroadcastReceiver downloadReceiver =
+        new BroadcastReceiver() {
+            @Override
+            public void onReceive(
+                Context context,
+                Intent intent
+            ) {
+                if (!DownloadManager
+                        .ACTION_DOWNLOAD_COMPLETE
+                        .equals(
+                            intent.getAction()
+                        )) {
+                    return;
+                }
 
-            long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
-            if (id != activeDownloadId || activeRelease == null) {
-                return;
-            }
+                long id =
+                    intent.getLongExtra(
+                        DownloadManager
+                            .EXTRA_DOWNLOAD_ID,
+                        -1L
+                    );
 
-            Uri uri = downloadManager.getUriForDownloadedFile(id);
-            if (uri == null) {
-                notifyFailure();
-                Toast.makeText(
-                    activity,
-                    R.string.update_download_failed,
-                    Toast.LENGTH_LONG
-                ).show();
-                clearActiveDownload();
-                return;
-            }
+                if (id != activeDownloadId
+                    || activeRelease == null) {
+                    return;
+                }
 
-            verifyThenInstall(uri, activeRelease);
-        }
-    };
+                Uri uri =
+                    downloadManager
+                        .getUriForDownloadedFile(
+                            id
+                        );
+
+                if (uri == null) {
+                    failVisible(
+                        R.string
+                            .update_download_failed
+                    );
+                    clearActiveDownload();
+                    return;
+                }
+
+                verifyThenInstall(
+                    uri,
+                    activeRelease
+                );
+            }
+        };
 
     UpdateInstaller(Activity activity) {
         this(activity, null);
@@ -65,43 +88,90 @@ final class UpdateInstaller implements AutoCloseable {
         Runnable failureFeedback
     ) {
         this.activity = activity;
-        this.failureFeedback = failureFeedback;
+        this.failureFeedback =
+            failureFeedback;
         this.downloadManager =
-            (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
+            (DownloadManager)
+                activity.getSystemService(
+                    Context.DOWNLOAD_SERVICE
+                );
 
-        IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        IntentFilter filter =
+            new IntentFilter(
+                DownloadManager
+                    .ACTION_DOWNLOAD_COMPLETE
+            );
+
+        if (Build.VERSION.SDK_INT
+            >= Build.VERSION_CODES.TIRAMISU) {
             activity.registerReceiver(
                 downloadReceiver,
                 filter,
                 Context.RECEIVER_NOT_EXPORTED
             );
         } else {
-            activity.registerReceiver(downloadReceiver, filter);
+            activity.registerReceiver(
+                downloadReceiver,
+                filter
+            );
         }
+
         receiverRegistered = true;
     }
 
     boolean canRequestPackageInstalls() {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.O
-            || activity.getPackageManager().canRequestPackageInstalls();
+        return Build.VERSION.SDK_INT
+                < Build.VERSION_CODES.O
+            || activity
+                .getPackageManager()
+                .canRequestPackageInstalls();
     }
 
     void openInstallPermissionSettings() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT
+            < Build.VERSION_CODES.O) {
             return;
         }
 
-        Intent intent = new Intent(
-            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-            Uri.parse("package:" + activity.getPackageName())
-        );
+        Intent intent =
+            new Intent(
+                Settings
+                    .ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                Uri.parse(
+                    "package:"
+                        + activity
+                            .getPackageName()
+                )
+            );
         activity.startActivity(intent);
     }
 
-    void downloadAndInstall(UpdateChecker.Release release) {
-        if (release == null || release.apkUrl == null) {
-            notifyFailure();
+    void downloadAndInstall(
+        UpdateChecker.Release release
+    ) {
+        if (release == null
+            || release.apkUrl == null
+            || !UpdateChecker
+                .isTrustedReleaseAssetUrl(
+                    release.apkUrl
+                )
+            || !UpdateChecker
+                .isValidSha256Digest(
+                    release.apkDigest
+                )) {
+            failVisible(
+                R.string
+                    .update_package_metadata_invalid
+            );
+            return;
+        }
+
+        if (!BuildConfig
+                .UPDATE_CHANNEL_ENABLED) {
+            failVisible(
+                R.string
+                    .update_channel_not_signed
+            );
             return;
         }
 
@@ -109,7 +179,8 @@ final class UpdateInstaller implements AutoCloseable {
             notifyFailure();
             Toast.makeText(
                 activity,
-                R.string.update_install_permission_needed,
+                R.string
+                    .update_install_permission_needed,
                 Toast.LENGTH_LONG
             ).show();
             openInstallPermissionSettings();
@@ -117,30 +188,48 @@ final class UpdateInstaller implements AutoCloseable {
         }
 
         if (downloadManager == null) {
-            notifyFailure();
-            Toast.makeText(
-                activity,
-                R.string.update_download_service_unavailable,
-                Toast.LENGTH_LONG
-            ).show();
+            failVisible(
+                R.string
+                    .update_download_service_unavailable
+            );
             return;
         }
 
-        String cleanVersion = release.version.replaceAll("[^A-Za-z0-9._-]", "_");
-        String fileName = String.format(
-            Locale.US,
-            "ReverieVR-%s-%d.apk",
-            cleanVersion,
-            System.currentTimeMillis()
-        );
+        String cleanVersion =
+            release.version
+                .replaceAll(
+                    "[^A-Za-z0-9._-]",
+                    "_"
+                );
 
-        DownloadManager.Request request = new DownloadManager.Request(
-            Uri.parse(release.apkUrl)
+        String fileName =
+            String.format(
+                Locale.US,
+                "ReverieVR-%s-%d.apk",
+                cleanVersion,
+                System.currentTimeMillis()
+            );
+
+        DownloadManager.Request request =
+            new DownloadManager.Request(
+                Uri.parse(
+                    release.apkUrl
+                )
+            );
+        request.setTitle(
+            activity.getString(
+                R.string.update_download_title
+            )
         );
-        request.setTitle(activity.getString(R.string.update_download_title));
-        request.setDescription(activity.getString(R.string.update_download_description));
+        request.setDescription(
+            activity.getString(
+                R.string
+                    .update_download_description
+            )
+        );
         request.setNotificationVisibility(
-            DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+            DownloadManager.Request
+                .VISIBILITY_VISIBLE_NOTIFY_COMPLETED
         );
         request.setDestinationInExternalFilesDir(
             activity,
@@ -149,94 +238,195 @@ final class UpdateInstaller implements AutoCloseable {
         );
 
         activeRelease = release;
+
         try {
-            activeDownloadId = downloadManager.enqueue(request);
+            activeDownloadId =
+                downloadManager.enqueue(
+                    request
+                );
         } catch (RuntimeException exception) {
             clearActiveDownload();
-            notifyFailure();
-            Toast.makeText(
-                activity,
-                R.string.update_download_failed,
-                Toast.LENGTH_LONG
-            ).show();
+            failVisible(
+                R.string
+                    .update_download_failed
+            );
             return;
         }
 
         Toast.makeText(
             activity,
-            R.string.update_download_started,
+            R.string
+                .update_download_started,
             Toast.LENGTH_SHORT
         ).show();
     }
 
-    private void verifyThenInstall(Uri uri, UpdateChecker.Release release) {
+    private void verifyThenInstall(
+        Uri uri,
+        UpdateChecker.Release release
+    ) {
         verifier.execute(() -> {
-            boolean digestValid = verifyDigestIfPresent(uri, release.apkDigest);
-            activity.runOnUiThread(() -> {
-                if (!digestValid) {
-                    notifyFailure();
-                    Toast.makeText(
-                        activity,
-                        R.string.update_digest_failed,
-                        Toast.LENGTH_LONG
-                    ).show();
-                    clearActiveDownload();
-                    return;
-                }
+            File verificationCopy = null;
 
-                launchPackageInstaller(uri);
-                clearActiveDownload();
-            });
+            try {
+                verificationCopy =
+                    copyForVerification(uri);
+
+                UpdatePackageVerifier.Result
+                    result =
+                        UpdatePackageVerifier
+                            .verify(
+                                activity,
+                                verificationCopy,
+                                release
+                            );
+
+                File finalVerificationCopy =
+                    verificationCopy;
+
+                activity.runOnUiThread(
+                    () -> {
+                        try {
+                            if (!result.valid) {
+                                notifyFailure();
+                                Toast.makeText(
+                                    activity,
+                                    activity.getString(
+                                        R.string
+                                            .update_package_verification_failed_format,
+                                        result.detail
+                                    ),
+                                    Toast.LENGTH_LONG
+                                ).show();
+                                clearActiveDownload();
+                                return;
+                            }
+
+                            launchPackageInstaller(
+                                uri
+                            );
+                            clearActiveDownload();
+                        } finally {
+                            deleteQuietly(
+                                finalVerificationCopy
+                            );
+                        }
+                    }
+                );
+            } catch (Exception exception) {
+                deleteQuietly(
+                    verificationCopy
+                );
+
+                activity.runOnUiThread(
+                    () -> {
+                        notifyFailure();
+                        Toast.makeText(
+                            activity,
+                            activity.getString(
+                                R.string
+                                    .update_package_verification_failed_format,
+                                exception
+                                    .getClass()
+                                    .getSimpleName()
+                            ),
+                            Toast.LENGTH_LONG
+                        ).show();
+                        clearActiveDownload();
+                    }
+                );
+            }
         });
     }
 
-    private boolean verifyDigestIfPresent(Uri uri, String digest) {
-        if (digest == null || digest.trim().isEmpty()) {
-            return true;
-        }
+    private File copyForVerification(
+        Uri uri
+    ) throws Exception {
+        File file =
+            File.createTempFile(
+                "reverievr-update-",
+                ".apk",
+                activity.getCacheDir()
+            );
 
-        String normalized = digest.trim().toLowerCase(Locale.US);
-        if (!normalized.startsWith("sha256:")) {
-            return true;
-        }
+        boolean complete = false;
 
-        String expected = normalized.substring("sha256:".length());
         try (
-            InputStream input = activity.getContentResolver().openInputStream(uri)
+            InputStream input =
+                activity
+                    .getContentResolver()
+                    .openInputStream(uri);
+            FileOutputStream output =
+                new FileOutputStream(file)
         ) {
             if (input == null) {
-                return false;
+                throw new IllegalStateException(
+                    "Downloaded APK cannot be opened."
+                );
             }
 
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-            byte[] buffer = new byte[32 * 1024];
+            byte[] buffer =
+                new byte[32 * 1024];
             int count;
-            while ((count = input.read(buffer)) != -1) {
-                messageDigest.update(buffer, 0, count);
+
+            while ((count =
+                input.read(buffer)) != -1) {
+                output.write(
+                    buffer,
+                    0,
+                    count
+                );
             }
 
-            return expected.equals(toHex(messageDigest.digest()));
-        } catch (Exception exception) {
-            return false;
+            output.getFD().sync();
+            complete = true;
+            return file;
+        } finally {
+            if (!complete) {
+                deleteQuietly(file);
+            }
         }
     }
 
-    private void launchPackageInstaller(Uri uri) {
-        Intent install = new Intent(Intent.ACTION_VIEW);
-        install.setDataAndType(uri, "application/vnd.android.package-archive");
-        install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    private void launchPackageInstaller(
+        Uri uri
+    ) {
+        Intent install =
+            new Intent(
+                Intent.ACTION_VIEW
+            );
+        install.setDataAndType(
+            uri,
+            "application/vnd.android.package-archive"
+        );
+        install.addFlags(
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+        );
+        install.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK
+        );
 
         try {
-            activity.startActivity(install);
+            activity.startActivity(
+                install
+            );
         } catch (Exception exception) {
-            notifyFailure();
-            Toast.makeText(
-                activity,
-                R.string.update_installer_unavailable,
-                Toast.LENGTH_LONG
-            ).show();
+            failVisible(
+                R.string
+                    .update_installer_unavailable
+            );
         }
+    }
+
+    private void failVisible(
+        int messageResource
+    ) {
+        notifyFailure();
+        Toast.makeText(
+            activity,
+            messageResource,
+            Toast.LENGTH_LONG
+        ).show();
     }
 
     private void notifyFailure() {
@@ -251,12 +441,21 @@ final class UpdateInstaller implements AutoCloseable {
         }
     }
 
-    private static String toHex(byte[] bytes) {
-        StringBuilder builder = new StringBuilder(bytes.length * 2);
-        for (byte value : bytes) {
-            builder.append(String.format(Locale.US, "%02x", value & 0xff));
+    private static void deleteQuietly(
+        File file
+    ) {
+        if (file == null
+            || !file.exists()) {
+            return;
         }
-        return builder.toString();
+
+        try {
+            if (!file.delete()) {
+                file.deleteOnExit();
+            }
+        } catch (RuntimeException ignored) {
+            // Verification cache cleanup must not block recovery.
+        }
     }
 
     private void clearActiveDownload() {
@@ -267,12 +466,19 @@ final class UpdateInstaller implements AutoCloseable {
     @Override
     public void close() {
         verifier.shutdownNow();
+
         if (receiverRegistered) {
             try {
-                activity.unregisterReceiver(downloadReceiver);
-            } catch (IllegalArgumentException ignored) {
-                // Receiver was already removed by the platform/activity teardown.
+                activity
+                    .unregisterReceiver(
+                        downloadReceiver
+                    );
+            } catch (
+                IllegalArgumentException ignored
+            ) {
+                // Receiver was already removed by Activity teardown.
             }
+
             receiverRegistered = false;
         }
     }
