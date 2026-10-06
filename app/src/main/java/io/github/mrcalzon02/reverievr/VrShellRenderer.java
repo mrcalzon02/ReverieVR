@@ -729,6 +729,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (recenterRequested.getAndSet(false)) {
             yawOffsetRadians = headEuler[1];
+            virtualPointerYaw = 0.0f;
+            virtualPointerPitch = 0.0f;
+            virtualPointerLastFrameNanos = 0L;
             host.onControllerRecenterRequested();
             textureDirty = true;
         }
@@ -1378,7 +1381,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 && poseAgeNanos >= 0L
                 && poseAgeNanos <= 750000000L;
 
-        boolean useController =
+        boolean useTrackedController =
             freshControllerPose
                 && (
                     pointerMode
@@ -1387,7 +1390,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         == VrPointerMode.AUTO
                 );
 
-        if (useController) {
+        if (useTrackedController) {
             quaternionForward(
                 controllerOrientationX,
                 controllerOrientationY,
@@ -1415,8 +1418,77 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 0,
                 3
             );
+
+            controllerModelRenderer.setTrackedPose(
+                controllerOrientationX,
+                controllerOrientationY,
+                controllerOrientationZ,
+                controllerOrientationW
+            );
+            controllerModelRenderer.setButtonState(
+                controllerTouchpadPressed,
+                controllerHomePressed,
+                controllerAppPressed,
+                controllerVolumeUpPressed,
+                controllerVolumeDownPressed
+            );
             return true;
         }
+
+        boolean useVirtualController =
+            gamepadPointerAvailable
+                && (
+                    pointerMode
+                        == VrPointerMode.CONTROLLER
+                    || pointerMode
+                        == VrPointerMode.AUTO
+                );
+
+        if (useVirtualController) {
+            updateVirtualPointerAngles(
+                frameNanos
+            );
+
+            float cosPitch =
+                (float) Math.cos(
+                    virtualPointerPitch
+                );
+            activePointerDirection[0] =
+                (float) Math.sin(
+                    virtualPointerYaw
+                ) * cosPitch;
+            activePointerDirection[1] =
+                (float) Math.sin(
+                    virtualPointerPitch
+                );
+            activePointerDirection[2] =
+                -(float) Math.cos(
+                    virtualPointerYaw
+                ) * cosPitch;
+            normalizeDirection(
+                activePointerDirection
+            );
+
+            activePointerOrigin[0] = 0.28f;
+            activePointerOrigin[1] = -0.34f;
+            activePointerOrigin[2] = -0.48f;
+
+            controllerModelRenderer.setVirtualAim(
+                virtualPointerYaw,
+                virtualPointerPitch
+            );
+            controllerModelRenderer.setButtonState(
+                false,
+                false,
+                false,
+                false,
+                false
+            );
+            return true;
+        }
+
+        virtualPointerLastFrameNanos = 0L;
+        controllerModelRenderer.hide();
 
         if (pointerMode
             == VrPointerMode.CONTROLLER) {
@@ -1443,6 +1515,86 @@ final class VrShellRenderer implements CardboardView.Renderer {
             activePointerDirection
         );
         return false;
+    }
+
+    private void updateVirtualPointerAngles(
+        long frameNanos
+    ) {
+        if (virtualPointerLastFrameNanos <= 0L) {
+            virtualPointerLastFrameNanos = frameNanos;
+            return;
+        }
+
+        float deltaSeconds =
+            Math.max(
+                0.0f,
+                Math.min(
+                    0.05f,
+                    (frameNanos
+                        - virtualPointerLastFrameNanos)
+                        / 1000000000.0f
+                )
+            );
+        virtualPointerLastFrameNanos = frameNanos;
+
+        float horizontal =
+            applyPointerDeadzone(
+                virtualPointerAxisX
+            );
+        float vertical =
+            applyPointerDeadzone(
+                virtualPointerAxisY
+            );
+        float angularRate =
+            (float) Math.toRadians(95.0);
+
+        virtualPointerYaw +=
+            horizontal
+                * angularRate
+                * deltaSeconds;
+        virtualPointerPitch -=
+            vertical
+                * angularRate
+                * deltaSeconds;
+        clampVirtualPointerAngles();
+    }
+
+    private void clampVirtualPointerAngles() {
+        float yawLimit =
+            (float) Math.toRadians(65.0);
+        float pitchLimit =
+            (float) Math.toRadians(45.0);
+
+        virtualPointerYaw =
+            clamp(
+                virtualPointerYaw,
+                -yawLimit,
+                yawLimit
+            );
+        virtualPointerPitch =
+            clamp(
+                virtualPointerPitch,
+                -pitchLimit,
+                pitchLimit
+            );
+    }
+
+    private static float applyPointerDeadzone(
+        float value
+    ) {
+        float magnitude =
+            Math.abs(value);
+        if (magnitude <= 0.16f) {
+            return 0.0f;
+        }
+
+        float normalized =
+            (magnitude - 0.16f)
+                / 0.84f;
+        return Math.copySign(
+            normalized,
+            value
+        );
     }
 
     private UiRayHit calculateUiRayHit(
