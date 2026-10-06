@@ -1376,7 +1376,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
          * Samsung/Android combinations.  Every eye must own a fresh viewport
          * before it clears or draws anything.
          */
-        CardboardView.Viewport eyeViewport = eye.getViewport();
+        Viewport eyeViewport = eye.getViewport();
         if (eyeViewport != null) {
             GLES20.glViewport(
                 eyeViewport.x,
