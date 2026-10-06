@@ -198,6 +198,15 @@ Implemented:
 - DOS child library with module paging, direct module launch, Android import-picker handoff, and return-to-library behavior after a DOS session;
 - flat media and DOS framebuffers composite onto the existing floating-screen geometry while the selected home environment remains visible around them; mono 360° media still owns the full sphere;
 - head-gaze target selection;
+- selectable VR pointer policy: Auto, Gaze, or Controller;
+- physical Daydream controller quaternion drives a true 3DoF menu pointer ray;
+- generic Android gamepads without inertial sensors drive a virtual pointer orientation through the right stick, with navigation/D-pad nudge fallback;
+- Auto pointer mode prefers fresh tracked controller pose, then virtual gamepad aim, then gaze;
+- active pointer source is visible in the Home status card as Tracked controller, Virtual gamepad, Gaze, or Controller unavailable;
+- simplified in-world controller representation renders a controller body, touch surface, two center buttons, two right-side buttons and an emitter; Daydream button state visibly drives the corresponding model controls;
+- Home UI is split into three independently positioned world-space planes: left navigation, center status/content, and right quick options;
+- focus transitions have quiet rate-limited audio, activation uses positive feedback, and rejected actions retain distinct failure feedback;
+- unavailable/inert menu targets do not acquire hover or accept activation;
 - Daydream touchpad-click activation;
 - Menu/back navigation through the launcher hierarchy;
 - Home controller + software-yaw recenter request;
@@ -212,9 +221,9 @@ Implemented:
 
 Reference-device startup defect RV-0092 is resolved: the physical Galaxy S9 now reaches the rendered VR shell instead of exiting before frame one. Issue #3 is closed after visible handset evidence of the center interaction marker, close control, phone/controller battery HUD, and settings control.
 
-Current validation: phone-test #28 completed successfully against `5b4ee8e2fe954cc56c8fb2098ce0f75c3e44ed42`, passing JVM tests, Android/native build, Cardboard JNI package verification, APK verification/signing, artifact preservation, and prerelease publication as `phone-test-28-1`. This build contains the new three-environment seated home shell and Media/DOS launcher hierarchy.
+Current validation: phone-test #32 completed successfully against `887ab65daf8a16e878fda117dfce2b630a65e0d5`, passing JVM tests, Android/native build, Cardboard JNI package verification, APK verification/signing, artifact preservation, and prerelease publication as `phone-test-32-1`. This package includes the three-environment seated home shell, three-plane Home dashboard, Media/DOS launcher hierarchy, tracked Daydream pointer, virtual gamepad pointer, simplified in-world controller representation, live pointer-source status, focus/activation/failure feedback, and inert-target suppression.
 
-Remaining gate: physical Galaxy S9 validation of the new home backgrounds, environment switching, floating-screen media/DOS composition, and in-headset launcher interactions.
+Remaining gate: physical Galaxy S9 validation of the home backgrounds, three-plane readability, Daydream quaternion orientation mapping, controller-model orientation, emitter-ray alignment, gamepad stick/D-pad virtual aim, environment switching, floating-screen media/DOS composition, and in-headset launcher interactions.
 
 ### RV-0108 / RV-0206 — first-run setup and user optical calibration
 
