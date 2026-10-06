@@ -97,6 +97,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final float CONTROLLER_ANCHOR_Z = -0.48f;
     private static final float CONTROLLER_EMITTER_FORWARD_METERS = 0.066f;
 
+    private static final int INITIAL_HEADING_STABLE_FRAME_TARGET = 8;
+    private static final float INITIAL_HEADING_STABLE_DELTA_RADIANS =
+        (float) Math.toRadians(1.5);
+    private static final long INITIAL_HEADING_SETTLE_TIMEOUT_NANOS =
+        750000000L;
+
     private static final int MODE_SETUP = 0;
     private static final int MODE_HOME = 1;
     private static final int MODE_VIDEO = 2;
@@ -294,6 +300,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] adjustedControllerForward = new float[3];
     private final float[] activePointerOrigin = new float[3];
     private final float[] activePointerDirection = new float[3];
+    private final float[] orientationMenuRayOrigin = new float[3];
+    private final float[] orientationMenuRayDirection = new float[3];
 
     private final AtomicBoolean firstFrameReported =
         new AtomicBoolean();
@@ -324,7 +332,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile boolean rendererFailed;
     private volatile boolean orientationMenuVisible;
     private boolean quickMenuSettingsVisible;
+    private volatile float orientationMenuYawRadians;
     private boolean shellHeadingInitialized;
+    private long initialHeadingStartedNanos;
+    private int initialHeadingStableFrames;
+    private float initialHeadingCandidateYaw = Float.NaN;
     private float controllerYawCalibrationRadians;
 
     private int program;
@@ -541,13 +553,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     void toggleOrientationMenu() {
-        orientationMenuVisible =
+        boolean opening =
             !orientationMenuVisible;
+        orientationMenuVisible = opening;
         quickMenuSettingsVisible = false;
         hoveredButton = -1;
         selectRequested.set(false);
         backRequested.set(false);
-        if (orientationMenuVisible) {
+        if (opening) {
+            captureOrientationMenuHeading();
             lastQuickMenuStatusRefreshNanos = 0L;
         }
         textureDirty = true;
@@ -833,16 +847,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         headTransform.getForwardVector(headForward, 0);
 
         if (!shellHeadingInitialized) {
-            shellHeadingInitialized = true;
-            yawOffsetRadians =
-                wrapAngle(headEuler[1]);
-            controllerModelRenderer
-                .setYawCalibration(
-                    controllerYawCalibrationRadians
-                );
-            ReverieLog.milestone(
-                "VR_HEADING",
-                "Initial shell forward aligned to first stable headset heading."
+            updateInitialShellHeading(
+                frameNanos
             );
         }
 
@@ -890,9 +896,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
-        if (recenterRequested.getAndSet(false)) {
-            recenterOnHeadset(
+        if (recenterRequested.getAndSet(false)
+            && !recenterOnHeadset(
                 frameNanos
+            )) {
+            ReverieLog.milestone(
+                "VR_HEADING",
+                "Headset recenter ignored because no horizontal forward heading was available."
             );
         }
 
@@ -1387,6 +1397,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
             0.0f,
             0.0f
         );
+        if (orientationMenuVisible) {
+            Matrix.rotateM(
+                tempMatrix,
+                0,
+                (float) Math.toDegrees(
+                    orientationMenuYawRadians
+                ),
+                0.0f,
+                1.0f,
+                0.0f
+            );
+        }
         Matrix.multiplyMM(
             modelViewProjection,
             0,
@@ -1872,19 +1894,32 @@ final class VrShellRenderer implements CardboardView.Renderer {
             && poseAgeNanos <= 750000000L;
     }
 
-    private void recenterOnHeadset(
+    private boolean recenterOnHeadset(
         long frameNanos
     ) {
+        float headsetYaw =
+            VrHeadingMath.yawFromForward(
+                headForward[0],
+                headForward[2]
+            );
+        if (!Float.isFinite(headsetYaw)) {
+            return false;
+        }
+
         setShellHeading(
-            headEuler[1],
+            headsetYaw,
             hasFreshControllerPose(
                 frameNanos
             )
         );
+        shellHeadingInitialized = true;
+        initialHeadingStableFrames =
+            INITIAL_HEADING_STABLE_FRAME_TARGET;
         ReverieLog.milestone(
             "VR_HEADING",
-            "Shell forward centered on headset heading."
+            "Shell forward centered on headset pointing direction."
         );
+        return true;
     }
 
     private boolean recenterOnController(
@@ -1912,24 +1947,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
             adjustedControllerForward
         );
 
-        float horizontalLengthSquared =
-            adjustedControllerForward[0]
-                * adjustedControllerForward[0]
-                + adjustedControllerForward[2]
-                    * adjustedControllerForward[2];
-        if (!Float.isFinite(
-                horizontalLengthSquared
-            )
-            || horizontalLengthSquared
-                < 0.0004f) {
+        float controllerYaw =
+            VrHeadingMath.yawFromForward(
+                adjustedControllerForward[0],
+                adjustedControllerForward[2]
+            );
+        if (!Float.isFinite(controllerYaw)) {
             return false;
         }
-
-        float controllerYaw =
-            (float) Math.atan2(
-                adjustedControllerForward[0],
-                -adjustedControllerForward[2]
-            );
 
         setShellHeading(
             yawOffsetRadians
@@ -1941,6 +1966,86 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "Shell forward centered on tracked controller pointing direction."
         );
         return true;
+    }
+
+    private void updateInitialShellHeading(
+        long frameNanos
+    ) {
+        float currentYaw =
+            VrHeadingMath.yawFromForward(
+                headForward[0],
+                headForward[2]
+            );
+        if (!Float.isFinite(currentYaw)) {
+            return;
+        }
+
+        if (initialHeadingStartedNanos <= 0L) {
+            initialHeadingStartedNanos =
+                frameNanos;
+        }
+
+        if (Float.isFinite(
+                initialHeadingCandidateYaw
+            )
+            && VrHeadingMath.angularDistance(
+                    currentYaw,
+                    initialHeadingCandidateYaw
+                )
+                <= INITIAL_HEADING_STABLE_DELTA_RADIANS) {
+            initialHeadingStableFrames++;
+        } else {
+            initialHeadingStableFrames = 1;
+        }
+        initialHeadingCandidateYaw =
+            currentYaw;
+
+        setShellHeading(
+            currentYaw,
+            hasFreshControllerPose(
+                frameNanos
+            )
+        );
+
+        boolean stable =
+            initialHeadingStableFrames
+                >= INITIAL_HEADING_STABLE_FRAME_TARGET;
+        boolean timedOut =
+            frameNanos
+                    - initialHeadingStartedNanos
+                >= INITIAL_HEADING_SETTLE_TIMEOUT_NANOS;
+        if (stable || timedOut) {
+            shellHeadingInitialized = true;
+            ReverieLog.milestone(
+                "VR_HEADING",
+                stable
+                    ? "Initial shell forward locked after stable headset heading acquisition."
+                    : "Initial shell forward locked after heading settle timeout."
+            );
+        }
+    }
+
+    private void captureOrientationMenuHeading() {
+        float headsetYaw =
+            VrHeadingMath.yawFromForward(
+                headForward[0],
+                headForward[2]
+            );
+        float relativeYaw =
+            VrHeadingMath.relativeYaw(
+                headsetYaw,
+                yawOffsetRadians
+            );
+        orientationMenuYawRadians =
+            Float.isFinite(relativeYaw)
+                ? relativeYaw
+                : 0.0f;
+
+        ReverieLog.milestone(
+            "VR_HEADING",
+            "Quick menu anchored to current headset direction; relativeYaw="
+                + orientationMenuYawRadians
+        );
     }
 
     private void setShellHeading(
@@ -2156,15 +2261,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (origin == null
             || origin.length < 3
             || direction == null
-            || direction.length < 3
-            || Math.abs(direction[2]) < 0.0001f) {
+            || direction.length < 3) {
             return UiRayHit.miss();
         }
 
         if (orientationMenuVisible) {
-            return hitPanel(
+            rotateYaw(
                 origin,
+                -orientationMenuYawRadians,
+                orientationMenuRayOrigin
+            );
+            rotateYaw(
                 direction,
+                -orientationMenuYawRadians,
+                orientationMenuRayDirection
+            );
+            return hitPanel(
+                orientationMenuRayOrigin,
+                orientationMenuRayDirection,
                 -PANEL_HALF_WIDTH,
                 PANEL_HALF_WIDTH,
                 -PANEL_HALF_HEIGHT,
@@ -2702,10 +2816,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         switch (button) {
             case 0:
-                recenterOnHeadset(
-                    System.nanoTime()
-                );
-                closeOrientationMenu();
+                if (recenterOnHeadset(
+                        System.nanoTime()
+                    )) {
+                    closeOrientationMenu();
+                } else {
+                    host.onUiActionRejected();
+                }
                 break;
 
             case 1:
