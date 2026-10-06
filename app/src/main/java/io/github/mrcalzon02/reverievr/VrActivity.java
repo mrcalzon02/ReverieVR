@@ -49,6 +49,8 @@ public final class VrActivity extends Activity
         "io.github.mrcalzon02.reverievr.REQUEST_UPDATE_CHECK";
     static final String EXTRA_REQUEST_BLUETOOTH_SETTINGS =
         "io.github.mrcalzon02.reverievr.REQUEST_BLUETOOTH_SETTINGS";
+    static final String EXTRA_REQUEST_CONTROLLER_PAIRING =
+        "io.github.mrcalzon02.reverievr.REQUEST_CONTROLLER_PAIRING";
 
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
 
@@ -863,6 +865,13 @@ public final class VrActivity extends Activity
     public void onBluetoothSettingsRequested() {
         returnToPhonePicker(
             EXTRA_REQUEST_BLUETOOTH_SETTINGS
+        );
+    }
+
+    @Override
+    public void onControllerPairingRequested() {
+        returnToPhonePicker(
+            EXTRA_REQUEST_CONTROLLER_PAIRING
         );
     }
 
