@@ -728,6 +728,24 @@ public final class MainActivity extends Activity
                     chooseDosContent();
                     return;
                 }
+
+                if (data.getBooleanExtra(
+                        VrActivity.EXTRA_REQUEST_UPDATE_CHECK,
+                        false
+                    )) {
+                    if (BuildConfig.UPDATE_CHANNEL_ENABLED) {
+                        checkForUpdates(true);
+                    }
+                    return;
+                }
+
+                if (data.getBooleanExtra(
+                        VrActivity.EXTRA_REQUEST_BLUETOOTH_SETTINGS,
+                        false
+                    )) {
+                    openBluetoothSettings();
+                    return;
+                }
             }
             return;
         }
