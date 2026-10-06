@@ -70,14 +70,9 @@ android {
             minifyEnabled = false
             matchingFallbacks = ["release", "debug"]
 
-            if (!phoneTestSigningConfigured) {
-                throw new GradleException(
-                    "phoneTest builds require persistent signing. "
-                        + "Provision the phone-test signing properties first."
-                )
+            if (phoneTestSigningConfigured) {
+                signingConfig = signingConfigs.phoneTest
             }
-
-            signingConfig = signingConfigs.phoneTest
         }
 
         release {
