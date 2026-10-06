@@ -1997,68 +1997,411 @@ final class VrShellRenderer implements CardboardView.Renderer {
         uiPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     }
 
-    private void drawHome(Canvas canvas, Paint paint) {
-        paint.setColor(Color.WHITE);
-        paint.setTextSize(31.0f * uiScale);
-        canvas.drawText("HOME", 90, 175, paint);
+    private void drawHome(
+        Canvas canvas,
+        Paint paint
+    ) {
+        drawHomePanelBackground(
+            canvas,
+            paint,
+            HOME_LEFT_PIXEL_LEFT,
+            HOME_LEFT_PIXEL_RIGHT,
+            HOME_PIXEL_TOP,
+            HOME_PIXEL_BOTTOM
+        );
+        drawHomePanelBackground(
+            canvas,
+            paint,
+            HOME_CENTER_PIXEL_LEFT,
+            HOME_CENTER_PIXEL_RIGHT,
+            HOME_PIXEL_TOP,
+            HOME_PIXEL_BOTTOM
+        );
+        drawHomePanelBackground(
+            canvas,
+            paint,
+            HOME_RIGHT_PIXEL_LEFT,
+            HOME_RIGHT_PIXEL_RIGHT,
+            HOME_PIXEL_TOP,
+            HOME_PIXEL_BOTTOM
+        );
 
-        paint.setColor(Color.rgb(150, 162, 177));
-        paint.setTextSize(20.0f * uiScale);
+        paint.setFakeBoldText(true);
+        paint.setColor(Color.rgb(56, 214, 235));
+        paint.setTextSize(28.0f * uiScale);
         canvas.drawText(
-            controllerConnected ? "Controller ready" : controllerMessage,
-            90,
-            215,
+            "REVERIE VR",
+            40,
+            115,
+            paint
+        );
+        paint.setFakeBoldText(false);
+
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(24.0f * uiScale);
+        canvas.drawText(
+            "HOME",
+            42,
+            158,
             paint
         );
 
-        String dosLabel;
-        if (!dosRuntimeAvailable) {
-            dosLabel = "DOS RUNTIME NOT BUILT";
-        } else if (dosModuleIds.length == 0) {
-            dosLabel = "IMPORT DOS MODULE ON PHONE";
-        } else {
-            dosLabel =
-                "DOS LIBRARY  ("
-                    + dosModuleIds.length
-                    + ")";
-        }
+        String dosLabel =
+            !dosRuntimeAvailable
+                ? "DOS unavailable"
+                : (
+                    dosModuleIds.length == 0
+                        ? "DOS Games"
+                        : "DOS Games  •  "
+                            + dosModuleIds.length
+                );
 
-        String nativeLabel;
-        if (!NativeModuleRuntime.isAvailable()) {
-            nativeLabel =
-                "NATIVE MODULE HOST UNAVAILABLE";
-        } else if (nativeModules.isEmpty()) {
-            nativeLabel =
-                "NO NATIVE MODULES BUILT";
-        } else {
-            nativeLabel =
-                "NATIVE: "
-                    + shorten(
-                        nativeModules
-                            .get(0)
-                            .displayName,
-                        30
-                    );
-        }
+        String nativeLabel =
+            NativeModuleRuntime.isAvailable()
+                && !nativeModules.isEmpty()
+                ? "Native Apps"
+                : "Native Apps";
 
-        String[] labels = new String[] {
+        String[] leftLabels =
+            new String[] {
+                "Media",
+                dosLabel,
+                nativeLabel,
+                "Environment",
+                "Setup / Comfort",
+                "Exit to Phone"
+            };
+        drawHomeButtons(
+            canvas,
+            paint,
+            leftLabels,
+            0,
+            6
+        );
+
+        paint.setFakeBoldText(true);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(30.0f * uiScale);
+        canvas.drawText(
+            "Welcome to ReverieVR",
+            292,
+            150,
+            paint
+        );
+        paint.setFakeBoldText(false);
+
+        paint.setColor(Color.rgb(160, 176, 194));
+        paint.setTextSize(17.0f * uiScale);
+        canvas.drawText(
+            preferences
+                .getHomeEnvironment()
+                .displayName,
+            292,
+            185,
+            paint
+        );
+
+        paint.setColor(Color.rgb(34, 45, 58));
+        canvas.drawRoundRect(
+            292,
+            220,
+            718,
+            326,
+            18,
+            18,
+            paint
+        );
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            "Controller",
+            314,
+            255,
+            paint
+        );
+        paint.setColor(
+            controllerConnected
+                ? Color.rgb(93, 224, 177)
+                : Color.rgb(231, 174, 87)
+        );
+        paint.setTextSize(17.0f * uiScale);
+        canvas.drawText(
+            controllerConnected
+                ? "Connected • pointer ready"
+                : shorten(
+                    controllerMessage,
+                    34
+                ),
+            314,
+            286,
+            paint
+        );
+
+        paint.setColor(Color.rgb(34, 45, 58));
+        canvas.drawRoundRect(
+            292,
+            348,
+            718,
+            454,
+            18,
+            18,
+            paint
+        );
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            "Media",
+            314,
+            383,
+            paint
+        );
+        paint.setColor(Color.rgb(160, 176, 194));
+        paint.setTextSize(17.0f * uiScale);
+        canvas.drawText(
             preferences.hasSelectedVideo()
-                ? "MEDIA  •  "
-                    + shorten(
-                        preferences.getSelectedVideoDisplayName(),
-                        26
-                    )
-                : "MEDIA",
-            dosLabel,
-            nativeLabel,
-            "ENVIRONMENT  •  "
+                ? shorten(
+                    preferences
+                        .getSelectedVideoDisplayName(),
+                    36
+                )
+                : "No media selected",
+            314,
+            414,
+            paint
+        );
+
+        paint.setColor(Color.rgb(34, 45, 58));
+        canvas.drawRoundRect(
+            292,
+            476,
+            718,
+            582,
+            18,
+            18,
+            paint
+        );
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            "Input",
+            314,
+            511,
+            paint
+        );
+        paint.setColor(Color.rgb(160, 176, 194));
+        paint.setTextSize(17.0f * uiScale);
+        canvas.drawText(
+            "Pointer: "
                 + preferences
-                    .getHomeEnvironment()
+                    .getVrPointerMode()
                     .displayName,
-            "SETUP / COMFORT",
-            "EXIT TO PHONE"
-        };
-        drawButtons(canvas, paint, labels, activeButtons());
+            314,
+            542,
+            paint
+        );
+
+        paint.setColor(Color.rgb(143, 160, 179));
+        paint.setTextSize(15.0f * uiScale);
+        canvas.drawText(
+            "Look or point • click to select",
+            292,
+            635,
+            paint
+        );
+
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(23.0f * uiScale);
+        canvas.drawText(
+            "QUICK OPTIONS",
+            780,
+            158,
+            paint
+        );
+
+        String[] rightLabels =
+            new String[] {
+                toggleLabel(
+                    "Battery HUD",
+                    preferences.isBatteryHudEnabled()
+                ),
+                toggleLabel(
+                    "Percentages",
+                    preferences.isShowPercentagesEnabled()
+                ),
+                toggleLabel(
+                    "Look-Up Reveal",
+                    preferences.isLookUpRevealEnabled()
+                ),
+                "Pointer: "
+                    + preferences
+                        .getVrPointerMode()
+                        .displayName,
+                "Recenter View"
+            };
+        drawHomeButtons(
+            canvas,
+            paint,
+            rightLabels,
+            6,
+            5
+        );
+
+        paint.setColor(Color.rgb(126, 145, 165));
+        paint.setTextSize(13.0f * uiScale);
+        canvas.drawText(
+            "Build "
+                + BuildConfig.PHONE_TEST_RUN_NUMBER
+                + " • "
+                + shorten(
+                    BuildConfig.SOURCE_REVISION,
+                    7
+                ),
+            780,
+            650,
+            paint
+        );
+    }
+
+    private void drawHomePanelBackground(
+        Canvas canvas,
+        Paint paint,
+        float left,
+        float right,
+        float top,
+        float bottom
+    ) {
+        paint.setColor(
+            Color.argb(
+                225,
+                11,
+                20,
+                31
+            )
+        );
+        canvas.drawRoundRect(
+            left,
+            top,
+            right,
+            bottom,
+            22,
+            22,
+            paint
+        );
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2.0f);
+        paint.setColor(
+            Color.argb(
+                150,
+                65,
+                145,
+                184
+            )
+        );
+        canvas.drawRoundRect(
+            left + 2,
+            top + 2,
+            right - 2,
+            bottom - 2,
+            20,
+            20,
+            paint
+        );
+        paint.setStyle(Paint.Style.FILL);
+    }
+
+    private void drawHomeButtons(
+        Canvas canvas,
+        Paint paint,
+        String[] labels,
+        int startIndex,
+        int count
+    ) {
+        int end =
+            Math.min(
+                HOME_BUTTONS.length,
+                startIndex + count
+            );
+        for (int index = startIndex;
+             index < end;
+             index++) {
+            String label =
+                labels[index - startIndex];
+            int[] rect =
+                HOME_BUTTONS[index];
+            boolean focused =
+                index == hoveredButton;
+
+            paint.setColor(
+                focused
+                    ? Color.rgb(
+                        24,
+                        112,
+                        151
+                    )
+                    : Color.rgb(
+                        25,
+                        37,
+                        50
+                    )
+            );
+            canvas.drawRoundRect(
+                rect[0],
+                rect[1],
+                rect[2],
+                rect[3],
+                14,
+                14,
+                paint
+            );
+
+            if (focused) {
+                paint.setStyle(
+                    Paint.Style.STROKE
+                );
+                paint.setStrokeWidth(3.0f);
+                paint.setColor(
+                    Color.rgb(
+                        68,
+                        220,
+                        245
+                    )
+                );
+                canvas.drawRoundRect(
+                    rect[0] + 1,
+                    rect[1] + 1,
+                    rect[2] - 1,
+                    rect[3] - 1,
+                    13,
+                    13,
+                    paint
+                );
+                paint.setStyle(
+                    Paint.Style.FILL
+                );
+            }
+
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(
+                16.0f * uiScale
+            );
+            paint.setFakeBoldText(focused);
+            canvas.drawText(
+                shorten(label, 20),
+                rect[0] + 12,
+                rect[1] + 35,
+                paint
+            );
+            paint.setFakeBoldText(false);
+        }
+    }
+
+    private static String toggleLabel(
+        String label,
+        boolean enabled
+    ) {
+        return label
+            + (enabled ? "  ON" : "  OFF");
     }
 
     private void drawMediaLibrary(
