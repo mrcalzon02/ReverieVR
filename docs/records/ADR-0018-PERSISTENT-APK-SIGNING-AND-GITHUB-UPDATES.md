@@ -1,6 +1,6 @@
 # ADR-0018 — Persistent APK signing and GitHub-hosted self-updates
 
-Status: **accepted design / provisioning pending**
+Status: **implemented in source / permanent-key provisioning and device proof pending**
 
 ## Context
 
@@ -192,18 +192,28 @@ The APK must never contain:
 
 The private signing key exists only in offline backup storage and transiently inside the protected signing job.
 
-## Follow-up implementation work
+## Implementation status
 
-1. Provision the permanent signing key and Actions secrets.
-2. Replace signed-`debug` distribution with a non-debuggable phone-test/release build type.
-3. Change versionCode generation to a strictly monotonic, rerun-safe sequence.
-4. Pin/record the expected signing-certificate SHA-256 fingerprint.
-5. Make update digest verification fail closed.
-6. Parse the downloaded APK and verify package ID, versionCode, and signing identity before install.
-7. Select the numerically highest valid phone-test release rather than the first newer API entry.
-8. Update the GitHub REST API version header to the current supported version used by project tooling.
-9. Produce first persistently signed package and perform the one-time manual migration on the Galaxy S9.
-10. Publish one additional build and prove a real in-app update-over-update with preserved settings/data.
+Completed in source/workflow:
+
+- GitHub-distributed handset and controller packages use a dedicated non-debuggable `phoneTest` build type.
+- CI refuses to publish when any persistent-signing secret is missing.
+- Android versionCode is `GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT`, preventing rerun collisions.
+- CI derives the certificate SHA-256 from the supplied keystore before the build, compiles that public fingerprint into the handset package, and verifies both produced APKs use that exact certificate.
+- GitHub release asset SHA-256 is mandatory and fails closed.
+- The downloaded APK is copied privately for verification before Android's installer sees it.
+- Package ID, strictly newer versionCode, tag-to-versionCode mapping, installed signer, candidate signer, and pinned signer are all checked.
+- Release discovery selects the numerically highest valid phone-test release instead of trusting API order.
+- The updater uses the current project GitHub REST API version header.
+- Windows and Unix/macOS one-time provisioning scripts generate the permanent key locally, stage the four secret values in an ignored directory, optionally populate GitHub with authenticated `gh`, and optionally trigger the first signed build.
+- `.local/reverievr-signing/` is ignored to prevent accidental key/password commits.
+
+Remaining external acceptance work:
+
+1. Run the provisioning script on the repository owner's machine and back up the generated keystore/secrets in two trusted offline locations.
+2. Populate the four GitHub Actions signing secrets (the script can do this through authenticated `gh`).
+3. Produce the first persistently signed package and perform the one-time manual migration on the Galaxy S9.
+4. Publish one additional build and prove a real in-app update-over-update with settings/data preserved.
 
 ## Acceptance
 
