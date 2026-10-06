@@ -209,6 +209,8 @@ Implemented:
 - Home UI is split into three independently positioned world-space planes: left navigation, center status/content, and right quick options;
 - Home side planes are pushed farther left/right and tilted so their outer edges come toward the viewer, giving the launcher a shallow wrap-around arrangement;
 - the shell panel envelope and screen-space power HUD are contracted to 90% of the prior extent to keep edge content inside the reference Daydream View comfort area;
+- the universal Quick Menu captures the headset's live horizontal heading when opened and renders in that captured direction rather than the possibly-wrong shell-forward direction, allowing orientation recovery without physically spinning to find the menu;
+- startup forward orientation follows the live headset forward vector through a short stability window before locking, with a bounded timeout fallback, and all headset/controller forward calculations now use tested shell-consistent yaw polarity;
 - startup heading is explicitly initialized from the first headset heading rather than leaving shell yaw at the sensor/world default;
 - the same shell-owned modal now serves as a first universal Quick Menu slice, reachable from Daydream App/Menu, Cardboard system menu, gamepad Start/Mode, and keyboard Menu; it exposes Headset Forward, Controller Forward when a fresh pose exists, volume down/up, contextual Back, Home, Exit to Phone, and Close;
 - orientation changes are software-owned: shell yaw and controller yaw-calibration advance together when preserving controller physical direction, while Center on Controller rotates the shell until the current tracked controller ray becomes forward;
