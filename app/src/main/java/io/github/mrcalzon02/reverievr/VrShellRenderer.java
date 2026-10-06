@@ -294,6 +294,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile boolean controllerPointerActive;
     private volatile float controllerPointerDistance = 6.0f;
     private volatile boolean controllerPointerHit;
+    private volatile String activePointerSource = "Gaze";
     private float yawOffsetRadians;
     private float userIpdMeters;
     private float uiScale;
@@ -1441,6 +1442,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerVolumeUpPressed,
                 controllerVolumeDownPressed
             );
+            setActivePointerSource(
+                "Tracked controller"
+            );
             return true;
         }
 
@@ -1493,6 +1497,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 false,
                 false
             );
+            setActivePointerSource(
+                "Virtual gamepad"
+            );
             return true;
         }
 
@@ -1501,6 +1508,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (pointerMode
             == VrPointerMode.CONTROLLER) {
+            setActivePointerSource(
+                "Controller unavailable"
+            );
             activePointerOrigin[0] = 0.0f;
             activePointerOrigin[1] = 0.0f;
             activePointerOrigin[2] = 0.0f;
@@ -1510,6 +1520,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return false;
         }
 
+        setActivePointerSource("Gaze");
         activePointerOrigin[0] = 0.0f;
         activePointerOrigin[1] = 0.0f;
         activePointerOrigin[2] = 0.0f;
@@ -1524,6 +1535,22 @@ final class VrShellRenderer implements CardboardView.Renderer {
             activePointerDirection
         );
         return false;
+    }
+
+    private void setActivePointerSource(
+        String source
+    ) {
+        String safe =
+            source == null
+                || source.trim().isEmpty()
+                ? "Unknown"
+                : source.trim();
+        if (safe.equals(activePointerSource)) {
+            return;
+        }
+
+        activePointerSource = safe;
+        textureDirty = true;
     }
 
     private void updateVirtualPointerAngles(
@@ -2628,6 +2655,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     .displayName,
             314,
             542,
+            paint
+        );
+        paint.setColor(Color.rgb(126, 205, 221));
+        paint.setTextSize(15.0f * uiScale);
+        canvas.drawText(
+            "Active: "
+                + shorten(
+                    activePointerSource,
+                    28
+                ),
+            314,
+            568,
             paint
         );
 
