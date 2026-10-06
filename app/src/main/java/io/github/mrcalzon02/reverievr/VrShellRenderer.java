@@ -1083,6 +1083,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         EGLConfig config
     ) {
         homeEnvironmentRenderer.onSurfaceCreated();
+        pointerRenderer.onSurfaceCreated();
         videoRenderer.onSurfaceCreated();
         dosRenderer.onSurfaceCreated();
         nativeSurfaceReady = false;
@@ -1153,6 +1154,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     public void onRendererShutdown() {
         videoRenderer.shutdown();
         dosRenderer.shutdown();
+        pointerRenderer.shutdown();
         homeEnvironmentRenderer.shutdown();
 
         if (nativeSurfaceReady
