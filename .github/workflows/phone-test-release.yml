@@ -79,24 +79,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          present=0
-          for value in \
-            "$PHONE_TEST_KEYSTORE_BASE64" \
-            "$PHONE_TEST_STORE_PASSWORD" \
-            "$PHONE_TEST_KEY_ALIAS" \
-            "$PHONE_TEST_KEY_PASSWORD"; do
-            if [[ -n "$value" ]]; then
-              present=$((present + 1))
-            fi
-          done
-
-          if [[ "$present" -ne 4 ]]; then
+          if [[ -z "$PHONE_TEST_KEYSTORE_BASE64" \
+            || -z "$PHONE_TEST_STORE_PASSWORD" ]]; then
             echo "Persistent phone-test signing is mandatory for published APKs." >&2
-            echo "Set PHONE_TEST_KEYSTORE_BASE64, PHONE_TEST_STORE_PASSWORD, PHONE_TEST_KEY_ALIAS, and PHONE_TEST_KEY_PASSWORD." >&2
+            echo "Set PHONE_TEST_KEYSTORE_BASE64 and PHONE_TEST_STORE_PASSWORD." >&2
             exit 1
           fi
 
-          KEYSTORE="$RUNNER_TEMP/reverievr-phone-test.jks"
+          KEYSTORE="$RUNNER_TEMP/reverievr-phone-test.keystore"
           CERT_DER="$RUNNER_TEMP/reverievr-phone-test-cert.der"
 
           printf '%s' "$PHONE_TEST_KEYSTORE_BASE64" \
@@ -104,16 +94,23 @@ jobs:
           test -s "$KEYSTORE"
           chmod 600 "$KEYSTORE"
 
+          KEY_ALIAS="$(keytool -list -v \
+            -keystore "$KEYSTORE" \
+            -storepass "$PHONE_TEST_STORE_PASSWORD" \
+            | sed -n 's/^Alias name: //p' \
+            | head -n 1)"
+          test -n "$KEY_ALIAS"
+
           keytool -list \
             -keystore "$KEYSTORE" \
             -storepass "$PHONE_TEST_STORE_PASSWORD" \
-            -alias "$PHONE_TEST_KEY_ALIAS" \
+            -alias "$KEY_ALIAS" \
             >/dev/null
 
           keytool -exportcert \
             -keystore "$KEYSTORE" \
             -storepass "$PHONE_TEST_STORE_PASSWORD" \
-            -alias "$PHONE_TEST_KEY_ALIAS" \
+            -alias "$KEY_ALIAS" \
             -file "$CERT_DER" \
             >/dev/null
 
@@ -122,6 +119,7 @@ jobs:
 
           echo "configured=true" >> "$GITHUB_OUTPUT"
           echo "keystore_path=$KEYSTORE" >> "$GITHUB_OUTPUT"
+          echo "key_alias=$KEY_ALIAS" >> "$GITHUB_OUTPUT"
           echo "signer_sha=$SIGNER_SHA" >> "$GITHUB_OUTPUT"
 
           echo "Persistent signing identity loaded."
@@ -133,7 +131,7 @@ jobs:
           DIAGNOSTIC_INTAKE_URL: ${{ vars.DIAGNOSTIC_INTAKE_URL }}
           ORG_GRADLE_PROJECT_phoneTestKeystorePath: ${{ steps.signing.outputs.keystore_path }}
           ORG_GRADLE_PROJECT_phoneTestStorePassword: ${{ secrets.PHONE_TEST_STORE_PASSWORD }}
-          ORG_GRADLE_PROJECT_phoneTestKeyAlias: ${{ secrets.PHONE_TEST_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_phoneTestKeyAlias: ${{ steps.signing.outputs.key_alias }}
           ORG_GRADLE_PROJECT_phoneTestKeyPassword: ${{ secrets.PHONE_TEST_KEY_PASSWORD }}
         run: |
           set -euo pipefail
