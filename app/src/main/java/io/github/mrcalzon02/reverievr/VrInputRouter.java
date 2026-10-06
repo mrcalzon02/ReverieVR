@@ -123,18 +123,11 @@ final class VrInputRouter {
             VrInputAction.RECENTER,
             source
         );
-        emitPressedEdge(
-            snapshot.volumeUpPressed,
-            previousVolumeUp,
-            VrInputAction.VOLUME_UP,
-            source
-        );
-        emitPressedEdge(
-            snapshot.volumeDownPressed,
-            previousVolumeDown,
-            VrInputAction.VOLUME_DOWN,
-            source
-        );
+        /*
+         * The physical controller's volume rocker is a pair of hosted-input
+         * buttons in ReverieVR. Do not also emit Android/system volume actions;
+         * shell volume lives in interface menus instead.
+         */
 
         if (snapshot.touching) {
             if (!previousTouching) {
@@ -515,10 +508,6 @@ final class VrInputRouter {
                 return BindingInput.NAV_UP;
             case NAV_DOWN:
                 return BindingInput.NAV_DOWN;
-            case VOLUME_UP:
-                return BindingInput.VOLUME_UP;
-            case VOLUME_DOWN:
-                return BindingInput.VOLUME_DOWN;
             default:
                 return null;
         }
@@ -598,12 +587,6 @@ final class VrInputRouter {
 
             case KeyEvent.KEYCODE_DPAD_DOWN:
                 return VrInputAction.NAV_DOWN;
-
-            case KeyEvent.KEYCODE_VOLUME_UP:
-                return VrInputAction.VOLUME_UP;
-
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
-                return VrInputAction.VOLUME_DOWN;
 
             default:
                 return null;
