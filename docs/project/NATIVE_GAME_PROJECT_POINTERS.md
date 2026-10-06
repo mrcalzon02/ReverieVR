@@ -1,6 +1,6 @@
 # Native Game Project Pointers
 
-**Status:** planned / deferred until the ReverieVR native-module host is stable.
+**Status:** foundation implementation started; user-visible launch remains deferred until the native interaction/runtime gates below are satisfied.
 
 **Purpose:** preserve the intended direction for small, deliberately pre-PSX-scale native games derived from existing project concepts without turning ReverieVR into a general-purpose modern game engine.
 

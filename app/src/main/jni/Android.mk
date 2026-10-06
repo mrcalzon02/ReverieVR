@@ -39,6 +39,20 @@ LOCAL_LDLIBS += -llog -lGLESv2
 
 include $(BUILD_SHARED_LIBRARY)
 
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := reverie_module_red_ledger
+LOCAL_SRC_FILES := \
+    native/red_ledger_module.cpp \
+    native/red_ledger_simulation.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm
+
+include $(BUILD_SHARED_LIBRARY)
+
 ifdef REVERIE_HAS_DOSBOX_PURE
 
 LOCAL_PATH := $(REVERIE_JNI_PATH)

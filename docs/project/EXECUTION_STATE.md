@@ -485,6 +485,56 @@ This is the ADR-0015 validation stop. Do not expand into Kkrieger gameplay,
 Werkkzeug3 mesh/operator porting or V2 audio until the proof module passes the
 reference-device gates above.
 
+### RV-0610 — Between Deliveries: The Red Ledger VR foundation
+
+State: **draft**
+
+The first full native-game track is now in implementation, following the
+recorded RV-GAME-01 order rather than skipping ahead to the larger outdoor
+projects.
+
+Implemented foundation:
+
+- platform-independent deterministic one-room bar/economy state with cash,
+  debt, beer stock, clean/dirty cups, serving, washing and a day-close ledger;
+- four compact recurring patron archetypes and a deliberately tiny supplier
+  catalogue;
+- protection-demand, inspection/fine and supply-interruption event states;
+- low-complexity GLES2 concrete-room renderer with counter/tap, stool,
+  cup-state proxies, back-room mattress/ledger props, patron proxy, event marker
+  and flickering light;
+- separate `libreverie_module_red_ledger.so` ndk-build target using the
+  existing native-module ABI without creating Android/EGL/Cardboard ownership;
+- committed native simulation smoke source covering the first three event days;
+- ADR-0019 records the bounded foundation exception and the no-placebo launch
+  rule.
+
+Current verification:
+
+- the platform-independent simulation compiled with C++17,
+  `-Wall -Wextra -Wpedantic -Werror`, and its protection -> inspection ->
+  supply-interruption smoke sequence passed;
+- the Red Ledger module source passed strict C++ syntax validation against the
+  current native ABI and GLES2 surface;
+- source inspection confirms the new NDK target is independent of DOSBox Pure;
+- the module is intentionally absent from `reverie_native_host.cpp`'s
+  compile-time built-in allowlist, so no visible Native Apps target has been
+  created prematurely;
+- no Android/NDK packaging or Galaxy S9 runtime claim is made by this slice.
+
+Remaining gates before user-visible launch:
+
+- Galaxy S9 validation of the existing native-module host/proof chamber and its
+  sustained thermal/frame-pacing behavior;
+- the smallest backward-compatible host service/input extension for tracked
+  controller pose, work-surface targeting/reach assistance and native save
+  state;
+- real object-level tap/cup/ledger/money interaction instead of the hidden
+  primary/secondary development harness;
+- deterministic save/load coverage;
+- dual-ABI Android build/package verification and then headset usability and
+  thermal validation.
+
 ### RV-0410 / RV-0411 — DOS runtime baseline and modules
 
 State: **draft**

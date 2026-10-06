@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Native games
+
+- Began **Between Deliveries: The Red Ledger VR** as ReverieVR's first full native-game track: added a deterministic one-room bar/economy core, first three pressure events (protection, inspection, supply interruption), day-close accounting, recurring patrons/supplies, a deliberately low-poly GLES2 bar-room module, strict host-C++ smoke coverage, and an NDK shared-library target. The game remains deliberately absent from the Native Apps allowlist until real controller-oriented work-surface interaction, save services, Android build proof, and the Galaxy S9 native-module/runtime gates are satisfied.
+
 ### VR presence and headset comfort
 
 - Added the user-supplied **Starry Cereal** track as looping ambient music for the VR shell/environment. The packaged 267.312-second stereo MP3 is APK-optimized to 48 kbps while preserving the source program, plays at a deliberately subdued menu gain, pauses across Activity lifecycle changes and whenever Media/DOS/Native hosted content owns the experience, then resumes from its prior position when the shell returns.
