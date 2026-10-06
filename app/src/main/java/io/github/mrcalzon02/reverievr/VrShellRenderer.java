@@ -331,6 +331,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean nativeSurfaceReady;
     private volatile boolean rendererFailed;
     private volatile boolean orientationMenuVisible;
+    private volatile boolean orientationMenuPlacementPending;
     private boolean quickMenuSettingsVisible;
     private boolean keyboardQuickMenuFocusActive;
     private volatile float orientationMenuYawRadians;
@@ -581,13 +582,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
         boolean opening =
             !orientationMenuVisible;
         orientationMenuVisible = opening;
+        orientationMenuPlacementPending = opening;
         quickMenuSettingsVisible = false;
         keyboardQuickMenuFocusActive = false;
         hoveredButton = -1;
         selectRequested.set(false);
         backRequested.set(false);
         if (opening) {
-            captureOrientationMenuHeading();
+            /*
+             * The current headset pose belongs to the renderer thread.
+             * Defer quick-menu placement to onNewFrameInternal() so opening
+             * the menu from an input/UI callback cannot capture a stale or
+             * zeroed headForward vector and silently fall back to shell yaw 0.
+             */
             lastQuickMenuStatusRefreshNanos = 0L;
         }
         textureDirty = true;
@@ -1052,6 +1059,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 "VR_HEADING",
                 "Headset recenter ignored because no horizontal forward heading was available."
             );
+        }
+
+        if (orientationMenuVisible
+            && orientationMenuPlacementPending) {
+            captureOrientationMenuHeading();
+            orientationMenuPlacementPending = false;
         }
 
         Matrix.setRotateM(
@@ -2363,7 +2376,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         ReverieLog.milestone(
             "VR_HEADING",
-            "Quick menu anchored to current headset direction; relativeYaw="
+            "Quick menu placed from renderer-current headset direction; relativeYaw="
                 + orientationMenuYawRadians
         );
     }
@@ -3294,6 +3307,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void closeOrientationMenu() {
         orientationMenuVisible = false;
+        orientationMenuPlacementPending = false;
         quickMenuSettingsVisible = false;
         keyboardQuickMenuFocusActive = false;
         hoveredButton = -1;
