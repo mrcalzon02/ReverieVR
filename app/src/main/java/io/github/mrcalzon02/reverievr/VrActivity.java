@@ -975,13 +975,6 @@ public final class VrActivity extends Activity
     }
 
     @Override
-    public void onControllerRecenterRequested() {
-        if (controllerManager != null) {
-            controllerManager.recenterController();
-        }
-    }
-
-    @Override
     public PerformanceEnvironmentSnapshot
         getPerformanceEnvironmentSnapshot() {
         return new PerformanceEnvironmentSnapshot(
