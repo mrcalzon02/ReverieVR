@@ -36,6 +36,8 @@ The reference presentation contains two compact percentage/progress bars in the 
 
 These indicators are a shell capability and therefore remain available regardless of which ReverieVR-hosted experience is active.
 
+The shell must keep persistent overlays inside a conservative headset comfort envelope rather than assuming the full mathematical viewport is comfortably visible through the physical optics. Reference-device evidence showed the original upper-right HUD placement was too close to the edge of the Daydream View field, so the baseline shell/HUD extent is contracted by approximately ten percent. This contraction is a presentation-space rule, not a change to Cardboard's physical lens-distortion or eye-projection model.
+
 Telemetry must be honest. If the selected controller protocol/runtime cannot provide battery state, the controller indicator reports an unavailable/unknown state instead of fabricating a percentage.
 
 ### Optional gaze-adaptive presentation
