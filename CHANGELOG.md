@@ -30,6 +30,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 - Adopted the new user-supplied ReverieVR logo as the Stage A setup header and repository README branding, using a lightweight app-ready copy of the supplied artwork.
 - Derived a square launcher icon from the user-supplied ReverieVR headset/orbit mark and applied it to both the headset APK and the ReverieVR Controller companion so installed builds carry consistent project branding.
+- Phone-test #44 correctly rejected a malformed first launcher-icon payload during AAPT2 resource compilation; both APKs now use the byte-verified 256×256 PNG (`SHA-256 edf2e1d16c991e9f424510609aaf3c1f8f922e9dce883600639f70b52a3a36d3`) generated from that mark.
 - Removed the inert **Prefer retro performance-first quality** Quality of Life switch and its orphaned stored-preference wiring. ReverieVR remains performance-first and retro-first by project doctrine; this is a product baseline, not a placebo user toggle.
 - Added an explicit project-management rule forbidding user-facing controls that do not reach implemented, observable behavior.
 - Added centralized activation and rejection/failure sounds for Stage A buttons, Stage B shell selections, and the controller-phone application's buttons.
