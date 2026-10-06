@@ -203,8 +203,12 @@ Implemented:
 - generic Android gamepads without inertial sensors drive a virtual pointer orientation through the right stick, with navigation/D-pad nudge fallback;
 - Auto pointer mode prefers fresh tracked controller pose, then virtual gamepad aim, then gaze;
 - active pointer source is visible in the Home status card as Tracked controller, Virtual gamepad, Gaze, or Controller unavailable;
-- simplified in-world controller representation renders a controller body, touch surface, two center buttons, two right-side buttons and an emitter; Daydream button state visibly drives the corresponding model controls;
+- the selected low-poly Daydream controller OBJ is packaged as the normal in-world controller visual with separate touchpad/Home/App/volume material groups; the old procedural shape is retained only as an asset-load fallback;
+- controller visual and pointer ray now share the same moving shell anchor and the ray begins at the model's front emitter rather than its center;
+- handset TYPE_LINEAR_ACCELERATION feeds a damped, spring-returned, hard-bounded pseudo-positional headset offset, producing small inertial parallax while remaining explicitly distinct from true 6DoF tracking;
 - Home UI is split into three independently positioned world-space planes: left navigation, center status/content, and right quick options;
+- Home side planes are pushed farther left/right and tilted so their outer edges come toward the viewer, giving the launcher a shallow wrap-around arrangement;
+- the shell panel envelope and screen-space power HUD are contracted to 90% of the prior extent to keep edge content inside the reference Daydream View comfort area;
 - focus transitions have quiet rate-limited audio, activation uses positive feedback, and rejected actions retain distinct failure feedback;
 - unavailable/inert menu targets do not acquire hover or accept activation;
 - Daydream touchpad-click activation;
