@@ -132,7 +132,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {780, 344, 982, 392},
         {780, 400, 982, 448},
         {780, 456, 982, 504},
-        {780, 512, 982, 560}
+        {780, 512, 982, 560},
+        {314, 592, 696, 644}
     };
 
     private static final int[][] DOS_LIBRARY_BUTTONS = new int[][] {
@@ -1803,6 +1804,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 && index == 12) {
                 return false;
             }
+            if (index == 13) {
+                return hasResumeTarget();
+            }
             return index < HOME_BUTTONS.length;
         }
 
@@ -1933,6 +1937,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         if (host.onNativeModulePlaybackRequested(
                             module.id
                         )) {
+                            preferences.markLastActivityNative(
+                                module.id,
+                                module.displayName
+                            );
                             nativeSurfaceReady = false;
                             mode = MODE_NATIVE;
                             hoveredButton = -1;
@@ -1989,6 +1997,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 12:
                     host.onBluetoothSettingsRequested();
                     return;
+                case 13:
+                    if (resumeLastActivity()) {
+                        hoveredButton = -1;
+                        return;
+                    }
+                    host.onUiActionRejected();
+                    break;
                 default:
                     break;
             }
@@ -2021,6 +2036,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     preferences.getVideoProjection()
                 );
                 videoSeekRequestedMillis.set(0);
+                preferences.markLastActivityMedia();
                 mode = MODE_VIDEO;
                 hoveredButton = -1;
                 host.onVideoPlaybackRequested();
@@ -2099,6 +2115,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     moduleIndex < dosModuleNames.length
                         ? dosModuleNames[moduleIndex]
                         : "DOS session";
+                preferences.markLastActivityDos(
+                    ids[moduleIndex],
+                    activeDosModuleName
+                );
                 dosExitRequested.set(false);
                 mode = MODE_DOS;
                 hoveredButton = -1;
