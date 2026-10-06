@@ -316,6 +316,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private float userIpdMeters;
     private float uiScale;
     private boolean bindingHeadInitialized;
+    private boolean controllerTrainingReturn;
     private long lastPerformanceLogNanos;
     private float previousBindingYaw;
     private float previousBindingPitch;
@@ -1968,6 +1969,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     mode = MODE_ENVIRONMENT;
                     break;
                 case 4:
+                    controllerTrainingReturn = false;
                     mode = MODE_SETUP;
                     setupStep = 0;
                     preferences.setVrSetupStep(0);
@@ -2062,6 +2064,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 2:
+                controllerTrainingReturn = true;
                 mode = MODE_SETUP;
                 setupStep = 1;
                 preferences.setVrSetupStep(1);
@@ -2291,7 +2294,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 1:
-                if (button == 0 || button == 1) {
+                if (controllerTrainingReturn) {
+                    if (button == 0) {
+                        controllerTrainingReturn = false;
+                        mode = MODE_CONTROLLER;
+                    } else if (button == 1) {
+                        controllerTrainingReturn = false;
+                        mode = MODE_HOME;
+                    }
+                } else if (button == 0 || button == 1) {
                     advanceSetup();
                 }
                 break;
@@ -2410,7 +2421,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        if (setupStep > 0) {
+        if (controllerTrainingReturn
+            && mode == MODE_SETUP
+            && setupStep == 1) {
+            controllerTrainingReturn = false;
+            mode = MODE_CONTROLLER;
+        } else if (setupStep > 0) {
             setupStep--;
             preferences.setVrSetupStep(setupStep);
         } else {
@@ -3894,7 +3910,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     405,
                     paint
                 );
-                labels = new String[] {"CONTINUE", "SKIP"};
+                labels =
+                    controllerTrainingReturn
+                        ? new String[] {
+                            "BACK TO CONTROLLER",
+                            "HOME"
+                        }
+                        : new String[] {
+                            "CONTINUE",
+                            "SKIP"
+                        };
                 break;
 
             case 2:
