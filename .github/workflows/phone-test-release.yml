@@ -58,6 +58,16 @@ jobs:
           node --check diagnostic-intake/src/index.js
           node diagnostic-intake/test/worker-validation-smoke.cjs
 
+      - name: Validate unsigned development tree
+        shell: bash
+        env:
+          DIAGNOSTIC_INTAKE_URL: ${{ vars.DIAGNOSTIC_INTAKE_URL }}
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon \
+            -PdiagnosticIntakeUrl="$DIAGNOSTIC_INTAKE_URL" \
+            test :app:assembleDebug :controller-app:assembleDebug
+
       - name: Prepare persistent phone-test signing
         id: signing
         shell: bash
@@ -117,7 +127,7 @@ jobs:
           echo "Persistent signing identity loaded."
           echo "Distribution certificate SHA-256: $SIGNER_SHA"
 
-      - name: Test and build
+      - name: Build persistent phone-test packages
         shell: bash
         env:
           DIAGNOSTIC_INTAKE_URL: ${{ vars.DIAGNOSTIC_INTAKE_URL }}
@@ -133,7 +143,7 @@ jobs:
             -PphoneTestRunAttempt="$GITHUB_RUN_ATTEMPT" \
             -PphoneTestSignerSha256="${{ steps.signing.outputs.signer_sha }}" \
             -PsourceRevision="$GITHUB_SHA" \
-            test :app:assemblePhoneTest :controller-app:assemblePhoneTest
+            :app:assemblePhoneTest :controller-app:assemblePhoneTest
 
       - name: Verify APK
         id: verify
