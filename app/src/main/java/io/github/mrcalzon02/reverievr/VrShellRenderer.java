@@ -3358,6 +3358,48 @@ final class VrShellRenderer implements CardboardView.Renderer {
         destination[2] = -sin * vector[0] + cos * vector[2];
     }
 
+    private static float[] panelVertices(
+        float left,
+        float right,
+        float bottom,
+        float top,
+        float z
+    ) {
+        return new float[] {
+            left, bottom, z,
+            right, bottom, z,
+            left, top, z,
+            right, top, z
+        };
+    }
+
+    private static float[] panelUvs(
+        int pixelLeft,
+        int pixelRight,
+        int pixelTop,
+        int pixelBottom
+    ) {
+        float u0 =
+            pixelLeft
+                / (float) TEXTURE_WIDTH;
+        float u1 =
+            pixelRight
+                / (float) TEXTURE_WIDTH;
+        float v0 =
+            pixelTop
+                / (float) TEXTURE_HEIGHT;
+        float v1 =
+            pixelBottom
+                / (float) TEXTURE_HEIGHT;
+
+        return new float[] {
+            u0, v1,
+            u1, v1,
+            u0, v0,
+            u1, v0
+        };
+    }
+
     private static FloatBuffer allocate(float[] values) {
         FloatBuffer buffer = ByteBuffer
             .allocateDirect(values.length * 4)
