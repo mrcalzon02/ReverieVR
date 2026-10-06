@@ -55,6 +55,7 @@
 - RV-0217 — Implement nonblocking notification policy with user-selectable categories, durations, placement, animation/reduced-motion behavior, and no mandatory center-screen modal for routine status.
 - RV-0218 — Implement optional session timer and break reminders with complete opt-out.
 - RV-0219 — Research an optional S9 rear-camera 'real-world peek' mode. Treat it as a convenience view, not room-scale passthrough or a safety boundary, and reject it if latency/distortion is uncomfortable.
+- RV-0220 — **Planned interaction primitive:** support an explicit world-anchored controller/tool attachment mode for mounted guns, turrets, yokes, fixed levers, vehicle controls, and similar fixtures. This is an opt-in module mechanic only; the normal handheld controller remains headset-reference-relative with independent tracked rotation and bounded inertial translation.
 
 ## P4 — Performance baseline
 
