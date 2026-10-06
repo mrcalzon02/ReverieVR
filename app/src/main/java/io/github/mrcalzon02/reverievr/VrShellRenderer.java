@@ -42,6 +42,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVideoPlaybackRequested();
         void onMediaSelectionRequested();
         void onDosImportRequested();
+        void onUpdateCheckRequested();
+        void onBluetoothSettingsRequested();
         void onVideoTogglePauseRequested();
         void onVideoSeekRequested(int deltaMillis);
         void onVideoStopRequested();
@@ -124,11 +126,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {42, 384, 230, 442},
         {42, 452, 230, 510},
         {42, 520, 230, 578},
-        {780, 190, 982, 248},
-        {780, 258, 982, 316},
-        {780, 326, 982, 384},
-        {780, 394, 982, 452},
-        {780, 462, 982, 520}
+        {780, 176, 982, 224},
+        {780, 232, 982, 280},
+        {780, 288, 982, 336},
+        {780, 344, 982, 392},
+        {780, 400, 982, 448},
+        {780, 456, 982, 504},
+        {780, 512, 982, 560}
     };
 
     private static final int[][] DOS_LIBRARY_BUTTONS = new int[][] {
@@ -1795,6 +1799,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return NativeModuleRuntime.isAvailable()
                     && !nativeModules.isEmpty();
             }
+            if (!BuildConfig.UPDATE_CHANNEL_ENABLED
+                && index == 12) {
+                return false;
+            }
             return index < HOME_BUTTONS.length;
         }
 
@@ -1971,6 +1979,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 10:
                     requestRecenter();
                     break;
+                case 11:
+                    if (BuildConfig.UPDATE_CHANNEL_ENABLED) {
+                        host.onUpdateCheckRequested();
+                    } else {
+                        host.onBluetoothSettingsRequested();
+                    }
+                    return;
+                case 12:
+                    host.onBluetoothSettingsRequested();
+                    return;
                 default:
                     break;
             }
@@ -2670,12 +2688,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
+        paint.setColor(Color.rgb(126, 205, 221));
+        paint.setTextSize(14.0f * uiScale);
+        canvas.drawText(
+            homeHelpText(hoveredButton),
+            292,
+            618,
+            paint
+        );
+
         paint.setColor(Color.rgb(143, 160, 179));
-        paint.setTextSize(15.0f * uiScale);
+        paint.setTextSize(14.0f * uiScale);
         canvas.drawText(
             "Look or point • click to select",
             292,
-            635,
+            644,
             paint
         );
 
@@ -2688,32 +2715,62 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
-        String[] rightLabels =
-            new String[] {
-                toggleLabel(
-                    "Battery HUD",
-                    preferences.isBatteryHudEnabled()
-                ),
-                toggleLabel(
-                    "Percentages",
-                    preferences.isShowPercentagesEnabled()
-                ),
-                toggleLabel(
-                    "Look-Up Reveal",
-                    preferences.isLookUpRevealEnabled()
-                ),
-                "Pointer: "
-                    + preferences
-                        .getVrPointerMode()
-                        .displayName,
-                "Recenter View"
-            };
+        String[] rightLabels;
+        int rightCount;
+        if (BuildConfig.UPDATE_CHANNEL_ENABLED) {
+            rightLabels =
+                new String[] {
+                    toggleLabel(
+                        "Battery HUD",
+                        preferences.isBatteryHudEnabled()
+                    ),
+                    toggleLabel(
+                        "Percentages",
+                        preferences.isShowPercentagesEnabled()
+                    ),
+                    toggleLabel(
+                        "Look-Up Reveal",
+                        preferences.isLookUpRevealEnabled()
+                    ),
+                    "Pointer: "
+                        + preferences
+                            .getVrPointerMode()
+                            .displayName,
+                    "Recenter View",
+                    "Check Updates",
+                    "Android Bluetooth"
+                };
+            rightCount = 7;
+        } else {
+            rightLabels =
+                new String[] {
+                    toggleLabel(
+                        "Battery HUD",
+                        preferences.isBatteryHudEnabled()
+                    ),
+                    toggleLabel(
+                        "Percentages",
+                        preferences.isShowPercentagesEnabled()
+                    ),
+                    toggleLabel(
+                        "Look-Up Reveal",
+                        preferences.isLookUpRevealEnabled()
+                    ),
+                    "Pointer: "
+                        + preferences
+                            .getVrPointerMode()
+                            .displayName,
+                    "Recenter View",
+                    "Android Bluetooth"
+                };
+            rightCount = 6;
+        }
         drawHomeButtons(
             canvas,
             paint,
             rightLabels,
             6,
-            5
+            rightCount
         );
 
         paint.setColor(Color.rgb(126, 145, 165));
@@ -2778,6 +2835,43 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
         paint.setStyle(Paint.Style.FILL);
+    }
+
+    private String homeHelpText(
+        int index
+    ) {
+        switch (index) {
+            case 0:
+                return "Open local video and floating-screen media controls.";
+            case 1:
+                return "Browse and launch imported DOS game modules.";
+            case 2:
+                return "Launch ReverieVR-native modules.";
+            case 3:
+                return "Change the persistent 3D home environment.";
+            case 4:
+                return "Comfort, calibration, and first-run setup controls.";
+            case 5:
+                return "Leave the headset shell and return to the phone interface.";
+            case 6:
+                return "Show or hide phone/controller battery bars in VR.";
+            case 7:
+                return "Show numeric battery percentages beside the HUD bars.";
+            case 8:
+                return "Reveal the HUD automatically when you look upward.";
+            case 9:
+                return "Cycle Auto, Gaze, and Controller pointer modes.";
+            case 10:
+                return "Recenter headset view and controller/virtual pointer aim.";
+            case 11:
+                return BuildConfig.UPDATE_CHANNEL_ENABLED
+                    ? "Return to the phone and check GitHub for a signed ReverieVR update."
+                    : "Return to the phone and open Android Bluetooth settings.";
+            case 12:
+                return "Return to the phone and open Android Bluetooth settings.";
+            default:
+                return "Choose a destination or quick option.";
+        }
     }
 
     private void drawHomeButtons(
