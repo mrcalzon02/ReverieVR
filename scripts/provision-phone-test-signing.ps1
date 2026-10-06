@@ -10,7 +10,7 @@ $Repo = "mrcalzon02/ReverieVR"
 $Alias = "reverievr-phone-test"
 $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $OutputDir = Join-Path $ProjectRoot ".local\reverievr-signing"
-$Keystore = Join-Path $OutputDir "reverievr-phone-test.jks"
+$Keystore = Join-Path $OutputDir "reverievr-phone-test.keystore"
 $Certificate = Join-Path $OutputDir "reverievr-phone-test-cert.der"
 $SecretsFile = Join-Path $OutputDir "github-secrets.txt"
 $FingerprintFile = Join-Path $OutputDir "certificate-sha256.txt"
@@ -21,9 +21,108 @@ function New-RandomSecret {
     return [Convert]::ToBase64String($bytes).Replace("+", "-").Replace("/", "_").TrimEnd("=")
 }
 
-$keytool = Get-Command keytool -ErrorAction SilentlyContinue
-if (-not $keytool) {
-    throw "keytool was not found. Install/use JDK 17 and make sure keytool is on PATH."
+function Resolve-Keytool {
+    $command = Get-Command keytool -ErrorAction SilentlyContinue
+    if ($command) { return $command.Source }
+
+    $candidates = @()
+    if ($env:JAVA_HOME) { $candidates += (Join-Path $env:JAVA_HOME "bin\keytool.exe") }
+
+    if ($env:ProgramFiles) {
+        $candidates += (Join-Path $env:ProgramFiles "Android\Android Studio\jbr\bin\keytool.exe")
+        $candidates += (Join-Path $env:ProgramFiles "Android\Android Studio\jre\bin\keytool.exe")
+        foreach ($root in @(
+            (Join-Path $env:ProgramFiles "Eclipse Adoptium"),
+            (Join-Path $env:ProgramFiles "Microsoft"),
+            (Join-Path $env:ProgramFiles "Java")
+        )) {
+            if (Test-Path $root) {
+                Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+                    $candidates += (Join-Path $_.FullName "bin\keytool.exe")
+                }
+            }
+        }
+    }
+
+    if ($env:LOCALAPPDATA) {
+        foreach ($root in @(
+            (Join-Path $env:LOCALAPPDATA "Programs\Eclipse Adoptium"),
+            (Join-Path $env:LOCALAPPDATA "Programs\Microsoft")
+        )) {
+            if (Test-Path $root) {
+                Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+                    $candidates += (Join-Path $_.FullName "bin\keytool.exe")
+                }
+            }
+        }
+    }
+
+    foreach ($candidate in $candidates) {
+        if ($candidate -and (Test-Path $candidate)) { return $candidate }
+    }
+    return $null
+}
+
+function New-NativeWindowsKeystore {
+    param(
+        [string]$Path,
+        [string]$CertificatePath,
+        [string]$Password
+    )
+
+    $newCertificate = Get-Command New-SelfSignedCertificate -ErrorAction SilentlyContinue
+    $exportPfx = Get-Command Export-PfxCertificate -ErrorAction SilentlyContinue
+    $exportCertificate = Get-Command Export-Certificate -ErrorAction SilentlyContinue
+
+    if (-not $newCertificate -or -not $exportPfx -or -not $exportCertificate) {
+        throw "Neither keytool nor the built-in Windows certificate tools are available."
+    }
+
+    $securePassword = ConvertTo-SecureString $Password -AsPlainText -Force
+    $cert = $null
+
+    try {
+        $certParams = @{
+            Type = "Custom"
+            Subject = "CN=ReverieVR Distribution, O=ReverieVR, C=US"
+            FriendlyName = $Alias
+            KeyAlgorithm = "RSA"
+            KeyLength = 3072
+            HashAlgorithm = "SHA256"
+            KeyExportPolicy = "Exportable"
+            KeyUsage = "DigitalSignature"
+            CertStoreLocation = "Cert:\CurrentUser\My"
+            NotAfter = (Get-Date).AddYears(50)
+        }
+        $cert = New-SelfSignedCertificate @certParams
+
+        if (-not $cert) { throw "Windows could not create the ReverieVR signing certificate." }
+
+        $pfxParams = @{
+            Cert = $cert
+            FilePath = $Path
+            Password = $securePassword
+            ChainOption = "EndEntityCertOnly"
+        }
+        Export-PfxCertificate @pfxParams | Out-Null
+
+        $certExportParams = @{
+            Cert = $cert
+            FilePath = $CertificatePath
+            Type = "CERT"
+        }
+        Export-Certificate @certExportParams | Out-Null
+    }
+    finally {
+        if ($cert) {
+            $certPath = "Cert:\CurrentUser\My\$($cert.Thumbprint)"
+            if (Test-Path $certPath) { Remove-Item -Force $certPath }
+        }
+    }
+
+    if (-not (Test-Path $Path) -or (Get-Item $Path).Length -le 0) {
+        throw "Windows certificate tooling did not produce a signing keystore."
+    }
 }
 
 if ((Test-Path $Keystore) -and -not $Force) {
@@ -35,48 +134,49 @@ New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $StorePassword = New-RandomSecret
 $KeyPassword = New-RandomSecret
 
-if (Test-Path $Keystore) {
-    Remove-Item -Force $Keystore
-}
-if (Test-Path $Certificate) {
-    Remove-Item -Force $Certificate
-}
+if (Test-Path $Keystore) { Remove-Item -Force $Keystore }
+if (Test-Path $Certificate) { Remove-Item -Force $Certificate }
 
-$genArgs = @(
-    "-genkeypair",
-    "-alias", $Alias,
-    "-keyalg", "RSA",
-    "-keysize", "3072",
-    "-sigalg", "SHA256withRSA",
-    "-validity", "36500",
-    "-storetype", "JKS",
-    "-keystore", $Keystore,
-    "-storepass", $StorePassword,
-    "-keypass", $KeyPassword,
-    "-dname", "CN=ReverieVR Distribution, O=ReverieVR, C=US",
-    "-noprompt"
-)
-& $keytool.Source @genArgs
-if ($LASTEXITCODE -ne 0) {
-    throw "keytool failed to create the ReverieVR signing keystore."
-}
+$keytoolPath = Resolve-Keytool
 
-$exportArgs = @(
-    "-exportcert",
-    "-alias", $Alias,
-    "-keystore", $Keystore,
-    "-storepass", $StorePassword,
-    "-file", $Certificate
-)
-& $keytool.Source @exportArgs
-if ($LASTEXITCODE -ne 0) {
-    throw "keytool failed to export the public signing certificate."
+if ($keytoolPath) {
+    Write-Host "Using keytool at $keytoolPath"
+
+    $genArgs = @(
+        "-genkeypair",
+        "-alias", $Alias,
+        "-keyalg", "RSA",
+        "-keysize", "3072",
+        "-sigalg", "SHA256withRSA",
+        "-validity", "36500",
+        "-storetype", "JKS",
+        "-keystore", $Keystore,
+        "-storepass", $StorePassword,
+        "-keypass", $KeyPassword,
+        "-dname", "CN=ReverieVR Distribution, O=ReverieVR, C=US",
+        "-noprompt"
+    )
+    & $keytoolPath @genArgs
+    if ($LASTEXITCODE -ne 0) { throw "keytool failed to create the ReverieVR signing keystore." }
+
+    $exportArgs = @(
+        "-exportcert",
+        "-alias", $Alias,
+        "-keystore", $Keystore,
+        "-storepass", $StorePassword,
+        "-file", $Certificate
+    )
+    & $keytoolPath @exportArgs
+    if ($LASTEXITCODE -ne 0) { throw "keytool failed to export the public signing certificate." }
+}
+else {
+    Write-Host "keytool not found; using built-in Windows certificate tooling instead."
+    $KeyPassword = $StorePassword
+    New-NativeWindowsKeystore -Path $Keystore -CertificatePath $Certificate -Password $StorePassword
 }
 
 $Fingerprint = (Get-FileHash -Algorithm SHA256 -Path $Certificate).Hash.ToLowerInvariant()
-if ($Fingerprint -notmatch "^[0-9a-f]{64}$") {
-    throw "Could not calculate a valid certificate SHA-256 fingerprint."
-}
+if ($Fingerprint -notmatch "^[0-9a-f]{64}$") { throw "Could not calculate a valid certificate SHA-256 fingerprint." }
 
 $KeystoreBase64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($Keystore))
 
@@ -102,7 +202,7 @@ if ($SetGitHubSecrets) {
 
     & $gh.Source auth status | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        throw "GitHub CLI is not authenticated. Run 'gh auth login', then rerun this script with -SetGitHubSecrets."
+        throw "GitHub CLI is not authenticated. Run gh auth login, then rerun this script with -SetGitHubSecrets."
     }
 
     $secretValues = @{
@@ -114,18 +214,14 @@ if ($SetGitHubSecrets) {
 
     foreach ($entry in $secretValues.GetEnumerator()) {
         $entry.Value | & $gh.Source secret set $entry.Key --repo $Repo
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to set GitHub Actions secret $($entry.Key)."
-        }
+        if ($LASTEXITCODE -ne 0) { throw "Failed to set GitHub Actions secret $($entry.Key)." }
     }
 
     Write-Host "GitHub Actions signing secrets were populated for $Repo."
 
     if ($TriggerBuild) {
         & $gh.Source workflow run phone-test-release.yml --repo $Repo
-        if ($LASTEXITCODE -ne 0) {
-            throw "Signing secrets were saved, but the phone-test workflow could not be triggered."
-        }
+        if ($LASTEXITCODE -ne 0) { throw "Signing secrets were saved, but the phone-test workflow could not be triggered." }
         Write-Host "First persistently signed phone-test build was triggered."
     }
 }
