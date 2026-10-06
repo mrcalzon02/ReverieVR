@@ -236,6 +236,14 @@ Phone-test #43 includes deterministic first-frame headset heading initialization
 
 Remaining gate: physical Galaxy S9 + Daydream View validation of startup heading behavior, Center on Headset, Center on Controller, menu placement/readability over Home/Media/DOS/Native surfaces, the 10% comfort contraction, HUD edge visibility, inertial translation direction/gain/settling feel, wrapped Home panel comfort/readability, Daydream model orientation/scale, emitter-ray alignment, and gamepad virtual aim. Build/package success is not device-comfort acceptance.
 
+### RV-0109 — VR shell/environment ambience
+
+State: **draft**
+
+The user-supplied **Starry Cereal** track is packaged as the VR shell's looping ambient menu music. The APK asset is a 267.312-second, 48 kHz stereo MP3 optimized to 48 kbps for handset package size (asset SHA-256 `dd0240297ea62fe2002b736ce2b43002cafc307ad76e32d795587012ffb99c00`; supplied source SHA-256 `26d5f261b080b913cce08ec8ea7e75105fbb6fb1d14a3808d4298302a24454cf`). Playback is shell-owned: it pauses for Activity lifecycle loss and whenever local video, DOS, or Native hosted content starts, resumes from the previous music position when the shell returns, loops continuously, and fails quiet rather than breaking VR startup.
+
+Remaining gate: Galaxy S9 + Daydream View listening validation for perceived level, looping behavior, transitions, and long-session comfort. User-facing music volume/mute remains part of RV-0203 audio settings.
+
 ### RV-0216 — universal quick-access shell panel
 
 State: **draft**

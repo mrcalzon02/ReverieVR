@@ -65,6 +65,7 @@ public final class VrActivity extends Activity
     private ControllerManager controllerManager;
     private ReveriePreferences preferences;
     private UiFeedback uiFeedback;
+    private ShellMenuMusic menuMusic;
     private LocalVideoPlayer videoPlayer;
     private InputManager inputManager;
     private VrInputRouter inputRouter;
@@ -137,6 +138,7 @@ public final class VrActivity extends Activity
             new StandardHidInputRouter(this);
         preferences = new ReveriePreferences(this);
         uiFeedback = new UiFeedback(this);
+        menuMusic = new ShellMenuMusic(this);
         videoPlayer = new LocalVideoPlayer(this, this);
         dosModuleRepository =
             new DosModuleRepository(this);
@@ -247,6 +249,9 @@ public final class VrActivity extends Activity
         if (cardboardView != null) {
             cardboardView.onResume();
         }
+        if (menuMusic != null) {
+            menuMusic.resumeForLifecycle();
+        }
         if (renderer != null) {
             renderer.setPhoneBattery(readPhoneBattery());
         }
@@ -274,6 +279,9 @@ public final class VrActivity extends Activity
         }
         if (standardHidInputRouter != null) {
             standardHidInputRouter.reset();
+        }
+        if (menuMusic != null) {
+            menuMusic.pauseForLifecycle();
         }
         if (videoPlayer != null) {
             videoPlayer.pauseForLifecycle();
@@ -315,6 +323,9 @@ public final class VrActivity extends Activity
         }
         if (nativeModuleRuntime != null) {
             nativeModuleRuntime.close();
+        }
+        if (menuMusic != null) {
+            menuMusic.close();
         }
         if (uiFeedback != null) {
             uiFeedback.close();
@@ -1073,6 +1084,16 @@ public final class VrActivity extends Activity
         });
     }
 
+    private void setShellMenuMusicActive(
+        boolean active
+    ) {
+        runOnUiThread(() -> {
+            if (menuMusic != null) {
+                menuMusic.setShellActive(active);
+            }
+        });
+    }
+
     @Override
     public boolean onNativeModulePlaybackRequested(
         String moduleId
@@ -1102,6 +1123,7 @@ public final class VrActivity extends Activity
             return false;
         }
 
+        setShellMenuMusicActive(false);
         ReverieLog.milestone(
             "NATIVE_MODULE",
             "Stage B launched module="
@@ -1118,6 +1140,7 @@ public final class VrActivity extends Activity
         if (inputBindingManager != null) {
             inputBindingManager.endHostedProfile();
         }
+        setShellMenuMusicActive(true);
     }
 
     @Override
@@ -1187,6 +1210,7 @@ public final class VrActivity extends Activity
             return false;
         }
 
+        setShellMenuMusicActive(false);
         ReverieLog.milestone(
             "DOS_SESSION",
             "Stage B launched module="
@@ -1496,6 +1520,7 @@ public final class VrActivity extends Activity
         if (inputBindingManager != null) {
             inputBindingManager.endHostedProfile();
         }
+        setShellMenuMusicActive(true);
         refreshDosModuleStatus();
     }
 
@@ -1506,6 +1531,9 @@ public final class VrActivity extends Activity
     ) {
         runOnUiThread(() -> {
             activeDosModuleId = "";
+            if (menuMusic != null) {
+                menuMusic.setShellActive(true);
+            }
             if (inputBindingManager != null) {
                 inputBindingManager.endHostedProfile();
             }
@@ -1546,6 +1574,9 @@ public final class VrActivity extends Activity
     public void onVideoPlaybackRequested() {
         runOnUiThread(() -> {
             if (videoPlayer != null && preferences != null) {
+                if (menuMusic != null) {
+                    menuMusic.setShellActive(false);
+                }
                 videoPlayer.play(preferences.getSelectedVideoUri());
             }
         });
@@ -1575,6 +1606,9 @@ public final class VrActivity extends Activity
             if (videoPlayer != null) {
                 videoPlayer.stop();
             }
+            if (menuMusic != null) {
+                menuMusic.setShellActive(true);
+            }
         });
     }
 
@@ -1593,6 +1627,9 @@ public final class VrActivity extends Activity
     @Override
     public void onVideoError(String message) {
         runOnUiThread(() -> {
+            if (menuMusic != null) {
+                menuMusic.setShellActive(true);
+            }
             uiFeedback.failure();
             Toast.makeText(
                 this,

@@ -30,6 +30,7 @@
 - RV-0106 — Implement shell-global handset/controller power HUD with percentage/progress presentation and honest unavailable states.
 - RV-0107 — Implement optional gaze-adaptive status reveal/retract plus persistent/manual fallback and local QoL toggles.
 - RV-0108 — Implement versioned first-VR-run onboarding/calibration wizard with resumable progress, safe defaults, skip/defer behavior, completion summary, and **Run VR Setup Again** entry point.
+- RV-0109 — **Draft implementation present.** Package the user-supplied **Starry Cereal** track as looping VR shell/environment ambience with lifecycle-safe pause/resume and automatic suppression while Media, DOS, or Native hosted content is active. Remaining gate: Galaxy S9 + Daydream View mix/comfort validation; user-facing music volume/mute belongs under RV-0203 audio settings rather than an inert placeholder control.
 
 ## P3 — Settings and controls
 

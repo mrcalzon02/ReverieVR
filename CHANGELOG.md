@@ -8,6 +8,7 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### VR presence and headset comfort
 
+- Added the user-supplied **Starry Cereal** track as looping ambient music for the VR shell/environment. The packaged 267.312-second stereo MP3 is APK-optimized to 48 kbps while preserving the source program, plays at a deliberately subdued menu gain, pauses across Activity lifecycle changes and whenever Media/DOS/Native hosted content owns the experience, then resumes from its prior position when the shell returns.
 - Added a shell-owned floating Orientation menu available from the Daydream App/Menu button, Cardboard system menu control, gamepad Start/Mode, and keyboard Menu key.
 - Added **Center on headset** and **Center on controller** heading choices, plus Back-one-level and Close actions; the controller option is disabled when no fresh tracked pose exists.
 - VR startup now explicitly aligns shell forward to the first headset heading instead of inheriting an arbitrary sensor/world yaw.
