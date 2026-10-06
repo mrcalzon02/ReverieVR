@@ -190,12 +190,20 @@ final class VrPointerRenderer {
         );
 
         vertices.position(3);
+        GLES20.glVertexAttribPointer(
+            positionHandle,
+            3,
+            GLES20.GL_FLOAT,
+            false,
+            0,
+            vertices
+        );
         GLES20.glPointSize(
             hitting ? 13.0f : 9.0f
         );
         GLES20.glDrawArrays(
             GLES20.GL_POINTS,
-            1,
+            0,
             1
         );
 
