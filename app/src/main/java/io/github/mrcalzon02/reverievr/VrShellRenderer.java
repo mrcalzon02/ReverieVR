@@ -2889,9 +2889,221 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     : "Return to the phone and open Android Bluetooth settings.";
             case 12:
                 return "Return to the phone and open Android Bluetooth settings.";
+            case 13:
+                return "Resume the last valid media, DOS, or native activity.";
             default:
                 return "Choose a destination or quick option.";
         }
+    }
+
+    private boolean hasResumeTarget() {
+        String type =
+            preferences.getLastActivityType();
+
+        if (ReveriePreferences.LAST_ACTIVITY_MEDIA.equals(
+                type
+            )) {
+            return preferences.hasSelectedVideo();
+        }
+
+        if (ReveriePreferences.LAST_ACTIVITY_DOS.equals(
+                type
+            )) {
+            return findDosModuleIndex(
+                preferences.getLastDosModuleId()
+            ) >= 0;
+        }
+
+        if (ReveriePreferences.LAST_ACTIVITY_NATIVE.equals(
+                type
+            )) {
+            return findNativeModule(
+                preferences.getLastNativeModuleId()
+            ) != null;
+        }
+
+        return false;
+    }
+
+    private String resumeLabel() {
+        String type =
+            preferences.getLastActivityType();
+
+        if (ReveriePreferences.LAST_ACTIVITY_MEDIA.equals(
+                type
+            )
+            && preferences.hasSelectedVideo()) {
+            String name =
+                preferences
+                    .getSelectedVideoDisplayName();
+            return "RESUME MEDIA"
+                + (
+                    name.trim().isEmpty()
+                        ? ""
+                        : " • " + shorten(name, 25)
+                );
+        }
+
+        if (ReveriePreferences.LAST_ACTIVITY_DOS.equals(
+                type
+            )) {
+            int index =
+                findDosModuleIndex(
+                    preferences.getLastDosModuleId()
+                );
+            if (index >= 0) {
+                String name =
+                    index < dosModuleNames.length
+                        ? dosModuleNames[index]
+                        : preferences
+                            .getLastDosModuleName();
+                return "RESUME DOS"
+                    + (
+                        name == null
+                            || name.trim().isEmpty()
+                            ? ""
+                            : " • "
+                                + shorten(
+                                    name,
+                                    27
+                                )
+                    );
+            }
+        }
+
+        if (ReveriePreferences.LAST_ACTIVITY_NATIVE.equals(
+                type
+            )) {
+            NativeModuleRuntime.Descriptor module =
+                findNativeModule(
+                    preferences
+                        .getLastNativeModuleId()
+                );
+            if (module != null) {
+                String name =
+                    module.displayName == null
+                        || module.displayName.trim().isEmpty()
+                        ? preferences
+                            .getLastNativeModuleName()
+                        : module.displayName;
+                return "RESUME NATIVE"
+                    + (
+                        name == null
+                            || name.trim().isEmpty()
+                            ? ""
+                            : " • "
+                                + shorten(
+                                    name,
+                                    23
+                                )
+                    );
+            }
+        }
+
+        return "RESUME";
+    }
+
+    private boolean resumeLastActivity() {
+        String type =
+            preferences.getLastActivityType();
+
+        if (ReveriePreferences.LAST_ACTIVITY_MEDIA.equals(
+                type
+            )
+            && preferences.hasSelectedVideo()) {
+            videoRenderer.setProjection(
+                preferences.getVideoProjection()
+            );
+            videoSeekRequestedMillis.set(0);
+            mode = MODE_VIDEO;
+            host.onVideoPlaybackRequested();
+            return true;
+        }
+
+        if (ReveriePreferences.LAST_ACTIVITY_DOS.equals(
+                type
+            )) {
+            int index =
+                findDosModuleIndex(
+                    preferences.getLastDosModuleId()
+                );
+            if (index >= 0
+                && host.onDosPlaybackRequested(
+                    dosModuleIds[index]
+                )) {
+                activeDosModuleName =
+                    index < dosModuleNames.length
+                        ? dosModuleNames[index]
+                        : "DOS session";
+                dosExitRequested.set(false);
+                mode = MODE_DOS;
+                return true;
+            }
+            return false;
+        }
+
+        if (ReveriePreferences.LAST_ACTIVITY_NATIVE.equals(
+                type
+            )) {
+            NativeModuleRuntime.Descriptor module =
+                findNativeModule(
+                    preferences
+                        .getLastNativeModuleId()
+                );
+            if (module != null
+                && host.onNativeModulePlaybackRequested(
+                    module.id
+                )) {
+                nativeSurfaceReady = false;
+                mode = MODE_NATIVE;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private int findDosModuleIndex(
+        String moduleId
+    ) {
+        if (moduleId == null
+            || moduleId.trim().isEmpty()) {
+            return -1;
+        }
+
+        for (int index = 0;
+             index < dosModuleIds.length;
+             index++) {
+            if (moduleId.equals(
+                    dosModuleIds[index]
+                )) {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    private NativeModuleRuntime.Descriptor
+        findNativeModule(
+            String moduleId
+        ) {
+        if (moduleId == null
+            || moduleId.trim().isEmpty()) {
+            return null;
+        }
+
+        for (
+            NativeModuleRuntime.Descriptor module
+            : nativeModules
+        ) {
+            if (module != null
+                && moduleId.equals(module.id)) {
+                return module;
+            }
+        }
+
+        return null;
     }
 
     private void drawHomeButtons(
