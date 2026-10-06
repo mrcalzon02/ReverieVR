@@ -246,9 +246,10 @@ Implemented first slice:
 - Home and Exit stop active media/DOS/native content through the shell-owned lifecycle before mode changes;
 - the modal also reports phone/controller battery, elapsed VR session time, Android thermal status, battery-sensor temperature, and rolling frame-time p95, refreshed once per second while open;
 - brightness down/up adjusts the VR Activity window in bounded 10% steps without requiring global Android brightness-write permission;
+- a nested Quick Settings page changes battery HUD visibility, numeric percentages, look-up reveal, pointer mode, and UI scale without leaving hosted content;
 - unavailable controller-forward calibration is visibly disabled rather than pretending to work.
 
-Remaining RV-0216 scope: direct Settings access plus Galaxy S9 comfort/readability validation. The current slice does not complete RV-0216.
+RV-0216's planned functional controls are now represented by implemented shell behavior. Remaining gate: Galaxy S9 + Daydream View comfort/readability and interaction validation before acceptance.
 
 ### RV-0108 / RV-0206 — first-run setup and user optical calibration
 

@@ -147,6 +147,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
             {524, 480, 804, 528}
         };
 
+    private static final int[][] QUICK_SETTINGS_BUTTONS =
+        new int[][] {
+            {220, 252, 500, 304},
+            {524, 252, 804, 304},
+            {220, 320, 500, 372},
+            {524, 320, 804, 372},
+            {220, 388, 500, 440},
+            {524, 388, 804, 440},
+            {220, 456, 500, 508},
+            {524, 456, 804, 508}
+        };
+
     private static final int[][] HOME_BUTTONS = new int[][] {
         {42, 180, 230, 238},
         {42, 248, 230, 306},
@@ -311,6 +323,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean nativeSurfaceReady;
     private volatile boolean rendererFailed;
     private volatile boolean orientationMenuVisible;
+    private boolean quickMenuSettingsVisible;
     private boolean shellHeadingInitialized;
     private float controllerYawCalibrationRadians;
 
@@ -530,6 +543,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     void toggleOrientationMenu() {
         orientationMenuVisible =
             !orientationMenuVisible;
+        quickMenuSettingsVisible = false;
         hoveredButton = -1;
         selectRequested.set(false);
         backRequested.set(false);
@@ -2406,6 +2420,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (orientationMenuVisible) {
+            if (quickMenuSettingsVisible) {
+                return index
+                    < QUICK_SETTINGS_BUTTONS.length;
+            }
             if (index == 1) {
                 return hasFreshControllerPose(
                     System.nanoTime()
@@ -2677,6 +2695,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void handleOrientationMenuSelection(
         int button
     ) {
+        if (quickMenuSettingsVisible) {
+            handleQuickSettingsSelection(button);
+            return;
+        }
+
         switch (button) {
             case 0:
                 recenterOnHeadset(
@@ -2726,13 +2749,82 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 9:
-                closeOrientationMenu();
+                quickMenuSettingsVisible = true;
+                hoveredButton = -1;
+                textureDirty = true;
                 break;
 
             default:
                 host.onUiActionRejected();
                 break;
         }
+    }
+
+    private void handleQuickSettingsSelection(
+        int button
+    ) {
+        switch (button) {
+            case 0:
+                preferences.setBatteryHudEnabled(
+                    !preferences.isBatteryHudEnabled()
+                );
+                hudTextureDirty = true;
+                break;
+
+            case 1:
+                preferences.setShowPercentagesEnabled(
+                    !preferences.isShowPercentagesEnabled()
+                );
+                hudTextureDirty = true;
+                break;
+
+            case 2:
+                preferences.setLookUpRevealEnabled(
+                    !preferences.isLookUpRevealEnabled()
+                );
+                break;
+
+            case 3:
+                preferences.setVrPointerMode(
+                    preferences
+                        .getVrPointerMode()
+                        .next()
+                );
+                break;
+
+            case 4:
+                uiScale = clamp(
+                    uiScale - 0.05f,
+                    0.75f,
+                    1.50f
+                );
+                preferences.setUiScale(uiScale);
+                break;
+
+            case 5:
+                uiScale = clamp(
+                    uiScale + 0.05f,
+                    0.75f,
+                    1.50f
+                );
+                preferences.setUiScale(uiScale);
+                break;
+
+            case 6:
+                quickMenuSettingsVisible = false;
+                break;
+
+            case 7:
+                closeOrientationMenu();
+                return;
+
+            default:
+                host.onUiActionRejected();
+                return;
+        }
+
+        hoveredButton = -1;
+        textureDirty = true;
     }
 
     private void returnToHomeFromQuickMenu() {
@@ -2765,6 +2857,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void closeOrientationMenu() {
         orientationMenuVisible = false;
+        quickMenuSettingsVisible = false;
         hoveredButton = -1;
         selectRequested.set(false);
         textureDirty = true;
@@ -3169,7 +3262,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void handleBack() {
         if (orientationMenuVisible) {
-            closeOrientationMenu();
+            if (quickMenuSettingsVisible) {
+                quickMenuSettingsVisible = false;
+                hoveredButton = -1;
+                textureDirty = true;
+            } else {
+                closeOrientationMenu();
+            }
             return;
         }
 
@@ -3222,7 +3321,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private int[][] activeButtons() {
         if (orientationMenuVisible) {
-            return ORIENTATION_MENU_BUTTONS;
+            return quickMenuSettingsVisible
+                ? QUICK_SETTINGS_BUTTONS
+                : ORIENTATION_MENU_BUTTONS;
         }
 
         if (mode == MODE_HOME) {
@@ -3431,6 +3532,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         Canvas canvas,
         Paint paint
     ) {
+        if (quickMenuSettingsVisible) {
+            drawQuickSettingsMenu(canvas, paint);
+            return;
+        }
+
         paint.setFakeBoldText(true);
         paint.setColor(
             Color.rgb(
@@ -3493,7 +3599,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 "BACK",
                 "HOME",
                 "EXIT PHONE",
-                "CLOSE"
+                "SETTINGS"
             },
             ORIENTATION_MENU_BUTTONS
         );
@@ -3606,6 +3712,113 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "Menu/Start toggles this panel anywhere.",
             220,
             626,
+            paint
+        );
+    }
+
+    private void drawQuickSettingsMenu(
+        Canvas canvas,
+        Paint paint
+    ) {
+        paint.setFakeBoldText(true);
+        paint.setColor(
+            Color.rgb(
+                56,
+                214,
+                200
+            )
+        );
+        paint.setTextSize(
+            36.0f * uiScale
+        );
+        canvas.drawText(
+            "QUICK SETTINGS",
+            250,
+            178,
+            paint
+        );
+        paint.setFakeBoldText(false);
+
+        paint.setColor(
+            Color.rgb(
+                210,
+                220,
+                230
+            )
+        );
+        paint.setTextSize(
+            19.0f * uiScale
+        );
+        canvas.drawText(
+            "Shell settings apply immediately without leaving hosted content.",
+            220,
+            218,
+            paint
+        );
+
+        String hudLabel =
+            preferences.isBatteryHudEnabled()
+                ? "HUD: ON"
+                : "HUD: OFF";
+        String percentLabel =
+            preferences.isShowPercentagesEnabled()
+                ? "PERCENT: ON"
+                : "PERCENT: OFF";
+        String lookupLabel =
+            preferences.isLookUpRevealEnabled()
+                ? "LOOK-UP: ON"
+                : "LOOK-UP: OFF";
+        String pointerLabel =
+            "PTR: "
+                + preferences
+                    .getVrPointerMode()
+                    .displayName
+                    .toUpperCase(Locale.US);
+
+        drawButtons(
+            canvas,
+            paint,
+            new String[] {
+                hudLabel,
+                percentLabel,
+                lookupLabel,
+                pointerLabel,
+                "UI SCALE -",
+                "UI SCALE +",
+                "BACK QUICK",
+                "CLOSE"
+            },
+            QUICK_SETTINGS_BUTTONS
+        );
+
+        paint.setColor(
+            Color.rgb(
+                144,
+                158,
+                174
+            )
+        );
+        paint.setTextSize(
+            16.0f
+                * Math.min(
+                    uiScale,
+                    1.2f
+                )
+        );
+        canvas.drawText(
+            "UI SCALE "
+                + Math.round(
+                    uiScale * 100.0f
+                )
+                + "% • Back returns to Quick Menu.",
+            220,
+            570,
+            paint
+        );
+        canvas.drawText(
+            "Menu/Start closes the panel from either page.",
+            220,
+            604,
             paint
         );
     }
