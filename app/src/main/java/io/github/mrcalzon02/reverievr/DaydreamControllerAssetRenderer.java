@@ -57,41 +57,56 @@ final class DaydreamControllerAssetRenderer {
         return !parts.isEmpty();
     }
 
+    boolean isRenderable() {
+        return isAvailable()
+            && program != 0;
+    }
+
     void onSurfaceCreated() {
+        program = 0;
         if (!isAvailable()) {
             return;
         }
 
-        program =
-            buildProgram(
-                VERTEX_SHADER,
-                FRAGMENT_SHADER
+        try {
+            program =
+                buildProgram(
+                    VERTEX_SHADER,
+                    FRAGMENT_SHADER
+                );
+            positionHandle =
+                GLES20.glGetAttribLocation(
+                    program,
+                    "a_Position"
+                );
+            normalHandle =
+                GLES20.glGetAttribLocation(
+                    program,
+                    "a_Normal"
+                );
+            mvpHandle =
+                GLES20.glGetUniformLocation(
+                    program,
+                    "u_Mvp"
+                );
+            modelViewHandle =
+                GLES20.glGetUniformLocation(
+                    program,
+                    "u_ModelView"
+                );
+            colorHandle =
+                GLES20.glGetUniformLocation(
+                    program,
+                    "u_Color"
+                );
+        } catch (RuntimeException exception) {
+            program = 0;
+            ReverieLog.error(
+                "CONTROLLER_MODEL",
+                "Daydream controller GL setup failed; using procedural fallback.",
+                exception
             );
-        positionHandle =
-            GLES20.glGetAttribLocation(
-                program,
-                "a_Position"
-            );
-        normalHandle =
-            GLES20.glGetAttribLocation(
-                program,
-                "a_Normal"
-            );
-        mvpHandle =
-            GLES20.glGetUniformLocation(
-                program,
-                "u_Mvp"
-            );
-        modelViewHandle =
-            GLES20.glGetUniformLocation(
-                program,
-                "u_ModelView"
-            );
-        colorHandle =
-            GLES20.glGetUniformLocation(
-                program,
-                "u_Color"
-            );
+        }
     }
 
     void drawEye(
