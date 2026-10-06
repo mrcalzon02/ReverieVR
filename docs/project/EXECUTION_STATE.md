@@ -210,7 +210,7 @@ Implemented:
 - Home side planes are pushed farther left/right and tilted so their outer edges come toward the viewer, giving the launcher a shallow wrap-around arrangement;
 - the shell panel envelope and screen-space power HUD are contracted to 90% of the prior extent to keep edge content inside the reference Daydream View comfort area;
 - startup heading is explicitly initialized from the first headset heading rather than leaving shell yaw at the sensor/world default;
-- a modal Orientation palette is reachable from Daydream App/Menu, Cardboard system menu, gamepad Start/Mode, and keyboard Menu; it offers Center on Headset, Center on Controller, Back One Level, and Close;
+- the same shell-owned modal now serves as a first universal Quick Menu slice, reachable from Daydream App/Menu, Cardboard system menu, gamepad Start/Mode, and keyboard Menu; it exposes Headset Forward, Controller Forward when a fresh pose exists, volume down/up, contextual Back, Home, Exit to Phone, and Close;
 - orientation changes are software-owned: shell yaw and controller yaw-calibration advance together when preserving controller physical direction, while Center on Controller rotates the shell until the current tracked controller ray becomes forward;
 - focus transitions have quiet rate-limited audio, activation uses positive feedback, and rejected actions retain distinct failure feedback;
 - unavailable/inert menu targets do not acquire hover or accept activation;
@@ -233,6 +233,20 @@ Current validation: phone-test #42 completed successfully against `bbc134ab5951b
 Phone-test #42 contains the 90% shell/HUD comfort envelope, wrapped three-plane Home layout, bounded handset linear-acceleration parallax, the vendored Daydream controller visual with procedural fallback, and aligned controller-model/pointer emitter transforms.
 
 Remaining gate: physical Galaxy S9 + Daydream View validation of the new 10% comfort contraction, HUD edge visibility, inertial translation direction/gain/settling feel, wrapped Home panel comfort/readability, Daydream model orientation/scale, emitter-ray alignment, gamepad virtual aim, and the existing media/DOS/native shell flows. Build/package success is not device-comfort acceptance.
+
+### RV-0216 — universal quick-access shell panel
+
+State: **draft**
+
+Implemented first slice:
+
+- Menu/Start opens one shell-owned modal over Home, local media, DOS sessions, native modules, setup, and child menus;
+- hosted/module input is suppressed while the modal is open so recovery actions cannot leak into guest content;
+- real actions are exposed for headset-forward calibration, tracked-controller-forward calibration when a fresh pose exists, volume down/up, contextual Back, Home, Exit to Phone, and Close;
+- Home and Exit stop active media/DOS/native content through the shell-owned lifecycle before mode changes;
+- unavailable controller-forward calibration is visibly disabled rather than pretending to work.
+
+Remaining RV-0216 scope: consolidated battery/time/session, brightness, thermal/performance state, and direct Settings access, plus Galaxy S9 comfort/readability validation. The current slice does not complete RV-0216.
 
 ### RV-0108 / RV-0206 — first-run setup and user optical calibration
 

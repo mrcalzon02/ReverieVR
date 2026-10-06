@@ -134,10 +134,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private static final int[][] ORIENTATION_MENU_BUTTONS =
         new int[][] {
-            {250, 262, 774, 326},
-            {250, 344, 774, 408},
-            {250, 426, 774, 490},
-            {250, 508, 774, 572}
+            {220, 252, 500, 308},
+            {524, 252, 804, 308},
+            {220, 328, 500, 384},
+            {524, 328, 804, 384},
+            {220, 404, 500, 460},
+            {524, 404, 804, 460},
+            {220, 480, 500, 536},
+            {524, 480, 804, 536}
         };
 
     private static final int[][] HOME_BUTTONS = new int[][] {
@@ -2674,11 +2678,28 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 2:
+                host.onVolumeAdjustRequested(-1);
+                break;
+
+            case 3:
+                host.onVolumeAdjustRequested(1);
+                break;
+
+            case 4:
                 closeOrientationMenu();
                 backRequested.set(true);
                 break;
 
-            case 3:
+            case 5:
+                returnToHomeFromQuickMenu();
+                break;
+
+            case 6:
+                returnToHomeFromQuickMenu();
+                host.onExitToPhoneRequested();
+                break;
+
+            case 7:
                 closeOrientationMenu();
                 break;
 
@@ -2686,6 +2707,34 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 host.onUiActionRejected();
                 break;
         }
+    }
+
+    private void returnToHomeFromQuickMenu() {
+        if (mode == MODE_VIDEO) {
+            host.onVideoStopRequested();
+            videoSeekRequestedMillis.set(0);
+        } else if (
+            mode == MODE_DOS
+                || mode == MODE_DOS_OVERLAY
+                || mode == MODE_DOS_BINDINGS
+        ) {
+            activeDosModuleName = "";
+            host.onDosStopRequested();
+            dosExitRequested.set(false);
+        } else if (mode == MODE_NATIVE) {
+            if (nativeSurfaceReady
+                && nativeModuleRuntime != null) {
+                nativeModuleRuntime.releaseSurface();
+            }
+            nativeSurfaceReady = false;
+            host.onNativeModuleStopRequested();
+        }
+
+        controllerTrainingReturn = false;
+        backRequested.set(false);
+        selectRequested.set(false);
+        mode = MODE_HOME;
+        closeOrientationMenu();
     }
 
     private void closeOrientationMenu() {
@@ -3368,7 +3417,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             38.0f * uiScale
         );
         canvas.drawText(
-            "ORIENTATION",
+            "QUICK MENU",
             250,
             178,
             paint
@@ -3386,13 +3435,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             20.0f * uiScale
         );
         canvas.drawText(
-            "Choose what physical direction should become VR forward.",
+            "Forward direction, volume and recovery stay shell-owned.",
             250,
             216,
             paint
         );
         canvas.drawText(
-            "For a desk or keyboard, look straight ahead and center on headset.",
+            "Use headset forward for desk or keyboard play.",
             250,
             242,
             paint
@@ -3402,16 +3451,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
             hasFreshControllerPose(
                 System.nanoTime()
             )
-                ? "CENTER ON CONTROLLER"
-                : "CENTER ON CONTROLLER  •  unavailable";
+                ? "CONTROLLER FORWARD"
+                : "CONTROLLER • N/A";
 
         drawButtons(
             canvas,
             paint,
             new String[] {
-                "CENTER ON HEADSET",
+                "HEADSET FORWARD",
                 controllerLabel,
+                "VOLUME -",
+                "VOLUME +",
                 "BACK ONE LEVEL",
+                "HOME",
+                "EXIT TO PHONE",
                 "CLOSE"
             },
             ORIENTATION_MENU_BUTTONS
@@ -3428,7 +3481,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             17.0f * uiScale
         );
         canvas.drawText(
-            "Menu/Start toggles this panel at any time.",
+            "Menu/Start toggles this panel anywhere.",
             250,
             616,
             paint

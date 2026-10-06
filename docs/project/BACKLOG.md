@@ -48,7 +48,7 @@
 - RV-0213 — Implement audio accessibility defaults: subtitles/captions, caption size/background/position, visual alternatives for critical audio, mono/balance options where practical.
 - RV-0214 — Implement input accessibility and fallback: configurable actions, one-controller navigation, left/right-hand presentation, larger targeting tolerance, optional gaze/dwell selection, and no precision-timing requirement for essential shell actions.
 - RV-0215 — Implement controller-quality controls: gyro recalibration, drift/deadzone settings, touch sensitivity/deadzone, disconnect pause/reconnect overlay, and recovery without losing module state.
-- RV-0216 — Implement a universal quick-access panel for battery, time/session status, volume, brightness, thermal/performance state, recenter, Settings, Home, and Exit/Recovery.
+- RV-0216 — **Draft implementation present.** Complete the universal quick-access panel. The first shell-global slice now provides headset/controller forward calibration, volume down/up, contextual Back, Home, Exit/Recovery, and Close over Home/media/DOS/native/setup content. Remaining scope includes consolidated battery/time/session, brightness, thermal/performance state, and direct Settings access without exposing inert controls.
 - RV-0217 — Implement nonblocking notification policy with user-selectable categories, durations, placement, animation/reduced-motion behavior, and no mandatory center-screen modal for routine status.
 - RV-0218 — Implement optional session timer and break reminders with complete opt-out.
 - RV-0219 — Research an optional S9 rear-camera 'real-world peek' mode. Treat it as a convenience view, not room-scale passthrough or a safety boundary, and reject it if latency/distortion is uncomfortable.
