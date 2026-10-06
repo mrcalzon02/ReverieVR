@@ -2708,21 +2708,93 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
+        if (hasResumeTarget()) {
+            int[] resumeRect =
+                HOME_BUTTONS[13];
+            boolean resumeFocused =
+                hoveredButton == 13;
+
+            paint.setColor(
+                resumeFocused
+                    ? Color.rgb(
+                        18,
+                        126,
+                        160
+                    )
+                    : Color.rgb(
+                        21,
+                        83,
+                        112
+                    )
+            );
+            canvas.drawRoundRect(
+                resumeRect[0],
+                resumeRect[1],
+                resumeRect[2],
+                resumeRect[3],
+                16,
+                16,
+                paint
+            );
+
+            if (resumeFocused) {
+                paint.setStyle(
+                    Paint.Style.STROKE
+                );
+                paint.setStrokeWidth(3.0f);
+                paint.setColor(
+                    Color.rgb(
+                        87,
+                        229,
+                        248
+                    )
+                );
+                canvas.drawRoundRect(
+                    resumeRect[0] + 1,
+                    resumeRect[1] + 1,
+                    resumeRect[2] - 1,
+                    resumeRect[3] - 1,
+                    15,
+                    15,
+                    paint
+                );
+                paint.setStyle(
+                    Paint.Style.FILL
+                );
+            }
+
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(
+                16.0f * uiScale
+            );
+            paint.setFakeBoldText(true);
+            canvas.drawText(
+                shorten(
+                    resumeLabel(),
+                    38
+                ),
+                resumeRect[0] + 18,
+                resumeRect[1] + 33,
+                paint
+            );
+            paint.setFakeBoldText(false);
+        }
+
         paint.setColor(Color.rgb(126, 205, 221));
-        paint.setTextSize(14.0f * uiScale);
+        paint.setTextSize(13.0f * uiScale);
         canvas.drawText(
             homeHelpText(hoveredButton),
             292,
-            618,
+            676,
             paint
         );
 
         paint.setColor(Color.rgb(143, 160, 179));
-        paint.setTextSize(14.0f * uiScale);
+        paint.setTextSize(13.0f * uiScale);
         canvas.drawText(
             "Look or point • click to select",
             292,
-            644,
+            700,
             paint
         );
 
