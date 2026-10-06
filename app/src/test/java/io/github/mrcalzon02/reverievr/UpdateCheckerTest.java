@@ -63,6 +63,57 @@ public final class UpdateCheckerTest {
     }
 
     @Test
+    public void trustedDigestRequiresSha256AndFullHex() {
+        assertTrue(
+            UpdateChecker.isValidSha256Digest(
+                "sha256:"
+                    + "0123456789abcdef"
+                    + "0123456789abcdef"
+                    + "0123456789abcdef"
+                    + "0123456789abcdef"
+            )
+        );
+        assertFalse(
+            UpdateChecker.isValidSha256Digest(
+                "0123456789abcdef"
+            )
+        );
+        assertFalse(
+            UpdateChecker.isValidSha256Digest(
+                "sha256:deadbeef"
+            )
+        );
+        assertFalse(
+            UpdateChecker.isValidSha256Digest(null)
+        );
+    }
+
+    @Test
+    public void phoneTestTagMapsToRerunSafeVersionCode() {
+        org.junit.Assert.assertEquals(
+            32001,
+            UpdateChecker.versionCodeForPhoneTest(
+                32,
+                1
+            )
+        );
+        org.junit.Assert.assertEquals(
+            32002,
+            UpdateChecker.versionCodeForPhoneTest(
+                32,
+                2
+            )
+        );
+        org.junit.Assert.assertEquals(
+            0,
+            UpdateChecker.versionCodeForPhoneTest(
+                0,
+                1
+            )
+        );
+    }
+
+    @Test
     public void headsetAssetRejectsControllerCompanion() {
         assertTrue(
             UpdateChecker.isHeadsetApkAssetName(
