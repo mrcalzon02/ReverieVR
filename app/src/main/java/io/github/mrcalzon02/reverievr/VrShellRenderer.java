@@ -39,6 +39,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             getPerformanceEnvironmentSnapshot();
         void onVideoSurfaceTextureReady(SurfaceTexture surfaceTexture);
         void onVideoPlaybackRequested();
+        void onMediaSelectionRequested();
+        void onDosImportRequested();
         void onVideoTogglePauseRequested();
         void onVideoSeekRequested(int deltaMillis);
         void onVideoStopRequested();
@@ -90,6 +92,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_NATIVE = 5;
     private static final int MODE_DOS_OVERLAY = 6;
     private static final int MODE_DOS_BINDINGS = 7;
+    private static final int MODE_MEDIA_LIBRARY = 8;
+    private static final int MODE_ENVIRONMENT = 9;
 
     private static final int[][] HOME_BUTTONS = new int[][] {
         {140, 225, 884, 280},
@@ -106,6 +110,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {140, 395, 884, 460},
         {140, 475, 884, 540},
         {140, 555, 884, 620}
+    };
+
+    private static final int[][] MEDIA_BUTTONS = new int[][] {
+        {140, 235, 884, 300},
+        {140, 315, 884, 380},
+        {140, 395, 884, 460},
+        {140, 475, 884, 540},
+        {140, 555, 884, 620}
+    };
+
+    private static final int[][] ENVIRONMENT_BUTTONS = new int[][] {
+        {140, 265, 884, 330},
+        {140, 345, 884, 410},
+        {140, 425, 884, 490},
+        {140, 535, 884, 600}
     };
 
     private static final int[][] DOS_OVERLAY_BUTTONS = new int[][] {
@@ -144,6 +163,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final Host host;
     private final float viewerInterLensMeters;
     private final VideoSurfaceRenderer videoRenderer;
+    private final HomeEnvironmentRenderer homeEnvironmentRenderer;
     private final DosSession dosSession;
     private final DosSurfaceRenderer dosRenderer;
     private final NativeModuleRuntime nativeModuleRuntime;
@@ -239,6 +259,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         nativeModules =
             NativeModuleRuntime.listBuiltIns();
         videoRenderer = new VideoSurfaceRenderer(host::onVideoSurfaceTextureReady);
+        homeEnvironmentRenderer =
+            new HomeEnvironmentRenderer();
         dosRenderer = new DosSurfaceRenderer(dosSession);
 
         userIpdMeters = preferences.getUserIpdMeters(this.viewerInterLensMeters);
@@ -552,7 +574,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
             if (dosExitRequested.getAndSet(false)) {
                 activeDosModuleName = "";
-                mode = MODE_HOME;
+                mode = MODE_DOS_LIBRARY;
                 hoveredButton = -1;
                 textureDirty = true;
                 return;
@@ -573,7 +595,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
             if (dosExitRequested.getAndSet(false)) {
                 activeDosModuleName = "";
-                mode = MODE_HOME;
+                mode = MODE_DOS_LIBRARY;
                 hoveredButton = -1;
                 textureDirty = true;
                 return;
@@ -586,7 +608,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (backRequested.getAndSet(false)) {
                 host.onVideoStopRequested();
                 videoSeekRequestedMillis.set(0);
-                mode = MODE_HOME;
+                mode = MODE_MEDIA_LIBRARY;
                 hoveredButton = -1;
                 textureDirty = true;
                 return;
@@ -638,12 +660,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void onDrawEyeInternal(
         CardboardView.Eye eye
     ) {
-        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-        GLES20.glClearColor(0.015f, 0.02f, 0.025f, 1.0f);
-        GLES20.glClear(
-            GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT
-        );
-
         eye.applyHeadView(adjustedHeadView);
 
         float correctionHalf =
@@ -651,6 +667,26 @@ final class VrShellRenderer implements CardboardView.Renderer {
         float eyeCorrection = eye.getEyeType() == CardboardView.Eye.LEFT
             ? correctionHalf
             : -correctionHalf;
+
+        if (mode != MODE_NATIVE) {
+            homeEnvironmentRenderer.drawEye(
+                eye,
+                eyeCorrection,
+                preferences.getHomeEnvironment()
+            );
+        } else {
+            GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+            GLES20.glClearColor(
+                0.015f,
+                0.02f,
+                0.025f,
+                1.0f
+            );
+            GLES20.glClear(
+                GLES20.GL_COLOR_BUFFER_BIT
+                    | GLES20.GL_DEPTH_BUFFER_BIT
+            );
+        }
 
         if (mode == MODE_VIDEO) {
             videoRenderer.drawEye(eye, eyeCorrection);
@@ -861,6 +897,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void initializeSurface(
         EGLConfig config
     ) {
+        homeEnvironmentRenderer.onSurfaceCreated();
         videoRenderer.onSurfaceCreated();
         dosRenderer.onSurfaceCreated();
         nativeSurfaceReady = false;
@@ -931,6 +968,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     public void onRendererShutdown() {
         videoRenderer.shutdown();
         dosRenderer.shutdown();
+        homeEnvironmentRenderer.shutdown();
 
         if (nativeSurfaceReady
             && nativeModuleRuntime != null
@@ -1011,39 +1049,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (mode == MODE_HOME) {
             switch (hoveredButton) {
                 case 0:
-                    mode = MODE_SETUP;
-                    setupStep = 0;
-                    preferences.setVrSetupStep(0);
+                    mode = MODE_MEDIA_LIBRARY;
                     break;
                 case 1:
-                    mode = MODE_SETUP;
-                    setupStep = 2;
-                    preferences.setVrSetupStep(2);
-                    break;
-                case 2:
-                    if (!preferences.hasSelectedVideo()) {
-                        host.onExitToPhoneRequested();
-                        return;
-                    }
-
-                    videoRenderer.setProjection(
-                        preferences.getVideoProjection()
-                    );
-                    videoSeekRequestedMillis.set(0);
-                    mode = MODE_VIDEO;
-                    hoveredButton = -1;
-                    host.onVideoPlaybackRequested();
-                    return;
-                case 3:
-                    if (!dosRuntimeAvailable
-                        || dosModuleIds.length == 0) {
-                        host.onExitToPhoneRequested();
-                        return;
-                    }
                     dosLibraryPage = 0;
                     mode = MODE_DOS_LIBRARY;
                     break;
-                case 4:
+                case 2:
                     if (NativeModuleRuntime.isAvailable()
                         && !nativeModules.isEmpty()) {
                         NativeModuleRuntime.Descriptor module =
@@ -1059,12 +1071,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     }
                     host.onUiActionRejected();
                     break;
+                case 3:
+                    mode = MODE_ENVIRONMENT;
+                    break;
+                case 4:
+                    mode = MODE_SETUP;
+                    setupStep = 0;
+                    preferences.setVrSetupStep(0);
+                    break;
                 case 5:
                     host.onExitToPhoneRequested();
                     return;
                 default:
                     break;
             }
+        } else if (mode == MODE_MEDIA_LIBRARY) {
+            handleMediaSelection(hoveredButton);
+        } else if (mode == MODE_ENVIRONMENT) {
+            handleEnvironmentSelection(hoveredButton);
         } else if (mode == MODE_DOS_LIBRARY) {
             handleDosLibrarySelection(hoveredButton);
         } else if (mode == MODE_DOS_OVERLAY) {
@@ -1079,12 +1103,85 @@ final class VrShellRenderer implements CardboardView.Renderer {
         textureDirty = true;
     }
 
+    private void handleMediaSelection(int button) {
+        switch (button) {
+            case 0:
+                if (!preferences.hasSelectedVideo()) {
+                    host.onMediaSelectionRequested();
+                    return;
+                }
+                videoRenderer.setProjection(
+                    preferences.getVideoProjection()
+                );
+                videoSeekRequestedMillis.set(0);
+                mode = MODE_VIDEO;
+                hoveredButton = -1;
+                host.onVideoPlaybackRequested();
+                return;
+
+            case 1:
+                VideoProjection current =
+                    preferences.getVideoProjection();
+                VideoProjection next =
+                    current
+                        == VideoProjection.MONO_EQUIRECTANGULAR_360
+                        ? VideoProjection.FLAT_CINEMA
+                        : VideoProjection.MONO_EQUIRECTANGULAR_360;
+                preferences.setVideoProjection(next);
+                break;
+
+            case 2:
+                host.onMediaSelectionRequested();
+                return;
+
+            case 3:
+                requestRecenter();
+                break;
+
+            case 4:
+                mode = MODE_HOME;
+                break;
+
+            default:
+                return;
+        }
+
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
+    private void handleEnvironmentSelection(
+        int button
+    ) {
+        if (button >= 0 && button <= 2) {
+            HomeEnvironment[] environments =
+                HomeEnvironment.values();
+            if (button < environments.length) {
+                preferences.setHomeEnvironment(
+                    environments[button]
+                );
+            }
+        } else if (button == 3) {
+            mode = MODE_HOME;
+        } else {
+            return;
+        }
+
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
     private void handleDosLibrarySelection(int button) {
         String[] ids = dosModuleIds;
         int pageCount =
             Math.max(1, (ids.length + 2) / 3);
 
         if (button >= 0 && button <= 2) {
+            if (ids.length == 0 && button == 0) {
+                host.onDosImportRequested();
+                return;
+            }
+
             int moduleIndex =
                 dosLibraryPage * 3 + button;
             if (moduleIndex < ids.length
@@ -1138,7 +1235,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 5:
                 activeDosModuleName = "";
                 host.onDosStopRequested();
-                mode = MODE_HOME;
+                mode = MODE_DOS_LIBRARY;
                 break;
             case 6:
                 activeDosModuleName = "";
@@ -1294,7 +1391,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        if (mode == MODE_DOS_LIBRARY) {
+        if (mode == MODE_DOS_LIBRARY
+            || mode == MODE_MEDIA_LIBRARY
+            || mode == MODE_ENVIRONMENT) {
             mode = MODE_HOME;
             hoveredButton = -1;
             textureDirty = true;
@@ -1334,6 +1433,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_DOS_LIBRARY) {
             return DOS_LIBRARY_BUTTONS;
+        }
+
+        if (mode == MODE_MEDIA_LIBRARY) {
+            return MEDIA_BUTTONS;
+        }
+
+        if (mode == MODE_ENVIRONMENT) {
+            return ENVIRONMENT_BUTTONS;
         }
 
         if (mode == MODE_DOS_OVERLAY) {
@@ -1383,6 +1490,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_HOME) {
             drawHome(canvas, paint);
+        } else if (mode == MODE_MEDIA_LIBRARY) {
+            drawMediaLibrary(canvas, paint);
+        } else if (mode == MODE_ENVIRONMENT) {
+            drawEnvironmentMenu(canvas, paint);
         } else if (mode == MODE_DOS_LIBRARY) {
             drawDosLibrary(canvas, paint);
         } else if (mode == MODE_DOS_OVERLAY) {
@@ -1473,16 +1584,142 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         String[] labels = new String[] {
-            "RUN VR SETUP",
-            "OPTICAL / DISPLAY CALIBRATION",
             preferences.hasSelectedVideo()
-                ? "PLAY SELECTED VIDEO"
-                : "SELECT VIDEO ON PHONE",
+                ? "MEDIA  •  "
+                    + shorten(
+                        preferences.getSelectedVideoDisplayName(),
+                        26
+                    )
+                : "MEDIA",
             dosLabel,
             nativeLabel,
+            "ENVIRONMENT  •  "
+                + preferences
+                    .getHomeEnvironment()
+                    .displayName,
+            "SETUP / COMFORT",
             "EXIT TO PHONE"
         };
         drawButtons(canvas, paint, labels, activeButtons());
+    }
+
+    private void drawMediaLibrary(
+        Canvas canvas,
+        Paint paint
+    ) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31.0f * uiScale);
+        canvas.drawText(
+            "MEDIA",
+            90,
+            175,
+            paint
+        );
+
+        paint.setColor(Color.rgb(150, 162, 177));
+        paint.setTextSize(20.0f * uiScale);
+
+        String selected =
+            preferences.hasSelectedVideo()
+                ? shorten(
+                    preferences.getSelectedVideoDisplayName(),
+                    48
+                )
+                : "No media selected";
+        canvas.drawText(
+            selected,
+            90,
+            215,
+            paint
+        );
+
+        VideoProjection projection =
+            preferences.getVideoProjection();
+        String[] labels = new String[] {
+            preferences.hasSelectedVideo()
+                ? "PLAY ON FLOATING SCREEN"
+                : "CHOOSE MEDIA ON PHONE",
+            projection
+                == VideoProjection.MONO_EQUIRECTANGULAR_360
+                ? "DISPLAY: MONO 360°"
+                : "DISPLAY: FLOATING SCREEN",
+            preferences.hasSelectedVideo()
+                ? "CHANGE MEDIA ON PHONE"
+                : "OPEN MEDIA PICKER ON PHONE",
+            "RECENTER",
+            "BACK TO HOME"
+        };
+
+        drawButtons(
+            canvas,
+            paint,
+            labels,
+            MEDIA_BUTTONS
+        );
+    }
+
+    private void drawEnvironmentMenu(
+        Canvas canvas,
+        Paint paint
+    ) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31.0f * uiScale);
+        canvas.drawText(
+            "HOME ENVIRONMENT",
+            90,
+            175,
+            paint
+        );
+
+        paint.setColor(Color.rgb(150, 162, 177));
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            "Current: "
+                + preferences
+                    .getHomeEnvironment()
+                    .displayName,
+            90,
+            215,
+            paint
+        );
+
+        HomeEnvironment current =
+            preferences.getHomeEnvironment();
+        HomeEnvironment[] environments =
+            HomeEnvironment.values();
+        String[] labels = new String[] {
+            environmentLabel(
+                environments[0],
+                current
+            ),
+            environmentLabel(
+                environments[1],
+                current
+            ),
+            environmentLabel(
+                environments[2],
+                current
+            ),
+            "BACK TO HOME"
+        };
+
+        drawButtons(
+            canvas,
+            paint,
+            labels,
+            ENVIRONMENT_BUTTONS
+        );
+    }
+
+    private static String environmentLabel(
+        HomeEnvironment environment,
+        HomeEnvironment current
+    ) {
+        return (
+            environment == current
+                ? "✓  "
+                : ""
+        ) + environment.displayName.toUpperCase(Locale.US);
     }
 
     private void drawDosLibrary(
@@ -1530,7 +1767,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         names[index],
                         42
                     )
-                    : "—";
+                    : (
+                        count == 0 && slot == 0
+                            ? "IMPORT DOS MODULE ON PHONE"
+                            : "—"
+                    );
         }
 
         labels[3] =
@@ -1586,7 +1827,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "BINDINGS",
             "VOLUME -",
             "VOLUME +",
-            "HOME",
+            "DOS LIBRARY",
             "EXIT VR"
         };
         drawButtons(
