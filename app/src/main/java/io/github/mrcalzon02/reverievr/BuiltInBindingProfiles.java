@@ -11,6 +11,8 @@ final class BuiltInBindingProfiles {
     static final String ID_DOS_CURSOR = "dos-cursor";
     static final String ID_NATIVE_TEST_CHAMBER =
         "native-test-chamber";
+    static final String ID_NATIVE_RED_LEDGER =
+        "native-red-ledger";
 
     private static final List<BindingProfile> PROFILES =
         buildProfiles();
@@ -54,7 +56,10 @@ final class BuiltInBindingProfiles {
     private static List<BindingProfile> buildDosProfiles() {
         List<BindingProfile> result = new ArrayList<>();
         for (BindingProfile profile : PROFILES) {
-            if (!ID_NATIVE_TEST_CHAMBER.equals(profile.id)) {
+            if (!ID_NATIVE_TEST_CHAMBER.equals(profile.id)
+                && !ID_NATIVE_RED_LEDGER.equals(
+                    profile.id
+                )) {
                 result.add(profile);
             }
         }
@@ -242,6 +247,22 @@ final class BuiltInBindingProfiles {
                 ID_NATIVE_TEST_CHAMBER,
                 "Native test chamber",
                 nativeTest
+            )
+        );
+
+        List<InputBinding> redLedger =
+            new ArrayList<>();
+        redLedger.add(
+            InputBinding.digital(
+                BindingInput.SELECT,
+                VirtualOutput.joystickButton(0)
+            )
+        );
+        profiles.add(
+            new BindingProfile(
+                ID_NATIVE_RED_LEDGER,
+                "Red Ledger — work surface",
+                redLedger
             )
         );
 

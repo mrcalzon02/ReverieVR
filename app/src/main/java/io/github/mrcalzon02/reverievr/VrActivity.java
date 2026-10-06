@@ -159,7 +159,9 @@ public final class VrActivity extends Activity
                     getFilesDir(),
                     "native-modules"
                 ),
-                virtualInputBus
+                virtualInputBus,
+                preferences.getLoggingMode()
+                    == LoggingMode.DEVELOPMENT
             );
         inputManager =
             (InputManager) getSystemService(Context.INPUT_SERVICE);
@@ -1114,8 +1116,15 @@ public final class VrActivity extends Activity
             return false;
         }
 
+        String hostedProfileId =
+            NativeModuleRuntime.ID_RED_LEDGER.equals(
+                moduleId
+            )
+                ? BuiltInBindingProfiles.ID_NATIVE_RED_LEDGER
+                : BuiltInBindingProfiles.ID_NATIVE_TEST_CHAMBER;
+
         inputBindingManager.beginHostedProfile(
-            BuiltInBindingProfiles.ID_NATIVE_TEST_CHAMBER
+            hostedProfileId
         );
 
         if (!nativeModuleRuntime.start(moduleId)) {
@@ -1139,6 +1148,8 @@ public final class VrActivity extends Activity
             "NATIVE_MODULE",
             "Stage B launched module="
                 + moduleId
+                + " profile="
+                + hostedProfileId
         );
         return true;
     }

@@ -50,6 +50,7 @@ final class NativeModuleRuntime implements AutoCloseable {
 
     private final File storageRoot;
     private final VirtualInputBus inputBus;
+    private final boolean developmentModulesAllowed;
 
     private long handle;
     private long lastUpdateNanos;
@@ -57,10 +58,13 @@ final class NativeModuleRuntime implements AutoCloseable {
 
     NativeModuleRuntime(
         File storageRoot,
-        VirtualInputBus inputBus
+        VirtualInputBus inputBus,
+        boolean developmentModulesAllowed
     ) {
         this.storageRoot = storageRoot;
         this.inputBus = inputBus;
+        this.developmentModulesAllowed =
+            developmentModulesAllowed;
     }
 
     static boolean isAvailable() {
@@ -150,6 +154,17 @@ final class NativeModuleRuntime implements AutoCloseable {
             ReverieLog.incident(
                 "NATIVE_MODULE",
                 "Rejected unsafe native module id."
+            );
+            return false;
+        }
+
+        if (ID_RED_LEDGER.equals(
+                safeModuleId
+            )
+            && !developmentModulesAllowed) {
+            ReverieLog.incident(
+                "NATIVE_MODULE",
+                "Rejected development-only native module outside Development logging mode."
             );
             return false;
         }
