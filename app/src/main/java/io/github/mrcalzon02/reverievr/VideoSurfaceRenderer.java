@@ -152,8 +152,20 @@ final class VideoSurfaceRenderer {
     void drawEye(CardboardView.Eye eye, float eyeCorrectionMeters) {
         GLES20.glDisable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+        if (projection
+            == VideoProjection.MONO_EQUIRECTANGULAR_360) {
+            GLES20.glClearColor(
+                0.0f,
+                0.0f,
+                0.0f,
+                1.0f
+            );
+            GLES20.glClear(
+                GLES20.GL_COLOR_BUFFER_BIT
+                    | GLES20.GL_DEPTH_BUFFER_BIT
+            );
+        }
 
         System.arraycopy(eye.getEyeView(), 0, eyeView, 0, 16);
         Matrix.translateM(
