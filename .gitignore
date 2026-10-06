@@ -21,3 +21,8 @@ diagnostic-intake/.dev.vars
 diagnostic-intake/.dev.vars.*
 diagnostic-intake/.env
 diagnostic-intake/.env.*
+
+
+# Permanent ReverieVR signing material generated locally.
+# Never commit the keystore, passwords, or GitHub-secret staging file.
+.local/reverievr-signing/
