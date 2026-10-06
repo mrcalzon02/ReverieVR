@@ -24,7 +24,7 @@ final class VrHeadingMath {
 
         return wrapAngle(
             (float) Math.atan2(
-                forwardX,
+                -forwardX,
                 -forwardZ
             )
         );
