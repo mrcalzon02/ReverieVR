@@ -209,6 +209,9 @@ Implemented:
 - Home UI is split into three independently positioned world-space planes: left navigation, center status/content, and right quick options;
 - Home side planes are pushed farther left/right and tilted so their outer edges come toward the viewer, giving the launcher a shallow wrap-around arrangement;
 - the shell panel envelope and screen-space power HUD are contracted to 90% of the prior extent to keep edge content inside the reference Daydream View comfort area;
+- startup heading is explicitly initialized from the first headset heading rather than leaving shell yaw at the sensor/world default;
+- a modal Orientation palette is reachable from Daydream App/Menu, Cardboard system menu, gamepad Start/Mode, and keyboard Menu; it offers Center on Headset, Center on Controller, Back One Level, and Close;
+- orientation changes are software-owned: shell yaw and controller yaw-calibration advance together when preserving controller physical direction, while Center on Controller rotates the shell until the current tracked controller ray becomes forward;
 - focus transitions have quiet rate-limited audio, activation uses positive feedback, and rejected actions retain distinct failure feedback;
 - unavailable/inert menu targets do not acquire hover or accept activation;
 - Daydream touchpad-click activation;
