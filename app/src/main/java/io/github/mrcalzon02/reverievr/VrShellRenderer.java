@@ -92,6 +92,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final float Z_NEAR = 0.10f;
     private static final float Z_FAR = 30.0f;
 
+    private static final float CONTROLLER_ANCHOR_X = 0.28f;
+    private static final float CONTROLLER_ANCHOR_Y = -0.34f;
+    private static final float CONTROLLER_ANCHOR_Z = -0.48f;
+    private static final float CONTROLLER_EMITTER_FORWARD_METERS = 0.066f;
+
     private static final int MODE_SETUP = 0;
     private static final int MODE_HOME = 1;
     private static final int MODE_VIDEO = 2;
@@ -1517,9 +1522,34 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 adjustedControllerForward
             );
 
-            activePointerOrigin[0] = 0.28f;
-            activePointerOrigin[1] = -0.34f;
-            activePointerOrigin[2] = -0.48f;
+            float controllerAnchorX =
+                CONTROLLER_ANCHOR_X
+                    + headInertialTranslation.x();
+            float controllerAnchorY =
+                CONTROLLER_ANCHOR_Y
+                    + headInertialTranslation.y();
+            float controllerAnchorZ =
+                CONTROLLER_ANCHOR_Z
+                    + headInertialTranslation.z();
+
+            controllerModelRenderer.setAnchor(
+                controllerAnchorX,
+                controllerAnchorY,
+                controllerAnchorZ
+            );
+
+            activePointerOrigin[0] =
+                controllerAnchorX
+                    + adjustedControllerForward[0]
+                        * CONTROLLER_EMITTER_FORWARD_METERS;
+            activePointerOrigin[1] =
+                controllerAnchorY
+                    + adjustedControllerForward[1]
+                        * CONTROLLER_EMITTER_FORWARD_METERS;
+            activePointerOrigin[2] =
+                controllerAnchorZ
+                    + adjustedControllerForward[2]
+                        * CONTROLLER_EMITTER_FORWARD_METERS;
 
             System.arraycopy(
                 adjustedControllerForward,
@@ -1582,9 +1612,34 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 activePointerDirection
             );
 
-            activePointerOrigin[0] = 0.28f;
-            activePointerOrigin[1] = -0.34f;
-            activePointerOrigin[2] = -0.48f;
+            float controllerAnchorX =
+                CONTROLLER_ANCHOR_X
+                    + headInertialTranslation.x();
+            float controllerAnchorY =
+                CONTROLLER_ANCHOR_Y
+                    + headInertialTranslation.y();
+            float controllerAnchorZ =
+                CONTROLLER_ANCHOR_Z
+                    + headInertialTranslation.z();
+
+            controllerModelRenderer.setAnchor(
+                controllerAnchorX,
+                controllerAnchorY,
+                controllerAnchorZ
+            );
+
+            activePointerOrigin[0] =
+                controllerAnchorX
+                    + activePointerDirection[0]
+                        * CONTROLLER_EMITTER_FORWARD_METERS;
+            activePointerOrigin[1] =
+                controllerAnchorY
+                    + activePointerDirection[1]
+                        * CONTROLLER_EMITTER_FORWARD_METERS;
+            activePointerOrigin[2] =
+                controllerAnchorZ
+                    + activePointerDirection[2]
+                        * CONTROLLER_EMITTER_FORWARD_METERS;
 
             controllerModelRenderer.setVirtualAim(
                 virtualPointerYaw,
