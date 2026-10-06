@@ -221,9 +221,9 @@ Implemented:
 
 Reference-device startup defect RV-0092 is resolved: the physical Galaxy S9 now reaches the rendered VR shell instead of exiting before frame one. Issue #3 is closed after visible handset evidence of the center interaction marker, close control, phone/controller battery HUD, and settings control.
 
-Current validation: phone-test #32 completed successfully against `887ab65daf8a16e878fda117dfce2b630a65e0d5`, passing JVM tests, Android/native build, Cardboard JNI package verification, APK verification/signing, artifact preservation, and prerelease publication as `phone-test-32-1`. This package includes the three-environment seated home shell, three-plane Home dashboard, Media/DOS launcher hierarchy, tracked Daydream pointer, virtual gamepad pointer, simplified in-world controller representation, live pointer-source status, focus/activation/failure feedback, and inert-target suppression.
+Current validation: phone-test #38 completed successfully against `5770e6a1addb3635f91cffd1bd58bb391d7197d8`, passing JVM tests, unsigned Android/native build validation, permanent signing preparation, non-debuggable phoneTest assembly, Cardboard JNI package verification, APK signer/versionCode verification, artifact preservation, and prerelease publication as `phone-test-38-1`. This package includes the three-environment seated home shell, three-plane Home dashboard, tracked Daydream and virtual gamepad pointers, simplified in-world controller representation, dedicated in-headset Controller panel, real Pair/Sync/Bluetooth/Update handoffs, persistent validated Resume across Media/DOS/Native activity, paged DOS and Native Apps libraries, contextual Home help, focus/activation/failure feedback, and inert-target suppression.
 
-Remaining gate: physical Galaxy S9 validation of the home backgrounds, three-plane readability, Daydream quaternion orientation mapping, controller-model orientation, emitter-ray alignment, gamepad stick/D-pad virtual aim, environment switching, floating-screen media/DOS composition, and in-headset launcher interactions.
+Remaining gate: physical Galaxy S9 validation of the home backgrounds, three-plane readability, Daydream quaternion orientation mapping, controller-model orientation, emitter-ray alignment, gamepad stick/D-pad virtual aim, Controller-panel flows, Resume behavior, environment switching, floating-screen media/DOS composition, and in-headset launcher interactions.
 
 ### RV-0108 / RV-0206 — first-run setup and user optical calibration
 
@@ -258,27 +258,36 @@ State: **draft**
 
 Implemented:
 
-- optional check on Stage A launch;
-- manual check;
-- authoritative source restricted to `mrcalzon02/ReverieVR` GitHub Releases;
-- release discovery reads the repository release list rather than GitHub's `/releases/latest` endpoint so phone-test prereleases are actually visible;
-- phone-test tags are ordered numerically as `phone-test-<run>-<attempt>` rather than being misparsed as semantic version zero;
-- each CI package receives an increasing Android `versionCode` from its workflow run number;
-- Stage A displays the exact installed app version, Android versionCode, phone-test run/attempt and short source revision;
-- explicit Update / Not now choice;
-- release notes;
-- trusted repository APK asset filtering;
-- Android Download Manager/package-installer handoff;
-- SHA-256 verification when GitHub publishes an asset digest;
-- updater controls are omitted entirely unless the APK was built with a persistent phone-test signing identity.
+- optional check on Stage A launch and explicit manual check;
+- authoritative source restricted to public `mrcalzon02/ReverieVR` GitHub Releases with no GitHub token in the APK;
+- phone-test prerelease discovery through the release list rather than `/releases/latest`;
+- numeric `phone-test-<run>-<attempt>` ordering and selection of the highest valid newer release;
+- dedicated non-debuggable `phoneTest` distribution build for handset and controller companion;
+- permanent direct-distribution signing identity provisioned through protected GitHub Actions secrets;
+- rerun-safe Android versionCode `GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT`;
+- exact installed build identity displayed in Stage A;
+- GitHub SHA-256 asset digest required fail-closed;
+- downloaded APK privately parsed before Android's installer sees it;
+- package ID, strictly newer versionCode, phone-test tag/versionCode mapping, installed signer, candidate signer, and pinned permanent signer all verified;
+- trusted repository release URL filtering;
+- Android Download Manager / package-installer handoff;
+- updater controls omitted entirely outside the persistent signing channel;
+- VR Home can request an update check and hands the operation back to Stage A.
 
-Root-cause evidence from published packages proved that the previous updater could not work end-to-end: phone-test releases are prereleases (and were invisible to `/releases/latest`), while phone-test #19 and #21 were signed by different ephemeral Android debug certificates. Android correctly refuses an in-place replacement signed by a different key.
+Permanent signer evidence:
 
-The release workflow now supports a persistent signing keystore through four protected secrets: `PHONE_TEST_KEYSTORE_BASE64`, `PHONE_TEST_STORE_PASSWORD`, `PHONE_TEST_KEY_ALIAS`, and `PHONE_TEST_KEY_PASSWORD`. Partial configuration fails closed. When no persistent signer is configured, the package remains manually installable but the updater panel is hidden rather than exposing placebo controls.
+- certificate SHA-256: `464dc2d100c3bb14deac1da680d29418cc22e60e1857852cb54541f7d7787f7c`;
+- phone-test #36 / versionCode 36001: first permanent-lineage package;
+- phone-test #37 / versionCode 37001: same signer;
+- phone-test #38 / versionCode 38001: same signer, full signed QoL package;
+- CI independently verifies both headset and companion APK signer fingerprints before every release publication.
 
-One transition install is unavoidable: an already-installed ephemeral-debug build cannot update itself into the first persistently signed build. That first stable-signer package must be installed manually and may require uninstalling the older package because Android will not permit signature replacement. Once the stable signer is established, later packages can use the in-app update path.
+The old updater failure is fully explained: prereleases were invisible to the original endpoint and historical CI packages used different ephemeral debug signing certificates. Android correctly refused those packages as in-place replacements.
 
-Remaining gates: verify the persistent signer is provisioned, install the first stable-signer package on the Galaxy S9, then prove one subsequent phone-test update downloads, verifies and installs over it without uninstalling.
+One transition install from the old ephemeral-debug lineage remains unavoidable. After that, the permanent lineage is designed for normal in-place upgrades.
+
+Remaining acceptance gate: on the physical Galaxy S9, install the first permanent-lineage build once, use ReverieVR to discover a later permanent-lineage release (currently #38), allow Android to replace it without uninstalling, and verify ReverieVR settings/data survive. Issue #4 remains open until that device proof is captured.
+
 
 ### RV-0500 / RV-0501 — local flat video and mono 360 video
 
