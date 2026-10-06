@@ -34,7 +34,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
         void onExitToPhoneRequested();
         void onSetupCompleted();
-        void onControllerRecenterRequested();
         void onUiFocusChanged();
         void onUiActionRejected();
         PerformanceEnvironmentSnapshot
