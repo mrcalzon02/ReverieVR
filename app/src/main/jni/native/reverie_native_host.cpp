@@ -5,9 +5,16 @@
 #include <jni.h>
 
 #include <algorithm>
+#include <cerrno>
+#include <cmath>
+#include <cstdio>
 #include <cstring>
+#include <fcntl.h>
 #include <mutex>
+#include <new>
 #include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace {
 
@@ -30,11 +37,30 @@ struct NativeSession {
     void *library = nullptr;
     const ReverieNativeModuleApiV1 *api = nullptr;
     void *instance = nullptr;
+    std::string storage_root;
     bool gl_ready = false;
 };
 
 std::mutex g_error_mutex;
 std::string g_last_error;
+thread_local NativeSession *g_callback_session = nullptr;
+
+class CallbackSessionScope {
+public:
+    explicit CallbackSessionScope(
+        NativeSession *session
+    )
+        : previous_(g_callback_session) {
+        g_callback_session = session;
+    }
+
+    ~CallbackSessionScope() {
+        g_callback_session = previous_;
+    }
+
+private:
+    NativeSession *previous_;
+};
 
 void SetError(const std::string &message) {
     std::lock_guard<std::mutex> lock(g_error_mutex);
@@ -87,10 +113,220 @@ void HostLog(
     );
 }
 
+bool IsSafeSaveSlot(const char *slot) {
+    if (slot == nullptr) {
+        return false;
+    }
+
+    const size_t length = std::strlen(slot);
+    if (length == 0u || length > 64u) {
+        return false;
+    }
+
+    for (size_t index = 0; index < length; ++index) {
+        const char ch = slot[index];
+        const bool safe =
+            (ch >= 'a' && ch <= 'z')
+                || (ch >= 'A' && ch <= 'Z')
+                || (ch >= '0' && ch <= '9')
+                || ch == '-'
+                || ch == '_'
+                || ch == '.';
+        if (!safe) {
+            return false;
+        }
+    }
+
+    return std::strcmp(slot, ".") != 0
+        && std::strcmp(slot, "..") != 0;
+}
+
+std::string SavePath(
+    const NativeSession *session,
+    const char *slot
+) {
+    if (session == nullptr
+        || session->storage_root.empty()
+        || !IsSafeSaveSlot(slot)) {
+        return std::string();
+    }
+
+    return session->storage_root
+        + "/"
+        + slot;
+}
+
+int32_t HostReadSave(
+    const char *slot,
+    void *buffer,
+    uint32_t capacity,
+    uint32_t *out_size
+) {
+    NativeSession *session =
+        g_callback_session;
+    if (session == nullptr
+        || out_size == nullptr) {
+        SetError(
+            "Native save read attempted outside an active module callback."
+        );
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    const std::string path =
+        SavePath(session, slot);
+    if (path.empty()) {
+        SetError("Native save slot name is invalid.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    struct stat info = {};
+    if (stat(path.c_str(), &info) != 0) {
+        if (errno == ENOENT) {
+            *out_size = 0u;
+            return REVERIE_NATIVE_SAVE_NOT_FOUND;
+        }
+        SetError("Could not inspect native save slot.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    if (info.st_size < 0
+        || static_cast<uint64_t>(info.st_size)
+            > REVERIE_NATIVE_SAVE_MAX_BYTES) {
+        SetError("Native save slot exceeds the host size limit.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    const uint32_t size =
+        static_cast<uint32_t>(info.st_size);
+    *out_size = size;
+
+    if (buffer == nullptr) {
+        return REVERIE_NATIVE_SAVE_OK;
+    }
+    if (capacity < size) {
+        return REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;
+    }
+
+    int fd =
+        open(
+            path.c_str(),
+            O_RDONLY
+        );
+    if (fd < 0) {
+        SetError("Could not open native save slot for reading.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    uint8_t *target =
+        static_cast<uint8_t *>(buffer);
+    uint32_t total = 0u;
+    while (total < size) {
+        const ssize_t count =
+            read(
+                fd,
+                target + total,
+                size - total
+            );
+        if (count <= 0) {
+            close(fd);
+            SetError("Native save slot read was incomplete.");
+            return REVERIE_NATIVE_SAVE_ERROR;
+        }
+        total += static_cast<uint32_t>(count);
+    }
+
+    close(fd);
+    return REVERIE_NATIVE_SAVE_OK;
+}
+
+int32_t HostWriteSave(
+    const char *slot,
+    const void *data,
+    uint32_t size
+) {
+    NativeSession *session =
+        g_callback_session;
+    if (session == nullptr) {
+        SetError(
+            "Native save write attempted outside an active module callback."
+        );
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+    if ((data == nullptr && size != 0u)
+        || size > REVERIE_NATIVE_SAVE_MAX_BYTES) {
+        SetError("Native save payload is invalid or too large.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    const std::string path =
+        SavePath(session, slot);
+    if (path.empty()) {
+        SetError("Native save slot name is invalid.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    const std::string temporary =
+        path + ".tmp";
+    int fd =
+        open(
+            temporary.c_str(),
+            O_WRONLY | O_CREAT | O_TRUNC,
+            0600
+        );
+    if (fd < 0) {
+        SetError("Could not open native save slot for writing.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    const uint8_t *source =
+        static_cast<const uint8_t *>(data);
+    uint32_t total = 0u;
+    while (total < size) {
+        const ssize_t count =
+            write(
+                fd,
+                source + total,
+                size - total
+            );
+        if (count <= 0) {
+            close(fd);
+            unlink(temporary.c_str());
+            SetError("Native save slot write was incomplete.");
+            return REVERIE_NATIVE_SAVE_ERROR;
+        }
+        total += static_cast<uint32_t>(count);
+    }
+
+    if (fsync(fd) != 0) {
+        close(fd);
+        unlink(temporary.c_str());
+        SetError("Native save slot could not be flushed.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+    if (close(fd) != 0) {
+        unlink(temporary.c_str());
+        SetError("Native save slot could not be closed cleanly.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    if (rename(
+            temporary.c_str(),
+            path.c_str()
+        ) != 0) {
+        unlink(temporary.c_str());
+        SetError("Native save slot atomic replace failed.");
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+
+    return REVERIE_NATIVE_SAVE_OK;
+}
+
 const ReverieNativeHostV1 kHostServices = {
     sizeof(ReverieNativeHostV1),
     REVERIE_NATIVE_MODULE_ABI_VERSION,
-    HostLog
+    HostLog,
+    HostReadSave,
+    HostWriteSave
 };
 
 const BuiltInModuleSpec *FindSpec(const char *id) {
@@ -176,6 +412,7 @@ void DestroySession(NativeSession *session) {
 
     if (session->api != nullptr
         && session->instance != nullptr) {
+        CallbackSessionScope scope(session);
         session->api->destroy(session->instance);
         session->instance = nullptr;
     }
@@ -255,27 +492,60 @@ JNIEXPORT jlong JNICALL
 Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
     JNIEnv *env,
     jclass,
-    jstring module_id
+    jstring module_id,
+    jstring storage_root
 ) {
     ClearError();
 
-    if (module_id == nullptr) {
-        SetError("Native module id is required.");
+    if (module_id == nullptr
+        || storage_root == nullptr) {
+        SetError(
+            "Native module id and storage root are required."
+        );
         return 0;
     }
 
     const char *id =
-        env->GetStringUTFChars(module_id, nullptr);
+        env->GetStringUTFChars(
+            module_id,
+            nullptr
+        );
     if (id == nullptr) {
         SetError("Could not read native module id.");
         return 0;
     }
 
-    const BuiltInModuleSpec *spec = FindSpec(id);
-    env->ReleaseStringUTFChars(module_id, id);
+    const BuiltInModuleSpec *spec =
+        FindSpec(id);
+    env->ReleaseStringUTFChars(
+        module_id,
+        id
+    );
 
     if (spec == nullptr) {
         SetError("Native module id is not allowlisted.");
+        return 0;
+    }
+
+    const char *storage =
+        env->GetStringUTFChars(
+            storage_root,
+            nullptr
+        );
+    if (storage == nullptr) {
+        SetError("Could not read native module storage root.");
+        return 0;
+    }
+
+    std::string storage_path(storage);
+    env->ReleaseStringUTFChars(
+        storage_root,
+        storage
+    );
+
+    if (storage_path.empty()
+        || storage_path[0] != '/') {
+        SetError("Native module storage root is invalid.");
         return 0;
     }
 
@@ -300,7 +570,8 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
             REVERIE_NATIVE_MODULE_ENTRY_SYMBOL
         );
     const char *symbol_error = dlerror();
-    if (symbol == nullptr || symbol_error != nullptr) {
+    if (symbol == nullptr
+        || symbol_error != nullptr) {
         SetError(
             std::string("Native module entry symbol is unavailable: ")
                 + (
@@ -325,18 +596,29 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
         return 0;
     }
 
-    void *instance = api->create(&kHostServices);
-    if (instance == nullptr) {
-        SetError("Native module create callback failed.");
+    NativeSession *session =
+        new (std::nothrow) NativeSession();
+    if (session == nullptr) {
+        SetError("Could not allocate native module session.");
         dlclose(library);
         return 0;
     }
 
-    NativeSession *session = new NativeSession();
     session->spec = spec;
     session->library = library;
     session->api = api;
-    session->instance = instance;
+    session->storage_root = storage_path;
+
+    {
+        CallbackSessionScope scope(session);
+        session->instance =
+            api->create(&kHostServices);
+    }
+    if (session->instance == nullptr) {
+        SetError("Native module create callback failed.");
+        DestroySession(session);
+        return 0;
+    }
 
     __android_log_print(
         ANDROID_LOG_INFO,
@@ -373,10 +655,13 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeOnSurfaceCreated(
         return JNI_FALSE;
     }
 
-    session->gl_ready =
-        session->api->on_gl_context_created(
-            session->instance
-        ) != 0;
+    {
+        CallbackSessionScope scope(session);
+        session->gl_ready =
+            session->api->on_gl_context_created(
+                session->instance
+            ) != 0;
+    }
 
     if (!session->gl_ready) {
         SetError("Native module failed to initialize its GL resources.");
@@ -398,6 +683,7 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeReleaseSurface(
         && session->api != nullptr
         && session->instance != nullptr
         && session->gl_ready) {
+        CallbackSessionScope scope(session);
         session->api->release_gl_context(
             session->instance
         );
@@ -416,6 +702,7 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeResume(
     if (session != nullptr
         && session->api != nullptr
         && session->instance != nullptr) {
+        CallbackSessionScope scope(session);
         session->api->resume(session->instance);
     }
 }
@@ -431,6 +718,7 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativePause(
     if (session != nullptr
         && session->api != nullptr
         && session->instance != nullptr) {
+        CallbackSessionScope scope(session);
         session->api->pause(session->instance);
     }
 }
@@ -445,9 +733,17 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
     jfloat move_x,
     jfloat move_y,
     jboolean primary_down,
-    jboolean secondary_down
+    jboolean secondary_down,
+    jint pointer_kind,
+    jfloat pointer_origin_x,
+    jfloat pointer_origin_y,
+    jfloat pointer_origin_z,
+    jfloat pointer_direction_x,
+    jfloat pointer_direction_y,
+    jfloat pointer_direction_z
 ) {
-    NativeSession *session = FromHandle(handle);
+    NativeSession *session =
+        FromHandle(handle);
     if (session == nullptr
         || session->api == nullptr
         || session->instance == nullptr) {
@@ -461,7 +757,9 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
         std::max(
             0.0f,
             std::min(
-                static_cast<float>(delta_seconds),
+                static_cast<float>(
+                    delta_seconds
+                ),
                 0.1f
             )
         );
@@ -469,7 +767,9 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
         std::max(
             -1.0f,
             std::min(
-                static_cast<float>(move_x),
+                static_cast<float>(
+                    move_x
+                ),
                 1.0f
             )
         );
@@ -477,15 +777,93 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
         std::max(
             -1.0f,
             std::min(
-                static_cast<float>(move_y),
+                static_cast<float>(
+                    move_y
+                ),
                 1.0f
             )
         );
     input.primary_down =
-        primary_down == JNI_TRUE ? 1u : 0u;
+        primary_down == JNI_TRUE
+            ? 1u
+            : 0u;
     input.secondary_down =
-        secondary_down == JNI_TRUE ? 1u : 0u;
+        secondary_down == JNI_TRUE
+            ? 1u
+            : 0u;
 
+    const bool kind_valid =
+        pointer_kind
+            == REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER
+        || pointer_kind
+            == REVERIE_NATIVE_POINTER_VIRTUAL_CONTROLLER;
+
+    const float origin[3] = {
+        static_cast<float>(
+            pointer_origin_x
+        ),
+        static_cast<float>(
+            pointer_origin_y
+        ),
+        static_cast<float>(
+            pointer_origin_z
+        )
+    };
+    float direction[3] = {
+        static_cast<float>(
+            pointer_direction_x
+        ),
+        static_cast<float>(
+            pointer_direction_y
+        ),
+        static_cast<float>(
+            pointer_direction_z
+        )
+    };
+
+    const bool finite =
+        std::isfinite(origin[0])
+        && std::isfinite(origin[1])
+        && std::isfinite(origin[2])
+        && std::isfinite(direction[0])
+        && std::isfinite(direction[1])
+        && std::isfinite(direction[2]);
+
+    const float direction_length_squared =
+        direction[0] * direction[0]
+        + direction[1] * direction[1]
+        + direction[2] * direction[2];
+
+    if (kind_valid
+        && finite
+        && direction_length_squared > 0.000001f
+        && std::abs(origin[0]) <= 1000.0f
+        && std::abs(origin[1]) <= 1000.0f
+        && std::abs(origin[2]) <= 1000.0f) {
+        const float inverse_length =
+            1.0f
+            / std::sqrt(
+                direction_length_squared
+            );
+        input.pointer_kind =
+            static_cast<uint32_t>(
+                pointer_kind
+            );
+        for (int index = 0;
+             index < 3;
+             ++index) {
+            input.pointer_origin[index] =
+                origin[index];
+            input.pointer_direction[index] =
+                direction[index]
+                    * inverse_length;
+        }
+    } else {
+        input.pointer_kind =
+            REVERIE_NATIVE_POINTER_NONE;
+    }
+
+    CallbackSessionScope scope(session);
     session->api->update(
         session->instance,
         &input
@@ -536,11 +914,15 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeRenderEye(
         eye.projection
     );
 
-    const int32_t rendered =
-        session->api->render_eye(
-            session->instance,
-            &eye
-        );
+    int32_t rendered = 0;
+    {
+        CallbackSessionScope scope(session);
+        rendered =
+            session->api->render_eye(
+                session->instance,
+                &eye
+            );
+    }
 
     if (rendered == 0) {
         SetError("Native module render callback reported failure.");

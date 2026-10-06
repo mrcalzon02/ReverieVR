@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <new>
 
@@ -15,6 +16,33 @@ using reverie::redledger::Simulation;
 
 constexpr float kMoveSpeed = 0.35f;
 constexpr float kMoveLimit = 0.35f;
+constexpr float kMaximumWorkReach = 3.5f;
+constexpr char kSaveSlot[] = "state-v1.bin";
+
+enum class WorkTarget : uint8_t {
+    None = 0,
+    Tap,
+    WashStation,
+    Ledger,
+    BeerOrder,
+    CupOrder,
+    ProtectionEnvelope
+};
+
+struct TargetBounds {
+    WorkTarget target;
+    float center[3];
+    float half_extent[3];
+};
+
+static const TargetBounds kWorkTargets[] = {
+    {WorkTarget::Tap, {-0.85f, -0.02f, -0.98f}, {0.28f, 0.35f, 0.28f}},
+    {WorkTarget::WashStation, {-0.28f, -0.18f, -1.18f}, {0.55f, 0.22f, 0.30f}},
+    {WorkTarget::Ledger, {0.85f, -0.20f, -0.90f}, {0.30f, 0.12f, 0.24f}},
+    {WorkTarget::BeerOrder, {1.20f, -0.18f, -0.72f}, {0.24f, 0.14f, 0.15f}},
+    {WorkTarget::CupOrder, {1.68f, -0.18f, -0.72f}, {0.24f, 0.14f, 0.15f}},
+    {WorkTarget::ProtectionEnvelope, {-1.35f, -0.18f, -0.72f}, {0.26f, 0.13f, 0.15f}}
+};
 
 struct ModuleState {
     const ReverieNativeHostV1 *host = nullptr;
@@ -31,13 +59,220 @@ struct ModuleState {
     float player_z = 0.0f;
     float elapsed_seconds = 0.0f;
     bool primary_was_down = false;
-    bool secondary_was_down = false;
+    WorkTarget hovered_target = WorkTarget::None;
+    float hovered_distance = 0.0f;
 };
 
 void Log(const ModuleState *state, int32_t level, const char *message) {
     if (state != nullptr && state->host != nullptr && state->host->log != nullptr) {
         state->host->log(level, "ReverieRedLedger", message);
     }
+}
+
+const char *WorkTargetName(WorkTarget target) {
+    switch (target) {
+        case WorkTarget::Tap: return "tap";
+        case WorkTarget::WashStation: return "wash station";
+        case WorkTarget::Ledger: return "ledger";
+        case WorkTarget::BeerOrder: return "beer order card";
+        case WorkTarget::CupOrder: return "cup order card";
+        case WorkTarget::ProtectionEnvelope: return "protection envelope";
+        case WorkTarget::None:
+        default: return "nothing";
+    }
+}
+
+bool IsTargetAvailable(const ModuleState *state, WorkTarget target) {
+    if (state == nullptr) {
+        return false;
+    }
+    if (target == WorkTarget::ProtectionEnvelope) {
+        return state->simulation.current_event() == EventType::ProtectionDemand
+            && !state->simulation.protection_paid();
+    }
+    return target != WorkTarget::None;
+}
+
+float RayAabbDistance(
+    const float *origin,
+    const float *direction,
+    const TargetBounds &bounds
+) {
+    float near_distance = 0.0f;
+    float far_distance = kMaximumWorkReach;
+
+    for (int axis = 0; axis < 3; ++axis) {
+        const float minimum = bounds.center[axis] - bounds.half_extent[axis];
+        const float maximum = bounds.center[axis] + bounds.half_extent[axis];
+        const float component = direction[axis];
+
+        if (std::abs(component) < 0.000001f) {
+            if (origin[axis] < minimum || origin[axis] > maximum) {
+                return -1.0f;
+            }
+            continue;
+        }
+
+        float first = (minimum - origin[axis]) / component;
+        float second = (maximum - origin[axis]) / component;
+        if (first > second) {
+            std::swap(first, second);
+        }
+
+        near_distance = std::max(near_distance, first);
+        far_distance = std::min(far_distance, second);
+        if (near_distance > far_distance) {
+            return -1.0f;
+        }
+    }
+
+    if (far_distance < 0.0f || near_distance > kMaximumWorkReach) {
+        return -1.0f;
+    }
+    return std::max(0.0f, near_distance);
+}
+
+WorkTarget FindWorkTarget(
+    const ModuleState *state,
+    const ReverieNativeInputV1 *input,
+    float *out_distance
+) {
+    if (out_distance != nullptr) {
+        *out_distance = 0.0f;
+    }
+    if (state == nullptr
+        || input == nullptr
+        || input->pointer_kind == REVERIE_NATIVE_POINTER_NONE) {
+        return WorkTarget::None;
+    }
+
+    WorkTarget best = WorkTarget::None;
+    float best_distance = kMaximumWorkReach + 1.0f;
+
+    for (const TargetBounds &bounds : kWorkTargets) {
+        if (!IsTargetAvailable(state, bounds.target)) {
+            continue;
+        }
+
+        const float distance = RayAabbDistance(
+            input->pointer_origin,
+            input->pointer_direction,
+            bounds
+        );
+        if (distance >= 0.0f && distance < best_distance) {
+            best = bounds.target;
+            best_distance = distance;
+        }
+    }
+
+    if (best != WorkTarget::None && out_distance != nullptr) {
+        *out_distance = best_distance;
+    }
+    return best;
+}
+
+bool SaveState(ModuleState *state) {
+    if (state == nullptr
+        || state->host == nullptr
+        || state->host->write_save == nullptr) {
+        return false;
+    }
+
+    uint8_t bytes[Simulation::kSerializedSize] = {};
+    size_t size = 0u;
+    if (!state->simulation.Serialize(bytes, sizeof(bytes), &size)) {
+        Log(state, REVERIE_NATIVE_LOG_ERROR, "Could not serialize Red Ledger state.");
+        return false;
+    }
+
+    const int32_t result = state->host->write_save(
+        kSaveSlot,
+        bytes,
+        static_cast<uint32_t>(size)
+    );
+    if (result != REVERIE_NATIVE_SAVE_OK) {
+        Log(state, REVERIE_NATIVE_LOG_WARN, "Host rejected Red Ledger save write.");
+        return false;
+    }
+    return true;
+}
+
+void LoadState(ModuleState *state) {
+    if (state == nullptr
+        || state->host == nullptr
+        || state->host->read_save == nullptr) {
+        return;
+    }
+
+    uint8_t bytes[Simulation::kSerializedSize] = {};
+    uint32_t size = 0u;
+    const int32_t result = state->host->read_save(
+        kSaveSlot,
+        bytes,
+        static_cast<uint32_t>(sizeof(bytes)),
+        &size
+    );
+
+    if (result == REVERIE_NATIVE_SAVE_NOT_FOUND) {
+        Log(state, REVERIE_NATIVE_LOG_INFO, "No Red Ledger save exists; using the opening state.");
+        return;
+    }
+
+    if (result != REVERIE_NATIVE_SAVE_OK
+        || size != sizeof(bytes)
+        || !state->simulation.Deserialize(bytes, size)) {
+        Log(state, REVERIE_NATIVE_LOG_WARN, "Red Ledger save is invalid; preserving a fresh opening state.");
+        return;
+    }
+
+    Log(state, REVERIE_NATIVE_LOG_INFO, "Red Ledger save restored.");
+}
+
+bool ActivateWorkTarget(ModuleState *state, WorkTarget target) {
+    if (state == nullptr || !IsTargetAvailable(state, target)) {
+        return false;
+    }
+
+    bool changed = false;
+    switch (target) {
+        case WorkTarget::Tap:
+            changed = state->simulation.ServeNextPatron();
+            break;
+        case WorkTarget::WashStation:
+            changed = state->simulation.WashOneCup();
+            break;
+        case WorkTarget::BeerOrder:
+            changed = state->simulation.BuySupply(
+                reverie::redledger::SupplierItem::BeerCrate
+            );
+            break;
+        case WorkTarget::CupOrder:
+            changed = state->simulation.BuySupply(
+                reverie::redledger::SupplierItem::CupSet
+            );
+            break;
+        case WorkTarget::ProtectionEnvelope:
+            changed = state->simulation.PayProtection();
+            break;
+        case WorkTarget::Ledger:
+            if (state->simulation.patrons_remaining() == 0) {
+                state->simulation.CloseDay();
+                changed = true;
+            }
+            break;
+        case WorkTarget::None:
+        default:
+            break;
+    }
+
+    if (!changed) {
+        Log(state, REVERIE_NATIVE_LOG_WARN, "Targeted bar interaction could not complete.");
+        return false;
+    }
+
+    Log(state, REVERIE_NATIVE_LOG_DEBUG, WorkTargetName(target));
+    SaveState(state);
+    return true;
 }
 
 GLuint CompileShader(GLenum type, const char *source) {
@@ -235,14 +470,53 @@ void DrawRoom(ModuleState *state, const float *view_projection, float flicker) {
     DrawCube(state, view_projection, flicker, 0.0f,-0.83f,-0.95f, 3.7f,0.85f,0.65f, 0.30f,0.20f,0.12f);
     DrawCube(state, view_projection, flicker, 0.0f,-0.36f,-0.95f, 3.9f,0.12f,0.75f, 0.39f,0.27f,0.15f);
 
-    DrawCube(state, view_projection, flicker,-0.85f,-0.15f,-0.98f, 0.18f,0.40f,0.18f, 0.36f,0.34f,0.30f);
-    DrawCube(state, view_projection, flicker,-0.85f, 0.10f,-0.98f, 0.34f,0.12f,0.22f, 0.25f,0.24f,0.22f);
+    const bool tap_hover = state->hovered_target == WorkTarget::Tap;
+    DrawCube(state, view_projection, flicker,-0.85f,-0.15f,-0.98f, 0.18f,0.40f,0.18f,
+        tap_hover ? 0.76f : 0.36f,
+        tap_hover ? 0.62f : 0.34f,
+        tap_hover ? 0.24f : 0.30f);
+    DrawCube(state, view_projection, flicker,-0.85f, 0.10f,-0.98f, 0.34f,0.12f,0.22f,
+        tap_hover ? 0.82f : 0.25f,
+        tap_hover ? 0.70f : 0.24f,
+        tap_hover ? 0.28f : 0.22f);
+
+    const bool wash_hover = state->hovered_target == WorkTarget::WashStation;
+    DrawCube(state, view_projection, flicker,-0.28f,-0.20f,-1.18f, 0.92f,0.12f,0.48f,
+        wash_hover ? 0.30f : 0.18f,
+        wash_hover ? 0.58f : 0.30f,
+        wash_hover ? 0.72f : 0.34f);
 
     DrawCube(state, view_projection, flicker, 1.35f,-0.95f,-1.80f, 0.72f,0.16f,0.72f, 0.22f,0.16f,0.12f);
     DrawCube(state, view_projection, flicker, 1.35f,-1.30f,-1.80f, 0.12f,0.70f,0.12f, 0.17f,0.13f,0.10f);
 
     DrawCube(state, view_projection, flicker, 1.90f,-1.38f,-2.38f, 1.35f,0.18f,0.70f, 0.31f,0.28f,0.23f);
-    DrawCube(state, view_projection, flicker, 0.85f,-0.22f,-0.90f, 0.42f,0.06f,0.30f, 0.18f,0.12f,0.08f);
+    const bool ledger_hover = state->hovered_target == WorkTarget::Ledger;
+    DrawCube(state, view_projection, flicker, 0.85f,-0.22f,-0.90f, 0.42f,0.06f,0.30f,
+        ledger_hover ? 0.78f : 0.18f,
+        ledger_hover ? 0.62f : 0.12f,
+        ledger_hover ? 0.24f : 0.08f);
+
+    const bool beer_hover = state->hovered_target == WorkTarget::BeerOrder;
+    DrawCube(state, view_projection, flicker, 1.20f,-0.18f,-0.72f, 0.42f,0.05f,0.24f,
+        beer_hover ? 0.78f : 0.34f,
+        beer_hover ? 0.66f : 0.28f,
+        beer_hover ? 0.25f : 0.12f);
+
+    const bool cup_hover = state->hovered_target == WorkTarget::CupOrder;
+    DrawCube(state, view_projection, flicker, 1.68f,-0.18f,-0.72f, 0.42f,0.05f,0.24f,
+        cup_hover ? 0.76f : 0.30f,
+        cup_hover ? 0.76f : 0.30f,
+        cup_hover ? 0.70f : 0.26f);
+
+    if (state->simulation.current_event() == EventType::ProtectionDemand
+        && !state->simulation.protection_paid()) {
+        const bool protection_hover =
+            state->hovered_target == WorkTarget::ProtectionEnvelope;
+        DrawCube(state, view_projection, flicker,-1.35f,-0.18f,-0.72f, 0.44f,0.05f,0.24f,
+            protection_hover ? 0.86f : 0.50f,
+            protection_hover ? 0.30f : 0.14f,
+            protection_hover ? 0.24f : 0.12f);
+    }
 
     const int clean = std::min(3, state->simulation.clean_cups());
     for (int i = 0; i < clean; ++i) {
@@ -294,7 +568,8 @@ void *Create(const ReverieNativeHostV1 *host) {
         return nullptr;
     }
     state->host = host;
-    Log(state, REVERIE_NATIVE_LOG_INFO, "Red Ledger module created with deterministic opening-day economy.");
+    LoadState(state);
+    Log(state, REVERIE_NATIVE_LOG_INFO, "Red Ledger module created with controller-ray work surface.");
     return state;
 }
 
@@ -335,7 +610,8 @@ void Pause(void *instance) {
 
 void Update(void *instance, const ReverieNativeInputV1 *input) {
     ModuleState *state = static_cast<ModuleState *>(instance);
-    if (state == nullptr || input == nullptr || input->struct_size < sizeof(ReverieNativeInputV1)) {
+    if (state == nullptr || input == nullptr
+        || input->struct_size < sizeof(ReverieNativeInputV1)) {
         return;
     }
 
@@ -346,23 +622,22 @@ void Update(void *instance, const ReverieNativeInputV1 *input) {
     state->player_z = std::max(-kMoveLimit, std::min(kMoveLimit,
         state->player_z + input->move_y * kMoveSpeed * dt));
 
+    state->hovered_target = FindWorkTarget(
+        state,
+        input,
+        &state->hovered_distance
+    );
+
     const bool primary = input->primary_down != 0u;
     if (primary && !state->primary_was_down) {
-        const bool served = state->simulation.ServeNextPatron();
-        Log(state, served ? REVERIE_NATIVE_LOG_DEBUG : REVERIE_NATIVE_LOG_WARN,
-            served ? "Development input served the next patron."
-                   : "Development serve action could not complete.");
+        if (state->hovered_target == WorkTarget::None) {
+            Log(state, REVERIE_NATIVE_LOG_WARN,
+                "Primary action had no reachable bar target.");
+        } else {
+            ActivateWorkTarget(state, state->hovered_target);
+        }
     }
     state->primary_was_down = primary;
-
-    const bool secondary = input->secondary_down != 0u;
-    if (secondary && !state->secondary_was_down) {
-        const bool washed = state->simulation.WashOneCup();
-        Log(state, washed ? REVERIE_NATIVE_LOG_DEBUG : REVERIE_NATIVE_LOG_WARN,
-            washed ? "Development input washed one cup."
-                   : "Development wash action could not complete.");
-    }
-    state->secondary_was_down = secondary;
 }
 
 int32_t RenderEye(void *instance, const ReverieNativeEyeV1 *eye) {

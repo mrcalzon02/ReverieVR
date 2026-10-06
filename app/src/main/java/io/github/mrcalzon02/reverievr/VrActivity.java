@@ -155,6 +155,10 @@ public final class VrActivity extends Activity
             );
         nativeModuleRuntime =
             new NativeModuleRuntime(
+                new java.io.File(
+                    getFilesDir(),
+                    "native-modules"
+                ),
                 virtualInputBus
             );
         inputManager =

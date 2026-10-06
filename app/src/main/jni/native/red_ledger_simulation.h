@@ -2,6 +2,7 @@
 #define REVERIE_RED_LEDGER_SIMULATION_H
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 
 namespace reverie {
@@ -64,6 +65,7 @@ public:
     static constexpr int32_t kDailyDebtServiceCents = 150;
     static constexpr int32_t kProtectionCostCents = 600;
     static constexpr int32_t kInspectionFineCents = 450;
+    static constexpr size_t kSerializedSize = 152u;
 
     Simulation();
 
@@ -84,6 +86,16 @@ public:
 
     const PatronDefinition *current_patron() const;
     const DayLedger &last_ledger() const;
+
+    bool Serialize(
+        uint8_t *buffer,
+        size_t capacity,
+        size_t *out_size
+    ) const;
+    bool Deserialize(
+        const uint8_t *buffer,
+        size_t size
+    );
 
     bool ServeNextPatron();
     bool WashOneCup();

@@ -10,12 +10,26 @@ extern "C" {
 
 #define REVERIE_NATIVE_MODULE_ABI_VERSION 1u
 #define REVERIE_NATIVE_MODULE_ENTRY_SYMBOL "reverie_native_module_entry_v1"
+#define REVERIE_NATIVE_SAVE_MAX_BYTES 65536u
 
 enum ReverieNativeLogLevel {
     REVERIE_NATIVE_LOG_DEBUG = 0,
     REVERIE_NATIVE_LOG_INFO = 1,
     REVERIE_NATIVE_LOG_WARN = 2,
     REVERIE_NATIVE_LOG_ERROR = 3
+};
+
+enum ReverieNativePointerKind {
+    REVERIE_NATIVE_POINTER_NONE = 0,
+    REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER = 1,
+    REVERIE_NATIVE_POINTER_VIRTUAL_CONTROLLER = 2
+};
+
+enum ReverieNativeSaveResult {
+    REVERIE_NATIVE_SAVE_ERROR = -1,
+    REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL = -2,
+    REVERIE_NATIVE_SAVE_NOT_FOUND = 0,
+    REVERIE_NATIVE_SAVE_OK = 1
 };
 
 typedef struct ReverieNativeHostV1 {
@@ -25,6 +39,23 @@ typedef struct ReverieNativeHostV1 {
         int32_t level,
         const char *tag,
         const char *message
+    );
+
+    /*
+     * Append-only ABI v1 service extension. Save slots are scoped by the host
+     * to the active packaged module. Slot names must be simple filenames; the
+     * module never receives an arbitrary filesystem path.
+     */
+    int32_t (*read_save)(
+        const char *slot,
+        void *buffer,
+        uint32_t capacity,
+        uint32_t *out_size
+    );
+    int32_t (*write_save)(
+        const char *slot,
+        const void *data,
+        uint32_t size
     );
 } ReverieNativeHostV1;
 
@@ -44,6 +75,15 @@ typedef struct ReverieNativeInputV1 {
     float move_y;
     uint32_t primary_down;
     uint32_t secondary_down;
+
+    /*
+     * Append-only ABI v1 pointer extension. The host owns controller
+     * calibration and supplies a normalized world-space ray. Modules do not
+     * consume raw Android controller quaternions.
+     */
+    uint32_t pointer_kind;
+    float pointer_origin[3];
+    float pointer_direction[3];
 } ReverieNativeInputV1;
 
 typedef struct ReverieNativeEyeV1 {

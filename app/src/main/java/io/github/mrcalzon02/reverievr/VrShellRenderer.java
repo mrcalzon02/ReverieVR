@@ -382,6 +382,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile boolean controllerPointerActive;
     private volatile float controllerPointerDistance = 6.0f;
     private volatile boolean controllerPointerHit;
+    private volatile int activeNativePointerKind =
+        NativeModuleRuntime.POINTER_NONE;
     private volatile String activePointerSource = "Gaze";
     private volatile float headLinearAccelerationX;
     private volatile float headLinearAccelerationY;
@@ -1105,7 +1107,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                             nativeModuleRuntime.onSurfaceCreated();
                     }
                     if (nativeSurfaceReady) {
-                        nativeModuleRuntime.update();
+                        nativeModuleRuntime.update(
+                            NativeModuleRuntime.POINTER_NONE,
+                            null,
+                            null
+                        );
                     } else {
                         host.onNativeModuleStopRequested();
                         closeOrientationMenu();
@@ -1157,7 +1163,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 }
             }
 
-            nativeModuleRuntime.update();
+            updateNativeModuleInteraction(
+                frameNanos
+            );
             return;
         }
 
@@ -1220,6 +1228,56 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         updateShellInteraction(
             frameNanos
+        );
+    }
+
+    private void updateNativeModuleInteraction(
+        long frameNanos
+    ) {
+        if (nativeModuleRuntime == null
+            || !nativeModuleRuntime.isRunning()) {
+            return;
+        }
+
+        rotateYaw(
+            headForward,
+            -yawOffsetRadians,
+            adjustedHeadForward
+        );
+
+        boolean usingControllerPointer =
+            updateActivePointer(frameNanos);
+        controllerPointerActive =
+            usingControllerPointer;
+        controllerPointerDistance = 2.5f;
+        controllerPointerHit = false;
+
+        if (usingControllerPointer) {
+            pointerRenderer.setPointer(
+                true,
+                activePointerOrigin[0],
+                activePointerOrigin[1],
+                activePointerOrigin[2],
+                activePointerDirection[0],
+                activePointerDirection[1],
+                activePointerDirection[2],
+                controllerPointerDistance,
+                false
+            );
+        } else {
+            pointerRenderer.hide();
+        }
+
+        nativeModuleRuntime.update(
+            usingControllerPointer
+                ? activeNativePointerKind
+                : NativeModuleRuntime.POINTER_NONE,
+            usingControllerPointer
+                ? activePointerOrigin
+                : null,
+            usingControllerPointer
+                ? activePointerDirection
+                : null
         );
     }
 
@@ -1442,6 +1500,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     eyeCorrection,
                     true
                 );
+                drawPointerOverlay(
+                    eye,
+                    eyeCorrection
+                );
+            } else {
                 drawPointerOverlay(
                     eye,
                     eyeCorrection
@@ -1889,6 +1952,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerVolumeUpPressed,
                 controllerVolumeDownPressed
             );
+            activeNativePointerKind =
+                NativeModuleRuntime.POINTER_TRACKED_CONTROLLER;
             setActivePointerSource(
                 "Tracked controller"
             );
@@ -1969,6 +2034,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 false,
                 false
             );
+            activeNativePointerKind =
+                NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER;
             setActivePointerSource(
                 "Virtual gamepad"
             );
@@ -1980,6 +2047,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (pointerMode
             == VrPointerMode.CONTROLLER) {
+            activeNativePointerKind =
+                NativeModuleRuntime.POINTER_NONE;
             setActivePointerSource(
                 "Controller unavailable"
             );
@@ -1992,6 +2061,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return false;
         }
 
+        activeNativePointerKind =
+            NativeModuleRuntime.POINTER_NONE;
         setActivePointerSource("Gaze");
         activePointerOrigin[0] =
             headInertialTranslation.x();

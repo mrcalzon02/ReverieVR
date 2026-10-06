@@ -58,6 +58,19 @@ jobs:
           node --check diagnostic-intake/src/index.js
           node diagnostic-intake/test/worker-validation-smoke.cjs
 
+      - name: Validate Red Ledger native simulation
+        shell: bash
+        run: |
+          set -euo pipefail
+          c++ \
+            -std=c++17 \
+            -Wall -Wextra -Wpedantic -Werror \
+            -I app/src/main/jni/native \
+            app/src/main/jni/native/red_ledger_simulation.cpp \
+            app/src/test/native/red_ledger_simulation_test.cpp \
+            -o /tmp/red-ledger-simulation-test
+          /tmp/red-ledger-simulation-test
+
       - name: Validate unsigned development tree
         shell: bash
         env:
@@ -161,6 +174,8 @@ jobs:
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_native_host.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_module_test_chamber.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_module_test_chamber.so"
+          unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_module_red_ledger.so"
+          unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_module_red_ledger.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_dos_host.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_dos_host.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libcardboard_sdk_jni.so"
@@ -236,7 +251,7 @@ jobs:
             echo "In-app update channel: enabled."
             echo "Build type: phoneTest (non-debuggable)."
             echo "This is the permanent ReverieVR direct-distribution signing lineage."
-            echo "Includes the native Procedural Test Chamber, DOSBox Pure, verified DOOM Shareware sample, and packaged Daydream controller visual."
+            echo "Includes the native Procedural Test Chamber, hidden Red Ledger foundation module, DOSBox Pure, verified DOOM Shareware sample, and packaged Daydream controller visual."
           } > release/RELEASE-NOTES.md
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "headset=$HEADSET" >> "$GITHUB_OUTPUT"

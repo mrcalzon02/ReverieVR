@@ -1,10 +1,15 @@
 package io.github.mrcalzon02.reverievr;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 final class NativeModuleRuntime implements AutoCloseable {
+    static final int POINTER_NONE = 0;
+    static final int POINTER_TRACKED_CONTROLLER = 1;
+    static final int POINTER_VIRTUAL_CONTROLLER = 2;
+
     static final class Descriptor {
         final String id;
         final String displayName;
@@ -40,6 +45,7 @@ final class NativeModuleRuntime implements AutoCloseable {
         AVAILABLE = loaded;
     }
 
+    private final File storageRoot;
     private final VirtualInputBus inputBus;
 
     private long handle;
@@ -47,8 +53,10 @@ final class NativeModuleRuntime implements AutoCloseable {
     private String activeModuleId = "";
 
     NativeModuleRuntime(
+        File storageRoot,
         VirtualInputBus inputBus
     ) {
+        this.storageRoot = storageRoot;
         this.inputBus = inputBus;
     }
 
@@ -115,8 +123,46 @@ final class NativeModuleRuntime implements AutoCloseable {
 
         stop();
 
+        String safeModuleId =
+            moduleId == null
+                ? ""
+                : moduleId.trim();
+        if (!isSafeModuleId(safeModuleId)) {
+            ReverieLog.incident(
+                "NATIVE_MODULE",
+                "Rejected unsafe native module id."
+            );
+            return false;
+        }
+
+        if (storageRoot == null) {
+            ReverieLog.incident(
+                "NATIVE_MODULE",
+                "Native module storage root is unavailable."
+            );
+            return false;
+        }
+
+        File moduleStorage =
+            new File(
+                storageRoot,
+                safeModuleId
+            );
+        if ((!moduleStorage.isDirectory()
+                && !moduleStorage.mkdirs())
+            || !moduleStorage.isDirectory()) {
+            ReverieLog.incident(
+                "NATIVE_MODULE",
+                "Could not create private native module storage."
+            );
+            return false;
+        }
+
         long created =
-            nativeCreate(moduleId);
+            nativeCreate(
+                safeModuleId,
+                moduleStorage.getAbsolutePath()
+            );
         if (created == 0L) {
             ReverieLog.incident(
                 "NATIVE_MODULE",
@@ -127,10 +173,7 @@ final class NativeModuleRuntime implements AutoCloseable {
         }
 
         handle = created;
-        activeModuleId =
-            moduleId == null
-                ? ""
-                : moduleId.trim();
+        activeModuleId = safeModuleId;
         lastUpdateNanos =
             System.nanoTime();
 
@@ -191,7 +234,11 @@ final class NativeModuleRuntime implements AutoCloseable {
         }
     }
 
-    synchronized void update() {
+    synchronized void update(
+        int pointerKind,
+        float[] pointerOrigin,
+        float[] pointerDirection
+    ) {
         if (handle == 0L) {
             return;
         }
@@ -218,13 +265,48 @@ final class NativeModuleRuntime implements AutoCloseable {
                 inputBus.isJoystickButtonDown(1);
         }
 
+        int safePointerKind = pointerKind;
+        if (safePointerKind != POINTER_TRACKED_CONTROLLER
+            && safePointerKind != POINTER_VIRTUAL_CONTROLLER) {
+            safePointerKind = POINTER_NONE;
+        }
+
+        float originX = 0.0f;
+        float originY = 0.0f;
+        float originZ = 0.0f;
+        float directionX = 0.0f;
+        float directionY = 0.0f;
+        float directionZ = 0.0f;
+
+        if (safePointerKind != POINTER_NONE
+            && pointerOrigin != null
+            && pointerOrigin.length >= 3
+            && pointerDirection != null
+            && pointerDirection.length >= 3) {
+            originX = pointerOrigin[0];
+            originY = pointerOrigin[1];
+            originZ = pointerOrigin[2];
+            directionX = pointerDirection[0];
+            directionY = pointerDirection[1];
+            directionZ = pointerDirection[2];
+        } else {
+            safePointerKind = POINTER_NONE;
+        }
+
         nativeUpdate(
             handle,
             deltaSeconds,
             moveX,
             moveY,
             primary,
-            secondary
+            secondary,
+            safePointerKind,
+            originX,
+            originY,
+            originZ,
+            directionX,
+            directionY,
+            directionZ
         );
     }
 
@@ -293,7 +375,8 @@ final class NativeModuleRuntime implements AutoCloseable {
     private static native String[] nativeListBuiltIns();
 
     private static native long nativeCreate(
-        String moduleId
+        String moduleId,
+        String storageRoot
     );
 
     private static native void nativeDestroy(
@@ -322,7 +405,14 @@ final class NativeModuleRuntime implements AutoCloseable {
         float moveX,
         float moveY,
         boolean primaryDown,
-        boolean secondaryDown
+        boolean secondaryDown,
+        int pointerKind,
+        float pointerOriginX,
+        float pointerOriginY,
+        float pointerOriginZ,
+        float pointerDirectionX,
+        float pointerDirectionY,
+        float pointerDirectionZ
     );
 
     private static native boolean nativeRenderEye(
@@ -331,6 +421,33 @@ final class NativeModuleRuntime implements AutoCloseable {
         float[] view,
         float[] projection
     );
+
+    private static boolean isSafeModuleId(
+        String value
+    ) {
+        if (value == null
+            || value.isEmpty()
+            || value.length() > 80) {
+            return false;
+        }
+
+        for (int index = 0;
+             index < value.length();
+             index++) {
+            char ch = value.charAt(index);
+            boolean safe =
+                (ch >= 'a' && ch <= 'z')
+                    || (ch >= 'A' && ch <= 'Z')
+                    || (ch >= '0' && ch <= '9')
+                    || ch == '-'
+                    || ch == '_'
+                    || ch == '.';
+            if (!safe) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     private static native String nativeGetLastError();
 }
