@@ -525,6 +525,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         cachedShowPercentages = preferences.isShowPercentagesEnabled();
     }
 
+    boolean isOrientationMenuVisible() {
+        return orientationMenuVisible;
+    }
+
     boolean handlesSelectAsShellAction() {
         if (orientationMenuVisible) {
             return true;
