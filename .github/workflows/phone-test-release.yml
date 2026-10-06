@@ -70,31 +70,52 @@ jobs:
           set -euo pipefail
 
           present=0
-          for value in             "$PHONE_TEST_KEYSTORE_BASE64"             "$PHONE_TEST_STORE_PASSWORD"             "$PHONE_TEST_KEY_ALIAS"             "$PHONE_TEST_KEY_PASSWORD"; do
+          for value in \
+            "$PHONE_TEST_KEYSTORE_BASE64" \
+            "$PHONE_TEST_STORE_PASSWORD" \
+            "$PHONE_TEST_KEY_ALIAS" \
+            "$PHONE_TEST_KEY_PASSWORD"; do
             if [[ -n "$value" ]]; then
               present=$((present + 1))
             fi
           done
 
-          if [[ "$present" -eq 0 ]]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "keystore_path=" >> "$GITHUB_OUTPUT"
-            echo "Persistent phone-test signing is not configured; updater UI will be omitted."
-            exit 0
-          fi
-
           if [[ "$present" -ne 4 ]]; then
-            echo "Phone-test signing is partially configured. Set all four signing secrets or none." >&2
+            echo "Persistent phone-test signing is mandatory for published APKs." >&2
+            echo "Set PHONE_TEST_KEYSTORE_BASE64, PHONE_TEST_STORE_PASSWORD, PHONE_TEST_KEY_ALIAS, and PHONE_TEST_KEY_PASSWORD." >&2
             exit 1
           fi
 
           KEYSTORE="$RUNNER_TEMP/reverievr-phone-test.jks"
-          printf '%s' "$PHONE_TEST_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          CERT_DER="$RUNNER_TEMP/reverievr-phone-test-cert.der"
+
+          printf '%s' "$PHONE_TEST_KEYSTORE_BASE64" \
+            | base64 --decode > "$KEYSTORE"
           test -s "$KEYSTORE"
           chmod 600 "$KEYSTORE"
 
+          keytool -list \
+            -keystore "$KEYSTORE" \
+            -storepass "$PHONE_TEST_STORE_PASSWORD" \
+            -alias "$PHONE_TEST_KEY_ALIAS" \
+            >/dev/null
+
+          keytool -exportcert \
+            -keystore "$KEYSTORE" \
+            -storepass "$PHONE_TEST_STORE_PASSWORD" \
+            -alias "$PHONE_TEST_KEY_ALIAS" \
+            -file "$CERT_DER" \
+            >/dev/null
+
+          SIGNER_SHA="$(sha256sum "$CERT_DER" | awk '{print $1}')"
+          [[ "$SIGNER_SHA" =~ ^[0-9a-f]{64}$ ]]
+
           echo "configured=true" >> "$GITHUB_OUTPUT"
           echo "keystore_path=$KEYSTORE" >> "$GITHUB_OUTPUT"
+          echo "signer_sha=$SIGNER_SHA" >> "$GITHUB_OUTPUT"
+
+          echo "Persistent signing identity loaded."
+          echo "Distribution certificate SHA-256: $SIGNER_SHA"
 
       - name: Test and build
         shell: bash
@@ -110,16 +131,24 @@ jobs:
             -PdiagnosticIntakeUrl="$DIAGNOSTIC_INTAKE_URL" \
             -PphoneTestRunNumber="$GITHUB_RUN_NUMBER" \
             -PphoneTestRunAttempt="$GITHUB_RUN_ATTEMPT" \
+            -PphoneTestSignerSha256="${{ steps.signing.outputs.signer_sha }}" \
             -PsourceRevision="$GITHUB_SHA" \
-            test :app:assembleDebug :controller-app:assembleDebug
+            test :app:assemblePhoneTest :controller-app:assemblePhoneTest
 
       - name: Verify APK
         id: verify
         shell: bash
         run: |
           set -euo pipefail
-          APK=app/build/outputs/apk/debug/app-debug.apk
+
+          APK=app/build/outputs/apk/phoneTest/app-phoneTest.apk
+          CONTROLLER_APK=controller-app/build/outputs/apk/phoneTest/controller-app-phoneTest.apk
+          EXPECTED_SIGNER="${{ steps.signing.outputs.signer_sha }}"
+          EXPECTED_VERSION_CODE=$((GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT))
+
           test -f "$APK"
+          test -f "$CONTROLLER_APK"
+
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_native_host.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_native_host.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_module_test_chamber.so"
@@ -128,12 +157,36 @@ jobs:
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_dos_host.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libcardboard_sdk_jni.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libcardboard_sdk_jni.so"
+          unzip -l "$APK" | grep -F "lib/armeabi-v7a/libGfxPluginCardboard.so"
+          unzip -l "$APK" | grep -F "lib/arm64-v8a/libGfxPluginCardboard.so"
+
           APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/apksigner"
+          AAPT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/aapt"
+
           VERIFY_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs "$APK")"
           printf '%s\n' "$VERIFY_OUTPUT"
-          SIGNER_SHA="$(printf '%s\n' "$VERIFY_OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1)"
-          test -n "$SIGNER_SHA"
+          SIGNER_SHA="$(printf '%s\n' "$VERIFY_OUTPUT" \
+            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' \
+            | head -n 1 \
+            | tr '[:upper:]' '[:lower:]')"
+          [[ "$SIGNER_SHA" =~ ^[0-9a-f]{64}$ ]]
+          test "$SIGNER_SHA" = "$EXPECTED_SIGNER"
+
+          CONTROLLER_VERIFY="$("$APKSIGNER" verify --verbose --print-certs "$CONTROLLER_APK")"
+          CONTROLLER_SIGNER_SHA="$(printf '%s\n' "$CONTROLLER_VERIFY" \
+            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' \
+            | head -n 1 \
+            | tr '[:upper:]' '[:lower:]')"
+          test "$CONTROLLER_SIGNER_SHA" = "$EXPECTED_SIGNER"
+
+          BADGING="$("$AAPT" dump badging "$APK")"
+          VERSION_CODE="$(printf '%s\n' "$BADGING" \
+            | sed -n "s/.*versionCode='\([0-9][0-9]*\)'.*/\1/p" \
+            | head -n 1)"
+          test "$VERSION_CODE" = "$EXPECTED_VERSION_CODE"
+
           echo "signer_sha=$SIGNER_SHA" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
       - name: Stage release
         id: release
@@ -145,25 +198,21 @@ jobs:
           HEADSET="ReverieVR-phone-test-${GITHUB_RUN_NUMBER}-${SHORT_SHA}.apk"
           CONTROLLER="ReverieVR-Controller-phone-test-${GITHUB_RUN_NUMBER}-${SHORT_SHA}.apk"
           mkdir -p release
-          cp app/build/outputs/apk/debug/app-debug.apk "release/$HEADSET"
-          cp controller-app/build/outputs/apk/debug/controller-app-debug.apk "release/$CONTROLLER"
+          cp app/build/outputs/apk/phoneTest/app-phoneTest.apk "release/$HEADSET"
+          cp controller-app/build/outputs/apk/phoneTest/controller-app-phoneTest.apk "release/$CONTROLLER"
           (cd release && sha256sum "$HEADSET" "$CONTROLLER" > SHA256SUMS.txt)
           {
             echo "ReverieVR development phone-test build."
             echo
             echo "Commit: $GITHUB_SHA"
             echo "Run: $GITHUB_RUN_NUMBER attempt $GITHUB_RUN_ATTEMPT"
-            echo "Android versionCode: $GITHUB_RUN_NUMBER"
+            echo "Android versionCode: ${{ steps.verify.outputs.version_code }}"
             echo "APK signer SHA-256: ${{ steps.verify.outputs.signer_sha }}"
             echo
-            if [[ "${{ steps.signing.outputs.configured }}" == "true" ]]; then
-              echo "Persistent phone-test signing: enabled."
-              echo "In-app update channel: enabled."
-            else
-              echo "Ephemeral debug signing: enabled."
-              echo "In-app update channel: disabled; manual install only."
-            fi
-            echo "This is reference-device/test signing, not production signing."
+            echo "Persistent phone-test signing: enabled."
+            echo "In-app update channel: enabled."
+            echo "Build type: phoneTest (non-debuggable)."
+            echo "This is the permanent ReverieVR direct-distribution signing lineage."
             echo "Includes the native Procedural Test Chamber, DOSBox Pure, and verified DOOM Shareware sample."
           } > release/RELEASE-NOTES.md
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
