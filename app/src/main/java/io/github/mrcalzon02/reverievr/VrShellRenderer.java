@@ -1370,6 +1370,25 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        /*
+         * Every eye pass owns only its viewport. glClear ignores glViewport,
+         * so a right-eye clear previously erased the completed left eye.
+         * Scope both clears and draws to the SDK-provided eye rectangle.
+         */
+        int[] previousScissor = new int[4];
+        int[] eyeViewport = new int[4];
+        int[] scissorEnabled = new int[1];
+        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, eyeViewport, 0);
+        GLES20.glGetIntegerv(GLES20.GL_SCISSOR_BOX, previousScissor, 0);
+        GLES20.glGetIntegerv(GLES20.GL_SCISSOR_TEST, scissorEnabled, 0);
+        if (eyeViewport[2] <= 0 || eyeViewport[3] <= 0) {
+            reportRendererFailure("invalid-eye-viewport",
+                new IllegalStateException("Empty eye viewport"));
+            return;
+        }
+        GLES20.glEnable(GLES20.GL_SCISSOR_TEST);
+        GLES20.glScissor(eyeViewport[0], eyeViewport[1],
+            eyeViewport[2], eyeViewport[3]);
         try {
             onDrawEyeInternal(eye);
         } catch (RuntimeException | LinkageError failure) {
@@ -1377,6 +1396,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 "draw-eye",
                 failure
             );
+        } finally {
+            GLES20.glScissor(previousScissor[0], previousScissor[1],
+                previousScissor[2], previousScissor[3]);
+            if (scissorEnabled[0] == 0) {
+                GLES20.glDisable(GLES20.GL_SCISSOR_TEST);
+            }
         }
     }
 
