@@ -6,9 +6,11 @@ ReverieVR's GitHub-distributed Android packages now use a permanent signing line
 
 Requirements:
 
-- JDK 17 (`keytool` available on PATH)
+- Windows PowerShell with the built-in PKI certificate cmdlets (standard on supported Windows installations), or an installed JDK/Android Studio if available
 - GitHub CLI (`gh`)
 - `gh auth login` completed for the account that can write Actions secrets to `mrcalzon02/ReverieVR`
+
+The Windows bootstrap does **not** require Java. It first looks for an existing `keytool` (including Android Studio/JDK locations); if none exists, it falls back to Windows-native certificate tooling and exports the permanent signing identity as PKCS#12.
 
 From the repository root:
 
@@ -18,7 +20,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\provision-phone-test-signing.
 
 The script:
 
-1. creates one 100-year RSA-3072 ReverieVR distribution signing key;
+1. creates one long-lived RSA-3072 ReverieVR distribution signing key using PKCS#12;
 2. stores it only under ignored `.local/reverievr-signing/`;
 3. generates strong random store/key passwords;
 4. exports the public certificate and calculates its SHA-256 fingerprint;
