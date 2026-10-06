@@ -1,5 +1,6 @@
 param(
     [switch]$SetGitHubSecrets,
+    [switch]$TriggerBuild,
     [switch]$Force
 )
 
@@ -89,6 +90,10 @@ PHONE_TEST_KEY_PASSWORD=$KeyPassword
 [IO.File]::WriteAllText($SecretsFile, $SecretsText, [Text.UTF8Encoding]::new($false))
 [IO.File]::WriteAllText($FingerprintFile, $Fingerprint + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
+if ($TriggerBuild -and -not $SetGitHubSecrets) {
+    throw "-TriggerBuild requires -SetGitHubSecrets so the workflow cannot start without the permanent signer."
+}
+
 if ($SetGitHubSecrets) {
     $gh = Get-Command gh -ErrorAction SilentlyContinue
     if (-not $gh) {
@@ -115,6 +120,14 @@ if ($SetGitHubSecrets) {
     }
 
     Write-Host "GitHub Actions signing secrets were populated for $Repo."
+
+    if ($TriggerBuild) {
+        & $gh.Source workflow run phone-test-release.yml --repo $Repo
+        if ($LASTEXITCODE -ne 0) {
+            throw "Signing secrets were saved, but the phone-test workflow could not be triggered."
+        }
+        Write-Host "First persistently signed phone-test build was triggered."
+    }
 }
 
 Write-Host ""
