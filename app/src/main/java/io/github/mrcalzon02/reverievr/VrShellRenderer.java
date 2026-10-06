@@ -143,6 +143,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private static final int[][] ORIENTATION_MENU_BUTTONS =
         new int[][] {
+            {220, 248, 500, 304},
+            {524, 248, 804, 304},
+            {220, 320, 500, 376},
+            {524, 320, 804, 376},
+            {220, 392, 500, 448},
+            {524, 392, 804, 448},
+            {220, 464, 500, 520},
+            {524, 464, 804, 520}
+        };
+
+    private static final int[][] QUICK_SETTINGS_BUTTONS =
+        new int[][] {
             {220, 248, 500, 296},
             {524, 248, 804, 296},
             {220, 306, 500, 354},
@@ -153,18 +165,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
             {524, 422, 804, 470},
             {220, 480, 500, 528},
             {524, 480, 804, 528}
-        };
-
-    private static final int[][] QUICK_SETTINGS_BUTTONS =
-        new int[][] {
-            {220, 252, 500, 304},
-            {524, 252, 804, 304},
-            {220, 320, 500, 372},
-            {524, 320, 804, 372},
-            {220, 388, 500, 440},
-            {524, 388, 804, 440},
-            {220, 456, 500, 508},
-            {524, 456, 804, 508}
         };
 
     private static final int[][] HOME_BUTTONS = new int[][] {
@@ -311,6 +311,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final ControllerInertialTranslation
         controllerInertialTranslation =
             new ControllerInertialTranslation();
+    private final ControllerShakeRecenterDetector
+        controllerShakeRecenterDetector =
+            new ControllerShakeRecenterDetector();
     private final float[] activePointerOrigin = new float[3];
     private final float[] activePointerDirection = new float[3];
     private final float[] orientationMenuRayOrigin = new float[3];
@@ -323,6 +326,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final AtomicBoolean backRequested =
         new AtomicBoolean();
     private final AtomicBoolean recenterRequested = new AtomicBoolean();
+    private final AtomicBoolean controllerPositionRecenterRequested =
+        new AtomicBoolean();
     private final AtomicInteger phoneBattery = new AtomicInteger(-1);
     private final AtomicInteger controllerBattery = new AtomicInteger(-1);
     private final AtomicInteger videoSeekRequestedMillis = new AtomicInteger();
@@ -665,6 +670,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerPointerActive = false;
             controllerAccelerationAtNanos = 0L;
             controllerInertialTranslation.reset();
+            controllerShakeRecenterDetector.reset();
+            controllerPositionRecenterRequested.set(false);
             controllerInertialLastFrameNanos = 0L;
             controllerGravityInitialized = false;
             pointerRenderer.hide();
@@ -707,6 +714,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 : System.nanoTime();
         controllerAccelerationAtNanos =
             controllerPoseReceivedAtNanos;
+        if (controllerShakeRecenterDetector.sample(
+                controllerAccelerationX,
+                controllerAccelerationY,
+                controllerAccelerationZ,
+                controllerAccelerationAtNanos
+            )) {
+            controllerPositionRecenterRequested.set(true);
+        }
         controllerTouchpadPressed =
             snapshot.touchpadPressed;
         controllerHomePressed =
@@ -1122,9 +1137,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             -headInertialTranslation.y(),
             -headInertialTranslation.z()
         );
-        updateControllerInertialTranslation(
-            frameNanos
-        );
+        if (controllerPositionRecenterRequested.getAndSet(false)) {
+            resetControllerPositionReference();
+        } else {
+            updateControllerInertialTranslation(
+                frameNanos
+            );
+        }
 
         boolean showPercentages = preferences.isShowPercentagesEnabled();
         if (showPercentages != cachedShowPercentages) {
@@ -2292,6 +2311,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
     }
 
+    private void resetControllerPositionReference() {
+        controllerInertialTranslation.reset();
+        controllerInertialLastFrameNanos = 0L;
+        controllerGravityInitialized = false;
+        ReverieLog.milestone(
+            "VR_CONTROLLER",
+            "Sharp shake recentered handset position; tracked orientation preserved."
+        );
+    }
+
     private void updateControllerInertialTranslation(
         long frameNanos
     ) {
@@ -3433,36 +3462,28 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 2:
-                host.onVolumeAdjustRequested(-1);
-                break;
-
-            case 3:
-                host.onVolumeAdjustRequested(1);
-                break;
-
-            case 4:
                 host.onBrightnessAdjustRequested(-1);
                 break;
 
-            case 5:
+            case 3:
                 host.onBrightnessAdjustRequested(1);
                 break;
 
-            case 6:
+            case 4:
                 closeOrientationMenu();
                 backRequested.set(true);
                 break;
 
-            case 7:
+            case 5:
                 returnToHomeFromQuickMenu();
                 break;
 
-            case 8:
+            case 6:
                 returnToHomeFromQuickMenu();
                 host.onExitToPhoneRequested();
                 break;
 
-            case 9:
+            case 7:
                 quickMenuSettingsVisible = true;
                 hoveredButton = -1;
                 textureDirty = true;
@@ -3507,6 +3528,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 4:
+                host.onVolumeAdjustRequested(-1);
+                break;
+
+            case 5:
+                host.onVolumeAdjustRequested(1);
+                break;
+
+            case 6:
                 uiScale = clamp(
                     uiScale - 0.05f,
                     0.75f,
@@ -3515,7 +3544,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 preferences.setUiScale(uiScale);
                 break;
 
-            case 5:
+            case 7:
                 uiScale = clamp(
                     uiScale + 0.05f,
                     0.75f,
@@ -3524,11 +3553,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 preferences.setUiScale(uiScale);
                 break;
 
-            case 6:
+            case 8:
                 quickMenuSettingsVisible = false;
                 break;
 
-            case 7:
+            case 9:
                 closeOrientationMenu();
                 return;
 
@@ -4308,8 +4337,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new String[] {
                 "HEADSET FWD",
                 controllerLabel,
-                "VOL -",
-                "VOL +",
                 "BRIGHT -",
                 "BRIGHT +",
                 "BACK",
@@ -4499,6 +4526,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 percentLabel,
                 lookupLabel,
                 pointerLabel,
+                "VOLUME -",
+                "VOLUME +",
                 "UI SCALE -",
                 "UI SCALE +",
                 "BACK QUICK",
