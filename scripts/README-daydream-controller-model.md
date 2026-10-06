@@ -1,58 +1,55 @@
-# Importing the original Daydream controller visual
+# Daydream controller visual asset
 
-Preferred source:
+The controller visual is no longer waiting on an import handoff. ReverieVR now
+packages a reviewed low-poly Daydream controller derivative at:
+
+`app/src/main/assets/models/daydream/vr_controller_daydream.obj`
+
+The runtime loader uses the model's separated material/object groups so
+touchpad, Home/App, and volume-button feedback can remain visually distinct.
+
+## Provenance
+
+Original:
 
 - **Daydream Vr Controller**
 - author: **rje**
 - Sketchfab UID: `c1944c64e06544babc90e9d0aa953551`
 - source: https://sketchfab.com/3d-models/daydream-vr-controller-c1944c64e06544babc90e9d0aa953551
-- license: Creative Commons Attribution (CC BY)
+- original listing license: Creative Commons Attribution (CC BY)
 
-The original model is intentionally preferred over the convenient
-`TechnoBuddhist/VR-Controller-Daydream` derivative because that derivative
-repository is distributed under GPL-3.0 while the original Sketchfab model is
-CC BY.
+Vendored derivative:
 
-## Why the repository does not download it automatically
+- https://github.com/TechnoBuddhist/VR-Controller-Daydream
+- preserves the derivative repository README and GPL-3.0 license beside the
+  runtime asset.
 
-Sketchfab's Download API requires an authenticated Sketchfab user and returns
-temporary download URLs. Do not put a Sketchfab token, OAuth access token, or
-account credential into ReverieVR or its public GitHub Actions workflow merely
-to obtain a static model once.
-
-Download the original model while signed into Sketchfab and retain the archive
-as the authoritative source artifact outside the app repository until it has
-been reviewed.
-
-## Handoff
-
-Provide the original downloaded Sketchfab archive (normally glTF/GLB content)
-to the project.
-
-Before committing the visual asset:
-
-1. verify the archive/model UID and author;
-2. preserve a copy of the CC-BY license/attribution information;
-3. inspect meshes/materials/textures and remove unrelated payload;
-4. normalize controller scale/orientation to ReverieVR's existing fixed
-   virtual-hand origin;
-5. preserve separate interactive surfaces where practical for touchpad,
-   Home/App and volume-button feedback;
-6. optimize only if the source asset proves materially heavier than the
-   published 686-triangle / 709-vertex model;
-7. keep the current procedural controller renderer as a safe fallback if the
-   optional visual asset cannot load.
+See `docs/records/DAYDREAM-CONTROLLER-MODEL-SOURCE.md` and the asset-local
+`THIRD_PARTY.md` for the authoritative provenance record.
 
 ## Runtime contract
 
-Replacing the procedural visual MUST NOT alter input semantics.
+Replacing or revising the visual MUST NOT alter controller semantics.
 
-- Physical Daydream: real 3DoF quaternion orientation, fixed virtual position.
-- Android gamepad: virtual yaw/pitch pointer, fixed virtual position.
-- No positional/6DoF tracking may be inferred.
-- The laser emitter, visible controller orientation, and UI raycast must share
-  one transform.
-- Missing/corrupt visual assets must fall back to the procedural model rather
-  than disabling controller input.
+- Physical Daydream input remains real 3DoF quaternion orientation.
+- The model and laser emitter share the same shell-owned anchor/orientation.
+- The shell may move that anchor with its small bounded headset/body inertial
+  offset so the virtual hand is not visually stranded when the user leans.
+- That movement is presentation compensation, not controller 6DoF tracking.
+- Android gamepads continue to use virtual yaw/pitch aiming.
+- Missing/corrupt visual assets fall back to the procedural controller model
+  rather than disabling input.
 
-See `docs/records/DAYDREAM-CONTROLLER-MODEL-SOURCE.md` for provenance.
+## Future replacement procedure
+
+If the original Sketchfab archive is later supplied and we choose to replace
+this derivative:
+
+1. verify model UID and author;
+2. preserve the CC-BY attribution;
+3. inspect meshes/materials/textures;
+4. normalize scale/orientation to the existing ReverieVR controller anchor;
+5. preserve distinct interactive surfaces where practical;
+6. update the asset-local provenance notices;
+7. retain the procedural fallback;
+8. verify the final phone-test APK actually packages the replacement asset.
