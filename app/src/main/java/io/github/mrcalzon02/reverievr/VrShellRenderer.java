@@ -889,6 +889,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             || mode == MODE_DOS_BINDINGS) {
             dosRenderer.drawEye(eye, eyeCorrection);
             drawUiPanel(eye, eyeCorrection, true);
+            drawPointerOverlay(
+                eye,
+                eyeCorrection
+            );
             drawPowerHudOverlay();
             return;
         }
@@ -947,7 +951,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         drawUiPanel(eye, eyeCorrection, false);
+        drawPointerOverlay(
+            eye,
+            eyeCorrection
+        );
         drawPowerHudOverlay();
+    }
+
+    private void drawPointerOverlay(
+        CardboardView.Eye eye,
+        float eyeCorrection
+    ) {
+        if (!controllerPointerActive) {
+            return;
+        }
+        pointerRenderer.drawEye(
+            eye,
+            eyeCorrection
+        );
     }
 
     private void reportRendererFailure(
