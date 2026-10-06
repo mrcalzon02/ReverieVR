@@ -499,10 +499,28 @@ public final class VrActivity extends Activity
             renderer.setControllerPose(snapshot);
         }
 
+        if (renderer != null) {
+            renderer.setControllerPose(snapshot);
+        }
+
         inputRouter.onControllerSnapshot(
             snapshot,
             controllerManager.getActiveProviderDisplayName()
         );
+    }
+
+    @Override
+    public void onPointerAxis(
+        float horizontal,
+        float vertical,
+        String source
+    ) {
+        if (renderer != null) {
+            renderer.setVirtualPointerAxes(
+                horizontal,
+                vertical
+            );
+        }
     }
 
     @Override
@@ -539,11 +557,19 @@ public final class VrActivity extends Activity
                 break;
 
             case NAV_LEFT:
-                renderer.requestVideoSeek(-10000);
+                if (!renderer.requestPointerNavigation(
+                        VrInputAction.NAV_LEFT
+                    )) {
+                    renderer.requestVideoSeek(-10000);
+                }
                 break;
 
             case NAV_RIGHT:
-                renderer.requestVideoSeek(10000);
+                if (!renderer.requestPointerNavigation(
+                        VrInputAction.NAV_RIGHT
+                    )) {
+                    renderer.requestVideoSeek(10000);
+                }
                 break;
 
             case VOLUME_UP:
@@ -555,7 +581,17 @@ public final class VrActivity extends Activity
                 break;
 
             case NAV_UP:
+                renderer.requestPointerNavigation(
+                    VrInputAction.NAV_UP
+                );
+                break;
+
             case NAV_DOWN:
+                renderer.requestPointerNavigation(
+                    VrInputAction.NAV_DOWN
+                );
+                break;
+
             default:
                 break;
         }
@@ -761,6 +797,12 @@ public final class VrActivity extends Activity
             return;
         }
 
+        String connectedGamepad =
+            AndroidGamepadSupport.firstConnectedGamepadName();
+        renderer.setGamepadPointerAvailable(
+            connectedGamepad != null
+        );
+
         if (controllerManager.isReady()) {
             String provider =
                 controllerManager.getActiveProviderDisplayName();
@@ -776,12 +818,10 @@ public final class VrActivity extends Activity
             return;
         }
 
-        String gamepad =
-            AndroidGamepadSupport.firstConnectedGamepadName();
-        if (gamepad != null) {
+        if (connectedGamepad != null) {
             renderer.setControllerState(
                 true,
-                "Android gamepad ready: " + gamepad
+                "Android gamepad ready: " + connectedGamepad
             );
             renderer.setControllerBattery(-1);
         } else {
@@ -824,6 +864,11 @@ public final class VrActivity extends Activity
             );
             finish();
         });
+    }
+
+    @Override
+    public void onUiFocusChanged() {
+        runOnUiThread(() -> uiFeedback.focus());
     }
 
     @Override
