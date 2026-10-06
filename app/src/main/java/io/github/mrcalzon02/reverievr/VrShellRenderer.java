@@ -1824,14 +1824,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_HOME) {
             UiRayHit best =
-                hitPanel(
+                hitTiltedPanel(
                     origin,
                     direction,
                     HOME_LEFT_WORLD_LEFT,
                     HOME_LEFT_WORLD_RIGHT,
                     HOME_WORLD_BOTTOM,
                     HOME_WORLD_TOP,
-                    HOME_LEFT_WORLD_Z,
+                    HOME_LEFT_WORLD_Z_OUTER,
+                    HOME_LEFT_WORLD_Z_INNER,
                     HOME_LEFT_PIXEL_LEFT,
                     HOME_LEFT_PIXEL_RIGHT,
                     HOME_PIXEL_TOP,
@@ -1855,14 +1856,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
             best = nearer(best, center);
 
             UiRayHit right =
-                hitPanel(
+                hitTiltedPanel(
                     origin,
                     direction,
                     HOME_RIGHT_WORLD_LEFT,
                     HOME_RIGHT_WORLD_RIGHT,
                     HOME_WORLD_BOTTOM,
                     HOME_WORLD_TOP,
-                    HOME_RIGHT_WORLD_Z,
+                    HOME_RIGHT_WORLD_Z_INNER,
+                    HOME_RIGHT_WORLD_Z_OUTER,
                     HOME_RIGHT_PIXEL_LEFT,
                     HOME_RIGHT_PIXEL_RIGHT,
                     HOME_PIXEL_TOP,
@@ -1883,6 +1885,101 @@ final class VrShellRenderer implements CardboardView.Renderer {
             TEXTURE_WIDTH,
             0,
             TEXTURE_HEIGHT
+        );
+    }
+
+    private UiRayHit hitTiltedPanel(
+        float[] origin,
+        float[] direction,
+        float worldLeft,
+        float worldRight,
+        float worldBottom,
+        float worldTop,
+        float leftZ,
+        float rightZ,
+        int pixelLeft,
+        int pixelRight,
+        int pixelTop,
+        int pixelBottom
+    ) {
+        float width =
+            worldRight - worldLeft;
+        if (Math.abs(width) < 0.0001f) {
+            return UiRayHit.miss();
+        }
+
+        float zSlope =
+            (rightZ - leftZ)
+                / width;
+        float denominator =
+            direction[2]
+                - zSlope
+                    * direction[0];
+        if (Math.abs(denominator)
+            < 0.00001f) {
+            return UiRayHit.miss();
+        }
+
+        float numerator =
+            leftZ
+                + zSlope
+                    * (
+                        origin[0]
+                            - worldLeft
+                    )
+                - origin[2];
+        float hitDistance =
+            numerator
+                / denominator;
+        if (!Float.isFinite(hitDistance)
+            || hitDistance <= 0.0f) {
+            return UiRayHit.miss();
+        }
+
+        float hitX =
+            origin[0]
+                + direction[0]
+                    * hitDistance;
+        float hitY =
+            origin[1]
+                + direction[1]
+                    * hitDistance;
+
+        if (hitX < worldLeft
+            || hitX > worldRight
+            || hitY < worldBottom
+            || hitY > worldTop) {
+            return UiRayHit.miss();
+        }
+
+        float px =
+            pixelLeft
+                + (
+                    (hitX - worldLeft)
+                        / width
+                ) * (
+                    pixelRight
+                        - pixelLeft
+                );
+        float py =
+            pixelTop
+                + (
+                    (worldTop - hitY)
+                        / (
+                            worldTop
+                                - worldBottom
+                        )
+                ) * (
+                    pixelBottom
+                        - pixelTop
+                );
+
+        return new UiRayHit(
+            buttonAtPixel(
+                px,
+                py
+            ),
+            hitDistance
         );
     }
 
@@ -4433,10 +4530,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void updateHudVertices() {
-        float left = 0.30f;
-        float right = 0.96f;
-        float top = hudDroppedDown ? 0.60f : 0.96f;
-        float bottom = hudDroppedDown ? 0.32f : 0.70f;
+        float left =
+            0.30f
+                * SHELL_VIEW_CONTRACTION;
+        float right =
+            0.96f
+                * SHELL_VIEW_CONTRACTION;
+        float top =
+            (
+                hudDroppedDown
+                    ? 0.60f
+                    : 0.96f
+            ) * SHELL_VIEW_CONTRACTION;
+        float bottom =
+            (
+                hudDroppedDown
+                    ? 0.32f
+                    : 0.70f
+            ) * SHELL_VIEW_CONTRACTION;
 
         hudVertices[0] = left;
         hudVertices[1] = bottom;
@@ -4707,11 +4818,29 @@ final class VrShellRenderer implements CardboardView.Renderer {
         float top,
         float z
     ) {
+        return panelVertices(
+            left,
+            right,
+            bottom,
+            top,
+            z,
+            z
+        );
+    }
+
+    private static float[] panelVertices(
+        float left,
+        float right,
+        float bottom,
+        float top,
+        float leftZ,
+        float rightZ
+    ) {
         return new float[] {
-            left, bottom, z,
-            right, bottom, z,
-            left, top, z,
-            right, top, z
+            left, bottom, leftZ,
+            right, bottom, rightZ,
+            left, top, leftZ,
+            right, top, rightZ
         };
     }
 
