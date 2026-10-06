@@ -190,7 +190,8 @@ final class UpdatePackageVerifier {
             singleCurrentSignerSha256(
                 candidate
             );
-        if (!pinnedSigner.equals(
+        if (!candidateSignerAcceptable(
+                pinnedSigner,
                 candidateSigner
             )) {
             return Result.fail(
@@ -198,7 +199,30 @@ final class UpdatePackageVerifier {
             );
         }
 
+        if (candidateSigner == null) {
+            ReverieLog.dev(
+                "UPDATE",
+                "Android did not expose the downloaded APK signer through "
+                    + "PackageManager archive parsing; digest/package/version "
+                    + "checks passed, so final signer continuity is delegated "
+                    + "to Android Package Installer."
+            );
+        }
+
         return Result.ok();
+    }
+
+    static boolean candidateSignerAcceptable(
+        String pinnedSigner,
+        String candidateSigner
+    ) {
+        if (pinnedSigner == null
+            || pinnedSigner.trim().isEmpty()) {
+            return false;
+        }
+
+        return candidateSigner == null
+            || pinnedSigner.equals(candidateSigner);
     }
 
     static String normalizeSha256Digest(
@@ -247,8 +271,10 @@ final class UpdatePackageVerifier {
         int flags =
             Build.VERSION.SDK_INT
                 >= Build.VERSION_CODES.P
-                ? PackageManager
-                    .GET_SIGNING_CERTIFICATES
+                ? (
+                    PackageManager.GET_SIGNING_CERTIFICATES
+                        | PackageManager.GET_SIGNATURES
+                )
                 : PackageManager.GET_SIGNATURES;
 
         PackageInfo packageInfo =
@@ -283,8 +309,10 @@ final class UpdatePackageVerifier {
         int flags =
             Build.VERSION.SDK_INT
                 >= Build.VERSION_CODES.P
-                ? PackageManager
-                    .GET_SIGNING_CERTIFICATES
+                ? (
+                    PackageManager.GET_SIGNING_CERTIFICATES
+                        | PackageManager.GET_SIGNATURES
+                )
                 : PackageManager.GET_SIGNATURES;
 
         return packageManager.getPackageInfo(
@@ -309,20 +337,19 @@ final class UpdatePackageVerifier {
         singleCurrentSignerSha256(
             PackageInfo packageInfo
         ) {
-        Signature[] signatures;
+        Signature[] signatures = null;
 
         if (Build.VERSION.SDK_INT
-            >= Build.VERSION_CODES.P) {
-            if (packageInfo.signingInfo
-                == null) {
-                return null;
-            }
-
+            >= Build.VERSION_CODES.P
+            && packageInfo.signingInfo != null) {
             signatures =
                 packageInfo
                     .signingInfo
                     .getApkContentsSigners();
-        } else {
+        }
+
+        if (signatures == null
+            || signatures.length == 0) {
             signatures =
                 packageInfo.signatures;
         }
