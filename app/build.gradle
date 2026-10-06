@@ -33,6 +33,18 @@ def phoneTestRunAttempt =
     (project.findProperty("phoneTestRunAttempt") ?: "0")
         .toString()
         .toInteger()
+def phoneTestVersionCode =
+    phoneTestRunNumber > 0
+        ? (
+            phoneTestRunNumber * 1000
+                + Math.max(phoneTestRunAttempt, 1)
+        )
+        : 1
+def phoneTestSignerSha256 =
+    (project.findProperty("phoneTestSignerSha256") ?: "")
+        .toString()
+        .replaceAll("[^A-Fa-f0-9]", "")
+        .toLowerCase()
 def sourceRevision =
     (project.findProperty("sourceRevision") ?: "local")
         .toString()
@@ -61,7 +73,9 @@ def phoneTestSigningConfigured =
         && !phoneTestKeyPassword.isEmpty()
         && file(phoneTestKeystorePath).isFile()
 def updateChannelEnabled =
-    phoneTestSigningConfigured && phoneTestRunNumber > 0
+    phoneTestSigningConfigured
+        && phoneTestRunNumber > 0
+        && phoneTestSignerSha256.length() == 64
 
 android {
     namespace = "io.github.mrcalzon02.reverievr"
@@ -71,9 +85,7 @@ android {
         applicationId = "io.github.mrcalzon02.reverievr"
         minSdk = 26
         targetSdk = 36
-        versionCode = phoneTestRunNumber > 0
-            ? phoneTestRunNumber
-            : 1
+        versionCode = phoneTestVersionCode
         versionName = "0.1.0-dev"
         buildConfigField(
             "boolean",
@@ -122,6 +134,11 @@ android {
             "UPDATE_CHANNEL_ENABLED",
             updateChannelEnabled.toString()
         )
+        buildConfigField(
+            "String",
+            "DISTRIBUTION_SIGNER_SHA256",
+            "\"" + phoneTestSignerSha256 + "\""
+        )
     }
 
     signingConfigs {
@@ -137,10 +154,25 @@ android {
 
     buildTypes {
         debug {
-            if (phoneTestSigningConfigured) {
-                signingConfig = signingConfigs.phoneTest
-            }
+            debuggable = true
         }
+
+        phoneTest {
+            debuggable = false
+            minifyEnabled = false
+            shrinkResources = false
+            matchingFallbacks = ["release", "debug"]
+
+            if (!phoneTestSigningConfigured) {
+                throw new GradleException(
+                    "phoneTest builds require persistent signing. "
+                        + "Provision the phone-test signing properties first."
+                )
+            }
+
+            signingConfig = signingConfigs.phoneTest
+        }
+
         release {
             minifyEnabled = true
             shrinkResources = true
