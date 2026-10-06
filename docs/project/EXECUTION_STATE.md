@@ -191,13 +191,18 @@ Implemented:
 - landscape immersive non-resizable `VrActivity`;
 - explicit GLES2, accelerometer and gyroscope hardware requirements;
 - Cardboard stereoscopic/head-tracked rendering;
-- deliberately simple OpenGL ES world-space menu panel;
+- fixed seated-origin home shell with three real lightweight GLES environment presets: White Cube Room + gray dais, Pastoral Forest Glade, and Windswept Dune Beach;
+- persistent home-environment preference with live in-headset switching;
+- world-space menu panel reorganized as the VR launcher hierarchy: Media, DOS Games, Native Apps, Environment, Setup / Comfort, and Exit to Phone;
+- Media child interface for floating-screen playback, mono-360 projection switching, recenter, and Android document-picker handoff;
+- DOS child library with module paging, direct module launch, Android import-picker handoff, and return-to-library behavior after a DOS session;
+- flat media and DOS framebuffers composite onto the existing floating-screen geometry while the selected home environment remains visible around them; mono 360° media still owns the full sphere;
 - head-gaze target selection;
 - Daydream touchpad-click activation;
-- Menu/back navigation;
+- Menu/back navigation through the launcher hierarchy;
 - Home controller + software-yaw recenter request;
 - Exit to Stage A;
-- shell entry to the real local-video path rather than a dead Media placeholder;
+- no dead Media placeholder;
 - no fake-success module entries;
 - persistent VR-startup phase marker armed at Enter VR and cleared only after the renderer completes its first frame;
 - recoverable Java/JNI/GL startup failures return to Stage A with explicit failure feedback rather than silently dropping the user;
@@ -205,11 +210,11 @@ Implemented:
 - renderer surface/new-frame/draw-eye callbacks contain recoverable RuntimeException/LinkageError failures and report the failing phase;
 - phone-test CI requires Cardboard JNI `libcardboard_sdk_jni.so` in both packaged target ABIs.
 
-Reference-device defect: on the Galaxy S9, the previously installed build left/minimized ReverieVR immediately after Enter VR and showed no VR frame or failure explanation. Issue #3 tracks this blocker.
+Reference-device startup defect RV-0092 is resolved: the physical Galaxy S9 now reaches the rendered VR shell instead of exiting before frame one. Issue #3 is closed after visible handset evidence of the center interaction marker, close control, phone/controller battery HUD, and settings control.
 
-Current validation: phone-test #23 is the first build validating the startup containment and Cardboard-JNI package assertions.
+Current validation: phone-test #28 completed successfully against `5b4ee8e2fe954cc56c8fb2098ce0f75c3e44ed42`, passing JVM tests, Android/native build, Cardboard JNI package verification, APK verification/signing, artifact preservation, and prerelease publication as `phone-test-28-1`. This build contains the new three-environment seated home shell and Media/DOS launcher hierarchy.
 
-Remaining gate: install the corrected handset package and demonstrate a completed first stereo frame on the physical Galaxy S9. A mere Activity transition is not acceptance.
+Remaining gate: physical Galaxy S9 validation of the new home backgrounds, environment switching, floating-screen media/DOS composition, and in-headset launcher interactions.
 
 ### RV-0108 / RV-0206 — first-run setup and user optical calibration
 
