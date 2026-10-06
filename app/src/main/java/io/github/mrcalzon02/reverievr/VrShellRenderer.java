@@ -1,5 +1,6 @@
 package io.github.mrcalzon02.reverievr;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -80,9 +81,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int HUD_TEXTURE_WIDTH = 512;
     private static final int HUD_TEXTURE_HEIGHT = 128;
     private static final float HUD_LOOK_UP_THRESHOLD = 0.72f;
+    private static final float SHELL_VIEW_CONTRACTION = 0.90f;
 
-    private static final float PANEL_HALF_WIDTH = 1.70f;
-    private static final float PANEL_HALF_HEIGHT = 1.20f;
+    private static final float PANEL_HALF_WIDTH =
+        1.70f * SHELL_VIEW_CONTRACTION;
+    private static final float PANEL_HALF_HEIGHT =
+        1.20f * SHELL_VIEW_CONTRACTION;
     private static final float PANEL_Z = -3.0f;
 
     private static final float Z_NEAR = 0.10f;
@@ -110,17 +114,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int HOME_PIXEL_TOP = 60;
     private static final int HOME_PIXEL_BOTTOM = 710;
 
-    private static final float HOME_LEFT_WORLD_LEFT = -2.35f;
-    private static final float HOME_LEFT_WORLD_RIGHT = -0.95f;
-    private static final float HOME_CENTER_WORLD_LEFT = -1.15f;
-    private static final float HOME_CENTER_WORLD_RIGHT = 1.15f;
-    private static final float HOME_RIGHT_WORLD_LEFT = 0.95f;
-    private static final float HOME_RIGHT_WORLD_RIGHT = 2.35f;
-    private static final float HOME_WORLD_BOTTOM = -1.20f;
-    private static final float HOME_WORLD_TOP = 1.20f;
-    private static final float HOME_LEFT_WORLD_Z = -3.25f;
+    private static final float HOME_LEFT_WORLD_LEFT = -2.43f;
+    private static final float HOME_LEFT_WORLD_RIGHT = -1.17f;
+    private static final float HOME_CENTER_WORLD_LEFT = -1.035f;
+    private static final float HOME_CENTER_WORLD_RIGHT = 1.035f;
+    private static final float HOME_RIGHT_WORLD_LEFT = 1.17f;
+    private static final float HOME_RIGHT_WORLD_RIGHT = 2.43f;
+    private static final float HOME_WORLD_BOTTOM = -1.08f;
+    private static final float HOME_WORLD_TOP = 1.08f;
+    private static final float HOME_LEFT_WORLD_Z_OUTER = -2.92f;
+    private static final float HOME_LEFT_WORLD_Z_INNER = -3.18f;
     private static final float HOME_CENTER_WORLD_Z = -3.0f;
-    private static final float HOME_RIGHT_WORLD_Z = -3.25f;
+    private static final float HOME_RIGHT_WORLD_Z_INNER = -3.18f;
+    private static final float HOME_RIGHT_WORLD_Z_OUTER = -2.92f;
 
     private static final int[][] HOME_BUTTONS = new int[][] {
         {42, 180, 230, 238},
@@ -248,6 +254,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] headEuler = new float[3];
     private final float[] headForward = new float[3];
     private final float[] adjustedHeadForward = new float[3];
+    private final float[] headMotionWorld = new float[3];
+    private final float[] adjustedHeadMotionWorld = new float[3];
+    private final BoundedInertialTranslation
+        headInertialTranslation =
+            new BoundedInertialTranslation();
     private final float[] controllerForward = new float[3];
     private final float[] adjustedControllerForward = new float[3];
     private final float[] activePointerOrigin = new float[3];
@@ -322,6 +333,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile float controllerPointerDistance = 6.0f;
     private volatile boolean controllerPointerHit;
     private volatile String activePointerSource = "Gaze";
+    private volatile float headLinearAccelerationX;
+    private volatile float headLinearAccelerationY;
+    private volatile float headLinearAccelerationZ;
+    private volatile long headLinearAccelerationAtNanos;
+    private long headInertialLastFrameNanos;
     private float yawOffsetRadians;
     private float userIpdMeters;
     private float uiScale;
@@ -332,6 +348,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private float previousBindingPitch;
 
     VrShellRenderer(
+        Context context,
         ReveriePreferences preferences,
         float viewerInterLensMeters,
         DosSession dosSession,
@@ -351,7 +368,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new HomeEnvironmentRenderer();
         pointerRenderer = new VrPointerRenderer();
         controllerModelRenderer =
-            new VrControllerModelRenderer();
+            new VrControllerModelRenderer(
+                context
+            );
         dosRenderer = new DosSurfaceRenderer(dosSession);
 
         userIpdMeters = preferences.getUserIpdMeters(this.viewerInterLensMeters);
@@ -389,7 +408,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     HOME_LEFT_WORLD_RIGHT,
                     HOME_WORLD_BOTTOM,
                     HOME_WORLD_TOP,
-                    HOME_LEFT_WORLD_Z
+                    HOME_LEFT_WORLD_Z_OUTER,
+                    HOME_LEFT_WORLD_Z_INNER
                 )
             );
         homeLeftUvBuffer =
@@ -427,7 +447,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     HOME_RIGHT_WORLD_RIGHT,
                     HOME_WORLD_BOTTOM,
                     HOME_WORLD_TOP,
-                    HOME_RIGHT_WORLD_Z
+                    HOME_RIGHT_WORLD_Z_INNER,
+                    HOME_RIGHT_WORLD_Z_OUTER
                 )
             );
         homeRightUvBuffer =
@@ -475,6 +496,30 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     void requestRecenter() {
         recenterRequested.set(true);
+    }
+
+    void setHeadLinearAcceleration(
+        float x,
+        float y,
+        float z,
+        long timestampNanos
+    ) {
+        if (!Float.isFinite(x)
+            || !Float.isFinite(y)
+            || !Float.isFinite(z)
+            || Math.abs(x) > 50.0f
+            || Math.abs(y) > 50.0f
+            || Math.abs(z) > 50.0f) {
+            return;
+        }
+
+        headLinearAccelerationX = x;
+        headLinearAccelerationY = y;
+        headLinearAccelerationZ = z;
+        headLinearAccelerationAtNanos =
+            timestampNanos > 0L
+                ? timestampNanos
+                : System.nanoTime();
     }
 
     void setPhoneBattery(int percentage) {
