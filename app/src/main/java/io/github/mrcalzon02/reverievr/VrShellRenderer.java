@@ -644,10 +644,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
         VrInputAction action
     ) {
         if (action == null
-            || mode == MODE_VIDEO
-            || mode == MODE_DOS
-            || mode == MODE_NATIVE
             || !gamepadPointerAvailable) {
+            return false;
+        }
+
+        if (!orientationMenuVisible
+            && (
+                mode == MODE_VIDEO
+                    || mode == MODE_DOS
+                    || mode == MODE_NATIVE
+            )) {
             return false;
         }
 
@@ -698,7 +704,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     boolean consumeBackDuringInputTraining() {
-        return mode == MODE_SETUP && setupStep == 1;
+        return !orientationMenuVisible
+            && mode == MODE_SETUP
+            && setupStep == 1;
     }
 
     void requestVideoExit() {
@@ -912,13 +920,25 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     || mode == MODE_DOS_BINDINGS
             ) {
                 dosRenderer.updateFrame();
-            } else if (
-                mode == MODE_NATIVE
-                    && nativeSurfaceReady
-                    && nativeModuleRuntime != null
-                    && nativeModuleRuntime.isRunning()
-            ) {
-                nativeModuleRuntime.update();
+            } else if (mode == MODE_NATIVE) {
+                if (nativeModuleRuntime == null
+                    || !nativeModuleRuntime.isRunning()) {
+                    nativeSurfaceReady = false;
+                    closeOrientationMenu();
+                    mode = MODE_HOME;
+                } else {
+                    if (!nativeSurfaceReady) {
+                        nativeSurfaceReady =
+                            nativeModuleRuntime.onSurfaceCreated();
+                    }
+                    if (nativeSurfaceReady) {
+                        nativeModuleRuntime.update();
+                    } else {
+                        host.onNativeModuleStopRequested();
+                        closeOrientationMenu();
+                        mode = MODE_HOME;
+                    }
+                }
             }
 
             updateShellInteraction(
