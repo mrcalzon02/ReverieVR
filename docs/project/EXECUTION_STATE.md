@@ -549,7 +549,10 @@ Verified evidence:
   `ReverieVR-phone-test-60-416e866.apk` with SHA-256
   `7a8aa42b47ff684a1393a244582198c9ed0ce3cd7578aa7da7291d72c3ed22ee`;
 - no Galaxy S9 runtime-load, controller-usability, save durability, comfort or
-  thermal acceptance is claimed by static/package evidence.
+  thermal acceptance is claimed by static/package evidence;
+- the next physical-test build adds a Development-only ray-contact cursor at
+  the selected AABB hit point and normalizes the module-side pointer direction
+  defensively without changing ABI v1.
 
 Remaining gates before normal user-visible launch:
 

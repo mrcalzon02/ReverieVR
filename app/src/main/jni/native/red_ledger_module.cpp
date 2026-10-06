@@ -1379,6 +1379,40 @@ void DrawRoom(
         );
     }
 
+    if (state->pointer_active
+        && state->hovered_target
+            != WorkTarget::None
+        && state->hovered_distance
+            > 0.0f) {
+        const float contact_x =
+            state->pointer_origin[0]
+            + state->pointer_direction[0]
+                * state->hovered_distance;
+        const float contact_y =
+            state->pointer_origin[1]
+            + state->pointer_direction[1]
+                * state->hovered_distance;
+        const float contact_z =
+            state->pointer_origin[2]
+            + state->pointer_direction[2]
+                * state->hovered_distance;
+
+        DrawCube(
+            state,
+            view_projection,
+            1.0f,
+            contact_x,
+            contact_y,
+            contact_z,
+            0.055f,
+            0.055f,
+            0.055f,
+            0.95f,
+            0.90f,
+            0.28f
+        );
+    }
+
     float marker_r = 0.28f;
     float marker_g = 0.36f;
     float marker_b = 0.30f;
@@ -1575,8 +1609,37 @@ void Update(
         );
     state->elapsed_seconds += dt;
 
+    ReverieNativeInputV1 effective_input =
+        *input;
+
+    if (effective_input.pointer_kind
+            != REVERIE_NATIVE_POINTER_NONE) {
+        const float direction_length =
+            std::sqrt(
+                effective_input.pointer_direction[0]
+                    * effective_input.pointer_direction[0]
+                + effective_input.pointer_direction[1]
+                    * effective_input.pointer_direction[1]
+                + effective_input.pointer_direction[2]
+                    * effective_input.pointer_direction[2]
+            );
+
+        if (direction_length
+            > 0.000001f) {
+            for (int axis = 0;
+                 axis < 3;
+                 ++axis) {
+                effective_input.pointer_direction[axis] /=
+                    direction_length;
+            }
+        } else {
+            effective_input.pointer_kind =
+                REVERIE_NATIVE_POINTER_NONE;
+        }
+    }
+
     state->pointer_active =
-        input->pointer_kind
+        effective_input.pointer_kind
             != REVERIE_NATIVE_POINTER_NONE;
 
     if (state->pointer_active) {
@@ -1584,16 +1647,16 @@ void Update(
              axis < 3;
              ++axis) {
             state->pointer_origin[axis] =
-                input->pointer_origin[axis];
+                effective_input.pointer_origin[axis];
             state->pointer_direction[axis] =
-                input->pointer_direction[axis];
+                effective_input.pointer_direction[axis];
         }
     }
 
     state->hovered_target =
         FindWorkTarget(
             state,
-            input,
+            &effective_input,
             &state->hovered_distance
         );
 

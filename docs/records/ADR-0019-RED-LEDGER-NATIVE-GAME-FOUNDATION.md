@@ -84,7 +84,10 @@ The host now recognizes Red Ledger as trusted packaged code for Development-only
 device testing. Standard-mode enumeration and runtime launch remain blocked.
 Having a compiled Development entry is not evidence that its reach volumes,
 controller alignment, held-cup placement or comfort are correct on the physical
-headset.
+headset. The Development build therefore renders a small contact cursor exactly
+at the selected ray/AABB hit point. The module also normalizes the supplied
+pointer direction defensively before hit testing; ABI v1 and shell ownership of
+controller calibration remain unchanged.
 
 ## Verification boundary
 
