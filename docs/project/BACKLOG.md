@@ -2,6 +2,8 @@
 
 **Role:** intent and prioritization. This file does not prove execution.
 
+**Execution decomposition:** `docs/project/INCREMENTAL_DEVELOPMENT_PLAN.md` converts these stable backlog intents into ordered, handset-testable slices, dependencies, release cadence, and evidence gates. Keep detailed work-package decomposition there rather than inflating each RV item here.
+
 ## P0 — Foundation
 
 - RV-0001 — Adopt AI Project Manager-compatible project governance and repository execution rules.
