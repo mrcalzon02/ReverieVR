@@ -499,7 +499,78 @@ final class VrShellRenderer implements CardboardView.Renderer {
             snapshot.receivedAtNanos > 0L
                 ? snapshot.receivedAtNanos
                 : System.nanoTime();
+        controllerTouchpadPressed =
+            snapshot.touchpadPressed;
+        controllerHomePressed =
+            snapshot.homePressed;
+        controllerAppPressed =
+            snapshot.menuPressed;
+        controllerVolumeUpPressed =
+            snapshot.volumeUpPressed;
+        controllerVolumeDownPressed =
+            snapshot.volumeDownPressed;
         controllerPoseValid = true;
+    }
+
+    void setGamepadPointerAvailable(
+        boolean available
+    ) {
+        gamepadPointerAvailable = available;
+        if (!available) {
+            virtualPointerAxisX = 0.0f;
+            virtualPointerAxisY = 0.0f;
+            virtualPointerLastFrameNanos = 0L;
+        }
+    }
+
+    void setVirtualPointerAxes(
+        float horizontal,
+        float vertical
+    ) {
+        virtualPointerAxisX =
+            clamp(horizontal, -1.0f, 1.0f);
+        virtualPointerAxisY =
+            clamp(vertical, -1.0f, 1.0f);
+    }
+
+    boolean requestPointerNavigation(
+        VrInputAction action
+    ) {
+        if (action == null
+            || mode == MODE_VIDEO
+            || mode == MODE_DOS
+            || mode == MODE_NATIVE
+            || !gamepadPointerAvailable) {
+            return false;
+        }
+
+        VrPointerMode pointerMode =
+            preferences.getVrPointerMode();
+        if (pointerMode == VrPointerMode.GAZE) {
+            return false;
+        }
+
+        float step =
+            (float) Math.toRadians(4.5);
+        switch (action) {
+            case NAV_LEFT:
+                virtualPointerYaw -= step;
+                break;
+            case NAV_RIGHT:
+                virtualPointerYaw += step;
+                break;
+            case NAV_UP:
+                virtualPointerPitch += step;
+                break;
+            case NAV_DOWN:
+                virtualPointerPitch -= step;
+                break;
+            default:
+                return false;
+        }
+
+        clampVirtualPointerAngles();
+        return true;
     }
 
     void setVideoAspectRatio(float aspectRatio) {
