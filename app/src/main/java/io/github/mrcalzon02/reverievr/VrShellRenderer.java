@@ -52,6 +52,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onDosOverlayPauseRequested();
         void onDosOverlayResumeRequested();
         void onVolumeAdjustRequested(int direction);
+        void onBrightnessAdjustRequested(int direction);
         String getActiveBindingProfileName();
         String getActiveBindingTuningSummary();
         void onDosBindingProfileCycleRequested(
@@ -134,14 +135,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private static final int[][] ORIENTATION_MENU_BUTTONS =
         new int[][] {
-            {220, 252, 500, 308},
-            {524, 252, 804, 308},
-            {220, 328, 500, 384},
-            {524, 328, 804, 384},
-            {220, 404, 500, 460},
-            {524, 404, 804, 460},
-            {220, 480, 500, 536},
-            {524, 480, 804, 536}
+            {220, 248, 500, 296},
+            {524, 248, 804, 296},
+            {220, 306, 500, 354},
+            {524, 306, 804, 354},
+            {220, 364, 500, 412},
+            {524, 364, 804, 412},
+            {220, 422, 500, 470},
+            {524, 422, 804, 470},
+            {220, 480, 500, 528},
+            {524, 480, 804, 528}
         };
 
     private static final int[][] HOME_BUTTONS = new int[][] {
@@ -2701,20 +2704,28 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 4:
+                host.onBrightnessAdjustRequested(-1);
+                break;
+
+            case 5:
+                host.onBrightnessAdjustRequested(1);
+                break;
+
+            case 6:
                 closeOrientationMenu();
                 backRequested.set(true);
                 break;
 
-            case 5:
+            case 7:
                 returnToHomeFromQuickMenu();
                 break;
 
-            case 6:
+            case 8:
                 returnToHomeFromQuickMenu();
                 host.onExitToPhoneRequested();
                 break;
 
-            case 7:
+            case 9:
                 closeOrientationMenu();
                 break;
 
@@ -3450,7 +3461,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             20.0f * uiScale
         );
         canvas.drawText(
-            "Forward direction, volume and recovery stay shell-owned.",
+            "Forward, volume, brightness and recovery stay shell-owned.",
             250,
             216,
             paint
@@ -3477,6 +3488,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerLabel,
                 "VOL -",
                 "VOL +",
+                "BRIGHT -",
+                "BRIGHT +",
                 "BACK",
                 "HOME",
                 "EXIT PHONE",

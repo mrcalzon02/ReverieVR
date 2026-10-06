@@ -245,9 +245,10 @@ Implemented first slice:
 - real actions are exposed for headset-forward calibration, tracked-controller-forward calibration when a fresh pose exists, volume down/up, contextual Back, Home, Exit to Phone, and Close;
 - Home and Exit stop active media/DOS/native content through the shell-owned lifecycle before mode changes;
 - the modal also reports phone/controller battery, elapsed VR session time, Android thermal status, battery-sensor temperature, and rolling frame-time p95, refreshed once per second while open;
+- brightness down/up adjusts the VR Activity window in bounded 10% steps without requiring global Android brightness-write permission;
 - unavailable controller-forward calibration is visibly disabled rather than pretending to work.
 
-Remaining RV-0216 scope: direct brightness and Settings access plus Galaxy S9 comfort/readability validation. The current slice does not complete RV-0216.
+Remaining RV-0216 scope: direct Settings access plus Galaxy S9 comfort/readability validation. The current slice does not complete RV-0216.
 
 ### RV-0108 / RV-0206 — first-run setup and user optical calibration
 

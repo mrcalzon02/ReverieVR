@@ -18,6 +18,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -1145,6 +1146,55 @@ public final class VrActivity extends Activity
         } else if (direction > 0) {
             adjustMediaVolume(AudioManager.ADJUST_RAISE);
         }
+    }
+
+    @Override
+    public void onBrightnessAdjustRequested(int direction) {
+        if (direction == 0) {
+            return;
+        }
+
+        runOnUiThread(() -> {
+            WindowManager.LayoutParams attributes =
+                getWindow().getAttributes();
+            float current = attributes.screenBrightness;
+            if (current < 0.0f) {
+                int systemBrightness =
+                    Settings.System.getInt(
+                        getContentResolver(),
+                        Settings.System.SCREEN_BRIGHTNESS,
+                        128
+                    );
+                current =
+                    Math.max(
+                        0.0f,
+                        Math.min(
+                            1.0f,
+                            systemBrightness / 255.0f
+                        )
+                    );
+            }
+
+            float delta =
+                direction < 0
+                    ? -0.10f
+                    : 0.10f;
+            float next =
+                Math.max(
+                    0.05f,
+                    Math.min(
+                        1.0f,
+                        current + delta
+                    )
+                );
+            attributes.screenBrightness = next;
+            getWindow().setAttributes(attributes);
+            ReverieLog.milestone(
+                "VR_BRIGHTNESS",
+                "windowBrightnessPercent="
+                    + Math.round(next * 100.0f)
+            );
+        });
     }
 
     @Override
