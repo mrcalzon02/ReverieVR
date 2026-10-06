@@ -769,11 +769,52 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        rotateYaw(headForward, -yawOffsetRadians, adjustedHeadForward);
-        int newHover = calculateHoveredButton(adjustedHeadForward);
+        rotateYaw(
+            headForward,
+            -yawOffsetRadians,
+            adjustedHeadForward
+        );
+
+        boolean usingControllerPointer =
+            updateActivePointer(frameNanos);
+        UiRayHit hit =
+            calculateUiRayHit(
+                activePointerOrigin,
+                activePointerDirection
+            );
+        int newHover = hit.buttonIndex;
+
+        controllerPointerActive =
+            usingControllerPointer;
+        controllerPointerDistance =
+            hit.distance > 0.0f
+                ? hit.distance
+                : 6.0f;
+        controllerPointerHit =
+            newHover >= 0;
+
+        if (usingControllerPointer) {
+            pointerRenderer.setPointer(
+                true,
+                activePointerOrigin[0],
+                activePointerOrigin[1],
+                activePointerOrigin[2],
+                activePointerDirection[0],
+                activePointerDirection[1],
+                activePointerDirection[2],
+                controllerPointerDistance,
+                controllerPointerHit
+            );
+        } else {
+            pointerRenderer.hide();
+        }
+
         if (newHover != hoveredButton) {
             hoveredButton = newHover;
             textureDirty = true;
+            if (newHover >= 0) {
+                host.onUiFocusChanged();
+            }
         }
 
         if (backRequested.getAndSet(false)) {
