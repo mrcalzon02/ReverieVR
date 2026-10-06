@@ -57,4 +57,41 @@ public final class UpdatePackageVerifierTest {
                 )
         );
     }
+    @Test
+    public void candidateSignerMayDeferToAndroidInstallerWhenArchiveParserOmitsIt() {
+        String pinned =
+            "0123456789abcdef"
+                + "0123456789abcdef"
+                + "0123456789abcdef"
+                + "0123456789abcdef";
+
+        assertEquals(
+            true,
+            UpdatePackageVerifier
+                .candidateSignerAcceptable(
+                    pinned,
+                    null
+                )
+        );
+        assertEquals(
+            true,
+            UpdatePackageVerifier
+                .candidateSignerAcceptable(
+                    pinned,
+                    pinned
+                )
+        );
+        assertEquals(
+            false,
+            UpdatePackageVerifier
+                .candidateSignerAcceptable(
+                    pinned,
+                    "ffffffffffffffff"
+                        + "ffffffffffffffff"
+                        + "ffffffffffffffff"
+                        + "ffffffffffffffff"
+                )
+        );
+    }
+
 }
