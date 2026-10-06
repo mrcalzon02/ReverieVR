@@ -1053,6 +1053,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (!controllerPointerActive) {
             return;
         }
+
+        controllerModelRenderer.drawEye(
+            eye,
+            eyeCorrection
+        );
         pointerRenderer.drawEye(
             eye,
             eyeCorrection
