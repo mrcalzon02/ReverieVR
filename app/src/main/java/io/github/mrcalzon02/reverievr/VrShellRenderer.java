@@ -1298,7 +1298,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.GL_ONE_MINUS_SRC_ALPHA
         );
 
-        if (mode == MODE_HOME) {
+        if (mode == MODE_HOME
+            && !orientationMenuVisible) {
             drawTexturedPanel(
                 homeLeftVertexBuffer,
                 homeLeftUvBuffer
@@ -3104,7 +3105,53 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.reset();
         paint.setAntiAlias(true);
 
-        if (mode == MODE_HOME) {
+        if (orientationMenuVisible) {
+            canvas.drawColor(
+                Color.TRANSPARENT,
+                PorterDuff.Mode.CLEAR
+            );
+            paint.setColor(
+                Color.argb(
+                    238,
+                    14,
+                    19,
+                    27
+                )
+            );
+            canvas.drawRoundRect(
+                190,
+                116,
+                834,
+                650,
+                30,
+                30,
+                paint
+            );
+            paint.setStyle(
+                Paint.Style.STROKE
+            );
+            paint.setStrokeWidth(2.0f);
+            paint.setColor(
+                Color.argb(
+                    180,
+                    56,
+                    214,
+                    200
+                )
+            );
+            canvas.drawRoundRect(
+                192,
+                118,
+                832,
+                648,
+                28,
+                28,
+                paint
+            );
+            paint.setStyle(
+                Paint.Style.FILL
+            );
+        } else if (mode == MODE_HOME) {
             canvas.drawColor(
                 Color.TRANSPARENT,
                 PorterDuff.Mode.CLEAR
@@ -3153,7 +3200,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint.setColor(Color.rgb(180, 190, 202));
         }
 
-        if (mode == MODE_HOME) {
+        if (orientationMenuVisible) {
+            drawOrientationMenu(
+                canvas,
+                paint
+            );
+        } else if (mode == MODE_HOME) {
             drawHome(canvas, paint);
         } else if (mode == MODE_CONTROLLER) {
             drawControllerPanel(canvas, paint);
@@ -3206,6 +3258,89 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
         uiCanvas = new Canvas(uiBitmap);
         uiPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    }
+
+    private void drawOrientationMenu(
+        Canvas canvas,
+        Paint paint
+    ) {
+        paint.setFakeBoldText(true);
+        paint.setColor(
+            Color.rgb(
+                56,
+                214,
+                200
+            )
+        );
+        paint.setTextSize(
+            38.0f * uiScale
+        );
+        canvas.drawText(
+            "ORIENTATION",
+            250,
+            178,
+            paint
+        );
+        paint.setFakeBoldText(false);
+
+        paint.setColor(
+            Color.rgb(
+                210,
+                220,
+                230
+            )
+        );
+        paint.setTextSize(
+            20.0f * uiScale
+        );
+        canvas.drawText(
+            "Choose what physical direction should become VR forward.",
+            250,
+            216,
+            paint
+        );
+        canvas.drawText(
+            "For a desk or keyboard, look straight ahead and center on headset.",
+            250,
+            242,
+            paint
+        );
+
+        String controllerLabel =
+            hasFreshControllerPose(
+                System.nanoTime()
+            )
+                ? "CENTER ON CONTROLLER"
+                : "CENTER ON CONTROLLER  •  unavailable";
+
+        drawButtons(
+            canvas,
+            paint,
+            new String[] {
+                "CENTER ON HEADSET",
+                controllerLabel,
+                "BACK ONE LEVEL",
+                "CLOSE"
+            },
+            ORIENTATION_MENU_BUTTONS
+        );
+
+        paint.setColor(
+            Color.rgb(
+                144,
+                158,
+                174
+            )
+        );
+        paint.setTextSize(
+            17.0f * uiScale
+        );
+        canvas.drawText(
+            "Menu/Start toggles this panel at any time.",
+            250,
+            616,
+            paint
+        );
     }
 
     private void drawHome(
