@@ -499,10 +499,6 @@ public final class VrActivity extends Activity
             renderer.setControllerPose(snapshot);
         }
 
-        if (renderer != null) {
-            renderer.setControllerPose(snapshot);
-        }
-
         inputRouter.onControllerSnapshot(
             snapshot,
             controllerManager.getActiveProviderDisplayName()
@@ -864,11 +860,6 @@ public final class VrActivity extends Activity
             );
             finish();
         });
-    }
-
-    @Override
-    public void onUiFocusChanged() {
-        runOnUiThread(() -> uiFeedback.focus());
     }
 
     @Override
