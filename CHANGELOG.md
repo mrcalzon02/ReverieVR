@@ -6,6 +6,15 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### VR presence and headset comfort
+
+- Added bounded inertial headset translation from the handset linear-acceleration sensor so small real head/body movements produce controlled parallax instead of leaving the VR viewpoint rotationally pinned; the offset is damped, spring-returned, bounded, and reset on recenter rather than pretending to provide drift-free 6DoF tracking.
+- Contracted the shell presentation envelope by roughly 10%, including the fixed power HUD, to bring edge content farther inside the Daydream View's comfortable visible area.
+- Repositioned the three Home planes farther left/right and tilted the side planes so their outer edges come toward the viewer, creating a shallow wrap-around launcher instead of a flat wall.
+- Vendored and integrated the selected low-poly Daydream controller model with preserved upstream attribution/license files; its separated controls respond to button state and the procedural model remains only as a load-failure fallback.
+- Unified the visible controller anchor and pointer emitter, including the bounded headset/body offset, so the ray begins at the front of the rendered controller instead of its center.
+- Added pure-Java tests for inertial deadzone, bounds, reset, and spring return.
+
 ### UI integrity
 
 - Removed the inert **Prefer retro performance-first quality** Quality of Life switch and its orphaned stored-preference wiring. ReverieVR remains performance-first and retro-first by project doctrine; this is a product baseline, not a placebo user toggle.
