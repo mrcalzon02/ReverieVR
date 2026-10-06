@@ -45,6 +45,10 @@ public final class VrActivity extends Activity
         "io.github.mrcalzon02.reverievr.REQUEST_MEDIA_PICKER";
     static final String EXTRA_REQUEST_DOS_PICKER =
         "io.github.mrcalzon02.reverievr.REQUEST_DOS_PICKER";
+    static final String EXTRA_REQUEST_UPDATE_CHECK =
+        "io.github.mrcalzon02.reverievr.REQUEST_UPDATE_CHECK";
+    static final String EXTRA_REQUEST_BLUETOOTH_SETTINGS =
+        "io.github.mrcalzon02.reverievr.REQUEST_BLUETOOTH_SETTINGS";
 
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
 
@@ -845,6 +849,20 @@ public final class VrActivity extends Activity
     public void onDosImportRequested() {
         returnToPhonePicker(
             EXTRA_REQUEST_DOS_PICKER
+        );
+    }
+
+    @Override
+    public void onUpdateCheckRequested() {
+        returnToPhonePicker(
+            EXTRA_REQUEST_UPDATE_CHECK
+        );
+    }
+
+    @Override
+    public void onBluetoothSettingsRequested() {
+        returnToPhonePicker(
+            EXTRA_REQUEST_BLUETOOTH_SETTINGS
         );
     }
 
