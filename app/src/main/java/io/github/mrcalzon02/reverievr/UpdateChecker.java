@@ -21,6 +21,8 @@ final class UpdateChecker implements AutoCloseable {
 
     private static final Pattern PHONE_TEST_TAG =
         Pattern.compile("^phone-test-(\\d+)-(\\d+)$");
+    private static final Pattern SHA256_DIGEST =
+        Pattern.compile("^sha256:[0-9a-fA-F]{64}$");
 
     interface Callback {
         void onResult(Result result);
@@ -147,7 +149,7 @@ final class UpdateChecker implements AutoCloseable {
             );
             connection.setRequestProperty(
                 "X-GitHub-Api-Version",
-                "2022-11-28"
+                "2026-03-10"
             );
             connection.setRequestProperty(
                 "User-Agent",
@@ -207,7 +209,8 @@ final class UpdateChecker implements AutoCloseable {
             );
         }
 
-        Release newerWithoutApk = null;
+        Release bestInstallable = null;
+        Release bestIncomplete = null;
 
         for (int index = 0; index < releases.length(); index++) {
             JSONObject releaseJson =
@@ -218,6 +221,12 @@ final class UpdateChecker implements AutoCloseable {
             }
 
             Release release = parseRelease(releaseJson);
+
+            if (currentPhoneTestRun > 0
+                && release.phoneTestRun <= 0) {
+                continue;
+            }
+
             if (!isReleaseNewer(
                     release,
                     currentVersion,
@@ -227,26 +236,43 @@ final class UpdateChecker implements AutoCloseable {
                 continue;
             }
 
-            if (release.apkUrl != null) {
-                return new Result(
-                    Result.State.UPDATE_AVAILABLE,
-                    release,
-                    "ReverieVR "
-                        + release.version
-                        + " is available."
-                );
-            }
-
-            if (newerWithoutApk == null) {
-                newerWithoutApk = release;
+            if (release.apkUrl != null
+                && isValidSha256Digest(
+                    release.apkDigest
+                )) {
+                if (bestInstallable == null
+                    || compareReleaseOrder(
+                        release,
+                        bestInstallable
+                    ) > 0) {
+                    bestInstallable = release;
+                }
+            } else if (
+                bestIncomplete == null
+                    || compareReleaseOrder(
+                        release,
+                        bestIncomplete
+                    ) > 0
+            ) {
+                bestIncomplete = release;
             }
         }
 
-        if (newerWithoutApk != null) {
+        if (bestInstallable != null) {
+            return new Result(
+                Result.State.UPDATE_AVAILABLE,
+                bestInstallable,
+                "ReverieVR "
+                    + bestInstallable.version
+                    + " is available."
+            );
+        }
+
+        if (bestIncomplete != null) {
             return new Result(
                 Result.State.RELEASE_WITHOUT_APK,
-                newerWithoutApk,
-                "A newer release exists, but it does not contain an APK asset."
+                bestIncomplete,
+                "A newer release exists, but it does not contain a trusted APK asset with SHA-256 metadata."
             );
         }
 
@@ -255,6 +281,39 @@ final class UpdateChecker implements AutoCloseable {
             null,
             "Installed version is current."
         );
+    }
+
+    private static int compareReleaseOrder(
+        Release left,
+        Release right
+    ) {
+        if (left.phoneTestRun > 0
+            && right.phoneTestRun > 0) {
+            if (left.phoneTestRun != right.phoneTestRun) {
+                return Integer.compare(
+                    left.phoneTestRun,
+                    right.phoneTestRun
+                );
+            }
+            return Integer.compare(
+                left.phoneTestAttempt,
+                right.phoneTestAttempt
+            );
+        }
+
+        if (VersionUtils.isNewer(
+                left.version,
+                right.version
+            )) {
+            return 1;
+        }
+        if (VersionUtils.isNewer(
+                right.version,
+                left.version
+            )) {
+            return -1;
+        }
+        return 0;
     }
 
     private static Release parseRelease(
@@ -375,7 +434,7 @@ final class UpdateChecker implements AutoCloseable {
             || normalized.equals("reverievr.apk");
     }
 
-    private static boolean isTrustedReleaseAssetUrl(
+    static boolean isTrustedReleaseAssetUrl(
         String value
     ) {
         try {
@@ -392,6 +451,32 @@ final class UpdateChecker implements AutoCloseable {
         } catch (Exception exception) {
             return false;
         }
+    }
+
+    static boolean isValidSha256Digest(
+        String value
+    ) {
+        return value != null
+            && SHA256_DIGEST
+                .matcher(value.trim())
+                .matches();
+    }
+
+    static int versionCodeForPhoneTest(
+        int run,
+        int attempt
+    ) {
+        if (run <= 0 || attempt <= 0) {
+            return 0;
+        }
+
+        long value =
+            (long) run * 1000L
+                + attempt;
+        if (value > Integer.MAX_VALUE) {
+            return 0;
+        }
+        return (int) value;
     }
 
     private static String readAll(InputStream stream)
