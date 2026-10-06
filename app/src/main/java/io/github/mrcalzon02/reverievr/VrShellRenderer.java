@@ -44,6 +44,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onDosImportRequested();
         void onUpdateCheckRequested();
         void onBluetoothSettingsRequested();
+        void onControllerPairingRequested();
         void onVideoTogglePauseRequested();
         void onVideoSeekRequested(int deltaMillis);
         void onVideoStopRequested();
@@ -97,6 +98,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_DOS_BINDINGS = 7;
     private static final int MODE_MEDIA_LIBRARY = 8;
     private static final int MODE_ENVIRONMENT = 9;
+    private static final int MODE_CONTROLLER = 10;
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -133,7 +135,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {780, 400, 982, 448},
         {780, 456, 982, 504},
         {780, 512, 982, 560},
-        {314, 592, 696, 644}
+        {314, 592, 696, 644},
+        {292, 220, 718, 326}
+    };
+
+    private static final int[][] CONTROLLER_BUTTONS = new int[][] {
+        {120, 300, 500, 365},
+        {524, 300, 904, 365},
+        {120, 385, 500, 450},
+        {524, 385, 904, 450},
+        {120, 470, 500, 535},
+        {524, 470, 904, 535}
     };
 
     private static final int[][] DOS_LIBRARY_BUTTONS = new int[][] {
@@ -1807,6 +1819,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (index == 13) {
                 return hasResumeTarget();
             }
+            if (index == 14) {
+                return true;
+            }
             return index < HOME_BUTTONS.length;
         }
 
@@ -2004,9 +2019,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     }
                     host.onUiActionRejected();
                     break;
+                case 14:
+                    mode = MODE_CONTROLLER;
+                    break;
                 default:
                     break;
             }
+        } else if (mode == MODE_CONTROLLER) {
+            handleControllerSelection(hoveredButton);
         } else if (mode == MODE_MEDIA_LIBRARY) {
             handleMediaSelection(hoveredButton);
         } else if (mode == MODE_ENVIRONMENT) {
@@ -2320,7 +2340,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_DOS_LIBRARY
             || mode == MODE_MEDIA_LIBRARY
-            || mode == MODE_ENVIRONMENT) {
+            || mode == MODE_ENVIRONMENT
+            || mode == MODE_CONTROLLER) {
             mode = MODE_HOME;
             hoveredButton = -1;
             textureDirty = true;
@@ -2356,6 +2377,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int[][] activeButtons() {
         if (mode == MODE_HOME) {
             return HOME_BUTTONS;
+        }
+
+        if (mode == MODE_CONTROLLER) {
+            return CONTROLLER_BUTTONS;
         }
 
         if (mode == MODE_DOS_LIBRARY) {
@@ -2444,6 +2469,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_HOME) {
             drawHome(canvas, paint);
+        } else if (mode == MODE_CONTROLLER) {
+            drawControllerPanel(canvas, paint);
         } else if (mode == MODE_MEDIA_LIBRARY) {
             drawMediaLibrary(canvas, paint);
         } else if (mode == MODE_ENVIRONMENT) {
