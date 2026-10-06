@@ -440,6 +440,7 @@
                 android:text="@string/vr_section" />
 
             <TextView
+                android:id="@+id/vr_runtime_status"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/vr_runtime_not_ready"
