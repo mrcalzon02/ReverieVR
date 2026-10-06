@@ -447,7 +447,45 @@ final class VrShellRenderer implements CardboardView.Renderer {
     void setControllerState(boolean connected, String message) {
         controllerConnected = connected;
         controllerMessage = message == null ? "Controller" : message;
+        if (!connected) {
+            controllerPoseValid = false;
+            controllerPointerActive = false;
+            pointerRenderer.hide();
+        }
         textureDirty = true;
+    }
+
+    void setControllerPose(ControllerSnapshot snapshot) {
+        if (snapshot == null) {
+            return;
+        }
+
+        float x = snapshot.orientationX;
+        float y = snapshot.orientationY;
+        float z = snapshot.orientationZ;
+        float w = snapshot.orientationW;
+
+        float lengthSquared =
+            x * x
+                + y * y
+                + z * z
+                + w * w;
+        if (!Float.isFinite(lengthSquared)
+            || lengthSquared < 0.25f
+            || lengthSquared > 2.25f) {
+            controllerPoseValid = false;
+            return;
+        }
+
+        controllerOrientationX = x;
+        controllerOrientationY = y;
+        controllerOrientationZ = z;
+        controllerOrientationW = w;
+        controllerPoseReceivedAtNanos =
+            snapshot.receivedAtNanos > 0L
+                ? snapshot.receivedAtNanos
+                : System.nanoTime();
+        controllerPoseValid = true;
     }
 
     void setVideoAspectRatio(float aspectRatio) {
