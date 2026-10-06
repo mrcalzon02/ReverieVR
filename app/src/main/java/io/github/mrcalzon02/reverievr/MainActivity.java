@@ -746,6 +746,14 @@ public final class MainActivity extends Activity
                     openBluetoothSettings();
                     return;
                 }
+
+                if (data.getBooleanExtra(
+                        VrActivity.EXTRA_REQUEST_CONTROLLER_PAIRING,
+                        false
+                    )) {
+                    beginControllerPairing();
+                    return;
+                }
             }
             return;
         }
