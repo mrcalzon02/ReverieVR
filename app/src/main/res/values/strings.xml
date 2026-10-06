@@ -140,7 +140,9 @@ Available: %2$s</string>
     <string name="dos_import_failed_format">DOS import failed: %1$s</string>
 
     <string name="vr_section">VR readiness</string>
-    <string name="vr_runtime_not_ready">The independent Cardboard-based VR runtime is wired. Connect a physical Daydream controller, a paired controller phone, or an Android gamepad; optionally select local media above; then enter VR.</string>
+    <string name="vr_runtime_not_ready">Checking Cardboard native runtime…</string>
+    <string name="vr_runtime_ready">Cardboard native runtime ready. Connect a controller or Android gamepad, then enter VR.</string>
+    <string name="vr_runtime_unavailable_format">VR runtime unavailable: %1$s</string>
     <string name="enter_vr">Enter VR</string>
     <string name="vr_startup_failure_title">VR startup failed</string>
 
