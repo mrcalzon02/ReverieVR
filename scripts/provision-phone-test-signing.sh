@@ -11,10 +11,12 @@ SECRETS_FILE="$OUTPUT_DIR/github-secrets.txt"
 FINGERPRINT_FILE="$OUTPUT_DIR/certificate-sha256.txt"
 
 SET_GITHUB=false
+TRIGGER_BUILD=false
 FORCE=false
 for arg in "$@"; do
   case "$arg" in
     --set-github-secrets) SET_GITHUB=true ;;
+    --trigger-build) TRIGGER_BUILD=true ;;
     --force) FORCE=true ;;
     *)
       echo "Unknown argument: $arg" >&2
@@ -88,6 +90,11 @@ EOF
 printf '%s\n' "$FINGERPRINT" > "$FINGERPRINT_FILE"
 chmod 600 "$KEYSTORE" "$SECRETS_FILE" "$FINGERPRINT_FILE" "$CERTIFICATE" || true
 
+if [[ "$TRIGGER_BUILD" == true && "$SET_GITHUB" != true ]]; then
+  echo "--trigger-build requires --set-github-secrets." >&2
+  exit 1
+fi
+
 if [[ "$SET_GITHUB" == true ]]; then
   command -v gh >/dev/null || {
     echo "GitHub CLI is not installed. Files were generated locally." >&2
@@ -101,6 +108,11 @@ if [[ "$SET_GITHUB" == true ]]; then
   printf '%s' "$KEY_PASSWORD" | gh secret set PHONE_TEST_KEY_PASSWORD --repo "$REPO"
 
   echo "GitHub Actions signing secrets were populated for $REPO."
+
+  if [[ "$TRIGGER_BUILD" == true ]]; then
+    gh workflow run phone-test-release.yml --repo "$REPO"
+    echo "First persistently signed phone-test build was triggered."
+  fi
 fi
 
 echo
