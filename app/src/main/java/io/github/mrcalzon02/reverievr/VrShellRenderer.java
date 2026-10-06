@@ -192,6 +192,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final VideoSurfaceRenderer videoRenderer;
     private final HomeEnvironmentRenderer homeEnvironmentRenderer;
     private final VrPointerRenderer pointerRenderer;
+    private final VrControllerModelRenderer controllerModelRenderer;
     private final DosSession dosSession;
     private final DosSurfaceRenderer dosRenderer;
     private final NativeModuleRuntime nativeModuleRuntime;
@@ -279,6 +280,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile float controllerOrientationZ;
     private volatile float controllerOrientationW;
     private volatile boolean controllerPoseValid;
+    private volatile boolean controllerTouchpadPressed;
+    private volatile boolean controllerHomePressed;
+    private volatile boolean controllerAppPressed;
+    private volatile boolean controllerVolumeUpPressed;
+    private volatile boolean controllerVolumeDownPressed;
+    private volatile boolean gamepadPointerAvailable;
+    private volatile float virtualPointerAxisX;
+    private volatile float virtualPointerAxisY;
+    private volatile float virtualPointerYaw;
+    private volatile float virtualPointerPitch;
+    private long virtualPointerLastFrameNanos;
     private volatile boolean controllerPointerActive;
     private volatile float controllerPointerDistance = 6.0f;
     private volatile boolean controllerPointerHit;
@@ -309,6 +321,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         homeEnvironmentRenderer =
             new HomeEnvironmentRenderer();
         pointerRenderer = new VrPointerRenderer();
+        controllerModelRenderer =
+            new VrControllerModelRenderer();
         dosRenderer = new DosSurfaceRenderer(dosSession);
 
         userIpdMeters = preferences.getUserIpdMeters(this.viewerInterLensMeters);
