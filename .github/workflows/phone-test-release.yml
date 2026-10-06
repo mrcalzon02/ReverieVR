@@ -168,6 +168,14 @@ jobs:
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libGfxPluginCardboard.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libGfxPluginCardboard.so"
 
+          # The Daydream controller visual is a runtime asset, not merely a
+          # source-tree reference. Refuse publication if packaging drops it.
+          unzip -l "$APK" \
+            | grep -F "assets/models/daydream/vr_controller_daydream.obj"
+          unzip -p "$APK" \
+            "assets/models/daydream/vr_controller_daydream.obj" \
+            | grep -Fq "o Body_Body_Cylinder"
+
           # Compilation against Cardboard is not sufficient: a minified
           # library AAR can still strip CardboardView before final packaging.
           # Verify the actual installable APK contains the runtime class.
@@ -228,7 +236,7 @@ jobs:
             echo "In-app update channel: enabled."
             echo "Build type: phoneTest (non-debuggable)."
             echo "This is the permanent ReverieVR direct-distribution signing lineage."
-            echo "Includes the native Procedural Test Chamber, DOSBox Pure, and verified DOOM Shareware sample."
+            echo "Includes the native Procedural Test Chamber, DOSBox Pure, verified DOOM Shareware sample, and packaged Daydream controller visual."
           } > release/RELEASE-NOTES.md
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "headset=$HEADSET" >> "$GITHUB_OUTPUT"
