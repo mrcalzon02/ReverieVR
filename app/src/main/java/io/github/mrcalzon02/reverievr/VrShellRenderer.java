@@ -3451,20 +3451,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
             hasFreshControllerPose(
                 System.nanoTime()
             )
-                ? "CONTROLLER FORWARD"
-                : "CONTROLLER • N/A";
+                ? "CONTROLLER FWD"
+                : "CONTROLLER N/A";
 
         drawButtons(
             canvas,
             paint,
             new String[] {
-                "HEADSET FORWARD",
+                "HEADSET FWD",
                 controllerLabel,
-                "VOLUME -",
-                "VOLUME +",
-                "BACK ONE LEVEL",
+                "VOL -",
+                "VOL +",
+                "BACK",
                 "HOME",
-                "EXIT TO PHONE",
+                "EXIT PHONE",
                 "CLOSE"
             },
             ORIENTATION_MENU_BUTTONS
