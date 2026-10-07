@@ -1672,7 +1672,7 @@ int32_t RenderEye(
         );
 
     if (state == nullptr
-        || !ReverieNativeEyeHasMatricesV1(
+        || !ReverieNativeEyeRenderableV1(
             eye
         )
         || state->program == 0

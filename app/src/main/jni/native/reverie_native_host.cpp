@@ -921,6 +921,12 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeRenderEye(
         eye.projection
     );
 
+    // Reject invalid optical input before invoking guest GLES code.
+    if (!ReverieNativeEyeRenderableV1(&eye)) {
+        SetError("Native module render eye index or matrices are invalid.");
+        return JNI_FALSE;
+    }
+
     int32_t rendered = 0;
     {
         CallbackSessionScope scope(session);

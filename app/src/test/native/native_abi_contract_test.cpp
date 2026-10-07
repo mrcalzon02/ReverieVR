@@ -329,6 +329,47 @@ int main() {
         ReverieNativeEyeHasMatricesV1(&eye) != 0,
         "eye matrix prefix should be readable"
     );
+    Check(
+        ReverieNativeEyeRenderableV1(&eye) != 0,
+        "finite left-eye matrices should be renderable"
+    );
+    eye.eye_index = 1;
+    Check(
+        ReverieNativeEyeRenderableV1(&eye) != 0,
+        "finite right-eye matrices should be renderable"
+    );
+    eye.eye_index = 2;
+    Check(
+        ReverieNativeEyeRenderableV1(&eye) == 0,
+        "render guard must reject out-of-range eye index"
+    );
+    eye.eye_index = -1;
+    Check(
+        ReverieNativeEyeRenderableV1(&eye) == 0,
+        "render guard must reject negative eye index"
+    );
+    eye.eye_index = 0;
+    eye.view[7] = std::numeric_limits<float>::quiet_NaN();
+    Check(
+        ReverieNativeEyeRenderableV1(&eye) == 0,
+        "render guard must reject NaN view matrix"
+    );
+    eye.view[7] = 0.0f;
+    eye.projection[11] = std::numeric_limits<float>::infinity();
+    Check(
+        ReverieNativeEyeRenderableV1(&eye) == 0,
+        "render guard must reject infinite projection matrix"
+    );
+    eye.projection[11] = 0.0f;
+    eye.struct_size = REVERIE_NATIVE_EYE_V1_MIN_SIZE - 1u;
+    Check(
+        ReverieNativeEyeRenderableV1(&eye) == 0,
+        "render guard must reject truncated eye prefix"
+    );
+    Check(
+        ReverieNativeEyeRenderableV1(nullptr) == 0,
+        "render guard must reject null eye"
+    );
 
     ReverieNativeModuleCapabilitiesV1 capabilities = {};
     capabilities.struct_size =

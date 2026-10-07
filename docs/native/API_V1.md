@@ -157,6 +157,8 @@ The shell/Cardboard path owns head tracking, optical projection, eye presentatio
 
 A module renders the supplied eye. It does not derive its own Daydream/Cardboard headset model.
 
+Before dispatching `render_eye`, the JNI host uses `ReverieNativeEyeRenderableV1` to require eye index **0 or 1**, the minimum eye prefix, and finite values in all 16 view plus 16 projection floats. Invalid eye data is rejected before guest GLES calls. Both reference games apply the same guard for alternate compatible hosts. This is a safety/compatibility check, **not** an optical-calibration or matrix-invertibility guarantee; the shell does not alter the supplied matrices.
+
 ## Lifecycle
 
 ### create

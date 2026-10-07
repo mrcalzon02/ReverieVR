@@ -562,7 +562,7 @@ int32_t RenderEye(
     ModuleState *state =
         static_cast<ModuleState *>(instance);
     if (state == nullptr
-        || !ReverieNativeEyeHasMatricesV1(
+        || !ReverieNativeEyeRenderableV1(
             eye
         )
         || state->program == 0

@@ -234,6 +234,23 @@ static inline int ReverieNativeEyeHasMatricesV1(
             >= REVERIE_NATIVE_EYE_V1_MIN_SIZE;
 }
 
+/* Render-boundary validation: never rewrite Cardboard optics. */
+static inline int ReverieNativeEyeRenderableV1(
+    const ReverieNativeEyeV1 *eye
+) {
+    if (!ReverieNativeEyeHasMatricesV1(eye)
+        || (eye->eye_index != 0 && eye->eye_index != 1)) {
+        return 0;
+    }
+    for (int i = 0; i < 16; ++i) {
+        if (!(fabsf(eye->view[i]) <= FLT_MAX)
+            || !(fabsf(eye->projection[i]) <= FLT_MAX)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 static inline int ReverieNativeApiHasMandatoryV1(
     const ReverieNativeModuleApiV1 *api
 ) {

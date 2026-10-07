@@ -70,6 +70,10 @@ Validates and normalizes a writable full-prefix `ReverieNativeInputV1` ray. Only
 
 Validates the eye prefix through the current view/projection matrices.
 
+### `ReverieNativeEyeRenderableV1`
+
+Checks the minimum eye prefix, stereo eye index **0 or 1**, and all **32 finite view/projection matrix floats** without allocating or modifying either matrix. The JNI render boundary and both built-in native games use this helper to reject NaN/infinite eye data before issuing GLES calls. It does **not** check matrix invertibility, correct Cardboard optics, or binocular comfort; the shell remains responsible for producing/calibrating the transforms. Null and truncated prefixes fail closed.
+
 ### `ReverieNativeApiHasMandatoryV1`
 
 Validates the mandatory module API-table prefix and ABI version. The host still separately verifies descriptor identity, GLES requirement, and required callbacks.

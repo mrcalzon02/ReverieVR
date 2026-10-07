@@ -239,7 +239,9 @@ def check_current_content() -> None:
         "ReverieNativeInputHasBaseV1",
         "ReverieNativeInputHasPointerV1",
         "ReverieNativeSanitizePointerV1",
+        "ReverieNativeSanitizeBaseInputV1",
         "ReverieNativeEyeHasMatricesV1",
+        "ReverieNativeEyeRenderableV1",
         "ReverieNativeApiHasMandatoryV1",
         "ReverieNativeApiCapabilitiesV1",
         "ReverieNativeCapabilitiesHasShellLocomotionV1",
@@ -267,6 +269,20 @@ def check_current_content() -> None:
         and "overflow-safe" in api_doc
         and "Scaled normalization" in sdk_doc,
         "shared pointer-ray validation drifted between JNI, game, and handbook",
+    )
+
+    require(
+        "ReverieNativeSanitizeBaseInputV1(&input)" in host
+        and "ReverieNativeSanitizeBaseInputV1(&effective_input)" in red_ledger_cpp
+        and "ReverieNativeEyeRenderableV1(&eye)" in host
+        and "ReverieNativeEyeRenderableV1" in test_chamber_cpp
+        and "ReverieNativeEyeRenderableV1" in red_ledger_cpp
+        and "eye->eye_index != 0 && eye->eye_index != 1" in sdk_header
+        and "fabsf(eye->view[i]) <= FLT_MAX" in sdk_header
+        and "fabsf(eye->projection[i]) <= FLT_MAX" in sdk_header
+        and "32 finite" in sdk_doc
+        and "render_eye" in api_doc,
+        "native input/eye boundary guards drifted from the shared SDK contract",
     )
 
     gl_tokens = (
@@ -394,7 +410,7 @@ def check_current_content() -> None:
             (
                 "ReverieNativeHostSupportsLogV1",
                 "ReverieNativeInputHasBaseV1",
-                "ReverieNativeEyeHasMatricesV1",
+                "ReverieNativeEyeRenderableV1",
             ),
         ),
         (
@@ -404,7 +420,7 @@ def check_current_content() -> None:
                 "ReverieNativeHostSupportsLogV1",
                 "ReverieNativeHostSupportsSaveV1",
                 "ReverieNativeInputHasPointerV1",
-                "ReverieNativeEyeHasMatricesV1",
+                "ReverieNativeEyeRenderableV1",
             ),
         ),
     )
@@ -451,6 +467,15 @@ def check_current_content() -> None:
         "ReverieNativeInputHasBaseV1",
         "ReverieNativeInputHasPointerV1",
         "ReverieNativeSanitizePointerV1",
+        "ReverieNativeSanitizeBaseInputV1",
+        "base sanitizer must neutralize non-finite samples and normalize buttons",
+        "base sanitizer must clamp finite axes and frame delta",
+        "base sanitizer must not mutate truncated input prefix",
+        "ReverieNativeEyeRenderableV1",
+        "render guard must reject out-of-range eye index",
+        "render guard must reject NaN view matrix",
+        "render guard must reject infinite projection matrix",
+        "render guard must reject truncated eye prefix",
         "pointer sanitizer must normalize huge finite rays without overflow",
         "pointer sanitizer must reject NaN direction",
         "pointer sanitizer must not mutate truncated input prefix",
