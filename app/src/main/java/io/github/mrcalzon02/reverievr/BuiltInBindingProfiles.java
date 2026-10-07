@@ -220,22 +220,7 @@ final class BuiltInBindingProfiles {
 
         List<InputBinding> nativeTest =
             new ArrayList<>();
-        nativeTest.add(
-            InputBinding.analog(
-                BindingInput.TOUCHPAD_X,
-                VirtualOutput.joystickAxisX(),
-                1.0f,
-                0.12f
-            )
-        );
-        nativeTest.add(
-            InputBinding.analog(
-                BindingInput.TOUCHPAD_Y,
-                VirtualOutput.joystickAxisY(),
-                1.0f,
-                0.12f
-            )
-        );
+        // Native 3D locomotion is shell-owned; do not move twice.
         nativeTest.add(
             InputBinding.digital(
                 BindingInput.SELECT,

@@ -23,6 +23,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### VR presence and headset comfort
 
+- Implemented bounded headset-view-relative Daydream touchpad travel in native 3D scenes. Touch top/bottom to advance/retreat and left/right to strafe, with analog deadzone, speed/area limits, no coasting, and release/click/menu/stale-input interlocks. Shell owns the camera transform for both eyes and controller ray, replacing duplicate Test Chamber world-axis movement. Red Ledger has a narrow behind-bar envelope; Test Chamber has a larger area. Pure-JVM motion and binding tests added; real S9 comfort and reach remain unverified.
+
 - Reworked the Daydream 3DoF controller placement as a yaw-only torso-side anchor rather than inheriting headset pitch/roll. Added a persistent Left/Right hand control and real Reset Hand Position action on the Controller panel, reduced inertial position travel to a small bounded envelope, and retained independent tracked-quaternion aiming. Torso yaw follows sustained turns with a deadband and smoothing; actual S9 controller-ray direction/comfort remains a hardware gate.
 
 - Added the user-supplied **Starry Cereal** track as looping ambient music for the VR shell/environment. The packaged 267.312-second stereo MP3 is APK-optimized to 48 kbps while preserving the source program, plays at a deliberately subdued menu gain, pauses across Activity lifecycle changes and whenever Media/DOS/Native hosted content owns the experience, then resumes from its prior position when the shell returns.

@@ -55,6 +55,7 @@
 - RV-0217 — Implement nonblocking notification policy with user-selectable categories, durations, placement, animation/reduced-motion behavior, and no mandatory center-screen modal for routine status.
 - RV-0218 — Implement optional session timer and break reminders with complete opt-out.
 - RV-0219 — Research an optional S9 rear-camera 'real-world peek' mode. Treat it as a convenience view, not room-scale passthrough or a safety boundary, and reject it if latency/distortion is uncomfortable.
+- RV-0221 — **Implemented; S9 proof pending:** Daydream touchpad gives bounded continuous view-relative native 3D movement: 0.28 radial deadzone, 0.70 m/s cap, normalized diagonals, no inertia, release/click/Quick Menu/stale-input gating, no artificial head rotation. Test Chamber limits ±1.55 m X/Z; Red Ledger limits ±0.70 m lateral and ±0.32 m depth. Shell applies one camera translation to both eyes and controller/pointer; duplicate Test Chamber module translation and touchpad-to-joystick bindings removed. JVM tests cover direction, speed, bounds, stop and input ownership. Validate on Galaxy S9 for comfort, stereo and geometry/pointer reach.
 - RV-0220 — **Planned interaction primitive:** support an explicit world-anchored controller/tool attachment mode for mounted guns, turrets, yokes, fixed levers, vehicle controls, and similar fixtures. This is an opt-in module mechanic only; the normal handheld controller remains headset-reference-relative with independent tracked rotation and bounded inertial translation.
 
 ## P4 — Performance baseline

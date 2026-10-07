@@ -316,6 +316,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final BoundedInertialTranslation
         headInertialTranslation =
             new BoundedInertialTranslation();
+    private final BoundedViewRelativeLocomotion nativeLocomotion =
+        new BoundedViewRelativeLocomotion();
+    private String nativeLocomotionModuleId = "";
+    private long nativeLocomotionLastFrameNanos;
     private final float[] controllerForward = new float[3];
     private final float[] adjustedControllerForward = new float[3];
     private final float[] controllerAccelerationWorld = new float[3];
@@ -407,6 +411,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile long controllerAccelerationAtNanos;
     private volatile boolean controllerPoseValid;
     private volatile boolean controllerTouchpadPressed;
+    private volatile boolean controllerTouching;
+    private volatile int controllerTouchX;
+    private volatile int controllerTouchY;
     private volatile boolean controllerHomePressed;
     private volatile boolean controllerAppPressed;
     private volatile boolean controllerVolumeUpPressed;
@@ -682,6 +689,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         controllerMessage = message == null ? "Controller" : message;
         if (!connected) {
             controllerPoseValid = false;
+            controllerTouching = false;
             controllerPointerActive = false;
             controllerAccelerationAtNanos = 0L;
             controllerInertialTranslation.reset();
@@ -737,6 +745,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             )) {
             controllerPositionRecenterRequested.set(true);
         }
+        controllerTouching = snapshot.touching;
+        controllerTouchX = snapshot.touchX;
+        controllerTouchY = snapshot.touchY;
         controllerTouchpadPressed =
             snapshot.touchpadPressed;
         controllerHomePressed =
@@ -1059,6 +1070,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     "VR_EYE_CPU",
                     eyeRenderPerformanceTracker.snapshot().toLogString()
                 );
+                if (mode == MODE_NATIVE) {
+                    ReverieLog.dev(
+                        "VR_LOCOMOTION",
+                        "module=" + nativeLocomotionModuleId
+                            + " xMeters=" + nativeLocomotion.x()
+                            + " zMeters=" + nativeLocomotion.z()
+                    );
+                }
             }
             lastPerformanceLogNanos = frameNanos;
         }
@@ -1144,6 +1163,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         updateHeadInertialTranslation(
             frameNanos
         );
+        updateNativeLocomotion(frameNanos);
 
         Matrix.multiplyMM(
             adjustedHeadView,
@@ -1160,6 +1180,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
             -headInertialTranslation.y(),
             -headInertialTranslation.z()
         );
+        if (mode == MODE_NATIVE) {
+            // One world-space translation shared by both Cardboard eyes.
+            Matrix.translateM(
+                adjustedHeadView,
+                0,
+                -nativeLocomotion.x(),
+                0.0f,
+                -nativeLocomotion.z()
+            );
+        }
         if (controllerPositionRecenterRequested.getAndSet(false)) {
             resetControllerPositionReference();
         } else {
@@ -1332,6 +1362,79 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         updateShellInteraction(
             frameNanos
+        );
+    }
+
+    private void updateNativeLocomotion(long frameNanos) {
+        if (mode != MODE_NATIVE
+            || nativeModuleRuntime == null
+            || !nativeModuleRuntime.isRunning()) {
+            if (!nativeLocomotionModuleId.isEmpty()) {
+                nativeLocomotion.reset();
+                nativeLocomotionModuleId = "";
+            }
+            nativeLocomotionLastFrameNanos = 0L;
+            return;
+        }
+
+        String moduleId = nativeModuleRuntime.getActiveModuleId();
+        if (!moduleId.equals(nativeLocomotionModuleId)) {
+            nativeLocomotion.reset();
+            nativeLocomotionModuleId = moduleId;
+            nativeLocomotionLastFrameNanos = 0L;
+            ReverieLog.milestone(
+                "VR_LOCOMOTION",
+                "Headset-relative touchpad movement initialized: "
+                    + moduleId
+            );
+        }
+
+        float limitX;
+        float limitZ;
+        if (NativeModuleRuntime.ID_RED_LEDGER.equals(moduleId)) {
+            // Bar operator stays behind the counter.
+            limitX = 0.70f;
+            limitZ = 0.32f;
+        } else if ("procedural-test-chamber".equals(moduleId)) {
+            limitX = 1.55f;
+            limitZ = 1.55f;
+        } else {
+            nativeLocomotionLastFrameNanos = frameNanos;
+            return;
+        }
+
+        float dt = nativeLocomotionLastFrameNanos == 0L
+            ? 0.0f
+            : (frameNanos - nativeLocomotionLastFrameNanos)
+                / 1000000000.0f;
+        nativeLocomotionLastFrameNanos = frameNanos;
+
+        // Click remains Select. A modal menu, stale BLE sample or finger
+        // release immediately stops artificial camera travel.
+        long poseAge = frameNanos - controllerPoseReceivedAtNanos;
+        if (orientationMenuVisible
+            || !controllerConnected
+            || !controllerPoseValid
+            || !controllerTouching
+            || controllerTouchpadPressed
+            || poseAge < 0L
+            || poseAge > 250000000L) {
+            return;
+        }
+
+        rotateYaw(
+            headForward,
+            -yawOffsetRadians,
+            adjustedHeadForward
+        );
+        nativeLocomotion.update(
+            (controllerTouchX / 127.5f) - 1.0f,
+            (controllerTouchY / 127.5f) - 1.0f,
+            adjustedHeadForward[0],
+            adjustedHeadForward[2],
+            dt,
+            limitX,
+            limitZ
         );
     }
 
@@ -2379,11 +2482,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             NativeModuleRuntime.POINTER_NONE;
         setActivePointerSource("Gaze");
         activePointerOrigin[0] =
-            headInertialTranslation.x();
+            headInertialTranslation.x()
+                + (mode == MODE_NATIVE ? nativeLocomotion.x() : 0.0f);
         activePointerOrigin[1] =
             headInertialTranslation.y();
         activePointerOrigin[2] =
-            headInertialTranslation.z();
+            headInertialTranslation.z()
+                + (mode == MODE_NATIVE ? nativeLocomotion.z() : 0.0f);
         System.arraycopy(
             adjustedHeadForward,
             0,
@@ -2434,11 +2539,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerBodyAnchor.reset();
             controllerAnchorLastFrameNanos = 0L;
             controllerAnchorWorld[0] =
-                offsetX + headInertialTranslation.x();
+                offsetX + headInertialTranslation.x()
+                    + (mode == MODE_NATIVE ? nativeLocomotion.x() : 0.0f);
             controllerAnchorWorld[1] =
                 offsetY + headInertialTranslation.y();
             controllerAnchorWorld[2] =
-                offsetZ + headInertialTranslation.z();
+                offsetZ + headInertialTranslation.z()
+                    + (mode == MODE_NATIVE ? nativeLocomotion.z() : 0.0f);
             controllerAnchorWorld[3] = 1.0f;
             return;
         }

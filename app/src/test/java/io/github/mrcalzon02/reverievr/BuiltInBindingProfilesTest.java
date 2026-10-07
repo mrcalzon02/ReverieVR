@@ -38,6 +38,18 @@ public final class BuiltInBindingProfilesTest {
         );
     }
 
+    @Test
+    public void testChamberTouchpadMovementIsShellOwned() {
+        BindingProfile profile = BuiltInBindingProfiles.byId(
+            BuiltInBindingProfiles.ID_NATIVE_TEST_CHAMBER
+        );
+        assertNotNull(profile);
+        assertEquals(3, profile.bindings.size());
+        assertDigitalButton(profile.bindings.get(0), BindingInput.SELECT, 0);
+        assertDigitalButton(profile.bindings.get(1), BindingInput.VOLUME_UP, 1);
+        assertDigitalButton(profile.bindings.get(2), BindingInput.VOLUME_DOWN, 2);
+    }
+
     private static void assertDigitalButton(
         InputBinding binding,
         BindingInput input,

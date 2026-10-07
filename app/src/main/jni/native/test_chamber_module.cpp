@@ -14,8 +14,6 @@
 namespace {
 
 constexpr int kTextureSize = 256;
-constexpr float kMoveSpeed = 1.6f;
-constexpr float kRoomLimit = 2.15f;
 
 struct ModuleState {
     const ReverieNativeHostV1 *host = nullptr;
@@ -30,8 +28,6 @@ struct ModuleState {
     GLint tint_location = -1;
     GLint texture_location = -1;
 
-    float player_x = 0.0f;
-    float player_z = 0.0f;
     bool primary_was_down = false;
     bool alternate_tint = false;
 
@@ -186,28 +182,6 @@ void MultiplyMatrix(
     );
 }
 
-void MakeTranslation(
-    float *out,
-    float x,
-    float y,
-    float z
-) {
-    static const float kIdentity[16] = {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-
-    std::memcpy(
-        out,
-        kIdentity,
-        sizeof(kIdentity)
-    );
-    out[12] = x;
-    out[13] = y;
-    out[14] = z;
-}
 
 void GenerateProceduralTexture(
     ModuleState *state
@@ -645,39 +619,6 @@ void Update(
         return;
     }
 
-    float dt =
-        std::max(
-            0.0f,
-            std::min(
-                input->delta_seconds,
-                0.1f
-            )
-        );
-
-    state->player_x =
-        std::max(
-            -kRoomLimit,
-            std::min(
-                state->player_x
-                    + input->move_x
-                        * kMoveSpeed
-                        * dt,
-                kRoomLimit
-            )
-        );
-
-    state->player_z =
-        std::max(
-            -kRoomLimit,
-            std::min(
-                state->player_z
-                    + input->move_y
-                        * kMoveSpeed
-                        * dt,
-                kRoomLimit
-            )
-        );
-
     bool primary =
         input->primary_down != 0u;
     if (primary
@@ -740,25 +681,13 @@ int32_t RenderEye(
     GLboolean cull_enabled =
         glIsEnabled(GL_CULL_FACE);
 
-    float translation[16];
-    float moved_view[16];
     float view_projection[16];
 
-    MakeTranslation(
-        translation,
-        -state->player_x,
-        0.0f,
-        -state->player_z
-    );
-    MultiplyMatrix(
-        moved_view,
-        eye->view,
-        translation
-    );
+    // Shell-owned camera movement is already shared across both eyes.
     MultiplyMatrix(
         view_projection,
         eye->projection,
-        moved_view
+        eye->view
     );
 
     glEnable(GL_DEPTH_TEST);
