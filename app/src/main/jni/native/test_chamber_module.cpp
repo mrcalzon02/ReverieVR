@@ -356,6 +356,19 @@ void AbandonGl(ModuleState *state) {
 }
 
 int32_t InitializeGl(ModuleState *state) {
+    ReverieNativeGlStateV1 init_gl_state = {};
+    ReverieNativeGlStateCaptureV1(
+        &init_gl_state
+    );
+    auto finish = [&init_gl_state](
+        int32_t result
+    ) -> int32_t {
+        ReverieNativeGlStateRestoreV1(
+            &init_gl_state
+        );
+        return result;
+    };
+
     AbandonGl(state);
 
     state->program = BuildProgram();
@@ -365,7 +378,7 @@ int32_t InitializeGl(ModuleState *state) {
             REVERIE_NATIVE_LOG_ERROR,
             "Shader program creation failed."
         );
-        return 0;
+        return finish(0);
     }
 
     state->position_location =
@@ -405,7 +418,7 @@ int32_t InitializeGl(ModuleState *state) {
             "Required shader locations are unavailable."
         );
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
 
     glGenBuffers(1, &state->vbo);
@@ -416,7 +429,7 @@ int32_t InitializeGl(ModuleState *state) {
             "Room vertex buffer creation failed."
         );
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
 
     glBindBuffer(
@@ -438,7 +451,7 @@ int32_t InitializeGl(ModuleState *state) {
             "Procedural texture creation failed."
         );
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
 
     glBindTexture(
@@ -488,7 +501,7 @@ int32_t InitializeGl(ModuleState *state) {
             "OpenGL ES initialization reported an error."
         );
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
 
     Log(
@@ -496,7 +509,7 @@ int32_t InitializeGl(ModuleState *state) {
         REVERIE_NATIVE_LOG_INFO,
         "GL resources created from OpenKTG procedural texture."
     );
-    return 1;
+    return finish(1);
 }
 
 void *Create(

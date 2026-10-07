@@ -1,6 +1,7 @@
 #ifndef REVERIE_NATIVE_GL_STATE_H
 #define REVERIE_NATIVE_GL_STATE_H
 
+#include <stddef.h>
 #include <GLES2/gl2.h>
 
 #ifdef __cplusplus

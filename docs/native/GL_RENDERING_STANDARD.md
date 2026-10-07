@@ -8,9 +8,9 @@
 
 ## Host-context rule
 
-A native module renders inside a GL context owned by ReverieVR/Cardboard. It is a guest renderer, not the owner of the complete render pipeline.
+A native module creates resources and renders inside a GL context owned by ReverieVR/Cardboard. It is a guest, not the owner of the complete render pipeline.
 
-A module may change state needed for its draw, but it must restore every host-visible state it changes before returning from `render_eye`.
+A module may change state needed for resource creation or drawing, but it must restore every host-visible state it changes before returning from `on_gl_context_created` or `render_eye`. The shared header is standalone C/C++ and includes its own basic/GLES dependencies.
 
 ## Shared guard
 
@@ -52,11 +52,11 @@ Restore attribute state before restoring the overall array-buffer binding, becau
 
 ## Current first-party use
 
-Procedural Test Chamber captures/restores its position and UV attributes.
+Procedural Test Chamber uses the global guard during GL resource creation, then captures/restores its position and UV attributes during eye rendering.
 
-Red Ledger captures/restores position, UV, color, and tile-origin attributes, including the constant generic values changed by dynamic cube rendering.
+Red Ledger uses the global guard during GL resource creation and eye rendering, and captures/restores position, UV, color, and tile-origin attributes during rendering, including the constant generic values changed by dynamic cube rendering.
 
-Both modules share the global state guard rather than maintaining separate handwritten snapshots.
+Both modules share the state guard rather than maintaining separate handwritten snapshots or resetting bindings to assumed defaults.
 
 ## Deliberate boundary
 

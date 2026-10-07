@@ -863,6 +863,19 @@ void AbandonGl(
 int32_t InitializeGl(
     ModuleState *state
 ) {
+    ReverieNativeGlStateV1 init_gl_state = {};
+    ReverieNativeGlStateCaptureV1(
+        &init_gl_state
+    );
+    auto finish = [&init_gl_state](
+        int32_t result
+    ) -> int32_t {
+        ReverieNativeGlStateRestoreV1(
+            &init_gl_state
+        );
+        return result;
+    };
+
     AbandonGl(state);
 
     state->program =
@@ -874,7 +887,7 @@ int32_t InitializeGl(
             REVERIE_NATIVE_LOG_ERROR,
             "Shader program creation failed."
         );
-        return 0;
+        return finish(0);
     }
 
     state->position_location =
@@ -914,7 +927,7 @@ int32_t InitializeGl(
             "Required shader locations are unavailable."
         );
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
 
     glGenBuffers(
@@ -929,7 +942,7 @@ int32_t InitializeGl(
             "Cube vertex buffer creation failed."
         );
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
 
     glBindBuffer(
@@ -955,14 +968,14 @@ int32_t InitializeGl(
         Log(state, REVERIE_NATIVE_LOG_ERROR,
             "Static room batch generation failed.");
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
     glGenBuffers(1, &state->static_vbo);
     if (state->static_vbo == 0) {
         Log(state, REVERIE_NATIVE_LOG_ERROR,
             "Static room VBO allocation failed.");
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
     glBindBuffer(GL_ARRAY_BUFFER, state->static_vbo);
     glBufferData(GL_ARRAY_BUFFER, geo::kStaticVertexBytes,
@@ -984,13 +997,9 @@ int32_t InitializeGl(
         Log(state, REVERIE_NATIVE_LOG_ERROR,
             "Procedural atlas allocation/generation failed.");
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
-    GLint previous_active_texture = 0;
-    GLint previous_texture = 0;
-    glGetIntegerv(GL_ACTIVE_TEXTURE, &previous_active_texture);
     glActiveTexture(GL_TEXTURE0);
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous_texture);
     glGenTextures(1, &state->atlas_texture);
     if (state->atlas_texture != 0) {
         glBindTexture(GL_TEXTURE_2D, state->atlas_texture);
@@ -1005,9 +1014,6 @@ int32_t InitializeGl(
             0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, pixels.get()
         );
     }
-    glBindTexture(GL_TEXTURE_2D,
-        static_cast<GLuint>(previous_texture));
-    glActiveTexture(static_cast<GLenum>(previous_active_texture));
     pixels.reset();
 
     if (state->atlas_texture == 0 || glGetError()
@@ -1018,7 +1024,7 @@ int32_t InitializeGl(
             "OpenGL ES initialization reported an error."
         );
         DestroyGl(state);
-        return 0;
+        return finish(0);
     }
 
     Log(
@@ -1026,7 +1032,7 @@ int32_t InitializeGl(
         REVERIE_NATIVE_LOG_INFO,
         "Red Ledger GL: 32 KiB RGB565 atlas and one static room VBO."
     );
-    return 1;
+    return finish(1);
 }
 
 void DrawCube(
