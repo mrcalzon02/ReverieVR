@@ -51,8 +51,8 @@ public final class ControllerShakeRecenterDetectorTest {
         detector.cancelPendingImpulse();
         assertFalse(detector.sample(2.5f, 0f, 0f, start + 350000000L));
         assertFalse(detector.sample(-2.5f, 0f, 0f, start + 470000000L));
-        assertFalse(detector.sample(2.5f, 0f, 0f, start + 3100000000L));
-        assertTrue(detector.sample(-2.5f, 0f, 0f, start + 3220000000L));
+        assertFalse(detector.sample(2.5f, 0f, 0f, start + 3300000000L));
+        assertTrue(detector.sample(-2.5f, 0f, 0f, start + 3420000000L));
     }
 
     @Test
