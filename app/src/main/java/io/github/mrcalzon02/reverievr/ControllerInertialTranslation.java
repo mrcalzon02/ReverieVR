@@ -33,6 +33,14 @@ final class ControllerInertialTranslation {
         returnSecondsRemaining = RETURN_DURATION_SECONDS;
     }
 
+    boolean isReturningToCenter() {
+        return returnSecondsRemaining > 0.0f;
+    }
+
+    void cancelReturnToCenter() {
+        returnSecondsRemaining = 0.0f;
+    }
+
     void update(
         float accelerationX,
         float accelerationY,

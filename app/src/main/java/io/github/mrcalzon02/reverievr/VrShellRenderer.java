@@ -36,6 +36,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onSetupCompleted();
         void onUiFocusChanged();
         void onUiActionRejected();
+        void onControllerSpringRecenterRequested();
         PerformanceEnvironmentSnapshot
             getPerformanceEnvironmentSnapshot();
         void onVideoSurfaceTextureReady(SurfaceTexture surfaceTexture);
@@ -299,6 +300,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] inverseAdjustedHeadView = new float[16];
     private final float[] controllerAnchorView = new float[4];
     private final float[] controllerAnchorWorld = new float[4];
+    private final float[] controllerGhostWorld = new float[4];
     private final float[] controllerAnchorForwardView =
         new float[] {0.0f, 0.0f, -1.0f, 0.0f};
     private final float[] controllerAnchorForwardWorld = new float[4];
@@ -436,6 +438,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile long headLinearAccelerationAtNanos;
     private long headInertialLastFrameNanos;
     private long controllerInertialLastFrameNanos;
+    private boolean controllerRecenterFeedbackActive;
     private boolean controllerGravityInitialized;
     private float yawOffsetRadians;
     private float userIpdMeters;
@@ -1198,6 +1201,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
             requestSoftControllerRecenter();
         }
         updateControllerInertialTranslation(frameNanos);
+        if (controllerRecenterFeedbackActive
+            && !controllerInertialTranslation.isReturningToCenter()) {
+            controllerRecenterFeedbackActive = false;
+            ReverieLog.milestone(
+                "VR_CONTROLLER",
+                "Controller recenter ended; offset meters="
+                    + controllerRecenterOffsetLength()
+            );
+        }
 
         boolean showPercentages = preferences.isShowPercentagesEnabled();
         if (showPercentages != cachedShowPercentages) {
@@ -2343,6 +2355,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerAnchorY,
                 controllerAnchorZ
             );
+            if (controllerInertialTranslation.isReturningToCenter()) {
+                controllerModelRenderer.setGhostTarget(
+                    controllerGhostWorld[0],
+                    controllerGhostWorld[1],
+                    controllerGhostWorld[2]
+                );
+            } else {
+                controllerModelRenderer.clearGhost();
+            }
 
             activePointerOrigin[0] =
                 controllerAnchorX
@@ -2388,6 +2409,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 "Tracked controller"
             );
             return true;
+        }
+
+        if (controllerInertialTranslation.isReturningToCenter()
+            && !freshControllerPose) {
+            controllerInertialTranslation.cancelReturnToCenter();
+            controllerModelRenderer.clearGhost();
+            ReverieLog.milestone(
+                "VR_CONTROLLER",
+                "Controller recenter interrupted by stale or invalid tracking."
+            );
         }
 
         boolean useVirtualController =
@@ -2437,6 +2468,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerAnchorY,
                 controllerAnchorZ
             );
+            controllerModelRenderer.clearGhost();
 
             activePointerOrigin[0] =
                 controllerAnchorX
@@ -2472,6 +2504,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         virtualPointerLastFrameNanos = 0L;
         controllerModelRenderer.hide();
+        controllerModelRenderer.clearGhost();
 
         if (pointerMode
             == VrPointerMode.CONTROLLER) {
@@ -2558,6 +2591,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 offsetZ + headInertialTranslation.z()
                     + (mode == MODE_NATIVE ? nativeLocomotion.z() : 0.0f);
             controllerAnchorWorld[3] = 1.0f;
+            controllerGhostWorld[0] =
+                handX + headInertialTranslation.x()
+                    + (mode == MODE_NATIVE ? nativeLocomotion.x() : 0.0f);
+            controllerGhostWorld[1] =
+                CONTROLLER_ANCHOR_Y + headInertialTranslation.y();
+            controllerGhostWorld[2] =
+                CONTROLLER_ANCHOR_Z + headInertialTranslation.z()
+                    + (mode == MODE_NATIVE ? nativeLocomotion.z() : 0.0f);
+            controllerGhostWorld[3] = 1.0f;
             return;
         }
 
@@ -2597,6 +2639,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerAnchorWorld[0],
             controllerAnchorWorld[1],
             controllerAnchorWorld[2],
+            handX,
+            CONTROLLER_ANCHOR_Y,
+            CONTROLLER_ANCHOR_Z,
+            controllerGhostWorld
+        );
+        controllerBodyAnchor.place(
+            controllerAnchorWorld[0],
+            controllerAnchorWorld[1],
+            controllerAnchorWorld[2],
             offsetX,
             offsetY,
             offsetZ,
@@ -2605,13 +2656,27 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void requestSoftControllerRecenter() {
+        if (controllerInertialTranslation.isReturningToCenter()
+            || !controllerConnected
+            || !controllerPoseValid) {
+            return;
+        }
         controllerInertialTranslation.beginReturnToCenter();
-        // Preserve live inertial input, gravity reference, hand anchor
-        // and tracked quaternion. Only the positional offset eases home.
+        controllerRecenterFeedbackActive = true;
+        host.onControllerSpringRecenterRequested();
+        // Keep tracked quaternion, live motion and gravity reference.
         ReverieLog.milestone(
             "VR_CONTROLLER",
-            "Deliberate shake started gentle handset return to neutral; orientation and movement remain live."
+            "Controller soft recenter started; offset meters="
+                + controllerRecenterOffsetLength()
         );
+    }
+
+    private float controllerRecenterOffsetLength() {
+        float x = controllerInertialTranslation.x();
+        float y = controllerInertialTranslation.y();
+        float z = controllerInertialTranslation.z();
+        return (float) Math.sqrt(x * x + y * y + z * z);
     }
 
     private void updateControllerInertialTranslation(

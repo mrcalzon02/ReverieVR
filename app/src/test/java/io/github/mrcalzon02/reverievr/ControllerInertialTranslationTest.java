@@ -7,6 +7,22 @@ import org.junit.Test;
 
 public final class ControllerInertialTranslationTest {
     @Test
+    public void cancelReturnPreservesLiveHandPosition() {
+        ControllerInertialTranslation translation =
+            new ControllerInertialTranslation();
+        for (int i = 0; i < 12; i++) {
+            translation.update(3.0f, 0.0f, 0.0f, 0.02f);
+        }
+        float before = translation.x();
+        assertTrue(before > 0.0f);
+        translation.beginReturnToCenter();
+        assertTrue(translation.isReturningToCenter());
+        translation.cancelReturnToCenter();
+        assertTrue(!translation.isReturningToCenter());
+        assertEquals(before, translation.x(), 0.000001f);
+    }
+
+    @Test
     public void forwardAndBackwardMotionChangesDepth() {
         ControllerInertialTranslation translation =
             new ControllerInertialTranslation();
