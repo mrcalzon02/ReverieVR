@@ -4,6 +4,8 @@
 
 ## Purpose
 
+This file is governed by `docs/native/CONTRACT_INDEX.md`. Changes to the mapped procedural-material or static-geometry utilities require same-change review/update of this standard and should pass `python3 scripts/verify-native-doc-sync.py`.
+
 ReverieVR deliberately treats recipes, seeds, compact tables, and generation code as first-class game assets.
 
 The inspiration is the same broad discipline that made tiny procedural productions possible: store the *instructions for making the asset* when those instructions are smaller and cheaper than storing the expanded asset.
