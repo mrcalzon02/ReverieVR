@@ -67,7 +67,7 @@ Red Ledger uses four deterministic material families:
 
 They are generated from a tiny hash/recipe function rather than bitmap files.
 
-The current atlas is 128x128 and packs four 64x64 tiles. Red Ledger now generates the final atlas directly as RGB565, reducing the GPU payload to 32 KiB from the earlier 64 KiB RGBA8 implementation.
+The current atlas is 128x128 and packs four 64x64 tiles. The authoritative utility exposes `GenerateMaterialAtlas` for the RGBA8 reference path and `GenerateMaterialAtlasRgb565` for direct packed generation. Red Ledger now uses the RGB565 path, reducing the GPU payload to 32 KiB from the earlier 64 KiB RGBA8 implementation.
 
 This exact atlas size and format are not mandatory for every game. The reusable lesson is:
 
