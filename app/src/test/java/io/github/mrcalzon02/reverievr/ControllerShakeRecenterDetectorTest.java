@@ -31,6 +31,17 @@ public final class ControllerShakeRecenterDetectorTest {
     }
 
     @Test
+    public void sameDirectionImpactsCannotTriggerRecenter() {
+        ControllerShakeRecenterDetector detector =
+            new ControllerShakeRecenterDetector();
+        long start = 1000000000L;
+        assertFalse(detector.sample(2.5f, 0f, 0f, start));
+        assertFalse(detector.sample(2.6f, 0f, 0f, start + 120000000L));
+        assertFalse(detector.sample(2.7f, 0f, 0f, start + 240000000L));
+        assertTrue(detector.sample(-2.6f, 0f, 0f, start + 360000000L));
+    }
+
+    @Test
     public void normalGravityDoesNotTrigger() {
         ControllerShakeRecenterDetector detector =
             new ControllerShakeRecenterDetector();

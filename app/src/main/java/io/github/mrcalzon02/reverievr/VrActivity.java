@@ -95,7 +95,7 @@ public final class VrActivity extends Activity
         new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                updateBatteryTemperature(intent);
+                updateBatteryStatus(intent);
             }
         };
     private boolean batteryTemperatureReceiverRegistered;
@@ -1746,7 +1746,7 @@ public final class VrActivity extends Activity
                     new IntentFilter(Intent.ACTION_BATTERY_CHANGED)
                 );
                 batteryTemperatureReceiverRegistered = true;
-                updateBatteryTemperature(sticky);
+                updateBatteryStatus(sticky);
             } catch (RuntimeException exception) {
                 batteryTemperatureTenthsC.set(
                     PerformanceEnvironmentSnapshot
@@ -1783,7 +1783,7 @@ public final class VrActivity extends Activity
         }
     }
 
-    private void updateBatteryTemperature(Intent intent) {
+    private void updateBatteryStatus(Intent intent) {
         if (intent == null
             || !Intent.ACTION_BATTERY_CHANGED.equals(intent.getAction())) {
             batteryTemperatureTenthsC.set(
@@ -1803,6 +1803,16 @@ public final class VrActivity extends Activity
                     .BATTERY_TEMPERATURE_UNAVAILABLE;
         }
         batteryTemperatureTenthsC.set(value);
+
+        // Battery broadcasts update on real level changes. The fallback
+        // BatteryManager read at lifecycle entry remains available.
+        int percentage = PhoneBatteryPercentage.fromLevelAndScale(
+            intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1),
+            intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+        );
+        if (percentage >= 0 && renderer != null) {
+            renderer.setPhoneBattery(percentage);
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.Q)

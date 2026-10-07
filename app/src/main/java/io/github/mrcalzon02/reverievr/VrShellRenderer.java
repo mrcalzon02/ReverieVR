@@ -318,6 +318,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new BoundedInertialTranslation();
     private final BoundedViewRelativeLocomotion nativeLocomotion =
         new BoundedViewRelativeLocomotion();
+    private final TouchpadLocomotionGate nativeLocomotionGate =
+        new TouchpadLocomotionGate();
     private String nativeLocomotionModuleId = "";
     private long nativeLocomotionLastFrameNanos;
     private final float[] controllerForward = new float[3];
@@ -411,9 +413,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile long controllerAccelerationAtNanos;
     private volatile boolean controllerPoseValid;
     private volatile boolean controllerTouchpadPressed;
-    private volatile boolean controllerTouching;
-    private volatile int controllerTouchX;
-    private volatile int controllerTouchY;
+    private volatile ControllerSnapshot locomotionControllerSnapshot;
     private volatile boolean controllerHomePressed;
     private volatile boolean controllerAppPressed;
     private volatile boolean controllerVolumeUpPressed;
@@ -675,8 +675,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     void setPhoneBattery(int percentage) {
-        phoneBattery.set(percentage);
-        hudTextureDirty = true;
+        if (percentage < -1 || percentage > 100) {
+            return;
+        }
+        if (phoneBattery.getAndSet(percentage) != percentage) {
+            hudTextureDirty = true;
+        }
     }
 
     void setControllerBattery(int percentage) {
@@ -689,7 +693,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         controllerMessage = message == null ? "Controller" : message;
         if (!connected) {
             controllerPoseValid = false;
-            controllerTouching = false;
+            locomotionControllerSnapshot = null;
+            nativeLocomotionGate.reset();
             controllerPointerActive = false;
             controllerAccelerationAtNanos = 0L;
             controllerInertialTranslation.reset();
@@ -737,7 +742,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 : System.nanoTime();
         controllerAccelerationAtNanos =
             controllerPoseReceivedAtNanos;
-        if (controllerShakeRecenterDetector.sample(
+        if (snapshot.touching || snapshot.touchpadPressed) {
+            controllerShakeRecenterDetector.reset();
+        } else if (controllerShakeRecenterDetector.sample(
                 controllerAccelerationX,
                 controllerAccelerationY,
                 controllerAccelerationZ,
@@ -745,9 +752,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
             )) {
             controllerPositionRecenterRequested.set(true);
         }
-        controllerTouching = snapshot.touching;
-        controllerTouchX = snapshot.touchX;
-        controllerTouchY = snapshot.touchY;
         controllerTouchpadPressed =
             snapshot.touchpadPressed;
         controllerHomePressed =
@@ -759,6 +763,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         controllerVolumeDownPressed =
             snapshot.volumeDownPressed;
         controllerPoseValid = true;
+        locomotionControllerSnapshot = snapshot;
     }
 
     void setGamepadPointerAvailable(
@@ -1191,12 +1196,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
         if (controllerPositionRecenterRequested.getAndSet(false)) {
-            resetControllerPositionReference();
-        } else {
-            updateControllerInertialTranslation(
-                frameNanos
-            );
+            requestSoftControllerRecenter();
         }
+        updateControllerInertialTranslation(frameNanos);
 
         boolean showPercentages = preferences.isShowPercentagesEnabled();
         if (showPercentages != cachedShowPercentages) {
@@ -1373,6 +1375,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 nativeLocomotion.reset();
                 nativeLocomotionModuleId = "";
             }
+            nativeLocomotionGate.reset();
             nativeLocomotionLastFrameNanos = 0L;
             return;
         }
@@ -1380,6 +1383,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         String moduleId = nativeModuleRuntime.getActiveModuleId();
         if (!moduleId.equals(nativeLocomotionModuleId)) {
             nativeLocomotion.reset();
+            nativeLocomotionGate.reset();
             nativeLocomotionModuleId = moduleId;
             nativeLocomotionLastFrameNanos = 0L;
             ReverieLog.milestone(
@@ -1411,14 +1415,22 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         // Click remains Select. A modal menu, stale BLE sample or finger
         // release immediately stops artificial camera travel.
-        long poseAge = frameNanos - controllerPoseReceivedAtNanos;
-        if (orientationMenuVisible
+        ControllerSnapshot touch = locomotionControllerSnapshot;
+        long poseAge = touch == null
+            ? Long.MAX_VALUE
+            : frameNanos - touch.receivedAtNanos;
+        boolean blocked = orientationMenuVisible
             || !controllerConnected
             || !controllerPoseValid
-            || !controllerTouching
-            || controllerTouchpadPressed
+            || touch == null
+            || touch.receivedAtNanos <= 0L
             || poseAge < 0L
-            || poseAge > 250000000L) {
+            || poseAge > 250000000L;
+        if (!nativeLocomotionGate.allows(
+                touch != null && touch.touching,
+                touch != null && touch.touchpadPressed,
+                blocked
+            )) {
             return;
         }
 
@@ -1428,8 +1440,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             adjustedHeadForward
         );
         nativeLocomotion.update(
-            (controllerTouchX / 127.5f) - 1.0f,
-            (controllerTouchY / 127.5f) - 1.0f,
+            (touch.touchX / 127.5f) - 1.0f,
+            (touch.touchY / 127.5f) - 1.0f,
             adjustedHeadForward[0],
             adjustedHeadForward[2],
             dt,
@@ -2593,15 +2605,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
     }
 
-    private void resetControllerPositionReference() {
-        controllerInertialTranslation.reset();
-        controllerInertialLastFrameNanos = 0L;
-        controllerGravityInitialized = false;
-        controllerBodyAnchor.reset();
-        controllerAnchorLastFrameNanos = 0L;
+    private void requestSoftControllerRecenter() {
+        controllerInertialTranslation.beginReturnToCenter();
+        // Preserve live inertial input, gravity reference, hand anchor
+        // and tracked quaternion. Only the positional offset eases home.
         ReverieLog.milestone(
             "VR_CONTROLLER",
-            "Sharp shake recentered handset position; tracked orientation preserved."
+            "Deliberate shake started gentle handset return to neutral; orientation and movement remain live."
         );
     }
 

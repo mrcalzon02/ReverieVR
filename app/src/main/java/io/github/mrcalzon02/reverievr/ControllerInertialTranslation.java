@@ -8,6 +8,8 @@ final class ControllerInertialTranslation {
     private static final float MAX_X_METERS = 0.12f;
     private static final float MAX_Y_METERS = 0.08f;
     private static final float MAX_Z_METERS = 0.14f;
+    private static final float RETURN_DURATION_SECONDS = 3.0f;
+    private static final float RETURN_RATE_PER_SECOND = 0.95f;
 
     private float x;
     private float y;
@@ -15,6 +17,7 @@ final class ControllerInertialTranslation {
     private float velocityX;
     private float velocityY;
     private float velocityZ;
+    private float returnSecondsRemaining;
 
     void reset() {
         x = 0.0f;
@@ -23,6 +26,11 @@ final class ControllerInertialTranslation {
         velocityX = 0.0f;
         velocityY = 0.0f;
         velocityZ = 0.0f;
+        returnSecondsRemaining = 0.0f;
+    }
+
+    void beginReturnToCenter() {
+        returnSecondsRemaining = RETURN_DURATION_SECONDS;
     }
 
     void update(
@@ -63,6 +71,18 @@ final class ControllerInertialTranslation {
         x += velocityX * dt;
         y += velocityY * dt;
         z += velocityZ * dt;
+
+        if (returnSecondsRemaining > 0.0f) {
+            // Position approaches neutral gradually while incoming
+            // accelerometer impulses still affect velocity and travel.
+            float blend =
+                (float) Math.exp(-RETURN_RATE_PER_SECOND * dt);
+            x *= blend;
+            y *= blend;
+            z *= blend;
+            returnSecondsRemaining =
+                Math.max(0.0f, returnSecondsRemaining - dt);
+        }
 
         float nextX = clamp(x, -MAX_X_METERS, MAX_X_METERS);
         float nextY = clamp(y, -MAX_Y_METERS, MAX_Y_METERS);

@@ -74,6 +74,30 @@ public final class ControllerInertialTranslationTest {
     }
 
     @Test
+    public void shakeReturnBlendsWithoutSnappingOrBlockingInput() {
+        ControllerInertialTranslation translation =
+            new ControllerInertialTranslation();
+        for (int i = 0; i < 12; i++) {
+            translation.update(0.0f, 0.0f, -3.5f, 0.02f);
+        }
+        float before = translation.z();
+        assertTrue(before < -0.005f);
+        translation.beginReturnToCenter();
+        assertEquals(before, translation.z(), 0.0f);
+        translation.update(0.0f, 0.0f, 0.0f, 0.02f);
+        assertTrue(Math.abs(translation.z()) > 0.001f);
+        for (int i = 0; i < 80; i++) {
+            translation.update(0.0f, 0.0f, 0.0f, 0.02f);
+        }
+        float returning = translation.z();
+        assertTrue(Math.abs(returning) < Math.abs(before));
+        for (int i = 0; i < 20; i++) {
+            translation.update(0.0f, 0.0f, -5.0f, 0.02f);
+        }
+        assertTrue(translation.z() < returning);
+    }
+
+    @Test
     public void resetReturnsHandsetToReferencePosition() {
         ControllerInertialTranslation translation =
             new ControllerInertialTranslation();
