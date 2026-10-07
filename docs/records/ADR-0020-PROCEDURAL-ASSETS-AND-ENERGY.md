@@ -60,6 +60,18 @@ If the atlas raises GPU energy or harms frame pacing, reduce shader/texture
 cost, adjust materials or revert that slice. The procedural-first principle
 does not mandate runtime procedural shading.
 
+## Implemented next slice: immutable room batch
+
+Red Ledger now creates 11 immutable cubes as one 396-vertex world-space
+VBO (15,840 bytes) once per GL context. The CPU generator has no Android/GL
+dependency and refuses undersized buffers. Positions, colors, UVs and
+atlas tile origins are baked; the single GLES2 program handles the static
+attribute arrays and dynamic constant attributes. This replaces 11 static
+draw calls with one per eye. Hoverable controls, patrons, payments, cups and
+event indicators remain dynamic. Native CI tests deterministic geometry,
+bounds, material coverage and UV invariants. Battery and thermal effects
+remain subject to S9 measurement, not extrapolation from draw counts.
+
 ## Subsequent slices
 
 1. Extend seed/recipe-backed mesh and decoration generation, with cached

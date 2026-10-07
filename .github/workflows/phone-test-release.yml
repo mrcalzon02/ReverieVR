@@ -84,6 +84,19 @@ jobs:
             -o /tmp/reverie-procedural-material-test
           /tmp/reverie-procedural-material-test
 
+      - name: Validate immutable Red Ledger room batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          c++ \
+            -std=c++17 \
+            -Wall -Wextra -Wpedantic -Werror \
+            -I app/src/main/jni/native \
+            app/src/main/jni/native/red_ledger_static_geometry.cpp \
+            app/src/test/native/red_ledger_static_geometry_test.cpp \
+            -o /tmp/red-ledger-static-room-test
+          /tmp/red-ledger-static-room-test
+
       - name: Validate unsigned development tree
         shell: bash
         env:

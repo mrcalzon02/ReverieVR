@@ -1,6 +1,7 @@
 #include "reverie_native_module.h"
 #include "red_ledger_simulation.h"
 #include "procedural_material_atlas.h"
+#include "red_ledger_static_geometry.h"
 
 #include <GLES2/gl2.h>
 
@@ -18,6 +19,7 @@ using reverie::redledger::EventType;
 using reverie::redledger::Simulation;
 using reverie::redledger::SupplierItem;
 using reverie::procedural::Material;
+namespace geo = reverie::redledger::geometry;
 
 constexpr float kMaximumWorkReach = 3.5f;
 constexpr float kHeldCupDistance = 0.90f;
@@ -102,14 +104,15 @@ struct ModuleState {
 
     GLuint program = 0;
     GLuint cube_vbo = 0;
+    GLuint static_vbo = 0;
     GLuint atlas_texture = 0;
     GLint position_location = -1;
     GLint uv_location = -1;
+    GLint color_attribute_location = -1;
     GLint tile_origin_location = -1;
     GLint sampler_location = -1;
     int active_material = -1;
     GLint matrix_location = -1;
-    GLint color_location = -1;
     GLint flicker_location = -1;
 
     float elapsed_seconds = 0.0f;
@@ -638,22 +641,25 @@ GLuint BuildProgram() {
         "uniform mat4 u_Mvp;\n"
         "attribute vec3 a_Position;\n"
         "attribute vec2 a_Uv;\n"
-        "uniform vec2 u_TileOrigin;\n"
+        "attribute vec3 a_Color;\n"
+        "attribute vec2 a_TileOrigin;\n"
         "varying vec2 v_Uv;\n"
+        "varying vec3 v_Color;\n"
         "void main() {\n"
-        "  v_Uv = u_TileOrigin + a_Uv * 0.4921875;\n"
+        "  v_Uv = a_TileOrigin + a_Uv * 0.4921875;\n"
+        "  v_Color = a_Color;\n"
         "  gl_Position = u_Mvp * vec4(a_Position, 1.0);\n"
         "}\n";
 
     static const char *kFragmentShader =
         "precision mediump float;\n"
-        "uniform vec3 u_Color;\n"
         "uniform float u_Flicker;\n"
         "uniform sampler2D u_Atlas;\n"
         "varying vec2 v_Uv;\n"
+        "varying vec3 v_Color;\n"
         "void main() {\n"
         "  vec3 material = texture2D(u_Atlas, v_Uv).rgb;\n"
-        "  gl_FragColor = vec4(material * u_Color * u_Flicker, 1.0);\n"
+        "  gl_FragColor = vec4(material * v_Color * u_Flicker, 1.0);\n"
         "}\n";
 
     GLuint vertex =
@@ -704,6 +710,8 @@ GLuint BuildProgram() {
         1,
         "a_Uv"
     );
+    glBindAttribLocation(program, 2, "a_Color");
+    glBindAttribLocation(program, 3, "a_TileOrigin");
     glLinkProgram(program);
 
     glDeleteShader(vertex);
@@ -779,26 +787,11 @@ void MakeTransform(
     );
 }
 
-static const float kCubeVertices[] = {
-    -0.5f,-0.5f, 0.5f,  0.5f,-0.5f, 0.5f,  0.5f, 0.5f, 0.5f,
-    -0.5f,-0.5f, 0.5f,  0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f,
-     0.5f,-0.5f,-0.5f, -0.5f,-0.5f,-0.5f, -0.5f, 0.5f,-0.5f,
-     0.5f,-0.5f,-0.5f, -0.5f, 0.5f,-0.5f,  0.5f, 0.5f,-0.5f,
-    -0.5f,-0.5f,-0.5f, -0.5f,-0.5f, 0.5f, -0.5f, 0.5f, 0.5f,
-    -0.5f,-0.5f,-0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f,-0.5f,
-     0.5f,-0.5f, 0.5f,  0.5f,-0.5f,-0.5f,  0.5f, 0.5f,-0.5f,
-     0.5f,-0.5f, 0.5f,  0.5f, 0.5f,-0.5f,  0.5f, 0.5f, 0.5f,
-    -0.5f, 0.5f, 0.5f,  0.5f, 0.5f, 0.5f,  0.5f, 0.5f,-0.5f,
-    -0.5f, 0.5f, 0.5f,  0.5f, 0.5f,-0.5f, -0.5f, 0.5f,-0.5f,
-    -0.5f,-0.5f,-0.5f,  0.5f,-0.5f,-0.5f,  0.5f,-0.5f, 0.5f,
-    -0.5f,-0.5f,-0.5f,  0.5f,-0.5f, 0.5f, -0.5f,-0.5f, 0.5f
-};
-
 // UVs are baked once per context, never recomputed per eye or draw call.
 void BuildCubeVertices(float *out) {
     for (int index = 0; index < 36; ++index) {
         const int face = index / 6;
-        const float *position = &kCubeVertices[index * 3];
+        const float *position = &geo::kUnitCubeVertices[index * 3];
         const float u = (face < 2 || face >= 4)
             ? position[0] + 0.5f
             : position[2] + 0.5f;
@@ -820,6 +813,10 @@ void DestroyGl(
         glDeleteTextures(1, &state->atlas_texture);
         state->atlas_texture = 0;
     }
+    if (state->static_vbo != 0) {
+        glDeleteBuffers(1, &state->static_vbo);
+        state->static_vbo = 0;
+    }
     if (state->cube_vbo != 0) {
         glDeleteBuffers(
             1,
@@ -835,11 +832,11 @@ void DestroyGl(
 
     state->position_location = -1;
     state->uv_location = -1;
+    state->color_attribute_location = -1;
     state->tile_origin_location = -1;
     state->sampler_location = -1;
     state->active_material = -1;
     state->matrix_location = -1;
-    state->color_location = -1;
     state->flicker_location = -1;
 }
 
@@ -847,15 +844,16 @@ void AbandonGl(
     ModuleState *state
 ) {
     state->cube_vbo = 0;
+    state->static_vbo = 0;
     state->atlas_texture = 0;
     state->program = 0;
     state->position_location = -1;
     state->uv_location = -1;
+    state->color_attribute_location = -1;
     state->tile_origin_location = -1;
     state->sampler_location = -1;
     state->active_material = -1;
     state->matrix_location = -1;
-    state->color_location = -1;
     state->flicker_location = -1;
 }
 
@@ -883,19 +881,16 @@ int32_t InitializeGl(
         );
     state->uv_location =
         glGetAttribLocation(state->program, "a_Uv");
+    state->color_attribute_location =
+        glGetAttribLocation(state->program, "a_Color");
     state->tile_origin_location =
-        glGetUniformLocation(state->program, "u_TileOrigin");
+        glGetAttribLocation(state->program, "a_TileOrigin");
     state->sampler_location =
         glGetUniformLocation(state->program, "u_Atlas");
     state->matrix_location =
         glGetUniformLocation(
             state->program,
             "u_Mvp"
-        );
-    state->color_location =
-        glGetUniformLocation(
-            state->program,
-            "u_Color"
         );
     state->flicker_location =
         glGetUniformLocation(
@@ -905,10 +900,10 @@ int32_t InitializeGl(
 
     if (state->position_location < 0
         || state->uv_location < 0
+        || state->color_attribute_location < 0
         || state->tile_origin_location < 0
         || state->sampler_location < 0
         || state->matrix_location < 0
-        || state->color_location < 0
         || state->flicker_location < 0) {
         Log(
             state,
@@ -947,6 +942,30 @@ int32_t InitializeGl(
         GL_STATIC_DRAW
     );
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // One context-lifetime world-space batch replaces 11 static draw calls.
+    std::unique_ptr<float[]> room_vertices(
+        new (std::nothrow) float[geo::kStaticVertexFloats]
+    );
+    if (!room_vertices || !geo::BuildStaticRoomVertices(
+            room_vertices.get(), geo::kStaticVertexFloats)) {
+        Log(state, REVERIE_NATIVE_LOG_ERROR,
+            "Static room batch generation failed.");
+        DestroyGl(state);
+        return 0;
+    }
+    glGenBuffers(1, &state->static_vbo);
+    if (state->static_vbo == 0) {
+        Log(state, REVERIE_NATIVE_LOG_ERROR,
+            "Static room VBO allocation failed.");
+        DestroyGl(state);
+        return 0;
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, state->static_vbo);
+    glBufferData(GL_ARRAY_BUFFER, geo::kStaticVertexBytes,
+        room_vertices.get(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    room_vertices.reset();
 
     // Generate only on GL-context creation/recreation. The temporary CPU
     // buffer is freed immediately after upload; no runtime bitmap asset.
@@ -1000,7 +1019,7 @@ int32_t InitializeGl(
     Log(
         state,
         REVERIE_NATIVE_LOG_INFO,
-        "Red Ledger GL created; 4 procedural materials in one 128x128 atlas."
+        "Red Ledger GL: 128x128 atlas and 11 static cubes in one VBO."
     );
     return 1;
 }
@@ -1044,11 +1063,9 @@ void DrawCube(
         GL_FALSE,
         mvp
     );
-    glUniform3f(
-        state->color_location,
-        r,
-        g,
-        b
+    glVertexAttrib3f(
+        static_cast<GLuint>(state->color_attribute_location),
+        r, g, b
     );
     glUniform1f(
         state->flicker_location,
@@ -1057,8 +1074,8 @@ void DrawCube(
     const int material_index = static_cast<int>(material);
     if (state->active_material != material_index) {
         state->active_material = material_index;
-        glUniform2f(
-            state->tile_origin_location,
+        glVertexAttrib2f(
+            static_cast<GLuint>(state->tile_origin_location),
             0.00390625f + (material_index & 1) * 0.5f,
             0.00390625f + (material_index >> 1) * 0.5f
         );
@@ -1116,71 +1133,70 @@ void DrawCup(
     );
 }
 
+// Immutable world-space room: one GLES2 draw per eye, no per-frame upload.
+void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
+    const GLsizei stride = static_cast<GLsizei>(
+        geo::kStaticVertexStride * sizeof(float)
+    );
+    glBindBuffer(GL_ARRAY_BUFFER, state->static_vbo);
+    glVertexAttribPointer(
+        static_cast<GLuint>(state->position_location),
+        3, GL_FLOAT, GL_FALSE, stride,
+        reinterpret_cast<const void *>(0)
+    );
+    glVertexAttribPointer(
+        static_cast<GLuint>(state->uv_location),
+        2, GL_FLOAT, GL_FALSE, stride,
+        reinterpret_cast<const void *>(3u * sizeof(float))
+    );
+    glEnableVertexAttribArray(
+        static_cast<GLuint>(state->color_attribute_location)
+    );
+    glVertexAttribPointer(
+        static_cast<GLuint>(state->color_attribute_location),
+        3, GL_FLOAT, GL_FALSE, stride,
+        reinterpret_cast<const void *>(5u * sizeof(float))
+    );
+    glEnableVertexAttribArray(
+        static_cast<GLuint>(state->tile_origin_location)
+    );
+    glVertexAttribPointer(
+        static_cast<GLuint>(state->tile_origin_location),
+        2, GL_FLOAT, GL_FALSE, stride,
+        reinterpret_cast<const void *>(8u * sizeof(float))
+    );
+    glUniformMatrix4fv(state->matrix_location, 1, GL_FALSE, vp);
+    glUniform1f(state->flicker_location, flicker);
+    glDrawArrays(GL_TRIANGLES, 0,
+        static_cast<GLsizei>(geo::kStaticVertexCount));
+
+    // Dynamic props still use the unit-cube VBO and constant attributes.
+    glDisableVertexAttribArray(
+        static_cast<GLuint>(state->color_attribute_location)
+    );
+    glDisableVertexAttribArray(
+        static_cast<GLuint>(state->tile_origin_location)
+    );
+    glBindBuffer(GL_ARRAY_BUFFER, state->cube_vbo);
+    glVertexAttribPointer(
+        static_cast<GLuint>(state->position_location),
+        3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+        reinterpret_cast<const void *>(0)
+    );
+    glVertexAttribPointer(
+        static_cast<GLuint>(state->uv_location),
+        2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+        reinterpret_cast<const void *>(3u * sizeof(float))
+    );
+    state->active_material = -1;
+}
+
 void DrawRoom(
     ModuleState *state,
     const float *view_projection,
     float flicker
 ) {
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        0.0f,-1.55f,-0.6f,
-        6.0f,0.10f,5.0f,
-        0.20f,0.20f,0.18f
-    );
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        0.0f,0.0f,-3.05f,
-        6.0f,3.1f,0.10f,
-        0.29f,0.28f,0.24f
-    );
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        -3.05f,0.0f,-0.6f,
-        0.10f,3.1f,5.0f,
-        0.27f,0.27f,0.24f
-    );
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        3.05f,0.0f,-0.6f,
-        0.10f,3.1f,5.0f,
-        0.27f,0.27f,0.24f
-    );
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        0.0f,1.55f,-0.6f,
-        6.0f,0.10f,5.0f,
-        0.18f,0.18f,0.17f
-    );
-
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        0.0f,-0.83f,-0.95f,
-        3.7f,0.85f,0.65f,
-        0.30f,0.20f,0.12f,
-        Material::Wood
-    );
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        0.0f,-0.36f,-0.95f,
-        3.9f,0.12f,0.75f,
-        0.39f,0.27f,0.15f,
-        Material::Wood
-    );
-
+    DrawStaticRoom(state, view_projection, flicker);
     const bool tap_hover =
         state->hovered_target
             == WorkTarget::Tap;
@@ -1222,35 +1238,6 @@ void DrawRoom(
         wash_hover ? 0.58f : 0.30f,
         wash_hover ? 0.72f : 0.34f,
         Material::Metal
-    );
-
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        1.35f,-0.95f,-1.80f,
-        0.72f,0.16f,0.72f,
-        0.22f,0.16f,0.12f,
-        Material::Wood
-    );
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        1.35f,-1.30f,-1.80f,
-        0.12f,0.70f,0.12f,
-        0.17f,0.13f,0.10f,
-        Material::Wood
-    );
-
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        1.90f,-1.38f,-2.38f,
-        1.35f,0.18f,0.70f,
-        0.31f,0.28f,0.23f,
-        Material::Wood
     );
 
     const bool ledger_hover =
@@ -1578,15 +1565,6 @@ void DrawRoom(
         Material::Paper
     );
 
-    DrawCube(
-        state,
-        view_projection,
-        1.0f,
-        0.0f,1.28f,-0.70f,
-        0.55f,0.10f,0.34f,
-        0.54f,0.45f,0.28f,
-        Material::Metal
-    );
 }
 
 void *Create(
@@ -1635,6 +1613,7 @@ void Destroy(
 
     if (state->program != 0
         || state->cube_vbo != 0
+        || state->static_vbo != 0
         || state->atlas_texture != 0) {
         Log(
             state,
@@ -1829,6 +1808,7 @@ int32_t RenderEye(
             )
         || state->program == 0
         || state->cube_vbo == 0
+        || state->static_vbo == 0
         || state->atlas_texture == 0) {
         return 0;
     }
