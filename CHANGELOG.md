@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Performance diagnostics
+
+- Removed per-eye viewport/scissor scratch-array allocations from Cardboard stereo rendering and reused its viewport query for eye diagnostics. Added bounded, allocation-free-on-record Development left/right CPU submission avg/p95/p99/max with mode-isolated windows; log once per minute alongside battery percentage and existing frame/thermal metrics. JVM tests cover percentiles, invalid samples, mode transitions and bounded retention. Actual GPU/compositor and S9 power/thermal gains remain unmeasured.
+
 ### Native games
 
 - Halved Red Ledger's procedural GPU atlas footprint from 64 KiB RGBA8 to 32 KiB RGB565 using direct packed generation (no intermediate RGBA allocation). Moved animated flicker from per-eye rendering to once-per-update for stereo-consistent lighting. Native tests validate RGB565 quantization against the RGBA reference and deterministic bounds/seed behavior. S9 visual/power gains remain unmeasured.

@@ -83,6 +83,23 @@ lighting flicker once in Update and shares it across both eye renders,
 avoiding redundant trigonometry and eye-dependent lighting differences.
 Actual handset power/thermal and visual equivalence remain unverified.
 
+## Implemented next slice: low-allocation stereo diagnostics
+
+The Cardboard eye wrapper now reuses three fixed GL query scratch arrays,
+removing six short-lived Java array allocations per stereo frame without
+changing viewport ownership, the 82% presentation inset, or scissor restoration.
+Development mode samples elapsed CPU-side eye submission duration separately
+for left/right eyes in fixed 600-sample ring buffers. Once per minute the
+diagnostic log records avg/p95/p99/max and sample counts alongside existing
+frame cadence, battery percentage, battery temperature and Android thermal
+status. Mode transitions reset eye timing windows. The sampler is disabled
+outside Development mode; sorting/formatting occur only at log time.
+
+These durations include GL command submission and possible driver blocking,
+**not** actual GPU execution, frame presentation or compositor time. Battery
+percentage is a coarse trend, not an instantaneous power meter. S9 in-headset
+regression and sustained thermal testing remain mandatory.
+
 ## Subsequent slices
 
 1. Extend seed/recipe-backed mesh and decoration generation, with cached

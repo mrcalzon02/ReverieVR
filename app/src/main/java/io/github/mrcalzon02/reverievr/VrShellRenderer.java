@@ -273,6 +273,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final List<NativeModuleRuntime.Descriptor> nativeModules;
     private final FramePerformanceTracker performanceTracker =
         new FramePerformanceTracker();
+    private final EyeRenderPerformanceTracker eyeRenderPerformanceTracker =
+        new EyeRenderPerformanceTracker();
+    // Reused only by the serialized GL renderer callback thread.
+    private final int[] eyeViewportScratch = new int[4];
+    private final int[] eyeScissorScratch = new int[4];
+    private final int[] eyeScissorEnabledScratch = new int[1];
 
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer uvBuffer;
@@ -1043,9 +1049,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     + mode
                     + " "
                     + environment.toLogString()
+                    + " phoneBatteryPct="
+                    + phoneBattery.get()
                     + " "
                     + snapshot.toLogString()
             );
+            if (ReverieLog.isDevelopment()) {
+                ReverieLog.dev(
+                    "VR_EYE_CPU",
+                    eyeRenderPerformanceTracker.snapshot().toLogString()
+                );
+            }
             lastPerformanceLogNanos = frameNanos;
         }
 
@@ -1442,6 +1456,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        final boolean profileEye = ReverieLog.isDevelopment();
+        final long eyeStartedNanos =
+            profileEye ? System.nanoTime() : 0L;
+
         /*
          * Cardboard owns the physical per-eye viewport. Keep that raw rectangle
          * as the stereo isolation boundary, but render the VR world into a
@@ -1454,9 +1472,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
          * HUD is drawn after restoring the raw eye viewport so it remains a
          * stable calibration reference instead of shrinking with the world.
          */
-        int[] eyeViewport = new int[4];
-        int[] previousScissor = new int[4];
-        int[] scissorEnabled = new int[1];
+        // Avoid six short-lived allocations per stereo frame.
+        int[] eyeViewport = eyeViewportScratch;
+        int[] previousScissor = eyeScissorScratch;
+        int[] scissorEnabled = eyeScissorEnabledScratch;
         GLES20.glGetIntegerv(
             GLES20.GL_VIEWPORT,
             eyeViewport,
@@ -1484,7 +1503,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        recordStereoEyeDiagnostic(eye);
+        recordStereoEyeDiagnostic(eye, eyeViewport);
 
         int contentWidth =
             Math.max(
@@ -1584,6 +1603,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (scissorEnabled[0] == 0) {
                 GLES20.glDisable(
                     GLES20.GL_SCISSOR_TEST
+                );
+            }
+            if (profileEye && !rendererFailed) {
+                eyeRenderPerformanceTracker.recordEye(
+                    mode,
+                    eye.getEyeType() == CardboardView.Eye.LEFT ? 0 : 1,
+                    System.nanoTime() - eyeStartedNanos
                 );
             }
         }
@@ -1750,7 +1776,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void recordStereoEyeDiagnostic(
-        CardboardView.Eye eye
+        CardboardView.Eye eye,
+        int[] eyeViewport
     ) {
         if (!ReverieLog.isDevelopment()) {
             return;
@@ -1765,11 +1792,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 ? stereoLeftViewport
                 : stereoRightViewport;
 
-        GLES20.glGetIntegerv(
-            GLES20.GL_VIEWPORT,
-            viewport,
-            0
-        );
+        // Reuse the Cardboard-owned viewport already queried by caller.
+        System.arraycopy(eyeViewport, 0, viewport, 0, 4);
         stereoEyeMask |= eyeBit;
     }
 
