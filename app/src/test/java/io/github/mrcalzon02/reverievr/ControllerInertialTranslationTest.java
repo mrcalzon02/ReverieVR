@@ -49,9 +49,9 @@ public final class ControllerInertialTranslationTest {
             );
         }
 
-        assertTrue(Math.abs(translation.x()) <= 0.450001f);
-        assertTrue(Math.abs(translation.y()) <= 0.350001f);
-        assertTrue(Math.abs(translation.z()) <= 0.650001f);
+        assertTrue(Math.abs(translation.x()) <= 0.120001f);
+        assertTrue(Math.abs(translation.y()) <= 0.080001f);
+        assertTrue(Math.abs(translation.z()) <= 0.140001f);
     }
 
     @Test

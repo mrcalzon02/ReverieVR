@@ -16,6 +16,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### VR presence and headset comfort
 
+- Reworked the Daydream 3DoF controller placement as a yaw-only torso-side anchor rather than inheriting headset pitch/roll. Added a persistent Left/Right hand control and real Reset Hand Position action on the Controller panel, reduced inertial position travel to a small bounded envelope, and retained independent tracked-quaternion aiming. Torso yaw follows sustained turns with a deadband and smoothing; actual S9 controller-ray direction/comfort remains a hardware gate.
+
 - Added the user-supplied **Starry Cereal** track as looping ambient music for the VR shell/environment. The packaged 267.312-second stereo MP3 is APK-optimized to 48 kbps while preserving the source program, plays at a deliberately subdued menu gain, pauses across Activity lifecycle changes and whenever Media/DOS/Native hosted content owns the experience, then resumes from its prior position when the shell returns.
 - Added a shell-owned floating Orientation menu available from the Daydream App/Menu button, Cardboard system menu control, gamepad Start/Mode, and keyboard Menu key.
 - Added **Center on headset** and **Center on controller** heading choices, plus Back-one-level and Close actions; the controller option is disabled when no fresh tracked pose exists.

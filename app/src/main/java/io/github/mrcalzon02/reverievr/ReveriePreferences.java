@@ -22,6 +22,7 @@ final class ReveriePreferences {
     private static final String KEY_VIDEO_PROJECTION = "video_projection";
     private static final String KEY_HOME_ENVIRONMENT = "home_environment";
     private static final String KEY_VR_POINTER_MODE = "vr_pointer_mode";
+    private static final String KEY_CONTROLLER_LEFT_HANDED = "controller_left_handed";
     private static final String KEY_LAST_ACTIVITY_TYPE = "last_activity_type";
     private static final String KEY_LAST_DOS_MODULE_ID = "last_dos_module_id";
     private static final String KEY_LAST_DOS_MODULE_NAME = "last_dos_module_name";
@@ -236,6 +237,16 @@ final class ReveriePreferences {
                 KEY_VR_POINTER_MODE,
                 safe.preferenceValue
             )
+            .apply();
+    }
+
+    boolean isControllerLeftHanded() {
+        return preferences.getBoolean(KEY_CONTROLLER_LEFT_HANDED, false);
+    }
+
+    void setControllerLeftHanded(boolean leftHanded) {
+        preferences.edit()
+            .putBoolean(KEY_CONTROLLER_LEFT_HANDED, leftHanded)
             .apply();
     }
 

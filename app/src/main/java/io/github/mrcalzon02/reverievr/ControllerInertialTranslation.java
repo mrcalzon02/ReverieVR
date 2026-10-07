@@ -1,13 +1,13 @@
 package io.github.mrcalzon02.reverievr;
 
 final class ControllerInertialTranslation {
-    private static final float DEADZONE_METERS_PER_SECOND_SQUARED = 0.22f;
-    private static final float INPUT_GAIN = 1.55f;
-    private static final float DAMPING_PER_SECOND = 3.20f;
-    private static final float SPRING_PER_SECOND_SQUARED = 2.20f;
-    private static final float MAX_X_METERS = 0.45f;
-    private static final float MAX_Y_METERS = 0.35f;
-    private static final float MAX_Z_METERS = 0.65f;
+    private static final float DEADZONE_METERS_PER_SECOND_SQUARED = 0.30f;
+    private static final float INPUT_GAIN = 0.85f;
+    private static final float DAMPING_PER_SECOND = 5.20f;
+    private static final float SPRING_PER_SECOND_SQUARED = 5.50f;
+    private static final float MAX_X_METERS = 0.12f;
+    private static final float MAX_Y_METERS = 0.08f;
+    private static final float MAX_Z_METERS = 0.14f;
 
     private float x;
     private float y;
