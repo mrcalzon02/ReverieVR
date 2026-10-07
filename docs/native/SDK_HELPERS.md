@@ -58,6 +58,10 @@ Validates the input prefix through pointer kind, origin, and direction.
 
 Use this before reading any pointer fields.
 
+### `ReverieNativeSanitizePointerV1`
+
+Validates and normalizes a writable full-prefix `ReverieNativeInputV1` ray. Only tracked/virtual kinds, finite origins within **±1000 m per axis**, and finite directions longer than **0.001** are accepted. Scaled normalization avoids overflow from squaring huge finite directions. Rejected full-prefix rays become `REVERIE_NATIVE_POINTER_NONE` with zeroed origin/direction; truncated prefixes are rejected without writing to missing tail fields. The JNI host and Red Ledger share this helper. Copy a const input before using it. This does not implement physical tracking or game-specific hit testing.
+
 ### `ReverieNativeEyeHasMatricesV1`
 
 Validates the eye prefix through the current view/projection matrices.
@@ -82,7 +86,7 @@ A new native game should normally:
 2. choose the smallest host capability it actually requires;
 3. keep non-GL state allocation in `create`;
 4. create/recreate GPU resources only from the GL-context callback;
-5. choose `ReverieNativeInputHasBaseV1` or `ReverieNativeInputHasPointerV1` according to real input needs;
+5. choose `ReverieNativeInputHasBaseV1` or `ReverieNativeInputHasPointerV1` according to real input needs; sanitize a writable copy of pointer input when appropriate;
 6. use `ReverieNativeEyeHasMatricesV1` before rendering;
 7. mutate game state in `update`, not `render_eye`;
 8. release GL resources in `release_gl_context`;

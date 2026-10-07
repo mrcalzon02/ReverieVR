@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <cmath>
 #include <cstdio>
 
 namespace {
@@ -215,6 +216,66 @@ int main() {
     Check(
         ReverieNativeInputHasPointerV1(&input) != 0,
         "pointer input prefix should expose pointer fields"
+    );
+
+    input = {};
+    input.struct_size = REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE;
+    input.pointer_kind = REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_direction[0] = 3.0f;
+    input.pointer_direction[1] = 4.0f;
+    Check(
+        ReverieNativeSanitizePointerV1(&input) != 0
+        && std::abs(input.pointer_direction[0] - 0.6f) < 0.00001f,
+        "pointer sanitizer must normalize ordinary finite rays"
+    );
+    input.pointer_kind = REVERIE_NATIVE_POINTER_VIRTUAL_CONTROLLER;
+    input.pointer_direction[0] = 1.0e30f;
+    input.pointer_direction[1] = 1.0e30f;
+    Check(
+        ReverieNativeSanitizePointerV1(&input) != 0
+        && std::isfinite(input.pointer_direction[0])
+        && std::abs(input.pointer_direction[0] - 0.70710678f) < 0.00001f,
+        "pointer sanitizer must normalize huge finite rays without overflow"
+    );
+    input.pointer_kind = REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_direction[0] = std::numeric_limits<float>::quiet_NaN();
+    Check(
+        ReverieNativeSanitizePointerV1(&input) == 0
+        && input.pointer_kind == REVERIE_NATIVE_POINTER_NONE,
+        "pointer sanitizer must reject NaN direction"
+    );
+    input.pointer_kind = REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_direction[0] = std::numeric_limits<float>::infinity();
+    Check(
+        ReverieNativeSanitizePointerV1(&input) == 0,
+        "pointer sanitizer must reject infinity"
+    );
+    input.pointer_kind = REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_direction[0] = 1.0f;
+    input.pointer_origin[0] = 1001.0f;
+    Check(
+        ReverieNativeSanitizePointerV1(&input) == 0,
+        "pointer sanitizer must reject out-of-range origin"
+    );
+    input.pointer_kind = REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.pointer_origin[0] = 0.0f;
+    input.pointer_direction[0] = 1.0e-20f;
+    Check(
+        ReverieNativeSanitizePointerV1(&input) == 0,
+        "pointer sanitizer must reject degenerate ray"
+    );
+    input.pointer_kind = 99u;
+    input.pointer_direction[0] = 1.0f;
+    Check(
+        ReverieNativeSanitizePointerV1(&input) == 0,
+        "pointer sanitizer must reject unknown kind"
+    );
+    input.pointer_kind = REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    input.struct_size = REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE - 1u;
+    Check(
+        ReverieNativeSanitizePointerV1(&input) == 0
+        && input.pointer_kind == REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER,
+        "pointer sanitizer must not mutate truncated input prefix"
     );
 
     ReverieNativeEyeV1 eye = {};

@@ -4,6 +4,7 @@
 #include "reverie_native_module.h"
 
 #include <float.h>
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,6 +146,55 @@ static inline int ReverieNativeInputHasPointerV1(
     return input != NULL
         && input->struct_size
             >= REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE;
+}
+
+/*
+ * Normalize a writable pointer ray without squared-length overflow.
+ * Invalid full-prefix rays are cleared; truncated prefixes stay untouched.
+ */
+static inline int ReverieNativeSanitizePointerV1(
+    ReverieNativeInputV1 *input
+) {
+    if (!ReverieNativeInputHasPointerV1(input)) {
+        return 0;
+    }
+
+    const int known_kind =
+        input->pointer_kind == REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER
+        || input->pointer_kind == REVERIE_NATIVE_POINTER_VIRTUAL_CONTROLLER;
+    const float abs_x = fabsf(input->pointer_direction[0]);
+    const float abs_y = fabsf(input->pointer_direction[1]);
+    const float abs_z = fabsf(input->pointer_direction[2]);
+    float largest = abs_x;
+    if (abs_y > largest) largest = abs_y;
+    if (abs_z > largest) largest = abs_z;
+
+    if (known_kind
+        && fabsf(input->pointer_origin[0]) <= 1000.0f
+        && fabsf(input->pointer_origin[1]) <= 1000.0f
+        && fabsf(input->pointer_origin[2]) <= 1000.0f
+        && abs_x <= FLT_MAX
+        && abs_y <= FLT_MAX
+        && abs_z <= FLT_MAX
+        && largest > 0.0f) {
+        const float x = input->pointer_direction[0] / largest;
+        const float y = input->pointer_direction[1] / largest;
+        const float z = input->pointer_direction[2] / largest;
+        const float length = sqrtf(x * x + y * y + z * z);
+        if (largest > 0.001f / length) {
+            input->pointer_direction[0] = x / length;
+            input->pointer_direction[1] = y / length;
+            input->pointer_direction[2] = z / length;
+            return 1;
+        }
+    }
+
+    input->pointer_kind = REVERIE_NATIVE_POINTER_NONE;
+    for (int axis = 0; axis < 3; ++axis) {
+        input->pointer_origin[axis] = 0.0f;
+        input->pointer_direction[axis] = 0.0f;
+    }
+    return 0;
 }
 
 static inline int ReverieNativeEyeHasMatricesV1(

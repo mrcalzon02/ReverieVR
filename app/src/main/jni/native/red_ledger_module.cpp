@@ -1621,31 +1621,8 @@ void Update(
     ReverieNativeInputV1 effective_input =
         *input;
 
-    if (effective_input.pointer_kind
-            != REVERIE_NATIVE_POINTER_NONE) {
-        const float direction_length =
-            std::sqrt(
-                effective_input.pointer_direction[0]
-                    * effective_input.pointer_direction[0]
-                + effective_input.pointer_direction[1]
-                    * effective_input.pointer_direction[1]
-                + effective_input.pointer_direction[2]
-                    * effective_input.pointer_direction[2]
-            );
-
-        if (direction_length
-            > 0.000001f) {
-            for (int axis = 0;
-                 axis < 3;
-                 ++axis) {
-                effective_input.pointer_direction[axis] /=
-                    direction_length;
-            }
-        } else {
-            effective_input.pointer_kind =
-                REVERIE_NATIVE_POINTER_NONE;
-        }
-    }
+    // Defensive check before game-private interaction geometry.
+    ReverieNativeSanitizePointerV1(&effective_input);
 
     state->pointer_active =
         effective_input.pointer_kind

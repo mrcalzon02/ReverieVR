@@ -238,6 +238,7 @@ def check_current_content() -> None:
         "ReverieNativeGlesRequirementSupportedV1",
         "ReverieNativeInputHasBaseV1",
         "ReverieNativeInputHasPointerV1",
+        "ReverieNativeSanitizePointerV1",
         "ReverieNativeEyeHasMatricesV1",
         "ReverieNativeApiHasMandatoryV1",
         "ReverieNativeApiCapabilitiesV1",
@@ -256,6 +257,17 @@ def check_current_content() -> None:
         "shared locomotion capability helper lost finite-bounds contract",
     )
 
+
+    require(
+        "largest > 0.001f / length" in sdk_header
+        and "fabsf(input->pointer_origin[0]) <= 1000.0f" in sdk_header
+        and "ReverieNativeSanitizePointerV1(&input)" in host
+        and "ReverieNativeSanitizePointerV1(&effective_input)" in red_ledger_cpp
+        and "direction_length_squared" not in host
+        and "overflow-safe" in api_doc
+        and "Scaled normalization" in sdk_doc,
+        "shared pointer-ray validation drifted between JNI, game, and handbook",
+    )
 
     gl_tokens = (
         "ReverieNativeGlStateV1",
@@ -438,6 +450,10 @@ def check_current_content() -> None:
         "ReverieNativeGlesRequirementSupportedV1",
         "ReverieNativeInputHasBaseV1",
         "ReverieNativeInputHasPointerV1",
+        "ReverieNativeSanitizePointerV1",
+        "pointer sanitizer must normalize huge finite rays without overflow",
+        "pointer sanitizer must reject NaN direction",
+        "pointer sanitizer must not mutate truncated input prefix",
         "ReverieNativeEyeHasMatricesV1",
         "ReverieNativeApiCapabilitiesV1",
         "ReverieNativeCapabilitiesHasShellLocomotionV1",

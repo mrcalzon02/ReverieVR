@@ -877,76 +877,15 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
             ? 1u
             : 0u;
 
-    const bool kind_valid =
-        pointer_kind
-            == REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER
-        || pointer_kind
-            == REVERIE_NATIVE_POINTER_VIRTUAL_CONTROLLER;
-
-    const float origin[3] = {
-        static_cast<float>(
-            pointer_origin_x
-        ),
-        static_cast<float>(
-            pointer_origin_y
-        ),
-        static_cast<float>(
-            pointer_origin_z
-        )
-    };
-    float direction[3] = {
-        static_cast<float>(
-            pointer_direction_x
-        ),
-        static_cast<float>(
-            pointer_direction_y
-        ),
-        static_cast<float>(
-            pointer_direction_z
-        )
-    };
-
-    const bool finite =
-        std::isfinite(origin[0])
-        && std::isfinite(origin[1])
-        && std::isfinite(origin[2])
-        && std::isfinite(direction[0])
-        && std::isfinite(direction[1])
-        && std::isfinite(direction[2]);
-
-    const float direction_length_squared =
-        direction[0] * direction[0]
-        + direction[1] * direction[1]
-        + direction[2] * direction[2];
-
-    if (kind_valid
-        && finite
-        && direction_length_squared > 0.000001f
-        && std::abs(origin[0]) <= 1000.0f
-        && std::abs(origin[1]) <= 1000.0f
-        && std::abs(origin[2]) <= 1000.0f) {
-        const float inverse_length =
-            1.0f
-            / std::sqrt(
-                direction_length_squared
-            );
-        input.pointer_kind =
-            static_cast<uint32_t>(
-                pointer_kind
-            );
-        for (int index = 0;
-             index < 3;
-             ++index) {
-            input.pointer_origin[index] =
-                origin[index];
-            input.pointer_direction[index] =
-                direction[index]
-                    * inverse_length;
-        }
-    } else {
-        input.pointer_kind =
-            REVERIE_NATIVE_POINTER_NONE;
-    }
+    input.pointer_kind = static_cast<uint32_t>(pointer_kind);
+    input.pointer_origin[0] = static_cast<float>(pointer_origin_x);
+    input.pointer_origin[1] = static_cast<float>(pointer_origin_y);
+    input.pointer_origin[2] = static_cast<float>(pointer_origin_z);
+    input.pointer_direction[0] = static_cast<float>(pointer_direction_x);
+    input.pointer_direction[1] = static_cast<float>(pointer_direction_y);
+    input.pointer_direction[2] = static_cast<float>(pointer_direction_z);
+    // Shared fail-closed ray validation at the JNI boundary.
+    ReverieNativeSanitizePointerV1(&input);
 
     CallbackSessionScope scope(session);
     session->api->update(

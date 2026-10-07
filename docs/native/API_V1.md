@@ -142,7 +142,7 @@ The host bounds frame delta and normalizes movement axes before calling the modu
 
 The pointer is a host-calibrated world-space ray. Modules should use it directly for interaction and must not reconstruct controller orientation from raw Android or transport-specific data.
 
-The pointer direction is expected to be normalized by the host. Defensive normalization inside sensitive geometry code is still acceptable.
+The JNI host calls the shared `ReverieNativeSanitizePointerV1` helper: finite rays are normalized with an overflow-safe scaled calculation; unknown kinds, non-finite values, near-zero directions, or origins beyond ±1000 m per axis become `REVERIE_NATIVE_POINTER_NONE` with cleared ray data. Native games may reapply this helper to a writable input copy before hit testing. The ABI layout is unchanged.
 
 ## Eye contract
 

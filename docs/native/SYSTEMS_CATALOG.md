@@ -21,10 +21,10 @@ This catalog is intentionally broader than the public C ABI. It includes impleme
 | System | Maturity | Authoritative source | Standard/reference | What it provides |
 |---|---|---|---|---|
 | Native module ABI v1 | **ABI v1** | `app/src/main/jni/native/reverie_native_module.h` | `docs/native/API_V1.md` | Module descriptor, lifecycle callbacks, input/eye structures, host services, optional capability tail. |
-| Safe ABI consumption helpers | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_sdk.h` | `docs/native/SDK_HELPERS.md` | Prefix/capability checks, safe host logging, exact frozen descriptor validation, GLES requirement comparison, safe optional feedback/capability access. |
+| Safe ABI consumption helpers | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_sdk.h` | `docs/native/SDK_HELPERS.md` | Prefix/capability checks, safe host logging, exact frozen descriptor validation, GLES requirement comparison, safe optional feedback/capability access and overflow-safe finite pointer-ray sanitization shared by JNI and Red Ledger. |
 | Native host / packaged loader | **Runtime service / provisional** | `app/src/main/jni/native/reverie_native_host.cpp` | `docs/native/API_V1.md`, `docs/native/RUNTIME_SERVICES.md` | Compile-time allowlist, packaged library loading, module-private save root, logging, feedback cue queue, JNI bridge. |
 | Java/native module runtime | **Runtime service / provisional** | `app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java` | `docs/native/API_V1.md` | Java-side lifetime, pointer/update bridge, cached module capabilities, feedback-mask return path. |
-| Executable ABI regression gate | **Implemented validation** | `app/src/test/native/native_abi_contract_test.cpp`, `scripts/verify-native-abi-contract.py` | `docs/native/CONTRACT_INDEX.md` | Host-buildable proof of prefix behavior, descriptor freeze, optional tails, feedback sanitization, capability gating, GLES admission. |
+| Executable ABI regression gate | **Implemented validation** | `app/src/test/native/native_abi_contract_test.cpp`, `scripts/verify-native-abi-contract.py` | `docs/native/CONTRACT_INDEX.md` | Host-buildable proof of prefix behavior, descriptor freeze, optional tails, feedback sanitization, capability gating, GLES admission, and malformed/overflowing pointer-ray rejection. |
 
 ### Current ABI-safe extension points
 

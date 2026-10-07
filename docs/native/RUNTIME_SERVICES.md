@@ -110,7 +110,7 @@ ABI v1 receives only normalized pointer kinds/rays:
 - virtual controller;
 - none.
 
-Modules do not parse BLE packets or raw Android/controller quaternions.
+Modules do not parse BLE packets or raw Android/controller quaternions. The JNI boundary uses `ReverieNativeSanitizePointerV1` to clear invalid rays to pointer kind `NONE`; Red Ledger applies the same helper defensively before target intersection.
 
 When the Quick Menu owns interaction, native module updates continue only under the shell's pause/input policy and do not receive a live native pointer ray.
 
