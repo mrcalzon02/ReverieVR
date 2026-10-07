@@ -1,4 +1,4 @@
-#include "reverie_native_module.h"
+#include "reverie_native_sdk.h"
 #include "red_ledger_simulation.h"
 #include "procedural_material_atlas.h"
 #include "red_ledger_static_geometry.h"
@@ -138,8 +138,9 @@ void Log(
     const char *message
 ) {
     if (state != nullptr
-        && state->host != nullptr
-        && state->host->log != nullptr) {
+        && ReverieNativeHostSupportsLogV1(
+            state->host
+        )) {
         state->host->log(
             level,
             "ReverieRedLedger",
@@ -397,9 +398,9 @@ WorkTarget FindWorkTarget(
 
 bool SaveState(ModuleState *state) {
     if (state == nullptr
-        || state->host == nullptr
-        || state->host->write_save
-            == nullptr) {
+        || !ReverieNativeHostSupportsSaveV1(
+            state->host
+        )) {
         return false;
     }
 
@@ -445,9 +446,9 @@ bool SaveState(ModuleState *state) {
 
 void LoadState(ModuleState *state) {
     if (state == nullptr
-        || state->host == nullptr
-        || state->host->read_save
-            == nullptr) {
+        || !ReverieNativeHostSupportsSaveV1(
+            state->host
+        )) {
         return;
     }
 
@@ -1573,11 +1574,9 @@ void DrawRoom(
 void *Create(
     const ReverieNativeHostV1 *host
 ) {
-    if (host == nullptr
-        || host->struct_size
-            < REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE
-        || host->abi_version
-            != REVERIE_NATIVE_MODULE_ABI_VERSION) {
+    if (!ReverieNativeHostSupportsSaveV1(
+            host
+        )) {
         return nullptr;
     }
 
@@ -1699,9 +1698,9 @@ void Update(
         );
 
     if (state == nullptr
-        || input == nullptr
-        || input->struct_size
-            < REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE) {
+        || !ReverieNativeInputHasPointerV1(
+            input
+        )) {
         return;
     }
 
@@ -1807,9 +1806,9 @@ int32_t RenderEye(
         );
 
     if (state == nullptr
-        || eye == nullptr
-        || eye->struct_size
-            < REVERIE_NATIVE_EYE_V1_MIN_SIZE
+        || !ReverieNativeEyeHasMatricesV1(
+            eye
+        )
         || state->program == 0
         || state->cube_vbo == 0
         || state->static_vbo == 0

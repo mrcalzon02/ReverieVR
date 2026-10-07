@@ -1,4 +1,4 @@
-#include "reverie_native_module.h"
+#include "reverie_native_sdk.h"
 
 #include <android/log.h>
 #include <dlfcn.h>
@@ -352,26 +352,14 @@ bool ValidateApi(
     const BuiltInModuleSpec &spec,
     const ReverieNativeModuleApiV1 *api
 ) {
-    if (api == nullptr) {
-        SetError("Native module entry returned a null API.");
+    if (!ReverieNativeApiHasMandatoryV1(api)) {
+        SetError("Native module API mandatory v1 prefix or ABI version is invalid.");
         return false;
     }
-    if (api->struct_size < REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE) {
-        SetError("Native module API structure is too small for the v1 mandatory prefix.");
-        return false;
-    }
-    if (api->abi_version != REVERIE_NATIVE_MODULE_ABI_VERSION) {
-        SetError("Native module ABI version is unsupported.");
-        return false;
-    }
-    if (api->descriptor.struct_size
-        < REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE) {
-        SetError("Native module descriptor structure is too small for the v1 mandatory prefix.");
-        return false;
-    }
-    if (api->descriptor.abi_version
-        != REVERIE_NATIVE_MODULE_ABI_VERSION) {
-        SetError("Native module descriptor ABI version is unsupported.");
+    if (!ReverieNativeDescriptorHasMandatoryV1(
+            &api->descriptor
+        )) {
+        SetError("Native module descriptor mandatory v1 prefix or ABI version is invalid.");
         return false;
     }
     if (api->descriptor.id == nullptr

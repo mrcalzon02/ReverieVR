@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 API_HEADER = Path("app/src/main/jni/native/reverie_native_module.h")
+SDK_HEADER = Path("app/src/main/jni/native/reverie_native_sdk.h")
 HOST_CPP = Path("app/src/main/jni/native/reverie_native_host.cpp")
 RUNTIME_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java"
@@ -38,6 +39,7 @@ RENDERER_JAVA = Path(
 )
 
 API_DOC = Path("docs/native/API_V1.md")
+SDK_DOC = Path("docs/native/SDK_HELPERS.md")
 RUNTIME_SERVICES_DOC = Path("docs/native/RUNTIME_SERVICES.md")
 PROCEDURAL_DOC = Path("docs/native/PROCEDURAL_CONTENT_STANDARD.md")
 CONTRACT_INDEX = Path("docs/native/CONTRACT_INDEX.md")
@@ -45,6 +47,7 @@ BACKLOG = Path("docs/project/BACKLOG.md")
 
 SYNC_MAP = {
     API_HEADER: {API_DOC},
+    SDK_HEADER: {SDK_DOC},
     HOST_CPP: {API_DOC},
     RUNTIME_JAVA: {API_DOC},
     MATERIAL_H: {PROCEDURAL_DOC},
@@ -81,6 +84,7 @@ def regex_value(pattern: str, text: str, label: str) -> str:
 
 def check_current_content() -> None:
     header = read(API_HEADER)
+    sdk_header = read(SDK_HEADER)
     host = read(HOST_CPP)
     runtime = read(RUNTIME_JAVA)
     test_chamber_cpp = read(TEST_CHAMBER_CPP)
@@ -91,6 +95,7 @@ def check_current_content() -> None:
     locomotion_gate_java = read(LOCOMOTION_GATE_JAVA)
     renderer_java = read(RENDERER_JAVA)
     api_doc = read(API_DOC)
+    sdk_doc = read(SDK_DOC)
     runtime_services_doc = read(RUNTIME_SERVICES_DOC)
     procedural_doc = read(PROCEDURAL_DOC)
     contract_index = read(CONTRACT_INDEX)
@@ -158,14 +163,26 @@ def check_current_content() -> None:
             f"API_V1.md does not document minimum-prefix constant: {token}",
         )
 
-    require(
-        "api->struct_size < REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE" in host,
-        "native host no longer validates the module API mandatory prefix",
+    helper_tokens = (
+        "ReverieNativeHostSupportsLogV1",
+        "ReverieNativeHostSupportsSaveV1",
+        "ReverieNativeDescriptorHasMandatoryV1",
+        "ReverieNativeInputHasBaseV1",
+        "ReverieNativeInputHasPointerV1",
+        "ReverieNativeEyeHasMatricesV1",
+        "ReverieNativeApiHasMandatoryV1",
     )
+    for token in helper_tokens:
+        require(token in sdk_header, f"native SDK helper header lost function: {token}")
+        require(
+            f"`{token}`" in sdk_doc,
+            f"SDK_HELPERS.md does not document current helper: {token}",
+        )
+
     require(
-        "api->descriptor.struct_size\n        < REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE"
-        in host,
-        "native host no longer validates the descriptor mandatory prefix",
+        "ReverieNativeApiHasMandatoryV1(api)" in host
+        and "ReverieNativeDescriptorHasMandatoryV1(" in host,
+        "native host no longer consumes the shared ABI validation helpers",
     )
 
     consumer_contracts = (
@@ -173,24 +190,29 @@ def check_current_content() -> None:
             test_chamber_cpp,
             "test chamber",
             (
-                "REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE",
-                "REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE",
-                "REVERIE_NATIVE_EYE_V1_MIN_SIZE",
+                "ReverieNativeHostSupportsLogV1",
+                "ReverieNativeInputHasBaseV1",
+                "ReverieNativeEyeHasMatricesV1",
             ),
         ),
         (
             red_ledger_cpp,
             "Red Ledger",
             (
-                "REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE",
-                "REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE",
-                "REVERIE_NATIVE_EYE_V1_MIN_SIZE",
+                "ReverieNativeHostSupportsLogV1",
+                "ReverieNativeHostSupportsSaveV1",
+                "ReverieNativeInputHasPointerV1",
+                "ReverieNativeEyeHasMatricesV1",
             ),
         ),
     )
     for source, label, required_tokens in consumer_contracts:
+        require(
+            '#include "reverie_native_sdk.h"' in source,
+            f"{label} does not include the shared native SDK helper header",
+        )
         for token in required_tokens:
-            require(token in source, f"{label} lost ABI prefix validation: {token}")
+            require(token in source, f"{label} lost shared SDK helper use: {token}")
 
     forbidden_full_size = (
         "struct_size < sizeof(ReverieNativeHostV1)",

@@ -12,6 +12,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
+- Added the first shared `reverie_native_sdk.h` helper layer and `docs/native/SDK_HELPERS.md`: host logging/save capability checks, descriptor/API mandatory-prefix checks, base/pointer input checks and eye-matrix checks are now centralized. The native host, Procedural Test Chamber and Red Ledger consume the shared helpers instead of duplicating ABI size/version logic, and the drift guard treats the helper header/document pair as a strict synchronized contract.
+
 - Repaired the ABI v1 append-only compatibility contract: the public header now exposes minimum-prefix size constants for host logging/save services, descriptors, base/pointer input, eye data and the mandatory module API table. The host, Procedural Test Chamber and Red Ledger validate only the prefix they consume instead of the newest total struct `sizeof`, and the native documentation drift guard rejects regression to full-structure size checks.
 
 - Made the native developer documentation an active implementation contract: added `docs/native/CONTRACT_INDEX.md`, a same-change source-to-document synchronization rule, and dependency-free `scripts/verify-native-doc-sync.py` checks for ABI version/symbol/save limits, pointer/services/lifecycle names, module-id policy, procedural atlas dimensions/format utilities, and static-geometry counts/footprint. Project doctrine, execution rules, AGENTS, backlog and acceptance evidence now treat known-stale native documentation as a defect rather than deferred cleanup.

@@ -1,4 +1,4 @@
-#include "reverie_native_module.h"
+#include "reverie_native_sdk.h"
 #include "gentexture.hpp"
 
 #include <GLES2/gl2.h>
@@ -40,8 +40,9 @@ void Log(
     const char *message
 ) {
     if (state != nullptr
-        && state->host != nullptr
-        && state->host->log != nullptr) {
+        && ReverieNativeHostSupportsLogV1(
+            state->host
+        )) {
         state->host->log(
             level,
             "ReverieTestChamber",
@@ -500,11 +501,9 @@ int32_t InitializeGl(ModuleState *state) {
 void *Create(
     const ReverieNativeHostV1 *host
 ) {
-    if (host == nullptr
-        || host->struct_size
-            < REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE
-        || host->abi_version
-            != REVERIE_NATIVE_MODULE_ABI_VERSION) {
+    if (!ReverieNativeHostSupportsLogV1(
+            host
+        )) {
         return nullptr;
     }
 
@@ -613,9 +612,9 @@ void Update(
     ModuleState *state =
         static_cast<ModuleState *>(instance);
     if (state == nullptr
-        || input == nullptr
-        || input->struct_size
-            < REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE) {
+        || !ReverieNativeInputHasBaseV1(
+            input
+        )) {
         return;
     }
 
@@ -641,9 +640,9 @@ int32_t RenderEye(
     ModuleState *state =
         static_cast<ModuleState *>(instance);
     if (state == nullptr
-        || eye == nullptr
-        || eye->struct_size
-            < REVERIE_NATIVE_EYE_V1_MIN_SIZE
+        || !ReverieNativeEyeHasMatricesV1(
+            eye
+        )
         || state->program == 0
         || state->vbo == 0
         || state->texture == 0) {

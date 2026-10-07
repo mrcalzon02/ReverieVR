@@ -30,6 +30,7 @@ Do not use "documentation will be updated later" as a normal completion state.
 | Area | Authoritative implementation | Normative documentation | State |
 |---|---|---|---|
 | Native C ABI layout, version, callbacks, constants | `app/src/main/jni/native/reverie_native_module.h` | `docs/native/API_V1.md` | Implemented ABI v1 |
+| Shared native ABI-consumption helpers | `app/src/main/jni/native/reverie_native_sdk.h` | `docs/native/SDK_HELPERS.md` | Implemented provisional SDK helper layer |
 | Native host loading/save-service behavior | `app/src/main/jni/native/reverie_native_host.cpp` | `docs/native/API_V1.md` | Implemented |
 | Java/native runtime bridge and module-id/input boundary | `app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java` | `docs/native/API_V1.md` | Implemented |
 | Procedural material atlas generator | `app/src/main/jni/native/procedural_material_atlas.h`, `app/src/main/jni/native/procedural_material_atlas.cpp` | `docs/native/PROCEDURAL_CONTENT_STANDARD.md` | Implemented reference / provisional shared standard |

@@ -139,7 +139,7 @@ Promotion may take the form of a shared C/C++ helper, a host service, a recipe f
 
 ### Phase A — simulation and contract
 
-Define module id, display name, state model, input needs, persistence schema, and minimum graphics requirement. Build the core simulation so it can be tested without a headset where practical.
+Define module id, display name, state model, input needs, persistence schema, and minimum graphics requirement. Start from `reverie_native_sdk.h` and require only the smallest host/input capability actually consumed. Build the core simulation so it can be tested without a headset where practical.
 
 ### Phase B — interaction
 
@@ -165,6 +165,7 @@ Anything reusable learned from the module is either promoted to shared SDK docum
 
 - `docs/native/CONTRACT_INDEX.md` — authoritative source-to-document map and synchronization rules.
 - `docs/native/API_V1.md` — current implemented native C ABI and compatibility rules.
+- `docs/native/SDK_HELPERS.md` — shared header-only capability/prefix helpers and canonical module-start pattern.
 - `docs/native/RUNTIME_SERVICES.md` — shell-owned native runtime behavior including locomotion, pointer/recovery ownership, lifecycle, and persistence boundaries.
 - `docs/native/PROCEDURAL_CONTENT_STANDARD.md` — generated materials, geometry, model-recipe direction, and asset/performance rules.
 - `scripts/verify-native-doc-sync.py` — dependency-free factual/drift guard for the native documentation contract.
