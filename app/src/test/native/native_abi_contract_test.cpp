@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <cstdio>
 
 namespace {
@@ -247,6 +248,50 @@ int main() {
     );
     capabilities.flags =
         REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION;
+    capabilities.locomotion_limit_x =
+        std::numeric_limits<float>::infinity();
+    Check(
+        ReverieNativeCapabilitiesHasShellLocomotionV1(
+            &capabilities
+        ) == 0,
+        "locomotion capability must reject non-finite X bounds"
+    );
+    capabilities.locomotion_limit_x = 1.0f;
+    capabilities.locomotion_limit_z =
+        std::numeric_limits<float>::infinity();
+    Check(
+        ReverieNativeCapabilitiesHasShellLocomotionV1(
+            &capabilities
+        ) == 0,
+        "locomotion capability must reject non-finite Z bounds"
+    );
+    capabilities.locomotion_limit_z =
+        std::numeric_limits<float>::quiet_NaN();
+    Check(
+        ReverieNativeCapabilitiesHasShellLocomotionV1(
+            &capabilities
+        ) == 0,
+        "locomotion capability must reject NaN bounds"
+    );
+    capabilities.locomotion_limit_z = 2.0f;
+    capabilities.locomotion_limit_x = 0.0f;
+    Check(
+        ReverieNativeCapabilitiesHasShellLocomotionV1(
+            &capabilities
+        ) == 0,
+        "locomotion capability must reject zero bounds"
+    );
+    capabilities.locomotion_limit_x = 1.0f;
+    capabilities.struct_size =
+        REVERIE_NATIVE_CAPABILITIES_V1_LOCOMOTION_MIN_SIZE - 1u;
+    Check(
+        ReverieNativeCapabilitiesHasShellLocomotionV1(
+            &capabilities
+        ) == 0,
+        "locomotion capability must reject truncated prefix"
+    );
+    capabilities.struct_size =
+        REVERIE_NATIVE_CAPABILITIES_V1_LOCOMOTION_MIN_SIZE;
 
     ReverieNativeModuleApiV1 api = {};
     api.abi_version =

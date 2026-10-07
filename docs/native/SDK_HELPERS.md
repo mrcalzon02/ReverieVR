@@ -72,7 +72,7 @@ Returns the optional `ReverieNativeModuleCapabilitiesV1` pointer only when the m
 
 ### `ReverieNativeCapabilitiesHasShellLocomotionV1`
 
-Checks that a capability block contains the locomotion prefix, declares `REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION`, and supplies positive X/Z bounds. The JNI bridge performs the additional finite/safety-range validation before caching those bounds for the renderer.
+Checks that a capability block contains the locomotion prefix, declares `REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION`, and supplies **positive finite** X/Z bounds. The shared helper rejects NaN and infinities before the JNI bridge applies its separate host safety limit of **100 m per axis** and caches the bounds for the renderer. The helper is a capability-presence check, not permission to bypass the host envelope limit.
 
 ## Canonical module-start pattern
 

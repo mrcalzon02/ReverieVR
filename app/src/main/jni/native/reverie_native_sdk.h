@@ -3,6 +3,8 @@
 
 #include "reverie_native_module.h"
 
+#include <float.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -186,7 +188,9 @@ static inline int ReverieNativeCapabilitiesHasShellLocomotionV1(
             & REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION
         ) != 0u
         && capabilities->locomotion_limit_x > 0.0f
-        && capabilities->locomotion_limit_z > 0.0f;
+        && capabilities->locomotion_limit_x <= FLT_MAX
+        && capabilities->locomotion_limit_z > 0.0f
+        && capabilities->locomotion_limit_z <= FLT_MAX;
 }
 
 #ifdef __cplusplus

@@ -249,6 +249,12 @@ def check_current_content() -> None:
             f"`{token}`" in sdk_doc,
             f"SDK_HELPERS.md does not document current helper: {token}",
         )
+    require(
+        "locomotion_limit_x <= FLT_MAX" in sdk_header
+        and "locomotion_limit_z <= FLT_MAX" in sdk_header
+        and "positive finite" in sdk_doc,
+        "shared locomotion capability helper lost finite-bounds contract",
+    )
 
 
     gl_tokens = (
@@ -437,6 +443,10 @@ def check_current_content() -> None:
         "ReverieNativeCapabilitiesHasShellLocomotionV1",
         "old mandatory v1 API prefix must remain valid",
         "old v1 API prefix must not expose unseen capability tail",
+        "locomotion capability must reject non-finite X bounds",
+        "locomotion capability must reject non-finite Z bounds",
+        "locomotion capability must reject NaN bounds",
+        "locomotion capability must reject truncated prefix",
     )
     for token in abi_test_tokens:
         require(
