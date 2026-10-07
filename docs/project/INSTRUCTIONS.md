@@ -201,6 +201,9 @@ The 2D setup surface and 3D VR shell are distinct application modes with an expl
 ### Performance is correctness
 Performance, thermal behavior, frame pacing, decoder behavior, tracking latency, and input latency are acceptance criteria.
 
+### Living documentation is correctness
+Normative developer documentation must remain true of the current implementation. When a documented function, service, utility, API contract, lifecycle rule, generated-content mechanism, or reusable platform behavior changes, update the corresponding documentation in the same scoped change. Known-stale documentation is a defect, not deferred cleanup. Native game work follows `docs/native/CONTRACT_INDEX.md` and must run the native documentation drift guard when applicable.
+
 ### Shell owns cross-module platform behavior
 Global status, recovery, settings access, and common navigation live in the shell/platform layer. Hosted modules consume platform services and input actions instead of cloning or bypassing them.
 
