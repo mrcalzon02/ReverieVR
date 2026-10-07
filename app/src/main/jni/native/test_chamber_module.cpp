@@ -1,5 +1,7 @@
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
+#include "reverie_native_gl_utils.h"
+#include "reverie_native_math.h"
 #include "gentexture.hpp"
 
 #include <GLES2/gl2.h>
@@ -52,32 +54,6 @@ void Log(
     }
 }
 
-GLuint CompileShader(
-    GLenum type,
-    const char *source
-) {
-    GLuint shader = glCreateShader(type);
-    if (shader == 0) {
-        return 0;
-    }
-
-    glShaderSource(shader, 1, &source, nullptr);
-    glCompileShader(shader);
-
-    GLint status = GL_FALSE;
-    glGetShaderiv(
-        shader,
-        GL_COMPILE_STATUS,
-        &status
-    );
-    if (status != GL_TRUE) {
-        glDeleteShader(shader);
-        return 0;
-    }
-
-    return shader;
-}
-
 GLuint BuildProgram() {
     static const char *kVertexShader =
         "uniform mat4 u_ViewProjection;\n"
@@ -100,7 +76,7 @@ GLuint BuildProgram() {
         "}\n";
 
     GLuint vertex =
-        CompileShader(
+        ReverieNativeCompileShader(
             GL_VERTEX_SHADER,
             kVertexShader
         );
@@ -109,7 +85,7 @@ GLuint BuildProgram() {
     }
 
     GLuint fragment =
-        CompileShader(
+        ReverieNativeCompileShader(
             GL_FRAGMENT_SHADER,
             kFragmentShader
         );
@@ -155,35 +131,6 @@ GLuint BuildProgram() {
 
     return program;
 }
-
-void MultiplyMatrix(
-    float *out,
-    const float *a,
-    const float *b
-) {
-    float result[16] = {};
-
-    for (int column = 0; column < 4; ++column) {
-        for (int row = 0; row < 4; ++row) {
-            result[column * 4 + row] =
-                a[0 * 4 + row]
-                    * b[column * 4 + 0]
-                + a[1 * 4 + row]
-                    * b[column * 4 + 1]
-                + a[2 * 4 + row]
-                    * b[column * 4 + 2]
-                + a[3 * 4 + row]
-                    * b[column * 4 + 3];
-        }
-    }
-
-    std::memcpy(
-        out,
-        result,
-        sizeof(result)
-    );
-}
-
 
 void GenerateProceduralTexture(
     ModuleState *state
@@ -686,7 +633,7 @@ int32_t RenderEye(
     float view_projection[16];
 
     // Shell-owned camera movement is already shared across both eyes.
-    MultiplyMatrix(
+    ReverieNativeMat4Multiply(
         view_projection,
         eye->projection,
         eye->view

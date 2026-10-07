@@ -169,6 +169,7 @@ Anything reusable learned from the module is either promoted to shared SDK docum
 - `docs/native/API_V1.md` — current implemented native C ABI and compatibility rules.
 - `docs/native/SDK_HELPERS.md` — shared header-only capability/prefix helpers and canonical module-start pattern.
 - `docs/native/GL_RENDERING_STANDARD.md` — shared GL-state isolation guard and renderer guest-state rules.
+- `docs/native/CORE_UTILITIES.md` — proven cross-game matrix/shader helpers and utility graduation rules.
 - `docs/native/RUNTIME_SERVICES.md` — shell-owned native runtime behavior including locomotion, pointer/recovery ownership, lifecycle, and persistence boundaries.
 - `docs/native/PROCEDURAL_CONTENT_STANDARD.md` — generated materials, geometry, model-recipe direction, and asset/performance rules.
 - `scripts/verify-native-doc-sync.py` — dependency-free factual/drift guard for the native documentation contract.

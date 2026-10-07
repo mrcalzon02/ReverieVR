@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 API_HEADER = Path("app/src/main/jni/native/reverie_native_module.h")
 SDK_HEADER = Path("app/src/main/jni/native/reverie_native_sdk.h")
 GL_STATE_HEADER = Path("app/src/main/jni/native/reverie_native_gl_state.h")
+MATH_HEADER = Path("app/src/main/jni/native/reverie_native_math.h")
+GL_UTILS_HEADER = Path("app/src/main/jni/native/reverie_native_gl_utils.h")
 HOST_CPP = Path("app/src/main/jni/native/reverie_native_host.cpp")
 RUNTIME_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java"
@@ -42,6 +44,7 @@ RENDERER_JAVA = Path(
 API_DOC = Path("docs/native/API_V1.md")
 SDK_DOC = Path("docs/native/SDK_HELPERS.md")
 GL_RENDERING_DOC = Path("docs/native/GL_RENDERING_STANDARD.md")
+CORE_UTILITIES_DOC = Path("docs/native/CORE_UTILITIES.md")
 RUNTIME_SERVICES_DOC = Path("docs/native/RUNTIME_SERVICES.md")
 PROCEDURAL_DOC = Path("docs/native/PROCEDURAL_CONTENT_STANDARD.md")
 CONTRACT_INDEX = Path("docs/native/CONTRACT_INDEX.md")
@@ -51,6 +54,8 @@ SYNC_MAP = {
     API_HEADER: {API_DOC},
     SDK_HEADER: {SDK_DOC},
     GL_STATE_HEADER: {GL_RENDERING_DOC},
+    MATH_HEADER: {CORE_UTILITIES_DOC},
+    GL_UTILS_HEADER: {CORE_UTILITIES_DOC},
     HOST_CPP: {API_DOC},
     RUNTIME_JAVA: {API_DOC},
     MATERIAL_H: {PROCEDURAL_DOC},
@@ -89,6 +94,8 @@ def check_current_content() -> None:
     header = read(API_HEADER)
     sdk_header = read(SDK_HEADER)
     gl_state_header = read(GL_STATE_HEADER)
+    math_header = read(MATH_HEADER)
+    gl_utils_header = read(GL_UTILS_HEADER)
     host = read(HOST_CPP)
     runtime = read(RUNTIME_JAVA)
     test_chamber_cpp = read(TEST_CHAMBER_CPP)
@@ -101,6 +108,7 @@ def check_current_content() -> None:
     api_doc = read(API_DOC)
     sdk_doc = read(SDK_DOC)
     gl_rendering_doc = read(GL_RENDERING_DOC)
+    core_utilities_doc = read(CORE_UTILITIES_DOC)
     runtime_services_doc = read(RUNTIME_SERVICES_DOC)
     procedural_doc = read(PROCEDURAL_DOC)
     contract_index = read(CONTRACT_INDEX)
@@ -198,6 +206,47 @@ def check_current_content() -> None:
         require(
             f"`{token}`" in gl_rendering_doc,
             f"GL_RENDERING_STANDARD.md does not document current GL symbol: {token}",
+        )
+
+
+    core_utilities = (
+        (
+            "ReverieNativeMat4Multiply",
+            math_header,
+            "matrix utility",
+        ),
+        (
+            "ReverieNativeCompileShader",
+            gl_utils_header,
+            "shader utility",
+        ),
+    )
+    for token, source, label in core_utilities:
+        require(token in source, f"native {label} header lost function: {token}")
+        require(
+            f"`{token}`" in core_utilities_doc,
+            f"CORE_UTILITIES.md does not document current utility: {token}",
+        )
+        for module_source, module_label in (
+            (test_chamber_cpp, "test chamber"),
+            (red_ledger_cpp, "Red Ledger"),
+        ):
+            require(
+                token in module_source,
+                f"{module_label} no longer consumes shared {label}: {token}",
+            )
+
+    for module_source, module_label in (
+        (test_chamber_cpp, "test chamber"),
+        (red_ledger_cpp, "Red Ledger"),
+    ):
+        require(
+            "GLuint CompileShader(" not in module_source,
+            f"{module_label} regressed to a private shader compiler",
+        )
+        require(
+            "void MultiplyMatrix(" not in module_source,
+            f"{module_label} regressed to a private matrix multiply",
         )
 
     for source, label, expected_attribs in (

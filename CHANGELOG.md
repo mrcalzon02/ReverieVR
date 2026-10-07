@@ -12,6 +12,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
+- Promoted two independently duplicated native-game utilities into focused shared SDK headers: `ReverieNativeMat4Multiply` in `reverie_native_math.h` and `ReverieNativeCompileShader` in `reverie_native_gl_utils.h`. Test Chamber and Red Ledger now consume the common implementations; `CORE_UTILITIES.md` and the drift guard explicitly prevent these helpers from drifting back into game-private copies.
+
 - Added shared `reverie_native_gl_state.h` plus `GL_RENDERING_STANDARD.md` and migrated both native games to it. The guard restores program/buffer/texture/enabled-state plus complete modified vertex-attribute configuration and generic values, closing the prior leak where modules restored only attribute enable flags after overwriting pointer/buffer/current-value state.
 
 - Added the first shared `reverie_native_sdk.h` helper layer and `docs/native/SDK_HELPERS.md`: host logging/save capability checks, descriptor/API mandatory-prefix checks, base/pointer input checks and eye-matrix checks are now centralized. The native host, Procedural Test Chamber and Red Ledger consume the shared helpers instead of duplicating ABI size/version logic, and the drift guard treats the helper header/document pair as a strict synchronized contract.
