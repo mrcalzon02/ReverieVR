@@ -17,6 +17,14 @@ Native-game work remains subordinate to:
 
 For ABI field names, sizes, constants, and callback signatures, the header is authoritative. This handbook defines the engineering contract around that ABI.
 
+## Active-truth requirement
+
+This handbook describes the current platform, not an aspirational snapshot. `docs/native/CONTRACT_INDEX.md` maps normative documentation to authoritative implementation and defines the same-change synchronization rule.
+
+When a documented native function, service, utility, lifecycle rule, input contract, persistence behavior, generator, or reusable technique changes, the corresponding documentation must be reviewed and updated in the same scoped change. If implementation evidence disproves a statement, correct or downgrade the statement immediately rather than leaving known-stale guidance.
+
+Run `python3 scripts/verify-native-doc-sync.py` for factual source/document anchors, and use `--staged` or `--base HEAD^` to enforce mapped source/document co-change. Machine checks supplement semantic review; they do not excuse it.
+
 ## Goal
 
 ReverieVR is not trying to become a general-purpose modern engine. The target is a compact native environment for deliberately restrained VR games that can run well on Daydream-era hardware.
