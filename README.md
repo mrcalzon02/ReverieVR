@@ -32,6 +32,7 @@ Development is governed by:
 - [Execution State](docs/project/EXECUTION_STATE.md)
 - [Acceptance Ledger](docs/project/ACCEPTANCE_LEDGER.md)
 - [Architecture/Decision Records](docs/records/README.md)
+- [Native Game Developer Handbook](docs/native/README.md)
 - [AI Agent Entry Point](AGENTS.md)
 
 See [CHANGELOG.md](CHANGELOG.md) for verified project changes.
