@@ -42,6 +42,12 @@ LOCOMOTION_GATE_JAVA = Path(
 RENDERER_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java"
 )
+CONTROLLER_GHOST_TETHER_JAVA = Path(
+    "app/src/main/java/io/github/mrcalzon02/reverievr/ControllerGhostTether.java"
+)
+CONTROLLER_SPRING_WAVEFORM_JAVA = Path(
+    "app/src/main/java/io/github/mrcalzon02/reverievr/ControllerSpringWaveform.java"
+)
 ACTIVITY_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java"
 )
@@ -55,6 +61,7 @@ GL_RENDERING_DOC = Path("docs/native/GL_RENDERING_STANDARD.md")
 CORE_UTILITIES_DOC = Path("docs/native/CORE_UTILITIES.md")
 RUNTIME_SERVICES_DOC = Path("docs/native/RUNTIME_SERVICES.md")
 PROCEDURAL_DOC = Path("docs/native/PROCEDURAL_CONTENT_STANDARD.md")
+SYSTEMS_CATALOG_DOC = Path("docs/native/SYSTEMS_CATALOG.md")
 CONTRACT_INDEX = Path("docs/native/CONTRACT_INDEX.md")
 BACKLOG = Path("docs/project/BACKLOG.md")
 
@@ -115,6 +122,12 @@ def check_current_content() -> None:
     locomotion_java = read(LOCOMOTION_JAVA)
     locomotion_gate_java = read(LOCOMOTION_GATE_JAVA)
     renderer_java = read(RENDERER_JAVA)
+    controller_ghost_tether_java = read(
+        CONTROLLER_GHOST_TETHER_JAVA
+    )
+    controller_spring_waveform_java = read(
+        CONTROLLER_SPRING_WAVEFORM_JAVA
+    )
     activity_java = read(ACTIVITY_JAVA)
     ui_feedback_java = read(UI_FEEDBACK_JAVA)
     api_doc = read(API_DOC)
@@ -123,6 +136,7 @@ def check_current_content() -> None:
     core_utilities_doc = read(CORE_UTILITIES_DOC)
     runtime_services_doc = read(RUNTIME_SERVICES_DOC)
     procedural_doc = read(PROCEDURAL_DOC)
+    systems_catalog = read(SYSTEMS_CATALOG_DOC)
     contract_index = read(CONTRACT_INDEX)
     backlog = read(BACKLOG)
 
@@ -649,9 +663,72 @@ def check_current_content() -> None:
         "contract index missing renderer semantic-review source",
     )
     require(
-        str(RUNTIME_SERVICES_DOC) in contract_index,
-        "contract index missing runtime services documentation",
+        str(SYSTEMS_CATALOG_DOC) in contract_index,
+        "contract index missing living systems catalog",
     )
+    require(
+        str(RENDERER_JAVA) in systems_catalog,
+        "systems catalog missing renderer integration source",
+    )
+    for mapped_source, mapped_docs in SYNC_MAP.items():
+        require(
+            str(mapped_source) in systems_catalog,
+            f"systems catalog missing standardized source: {mapped_source}",
+        )
+        for mapped_doc in mapped_docs:
+            require(
+                str(mapped_doc) in systems_catalog,
+                f"systems catalog missing standardized documentation: {mapped_doc}",
+            )
+
+    for source_path, label in (
+        (CONTROLLER_GHOST_TETHER_JAVA, "controller ghost tether"),
+        (CONTROLLER_SPRING_WAVEFORM_JAVA, "controller spring waveform"),
+    ):
+        require(
+            str(source_path) in systems_catalog,
+            f"systems catalog missing shell-only reference: {label}",
+        )
+
+    ghost_vertices = int(
+        regex_value(
+            r"static\s+final\s+int\s+VERTEX_COUNT\s*=\s*(\d+)\s*;",
+            controller_ghost_tether_java,
+            "controller ghost tether vertex count",
+        )
+    )
+    spring_rate = int(
+        regex_value(
+            r"static\s+final\s+int\s+SAMPLE_RATE\s*=\s*(\d+)\s*;",
+            controller_spring_waveform_java,
+            "controller spring waveform sample rate",
+        )
+    )
+    spring_duration = int(
+        regex_value(
+            r"static\s+final\s+int\s+DURATION_MILLIS\s*=\s*(\d+)\s*;",
+            controller_spring_waveform_java,
+            "controller spring waveform duration",
+        )
+    )
+    require(
+        f"{ghost_vertices}-vertex" in systems_catalog,
+        "systems catalog does not report current controller ghost tether size",
+    )
+    require(
+        f"{spring_rate:,} Hz" in systems_catalog
+        and f"{spring_duration} ms" in systems_catalog,
+        "systems catalog does not report current generated spring waveform dimensions",
+    )
+    for planned_phrase in (
+        "Arbitrary PCM/spatial audio | **Planned**",
+        "Haptics | **Planned**",
+        "Primitive-first model recipe direction | **Planned shared API**",
+    ):
+        require(
+            planned_phrase in systems_catalog,
+            f"systems catalog lost explicit planned maturity boundary: {planned_phrase}",
+        )
 
     for mapped_source, mapped_docs in SYNC_MAP.items():
         require(str(mapped_source) in contract_index, f"contract index missing {mapped_source}")

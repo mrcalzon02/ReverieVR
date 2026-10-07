@@ -41,6 +41,7 @@ Do not use "documentation will be updated later" as a normal completion state.
 | Native locomotion gesture re-arm gate | `app/src/main/java/io/github/mrcalzon02/reverievr/TouchpadLocomotionGate.java` | `docs/native/RUNTIME_SERVICES.md` | Implemented; S9 controller proof pending |
 | Locomotion/pointer shell integration | `app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java` | `docs/native/RUNTIME_SERVICES.md` | Implemented integration; semantic-review source rather than strict whole-file co-change |
 | Cross-module engineering rules and ownership | project doctrine + runtime implementation | `docs/native/README.md` | Living platform standard |
+| Native systems/method discovery and maturity classification | contract map + standardized sources + selected proven shell references | `docs/native/SYSTEMS_CATALOG.md` | Living discoverability catalog |
 
 When a new reusable native utility becomes part of the platform standard, add it to this table and to the machine-check mapping before calling the utility standardized.
 
@@ -80,10 +81,11 @@ For staged work before commit, run:
 python3 scripts/verify-native-doc-sync.py --staged
 ```
 
-The documentation verifier has two jobs:
+The documentation verifier has three jobs:
 
 1. compare key implementation constants/names against factual claims in the native docs;
-2. reject a mapped implementation-source change that lacks a same-change update to its mapped documentation.
+2. reject a mapped implementation-source change that lacks a same-change update to its mapped documentation;
+3. require the living systems catalog to remain discoverable across every standardized mapped source/document plus selected proven shell-only generation references.
 
 The ABI executable test independently exercises the header/helper compatibility rules. Both supplement review; neither can prove that every semantic or device-runtime claim is correct.
 

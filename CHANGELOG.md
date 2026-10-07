@@ -12,6 +12,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
+- Added `docs/native/SYSTEMS_CATALOG.md`, a living maturity/discovery index for the native environment: ABI and host services, module capabilities, input/recovery/locomotion, rendering helpers, generated materials/geometry, shell-only generation references, validation methods, game-private techniques, and planned systems. The native drift guard now requires every standardized contract-map source/document to remain discoverable there and pins selected shell references to their actual generated dimensions.
+
 - Added an append-only native host feedback service with `REVERIE_NATIVE_FEEDBACK_FOCUS`, `ACTIVATION`, and `FAILURE` flags. Requests are sanitized/coalesced in the native session, drained through the existing JNI update call, and mapped to the shell's implemented `UiFeedback` audio cues. Test Chamber and Red Ledger now exercise the service. This does not claim arbitrary audio mixing or haptics.
 
 - Added a host-buildable executable ABI contract gate (`native_abi_contract_test.cpp` via `verify-native-abi-contract.py`) covering old-v1 mandatory prefixes, optional capability tails, frozen descriptor layout, host/input/eye capability checks, shell-locomotion gating, and OpenGL ES version admission. The host now compares both required GLES major and minor through the shared `ReverieNativeGlesRequirementSupportedV1` helper instead of checking only the major version.

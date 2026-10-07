@@ -166,6 +166,7 @@ Anything reusable learned from the module is either promoted to shared SDK docum
 ## Documentation map
 
 - `docs/native/CONTRACT_INDEX.md` — authoritative source-to-document map and synchronization rules.
+- `docs/native/SYSTEMS_CATALOG.md` — discoverability index for implemented ABI/services/helpers/generators, reference techniques, game-private methods, and planned systems with explicit maturity labels.
 - `docs/native/API_V1.md` — current implemented native C ABI and compatibility rules.
 - `docs/native/SDK_HELPERS.md` — shared header-only capability/prefix helpers and canonical module-start pattern.
 - `docs/native/GL_RENDERING_STANDARD.md` — shared GL-state isolation guard and renderer guest-state rules.
