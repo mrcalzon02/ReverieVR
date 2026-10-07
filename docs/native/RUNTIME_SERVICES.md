@@ -1,0 +1,157 @@
+# ReverieVR Native Runtime Services
+
+**Status:** implemented first-party runtime services; higher-level configuration surface remains provisional and S9 comfort validation is still required where noted.
+
+**Purpose:** document shell-owned services that native games consume indirectly around ABI v1. These services are part of the native-game platform contract even when they are not C ABI functions.
+
+**Synchronization:** governed by `docs/native/CONTRACT_INDEX.md`. Strictly mapped helper changes require same-change updates here. Broader renderer integration is checked through factual anchors plus semantic review.
+
+## Ownership model
+
+A native module receives game-facing input and per-eye matrices through ABI v1, but ReverieVR deliberately keeps several cross-game behaviors in the shell so each module does not reimplement device-specific policy.
+
+Current shell-owned native runtime services include:
+
+- headset/controller coordinate ownership;
+- bounded touchpad locomotion for admitted first-party native scenes;
+- pointer origin/direction construction;
+- Quick Menu and recovery interception;
+- lifecycle pause/resume and GL-context handoff;
+- global HUD continuity;
+- module-private save isolation through the native host.
+
+This document covers the services around the module. Exact C ABI fields remain documented in `API_V1.md`.
+
+## Bounded view-relative locomotion
+
+### Current implementation
+
+The reusable motion integrator is `BoundedViewRelativeLocomotion`.
+
+Current parameters:
+
+- radial touchpad deadzone: **0.28**;
+- maximum horizontal speed: **0.70 m/s**;
+- per-update time contribution capped at **50 ms**;
+- horizontal motion only;
+- no artificial rotation;
+- no vertical travel;
+- no inertia/coasting;
+- diagonal input normalized so it is not faster than cardinal input.
+
+Forward/back/strafe are resolved against the headset's current horizontal forward direction, not the controller quaternion.
+
+The shell applies the resulting world translation once to the adjusted head view. The same translated frame is used for controller/pointer placement, so the module must not apply the same locomotion again.
+
+### Current first-party envelopes
+
+The shell currently admits locomotion only for known first-party native scenes:
+
+- Procedural Test Chamber: **±1.55 m X/Z**;
+- Between Deliveries: The Red Ledger VR: **±0.70 m lateral, ±0.32 m depth**.
+
+Unknown native module ids do not receive this shell locomotion.
+
+These hard-coded first-party envelopes are an implementation stage, not the final generalized SDK design. A future stable native SDK should move locomotion capability/envelope declaration into an explicit module descriptor or host policy rather than growing renderer id checks indefinitely.
+
+### Gesture re-arm safety
+
+`TouchpadLocomotionGate` prevents a touch already in progress from unexpectedly moving the player across:
+
+- native-module entry;
+- module changes;
+- Quick Menu close/open transitions;
+- touchpad click/select;
+- controller interruption or blocked input.
+
+A full touch release arms the next movement gesture. A blocked state or click disarms the gate.
+
+The renderer also rejects stale/invalid controller samples. The current stale cutoff is **250 ms**.
+
+This is important because continuous analog travel is a shell service, while touchpad click remains a game/select action.
+
+### Coordinate and stereo invariant
+
+Locomotion modifies one logical camera position before eye rendering. Both Cardboard eyes therefore observe the same player translation.
+
+A native module:
+
+- renders the eye matrices it receives;
+- must not add a second copy of shell locomotion;
+- may still use ABI movement axes for non-camera game mechanics when appropriate;
+- must keep persistent simulation changes in `update`, not per-eye rendering.
+
+## Pointer service
+
+The shell constructs controller/gaze pointer state in the same translated world frame as the player camera.
+
+ABI v1 receives only normalized pointer kinds/rays:
+
+- tracked controller;
+- virtual controller;
+- none.
+
+Modules do not parse BLE packets or raw Android/controller quaternions.
+
+When the Quick Menu owns interaction, native module updates continue only under the shell's pause/input policy and do not receive a live native pointer ray.
+
+## Recovery and input ownership
+
+The shell reserves platform recovery behavior. Native games cannot become the sole owner of Menu/Home/Back/recenter routing.
+
+Current native-game assumptions:
+
+- Quick Menu remains shell-owned;
+- module exit returns through shell lifecycle;
+- touchpad click/select is distinct from shell locomotion;
+- host-reserved controls do not become module-private bindings;
+- movement stops on stale/disconnected/blocked controller state.
+
+## Lifecycle service
+
+The shell owns Android/Cardboard lifecycle and forwards the native lifecycle in a controlled order:
+
+- create module instance;
+- resume;
+- create GL resources when the render context exists;
+- update/render while admitted;
+- release GL resources while the context is valid;
+- pause/stop;
+- destroy instance.
+
+Exact callbacks are defined in `API_V1.md`.
+
+## Persistence service
+
+Native games use the ABI v1 host save functions rather than arbitrary filesystem access.
+
+The shell/runtime chooses the module-private storage root; the native host validates slot names and performs bounded save reads/writes. Save schema/versioning remains game-owned.
+
+## Current limitations and next API candidates
+
+The following are **not** yet stable generalized services:
+
+- declarative locomotion envelope/capability in the native module descriptor;
+- per-game comfort-policy query;
+- standard spatial collision/guardian service;
+- shared mounted-tool/world-anchor primitive;
+- shell audio submission/mixing API;
+- haptics;
+- generalized generated-model service.
+
+When one of these becomes implemented and reusable, add its authoritative source and normative documentation to the contract index before describing it as part of the SDK.
+
+## Validation expectations
+
+Static/JVM validation currently covers locomotion direction, deadzone, diagonal normalization, bounds, release stop, invalid inputs, frame-gap clamping, input ownership, and gesture re-arm.
+
+Reference-device validation remains required for:
+
+- touchpad polarity and comfort;
+- real controller stale/reconnect behavior;
+- stereo alignment during movement;
+- pointer reach after translation;
+- geometry intersections;
+- sustained frame/thermal cost.
+
+Until those pass, this is an implemented runtime service with pending device acceptance, not a finished comfort guarantee.
