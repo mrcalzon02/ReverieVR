@@ -117,7 +117,8 @@ final class DaydreamControllerAssetRenderer {
         boolean homePressed,
         boolean appPressed,
         boolean volumeUpPressed,
-        boolean volumeDownPressed
+        boolean volumeDownPressed,
+        float opacity
     ) {
         if (!isAvailable()
             || program == 0
@@ -157,7 +158,9 @@ final class DaydreamControllerAssetRenderer {
         );
 
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-        GLES20.glDisable(GLES20.GL_BLEND);
+        if (opacity >= 1.0f) {
+            GLES20.glDisable(GLES20.GL_BLEND);
+        }
         GLES20.glUseProgram(program);
 
         GLES20.glUniformMatrix4fv(
@@ -219,10 +222,13 @@ final class DaydreamControllerAssetRenderer {
 
             GLES20.glUniform4f(
                 colorHandle,
-                color[0],
-                color[1],
-                color[2],
-                1.0f
+                opacity < 1.0f
+                    ? color[0] * 0.65f + 0.12f : color[0],
+                opacity < 1.0f
+                    ? color[1] * 0.65f + 0.35f : color[1],
+                opacity < 1.0f
+                    ? color[2] * 0.65f + 0.35f : color[2],
+                opacity
             );
             GLES20.glDrawArrays(
                 GLES20.GL_TRIANGLES,

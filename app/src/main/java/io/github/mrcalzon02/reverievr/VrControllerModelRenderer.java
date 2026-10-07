@@ -65,6 +65,24 @@ final class VrControllerModelRenderer {
         buildDisc(20);
     private final DaydreamControllerAssetRenderer
         assetRenderer;
+    private final float[] springVertices =
+        new float[ControllerGhostTether.VERTEX_COUNT * 3];
+    private final FloatBuffer springMesh =
+        buffer(new float[ControllerGhostTether.VERTEX_COUNT * 3]);
+    private final boolean[] previousDepthWrite = new boolean[1];
+    private final int[] previousBlendSourceRgb = new int[1];
+    private final int[] previousBlendDestinationRgb = new int[1];
+    private final int[] previousBlendSourceAlpha = new int[1];
+    private final int[] previousBlendDestinationAlpha = new int[1];
+    private final int[] previousBlendEquationRgb = new int[1];
+    private final int[] previousBlendEquationAlpha = new int[1];
+    private int springVertexCount;
+    private boolean ghostVisible;
+    private float ghostX;
+    private float ghostY;
+    private float ghostZ;
+    private boolean ghostPass;
+    private float ghostOpacity;
 
     private final float[] eyeView = new float[16];
     private final float[] correctedEyeView = new float[16];
@@ -190,6 +208,34 @@ final class VrControllerModelRenderer {
 
     void hide() {
         visible = false;
+        clearGhost();
+    }
+
+    void setGhostTarget(float x, float y, float z) {
+        if (!Float.isFinite(x) || !Float.isFinite(y)
+            || !Float.isFinite(z)) {
+            clearGhost();
+            return;
+        }
+        ghostX = x;
+        ghostY = y;
+        ghostZ = z;
+        ghostVisible = true;
+        springVertexCount = ControllerGhostTether.write(
+            springVertices,
+            anchorX, anchorY, anchorZ,
+            ghostX, ghostY, ghostZ
+        );
+        if (springVertexCount > 0) {
+            springMesh.position(0);
+            springMesh.put(springVertices, 0, springVertexCount * 3);
+            springMesh.position(0);
+        }
+    }
+
+    void clearGhost() {
+        ghostVisible = false;
+        springVertexCount = 0;
     }
 
     void drawEye(
@@ -289,6 +335,15 @@ final class VrControllerModelRenderer {
         );
         System.arraycopy(model, 0, root, 0, 16);
 
+        if (ghostVisible) {
+            drawGhostEye(eye);
+            // Ghost and live handset share rotation but never position.
+            Matrix.setIdentityM(root, 0);
+            Matrix.translateM(root, 0, anchorX, anchorY, anchorZ);
+            Matrix.multiplyMM(model, 0, root, 0, rotation, 0);
+            System.arraycopy(model, 0, root, 0, 16);
+        }
+
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
 
@@ -301,7 +356,8 @@ final class VrControllerModelRenderer {
                 homePressed,
                 appPressed,
                 volumeUpPressed,
-                volumeDownPressed
+                volumeDownPressed,
+                1.0f
             );
             return;
         }
@@ -400,6 +456,110 @@ final class VrControllerModelRenderer {
             0.78f,
             0.88f
         );
+    }
+
+    private void drawGhostEye(CardboardView.Eye eye) {
+        float dx = ghostX - anchorX;
+        float dy = ghostY - anchorY;
+        float dz = ghostZ - anchorZ;
+        float distance = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        float opacity = ControllerGhostTether.opacity(distance);
+        if (opacity <= 0.0f) return;
+
+        boolean wasBlending = GLES20.glIsEnabled(GLES20.GL_BLEND);
+        boolean wasDepthTest = GLES20.glIsEnabled(GLES20.GL_DEPTH_TEST);
+        GLES20.glGetBooleanv(
+            GLES20.GL_DEPTH_WRITEMASK, previousDepthWrite, 0
+        );
+        GLES20.glGetIntegerv(
+            GLES20.GL_BLEND_SRC_RGB, previousBlendSourceRgb, 0
+        );
+        GLES20.glGetIntegerv(
+            GLES20.GL_BLEND_DST_RGB, previousBlendDestinationRgb, 0
+        );
+        GLES20.glGetIntegerv(
+            GLES20.GL_BLEND_SRC_ALPHA, previousBlendSourceAlpha, 0
+        );
+        GLES20.glGetIntegerv(
+            GLES20.GL_BLEND_DST_ALPHA, previousBlendDestinationAlpha, 0
+        );
+        GLES20.glGetIntegerv(
+            GLES20.GL_BLEND_EQUATION_RGB, previousBlendEquationRgb, 0
+        );
+        GLES20.glGetIntegerv(
+            GLES20.GL_BLEND_EQUATION_ALPHA, previousBlendEquationAlpha, 0
+        );
+        try {
+            GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+            GLES20.glDepthMask(false);
+            GLES20.glEnable(GLES20.GL_BLEND);
+            GLES20.glBlendFunc(
+                GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA
+            );
+            Matrix.setIdentityM(root, 0);
+            Matrix.translateM(root, 0, ghostX, ghostY, ghostZ);
+            Matrix.multiplyMM(model, 0, root, 0, rotation, 0);
+            System.arraycopy(model, 0, root, 0, 16);
+
+            if (assetRenderer.isRenderable()) {
+                assetRenderer.drawEye(
+                    eye, correctedEyeView, root,
+                    false, false, false, false, false, opacity
+                );
+            } else {
+                ghostPass = true;
+                ghostOpacity = opacity;
+                drawCube(
+                    eye, 0.0f, 0.0f, 0.0f,
+                    0.105f, 0.040f, 0.220f,
+                    0.42f, 0.78f, 0.92f
+                );
+                drawDisc(
+                    eye, 0.0f, 0.022f, -0.055f,
+                    0.036f, 0.45f, 0.85f, 0.98f
+                );
+                drawCube(
+                    eye, 0.0f, 0.024f, 0.042f,
+                    0.030f, 0.010f, 0.050f,
+                    0.42f, 0.78f, 0.92f
+                );
+            }
+
+            if (springVertexCount > 1) {
+                ghostPass = true;
+                ghostOpacity = Math.min(0.64f, opacity * 2.0f);
+                Matrix.setIdentityM(local, 0);
+                drawMesh(
+                    eye, springMesh, springVertexCount,
+                    GLES20.GL_LINE_STRIP, local,
+                    0.30f, 0.86f, 0.98f
+                );
+            }
+        } finally {
+            ghostPass = false;
+            ghostOpacity = 1.0f;
+            GLES20.glDepthMask(previousDepthWrite[0]);
+            GLES20.glBlendFuncSeparate(
+                previousBlendSourceRgb[0],
+                previousBlendDestinationRgb[0],
+                previousBlendSourceAlpha[0],
+                previousBlendDestinationAlpha[0]
+            );
+            GLES20.glBlendEquationSeparate(
+                previousBlendEquationRgb[0],
+                previousBlendEquationAlpha[0]
+            );
+            if (wasBlending) {
+                GLES20.glEnable(GLES20.GL_BLEND);
+            } else {
+                GLES20.glDisable(GLES20.GL_BLEND);
+            }
+            if (wasDepthTest) {
+                GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+            } else {
+                GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+            }
+        }
     }
 
     private void drawCube(
@@ -554,10 +714,10 @@ final class VrControllerModelRenderer {
         );
         GLES20.glUniform4f(
             colorHandle,
-            red,
-            green,
-            blue,
-            1.0f
+            ghostPass ? red * 0.65f + 0.12f : red,
+            ghostPass ? green * 0.65f + 0.35f : green,
+            ghostPass ? blue * 0.65f + 0.35f : blue,
+            ghostPass ? ghostOpacity : 1.0f
         );
         GLES20.glDrawArrays(
             primitive,
@@ -570,6 +730,7 @@ final class VrControllerModelRenderer {
     }
 
     void shutdown() {
+        clearGhost();
         assetRenderer.shutdown();
         if (program != 0) {
             GLES20.glDeleteProgram(program);
