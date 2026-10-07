@@ -25,10 +25,21 @@ MATERIAL_H = Path("app/src/main/jni/native/procedural_material_atlas.h")
 MATERIAL_CPP = Path("app/src/main/jni/native/procedural_material_atlas.cpp")
 STATIC_H = Path("app/src/main/jni/native/red_ledger_static_geometry.h")
 STATIC_CPP = Path("app/src/main/jni/native/red_ledger_static_geometry.cpp")
+LOCOMOTION_JAVA = Path(
+    "app/src/main/java/io/github/mrcalzon02/reverievr/BoundedViewRelativeLocomotion.java"
+)
+LOCOMOTION_GATE_JAVA = Path(
+    "app/src/main/java/io/github/mrcalzon02/reverievr/TouchpadLocomotionGate.java"
+)
+RENDERER_JAVA = Path(
+    "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java"
+)
 
 API_DOC = Path("docs/native/API_V1.md")
+RUNTIME_SERVICES_DOC = Path("docs/native/RUNTIME_SERVICES.md")
 PROCEDURAL_DOC = Path("docs/native/PROCEDURAL_CONTENT_STANDARD.md")
 CONTRACT_INDEX = Path("docs/native/CONTRACT_INDEX.md")
+BACKLOG = Path("docs/project/BACKLOG.md")
 
 SYNC_MAP = {
     API_HEADER: {API_DOC},
@@ -38,6 +49,8 @@ SYNC_MAP = {
     MATERIAL_CPP: {PROCEDURAL_DOC},
     STATIC_H: {PROCEDURAL_DOC},
     STATIC_CPP: {PROCEDURAL_DOC},
+    LOCOMOTION_JAVA: {RUNTIME_SERVICES_DOC},
+    LOCOMOTION_GATE_JAVA: {RUNTIME_SERVICES_DOC},
 }
 
 
@@ -58,7 +71,7 @@ def require(condition: bool, message: str) -> None:
 
 
 def regex_value(pattern: str, text: str, label: str) -> str:
-    match = re.search(pattern, text, flags=re.MULTILINE)
+    match = re.search(pattern, text, flags=re.MULTILINE | re.DOTALL)
     if not match:
         raise ContractError(f"could not derive {label} from authoritative source")
     return match.group(1)
@@ -70,9 +83,14 @@ def check_current_content() -> None:
     runtime = read(RUNTIME_JAVA)
     material_h = read(MATERIAL_H)
     static_h = read(STATIC_H)
+    locomotion_java = read(LOCOMOTION_JAVA)
+    locomotion_gate_java = read(LOCOMOTION_GATE_JAVA)
+    renderer_java = read(RENDERER_JAVA)
     api_doc = read(API_DOC)
+    runtime_services_doc = read(RUNTIME_SERVICES_DOC)
     procedural_doc = read(PROCEDURAL_DOC)
     contract_index = read(CONTRACT_INDEX)
+    backlog = read(BACKLOG)
 
     abi_version = regex_value(
         r"^#define\s+REVERIE_NATIVE_MODULE_ABI_VERSION\s+(\d+)u\s*$",
@@ -191,6 +209,114 @@ def check_current_content() -> None:
             f"`{token}`" in procedural_doc,
             f"procedural standard does not name current utility: {token}",
         )
+
+
+    deadzone = float(
+        regex_value(
+            r"private\s+static\s+final\s+float\s+DEADZONE\s*=\s*([0-9.]+)f\s*;",
+            locomotion_java,
+            "native locomotion deadzone",
+        )
+    )
+    speed = float(
+        regex_value(
+            r"private\s+static\s+final\s+float\s+SPEED_METERS_PER_SECOND\s*=\s*([0-9.]+)f\s*;",
+            locomotion_java,
+            "native locomotion speed",
+        )
+    )
+    frame_cap_seconds = float(
+        regex_value(
+            r"Math\.min\(deltaSeconds,\s*([0-9.]+)f\)",
+            locomotion_java,
+            "native locomotion frame-delta cap",
+        )
+    )
+    stale_nanos = int(
+        regex_value(
+            r"poseAge\s*>\s*(\d+)L",
+            renderer_java,
+            "native locomotion stale-input threshold",
+        )
+    )
+    red_limit_x = float(
+        regex_value(
+            r"ID_RED_LEDGER\.equals\(moduleId\).*?limitX\s*=\s*([0-9.]+)f",
+            renderer_java,
+            "Red Ledger locomotion lateral limit",
+        )
+    )
+    red_limit_z = float(
+        regex_value(
+            r"ID_RED_LEDGER\.equals\(moduleId\).*?limitX\s*=\s*[0-9.]+f;.*?limitZ\s*=\s*([0-9.]+)f",
+            renderer_java,
+            "Red Ledger locomotion depth limit",
+        )
+    )
+    chamber_limit_x = float(
+        regex_value(
+            r'"procedural-test-chamber"\.equals\(moduleId\).*?limitX\s*=\s*([0-9.]+)f',
+            renderer_java,
+            "Test Chamber locomotion X limit",
+        )
+    )
+    chamber_limit_z = float(
+        regex_value(
+            r'"procedural-test-chamber"\.equals\(moduleId\).*?limitX\s*=\s*[0-9.]+f;.*?limitZ\s*=\s*([0-9.]+)f',
+            renderer_java,
+            "Test Chamber locomotion Z limit",
+        )
+    )
+
+    require(
+        f"**{deadzone:.2f}**" in runtime_services_doc,
+        "runtime services doc does not report current locomotion deadzone",
+    )
+    require(
+        f"**{speed:.2f} m/s**" in runtime_services_doc,
+        "runtime services doc does not report current locomotion speed",
+    )
+    require(
+        f"**{int(round(frame_cap_seconds * 1000.0))} ms**" in runtime_services_doc,
+        "runtime services doc does not report current frame-delta cap",
+    )
+    require(
+        f"**{int(round(stale_nanos / 1_000_000.0))} ms**" in runtime_services_doc,
+        "runtime services doc does not report current stale-input cutoff",
+    )
+    require(
+        f"**±{chamber_limit_x:.2f} m X/Z**" in runtime_services_doc
+        and abs(chamber_limit_x - chamber_limit_z) < 0.0001,
+        "runtime services doc does not report current Test Chamber bounds",
+    )
+    require(
+        f"**±{red_limit_x:.2f} m lateral, ±{red_limit_z:.2f} m depth**"
+        in runtime_services_doc,
+        "runtime services doc does not report current Red Ledger bounds",
+    )
+    require(
+        "TouchpadLocomotionGate" in locomotion_gate_java
+        and "`TouchpadLocomotionGate`" in runtime_services_doc,
+        "runtime services doc does not name the current locomotion gate",
+    )
+    for token in ("blocked || clicked", "!touching", "armed = true"):
+        require(
+            token in locomotion_gate_java,
+            f"locomotion gate semantics changed near: {token}",
+        )
+    require(
+        "current packed path is RV-0613" in backlog
+        and "live Red Ledger upload path is direct RGB565" in backlog,
+        "backlog Red Ledger atlas record is stale relative to the current packed path",
+    )
+    require(
+        str(RENDERER_JAVA) in contract_index,
+        "contract index missing renderer semantic-review source",
+    )
+    require(
+        str(RUNTIME_SERVICES_DOC) in contract_index,
+        "contract index missing runtime services documentation",
+    )
 
     for mapped_source, mapped_docs in SYNC_MAP.items():
         require(str(mapped_source) in contract_index, f"contract index missing {mapped_source}")
