@@ -207,6 +207,50 @@ int main() {
         ReverieNativeInputHasBaseV1(&input) != 0,
         "base input prefix should be readable"
     );
+    input.delta_seconds = std::numeric_limits<float>::quiet_NaN();
+    input.move_x = std::numeric_limits<float>::quiet_NaN();
+    input.move_y = std::numeric_limits<float>::infinity();
+    input.primary_down = 7u;
+    input.secondary_down = 9u;
+    Check(
+        ReverieNativeSanitizeBaseInputV1(&input) != 0
+        && input.delta_seconds == 0.0f
+        && input.move_x == 0.0f
+        && input.move_y == 0.0f
+        && input.primary_down == 1u
+        && input.secondary_down == 1u,
+        "base sanitizer must neutralize non-finite samples and normalize buttons"
+    );
+    input.delta_seconds = 0.5f;
+    input.move_x = 2.0f;
+    input.move_y = -2.0f;
+    Check(
+        ReverieNativeSanitizeBaseInputV1(&input) != 0
+        && input.delta_seconds == 0.1f
+        && input.move_x == 1.0f
+        && input.move_y == -1.0f,
+        "base sanitizer must clamp finite axes and frame delta"
+    );
+    input.delta_seconds = -0.25f;
+    input.move_x = -std::numeric_limits<float>::infinity();
+    Check(
+        ReverieNativeSanitizeBaseInputV1(&input) != 0
+        && input.delta_seconds == 0.0f
+        && input.move_x == 0.0f,
+        "base sanitizer must reject negative time and infinite axis"
+    );
+    input.struct_size = REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE - 1u;
+    input.move_x = std::numeric_limits<float>::quiet_NaN();
+    Check(
+        ReverieNativeSanitizeBaseInputV1(&input) == 0
+        && std::isnan(input.move_x),
+        "base sanitizer must not mutate truncated input prefix"
+    );
+    input.struct_size = REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;
+    Check(
+        ReverieNativeSanitizeBaseInputV1(nullptr) == 0,
+        "base sanitizer must reject null input"
+    );
     Check(
         ReverieNativeInputHasPointerV1(&input) == 0,
         "base input prefix must not expose pointer tail"

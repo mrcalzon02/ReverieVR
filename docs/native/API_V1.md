@@ -132,7 +132,7 @@ Save data remains the module's responsibility: use an explicit schema/version, v
 - pointer origin;
 - pointer direction.
 
-The host bounds frame delta and normalizes movement axes before calling the module.
+The JNI host applies the shared `ReverieNativeSanitizeBaseInputV1` helper before invoking a module: non-finite (NaN/infinite) frame delta and movement axes become neutral **zero**, finite frame delta is clamped to **0–0.1 s**, movement axes to **−1..1**, and button flags to **0/1**. Malformed floating-point input must never become unintended full-strength movement. A game may sanitize a writable input copy again when it needs to defend against another ABI-compatible host. This does not remap controls or grant shell locomotion.
 
 ### Pointer kinds
 

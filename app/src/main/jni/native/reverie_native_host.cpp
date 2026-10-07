@@ -838,36 +838,9 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
     ReverieNativeInputV1 input = {};
     input.struct_size =
         sizeof(ReverieNativeInputV1);
-    input.delta_seconds =
-        std::max(
-            0.0f,
-            std::min(
-                static_cast<float>(
-                    delta_seconds
-                ),
-                0.1f
-            )
-        );
-    input.move_x =
-        std::max(
-            -1.0f,
-            std::min(
-                static_cast<float>(
-                    move_x
-                ),
-                1.0f
-            )
-        );
-    input.move_y =
-        std::max(
-            -1.0f,
-            std::min(
-                static_cast<float>(
-                    move_y
-                ),
-                1.0f
-            )
-        );
+    input.delta_seconds = static_cast<float>(delta_seconds);
+    input.move_x = static_cast<float>(move_x);
+    input.move_y = static_cast<float>(move_y);
     input.primary_down =
         primary_down == JNI_TRUE
             ? 1u
@@ -876,6 +849,9 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
         secondary_down == JNI_TRUE
             ? 1u
             : 0u;
+
+    // Validate base input before invoking a native game.
+    ReverieNativeSanitizeBaseInputV1(&input);
 
     input.pointer_kind = static_cast<uint32_t>(pointer_kind);
     input.pointer_origin[0] = static_cast<float>(pointer_origin_x);

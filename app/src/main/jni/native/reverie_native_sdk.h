@@ -140,6 +140,35 @@ static inline int ReverieNativeInputHasBaseV1(
             >= REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;
 }
 
+/* Normalize mandatory base input without touching the pointer tail.
+ * Non-finite samples fail neutral rather than saturating an axis. */
+static inline float reverie_native_clamp_finite(
+    float value, float minimum, float maximum
+) {
+    if (!(fabsf(value) <= FLT_MAX)) return 0.0f;
+    if (value < minimum) return minimum;
+    if (value > maximum) return maximum;
+    return value;
+}
+
+static inline int ReverieNativeSanitizeBaseInputV1(
+    ReverieNativeInputV1 *input
+) {
+    if (!ReverieNativeInputHasBaseV1(input)) return 0;
+    input->delta_seconds = reverie_native_clamp_finite(
+        input->delta_seconds, 0.0f, 0.1f
+    );
+    input->move_x = reverie_native_clamp_finite(
+        input->move_x, -1.0f, 1.0f
+    );
+    input->move_y = reverie_native_clamp_finite(
+        input->move_y, -1.0f, 1.0f
+    );
+    input->primary_down = input->primary_down != 0u ? 1u : 0u;
+    input->secondary_down = input->secondary_down != 0u ? 1u : 0u;
+    return 1;
+}
+
 static inline int ReverieNativeInputHasPointerV1(
     const ReverieNativeInputV1 *input
 ) {

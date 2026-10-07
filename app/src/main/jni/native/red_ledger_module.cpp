@@ -1601,14 +1601,12 @@ void Update(
         return;
     }
 
-    const float dt =
-        std::max(
-            0.0f,
-            std::min(
-                input->delta_seconds,
-                0.1f
-            )
-        );
+    ReverieNativeInputV1 effective_input = *input;
+    // Validate a writable copy even with an alternate ABI-compatible host.
+    ReverieNativeSanitizeBaseInputV1(&effective_input);
+    ReverieNativeSanitizePointerV1(&effective_input);
+
+    const float dt = effective_input.delta_seconds;
     state->elapsed_seconds += dt;
     // Calculate lighting once per simulation update, not separately for
     // the two eyes. Both stereo views receive identical illumination.
@@ -1617,12 +1615,6 @@ void Update(
         + 0.35f * std::sin(state->elapsed_seconds * 19.0f);
     state->flicker = std::max(0.72f,
         std::min(1.0f, 0.90f + wave * 0.06f));
-
-    ReverieNativeInputV1 effective_input =
-        *input;
-
-    // Defensive check before game-private interaction geometry.
-    ReverieNativeSanitizePointerV1(&effective_input);
 
     state->pointer_active =
         effective_input.pointer_kind
@@ -1647,7 +1639,7 @@ void Update(
         );
 
     const bool primary =
-        input->primary_down != 0u;
+        effective_input.primary_down != 0u;
 
     if (primary
         && !state->primary_was_down) {

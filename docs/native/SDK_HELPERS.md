@@ -52,6 +52,10 @@ Validates the base input prefix through timing, movement axes, and primary/secon
 
 Use this for modules that do not consume the pointer tail.
 
+### `ReverieNativeSanitizeBaseInputV1`
+
+Sanitizes a writable input with the mandatory base prefix. Non-finite (NaN/infinite) time or movement samples become **zero**, not a saturated direction. Finite frame delta is clamped to **0–0.1 s**, each movement axis to **−1..1**, and nonzero primary/secondary button flags to **1**. A null or truncated base prefix is rejected without mutation; the pointer tail is never touched. The JNI host uses this before calling modules, and Red Ledger reapplies it to a writable copy for defense against alternate hosts. This is not an input-remapping or locomotion policy.
+
 ### `ReverieNativeInputHasPointerV1`
 
 Validates the input prefix through pointer kind, origin, and direction.
