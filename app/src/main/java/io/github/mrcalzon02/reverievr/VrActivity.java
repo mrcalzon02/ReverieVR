@@ -1161,12 +1161,8 @@ public final class VrActivity extends Activity
             return false;
         }
 
-        String hostedProfileId =
-            NativeModuleRuntime.ID_RED_LEDGER.equals(
-                moduleId
-            )
-                ? BuiltInBindingProfiles.ID_NATIVE_RED_LEDGER
-                : BuiltInBindingProfiles.ID_NATIVE_TEST_CHAMBER;
+        final String hostedProfileId =
+            BuiltInBindingProfiles.ID_NATIVE_STANDARD;
 
         inputBindingManager.beginHostedProfile(
             hostedProfileId

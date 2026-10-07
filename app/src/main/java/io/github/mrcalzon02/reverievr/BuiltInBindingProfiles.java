@@ -9,10 +9,8 @@ final class BuiltInBindingProfiles {
     static final String ID_DOS_DOOM_SHAREWARE = "dos-doom-shareware";
     static final String ID_DOS_FPS_HEAD_MOUSE = "dos-fps-head-mouse";
     static final String ID_DOS_CURSOR = "dos-cursor";
-    static final String ID_NATIVE_TEST_CHAMBER =
-        "native-test-chamber";
-    static final String ID_NATIVE_RED_LEDGER =
-        "native-red-ledger";
+    static final String ID_NATIVE_STANDARD =
+        "native-standard";
 
     private static final List<BindingProfile> PROFILES =
         buildProfiles();
@@ -56,8 +54,7 @@ final class BuiltInBindingProfiles {
     private static List<BindingProfile> buildDosProfiles() {
         List<BindingProfile> result = new ArrayList<>();
         for (BindingProfile profile : PROFILES) {
-            if (!ID_NATIVE_TEST_CHAMBER.equals(profile.id)
-                && !ID_NATIVE_RED_LEDGER.equals(
+            if (!ID_NATIVE_STANDARD.equals(
                     profile.id
                 )) {
                 result.add(profile);
@@ -218,22 +215,22 @@ final class BuiltInBindingProfiles {
             )
         );
 
-        List<InputBinding> nativeTest =
+        List<InputBinding> nativeStandard =
             new ArrayList<>();
         // Native 3D locomotion is shell-owned; do not move twice.
-        nativeTest.add(
+        nativeStandard.add(
             InputBinding.digital(
                 BindingInput.SELECT,
                 VirtualOutput.joystickButton(0)
             )
         );
-        nativeTest.add(
+        nativeStandard.add(
             InputBinding.digital(
                 BindingInput.VOLUME_UP,
                 VirtualOutput.joystickButton(1)
             )
         );
-        nativeTest.add(
+        nativeStandard.add(
             InputBinding.digital(
                 BindingInput.VOLUME_DOWN,
                 VirtualOutput.joystickButton(2)
@@ -241,37 +238,9 @@ final class BuiltInBindingProfiles {
         );
         profiles.add(
             new BindingProfile(
-                ID_NATIVE_TEST_CHAMBER,
-                "Native test chamber",
-                nativeTest
-            )
-        );
-
-        List<InputBinding> redLedger =
-            new ArrayList<>();
-        redLedger.add(
-            InputBinding.digital(
-                BindingInput.SELECT,
-                VirtualOutput.joystickButton(0)
-            )
-        );
-        redLedger.add(
-            InputBinding.digital(
-                BindingInput.VOLUME_UP,
-                VirtualOutput.joystickButton(1)
-            )
-        );
-        redLedger.add(
-            InputBinding.digital(
-                BindingInput.VOLUME_DOWN,
-                VirtualOutput.joystickButton(2)
-            )
-        );
-        profiles.add(
-            new BindingProfile(
-                ID_NATIVE_RED_LEDGER,
-                "Red Ledger — work surface",
-                redLedger
+                ID_NATIVE_STANDARD,
+                "Native game — standard controls",
+                nativeStandard
             )
         );
 

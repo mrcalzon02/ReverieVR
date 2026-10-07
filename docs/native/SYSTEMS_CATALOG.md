@@ -60,6 +60,7 @@ This catalog is intentionally broader than the public C ABI. It includes impleme
 | Bounded view-relative locomotion | **Runtime service / provisional** | `app/src/main/java/io/github/mrcalzon02/reverievr/BoundedViewRelativeLocomotion.java` | `docs/native/RUNTIME_SERVICES.md` |
 | Gesture re-arm gate | **Runtime service / provisional** | `app/src/main/java/io/github/mrcalzon02/reverievr/TouchpadLocomotionGate.java` | `docs/native/RUNTIME_SERVICES.md` |
 | Shell integration / translated pointer frame | **Runtime integration** | `app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java` | `docs/native/RUNTIME_SERVICES.md` |
+| Standard native hosted input profile | **Runtime service / provisional** | `app/src/main/java/io/github/mrcalzon02/reverievr/BuiltInBindingProfiles.java`, `app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java` | `docs/native/RUNTIME_SERVICES.md` |
 | Recovery ownership | **Platform rule** | shell lifecycle/input routing | `docs/native/README.md`, `docs/native/RUNTIME_SERVICES.md` |
 
 Native modules consume normalized actions/rays. They do not parse BLE packets, Android key codes, or raw Daydream quaternions.

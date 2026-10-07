@@ -84,6 +84,22 @@ A native module:
 - may still use ABI movement axes for non-camera game mechanics when appropriate;
 - must keep persistent simulation changes in `update`, not per-eye rendering.
 
+## Standard native hosted input profile
+
+Native modules launch under one shared `native-standard` binding profile rather than game-id-specific profiles.
+
+The current normalized button mapping is:
+
+- Select → virtual joystick button **0**;
+- the reclaimed `VOLUME_UP` input source → virtual joystick button **1**;
+- the reclaimed `VOLUME_DOWN` input source → virtual joystick button **2**.
+
+Those `VOLUME_*` names identify the Android/hardware input sources; under the native hosted profile they are game buttons and do not perform system volume control. Volume adjustment remains a shell/menu responsibility.
+
+Touchpad travel is deliberately **not** mapped into joystick movement by this profile. Shell-owned locomotion consumes the touchpad separately when the module declares `REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION`, preventing movement from being applied twice.
+
+A newly admitted native game receives this standard profile without adding a game-id branch in `VrActivity`. A future need for materially different native input semantics should become an explicit reusable capability/profile contract rather than another hard-coded module-name switch.
+
 ## Pointer service
 
 The shell constructs controller/gaze pointer state in the same translated world frame as the player camera.

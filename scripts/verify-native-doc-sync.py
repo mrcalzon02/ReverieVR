@@ -51,6 +51,12 @@ CONTROLLER_SPRING_WAVEFORM_JAVA = Path(
 ACTIVITY_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java"
 )
+BINDING_PROFILES_JAVA = Path(
+    "app/src/main/java/io/github/mrcalzon02/reverievr/BuiltInBindingProfiles.java"
+)
+BINDING_PROFILES_TEST = Path(
+    "app/src/test/java/io/github/mrcalzon02/reverievr/BuiltInBindingProfilesTest.java"
+)
 UI_FEEDBACK_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/UiFeedback.java"
 )
@@ -129,6 +135,8 @@ def check_current_content() -> None:
         CONTROLLER_SPRING_WAVEFORM_JAVA
     )
     activity_java = read(ACTIVITY_JAVA)
+    binding_profiles_java = read(BINDING_PROFILES_JAVA)
+    binding_profiles_test = read(BINDING_PROFILES_TEST)
     ui_feedback_java = read(UI_FEEDBACK_JAVA)
     api_doc = read(API_DOC)
     sdk_doc = read(SDK_DOC)
@@ -475,6 +483,51 @@ def check_current_content() -> None:
         and "nativeModuleRuntime.update(" in renderer_java,
         "renderer no longer forwards native feedback masks",
     )
+    require(
+        "ID_NATIVE_STANDARD" in binding_profiles_java
+        and '"native-standard"' in binding_profiles_java
+        and '"Native game — standard controls"' in binding_profiles_java,
+        "standard native hosted binding profile is missing",
+    )
+    require(
+        "ID_NATIVE_TEST_CHAMBER" not in binding_profiles_java
+        and "ID_NATIVE_RED_LEDGER" not in binding_profiles_java
+        and "ID_NATIVE_TEST_CHAMBER" not in activity_java
+        and "ID_NATIVE_RED_LEDGER" not in activity_java,
+        "native input routing regressed to game-id-specific binding profiles",
+    )
+    require(
+        "BuiltInBindingProfiles.ID_NATIVE_STANDARD" in activity_java,
+        "VrActivity no longer launches native games under the standard hosted profile",
+    )
+    for token in (
+        "BindingInput.SELECT",
+        "BindingInput.VOLUME_UP",
+        "BindingInput.VOLUME_DOWN",
+        "VirtualOutput.joystickButton(0)",
+        "VirtualOutput.joystickButton(1)",
+        "VirtualOutput.joystickButton(2)",
+    ):
+        require(
+            token in binding_profiles_java,
+            f"standard native hosted binding profile lost mapping token: {token}",
+        )
+    require(
+        "nativeStandardUsesControllerButtons" in binding_profiles_test
+        and "nativeStandardDoesNotLeakIntoDosProfileList" in binding_profiles_test,
+        "native hosted binding profile JVM regression coverage is missing",
+    )
+    require(
+        str(BINDING_PROFILES_JAVA) in systems_catalog
+        and str(ACTIVITY_JAVA) in systems_catalog,
+        "systems catalog missing standard native hosted input sources",
+    )
+    require(
+        "Standard native hosted input profile" in runtime_services_doc
+        and "`native-standard`" in runtime_services_doc,
+        "runtime services docs do not describe the standard native hosted profile",
+    )
+
     require(
         "onNativeModuleFeedbackRequested" in activity_java
         and "uiFeedback.focus()" in activity_java

@@ -40,6 +40,7 @@ Do not use "documentation will be updated later" as a normal completion state.
 | Bounded view-relative locomotion integrator | `app/src/main/java/io/github/mrcalzon02/reverievr/BoundedViewRelativeLocomotion.java` | `docs/native/RUNTIME_SERVICES.md` | Implemented; S9 comfort proof pending |
 | Native locomotion gesture re-arm gate | `app/src/main/java/io/github/mrcalzon02/reverievr/TouchpadLocomotionGate.java` | `docs/native/RUNTIME_SERVICES.md` | Implemented; S9 controller proof pending |
 | Locomotion/pointer shell integration | `app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java` | `docs/native/RUNTIME_SERVICES.md` | Implemented integration; semantic-review source rather than strict whole-file co-change |
+| Standard native hosted input profile | `app/src/main/java/io/github/mrcalzon02/reverievr/BuiltInBindingProfiles.java`, `app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java` | `docs/native/RUNTIME_SERVICES.md` | Implemented integration; selected facts machine-checked rather than strict whole-file co-change |
 | Cross-module engineering rules and ownership | project doctrine + runtime implementation | `docs/native/README.md` | Living platform standard |
 | Native systems/method discovery and maturity classification | contract map + standardized sources + selected proven shell references | `docs/native/SYSTEMS_CATALOG.md` | Living discoverability catalog |
 

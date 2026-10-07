@@ -12,6 +12,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
+- Collapsed duplicate Test Chamber/Red Ledger hosted input profiles into one `native-standard` native-game profile: Select maps to virtual button 0 and the two reclaimed former volume-key inputs map to game buttons 1/2. `VrActivity` no longer chooses a profile by module id; optional movement remains separately module-declared through the locomotion capability.
+
 - Promoted two more repeated correctness utilities: `ReverieNativeLogV1` now centralizes safe host logging/fallbacks, and `ReverieNativeBuildProgram` plus `ReverieNativeGlAttributeBindingV1` centralize the common GLES compile/bind/link/cleanup lifecycle. Test Chamber and Red Ledger keep their own tags, shader text, bindings, uniform policy and diagnostics but no longer duplicate host-log dispatch or program-link boilerplate.
 
 - Added `docs/native/SYSTEMS_CATALOG.md`, a living maturity/discovery index for the native environment: ABI and host services, module capabilities, input/recovery/locomotion, rendering helpers, generated materials/geometry, shell-only generation references, validation methods, game-private techniques, and planned systems. The native drift guard now requires every standardized contract-map source/document to remain discoverable there and pins selected shell references to their actual generated dimensions.

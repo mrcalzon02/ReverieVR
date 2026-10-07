@@ -8,15 +8,15 @@ import org.junit.Test;
 
 public final class BuiltInBindingProfilesTest {
     @Test
-    public void redLedgerUsesControllerButtons() {
+    public void nativeStandardUsesControllerButtons() {
         BindingProfile profile =
             BuiltInBindingProfiles.byId(
-                BuiltInBindingProfiles.ID_NATIVE_RED_LEDGER
+                BuiltInBindingProfiles.ID_NATIVE_STANDARD
             );
 
         assertNotNull(profile);
         assertEquals(
-            BuiltInBindingProfiles.ID_NATIVE_RED_LEDGER,
+            BuiltInBindingProfiles.ID_NATIVE_STANDARD,
             profile.id
         );
         assertEquals(3, profile.bindings.size());
@@ -39,15 +39,12 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
-    public void testChamberTouchpadMovementIsShellOwned() {
-        BindingProfile profile = BuiltInBindingProfiles.byId(
-            BuiltInBindingProfiles.ID_NATIVE_TEST_CHAMBER
+    public void nativeStandardDoesNotLeakIntoDosProfileList() {
+        assertFalse(
+            BuiltInBindingProfiles.isDosProfileId(
+                BuiltInBindingProfiles.ID_NATIVE_STANDARD
+            )
         );
-        assertNotNull(profile);
-        assertEquals(3, profile.bindings.size());
-        assertDigitalButton(profile.bindings.get(0), BindingInput.SELECT, 0);
-        assertDigitalButton(profile.bindings.get(1), BindingInput.VOLUME_UP, 1);
-        assertDigitalButton(profile.bindings.get(2), BindingInput.VOLUME_DOWN, 2);
     }
 
     private static void assertDigitalButton(
@@ -63,17 +60,4 @@ public final class BuiltInBindingProfilesTest {
         assertEquals(button, binding.output.code);
     }
 
-    @Test
-    public void nativeProfilesDoNotLeakIntoDosProfileList() {
-        assertFalse(
-            BuiltInBindingProfiles.isDosProfileId(
-                BuiltInBindingProfiles.ID_NATIVE_TEST_CHAMBER
-            )
-        );
-        assertFalse(
-            BuiltInBindingProfiles.isDosProfileId(
-                BuiltInBindingProfiles.ID_NATIVE_RED_LEDGER
-            )
-        );
-    }
 }
