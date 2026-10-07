@@ -163,6 +163,7 @@ def check_current_content() -> None:
     prefix_tokens = (
         "REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE",
         "REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE",
+        "REVERIE_NATIVE_DESCRIPTOR_V1_SIZE",
         "REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE",
         "REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE",
         "REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE",
@@ -175,6 +176,18 @@ def check_current_content() -> None:
             f"`{token}`" in api_doc,
             f"API_V1.md does not document minimum-prefix constant: {token}",
         )
+
+
+    require(
+        "descriptor->struct_size\n            == REVERIE_NATIVE_DESCRIPTOR_V1_SIZE"
+        in sdk_header,
+        "SDK helper no longer enforces the frozen ABI-v1 descriptor size",
+    )
+    require(
+        "layout-frozen" in api_doc
+        and "tail of `ReverieNativeModuleApiV1`" in api_doc,
+        "API_V1.md does not explain the embedded descriptor extension boundary",
+    )
 
     helper_tokens = (
         "ReverieNativeHostSupportsLogV1",

@@ -38,15 +38,22 @@ Current minimum-prefix constants are:
 
 - `REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE` — host header plus logging service;
 - `REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE` — host prefix through read/write save services;
-- `REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE` — mandatory module descriptor fields;
+- `REVERIE_NATIVE_DESCRIPTOR_V1_SIZE` — exact frozen ABI-v1 descriptor size;
+- `REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE` — compatibility alias to that exact frozen size;
 - `REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE` — base timing/movement/button input;
 - `REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE` — input prefix through world-space pointer data;
 - `REVERIE_NATIVE_EYE_V1_MIN_SIZE` — mandatory eye matrices;
 - `REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE` — mandatory module callback table.
 
-The native host and both reference modules use these prefixes. This makes the append-only rule operational: a future optional tail extension does not make an older otherwise-valid v1 prefix fail merely because the newest header's `sizeof` increased.
+The native host and both reference modules use these prefixes. This makes the append-only rule operational for structures whose tails can actually grow without moving existing fields.
 
-Adding optional tail fields can remain ABI v1 when old producers/consumers can safely ignore them. Adding a new mandatory callback, changing existing semantics incompatibly, or requiring a different mandatory layout requires a new ABI version.
+### Descriptor layout exception
+
+`ReverieNativeModuleDescriptorV1` is **layout-frozen** for ABI v1. It is embedded by value inside `ReverieNativeModuleApiV1` before the callback pointers, so appending a descriptor field would shift every callback offset. The v1 helper therefore requires `descriptor.struct_size == REVERIE_NATIVE_DESCRIPTOR_V1_SIZE`.
+
+Do not place future capability declarations by appending to the v1 descriptor. Put a compatible optional extension at the **tail of `ReverieNativeModuleApiV1`** or introduce ABI v2 when the change cannot remain optional.
+
+Adding optional tail fields can remain ABI v1 only when all existing field offsets stay unchanged and old producers/consumers can safely ignore the added tail. Adding a new mandatory callback, changing existing semantics incompatibly, extending the embedded v1 descriptor, or requiring a different mandatory layout requires a new ABI version.
 
 ## Module descriptor
 

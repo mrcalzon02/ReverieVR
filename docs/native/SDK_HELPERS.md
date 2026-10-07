@@ -26,7 +26,7 @@ A module that only needs logging should not require the larger save prefix.
 
 ### `ReverieNativeDescriptorHasMandatoryV1`
 
-Validates the current mandatory v1 descriptor prefix and ABI version.
+Validates the ABI version and requires the exact frozen `REVERIE_NATIVE_DESCRIPTOR_V1_SIZE`. The descriptor is embedded before callback pointers in the v1 API table and therefore cannot grow in place without breaking callback offsets.
 
 ### `ReverieNativeInputHasBaseV1`
 

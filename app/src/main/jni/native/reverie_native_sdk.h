@@ -45,7 +45,7 @@ static inline int ReverieNativeDescriptorHasMandatoryV1(
         && descriptor->abi_version
             == REVERIE_NATIVE_MODULE_ABI_VERSION
         && descriptor->struct_size
-            >= REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE;
+            == REVERIE_NATIVE_DESCRIPTOR_V1_SIZE;
 }
 
 static inline int ReverieNativeInputHasBaseV1(

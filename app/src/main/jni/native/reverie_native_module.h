@@ -75,9 +75,15 @@ typedef struct ReverieNativeModuleDescriptorV1 {
     uint32_t required_gles_minor;
 } ReverieNativeModuleDescriptorV1;
 
+/*
+ * ABI v1 layout freeze: this descriptor is embedded by value in
+ * ReverieNativeModuleApiV1 before callback pointers. Appending fields here
+ * would shift the callback offsets and therefore requires a new ABI version.
+ */
+#define REVERIE_NATIVE_DESCRIPTOR_V1_SIZE \
+    ((uint32_t)sizeof(ReverieNativeModuleDescriptorV1))
 #define REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE \
-    ((uint32_t)(offsetof(ReverieNativeModuleDescriptorV1, required_gles_minor) \
-        + sizeof(((ReverieNativeModuleDescriptorV1 *)0)->required_gles_minor)))
+    REVERIE_NATIVE_DESCRIPTOR_V1_SIZE
 
 typedef struct ReverieNativeInputV1 {
     uint32_t struct_size;

@@ -12,6 +12,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
+- Tightened ABI-v1 evolution rules around the embedded module descriptor: `ReverieNativeModuleDescriptorV1` is now explicitly layout-frozen and validated at its exact v1 size because growing it would shift the surrounding API callback table. Optional future v1 metadata must live at the tail of `ReverieNativeModuleApiV1`, otherwise the change requires ABI v2.
+
 - Promoted two independently duplicated native-game utilities into focused shared SDK headers: `ReverieNativeMat4Multiply` in `reverie_native_math.h` and `ReverieNativeCompileShader` in `reverie_native_gl_utils.h`. Test Chamber and Red Ledger now consume the common implementations; `CORE_UTILITIES.md` and the drift guard explicitly prevent these helpers from drifting back into game-private copies.
 
 - Added shared `reverie_native_gl_state.h` plus `GL_RENDERING_STANDARD.md` and migrated both native games to it. The guard restores program/buffer/texture/enabled-state plus complete modified vertex-attribute configuration and generic values, closing the prior leak where modules restored only attribute enable flags after overwriting pointer/buffer/current-value state.
