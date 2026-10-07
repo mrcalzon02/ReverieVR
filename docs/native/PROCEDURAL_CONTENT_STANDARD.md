@@ -103,7 +103,7 @@ Recipes should remain simple enough to test and reason about. A 200-line procedu
 
 Geometry that never changes during gameplay should be generated or assembled once and uploaded as immutable GPU data.
 
-Red Ledger currently demonstrates the pattern by baking 11 static room/furniture cubes into one world-space VBO: 396 vertices and a 15,840-byte buffer, rendered in one static-room draw per eye. Interactive/hoverable props remain separate.
+Red Ledger currently demonstrates the pattern through `BuildStaticRoomVertices`, baking 11 static room/furniture cubes into one world-space VBO: 396 vertices and a 15,840-byte buffer, rendered in one static-room draw per eye. Interactive/hoverable props remain separate.
 
 The standard lesson is to separate:
 
