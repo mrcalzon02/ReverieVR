@@ -4,7 +4,7 @@
 
 **Authoritative declaration:** `app/src/main/jni/native/reverie_native_module.h`
 
-**Synchronization:** this file is governed by `docs/native/CONTRACT_INDEX.md`. Changes to the ABI header, native host services, or `NativeModuleRuntime` require same-change review/update of this reference and should pass `python3 scripts/verify-native-doc-sync.py`.
+**Synchronization:** this file is governed by `docs/native/CONTRACT_INDEX.md`. Changes to the ABI header, native host services, or `NativeModuleRuntime` require same-change review/update of this reference and should pass both `python3 scripts/verify-native-doc-sync.py` and the host-buildable `python3 scripts/verify-native-abi-contract.py` gate when ABI structure/consumption behavior is affected.
 
 ## ABI identity
 
@@ -69,6 +69,8 @@ Adding optional tail fields can remain ABI v1 only when all existing field offse
 - required OpenGL ES major/minor version.
 
 The current host requires the descriptor id to match the allowlisted package entry.
+
+The native module host currently provides **OpenGL ES 2.0**. It compares both descriptor version components through `ReverieNativeGlesRequirementSupportedV1`: requirements below 2.x are admitted, 2.0 is admitted, and requirements above 2.0 (including 2.1 or 3.0) are rejected before module creation.
 
 Module ids are treated as storage/security identifiers, not display strings. Current runtime policy accepts simple ids made from letters, digits, `-`, `_`, and `.`, with a maximum length of 80 characters.
 

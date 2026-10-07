@@ -23,7 +23,7 @@ This handbook describes the current platform, not an aspirational snapshot. `doc
 
 When a documented native function, service, utility, lifecycle rule, input contract, persistence behavior, generator, or reusable technique changes, the corresponding documentation must be reviewed and updated in the same scoped change. If implementation evidence disproves a statement, correct or downgrade the statement immediately rather than leaving known-stale guidance.
 
-Run `python3 scripts/verify-native-doc-sync.py` for factual source/document anchors, and use `--staged` or `--base HEAD^` to enforce mapped source/document co-change. Machine checks supplement semantic review; they do not excuse it.
+Run `python3 scripts/verify-native-doc-sync.py` for factual source/document anchors, and use `--staged` or `--base HEAD^` to enforce mapped source/document co-change. Run `python3 scripts/verify-native-abi-contract.py` whenever ABI layout, prefix validation, optional tails, descriptor admission, or shared ABI helpers change; it compiles and executes the dependency-free host C++ contract test. Machine checks supplement semantic review; they do not excuse it.
 
 ## Goal
 
@@ -157,7 +157,7 @@ Exercise create/destroy, GL context create/release, pause/resume, module exit, Q
 
 ### Phase E — validation
 
-Run native/JVM deterministic checks, Android/NDK packaging checks, stereo-isolation verification, then real Galaxy S9 + Daydream View interaction and sustained performance/thermal testing.
+Run `verify-native-doc-sync.py` and `verify-native-abi-contract.py`, then the relevant native/JVM deterministic checks, Android/NDK packaging checks, stereo-isolation verification, and finally real Galaxy S9 + Daydream View interaction and sustained performance/thermal testing.
 
 ### Phase F — standardization
 
@@ -173,6 +173,7 @@ Anything reusable learned from the module is either promoted to shared SDK docum
 - `docs/native/RUNTIME_SERVICES.md` — shell-owned native runtime behavior including locomotion, pointer/recovery ownership, lifecycle, and persistence boundaries.
 - `docs/native/PROCEDURAL_CONTENT_STANDARD.md` — generated materials, geometry, model-recipe direction, and asset/performance rules.
 - `scripts/verify-native-doc-sync.py` — dependency-free factual/drift guard for the native documentation contract.
+- `scripts/verify-native-abi-contract.py` + `app/src/test/native/native_abi_contract_test.cpp` — host-buildable executable regression gate for ABI prefixes, descriptor freeze, optional tails, capability checks, and GLES admission.
 - `docs/project/NATIVE_GAME_PROJECT_POINTERS.md` — game-specific concept and scope pointers.
 - `docs/project/BACKLOG.md` — implementation intent and acceptance gates.
 - `docs/records/` — durable architectural decisions and tradeoffs.

@@ -367,8 +367,14 @@ bool ValidateApi(
         SetError("Native module id does not match the allowlisted module.");
         return false;
     }
-    if (api->descriptor.required_gles_major > 2u) {
-        SetError("Native module requires a newer OpenGL ES major version.");
+    if (!ReverieNativeGlesRequirementSupportedV1(
+            &api->descriptor,
+            2u,
+            0u
+        )) {
+        SetError(
+            "Native module OpenGL ES requirement exceeds host support 2.0."
+        );
         return false;
     }
     if (api->create == nullptr

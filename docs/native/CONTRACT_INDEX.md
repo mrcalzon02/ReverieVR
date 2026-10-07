@@ -50,7 +50,7 @@ Large integration files such as `VrShellRenderer.java` are not strict whole-file
 
 Current-state project records such as the backlog and acceptance ledger must also remain compatible with these normative documents. Historical changelog entries may describe superseded states when they are clearly historical.
 
-## Machine-verifiable drift guard
+## Machine-verifiable contract gates
 
 Run:
 
@@ -59,6 +59,14 @@ python3 scripts/verify-native-doc-sync.py
 ```
 
 to verify current source/document anchors.
+
+For ABI layout/consumption behavior, also run:
+
+```bash
+python3 scripts/verify-native-abi-contract.py
+```
+
+This compiles and executes `app/src/test/native/native_abi_contract_test.cpp` with an available host C++17 compiler. It checks the frozen descriptor, old mandatory API prefix, optional capability tail, host/input/eye prefixes, shell-locomotion capability gating, and GLES major/minor admission without needing Android or GLES libraries.
 
 When validating a completed commit against its parent, run:
 
@@ -72,12 +80,12 @@ For staged work before commit, run:
 python3 scripts/verify-native-doc-sync.py --staged
 ```
 
-The verifier has two jobs:
+The documentation verifier has two jobs:
 
 1. compare key implementation constants/names against factual claims in the native docs;
 2. reject a mapped implementation-source change that lacks a same-change update to its mapped documentation.
 
-The script is deliberately small and dependency-free. It supplements review; it cannot prove that every sentence is semantically correct.
+The ABI executable test independently exercises the header/helper compatibility rules. Both supplement review; neither can prove that every semantic or device-runtime claim is correct.
 
 ## Review rule for non-machine-checkable claims
 
@@ -107,6 +115,7 @@ For native SDK-facing changes, the completion evidence should include:
 
 - implementation/source validation;
 - `verify-native-doc-sync.py` result;
+- `verify-native-abi-contract.py` result for ABI/helper changes;
 - relevant deterministic tests;
 - build/package evidence when applicable;
 - device/runtime evidence when the claim requires it;

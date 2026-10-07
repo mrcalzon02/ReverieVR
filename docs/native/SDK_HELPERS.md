@@ -28,6 +28,10 @@ A module that only needs logging should not require the larger save prefix.
 
 Validates the ABI version and requires the exact frozen `REVERIE_NATIVE_DESCRIPTOR_V1_SIZE`. The descriptor is embedded before callback pointers in the v1 API table and therefore cannot grow in place without breaking callback offsets.
 
+### `ReverieNativeGlesRequirementSupportedV1`
+
+Compares the descriptor's required OpenGL ES major/minor pair against a host-supported major/minor pair after validating the frozen descriptor. Version comparison is lexicographic: a lower required major is accepted, a higher major is rejected, and equal majors compare the minor version. The current ReverieVR native host supplies **2.0**.
+
 ### `ReverieNativeInputHasBaseV1`
 
 Validates the base input prefix through timing, movement axes, and primary/secondary buttons.

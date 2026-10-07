@@ -27,6 +27,8 @@ RUNTIME_JAVA = Path(
 )
 TEST_CHAMBER_CPP = Path("app/src/main/jni/native/test_chamber_module.cpp")
 RED_LEDGER_CPP = Path("app/src/main/jni/native/red_ledger_module.cpp")
+ABI_CONTRACT_TEST = Path("app/src/test/native/native_abi_contract_test.cpp")
+ABI_CONTRACT_RUNNER = Path("scripts/verify-native-abi-contract.py")
 MATERIAL_H = Path("app/src/main/jni/native/procedural_material_atlas.h")
 MATERIAL_CPP = Path("app/src/main/jni/native/procedural_material_atlas.cpp")
 STATIC_H = Path("app/src/main/jni/native/red_ledger_static_geometry.h")
@@ -100,6 +102,8 @@ def check_current_content() -> None:
     runtime = read(RUNTIME_JAVA)
     test_chamber_cpp = read(TEST_CHAMBER_CPP)
     red_ledger_cpp = read(RED_LEDGER_CPP)
+    abi_contract_test = read(ABI_CONTRACT_TEST)
+    abi_contract_runner = read(ABI_CONTRACT_RUNNER)
     material_h = read(MATERIAL_H)
     static_h = read(STATIC_H)
     locomotion_java = read(LOCOMOTION_JAVA)
@@ -195,6 +199,7 @@ def check_current_content() -> None:
         "ReverieNativeHostSupportsLogV1",
         "ReverieNativeHostSupportsSaveV1",
         "ReverieNativeDescriptorHasMandatoryV1",
+        "ReverieNativeGlesRequirementSupportedV1",
         "ReverieNativeInputHasBaseV1",
         "ReverieNativeInputHasPointerV1",
         "ReverieNativeEyeHasMatricesV1",
@@ -294,8 +299,14 @@ def check_current_content() -> None:
 
     require(
         "ReverieNativeApiHasMandatoryV1(api)" in host
-        and "ReverieNativeDescriptorHasMandatoryV1(" in host,
+        and "ReverieNativeDescriptorHasMandatoryV1(" in host
+        and "ReverieNativeGlesRequirementSupportedV1(" in host,
         "native host no longer consumes the shared ABI validation helpers",
+    )
+    require(
+        "2u,\n            0u" in host
+        and "host support 2.0" in host,
+        "native host GLES admission version changed without contract update",
     )
 
     consumer_contracts = (
@@ -345,6 +356,39 @@ def check_current_content() -> None:
                 pattern not in compact,
                 f"{label} regressed to newest-struct sizeof validation: {pattern}",
             )
+
+    abi_test_tokens = (
+        "REVERIE_NATIVE_DESCRIPTOR_V1_SIZE",
+        "REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE",
+        "REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE",
+        "ReverieNativeHostSupportsLogV1",
+        "ReverieNativeHostSupportsSaveV1",
+        "ReverieNativeGlesRequirementSupportedV1",
+        "ReverieNativeInputHasBaseV1",
+        "ReverieNativeInputHasPointerV1",
+        "ReverieNativeEyeHasMatricesV1",
+        "ReverieNativeApiCapabilitiesV1",
+        "ReverieNativeCapabilitiesHasShellLocomotionV1",
+        "old mandatory v1 API prefix must remain valid",
+        "old v1 API prefix must not expose unseen capability tail",
+    )
+    for token in abi_test_tokens:
+        require(
+            token in abi_contract_test,
+            f"native ABI contract test lost regression anchor: {token}",
+        )
+    require(
+        "c++" in abi_contract_runner
+        and "g++" in abi_contract_runner
+        and "clang++" in abi_contract_runner
+        and "native_abi_contract_test.cpp" in abi_contract_runner,
+        "native ABI contract runner no longer compiles the canonical C++ test",
+    )
+    require(
+        str(ABI_CONTRACT_TEST) in contract_index
+        and str(ABI_CONTRACT_RUNNER) in contract_index,
+        "contract index does not name the executable ABI regression gate",
+    )
 
     for token in ("HostReadSave", "HostWriteSave", "IsSafeSaveSlot"):
         require(token in host, f"native host lost expected service implementation: {token}")

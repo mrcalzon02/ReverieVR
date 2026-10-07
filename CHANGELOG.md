@@ -12,6 +12,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
+- Added a host-buildable executable ABI contract gate (`native_abi_contract_test.cpp` via `verify-native-abi-contract.py`) covering old-v1 mandatory prefixes, optional capability tails, frozen descriptor layout, host/input/eye capability checks, shell-locomotion gating, and OpenGL ES version admission. The host now compares both required GLES major and minor through the shared `ReverieNativeGlesRequirementSupportedV1` helper instead of checking only the major version.
+
 - Added the first compatible optional ABI-v1 module capability tail: `ReverieNativeModuleCapabilitiesV1` with `REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION`. Test Chamber and Red Ledger now declare their travel envelopes in their module API; JNI validates/caches the capability once at launch and the renderer consumes the cached bounds instead of hard-coded module-id branches. Older v1 modules whose API ends at `render_eye` remain valid and simply expose no optional capability block.
 
 - Tightened ABI-v1 evolution rules around the embedded module descriptor: `ReverieNativeModuleDescriptorV1` is now explicitly layout-frozen and validated at its exact v1 size because growing it would shift the surrounding API callback table. Optional future v1 metadata must live at the tail of `ReverieNativeModuleApiV1`, otherwise the change requires ABI v2.

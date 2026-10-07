@@ -1,0 +1,245 @@
+#include "reverie_native_sdk.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+
+namespace {
+
+int failures = 0;
+
+void Check(bool condition, const char *message) {
+    if (!condition) {
+        std::fprintf(stderr, "FAIL: %s\n", message);
+        ++failures;
+    }
+}
+
+void DummyLog(
+    int32_t,
+    const char *,
+    const char *
+) {
+}
+
+int32_t DummyReadSave(
+    const char *,
+    void *,
+    uint32_t,
+    uint32_t *
+) {
+    return REVERIE_NATIVE_SAVE_NOT_FOUND;
+}
+
+int32_t DummyWriteSave(
+    const char *,
+    const void *,
+    uint32_t
+) {
+    return REVERIE_NATIVE_SAVE_OK;
+}
+
+}  // namespace
+
+static_assert(
+    REVERIE_NATIVE_DESCRIPTOR_V1_SIZE
+        == sizeof(ReverieNativeModuleDescriptorV1),
+    "descriptor v1 size must stay frozen"
+);
+
+static_assert(
+    REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE
+        == offsetof(
+            ReverieNativeModuleApiV1,
+            capabilities
+        ),
+    "optional API tail must begin exactly after mandatory callbacks"
+);
+
+static_assert(
+    REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE
+        <= sizeof(ReverieNativeModuleApiV1),
+    "capability-tail prefix must fit the current API table"
+);
+
+int main() {
+    ReverieNativeHostV1 host = {};
+    host.struct_size =
+        REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE;
+    host.abi_version =
+        REVERIE_NATIVE_MODULE_ABI_VERSION;
+    host.log = DummyLog;
+    host.read_save = DummyReadSave;
+    host.write_save = DummyWriteSave;
+
+    Check(
+        ReverieNativeHostSupportsLogV1(&host) != 0,
+        "log-prefix host should expose logging"
+    );
+    Check(
+        ReverieNativeHostSupportsSaveV1(&host) == 0,
+        "log-prefix host must not expose save tail"
+    );
+
+    host.struct_size =
+        REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE;
+    Check(
+        ReverieNativeHostSupportsSaveV1(&host) != 0,
+        "save-prefix host should expose save callbacks"
+    );
+
+    ReverieNativeModuleDescriptorV1 descriptor = {};
+    descriptor.struct_size =
+        REVERIE_NATIVE_DESCRIPTOR_V1_SIZE;
+    descriptor.abi_version =
+        REVERIE_NATIVE_MODULE_ABI_VERSION;
+    descriptor.required_gles_major = 2u;
+    descriptor.required_gles_minor = 0u;
+
+    Check(
+        ReverieNativeDescriptorHasMandatoryV1(
+            &descriptor
+        ) != 0,
+        "exact v1 descriptor size should be admitted"
+    );
+    descriptor.struct_size += 1u;
+    Check(
+        ReverieNativeDescriptorHasMandatoryV1(
+            &descriptor
+        ) == 0,
+        "embedded v1 descriptor must reject layout growth"
+    );
+    descriptor.struct_size =
+        REVERIE_NATIVE_DESCRIPTOR_V1_SIZE;
+
+    Check(
+        ReverieNativeGlesRequirementSupportedV1(
+            &descriptor,
+            2u,
+            0u
+        ) != 0,
+        "GLES 2.0 requirement should fit GLES 2.0 host"
+    );
+    descriptor.required_gles_minor = 1u;
+    Check(
+        ReverieNativeGlesRequirementSupportedV1(
+            &descriptor,
+            2u,
+            0u
+        ) == 0,
+        "GLES 2.1 requirement must not fit GLES 2.0 host"
+    );
+    descriptor.required_gles_major = 3u;
+    descriptor.required_gles_minor = 0u;
+    Check(
+        ReverieNativeGlesRequirementSupportedV1(
+            &descriptor,
+            2u,
+            0u
+        ) == 0,
+        "GLES 3.0 requirement must not fit GLES 2.0 host"
+    );
+    descriptor.required_gles_major = 1u;
+    descriptor.required_gles_minor = 1u;
+    Check(
+        ReverieNativeGlesRequirementSupportedV1(
+            &descriptor,
+            2u,
+            0u
+        ) != 0,
+        "lower GLES major requirement should fit newer host"
+    );
+
+    ReverieNativeInputV1 input = {};
+    input.struct_size =
+        REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE;
+    Check(
+        ReverieNativeInputHasBaseV1(&input) != 0,
+        "base input prefix should be readable"
+    );
+    Check(
+        ReverieNativeInputHasPointerV1(&input) == 0,
+        "base input prefix must not expose pointer tail"
+    );
+    input.struct_size =
+        REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE;
+    Check(
+        ReverieNativeInputHasPointerV1(&input) != 0,
+        "pointer input prefix should expose pointer fields"
+    );
+
+    ReverieNativeEyeV1 eye = {};
+    eye.struct_size =
+        REVERIE_NATIVE_EYE_V1_MIN_SIZE;
+    Check(
+        ReverieNativeEyeHasMatricesV1(&eye) != 0,
+        "eye matrix prefix should be readable"
+    );
+
+    ReverieNativeModuleCapabilitiesV1 capabilities = {};
+    capabilities.struct_size =
+        REVERIE_NATIVE_CAPABILITIES_V1_LOCOMOTION_MIN_SIZE;
+    capabilities.flags =
+        REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION;
+    capabilities.locomotion_limit_x = 1.0f;
+    capabilities.locomotion_limit_z = 2.0f;
+
+    Check(
+        ReverieNativeCapabilitiesHasShellLocomotionV1(
+            &capabilities
+        ) != 0,
+        "valid locomotion capability should be admitted"
+    );
+    capabilities.flags = 0u;
+    Check(
+        ReverieNativeCapabilitiesHasShellLocomotionV1(
+            &capabilities
+        ) == 0,
+        "locomotion bounds without flag must not opt in"
+    );
+    capabilities.flags =
+        REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION;
+
+    ReverieNativeModuleApiV1 api = {};
+    api.abi_version =
+        REVERIE_NATIVE_MODULE_ABI_VERSION;
+    api.capabilities = &capabilities;
+
+    api.struct_size =
+        REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE;
+    Check(
+        ReverieNativeApiHasMandatoryV1(&api) != 0,
+        "old mandatory v1 API prefix must remain valid"
+    );
+    Check(
+        ReverieNativeApiCapabilitiesV1(&api) == nullptr,
+        "old v1 API prefix must not expose unseen capability tail"
+    );
+
+    api.struct_size =
+        REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE;
+    Check(
+        ReverieNativeApiCapabilitiesV1(&api)
+            == &capabilities,
+        "capability-aware v1 API should expose capability block"
+    );
+
+    api.abi_version =
+        REVERIE_NATIVE_MODULE_ABI_VERSION + 1u;
+    Check(
+        ReverieNativeApiHasMandatoryV1(&api) == 0,
+        "different ABI version must fail mandatory v1 helper"
+    );
+
+    if (failures != 0) {
+        std::fprintf(
+            stderr,
+            "NATIVE ABI CONTRACT: FAIL (%d)\n",
+            failures
+        );
+        return 1;
+    }
+
+    std::puts("NATIVE ABI CONTRACT: PASS");
+    return 0;
+}

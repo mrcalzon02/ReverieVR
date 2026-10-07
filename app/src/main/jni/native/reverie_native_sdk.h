@@ -48,6 +48,29 @@ static inline int ReverieNativeDescriptorHasMandatoryV1(
             == REVERIE_NATIVE_DESCRIPTOR_V1_SIZE;
 }
 
+static inline int ReverieNativeGlesRequirementSupportedV1(
+    const ReverieNativeModuleDescriptorV1 *descriptor,
+    uint32_t host_major,
+    uint32_t host_minor
+) {
+    if (!ReverieNativeDescriptorHasMandatoryV1(
+            descriptor
+        )) {
+        return 0;
+    }
+
+    if (descriptor->required_gles_major
+        < host_major) {
+        return 1;
+    }
+    if (descriptor->required_gles_major
+        > host_major) {
+        return 0;
+    }
+    return descriptor->required_gles_minor
+        <= host_minor;
+}
+
 static inline int ReverieNativeInputHasBaseV1(
     const ReverieNativeInputV1 *input
 ) {
