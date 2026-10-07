@@ -34,11 +34,18 @@ Do not use "documentation will be updated later" as a normal completion state.
 | Java/native runtime bridge and module-id/input boundary | `app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java` | `docs/native/API_V1.md` | Implemented |
 | Procedural material atlas generator | `app/src/main/jni/native/procedural_material_atlas.h`, `app/src/main/jni/native/procedural_material_atlas.cpp` | `docs/native/PROCEDURAL_CONTENT_STANDARD.md` | Implemented reference / provisional shared standard |
 | Red Ledger static-room geometry baker | `app/src/main/jni/native/red_ledger_static_geometry.h`, `app/src/main/jni/native/red_ledger_static_geometry.cpp` | `docs/native/PROCEDURAL_CONTENT_STANDARD.md` | Implemented reference / provisional shared standard |
+| Bounded view-relative locomotion integrator | `app/src/main/java/io/github/mrcalzon02/reverievr/BoundedViewRelativeLocomotion.java` | `docs/native/RUNTIME_SERVICES.md` | Implemented; S9 comfort proof pending |
+| Native locomotion gesture re-arm gate | `app/src/main/java/io/github/mrcalzon02/reverievr/TouchpadLocomotionGate.java` | `docs/native/RUNTIME_SERVICES.md` | Implemented; S9 controller proof pending |
+| Locomotion/pointer shell integration | `app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java` | `docs/native/RUNTIME_SERVICES.md` | Implemented integration; semantic-review source rather than strict whole-file co-change |
 | Cross-module engineering rules and ownership | project doctrine + runtime implementation | `docs/native/README.md` | Living platform standard |
 
 When a new reusable native utility becomes part of the platform standard, add it to this table and to the machine-check mapping before calling the utility standardized.
 
 Game-private code is not automatically part of the public/native SDK merely because it appears in a reference game.
+
+Large integration files such as `VrShellRenderer.java` are not strict whole-file co-change triggers because they contain many unrelated responsibilities. Instead, the verifier derives selected contract facts from them and semantic review is mandatory when native-runtime integration behavior changes.
+
+Current-state project records such as the backlog and acceptance ledger must also remain compatible with these normative documents. Historical changelog entries may describe superseded states when they are clearly historical.
 
 ## Machine-verifiable drift guard
 
