@@ -253,6 +253,19 @@ def check_current_content() -> None:
             f"SDK_HELPERS.md does not document current helper: {token}",
         )
     require(
+        "descriptor->required_gles_major == 0u" in sdk_header
+        and "host_major == 0u" in sdk_header
+        and "GLES 0.x" in api_doc
+        and "nonzero" in sdk_doc,
+        "GLES zero-major rejection drifted between SDK and normative docs",
+    )
+    require(
+        "ReverieNativeSanitizeBaseInputV1" in acceptance_ledger
+        and "ReverieNativeEyeRenderableV1" in acceptance_ledger
+        and "zero-major GLES" in acceptance_ledger,
+        "acceptance ledger omits implemented native input/eye/GLES safeguards",
+    )
+    require(
         "locomotion_limit_x <= FLT_MAX" in sdk_header
         and "locomotion_limit_z <= FLT_MAX" in sdk_header
         and "positive finite" in sdk_doc,
@@ -464,6 +477,8 @@ def check_current_content() -> None:
         "REVERIE_NATIVE_FEEDBACK_ACTIVATION",
         "feedback helper must strip unknown flag bits",
         "ReverieNativeGlesRequirementSupportedV1",
+        "zero GLES major must not be accepted as a valid requirement",
+        "zero GLES host major must not be accepted as valid support",
         "ReverieNativeInputHasBaseV1",
         "ReverieNativeInputHasPointerV1",
         "ReverieNativeSanitizePointerV1",

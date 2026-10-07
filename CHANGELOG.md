@@ -20,6 +20,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
+- Hardened native GLES descriptor admission to reject invalid zero-major requirements and hosts; extended host C++ ABI regression coverage and synchronized API/SDK reference guidance. The prepared commit was subsequently integrated into `main`; full repository ABI/doc checks, Android/NDK packaging and Galaxy S9 validation remain pending.
+
+- Reconciled the native SDK acceptance record with shared base-input sanitization and stereo-eye validation, and strengthened the documentation guard against future GLES/acceptance drift. This is source/documentation hardening, not device acceptance.
+
 - Centralized overflow-safe finite pointer-ray validation in `ReverieNativeSanitizePointerV1` and routed JNI host and Red Ledger through it. Invalid pointer kinds, NaN/infinity, out-of-range origins, and degenerate directions now fail closed; huge finite rays normalize without squared-length overflow. Extended the host-buildable ABI regression gate and living native handbook/drift guard. Android/NDK and Galaxy S9 validation remain pending.
 
 
