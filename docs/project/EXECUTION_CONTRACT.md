@@ -46,6 +46,7 @@ Use exact states: drafted, worktree edit, staged, committed, pushed/remote, devi
 - Repair authoritative source, not generated/package output.
 - Do not create parallel implementations to evade the existing architecture.
 - Do not weaken validators/tests/gates to obtain a pass.
+- Keep normative documentation synchronized with implementation in the same scoped change. For native SDK-facing work, follow `docs/native/CONTRACT_INDEX.md`; mapped source changes require their mapped documentation to change with them, and `python3 scripts/verify-native-doc-sync.py --staged` (before commit) or `--base HEAD^` (commit verification) is part of the applicable validation.
 - Do not silently swallow failures.
 - Do not add or retain inert user-facing controls. A button, switch, menu item, setting, or action must reach implemented, observable behavior when exposed; planned behavior stays in the backlog until wired. Remove the control and orphaned preference/state wiring when no behavior exists.
 - Verify actionable controls have visible focus/pressed/disabled states as appropriate, a normal activation sound, and a distinct rejection/failure sound when the requested action cannot complete.
