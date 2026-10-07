@@ -70,6 +70,7 @@ PROCEDURAL_DOC = Path("docs/native/PROCEDURAL_CONTENT_STANDARD.md")
 SYSTEMS_CATALOG_DOC = Path("docs/native/SYSTEMS_CATALOG.md")
 CONTRACT_INDEX = Path("docs/native/CONTRACT_INDEX.md")
 BACKLOG = Path("docs/project/BACKLOG.md")
+ACCEPTANCE_LEDGER = Path("docs/project/ACCEPTANCE_LEDGER.md")
 
 SYNC_MAP = {
     API_HEADER: {API_DOC},
@@ -147,6 +148,7 @@ def check_current_content() -> None:
     systems_catalog = read(SYSTEMS_CATALOG_DOC)
     contract_index = read(CONTRACT_INDEX)
     backlog = read(BACKLOG)
+    acceptance_ledger = read(ACCEPTANCE_LEDGER)
 
     abi_version = regex_value(
         r"^#define\s+REVERIE_NATIVE_MODULE_ABI_VERSION\s+(\d+)u\s*$",
@@ -526,6 +528,13 @@ def check_current_content() -> None:
         "Standard native hosted input profile" in runtime_services_doc
         and "`native-standard`" in runtime_services_doc,
         "runtime services docs do not describe the standard native hosted profile",
+    )
+    require(
+        "`native-standard` profile" in acceptance_ledger
+        and "virtual button 0" in acceptance_ledger
+        and "game buttons 1/2" in acceptance_ledger
+        and "maps Select only" not in acceptance_ledger,
+        "acceptance ledger is stale relative to the shared native hosted input profile",
     )
 
     require(
