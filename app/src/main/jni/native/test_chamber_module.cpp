@@ -1,4 +1,5 @@
 #include "reverie_native_sdk.h"
+#include "reverie_native_gl_state.h"
 #include "gentexture.hpp"
 
 #include <GLES2/gl2.h>
@@ -649,36 +650,25 @@ int32_t RenderEye(
         return 0;
     }
 
-    GLint previous_program = 0;
-    GLint previous_array_buffer = 0;
-    GLint previous_active_texture = 0;
+    ReverieNativeGlStateV1 gl_state = {};
+    ReverieNativeGlAttribStateV1 position_state = {};
+    ReverieNativeGlAttribStateV1 uv_state = {};
 
-    glGetIntegerv(
-        GL_CURRENT_PROGRAM,
-        &previous_program
+    ReverieNativeGlStateCaptureV1(
+        &gl_state
     );
-    glGetIntegerv(
-        GL_ARRAY_BUFFER_BINDING,
-        &previous_array_buffer
+    ReverieNativeGlAttribCaptureV1(
+        &position_state,
+        static_cast<GLuint>(
+            state->position_location
+        )
     );
-    glGetIntegerv(
-        GL_ACTIVE_TEXTURE,
-        &previous_active_texture
+    ReverieNativeGlAttribCaptureV1(
+        &uv_state,
+        static_cast<GLuint>(
+            state->uv_location
+        )
     );
-
-    glActiveTexture(GL_TEXTURE0);
-    GLint previous_texture = 0;
-    glGetIntegerv(
-        GL_TEXTURE_BINDING_2D,
-        &previous_texture
-    );
-
-    GLboolean depth_enabled =
-        glIsEnabled(GL_DEPTH_TEST);
-    GLboolean blend_enabled =
-        glIsEnabled(GL_BLEND);
-    GLboolean cull_enabled =
-        glIsEnabled(GL_CULL_FACE);
 
     float view_projection[16];
 
@@ -772,57 +762,15 @@ int32_t RenderEye(
         36
     );
 
-    glDisableVertexAttribArray(
-        static_cast<GLuint>(
-            state->position_location
-        )
+    ReverieNativeGlAttribRestoreV1(
+        &uv_state
     );
-    glDisableVertexAttribArray(
-        static_cast<GLuint>(
-            state->uv_location
-        )
+    ReverieNativeGlAttribRestoreV1(
+        &position_state
     );
-
-    glBindTexture(
-        GL_TEXTURE_2D,
-        static_cast<GLuint>(
-            previous_texture
-        )
+    ReverieNativeGlStateRestoreV1(
+        &gl_state
     );
-    glActiveTexture(
-        static_cast<GLenum>(
-            previous_active_texture
-        )
-    );
-    glBindBuffer(
-        GL_ARRAY_BUFFER,
-        static_cast<GLuint>(
-            previous_array_buffer
-        )
-    );
-    glUseProgram(
-        static_cast<GLuint>(
-            previous_program
-        )
-    );
-
-    if (depth_enabled == GL_TRUE) {
-        glEnable(GL_DEPTH_TEST);
-    } else {
-        glDisable(GL_DEPTH_TEST);
-    }
-
-    if (blend_enabled == GL_TRUE) {
-        glEnable(GL_BLEND);
-    } else {
-        glDisable(GL_BLEND);
-    }
-
-    if (cull_enabled == GL_TRUE) {
-        glEnable(GL_CULL_FACE);
-    } else {
-        glDisable(GL_CULL_FACE);
-    }
 
     return glGetError() == GL_NO_ERROR
         ? 1

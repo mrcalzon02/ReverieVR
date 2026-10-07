@@ -12,6 +12,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
+- Added shared `reverie_native_gl_state.h` plus `GL_RENDERING_STANDARD.md` and migrated both native games to it. The guard restores program/buffer/texture/enabled-state plus complete modified vertex-attribute configuration and generic values, closing the prior leak where modules restored only attribute enable flags after overwriting pointer/buffer/current-value state.
+
 - Added the first shared `reverie_native_sdk.h` helper layer and `docs/native/SDK_HELPERS.md`: host logging/save capability checks, descriptor/API mandatory-prefix checks, base/pointer input checks and eye-matrix checks are now centralized. The native host, Procedural Test Chamber and Red Ledger consume the shared helpers instead of duplicating ABI size/version logic, and the drift guard treats the helper header/document pair as a strict synchronized contract.
 
 - Repaired the ABI v1 append-only compatibility contract: the public header now exposes minimum-prefix size constants for host logging/save services, descriptors, base/pointer input, eye data and the mandatory module API table. The host, Procedural Test Chamber and Red Ledger validate only the prefix they consume instead of the newest total struct `sizeof`, and the native documentation drift guard rejects regression to full-structure size checks.

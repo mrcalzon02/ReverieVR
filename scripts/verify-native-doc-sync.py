@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 API_HEADER = Path("app/src/main/jni/native/reverie_native_module.h")
 SDK_HEADER = Path("app/src/main/jni/native/reverie_native_sdk.h")
+GL_STATE_HEADER = Path("app/src/main/jni/native/reverie_native_gl_state.h")
 HOST_CPP = Path("app/src/main/jni/native/reverie_native_host.cpp")
 RUNTIME_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java"
@@ -40,6 +41,7 @@ RENDERER_JAVA = Path(
 
 API_DOC = Path("docs/native/API_V1.md")
 SDK_DOC = Path("docs/native/SDK_HELPERS.md")
+GL_RENDERING_DOC = Path("docs/native/GL_RENDERING_STANDARD.md")
 RUNTIME_SERVICES_DOC = Path("docs/native/RUNTIME_SERVICES.md")
 PROCEDURAL_DOC = Path("docs/native/PROCEDURAL_CONTENT_STANDARD.md")
 CONTRACT_INDEX = Path("docs/native/CONTRACT_INDEX.md")
@@ -48,6 +50,7 @@ BACKLOG = Path("docs/project/BACKLOG.md")
 SYNC_MAP = {
     API_HEADER: {API_DOC},
     SDK_HEADER: {SDK_DOC},
+    GL_STATE_HEADER: {GL_RENDERING_DOC},
     HOST_CPP: {API_DOC},
     RUNTIME_JAVA: {API_DOC},
     MATERIAL_H: {PROCEDURAL_DOC},
@@ -85,6 +88,7 @@ def regex_value(pattern: str, text: str, label: str) -> str:
 def check_current_content() -> None:
     header = read(API_HEADER)
     sdk_header = read(SDK_HEADER)
+    gl_state_header = read(GL_STATE_HEADER)
     host = read(HOST_CPP)
     runtime = read(RUNTIME_JAVA)
     test_chamber_cpp = read(TEST_CHAMBER_CPP)
@@ -96,6 +100,7 @@ def check_current_content() -> None:
     renderer_java = read(RENDERER_JAVA)
     api_doc = read(API_DOC)
     sdk_doc = read(SDK_DOC)
+    gl_rendering_doc = read(GL_RENDERING_DOC)
     runtime_services_doc = read(RUNTIME_SERVICES_DOC)
     procedural_doc = read(PROCEDURAL_DOC)
     contract_index = read(CONTRACT_INDEX)
@@ -177,6 +182,48 @@ def check_current_content() -> None:
         require(
             f"`{token}`" in sdk_doc,
             f"SDK_HELPERS.md does not document current helper: {token}",
+        )
+
+
+    gl_tokens = (
+        "ReverieNativeGlStateV1",
+        "ReverieNativeGlStateCaptureV1",
+        "ReverieNativeGlStateRestoreV1",
+        "ReverieNativeGlAttribStateV1",
+        "ReverieNativeGlAttribCaptureV1",
+        "ReverieNativeGlAttribRestoreV1",
+    )
+    for token in gl_tokens:
+        require(token in gl_state_header, f"native GL guard lost symbol: {token}")
+        require(
+            f"`{token}`" in gl_rendering_doc,
+            f"GL_RENDERING_STANDARD.md does not document current GL symbol: {token}",
+        )
+
+    for source, label, expected_attribs in (
+        (test_chamber_cpp, "test chamber", 2),
+        (red_ledger_cpp, "Red Ledger", 4),
+    ):
+        require(
+            '#include "reverie_native_gl_state.h"' in source,
+            f"{label} does not include the shared GL state guard",
+        )
+        require(
+            source.count("ReverieNativeGlStateCaptureV1(") == 1
+            and source.count("ReverieNativeGlStateRestoreV1(") == 1,
+            f"{label} does not capture/restore one shared GL state snapshot",
+        )
+        require(
+            source.count("ReverieNativeGlAttribCaptureV1(") == expected_attribs
+            and source.count("ReverieNativeGlAttribRestoreV1(") == expected_attribs,
+            f"{label} does not preserve every expected vertex attribute",
+        )
+        require(
+            "previous_program" not in source
+            and "previous_array_buffer" not in source
+            and "previous_active_texture" not in source
+            and "previous_texture" not in source,
+            f"{label} still contains the superseded partial handwritten GL snapshot",
         )
 
     require(

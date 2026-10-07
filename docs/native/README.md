@@ -102,6 +102,8 @@ Game state and GPU state are different things.
 
 The module renders inside a shell-owned GL environment. It must not leave incompatible program, buffer, texture, blend, depth, cull, scissor, viewport, or attribute state behind.
 
+Use the shared `reverie_native_gl_state.h` guard for the state it covers, including full vertex-attribute configuration/current values rather than only enable flags. If a module starts mutating additional GL state, restore that state explicitly or extend the shared guard and `GL_RENDERING_STANDARD.md` in the same scoped change.
+
 Where the host contract already owns viewport/scissor or eye isolation, the module must not fight it.
 
 ### 8. Performance is correctness
@@ -166,6 +168,7 @@ Anything reusable learned from the module is either promoted to shared SDK docum
 - `docs/native/CONTRACT_INDEX.md` — authoritative source-to-document map and synchronization rules.
 - `docs/native/API_V1.md` — current implemented native C ABI and compatibility rules.
 - `docs/native/SDK_HELPERS.md` — shared header-only capability/prefix helpers and canonical module-start pattern.
+- `docs/native/GL_RENDERING_STANDARD.md` — shared GL-state isolation guard and renderer guest-state rules.
 - `docs/native/RUNTIME_SERVICES.md` — shell-owned native runtime behavior including locomotion, pointer/recovery ownership, lifecycle, and persistence boundaries.
 - `docs/native/PROCEDURAL_CONTENT_STANDARD.md` — generated materials, geometry, model-recipe direction, and asset/performance rules.
 - `scripts/verify-native-doc-sync.py` — dependency-free factual/drift guard for the native documentation contract.
