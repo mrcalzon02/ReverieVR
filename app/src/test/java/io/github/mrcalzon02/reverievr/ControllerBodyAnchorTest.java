@@ -5,6 +5,33 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 public final class ControllerBodyAnchorTest {
+    @Test
+    public void ghostAndHandShareMovingTorsoReference() {
+        ControllerBodyAnchor anchor = new ControllerBodyAnchor();
+        anchor.update(0.0f, 0.016f);
+        float[] live = new float[4];
+        float[] neutral = new float[4];
+        anchor.place(0.0f, 1.7f, 0.0f,
+            0.35f, -0.30f, -0.56f, live);
+        anchor.place(0.0f, 1.7f, 0.0f,
+            0.28f, -0.34f, -0.48f, neutral);
+        assertEquals(0.07f, live[0] - neutral[0], EPSILON);
+        assertEquals(0.04f, live[1] - neutral[1], EPSILON);
+        float distanceBefore = (float) Math.hypot(
+            live[0] - neutral[0], live[2] - neutral[2]);
+        for (int i = 0; i < 80; i++) {
+            anchor.update((float) (Math.PI / 2), 0.016f);
+        }
+        anchor.place(2.0f, 1.7f, 3.0f,
+            0.35f, -0.30f, -0.56f, live);
+        anchor.place(2.0f, 1.7f, 3.0f,
+            0.28f, -0.34f, -0.48f, neutral);
+        float distanceAfter = (float) Math.hypot(
+            live[0] - neutral[0], live[2] - neutral[2]);
+        assertEquals(distanceBefore, distanceAfter, EPSILON);
+        assertTrue(Math.abs(neutral[0] - 0.28f) > 0.05f);
+    }
+
     private static final float EPSILON = 0.0001f;
 
     @Test
