@@ -309,6 +309,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] controllerAnchorForwardWorld = new float[4];
     private final ControllerBodyAnchor controllerBodyAnchor =
         new ControllerBodyAnchor();
+    private final PlayerHeadRig playerHeadRig = new PlayerHeadRig();
+    private boolean controllerHeadsetOverlap;
     private long controllerAnchorLastFrameNanos;
     private final float[] hudIdentity = new float[16];
     private final float[] hudVertices = new float[12];
@@ -1202,6 +1204,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 -nativeLocomotion.z()
             );
         }
+        // The shell owns one center-head rig, never a separate per-eye rig.
+        // This only supplies collision probes and future mirror geometry;
+        // it does not touch the Cardboard projection or IPD transforms.
+        playerHeadRig.update(adjustedHeadView, userIpdMeters);
         if (controllerPositionRecenterRequested.getAndSet(false)) {
             requestSoftControllerRecenter();
         }
@@ -2366,6 +2372,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerAnchorY,
                 controllerAnchorZ
             );
+            updateHeadsetOverlap(
+                controllerAnchorX, controllerAnchorY, controllerAnchorZ
+            );
             if (controllerInertialTranslation.isReturningToCenter()) {
                 controllerModelRenderer.setGhostTarget(
                     controllerGhostWorld[0],
@@ -2514,6 +2523,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         virtualPointerLastFrameNanos = 0L;
+        controllerHeadsetOverlap = false;
         controllerModelRenderer.hide();
         controllerModelRenderer.clearGhost();
 
@@ -2555,6 +2565,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
             activePointerDirection
         );
         return false;
+    }
+
+    private void updateHeadsetOverlap(float x, float y, float z) {
+        // A diagnostic collision probe, not physical head/hand tracking.
+        // No hidden motion correction or gameplay input suppression.
+        boolean overlaps = playerHeadRig.intersectsSphere(
+            x, y, z, 0.045f
+        );
+        if (overlaps != controllerHeadsetOverlap) {
+            controllerHeadsetOverlap = overlaps;
+            if (ReverieLog.isDevelopment()) {
+                ReverieLog.dev(
+                    "VR_PLAYER_RIG",
+                    overlaps ? "Controller proxy entered headset collider."
+                        : "Controller proxy left headset collider."
+                );
+            }
+        }
     }
 
     private void resolveControllerViewAnchor(

@@ -6,6 +6,12 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Headset rig foundation
+
+- Added an allocation-free shell-owned center-head player rig with calibrated eye-origin markers, headset wireframe geometry for a future mirror/third-person pass, and an oriented-box collision probe. The tracked/virtual controller proxy now reports headset overlap transitions in Development diagnostics without interfering with live tracking, controller motion, Cardboard optics, or stereo. Unit tests cover head translation/yaw, eye separation, collision, geometry and invalid pose handling. No mirror renderer, scene collision response or physical S9 proof is claimed.
+
+- Corrected the superseded ADR-0022 recenter note to reflect the already shipped ghost/spring/sound implementation rather than leaving known-stale project guidance.
+
 ### Performance diagnostics
 
 - Removed per-eye viewport/scissor scratch-array allocations from Cardboard stereo rendering and reused its viewport query for eye diagnostics. Added bounded, allocation-free-on-record Development left/right CPU submission avg/p95/p99/max with mode-isolated windows; log once per minute alongside battery percentage and existing frame/thermal metrics. JVM tests cover percentiles, invalid samples, mode transitions and bounded retention. Actual GPU/compositor and S9 power/thermal gains remain unmeasured.

@@ -22,8 +22,10 @@ The recenter action no longer hard-resets controller position, velocity,
 body-anchor smoothing or tracked orientation. Instead it enables a
 three-second exponential positional return to neutral; accelerometer
 movement remains live. This is intentionally a gentle, non-snap action.
-A visible translucent target-controller/spring and procedural sound
-remain future work and must not be claimed as implemented.
+Follow-up phone-test #74 implemented the translucent headset-relative
+neutral-target controller, procedural spring, and generated audio cue.
+Stereo/audio/gesture comfort still requires Galaxy S9 physical proof;
+see `CONTROLLER-GHOST-RECENTER-CONTRACT.md`.
 
 ## Battery telemetry
 

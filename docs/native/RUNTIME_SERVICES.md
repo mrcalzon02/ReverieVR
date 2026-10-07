@@ -184,3 +184,7 @@ Reference-device validation remains required for:
 - sustained frame/thermal cost.
 
 Until those pass, this is an implemented runtime service with pending device acceptance, not a finished comfort guarantee.
+
+## Shell headset rig (not a native game API)
+
+`PlayerHeadRig` derives the center-head world pose from the adjusted Cardboard head view and keeps left/right eye marker positions at the calibrated IPD. Its small oriented-box collider is currently consumed only for Development logging of controller-proxy overlap transitions; it does not constrain movement or supply a room-scale safety boundary. An allocation-free headset/eye wireframe is available for a future mirror or third-person renderer, but neither that render pass nor a native ABI player-rig service exists yet. The shell does not change the Cardboard eye matrices to produce this geometry. See `docs/records/PLAYER-HEAD-RIG-CONTRACT.md`.
