@@ -26,6 +26,30 @@ static inline int ReverieNativeHostSupportsLogV1(
         && host->log != NULL;
 }
 
+static inline int ReverieNativeLogV1(
+    const ReverieNativeHostV1 *host,
+    int32_t level,
+    const char *tag,
+    const char *message
+) {
+    if (!ReverieNativeHostSupportsLogV1(
+            host
+        )) {
+        return 0;
+    }
+
+    host->log(
+        level,
+        tag != NULL
+            ? tag
+            : "ReverieNativeModule",
+        message != NULL
+            ? message
+            : ""
+    );
+    return 1;
+}
+
 static inline int ReverieNativeHostSupportsSaveV1(
     const ReverieNativeHostV1 *host
 ) {

@@ -12,6 +12,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### Native games
 
+- Promoted two more repeated correctness utilities: `ReverieNativeLogV1` now centralizes safe host logging/fallbacks, and `ReverieNativeBuildProgram` plus `ReverieNativeGlAttributeBindingV1` centralize the common GLES compile/bind/link/cleanup lifecycle. Test Chamber and Red Ledger keep their own tags, shader text, bindings, uniform policy and diagnostics but no longer duplicate host-log dispatch or program-link boilerplate.
+
 - Added `docs/native/SYSTEMS_CATALOG.md`, a living maturity/discovery index for the native environment: ABI and host services, module capabilities, input/recovery/locomotion, rendering helpers, generated materials/geometry, shell-only generation references, validation methods, game-private techniques, and planned systems. The native drift guard now requires every standardized contract-map source/document to remain discoverable there and pins selected shell references to their actual generated dimensions.
 
 - Added an append-only native host feedback service with `REVERIE_NATIVE_FEEDBACK_FOCUS`, `ACTIVATION`, and `FAILURE` flags. Requests are sanitized/coalesced in the native session, drained through the existing JNI update call, and mapped to the shell's implemented `UiFeedback` audio cues. Test Chamber and Red Ledger now exercise the service. This does not claim arbitrary audio mixing or haptics.

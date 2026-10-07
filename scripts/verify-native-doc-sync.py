@@ -220,6 +220,7 @@ def check_current_content() -> None:
 
     helper_tokens = (
         "ReverieNativeHostSupportsLogV1",
+        "ReverieNativeLogV1",
         "ReverieNativeHostSupportsSaveV1",
         "ReverieNativeHostSupportsFeedbackV1",
         "ReverieNativeRequestFeedbackV1",
@@ -267,6 +268,16 @@ def check_current_content() -> None:
             gl_utils_header,
             "shader utility",
         ),
+        (
+            "ReverieNativeBuildProgram",
+            gl_utils_header,
+            "program link utility",
+        ),
+        (
+            "ReverieNativeGlAttributeBindingV1",
+            gl_utils_header,
+            "attribute binding declaration",
+        ),
     )
     for token, source, label in core_utilities:
         require(token in source, f"native {label} header lost function: {token}")
@@ -288,12 +299,26 @@ def check_current_content() -> None:
         (red_ledger_cpp, "Red Ledger"),
     ):
         require(
+            "ReverieNativeLogV1(" in module_source,
+            f"{module_label} no longer consumes the shared safe log helper",
+        )
+        require(
+            "ReverieNativeBuildProgram(" in module_source,
+            f"{module_label} no longer consumes the shared GLES program linker",
+        )
+        require(
             "GLuint CompileShader(" not in module_source,
             f"{module_label} regressed to a private shader compiler",
         )
         require(
             "void MultiplyMatrix(" not in module_source,
             f"{module_label} regressed to a private matrix multiply",
+        )
+        require(
+            "glCreateProgram(" not in module_source
+            and "glAttachShader(" not in module_source
+            and "glLinkProgram(" not in module_source,
+            f"{module_label} regressed to private GLES program-link boilerplate",
         )
 
     for source, label, expected_attribs in (
@@ -387,6 +412,8 @@ def check_current_content() -> None:
         "REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE",
         "REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE",
         "ReverieNativeHostSupportsLogV1",
+        "ReverieNativeLogV1",
+        "log helper should work on minimum log-prefix host",
         "ReverieNativeHostSupportsSaveV1",
         "ReverieNativeHostSupportsFeedbackV1",
         "ReverieNativeRequestFeedbackV1",

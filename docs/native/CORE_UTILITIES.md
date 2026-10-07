@@ -45,7 +45,24 @@ The helper:
 - checks `GL_COMPILE_STATUS`;
 - deletes a failed shader before returning zero.
 
-It deliberately does **not** link programs, bind attributes, choose shader language/features, or emit module-specific diagnostics. Those policies still differ between the two reference games.
+It deliberately does not choose shader language/features or emit module-specific diagnostics.
+
+### `ReverieNativeBuildProgram`
+
+Builds one GLES program from caller-supplied vertex/fragment source plus a compact array of `ReverieNativeGlAttributeBindingV1` entries.
+
+The helper owns only the repeated link lifecycle:
+
+- validates source/binding pointers;
+- compiles both shaders through `ReverieNativeCompileShader`;
+- creates the program;
+- attaches shaders;
+- applies caller-declared attribute index/name bindings;
+- links;
+- deletes both temporary shader objects;
+- deletes and returns zero for a failed program link.
+
+Shader source, attribute names/index choices, uniform lookups, program-specific validation, and module-facing diagnostics remain game-owned. Test Chamber currently supplies two attribute bindings; Red Ledger supplies four.
 
 ## What does not belong here yet
 

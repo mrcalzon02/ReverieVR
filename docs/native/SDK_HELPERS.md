@@ -18,6 +18,12 @@ Use the helper layer when consuming host, descriptor, input, eye, or module-API 
 
 Returns true only when the host pointer is present, the ABI version is v1, the logging prefix is available, and the log callback is non-null.
 
+### `ReverieNativeLogV1`
+
+Dispatches one bounded log message through the host when the minimum logging prefix is available. A null tag falls back to `ReverieNativeModule`; a null message becomes an empty string. The helper returns false when the host cannot provide logging.
+
+Reference games keep their own small `Log` wrappers only to supply stable game-specific tags; they no longer duplicate host-capability checks or callback invocation.
+
 ### `ReverieNativeHostSupportsSaveV1`
 
 Returns true only when the host pointer is present, the ABI version is v1, the save-service prefix is available, and both read/write save callbacks are non-null.

@@ -7,6 +7,7 @@
 namespace {
 
 int failures = 0;
+int captured_log_count = 0;
 uint32_t captured_feedback_flags = 0u;
 
 void Check(bool condition, const char *message) {
@@ -21,6 +22,7 @@ void DummyLog(
     const char *,
     const char *
 ) {
+    ++captured_log_count;
 }
 
 int32_t DummyReadSave(
@@ -83,6 +85,16 @@ int main() {
     Check(
         ReverieNativeHostSupportsLogV1(&host) != 0,
         "log-prefix host should expose logging"
+    );
+    Check(
+        ReverieNativeLogV1(
+            &host,
+            REVERIE_NATIVE_LOG_INFO,
+            nullptr,
+            nullptr
+        ) != 0
+            && captured_log_count == 1,
+        "log helper should work on minimum log-prefix host"
     );
     Check(
         ReverieNativeHostSupportsSaveV1(&host) == 0,

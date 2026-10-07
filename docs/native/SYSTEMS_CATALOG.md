@@ -21,7 +21,7 @@ This catalog is intentionally broader than the public C ABI. It includes impleme
 | System | Maturity | Authoritative source | Standard/reference | What it provides |
 |---|---|---|---|---|
 | Native module ABI v1 | **ABI v1** | `app/src/main/jni/native/reverie_native_module.h` | `docs/native/API_V1.md` | Module descriptor, lifecycle callbacks, input/eye structures, host services, optional capability tail. |
-| Safe ABI consumption helpers | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_sdk.h` | `docs/native/SDK_HELPERS.md` | Prefix/capability checks, exact frozen descriptor validation, GLES requirement comparison, safe optional feedback/capability access. |
+| Safe ABI consumption helpers | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_sdk.h` | `docs/native/SDK_HELPERS.md` | Prefix/capability checks, safe host logging, exact frozen descriptor validation, GLES requirement comparison, safe optional feedback/capability access. |
 | Native host / packaged loader | **Runtime service / provisional** | `app/src/main/jni/native/reverie_native_host.cpp` | `docs/native/API_V1.md`, `docs/native/RUNTIME_SERVICES.md` | Compile-time allowlist, packaged library loading, module-private save root, logging, feedback cue queue, JNI bridge. |
 | Java/native module runtime | **Runtime service / provisional** | `app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java` | `docs/native/API_V1.md` | Java-side lifetime, pointer/update bridge, cached module capabilities, feedback-mask return path. |
 | Executable ABI regression gate | **Implemented validation** | `app/src/test/native/native_abi_contract_test.cpp`, `scripts/verify-native-abi-contract.py` | `docs/native/CONTRACT_INDEX.md` | Host-buildable proof of prefix behavior, descriptor freeze, optional tails, feedback sanitization, capability gating, GLES admission. |
@@ -70,7 +70,7 @@ Native modules consume normalized actions/rays. They do not parse BLE packets, A
 |---|---|---|---|
 | Guest GL state isolation | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_gl_state.h` | `docs/native/GL_RENDERING_STANDARD.md` |
 | Column-major 4×4 multiply | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_math.h` | `docs/native/CORE_UTILITIES.md` |
-| GLES shader compile helper | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_gl_utils.h` | `docs/native/CORE_UTILITIES.md` |
+| GLES shader compile/program-link helpers | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_gl_utils.h` | `docs/native/CORE_UTILITIES.md` | Shader compile plus caller-declared attribute bindings and fail-closed program linking; shader text/policy remain game-owned. |
 | One update / two eye renders | **Platform rule** | ABI lifecycle + reference modules | `docs/native/README.md`, `docs/native/GL_RENDERING_STANDARD.md` |
 | OpenGL ES admission | **ABI v1** | `ReverieNativeGlesRequirementSupportedV1` | Current host supports GLES 2.0 and rejects higher requirements before create. |
 
@@ -135,7 +135,7 @@ Promote a technique only when:
 6. performance-sensitive behavior has appropriate device evidence before performance claims become normative;
 7. implementation, documentation, catalog entry, and drift checks move together.
 
-Examples already promoted by this rule include ABI prefix helpers, GLES admission, matrix multiplication, shader compilation, GL state isolation, module-declared locomotion, and shell feedback cues.
+Examples already promoted by this rule include ABI prefix helpers, safe host logging, GLES admission, matrix multiplication, shader compilation/program linking, GL state isolation, module-declared locomotion, and shell feedback cues.
 
 Examples **not** yet promoted include Red Ledger work-target rules, its exact cuboid room recipe, arbitrary audio mixing, haptics, and the planned generic primitive model recipe.
 

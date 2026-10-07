@@ -140,16 +140,16 @@ void Log(
     int32_t level,
     const char *message
 ) {
-    if (state != nullptr
-        && ReverieNativeHostSupportsLogV1(
-            state->host
-        )) {
-        state->host->log(
-            level,
-            "ReverieRedLedger",
-            message
-        );
+    if (state == nullptr) {
+        return;
     }
+
+    ReverieNativeLogV1(
+        state->host,
+        level,
+        "ReverieRedLedger",
+        message
+    );
 }
 
 const char *WorkTargetName(
@@ -641,74 +641,20 @@ GLuint BuildProgram() {
         "  gl_FragColor = vec4(material * v_Color * u_Flicker, 1.0);\n"
         "}\n";
 
-    GLuint vertex =
-        ReverieNativeCompileShader(
-            GL_VERTEX_SHADER,
-            kVertexShader
-        );
+    static const ReverieNativeGlAttributeBindingV1 kBindings[] = {
+        {0u, "a_Position"},
+        {1u, "a_Uv"},
+        {2u, "a_Color"},
+        {3u, "a_TileOrigin"}
+    };
 
-    if (vertex == 0) {
-        return 0;
-    }
-
-    GLuint fragment =
-        ReverieNativeCompileShader(
-            GL_FRAGMENT_SHADER,
-            kFragmentShader
-        );
-
-    if (fragment == 0) {
-        glDeleteShader(vertex);
-        return 0;
-    }
-
-    GLuint program =
-        glCreateProgram();
-
-    if (program == 0) {
-        glDeleteShader(vertex);
-        glDeleteShader(fragment);
-        return 0;
-    }
-
-    glAttachShader(
-        program,
-        vertex
+    return ReverieNativeBuildProgram(
+        kVertexShader,
+        kFragmentShader,
+        kBindings,
+        sizeof(kBindings)
+            / sizeof(kBindings[0])
     );
-    glAttachShader(
-        program,
-        fragment
-    );
-    glBindAttribLocation(
-        program,
-        0,
-        "a_Position"
-    );
-    glBindAttribLocation(
-        program,
-        1,
-        "a_Uv"
-    );
-    glBindAttribLocation(program, 2, "a_Color");
-    glBindAttribLocation(program, 3, "a_TileOrigin");
-    glLinkProgram(program);
-
-    glDeleteShader(vertex);
-    glDeleteShader(fragment);
-
-    GLint linked = GL_FALSE;
-    glGetProgramiv(
-        program,
-        GL_LINK_STATUS,
-        &linked
-    );
-
-    if (linked != GL_TRUE) {
-        glDeleteProgram(program);
-        return 0;
-    }
-
-    return program;
 }
 
 void MakeTransform(
