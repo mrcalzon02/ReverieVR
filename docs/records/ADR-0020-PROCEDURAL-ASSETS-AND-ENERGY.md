@@ -36,12 +36,11 @@ evidence of low power consumption.
 ## First implementation: Red Ledger atlas
 
 - Four compact authored recipes: stone, wood, metal, paper.
-- A fixed seed and 128×128 RGBA8 atlas (65,536 bytes GPU payload).
+- A fixed seed and 128×128 RGB565 atlas (32,768 bytes GPU payload), replacing the earlier 65,536-byte RGBA8 upload. The source retains an RGBA reference generator for pixel-level tests.
 - No PNG/JPEG material bitmap assets in the module.
-- Generated on GL-context creation and immediately released from CPU memory
-  after GPU upload; one GL texture reused for both eyes and all cubes.
+- Generated directly into packed RGB565 on GL-context creation, without an intermediate RGBA buffer; CPU staging is released after GPU upload. One GL texture is reused for both eyes and all cubes.
 - 36 cube vertices gain UVs computed once per context; material selection
-  changes a tile-origin uniform, not texture binding.
+  changes a constant vertex attribute, not texture binding.
 - CI checks deterministic output, changed-seed variation, distinct tiles,
   buffer rejection/guard integrity and RGBA completeness.
 
@@ -71,6 +70,18 @@ draw calls with one per eye. Hoverable controls, patrons, payments, cups and
 event indicators remain dynamic. Native CI tests deterministic geometry,
 bounds, material coverage and UV invariants. Battery and thermal effects
 remain subject to S9 measurement, not extrapolation from draw counts.
+
+## Implemented next slice: packed atlas and stereo-coherent lighting
+
+The four material recipes now generate native RGB565 pixels directly for
+GL_RGB/GL_UNSIGNED_SHORT_5_6_5, halving the atlas upload and GPU payload
+from 64 KiB to 32 KiB without an intermediate RGBA staging buffer. The
+RGBA reference generator remains available for deterministic comparison;
+CI verifies pixel-for-pixel 565 quantization, seed behavior, invalid buffer
+rejection and guard preservation. Red Ledger also computes its animated
+lighting flicker once in Update and shares it across both eye renders,
+avoiding redundant trigonometry and eye-dependent lighting differences.
+Actual handset power/thermal and visual equivalence remain unverified.
 
 ## Subsequent slices
 

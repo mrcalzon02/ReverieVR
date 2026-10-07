@@ -61,17 +61,8 @@ uint8_t PixelValue(
     return 255u;
 }
 
-}  // namespace
-
-bool GenerateMaterialAtlas(
-    uint32_t seed,
-    uint8_t *rgba,
-    size_t capacity
-) {
-    if (rgba == nullptr || capacity < kAtlasBytes) {
-        return false;
-    }
-
+template <typename PixelWriter>
+void GeneratePixels(uint32_t seed, PixelWriter write) {
     for (int tile = 0; tile < 4; ++tile) {
         const Material material = static_cast<Material>(tile);
         const int tile_x = (tile & 1) * kTileSize;
@@ -84,17 +75,43 @@ bool GenerateMaterialAtlas(
                     seed ^ (static_cast<uint32_t>(tile) * 0x9e3779b9u)
                 );
                 const uint8_t value = PixelValue(material, x, y, hash);
-                const size_t offset = (
-                    static_cast<size_t>(tile_y + y) * kAtlasWidth
-                    + static_cast<size_t>(tile_x + x)
-                ) * 4u;
-                rgba[offset] = value;
-                rgba[offset + 1u] = value;
-                rgba[offset + 2u] = value;
-                rgba[offset + 3u] = 255u;
+                const size_t pixel = static_cast<size_t>(tile_y + y)
+                    * kAtlasWidth + static_cast<size_t>(tile_x + x);
+                write(pixel, value);
             }
         }
     }
+}
+
+}  // namespace
+
+bool GenerateMaterialAtlas(uint32_t seed, uint8_t *rgba, size_t capacity) {
+    if (rgba == nullptr || capacity < kAtlasBytes) return false;
+    GeneratePixels(seed, [rgba](size_t pixel, uint8_t value) {
+        const size_t offset = pixel * 4u;
+        rgba[offset] = value;
+        rgba[offset + 1u] = value;
+        rgba[offset + 2u] = value;
+        rgba[offset + 3u] = 255u;
+    });
+    return true;
+}
+
+bool GenerateMaterialAtlasRgb565(
+    uint32_t seed,
+    uint16_t *pixels,
+    size_t capacity_bytes
+) {
+    if (pixels == nullptr || capacity_bytes < kAtlasRgb565Bytes) {
+        return false;
+    }
+    GeneratePixels(seed, [pixels](size_t pixel, uint8_t value) {
+        // GLES2 native RGB565: quantize a grayscale procedural pixel
+        // directly without allocating an intermediate RGBA atlas.
+        const uint16_t r = static_cast<uint16_t>(value >> 3);
+        const uint16_t g = static_cast<uint16_t>(value >> 2);
+        pixels[pixel] = static_cast<uint16_t>((r << 11) | (g << 5) | r);
+    });
     return true;
 }
 

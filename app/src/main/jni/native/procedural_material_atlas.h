@@ -19,8 +19,10 @@ enum class Material : uint8_t {
 constexpr int kTileSize = 64;
 constexpr int kAtlasWidth = kTileSize * 2;
 constexpr int kAtlasHeight = kTileSize * 2;
-constexpr size_t kAtlasBytes =
-    static_cast<size_t>(kAtlasWidth) * kAtlasHeight * 4u;
+constexpr size_t kAtlasPixelCount =
+    static_cast<size_t>(kAtlasWidth) * kAtlasHeight;
+constexpr size_t kAtlasBytes = kAtlasPixelCount * 4u;
+constexpr size_t kAtlasRgb565Bytes = kAtlasPixelCount * sizeof(uint16_t);
 constexpr uint32_t kRedLedgerMaterialSeed = 0x52ED1ED6u;
 
 // RGBA8, deterministic, no GL calls or dynamic allocation. Reject undersized
@@ -29,6 +31,15 @@ bool GenerateMaterialAtlas(
     uint32_t seed,
     uint8_t *rgba,
     size_t capacity
+);
+
+// Compact GLES2-native RGB565 path. Direct procedural generation; no
+// temporary RGBA staging allocation. Capacity is measured in BYTES.
+// GL_RGB/GL_UNSIGNED_SHORT_5_6_5, no alpha, 32 KiB per context.
+bool GenerateMaterialAtlasRgb565(
+    uint32_t seed,
+    uint16_t *pixels,
+    size_t capacity_bytes
 );
 
 }  // namespace procedural

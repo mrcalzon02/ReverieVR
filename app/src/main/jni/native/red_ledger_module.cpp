@@ -116,6 +116,7 @@ struct ModuleState {
     GLint flicker_location = -1;
 
     float elapsed_seconds = 0.0f;
+    float flicker = 0.90f;
     bool primary_was_down = false;
 
     bool pointer_active = false;
@@ -969,13 +970,15 @@ int32_t InitializeGl(
 
     // Generate only on GL-context creation/recreation. The temporary CPU
     // buffer is freed immediately after upload; no runtime bitmap asset.
-    std::unique_ptr<uint8_t[]> pixels(
-        new (std::nothrow) uint8_t[reverie::procedural::kAtlasBytes]
+    // RGB565 is 32 KiB instead of 64 KiB RGBA8, and needs no
+    // intermediate bitmap or conversion allocation.
+    std::unique_ptr<uint16_t[]> pixels(
+        new (std::nothrow) uint16_t[reverie::procedural::kAtlasPixelCount]
     );
-    if (!pixels || !reverie::procedural::GenerateMaterialAtlas(
+    if (!pixels || !reverie::procedural::GenerateMaterialAtlasRgb565(
             reverie::procedural::kRedLedgerMaterialSeed,
             pixels.get(),
-            reverie::procedural::kAtlasBytes)) {
+            reverie::procedural::kAtlasRgb565Bytes)) {
         Log(state, REVERIE_NATIVE_LOG_ERROR,
             "Procedural atlas allocation/generation failed.");
         DestroyGl(state);
@@ -994,10 +997,10 @@ int32_t InitializeGl(
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexImage2D(
-            GL_TEXTURE_2D, 0, GL_RGBA,
+            GL_TEXTURE_2D, 0, GL_RGB,
             reverie::procedural::kAtlasWidth,
             reverie::procedural::kAtlasHeight,
-            0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.get()
+            0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, pixels.get()
         );
     }
     glBindTexture(GL_TEXTURE_2D,
@@ -1019,7 +1022,7 @@ int32_t InitializeGl(
     Log(
         state,
         REVERIE_NATIVE_LOG_INFO,
-        "Red Ledger GL: 128x128 atlas and 11 static cubes in one VBO."
+        "Red Ledger GL: 32 KiB RGB565 atlas and one static room VBO."
     );
     return 1;
 }
@@ -1715,6 +1718,13 @@ void Update(
             )
         );
     state->elapsed_seconds += dt;
+    // Calculate lighting once per simulation update, not separately for
+    // the two eyes. Both stereo views receive identical illumination.
+    const float wave =
+        std::sin(state->elapsed_seconds * 7.0f)
+        + 0.35f * std::sin(state->elapsed_seconds * 19.0f);
+    state->flicker = std::max(0.72f,
+        std::min(1.0f, 0.90f + wave * 0.06f));
 
     ReverieNativeInputV1 effective_input =
         *input;
@@ -1891,26 +1901,7 @@ int32_t RenderEye(
         reinterpret_cast<const void *>(3 * sizeof(float))
     );
 
-    const float wave =
-        std::sin(
-            state->elapsed_seconds
-                * 7.0f
-        )
-        + 0.35f
-            * std::sin(
-                state->elapsed_seconds
-                    * 19.0f
-            );
-
-    const float flicker =
-        std::max(
-            0.72f,
-            std::min(
-                1.0f,
-                0.90f
-                    + wave * 0.06f
-            )
-        );
+    const float flicker = state->flicker;
 
     DrawRoom(
         state,
