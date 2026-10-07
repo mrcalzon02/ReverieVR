@@ -11,7 +11,7 @@ Before reading, changing, validating, committing, or pushing ReverieVR:
 5. Read `docs/project/APK_BUILD_ORDER.md` before implementation work.
 6. Reconcile those documents with actual repository and remote `main` state before mutation.
 7. Use `docs/records/` for durable architectural decisions.
-8. For native game/module work, read `docs/native/README.md` and its linked API/content standards before implementation.
+8. For native game/module work, read `docs/native/README.md`, `docs/native/CONTRACT_INDEX.md`, and the linked API/content standards before implementation; update mapped documentation in the same scoped change when implementation changes and run `python3 scripts/verify-native-doc-sync.py` with the appropriate change-range option.
 9. Follow DEEFM for every material operation: **Intent -> Execute -> Observe -> Verify -> Claim**.
 
 Conversation history, memory, prompts, and handoffs are context. They are not proof of repository state.
