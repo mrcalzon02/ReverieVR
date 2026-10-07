@@ -225,6 +225,7 @@ Automatic HUD reveal/retract, gaze-triggered behavior, comfort helpers, and simi
 - `docs/project/EXECUTION_STATE.md` — current verified operational position.
 - `docs/project/ACCEPTANCE_LEDGER.md` — admission state.
 - `docs/records/` — architecture, investigations, decisions.
+- `docs/native/` — native game developer handbook, implemented API reference, and reusable generated-content standards.
 - `CHANGELOG.md` — verified completed project changes.
 
 Do not create competing trackers for the same authority role.
