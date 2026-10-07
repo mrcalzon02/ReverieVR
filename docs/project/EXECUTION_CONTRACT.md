@@ -104,6 +104,7 @@ Before commit:
 - inspect complete scoped diff;
 - run available checks;
 - confirm docs/ledger match evidence;
+- for native SDK-facing changes, run the native documentation drift guard and resolve any mapped source/document mismatch;
 - refresh concurrency state;
 - stage only intended paths;
 - inspect staged diff;
