@@ -169,6 +169,8 @@ def check_current_content() -> None:
         "REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE",
         "REVERIE_NATIVE_EYE_V1_MIN_SIZE",
         "REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE",
+        "REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE",
+        "REVERIE_NATIVE_CAPABILITIES_V1_LOCOMOTION_MIN_SIZE",
     )
     for token in prefix_tokens:
         require(token in header, f"ABI header lost minimum-prefix constant: {token}")
@@ -197,6 +199,8 @@ def check_current_content() -> None:
         "ReverieNativeInputHasPointerV1",
         "ReverieNativeEyeHasMatricesV1",
         "ReverieNativeApiHasMandatoryV1",
+        "ReverieNativeApiCapabilitiesV1",
+        "ReverieNativeCapabilitiesHasShellLocomotionV1",
     )
     for token in helper_tokens:
         require(token in sdk_header, f"native SDK helper header lost function: {token}")
@@ -271,9 +275,9 @@ def check_current_content() -> None:
             f"{label} does not include the shared GL state guard",
         )
         require(
-            source.count("ReverieNativeGlStateCaptureV1(") == 1
-            and source.count("ReverieNativeGlStateRestoreV1(") == 1,
-            f"{label} does not capture/restore one shared GL state snapshot",
+            source.count("ReverieNativeGlStateCaptureV1(") == 2
+            and source.count("ReverieNativeGlStateRestoreV1(") == 2,
+            f"{label} does not isolate shared GL state during initialization and rendering",
         )
         require(
             source.count("ReverieNativeGlAttribCaptureV1(") == expected_attribs
@@ -444,35 +448,55 @@ def check_current_content() -> None:
             "native locomotion stale-input threshold",
         )
     )
-    red_limit_x = float(
-        regex_value(
-            r"ID_RED_LEDGER\.equals\(moduleId\).*?limitX\s*=\s*([0-9.]+)f",
-            renderer_java,
-            "Red Ledger locomotion lateral limit",
-        )
+    red_capability = re.search(
+        r"const\s+ReverieNativeModuleCapabilitiesV1\s+kCapabilities\s*=\s*\{"
+        r".*?REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION\s*,"
+        r"\s*([0-9.]+)f\s*,\s*([0-9.]+)f",
+        red_ledger_cpp,
+        flags=re.MULTILINE | re.DOTALL,
     )
-    red_limit_z = float(
-        regex_value(
-            r"ID_RED_LEDGER\.equals\(moduleId\).*?limitX\s*=\s*[0-9.]+f;.*?limitZ\s*=\s*([0-9.]+)f",
-            renderer_java,
-            "Red Ledger locomotion depth limit",
-        )
+    chamber_capability = re.search(
+        r"const\s+ReverieNativeModuleCapabilitiesV1\s+kCapabilities\s*=\s*\{"
+        r".*?REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION\s*,"
+        r"\s*([0-9.]+)f\s*,\s*([0-9.]+)f",
+        test_chamber_cpp,
+        flags=re.MULTILINE | re.DOTALL,
     )
-    chamber_limit_x = float(
-        regex_value(
-            r'"procedural-test-chamber"\.equals\(moduleId\).*?limitX\s*=\s*([0-9.]+)f',
-            renderer_java,
-            "Test Chamber locomotion X limit",
-        )
+    require(red_capability is not None, "Red Ledger lost shell-locomotion capability")
+    require(chamber_capability is not None, "Test Chamber lost shell-locomotion capability")
+    red_limit_x = float(red_capability.group(1))
+    red_limit_z = float(red_capability.group(2))
+    chamber_limit_x = float(chamber_capability.group(1))
+    chamber_limit_z = float(chamber_capability.group(2))
+
+    require(
+        "nativeGetShellLocomotionBounds" in host
+        and "ReverieNativeApiCapabilitiesV1" in host
+        and "ReverieNativeCapabilitiesHasShellLocomotionV1" in host,
+        "native host no longer validates/exposes module locomotion capabilities",
     )
-    chamber_limit_z = float(
-        regex_value(
-            r'"procedural-test-chamber"\.equals\(moduleId\).*?limitX\s*=\s*[0-9.]+f;.*?limitZ\s*=\s*([0-9.]+)f',
-            renderer_java,
-            "Test Chamber locomotion Z limit",
-        )
+    require(
+        "nativeGetShellLocomotionBounds" in runtime
+        and "copyShellLocomotionBounds" in runtime,
+        "NativeModuleRuntime no longer caches/exposes shell locomotion capability",
+    )
+    require(
+        "copyShellLocomotionBounds" in renderer_java,
+        "renderer no longer consumes cached module locomotion capability",
+    )
+    require(
+        "limitX = 0.70f" not in renderer_java
+        and "limitX = 1.55f" not in renderer_java
+        and '"procedural-test-chamber".equals(moduleId)' not in renderer_java,
+        "renderer regressed to hard-coded module-id locomotion policy",
     )
 
+    require(
+        "REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION" in header
+        and "`REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION`" in api_doc
+        and "`REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION`" in runtime_services_doc,
+        "shell locomotion capability is not synchronized across header/API/runtime docs",
+    )
     require(
         f"**{deadzone:.2f}**" in runtime_services_doc,
         "runtime services doc does not report current locomotion deadzone",

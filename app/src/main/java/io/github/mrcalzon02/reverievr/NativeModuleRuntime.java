@@ -55,6 +55,8 @@ final class NativeModuleRuntime implements AutoCloseable {
     private long handle;
     private long lastUpdateNanos;
     private String activeModuleId = "";
+    private float shellLocomotionLimitX;
+    private float shellLocomotionLimitZ;
 
     NativeModuleRuntime(
         File storageRoot,
@@ -211,6 +213,29 @@ final class NativeModuleRuntime implements AutoCloseable {
         lastUpdateNanos =
             System.nanoTime();
 
+        float[] shellLocomotion =
+            nativeGetShellLocomotionBounds(
+                handle
+            );
+        if (shellLocomotion != null
+            && shellLocomotion.length >= 2
+            && Float.isFinite(
+                shellLocomotion[0]
+            )
+            && Float.isFinite(
+                shellLocomotion[1]
+            )
+            && shellLocomotion[0] > 0.0f
+            && shellLocomotion[1] > 0.0f) {
+            shellLocomotionLimitX =
+                shellLocomotion[0];
+            shellLocomotionLimitZ =
+                shellLocomotion[1];
+        } else {
+            shellLocomotionLimitX = 0.0f;
+            shellLocomotionLimitZ = 0.0f;
+        }
+
         nativeResume(handle);
 
         ReverieLog.milestone(
@@ -227,6 +252,22 @@ final class NativeModuleRuntime implements AutoCloseable {
 
     synchronized String getActiveModuleId() {
         return activeModuleId;
+    }
+
+    synchronized boolean copyShellLocomotionBounds(
+        float[] outBounds
+    ) {
+        if (handle == 0L
+            || shellLocomotionLimitX <= 0.0f
+            || shellLocomotionLimitZ <= 0.0f
+            || outBounds == null
+            || outBounds.length < 2) {
+            return false;
+        }
+
+        outBounds[0] = shellLocomotionLimitX;
+        outBounds[1] = shellLocomotionLimitZ;
+        return true;
     }
 
     synchronized boolean onSurfaceCreated() {
@@ -391,6 +432,8 @@ final class NativeModuleRuntime implements AutoCloseable {
         handle = 0L;
         activeModuleId = "";
         lastUpdateNanos = 0L;
+        shellLocomotionLimitX = 0.0f;
+        shellLocomotionLimitZ = 0.0f;
 
         nativePause(active);
         nativeDestroy(active);
@@ -411,6 +454,10 @@ final class NativeModuleRuntime implements AutoCloseable {
     private static native long nativeCreate(
         String moduleId,
         String storageRoot
+    );
+
+    private static native float[] nativeGetShellLocomotionBounds(
+        long handle
     );
 
     private static native void nativeDestroy(

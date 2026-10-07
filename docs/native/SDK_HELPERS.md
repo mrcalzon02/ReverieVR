@@ -48,6 +48,14 @@ Validates the eye prefix through the current view/projection matrices.
 
 Validates the mandatory module API-table prefix and ABI version. The host still separately verifies descriptor identity, GLES requirement, and required callbacks.
 
+### `ReverieNativeApiCapabilitiesV1`
+
+Returns the optional `ReverieNativeModuleCapabilitiesV1` pointer only when the module API's `struct_size` proves that the capability tail exists. Older v1 modules therefore remain safe and return no capability block.
+
+### `ReverieNativeCapabilitiesHasShellLocomotionV1`
+
+Checks that a capability block contains the locomotion prefix, declares `REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION`, and supplies positive X/Z bounds. The JNI bridge performs the additional finite/safety-range validation before caching those bounds for the renderer.
+
 ## Canonical module-start pattern
 
 A new native game should normally:

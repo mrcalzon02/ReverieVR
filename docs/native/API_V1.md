@@ -14,6 +14,7 @@
 - host service type: `ReverieNativeHostV1`
 - input type: `ReverieNativeInputV1`
 - eye type: `ReverieNativeEyeV1`
+- optional capability type: `ReverieNativeModuleCapabilitiesV1`
 - maximum single save payload: `65536` bytes
 
 Native modules are trusted libraries packaged inside the APK and admitted through the host's compile-time allowlist. ABI v1 is deliberately *not* a plugin loader for arbitrary code from writable storage.
@@ -43,7 +44,9 @@ Current minimum-prefix constants are:
 - `REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE` — base timing/movement/button input;
 - `REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE` — input prefix through world-space pointer data;
 - `REVERIE_NATIVE_EYE_V1_MIN_SIZE` — mandatory eye matrices;
-- `REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE` — mandatory module callback table.
+- `REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE` — mandatory module callback table through `render_eye`;
+- `REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE` — optional API tail through the `capabilities` pointer;
+- `REVERIE_NATIVE_CAPABILITIES_V1_LOCOMOTION_MIN_SIZE` — capability block prefix through shell-locomotion bounds.
 
 The native host and both reference modules use these prefixes. This makes the append-only rule operational for structures whose tails can actually grow without moving existing fields.
 
@@ -51,7 +54,7 @@ The native host and both reference modules use these prefixes. This makes the ap
 
 `ReverieNativeModuleDescriptorV1` is **layout-frozen** for ABI v1. It is embedded by value inside `ReverieNativeModuleApiV1` before the callback pointers, so appending a descriptor field would shift every callback offset. The v1 helper therefore requires `descriptor.struct_size == REVERIE_NATIVE_DESCRIPTOR_V1_SIZE`.
 
-Do not place future capability declarations by appending to the v1 descriptor. Put a compatible optional extension at the **tail of `ReverieNativeModuleApiV1`** or introduce ABI v2 when the change cannot remain optional.
+Do not place future capability declarations by appending to the v1 descriptor. The implemented `ReverieNativeModuleCapabilitiesV1` pointer demonstrates the compatible pattern: add optional metadata at the **tail of `ReverieNativeModuleApiV1`** and prove its presence from `struct_size`, or introduce ABI v2 when the change cannot remain optional.
 
 Adding optional tail fields can remain ABI v1 only when all existing field offsets stay unchanged and old producers/consumers can safely ignore the added tail. Adding a new mandatory callback, changing existing semantics incompatibly, extending the embedded v1 descriptor, or requiring a different mandatory layout requires a new ABI version.
 
@@ -223,6 +226,22 @@ A valid module must:
 - fail closed when required callbacks/resources are unavailable.
 
 Do not design game distribution around downloading executable native modules into app-writable storage under ABI v1.
+
+## Optional module capabilities
+
+ABI v1 now uses its first optional API-tail extension for module-declared platform capabilities.
+
+A module may append a pointer to `ReverieNativeModuleCapabilitiesV1` at the tail of `ReverieNativeModuleApiV1`. An older v1 binary whose `struct_size` ends at `render_eye` remains valid; the host must not read `api.capabilities` until `struct_size >= REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE`.
+
+The current capability flag is:
+
+- `REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION` — requests shell-owned bounded horizontal touchpad locomotion.
+
+When that flag is present, the capability block must include positive finite `locomotion_limit_x` and `locomotion_limit_z` values. The host validates an upper safety bound before exposing the envelope to the Java runtime.
+
+Capabilities describe reusable platform behavior. They are not a route for embedding arbitrary game rules in the ABI.
+
+A module with no capability tail or a null capability pointer continues to run; it simply receives none of the optional shell behaviors represented there.
 
 ## API evolution policy
 

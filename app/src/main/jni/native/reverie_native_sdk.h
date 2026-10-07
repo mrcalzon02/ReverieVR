@@ -82,6 +82,32 @@ static inline int ReverieNativeApiHasMandatoryV1(
             >= REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE;
 }
 
+static inline const ReverieNativeModuleCapabilitiesV1 *
+ReverieNativeApiCapabilitiesV1(
+    const ReverieNativeModuleApiV1 *api
+) {
+    if (!ReverieNativeApiHasMandatoryV1(api)
+        || api->struct_size
+            < REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE) {
+        return NULL;
+    }
+    return api->capabilities;
+}
+
+static inline int ReverieNativeCapabilitiesHasShellLocomotionV1(
+    const ReverieNativeModuleCapabilitiesV1 *capabilities
+) {
+    return capabilities != NULL
+        && capabilities->struct_size
+            >= REVERIE_NATIVE_CAPABILITIES_V1_LOCOMOTION_MIN_SIZE
+        && (
+            capabilities->flags
+            & REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION
+        ) != 0u
+        && capabilities->locomotion_limit_x > 0.0f
+        && capabilities->locomotion_limit_z > 0.0f;
+}
+
 #ifdef __cplusplus
 }
 #endif

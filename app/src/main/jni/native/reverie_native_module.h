@@ -121,6 +121,26 @@ typedef struct ReverieNativeEyeV1 {
     ((uint32_t)(offsetof(ReverieNativeEyeV1, projection) \
         + sizeof(((ReverieNativeEyeV1 *)0)->projection)))
 
+enum ReverieNativeModuleCapabilityFlagV1 {
+    REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION = 1u << 0
+};
+
+typedef struct ReverieNativeModuleCapabilitiesV1 {
+    uint32_t struct_size;
+    uint32_t flags;
+
+    /*
+     * Horizontal shell-owned travel envelope in meters when
+     * REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION is set.
+     */
+    float locomotion_limit_x;
+    float locomotion_limit_z;
+} ReverieNativeModuleCapabilitiesV1;
+
+#define REVERIE_NATIVE_CAPABILITIES_V1_LOCOMOTION_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeModuleCapabilitiesV1, locomotion_limit_z) \
+        + sizeof(((ReverieNativeModuleCapabilitiesV1 *)0)->locomotion_limit_z)))
+
 typedef struct ReverieNativeModuleApiV1 {
     uint32_t struct_size;
     uint32_t abi_version;
@@ -150,11 +170,20 @@ typedef struct ReverieNativeModuleApiV1 {
         void *instance,
         const ReverieNativeEyeV1 *eye
     );
+
+    /*
+     * Optional ABI-v1 tail extension. Hosts must prove this field exists
+     * from struct_size before reading it. NULL means no declared capabilities.
+     */
+    const ReverieNativeModuleCapabilitiesV1 *capabilities;
 } ReverieNativeModuleApiV1;
 
 #define REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE \
     ((uint32_t)(offsetof(ReverieNativeModuleApiV1, render_eye) \
         + sizeof(((ReverieNativeModuleApiV1 *)0)->render_eye)))
+#define REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeModuleApiV1, capabilities) \
+        + sizeof(((ReverieNativeModuleApiV1 *)0)->capabilities)))
 
 typedef const ReverieNativeModuleApiV1 *
     (*ReverieNativeModuleEntryV1)(void);

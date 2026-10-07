@@ -322,6 +322,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         new BoundedViewRelativeLocomotion();
     private final TouchpadLocomotionGate nativeLocomotionGate =
         new TouchpadLocomotionGate();
+    private final float[] nativeLocomotionBounds =
+        new float[2];
     private String nativeLocomotionModuleId = "";
     private long nativeLocomotionLastFrameNanos;
     private final float[] controllerForward = new float[3];
@@ -1404,19 +1406,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
-        float limitX;
-        float limitZ;
-        if (NativeModuleRuntime.ID_RED_LEDGER.equals(moduleId)) {
-            // Bar operator stays behind the counter.
-            limitX = 0.70f;
-            limitZ = 0.32f;
-        } else if ("procedural-test-chamber".equals(moduleId)) {
-            limitX = 1.55f;
-            limitZ = 1.55f;
-        } else {
-            nativeLocomotionLastFrameNanos = frameNanos;
+        if (!nativeModuleRuntime
+                .copyShellLocomotionBounds(
+                    nativeLocomotionBounds
+                )) {
+            nativeLocomotionLastFrameNanos =
+                frameNanos;
             return;
         }
+
+        final float limitX =
+            nativeLocomotionBounds[0];
+        final float limitZ =
+            nativeLocomotionBounds[1];
 
         float dt = nativeLocomotionLastFrameNanos == 0L
             ? 0.0f

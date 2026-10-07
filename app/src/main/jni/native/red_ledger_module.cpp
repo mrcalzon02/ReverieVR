@@ -1871,6 +1871,13 @@ int32_t RenderEye(
         : 0;
 }
 
+const ReverieNativeModuleCapabilitiesV1 kCapabilities = {
+    sizeof(ReverieNativeModuleCapabilitiesV1),
+    REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION,
+    0.70f,
+    0.32f
+};
+
 const ReverieNativeModuleApiV1 kApi = {
     sizeof(
         ReverieNativeModuleApiV1
@@ -1893,7 +1900,8 @@ const ReverieNativeModuleApiV1 kApi = {
     Resume,
     Pause,
     Update,
-    RenderEye
+    RenderEye,
+    &kCapabilities
 };
 
 }  // namespace

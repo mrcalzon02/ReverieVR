@@ -624,6 +624,65 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
 }
 
 extern "C"
+JNIEXPORT jfloatArray JNICALL
+Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeGetShellLocomotionBounds(
+    JNIEnv *env,
+    jclass,
+    jlong handle
+) {
+    NativeSession *session = FromHandle(handle);
+    if (session == nullptr
+        || session->api == nullptr) {
+        return nullptr;
+    }
+
+    const ReverieNativeModuleCapabilitiesV1 *capabilities =
+        ReverieNativeApiCapabilitiesV1(
+            session->api
+        );
+    if (!ReverieNativeCapabilitiesHasShellLocomotionV1(
+            capabilities
+        )) {
+        return nullptr;
+    }
+
+    const float limit_x =
+        capabilities->locomotion_limit_x;
+    const float limit_z =
+        capabilities->locomotion_limit_z;
+
+    if (!std::isfinite(limit_x)
+        || !std::isfinite(limit_z)
+        || limit_x <= 0.0f
+        || limit_z <= 0.0f
+        || limit_x > 100.0f
+        || limit_z > 100.0f) {
+        SetError(
+            "Native module shell-locomotion capability has invalid bounds."
+        );
+        return nullptr;
+    }
+
+    jfloatArray result =
+        env->NewFloatArray(2);
+    if (result == nullptr) {
+        return nullptr;
+    }
+
+    const jfloat values[2] = {
+        static_cast<jfloat>(limit_x),
+        static_cast<jfloat>(limit_z)
+    };
+    env->SetFloatArrayRegion(
+        result,
+        0,
+        2,
+        values
+    );
+    return result;
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeDestroy(
     JNIEnv *,

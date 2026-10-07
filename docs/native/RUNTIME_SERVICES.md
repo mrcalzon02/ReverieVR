@@ -43,16 +43,18 @@ Forward/back/strafe are resolved against the headset's current horizontal forwar
 
 The shell applies the resulting world translation once to the adjusted head view. The same translated frame is used for controller/pointer placement, so the module must not apply the same locomotion again.
 
-### Current first-party envelopes
+### Module-declared envelopes
 
-The shell currently admits locomotion only for known first-party native scenes:
+Shell locomotion is now an optional ABI-v1 capability rather than a renderer module-id special case. A module opts in with `REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION` and supplies its horizontal envelope through `ReverieNativeModuleCapabilitiesV1`.
+
+Current declarations are:
 
 - Procedural Test Chamber: **±1.55 m X/Z**;
 - Between Deliveries: The Red Ledger VR: **±0.70 m lateral, ±0.32 m depth**.
 
-Unknown native module ids do not receive this shell locomotion.
+The JNI host validates and exposes those values once at module launch; `NativeModuleRuntime` caches them, and the renderer reads the cached pair without per-frame JNI allocation.
 
-These hard-coded first-party envelopes are an implementation stage, not the final generalized SDK design. A future stable native SDK should move locomotion capability/envelope declaration into an explicit module descriptor or host policy rather than growing renderer id checks indefinitely.
+A module with no compatible capability tail, a null capability block, no locomotion flag, or invalid bounds receives no shell locomotion.
 
 ### Gesture re-arm safety
 
@@ -131,8 +133,8 @@ The shell/runtime chooses the module-private storage root; the native host valid
 
 The following are **not** yet stable generalized services:
 
-- declarative locomotion envelope/capability in the native module descriptor;
-- per-game comfort-policy query;
+- per-game comfort-policy query beyond the implemented locomotion capability;
+- per-module locomotion speed/deadzone policy (the shell still owns the common values);
 - standard spatial collision/guardian service;
 - shared mounted-tool/world-anchor primitive;
 - shell audio submission/mixing API;
