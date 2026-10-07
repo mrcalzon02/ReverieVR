@@ -255,6 +255,9 @@ public final class VrActivity extends Activity
         if (cardboardView != null) {
             cardboardView.onResume();
         }
+        if (uiFeedback != null) {
+            uiFeedback.resumeForLifecycle();
+        }
         if (menuMusic != null) {
             menuMusic.resumeForLifecycle();
         }
@@ -285,6 +288,9 @@ public final class VrActivity extends Activity
         }
         if (standardHidInputRouter != null) {
             standardHidInputRouter.reset();
+        }
+        if (uiFeedback != null) {
+            uiFeedback.pauseForLifecycle();
         }
         if (menuMusic != null) {
             menuMusic.pauseForLifecycle();
@@ -1070,6 +1076,11 @@ public final class VrActivity extends Activity
     @Override
     public void onUiActionRejected() {
         runOnUiThread(() -> uiFeedback.failure());
+    }
+
+    @Override
+    public void onControllerSpringRecenterRequested() {
+        runOnUiThread(() -> uiFeedback.springRecenter());
     }
 
     @Override

@@ -18,6 +18,9 @@ final class UiFeedback implements AutoCloseable {
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final AudioManager audioManager;
+    private final ControllerSpringSound controllerSpringSound =
+        new ControllerSpringSound();
+    private boolean lifecycleActive = true;
     private ToneGenerator toneGenerator;
     private long lastFocusSoundMillis;
 
@@ -84,6 +87,23 @@ final class UiFeedback implements AutoCloseable {
 
     void activation() {
         mainHandler.post(this::playActivationNow);
+    }
+
+    void springRecenter() {
+        mainHandler.post(() -> {
+            if (lifecycleActive) {
+                controllerSpringSound.play();
+            }
+        });
+    }
+
+    void pauseForLifecycle() {
+        lifecycleActive = false;
+        controllerSpringSound.stop();
+    }
+
+    void resumeForLifecycle() {
+        lifecycleActive = true;
     }
 
     private void playActivationNow() {
@@ -202,6 +222,7 @@ final class UiFeedback implements AutoCloseable {
     @Override
     public void close() {
         mainHandler.removeCallbacksAndMessages(null);
+        controllerSpringSound.close();
         if (toneGenerator != null) {
             toneGenerator.release();
             toneGenerator = null;
