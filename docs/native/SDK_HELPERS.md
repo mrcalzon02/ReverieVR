@@ -44,7 +44,7 @@ Validates the ABI version and requires the exact frozen `REVERIE_NATIVE_DESCRIPT
 
 ### `ReverieNativeGlesRequirementSupportedV1`
 
-Compares the descriptor's required OpenGL ES major/minor pair against a host-supported major/minor pair after validating the frozen descriptor. Version comparison is lexicographic: a lower required major is accepted, a higher major is rejected, and equal majors compare the minor version. The current ReverieVR native host supplies **2.0**.
+Compares the descriptor's required OpenGL ES major/minor pair against a host-supported major/minor pair after validating the frozen descriptor. Version comparison is lexicographic: a lower required major is accepted, a higher major is rejected, and equal majors compare the minor version. Both required and host GLES major versions must be **nonzero**; a descriptor advertising GLES 0.x or an invalid zero-major host is rejected before comparison. The current ReverieVR native host supplies **2.0**.
 
 ### `ReverieNativeInputHasBaseV1`
 
@@ -95,7 +95,7 @@ A new native game should normally:
 3. keep non-GL state allocation in `create`;
 4. create/recreate GPU resources only from the GL-context callback;
 5. choose `ReverieNativeInputHasBaseV1` or `ReverieNativeInputHasPointerV1` according to real input needs; sanitize a writable copy of pointer input when appropriate;
-6. use `ReverieNativeEyeHasMatricesV1` before rendering;
+6. use `ReverieNativeEyeRenderableV1` before rendering (not merely the matrix-prefix check);
 7. mutate game state in `update`, not `render_eye`;
 8. release GL resources in `release_gl_context`;
 9. expose a static `ReverieNativeModuleApiV1` and the canonical v1 entry symbol.
@@ -132,7 +132,7 @@ void Update(void *instance, const ReverieNativeInputV1 *input) {
 }
 
 int32_t RenderEye(void *instance, const ReverieNativeEyeV1 *eye) {
-    if (instance == nullptr || !ReverieNativeEyeHasMatricesV1(eye)) {
+    if (instance == nullptr || !ReverieNativeEyeRenderableV1(eye)) {
         return 0;
     }
 

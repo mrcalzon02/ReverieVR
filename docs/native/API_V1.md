@@ -71,7 +71,7 @@ Adding optional tail fields can remain ABI v1 only when all existing field offse
 
 The current host requires the descriptor id to match the allowlisted package entry.
 
-The native module host currently provides **OpenGL ES 2.0**. It compares both descriptor version components through `ReverieNativeGlesRequirementSupportedV1`: requirements below 2.x are admitted, 2.0 is admitted, and requirements above 2.0 (including 2.1 or 3.0) are rejected before module creation.
+The native module host currently provides **OpenGL ES 2.0**. It compares both descriptor version components through `ReverieNativeGlesRequirementSupportedV1`: required and host major versions must be nonzero; GLES 0.x is rejected as invalid, requirements from valid lower majors are admitted, 2.0 is admitted, and requirements above 2.0 (including 2.1 or 3.0) are rejected before module creation.
 
 Module ids are treated as storage/security identifiers, not display strings. Current runtime policy accepts simple ids made from letters, digits, `-`, `_`, and `.`, with a maximum length of 80 characters.
 

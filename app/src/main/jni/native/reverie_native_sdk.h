@@ -116,7 +116,8 @@ static inline int ReverieNativeGlesRequirementSupportedV1(
 ) {
     if (!ReverieNativeDescriptorHasMandatoryV1(
             descriptor
-        )) {
+        ) || descriptor->required_gles_major == 0u
+          || host_major == 0u) {
         return 0;
     }
 

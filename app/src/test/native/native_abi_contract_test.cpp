@@ -189,6 +189,17 @@ int main() {
         ) == 0,
         "GLES 3.0 requirement must not fit GLES 2.0 host"
     );
+    descriptor.required_gles_major = 0u;
+    descriptor.required_gles_minor = 0u;
+    Check(
+        ReverieNativeGlesRequirementSupportedV1(&descriptor, 2u, 0u) == 0,
+        "zero GLES major must not be accepted as a valid requirement"
+    );
+    descriptor.required_gles_major = 2u;
+    Check(
+        ReverieNativeGlesRequirementSupportedV1(&descriptor, 0u, 0u) == 0,
+        "zero GLES host major must not be accepted as valid support"
+    );
     descriptor.required_gles_major = 1u;
     descriptor.required_gles_minor = 1u;
     Check(

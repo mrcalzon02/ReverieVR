@@ -68,7 +68,7 @@ For ABI layout/consumption behavior, also run:
 python3 scripts/verify-native-abi-contract.py
 ```
 
-This compiles and executes `app/src/test/native/native_abi_contract_test.cpp` with an available host C++17 compiler. It checks the frozen descriptor, old mandatory API prefix, optional capability tail, host/input/eye prefixes, shell-locomotion capability gating, overflow-safe pointer-ray sanitization, base-input finite/clamp behavior, stereo-eye index/finite-matrix rejection (including truncated prefixes), and GLES major/minor admission without needing Android or GLES libraries.
+This compiles and executes `app/src/test/native/native_abi_contract_test.cpp` with an available host C++17 compiler. It checks the frozen descriptor, old mandatory API prefix, optional capability tail, host/input/eye prefixes, shell-locomotion capability gating, overflow-safe pointer-ray sanitization, base-input finite/clamp behavior, stereo-eye index/finite-matrix rejection (including truncated prefixes), and GLES major/minor admission (including invalid zero-major rejection) without needing Android or GLES libraries.
 
 When validating a completed commit against its parent, run:
 
