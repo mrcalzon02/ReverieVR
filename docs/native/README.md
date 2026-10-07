@@ -163,8 +163,10 @@ Anything reusable learned from the module is either promoted to shared SDK docum
 
 ## Documentation map
 
+- `docs/native/CONTRACT_INDEX.md` — authoritative source-to-document map and synchronization rules.
 - `docs/native/API_V1.md` — current implemented native C ABI and compatibility rules.
 - `docs/native/PROCEDURAL_CONTENT_STANDARD.md` — generated materials, geometry, model-recipe direction, and asset/performance rules.
+- `scripts/verify-native-doc-sync.py` — dependency-free factual/drift guard for the native documentation contract.
 - `docs/project/NATIVE_GAME_PROJECT_POINTERS.md` — game-specific concept and scope pointers.
 - `docs/project/BACKLOG.md` — implementation intent and acceptance gates.
 - `docs/records/` — durable architectural decisions and tradeoffs.
