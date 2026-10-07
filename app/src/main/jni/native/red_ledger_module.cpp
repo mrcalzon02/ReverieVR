@@ -1,5 +1,6 @@
 #include "reverie_native_module.h"
 #include "red_ledger_simulation.h"
+#include "procedural_material_atlas.h"
 
 #include <GLES2/gl2.h>
 
@@ -8,6 +9,7 @@
 #include <cstdint>
 #include <cstring>
 #include <new>
+#include <memory>
 
 namespace {
 
@@ -15,6 +17,7 @@ using reverie::redledger::DrinkState;
 using reverie::redledger::EventType;
 using reverie::redledger::Simulation;
 using reverie::redledger::SupplierItem;
+using reverie::procedural::Material;
 
 constexpr float kMaximumWorkReach = 3.5f;
 constexpr float kHeldCupDistance = 0.90f;
@@ -99,7 +102,12 @@ struct ModuleState {
 
     GLuint program = 0;
     GLuint cube_vbo = 0;
+    GLuint atlas_texture = 0;
     GLint position_location = -1;
+    GLint uv_location = -1;
+    GLint tile_origin_location = -1;
+    GLint sampler_location = -1;
+    int active_material = -1;
     GLint matrix_location = -1;
     GLint color_location = -1;
     GLint flicker_location = -1;
@@ -629,7 +637,11 @@ GLuint BuildProgram() {
     static const char *kVertexShader =
         "uniform mat4 u_Mvp;\n"
         "attribute vec3 a_Position;\n"
+        "attribute vec2 a_Uv;\n"
+        "uniform vec2 u_TileOrigin;\n"
+        "varying vec2 v_Uv;\n"
         "void main() {\n"
+        "  v_Uv = u_TileOrigin + a_Uv * 0.4921875;\n"
         "  gl_Position = u_Mvp * vec4(a_Position, 1.0);\n"
         "}\n";
 
@@ -637,8 +649,11 @@ GLuint BuildProgram() {
         "precision mediump float;\n"
         "uniform vec3 u_Color;\n"
         "uniform float u_Flicker;\n"
+        "uniform sampler2D u_Atlas;\n"
+        "varying vec2 v_Uv;\n"
         "void main() {\n"
-        "  gl_FragColor = vec4(u_Color * u_Flicker, 1.0);\n"
+        "  vec3 material = texture2D(u_Atlas, v_Uv).rgb;\n"
+        "  gl_FragColor = vec4(material * u_Color * u_Flicker, 1.0);\n"
         "}\n";
 
     GLuint vertex =
@@ -683,6 +698,11 @@ GLuint BuildProgram() {
         program,
         0,
         "a_Position"
+    );
+    glBindAttribLocation(
+        program,
+        1,
+        "a_Uv"
     );
     glLinkProgram(program);
 
@@ -774,9 +794,32 @@ static const float kCubeVertices[] = {
     -0.5f,-0.5f,-0.5f,  0.5f,-0.5f, 0.5f, -0.5f,-0.5f, 0.5f
 };
 
+// UVs are baked once per context, never recomputed per eye or draw call.
+void BuildCubeVertices(float *out) {
+    for (int index = 0; index < 36; ++index) {
+        const int face = index / 6;
+        const float *position = &kCubeVertices[index * 3];
+        const float u = (face < 2 || face >= 4)
+            ? position[0] + 0.5f
+            : position[2] + 0.5f;
+        const float v = (face >= 4)
+            ? position[2] + 0.5f
+            : position[1] + 0.5f;
+        for (int axis = 0; axis < 3; ++axis) {
+            out[index * 5 + axis] = position[axis];
+        }
+        out[index * 5 + 3] = u;
+        out[index * 5 + 4] = v;
+    }
+}
+
 void DestroyGl(
     ModuleState *state
 ) {
+    if (state->atlas_texture != 0) {
+        glDeleteTextures(1, &state->atlas_texture);
+        state->atlas_texture = 0;
+    }
     if (state->cube_vbo != 0) {
         glDeleteBuffers(
             1,
@@ -791,6 +834,10 @@ void DestroyGl(
     }
 
     state->position_location = -1;
+    state->uv_location = -1;
+    state->tile_origin_location = -1;
+    state->sampler_location = -1;
+    state->active_material = -1;
     state->matrix_location = -1;
     state->color_location = -1;
     state->flicker_location = -1;
@@ -800,8 +847,13 @@ void AbandonGl(
     ModuleState *state
 ) {
     state->cube_vbo = 0;
+    state->atlas_texture = 0;
     state->program = 0;
     state->position_location = -1;
+    state->uv_location = -1;
+    state->tile_origin_location = -1;
+    state->sampler_location = -1;
+    state->active_material = -1;
     state->matrix_location = -1;
     state->color_location = -1;
     state->flicker_location = -1;
@@ -829,6 +881,12 @@ int32_t InitializeGl(
             state->program,
             "a_Position"
         );
+    state->uv_location =
+        glGetAttribLocation(state->program, "a_Uv");
+    state->tile_origin_location =
+        glGetUniformLocation(state->program, "u_TileOrigin");
+    state->sampler_location =
+        glGetUniformLocation(state->program, "u_Atlas");
     state->matrix_location =
         glGetUniformLocation(
             state->program,
@@ -846,6 +904,9 @@ int32_t InitializeGl(
         );
 
     if (state->position_location < 0
+        || state->uv_location < 0
+        || state->tile_origin_location < 0
+        || state->sampler_location < 0
         || state->matrix_location < 0
         || state->color_location < 0
         || state->flicker_location < 0) {
@@ -877,18 +938,55 @@ int32_t InitializeGl(
         GL_ARRAY_BUFFER,
         state->cube_vbo
     );
+    float cube_vertices[36 * 5];
+    BuildCubeVertices(cube_vertices);
     glBufferData(
         GL_ARRAY_BUFFER,
-        sizeof(kCubeVertices),
-        kCubeVertices,
+        sizeof(cube_vertices),
+        cube_vertices,
         GL_STATIC_DRAW
     );
-    glBindBuffer(
-        GL_ARRAY_BUFFER,
-        0
-    );
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    if (glGetError()
+    // Generate only on GL-context creation/recreation. The temporary CPU
+    // buffer is freed immediately after upload; no runtime bitmap asset.
+    std::unique_ptr<uint8_t[]> pixels(
+        new (std::nothrow) uint8_t[reverie::procedural::kAtlasBytes]
+    );
+    if (!pixels || !reverie::procedural::GenerateMaterialAtlas(
+            reverie::procedural::kRedLedgerMaterialSeed,
+            pixels.get(),
+            reverie::procedural::kAtlasBytes)) {
+        Log(state, REVERIE_NATIVE_LOG_ERROR,
+            "Procedural atlas allocation/generation failed.");
+        DestroyGl(state);
+        return 0;
+    }
+    GLint previous_active_texture = 0;
+    GLint previous_texture = 0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &previous_active_texture);
+    glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous_texture);
+    glGenTextures(1, &state->atlas_texture);
+    if (state->atlas_texture != 0) {
+        glBindTexture(GL_TEXTURE_2D, state->atlas_texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(
+            GL_TEXTURE_2D, 0, GL_RGBA,
+            reverie::procedural::kAtlasWidth,
+            reverie::procedural::kAtlasHeight,
+            0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.get()
+        );
+    }
+    glBindTexture(GL_TEXTURE_2D,
+        static_cast<GLuint>(previous_texture));
+    glActiveTexture(static_cast<GLenum>(previous_active_texture));
+    pixels.reset();
+
+    if (state->atlas_texture == 0 || glGetError()
         != GL_NO_ERROR) {
         Log(
             state,
@@ -902,7 +1000,7 @@ int32_t InitializeGl(
     Log(
         state,
         REVERIE_NATIVE_LOG_INFO,
-        "Red Ledger manual-service GL resources created."
+        "Red Ledger GL created; 4 procedural materials in one 128x128 atlas."
     );
     return 1;
 }
@@ -919,7 +1017,8 @@ void DrawCube(
     float sz,
     float r,
     float g,
-    float b
+    float b,
+    Material material = Material::Stone
 ) {
     float model[16];
     float mvp[16];
@@ -955,6 +1054,15 @@ void DrawCube(
         state->flicker_location,
         flicker
     );
+    const int material_index = static_cast<int>(material);
+    if (state->active_material != material_index) {
+        state->active_material = material_index;
+        glUniform2f(
+            state->tile_origin_location,
+            0.00390625f + (material_index & 1) * 0.5f,
+            0.00390625f + (material_index >> 1) * 0.5f
+        );
+    }
     glDrawArrays(
         GL_TRIANGLES,
         0,
@@ -1003,7 +1111,8 @@ void DrawCup(
         0.13f,
         r,
         g,
-        b
+        b,
+        Material::Metal
     );
 }
 
@@ -1059,7 +1168,8 @@ void DrawRoom(
         flicker,
         0.0f,-0.83f,-0.95f,
         3.7f,0.85f,0.65f,
-        0.30f,0.20f,0.12f
+        0.30f,0.20f,0.12f,
+        Material::Wood
     );
     DrawCube(
         state,
@@ -1067,7 +1177,8 @@ void DrawRoom(
         flicker,
         0.0f,-0.36f,-0.95f,
         3.9f,0.12f,0.75f,
-        0.39f,0.27f,0.15f
+        0.39f,0.27f,0.15f,
+        Material::Wood
     );
 
     const bool tap_hover =
@@ -1082,7 +1193,8 @@ void DrawRoom(
         0.18f,0.40f,0.18f,
         tap_hover ? 0.76f : 0.36f,
         tap_hover ? 0.62f : 0.34f,
-        tap_hover ? 0.24f : 0.30f
+        tap_hover ? 0.24f : 0.30f,
+        Material::Metal
     );
     DrawCube(
         state,
@@ -1092,7 +1204,8 @@ void DrawRoom(
         0.34f,0.12f,0.22f,
         tap_hover ? 0.82f : 0.25f,
         tap_hover ? 0.70f : 0.24f,
-        tap_hover ? 0.28f : 0.22f
+        tap_hover ? 0.28f : 0.22f,
+        Material::Metal
     );
 
     const bool wash_hover =
@@ -1107,7 +1220,8 @@ void DrawRoom(
         0.92f,0.12f,0.48f,
         wash_hover ? 0.30f : 0.18f,
         wash_hover ? 0.58f : 0.30f,
-        wash_hover ? 0.72f : 0.34f
+        wash_hover ? 0.72f : 0.34f,
+        Material::Metal
     );
 
     DrawCube(
@@ -1116,7 +1230,8 @@ void DrawRoom(
         flicker,
         1.35f,-0.95f,-1.80f,
         0.72f,0.16f,0.72f,
-        0.22f,0.16f,0.12f
+        0.22f,0.16f,0.12f,
+        Material::Wood
     );
     DrawCube(
         state,
@@ -1124,7 +1239,8 @@ void DrawRoom(
         flicker,
         1.35f,-1.30f,-1.80f,
         0.12f,0.70f,0.12f,
-        0.17f,0.13f,0.10f
+        0.17f,0.13f,0.10f,
+        Material::Wood
     );
 
     DrawCube(
@@ -1133,7 +1249,8 @@ void DrawRoom(
         flicker,
         1.90f,-1.38f,-2.38f,
         1.35f,0.18f,0.70f,
-        0.31f,0.28f,0.23f
+        0.31f,0.28f,0.23f,
+        Material::Wood
     );
 
     const bool ledger_hover =
@@ -1148,7 +1265,8 @@ void DrawRoom(
         0.42f,0.06f,0.30f,
         ledger_hover ? 0.78f : 0.18f,
         ledger_hover ? 0.62f : 0.12f,
-        ledger_hover ? 0.24f : 0.08f
+        ledger_hover ? 0.24f : 0.08f,
+        Material::Paper
     );
 
     const bool beer_hover =
@@ -1162,7 +1280,8 @@ void DrawRoom(
         0.42f,0.05f,0.24f,
         beer_hover ? 0.78f : 0.34f,
         beer_hover ? 0.66f : 0.28f,
-        beer_hover ? 0.25f : 0.12f
+        beer_hover ? 0.25f : 0.12f,
+        Material::Paper
     );
 
     const bool order_cup_hover =
@@ -1176,7 +1295,8 @@ void DrawRoom(
         0.42f,0.05f,0.24f,
         order_cup_hover ? 0.76f : 0.30f,
         order_cup_hover ? 0.76f : 0.30f,
-        order_cup_hover ? 0.70f : 0.26f
+        order_cup_hover ? 0.70f : 0.26f,
+        Material::Paper
     );
 
     if (state->simulation.current_event()
@@ -1195,7 +1315,8 @@ void DrawRoom(
             0.44f,0.05f,0.24f,
             protection_hover ? 0.86f : 0.50f,
             protection_hover ? 0.30f : 0.14f,
-            protection_hover ? 0.24f : 0.12f
+            protection_hover ? 0.24f : 0.12f,
+            Material::Paper
         );
     }
 
@@ -1211,7 +1332,8 @@ void DrawRoom(
         0.82f,0.06f,0.34f,
         cup_stack_hover ? 0.58f : 0.24f,
         cup_stack_hover ? 0.56f : 0.23f,
-        cup_stack_hover ? 0.48f : 0.20f
+        cup_stack_hover ? 0.48f : 0.20f,
+        Material::Wood
     );
 
     const int clean =
@@ -1314,7 +1436,8 @@ void DrawRoom(
             0.12f,0.04f,0.12f,
             payment_hover ? 0.95f : 0.72f,
             payment_hover ? 0.82f : 0.62f,
-            payment_hover ? 0.28f : 0.16f
+            payment_hover ? 0.28f : 0.16f,
+            Material::Metal
         );
         DrawCube(
             state,
@@ -1324,7 +1447,8 @@ void DrawRoom(
             0.10f,0.04f,0.10f,
             payment_hover ? 0.94f : 0.68f,
             payment_hover ? 0.80f : 0.58f,
-            payment_hover ? 0.26f : 0.14f
+            payment_hover ? 0.26f : 0.14f,
+            Material::Metal
         );
     }
 
@@ -1346,7 +1470,8 @@ void DrawRoom(
             0.58f,1.50f,0.05f,
             exit_hover ? 0.68f : 0.33f,
             exit_hover ? 0.28f : 0.18f,
-            exit_hover ? 0.22f : 0.16f
+            exit_hover ? 0.22f : 0.16f,
+            Material::Wood
         );
     }
 
@@ -1449,7 +1574,8 @@ void DrawRoom(
         flicker,
         1.80f,0.45f,-2.98f,
         0.75f,0.46f,0.04f,
-        marker_r,marker_g,marker_b
+        marker_r,marker_g,marker_b,
+        Material::Paper
     );
 
     DrawCube(
@@ -1458,7 +1584,8 @@ void DrawRoom(
         1.0f,
         0.0f,1.28f,-0.70f,
         0.55f,0.10f,0.34f,
-        0.54f,0.45f,0.28f
+        0.54f,0.45f,0.28f,
+        Material::Metal
     );
 }
 
@@ -1507,7 +1634,8 @@ void Destroy(
     }
 
     if (state->program != 0
-        || state->cube_vbo != 0) {
+        || state->cube_vbo != 0
+        || state->atlas_texture != 0) {
         Log(
             state,
             REVERIE_NATIVE_LOG_WARN,
@@ -1700,12 +1828,15 @@ int32_t RenderEye(
                 ReverieNativeEyeV1
             )
         || state->program == 0
-        || state->cube_vbo == 0) {
+        || state->cube_vbo == 0
+        || state->atlas_texture == 0) {
         return 0;
     }
 
     GLint previous_program = 0;
     GLint previous_array_buffer = 0;
+    GLint previous_active_texture = 0;
+    GLint previous_texture = 0;
 
     glGetIntegerv(
         GL_CURRENT_PROGRAM,
@@ -1715,6 +1846,9 @@ int32_t RenderEye(
         GL_ARRAY_BUFFER_BINDING,
         &previous_array_buffer
     );
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &previous_active_texture);
+    glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &previous_texture);
 
     const GLboolean depth_enabled =
         glIsEnabled(
@@ -1743,6 +1877,9 @@ int32_t RenderEye(
     glUseProgram(
         state->program
     );
+    glBindTexture(GL_TEXTURE_2D, state->atlas_texture);
+    glUniform1i(state->sampler_location, 0);
+    state->active_material = -1;
     glBindBuffer(
         GL_ARRAY_BUFFER,
         state->cube_vbo
@@ -1759,10 +1896,19 @@ int32_t RenderEye(
         3,
         GL_FLOAT,
         GL_FALSE,
-        3 * sizeof(float),
+        5 * sizeof(float),
         reinterpret_cast<
             const void *
         >(0)
+    );
+    glEnableVertexAttribArray(
+        static_cast<GLuint>(state->uv_location)
+    );
+    glVertexAttribPointer(
+        static_cast<GLuint>(state->uv_location),
+        2, GL_FLOAT, GL_FALSE,
+        5 * sizeof(float),
+        reinterpret_cast<const void *>(3 * sizeof(float))
     );
 
     const float wave =
@@ -1797,6 +1943,12 @@ int32_t RenderEye(
             state->position_location
         )
     );
+    glDisableVertexAttribArray(
+        static_cast<GLuint>(state->uv_location)
+    );
+    glBindTexture(GL_TEXTURE_2D,
+        static_cast<GLuint>(previous_texture));
+    glActiveTexture(static_cast<GLenum>(previous_active_texture));
     glBindBuffer(
         GL_ARRAY_BUFFER,
         static_cast<GLuint>(

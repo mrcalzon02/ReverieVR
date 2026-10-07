@@ -45,7 +45,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := reverie_module_red_ledger
 LOCAL_SRC_FILES := \
     native/red_ledger_module.cpp \
-    native/red_ledger_simulation.cpp
+    native/red_ledger_simulation.cpp \
+    native/procedural_material_atlas.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384

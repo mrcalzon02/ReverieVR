@@ -62,6 +62,7 @@
 - RV-0300 — Build retro-complexity calibration scene.
 - RV-0301 — Define measured reference-device performance/thermal acceptance thresholds from actual Galaxy S9 tests.
 - RV-0302 — Establish performance regression procedure.
+- RV-0303 — Procedural-first native asset/power budget: compact seeded recipes, one-time generation and cached GPU uploads, low-cost shading, no per-frame texture synthesis, and measured S9 CPU/GPU/battery/thermal acceptance. Track per-eye cost and stereo correctness; never trade VR frame pacing for a marketing battery target.
 
 ## P5 — Module host
 
@@ -89,6 +90,7 @@
 - RV-0601 — Implement and device-test first playable module.
 - RV-0602 — Add further experiences only after regression/thermal gates remain healthy.
 - RV-0610 — **Draft manual-service/dev-test foundation present:** **Between Deliveries: The Red Ledger VR** now has the deterministic economy, seated GLES2 room, cup→fill→serve→payment→wash interaction loop, supplier/protection/ledger/turn-away targets, v2 mid-transaction saves, and verified dual-ABI packaging from phone-test #52. The packaged module is admitted only for physical testing: Standard logging hides it, Development logging exposes `[DEV]`, runtime launch is independently Development-gated, and its hosted profile maps Select only. Phone-test #60 verifies that admission/profile path and packages it with the current stereo-isolation repair. The next build adds a Development-only ray-contact cursor at the actual selected target and defensive pointer-direction normalization. Remaining work is real Galaxy S9/Daydream target/reach/held-cup tuning, recovery/recenter, save/update durability and the 15-minute runtime/thermal gate before normal visibility.
+- RV-0611 — **Draft implementation:** Red Ledger uses a deterministic 128×128 RGBA8 atlas generated from four tiny stone/wood/metal/paper recipes at GL-context creation. One texture is shared across all cubes and both eyes, with no bitmap files or per-frame generation. CI validates deterministic seeds, tile diversity and buffer bounds. Remaining gate: Android/NDK build and real Galaxy S9 visual/thermal/power measurements before treating this as a net energy win.
 - RV-0620 — **Planned:** prototype **Ministry of Intelligence: Lantern Desk VR** as a seated intelligence-analysis native game; preserve strict World Truth vs Ministry Knowledge separation and prove one complete reconnaissance-photo-to-report cycle before expanding the war simulation.
 - RV-0630 — **Planned:** prototype **Iron Sight: Forward Detachment VR** as a compact reconnaissance/patrol native game; begin with one sector, one small detachment, route/identification/reporting pressure, and deliberately constrained combat rather than the full campaign.
 

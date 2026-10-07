@@ -71,6 +71,19 @@ jobs:
             -o /tmp/red-ledger-simulation-test
           /tmp/red-ledger-simulation-test
 
+      - name: Validate deterministic procedural atlas
+        shell: bash
+        run: |
+          set -euo pipefail
+          c++ \
+            -std=c++17 \
+            -Wall -Wextra -Wpedantic -Werror \
+            -I app/src/main/jni/native \
+            app/src/main/jni/native/procedural_material_atlas.cpp \
+            app/src/test/native/procedural_material_atlas_test.cpp \
+            -o /tmp/reverie-procedural-material-test
+          /tmp/reverie-procedural-material-test
+
       - name: Validate unsigned development tree
         shell: bash
         env:
