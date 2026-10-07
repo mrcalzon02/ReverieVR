@@ -59,6 +59,13 @@ typedef struct ReverieNativeHostV1 {
     );
 } ReverieNativeHostV1;
 
+#define REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeHostV1, log) \
+        + sizeof(((ReverieNativeHostV1 *)0)->log)))
+#define REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeHostV1, write_save) \
+        + sizeof(((ReverieNativeHostV1 *)0)->write_save)))
+
 typedef struct ReverieNativeModuleDescriptorV1 {
     uint32_t struct_size;
     uint32_t abi_version;
@@ -67,6 +74,10 @@ typedef struct ReverieNativeModuleDescriptorV1 {
     uint32_t required_gles_major;
     uint32_t required_gles_minor;
 } ReverieNativeModuleDescriptorV1;
+
+#define REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeModuleDescriptorV1, required_gles_minor) \
+        + sizeof(((ReverieNativeModuleDescriptorV1 *)0)->required_gles_minor)))
 
 typedef struct ReverieNativeInputV1 {
     uint32_t struct_size;
@@ -86,12 +97,23 @@ typedef struct ReverieNativeInputV1 {
     float pointer_direction[3];
 } ReverieNativeInputV1;
 
+#define REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeInputV1, secondary_down) \
+        + sizeof(((ReverieNativeInputV1 *)0)->secondary_down)))
+#define REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeInputV1, pointer_direction) \
+        + sizeof(((ReverieNativeInputV1 *)0)->pointer_direction)))
+
 typedef struct ReverieNativeEyeV1 {
     uint32_t struct_size;
     int32_t eye_index;
     float view[16];
     float projection[16];
 } ReverieNativeEyeV1;
+
+#define REVERIE_NATIVE_EYE_V1_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeEyeV1, projection) \
+        + sizeof(((ReverieNativeEyeV1 *)0)->projection)))
 
 typedef struct ReverieNativeModuleApiV1 {
     uint32_t struct_size;
@@ -123,6 +145,10 @@ typedef struct ReverieNativeModuleApiV1 {
         const ReverieNativeEyeV1 *eye
     );
 } ReverieNativeModuleApiV1;
+
+#define REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeModuleApiV1, render_eye) \
+        + sizeof(((ReverieNativeModuleApiV1 *)0)->render_eye)))
 
 typedef const ReverieNativeModuleApiV1 *
     (*ReverieNativeModuleEntryV1)(void);

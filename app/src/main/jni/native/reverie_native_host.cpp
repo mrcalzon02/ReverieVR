@@ -356,8 +356,8 @@ bool ValidateApi(
         SetError("Native module entry returned a null API.");
         return false;
     }
-    if (api->struct_size < sizeof(ReverieNativeModuleApiV1)) {
-        SetError("Native module API structure is too small.");
+    if (api->struct_size < REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE) {
+        SetError("Native module API structure is too small for the v1 mandatory prefix.");
         return false;
     }
     if (api->abi_version != REVERIE_NATIVE_MODULE_ABI_VERSION) {
@@ -365,8 +365,8 @@ bool ValidateApi(
         return false;
     }
     if (api->descriptor.struct_size
-        < sizeof(ReverieNativeModuleDescriptorV1)) {
-        SetError("Native module descriptor structure is too small.");
+        < REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE) {
+        SetError("Native module descriptor structure is too small for the v1 mandatory prefix.");
         return false;
     }
     if (api->descriptor.abi_version

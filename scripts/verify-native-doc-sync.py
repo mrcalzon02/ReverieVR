@@ -21,6 +21,8 @@ HOST_CPP = Path("app/src/main/jni/native/reverie_native_host.cpp")
 RUNTIME_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java"
 )
+TEST_CHAMBER_CPP = Path("app/src/main/jni/native/test_chamber_module.cpp")
+RED_LEDGER_CPP = Path("app/src/main/jni/native/red_ledger_module.cpp")
 MATERIAL_H = Path("app/src/main/jni/native/procedural_material_atlas.h")
 MATERIAL_CPP = Path("app/src/main/jni/native/procedural_material_atlas.cpp")
 STATIC_H = Path("app/src/main/jni/native/red_ledger_static_geometry.h")
@@ -81,6 +83,8 @@ def check_current_content() -> None:
     header = read(API_HEADER)
     host = read(HOST_CPP)
     runtime = read(RUNTIME_JAVA)
+    test_chamber_cpp = read(TEST_CHAMBER_CPP)
+    red_ledger_cpp = read(RED_LEDGER_CPP)
     material_h = read(MATERIAL_H)
     static_h = read(STATIC_H)
     locomotion_java = read(LOCOMOTION_JAVA)
@@ -136,6 +140,76 @@ def check_current_content() -> None:
             f"`{token}`" in api_doc or token in api_doc,
             f"API_V1.md does not mention current ABI token: {token}",
         )
+
+
+    prefix_tokens = (
+        "REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE",
+        "REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE",
+        "REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE",
+        "REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE",
+        "REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE",
+        "REVERIE_NATIVE_EYE_V1_MIN_SIZE",
+        "REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE",
+    )
+    for token in prefix_tokens:
+        require(token in header, f"ABI header lost minimum-prefix constant: {token}")
+        require(
+            f"`{token}`" in api_doc,
+            f"API_V1.md does not document minimum-prefix constant: {token}",
+        )
+
+    require(
+        "api->struct_size < REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE" in host,
+        "native host no longer validates the module API mandatory prefix",
+    )
+    require(
+        "api->descriptor.struct_size\n        < REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE"
+        in host,
+        "native host no longer validates the descriptor mandatory prefix",
+    )
+
+    consumer_contracts = (
+        (
+            test_chamber_cpp,
+            "test chamber",
+            (
+                "REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE",
+                "REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE",
+                "REVERIE_NATIVE_EYE_V1_MIN_SIZE",
+            ),
+        ),
+        (
+            red_ledger_cpp,
+            "Red Ledger",
+            (
+                "REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE",
+                "REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE",
+                "REVERIE_NATIVE_EYE_V1_MIN_SIZE",
+            ),
+        ),
+    )
+    for source, label, required_tokens in consumer_contracts:
+        for token in required_tokens:
+            require(token in source, f"{label} lost ABI prefix validation: {token}")
+
+    forbidden_full_size = (
+        "struct_size < sizeof(ReverieNativeHostV1)",
+        "struct_size < sizeof(ReverieNativeInputV1)",
+        "struct_size < sizeof(ReverieNativeEyeV1)",
+        "struct_size < sizeof(ReverieNativeModuleApiV1)",
+        "< sizeof(ReverieNativeModuleDescriptorV1)",
+    )
+    for source, label in (
+        (host.replace("\n", " "), "native host"),
+        (test_chamber_cpp.replace("\n", " "), "test chamber"),
+        (red_ledger_cpp.replace("\n", " "), "Red Ledger"),
+    ):
+        compact = re.sub(r"\s+", " ", source)
+        for pattern in forbidden_full_size:
+            require(
+                pattern not in compact,
+                f"{label} regressed to newest-struct sizeof validation: {pattern}",
+            )
 
     for token in ("HostReadSave", "HostWriteSave", "IsSafeSaveSlot"):
         require(token in host, f"native host lost expected service implementation: {token}")

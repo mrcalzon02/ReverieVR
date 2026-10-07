@@ -502,7 +502,7 @@ void *Create(
 ) {
     if (host == nullptr
         || host->struct_size
-            < sizeof(ReverieNativeHostV1)
+            < REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE
         || host->abi_version
             != REVERIE_NATIVE_MODULE_ABI_VERSION) {
         return nullptr;
@@ -615,7 +615,7 @@ void Update(
     if (state == nullptr
         || input == nullptr
         || input->struct_size
-            < sizeof(ReverieNativeInputV1)) {
+            < REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE) {
         return;
     }
 
@@ -643,7 +643,7 @@ int32_t RenderEye(
     if (state == nullptr
         || eye == nullptr
         || eye->struct_size
-            < sizeof(ReverieNativeEyeV1)
+            < REVERIE_NATIVE_EYE_V1_MIN_SIZE
         || state->program == 0
         || state->vbo == 0
         || state->texture == 0) {

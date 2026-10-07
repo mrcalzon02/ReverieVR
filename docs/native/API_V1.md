@@ -32,9 +32,21 @@ The host validates the API table, descriptor, ABI version, required callbacks, O
 
 Every public ABI structure begins with `struct_size`. ABI v1 extensions are append-only.
 
-A consumer must validate that a structure is large enough for the fields it intends to access. Existing fields must not be reordered or reinterpreted.
+A consumer must validate that a structure is large enough for the **fields it actually intends to access**, using the named minimum-prefix constants in the header rather than comparing against the newest total `sizeof(struct)`. Existing fields must not be reordered or reinterpreted.
 
-Adding optional tail fields can remain ABI v1 when old producers/consumers can safely ignore them. Adding a new mandatory callback, changing existing semantics incompatibly, or requiring a different layout requires a new ABI version.
+Current minimum-prefix constants are:
+
+- `REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE` — host header plus logging service;
+- `REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE` — host prefix through read/write save services;
+- `REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE` — mandatory module descriptor fields;
+- `REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE` — base timing/movement/button input;
+- `REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE` — input prefix through world-space pointer data;
+- `REVERIE_NATIVE_EYE_V1_MIN_SIZE` — mandatory eye matrices;
+- `REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE` — mandatory module callback table.
+
+The native host and both reference modules use these prefixes. This makes the append-only rule operational: a future optional tail extension does not make an older otherwise-valid v1 prefix fail merely because the newest header's `sizeof` increased.
+
+Adding optional tail fields can remain ABI v1 when old producers/consumers can safely ignore them. Adding a new mandatory callback, changing existing semantics incompatibly, or requiring a different mandatory layout requires a new ABI version.
 
 ## Module descriptor
 
