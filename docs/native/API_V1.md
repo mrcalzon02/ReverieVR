@@ -4,6 +4,8 @@
 
 **Authoritative declaration:** `app/src/main/jni/native/reverie_native_module.h`
 
+**Synchronization:** this file is governed by `docs/native/CONTRACT_INDEX.md`. Changes to the ABI header, native host services, or `NativeModuleRuntime` require same-change review/update of this reference and should pass `python3 scripts/verify-native-doc-sync.py`.
+
 ## ABI identity
 
 - ABI version: `REVERIE_NATIVE_MODULE_ABI_VERSION == 1`
