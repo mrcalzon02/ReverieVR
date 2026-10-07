@@ -25,6 +25,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ### VR presence and headset comfort
 
+- Corrected the remaining Quick Menu handset-recenter action to use the same gentle positional return as the shake gesture (fixing a Java compile failure in phone-test #71). Touchpad activity now clears only a pending shake impulse, preserving the three-second recenter cooldown. Native locomotion gate is renderer-thread-owned, including on BLE disconnect. Added cooldown regression coverage.
+
 - Hardened native touchpad travel with release-to-rearm after scene entry, Quick Menu, click and stale controller packets; an immutable touch snapshot prevents mixed-coordinate frames. Reduced shake recenter false triggers by requiring opposing sharp impulses and ignoring touchpad use; handset now eases toward neutral over three seconds while preserving active inertial movement and aim. Wired live Android battery-change broadcasts into the renderer and avoided redundant battery HUD texture refreshes. Added pure-JVM gate, battery conversion and gesture regression tests. Hardware comfort, shake thresholds and battery drain remain to be measured.
 
 - Implemented bounded headset-view-relative Daydream touchpad travel in native 3D scenes. Touch top/bottom to advance/retreat and left/right to strafe, with analog deadzone, speed/area limits, no coasting, and release/click/menu/stale-input interlocks. Shell owns the camera transform for both eyes and controller ray, replacing duplicate Test Chamber world-axis movement. Red Ledger has a narrow behind-bar envelope; Test Chamber has a larger area. Pure-JVM motion and binding tests added; real S9 comfort and reach remain unverified.

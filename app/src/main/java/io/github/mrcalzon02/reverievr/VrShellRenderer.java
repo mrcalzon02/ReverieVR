@@ -694,7 +694,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (!connected) {
             controllerPoseValid = false;
             locomotionControllerSnapshot = null;
-            nativeLocomotionGate.reset();
             controllerPointerActive = false;
             controllerAccelerationAtNanos = 0L;
             controllerInertialTranslation.reset();
@@ -743,7 +742,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         controllerAccelerationAtNanos =
             controllerPoseReceivedAtNanos;
         if (snapshot.touching || snapshot.touchpadPressed) {
-            controllerShakeRecenterDetector.reset();
+            controllerShakeRecenterDetector.cancelPendingImpulse();
         } else if (controllerShakeRecenterDetector.sample(
                 controllerAccelerationX,
                 controllerAccelerationY,
@@ -4008,7 +4007,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 6:
-                resetControllerPositionReference();
+                requestSoftControllerRecenter();
                 break;
 
             case 7:

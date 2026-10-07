@@ -42,6 +42,20 @@ public final class ControllerShakeRecenterDetectorTest {
     }
 
     @Test
+    public void cancellingPendingShakeDoesNotClearCooldown() {
+        ControllerShakeRecenterDetector detector =
+            new ControllerShakeRecenterDetector();
+        long start = 1000000000L;
+        detector.sample(2.5f, 0f, 0f, start);
+        assertTrue(detector.sample(-2.5f, 0f, 0f, start + 120000000L));
+        detector.cancelPendingImpulse();
+        assertFalse(detector.sample(2.5f, 0f, 0f, start + 350000000L));
+        assertFalse(detector.sample(-2.5f, 0f, 0f, start + 470000000L));
+        assertFalse(detector.sample(2.5f, 0f, 0f, start + 3100000000L));
+        assertTrue(detector.sample(-2.5f, 0f, 0f, start + 3220000000L));
+    }
+
+    @Test
     public void normalGravityDoesNotTrigger() {
         ControllerShakeRecenterDetector detector =
             new ControllerShakeRecenterDetector();

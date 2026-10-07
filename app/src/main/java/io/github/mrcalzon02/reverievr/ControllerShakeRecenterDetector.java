@@ -103,11 +103,15 @@ final class ControllerShakeRecenterDetector {
         firstImpulseZ = z;
     }
 
-    void reset() {
+    void cancelPendingImpulse() {
         firstImpulseAtNanos = 0L;
-        lastTriggerAtNanos = 0L;
         firstImpulseX = 0.0f;
         firstImpulseY = 0.0f;
         firstImpulseZ = 0.0f;
+    }
+
+    void reset() {
+        cancelPendingImpulse();
+        lastTriggerAtNanos = 0L;
     }
 }
