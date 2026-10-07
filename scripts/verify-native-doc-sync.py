@@ -42,6 +42,12 @@ LOCOMOTION_GATE_JAVA = Path(
 RENDERER_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java"
 )
+ACTIVITY_JAVA = Path(
+    "app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java"
+)
+UI_FEEDBACK_JAVA = Path(
+    "app/src/main/java/io/github/mrcalzon02/reverievr/UiFeedback.java"
+)
 
 API_DOC = Path("docs/native/API_V1.md")
 SDK_DOC = Path("docs/native/SDK_HELPERS.md")
@@ -109,6 +115,8 @@ def check_current_content() -> None:
     locomotion_java = read(LOCOMOTION_JAVA)
     locomotion_gate_java = read(LOCOMOTION_GATE_JAVA)
     renderer_java = read(RENDERER_JAVA)
+    activity_java = read(ACTIVITY_JAVA)
+    ui_feedback_java = read(UI_FEEDBACK_JAVA)
     api_doc = read(API_DOC)
     sdk_doc = read(SDK_DOC)
     gl_rendering_doc = read(GL_RENDERING_DOC)
@@ -167,6 +175,7 @@ def check_current_content() -> None:
     prefix_tokens = (
         "REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE",
         "REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE",
+        "REVERIE_NATIVE_HOST_V1_FEEDBACK_MIN_SIZE",
         "REVERIE_NATIVE_DESCRIPTOR_V1_SIZE",
         "REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE",
         "REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE",
@@ -198,6 +207,8 @@ def check_current_content() -> None:
     helper_tokens = (
         "ReverieNativeHostSupportsLogV1",
         "ReverieNativeHostSupportsSaveV1",
+        "ReverieNativeHostSupportsFeedbackV1",
+        "ReverieNativeRequestFeedbackV1",
         "ReverieNativeDescriptorHasMandatoryV1",
         "ReverieNativeGlesRequirementSupportedV1",
         "ReverieNativeInputHasBaseV1",
@@ -363,6 +374,10 @@ def check_current_content() -> None:
         "REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE",
         "ReverieNativeHostSupportsLogV1",
         "ReverieNativeHostSupportsSaveV1",
+        "ReverieNativeHostSupportsFeedbackV1",
+        "ReverieNativeRequestFeedbackV1",
+        "REVERIE_NATIVE_FEEDBACK_ACTIVATION",
+        "feedback helper must strip unknown flag bits",
         "ReverieNativeGlesRequirementSupportedV1",
         "ReverieNativeInputHasBaseV1",
         "ReverieNativeInputHasPointerV1",
@@ -388,6 +403,53 @@ def check_current_content() -> None:
         str(ABI_CONTRACT_TEST) in contract_index
         and str(ABI_CONTRACT_RUNNER) in contract_index,
         "contract index does not name the executable ABI regression gate",
+    )
+
+    require(
+        "HostRequestFeedback" in host
+        and "pending_feedback_flags" in host
+        and "std::memory_order_relaxed" in host
+        and "JNIEXPORT jint JNICALL" in host,
+        "native host lost coalesced feedback queue/update return path",
+    )
+    for token in (
+        "REVERIE_NATIVE_FEEDBACK_FOCUS",
+        "REVERIE_NATIVE_FEEDBACK_ACTIVATION",
+        "REVERIE_NATIVE_FEEDBACK_FAILURE",
+    ):
+        require(token in header, f"ABI header lost feedback flag: {token}")
+        require(
+            f"`{token}`" in api_doc,
+            f"API_V1.md does not document feedback flag: {token}",
+        )
+    require(
+        "static final int FEEDBACK_FOCUS" in runtime
+        and "static final int FEEDBACK_ACTIVATION" in runtime
+        and "static final int FEEDBACK_FAILURE" in runtime
+        and "private static native int nativeUpdate(" in runtime,
+        "NativeModuleRuntime feedback mask/JNI return contract drifted",
+    )
+    require(
+        "onNativeModuleFeedbackRequested" in renderer_java
+        and "nativeModuleRuntime.update(" in renderer_java,
+        "renderer no longer forwards native feedback masks",
+    )
+    require(
+        "onNativeModuleFeedbackRequested" in activity_java
+        and "uiFeedback.focus()" in activity_java
+        and "uiFeedback.activation()" in activity_java
+        and "uiFeedback.failure()" in activity_java,
+        "activity no longer maps native feedback to implemented shell cues",
+    )
+    for token in ("void focus()", "void activation()", "void failure()"):
+        require(
+            token in ui_feedback_java,
+            f"UiFeedback lost implemented native-cue target: {token}",
+        )
+    require(
+        "Haptics are also not implemented" in runtime_services_doc
+        and "not an arbitrary audio submission/mixing API" in api_doc,
+        "native feedback documentation overstates audio/haptics capability",
     )
 
     for token in ("HostReadSave", "HostWriteSave", "IsSafeSaveSlot"):

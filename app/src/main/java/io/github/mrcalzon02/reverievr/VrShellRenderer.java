@@ -36,6 +36,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onSetupCompleted();
         void onUiFocusChanged();
         void onUiActionRejected();
+        void onNativeModuleFeedbackRequested(
+            int feedbackFlags
+        );
         void onControllerSpringRecenterRequested();
         PerformanceEnvironmentSnapshot
             getPerformanceEnvironmentSnapshot();
@@ -1500,17 +1503,23 @@ final class VrShellRenderer implements CardboardView.Renderer {
             pointerRenderer.hide();
         }
 
-        nativeModuleRuntime.update(
-            usingControllerPointer
-                ? activeNativePointerKind
-                : NativeModuleRuntime.POINTER_NONE,
-            usingControllerPointer
-                ? activePointerOrigin
-                : null,
-            usingControllerPointer
-                ? activePointerDirection
-                : null
-        );
+        int feedbackFlags =
+            nativeModuleRuntime.update(
+                usingControllerPointer
+                    ? activeNativePointerKind
+                    : NativeModuleRuntime.POINTER_NONE,
+                usingControllerPointer
+                    ? activePointerOrigin
+                    : null,
+                usingControllerPointer
+                    ? activePointerDirection
+                    : null
+            );
+        if (feedbackFlags != 0) {
+            host.onNativeModuleFeedbackRequested(
+                feedbackFlags
+            );
+        }
     }
 
     private void updateShellInteraction(

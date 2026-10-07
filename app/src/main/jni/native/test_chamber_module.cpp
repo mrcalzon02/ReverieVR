@@ -590,6 +590,10 @@ void Update(
             REVERIE_NATIVE_LOG_DEBUG,
             "Primary action toggled chamber tint."
         );
+        ReverieNativeRequestFeedbackV1(
+            state->host,
+            REVERIE_NATIVE_FEEDBACK_ACTIVATION
+        );
     }
     state->primary_was_down = primary;
 }

@@ -7,6 +7,7 @@
 namespace {
 
 int failures = 0;
+uint32_t captured_feedback_flags = 0u;
 
 void Check(bool condition, const char *message) {
     if (!condition) {
@@ -37,6 +38,12 @@ int32_t DummyWriteSave(
     uint32_t
 ) {
     return REVERIE_NATIVE_SAVE_OK;
+}
+
+void DummyFeedback(
+    uint32_t flags
+) {
+    captured_feedback_flags |= flags;
 }
 
 }  // namespace
@@ -71,6 +78,7 @@ int main() {
     host.log = DummyLog;
     host.read_save = DummyReadSave;
     host.write_save = DummyWriteSave;
+    host.request_feedback = DummyFeedback;
 
     Check(
         ReverieNativeHostSupportsLogV1(&host) != 0,
@@ -86,6 +94,34 @@ int main() {
     Check(
         ReverieNativeHostSupportsSaveV1(&host) != 0,
         "save-prefix host should expose save callbacks"
+    );
+    Check(
+        ReverieNativeHostSupportsFeedbackV1(&host) == 0,
+        "save-prefix host must not expose feedback tail"
+    );
+
+    host.struct_size =
+        REVERIE_NATIVE_HOST_V1_FEEDBACK_MIN_SIZE;
+    Check(
+        ReverieNativeHostSupportsFeedbackV1(&host) != 0,
+        "feedback-prefix host should expose cue callback"
+    );
+    Check(
+        ReverieNativeRequestFeedbackV1(
+            &host,
+            REVERIE_NATIVE_FEEDBACK_ACTIVATION
+                | REVERIE_NATIVE_FEEDBACK_FAILURE
+                | 0x80000000u
+        ) != 0,
+        "known feedback flags should be submitted"
+    );
+    Check(
+        captured_feedback_flags
+            == (
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION
+                | REVERIE_NATIVE_FEEDBACK_FAILURE
+            ),
+        "feedback helper must strip unknown flag bits"
     );
 
     ReverieNativeModuleDescriptorV1 descriptor = {};

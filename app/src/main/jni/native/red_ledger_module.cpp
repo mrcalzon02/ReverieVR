@@ -595,6 +595,10 @@ bool ActivateWorkTarget(
             REVERIE_NATIVE_LOG_WARN,
             "Targeted bar interaction could not complete."
         );
+        ReverieNativeRequestFeedbackV1(
+            state->host,
+            REVERIE_NATIVE_FEEDBACK_FAILURE
+        );
         return false;
     }
 
@@ -602,6 +606,10 @@ bool ActivateWorkTarget(
         state,
         REVERIE_NATIVE_LOG_DEBUG,
         WorkTargetName(target)
+    );
+    ReverieNativeRequestFeedbackV1(
+        state->host,
+        REVERIE_NATIVE_FEEDBACK_ACTIVATION
     );
     SaveState(state);
     return true;

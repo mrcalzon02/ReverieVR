@@ -13,6 +13,14 @@ final class NativeModuleRuntime implements AutoCloseable {
     static final int POINTER_TRACKED_CONTROLLER = 1;
     static final int POINTER_VIRTUAL_CONTROLLER = 2;
 
+    static final int FEEDBACK_FOCUS = 1 << 0;
+    static final int FEEDBACK_ACTIVATION = 1 << 1;
+    static final int FEEDBACK_FAILURE = 1 << 2;
+    static final int FEEDBACK_ALL =
+        FEEDBACK_FOCUS
+        | FEEDBACK_ACTIVATION
+        | FEEDBACK_FAILURE;
+
     static final class Descriptor {
         final String id;
         final String displayName;
@@ -309,13 +317,13 @@ final class NativeModuleRuntime implements AutoCloseable {
         }
     }
 
-    synchronized void update(
+    synchronized int update(
         int pointerKind,
         float[] pointerOrigin,
         float[] pointerDirection
     ) {
         if (handle == 0L) {
-            return;
+            return 0;
         }
 
         long now = System.nanoTime();
@@ -368,7 +376,7 @@ final class NativeModuleRuntime implements AutoCloseable {
             safePointerKind = POINTER_NONE;
         }
 
-        nativeUpdate(
+        return nativeUpdate(
             handle,
             deltaSeconds,
             moveX,
@@ -382,7 +390,7 @@ final class NativeModuleRuntime implements AutoCloseable {
             directionX,
             directionY,
             directionZ
-        );
+        ) & FEEDBACK_ALL;
     }
 
     synchronized boolean renderEye(
@@ -480,7 +488,7 @@ final class NativeModuleRuntime implements AutoCloseable {
         long handle
     );
 
-    private static native void nativeUpdate(
+    private static native int nativeUpdate(
         long handle,
         float deltaSeconds,
         float moveX,

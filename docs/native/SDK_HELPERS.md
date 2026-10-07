@@ -24,6 +24,14 @@ Returns true only when the host pointer is present, the ABI version is v1, the s
 
 A module that only needs logging should not require the larger save prefix.
 
+### `ReverieNativeHostSupportsFeedbackV1`
+
+Returns true only when the append-only host prefix includes the `request_feedback` callback. Older v1 hosts ending at the save-service prefix remain valid; modules must treat shell feedback as optional unless they deliberately require a newer host.
+
+### `ReverieNativeRequestFeedbackV1`
+
+Submits only the implemented `REVERIE_NATIVE_FEEDBACK_FOCUS`, `REVERIE_NATIVE_FEEDBACK_ACTIVATION`, and `REVERIE_NATIVE_FEEDBACK_FAILURE` bits when the host supports feedback. Unknown bits are stripped before the callback. The current host coalesces repeated flags until the end of the native update.
+
 ### `ReverieNativeDescriptorHasMandatoryV1`
 
 Validates the ABI version and requires the exact frozen `REVERIE_NATIVE_DESCRIPTOR_V1_SIZE`. The descriptor is embedded before callback pointers in the v1 API table and therefore cannot grow in place without breaking callback offsets.

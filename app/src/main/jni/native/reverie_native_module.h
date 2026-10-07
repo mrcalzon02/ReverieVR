@@ -32,6 +32,16 @@ enum ReverieNativeSaveResult {
     REVERIE_NATIVE_SAVE_OK = 1
 };
 
+enum ReverieNativeFeedbackFlagV1 {
+    REVERIE_NATIVE_FEEDBACK_FOCUS = 1u << 0,
+    REVERIE_NATIVE_FEEDBACK_ACTIVATION = 1u << 1,
+    REVERIE_NATIVE_FEEDBACK_FAILURE = 1u << 2,
+    REVERIE_NATIVE_FEEDBACK_ALL =
+        REVERIE_NATIVE_FEEDBACK_FOCUS
+        | REVERIE_NATIVE_FEEDBACK_ACTIVATION
+        | REVERIE_NATIVE_FEEDBACK_FAILURE
+};
+
 typedef struct ReverieNativeHostV1 {
     uint32_t struct_size;
     uint32_t abi_version;
@@ -57,6 +67,14 @@ typedef struct ReverieNativeHostV1 {
         const void *data,
         uint32_t size
     );
+
+    /*
+     * Optional shell-owned cue request. Requests are coalesced by flag until
+     * the host drains them after the current native update.
+     */
+    void (*request_feedback)(
+        uint32_t flags
+    );
 } ReverieNativeHostV1;
 
 #define REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE \
@@ -65,6 +83,9 @@ typedef struct ReverieNativeHostV1 {
 #define REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE \
     ((uint32_t)(offsetof(ReverieNativeHostV1, write_save) \
         + sizeof(((ReverieNativeHostV1 *)0)->write_save)))
+#define REVERIE_NATIVE_HOST_V1_FEEDBACK_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeHostV1, request_feedback) \
+        + sizeof(((ReverieNativeHostV1 *)0)->request_feedback)))
 
 typedef struct ReverieNativeModuleDescriptorV1 {
     uint32_t struct_size;

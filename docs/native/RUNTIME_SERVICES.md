@@ -18,7 +18,8 @@ Current shell-owned native runtime services include:
 - Quick Menu and recovery interception;
 - lifecycle pause/resume and GL-context handoff;
 - global HUD continuity;
-- module-private save isolation through the native host.
+- module-private save isolation through the native host;
+- coalesced native focus/activation/failure audio cues through shell `UiFeedback`.
 
 This document covers the services around the module. Exact C ABI fields remain documented in `API_V1.md`.
 
@@ -129,6 +130,16 @@ Native games use the ABI v1 host save functions rather than arbitrary filesystem
 
 The shell/runtime chooses the module-private storage root; the native host validates slot names and performs bounded save reads/writes. Save schema/versioning remains game-owned.
 
+## Native feedback cue service
+
+Native modules may request the shell's existing focus, activation, and failure cues through the optional `ReverieNativeHostV1.request_feedback` tail.
+
+Requests made during a module update are sanitized and coalesced by flag in the native host. The same JNI update call returns the mask to `NativeModuleRuntime`; `VrShellRenderer` forwards nonzero masks to the activity, which maps them to `UiFeedback.focus()`, `activation()`, and `failure()`.
+
+Test Chamber requests an activation cue when its tint toggle changes. Red Ledger requests activation for completed targeted actions and failure for a targeted action that cannot complete.
+
+The service is deliberately event-level. It does not accept PCM, sound files, spatial audio buffers, arbitrary tones, or mixer controls. Haptics are also not implemented by this path.
+
 ## Current limitations and next API candidates
 
 The following are **not** yet stable generalized services:
@@ -137,7 +148,7 @@ The following are **not** yet stable generalized services:
 - per-module locomotion speed/deadzone policy (the shell still owns the common values);
 - standard spatial collision/guardian service;
 - shared mounted-tool/world-anchor primitive;
-- shell audio submission/mixing API;
+- arbitrary native-game audio submission/mixing or spatial-audio API beyond the implemented cue service;
 - haptics;
 - generalized generated-model service.
 

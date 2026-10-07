@@ -39,6 +39,7 @@ Current minimum-prefix constants are:
 
 - `REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE` — host header plus logging service;
 - `REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE` — host prefix through read/write save services;
+- `REVERIE_NATIVE_HOST_V1_FEEDBACK_MIN_SIZE` — host prefix through shell feedback cue requests;
 - `REVERIE_NATIVE_DESCRIPTOR_V1_SIZE` — exact frozen ABI-v1 descriptor size;
 - `REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE` — compatibility alias to that exact frozen size;
 - `REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE` — base timing/movement/button input;
@@ -76,7 +77,7 @@ Module ids are treated as storage/security identifiers, not display strings. Cur
 
 ## Host services
 
-`ReverieNativeHostV1` currently exposes three services.
+`ReverieNativeHostV1` currently exposes four services.
 
 ### Logging
 
@@ -95,6 +96,22 @@ Supported levels are debug, info, warn, and error.
 `write_save(slot, data, size)`
 
 Save slots are scoped by the host to the active packaged module. A module does not receive an arbitrary filesystem path.
+
+### Shell feedback cues
+
+`request_feedback(flags)`
+
+This append-only host tail accepts a bitmask of implemented shell cue requests:
+
+- `REVERIE_NATIVE_FEEDBACK_FOCUS`;
+- `REVERIE_NATIVE_FEEDBACK_ACTIVATION`;
+- `REVERIE_NATIVE_FEEDBACK_FAILURE`.
+
+Use `ReverieNativeHostSupportsFeedbackV1` / `ReverieNativeRequestFeedbackV1` so an older v1 host that ends at the save-service prefix remains safe.
+
+The current host coalesces repeated flags during a native update and returns the mask through the existing JNI update path. The Android shell maps those flags to its existing `UiFeedback` audio cues.
+
+This is **not** an arbitrary audio submission/mixing API and does **not** provide haptics. Modules must not describe either capability as implemented through this service.
 
 Slot names are simple filenames. The host owns directory isolation and path validation.
 

@@ -5,6 +5,7 @@
 #include <jni.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cerrno>
 #include <cmath>
 #include <cstdio>
@@ -44,6 +45,7 @@ struct NativeSession {
     void *instance = nullptr;
     std::string storage_root;
     bool gl_ready = false;
+    std::atomic<uint32_t> pending_feedback_flags{0u};
 };
 
 std::mutex g_error_mutex;
@@ -326,12 +328,37 @@ int32_t HostWriteSave(
     return REVERIE_NATIVE_SAVE_OK;
 }
 
+void HostRequestFeedback(
+    uint32_t flags
+) {
+    NativeSession *session =
+        g_callback_session;
+    if (session == nullptr) {
+        return;
+    }
+
+    const uint32_t safe_flags =
+        flags
+        & static_cast<uint32_t>(
+            REVERIE_NATIVE_FEEDBACK_ALL
+        );
+    if (safe_flags == 0u) {
+        return;
+    }
+
+    session->pending_feedback_flags.fetch_or(
+        safe_flags,
+        std::memory_order_relaxed
+    );
+}
+
 const ReverieNativeHostV1 kHostServices = {
     sizeof(ReverieNativeHostV1),
     REVERIE_NATIVE_MODULE_ABI_VERSION,
     HostLog,
     HostReadSave,
-    HostWriteSave
+    HostWriteSave,
+    HostRequestFeedback
 };
 
 const BuiltInModuleSpec *FindSpec(const char *id) {
@@ -782,7 +809,7 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativePause(
 }
 
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
     JNIEnv *,
     jclass,
@@ -805,7 +832,7 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
     if (session == nullptr
         || session->api == nullptr
         || session->instance == nullptr) {
-        return;
+        return 0;
     }
 
     ReverieNativeInputV1 input = {};
@@ -925,6 +952,13 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
     session->api->update(
         session->instance,
         &input
+    );
+
+    return static_cast<jint>(
+        session->pending_feedback_flags.exchange(
+            0u,
+            std::memory_order_relaxed
+        )
     );
 }
 

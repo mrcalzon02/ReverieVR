@@ -33,7 +33,7 @@ Do not use "documentation will be updated later" as a normal completion state.
 | Shared native ABI-consumption helpers | `app/src/main/jni/native/reverie_native_sdk.h` | `docs/native/SDK_HELPERS.md` | Implemented provisional SDK helper layer |
 | Shared native GL state guard | `app/src/main/jni/native/reverie_native_gl_state.h` | `docs/native/GL_RENDERING_STANDARD.md` | Implemented focused guard; device validation pending |
 | Shared native matrix/shader core utilities | `app/src/main/jni/native/reverie_native_math.h`, `app/src/main/jni/native/reverie_native_gl_utils.h` | `docs/native/CORE_UTILITIES.md` | Implemented provisional shared utilities |
-| Native host loading/save-service behavior | `app/src/main/jni/native/reverie_native_host.cpp` | `docs/native/API_V1.md` | Implemented |
+| Native host loading/save/feedback behavior | `app/src/main/jni/native/reverie_native_host.cpp` | `docs/native/API_V1.md`, `docs/native/RUNTIME_SERVICES.md` | Implemented |
 | Java/native runtime bridge and module-id/input boundary | `app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java` | `docs/native/API_V1.md` | Implemented |
 | Procedural material atlas generator | `app/src/main/jni/native/procedural_material_atlas.h`, `app/src/main/jni/native/procedural_material_atlas.cpp` | `docs/native/PROCEDURAL_CONTENT_STANDARD.md` | Implemented reference / provisional shared standard |
 | Red Ledger static-room geometry baker | `app/src/main/jni/native/red_ledger_static_geometry.h`, `app/src/main/jni/native/red_ledger_static_geometry.cpp` | `docs/native/PROCEDURAL_CONTENT_STANDARD.md` | Implemented reference / provisional shared standard |

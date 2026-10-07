@@ -1079,6 +1079,40 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public void onNativeModuleFeedbackRequested(
+        int feedbackFlags
+    ) {
+        if (uiFeedback == null) {
+            return;
+        }
+
+        final int safeFlags =
+            feedbackFlags
+                & NativeModuleRuntime.FEEDBACK_ALL;
+        if (safeFlags == 0) {
+            return;
+        }
+
+        runOnUiThread(() -> {
+            if ((safeFlags
+                    & NativeModuleRuntime.FEEDBACK_FOCUS)
+                != 0) {
+                uiFeedback.focus();
+            }
+            if ((safeFlags
+                    & NativeModuleRuntime.FEEDBACK_ACTIVATION)
+                != 0) {
+                uiFeedback.activation();
+            }
+            if ((safeFlags
+                    & NativeModuleRuntime.FEEDBACK_FAILURE)
+                != 0) {
+                uiFeedback.failure();
+            }
+        });
+    }
+
+    @Override
     public void onControllerSpringRecenterRequested() {
         runOnUiThread(() -> uiFeedback.springRecenter());
     }

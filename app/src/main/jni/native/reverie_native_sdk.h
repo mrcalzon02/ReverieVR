@@ -38,6 +38,40 @@ static inline int ReverieNativeHostSupportsSaveV1(
         && host->write_save != NULL;
 }
 
+static inline int ReverieNativeHostSupportsFeedbackV1(
+    const ReverieNativeHostV1 *host
+) {
+    return host != NULL
+        && host->abi_version
+            == REVERIE_NATIVE_MODULE_ABI_VERSION
+        && host->struct_size
+            >= REVERIE_NATIVE_HOST_V1_FEEDBACK_MIN_SIZE
+        && host->request_feedback != NULL;
+}
+
+static inline int ReverieNativeRequestFeedbackV1(
+    const ReverieNativeHostV1 *host,
+    uint32_t flags
+) {
+    if (!ReverieNativeHostSupportsFeedbackV1(
+            host
+        )) {
+        return 0;
+    }
+
+    const uint32_t safe_flags =
+        flags
+        & (uint32_t)REVERIE_NATIVE_FEEDBACK_ALL;
+    if (safe_flags == 0u) {
+        return 0;
+    }
+
+    host->request_feedback(
+        safe_flags
+    );
+    return 1;
+}
+
 static inline int ReverieNativeDescriptorHasMandatoryV1(
     const ReverieNativeModuleDescriptorV1 *descriptor
 ) {
