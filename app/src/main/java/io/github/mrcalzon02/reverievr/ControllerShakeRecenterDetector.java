@@ -2,10 +2,10 @@ package io.github.mrcalzon02.reverievr;
 
 final class ControllerShakeRecenterDetector {
     private static final float STANDARD_GRAVITY = 9.80665f;
-    private static final float IMPULSE_DEVIATION = 6.25f;
+    private static final float IMPULSE_DEVIATION = 8.75f;
     private static final long MIN_IMPULSE_GAP_NANOS = 40000000L;
-    private static final long MAX_IMPULSE_GAP_NANOS = 500000000L;
-    private static final long COOLDOWN_NANOS = 1200000000L;
+    private static final long MAX_IMPULSE_GAP_NANOS = 350000000L;
+    private static final long COOLDOWN_NANOS = 2000000000L;
 
     private long firstImpulseAtNanos;
     private long lastTriggerAtNanos;
