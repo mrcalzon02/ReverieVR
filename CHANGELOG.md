@@ -6,6 +6,8 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+- Hardened phone-test release publication against transient GitHub API 5xx errors: bounded retries, recovery of partially created tags, and mandatory read-back verification of commit target and all three nonempty release assets. The prior #75 APKs passed build/signature checks but publication failed with GitHub HTTP 500; this workflow change triggers a fresh run.
+
 ### Headset rig foundation
 
 - Added an allocation-free shell-owned center-head player rig with calibrated eye-origin markers, headset wireframe geometry for a future mirror/third-person pass, and an oriented-box collision probe. The tracked/virtual controller proxy now reports headset overlap transitions in Development diagnostics without interfering with live tracking, controller motion, Cardboard optics, or stereo. Unit tests cover head translation/yaw, eye separation, collision, geometry and invalid pose handling. No mirror renderer, scene collision response or physical S9 proof is claimed.

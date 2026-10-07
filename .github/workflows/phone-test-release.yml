@@ -301,12 +301,65 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh release create "${{ steps.release.outputs.tag }}" \
-            "release/${{ steps.release.outputs.headset }}" \
-            "release/${{ steps.release.outputs.controller }}" \
-            release/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "ReverieVR Phone Test #$GITHUB_RUN_NUMBER" \
-            --notes-file release/RELEASE-NOTES.md \
-            --prerelease
+          TAG="${{ steps.release.outputs.tag }}"
+          HEADSET="release/${{ steps.release.outputs.headset }}"
+          CONTROLLER="release/${{ steps.release.outputs.controller }}"
+          CHECKSUMS="release/SHA256SUMS.txt"
+
+          # GitHub release creation can return transient 5xx after the APKs
+          # have already built and passed signing verification. Never claim
+          # publication without reading the tag and all expected assets back.
+          verify_release() {
+            local payload
+            payload="$(gh release view "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json tagName,targetCommitish,assets 2>/dev/null)" || return 1
+            jq -e \
+              --arg tag "$TAG" \
+              --arg sha "$GITHUB_SHA" \
+              --arg headset "${{ steps.release.outputs.headset }}" \
+              --arg controller "${{ steps.release.outputs.controller }}" \
+              '.tagName == $tag
+                and .targetCommitish == $sha
+                and ([.assets[]
+                  | select((.name == $headset
+                      or .name == $controller
+                      or .name == "SHA256SUMS.txt")
+                    and .size > 0)] | length == 3)' \
+              <<< "$payload" >/dev/null
+          }
+
+          for attempt in 1 2 3 4; do
+            if verify_release; then
+              echo "Verified release $TAG and all three assets."
+              exit 0
+            fi
+
+            if gh release view "$TAG" \
+              --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              # Recover a partially created release instead of trying to
+              # recreate the tag. Clobber makes upload retry idempotent.
+              gh release upload "$TAG" \
+                "$HEADSET" "$CONTROLLER" "$CHECKSUMS" \
+                --clobber --repo "$GITHUB_REPOSITORY" || true
+            else
+              gh release create "$TAG" \
+                "$HEADSET" "$CONTROLLER" "$CHECKSUMS" \
+                --repo "$GITHUB_REPOSITORY" \
+                --target "$GITHUB_SHA" \
+                --title "ReverieVR Phone Test #$GITHUB_RUN_NUMBER" \
+                --notes-file release/RELEASE-NOTES.md \
+                --prerelease || true
+            fi
+
+            if verify_release; then
+              echo "Verified release $TAG and all three assets."
+              exit 0
+            fi
+            if (( attempt < 4 )); then
+              echo "::warning::Release publication/read-back attempt $attempt failed; retrying."
+              sleep $((attempt * 5))
+            fi
+          done
+          echo "::error::Release publication or asset read-back failed after four attempts." >&2
+          exit 1
