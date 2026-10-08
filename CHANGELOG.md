@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Diagnostic mirror legibility
+
+- Extended the white-room stereo mirror's controller marker with an orientation/aim arrow sourced from the actual tracked or virtual pointer direction, rejecting invalid rays. Converted mirror line segments to clipped 14mm planar triangle ribbons so their visibility does not depend on GLES2 wide-line support. Reused scratch buffers per eye, kept the Cardboard optics and handset motion untouched, and added projection/ribbon regression tests. S9 visual comfort and legibility remain to be verified.
+
 - Hardened phone-test release publication against transient GitHub API 5xx errors: bounded retries, recovery of partially created tags, and mandatory read-back verification of commit target and all three nonempty release assets. The prior #75 APKs passed build/signature checks but publication failed with GitHub HTTP 500; this workflow change triggers a fresh run.
 
 ### White-room headset diagnostic mirror

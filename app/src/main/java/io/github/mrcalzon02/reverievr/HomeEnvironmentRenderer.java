@@ -39,8 +39,10 @@ final class HomeEnvironmentRenderer {
         new HeadsetMirrorProjection();
     private final float[] mirrorLineScratch = new float[
         HeadsetMirrorProjection.MAX_VERTICES * 3];
-    private final FloatBuffer mirrorLineVertices =
-        ByteBuffer.allocateDirect(mirrorLineScratch.length * 4)
+    private final float[] mirrorRibbonScratch = new float[
+        HeadsetMirrorProjection.MAX_VERTICES / 2 * 18];
+    private final FloatBuffer mirrorRibbonVertices =
+        ByteBuffer.allocateDirect(mirrorRibbonScratch.length * 4)
             .order(ByteOrder.nativeOrder()).asFloatBuffer();
     private final Mesh daisTop =
         mesh(quadHorizontal(-1.75f, 1.75f, -4.1f, -1.35f, -1.08f));
@@ -298,7 +300,8 @@ final class HomeEnvironmentRenderer {
      */
     void drawMirrorEye(PlayerHeadRig rig, int eyeIndex,
         boolean controllerVisible, float controllerX,
-        float controllerY, float controllerZ) {
+        float controllerY, float controllerZ,
+        float directionX, float directionY, float directionZ) {
         if (program == 0 || !mirrorProjection.prepare(rig, eyeIndex)) {
             return;
         }
@@ -310,7 +313,8 @@ final class HomeEnvironmentRenderer {
         drawMirrorLines(headsetCount, 0.35f, 0.91f, 1.0f);
         if (controllerVisible) {
             int controllerCount = mirrorProjection.writeController(
-                controllerX, controllerY, controllerZ, mirrorLineScratch);
+                controllerX, controllerY, controllerZ,
+                directionX, directionY, directionZ, mirrorLineScratch);
             drawMirrorLines(controllerCount, 1.0f, 0.72f, 0.26f);
         }
     }
@@ -318,16 +322,22 @@ final class HomeEnvironmentRenderer {
     private void drawMirrorLines(int count, float red, float green,
         float blue) {
         if (count <= 0) return;
-        mirrorLineVertices.clear();
-        mirrorLineVertices.put(mirrorLineScratch, 0, count * 3);
-        mirrorLineVertices.position(0);
+        // GLES2 implementations may clamp GL_LINES to one pixel. Convert
+        // clipped segments to narrow, deterministic mirror-plane triangles.
+        // Buffers are allocated once and reused for both eyes.
+        int ribbonVertices = MirrorLineRibbons.write(
+            mirrorLineScratch, count, mirrorRibbonScratch);
+        if (ribbonVertices == 0) return;
+        mirrorRibbonVertices.clear();
+        mirrorRibbonVertices.put(mirrorRibbonScratch, 0, ribbonVertices * 3);
+        mirrorRibbonVertices.position(0);
         GLES20.glUseProgram(program);
         GLES20.glVertexAttribPointer(positionHandle, 3,
-            GLES20.GL_FLOAT, false, 0, mirrorLineVertices);
+            GLES20.GL_FLOAT, false, 0, mirrorRibbonVertices);
         GLES20.glEnableVertexAttribArray(positionHandle);
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0);
         GLES20.glUniform4f(colorHandle, red, green, blue, 1.0f);
-        GLES20.glDrawArrays(GLES20.GL_LINES, 0, count);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, ribbonVertices);
         GLES20.glDisableVertexAttribArray(positionHandle);
     }
 

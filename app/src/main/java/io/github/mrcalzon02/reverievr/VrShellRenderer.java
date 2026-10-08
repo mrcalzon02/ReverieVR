@@ -1791,7 +1791,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     controllerPointerActive,
                     controllerAnchorWorld[0],
                     controllerAnchorWorld[1],
-                    controllerAnchorWorld[2]
+                    controllerAnchorWorld[2],
+                    activePointerDirection[0],
+                    activePointerDirection[1],
+                    activePointerDirection[2]
                 );
             }
         } else {

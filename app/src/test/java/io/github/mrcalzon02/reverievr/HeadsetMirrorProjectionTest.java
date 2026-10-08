@@ -19,7 +19,8 @@ public final class HeadsetMirrorProjectionTest {
         for (int eye=0; eye<2; eye++) {
             assertTrue(projection.prepare(rig,eye));
             assertEquals(36,projection.writeHeadset(headset));
-            assertEquals(6,projection.writeController(0.28f,-0.34f,-0.48f,controller));
+            assertEquals(12,projection.writeController(0.28f,-0.34f,-0.48f,
+                0,0,-1,controller));
             for (float[] buffer:new float[][]{headset,controller}) {
                 for (int i=0;i<buffer.length;i+=3) {
                     assertEquals(HeadsetMirrorProjection.LINE_X,buffer[i],0.00001f);
@@ -63,8 +64,28 @@ public final class HeadsetMirrorProjectionTest {
         assertEquals(0,projection.writeHeadset(buffer));
         assertTrue(rig.update(at(0,0,0),0.064f));
         assertTrue(projection.prepare(rig,0));
-        assertEquals(0,projection.writeController(Float.NaN,0,0,
+        assertEquals(0,projection.writeController(Float.NaN,0,0,0,0,-1,
             new float[HeadsetMirrorProjection.CONTROLLER_VERTICES*3]));
+    }
+
+    @Test public void controllerAimChangesMirroredArrowWithoutChangingMarker() {
+        PlayerHeadRig rig = new PlayerHeadRig();
+        assertTrue(rig.update(at(0,0,0),0.064f));
+        HeadsetMirrorProjection projection = new HeadsetMirrorProjection();
+        assertTrue(projection.prepare(rig,0));
+        float[] forward = new float[HeadsetMirrorProjection.CONTROLLER_VERTICES*3];
+        float[] upward = new float[forward.length];
+        assertEquals(12,projection.writeController(0.28f,-0.34f,-0.48f,
+            0,0,-1,forward));
+        assertEquals(12,projection.writeController(0.28f,-0.34f,-0.48f,
+            0,1,0,upward));
+        for (int i=0;i<18;i++) assertEquals(forward[i],upward[i],0.00001f);
+        assertTrue(Math.abs(forward[22]-upward[22])>0.01f
+            || Math.abs(forward[23]-upward[23])>0.01f);
+        assertEquals(0,projection.writeController(0,0,0,0,0,0,forward));
+        assertEquals(0,projection.writeController(0,0,0,Float.NaN,0,1,forward));
+        assertEquals(12,projection.writeController(0,0,0,0,1,0,forward));
+        for (float value:forward) assertTrue(Float.isFinite(value));
     }
 
     @Test public void invalidHeadPoseNeverRendersStaleReflection() {

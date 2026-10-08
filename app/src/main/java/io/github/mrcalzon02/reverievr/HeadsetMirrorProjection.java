@@ -12,7 +12,7 @@ final class HeadsetMirrorProjection {
     static final float HALF_HEIGHT = 0.85f;
     static final float HALF_WIDTH = 0.95f;
     static final int MAX_VERTICES = PlayerHeadRig.WIREFRAME_VERTICES;
-    static final int CONTROLLER_VERTICES = 6;
+    static final int CONTROLLER_VERTICES = 12;
 
     private final float[] headset = new float[PlayerHeadRig.WIREFRAME_FLOATS];
     private final float[] eyes = new float[6];
@@ -47,10 +47,35 @@ final class HeadsetMirrorProjection {
         return written / 3;
     }
 
-    int writeController(float x, float y, float z, float[] out) {
+    /**
+     * A headset-relative handset position marker plus a world-space aiming
+     * arrow. The arrow follows the same normalized ray used for interaction,
+     * whether the source is a tracked or virtual controller. No raw
+     * quaternion is inferred here and invalid rays never draw stale aim.
+     */
+    int writeController(float x, float y, float z,
+        float dx, float dy, float dz, float[] out) {
         if (!ready || out == null || out.length < CONTROLLER_VERTICES * 3
             || !Float.isFinite(x) || !Float.isFinite(y)
-            || !Float.isFinite(z)) return 0;
+            || !Float.isFinite(z) || !Float.isFinite(dx)
+            || !Float.isFinite(dy) || !Float.isFinite(dz)) return 0;
+        double length = Math.sqrt((double) dx * dx
+            + (double) dy * dy + (double) dz * dz);
+        if (!Double.isFinite(length) || length < 0.00001) return 0;
+        float nx = (float) (dx / length);
+        float ny = (float) (dy / length);
+        float nz = (float) (dz / length);
+
+        // Stable perpendicular arrowhead basis even when aiming vertically.
+        float tx = Math.abs(ny) > 0.90f ? 0.0f : -nz;
+        float ty = Math.abs(ny) > 0.90f ? nz : 0.0f;
+        float tz = Math.abs(ny) > 0.90f ? -ny : nx;
+        float tangentLength = (float) Math.sqrt(tx * tx + ty * ty + tz * tz);
+        if (tangentLength < 0.00001f) return 0;
+        tx /= tangentLength;
+        ty /= tangentLength;
+        tz /= tangentLength;
+
         int written = 0;
         written = segment(out, written,
             x - 0.08f, y, z, x + 0.08f, y, z);
@@ -58,6 +83,21 @@ final class HeadsetMirrorProjection {
             x, y - 0.06f, z, x, y + 0.06f, z);
         written = segment(out, written,
             x, y, z - 0.06f, x, y, z + 0.06f);
+
+        float tipX = x + nx * 0.32f;
+        float tipY = y + ny * 0.32f;
+        float tipZ = z + nz * 0.32f;
+        written = segment(out, written, x, y, z, tipX, tipY, tipZ);
+        written = segment(out, written,
+            tipX, tipY, tipZ,
+            tipX - nx * 0.07f + tx * 0.04f,
+            tipY - ny * 0.07f + ty * 0.04f,
+            tipZ - nz * 0.07f + tz * 0.04f);
+        written = segment(out, written,
+            tipX, tipY, tipZ,
+            tipX - nx * 0.07f - tx * 0.04f,
+            tipY - ny * 0.07f - ty * 0.04f,
+            tipZ - nz * 0.07f - tz * 0.04f);
         return written / 3;
     }
 
