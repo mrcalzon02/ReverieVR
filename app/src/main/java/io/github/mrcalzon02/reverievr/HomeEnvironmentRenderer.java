@@ -27,6 +27,21 @@ final class HomeEnvironmentRenderer {
         mesh(quadVerticalX(-6.0f, 6.0f, -1.35f, 4.0f, -6.0f));
     private final Mesh whiteRight =
         mesh(quadVerticalX(6.0f, -6.0f, -1.35f, 4.0f, 6.0f));
+    private final Mesh mirrorFrame = mesh(
+        quadVerticalX(2.17f, -1.02f, -0.92f, 0.92f, 1.02f));
+    private final Mesh mirrorGlass = mesh(
+        quadVerticalX(HeadsetMirrorProjection.PLANE_X,
+            -HeadsetMirrorProjection.HALF_WIDTH,
+            -HeadsetMirrorProjection.HALF_HEIGHT,
+            HeadsetMirrorProjection.HALF_HEIGHT,
+            HeadsetMirrorProjection.HALF_WIDTH));
+    private final HeadsetMirrorProjection mirrorProjection =
+        new HeadsetMirrorProjection();
+    private final float[] mirrorLineScratch = new float[
+        HeadsetMirrorProjection.MAX_VERTICES * 3];
+    private final FloatBuffer mirrorLineVertices =
+        ByteBuffer.allocateDirect(mirrorLineScratch.length * 4)
+            .order(ByteOrder.nativeOrder()).asFloatBuffer();
     private final Mesh daisTop =
         mesh(quadHorizontal(-1.75f, 1.75f, -4.1f, -1.35f, -1.08f));
     private final Mesh daisFront =
@@ -274,6 +289,46 @@ final class HomeEnvironmentRenderer {
                 );
                 break;
         }
+    }
+
+    /**
+     * Small planar diagnostic mirror on the white-room right side.
+     * Shows only headset/eye and controller proxies, not the environment.
+     * Drawn after the room and before UI with the same corrected eye MVP.
+     */
+    void drawMirrorEye(PlayerHeadRig rig, int eyeIndex,
+        boolean controllerVisible, float controllerX,
+        float controllerY, float controllerZ) {
+        if (program == 0 || !mirrorProjection.prepare(rig, eyeIndex)) {
+            return;
+        }
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+        GLES20.glDisable(GLES20.GL_BLEND);
+        draw(mirrorFrame, 0.13f, 0.19f, 0.23f, 1.0f);
+        draw(mirrorGlass, 0.08f, 0.14f, 0.18f, 1.0f);
+        int headsetCount = mirrorProjection.writeHeadset(mirrorLineScratch);
+        drawMirrorLines(headsetCount, 0.35f, 0.91f, 1.0f);
+        if (controllerVisible) {
+            int controllerCount = mirrorProjection.writeController(
+                controllerX, controllerY, controllerZ, mirrorLineScratch);
+            drawMirrorLines(controllerCount, 1.0f, 0.72f, 0.26f);
+        }
+    }
+
+    private void drawMirrorLines(int count, float red, float green,
+        float blue) {
+        if (count <= 0) return;
+        mirrorLineVertices.clear();
+        mirrorLineVertices.put(mirrorLineScratch, 0, count * 3);
+        mirrorLineVertices.position(0);
+        GLES20.glUseProgram(program);
+        GLES20.glVertexAttribPointer(positionHandle, 3,
+            GLES20.GL_FLOAT, false, 0, mirrorLineVertices);
+        GLES20.glEnableVertexAttribArray(positionHandle);
+        GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0);
+        GLES20.glUniform4f(colorHandle, red, green, blue, 1.0f);
+        GLES20.glDrawArrays(GLES20.GL_LINES, 0, count);
+        GLES20.glDisableVertexAttribArray(positionHandle);
     }
 
     void shutdown() {

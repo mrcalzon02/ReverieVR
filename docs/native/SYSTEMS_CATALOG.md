@@ -72,7 +72,7 @@ Native modules consume normalized actions/rays. They do not parse BLE packets, A
 | Guest GL state isolation | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_gl_state.h` | `docs/native/GL_RENDERING_STANDARD.md` |
 | Column-major 4×4 multiply | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_math.h` | `docs/native/CORE_UTILITIES.md` |
 | GLES shader compile/program-link helpers | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_gl_utils.h` | `docs/native/CORE_UTILITIES.md` | Shader compile plus caller-declared attribute bindings and fail-closed program linking; shader text/policy remain game-owned. |
-| Headset/eye wireframe and collider probe | **Shell-only reference** | `app/src/main/java/io/github/mrcalzon02/reverievr/PlayerHeadRig.java` | `docs/records/PLAYER-HEAD-RIG-CONTRACT.md` | Center-head pose, IPD-separated eye markers, oriented-box collision and mirror-ready lines; no mirror renderer or game-facing ABI yet. |
+| Headset/eye wireframe and collider probe | **Shell-only reference** | `app/src/main/java/io/github/mrcalzon02/reverievr/PlayerHeadRig.java` | `docs/records/PLAYER-HEAD-RIG-CONTRACT.md` | Center-head pose, IPD-separated eye markers and oriented-box collision; white-room diagnostic mirror uses `HeadsetMirrorProjection` to reflect the headset and handset proxy in stereo, not full scene reflections or a game-facing ABI. |
 | One update / two eye renders | **Platform rule** | ABI lifecycle + reference modules | `docs/native/README.md`, `docs/native/GL_RENDERING_STANDARD.md` |
 | OpenGL ES admission | **ABI v1** | `ReverieNativeGlesRequirementSupportedV1` | Current host supports GLES 2.0, rejects invalid zero-major versions and higher requirements before create. |
 

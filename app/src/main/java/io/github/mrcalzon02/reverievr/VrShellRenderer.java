@@ -1775,11 +1775,25 @@ final class VrShellRenderer implements CardboardView.Renderer {
             : -correctionHalf;
 
         if (mode != MODE_NATIVE) {
+            HomeEnvironment homeEnvironment =
+                preferences.getHomeEnvironment();
             homeEnvironmentRenderer.drawEye(
                 eye,
                 eyeCorrection,
-                preferences.getHomeEnvironment()
+                homeEnvironment
             );
+            if (mode == MODE_HOME
+                && homeEnvironment == HomeEnvironment.WHITE_ROOM
+                && !orientationMenuVisible) {
+                homeEnvironmentRenderer.drawMirrorEye(
+                    playerHeadRig,
+                    eye.getEyeType() == CardboardView.Eye.LEFT ? 0 : 1,
+                    controllerPointerActive,
+                    controllerAnchorWorld[0],
+                    controllerAnchorWorld[1],
+                    controllerAnchorWorld[2]
+                );
+            }
         } else {
             GLES20.glEnable(GLES20.GL_DEPTH_TEST);
             GLES20.glClearColor(

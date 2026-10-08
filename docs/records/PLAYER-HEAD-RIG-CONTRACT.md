@@ -1,6 +1,6 @@
 # Player headset rig — active implementation contract
 
-**Status:** shell-owned geometry/collision foundation implemented; mirror display, scene collision response and Galaxy S9 validation pending.
+**Status:** shell-owned geometry/collision and white-room diagnostic mirror implemented; full scene reflections, collision response and Galaxy S9 validation pending.
 
 ## Pose and optics
 
@@ -16,8 +16,8 @@ The collider is **not** a user safety boundary, full-body physics collider, room
 
 ## Rendering contract
 
-The wireframe is intentionally **not drawn into the user's own near-eye view**; that would place opaque/near-plane geometry on top of the camera and impair comfort. A future mirror/third-person pass can draw this geometry with its own camera, correct occlusion and both-eye coherence. Do not claim the mirror exists before it is implemented and headset-tested.
+The wireframe is intentionally **not drawn into the user's own near-eye view**; that would place near-plane geometry on top of the camera and impair comfort. In the white home room, a small vanity panel at world X=2.14m (to the player's right) now displays a **diagnostic mirror of the headset/eye wireframe and active controller proxy**. `HeadsetMirrorProjection` reflects world-space proxy vertices across the panel, intersects sightlines from each separately calibrated eye, clips the projected line segments to the mirror rectangle and draws them on the visible panel. Both eyes see a consistent stereo scene from their own viewpoints. The mirror is not a full environment reflection, does not render a face/body avatar, and does not change Cardboard projection. It is not shown in native games or other home environments. The panel is visible by looking to the right in the white room. Headset testing is still needed for comfort, depth and visibility.
 
 ## Acceptance gates
 
-JVM tests verify identity/yaw/translation poses, eye marker separation, box-sphere intersection, deterministic finite line geometry and rejection of invalid transforms. Phone-test CI checks Android compilation and integration. A real S9 headset run must still verify world scale, calibration, mirror behavior once implemented, and absence of eye/view regressions.
+JVM tests verify identity/yaw/translation poses, eye marker separation, box-sphere intersection, deterministic finite line geometry and rejection of invalid transforms. Phone-test CI checks Android compilation and integration. A real S9 headset run must still verify world scale, calibration, the diagnostic mirror's visibility and stereo parallax, and absence of eye/view regressions.

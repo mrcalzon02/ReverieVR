@@ -8,6 +8,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 - Hardened phone-test release publication against transient GitHub API 5xx errors: bounded retries, recovery of partially created tags, and mandatory read-back verification of commit target and all three nonempty release assets. The prior #75 APKs passed build/signature checks but publication failed with GitHub HTTP 500; this workflow change triggers a fresh run.
 
+### White-room headset diagnostic mirror
+
+- Added a small right-side planar vanity mirror in the white home room. Each eye sees a separately projected and panel-clipped reflection of the headset wireframe, eye markers and active handset marker, using the same stereo matrices as the home room. The renderer reuses buffers and only draws in the white-room home mode; it is a diagnostic proxy reflection, not a full scene/face/body mirror. JVM projection tests cover per-eye parallax, clipping, invalid pose and finite output. Physical Galaxy S9 headset acceptance remains pending.
+
 ### Headset rig foundation
 
 - Added an allocation-free shell-owned center-head player rig with calibrated eye-origin markers, headset wireframe geometry for a future mirror/third-person pass, and an oriented-box collision probe. The tracked/virtual controller proxy now reports headset overlap transitions in Development diagnostics without interfering with live tracking, controller motion, Cardboard optics, or stereo. Unit tests cover head translation/yaw, eye separation, collision, geometry and invalid pose handling. No mirror renderer, scene collision response or physical S9 proof is claimed.
