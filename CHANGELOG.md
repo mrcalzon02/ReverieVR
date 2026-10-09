@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### GLES2-safe pointer ribbons
+
+- Replaced the stereo interaction pointer's implementation-defined wide GL_LINES draw with an allocation-free 18-vertex triangle beam and crosshair. Shared hover/press colors and size remain unchanged. Pure JVM regression tests cover full buffer writes, straight-ahead geometry and undersized buffers; handset stereo readability remains a device gate.
+
 ### VR pointer GLES2 state isolation
 
 - The shell-owned stereo interaction ray now restores the caller's depth-test enable, line-width, active shader program, and pointer vertex-attribute enable values after drawing, even when the draw throws. It uses a persistent GL-query scratch buffer rather than allocating in each eye. This closes the pointer overlay's state leak without changing Cardboard per-eye projection, scissor or viewport. Phone-test compilation and Galaxy S9 stereo transition proof remain the acceptance gates.

@@ -15,7 +15,7 @@ final class VrPointerRenderer {
 
     private final FloatBuffer vertices =
         ByteBuffer
-            .allocateDirect(18 * 4)
+            .allocateDirect(54 * 4)
             .order(ByteOrder.nativeOrder())
             .asFloatBuffer();
 
@@ -23,7 +23,6 @@ final class VrPointerRenderer {
     private final float[] correctedEyeView = new float[16];
     private final float[] mvp = new float[16];
     // Reused GL state query buffer; no per-eye allocation.
-    private final float[] previousLineWidth = new float[1];
     private final int[] previousProgram = new int[1];
     private final int[] previousPositionEnabled = new int[1];
 
@@ -146,31 +145,15 @@ final class VrPointerRenderer {
         float markerSize = PointerVisualFeedback.markerSize(visualState);
         PointerVisualFeedback.writeColor(visualState, feedbackColor);
 
-        vertices.position(0);
-        vertices.put(originX);
-        vertices.put(originY);
-        vertices.put(originZ);
-        vertices.put(endX);
-        vertices.put(endY);
-        vertices.put(endZ);
-
-        vertices.put(endX - markerSize);
-        vertices.put(endY);
-        vertices.put(endZ);
-        vertices.put(endX + markerSize);
-        vertices.put(endY);
-        vertices.put(endZ);
-
-        vertices.put(endX);
-        vertices.put(endY - markerSize);
-        vertices.put(endZ);
-        vertices.put(endX);
-        vertices.put(endY + markerSize);
-        vertices.put(endZ);
+        PointerRibbonGeometry.fill(
+            vertices,
+            originX, originY, originZ,
+            endX, endY, endZ,
+            markerSize
+        );
         vertices.position(0);
 
         boolean depthWasEnabled = GLES20.glIsEnabled(GLES20.GL_DEPTH_TEST);
-        GLES20.glGetFloatv(GLES20.GL_LINE_WIDTH, previousLineWidth, 0);
         GLES20.glGetIntegerv(GLES20.GL_CURRENT_PROGRAM, previousProgram, 0);
         GLES20.glGetVertexAttribiv(positionHandle, GLES20.GL_VERTEX_ATTRIB_ARRAY_ENABLED, previousPositionEnabled, 0);
         GLES20.glDisable(GLES20.GL_DEPTH_TEST);
@@ -203,27 +186,7 @@ final class VrPointerRenderer {
             feedbackColor[3]
         );
 
-        GLES20.glLineWidth(3.0f);
-        GLES20.glDrawArrays(
-            GLES20.GL_LINES,
-            0,
-            2
-        );
-
-        vertices.position(6);
-        GLES20.glVertexAttribPointer(
-            positionHandle,
-            3,
-            GLES20.GL_FLOAT,
-            false,
-            0,
-            vertices
-        );
-        GLES20.glDrawArrays(
-            GLES20.GL_LINES,
-            0,
-            4
-        );
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 18);
 
         } finally {
             if (previousPositionEnabled[0] == 0) {
@@ -232,7 +195,6 @@ final class VrPointerRenderer {
                 GLES20.glEnableVertexAttribArray(positionHandle);
             }
             GLES20.glUseProgram(previousProgram[0]);
-            GLES20.glLineWidth(previousLineWidth[0]);
             if (depthWasEnabled) {
                 GLES20.glEnable(GLES20.GL_DEPTH_TEST);
             } else {
