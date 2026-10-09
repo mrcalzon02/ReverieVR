@@ -113,6 +113,9 @@ final class VrControllerModelRenderer {
     private volatile boolean appPressed;
     private volatile boolean volumeUpPressed;
     private volatile boolean volumeDownPressed;
+    private volatile boolean pointerHit;
+    private volatile boolean pointerPressed;
+    private final float[] pointerFeedbackColor = new float[4];
 
     private int program;
     private int positionHandle;
@@ -206,8 +209,15 @@ final class VrControllerModelRenderer {
         this.volumeDownPressed = volumeDownPressed;
     }
 
+    void setInteractionState(boolean hitting, boolean pressed) {
+        pointerHit = hitting;
+        pointerPressed = pressed;
+    }
+
     void hide() {
         visible = false;
+        pointerHit = false;
+        pointerPressed = false;
         clearGhost();
     }
 
@@ -359,6 +369,7 @@ final class VrControllerModelRenderer {
                 volumeDownPressed,
                 1.0f
             );
+            drawEmitter(eye);
             return;
         }
 
@@ -444,17 +455,30 @@ final class VrControllerModelRenderer {
             volumeDownPressed ? 1.00f : 0.68f
         );
 
+        drawEmitter(eye);
+    }
+
+    private void drawEmitter(CardboardView.Eye eye) {
+        int visualState = PointerVisualFeedback.resolve(
+            pointerHit, pointerPressed
+        );
+        PointerVisualFeedback.writeColor(
+            visualState, pointerFeedbackColor
+        );
+        float scale = visualState == PointerVisualFeedback.PRESSED
+            ? 1.18f
+            : visualState == PointerVisualFeedback.HOVER ? 1.08f : 1.0f;
         drawCube(
             eye,
             0.0f,
             0.0f,
             -0.122f,
-            0.028f,
-            0.020f,
-            0.025f,
-            0.15f,
-            0.78f,
-            0.88f
+            0.028f * scale,
+            0.020f * scale,
+            0.025f * scale,
+            pointerFeedbackColor[0],
+            pointerFeedbackColor[1],
+            pointerFeedbackColor[2]
         );
     }
 

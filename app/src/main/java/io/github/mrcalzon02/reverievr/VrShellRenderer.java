@@ -1492,6 +1492,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             usingControllerPointer;
         controllerPointerDistance = 2.5f;
         controllerPointerHit = false;
+        boolean pointerPressed =
+            usingControllerPointer && controllerTouchpadPressed;
+        controllerModelRenderer.setInteractionState(
+            false, pointerPressed
+        );
 
         if (usingControllerPointer) {
             pointerRenderer.setPointer(
@@ -1503,7 +1508,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 activePointerDirection[1],
                 activePointerDirection[2],
                 controllerPointerDistance,
-                false
+                false,
+                pointerPressed
             );
         } else {
             pointerRenderer.hide();
@@ -1558,6 +1564,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 : 6.0f;
         controllerPointerHit =
             newHover >= 0;
+        boolean pointerPressed =
+            usingControllerPointer
+                && (controllerTouchpadPressed || selectRequested.get());
+        controllerModelRenderer.setInteractionState(
+            controllerPointerHit, pointerPressed
+        );
 
         if (usingControllerPointer) {
             pointerRenderer.setPointer(
@@ -1569,7 +1581,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 activePointerDirection[1],
                 activePointerDirection[2],
                 controllerPointerDistance,
-                controllerPointerHit
+                controllerPointerHit,
+                pointerPressed
             );
         } else {
             pointerRenderer.hide();

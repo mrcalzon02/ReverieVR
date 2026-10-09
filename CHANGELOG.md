@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Controller interaction feedback
+
+- Unified the live controller emitter and VR interaction ray around one allocation-free visual-state policy: neutral aim remains muted, valid hover grows/brightens cyan, and routed Select/Daydream touchpad press grows to amber. The real Daydream asset now receives the same emitter feedback instead of bypassing the procedural indicator. Native modules retain host-owned pointer rendering without inventing hit state they do not report; tracked press is still visible. Added JVM regression coverage for state precedence, marker sizing and bounded colors. Galaxy S9/Daydream readability remains to be verified.
+
 ### Diagnostic mirror legibility
 
 - Extended the white-room stereo mirror's controller marker with an orientation/aim arrow sourced from the actual tracked or virtual pointer direction, rejecting invalid rays. Converted mirror line segments to clipped 14mm planar triangle ribbons so their visibility does not depend on GLES2 wide-line support. Reused scratch buffers per eye, kept the Cardboard optics and handset motion untouched, and added projection/ribbon regression tests. S9 visual comfort and legibility remain to be verified.

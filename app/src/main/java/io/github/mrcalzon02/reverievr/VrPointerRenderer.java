@@ -31,6 +31,8 @@ final class VrPointerRenderer {
     private volatile float endY;
     private volatile float endZ;
     private volatile boolean hitting;
+    private volatile boolean pressed;
+    private final float[] feedbackColor = new float[4];
 
     private int program;
     private int positionHandle;
@@ -69,7 +71,8 @@ final class VrPointerRenderer {
         float directionY,
         float directionZ,
         float distance,
-        boolean hitting
+        boolean hitting,
+        boolean pressed
     ) {
         this.visible = visible;
         this.originX = originX;
@@ -92,6 +95,7 @@ final class VrPointerRenderer {
             originZ
                 + directionZ * safeDistance;
         this.hitting = hitting;
+        this.pressed = pressed;
     }
 
     void hide() {
@@ -134,8 +138,9 @@ final class VrPointerRenderer {
             0
         );
 
-        float markerSize =
-            hitting ? 0.024f : 0.016f;
+        int visualState = PointerVisualFeedback.resolve(hitting, pressed);
+        float markerSize = PointerVisualFeedback.markerSize(visualState);
+        PointerVisualFeedback.writeColor(visualState, feedbackColor);
 
         vertices.position(0);
         vertices.put(originX);
@@ -181,23 +186,13 @@ final class VrPointerRenderer {
             0
         );
 
-        if (hitting) {
-            GLES20.glUniform4f(
-                colorHandle,
-                0.18f,
-                0.92f,
-                1.0f,
-                0.95f
-            );
-        } else {
-            GLES20.glUniform4f(
-                colorHandle,
-                0.46f,
-                0.68f,
-                0.78f,
-                0.72f
-            );
-        }
+        GLES20.glUniform4f(
+            colorHandle,
+            feedbackColor[0],
+            feedbackColor[1],
+            feedbackColor[2],
+            feedbackColor[3]
+        );
 
         GLES20.glLineWidth(3.0f);
         GLES20.glDrawArrays(
