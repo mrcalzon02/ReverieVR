@@ -1493,7 +1493,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         controllerPointerDistance = 2.5f;
         controllerPointerHit = false;
         boolean pointerPressed =
-            usingControllerPointer && controllerTouchpadPressed;
+            usingControllerPointer
+                && activeNativePointerKind
+                    == NativeModuleRuntime.POINTER_TRACKED_CONTROLLER
+                && controllerTouchpadPressed;
         controllerModelRenderer.setInteractionState(
             false, pointerPressed
         );
@@ -1564,9 +1567,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 : 6.0f;
         controllerPointerHit =
             newHover >= 0;
-        boolean pointerPressed =
-            usingControllerPointer
-                && (controllerTouchpadPressed || selectRequested.get());
+        boolean pointerPressed = false;
+        if (usingControllerPointer) {
+            pointerPressed = activeNativePointerKind
+                    == NativeModuleRuntime.POINTER_TRACKED_CONTROLLER
+                ? controllerTouchpadPressed
+                : selectRequested.get();
+        }
         controllerModelRenderer.setInteractionState(
             controllerPointerHit, pointerPressed
         );
