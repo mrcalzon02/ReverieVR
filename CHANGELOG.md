@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### VR pointer GLES2 state isolation
+
+- The shell-owned stereo interaction ray now restores the caller's depth-test enable and line-width values after drawing, even when the draw throws. It uses a persistent GL-query scratch buffer rather than allocating in each eye. This closes the pointer overlay's state leak without changing Cardboard per-eye projection, scissor or viewport. Phone-test compilation and Galaxy S9 stereo transition proof remain the acceptance gates.
+
 ### Controller interaction feedback
 
 - Unified the live controller emitter and VR interaction ray around one allocation-free visual-state policy: neutral aim remains muted, valid hover grows/brightens cyan, and routed Select/Daydream touchpad press grows to amber. The real Daydream asset now receives the same emitter feedback instead of bypassing the procedural indicator. Native modules retain host-owned pointer rendering without inventing hit state they do not report; tracked press is still visible. Added JVM regression coverage for state precedence, marker sizing and bounded colors. Galaxy S9/Daydream readability remains to be verified.

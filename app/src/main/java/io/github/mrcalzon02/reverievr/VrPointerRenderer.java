@@ -22,6 +22,8 @@ final class VrPointerRenderer {
     private final float[] eyeView = new float[16];
     private final float[] correctedEyeView = new float[16];
     private final float[] mvp = new float[16];
+    // Reused GL state query buffer; no per-eye allocation.
+    private final float[] previousLineWidth = new float[1];
 
     private volatile boolean visible;
     private volatile float originX;
@@ -165,7 +167,10 @@ final class VrPointerRenderer {
         vertices.put(endZ);
         vertices.position(0);
 
+        boolean depthWasEnabled = GLES20.glIsEnabled(GLES20.GL_DEPTH_TEST);
+        GLES20.glGetFloatv(GLES20.GL_LINE_WIDTH, previousLineWidth, 0);
         GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        try {
         GLES20.glUseProgram(program);
         GLES20.glVertexAttribPointer(
             positionHandle,
@@ -216,9 +221,15 @@ final class VrPointerRenderer {
             4
         );
 
-        GLES20.glDisableVertexAttribArray(
-            positionHandle
-        );
+        } finally {
+            GLES20.glDisableVertexAttribArray(positionHandle);
+            GLES20.glLineWidth(previousLineWidth[0]);
+            if (depthWasEnabled) {
+                GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+            } else {
+                GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+            }
+        }
     }
 
     void shutdown() {
