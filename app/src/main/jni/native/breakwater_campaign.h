@@ -57,6 +57,7 @@ public:
     bool CallAirstrike();
     void Tick(float seconds);
     Phase phase() const { return phase_; }
+    Difficulty difficulty() const { return difficulty_; }
     Period period() const { return period_; }
     uint8_t location() const { return location_; }
     uint8_t day() const { return day_; }
