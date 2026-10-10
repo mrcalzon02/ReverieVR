@@ -4,7 +4,7 @@
 
 ## User experience
 
-From the 3D Home, the player can summon a portrait Android screen panel into a comfortable position. It renders the current handset screen at its authentic aspect ratio and pixel content. The controller pointer intersects the panel, shows a cursor, and the Daydream touchpad click acts as a touchscreen finger. Press-and-hold plus controller movement becomes a drag/scroll; release finishes the touch. Android Back/Home/Recent Apps and keyboard open through separately identified shell controls. The regular ReverieVR Quick Menu always supersedes touch mode. Panel focus can be relinquished without losing the headset session.
+Inside the existing 3D Home environment (birch living room, beach or forest), the player can summon a spatially anchored Android screen panel without leaving Home or replacing the environment. It renders the current handset screen at its authentic aspect ratio and pixel content. The panel is a world-space object and may be repositioned independently of the headset; its controls do not turn the whole world or the Quick Menu. The controller pointer intersects the panel, shows a cursor, and the Daydream touchpad click acts as a touchscreen finger. Press-and-hold plus controller movement becomes a drag/scroll; release finishes the touch. Android Back/Home/Recent Apps and keyboard open through separately identified shell controls. The panel has a distinct upper-right control cluster with orientation controls: yaw left/right, pitch up/down, recenter to headset forward, portrait/landscape presentation, and size/distance adjustment. These controls are VR-owned hit regions, outside the Android touch rectangle, and must consume pointer events without generating proxy taps. The regular ReverieVR Quick Menu always supersedes touch mode. Panel focus can be relinquished without losing the headset session.
 
 ## Android architecture and permissions
 
@@ -20,7 +20,7 @@ From the 3D Home, the player can summon a portrait Android screen panel into a c
 ## Acceptance tests
 
 1. Galaxy S9 Android/API target verification and consent/revocation sequences.
-2. Screen readable with preserved aspect ratio, portrait orientation changes, stereo comfort, and actual live pixel updates at headset frame rate.
+2. Screen panel is embedded inside each of the birch living room, beach and forest 3D home scenes; virtual upper-right orientation controls visibly rotate, tilt, resize, move and recenter the panel while preserving the Android screen's proper portrait/landscape aspect and live pixel updates. The scene and shell HUD remain visible.
 3. Controller hover is visual only. Click taps the correct pixel across center/corners, long press and drag scroll accurately, no input when closed, unfocused or unauthorized.
 4. Separate supported Back/Home keyboard actions; shell Quick Menu always recovers control, including failed capture or BLE disconnect.
 5. No recursion/capture feedback loops and no protected content exposure; honest user-facing inability to interact with apps/surfaces blocked by the OS.
