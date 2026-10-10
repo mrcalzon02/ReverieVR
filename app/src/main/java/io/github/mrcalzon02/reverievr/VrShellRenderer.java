@@ -379,7 +379,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean nativeSurfaceReady;
     private volatile boolean rendererFailed;
     private volatile boolean orientationMenuVisible;
-    private volatile boolean orientationMenuPlacementPending;
     private boolean quickMenuSettingsVisible;
     private boolean keyboardQuickMenuFocusActive;
     private volatile float orientationMenuYawRadians;
@@ -640,7 +639,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         boolean opening =
             !orientationMenuVisible;
         orientationMenuVisible = opening;
-        orientationMenuPlacementPending = opening;
         quickMenuSettingsVisible = false;
         keyboardQuickMenuFocusActive = false;
         hoveredButton = -1;
@@ -1167,7 +1165,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
             // yaw every frame instead of freezing its world heading at open.
             // Both rendering and hit testing use this same orientation.
             captureOrientationMenuHeading();
-            orientationMenuPlacementPending = false;
         }
 
         Matrix.setRotateM(
@@ -4075,7 +4072,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void closeOrientationMenu() {
         orientationMenuVisible = false;
-        orientationMenuPlacementPending = false;
         quickMenuSettingsVisible = false;
         keyboardQuickMenuFocusActive = false;
         hoveredButton = -1;
