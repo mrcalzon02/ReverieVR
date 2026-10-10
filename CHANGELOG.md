@@ -6,6 +6,14 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Headset viewport and home-space corrections
+
+- Contracted the centered per-eye content viewport by a further 10% (scale 0.82 to 0.738), retaining Cardboard-owned projection and eye viewport setup.
+- Rebound the Quick Menu's horizontal orientation to the current headset yaw each frame, using the same heading for visible panel placement and pointer hit testing. Full pitch-following HUD behavior still requires headset acceptance.
+- Enabled bounded (1.4 m per axis) view-relative Daydream touchpad travel in the shell home and connected it to both eyes of the procedural environment. Native games retain their own movement bounds and the existing touch-release, stale-sample, and menu interlocks.
+- Added once-allocated procedural birch wall seams, baseboards and furniture to the former White Room, new forest understory, and sparse beach foam/driftwood. The white environment is now labelled Birch Panel Living Room.
+- These changes are repository source edits pending Android build and Galaxy S9/Daydream testing. Native Apps navigation failure and the requested full virtual text-entry keyboard remain unresolved; neither is claimed as repaired.
+
 ### Breakwater Battery aircraft attack runs
 
 - Replaced the placeholder aircraft shoreline collision with deterministic bomber and strafer behavior. Strafers deliver repeated light attacks while crossing overhead; bombers make a slower single heavy attack and then leave the combat volume. Purchased AA can destroy an aircraft before its attack window, while basic-gun rounds remain ineffective but are still consumed. The generated renderer now gives bombers and strafers visibly different tiny silhouettes. Regression source fixes deterministic late-campaign seeds for bomber damage, strafer bursts and pre-attack AA interception; Android/NDK and physical headset acceptance remain separate gates.
