@@ -500,7 +500,19 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    private static boolean isHeadsetBlockedVolumeKey(int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_VOLUME_UP
+            || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+            || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE;
+    }
+
     public boolean dispatchKeyEvent(KeyEvent event) {
+        // The phone is enclosed by the viewer in VR. Clamp pressure can hold
+        // these keys down; consume both presses and releases before routing.
+        if (event != null && isHeadsetBlockedVolumeKey(event.getKeyCode())) {
+            return true;
+        }
+
         if (event != null
             && event.getKeyCode() == KeyEvent.KEYCODE_MENU
             && event.getAction() == KeyEvent.ACTION_DOWN
@@ -624,6 +636,15 @@ public final class VrActivity extends Activity
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
+        // The display is physically inaccessible inside the headset. Consume
+        // touchscreen events before Cardboard can interpret clamp-nub contacts
+        // as trigger or navigation input. External mouse input remains routed.
+        if (event != null
+            && (event.getSource() & android.view.InputDevice.SOURCE_TOUCHSCREEN)
+                == android.view.InputDevice.SOURCE_TOUCHSCREEN) {
+            return true;
+        }
+
         if (event != null) {
             int source = event.getSource();
             boolean mouse =
