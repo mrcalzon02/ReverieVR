@@ -2757,9 +2757,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
             if (Float.isFinite(headsetYaw)
                     && Float.isFinite(rawControllerYaw)) {
-                controllerYawCalibrationRadians = wrapAngle(
-                    rawControllerYaw - headsetYaw
-                );
+                controllerYawCalibrationRadians =
+                    VrHeadingMath.controllerCalibrationForHeadset(
+                        rawControllerYaw, headsetYaw
+                    );
                 controllerModelRenderer.setYawCalibration(
                     controllerYawCalibrationRadians
                 );
