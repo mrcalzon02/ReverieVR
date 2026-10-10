@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater Battery physical firing semantics
+
+- Routed every valid in-traverse gun trigger pull through the campaign magazine/cadence gate, including misses. Ineffective pre-AA fire at aircraft now spends ammunition without damaging the aircraft instead of acting as a free target probe. The VR module records the fired direction and renders a short-lived generated tracer ribbon from the world-anchored barrel. Native regression source covers miss cadence, magazine depletion and timed reload; Galaxy S9/headset visual and control acceptance remains pending.
+
 ### Breakwater Battery inter-wave save and magazine pacing
 
 - Added transactional, versioned 80-byte campaign snapshot support through the existing host-scoped save callbacks, triggered by completed waves and successful shop purchases, with invalid data rejected before any live-state mutation. Firing now pauses during a 1.15-second magazine reload so clip-size upgrades alter actual gameplay; HUD shows remaining rounds. Native tests cover save restoration and rejection, and game text now supports lowercase location names.
