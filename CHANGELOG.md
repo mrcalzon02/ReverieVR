@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Virtual keyboard slab first functional slice
+
+- Added a deterministic 50-key keyboard/editor (letters, digits, symbols, Shift/Caps, Space, Tab, Enter, Backspace, Delete, left/right caret and Clear) with focusable controller-ray hitboxes and a live text preview. The shell Keyboard card opens the key surface on the existing horizontal home dais; pointer hit testing intersects that actual plane. Copy + Close writes the composed text to Android clipboard through the UI thread, rather than faking text-entry success. Added JVM model regression source. Direct DOS/native guest typing, long-press repeat, physical S9 validation and an Android build remain outstanding.
+
 ### Headset viewport and home-space corrections
 
 - Contracted the centered per-eye content viewport by a further 10% (scale 0.82 to 0.738), retaining Cardboard-owned projection and eye viewport setup.
