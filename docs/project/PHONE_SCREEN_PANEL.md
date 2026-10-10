@@ -1,6 +1,6 @@
 # Phone Screen Panel — Android Display and Touch Proxy
 
-**Status:** design contract and standalone coordinate/gesture safety primitive committed; no screen capture, external input dispatch or visible panel is implemented yet.
+**Status:** dedicated Home activation and actual static world-space phone housing now integrated into the Home renderer, alongside the coordinate/gesture safety primitive. The housing intentionally displays no Android pixels yet; MediaProjection, permissioned touch dispatch, and functional upper-right orientation controls are still outstanding.
 
 ## User experience
 
@@ -27,3 +27,7 @@ Inside the existing 3D Home environment (birch living room, beach or forest), th
 6. Latency, thermal and battery profiling with both per-eye rendering and camera/VR activity running.
 
 Do not describe the panel as available until capture + presentation + permissioned external touch have been implemented and verified end-to-end.
+
+## Implemented activation slice
+
+The existing first six Home navigation buttons remain unchanged. A seventh left-hand `Phone Screen` button is placed beneath `Exit to Phone` and opens a spatially anchored bezel and dark screen in the active Home environment. While displayed, ordinary Home menus are hidden to prevent their occlusion of the panel and their invisible hit regions are disabled. Android Back dismisses the panel and restores Home, rather than exiting ReverieVR. The Quick Menu remains available. The upper-right rail marks the reserved orientation-control area; it does **not yet** respond to controller input. No phone display or proxy touch has been claimed.
