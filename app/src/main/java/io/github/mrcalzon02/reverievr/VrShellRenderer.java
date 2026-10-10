@@ -1196,7 +1196,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             -headInertialTranslation.y(),
             -headInertialTranslation.z()
         );
-        if (mode == MODE_NATIVE) {
+        if (mode == MODE_NATIVE || mode == MODE_HOME) {
             // One world-space translation shared by both Cardboard eyes.
             Matrix.translateM(
                 adjustedHeadView,
@@ -1392,9 +1392,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void updateNativeLocomotion(long frameNanos) {
-        if (mode != MODE_NATIVE
-            || nativeModuleRuntime == null
-            || !nativeModuleRuntime.isRunning()) {
+        final boolean homeTravel = mode == MODE_HOME;
+        final boolean activeNative = mode == MODE_NATIVE
+            && nativeModuleRuntime != null
+            && nativeModuleRuntime.isRunning();
+        if (!homeTravel && !activeNative) {
             if (!nativeLocomotionModuleId.isEmpty()) {
                 nativeLocomotion.reset();
                 nativeLocomotionModuleId = "";
@@ -1404,7 +1406,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        String moduleId = nativeModuleRuntime.getActiveModuleId();
+        // The shell home is a real, bounded room-scale space, not a
+        // decorative backdrop. Native experiences retain their own bounds.
+        String moduleId = homeTravel
+            ? "shell-home"
+            : nativeModuleRuntime.getActiveModuleId();
         if (!moduleId.equals(nativeLocomotionModuleId)) {
             nativeLocomotion.reset();
             nativeLocomotionGate.reset();
@@ -1417,7 +1423,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
-        if (!nativeModuleRuntime
+        if (!homeTravel && !nativeModuleRuntime
                 .copyShellLocomotionBounds(
                     nativeLocomotionBounds
                 )) {
@@ -1426,10 +1432,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        final float limitX =
-            nativeLocomotionBounds[0];
-        final float limitZ =
-            nativeLocomotionBounds[1];
+        final float limitX = homeTravel ? 1.4f : nativeLocomotionBounds[0];
+        final float limitZ = homeTravel ? 1.4f : nativeLocomotionBounds[1];
 
         float dt = nativeLocomotionLastFrameNanos == 0L
             ? 0.0f
