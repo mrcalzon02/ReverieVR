@@ -6,6 +6,11 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Phone screen panel — consent and touch-proxy foundation
+
+- Added a pure-Java bounded screen-coordinate mapper with user-authorization gating, pointer contact begin/move/end, cancellation on leaving the panel or revoking authorization, and focused regression source. This intentionally does **not** inject Android events or imply a running mirrored display.
+- Defined the live VR Phone Screen panel architecture and Android consent requirements, including MediaProjection capture, optional explicitly enabled Accessibility gesture dispatch, secure-content exclusion, foreground-capture limitations, headset recovery and device-proof criteria in `docs/project/PHONE_SCREEN_PANEL.md`. The rendered panel, Android consent flows and cross-app touch dispatch are outstanding.
+
 ### Per-eye lens-edge power HUD (source; device proof pending)
 
 - Replaced the high-right rectangular battery panel with two narrow concentric 45-degree arcs that follow the upper-right circular lens area in each eye, without reducing or disturbing the calibrated world viewport.
