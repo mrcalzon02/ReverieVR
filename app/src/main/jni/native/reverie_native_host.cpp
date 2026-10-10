@@ -35,6 +35,11 @@ static const BuiltInModuleSpec kBuiltIns[] = {
         "between-deliveries-red-ledger",
         "Between Deliveries: The Red Ledger VR [DEV]",
         "libreverie_module_red_ledger.so"
+    },
+    {
+        "breakwater-battery",
+        "Breakwater Battery VR [DEV]",
+        "libreverie_module_breakwater.so"
     }
 };
 

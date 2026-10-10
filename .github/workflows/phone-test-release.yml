@@ -84,6 +84,17 @@ jobs:
             "/tmp/${game}_simulation_test"
           done
 
+      - name: Validate Breakwater landing and upgrade simulation
+        shell: bash
+        run: |
+          set -euo pipefail
+          c++ -std=c++17 -Wall -Wextra -Wpedantic -Werror \
+            -I app/src/main/jni/native \
+            app/src/main/jni/native/breakwater_campaign.cpp \
+            app/src/test/native/breakwater_campaign_test.cpp \
+            -o /tmp/breakwater-campaign-test
+          /tmp/breakwater-campaign-test
+
       - name: Validate deterministic procedural atlas
         shell: bash
         run: |

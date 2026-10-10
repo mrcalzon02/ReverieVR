@@ -8,6 +8,13 @@ import java.util.List;
 final class NativeModuleRuntime implements AutoCloseable {
     static final String ID_RED_LEDGER =
         "between-deliveries-red-ledger";
+    static final String ID_BREAKWATER_BATTERY =
+        "breakwater-battery";
+
+    static boolean isDevelopmentOnly(String id) {
+        return ID_RED_LEDGER.equals(id)
+            || ID_BREAKWATER_BATTERY.equals(id);
+    }
 
     static final int POINTER_NONE = 0;
     static final int POINTER_TRACKED_CONTROLLER = 1;
@@ -128,9 +135,7 @@ final class NativeModuleRuntime implements AutoCloseable {
             String safeName = name.trim();
 
             if (!includeDevelopmentModules
-                && ID_RED_LEDGER.equals(
-                    safeId
-                )) {
+                && isDevelopmentOnly(safeId)) {
                 continue;
             }
 
@@ -168,9 +173,7 @@ final class NativeModuleRuntime implements AutoCloseable {
             return false;
         }
 
-        if (ID_RED_LEDGER.equals(
-                safeModuleId
-            )
+        if (isDevelopmentOnly(safeModuleId)
             && !developmentModulesAllowed) {
             ReverieLog.incident(
                 "NATIVE_MODULE",

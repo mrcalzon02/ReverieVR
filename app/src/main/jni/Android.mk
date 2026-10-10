@@ -55,6 +55,17 @@ LOCAL_LDLIBS += -lGLESv2 -lm
 
 include $(BUILD_SHARED_LIBRARY)
 
+# Development-only seated-defense native module
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+LOCAL_MODULE := reverie_module_breakwater
+LOCAL_SRC_FILES := native/breakwater_module.cpp native/breakwater_campaign.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm
+include $(BUILD_SHARED_LIBRARY)
+
 ifdef REVERIE_HAS_DOSBOX_PURE
 
 LOCAL_PATH := $(REVERIE_JNI_PATH)
