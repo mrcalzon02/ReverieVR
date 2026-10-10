@@ -449,6 +449,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile boolean controllerPoseValid;
     private volatile boolean controllerTouchpadPressed;
     private volatile ControllerSnapshot locomotionControllerSnapshot;
+    private boolean viewerTouchActive;
+    private float viewerPreviousTouchX;
+    private float viewerPreviousTouchY;
     private volatile boolean controllerHomePressed;
     private volatile boolean controllerAppPressed;
     private volatile boolean controllerVolumeUpPressed;
@@ -1330,6 +1333,35 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (selectRequested.getAndSet(false)) {
                 modelViewer.rotate(30.0f);
                 host.onUiFocusChanged();
+            }
+            ControllerSnapshot touch = locomotionControllerSnapshot;
+            boolean freshTouch = touch != null
+                && touch.receivedAtNanos > 0L
+                && frameNanos >= touch.receivedAtNanos
+                && frameNanos - touch.receivedAtNanos <= 250000000L
+                && touch.touching && !touch.touchpadPressed;
+            if (freshTouch) {
+                float currentX = touch.touchX;
+                float currentY = touch.touchY;
+                if (viewerTouchActive) {
+                    modelViewer.adjustView(
+                        (currentX - viewerPreviousTouchX) * 0.5f,
+                        (currentY - viewerPreviousTouchY) * 0.35f,
+                        0.0f
+                    );
+                }
+                viewerTouchActive = true;
+                viewerPreviousTouchX = currentX;
+                viewerPreviousTouchY = currentY;
+            } else {
+                viewerTouchActive = false;
+            }
+            // The rocker is free for hosted app controls (not Android volume).
+            if (controllerVolumeUpPressed) {
+                modelViewer.adjustView(0.0f, 0.0f, -0.04f);
+            }
+            if (controllerVolumeDownPressed) {
+                modelViewer.adjustView(0.0f, 0.0f, 0.04f);
             }
             controllerPointerActive = updateActivePointer(frameNanos);
             pointerRenderer.hide();
