@@ -236,6 +236,8 @@ void BuildScene(State *s) {
     // Shore parapet, mounted barrel and enemy silhouettes.
     Box(s,0,-1.24f,-.95f,7.8f,.55f,.7f,.37f,.38f,.36f);
     Box(s,0,-.83f,-1.2f,.65f,.38f,1.9f,.27f,.29f,.31f);
+    if(game.stats().turret)
+        Box(s,2.15f,-.76f,-1.40f,.42f,.32f,1.14f,.36f,.44f,.39f);
     for(const Enemy &e:game.enemies())if(e.active) {
         const bool aircraft=e.type==UnitType::Aircraft;
         const float y=aircraft?1.6f:-.68f;
@@ -255,11 +257,12 @@ void BuildScene(State *s) {
         Text(s,"BREAKWATER",0,1.67f,-3.0f,.073f,.92f,.86f,.58f);
         Text(s,Campaign::Locations()[game.location()].name,0,1.28f,-3.0f,
              .055f,.69f,.78f,.76f);
-        Text(s,night?"NIGHT":"DAY",-.95f,.88f,-3.0f,.065f,.93f,.81f,.62f);
-        char digits[32];std::snprintf(digits,sizeof(digits),"%u  /  %u",
+        Text(s,night?"NIGHT":"DAY",-1.55f,.88f,-3.0f,.065f,.93f,.81f,.62f);
+        char digits[32];std::snprintf(digits,sizeof(digits),"D%u W%u/%u",
                static_cast<unsigned>(game.day()),
+               static_cast<unsigned>(game.wave_index()),
                static_cast<unsigned>(game.waves_this_period()));
-        Text(s,digits,.65f,.88f,-3.0f,.06f,.90f,.89f,.82f);
+        Text(s,digits,1.05f,.88f,-3.0f,.053f,.90f,.89f,.82f);
         const char *labels[]={"FIRE","POWER","CLIP","ANTI","ARTY","AIR","TURRET","REPAIR"};
         for(int n=0;n<8;n++) {
             const float x=-2.1f+(n%4)*1.4f,y=.05f-(n/4)*.65f;
