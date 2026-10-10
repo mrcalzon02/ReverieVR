@@ -9,6 +9,7 @@ enum class Difficulty : uint8_t { Casual, Regular, Veteran, Siege };
 enum class Phase : uint8_t { Briefing, Shop, Combat, Victory, Defeat };
 enum class Period : uint8_t { Day, Night };
 enum class UnitType : uint8_t { Rowboat, LandingCraft, Gunboat, Aircraft };
+enum class AircraftPattern : uint8_t { None, Strafer, Bomber };
 enum class Upgrade : uint8_t {
     FireRate, Damage, Magazine, AntiAir, Artillery, Airstrike, SupportTurret, Repair
 };
@@ -24,6 +25,9 @@ struct Enemy {
     uint8_t passengers = 0;
     bool active = false;
     bool landed = false;
+    AircraftPattern aircraft_pattern = AircraftPattern::None;
+    uint8_t attacks_remaining = 0;
+    float attack_timer = 0;
 };
 struct Stats {
     uint16_t fire_delay_ms = 300;
@@ -37,6 +41,7 @@ struct Status {
     uint8_t troops_landed = 0;
     uint8_t troops_stopped = 0;
     uint8_t aircraft_destroyed = 0;
+    uint8_t aircraft_attacks = 0;
 };
 class Campaign {
 public:
