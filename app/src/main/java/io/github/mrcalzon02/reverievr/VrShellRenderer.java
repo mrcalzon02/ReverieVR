@@ -305,6 +305,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final int[] eyeScissorEnabledScratch = new int[1];
 
     private final FloatBuffer vertexBuffer;
+    private final FloatBuffer keyboardSlabVertexBuffer;
     private final FloatBuffer uvBuffer;
     private final FloatBuffer homeLeftVertexBuffer;
     private final FloatBuffer homeLeftUvBuffer;
@@ -548,6 +549,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         };
 
         vertexBuffer = allocate(vertices);
+        // Keyboard occupies the existing horizontal gray dais.
+        // Top of the keyboard texture faces the far end of the slab.
+        keyboardSlabVertexBuffer = allocate(new float[] {
+            -1.73f, -1.065f, -4.08f,
+             1.73f, -1.065f, -4.08f,
+            -1.73f, -1.065f, -1.36f,
+             1.73f, -1.065f, -1.36f
+        });
         uvBuffer = allocate(uvs);
 
         homeLeftVertexBuffer =
@@ -2143,7 +2152,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         } else {
             drawTexturedPanel(
-                vertexBuffer,
+                mode == MODE_KEYBOARD && !orientationMenuVisible
+                    ? keyboardSlabVertexBuffer : vertexBuffer,
                 uvBuffer
             );
         }
@@ -3358,6 +3368,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 0,
                 TEXTURE_HEIGHT
             );
+        }
+
+        if (mode == MODE_KEYBOARD) {
+            // The text-entry texture is laid flat on the existing dais;
+            // selection must intersect the same horizontal geometry.
+            final float dy = direction[1];
+            if (Math.abs(dy) < 0.00001f) return UiRayHit.miss();
+            final float distance = (-1.065f - origin[1]) / dy;
+            if (!Float.isFinite(distance) || distance <= 0.0f)
+                return UiRayHit.miss();
+            final float x = origin[0] + distance * direction[0];
+            final float z = origin[2] + distance * direction[2];
+            if (x < -1.73f || x > 1.73f ||
+                z < -4.08f || z > -1.36f)
+                return UiRayHit.miss();
+            final float px = (x + 1.73f) / 3.46f * TEXTURE_WIDTH;
+            final float py = (z + 4.08f) / 2.72f * TEXTURE_HEIGHT;
+            return new UiRayHit(buttonAtPixel(px, py), distance);
         }
 
         if (mode == MODE_HOME) {
