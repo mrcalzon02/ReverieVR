@@ -34,6 +34,23 @@ int main() {
     assert(sunk.wave_status().troops_landed==0);
     assert(sunk.infantry()==0);
 
+    // Trigger pulls are physical actions, not free hit-probes: misses spend
+    // ammunition, respect fire cadence and enter the same timed reload cycle.
+    Campaign firing(Difficulty::Casual,19);
+    assert(firing.Start() && firing.BeginWave());
+    const uint8_t full_mag=firing.magazine_left();
+    assert(full_mag==firing.stats().magazine);
+    assert(firing.FireMiss());
+    assert(firing.magazine_left()==full_mag-1);
+    assert(!firing.FireMiss());
+    while(firing.magazine_left()>0) {
+        for(int i=0;i<7;i++) firing.Tick(0.05f);
+        assert(firing.FireMiss());
+    }
+    assert(!firing.FireMiss());
+    for(int i=0;i<24;i++) firing.Tick(0.05f);
+    assert(firing.magazine_left()==firing.stats().magazine);
+
     Campaign landed(Difficulty::Casual,41);
     assert(landed.Start() && landed.BeginWave());
     for(int i=0;i<4500 && landed.wave_status().troops_landed==0;i++)
