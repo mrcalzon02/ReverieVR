@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Coherent pointer sampling
+
+- Capture controller-origin, endpoint and interaction-state inputs under one synchronization boundary before each eye draw, preventing mixed-frame controller samples when input updates overlap renderer reads. Reuses an 8-float snapshot buffer; no additional render-frame allocations. Stereo headset confirmation remains pending.
+
 ### Input-safe controller ray geometry
 
 - Reject invalid controller pointer samples (nonfinite origin, direction or distance; zero/overflowing direction), normalize finite nonunit direction and guard computed endpoints before exposing the ray to stereo GLES2 geometry. Added JVM tests for invalid samples and existing ray length boundaries. No new controls. Device proof remains pending.
