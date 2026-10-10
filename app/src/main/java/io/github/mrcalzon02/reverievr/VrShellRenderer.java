@@ -6956,9 +6956,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         float cos = (float) Math.cos(radians);
         float sin = (float) Math.sin(radians);
 
-        destination[0] = cos * vector[0] + sin * vector[2];
-        destination[1] = vector[1];
-        destination[2] = -sin * vector[0] + cos * vector[2];
+        // Source and destination may alias after full 3D calibration.
+        float x = vector[0];
+        float y = vector[1];
+        float z = vector[2];
+        destination[0] = cos * x + sin * z;
+        destination[1] = y;
+        destination[2] = -sin * x + cos * z;
     }
 
     private static float[] panelVertices(
