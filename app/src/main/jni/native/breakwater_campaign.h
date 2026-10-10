@@ -53,6 +53,7 @@ public:
     bool Purchase(Upgrade upgrade);
     bool FireAt(uint8_t index);
     bool FireAtInfantry();
+    bool FireMiss();
     bool CallArtillery();
     bool CallAirstrike();
     void Tick(float seconds);
@@ -76,6 +77,7 @@ public:
     uint8_t level(Upgrade upgrade) const;
 private:
     uint32_t Hash(uint32_t tag) const;
+    bool BeginGunShot();
     bool FinishedWave() const;
     void CompleteWave();
     void Land(Enemy &enemy);
