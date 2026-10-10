@@ -23,6 +23,7 @@ struct State {
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
     float flash = 0.0f, elapsed = 0.0f;
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
+    float shot_direction[3] = {0.0f,0.0f,-1.0f};
     std::vector<float> mesh;
 };
 void Feedback(State *s, uint32_t code) {
@@ -228,8 +229,13 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 AimAtPlane(input,-2.2f,&x,&y)>0 &&
                 std::abs(x)<1.6f && y<.0f && y>-1.3f)
             shot=game.FireAtInfantry();
-        if(shot){s->flash=.09f;Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);}
-        else if(edge)Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+        else if(GunWithinTraverse(input.pointer_direction))
+            shot=game.FireMiss();
+        if(shot){
+            for(int k=0;k<3;k++)s->shot_direction[k]=input.pointer_direction[k];
+            s->flash=.09f;
+            Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        } else if(edge)Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
         game=Campaign(Difficulty::Regular,1049u);
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -280,6 +286,26 @@ void BuildScene(State *s) {
              ex,ey+.050f,ez,.48f,.48f,.43f);
     Triangle(s,ex,ey+.050f,ez,sx,sy-.065f,sz,
              ex,ey-.050f,ez,.48f,.48f,.43f);
+    if(s->flash>0.0f) {
+        const float *shot=s->shot_direction;
+        const float shotHorizontal=std::sqrt(shot[0]*shot[0]+shot[2]*shot[2]);
+        const float shotRightX=shotHorizontal>.01f?-shot[2]/shotHorizontal:1.0f;
+        const float shotRightZ=shotHorizontal>.01f?shot[0]/shotHorizontal:0.0f;
+        const float nearX=sx+shot[0]*1.30f;
+        const float nearY=sy+shot[1]*1.30f;
+        const float nearZ=sz+shot[2]*1.30f;
+        const float farX=sx+shot[0]*7.5f;
+        const float farY=sy+shot[1]*7.5f;
+        const float farZ=sz+shot[2]*7.5f;
+        Triangle(s,nearX+shotRightX*.018f,nearY,nearZ+shotRightZ*.018f,
+                 nearX-shotRightX*.018f,nearY,nearZ-shotRightZ*.018f,
+                 farX+shotRightX*.010f,farY,farZ+shotRightZ*.010f,
+                 .98f,.72f,.25f);
+        Triangle(s,farX+shotRightX*.010f,farY,farZ+shotRightZ*.010f,
+                 nearX-shotRightX*.018f,nearY,nearZ-shotRightZ*.018f,
+                 farX-shotRightX*.010f,farY,farZ-shotRightZ*.010f,
+                 .98f,.72f,.25f);
+    }
     if(game.stats().turret)
         Box(s,2.15f,-.76f,-1.40f,.42f,.32f,1.14f,.36f,.44f,.39f);
     for(const Enemy &e:game.enemies())if(e.active) {
