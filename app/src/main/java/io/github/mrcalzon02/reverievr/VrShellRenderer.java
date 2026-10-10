@@ -1808,7 +1808,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             homeEnvironmentRenderer.drawEye(
                 eye,
                 eyeCorrection,
-                homeEnvironment
+                homeEnvironment,
+                mode == MODE_HOME ? nativeLocomotion.x() : 0.0f,
+                mode == MODE_HOME ? nativeLocomotion.z() : 0.0f
             );
             if (mode == MODE_HOME
                 && homeEnvironment == HomeEnvironment.WHITE_ROOM
