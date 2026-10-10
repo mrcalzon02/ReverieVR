@@ -194,7 +194,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {292, 220, 718, 326},
         {292, 348, 718, 454},
         {292, 476, 718, 526},
-        {292, 535, 718, 582}
+        {292, 535, 718, 582},
+        {42, 590, 230, 648}
     };
 
     private static final int[][] KEYBOARD_BUTTONS = makeKeyboardButtons();
@@ -300,6 +301,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final NativeModuleRuntime nativeModuleRuntime;
     private final List<NativeModuleRuntime.Descriptor> nativeModules;
     private final VrKeyboardEditor keyboardEditor = new VrKeyboardEditor();
+    private boolean phonePanelVisible;
     private final FramePerformanceTracker performanceTracker =
         new FramePerformanceTracker();
     private final EyeRenderPerformanceTracker eyeRenderPerformanceTracker =
@@ -1898,6 +1900,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 mode == MODE_HOME ? nativeLocomotion.x() : 0.0f,
                 mode == MODE_HOME ? nativeLocomotion.z() : 0.0f
             );
+            if (mode == MODE_HOME && phonePanelVisible) {
+                homeEnvironmentRenderer.drawPhonePanel();
+            }
             if (mode == MODE_HOME
                 && homeEnvironment == HomeEnvironment.WHITE_ROOM
                 && !orientationMenuVisible) {
@@ -3961,6 +3966,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 5:
                     host.onExitToPhoneRequested();
                     return;
+                case 18:
+                    phonePanelVisible = !phonePanelVisible;
+                    textureDirty = true;
+                    break;
                 case 6:
                     preferences.setBatteryHudEnabled(
                         !preferences.isBatteryHudEnabled()
@@ -5286,7 +5295,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 nativeLabel,
                 "Environment",
                 "Setup / Comfort",
-                "Exit to Phone"
+                "Exit to Phone",
+                phonePanelVisible ? "Hide Phone Screen" : "Phone Screen"
             };
         drawHomeButtons(
             canvas,
@@ -5295,6 +5305,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             0,
             6
         );
+        // A dedicated seventh launch button, without shifting established
+        // Media/DOS/Native positions or changing their saved navigation.
+        drawHomeButtons(canvas, paint,
+            new String[] {leftLabels[6]}, 18, 1);
 
         paint.setFakeBoldText(true);
         paint.setColor(Color.WHITE);
