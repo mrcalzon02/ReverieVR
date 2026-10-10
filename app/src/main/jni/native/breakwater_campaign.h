@@ -40,12 +40,15 @@ struct Status {
 };
 class Campaign {
 public:
+    static constexpr size_t kSerializedSize = 80;
     static constexpr size_t kMaxEnemies = 12;
     static constexpr uint8_t kLocations = 3;
     static const std::array<Location, kLocations> &Locations();
     explicit Campaign(Difficulty difficulty = Difficulty::Regular,
                       uint32_t seed = 1);
     bool Start();
+    bool SerializeShop(uint8_t *buffer, size_t capacity) const;
+    bool DeserializeShop(const uint8_t *buffer, size_t size);
     bool BeginWave();
     bool Purchase(Upgrade upgrade);
     bool FireAt(uint8_t index);
