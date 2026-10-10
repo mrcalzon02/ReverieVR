@@ -28,6 +28,34 @@ public class ControllerOrientationCalibrationTest {
         assertEquals(-1f,rotated[2],0.0002f);
     }
 
+    @Test public void headsetPitchAndRollAreCapturedAsFullRotation() {
+        // Head-view = transpose of a 90-degree roll about world Z.
+        float[] headView=identity();
+        headView[0]=0f; headView[1]=-1f;
+        headView[4]=1f; headView[5]=0f;
+        float[] correction=new float[16];
+        assertTrue(ControllerOrientationCalibration.compute(
+            headView, 0f, 0f, 0f, 1f, correction));
+        float[] source={1f,0f,0f};
+        float[] target=new float[3];
+        ControllerOrientationCalibration.rotate(correction,true,source,target);
+        assertEquals(0f,target[0],0.0001f);
+        assertEquals(1f,target[1],0.0001f);
+        assertEquals(0f,target[2],0.0001f);
+
+        // Head-view = transpose of a 90-degree pitch about world X.
+        headView=identity();
+        headView[5]=0f; headView[6]=-1f;
+        headView[9]=1f; headView[10]=0f;
+        assertTrue(ControllerOrientationCalibration.compute(
+            headView, 0f, 0f, 0f, 1f, correction));
+        source=new float[] {0f,0f,-1f};
+        ControllerOrientationCalibration.rotate(correction,true,source,target);
+        assertEquals(0f,target[0],0.0001f);
+        assertEquals(1f,target[1],0.0001f);
+        assertEquals(0f,target[2],0.0001f);
+    }
+
     @Test public void rejectsInvalidQuaternionWithoutChangingMatrix() {
         float[] out=identity();
         assertFalse(ControllerOrientationCalibration.compute(identity(),0,0,0,0,out));
