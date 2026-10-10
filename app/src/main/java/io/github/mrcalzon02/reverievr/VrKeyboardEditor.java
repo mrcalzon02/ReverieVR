@@ -29,7 +29,8 @@ final class VrKeyboardEditor {
     String label(int row, int column) {
         if (row < 0 || row >= ROWS.length ||
             column < 0 || column >= ROWS[row].length) return "";
-        if (symbols && row < 4) return SYMBOLS[row * 10 + column];
+        if (symbols && row < 4 && !(row == 3 && column == 0))
+            return SYMBOLS[row * 10 + column];
         String base = ROWS[row][column];
         if (base.length() == 1 && Character.isLetter(base.charAt(0))
             && (caps ^ shift)) return base.toUpperCase(java.util.Locale.US);
