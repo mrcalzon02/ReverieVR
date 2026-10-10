@@ -85,7 +85,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int TEXTURE_WIDTH = 1024;
     private static final int TEXTURE_HEIGHT = 768;
     private static final int HUD_TEXTURE_WIDTH = 512;
-    private static final int HUD_TEXTURE_HEIGHT = 128;
+    private static final int HUD_TEXTURE_HEIGHT = 512;
     private static final float HUD_LOOK_UP_THRESHOLD = 0.72f;
     private static final float SHELL_VIEW_CONTRACTION = 0.81f;
     private static final float EYE_CONTENT_VIEWPORT_SCALE = 0.738f;
@@ -629,11 +629,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
 
         hudVertexBuffer = allocate(new float[12]);
+        // Crop the quad to the arc region: no full-eye transparent overdraw.
         hudUvBuffer = allocate(new float[] {
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            0.0f, 0.0f,
-            1.0f, 0.0f
+            280f / HUD_TEXTURE_WIDTH, 284f / HUD_TEXTURE_HEIGHT,
+            451f / HUD_TEXTURE_WIDTH, 284f / HUD_TEXTURE_HEIGHT,
+            280f / HUD_TEXTURE_WIDTH, 67f / HUD_TEXTURE_HEIGHT,
+            451f / HUD_TEXTURE_WIDTH, 67f / HUD_TEXTURE_HEIGHT
         });
 
         Matrix.setIdentityM(adjustedHeadView, 0);
@@ -1273,6 +1274,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 && headForward[1] >= HUD_LOOK_UP_THRESHOLD;
         if (newHudDroppedDown != hudDroppedDown) {
             hudDroppedDown = newHudDroppedDown;
+            hudTextureDirty = true;
         }
 
         if (orientationMenuVisible) {
@@ -6846,38 +6848,23 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void updateHudVertices() {
-        float left =
-            0.30f
-                * SHELL_VIEW_CONTRACTION;
-        float right =
-            0.96f
-                * SHELL_VIEW_CONTRACTION;
-        float top =
-            (
-                hudDroppedDown
-                    ? 0.60f
-                    : 0.96f
-            ) * SHELL_VIEW_CONTRACTION;
-        float bottom =
-            (
-                hudDroppedDown
-                    ? 0.32f
-                    : 0.70f
-            ) * SHELL_VIEW_CONTRACTION;
-
+        // Cardboard restores each full eye before rendering this global HUD.
+        final float left = 2f * 280f / HUD_TEXTURE_WIDTH - 1f;
+        final float right = 2f * 451f / HUD_TEXTURE_WIDTH - 1f;
+        final float top = 1f - 2f * 67f / HUD_TEXTURE_HEIGHT;
+        final float bottom = 1f - 2f * 284f / HUD_TEXTURE_HEIGHT;
         hudVertices[0] = left;
         hudVertices[1] = bottom;
-        hudVertices[2] = 0.0f;
+        hudVertices[2] = 0f;
         hudVertices[3] = right;
         hudVertices[4] = bottom;
-        hudVertices[5] = 0.0f;
+        hudVertices[5] = 0f;
         hudVertices[6] = left;
         hudVertices[7] = top;
-        hudVertices[8] = 0.0f;
+        hudVertices[8] = 0f;
         hudVertices[9] = right;
         hudVertices[10] = top;
-        hudVertices[11] = 0.0f;
-
+        hudVertices[11] = 0f;
         hudVertexBuffer.position(0);
         hudVertexBuffer.put(hudVertices);
         hudVertexBuffer.position(0);
@@ -6910,33 +6897,28 @@ final class VrShellRenderer implements CardboardView.Renderer {
             PorterDuff.Mode.CLEAR
         );
 
-        paint.setColor(Color.argb(218, 16, 20, 26));
-        canvas.drawRoundRect(
-            0.0f,
-            0.0f,
-            HUD_TEXTURE_WIDTH,
-            HUD_TEXTURE_HEIGHT,
-            18.0f,
-            18.0f,
-            paint
-        );
+        // User reference: a pair of narrow arcs just inside the circular
+        // lens edge, visible in the forward view without pressing the headset.
+        float shift = PowerHudArcGeometry.revealY(hudDroppedDown);
+        drawBatteryArc(canvas, paint, PowerHudArcGeometry.OUTER,
+            phoneBattery.get(), Color.rgb(105, 236, 121), shift);
+        drawBatteryArc(canvas, paint, PowerHudArcGeometry.INNER,
+            controllerBattery.get(), Color.rgb(125, 213, 223), shift);
 
-        drawBatteryRow(
-            canvas,
-            paint,
-            "PHONE",
-            phoneBattery.get(),
-            18.0f,
-            20.0f
-        );
-        drawBatteryRow(
-            canvas,
-            paint,
-            "CTRL",
-            controllerBattery.get(),
-            18.0f,
-            74.0f
-        );
+        if (cachedShowPercentages) {
+            paint.setStyle(Paint.Style.FILL);
+            paint.setTextSize(21f);
+            paint.setFakeBoldText(true);
+            paint.setShadowLayer(3f, 0f, 1f, Color.BLACK);
+            paint.setColor(Color.rgb(225, 244, 230));
+            canvas.drawText("P " + batteryLabel(phoneBattery.get()),
+                326f, 188f + shift, paint);
+            paint.setColor(Color.rgb(201, 233, 238));
+            canvas.drawText("C " + batteryLabel(controllerBattery.get()),
+                326f, 216f + shift, paint);
+            paint.clearShadowLayer();
+            paint.setFakeBoldText(false);
+        }
 
         GLES20.glBindTexture(
             GLES20.GL_TEXTURE_2D,
@@ -6964,70 +6946,35 @@ final class VrShellRenderer implements CardboardView.Renderer {
         hudTextureDirty = false;
     }
 
-    private void drawBatteryRow(
-        Canvas canvas,
-        Paint paint,
-        String label,
-        int percentage,
-        float x,
-        float y
+    private void drawBatteryArc(
+        Canvas canvas, Paint paint, float radius,
+        int percentage, int fillColor, float shift
     ) {
+        final float cx = PowerHudArcGeometry.CENTER;
+        final float cy = cx + shift;
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeWidth(PowerHudArcGeometry.TRACK_WIDTH);
+        paint.setColor(Color.argb(230, 42, 52, 49));
+        canvas.drawArc(cx - radius, cy - radius,
+            cx + radius, cy + radius,
+            PowerHudArcGeometry.START, PowerHudArcGeometry.SWEEP,
+            false, paint);
+        float sweep = PowerHudArcGeometry.progress(percentage);
+        if (sweep > 0f) {
+            paint.setStrokeWidth(PowerHudArcGeometry.PROGRESS_WIDTH);
+            paint.setColor(fillColor);
+            canvas.drawArc(cx - radius, cy - radius,
+                cx + radius, cy + radius,
+                PowerHudArcGeometry.START, sweep, false, paint);
+        }
+        paint.setStrokeCap(Paint.Cap.BUTT);
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.rgb(220, 226, 234));
-        paint.setTextSize(21.0f);
-        paint.setFakeBoldText(true);
-        canvas.drawText(label, x, y + 24.0f, paint);
-        paint.setFakeBoldText(false);
+    }
 
-        float barLeft = 104.0f;
-        float barTop = y + 8.0f;
-        float barRight = 404.0f;
-        float barBottom = y + 34.0f;
-
-        paint.setColor(Color.rgb(49, 58, 69));
-        canvas.drawRoundRect(
-            barLeft,
-            barTop,
-            barRight,
-            barBottom,
-            8.0f,
-            8.0f,
-            paint
-        );
-
-        if (percentage >= 0 && percentage <= 100) {
-            float fillRight =
-                barLeft
-                    + ((barRight - barLeft)
-                        * (percentage / 100.0f));
-            if (fillRight > barLeft) {
-                paint.setColor(Color.rgb(56, 214, 200));
-                canvas.drawRoundRect(
-                    barLeft,
-                    barTop,
-                    fillRight,
-                    barBottom,
-                    8.0f,
-                    8.0f,
-                    paint
-                );
-            }
-        }
-
-        if (cachedShowPercentages) {
-            paint.setColor(Color.WHITE);
-            paint.setTextSize(20.0f);
-            String value =
-                percentage >= 0 && percentage <= 100
-                    ? percentage + "%"
-                    : "--";
-            canvas.drawText(
-                value,
-                426.0f,
-                y + 28.0f,
-                paint
-            );
-        }
+    private static String batteryLabel(int percentage) {
+        return percentage >= 0 && percentage <= 100
+            ? percentage + "%" : "--";
     }
 
     private void drawReticle(Canvas canvas, Paint paint) {

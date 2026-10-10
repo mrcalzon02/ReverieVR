@@ -6,6 +6,13 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Per-eye lens-edge power HUD (source; device proof pending)
+
+- Replaced the high-right rectangular battery panel with two narrow concentric 45-degree arcs that follow the upper-right circular lens area in each eye, without reducing or disturbing the calibrated world viewport.
+- Existing look-up reveal lowers the arcs into view; percentages, unavailable-controller state, shell-global status and battery refresh still work. Geometry constants have JVM regression source; cropped overlay quad avoids whole-eye transparent blending. Added the optical-reference design record.
+- Remote source verification is not an APK build or Galaxy S9 optical acceptance; those checks remain.
+
+
 ### Immersive native applications and internal OBJ file viewer
 
 - Native modules now receive the entire Cardboard-owned left/right eye viewport (content scale 1.0), rather than the 0.738 comfort-inset shell/flat-media presentation. The dedicated Java/GLES2 3D file viewer uses the same full-eye stereo policy and is not rendered on a flat panel.
