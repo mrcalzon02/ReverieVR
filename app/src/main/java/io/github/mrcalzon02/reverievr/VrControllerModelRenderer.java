@@ -90,6 +90,9 @@ final class VrControllerModelRenderer {
     private final float[] rotation = new float[16];
     private final float[] yawCalibration = new float[16];
     private final float[] calibratedRotation = new float[16];
+    private final float[] correctedTrackedRotation = new float[16];
+    private final float[] orientationCorrection = new float[16];
+    private boolean hasOrientationCorrection;
     private final float[] local = new float[16];
     private final float[] model = new float[16];
     private final float[] modelView = new float[16];
@@ -169,6 +172,12 @@ final class VrControllerModelRenderer {
         float radians
     ) {
         yawCalibrationRadians = radians;
+    }
+
+    void setOrientationCorrection(float[] correction) {
+        if (correction == null || correction.length < 16) return;
+        System.arraycopy(correction, 0, orientationCorrection, 0, 16);
+        hasOrientationCorrection = true;
     }
 
     void setTrackedPose(
@@ -290,6 +299,11 @@ final class VrControllerModelRenderer {
                 qw,
                 rotation
             );
+            if (hasOrientationCorrection) {
+                Matrix.multiplyMM(correctedTrackedRotation, 0,
+                    orientationCorrection, 0, rotation, 0);
+                System.arraycopy(correctedTrackedRotation, 0, rotation, 0, 16);
+            }
             Matrix.setRotateM(
                 yawCalibration,
                 0,

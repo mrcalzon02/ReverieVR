@@ -388,6 +388,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int initialHeadingStableFrames;
     private float initialHeadingCandidateYaw = Float.NaN;
     private float controllerYawCalibrationRadians;
+    private final float[] controllerOrientationCorrection = new float[16];
+    private boolean fullControllerOrientationCalibration;
 
     private int program;
     private int texture;
@@ -2387,8 +2389,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerOrientationW,
                 controllerForward
             );
-            rotateYaw(
+            ControllerOrientationCalibration.rotate(
+                controllerOrientationCorrection,
+                fullControllerOrientationCalibration,
                 controllerForward,
+                adjustedControllerForward
+            );
+            rotateYaw(
+                adjustedControllerForward,
                 -controllerYawCalibrationRadians,
                 adjustedControllerForward
             );
@@ -2737,39 +2745,31 @@ final class VrShellRenderer implements CardboardView.Renderer {
             || !controllerPoseValid) {
             return;
         }
-        // A shake aims the controller at the headset's current horizontal
-        // heading; the physical tracked quaternion remains untouched.
-        // Reject stale tracking or a near-vertical headset direction.
+        // Full 3D shake target: the headset's current forward, pitch,
+        // and roll, expressed in the same adjusted world as the pointer.
+        // Reject stale controller pose; retain the existing calibration
+        // if the headset transform or quaternion is invalid.
         long now = System.nanoTime();
-        if (hasFreshControllerPose(now)) {
-            quaternionForward(
-                controllerOrientationX,
-                controllerOrientationY,
-                controllerOrientationZ,
-                controllerOrientationW,
-                controllerForward
+        if (hasFreshControllerPose(now)
+                && ControllerOrientationCalibration.compute(
+                    adjustedHeadView,
+                    controllerOrientationX,
+                    controllerOrientationY,
+                    controllerOrientationZ,
+                    controllerOrientationW,
+                    controllerOrientationCorrection
+                )) {
+            fullControllerOrientationCalibration = true;
+            controllerYawCalibrationRadians = 0.0f;
+            controllerModelRenderer.setYawCalibration(0.0f);
+            controllerModelRenderer.setOrientationCorrection(
+                controllerOrientationCorrection
             );
-            float headsetYaw = VrHeadingMath.yawFromForward(
-                headForward[0], headForward[2]
-            );
-            float rawControllerYaw = VrHeadingMath.yawFromForward(
-                controllerForward[0], controllerForward[2]
-            );
-            if (Float.isFinite(headsetYaw)
-                    && Float.isFinite(rawControllerYaw)) {
-                controllerYawCalibrationRadians =
-                    VrHeadingMath.controllerCalibrationForHeadset(
-                        rawControllerYaw, headsetYaw
-                    );
-                controllerModelRenderer.setYawCalibration(
-                    controllerYawCalibrationRadians
-                );
-            }
         }
         controllerInertialTranslation.beginReturnToCenter();
         controllerRecenterFeedbackActive = true;
         host.onControllerSpringRecenterRequested();
-        // Preserve tracked pitch/roll, live motion and gravity reference.
+        // Preserve tracked quaternion, live motion and gravity reference.
         ReverieLog.milestone(
             "VR_CONTROLLER",
             "Controller soft recenter started; offset meters="
@@ -2975,8 +2975,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerOrientationW,
             controllerForward
         );
-        rotateYaw(
+        ControllerOrientationCalibration.rotate(
+            controllerOrientationCorrection,
+            fullControllerOrientationCalibration,
             controllerForward,
+            adjustedControllerForward
+        );
+        rotateYaw(
+            adjustedControllerForward,
             -controllerYawCalibrationRadians,
             adjustedControllerForward
         );

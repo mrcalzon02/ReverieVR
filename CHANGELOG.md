@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Full 3D headset-aligned shake recenter
+
+- Extended sharp-shake alignment from yaw-only to headset yaw, pitch and roll at trigger time. A single tracked-pose correction matrix drives both controller mesh orientation and the active ray, retaining the existing gentle position return and spring feedback. Invalid poses cannot replace the current calibration. Pure JVM tests cover identity, yaw compensation and invalid quaternion rejection. Galaxy S9 acceptance remains pending.
+
 ### Shake recenter targets headset heading
 
 - A detected sharp shake now calibrates the tracked controller's horizontal aiming direction to the headset's current forward heading while preserving the slow positional spring return, live inertial inputs and the original tracked quaternion. Stale tracking and near-vertical headset aim are rejected for calibration. Headset pitch/roll alignment is not yet implemented, and Galaxy S9 testing remains pending. JVM heading tests cover alignment and wraparound.
