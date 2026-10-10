@@ -4,6 +4,8 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
@@ -374,6 +376,22 @@ public final class VrActivity extends Activity
     ) {
         // Linear-acceleration accuracy changes do not alter the bounded
         // translation contract; samples continue through drift correction.
+    }
+
+    @Override
+    public void onVrKeyboardTextCommitted(String text) {
+        final String safeText = text == null ? "" : text;
+        runOnUiThread(() -> {
+            ClipboardManager clipboard =
+                (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard != null) {
+                clipboard.setPrimaryClip(
+                    ClipData.newPlainText("ReverieVR keyboard", safeText)
+                );
+                ReverieLog.milestone("VR_KEYBOARD",
+                    "Keyboard text copied to Android clipboard.");
+            }
+        });
     }
 
     @Override
