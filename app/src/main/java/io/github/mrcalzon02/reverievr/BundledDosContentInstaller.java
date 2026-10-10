@@ -241,8 +241,12 @@ final class BundledDosContentInstaller {
         File runtime
     ) {
         File dooms = childDirectory(runtime, "DOOMS");
+        // DEICE may create DOOM.EXE before unpacking all game data.
+        // An executable alone must never promote an interrupted install
+        // into the direct-play path.
         return dooms != null
-            && childFile(dooms, "DOOM.EXE") != null;
+            && childFile(dooms, "DOOM.EXE") != null
+            && childFile(dooms, "DOOM1.WAD") != null;
     }
 
     private static File childFile(
