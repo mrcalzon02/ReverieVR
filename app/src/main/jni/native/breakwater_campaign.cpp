@@ -248,6 +248,13 @@ void Campaign::Tick(float seconds) {
                  static_cast<uint8_t>(kind == UnitType::Rowboat ? 1 :
                  kind == UnitType::LandingCraft ? 3 + (choice >> 8u) % 4u : 0),
                  true, false};
+            if (kind == UnitType::Aircraft) {
+                e.aircraft_pattern = (choice & 0x100u) ?
+                    AircraftPattern::Bomber : AircraftPattern::Strafer;
+                e.attacks_remaining =
+                    e.aircraft_pattern == AircraftPattern::Bomber ? 1u : 4u;
+                e.attack_timer = 0.15f;
+            }
             --remaining_to_spawn_;
             ++spawned_;
             spawn_timer_ = 1.6f;
@@ -279,14 +286,30 @@ void Campaign::Tick(float seconds) {
     }
     for (Enemy &e : enemies_) {
         if (!e.active) continue;
+        if (e.type == UnitType::Aircraft) {
+            const bool bomber = e.aircraft_pattern == AircraftPattern::Bomber;
+            e.z += (bomber ? 1.05f : 1.55f) * dt;
+            e.attack_timer = std::max(0.0f, e.attack_timer - dt);
+            const float attack_start = bomber ? -5.6f : -8.0f;
+            const float attack_end = bomber ? -2.0f : 1.2f;
+            if (e.attacks_remaining > 0 && e.z >= attack_start &&
+                e.z <= attack_end && e.attack_timer <= 0.0f) {
+                integrity_ = std::max(0, integrity_ - (bomber ? 12 : 3));
+                --e.attacks_remaining;
+                ++wave_status_.aircraft_attacks;
+                e.attack_timer = bomber ? 20.0f : 0.72f;
+            }
+            // Aircraft make a complete overhead pass rather than colliding
+            // with the beach. Surviving attackers leave the combat volume.
+            if (e.z >= 2.4f) e.active = false;
+            continue;
+        }
         const float speed = e.type == UnitType::Rowboat ? 0.9f :
-            e.type == UnitType::LandingCraft ? 0.62f :
-            e.type == UnitType::Gunboat ? 0.76f : 1.4f;
+            e.type == UnitType::LandingCraft ? 0.62f : 0.76f;
         e.z += speed * dt;
         if (e.z >= -2.2f) {
-            if (e.type == UnitType::Aircraft || e.type == UnitType::Gunboat) {
-                integrity_ = std::max(0, integrity_ -
-                    (e.type == UnitType::Aircraft ? 12 : 8));
+            if (e.type == UnitType::Gunboat) {
+                integrity_ = std::max(0, integrity_ - 8);
                 e.active = false;
             } else Land(e);
         }
