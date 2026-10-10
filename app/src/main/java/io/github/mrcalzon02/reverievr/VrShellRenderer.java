@@ -2737,10 +2737,38 @@ final class VrShellRenderer implements CardboardView.Renderer {
             || !controllerPoseValid) {
             return;
         }
+        // A shake aims the controller at the headset's current horizontal
+        // heading; the physical tracked quaternion remains untouched.
+        // Reject stale tracking or a near-vertical headset direction.
+        long now = System.nanoTime();
+        if (hasFreshControllerPose(now)) {
+            quaternionForward(
+                controllerOrientationX,
+                controllerOrientationY,
+                controllerOrientationZ,
+                controllerOrientationW,
+                controllerForward
+            );
+            float headsetYaw = VrHeadingMath.yawFromForward(
+                headForward[0], headForward[2]
+            );
+            float rawControllerYaw = VrHeadingMath.yawFromForward(
+                controllerForward[0], controllerForward[2]
+            );
+            if (Float.isFinite(headsetYaw)
+                    && Float.isFinite(rawControllerYaw)) {
+                controllerYawCalibrationRadians = wrapAngle(
+                    rawControllerYaw - headsetYaw
+                );
+                controllerModelRenderer.setYawCalibration(
+                    controllerYawCalibrationRadians
+                );
+            }
+        }
         controllerInertialTranslation.beginReturnToCenter();
         controllerRecenterFeedbackActive = true;
         host.onControllerSpringRecenterRequested();
-        // Keep tracked quaternion, live motion and gravity reference.
+        // Preserve tracked pitch/roll, live motion and gravity reference.
         ReverieLog.milestone(
             "VR_CONTROLLER",
             "Controller soft recenter started; offset meters="
