@@ -1631,7 +1631,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         /*
          * Cardboard owns the physical per-eye viewport. Keep that raw rectangle
          * as the stereo isolation boundary, but render the VR world into a
-         * centered 82% presentation rectangle inside it. This produces the
+         * centered 73.8% presentation rectangle inside it. This produces the
          * measured handset/headset inset without changing projection, IPD, or
          * the SDK's left/right eye ownership.
          *
@@ -2053,18 +2053,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
             0.0f,
             0.0f
         );
-        if (orientationMenuVisible) {
-            Matrix.rotateM(
-                tempMatrix,
-                0,
-                (float) Math.toDegrees(
-                    orientationMenuYawRadians
-                ),
-                0.0f,
-                1.0f,
-                0.0f
-            );
-        }
+        // Render shell panels in the same heading-relative coordinates
+        // used by the controller ray and home interaction hit tests.
+        // Cardboard's eye view remains untouched for stereo calibration.
+        Matrix.rotateM(
+            tempMatrix,
+            0,
+            (float) Math.toDegrees(
+                yawOffsetRadians
+                    + (orientationMenuVisible
+                        ? orientationMenuYawRadians : 0.0f)
+            ),
+            0.0f,
+            1.0f,
+            0.0f
+        );
         Matrix.multiplyMM(
             modelViewProjection,
             0,
