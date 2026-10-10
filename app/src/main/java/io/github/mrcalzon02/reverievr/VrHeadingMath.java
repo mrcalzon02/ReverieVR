@@ -30,6 +30,14 @@ final class VrHeadingMath {
         );
     }
 
+    /** The yaw correction to rotate a raw controller aim onto headset forward. */
+    static float controllerCalibrationForHeadset(float controllerYaw, float headsetYaw) {
+        if (!Float.isFinite(controllerYaw) || !Float.isFinite(headsetYaw)) {
+            return Float.NaN;
+        }
+        return wrapAngle(controllerYaw - headsetYaw);
+    }
+
     static float relativeYaw(
         float absoluteYaw,
         float shellYaw
