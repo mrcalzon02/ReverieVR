@@ -87,7 +87,10 @@ void Text(State *s,const char *text,float x,float y,float z,float scale,
     const size_t len=std::strlen(text);
     float px=x-static_cast<float>(len)*scale*2.0f;
     for(size_t i=0;i<len;i++) {
-        const char *pixels=Glyph(text[i]);
+        const char ascii=text[i];
+        const char upper=(ascii>='a' && ascii<='z') ?
+            static_cast<char>(ascii-'a'+'A') : ascii;
+        const char *pixels=Glyph(upper);
         for(int bit=0;bit<15;bit++) {
             if(pixels[bit]!='1')continue;
             const int cx=bit%3, cy=bit/3;
@@ -251,6 +254,10 @@ void BuildScene(State *s) {
     } else if(game.phase()==Phase::Combat) {
         char digits[32];std::snprintf(digits,sizeof(digits),"HULL %d",game.integrity());
         Text(s,digits,0,1.20f,-2.0f,.075f,.92f,.92f,.74f);
+        char ammo[32];
+        std::snprintf(ammo,sizeof(ammo),"CLIP %u",
+            static_cast<unsigned>(game.magazine_left()));
+        Text(s,ammo,0,.93f,-1.79f,.055f,.88f,.9f,.68f);
         Text(s,"ARTY",-2.07f,.97f,-1.79f,.078f,.89f,.81f,.42f);
         Text(s,"AIR",2.10f,.97f,-1.79f,.078f,.89f,.81f,.42f);
         if(s->flash>0)Panel(s,0,-.65f,-1.85f,.28f,.20f,1,.82f,.25f);
