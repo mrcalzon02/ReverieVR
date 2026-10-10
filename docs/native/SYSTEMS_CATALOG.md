@@ -106,6 +106,9 @@ Red Ledger's current static baker emits 11 immutable cubes into one 396-vertex, 
 
 The planned shared primitive model language should eventually express primitive type, transform, material/tile id, tint, interaction/collision tag, and static/dynamic classification. Until an actual shared structure/helper exists, keep it labeled planned.
 
+| Breakwater wave/landing economy | **Game-private native prototype** | `app/src/main/jni/native/breakwater_campaign.{h,cpp}`, `app/src/test/native/breakwater_campaign_test.cpp` | `docs/project/BREAKWATER_BATTERY_VR.md` | Seeded rowboats and landing craft, infantry interception, late aircraft, wave clock, shop and autonomous turret; not a shared engine utility. |
+| Breakwater procedural GLES2 gun scene | **Game-private Development module** | `app/src/main/jni/native/breakwater_module.cpp` | `docs/project/BREAKWATER_BATTERY_VR.md` | Generated sea and low-poly boats, glyph shop, aim/fire interactions; physical acceptance pending. |
+
 ## 8. Procedural motion and generated audio references
 
 | System | Maturity | Authoritative source | Status |
@@ -113,6 +116,7 @@ The planned shared primitive model language should eventually express primitive 
 | Update-time shared animation state | **Platform method** | Red Ledger flicker reference | Compute once per simulation update; render identical state to both eyes. |
 | Generated controller spring waveform | **Shell-only reference** | `app/src/main/java/io/github/mrcalzon02/reverievr/ControllerSpringWaveform.java` | Deterministic 22,050 Hz / 460 ms PCM cue generated without an asset. |
 | General native procedural-audio generator | **Planned** | None | Not standardized and not exposed to native modules. |
+| Original MIDI-era sequence/synth | **Planned cross-game service** | `docs/native/MIDI_MUSIC_STANDARD.md` | Composed note events and a future host-owned synth; **no current native-game audible MIDI**. |
 
 The existence of the controller spring waveform does not make procedural audio a native SDK service. It is evidence for a technique that may graduate later if real native games need the same facility.
 

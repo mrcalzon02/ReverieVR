@@ -311,7 +311,7 @@ Projection correctness should have dedicated geometric fixtures; media projectio
 
 ## 16. Milestone H — first native games, one playable loop at a time
 
-**Backlog:** RV-0600, RV-0601, RV-0610, RV-0620, RV-0630.  
+**Backlog:** RV-0600, RV-0601, RV-0610, RV-0620, RV-0630, RV-0640.  
 **Order remains:** Between Deliveries -> Ministry of Intelligence -> Iron Sight.
 
 ### H1 Between Deliveries: The Red Ledger
@@ -349,6 +349,10 @@ Build one patrol:
 8. persistence of sector outcome.
 
 Vehicles, squad complexity, logistics, and larger combat expand only after this loop works within the S9 budget.
+
+### H4 Breakwater Battery — prioritized playable device slice
+
+RV-0640 defines a stationary coastal gun with development-gated module admission. Verify boat interception prevents one-person rowboat and later 3–6-person landing craft landings; shore troops damage the position; inter-wave shop purchases have observable consequences; day/night multi-day campaigns and late aircraft/anti-air gating remain within the Galaxy S9 budget. Preserve Quick Menu/Home/recenter, ship a signed test APK, exercise the physical controller and thermal regression before normal Native Apps visibility. MIDI-era music is a required future shared service, not yet audible.
 
 ## 17. Milestone I — compatibility expansion
 

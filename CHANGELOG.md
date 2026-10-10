@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater Battery native game-first slice
+
+- Packaged a new Development-only native coastal-defense module into the host and both Android ABIs. It uses generated GLES2 boat/sea/air/infantry geometry, a real aim-and-Select interaction loop and inter-wave purchase panels. C++ campaign sim covers rowboat and 3–6-passenger landing craft interception, onshore infantry damage, day/night multi-location progression, upgrade economy, artillery/airstrike charges and functional automatic support turret. Native regression, Development admission test and phone-test build wiring were added. Physical headset acceptance, campaign persistence, rich weapons and audible Sierra-inspired MIDI playback remain future gates.
+
 ### Native game proof kernels: Lantern Desk and Forward Detachment
 
 - Added deterministic C++ gameplay kernels for Ministry of Intelligence's first reconnaissance photograph/report cycle and Iron Sight's first route/contact/debrief cycle. Ministry hides truth behind procedural 16×16 photo evidence and grades a submitted assessment; Forward Detachment exposes ambiguous observations and applies fuel, damage and reporting consequences. Both have executable host-native regression tests wired into the existing phone-test build. Neither is exposed in the native launcher until interaction, persistence, renderer and Galaxy S9 admission gates pass.
