@@ -99,7 +99,9 @@ final class HomeEnvironmentRenderer {
     void drawEye(
         CardboardView.Eye eye,
         float eyeCorrectionMeters,
-        HomeEnvironment environment
+        HomeEnvironment environment,
+        float travelXMeters,
+        float travelZMeters
     ) {
         HomeEnvironment safe =
             environment == null
@@ -156,6 +158,12 @@ final class HomeEnvironmentRenderer {
             eyeCorrectionMeters,
             0.0f,
             0.0f
+        );
+        // World travel applies to the environment model view, not to the
+        // Cardboard projection or per-eye IPD calibration.
+        Matrix.translateM(
+            correctedEyeView, 0,
+            -travelXMeters, 0.0f, -travelZMeters
         );
         Matrix.setIdentityM(model, 0);
         Matrix.multiplyMM(
