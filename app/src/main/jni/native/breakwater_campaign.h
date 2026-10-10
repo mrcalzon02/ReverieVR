@@ -96,6 +96,7 @@ private:
     uint8_t spawned_ = 0;
     float spawn_timer_ = 0;
     float fire_timer_ = 0;
+    float reload_timer_ = 0;
     float infantry_timer_ = 0;
     float turret_timer_ = 0;
 };
