@@ -311,12 +311,20 @@ void BuildScene(State *s) {
     for(const Enemy &e:game.enemies())if(e.active) {
         const bool aircraft=e.type==UnitType::Aircraft;
         const float y=aircraft?1.6f:-.68f;
-        const float width=e.type==UnitType::Rowboat?.7f:
-            e.type==UnitType::LandingCraft?1.1f:1.25f;
-        Box(s,e.x,y,e.z,width,.29f,1.0f,
-            aircraft?.65f:.40f,aircraft?.57f:.36f,aircraft?.47f:.26f);
-        if(aircraft)Box(s,e.x,y+.04f,e.z,.25f,.10f,2.1f,.44f,.46f,.43f);
-        else Box(s,e.x,y+.20f,e.z,.31f,.17f,.48f,.25f,.25f,.24f);
+        if(aircraft) {
+            const bool bomber=e.aircraft_pattern==AircraftPattern::Bomber;
+            Box(s,e.x,y,e.z,.34f,.28f,bomber?1.65f:1.20f,
+                bomber?.54f:.67f,bomber?.48f:.58f,bomber?.43f:.48f);
+            Box(s,e.x,y+.02f,e.z,bomber?2.45f:1.85f,.10f,.30f,
+                bomber?.42f:.45f,bomber?.43f:.47f,bomber?.40f:.44f);
+            if(bomber)
+                Box(s,e.x,y-.17f,e.z+.12f,.58f,.22f,.62f,.31f,.31f,.29f);
+        } else {
+            const float width=e.type==UnitType::Rowboat?.7f:
+                e.type==UnitType::LandingCraft?1.1f:1.25f;
+            Box(s,e.x,y,e.z,width,.29f,1.0f,.40f,.36f,.26f);
+            Box(s,e.x,y+.20f,e.z,.31f,.17f,.48f,.25f,.25f,.24f);
+        }
     }
     for(int n=0;n<game.infantry();n++) {
         const float x=(n%7-3)*.39f;
