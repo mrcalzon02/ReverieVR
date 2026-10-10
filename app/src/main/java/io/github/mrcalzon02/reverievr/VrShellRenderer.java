@@ -2058,7 +2058,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        drawUiPanel(eye, eyeCorrection, false);
+        if (!(mode == MODE_HOME && phonePanelVisible)) {
+            drawUiPanel(eye, eyeCorrection, false);
+        }
         drawPointerOverlay(
             eye,
             eyeCorrection
@@ -4667,6 +4669,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_HOME) {
+            if (phonePanelVisible) {
+                phonePanelVisible = false;
+                hoveredButton = -1;
+                textureDirty = true;
+                return;
+            }
             host.onExitToPhoneRequested();
             return;
         }
