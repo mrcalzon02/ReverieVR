@@ -6,6 +6,13 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Immersive native applications and internal OBJ file viewer
+
+- Native modules now receive the entire Cardboard-owned left/right eye viewport (content scale 1.0), rather than the 0.738 comfort-inset shell/flat-media presentation. The dedicated Java/GLES2 3D file viewer uses the same full-eye stereo policy and is not rendered on a flat panel.
+- Implemented bounded Wavefront OBJ parsing (triangles/convex polygon fans, positive and relative indices, finite coordinates, limits on vertices/triangles/source size). Added malformed-geometry and triangulation regression source. Model picker uses Android document access to validate and import into private storage without replacing a valid previous model on failure.
+- VR Home now exposes a 3D Model Viewer card. A selected OBJ renders as centered, fitted, per-face shaded actual 3D triangles with bounded Daydream touchpad orbit, rocker zoom, click rotation, shell Quick Menu and Back/Home recovery. Unsupported `.mtl`/texture and glTF/STL formats are not represented as implemented.
+- Source/commit read-back is verified. No Android/Gradle build, Galaxy S9 headset acceptance, signed release or independent Native Apps crash root-cause repair is claimed.
+
 ### Virtual keyboard slab first functional slice
 
 - Added a deterministic 50-key keyboard/editor (letters, digits, symbols, Shift/Caps, Space, Tab, Enter, Backspace, Delete, left/right caret and Clear) with focusable controller-ray hitboxes and a live text preview. The shell Keyboard card opens the key surface on the existing horizontal home dais; pointer hit testing intersects that actual plane. Copy + Close writes the composed text to Android clipboard through the UI thread, rather than faking text-entry success. Added JVM model regression source. Direct DOS/native guest typing, long-press repeat, physical S9 validation and an Android build remain outstanding.
