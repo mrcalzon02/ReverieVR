@@ -72,6 +72,59 @@ bool Campaign::Purchase(Upgrade u) {
     else ++upgrades_[static_cast<uint8_t>(u)];
     return true;
 }
+bool Campaign::SerializeShop(uint8_t *out, size_t capacity) const {
+    if (phase_ != Phase::Shop || out == nullptr || capacity < kSerializedSize)
+        return false;
+    const uint32_t words[20] = {
+        0x31574252u, 1u, seed_, static_cast<uint32_t>(difficulty_),
+        location_, day_, static_cast<uint32_t>(period_), wave_index_,
+        static_cast<uint32_t>(credits_), static_cast<uint32_t>(integrity_),
+        artillery_charges_, airstrike_charges_,
+        upgrades_[0], upgrades_[1], upgrades_[2], upgrades_[3],
+        upgrades_[4], upgrades_[5], upgrades_[6], upgrades_[7]
+    };
+    for (size_t i = 0; i < 20; ++i) {
+        const uint32_t value = words[i];
+        for (size_t byte = 0; byte < 4; ++byte)
+            out[i * 4u + byte] = static_cast<uint8_t>(value >> (byte * 8u));
+    }
+    return true;
+}
+
+bool Campaign::DeserializeShop(const uint8_t *source, size_t length) {
+    if (source == nullptr || length != kSerializedSize) return false;
+    uint32_t data[20] = {};
+    for (size_t i = 0; i < 20; ++i) {
+        for (size_t byte = 0; byte < 4; ++byte)
+            data[i] |= static_cast<uint32_t>(source[i * 4u + byte]) << (byte * 8u);
+    }
+    if (data[0] != 0x31574252u || data[1] != 1u ||
+        data[3] > 3u || data[4] >= kLocations || data[5] == 0 ||
+        data[5] > kPlaces[data[4]].days || data[6] > 1u ||
+        data[7] == 0 || data[8] > 10000000u ||
+        data[9] == 0 || data[9] > 100u ||
+        data[10] > 3u || data[11] > 3u ||
+        data[12] > 4u || data[13] > 4u || data[14] > 4u ||
+        data[15] > 1u || data[16] != 0u || data[17] != 0u ||
+        data[18] > 1u || data[19] != 0u) return false;
+    Campaign candidate(static_cast<Difficulty>(data[3]), data[2]);
+    candidate.phase_ = Phase::Shop;
+    candidate.location_ = static_cast<uint8_t>(data[4]);
+    candidate.day_ = static_cast<uint8_t>(data[5]);
+    candidate.period_ = static_cast<Period>(data[6]);
+    candidate.wave_index_ = static_cast<uint8_t>(data[7]);
+    if (candidate.wave_index_ > candidate.waves_this_period()) return false;
+    candidate.credits_ = static_cast<int32_t>(data[8]);
+    candidate.integrity_ = static_cast<int32_t>(data[9]);
+    candidate.artillery_charges_ = static_cast<uint8_t>(data[10]);
+    candidate.airstrike_charges_ = static_cast<uint8_t>(data[11]);
+    for (size_t i = 0; i < candidate.upgrades_.size(); ++i)
+        candidate.upgrades_[i] = static_cast<uint8_t>(data[12u + i]);
+    candidate.magazine_left_ = static_cast<uint8_t>(candidate.stats().magazine);
+    *this = candidate; // commit only after every validation succeeds
+    return true;
+}
+
 uint8_t Campaign::NextCount() const {
     return static_cast<uint8_t>(std::min<unsigned>(10u, 2u + Tier(difficulty_) +
          location_ + (day_ - 1u) + (period_ == Period::Night ? 1u : 0u)));
