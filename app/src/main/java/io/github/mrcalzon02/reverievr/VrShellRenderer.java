@@ -122,6 +122,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_ENVIRONMENT = 9;
     private static final int MODE_CONTROLLER = 10;
     private static final int MODE_NATIVE_LIBRARY = 11;
+    private static final int MODE_KEYBOARD = 12;
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -187,8 +188,25 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {780, 456, 982, 504},
         {780, 512, 982, 560},
         {314, 592, 696, 644},
-        {292, 220, 718, 326}
+        {292, 220, 718, 326},
+        {292, 348, 718, 454}
     };
+
+    private static final int[][] KEYBOARD_BUTTONS = makeKeyboardButtons();
+
+    private static int[][] makeKeyboardButtons() {
+        int[][] buttons = new int[51][4];
+        for (int row = 0; row < 5; row++) {
+            for (int col = 0; col < 10; col++) {
+                int left = 72 + col * 88;
+                int top = 238 + row * 84;
+                buttons[row * 10 + col] =
+                    new int[] {left, top, left + 82, top + 74};
+            }
+        }
+        buttons[50] = new int[] {340, 684, 684, 736};
+        return buttons;
+    }
 
     private static final int[][] NATIVE_LIBRARY_BUTTONS = new int[][] {
         {140, 235, 884, 300},
@@ -275,6 +293,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final DosSurfaceRenderer dosRenderer;
     private final NativeModuleRuntime nativeModuleRuntime;
     private final List<NativeModuleRuntime.Descriptor> nativeModules;
+    private final VrKeyboardEditor keyboardEditor = new VrKeyboardEditor();
     private final FramePerformanceTracker performanceTracker =
         new FramePerformanceTracker();
     private final EyeRenderPerformanceTracker eyeRenderPerformanceTracker =
@@ -3614,6 +3633,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return index < HOME_BUTTONS.length;
         }
 
+        if (mode == MODE_KEYBOARD) {
+            return index < KEYBOARD_BUTTONS.length;
+        }
+
         if (mode == MODE_NATIVE_LIBRARY) {
             int count = nativeModules.size();
             if (index >= 0 && index <= 2) {
@@ -3882,11 +3905,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 14:
                     mode = MODE_CONTROLLER;
                     break;
+                case 15:
+                    mode = MODE_KEYBOARD;
+                    break;
                 default:
                     break;
             }
         } else if (mode == MODE_CONTROLLER) {
             handleControllerSelection(hoveredButton);
+        } else if (mode == MODE_KEYBOARD) {
+            int key = hoveredButton;
+            if (key == 50) {
+                mode = MODE_HOME;
+            } else if (!keyboardEditor.press(key / 10, key % 10)) {
+                host.onUiActionRejected();
+            }
         } else if (mode == MODE_NATIVE_LIBRARY) {
             handleNativeLibrarySelection(hoveredButton);
         } else if (mode == MODE_MEDIA_LIBRARY) {
@@ -4518,6 +4551,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             || mode == MODE_MEDIA_LIBRARY
             || mode == MODE_ENVIRONMENT
             || mode == MODE_CONTROLLER
+            || mode == MODE_KEYBOARD
             || mode == MODE_NATIVE_LIBRARY) {
             mode = MODE_HOME;
             hoveredButton = -1;
@@ -4569,6 +4603,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_CONTROLLER) {
             return CONTROLLER_BUTTONS;
+        }
+        if (mode == MODE_KEYBOARD) {
+            return KEYBOARD_BUTTONS;
         }
 
         if (mode == MODE_NATIVE_LIBRARY) {
@@ -4714,6 +4751,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawHome(canvas, paint);
         } else if (mode == MODE_CONTROLLER) {
             drawControllerPanel(canvas, paint);
+        } else if (mode == MODE_KEYBOARD) {
+            drawKeyboard(canvas, paint);
         } else if (mode == MODE_NATIVE_LIBRARY) {
             drawNativeLibrary(canvas, paint);
         } else if (mode == MODE_MEDIA_LIBRARY) {
@@ -5239,7 +5278,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
-        paint.setColor(Color.rgb(34, 45, 58));
+        paint.setColor(hoveredButton == 15
+            ? Color.rgb(25, 88, 116) : Color.rgb(34, 45, 58));
         canvas.drawRoundRect(
             292,
             348,
@@ -5252,7 +5292,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(20.0f * uiScale);
         canvas.drawText(
-            "Media",
+            "Virtual Keyboard",
             314,
             383,
             paint
@@ -5266,7 +5306,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         .getSelectedVideoDisplayName(),
                     36
                 )
-                : "No media selected",
+                : "Select to open the text-entry keyboard",
             314,
             414,
             paint
@@ -5897,6 +5937,44 @@ final class VrShellRenderer implements CardboardView.Renderer {
     ) {
         return label
             + (enabled ? "  ON" : "  OFF");
+    }
+
+    private void drawKeyboard(Canvas canvas, Paint paint) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(30.0f * uiScale);
+        canvas.drawText("VIRTUAL KEYBOARD", 72, 110, paint);
+        paint.setColor(Color.rgb(35, 45, 58));
+        canvas.drawRoundRect(72, 133, 952, 211, 10, 10, paint);
+        String value = keyboardEditor.value().replace("\n", " ↵ ").replace("\t", " ⇥ ");
+        int caret = keyboardEditor.cursor();
+        String visible = shorten(value, 85);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(23.0f * uiScale);
+        canvas.drawText(visible, 90, 176, paint);
+        paint.setTextSize(16.0f * uiScale);
+        canvas.drawText("Cursor " + caret + " / " + keyboardEditor.value().length(),
+            75, 224, paint);
+        for (int key = 0; key < 50; key++) {
+            int[] rect = KEYBOARD_BUTTONS[key];
+            boolean highlighted = hoveredButton == key;
+            paint.setColor(highlighted ? Color.rgb(40, 126, 125)
+                : Color.rgb(42, 54, 66));
+            canvas.drawRoundRect(rect[0], rect[1], rect[2], rect[3], 9, 9, paint);
+            paint.setColor(Color.WHITE);
+            String label = keyboardEditor.label(key / 10, key % 10);
+            paint.setTextSize((label.length() > 4 ? 13 : 21) * uiScale);
+            float textX = rect[0] + (rect[2]-rect[0]-paint.measureText(label))*0.5f;
+            float baseline = rect[1] + (rect[3]-rect[1]
+                - paint.ascent()-paint.descent())*0.5f;
+            canvas.drawText(label, textX, baseline, paint);
+        }
+        int[] done = KEYBOARD_BUTTONS[50];
+        paint.setColor(hoveredButton == 50 ? Color.rgb(40, 126, 125)
+            : Color.rgb(45, 78, 72));
+        canvas.drawRoundRect(done[0],done[1],done[2],done[3],8,8,paint);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(24.0f * uiScale);
+        canvas.drawText("RETURN HOME", 414, 720, paint);
     }
 
     private void drawNativeLibrary(
