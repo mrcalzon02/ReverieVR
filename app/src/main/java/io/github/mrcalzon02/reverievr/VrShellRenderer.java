@@ -552,10 +552,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Keyboard occupies the existing horizontal gray dais.
         // Top of the keyboard texture faces the far end of the slab.
         keyboardSlabVertexBuffer = allocate(new float[] {
-            -1.73f, -1.065f, -4.08f,
-             1.73f, -1.065f, -4.08f,
             -1.73f, -1.065f, -1.36f,
-             1.73f, -1.065f, -1.36f
+             1.73f, -1.065f, -1.36f,
+            -1.73f, -1.065f, -4.08f,
+             1.73f, -1.065f, -4.08f
         });
         uvBuffer = allocate(uvs);
 
