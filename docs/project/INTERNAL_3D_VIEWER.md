@@ -10,11 +10,10 @@ The immersive viewer is presently a **shell-native renderer** (`ObjMeshViewerRen
 
 ## Working source-level path
 
-1. On VR Home, choose **3D Model Viewer** in the center panel.
-2. When there is no model, the shell requests the Android `ACTION_OPEN_DOCUMENT` picker by returning safely to the 2D Activity. Select a `.obj` file.
-3. The 2D importer copies at most 8 MiB into temporary app-private storage, parses and validates the OBJ before atomically replacing the previous `model-viewer.obj`.
-4. Re-enter VR and select **3D Model Viewer** to open the imported geometry as actual triangles (no billboard, screenshot or textured quad).
-5. The viewer recenters and normalizes the object to a visible size; face-shade gradients are computed once on loading. Move the Daydream touch surface to orbit yaw/pitch. The two rocker inputs zoom in/out within a bounded range. A select/click rotates by 30 degrees. Back returns Home; Quick Menu recovery remains shell-owned.
+1. On VR Home, choose **IMPORT / REPLACE OBJ MODEL** in the center panel. The shell requests the Android `ACTION_OPEN_DOCUMENT` picker by returning safely to the 2D Activity. Select a `.obj` file.
+2. The 2D importer copies at most 8 MiB into temporary app-private storage, parses and validates the OBJ before atomically replacing the previous `model-viewer.obj`.
+3. Re-enter VR and choose **OPEN 3D MODEL — IMMERSIVE VR**. The Open action is unavailable until a model has been imported; Import/Replace remains available after an import.
+4. The OBJ opens as actual triangles (no billboard, screenshot or textured quad). The viewer recenters and normalizes the object to a visible size; face shades are computed once on loading. Move the Daydream touch surface to orbit yaw/pitch. The two rocker inputs zoom in/out within a bounded range. A select/click rotates by 30 degrees. Back returns Home; Quick Menu recovery remains shell-owned.
 
 ## Current geometry subset
 
