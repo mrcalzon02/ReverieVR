@@ -225,7 +225,8 @@ void Campaign::Tick(float seconds) {
             if (e.active) continue;
             const uint32_t choice = Hash(0x1234u + spawned_ * 313u);
             const unsigned progression = location_ * 3u + (day_ - 1u) * 2u +
-                (period_ == Period::Night ? 1u : 0u) + Tier(difficulty_);
+                (period_ == Period::Night ? 1u : 0u) +
+                (Tier(difficulty_) > 0u ? 1u : 0u);
             // Opening day: rowboats with exactly one passenger only.
             const UnitType kind = progression < 2u ? UnitType::Rowboat :
                 (progression >= 8u && (choice % 6u == 0u)) ? UnitType::Aircraft :
