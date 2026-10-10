@@ -7,9 +7,10 @@ final class DoomSharewareBootstrapPlan {
     static String installYml() {
         return "run_path: DOSBOX.BAT\n"
             + "run_input: "
-            + "(wait:1500)c(enter)"
-            + "(wait:900)(enter)"
-            + "(wait:900)y(enter)\n";
+            // DEICE accepts the target drive as a single keystroke.
+            // The following Enter accepts its default install directory.
+            + "(wait:1500)c"
+            + "(wait:900)(enter)\n";
     }
 
     static String playYml() {
