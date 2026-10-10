@@ -161,6 +161,25 @@ int main() {
     );
     assert(resumed.CollectPayment());
 
+    // Pending payment is the 23rd payload field (offset 96). A
+    // syntactically valid but mismatched patron amount must fail without
+    // resetting the already-running game or changing its customer state.
+    uint8_t invalid_payment[Simulation::kSerializedSize] = {};
+    size_t invalid_size = 0;
+    assert(sim.Serialize(invalid_payment, sizeof(invalid_payment), &invalid_size));
+    assert(invalid_size == Simulation::kSerializedSize);
+    invalid_payment[96] = 0xe7u; // 999 cents, no patron charges this
+    invalid_payment[97] = 0x03u;
+    invalid_payment[98] = 0u;
+    invalid_payment[99] = 0u;
+    const int32_t before_cash = resumed.cash_cents();
+    const int32_t before_day = resumed.day();
+    const int32_t before_remaining = resumed.patrons_remaining();
+    assert(!resumed.Deserialize(invalid_payment, invalid_size));
+    assert(resumed.cash_cents() == before_cash);
+    assert(resumed.day() == before_day);
+    assert(resumed.patrons_remaining() == before_remaining);
+
     save[0] ^= 0xffu;
     Simulation corrupt;
     assert(!corrupt.Deserialize(
