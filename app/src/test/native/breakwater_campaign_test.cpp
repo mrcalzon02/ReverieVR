@@ -151,6 +151,68 @@ int main() {
     assert(landing_stage.wave_status().boats_sunk>=1);
     assert(landing_stage.wave_status().troops_landed==0);
 
+    auto stage_blackcap_night=[](Campaign &game) {
+        uint8_t bytes[Campaign::kSerializedSize]={};
+        assert(game.SerializeShop(bytes,sizeof(bytes)));
+        bytes[16]=2; // Blackcap Island
+        bytes[20]=4; // final day
+        bytes[24]=1; // night
+        bytes[28]=1; // first wave in period
+        assert(game.DeserializeShop(bytes,sizeof(bytes)));
+    };
+
+    // Seed 8 deterministically opens late Blackcap with a bomber. Without AA
+    // the gun still spends its round, but cannot damage the aircraft.
+    Campaign bomber(Difficulty::Casual,8);
+    assert(bomber.Start());
+    stage_blackcap_night(bomber);
+    assert(bomber.BeginWave());
+    bomber.Tick(0.05f);
+    assert(bomber.enemies()[0].active);
+    assert(bomber.enemies()[0].type==UnitType::Aircraft);
+    assert(bomber.enemies()[0].aircraft_pattern==AircraftPattern::Bomber);
+    const int16_t bomber_hp=bomber.enemies()[0].hp;
+    const uint8_t bomber_mag=bomber.magazine_left();
+    assert(bomber.FireAt(0));
+    assert(bomber.magazine_left()==bomber_mag-1);
+    assert(bomber.enemies()[0].hp==bomber_hp);
+    for(int i=0;i<140 && bomber.wave_status().aircraft_attacks==0;i++)
+        bomber.Tick(0.05f);
+    assert(bomber.wave_status().aircraft_attacks==1);
+    assert(bomber.integrity()==88);
+
+    // Seed 22 opens the same stage with a strafer that peppers the position
+    // repeatedly during one overhead pass instead of behaving like a sky-boat.
+    Campaign strafer(Difficulty::Casual,22);
+    assert(strafer.Start());
+    stage_blackcap_night(strafer);
+    assert(strafer.BeginWave());
+    strafer.Tick(0.05f);
+    assert(strafer.enemies()[0].active);
+    assert(strafer.enemies()[0].aircraft_pattern==AircraftPattern::Strafer);
+    for(int i=0;i<110 && strafer.wave_status().aircraft_attacks<4;i++)
+        strafer.Tick(0.05f);
+    assert(strafer.wave_status().aircraft_attacks==4);
+    assert(strafer.integrity()==88);
+
+    // Purchasing AA turns those otherwise ineffective shots into damage and
+    // can destroy the bomber before its attack window begins.
+    Campaign defended(Difficulty::Casual,8);
+    assert(defended.Start());
+    assert(defended.Purchase(Upgrade::AntiAir));
+    stage_blackcap_night(defended);
+    assert(defended.BeginWave());
+    defended.Tick(0.05f);
+    assert(defended.enemies()[0].type==UnitType::Aircraft);
+    for(int shot=0;shot<5;shot++) {
+        if(shot>0) for(int i=0;i<7;i++) defended.Tick(0.05f);
+        assert(defended.FireAt(0));
+    }
+    assert(!defended.enemies()[0].active);
+    assert(defended.wave_status().aircraft_destroyed==1);
+    assert(defended.wave_status().aircraft_attacks==0);
+    assert(defended.integrity()==100);
+
     // Day and night each contain their own shop-separated waves.
     Campaign clock(Difficulty::Casual,41);
     assert(clock.Start());
