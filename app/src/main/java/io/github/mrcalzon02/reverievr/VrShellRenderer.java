@@ -3448,6 +3448,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
+        if (mode == MODE_HOME && phonePanelVisible
+            && !orientationMenuVisible) {
+            // Do not accept invisible Home-button activations while the
+            // immersive Phone Screen panel has focus.
+            return UiRayHit.miss();
+        }
+
         if (mode == MODE_KEYBOARD) {
             // The text-entry texture is laid flat on the existing dais;
             // selection must intersect the same horizontal geometry.
