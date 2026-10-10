@@ -65,6 +65,15 @@ int main() {
     assert(!veteran.CallArtillery());
     assert(!veteran.Purchase(Upgrade::Damage));
 
+    Campaign turret(Difficulty::Casual,41);
+    assert(turret.Start());
+    assert(turret.Purchase(Upgrade::SupportTurret));
+    assert(turret.stats().turret);
+    assert(turret.BeginWave());
+    for(int i=0;i<160;i++) turret.Tick(0.05f);
+    assert(turret.wave_status().boats_sunk>=1);
+    assert(turret.wave_status().troops_landed==0);
+
     assert(Campaign::Locations()[0].days==2);
     assert(Campaign::Locations()[1].days==3);
     assert(Campaign::Locations()[2].days==4);
