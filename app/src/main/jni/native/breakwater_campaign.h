@@ -1,6 +1,7 @@
 #ifndef REVERIE_BREAKWATER_CAMPAIGN_H
 #define REVERIE_BREAKWATER_CAMPAIGN_H
 #include <array>
+#include <cstddef>
 #include <cstdint>
 
 namespace reverie { namespace breakwater {
