@@ -77,28 +77,38 @@ final class VrPointerRenderer {
         boolean hitting,
         boolean pressed
     ) {
-        this.visible = visible;
+        // Invalid tracking samples must never reach the GLES2 vertex buffer.
+        if (!visible || !PointerRayValidation.valid(
+                originX, originY, originZ,
+                directionX, directionY, directionZ, distance)) {
+            hide();
+            return;
+        }
+        float magnitude = (float) Math.sqrt(
+            directionX * directionX
+                + directionY * directionY
+                + directionZ * directionZ
+        );
+        float safeDistance = PointerRayValidation.clampDistance(distance);
+        float invMagnitude = 1.0f / magnitude;
+        float nextEndX = originX + directionX * invMagnitude * safeDistance;
+        float nextEndY = originY + directionY * invMagnitude * safeDistance;
+        float nextEndZ = originZ + directionZ * invMagnitude * safeDistance;
+        if (!Float.isFinite(nextEndX)
+                || !Float.isFinite(nextEndY)
+                || !Float.isFinite(nextEndZ)) {
+            hide();
+            return;
+        }
         this.originX = originX;
         this.originY = originY;
         this.originZ = originZ;
-
-        float safeDistance =
-            Math.max(
-                0.25f,
-                Math.min(distance, 12.0f)
-            );
-
-        this.endX =
-            originX
-                + directionX * safeDistance;
-        this.endY =
-            originY
-                + directionY * safeDistance;
-        this.endZ =
-            originZ
-                + directionZ * safeDistance;
+        this.endX = nextEndX;
+        this.endY = nextEndY;
+        this.endZ = nextEndZ;
         this.hitting = hitting;
         this.pressed = pressed;
+        this.visible = true;
     }
 
     void hide() {

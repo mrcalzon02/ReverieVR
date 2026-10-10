@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Input-safe controller ray geometry
+
+- Reject invalid controller pointer samples (nonfinite origin, direction or distance; zero/overflowing direction), normalize finite nonunit direction and guard computed endpoints before exposing the ray to stereo GLES2 geometry. Added JVM tests for invalid samples and existing ray length boundaries. No new controls. Device proof remains pending.
+
 ### GLES2-safe pointer ribbons
 
 - Replaced the stereo interaction pointer's implementation-defined wide GL_LINES draw with an allocation-free 18-vertex triangle beam and crosshair. Shared hover/press colors and size remain unchanged. Pure JVM regression tests cover full buffer writes, straight-ahead geometry and undersized buffers; handset stereo readability remains a device gate.
