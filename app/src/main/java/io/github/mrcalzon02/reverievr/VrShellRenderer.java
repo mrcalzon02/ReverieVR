@@ -193,7 +193,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {314, 592, 696, 644},
         {292, 220, 718, 326},
         {292, 348, 718, 454},
-        {292, 476, 718, 582}
+        {292, 476, 718, 526},
+        {292, 535, 718, 582}
     };
 
     private static final int[][] KEYBOARD_BUTTONS = makeKeyboardButtons();
@@ -3724,8 +3725,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (index == 13) {
                 return hasResumeTarget();
             }
-            if (index == 14 || index == 15 || index == 16) {
+            if (index == 14 || index == 15 || index == 17) {
                 return true;
+            }
+            if (index == 16) {
+                return modelViewer.hasModel();
             }
             return index < HOME_BUTTONS.length;
         }
@@ -4006,14 +4010,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     mode = MODE_KEYBOARD;
                     break;
                 case 16:
-                    if (modelViewer.hasModel()) {
-                        if (modelViewer.load()) mode = MODE_MODEL_VIEWER;
-                        else host.onUiActionRejected();
+                    if (modelViewer.load()) {
+                        mode = MODE_MODEL_VIEWER;
                     } else {
-                        host.onModelImportRequested();
-                        return;
+                        host.onUiActionRejected();
                     }
                     break;
+                case 17:
+                    host.onModelImportRequested();
+                    return;
                 default:
                     break;
             }
@@ -5413,43 +5418,25 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
-        paint.setColor(hoveredButton == 16 ? Color.rgb(25, 88, 116) : Color.rgb(34, 45, 58));
-        canvas.drawRoundRect(
-            292,
-            476,
-            718,
-            582,
-            18,
-            18,
-            paint
-        );
+        paint.setColor(hoveredButton == 16
+            ? Color.rgb(25, 88, 116)
+            : Color.rgb(34, 45, 58));
+        canvas.drawRoundRect(292, 476, 718, 526, 14, 14, paint);
+        paint.setColor(modelViewer.hasModel() ? Color.WHITE
+            : Color.rgb(110, 123, 134));
+        paint.setTextSize(19.0f * uiScale);
+        canvas.drawText(modelViewer.hasModel()
+            ? "OPEN 3D MODEL  -  IMMERSIVE VR"
+            : "OPEN 3D MODEL  -  NONE IMPORTED",
+            313, 508, paint);
+
+        paint.setColor(hoveredButton == 17
+            ? Color.rgb(25, 88, 116)
+            : Color.rgb(34, 45, 58));
+        canvas.drawRoundRect(292, 535, 718, 582, 14, 14, paint);
         paint.setColor(Color.WHITE);
-        paint.setTextSize(20.0f * uiScale);
-        canvas.drawText(
-            "3D Model Viewer",
-            314,
-            511,
-            paint
-        );
-        paint.setColor(Color.rgb(160, 176, 194));
-        paint.setTextSize(17.0f * uiScale);
-        canvas.drawText(
-            modelViewer.hasModel() ? "Open imported OBJ in full VR"
-                : "Select to import an OBJ model",
-            314, 542, paint
-        );
-        paint.setColor(Color.rgb(126, 205, 221));
-        paint.setTextSize(15.0f * uiScale);
-        canvas.drawText(
-            "Active: "
-                + shorten(
-                    activePointerSource,
-                    28
-                ),
-            314,
-            568,
-            paint
-        );
+        paint.setTextSize(19.0f * uiScale);
+        canvas.drawText("IMPORT / REPLACE OBJ MODEL", 313, 565, paint);
 
         if (hasResumeTarget()) {
             int[] resumeRect =
