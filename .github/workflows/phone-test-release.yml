@@ -71,6 +71,19 @@ jobs:
             -o /tmp/red-ledger-simulation-test
           /tmp/red-ledger-simulation-test
 
+      - name: Validate Ministry and Forward Detachment native simulations
+        shell: bash
+        run: |
+          set -euo pipefail
+          for game in lantern_desk forward_detachment; do
+            c++ -std=c++17 -Wall -Wextra -Wpedantic -Werror \
+              -I app/src/main/jni/native \
+              "app/src/main/jni/native/${game}_simulation.cpp" \
+              "app/src/test/native/${game}_simulation_test.cpp" \
+              -o "/tmp/${game}_simulation_test"
+            "/tmp/${game}_simulation_test"
+          done
+
       - name: Validate deterministic procedural atlas
         shell: bash
         run: |

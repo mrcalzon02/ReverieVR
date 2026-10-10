@@ -72,6 +72,8 @@ Do not begin with the complete supplier/faction/cast catalogue. Do not implement
 
 ## RV-GAME-02 — Ministry of Intelligence: Lantern Desk VR
 
+**Current implementation boundary:** a deterministic pure C++ evidence kernel now implements sector assignment, sortie completion, procedurally rasterized 16×16 photos, an Orchard civilian false-positive candidate, graded assessments and operational consequences. The public photo exposes observations, not hidden World Truth. This is **not** a launchable VR game: desk examination, annotations, persistence and device acceptance remain unimplemented.
+
 **Source concept:** *Ministry of Intelligence*, the standalone intelligence-command game formerly developed as *Second Lantern*. It must remain separate from older IronSight material.
 
 ### Native VR identity
@@ -116,6 +118,8 @@ Do not convert it into a tactical RTS. Do not expose World Truth through conveni
 ---
 
 ## RV-GAME-03 — Iron Sight: Forward Detachment VR
+
+**Current implementation boundary:** a deterministic pure C++ patrol kernel now exercises main-road versus ridge-route resource costs, ambiguous observable contact clues, action consequences, safe return and once-only debrief. It is **not** packaged as a launchable module: 3D sector, controls, squad handling, persistence and device acceptance remain unimplemented.
 
 **Source concept:** *Iron Sight*, centered on a forward reconnaissance detachment operating in the ambiguous Barsofagrod conflict: patrols, route security, reconnaissance, interdiction, logistics, liaison, ROE, uncertain civilians, deception, IED risk, and survival through discipline rather than indiscriminate combat.
 

@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Native game proof kernels: Lantern Desk and Forward Detachment
+
+- Added deterministic C++ gameplay kernels for Ministry of Intelligence's first reconnaissance photograph/report cycle and Iron Sight's first route/contact/debrief cycle. Ministry hides truth behind procedural 16×16 photo evidence and grades a submitted assessment; Forward Detachment exposes ambiguous observations and applies fuel, damage and reporting consequences. Both have executable host-native regression tests wired into the existing phone-test build. Neither is exposed in the native launcher until interaction, persistence, renderer and Galaxy S9 admission gates pass.
+
 ### Red Ledger native save integrity
 
 - A malformed but structurally valid outstanding-payment field now fails native game load before mutating the current session; it no longer resets the running bar simulation after a partial deserialize. Regression coverage verifies current cash, day, and customer queue survive rejection. This strengthens the first native game's persistence semantics without changing save layout/version or showing new UI.
