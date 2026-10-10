@@ -100,6 +100,42 @@ int main() {
     assert(writer.BeginWave());
     assert(!writer.SerializeShop(encoded,sizeof(encoded)));
 
+    // A location-stage fixture proves the military landing craft is an
+    // actual transport containing 3–6 soldiers, not a decorative rowboat.
+    Campaign stage(Difficulty::Casual,6);
+    assert(stage.Start());
+    uint8_t stage_bytes[Campaign::kSerializedSize]={};
+    assert(stage.SerializeShop(stage_bytes,sizeof(stage_bytes)));
+    stage_bytes[16]=1; // advance location from Shingle Bay to Iron Quay
+    Campaign landing_stage;
+    assert(landing_stage.DeserializeShop(stage_bytes,sizeof(stage_bytes)));
+    assert(landing_stage.location()==1);
+    assert(landing_stage.BeginWave());
+    landing_stage.Tick(0.05f);
+    const Enemy first_craft=landing_stage.enemies()[0];
+    assert(first_craft.active && first_craft.type==UnitType::LandingCraft);
+    assert(first_craft.passengers>=3 && first_craft.passengers<=6);
+    for(int i=0;i<35;i++) {
+        landing_stage.FireAt(0);
+        landing_stage.Tick(0.05f);
+    }
+    assert(landing_stage.wave_status().boats_sunk>=1);
+    assert(landing_stage.wave_status().troops_landed==0);
+
+    // Day and night each contain their own shop-separated waves.
+    Campaign clock(Difficulty::Casual,41);
+    assert(clock.Start());
+    for(int i=0;i<1800 && clock.period()!=Period::Night;i++) {
+        if(clock.phase()==Phase::Shop) assert(clock.BeginWave());
+        clock.Tick(0.05f);
+        for(uint8_t n=0;n<clock.enemies().size();n++)
+            if(clock.enemies()[n].active) clock.FireAt(n);
+        if(clock.infantry()>0) clock.FireAtInfantry();
+    }
+    assert(clock.period()==Period::Night && clock.day()==1);
+    assert(clock.wave_index()==1);
+    assert(clock.waves_this_period()==1);
+
     assert(Campaign::Locations()[0].days==2);
     assert(Campaign::Locations()[1].days==3);
     assert(Campaign::Locations()[2].days==4);
