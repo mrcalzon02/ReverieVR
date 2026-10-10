@@ -152,15 +152,25 @@ void Campaign::Land(Enemy &e) {
     wave_status_.troops_landed = static_cast<uint8_t>(
         wave_status_.troops_landed + e.passengers);
 }
-bool Campaign::FireAt(uint8_t index) {
-    if (phase_ != Phase::Combat || index >= enemies_.size() ||
-        !enemies_[index].active || fire_timer_ > 0 ||
+bool Campaign::BeginGunShot() {
+    if (phase_ != Phase::Combat || fire_timer_ > 0 ||
         reload_timer_ > 0 || magazine_left_ == 0) return false;
-    Enemy &e = enemies_[index];
-    if (e.type == UnitType::Aircraft && !stats().anti_air) return false;
     --magazine_left_;
     fire_timer_ = stats().fire_delay_ms / 1000.0f;
     if (magazine_left_ == 0) reload_timer_ = 1.15f;
+    return true;
+}
+bool Campaign::FireMiss() {
+    return BeginGunShot();
+}
+bool Campaign::FireAt(uint8_t index) {
+    if (phase_ != Phase::Combat || index >= enemies_.size() ||
+        !enemies_[index].active) return false;
+    Enemy &e = enemies_[index];
+    if (!BeginGunShot()) return false;
+    // The basic mount may still throw rounds at an aircraft, but without the
+    // AA package those rounds cannot damage the fast overhead target.
+    if (e.type == UnitType::Aircraft && !stats().anti_air) return true;
     e.hp = static_cast<int16_t>(e.hp - stats().gun_damage);
     if (e.hp <= 0) {
         e.active = false;
@@ -172,11 +182,8 @@ bool Campaign::FireAt(uint8_t index) {
     return true;
 }
 bool Campaign::FireAtInfantry() {
-    if (phase_ != Phase::Combat || infantry_ == 0 || fire_timer_ > 0 ||
-        reload_timer_ > 0 || magazine_left_ == 0) return false;
-    --magazine_left_;
-    fire_timer_ = stats().fire_delay_ms / 1000.0f;
-    if (magazine_left_ == 0) reload_timer_ = 1.15f;
+    if (phase_ != Phase::Combat || infantry_ == 0) return false;
+    if (!BeginGunShot()) return false;
     --infantry_;
     ++wave_status_.troops_stopped;
     credits_ += 20;
