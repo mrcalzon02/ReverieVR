@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater Battery aircraft attack runs
+
+- Replaced the placeholder aircraft shoreline collision with deterministic bomber and strafer behavior. Strafers deliver repeated light attacks while crossing overhead; bombers make a slower single heavy attack and then leave the combat volume. Purchased AA can destroy an aircraft before its attack window, while basic-gun rounds remain ineffective but are still consumed. The generated renderer now gives bombers and strafers visibly different tiny silhouettes. Regression source fixes deterministic late-campaign seeds for bomber damage, strafer bursts and pre-attack AA interception; Android/NDK and physical headset acceptance remain separate gates.
+
 ### Breakwater Battery physical firing semantics
 
 - Routed every valid in-traverse gun trigger pull through the campaign magazine/cadence gate, including misses. Ineffective pre-AA fire at aircraft now spends ammunition without damaging the aircraft instead of acting as a free target probe. The VR module records the fired direction and renders a short-lived generated tracer ribbon from the world-anchored barrel. Native regression source covers miss cadence, magazine depletion and timed reload; Galaxy S9/headset visual and control acceptance remains pending.
