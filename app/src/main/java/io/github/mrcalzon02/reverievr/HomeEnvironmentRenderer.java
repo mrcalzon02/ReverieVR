@@ -51,6 +51,13 @@ final class HomeEnvironmentRenderer {
     private final Mesh duneShoreline = mesh(buildShoreline());
     private final Mesh beachDriftwood = mesh(buildDriftwood());
     private final Mesh forestUnderstory = mesh(buildForestUnderstory());
+    // World-anchored portrait display assembly; never a headset-locked HUD.
+    private final Mesh phonePanelFrame = mesh(
+        quadVerticalZ(-0.68f, 0.68f, -0.72f, 1.05f, -2.27f));
+    private final Mesh phonePanelGlass = mesh(
+        quadVerticalZ(-0.61f, 0.61f, -0.65f, 0.92f, -2.255f));
+    private final Mesh phonePanelControlRail = mesh(
+        quadVerticalZ(0.20f, 0.61f, 0.80f, 0.92f, -2.245f));
     private final Mesh daisTop =
         mesh(quadHorizontal(-1.75f, 1.75f, -4.1f, -1.35f, -1.08f));
     private final Mesh daisFront =
@@ -312,6 +319,19 @@ final class HomeEnvironmentRenderer {
                 );
                 break;
         }
+    }
+
+    /**
+     * Draw a genuinely world-space phone-panel housing in Home. The inner
+     * surface is deliberately dark until user-consented MediaProjection is
+     * available; never depict a fake live Android screen.
+     */
+    void drawPhonePanel() {
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+        GLES20.glDisable(GLES20.GL_BLEND);
+        draw(phonePanelFrame, 0.08f, 0.12f, 0.16f, 1.0f);
+        draw(phonePanelGlass, 0.015f, 0.027f, 0.040f, 1.0f);
+        draw(phonePanelControlRail, 0.12f, 0.36f, 0.48f, 1.0f);
     }
 
     /**
