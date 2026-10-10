@@ -82,7 +82,7 @@ private:
     uint8_t location_ = 0;
     uint8_t day_ = 1;
     uint8_t wave_index_ = 1;
-    int32_t credits_ = 900;
+    int32_t credits_ = 1300;
     int32_t integrity_ = 100;
     uint8_t infantry_ = 0;
     uint8_t magazine_left_ = 12;
