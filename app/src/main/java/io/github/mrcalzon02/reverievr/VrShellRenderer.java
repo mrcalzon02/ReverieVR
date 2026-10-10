@@ -29,6 +29,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     interface Host {
         void onVrFirstFrameRendered();
         void onVrKeyboardTextCommitted(String text);
+        void onModelImportRequested();
         void onVrRendererFailure(
             String phase,
             Throwable throwable
@@ -124,6 +125,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_CONTROLLER = 10;
     private static final int MODE_NATIVE_LIBRARY = 11;
     private static final int MODE_KEYBOARD = 12;
+    private static final int MODE_MODEL_VIEWER = 13;
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -190,7 +192,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {780, 512, 982, 560},
         {314, 592, 696, 644},
         {292, 220, 718, 326},
-        {292, 348, 718, 454}
+        {292, 348, 718, 454},
+        {292, 476, 718, 582}
     };
 
     private static final int[][] KEYBOARD_BUTTONS = makeKeyboardButtons();
@@ -288,6 +291,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float viewerInterLensMeters;
     private final VideoSurfaceRenderer videoRenderer;
     private final HomeEnvironmentRenderer homeEnvironmentRenderer;
+    private final ObjMeshViewerRenderer modelViewer;
     private final VrPointerRenderer pointerRenderer;
     private final VrControllerModelRenderer controllerModelRenderer;
     private final DosSession dosSession;
@@ -516,6 +520,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         videoRenderer = new VideoSurfaceRenderer(host::onVideoSurfaceTextureReady);
         homeEnvironmentRenderer =
             new HomeEnvironmentRenderer();
+        modelViewer = new ObjMeshViewerRenderer(context);
         pointerRenderer = new VrPointerRenderer();
         controllerModelRenderer =
             new VrControllerModelRenderer(
@@ -1314,6 +1319,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        if (mode == MODE_MODEL_VIEWER && !orientationMenuVisible) {
+            if (backRequested.getAndSet(false)) {
+                mode = MODE_HOME;
+                hoveredButton = -1;
+                textureDirty = true;
+                return;
+            }
+            if (selectRequested.getAndSet(false)) {
+                modelViewer.rotate(30.0f);
+                host.onUiFocusChanged();
+            }
+            updateActivePointer(frameNanos);
+            return;
+        }
+
         if (mode == MODE_NATIVE) {
             selectRequested.set(false);
 
@@ -1704,7 +1724,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         // Hosted native applications own an immersive stereoscopic scene.
         // Do not letterbox them using the shell menu's optical comfort inset.
-        final float contentScale = mode == MODE_NATIVE
+        final float contentScale = (mode == MODE_NATIVE
+            || mode == MODE_MODEL_VIEWER)
             ? 1.0f : EYE_CONTENT_VIEWPORT_SCALE;
         int contentWidth =
             Math.max(
@@ -1830,7 +1851,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             ? correctionHalf
             : -correctionHalf;
 
-        if (mode != MODE_NATIVE) {
+        if (mode != MODE_NATIVE && mode != MODE_MODEL_VIEWER) {
             HomeEnvironment homeEnvironment =
                 preferences.getHomeEnvironment();
             homeEnvironmentRenderer.drawEye(
@@ -1915,6 +1936,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 eye,
                 eyeCorrection
             );
+            return;
+        }
+
+        if (mode == MODE_MODEL_VIEWER) {
+            modelViewer.drawEye(eye, eyeCorrection);
+            if (orientationMenuVisible) {
+                drawUiPanel(eye, eyeCorrection, true);
+            }
+            drawPointerOverlay(eye, eyeCorrection);
             return;
         }
 
@@ -2288,6 +2318,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         EGLConfig config
     ) {
         homeEnvironmentRenderer.onSurfaceCreated();
+        modelViewer.onSurfaceCreated();
         pointerRenderer.onSurfaceCreated();
         controllerModelRenderer.onSurfaceCreated();
         videoRenderer.onSurfaceCreated();
@@ -2363,6 +2394,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         pointerRenderer.shutdown();
         controllerModelRenderer.shutdown();
         homeEnvironmentRenderer.shutdown();
+        modelViewer.shutdown();
 
         if (nativeSurfaceReady
             && nativeModuleRuntime != null
@@ -3658,7 +3690,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (index == 13) {
                 return hasResumeTarget();
             }
-            if (index == 14) {
+            if (index == 14 || index == 15 || index == 16) {
                 return true;
             }
             return index < HOME_BUTTONS.length;
@@ -3938,6 +3970,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     break;
                 case 15:
                     mode = MODE_KEYBOARD;
+                    break;
+                case 16:
+                    if (modelViewer.hasModel()) {
+                        if (modelViewer.load()) mode = MODE_MODEL_VIEWER;
+                        else host.onUiActionRejected();
+                    } else {
+                        host.onModelImportRequested();
+                        return;
+                    }
                     break;
                 default:
                     break;
@@ -5338,7 +5379,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
-        paint.setColor(Color.rgb(34, 45, 58));
+        paint.setColor(hoveredButton == 16 ? Color.rgb(25, 88, 116) : Color.rgb(34, 45, 58));
         canvas.drawRoundRect(
             292,
             476,
@@ -5351,7 +5392,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(20.0f * uiScale);
         canvas.drawText(
-            "Input",
+            "3D Model Viewer",
             314,
             511,
             paint
@@ -5359,13 +5400,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.rgb(160, 176, 194));
         paint.setTextSize(17.0f * uiScale);
         canvas.drawText(
-            "Pointer: "
-                + preferences
-                    .getVrPointerMode()
-                    .displayName,
-            314,
-            542,
-            paint
+            modelViewer.hasModel() ? "Open imported OBJ in full VR"
+                : "Select to import an OBJ model",
+            314, 542, paint
         );
         paint.setColor(Color.rgb(126, 205, 221));
         paint.setTextSize(15.0f * uiScale);
