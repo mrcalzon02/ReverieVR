@@ -47,6 +47,7 @@ public final class MainActivity extends Activity
     private static final int DOS_PICK_REQUEST = 1203;
     private static final int LOG_EXPORT_REQUEST = 1204;
     private static final int VR_LAUNCH_REQUEST = 1205;
+    private static final int MODEL_PICK_REQUEST = 1206;
 
     private static final String DIAGNOSTIC_PENDING_PREFS =
         "reverie-diagnostic-pending";
@@ -666,6 +667,70 @@ public final class MainActivity extends Activity
         );
     }
 
+    private void chooseModelFile() {
+        Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        picker.addCategory(Intent.CATEGORY_OPENABLE);
+        picker.setType("*/*");
+        picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try {
+            startActivityForResult(picker, MODEL_PICK_REQUEST);
+        } catch (ActivityNotFoundException failure) {
+            Toast.makeText(this, "No model file picker available",
+                Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void handleSelectedModel(Intent data) {
+        final Uri uri = data.getData();
+        if (uri == null) return;
+        String displayName = resolveDisplayName(uri, "model");
+        if (!displayName.toLowerCase(Locale.US).endsWith(".obj")) {
+            Toast.makeText(this, "Choose a Wavefront .obj model",
+                Toast.LENGTH_LONG).show();
+            return;
+        }
+        // Copy to app-private storage. Never expose raw URI paths to GLES
+        // or allow partial overwrites of the currently imported model.
+        dosImportExecutor.execute(() -> {
+            File destination = new File(getFilesDir(),
+                ObjMeshViewerRenderer.LOCAL_MODEL_FILE);
+            File temporary = new File(getFilesDir(), "model-viewer.obj.partial");
+            try (java.io.InputStream in = getContentResolver().openInputStream(uri);
+                 java.io.FileOutputStream out =
+                     new java.io.FileOutputStream(temporary)) {
+                if (in == null) throw new java.io.IOException("Cannot open OBJ");
+                byte[] buffer = new byte[16384];
+                int count;
+                long total = 0;
+                while ((count = in.read(buffer)) != -1) {
+                    total += count;
+                    if (total > 8L * 1024L * 1024L)
+                        throw new java.io.IOException("OBJ exceeds 8 MiB limit");
+                    out.write(buffer, 0, count);
+                }
+                out.getFD().sync();
+                if (total == 0) throw new java.io.IOException("Empty model");
+                // Validate geometry before replacing the installed model.
+                try (java.io.FileReader reader = new java.io.FileReader(temporary)) {
+                    ObjMeshReader.read(reader);
+                }
+                if (!temporary.renameTo(destination))
+                    throw new java.io.IOException("Could not install model");
+                runOnUiThread(() -> Toast.makeText(this,
+                    "3D model imported. Enter VR and open 3D Model Viewer.",
+                    Toast.LENGTH_LONG).show());
+            } catch (java.io.IOException | OutOfMemoryError failure) {
+                ReverieLog.error("VR_MODEL_VIEWER",
+                    "Could not import OBJ model", failure);
+                runOnUiThread(() -> Toast.makeText(this,
+                    "3D model import failed: " + failure.getMessage(),
+                    Toast.LENGTH_LONG).show());
+            } finally {
+                if (temporary.exists()) temporary.delete();
+            }
+        });
+    }
+
     private void chooseLocalVideo() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -728,6 +793,13 @@ public final class MainActivity extends Activity
                     chooseDosContent();
                     return;
                 }
+                if (data.getBooleanExtra(
+                        VrActivity.EXTRA_REQUEST_MODEL_PICKER,
+                        false
+                    )) {
+                    chooseModelFile();
+                    return;
+                }
 
                 if (data.getBooleanExtra(
                         VrActivity.EXTRA_REQUEST_UPDATE_CHECK,
@@ -766,6 +838,10 @@ public final class MainActivity extends Activity
 
         if (requestCode == MEDIA_PICK_REQUEST) {
             handleSelectedVideo(data);
+            return;
+        }
+        if (requestCode == MODEL_PICK_REQUEST) {
+            handleSelectedModel(data);
             return;
         }
 
