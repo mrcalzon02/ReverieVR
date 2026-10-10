@@ -39,7 +39,7 @@ The Development-only module is launched from Native Apps after setting launcher 
 
 In the shop, point at any of the eight labelled upgrade cards and press **Select** to buy it. Point at **START** and press Select to begin the next wave; an available secondary action can also begin it. In combat, point at a hull or disembarked infantry and hold Select to engage; fire cadence depends on purchased rate. Point at **ARTY** or **AIR** and press Select to spend a stockpiled strike. The turret fires automatically after being purchased. Invalid actions produce the existing shell-owned failure cue. Victory/Defeat provides an implemented restart. Phone test must prove readable target silhouettes and reliable pointer hitboxes; this is not physical validation.
 
-The current module uses a gun-aim pointer, not yet a fully constrained traverse/elevation mechanical gun mount. Miss consumption, audible weapon report/reload, physical magazine reload, tracer/splash cards, impact feedback, more believable aircraft flight paths and persistent campaign saves are explicit next slices.
+The current module uses a gun-aim pointer, not yet a fully constrained traverse/elevation mechanical gun mount. Miss consumption, audible weapon report/reload, **visual** magazine reload, tracer/splash cards, impact feedback and more believable aircraft flight paths are explicit next slices. A timed automatic reload (1.15 seconds) now makes the clip-size purchase meaningful; an 80-byte versioned shop-state save preserves completed waves and bought upgrades through the module-private host save service. Mid-wave exit resumes at the prior shop; S9 exit/re-entry and APK update durability remain device gates.
 
 ## Runtime art and visuals
 
