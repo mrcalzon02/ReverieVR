@@ -50,6 +50,18 @@ int main() {
     assert(landed.wave_status().troops_stopped>=1);
     assert(landed.waves_this_period()==2);
 
+    // Higher difficulties add more boats and waves, never skip the
+    // opening single-passenger rowboat introduction.
+    for(Difficulty d : {Difficulty::Casual, Difficulty::Regular,
+                        Difficulty::Veteran, Difficulty::Siege}) {
+        Campaign opening(d,17);
+        assert(opening.Start() && opening.BeginWave());
+        opening.Tick(0.05f);
+        assert(opening.enemies()[0].active);
+        assert(opening.enemies()[0].type==UnitType::Rowboat);
+        assert(opening.enemies()[0].passengers==1);
+    }
+
     Campaign veteran(Difficulty::Siege,7);
     assert(veteran.Start());
     assert(veteran.waves_this_period()==5);
