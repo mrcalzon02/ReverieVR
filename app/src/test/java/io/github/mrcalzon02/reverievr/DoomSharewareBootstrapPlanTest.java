@@ -50,6 +50,13 @@ public final class DoomSharewareBootstrapPlanTest {
     }
 
     @Test
+    public void bootstrapRequiresAnInstalledGameBeforeLaunching() {
+        String batch = DoomSharewareBootstrapPlan.bootstrapBatch();
+        assertTrue(batch.contains("if exist DOOMS\\DOOM.EXE goto CONFIG"));
+        assertTrue(batch.contains("if not exist DOOMS\\DOOM.EXE goto END"));
+    }
+
+    @Test
     public void bootstrapConfigMatchesDosboxSb16Baseline() {
         String config =
             DoomSharewareBootstrapPlan.doomConfig();
