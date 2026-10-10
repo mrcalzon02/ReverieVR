@@ -1162,8 +1162,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
-        if (orientationMenuVisible
-            && orientationMenuPlacementPending) {
+        if (orientationMenuVisible) {
+            // A Quick Menu is shell HUD content. Follow current headset
+            // yaw every frame instead of freezing its world heading at open.
+            // Both rendering and hit testing use this same orientation.
             captureOrientationMenuHeading();
             orientationMenuPlacementPending = false;
         }
@@ -3088,11 +3090,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 ? relativeYaw
                 : 0.0f;
 
-        ReverieLog.milestone(
-            "VR_HEADING",
-            "Quick menu placed from renderer-current headset direction; relativeYaw="
-                + orientationMenuYawRadians
-        );
+        // Per-frame HUD attachment must not emit a log every frame.
     }
 
     private void setShellHeading(
