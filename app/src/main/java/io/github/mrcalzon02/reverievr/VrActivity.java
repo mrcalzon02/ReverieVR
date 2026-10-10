@@ -51,6 +51,8 @@ public final class VrActivity extends Activity
         "io.github.mrcalzon02.reverievr.VR_STARTUP_ERROR";
     static final String EXTRA_REQUEST_MEDIA_PICKER =
         "io.github.mrcalzon02.reverievr.REQUEST_MEDIA_PICKER";
+    static final String EXTRA_REQUEST_MODEL_PICKER =
+        "io.github.mrcalzon02.reverievr.REQUEST_MODEL_PICKER";
     static final String EXTRA_REQUEST_DOS_PICKER =
         "io.github.mrcalzon02.reverievr.REQUEST_DOS_PICKER";
     static final String EXTRA_REQUEST_UPDATE_CHECK =
@@ -1035,6 +1037,11 @@ public final class VrActivity extends Activity
     @Override
     public void onExitToPhoneRequested() {
         runOnUiThread(this::finish);
+    }
+
+    @Override
+    public void onModelImportRequested() {
+        returnToPhonePicker(EXTRA_REQUEST_MODEL_PICKER);
     }
 
     @Override
