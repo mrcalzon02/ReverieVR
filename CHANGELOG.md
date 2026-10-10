@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater Battery inter-wave save and magazine pacing
+
+- Added transactional, versioned 80-byte campaign snapshot support through the existing host-scoped save callbacks, triggered by completed waves and successful shop purchases, with invalid data rejected before any live-state mutation. Firing now pauses during a 1.15-second magazine reload so clip-size upgrades alter actual gameplay; HUD shows remaining rounds. Native tests cover save restoration and rejection, and game text now supports lowercase location names.
+
 ### Breakwater Battery native game-first slice
 
 - Packaged a new Development-only native coastal-defense module into the host and both Android ABIs. It uses generated GLES2 boat/sea/air/infantry geometry, a real aim-and-Select interaction loop and inter-wave purchase panels. C++ campaign sim covers rowboat and 3–6-passenger landing craft interception, onshore infantry damage, day/night multi-location progression, upgrade economy, artillery/airstrike charges and functional automatic support turret. Native regression, Development admission test and phone-test build wiring were added. Physical headset acceptance, campaign persistence, rich weapons and audible Sierra-inspired MIDI playback remain future gates.
