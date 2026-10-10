@@ -110,6 +110,14 @@ float AimAtPlane(const ReverieNativeInputV1 &input,float z,float *x,float *y) {
     *y=input.pointer_origin[1]+distance*input.pointer_direction[1];
     return distance;
 }
+int DifficultyTarget(const ReverieNativeInputV1 &input) {
+    float x=0,y=0;
+    if(AimAtPlane(input,kShopZ,&x,&y)<0)return -1;
+    for(int n=0;n<4;n++)
+        if(std::abs(x-(-2.1f+n*1.4f))<.62f && std::abs(y+.3f)<.27f)
+            return n;
+    return -1;
+}
 int ShopTarget(const ReverieNativeInputV1 &input) {
     float x=0,y=0;
     if(AimAtPlane(input,kShopZ,&x,&y)<0)return -1;
@@ -180,7 +188,16 @@ void LoadState(State *s) {
 }
 void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     Campaign &game=s->campaign;
-    if(game.phase()==Phase::Shop) {
+    if(game.phase()==Phase::Briefing) {
+        if(!edge)return;
+        const int choice=DifficultyTarget(input);
+        if(choice>=0 && choice<4) {
+            game=Campaign(static_cast<Difficulty>(choice),1049u);
+            game.Start();
+            SaveState(s);
+            Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        } else Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+    } else if(game.phase()==Phase::Shop) {
         if(!edge)return;
         const int target=ShopTarget(input);
         bool done=false;
@@ -215,8 +232,6 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         else if(edge)Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
         game=Campaign(Difficulty::Regular,1049u);
-        game.Start();
-        SaveState(s);
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
 }
@@ -281,7 +296,18 @@ void BuildScene(State *s) {
         const float x=(n%7-3)*.39f;
         Box(s,x,-.75f,-2.25f,.14f,.48f,.18f,.51f,.45f,.35f);
     }
-    if(game.phase()==Phase::Shop) {
+    if(game.phase()==Phase::Briefing) {
+        Panel(s,0,.40f,-3.06f,6.35f,3.6f,.08f,.12f,.16f);
+        Text(s,"BREAKWATER",0,1.45f,-3.0f,.082f,.98f,.86f,.58f);
+        Text(s,"CHOOSE DIFFICULTY",0,.78f,-3.0f,.060f,.85f,.87f,.79f);
+        const char *choices[]={"CADET","REGULAR","VETERAN","SIEGE"};
+        for(int n=0;n<4;n++) {
+            const float x=-2.1f+n*1.4f;
+            Panel(s,x,-.30f,-3.0f,1.23f,.49f,.22f,.33f,.30f);
+            Text(s,choices[n],x,-.30f,-2.97f,.049f,.97f,.93f,.74f);
+        }
+        Text(s,"SELECT A LEVEL",0,-1.12f,-2.97f,.067f,.90f,.83f,.66f);
+    } else if(game.phase()==Phase::Shop) {
         Panel(s,0,.4f,-3.06f,6.35f,3.75f,.08f,.12f,.16f);
         Text(s,"BREAKWATER",0,1.67f,-3.0f,.073f,.92f,.86f,.58f);
         Text(s,Campaign::Locations()[game.location()].name,0,1.28f,-3.0f,
@@ -337,7 +363,7 @@ void *Create(const ReverieNativeHostV1 *host) {
     if(!s)return nullptr;
     s->host=host;
     s->mesh.reserve(81920);
-    s->campaign.Start();
+    // New players choose their difficulty. Returning players restore shop state.
     LoadState(s);
     return s;
 }
