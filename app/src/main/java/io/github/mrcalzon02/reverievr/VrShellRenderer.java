@@ -28,6 +28,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 final class VrShellRenderer implements CardboardView.Renderer {
     interface Host {
         void onVrFirstFrameRendered();
+        void onVrKeyboardTextCommitted(String text);
         void onVrRendererFailure(
             String phase,
             Throwable throwable
@@ -3916,6 +3917,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         } else if (mode == MODE_KEYBOARD) {
             int key = hoveredButton;
             if (key == 50) {
+                host.onVrKeyboardTextCommitted(keyboardEditor.value());
                 mode = MODE_HOME;
             } else if (!keyboardEditor.press(key / 10, key % 10)) {
                 host.onUiActionRejected();
@@ -5300,13 +5302,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.rgb(160, 176, 194));
         paint.setTextSize(17.0f * uiScale);
         canvas.drawText(
-            preferences.hasSelectedVideo()
-                ? shorten(
-                    preferences
-                        .getSelectedVideoDisplayName(),
-                    36
-                )
-                : "Select to open the text-entry keyboard",
+            "Type text, then copy it to Android clipboard",
             314,
             414,
             paint
@@ -5942,7 +5938,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void drawKeyboard(Canvas canvas, Paint paint) {
         paint.setColor(Color.WHITE);
         paint.setTextSize(30.0f * uiScale);
-        canvas.drawText("VIRTUAL KEYBOARD", 72, 110, paint);
+        canvas.drawText("VIRTUAL KEYBOARD - COPY TEXT", 72, 110, paint);
         paint.setColor(Color.rgb(35, 45, 58));
         canvas.drawRoundRect(72, 133, 952, 211, 10, 10, paint);
         String value = keyboardEditor.value().replace("\n", " ↵ ").replace("\t", " ⇥ ");
@@ -5974,7 +5970,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         canvas.drawRoundRect(done[0],done[1],done[2],done[3],8,8,paint);
         paint.setColor(Color.WHITE);
         paint.setTextSize(24.0f * uiScale);
-        canvas.drawText("RETURN HOME", 414, 720, paint);
+        canvas.drawText("COPY + CLOSE", 429, 720, paint);
     }
 
     private void drawNativeLibrary(
