@@ -9,6 +9,30 @@ public final class VrHeadingMathTest {
     private static final float EPSILON = 0.0001f;
 
     @Test
+    public void shakeCalibrationPointsControllerAtHeadsetYaw() {
+        float controllerYaw = (float) Math.toRadians(75);
+        float headsetYaw = (float) Math.toRadians(-20);
+        float calibration = VrHeadingMath.controllerCalibrationForHeadset(
+            controllerYaw, headsetYaw
+        );
+        assertEquals(headsetYaw,
+            VrHeadingMath.wrapAngle(controllerYaw - calibration), EPSILON);
+        assertTrue(Float.isNaN(
+            VrHeadingMath.controllerCalibrationForHeadset(
+                Float.NaN, headsetYaw)));
+    }
+
+    @Test
+    public void shakeCalibrationWrapsAcrossRearHeading() {
+        float controllerYaw = (float) Math.toRadians(179);
+        float headsetYaw = (float) Math.toRadians(-179);
+        float calibration = VrHeadingMath.controllerCalibrationForHeadset(
+            controllerYaw, headsetYaw
+        );
+        assertEquals((float) Math.toRadians(-2), calibration, EPSILON);
+    }
+
+    @Test
     public void forwardMapsToZeroYaw() {
         assertEquals(
             0.0f,
