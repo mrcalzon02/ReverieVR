@@ -86,7 +86,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int HUD_TEXTURE_HEIGHT = 128;
     private static final float HUD_LOOK_UP_THRESHOLD = 0.72f;
     private static final float SHELL_VIEW_CONTRACTION = 0.81f;
-    private static final float EYE_CONTENT_VIEWPORT_SCALE = 0.82f;
+    private static final float EYE_CONTENT_VIEWPORT_SCALE = 0.738f;
 
     private static final float PANEL_HALF_WIDTH =
         1.70f * SHELL_VIEW_CONTRACTION;
