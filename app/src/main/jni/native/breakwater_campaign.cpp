@@ -85,6 +85,7 @@ bool Campaign::BeginWave() {
     remaining_to_spawn_ = NextCount();
     spawn_timer_ = 0;
     fire_timer_ = 0;
+    reload_timer_ = 0;
     infantry_timer_ = 0;
     turret_timer_ = 0;
     magazine_left_ = static_cast<uint8_t>(stats().magazine);
@@ -100,12 +101,13 @@ void Campaign::Land(Enemy &e) {
 }
 bool Campaign::FireAt(uint8_t index) {
     if (phase_ != Phase::Combat || index >= enemies_.size() ||
-        !enemies_[index].active || fire_timer_ > 0) return false;
+        !enemies_[index].active || fire_timer_ > 0 ||
+        reload_timer_ > 0 || magazine_left_ == 0) return false;
     Enemy &e = enemies_[index];
     if (e.type == UnitType::Aircraft && !stats().anti_air) return false;
-    if (magazine_left_ == 0) magazine_left_ = static_cast<uint8_t>(stats().magazine);
     --magazine_left_;
     fire_timer_ = stats().fire_delay_ms / 1000.0f;
+    if (magazine_left_ == 0) reload_timer_ = 1.15f;
     e.hp = static_cast<int16_t>(e.hp - stats().gun_damage);
     if (e.hp <= 0) {
         e.active = false;
@@ -117,10 +119,11 @@ bool Campaign::FireAt(uint8_t index) {
     return true;
 }
 bool Campaign::FireAtInfantry() {
-    if (phase_ != Phase::Combat || infantry_ == 0 || fire_timer_ > 0) return false;
-    if (magazine_left_ == 0) magazine_left_ = static_cast<uint8_t>(stats().magazine);
+    if (phase_ != Phase::Combat || infantry_ == 0 || fire_timer_ > 0 ||
+        reload_timer_ > 0 || magazine_left_ == 0) return false;
     --magazine_left_;
     fire_timer_ = stats().fire_delay_ms / 1000.0f;
+    if (magazine_left_ == 0) reload_timer_ = 1.15f;
     --infantry_;
     ++wave_status_.troops_stopped;
     credits_ += 20;
@@ -156,6 +159,13 @@ void Campaign::Tick(float seconds) {
     if (phase_ != Phase::Combat || !std::isfinite(seconds) || seconds <= 0) return;
     const float dt = std::min(seconds, 0.05f);
     fire_timer_ = std::max(0.0f, fire_timer_ - dt);
+    if (reload_timer_ > 0) {
+        reload_timer_ -= dt;
+        if (reload_timer_ <= 0) {
+            reload_timer_ = 0;
+            magazine_left_ = static_cast<uint8_t>(stats().magazine);
+        }
+    }
     spawn_timer_ -= dt;
     if (remaining_to_spawn_ && spawn_timer_ <= 0) {
         for (Enemy &e : enemies_) {
