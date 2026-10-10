@@ -36,6 +36,8 @@ final class VrPointerRenderer {
     private volatile boolean hitting;
     private volatile boolean pressed;
     private final float[] feedbackColor = new float[4];
+    // One coherent pointer sample per eye, without per-frame allocation.
+    private final float[] framePointer = new float[8];
 
     private int program;
     private int positionHandle;
@@ -65,7 +67,7 @@ final class VrPointerRenderer {
             );
     }
 
-    void setPointer(
+    synchronized void setPointer(
         boolean visible,
         float originX,
         float originY,
@@ -111,7 +113,7 @@ final class VrPointerRenderer {
         this.visible = true;
     }
 
-    void hide() {
+    synchronized void hide() {
         visible = false;
     }
 
@@ -119,8 +121,19 @@ final class VrPointerRenderer {
         CardboardView.Eye eye,
         float eyeCorrectionMeters
     ) {
-        if (!visible || program == 0) {
+        if (program == 0) {
             return;
+        }
+        synchronized (this) {
+            if (!visible) return;
+            framePointer[0] = originX;
+            framePointer[1] = originY;
+            framePointer[2] = originZ;
+            framePointer[3] = endX;
+            framePointer[4] = endY;
+            framePointer[5] = endZ;
+            framePointer[6] = hitting ? 1f : 0f;
+            framePointer[7] = pressed ? 1f : 0f;
         }
 
         System.arraycopy(
@@ -151,14 +164,14 @@ final class VrPointerRenderer {
             0
         );
 
-        int visualState = PointerVisualFeedback.resolve(hitting, pressed);
+        int visualState = PointerVisualFeedback.resolve(framePointer[6] != 0f, framePointer[7] != 0f);
         float markerSize = PointerVisualFeedback.markerSize(visualState);
         PointerVisualFeedback.writeColor(visualState, feedbackColor);
 
         PointerRibbonGeometry.fill(
             vertices,
-            originX, originY, originZ,
-            endX, endY, endZ,
+            framePointer[0], framePointer[1], framePointer[2],
+            framePointer[3], framePointer[4], framePointer[5],
             markerSize
         );
         vertices.position(0);
