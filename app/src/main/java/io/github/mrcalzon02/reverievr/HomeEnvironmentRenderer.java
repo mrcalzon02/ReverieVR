@@ -44,6 +44,13 @@ final class HomeEnvironmentRenderer {
     private final FloatBuffer mirrorRibbonVertices =
         ByteBuffer.allocateDirect(mirrorRibbonScratch.length * 4)
             .order(ByteOrder.nativeOrder()).asFloatBuffer();
+    // Low-poly 1990s birch living-room details, allocated once.
+    private final Mesh birchPanelSeams = mesh(buildBirchPanelSeams());
+    private final Mesh birchBaseboards = mesh(buildBirchBaseboards());
+    private final Mesh roomFurniture = mesh(buildRoomFurniture());
+    private final Mesh duneShoreline = mesh(buildShoreline());
+    private final Mesh beachDriftwood = mesh(buildDriftwood());
+    private final Mesh forestUnderstory = mesh(buildForestUnderstory());
     private final Mesh daisTop =
         mesh(quadHorizontal(-1.75f, 1.75f, -4.1f, -1.35f, -1.08f));
     private final Mesh daisFront =
@@ -206,6 +213,7 @@ final class HomeEnvironmentRenderer {
                     0.10f,
                     1.0f
                 );
+                draw(forestUnderstory, 0.17f, 0.42f, 0.16f, 1.0f);
                 break;
 
             case DUNE_BEACH:
@@ -237,6 +245,8 @@ final class HomeEnvironmentRenderer {
                     0.18f,
                     1.0f
                 );
+                draw(duneShoreline, 0.88f, 0.91f, 0.83f, 1.0f);
+                draw(beachDriftwood, 0.38f, 0.27f, 0.16f, 1.0f);
                 break;
 
             case WHITE_ROOM:
@@ -283,6 +293,9 @@ final class HomeEnvironmentRenderer {
                     0.90f,
                     1.0f
                 );
+                draw(birchPanelSeams, 0.69f, 0.60f, 0.48f, 1.0f);
+                draw(birchBaseboards, 0.78f, 0.70f, 0.56f, 1.0f);
+                draw(roomFurniture, 0.66f, 0.56f, 0.45f, 1.0f);
                 draw(
                     daisTop,
                     0.55f,
@@ -404,6 +417,89 @@ final class HomeEnvironmentRenderer {
         GLES20.glDisableVertexAttribArray(
             positionHandle
         );
+    }
+
+    private static float[] buildBirchPanelSeams() {
+        List<Float> values = new ArrayList<>();
+        // Narrow vertical seams break up the featureless white room;
+        // alternating wall spacing evokes the pale plywood of a 1990s den.
+        for (int index = -5; index <= 5; index++) {
+            float x = index;
+            append(values, quadVerticalZ(x, x + 0.018f,
+                -1.30f, 3.94f, -5.985f));
+            float z = index;
+            append(values, quadVerticalX(-5.985f, z,
+                -1.30f, 3.94f, z + 0.018f));
+            append(values, quadVerticalX(5.985f, z,
+                -1.30f, 3.94f, z + 0.018f));
+        }
+        return toArray(values);
+    }
+
+    private static float[] buildBirchBaseboards() {
+        List<Float> values = new ArrayList<>();
+        append(values, quadVerticalZ(-5.98f, 5.98f,
+            -1.34f, -1.16f, -5.965f));
+        append(values, quadVerticalX(-5.965f, -5.98f,
+            -1.34f, -1.16f, 5.98f));
+        append(values, quadVerticalX(5.965f, -5.98f,
+            -1.34f, -1.16f, 5.98f));
+        return toArray(values);
+    }
+
+    private static float[] buildRoomFurniture() {
+        List<Float> values = new ArrayList<>();
+        // Deliberately simple, low-slung birch console and bench.
+        // Both sit clear of the player/central interaction lane.
+        append(values, quadHorizontal(-4.6f, -2.3f,
+            -4.7f, -3.8f, -0.83f));
+        append(values, quadVerticalZ(-4.6f, -2.3f,
+            -1.34f, -0.83f, -3.8f));
+        append(values, quadHorizontal(2.8f, 4.8f,
+            -3.8f, -2.6f, -0.83f));
+        append(values, quadVerticalZ(2.8f, 4.8f,
+            -1.34f, -0.83f, -2.6f));
+        return toArray(values);
+    }
+
+    private static float[] buildShoreline() {
+        List<Float> values = new ArrayList<>();
+        // Thin pale foam bands retain the original untextured GLES2 budget.
+        for (int band = 0; band < 7; band++) {
+            float z = -6.0f - band * 1.65f;
+            float span = 2.0f + band * 0.45f;
+            append(values, quadHorizontal(-span, span,
+                z - 0.05f, z + 0.05f, -1.286f));
+        }
+        return toArray(values);
+    }
+
+    private static float[] buildDriftwood() {
+        List<Float> values = new ArrayList<>();
+        for (int piece = 0; piece < 9; piece++) {
+            float x = (piece % 5 - 2) * 2.8f;
+            float z = (piece / 5) * 3.9f - 1.0f;
+            append(values, quadHorizontal(x - 0.45f, x + 0.45f,
+                z - 0.075f, z + 0.075f, -1.335f));
+        }
+        return toArray(values);
+    }
+
+    private static float[] buildForestUnderstory() {
+        List<Float> values = new ArrayList<>();
+        for (int plant = 0; plant < 52; plant++) {
+            float theta = plant * 2.399963f;
+            float radius = 4.1f + (plant % 7) * 0.48f;
+            float x = (float) Math.cos(theta) * radius;
+            float z = (float) Math.sin(theta) * radius;
+            appendFacingQuad(values, x, z, 0.30f,
+                -1.35f, -0.48f + (plant % 3) * 0.12f);
+        }
+        return toArray(values);
+    }
+
+    private static void append(List<Float> target, float[] source) {
+        for (float value : source) target.add(value);
     }
 
     private static float[] buildForestTrunks() {
