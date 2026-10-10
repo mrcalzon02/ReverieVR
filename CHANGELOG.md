@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Shake recenter targets headset heading
+
+- A detected sharp shake now calibrates the tracked controller's horizontal aiming direction to the headset's current forward heading while preserving the slow positional spring return, live inertial inputs and the original tracked quaternion. Stale tracking and near-vertical headset aim are rejected for calibration. Headset pitch/roll alignment is not yet implemented, and Galaxy S9 testing remains pending. JVM heading tests cover alignment and wraparound.
+
 ### Coherent pointer sampling
 
 - Capture controller-origin, endpoint and interaction-state inputs under one synchronization boundary before each eye draw, preventing mixed-frame controller samples when input updates overlap renderer reads. Reuses an 8-float snapshot buffer; no additional render-frame allocations. Stereo headset confirmation remains pending.
