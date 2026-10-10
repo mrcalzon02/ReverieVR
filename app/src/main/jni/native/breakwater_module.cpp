@@ -22,6 +22,7 @@ struct State {
     GLint matrix = -1, position = -1, color = -1;
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
     float flash = 0.0f, elapsed = 0.0f;
+    float gun_direction[3] = {0.0f,0.0f,-1.0f};
     std::vector<float> mesh;
 };
 void Feedback(State *s, uint32_t code) {
@@ -137,8 +138,16 @@ bool AimAtEnemy(const ReverieNativeInputV1 &input,const Enemy &enemy,
     *distance=projection;
     return true;
 }
+bool GunWithinTraverse(const float *direction) {
+    // Bounded rail-mounted gun: approximately 68 degrees horizontal
+    // traverse each side, with a generous but finite elevation arc.
+    return direction[2]<-0.18f &&
+        std::abs(direction[0]) <= -direction[2]*2.5f &&
+        std::abs(direction[1]) <= -direction[2]*1.6f;
+}
 int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game) {
-    if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE)return -1;
+    if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE ||
+       !GunWithinTraverse(input.pointer_direction))return -1;
     float best=1e9f;int index=-1;
     for(uint8_t i=0;i<game.enemies().size();i++) {
         float depth=0;
@@ -198,7 +207,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         const int target=CombatTarget(input,game);
         bool shot=false;
         if(target>=0)shot=game.FireAt(static_cast<uint8_t>(target));
-        else if(game.infantry()>0 &&
+        else if(game.infantry()>0 && GunWithinTraverse(input.pointer_direction) &&
                 AimAtPlane(input,-2.2f,&x,&y)>0 &&
                 std::abs(x)<1.6f && y<.0f && y>-1.3f)
             shot=game.FireAtInfantry();
@@ -235,7 +244,27 @@ void BuildScene(State *s) {
     }
     // Shore parapet, mounted barrel and enemy silhouettes.
     Box(s,0,-1.24f,-.95f,7.8f,.55f,.7f,.37f,.38f,.36f);
-    Box(s,0,-.83f,-1.2f,.65f,.38f,1.9f,.27f,.29f,.31f);
+    // Gun carriage stays world-anchored. The light two-strip barrel aims
+    // with the hand, not with headset rotation or the scene camera.
+    Box(s,0,-.83f,-.64f,.68f,.42f,.46f,.27f,.29f,.31f);
+    const float *aim=s->gun_direction;
+    const float horizontal=std::sqrt(aim[0]*aim[0]+aim[2]*aim[2]);
+    const float rightX=horizontal>.01f?-aim[2]/horizontal:1.0f;
+    const float rightZ=horizontal>.01f?aim[0]/horizontal:0.0f;
+    const float sx=0.0f,sy=-.78f,sz=-.88f;
+    const float ex=sx+aim[0]*1.45f;
+    const float ey=sy+aim[1]*1.45f;
+    const float ez=sz+aim[2]*1.45f;
+    Triangle(s,sx+rightX*.07f,sy,sz+rightZ*.07f,
+             sx-rightX*.07f,sy,sz-rightZ*.07f,
+             ex+rightX*.055f,ey,ez+rightZ*.055f,.31f,.34f,.33f);
+    Triangle(s,ex+rightX*.055f,ey,ez+rightZ*.055f,
+             sx-rightX*.07f,sy,sz-rightZ*.07f,
+             ex-rightX*.055f,ey,ez-rightZ*.055f,.31f,.34f,.33f);
+    Triangle(s,sx,sy+.065f,sz,sx,sy-.065f,sz,
+             ex,ey+.050f,ez,.48f,.48f,.43f);
+    Triangle(s,ex,ey+.050f,ez,sx,sy-.065f,sz,
+             ex,ey-.050f,ez,.48f,.48f,.43f);
     if(game.stats().turret)
         Box(s,2.15f,-.76f,-1.40f,.42f,.32f,1.14f,.36f,.44f,.39f);
     for(const Enemy &e:game.enemies())if(e.active) {
@@ -352,6 +381,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     ReverieNativeSanitizePointerV1(&copy);
     const bool down=copy.primary_down!=0;
     const bool secondary=copy.secondary_down!=0;
+    if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
+       GunWithinTraverse(copy.pointer_direction)) {
+        for(int k=0;k<3;k++)s->gun_direction[k]=copy.pointer_direction[k];
+    }
     s->elapsed+=copy.delta_seconds;
     s->flash=std::max(0.0f,s->flash-copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
