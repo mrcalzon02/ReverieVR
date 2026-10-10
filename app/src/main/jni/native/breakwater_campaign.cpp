@@ -86,6 +86,7 @@ bool Campaign::BeginWave() {
     spawn_timer_ = 0;
     fire_timer_ = 0;
     infantry_timer_ = 0;
+    turret_timer_ = 0;
     magazine_left_ = static_cast<uint8_t>(stats().magazine);
     phase_ = Phase::Combat;
     return true;
@@ -180,6 +181,29 @@ void Campaign::Tick(float seconds) {
             ++spawned_;
             spawn_timer_ = 1.6f;
             break;
+        }
+    }
+    // An actually purchased support turret automatically engages the nearest
+    // surviving surface vessel; it never silently shoots down aircraft.
+    if (stats().turret) {
+        turret_timer_ -= dt;
+        if (turret_timer_ <= 0.0f) {
+            Enemy *target = nullptr;
+            for (Enemy &candidate : enemies_) {
+                if (candidate.active && candidate.type != UnitType::Aircraft &&
+                    (target == nullptr || candidate.z > target->z)) {
+                    target = &candidate;
+                }
+            }
+            if (target != nullptr) {
+                target->hp = static_cast<int16_t>(target->hp - 15);
+                if (target->hp <= 0) {
+                    target->active = false;
+                    ++wave_status_.boats_sunk;
+                    credits_ += 55;
+                }
+                turret_timer_ = 1.35f;
+            }
         }
     }
     for (Enemy &e : enemies_) {
