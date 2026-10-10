@@ -1702,20 +1702,22 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         recordStereoEyeDiagnostic(eye, eyeViewport);
 
+        // Hosted native applications own an immersive stereoscopic scene.
+        // Do not letterbox them using the shell menu's optical comfort inset.
+        final float contentScale = mode == MODE_NATIVE
+            ? 1.0f : EYE_CONTENT_VIEWPORT_SCALE;
         int contentWidth =
             Math.max(
                 1,
                 Math.round(
-                    eyeViewport[2]
-                        * EYE_CONTENT_VIEWPORT_SCALE
+                    eyeViewport[2] * contentScale
                 )
             );
         int contentHeight =
             Math.max(
                 1,
                 Math.round(
-                    eyeViewport[3]
-                        * EYE_CONTENT_VIEWPORT_SCALE
+                    eyeViewport[3] * contentScale
                 )
             );
         int contentX =
