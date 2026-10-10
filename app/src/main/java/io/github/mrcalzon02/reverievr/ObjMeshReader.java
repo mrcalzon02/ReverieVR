@@ -74,7 +74,7 @@ final class ObjMeshReader {
                     indices[i] = index;
                 }
                 for (int i = 1; i + 1 < indices.length; i++) {
-                    if (faces.size() >= MAX_TRIANGLES)
+                    if (faces.size() / 3 >= MAX_TRIANGLES)
                         throw new IOException("OBJ triangle limit exceeded");
                     faces.add(vertices.get(indices[0]));
                     faces.add(vertices.get(indices[i]));
