@@ -170,10 +170,19 @@ No full ~80-person formation simulation for the first native game. No giant comb
 
 ---
 
+## RV-GAME-04 — Breakwater Battery VR
+
+**Canonical spec:** docs/project/BREAKWATER_BATTERY_VR.md. Prioritized stationary coastal-defense game with day/night/location campaigns and inter-wave purchases. First enemies are one-passenger rowboats, followed by 3–6-person military landing craft whose occupants only disembark if their boat survives to reach shore. Later surface gunboats and aircraft require higher-tier countermeasures.
+
+**Implemented boundary:** Development-only GLES2 module, deterministic native campaign loop, generated world/menus and multiple purchasable combat upgrades. **Missing acceptance:** actual physical headset proof, campaign persistence, sophisticated effects and shared MIDI synth/audio service.
+
+---
+
 ## Recommended implementation order
 
 1. **Between Deliveries** — smallest space, richest direct hand interaction, strongest test of the native-module interaction layer.
 2. **Ministry of Intelligence** — naturally seated and interface-heavy; ideal for proving persistent simulation, document interaction, and high-resolution VR UI.
 3. **Iron Sight** — consumes the proven interaction, persistence, AI, rendering, and reporting foundations while adding outdoor traversal, vehicles, squad state, and combat.
+4. **Breakwater Battery** — prioritize its compact stationary-shooter loop for immediate Development device playtesting, without waiving the usual device and thermal gates.
 
 These are roadmap pointers only. Implementation should begin only after RV-0400/RV-0402 are sufficiently stable and the first tiny native gameplay prototype (RV-0600/RV-0601) has established a safe thermal/performance envelope.
