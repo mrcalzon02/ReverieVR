@@ -19,6 +19,8 @@ final class ObjMeshViewerRenderer {
     private FloatBuffer vertices;
     private int program, positionHandle, shadeHandle, mvpHandle;
     private float spinDegrees;
+    private float pitchDegrees;
+    private float viewingDistance = 3.3f;
     private final float[] eyeView = new float[16];
     private final float[] model = new float[16];
     private final float[] combined = new float[16];
@@ -62,6 +64,8 @@ final class ObjMeshViewerRenderer {
             mesh = loaded;
             vertices = prepared;
             spinDegrees = 0.0f;
+            pitchDegrees = 0.0f;
+            viewingDistance = 3.3f;
             return true;
         } catch (IOException | OutOfMemoryError failure) {
             ReverieLog.error("VR_MODEL_VIEWER", "Model load failed.", failure);
@@ -73,7 +77,18 @@ final class ObjMeshViewerRenderer {
 
     boolean hasModel() { return file.isFile() && file.length() > 0; }
     void rotate(float deltaDegrees) {
-        spinDegrees = (spinDegrees + deltaDegrees) % 360.0f;
+        adjustView(deltaDegrees, 0.0f, 0.0f);
+    }
+
+    void adjustView(float yawDegrees, float pitchDeltaDegrees, float zoomMeters) {
+        if (!Float.isFinite(yawDegrees)
+            || !Float.isFinite(pitchDeltaDegrees)
+            || !Float.isFinite(zoomMeters)) return;
+        spinDegrees = (spinDegrees + yawDegrees) % 360.0f;
+        pitchDegrees = Math.max(-75.0f, Math.min(75.0f,
+            pitchDegrees + pitchDeltaDegrees));
+        viewingDistance = Math.max(1.6f, Math.min(8.0f,
+            viewingDistance + zoomMeters));
     }
 
     void onSurfaceCreated() {
@@ -125,7 +140,8 @@ final class ObjMeshViewerRenderer {
         System.arraycopy(eye.getEyeView(), 0, eyeView, 0, 16);
         Matrix.translateM(eyeView, 0, eyeCorrection, 0.0f, 0.0f);
         Matrix.setIdentityM(model, 0);
-        Matrix.translateM(model, 0, 0.0f, 0.0f, -3.3f);
+        Matrix.translateM(model, 0, 0.0f, 0.0f, -viewingDistance);
+        Matrix.rotateM(model, 0, pitchDegrees, 1.0f, 0.0f, 0.0f);
         Matrix.rotateM(model, 0, spinDegrees, 0.0f, 1.0f, 0.0f);
         Matrix.scaleM(model, 0, scale, scale, scale);
         Matrix.translateM(model, 0, -centerX, -centerY, -centerZ);
