@@ -6,6 +6,10 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Red Ledger native save integrity
+
+- A malformed but structurally valid outstanding-payment field now fails native game load before mutating the current session; it no longer resets the running bar simulation after a partial deserialize. Regression coverage verifies current cash, day, and customer queue survive rejection. This strengthens the first native game's persistence semantics without changing save layout/version or showing new UI.
+
 ### Full 3D headset-aligned shake recenter
 
 - Extended sharp-shake alignment from yaw-only to headset yaw, pitch and roll at trigger time. A single tracked-pose correction matrix drives both controller mesh orientation and the active ray, retaining the existing gentle position return and spring feedback. Invalid poses cannot replace the current calibration. Pure JVM tests cover identity, yaw compensation and invalid quaternion rejection. Galaxy S9 acceptance remains pending.
