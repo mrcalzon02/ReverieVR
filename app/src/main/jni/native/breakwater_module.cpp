@@ -148,6 +148,27 @@ int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game) {
     }
     return index;
 }
+constexpr char kSaveSlot[]="breakwater-v1.bin";
+bool SaveState(State *s) {
+    if(!ReverieNativeHostSupportsSaveV1(s->host))return false;
+    uint8_t bytes[Campaign::kSerializedSize]={};
+    if(!s->campaign.SerializeShop(bytes,sizeof(bytes)))return false;
+    return s->host->write_save(kSaveSlot,bytes,
+        static_cast<uint32_t>(sizeof(bytes)))==REVERIE_NATIVE_SAVE_OK;
+}
+void LoadState(State *s) {
+    if(!ReverieNativeHostSupportsSaveV1(s->host))return;
+    uint8_t bytes[Campaign::kSerializedSize]={};
+    uint32_t size=0;
+    const int32_t status=s->host->read_save(kSaveSlot,bytes,
+        static_cast<uint32_t>(sizeof(bytes)),&size);
+    if(status==REVERIE_NATIVE_SAVE_NOT_FOUND)return;
+    if(status!=REVERIE_NATIVE_SAVE_OK || size!=sizeof(bytes) ||
+       !s->campaign.DeserializeShop(bytes,size)) {
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,"Breakwater",
+            "Save rejected; keeping fresh campaign instead of resetting partially.");
+    }
+}
 void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     Campaign &game=s->campaign;
     if(game.phase()==Phase::Shop) {
@@ -155,7 +176,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         const int target=ShopTarget(input);
         bool done=false;
         if(target==8)done=game.BeginWave();
-        else if(target>=0 && target<8)done=game.Purchase(static_cast<Upgrade>(target));
+        else if(target>=0 && target<8){
+            done=game.Purchase(static_cast<Upgrade>(target));
+            if(done)SaveState(s);
+        }
         Feedback(s,done?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(game.phase()==Phase::Combat) {
         float x=0,y=0;
@@ -183,6 +207,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
         game=Campaign(Difficulty::Regular,1049u);
         game.Start();
+        SaveState(s);
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
 }
@@ -281,6 +306,7 @@ void *Create(const ReverieNativeHostV1 *host) {
     s->host=host;
     s->mesh.reserve(81920);
     s->campaign.Start();
+    LoadState(s);
     return s;
 }
 void Destroy(void *instance) { delete static_cast<State *>(instance); }
@@ -325,7 +351,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     const bool secondary=copy.secondary_down!=0;
     s->elapsed+=copy.delta_seconds;
     s->flash=std::max(0.0f,s->flash-copy.delta_seconds);
-    if(s->campaign.phase()==Phase::Combat)s->campaign.Tick(copy.delta_seconds);
+    if(s->campaign.phase()==Phase::Combat) {
+        s->campaign.Tick(copy.delta_seconds);
+        if(s->campaign.phase()==Phase::Shop)SaveState(s);
+    }
     if(down)Interact(s,copy,!s->held);
     if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop)
         s->campaign.BeginWave();
