@@ -3,7 +3,7 @@ package io.github.mrcalzon02.reverievr;
 enum HomeEnvironment {
     WHITE_ROOM(
         "white_room",
-        "White Cube Room"
+        "Birch Panel Living Room"
     ),
     FOREST_GLADE(
         "forest_glade",
