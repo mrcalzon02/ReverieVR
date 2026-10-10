@@ -17,7 +17,7 @@ final class ObjMeshViewerRenderer {
     private final File file;
     private ObjMeshReader.Mesh mesh;
     private FloatBuffer vertices;
-    private int program, positionHandle, mvpHandle;
+    private int program, positionHandle, shadeHandle, mvpHandle;
     private float spinDegrees;
     private final float[] eyeView = new float[16];
     private final float[] model = new float[16];
@@ -31,10 +31,34 @@ final class ObjMeshViewerRenderer {
     boolean load() {
         try (FileReader reader = new FileReader(file)) {
             ObjMeshReader.Mesh loaded = ObjMeshReader.read(reader);
+            // Face normals are generated once, never recomputed per eye.
+            // Interleaved xyz + brightness gives useful shape cues without
+            // texture dependencies or another GPU buffer.
             FloatBuffer prepared = ByteBuffer.allocateDirect(
-                loaded.triangles.length * 4).order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-            prepared.put(loaded.triangles).position(0);
+                loaded.triangles.length / 3 * 16)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+            for (int at = 0; at < loaded.triangles.length; at += 9) {
+                float[] v = loaded.triangles;
+                float ax = v[at + 3] - v[at];
+                float ay = v[at + 4] - v[at + 1];
+                float az = v[at + 5] - v[at + 2];
+                float bx = v[at + 6] - v[at];
+                float by = v[at + 7] - v[at + 1];
+                float bz = v[at + 8] - v[at + 2];
+                float nx = ay * bz - az * by;
+                float ny = az * bx - ax * bz;
+                float nz = ax * by - ay * bx;
+                float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+                float shade = length <= 0.000001f ? 0.5f
+                    : 0.32f + 0.68f * Math.abs(
+                        (nx * 0.38f + ny * 0.72f + nz * 0.58f)
+                            / (length * 0.9946f));
+                for (int vertex = 0; vertex < 3; vertex++) {
+                    prepared.put(v, at + vertex * 3, 3);
+                    prepared.put(Math.min(1.0f, shade));
+                }
+            }
+            prepared.position(0);
             mesh = loaded;
             vertices = prepared;
             spinDegrees = 0.0f;
@@ -54,10 +78,15 @@ final class ObjMeshViewerRenderer {
 
     void onSurfaceCreated() {
         shutdown();
-        final String vertex = "uniform mat4 u_Mvp; attribute vec3 a_Pos;"
-            + "void main(){gl_Position=u_Mvp*vec4(a_Pos,1.0);}";
+        final String vertex = "uniform mat4 u_Mvp;"
+            + "attribute vec3 a_Pos; attribute float a_Shade;"
+            + "varying float v_Shade;"
+            + "void main(){v_Shade=a_Shade;"
+            + "gl_Position=u_Mvp*vec4(a_Pos,1.0);}";
         final String fragment = "precision mediump float;"
-            + "void main(){gl_FragColor=vec4(0.78,0.86,0.93,1.0);}";
+            + "varying float v_Shade;"
+            + "void main(){gl_FragColor=vec4("
+            + "0.78*v_Shade,0.86*v_Shade,0.93*v_Shade,1.0);}";
         int vs = shader(GLES20.GL_VERTEX_SHADER, vertex);
         int fs = shader(GLES20.GL_FRAGMENT_SHADER, fragment);
         if (vs == 0 || fs == 0) {
@@ -69,6 +98,7 @@ final class ObjMeshViewerRenderer {
         GLES20.glAttachShader(program, vs);
         GLES20.glAttachShader(program, fs);
         GLES20.glBindAttribLocation(program, 0, "a_Pos");
+        GLES20.glBindAttribLocation(program, 1, "a_Shade");
         GLES20.glLinkProgram(program);
         GLES20.glDeleteShader(vs);
         GLES20.glDeleteShader(fs);
@@ -79,6 +109,7 @@ final class ObjMeshViewerRenderer {
             throw new IllegalStateException("Model viewer shader link failed");
         }
         positionHandle = GLES20.glGetAttribLocation(program, "a_Pos");
+        shadeHandle = GLES20.glGetAttribLocation(program, "a_Shade");
         mvpHandle = GLES20.glGetUniformLocation(program, "u_Mvp");
     }
 
@@ -107,10 +138,15 @@ final class ObjMeshViewerRenderer {
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0);
         vertices.position(0);
         GLES20.glVertexAttribPointer(positionHandle, 3,
-            GLES20.GL_FLOAT, false, 0, vertices);
+            GLES20.GL_FLOAT, false, 16, vertices);
         GLES20.glEnableVertexAttribArray(positionHandle);
+        vertices.position(3);
+        GLES20.glVertexAttribPointer(shadeHandle, 1,
+            GLES20.GL_FLOAT, false, 16, vertices);
+        GLES20.glEnableVertexAttribArray(shadeHandle);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0,
             mesh.triangles.length / 3);
+        GLES20.glDisableVertexAttribArray(shadeHandle);
         GLES20.glDisableVertexAttribArray(positionHandle);
     }
 
