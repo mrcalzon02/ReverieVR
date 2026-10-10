@@ -8,7 +8,7 @@
 
 A PHONE/CTRL rectangular panel drawn high on the right edge of each Cardboard eye was effectively unreadable in normal headset fit. The sketch provides two concentric short curved power bands that hug the viewing circle, with their first/leftmost section visible while facing straight ahead. "Semicircular" describes the curvature, **not** a 180-degree span: the requested occupied section is approximately **one eighth of a circumference** rather than a quarter of the field.
 
-Use the upper-right lens quadrant, not the clipped extreme corner. Place the outer **PHONE** ring and inner **CTRL** ring inside the headset's natural optical boundary. Each has a dark unfilled track, with green PHONE progress and pale-cyan CTRL progress so their readings can be differentiated. No controller data means an unfilled track and `C --` when numeric display is enabled; it must never manufacture a percentage.
+Use the upper-right lens quadrant, not the clipped extreme corner. Place the outer **PHONE** ring and inner **CTRL** ring inside the headset's natural optical boundary. Each has a dark unfilled track, with bright-green PHONE progress and deeper-green CTRL progress so their readings can be differentiated. No controller data means an unfilled track and `C --` when numeric display is enabled; it must never manufacture a percentage.
 
 ## Implementation contract
 

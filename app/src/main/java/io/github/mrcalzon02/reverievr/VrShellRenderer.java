@@ -6903,7 +6903,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         drawBatteryArc(canvas, paint, PowerHudArcGeometry.OUTER,
             phoneBattery.get(), Color.rgb(105, 236, 121), shift);
         drawBatteryArc(canvas, paint, PowerHudArcGeometry.INNER,
-            controllerBattery.get(), Color.rgb(125, 213, 223), shift);
+            controllerBattery.get(), Color.rgb(77, 196, 96), shift);
 
         if (cachedShowPercentages) {
             paint.setStyle(Paint.Style.FILL);
@@ -6913,7 +6913,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint.setColor(Color.rgb(225, 244, 230));
             canvas.drawText("P " + batteryLabel(phoneBattery.get()),
                 326f, 188f + shift, paint);
-            paint.setColor(Color.rgb(201, 233, 238));
+            paint.setColor(Color.rgb(194, 232, 198));
             canvas.drawText("C " + batteryLabel(controllerBattery.get()),
                 326f, 216f + shift, paint);
             paint.clearShadowLayer();
