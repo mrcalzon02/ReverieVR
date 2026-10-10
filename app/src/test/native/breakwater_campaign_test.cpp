@@ -74,6 +74,32 @@ int main() {
     assert(turret.wave_status().boats_sunk>=1);
     assert(turret.wave_status().troops_landed==0);
 
+    // Snapshot only stable shop state. Corrupt/mismatched snapshots must
+    // leave the live campaign untouched, including purchased upgrades.
+    Campaign writer(Difficulty::Veteran,1234);
+    assert(writer.Start());
+    assert(writer.Purchase(Upgrade::Damage));
+    assert(writer.Purchase(Upgrade::Artillery));
+    uint8_t encoded[Campaign::kSerializedSize]={};
+    assert(writer.SerializeShop(encoded,sizeof(encoded)));
+    Campaign restored;
+    assert(restored.DeserializeShop(encoded,sizeof(encoded)));
+    assert(restored.phase()==Phase::Shop);
+    assert(restored.credits()==writer.credits());
+    assert(restored.level(Upgrade::Damage)==1);
+    assert(restored.artillery_charges()==1);
+    assert(restored.waves_this_period()==4);
+    const int credit_before=restored.credits();
+    encoded[0]^=0xffu;
+    assert(!restored.DeserializeShop(encoded,sizeof(encoded)));
+    assert(restored.credits()==credit_before);
+    encoded[0]^=0xffu;
+    encoded[28]=0xffu; // invalid wave index, at word 7
+    assert(!restored.DeserializeShop(encoded,sizeof(encoded)));
+    assert(restored.credits()==credit_before);
+    assert(writer.BeginWave());
+    assert(!writer.SerializeShop(encoded,sizeof(encoded)));
+
     assert(Campaign::Locations()[0].days==2);
     assert(Campaign::Locations()[1].days==3);
     assert(Campaign::Locations()[2].days==4);
