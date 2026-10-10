@@ -658,6 +658,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         return mode == MODE_VIDEO
+            || mode == MODE_MODEL_VIEWER
             || hoveredButton >= 0;
     }
 
@@ -1330,7 +1331,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 modelViewer.rotate(30.0f);
                 host.onUiFocusChanged();
             }
-            updateActivePointer(frameNanos);
+            controllerPointerActive = updateActivePointer(frameNanos);
+            pointerRenderer.hide();
             return;
         }
 
