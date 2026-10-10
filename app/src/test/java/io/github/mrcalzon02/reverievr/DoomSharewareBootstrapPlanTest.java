@@ -12,9 +12,10 @@ public final class DoomSharewareBootstrapPlanTest {
             DoomSharewareBootstrapPlan.installYml();
 
         assertTrue(yml.contains("run_path: DOSBOX.BAT"));
-        assertTrue(yml.contains("(wait:1500)c(enter)"));
+        assertTrue(yml.contains("(wait:1500)c"));
         assertTrue(yml.contains("(wait:900)(enter)"));
-        assertTrue(yml.contains("(wait:900)y(enter)"));
+        assertFalse(yml.contains("c(enter)"));
+        assertFalse(yml.contains("y(enter)"));
     }
 
     @Test
