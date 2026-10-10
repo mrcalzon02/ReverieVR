@@ -4011,6 +4011,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     break;
                 case 16:
                     if (modelViewer.load()) {
+                        viewerTouchActive = false;
                         mode = MODE_MODEL_VIEWER;
                     } else {
                         host.onUiActionRejected();
