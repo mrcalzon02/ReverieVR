@@ -690,6 +690,20 @@ bool Simulation::Deserialize(
         return false;
     }
 
+    // Validate the outstanding payment against the deterministic patron
+    // queue BEFORE mutating the current simulation. Failed loads are atomic.
+    if (pending_payment > 0) {
+        const int32_t rotation =
+            (day - 1) % static_cast<int32_t>(kPatrons.size());
+        const int32_t queue_index =
+            (rotation + next_patron) % static_cast<int32_t>(kPatrons.size());
+        if (next_patron >= kPatronsPerDay
+            || kPatrons[static_cast<size_t>(queue_index)].drink_price_cents
+                != pending_payment) {
+            return false;
+        }
+    }
+
     day_ = day;
     cash_cents_ = cash;
     debt_cents_ = debt;
@@ -725,17 +739,6 @@ bool Simulation::Deserialize(
         pending_payment;
     last_ledger_ = ledger;
     BuildPatronQueue();
-
-    if (pending_payment_cents_ > 0) {
-        const PatronDefinition *patron =
-            current_patron();
-        if (patron == nullptr
-            || patron->drink_price_cents
-                != pending_payment_cents_) {
-            Reset();
-            return false;
-        }
-    }
 
     return true;
 }
