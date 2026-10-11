@@ -184,6 +184,14 @@ void Campaign::Land(Enemy &e) {
     wave_status_.troops_landed = static_cast<uint8_t>(
         wave_status_.troops_landed + e.passengers);
 }
+float Campaign::reload_fraction() const {
+    if (!reloading()) return 0.0f;
+    // This is display-only progress. The simulation remains the sole owner
+    // of magazine refills and reload timing.
+    constexpr float kReloadSeconds = 1.15f;
+    return std::max(0.0f, std::min(1.0f,
+        1.0f - reload_timer_ / kReloadSeconds));
+}
 bool Campaign::BeginGunShot() {
     if (phase_ != Phase::Combat || fire_timer_ > 0 ||
         reload_timer_ > 0 || magazine_left_ == 0) return false;

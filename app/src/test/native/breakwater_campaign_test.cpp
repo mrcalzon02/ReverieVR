@@ -40,16 +40,35 @@ int main() {
     assert(firing.Start() && firing.BeginWave());
     const uint8_t full_mag=firing.magazine_left();
     assert(full_mag==firing.stats().magazine);
+    assert(!firing.reloading());
+    assert(firing.reload_fraction()==0.0f);
     assert(firing.FireMiss());
     assert(firing.magazine_left()==full_mag-1);
+    assert(!firing.reloading());
+    assert(firing.reload_fraction()==0.0f);
     assert(!firing.FireMiss());
     while(firing.magazine_left()>0) {
         for(int i=0;i<7;i++) firing.Tick(0.05f);
         assert(firing.FireMiss());
     }
+    assert(firing.reloading());
+    assert(firing.reload_fraction()==0.0f);
     assert(!firing.FireMiss());
-    for(int i=0;i<24;i++) firing.Tick(0.05f);
+    firing.Tick(0.05f);
+    const float early_progress=firing.reload_fraction();
+    assert(early_progress>0.0f && early_progress<1.0f);
+    assert(firing.magazine_left()==0);
+    assert(!firing.FireMiss());
+    for(int i=0;i<9;i++) firing.Tick(0.05f);
+    assert(firing.reloading());
+    assert(firing.reload_fraction()>early_progress);
+    assert(firing.reload_fraction()<1.0f);
+    assert(!firing.FireMiss());
+    for(int i=0;i<14;i++) firing.Tick(0.05f);
+    assert(!firing.reloading());
+    assert(firing.reload_fraction()==0.0f);
     assert(firing.magazine_left()==firing.stats().magazine);
+    assert(firing.FireMiss());
 
     Campaign landed(Difficulty::Casual,41);
     assert(landed.Start() && landed.BeginWave());

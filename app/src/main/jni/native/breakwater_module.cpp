@@ -388,6 +388,18 @@ void BuildScene(State *s) {
         std::snprintf(ammo,sizeof(ammo),"CLIP %u",
             static_cast<unsigned>(game.magazine_left()));
         Text(s,ammo,0,.93f,-1.79f,.055f,.88f,.9f,.68f);
+        if(game.reloading()) {
+            // Bounded progress bar: computed once during update, rendered
+            // as the same scene geometry for both eyes.
+            const float progress=game.reload_fraction();
+            Panel(s,0,.72f,-1.79f,1.60f,.12f,.24f,.28f,.30f);
+            if(progress>0.0f) {
+                const float fill=1.52f*progress;
+                Panel(s,-.76f+fill*.5f,.72f,-1.78f,fill,.09f,
+                      .93f,.74f,.34f);
+            }
+            Text(s,"RELOADING",0,.52f,-1.79f,.038f,.92f,.79f,.54f);
+        }
         Text(s,"ARTY",-2.07f,.97f,-1.79f,.078f,.89f,.81f,.42f);
         Text(s,"AIR",2.10f,.97f,-1.79f,.078f,.89f,.81f,.42f);
         if(s->flash>0)Panel(s,0,-.65f,-1.85f,.28f,.20f,1,.82f,.25f);
