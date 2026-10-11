@@ -9,6 +9,11 @@ import com.google.cardboard.sdk.CardboardView;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 final class VrControllerModelRenderer {
     private static final float Z_NEAR = 0.10f;
@@ -65,6 +70,10 @@ final class VrControllerModelRenderer {
         buildDisc(20);
     private final DaydreamControllerAssetRenderer
         assetRenderer;
+    private final List<SteamControllerMesh.Part> steamParts;
+    private boolean steamControllerPrimary;
+    private final float[] steamView = new float[16];
+    private final float[] steamMvp = new float[16];
     private final float[] springVertices =
         new float[ControllerGhostTether.VERTEX_COUNT * 3];
     private final FloatBuffer springMesh =
@@ -132,6 +141,59 @@ final class VrControllerModelRenderer {
             new DaydreamControllerAssetRenderer(
                 context
             );
+        steamParts = loadSteamControllerParts(context);
+    }
+
+    private static List<SteamControllerMesh.Part> loadSteamControllerParts(
+        Context context
+    ) {
+        try (InputStream in = context.getAssets().open(
+            "steam_controller_2015/handoff.zip");
+             ZipInputStream zip = new ZipInputStream(in)) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if ("controller.rvmesh".equals(entry.getName())) {
+                    return SteamControllerMesh.read(zip);
+                }
+                zip.closeEntry();
+            }
+        } catch (IOException | OutOfMemoryError failure) {
+            ReverieLog.error("STEAM_CONTROLLER",
+                "Real Steam Controller asset failed validation", failure);
+        }
+        return null;
+    }
+
+    void setSteamControllerPrimary(boolean primary) {
+        steamControllerPrimary = primary && steamParts != null;
+    }
+
+    private void drawSteamController(CardboardView.Eye eye) {
+        Matrix.multiplyMM(steamView, 0, correctedEyeView, 0, root, 0);
+        Matrix.multiplyMM(steamMvp, 0,
+            eye.getPerspective(Z_NEAR, Z_FAR), 0, steamView, 0);
+        GLES20.glUseProgram(program);
+        GLES20.glUniformMatrix4fv(mvpHandle, 1, false, steamMvp, 0);
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+        GLES20.glDisable(GLES20.GL_BLEND);
+        for (SteamControllerMesh.Part part : steamParts) {
+            FloatBuffer data = part.vertices;
+            data.position(0);
+            GLES20.glVertexAttribPointer(positionHandle, 3,
+                GLES20.GL_FLOAT, false, 24, data);
+            GLES20.glEnableVertexAttribArray(positionHandle);
+            String name = part.name;
+            boolean control = name.startsWith("Button")
+                || name.startsWith("TrackPad");
+            boolean shell = name.startsWith("Case");
+            float color = shell ? 0.22f : control ? 0.36f : 0.28f;
+            GLES20.glUniform4f(colorHandle,
+                ghostPass ? color * 0.7f : color,
+                ghostPass ? color * 0.85f : color,
+                ghostPass ? 0.65f : color + 0.04f, 1.0f);
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, part.count);
+        }
+        GLES20.glDisableVertexAttribArray(positionHandle);
     }
 
     void onSurfaceCreated() {
@@ -370,6 +432,12 @@ final class VrControllerModelRenderer {
 
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
+
+        if (steamControllerPrimary && steamParts != null) {
+            drawSteamController(eye);
+            drawEmitter(eye);
+            return;
+        }
 
         if (assetRenderer.isRenderable()) {
             assetRenderer.drawEye(
