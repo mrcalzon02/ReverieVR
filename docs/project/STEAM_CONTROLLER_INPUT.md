@@ -28,3 +28,12 @@
 
 ## Acceptance
 Not complete until built, diagnostic events shown on a real S9, and behavior verified across the application, DOS host and native modules. No placeholder UI toggle or claims of raw driver access before actual support.
+
+## 3D model sourcing and interactive handset visualization (2026-10-10)
+Valve publicly released original **2015** Steam Controller externally visible mechanical CAD geometry on 2016-03-24: https://steamcommunity.com/app/353370/announcements/ . The announcement offers ZIP/CAD and separate-part STL assets under Creative Commons terms, but explicitly states that commercial creations require contacting Valve. **Do not confuse this with Valve's 2026 Steam Controller CAD release.**
+
+Decision: use Valve's original 2015 model as geometry reference and candidate source, subject to checking the **exact license inside the downloaded archive** and whether an APK distribution is permitted. No Valve model is currently vendored or approved for redistribution. Do not commit the archive or derived mesh until provenance and redistribution status are recorded.
+
+Asset pipeline: fetch/inspect source archive; retain original provenance, author, URL, license text and SHA-256; separate functional face buttons, pads, triggers, shoulders, grips, stick and shell by stable mesh names; decimate/retopologize into an efficient GLES2-friendly mesh and lightweight texture/vertex-color materials. Record vertex/triangle count, source/derived sizes, visual verification and controller-relative transforms. Any generated low-poly substitute should be independently authored, not mislabeled as Valve's original mesh.
+
+Interaction: tie material highlights and pad-contact markers to observed live controller event IDs (do not invent activity when HID events are absent); use neutral/unavailable visual states for unsupported sensors; reuse the existing controller model/hand-anchor abstraction rather than implementing a second avatar/input routing path. Add a side-by-side 3D controller diagnostic view when the model and report mappings are both verified.
