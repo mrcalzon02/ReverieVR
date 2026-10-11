@@ -256,6 +256,31 @@ int main() {
     assert(firing.magazine_left()==firing.stats().magazine);
     assert(firing.FireMiss());
 
+    // The combat secondary action allows a tactical partial-magazine reload,
+    // but never an instant refill, a second concurrent reload, or a full-mag
+    // exploit. The existing timed reload path remains authoritative.
+    Campaign tactical(Difficulty::Casual,19);
+    assert(!tactical.RequestReload()); // briefing
+    assert(tactical.Start());
+    assert(!tactical.RequestReload()); // shop
+    assert(tactical.BeginWave());
+    const uint8_t tactical_full=tactical.magazine_left();
+    assert(!tactical.RequestReload()); // full magazine
+    assert(tactical.FireMiss());
+    assert(tactical.magazine_left()==tactical_full-1);
+    assert(tactical.RequestReload());
+    assert(tactical.reloading());
+    assert(tactical.magazine_left()==tactical_full-1);
+    assert(!tactical.RequestReload());
+    assert(!tactical.FireMiss());
+    tactical.Tick(.05f);
+    assert(tactical.reload_fraction()>0.0f);
+    for(int i=0;i<24;i++) tactical.Tick(.05f);
+    assert(!tactical.reloading());
+    assert(tactical.magazine_left()==tactical_full);
+    assert(!tactical.RequestReload());
+    assert(tactical.FireMiss());
+
     Campaign landed(Difficulty::Casual,41);
     assert(landed.Start() && landed.BeginWave());
     for(int i=0;i<4500 && landed.wave_status().troops_landed==0;i++)

@@ -468,6 +468,8 @@ void BuildScene(State *s) {
             Text(s,"RELOADING",0,.52f,-1.79f,.038f,.92f,.79f,.54f);
         } else if(s->reload_ready_flash>0.0f) {
             Text(s,"READY",0,.61f,-1.79f,.048f,.57f,.96f,.58f);
+        } else if(game.magazine_left()<game.stats().magazine) {
+            Text(s,"SECONDARY RELOAD",0,.52f,-1.79f,.034f,.72f,.83f,.74f);
         }
         char support[24];
         std::snprintf(support,sizeof(support),"ARTY %u",
@@ -581,7 +583,16 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             s->reload_ready_flash=.55f;
         if(s->campaign.phase()==Phase::Shop)SaveState(s);
     }
-    if(down)Interact(s,copy,!s->held);
+    bool started_reload=false;
+    if(secondary && !s->secondary_held &&
+       s->campaign.phase()==Phase::Combat) {
+        started_reload=s->campaign.RequestReload();
+        if(started_reload)s->reload_ready_flash=0.0f;
+        Feedback(s,started_reload?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                  REVERIE_NATIVE_FEEDBACK_FAILURE);
+    }
+    // Reload takes priority if both controls are pressed on the same frame.
+    if(down && !started_reload)Interact(s,copy,!s->held);
     if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop)
         s->campaign.BeginWave();
     s->held=down;s->secondary_held=secondary;

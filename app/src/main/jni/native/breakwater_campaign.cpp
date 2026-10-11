@@ -10,6 +10,7 @@ constexpr std::array<Location, Campaign::kLocations> kPlaces = {{
 }};
 constexpr int kCost[] = {180,200,160,750,260,420,470,140};
 constexpr int kExtra[] = {120,140,100,0,0,0,0,0};
+constexpr float kReloadSeconds = 1.15f;
 constexpr float kGunboatSpeed = .76f;
 constexpr float kBomberSpeed = 1.05f, kStraferSpeed = 1.55f;
 constexpr float kBomberAttackStart = -5.6f, kStraferAttackStart = -8.0f;
@@ -242,16 +243,23 @@ float Campaign::reload_fraction() const {
     if (!reloading()) return 0.0f;
     // This is display-only progress. The simulation remains the sole owner
     // of magazine refills and reload timing.
-    constexpr float kReloadSeconds = 1.15f;
     return std::max(0.0f, std::min(1.0f,
         1.0f - reload_timer_ / kReloadSeconds));
+}
+bool Campaign::RequestReload() {
+    // Tactical reload is an explicit secondary action. It costs the same
+    // time as an empty-magazine reload and cannot interrupt one in progress.
+    if (phase_ != Phase::Combat || reload_timer_ > 0.0f ||
+        magazine_left_ == 0 || magazine_left_ >= stats().magazine) return false;
+    reload_timer_ = kReloadSeconds;
+    return true;
 }
 bool Campaign::BeginGunShot() {
     if (phase_ != Phase::Combat || fire_timer_ > 0 ||
         reload_timer_ > 0 || magazine_left_ == 0) return false;
     --magazine_left_;
     fire_timer_ = stats().fire_delay_ms / 1000.0f;
-    if (magazine_left_ == 0) reload_timer_ = 1.15f;
+    if (magazine_left_ == 0) reload_timer_ = kReloadSeconds;
     return true;
 }
 bool Campaign::FireMiss() {

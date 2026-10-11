@@ -84,6 +84,7 @@ public:
     bool FireAt(uint8_t index);
     bool FireAtInfantry(uint8_t index);
     bool FireMiss();
+    bool RequestReload();
     bool CallArtillery();
     bool CallAirstrike();
     void Tick(float seconds);
