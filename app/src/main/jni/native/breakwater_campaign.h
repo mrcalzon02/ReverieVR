@@ -83,6 +83,8 @@ public:
     int32_t integrity() const { return integrity_; }
     uint8_t infantry() const { return infantry_; }
     uint8_t magazine_left() const { return magazine_left_; }
+    bool reloading() const { return phase_ == Phase::Combat && reload_timer_ > 0.0f; }
+    float reload_fraction() const;
     uint8_t artillery_charges() const { return artillery_charges_; }
     uint8_t airstrike_charges() const { return airstrike_charges_; }
     Stats stats() const;
