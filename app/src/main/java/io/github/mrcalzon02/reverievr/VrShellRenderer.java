@@ -825,6 +825,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         locomotionControllerSnapshot = snapshot;
     }
 
+    void setSteamControllerPrimary(boolean primary) {
+        controllerModelRenderer.setSteamControllerPrimary(primary);
+    }
+
     void setGamepadPointerAvailable(
         boolean available
     ) {
