@@ -503,13 +503,13 @@ public final class VrActivity extends Activity
         finish();
     }
 
-    @Override
     private static boolean isHeadsetBlockedVolumeKey(int keyCode) {
         return keyCode == KeyEvent.KEYCODE_VOLUME_UP
             || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
             || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE;
     }
 
+    @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         // The phone is enclosed by the viewer in VR. Clamp pressure can hold
         // these keys down; consume both presses and releases before routing.
