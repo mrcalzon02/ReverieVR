@@ -198,6 +198,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {42, 590, 230, 648}
     };
 
+    // Virtual targets are intercepted in world-space by
+    // hitPhonePanelControls; this index table enables activation only.
+    private static final int[][] PHONE_PANEL_BUTTONS = new int[24][4];
+
     private static final int[][] KEYBOARD_BUTTONS = makeKeyboardButtons();
 
     private static int[][] makeKeyboardButtons() {
@@ -302,6 +306,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final List<NativeModuleRuntime.Descriptor> nativeModules;
     private final VrKeyboardEditor keyboardEditor = new VrKeyboardEditor();
     private boolean phonePanelVisible;
+    private float phonePanelYawDegrees;
+    private float phonePanelPitchDegrees;
     private final FramePerformanceTracker performanceTracker =
         new FramePerformanceTracker();
     private final EyeRenderPerformanceTracker eyeRenderPerformanceTracker =
@@ -1901,7 +1907,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 mode == MODE_HOME ? nativeLocomotion.z() : 0.0f
             );
             if (mode == MODE_HOME && phonePanelVisible) {
-                homeEnvironmentRenderer.drawPhonePanel();
+                homeEnvironmentRenderer.drawPhonePanel(
+                    phonePanelYawDegrees, phonePanelPitchDegrees,
+                    hoveredButton >= 19 && hoveredButton <= 23
+                        ? hoveredButton - 19 : -1);
             }
             if (mode == MODE_HOME
                 && homeEnvironment == HomeEnvironment.WHITE_ROOM
@@ -3411,6 +3420,54 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
     }
 
+    /**
+     * Mirror the model rotation used by HomeEnvironmentRenderer to translate
+     * pointer intersections into the panel's five world-space control keys.
+     * These targets never dispatch Android screen touches.
+     */
+    private UiRayHit hitPhonePanelControls(
+        float[] origin, float[] direction
+    ) {
+        float[] rotatedOrigin = new float[3];
+        float[] rotatedDirection = new float[3];
+        // Shell input is calibrated to its initial yaw. Environment geometry
+        // remains expressed in the uncalibrated world coordinate frame.
+        rotateYaw(origin, yawOffsetRadians, rotatedOrigin);
+        rotateYaw(direction, yawOffsetRadians, rotatedDirection);
+        float[] pose = new float[16];
+        float[] inverse = new float[16];
+        Matrix.setIdentityM(pose, 0);
+        Matrix.translateM(pose, 0, 0.0f, 0.0f, -2.27f);
+        Matrix.rotateM(pose, 0, phonePanelYawDegrees, 0.0f, 1.0f, 0.0f);
+        Matrix.rotateM(pose, 0, phonePanelPitchDegrees, 1.0f, 0.0f, 0.0f);
+        Matrix.translateM(pose, 0, 0.0f, 0.0f, 2.27f);
+        if (!Matrix.invertM(inverse, 0, pose, 0)) return UiRayHit.miss();
+        float[] point = {
+            rotatedOrigin[0], rotatedOrigin[1], rotatedOrigin[2], 1.0f
+        };
+        float[] vector = {
+            rotatedDirection[0], rotatedDirection[1],
+            rotatedDirection[2], 0.0f
+        };
+        float[] localOrigin = new float[4], localDirection = new float[4];
+        Matrix.multiplyMV(localOrigin, 0, inverse, 0, point, 0);
+        Matrix.multiplyMV(localDirection, 0, inverse, 0, vector, 0);
+        if (Math.abs(localDirection[2]) < 0.00001f)
+            return UiRayHit.miss();
+        float t = (-2.245f - localOrigin[2]) / localDirection[2];
+        if (!Float.isFinite(t) || t <= 0.0f) return UiRayHit.miss();
+        float x = localOrigin[0] + t * localDirection[0];
+        float y = localOrigin[1] + t * localDirection[1];
+        if (x < 0.72f || x > 1.12f) return UiRayHit.miss();
+        for (int i = 0; i < 5; i++) {
+            float top = 1.02f - 0.165f * i;
+            if (y >= top - 0.145f && y <= top) {
+                return new UiRayHit(19 + i, t);
+            }
+        }
+        return UiRayHit.miss();
+    }
+
     private UiRayHit calculateUiRayHit(
         float[] origin,
         float[] direction
@@ -3450,9 +3507,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_HOME && phonePanelVisible
             && !orientationMenuVisible) {
-            // Do not accept invisible Home-button activations while the
-            // immersive Phone Screen panel has focus.
-            return UiRayHit.miss();
+            return hitPhonePanelControls(origin, direction);
         }
 
         if (mode == MODE_KEYBOARD) {
@@ -3747,6 +3802,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (index == 16) {
                 return modelViewer.hasModel();
             }
+            if (index >= 19 && index <= 23) {
+                return phonePanelVisible;
+            }
             return index < HOME_BUTTONS.length;
         }
 
@@ -3978,6 +4036,26 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 18:
                     phonePanelVisible = !phonePanelVisible;
                     textureDirty = true;
+                    break;
+                case 19:
+                    phonePanelYawDegrees = Math.max(-65.0f,
+                        phonePanelYawDegrees - 10.0f);
+                    break;
+                case 20:
+                    phonePanelYawDegrees = Math.min(65.0f,
+                        phonePanelYawDegrees + 10.0f);
+                    break;
+                case 21:
+                    phonePanelPitchDegrees = Math.max(-40.0f,
+                        phonePanelPitchDegrees - 10.0f);
+                    break;
+                case 22:
+                    phonePanelPitchDegrees = Math.min(40.0f,
+                        phonePanelPitchDegrees + 10.0f);
+                    break;
+                case 23:
+                    phonePanelYawDegrees = 0.0f;
+                    phonePanelPitchDegrees = 0.0f;
                     break;
                 case 6:
                     preferences.setBatteryHudEnabled(
@@ -4737,7 +4815,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_HOME) {
-            return HOME_BUTTONS;
+            return phonePanelVisible
+                ? PHONE_PANEL_BUTTONS : HOME_BUTTONS;
         }
 
         if (mode == MODE_CONTROLLER) {
