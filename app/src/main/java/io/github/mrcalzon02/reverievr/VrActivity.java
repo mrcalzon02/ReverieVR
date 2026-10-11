@@ -1065,13 +1065,13 @@ public final class VrActivity extends Activity
         renderer.setSteamControllerPrimary(steamPrimary);
 
         if (provider) {
-            String provider =
+            String providerName =
                 controllerManager.getActiveProviderDisplayName();
             renderer.setControllerState(
                 true,
-                provider == null || provider.trim().isEmpty()
+                providerName == null || providerName.trim().isEmpty()
                     ? controllerConnectionMessage
-                    : provider + " ready"
+                    : providerName + " ready"
             );
             renderer.setControllerBattery(
                 controllerManager.getBatteryPercentage()
