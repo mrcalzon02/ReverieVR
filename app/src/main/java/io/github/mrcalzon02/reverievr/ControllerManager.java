@@ -19,6 +19,7 @@ final class ControllerManager implements AutoCloseable {
 
     private final ControllerProvider daydreamProvider;
     private final PhoneControllerEmulatorProvider phoneEmulatorProvider;
+    private final SteamControllerBatteryMonitor steamBatteryMonitor;
     private final CopyOnWriteArrayList<Listener> listeners =
         new CopyOnWriteArrayList<>();
 
@@ -33,6 +34,7 @@ final class ControllerManager implements AutoCloseable {
     ControllerManager(Context context) {
         daydreamProvider = new DaydreamControllerProvider(context);
         phoneEmulatorProvider = new PhoneControllerEmulatorProvider(context);
+        steamBatteryMonitor = new SteamControllerBatteryMonitor(context, this::notifyBattery);
 
         daydreamProvider.setListener(
             new ProviderListener(daydreamProvider)
@@ -118,6 +120,15 @@ final class ControllerManager implements AutoCloseable {
         return provider == null ? "" : provider.getDisplayName();
     }
 
+    void refreshSteamBattery(boolean selectedAndConnected) {
+        steamBatteryMonitor.refresh(selectedAndConnected);
+    }
+
+    int getSteamBatteryPercentage() {
+        int publicApi = AndroidGamepadSupport.steamBatteryPercentage();
+        return publicApi >= 0 ? publicApi : steamBatteryMonitor.getPercentage();
+    }
+
     int getBatteryPercentage() {
         return batteryPercentage;
     }
@@ -172,6 +183,7 @@ final class ControllerManager implements AutoCloseable {
     @Override
     public void close() {
         listeners.clear();
+        steamBatteryMonitor.close();
         daydreamProvider.close();
         phoneEmulatorProvider.close();
     }

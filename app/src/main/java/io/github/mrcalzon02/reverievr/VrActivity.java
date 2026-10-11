@@ -1063,6 +1063,7 @@ public final class VrActivity extends Activity
             : ReveriePreferences.CONTROLLER_AUTO.equals(selected) && !provider ? gamepad : null;
         renderer.setGamepadPointerAvailable(steamPrimary || connectedVrController != null);
         renderer.setSteamControllerPrimary(steamPrimary);
+        controllerManager.refreshSteamBattery(steamPrimary);
 
         if (provider) {
             String providerName =
@@ -1085,7 +1086,7 @@ public final class VrActivity extends Activity
                 "Android controller ready: " + connectedVrController
             );
             renderer.setControllerBattery(steamPrimary
-                ? AndroidGamepadSupport.steamBatteryPercentage() : -1);
+                ? controllerManager.getSteamBatteryPercentage() : -1);
         } else {
             renderer.setControllerState(
                 false,

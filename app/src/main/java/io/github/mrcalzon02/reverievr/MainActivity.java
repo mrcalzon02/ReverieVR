@@ -673,7 +673,8 @@ public final class MainActivity extends Activity
         boolean steam = ReveriePreferences.CONTROLLER_STEAM.equals(choice)
             || ReveriePreferences.CONTROLLER_AUTO.equals(choice) && !controllerManager.isReady()
                 && AndroidGamepadSupport.firstConnectedSteamController() != null;
-        if (steam) showControllerBattery(AndroidGamepadSupport.steamBatteryPercentage(), -1);
+        controllerManager.refreshSteamBattery(steam);
+        if (steam) showControllerBattery(controllerManager.getSteamBatteryPercentage(), -1);
         else if (controllerManager.isReady())
             showControllerBattery(controllerManager.getBatteryPercentage(),
                 controllerManager.getBatteryMillivolts());
