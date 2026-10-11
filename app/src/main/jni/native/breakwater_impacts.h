@@ -6,7 +6,7 @@
 #include <cstdint>
 
 namespace reverie { namespace breakwater {
-enum class ImpactKind : uint8_t { Water, Metal, Sand };
+enum class ImpactKind : uint8_t { Water, Metal, Sand, Explosion };
 struct ImpactPulse {
     float x=0, y=0, z=0, remaining=0;
     ImpactKind kind=ImpactKind::Water;
@@ -15,6 +15,7 @@ class ImpactEffects {
 public:
     static constexpr size_t kCapacity=8;
     static constexpr float kLifetime=.30f;
+    static constexpr float kExplosionLifetime=.58f;
     const std::array<ImpactPulse,kCapacity> &pulses() const { return pulses_; }
     bool RecordHit(const float *origin,const float *direction,float distance,
                    ImpactKind kind) {
@@ -32,9 +33,18 @@ public:
             point[axis]=static_cast<float>(position);
         }
         if(magnitude<=0 || !std::isfinite(magnitude)) return false;
-        pulses_[next_]={point[0],point[1],point[2],kLifetime,kind};
+        pulses_[next_]={point[0],point[1],point[2],
+            kind==ImpactKind::Explosion?kExplosionLifetime:kLifetime,kind};
         next_=(next_+1)%kCapacity;
         return true;
+    }
+    // Only a damaging round creates an impact. In particular, basic gun
+    // rounds against aircraft without anti-air must not fake a hit spark.
+    bool RecordDamageHit(const float *origin,const float *direction,float distance,
+                         int16_t beforeHp,int16_t afterHp,bool stillActive) {
+        if(afterHp>=beforeHp) return false;
+        return RecordHit(origin,direction,distance,
+                         stillActive?ImpactKind::Metal:ImpactKind::Explosion);
     }
     bool RecordWaterMiss(const float *origin,const float *direction) {
         if(!origin || !direction || !std::isfinite(origin[1]) ||

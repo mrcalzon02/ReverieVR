@@ -34,6 +34,24 @@ int main() {
         if(pulse.remaining>0) ++liveEffects;
     assert(liveEffects==ImpactEffects::kCapacity);
 
+    // A hit spark requires real damage; lethal hits have longer blast pulses.
+    // The unupgraded gun consumes ammo against aircraft without dealing damage.
+    ImpactEffects blasts;
+    assert(!blasts.RecordDamageHit(muzzle,horizontal,5.0f,100,100,true));
+    assert(blasts.RecordDamageHit(muzzle,horizontal,5.0f,100,80,true));
+    assert(blasts.pulses()[0].kind==ImpactKind::Metal);
+    assert(blasts.RecordDamageHit(muzzle,horizontal,5.0f,20,-10,false));
+    assert(blasts.pulses()[1].kind==ImpactKind::Explosion);
+    assert(std::abs(blasts.pulses()[1].remaining-
+                    ImpactEffects::kExplosionLifetime)<.0001f);
+    assert(!blasts.RecordDamageHit(muzzle,zeroVector,5.0f,20,0,false));
+    assert(!blasts.RecordDamageHit(muzzle,horizontal,41.0f,20,0,false));
+    blasts.Tick(ImpactEffects::kLifetime);
+    assert(blasts.pulses()[0].remaining==0.0f);
+    assert(blasts.pulses()[1].remaining>0.0f);
+    blasts.Tick(ImpactEffects::kExplosionLifetime);
+    assert(blasts.pulses()[1].remaining==0.0f);
+
     // Surface intersection ordering must beat center-distance ordering.
     // The farther center's larger hull can be the first struck surface.
     const float rayOrigin[]={0,0,5}, rayForward[]={0,0,-1};

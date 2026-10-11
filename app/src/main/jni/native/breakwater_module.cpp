@@ -229,14 +229,14 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         const int target=CombatTarget(input,game);
         // Resolve the impact before a lethal hit deactivates the target.
         float impactDepth=0.0f;
-        ImpactKind impactKind=ImpactKind::Metal;
-        if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies))
+        const bool enemyTarget=target>=0 &&
+            target<static_cast<int>(Campaign::kMaxEnemies);
+        const int16_t targetHp=enemyTarget?game.enemies()[target].hp:0;
+        if(enemyTarget)
             AimAtEnemy(input,game.enemies()[target],&impactDepth);
-        else if(target>=static_cast<int>(Campaign::kMaxEnemies)) {
-            impactKind=ImpactKind::Sand;
+        else if(target>=static_cast<int>(Campaign::kMaxEnemies))
             RayHitsInfantry(game.infantry_units()[target-Campaign::kMaxEnemies],
                            input.pointer_origin,input.pointer_direction,&impactDepth);
-        }
         bool shot=false;
         if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies))
             shot=game.FireAt(static_cast<uint8_t>(target));
@@ -245,10 +245,15 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         else if(GunWithinTraverse(input.pointer_direction))
             shot=game.FireMiss();
         if(shot){
-            if(impactDepth>0.0f)
-                s->impacts.RecordHit(input.pointer_origin,input.pointer_direction,
-                                     impactDepth,impactKind);
-            else if(target<0)
+            if(impactDepth>0.0f) {
+                if(enemyTarget)
+                    s->impacts.RecordDamageHit(input.pointer_origin,input.pointer_direction,
+                        impactDepth,targetHp,game.enemies()[target].hp,
+                        game.enemies()[target].active);
+                else
+                    s->impacts.RecordHit(input.pointer_origin,input.pointer_direction,
+                                         impactDepth,ImpactKind::Sand);
+            } else if(target<0)
                 s->impacts.RecordWaterMiss(input.pointer_origin,input.pointer_direction);
             for(int k=0;k<3;k++)s->shot_direction[k]=input.pointer_direction[k];
             s->flash=.09f;
@@ -352,10 +357,24 @@ void BuildScene(State *s) {
     }
     // CPU-updated, fixed-capacity impact pulses render identically in both eyes.
     for(const ImpactPulse &impact:s->impacts.pulses())if(impact.remaining>0.0f) {
-        const float progress=1.0f-impact.remaining/ImpactEffects::kLifetime;
-        const float size=.07f+.17f*progress;
+        const bool explosion=impact.kind==ImpactKind::Explosion;
+        const float lifetime=explosion?ImpactEffects::kExplosionLifetime:
+                                       ImpactEffects::kLifetime;
+        const float progress=std::max(0.0f,1.0f-impact.remaining/lifetime);
+        const float size=explosion?.19f+.54f*progress:.07f+.17f*progress;
         const float x=impact.x,y=impact.y,z=impact.z+.035f;
-        if(impact.kind==ImpactKind::Water) {
+        if(explosion) {
+            // Three crossed, expanding vertex-color blast petals darken to smoke.
+            // No textures, heap particles or per-eye simulation updates.
+            const float fade=1.0f-progress;
+            Triangle(s,x-size,y,z,x,y+size*.9f,z,x+size,y,z,
+                     .22f+.76f*fade,.17f+.48f*fade,.12f+.12f*fade);
+            Triangle(s,x,y-size*.7f,z,x+size*.8f,y,z,x,y+size*.7f,z,
+                     .22f+.58f*fade,.15f+.35f*fade,.12f+.10f*fade);
+            Triangle(s,x,y-size*.65f,z-size*.6f,x,y+size*.85f,z,
+                     x,y-size*.65f,z+size*.6f,
+                     .20f+.60f*fade,.16f+.38f*fade,.13f+.11f*fade);
+        } else if(impact.kind==ImpactKind::Water) {
             Triangle(s,x-size,y+.01f,z-size,x+size,y+.01f,z-size,
                      x,y+size*1.5f,z,.67f,.85f,.96f);
             Triangle(s,x-size*.7f,y+.01f,z+size,x+size*.7f,y+.01f,z+size,
