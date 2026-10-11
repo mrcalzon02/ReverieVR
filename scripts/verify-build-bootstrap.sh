@@ -50,6 +50,20 @@ if [ -d third_party/dosbox-pure/src/.git ] || [ -f third_party/dosbox-pure/src/.
     dosbox_status="$dosbox_hash"
 fi
 
+# Controller input must not demand Location permission or query Location state.
+# BLE/GATT and standard Android HID input use their Bluetooth/input APIs only.
+if grep -Eq 'android\\.permission\\.ACCESS_(FINE|COARSE|BACKGROUND)_LOCATION' \
+    app/src/main/AndroidManifest.xml controller-app/src/main/AndroidManifest.xml; then
+    echo "Controller build unexpectedly declares an Android Location permission." >&2
+    exit 8
+fi
+
+if grep -Eq 'ACCESS_(FINE|COARSE|BACKGROUND)_LOCATION|LocationManager|isLocationEnabled|isProviderEnabled' \
+    app/src/main/java/io/github/mrcalzon02/reverievr/DaydreamControllerProvider.java; then
+    echo "Daydream controller provider unexpectedly checks or requests Location." >&2
+    exit 9
+fi
+
 echo "ReverieVR build bootstrap verified."
 echo "  Gradle wrapper: $wrapper_hash"
 echo "  Gradle distribution SHA-256: $EXPECTED_DISTRIBUTION_SHA256"
