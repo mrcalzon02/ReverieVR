@@ -57,6 +57,50 @@ final class HomeEnvironmentRenderer {
     private final Mesh phonePanelGlass = mesh(
         quadVerticalZ(-0.61f, 0.61f, -0.65f, 0.92f, -2.255f));
     private final Mesh[] phonePanelControlKeys = buildPhoneControlKeys();
+    private final Mesh[] phonePanelControlGlyphs = buildPhoneControlGlyphs();
+
+    private static Mesh[] buildPhoneControlGlyphs() {
+        Mesh[] glyphs = new Mesh[5];
+        for (int i = 0; i < glyphs.length; i++) {
+            float middle = 0.9475f - i * 0.165f;
+            java.util.List<Float> triangles = new java.util.ArrayList<>();
+            // Minus/plus, up/down and home reset; actual mesh marks rather
+            // than empty cyan rectangles or unreadable small bitmap text.
+            if (i <= 1) {
+                append(triangles, quadVerticalZ(
+                    0.85f, 0.99f, middle - 0.012f, middle + 0.012f,
+                    -2.237f));
+                if (i == 1) append(triangles, quadVerticalZ(
+                    0.91f, 0.93f, middle - 0.051f, middle + 0.051f,
+                    -2.236f));
+            } else if (i == 2 || i == 3) {
+                float direction = i == 2 ? 1.0f : -1.0f;
+                float tip = middle + direction * 0.048f;
+                float bottom = middle - direction * 0.040f;
+                append(triangles, quadVerticalZ(
+                    0.912f, 0.932f, Math.min(tip,bottom),
+                    Math.max(tip,bottom), -2.237f));
+                append(triangles, quadVerticalZ(
+                    0.86f, 0.98f, tip - 0.010f, tip + 0.010f,
+                    -2.236f));
+            } else {
+                append(triangles, quadVerticalZ(
+                    0.85f, 0.99f, middle - 0.045f,
+                    middle - 0.027f, -2.237f));
+                append(triangles, quadVerticalZ(
+                    0.85f, 0.87f, middle - 0.045f,
+                    middle + 0.040f, -2.237f));
+                append(triangles, quadVerticalZ(
+                    0.97f, 0.99f, middle - 0.045f,
+                    middle + 0.040f, -2.237f));
+            }
+            float[] data = new float[triangles.size()];
+            for (int j = 0; j < data.length; j++) data[j] = triangles.get(j);
+            glyphs[i] = mesh(data);
+        }
+        return glyphs;
+    }
+
     private final float[] phoneBaseMvp = new float[16];
     private final float[] phonePose = new float[16];
     private final float[] phoneRotatedMvp = new float[16];
@@ -358,6 +402,7 @@ final class HomeEnvironmentRenderer {
                 focused ? 0.24f : 0.10f,
                 focused ? 0.76f : 0.34f,
                 focused ? 0.85f : 0.48f, 1.0f);
+            draw(phonePanelControlGlyphs[i], 0.93f, 0.96f, 0.99f, 1.0f);
         }
         System.arraycopy(phoneBaseMvp, 0, mvp, 0, 16);
     }
