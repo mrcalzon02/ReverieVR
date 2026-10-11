@@ -74,6 +74,10 @@ A user-selectable adaptive HUD mode may retract the status layer during ordinary
 
 Bindings in Stage B must be represented by a configurable input-action layer rather than permanently hard-coded into application logic.
 
+### 3.2.1 Bluetooth controller privacy and entry
+
+ReverieVR must not check system Location-services state, request Android Location permissions, or require Location services as an application-level prerequisite for controller pairing, controller reconnection, standard Bluetooth HID input or VR entry. For controllers already paired through Android (including the original Steam Controller), use `InputDevice` input routing without a new BLE scan. Reuse known Daydream bonds before attempting BLE discovery. Where Android itself filters or refuses an app-initiated BLE scan, expose the actual scan/permission failure without claiming Location must be enabled, silently bypassing that error, or weakening recovery. Android 12+ Nearby Devices (`BLUETOOTH_SCAN`/`BLUETOOTH_CONNECT`) permissions may still apply to direct BLE access. Do not conflate the operating system's constraints on new discovery with a requirement for standard controller operation.
+
 ### 3.3 Shell continuity invariant
 
 The ReverieVR shell is not merely the first 3D scene. It is the persistent platform layer around hosted experiences.
