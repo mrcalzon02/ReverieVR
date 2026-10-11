@@ -7,6 +7,21 @@
 
 Source change (APK and Galaxy S9 validation pending): Stage B QoL, media, video projection and DOS import panels removed from the pre-VR setup screen. Retained phone/controller status and tests, VR entry, updater, diagnostics and recovery. VR-to-Android document-picker handoff and import storage are preserved. In VR, the DOS library has an always-available Import control alongside paging and Home, even when modules already exist. Static source verification only; not an APK or device acceptance claim.
 
+## 2026-10-11 — RV-0502 media scene / stereo video source slice
+
+The media pipeline now distinguishes ordinary 2D cinema and 360-degree content from
+explicitly configured packed stereoscopic side-by-side and top/bottom layouts
+(including equirectangular 360-degree variants). Both Cardboard eyes receive the
+proper packed UV region before the external SurfaceTexture transform, with
+aspect correction per eye for flat cinema. Video occupies the full physical eye
+viewport rather than the inset menu rectangle and does not render the home
+environment behind it. The in-VR Media panel cycles modes; selecting a different
+video resets to a conservative filename hint or 2D fallback. Unrecognized 3D
+metadata is **not** detected automatically. VR180 fisheye decoding is not
+implemented. Regression tests cover packing, defaults, aspect and suggestions.
+Status: source-integrated, APK / JVM execution and Galaxy S9 stereo/thermal
+acceptance pending; no device validation claim.
+
 ## Authority
 
 - Repository: `mrcalzon02/ReverieVR`

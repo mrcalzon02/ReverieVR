@@ -33,6 +33,7 @@ final class VideoSurfaceRenderer {
     private final int sphereVertexCount;
 
     private final float[] surfaceTransform = new float[16];
+    private final float[] eyeUvRegion = new float[4];
     private final float[] eyeView = new float[16];
     private final float[] correctedEyeView = new float[16];
     private final float[] model = new float[16];
@@ -48,6 +49,7 @@ final class VideoSurfaceRenderer {
     private int uvHandle;
     private int mvpHandle;
     private int surfaceTransformHandle;
+    private int eyeRegionHandle;
     private int textureHandle;
 
     private SurfaceTexture surfaceTexture;
@@ -99,6 +101,7 @@ final class VideoSurfaceRenderer {
         mvpHandle = GLES20.glGetUniformLocation(program, "u_Mvp");
         surfaceTransformHandle =
             GLES20.glGetUniformLocation(program, "u_SurfaceTransform");
+        eyeRegionHandle = GLES20.glGetUniformLocation(program, "u_EyeRegion");
         textureHandle = GLES20.glGetUniformLocation(program, "u_Texture");
 
         int[] textures = new int[1];
@@ -153,8 +156,10 @@ final class VideoSurfaceRenderer {
         GLES20.glDisable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
 
-        if (projection
-            == VideoProjection.MONO_EQUIRECTANGULAR_360) {
+        VideoProjection selected = projection;
+        selected.fillEyeUvRegion(
+            eye.getEyeType() == CardboardView.Eye.LEFT, eyeUvRegion);
+        if (selected.isImmersive()) {
             GLES20.glClearColor(
                 0.0f,
                 0.0f,
@@ -178,7 +183,7 @@ final class VideoSurfaceRenderer {
             0.0f
         );
 
-        if (projection == VideoProjection.MONO_EQUIRECTANGULAR_360) {
+        if (selected.isImmersive()) {
             drawSphere(eye);
         } else {
             drawFlat(eye);
@@ -210,6 +215,7 @@ final class VideoSurfaceRenderer {
         uvHandle = -1;
         mvpHandle = -1;
         surfaceTransformHandle = -1;
+        eyeRegionHandle = -1;
         textureHandle = -1;
         frameAvailable.set(false);
         Matrix.setIdentityM(surfaceTransform, 0);
@@ -227,7 +233,8 @@ final class VideoSurfaceRenderer {
 
     private void drawFlat(CardboardView.Eye eye) {
         float halfHeight = 0.95f;
-        float halfWidth = Math.min(1.75f, halfHeight * videoAspectRatio);
+        float halfWidth = Math.min(1.75f,
+            halfHeight * projection.eyeDisplayAspect(videoAspectRatio));
 
         Matrix.setIdentityM(model, 0);
         Matrix.translateM(model, 0, 0.0f, 0.0f, -3.2f);
@@ -304,6 +311,7 @@ final class VideoSurfaceRenderer {
             surfaceTransform,
             0
         );
+        GLES20.glUniform4fv(eyeRegionHandle, 1, eyeUvRegion, 0);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture);
@@ -472,13 +480,15 @@ final class VideoSurfaceRenderer {
     private static final String VERTEX_SHADER =
         "uniform mat4 u_Mvp;\n"
             + "uniform mat4 u_SurfaceTransform;\n"
+            + "uniform vec4 u_EyeRegion;\n"
             + "attribute vec4 a_Position;\n"
             + "attribute vec2 a_TexCoord;\n"
             + "varying vec2 v_TexCoord;\n"
             + "void main() {\n"
             + "  gl_Position = u_Mvp * a_Position;\n"
             + "  v_TexCoord = "
-            + "(u_SurfaceTransform * vec4(a_TexCoord, 0.0, 1.0)).xy;\n"
+            + "(u_SurfaceTransform * vec4(u_EyeRegion.xy + "
+            + "a_TexCoord * u_EyeRegion.zw, 0.0, 1.0)).xy;\n"
             + "}\n";
 
     private static final String FRAGMENT_SHADER =

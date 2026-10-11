@@ -1781,10 +1781,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         recordStereoEyeDiagnostic(eye, eyeViewport);
 
-        // Hosted native applications own an immersive stereoscopic scene.
-        // Do not letterbox them using the shell menu's optical comfort inset.
+        // Media is a full eye-owned 3D scene, not a menu texture inset.
+        // Flat cinema stays a world-space surface; packed 3D and panoramas
+        // use their own stereo views without shrinking either Cardboard eye.
         final float contentScale = (mode == MODE_NATIVE
-            || mode == MODE_MODEL_VIEWER)
+            || mode == MODE_MODEL_VIEWER
+            || mode == MODE_VIDEO)
             ? 1.0f : EYE_CONTENT_VIEWPORT_SCALE;
         int contentWidth =
             Math.max(
@@ -1910,7 +1912,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             ? correctionHalf
             : -correctionHalf;
 
-        if (mode != MODE_NATIVE && mode != MODE_MODEL_VIEWER) {
+        if (mode != MODE_NATIVE && mode != MODE_MODEL_VIEWER
+            && mode != MODE_VIDEO) {
             HomeEnvironment homeEnvironment =
                 preferences.getHomeEnvironment();
             homeEnvironmentRenderer.drawEye(
@@ -4478,12 +4481,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 1:
                 VideoProjection current =
                     preferences.getVideoProjection();
-                VideoProjection next =
-                    current
-                        == VideoProjection.MONO_EQUIRECTANGULAR_360
-                        ? VideoProjection.FLAT_CINEMA
-                        : VideoProjection.MONO_EQUIRECTANGULAR_360;
-                preferences.setVideoProjection(next);
+                preferences.setVideoProjection(current.next());
+                videoRenderer.setProjection(preferences.getVideoProjection());
                 break;
 
             case 2:
@@ -6425,12 +6424,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             preferences.getVideoProjection();
         String[] labels = new String[] {
             preferences.hasSelectedVideo()
-                ? "PLAY ON FLOATING SCREEN"
+                ? (projection.isStereo()
+                    ? "PLAY STEREO IN 3D SCENE"
+                    : projection.isImmersive()
+                        ? "PLAY 360 IN 3D SCENE"
+                        : "PLAY 2D CINEMA")
                 : "CHOOSE MEDIA ON PHONE",
-            projection
-                == VideoProjection.MONO_EQUIRECTANGULAR_360
-                ? "DISPLAY: MONO 360°"
-                : "DISPLAY: FLOATING SCREEN",
+            "FORMAT: " + projection.displayName(),
             preferences.hasSelectedVideo()
                 ? "CHANGE MEDIA ON PHONE"
                 : "OPEN MEDIA PICKER ON PHONE",

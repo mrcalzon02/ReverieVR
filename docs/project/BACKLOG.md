@@ -96,7 +96,7 @@
 
 - RV-0500 — Local flat virtual-screen playback.
 - RV-0501 — 180/360 projection.
-- RV-0502 — stereoscopic media layouts.
+- RV-0502 — **Source implementation committed; build/headset gate pending:** use full Cardboard eye viewports for the media scene; render mono 2D cinema or 360° panoramas, and packed side-by-side/top-bottom stereo cinema or 360° with independent eye sampling and per-eye aspect correction. Recognize explicit filename tags on new selections and allow in-VR format override. Physical stereo orientation, decode performance, and device comfort remain unaccepted. VR180 fisheye, embedded container stereo metadata, and advanced video library detection remain future work.
 - RV-0503 — playback controls and file/library UI.
 - RV-0504 — sustained decode/thermal validation.
 

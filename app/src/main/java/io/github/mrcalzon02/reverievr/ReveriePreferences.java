@@ -170,20 +170,27 @@ final class ReveriePreferences {
             return;
         }
 
-        preferences.edit()
+        SharedPreferences.Editor editor = preferences.edit()
             .putString(KEY_VIDEO_URI, uri)
             .putString(
                 KEY_VIDEO_DISPLAY_NAME,
                 displayName == null ? "" : displayName
-            )
-            .apply();
+            );
+        // A new video has its own format. Never carry a previous movie's 3D
+        // interpretation into an unrelated ordinary 2D file.
+        if (!uri.equals(getSelectedVideoUri())) {
+            editor.putString(KEY_VIDEO_PROJECTION,
+                VideoProjection.suggestForFileName(displayName).name());
+        }
+        editor.apply();
     }
 
     void clearSelectedVideo() {
         SharedPreferences.Editor editor =
             preferences.edit()
                 .remove(KEY_VIDEO_URI)
-                .remove(KEY_VIDEO_DISPLAY_NAME);
+                .remove(KEY_VIDEO_DISPLAY_NAME)
+                .remove(KEY_VIDEO_PROJECTION);
 
         if (LAST_ACTIVITY_MEDIA.equals(
                 getLastActivityType()
