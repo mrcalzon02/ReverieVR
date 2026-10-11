@@ -1030,6 +1030,24 @@ public final class VrActivity extends Activity
         renderer.setGamepadPointerAvailable(
             connectedGamepad != null
         );
+        // Prefer the primary gamepad's actual Android vendor identity,
+        // never Steam platform services or unrelated Valve HID devices.
+        boolean steamPrimary = false;
+        if (!controllerManager.isReady() && connectedGamepad != null) {
+            int[] ids = android.view.InputDevice.getDeviceIds();
+            for (int id : ids) {
+                android.view.InputDevice device =
+                    android.view.InputDevice.getDevice(id);
+                if (device == null) continue;
+                if (SteamControllerIdentity.matches(
+                        device.getVendorId(), device.getName())
+                    && connectedGamepad.equals(device.getName())) {
+                    steamPrimary = true;
+                    break;
+                }
+            }
+        }
+        renderer.setSteamControllerPrimary(steamPrimary);
 
         if (controllerManager.isReady()) {
             String provider =
