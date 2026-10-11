@@ -30,6 +30,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVrFirstFrameRendered();
         void onVrKeyboardTextCommitted(String text);
         void onModelImportRequested();
+        void onPhoneCaptureConsentRequested();
+        void onPhoneCaptureDismissed();
         void onVrRendererFailure(
             String phase,
             Throwable throwable
@@ -4035,6 +4037,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     return;
                 case 18:
                     phonePanelVisible = !phonePanelVisible;
+                    if (phonePanelVisible) host.onPhoneCaptureConsentRequested();
+                    else host.onPhoneCaptureDismissed();
                     textureDirty = true;
                     break;
                 case 19:
@@ -4756,6 +4760,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (mode == MODE_HOME) {
             if (phonePanelVisible) {
                 phonePanelVisible = false;
+                host.onPhoneCaptureDismissed();
                 hoveredButton = -1;
                 textureDirty = true;
                 return;
