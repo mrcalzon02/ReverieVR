@@ -21,7 +21,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -485,21 +484,6 @@ final class DaydreamControllerProvider implements ControllerProvider {
             return;
         }
 
-        if (!legacyBleLocationServicesEnabled()) {
-            ReverieLog.incident(
-                "CONTROLLER_BLE",
-                "BLE discovery blocked because Android Location services are off."
-            );
-            emitConnection(
-                ConnectionState.ERROR,
-                "Android 8–11 block app BLE discovery when Location is off. "
-                    + "This affects finding a new Daydream controller, not connecting "
-                    + "an existing bond or using an Android Steam Controller HID. "
-                    + "Enable Location only if you need to scan for a new Daydream controller."
-            );
-            return;
-        }
-
         scanner = adapter.getBluetoothLeScanner();
         if (scanner == null) {
             emitConnection(
@@ -558,9 +542,10 @@ final class DaydreamControllerProvider implements ControllerProvider {
                     );
                     emitConnection(
                         ConnectionState.ERROR,
-                        observed == 0 && Build.VERSION.SDK_INT < Build.VERSION_CODES.S
-                            ? "Android returned no BLE scan results. Confirm Location is ON, "
-                                + "wake the controller, and try Pair again."
+                        observed == 0
+                            ? "No Daydream BLE advertisements received. "
+                                + "Check that the controller is awake and Bluetooth is on. "
+                                + "Android may filter app-initiated scans; review scan permissions."
                             : "No Daydream controller was found. Wake it and try again."
                     );
                 }
@@ -654,34 +639,6 @@ final class DaydreamControllerProvider implements ControllerProvider {
         }
 
         return null;
-    }
-
-    private boolean legacyBleLocationServicesEnabled() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            return true;
-        }
-
-        LocationManager manager =
-            (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        if (manager == null) {
-            return true;
-        }
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                return manager.isLocationEnabled();
-            }
-
-            return manager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-                || manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        } catch (RuntimeException exception) {
-            ReverieLog.dev(
-                "CONTROLLER_BLE",
-                "Could not read legacy Location-services state: "
-                    + exception.getClass().getSimpleName()
-            );
-            return true;
-        }
     }
 
     private void updateScanDiagnostics(ScanResult result) {
