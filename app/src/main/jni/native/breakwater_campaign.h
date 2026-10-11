@@ -48,6 +48,11 @@ struct Stats {
     bool anti_air = false;
     bool turret = false;
 };
+struct IncomingThreats {
+    // -1 means no eligible attacker can fire before leaving its attack window.
+    float aircraft_seconds = -1.0f;
+    float gunboat_seconds = -1.0f;
+};
 struct TurretShotEvent {
     uint32_t sequence = 0;
     float x = 0;
@@ -100,6 +105,7 @@ public:
     Stats stats() const;
     Status wave_status() const { return wave_status_; }
     TurretShotEvent turret_shot() const { return turret_shot_; }
+    IncomingThreats incoming_threats() const;
     const std::array<Enemy,kMaxEnemies> &enemies() const { return enemies_; }
     const std::array<Infantry,kMaxInfantry> &infantry_units() const { return infantry_units_; }
     int32_t price(Upgrade upgrade) const;

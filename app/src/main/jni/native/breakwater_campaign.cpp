@@ -10,6 +10,11 @@ constexpr std::array<Location, Campaign::kLocations> kPlaces = {{
 }};
 constexpr int kCost[] = {180,200,160,750,260,420,470,140};
 constexpr int kExtra[] = {120,140,100,0,0,0,0,0};
+constexpr float kGunboatSpeed = .76f;
+constexpr float kBomberSpeed = 1.05f, kStraferSpeed = 1.55f;
+constexpr float kBomberAttackStart = -5.6f, kStraferAttackStart = -8.0f;
+constexpr float kBomberAttackEnd = -2.0f, kStraferAttackEnd = 1.2f;
+constexpr float kGunboatAttackStart = -8.0f, kGunboatAttackEnd = -2.2f;
 bool Valid(Upgrade u) { return static_cast<uint8_t>(u) <= 7; }
 uint8_t Tier(Difficulty d) { return static_cast<uint8_t>(d); }
 static_assert(Campaign::kMaxInfantry >= 10u * 6u,
@@ -203,6 +208,36 @@ void Campaign::Land(Enemy &e) {
     wave_status_.troops_landed = static_cast<uint8_t>(
         wave_status_.troops_landed + e.passengers);
 }
+IncomingThreats Campaign::incoming_threats() const {
+    IncomingThreats warning;
+    if (phase_ != Phase::Combat) return warning;
+    for (const Enemy &enemy : enemies_) {
+        if (!enemy.active) continue;
+        float speed = 0.0f, start = 0.0f, end = 0.0f;
+        float *earliest = nullptr;
+        if (enemy.type == UnitType::Aircraft && enemy.attacks_remaining > 0) {
+            const bool bomber = enemy.aircraft_pattern == AircraftPattern::Bomber;
+            speed = bomber ? kBomberSpeed : kStraferSpeed;
+            start = bomber ? kBomberAttackStart : kStraferAttackStart;
+            end = bomber ? kBomberAttackEnd : kStraferAttackEnd;
+            earliest = &warning.aircraft_seconds;
+        } else if (enemy.type == UnitType::Gunboat) {
+            speed = kGunboatSpeed;
+            start = kGunboatAttackStart;
+            end = kGunboatAttackEnd;
+            earliest = &warning.gunboat_seconds;
+        } else continue;
+        // A cooldown that expires after the attacker exits the firing lane
+        // is not a real incoming salvo. Use the same speed/zone as TickStep.
+        const float until_zone = std::max(0.0f, (start - enemy.z) / speed);
+        const float until_fire = std::max(until_zone,
+                                          std::max(0.0f, enemy.attack_timer));
+        if (enemy.z + speed * until_fire > end) continue;
+        if (*earliest < 0.0f || until_fire < *earliest)
+            *earliest = until_fire;
+    }
+    return warning;
+}
 float Campaign::reload_fraction() const {
     if (!reloading()) return 0.0f;
     // This is display-only progress. The simulation remains the sole owner
@@ -380,10 +415,10 @@ void Campaign::TickStep(float dt) {
         if (!e.active) continue;
         if (e.type == UnitType::Aircraft) {
             const bool bomber = e.aircraft_pattern == AircraftPattern::Bomber;
-            e.z += (bomber ? 1.05f : 1.55f) * dt;
+            e.z += (bomber ? kBomberSpeed : kStraferSpeed) * dt;
             e.attack_timer = std::max(0.0f, e.attack_timer - dt);
-            const float attack_start = bomber ? -5.6f : -8.0f;
-            const float attack_end = bomber ? -2.0f : 1.2f;
+            const float attack_start = bomber ? kBomberAttackStart : kStraferAttackStart;
+            const float attack_end = bomber ? kBomberAttackEnd : kStraferAttackEnd;
             if (e.attacks_remaining > 0 && e.z >= attack_start &&
                 e.z <= attack_end && e.attack_timer <= 0.0f) {
                 integrity_ = std::max(0, integrity_ - (bomber ? 12 : 3));
@@ -397,13 +432,14 @@ void Campaign::TickStep(float dt) {
             continue;
         }
         const float speed = e.type == UnitType::Rowboat ? 0.9f :
-            e.type == UnitType::LandingCraft ? 0.62f : 0.76f;
+            e.type == UnitType::LandingCraft ? 0.62f : kGunboatSpeed;
         e.z += speed * dt;
         if (e.type == UnitType::Gunboat) {
             e.attack_timer = std::max(0.0f, e.attack_timer - dt);
             // Unlike troop transports, gunboats threaten the battery from
             // offshore. Sinking one before the firing line prevents its salvos.
-            if (e.z >= -8.0f && e.z < -2.2f && e.attack_timer <= 0.0f) {
+            if (e.z >= kGunboatAttackStart && e.z < kGunboatAttackEnd &&
+                e.attack_timer <= 0.0f) {
                 integrity_ = std::max(0, integrity_ - 3);
                 ++wave_status_.gunboat_attacks;
                 e.attack_timer = 2.8f;

@@ -175,6 +175,8 @@ int main() {
         }
     }
     assert(saw_rowboat);
+    assert(c.incoming_threats().aircraft_seconds<0.0f);
+    assert(c.incoming_threats().gunboat_seconds<0.0f);
     // The SDK permits a 0.10-second frame delta. One slow frame must
     // simulate the same world as two 0.05-second frames, without letting
     // an arbitrarily long resume pause skip an entire battle.
@@ -441,6 +443,10 @@ int main() {
     Campaign firing_ship(Difficulty::Casual,8);
     assert(firing_ship.Start());
     prepare_gunboat(firing_ship);
+    const IncomingThreats approaching_gunboat=firing_ship.incoming_threats();
+    assert(approaching_gunboat.aircraft_seconds<0.0f);
+    assert(approaching_gunboat.gunboat_seconds>3.0f &&
+           approaching_gunboat.gunboat_seconds<5.0f);
     for(int i=0;i<70;i++) firing_ship.Tick(0.05f);
     assert(firing_ship.wave_status().gunboat_attacks==0);
     assert(firing_ship.integrity()==100);
@@ -461,6 +467,7 @@ int main() {
         assert(stopped_ship.FireAt(0));
     }
     assert(!stopped_ship.enemies()[0].active);
+    assert(stopped_ship.incoming_threats().gunboat_seconds<0.0f);
     for(int i=0;i<140;i++) stopped_ship.Tick(0.05f);
     assert(stopped_ship.wave_status().gunboat_attacks==0);
     assert(stopped_ship.integrity()==100);
@@ -526,6 +533,10 @@ int main() {
     assert(bomber.enemies()[0].active);
     assert(bomber.enemies()[0].type==UnitType::Aircraft);
     assert(bomber.enemies()[0].aircraft_pattern==AircraftPattern::Bomber);
+    const IncomingThreats approaching_bomber=bomber.incoming_threats();
+    assert(approaching_bomber.aircraft_seconds>4.0f &&
+           approaching_bomber.aircraft_seconds<6.0f);
+    assert(approaching_bomber.gunboat_seconds<0.0f);
     const int16_t bomber_hp=bomber.enemies()[0].hp;
     const uint8_t bomber_mag=bomber.magazine_left();
     assert(bomber.FireAt(0));
@@ -534,6 +545,7 @@ int main() {
     for(int i=0;i<140 && bomber.wave_status().aircraft_attacks==0;i++)
         bomber.Tick(0.05f);
     assert(bomber.wave_status().aircraft_attacks==1);
+    assert(bomber.incoming_threats().aircraft_seconds<0.0f);
     assert(bomber.integrity()==88);
 
     // Seed 22 opens the same stage with a strafer that peppers the position
@@ -564,6 +576,7 @@ int main() {
         assert(defended.FireAt(0));
     }
     assert(!defended.enemies()[0].active);
+    assert(defended.incoming_threats().aircraft_seconds<0.0f);
     assert(defended.wave_status().aircraft_destroyed==1);
     assert(defended.wave_status().aircraft_attacks==0);
     assert(defended.integrity()==100);

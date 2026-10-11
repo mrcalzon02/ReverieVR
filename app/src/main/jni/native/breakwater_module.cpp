@@ -476,6 +476,23 @@ void BuildScene(State *s) {
         std::snprintf(support,sizeof(support),"AIR %u",
             static_cast<unsigned>(game.airstrike_charges()));
         Text(s,support,2.10f,.97f,-1.79f,.064f,.89f,.81f,.42f);
+        // Threat predictions come from live attack timers and actual firing
+        // windows, not a decorative alarm or an unrelated wall-clock timer.
+        const IncomingThreats threats=game.incoming_threats();
+        if(threats.aircraft_seconds>=0.0f && threats.aircraft_seconds<=6.0f) {
+            char warning[24];
+            std::snprintf(warning,sizeof(warning),"AIR RAID %uS",
+                static_cast<unsigned>(std::ceil(threats.aircraft_seconds)));
+            Panel(s,-1.58f,.30f,-1.82f,2.20f,.27f,.44f,.15f,.13f);
+            Text(s,warning,-1.58f,.30f,-1.79f,.039f,1.0f,.81f,.68f);
+        }
+        if(threats.gunboat_seconds>=0.0f && threats.gunboat_seconds<=6.0f) {
+            char warning[24];
+            std::snprintf(warning,sizeof(warning),"GUNBOAT %uS",
+                static_cast<unsigned>(std::ceil(threats.gunboat_seconds)));
+            Panel(s,1.58f,.30f,-1.82f,2.20f,.27f,.42f,.29f,.12f);
+            Text(s,warning,1.58f,.30f,-1.79f,.039f,1.0f,.90f,.64f);
+        }
         if(s->flash>0)Panel(s,0,-.65f,-1.85f,.28f,.20f,1,.82f,.25f);
     } else {
         Panel(s,0,0,-3.0f,4.2f,1.6f,.07f,.10f,.14f);
