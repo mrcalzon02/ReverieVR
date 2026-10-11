@@ -12,6 +12,24 @@ public class ScrcpyHidIdentityTest {
         assertTrue(ScrcpyHidIdentity.matchesName("scrcpy-uhid-mouse"));
         assertTrue(ScrcpyHidIdentity.matchesName(" SCRCPY_MOUSE "));
     }
+    @Test public void explicitlyRecognizesUpstreamScrcpyXboxCompatibleGamepad() {
+        // Genymobile/scrcpy app/src/uhid/gamepad_uhid.c:
+        // the UHID gamepad identifies itself as Microsoft X-Box 360 Pad.
+        assertTrue(ScrcpyHidIdentity.matchesCompatibleGamepad(
+            0x045e, 0x028e, "Microsoft X-Box 360 Pad"));
+        assertTrue(ScrcpyHidIdentity.matchesCompatibleGamepad(
+            0x045e, 0x028e, "microsoft x-box 360 pad"));
+        assertFalse(ScrcpyHidIdentity.matchesCompatibleGamepad(
+            0x045e, 0x028e, "scrcpy"));
+        assertFalse(ScrcpyHidIdentity.matchesCompatibleGamepad(
+            0x045e, 0x028e, "Xbox Wireless Controller"));
+        assertFalse(ScrcpyHidIdentity.matchesCompatibleGamepad(
+            0x1234, 0x028e, "Microsoft X-Box 360 Pad"));
+        assertFalse(ScrcpyHidIdentity.matchesCompatibleGamepad(
+            0x045e, 0x1234, "Microsoft X-Box 360 Pad"));
+        assertFalse(ScrcpyHidIdentity.matchesCompatibleGamepad(
+            0x045e, 0x028e, null));
+    }
     @Test public void rejectsOrdinaryDevices() {
         assertFalse(ScrcpyHidIdentity.matchesName(null));
         assertFalse(ScrcpyHidIdentity.matchesName(""));

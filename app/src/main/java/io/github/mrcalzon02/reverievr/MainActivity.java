@@ -453,11 +453,16 @@ public final class MainActivity extends Activity
     private void showControllerChooser() {
         String choice = preferences.getActiveController();
         boolean connected = AndroidGamepadSupport.firstConnectedSteamController() != null;
-        boolean scrcpy = AndroidGamepadSupport.firstConnectedScrcpyHid() != null;
+        android.view.InputDevice scrcpySource =
+            AndroidGamepadSupport.firstConnectedScrcpySelectableInput();
+        boolean scrcpy = scrcpySource != null;
+        boolean compatiblePad = AndroidGamepadSupport.isScrcpyCompatibleGamepad(scrcpySource)
+            && !AndroidGamepadSupport.isScrcpyHid(scrcpySource);
         String[] entries = { "Automatic", "Daydream controller",
             connected ? "Original Steam Controller (connected)"
                 : "Original Steam Controller (disconnected)",
-            scrcpy ? "scrcpy HID (connected)" : "scrcpy HID (disconnected)" };
+            scrcpy ? compatiblePad ? "scrcpy / Xbox-compatible HID (available)"
+                : "scrcpy HID (connected)" : "scrcpy HID (disconnected)" };
         int checked = ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice) ? 1
             : ReveriePreferences.CONTROLLER_STEAM.equals(choice) ? 2
             : ReveriePreferences.CONTROLLER_SCRCPY.equals(choice) ? 3
@@ -570,7 +575,8 @@ public final class MainActivity extends Activity
                 || ReveriePreferences.CONTROLLER_PHONE.equals(choice)
                     && "daydream_phone_emulator".equals(activeId));
         android.view.InputDevice steam = AndroidGamepadSupport.firstConnectedSteamController();
-        android.view.InputDevice scrcpy = AndroidGamepadSupport.firstConnectedScrcpyHid();
+        android.view.InputDevice scrcpy =
+            AndroidGamepadSupport.firstConnectedScrcpySelectableInput();
         String gamepadName = ReveriePreferences.CONTROLLER_STEAM.equals(choice)
             ? steam == null ? null : steam.getName()
             : ReveriePreferences.CONTROLLER_SCRCPY.equals(choice)

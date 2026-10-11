@@ -513,7 +513,9 @@ public final class VrActivity extends Activity
         if (event == null) return false;
         String selected = preferences.getActiveController();
         boolean steam = AndroidGamepadSupport.isOriginalSteamController(event.getDevice());
-        boolean scrcpy = AndroidGamepadSupport.isScrcpyHid(event.getDevice());
+        boolean scrcpy = AndroidGamepadSupport.isScrcpyHid(event.getDevice())
+            || ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
+                && AndroidGamepadSupport.isScrcpyCompatibleGamepad(event.getDevice());
         if (steam) return ReveriePreferences.CONTROLLER_DAYDREAM.equals(selected)
             || ReveriePreferences.CONTROLLER_PHONE.equals(selected)
             || ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
@@ -1075,7 +1077,10 @@ public final class VrActivity extends Activity
         String gamepad = AndroidGamepadSupport.firstConnectedGamepadName();
         android.view.InputDevice sd = AndroidGamepadSupport.firstConnectedSteamController();
         String steam = sd == null ? null : sd.getName();
-        android.view.InputDevice scrcpyDevice = AndroidGamepadSupport.firstConnectedScrcpyHid();
+        android.view.InputDevice scrcpyDevice =
+            ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
+                ? AndroidGamepadSupport.firstConnectedScrcpySelectableInput()
+                : AndroidGamepadSupport.firstConnectedScrcpyHid();
         String scrcpy = scrcpyDevice == null ? null : scrcpyDevice.getName();
         boolean steamPrimary = steam != null && (
             ReveriePreferences.CONTROLLER_STEAM.equals(selected)

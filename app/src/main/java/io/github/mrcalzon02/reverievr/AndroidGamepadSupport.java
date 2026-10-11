@@ -53,6 +53,24 @@ final class AndroidGamepadSupport {
         return null;
     }
 
+    /** Explicit scrcpy mode may select its Xbox-360-compatible UHID gamepad. */
+    static InputDevice firstConnectedScrcpySelectableInput() {
+        InputDevice labelled = firstConnectedScrcpyHid();
+        if (labelled != null) return labelled;
+        for (int id : InputDevice.getDeviceIds()) {
+            InputDevice device = InputDevice.getDevice(id);
+            if (isScrcpyCompatibleGamepad(device)) return device;
+        }
+        return null;
+    }
+
+    static boolean isScrcpyCompatibleGamepad(InputDevice device) {
+        return device != null && !device.isVirtual()
+            && isGamepadDevice(device)
+            && ScrcpyHidIdentity.matchesCompatibleGamepad(
+                device.getVendorId(), device.getProductId(), device.getName());
+    }
+
     static boolean isScrcpyHid(InputDevice device) {
         if (device == null || device.isVirtual()
             || !ScrcpyHidIdentity.matchesName(device.getName())) return false;
