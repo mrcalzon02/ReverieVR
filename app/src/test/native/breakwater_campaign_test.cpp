@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_impacts.h"
 #include <cassert>
 #include <cmath>
 #include <limits>
@@ -6,6 +7,33 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // Procedural hit feedback uses finite positions and a bounded pulse pool.
+    ImpactEffects effects;
+    const float muzzle[]={0,0,0}, downward[]={0,-.2f,-1};
+    assert(effects.RecordHit(muzzle,downward,4.0f,ImpactKind::Metal));
+    assert(std::abs(effects.pulses()[0].y+.8f)<.0001f);
+    assert(effects.pulses()[0].kind==ImpactKind::Metal);
+    assert(effects.RecordWaterMiss(muzzle,downward));
+    assert(std::abs(effects.pulses()[1].y+1.10f)<.0001f);
+    assert(effects.pulses()[1].kind==ImpactKind::Water);
+    const float horizontal[]={0,0,-1}, zeroVector[]={0,0,0};
+    assert(!effects.RecordWaterMiss(muzzle,horizontal));
+    assert(!effects.RecordHit(muzzle,zeroVector,2,ImpactKind::Sand));
+    assert(!effects.RecordHit(muzzle,horizontal,41,ImpactKind::Metal));
+    const float nanVector[]={0,std::numeric_limits<float>::quiet_NaN(),-1};
+    assert(!effects.RecordHit(muzzle,nanVector,2,ImpactKind::Metal));
+    effects.Tick(.15f);
+    assert(effects.pulses()[0].remaining>0.14f);
+    effects.Tick(.15f);
+    assert(effects.pulses()[0].remaining==0.0f);
+    for(size_t i=0;i<ImpactEffects::kCapacity+2;i++)
+        assert(effects.RecordHit(muzzle,horizontal,static_cast<float>(i+1),
+                                 ImpactKind::Sand));
+    size_t liveEffects=0;
+    for(const ImpactPulse &pulse:effects.pulses())
+        if(pulse.remaining>0) ++liveEffects;
+    assert(liveEffects==ImpactEffects::kCapacity);
+
     // Surface intersection ordering must beat center-distance ordering.
     // The farther center's larger hull can be the first struck surface.
     const float rayOrigin[]={0,0,5}, rayForward[]={0,0,-1};

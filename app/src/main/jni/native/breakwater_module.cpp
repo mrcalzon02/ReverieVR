@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_impacts.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -24,6 +25,7 @@ struct State {
     float flash = 0.0f, elapsed = 0.0f;
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
+    ImpactEffects impacts;
     std::vector<float> mesh;
 };
 void Feedback(State *s, uint32_t code) {
@@ -195,6 +197,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         const int choice=DifficultyTarget(input);
         if(choice>=0 && choice<4) {
             game=Campaign(static_cast<Difficulty>(choice),1049u);
+            s->impacts=ImpactEffects{};
             game.Start();
             SaveState(s);
             Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -224,6 +227,16 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             }
         }
         const int target=CombatTarget(input,game);
+        // Resolve the impact before a lethal hit deactivates the target.
+        float impactDepth=0.0f;
+        ImpactKind impactKind=ImpactKind::Metal;
+        if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies))
+            AimAtEnemy(input,game.enemies()[target],&impactDepth);
+        else if(target>=static_cast<int>(Campaign::kMaxEnemies)) {
+            impactKind=ImpactKind::Sand;
+            RayHitsInfantry(game.infantry_units()[target-Campaign::kMaxEnemies],
+                           input.pointer_origin,input.pointer_direction,&impactDepth);
+        }
         bool shot=false;
         if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies))
             shot=game.FireAt(static_cast<uint8_t>(target));
@@ -232,12 +245,18 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         else if(GunWithinTraverse(input.pointer_direction))
             shot=game.FireMiss();
         if(shot){
+            if(impactDepth>0.0f)
+                s->impacts.RecordHit(input.pointer_origin,input.pointer_direction,
+                                     impactDepth,impactKind);
+            else if(target<0)
+                s->impacts.RecordWaterMiss(input.pointer_origin,input.pointer_direction);
             for(int k=0;k<3;k++)s->shot_direction[k]=input.pointer_direction[k];
             s->flash=.09f;
             Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         } else if(edge)Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
         game=Campaign(Difficulty::Regular,1049u);
+        s->impacts=ImpactEffects{};
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
 }
@@ -329,6 +348,24 @@ void BuildScene(State *s) {
             if(e.type==UnitType::Gunboat && e.attack_timer>2.64f)
                 Box(s,e.x,y+.32f,e.z+.38f,.18f,.15f,.23f,
                     .98f,.68f,.24f);
+        }
+    }
+    // CPU-updated, fixed-capacity impact pulses render identically in both eyes.
+    for(const ImpactPulse &impact:s->impacts.pulses())if(impact.remaining>0.0f) {
+        const float progress=1.0f-impact.remaining/ImpactEffects::kLifetime;
+        const float size=.07f+.17f*progress;
+        const float x=impact.x,y=impact.y,z=impact.z+.035f;
+        if(impact.kind==ImpactKind::Water) {
+            Triangle(s,x-size,y+.01f,z-size,x+size,y+.01f,z-size,
+                     x,y+size*1.5f,z,.67f,.85f,.96f);
+            Triangle(s,x-size*.7f,y+.01f,z+size,x+size*.7f,y+.01f,z+size,
+                     x,y+size*1.2f,z,.41f,.70f,.87f);
+        } else {
+            const bool sand=impact.kind==ImpactKind::Sand;
+            const float r=sand?.79f:1.0f,g=sand?.67f:.73f,b=sand?.46f:.24f;
+            Triangle(s,x-size,y,z,x,y+size,z,x+size,y,z,r,g,b);
+            Triangle(s,x-size*.7f,y,z,x,y-size,z,x+size*.7f,y,z,
+                     r*.75f,g*.75f,b*.75f);
         }
     }
     for(const Infantry &trooper:game.infantry_units())if(trooper.active) {
@@ -470,6 +507,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     }
     s->elapsed+=copy.delta_seconds;
     s->flash=std::max(0.0f,s->flash-copy.delta_seconds);
+    s->impacts.Tick(copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
         s->campaign.Tick(copy.delta_seconds);
         if(s->campaign.phase()==Phase::Shop)SaveState(s);
