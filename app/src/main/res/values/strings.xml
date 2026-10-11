@@ -17,6 +17,7 @@
     <string name="pair_controller">Pair / Sync Daydream controller</string>
     <string name="select_controller_title">Select active controller</string>
     <string name="select_controller_format">Active controller: %1$s (tap to switch)</string>
+    <string name="scrcpy_hid_not_connected">Selected scrcpy HID is unavailable. Start scrcpy with UHID keyboard, mouse or gamepad input.</string>
     <string name="steam_controller_not_connected">Selected Steam Controller disconnected; reconnect in Android Bluetooth.</string>
     <string name="use_phone_controller">Use paired phone as controller</string>
     <string name="phone_controller_choose_title">Choose controller phone</string>

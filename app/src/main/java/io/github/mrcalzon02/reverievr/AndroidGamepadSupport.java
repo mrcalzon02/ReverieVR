@@ -41,7 +41,27 @@ final class AndroidGamepadSupport {
                 return device.getName();
             }
         }
+        InputDevice scrcpy = firstConnectedScrcpyHid();
+        return scrcpy == null ? null : scrcpy.getName();
+    }
+
+    static InputDevice firstConnectedScrcpyHid() {
+        for (int id : InputDevice.getDeviceIds()) {
+            InputDevice device = InputDevice.getDevice(id);
+            if (isScrcpyHid(device)) return device;
+        }
         return null;
+    }
+
+    static boolean isScrcpyHid(InputDevice device) {
+        if (device == null || device.isVirtual()
+            || !ScrcpyHidIdentity.matchesName(device.getName())) return false;
+        int sources = device.getSources();
+        return (sources & InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD
+            || (sources & InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE
+            || (sources & InputDevice.SOURCE_MOUSE_RELATIVE)
+                == InputDevice.SOURCE_MOUSE_RELATIVE
+            || isGamepadDevice(device);
     }
 
     static InputDevice firstConnectedSteamController() {

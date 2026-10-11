@@ -284,6 +284,9 @@ public final class MainActivity extends Activity
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (controllerTestEnabled && event != null
+            && AndroidGamepadSupport.isScrcpyHid(event.getDevice()))
+            controllerInputTestText.setText("scrcpy HID keyboard input detected");
         if (controllerTestEnabled
             && inputRouter != null
             && inputRouter.onKeyEvent(event)) {
@@ -294,6 +297,9 @@ public final class MainActivity extends Activity
 
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
+        if (controllerTestEnabled && event != null
+            && AndroidGamepadSupport.isScrcpyHid(event.getDevice()))
+            controllerInputTestText.setText("scrcpy HID motion input detected");
         if (controllerTestEnabled
             && inputRouter != null
             && inputRouter.onGenericMotionEvent(event)) {
@@ -447,16 +453,22 @@ public final class MainActivity extends Activity
     private void showControllerChooser() {
         String choice = preferences.getActiveController();
         boolean connected = AndroidGamepadSupport.firstConnectedSteamController() != null;
+        boolean scrcpy = AndroidGamepadSupport.firstConnectedScrcpyHid() != null;
         String[] entries = { "Automatic", "Daydream controller",
             connected ? "Original Steam Controller (connected)"
-                : "Original Steam Controller (disconnected)" };
+                : "Original Steam Controller (disconnected)",
+            scrcpy ? "scrcpy HID (connected)" : "scrcpy HID (disconnected)" };
         int checked = ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice) ? 1
             : ReveriePreferences.CONTROLLER_STEAM.equals(choice) ? 2
+            : ReveriePreferences.CONTROLLER_SCRCPY.equals(choice) ? 3
             : ReveriePreferences.CONTROLLER_AUTO.equals(choice) ? 0 : -1;
         new AlertDialog.Builder(this).setTitle(R.string.select_controller_title)
             .setSingleChoiceItems(entries, checked, (dialog, index) -> {
                 if (index == 2) {
                     preferences.setActiveController(ReveriePreferences.CONTROLLER_STEAM);
+                    controllerManager.deselectProvider();
+                } else if (index == 3) {
+                    preferences.setActiveController(ReveriePreferences.CONTROLLER_SCRCPY);
                     controllerManager.deselectProvider();
                 } else if (index == 1) {
                     preferences.setActiveController(ReveriePreferences.CONTROLLER_DAYDREAM);
@@ -557,16 +569,21 @@ public final class MainActivity extends Activity
                     && "daydream_ble".equals(activeId)
                 || ReveriePreferences.CONTROLLER_PHONE.equals(choice)
                     && "daydream_phone_emulator".equals(activeId));
+        android.view.InputDevice steam = AndroidGamepadSupport.firstConnectedSteamController();
+        android.view.InputDevice scrcpy = AndroidGamepadSupport.firstConnectedScrcpyHid();
         String gamepadName = ReveriePreferences.CONTROLLER_STEAM.equals(choice)
-            ? AndroidGamepadSupport.firstConnectedSteamController() == null ? null
-                : AndroidGamepadSupport.firstConnectedSteamController().getName()
+            ? steam == null ? null : steam.getName()
+            : ReveriePreferences.CONTROLLER_SCRCPY.equals(choice)
+                ? scrcpy == null ? null : scrcpy.getName()
             : ReveriePreferences.CONTROLLER_AUTO.equals(choice)
                 ? AndroidGamepadSupport.firstConnectedVrControllerName() : null;
         boolean gamepadReady = gamepadName != null;
         selectControllerButton.setText(getString(R.string.select_controller_format,
             ReveriePreferences.CONTROLLER_STEAM.equals(choice) ? "Steam Controller"
                 : ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice) ? "Daydream"
-                : ReveriePreferences.CONTROLLER_PHONE.equals(choice) ? "Phone" : "Automatic"));
+                : ReveriePreferences.CONTROLLER_PHONE.equals(choice) ? "Phone"
+                : ReveriePreferences.CONTROLLER_SCRCPY.equals(choice) ? "scrcpy HID"
+                : "Automatic"));
         boolean vrRuntimeReady =
             vrRuntimePreflight != null
                 && vrRuntimePreflight.available;
@@ -596,6 +613,8 @@ public final class MainActivity extends Activity
             );
         } else if (ReveriePreferences.CONTROLLER_STEAM.equals(choice)) {
             controllerStatusText.setText(R.string.steam_controller_not_connected);
+        } else if (ReveriePreferences.CONTROLLER_SCRCPY.equals(choice)) {
+            controllerStatusText.setText(R.string.scrcpy_hid_not_connected);
         } else {
             controllerStatusText.setText(controllerConnectionMessage);
         }
@@ -617,7 +636,8 @@ public final class MainActivity extends Activity
                 && AndroidGamepadSupport.firstConnectedSteamController() != null;
         controllerManager.refreshSteamBattery(steam);
         if (steam) showControllerBattery(controllerManager.getSteamBatteryPercentage(), -1);
-        else if (controllerManager.isReady())
+        else if (controllerManager.isReady()
+            && !ReveriePreferences.CONTROLLER_SCRCPY.equals(choice))
             showControllerBattery(controllerManager.getBatteryPercentage(),
                 controllerManager.getBatteryMillivolts());
         else showControllerBattery(-1, -1);

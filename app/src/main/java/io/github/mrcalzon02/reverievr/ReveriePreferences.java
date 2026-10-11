@@ -28,6 +28,7 @@ final class ReveriePreferences {
     static final String CONTROLLER_DAYDREAM = "daydream";
     static final String CONTROLLER_STEAM = "steam";
     static final String CONTROLLER_PHONE = "phone";
+    static final String CONTROLLER_SCRCPY = "scrcpy";
     private static final String KEY_LAST_ACTIVITY_TYPE = "last_activity_type";
     private static final String KEY_LAST_DOS_MODULE_ID = "last_dos_module_id";
     private static final String KEY_LAST_DOS_MODULE_NAME = "last_dos_module_name";
@@ -48,12 +49,14 @@ final class ReveriePreferences {
     String getActiveController() {
         String choice = preferences.getString(KEY_ACTIVE_CONTROLLER, CONTROLLER_AUTO);
         return CONTROLLER_DAYDREAM.equals(choice) || CONTROLLER_STEAM.equals(choice)
-            || CONTROLLER_PHONE.equals(choice) ? choice : CONTROLLER_AUTO;
+            || CONTROLLER_PHONE.equals(choice) || CONTROLLER_SCRCPY.equals(choice)
+            ? choice : CONTROLLER_AUTO;
     }
 
     void setActiveController(String choice) {
         if (!CONTROLLER_AUTO.equals(choice) && !CONTROLLER_DAYDREAM.equals(choice)
-            && !CONTROLLER_STEAM.equals(choice) && !CONTROLLER_PHONE.equals(choice))
+            && !CONTROLLER_STEAM.equals(choice) && !CONTROLLER_PHONE.equals(choice)
+            && !CONTROLLER_SCRCPY.equals(choice))
             throw new IllegalArgumentException("Unknown controller");
         preferences.edit().putString(KEY_ACTIVE_CONTROLLER, choice).apply();
     }

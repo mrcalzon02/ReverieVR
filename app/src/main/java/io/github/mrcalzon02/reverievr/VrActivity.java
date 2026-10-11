@@ -513,19 +513,39 @@ public final class VrActivity extends Activity
         if (event == null) return false;
         String selected = preferences.getActiveController();
         boolean steam = AndroidGamepadSupport.isOriginalSteamController(event.getDevice());
+        boolean scrcpy = AndroidGamepadSupport.isScrcpyHid(event.getDevice());
         if (steam) return ReveriePreferences.CONTROLLER_DAYDREAM.equals(selected)
             || ReveriePreferences.CONTROLLER_PHONE.equals(selected)
+            || ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
             || ReveriePreferences.CONTROLLER_AUTO.equals(selected) && controllerManager.isReady();
-        return ReveriePreferences.CONTROLLER_STEAM.equals(selected)
+        if (scrcpy) return ReveriePreferences.CONTROLLER_STEAM.equals(selected)
+            || ReveriePreferences.CONTROLLER_DAYDREAM.equals(selected)
+            || ReveriePreferences.CONTROLLER_PHONE.equals(selected)
+            || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
+                && (controllerManager.isReady()
+                    || AndroidGamepadSupport.firstConnectedSteamController() != null
+                    || (AndroidGamepadSupport.firstConnectedGamepadName() != null
+                        && !ScrcpyHidIdentity.matchesName(
+                            AndroidGamepadSupport.firstConnectedGamepadName())));
+        return (ReveriePreferences.CONTROLLER_STEAM.equals(selected)
+            || ReveriePreferences.CONTROLLER_SCRCPY.equals(selected))
             && AndroidGamepadSupport.isGamepadEvent(event);
     }
 
-    private boolean selectedSteamMouse(String source) {
+    private boolean selectedShellMouse(String source) {
         String selected = preferences.getActiveController();
-        return SteamControllerIdentity.matchesAndroidHid(0, source)
-            && (ReveriePreferences.CONTROLLER_STEAM.equals(selected)
+        if (SteamControllerIdentity.matchesAndroidHid(0, source))
+            return ReveriePreferences.CONTROLLER_STEAM.equals(selected)
                 || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
-                    && !controllerManager.isReady());
+                    && !controllerManager.isReady();
+        if (!ScrcpyHidIdentity.matchesName(source)) return false;
+        return ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
+            || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
+                && !controllerManager.isReady()
+                && AndroidGamepadSupport.firstConnectedSteamController() == null
+                && (AndroidGamepadSupport.firstConnectedGamepadName() == null
+                    || ScrcpyHidIdentity.matchesName(
+                        AndroidGamepadSupport.firstConnectedGamepadName()));
     }
 
     @Override
@@ -920,7 +940,7 @@ public final class VrActivity extends Activity
         boolean down,
         String source
     ) {
-        if (down && button == VirtualOutput.MOUSE_LEFT && selectedSteamMouse(source)
+        if (down && button == VirtualOutput.MOUSE_LEFT && selectedShellMouse(source)
                 && renderer != null && renderer.handlesSelectAsShellAction())
             inputRouter.submitAction(VrInputAction.SELECT, source);
         if (isGuestInputSuppressed()) {
@@ -940,7 +960,7 @@ public final class VrActivity extends Activity
         float deltaY,
         String source
     ) {
-        if (selectedSteamMouse(source) && renderer != null)
+        if (selectedShellMouse(source) && renderer != null)
             renderer.nudgeExternalPointer(deltaX, deltaY);
         if (virtualInputBus == null
             || isGuestInputSuppressed()) {
@@ -1055,13 +1075,22 @@ public final class VrActivity extends Activity
         String gamepad = AndroidGamepadSupport.firstConnectedGamepadName();
         android.view.InputDevice sd = AndroidGamepadSupport.firstConnectedSteamController();
         String steam = sd == null ? null : sd.getName();
+        android.view.InputDevice scrcpyDevice = AndroidGamepadSupport.firstConnectedScrcpyHid();
+        String scrcpy = scrcpyDevice == null ? null : scrcpyDevice.getName();
         boolean steamPrimary = steam != null && (
             ReveriePreferences.CONTROLLER_STEAM.equals(selected)
                 || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
                     && !provider && (gamepad == null || steam.equals(gamepad)));
+        boolean scrcpyPrimary = scrcpy != null && (
+            ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
+                || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
+                    && !provider && !steamPrimary
+                    && (gamepad == null || ScrcpyHidIdentity.matchesName(gamepad)));
         String connectedVrController = steamPrimary ? steam
-            : ReveriePreferences.CONTROLLER_AUTO.equals(selected) && !provider ? gamepad : null;
-        renderer.setGamepadPointerAvailable(steamPrimary || connectedVrController != null);
+            : scrcpyPrimary ? scrcpy
+            : ReveriePreferences.CONTROLLER_AUTO.equals(selected) && !provider
+                ? gamepad : null;
+        renderer.setGamepadPointerAvailable(!provider && connectedVrController != null);
         renderer.setSteamControllerPrimary(steamPrimary);
         controllerManager.refreshSteamBattery(steamPrimary);
 
@@ -1091,7 +1120,9 @@ public final class VrActivity extends Activity
             renderer.setControllerState(
                 false,
                 ReveriePreferences.CONTROLLER_STEAM.equals(selected)
-                    ? "Selected Steam Controller disconnected" : controllerConnectionMessage
+                    ? "Selected Steam Controller disconnected"
+                    : ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
+                        ? "Selected scrcpy HID disconnected" : controllerConnectionMessage
             );
             renderer.setControllerBattery(-1);
         }
