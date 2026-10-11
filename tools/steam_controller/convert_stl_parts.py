@@ -107,19 +107,19 @@ def convert(src, dst, target):
         name = f"{idx:03d}_{safe}.obj"
         out = dst / name
         with out.open("w", encoding="utf8") as stream:
-            stream.write(f"# Derived from {path.name}; not licensed by this tool\\n")
-            stream.write(f"o {safe}\\n")
+            stream.write(f"# Derived from {path.name}; not licensed by this tool\n")
+            stream.write(f"o {safe}\n")
             for x, y, z in vertices:
-                stream.write(f"v {x:.8g} {y:.8g} {z:.8g}\\n")
+                stream.write(f"v {x:.8g} {y:.8g} {z:.8g}\n")
             for a, b, c in faces:
-                stream.write(f"f {a} {b} {c}\\n")
+                stream.write(f"f {a} {b} {c}\n")
         report["parts"].append({
             "input": str(path.relative_to(src)), "output": name,
             "source_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             "input_faces": len(triangles), "output_faces": len(faces),
             "vertices": len(vertices), "bbox_min": minimum, "bbox_max": maximum,
         })
-    (dst / "conversion_manifest.json").write_text(json.dumps(report, indent=2) + "\\n", encoding="utf8")
+    (dst / "conversion_manifest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf8")
     return report
 
 def main():
