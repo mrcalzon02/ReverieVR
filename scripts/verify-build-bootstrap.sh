@@ -52,7 +52,7 @@ fi
 
 # Controller input must not demand Location permission or query Location state.
 # BLE/GATT and standard Android HID input use their Bluetooth/input APIs only.
-if grep -Eq 'android\\.permission\\.ACCESS_(FINE|COARSE|BACKGROUND)_LOCATION' \
+if grep -Eq 'android[.]permission[.]ACCESS_(FINE|COARSE|BACKGROUND)_LOCATION' \
     app/src/main/AndroidManifest.xml controller-app/src/main/AndroidManifest.xml; then
     echo "Controller build unexpectedly declares an Android Location permission." >&2
     exit 8
