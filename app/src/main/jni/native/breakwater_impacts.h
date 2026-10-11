@@ -41,10 +41,7 @@ public:
             point[axis]=static_cast<float>(position);
         }
         if(magnitude<=0 || !std::isfinite(magnitude)) return false;
-        pulses_[next_]={point[0],point[1],point[2],
-            LifetimeFor(kind),kind};
-        next_=(next_+1)%kCapacity;
-        return true;
+        return PlacePulse(point[0],point[1],point[2],kind);
     }
     // Only a damaging round creates an impact. In particular, basic gun
     // rounds against aircraft without anti-air must not fake a hit spark.
@@ -84,13 +81,33 @@ public:
             pulse.remaining=std::fmax(0.0f,pulse.remaining-seconds);
     }
 private:
+    static bool Blast(ImpactKind kind) {
+        return kind==ImpactKind::Explosion || kind==ImpactKind::ArtilleryBlast ||
+               kind==ImpactKind::AirstrikeBlast;
+    }
+    bool PlacePulse(float x,float y,float z,ImpactKind kind) {
+        size_t slot=kCapacity;
+        for(size_t i=0;i<kCapacity;i++) {
+            size_t index=(next_+i)%kCapacity;
+            if(pulses_[index].remaining<=0) { slot=index; break; }
+        }
+        if(slot==kCapacity) for(size_t i=0;i<kCapacity;i++) {
+            size_t index=(next_+i)%kCapacity;
+            if(!Blast(pulses_[index].kind)) { slot=index; break; }
+        }
+        if(slot==kCapacity) {
+            if(!Blast(kind)) return false;
+            slot=next_;
+        }
+        pulses_[slot]={x,y,z,LifetimeFor(kind),kind};
+        next_=(slot+1)%kCapacity;
+        return true;
+    }
     bool RecordWorldBlast(float x,float y,float z,ImpactKind kind) {
         if(!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z) ||
            std::abs(x)>10000 || std::abs(y)>10000 || std::abs(z)>10000)
             return false;
-        pulses_[next_]={x,y,z,LifetimeFor(kind),kind};
-        next_=(next_+1)%kCapacity;
-        return true;
+        return PlacePulse(x,y,z,kind);
     }
     std::array<ImpactPulse,kCapacity> pulses_{};
     size_t next_=0;

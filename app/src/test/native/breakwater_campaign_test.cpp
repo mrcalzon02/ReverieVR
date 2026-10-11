@@ -34,6 +34,23 @@ int main() {
         if(pulse.remaining>0) ++liveEffects;
     assert(liveEffects==ImpactEffects::kCapacity);
 
+    // Minor impact saturation cannot erase a live explosion.
+    ImpactEffects priority;
+    assert(priority.RecordHit(muzzle,horizontal,1,ImpactKind::Explosion));
+    for(size_t i=0;i<ImpactEffects::kCapacity+6;i++)
+        assert(priority.RecordHit(muzzle,horizontal,2,ImpactKind::Sand));
+    size_t retained=0;
+    for(const auto &pulse:priority.pulses())
+        if(pulse.remaining>0 && pulse.kind==ImpactKind::Explosion) ++retained;
+    assert(retained==1);
+    ImpactEffects allBlasts;
+    for(size_t i=0;i<ImpactEffects::kCapacity;i++)
+        assert(allBlasts.RecordHit(muzzle,horizontal,1,ImpactKind::Explosion));
+    assert(!allBlasts.RecordHit(muzzle,horizontal,2,ImpactKind::Water));
+    assert(allBlasts.RecordHit(muzzle,horizontal,2,ImpactKind::AirstrikeBlast));
+    allBlasts.Tick(ImpactEffects::kAirstrikeLifetime);
+    assert(allBlasts.RecordHit(muzzle,horizontal,2,ImpactKind::Water));
+
     // A hit spark requires real damage; lethal hits have longer blast pulses.
     // The unupgraded gun consumes ammo against aircraft without dealing damage.
     ImpactEffects blasts;

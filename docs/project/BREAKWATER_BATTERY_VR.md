@@ -62,3 +62,7 @@ Soundtracks should evoke **early Sierra MIDI composition** through new melodies 
 5. Campaign save/update durability, actual projectile effects, audio/MIDI ownership, 15-minute thermal/frame pacing and battery test.
 
 Do not promote the prototype to the normal launcher until the hardware gates have been met.
+
+### Impact pool saturation behavior
+
+The eight-slot impact pool prefers expired entries, then active minor effects. Minor sparks, dust, and splashes cannot evict live explosions when the pool is full; fresh explosion and support-blast effects may replace existing blasts when necessary. This is deterministic and allocation-free. Native regression tests cover retention, saturated rejection, and slot reuse after expiration. Physical headset validation remains outstanding.
