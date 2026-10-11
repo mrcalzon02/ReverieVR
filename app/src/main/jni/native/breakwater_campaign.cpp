@@ -233,6 +233,11 @@ bool Campaign::FireAtInfantry(uint8_t index) {
 }
 bool Campaign::CallArtillery() {
     if (phase_ != Phase::Combat || artillery_charges_ == 0) return false;
+    // A strike is only spent if at least one eligible vessel is present.
+    // Troops already ashore and aircraft are not artillery targets.
+    const bool target_available = std::any_of(enemies_.begin(), enemies_.end(),
+        [](const Enemy &e) { return e.active && e.type != UnitType::Aircraft; });
+    if (!target_available) return false;
     --artillery_charges_;
     for (Enemy &e : enemies_) {
         if (e.active && e.type != UnitType::Aircraft) {
@@ -244,6 +249,10 @@ bool Campaign::CallArtillery() {
 }
 bool Campaign::CallAirstrike() {
     if (phase_ != Phase::Combat || airstrike_charges_ == 0) return false;
+    // Empty-airspace calls must not silently consume purchased support.
+    const bool target_available = std::any_of(enemies_.begin(), enemies_.end(),
+        [](const Enemy &e) { return e.active; });
+    if (!target_available) return false;
     --airstrike_charges_;
     for (Enemy &e : enemies_) {
         if (e.active) {

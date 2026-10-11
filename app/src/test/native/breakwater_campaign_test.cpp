@@ -143,9 +143,40 @@ int main() {
     assert(veteran.Purchase(Upgrade::Artillery));
     assert(veteran.Purchase(Upgrade::Airstrike)==false); // insufficient credits
     assert(veteran.BeginWave());
+    assert(!veteran.CallArtillery()); // no vessel spawned yet
+    assert(veteran.artillery_charges()==1);
+    veteran.Tick(0.05f);
+    assert(veteran.enemies()[0].active);
     assert(veteran.CallArtillery());
+    assert(veteran.artillery_charges()==0);
     assert(!veteran.CallArtillery());
     assert(!veteran.Purchase(Upgrade::Damage));
+
+    // Support charges are never consumed by a call with no eligible target.
+    Campaign empty_support(Difficulty::Casual,41);
+    assert(empty_support.Start());
+    assert(empty_support.Purchase(Upgrade::Artillery));
+    assert(empty_support.Purchase(Upgrade::Airstrike));
+    assert(!empty_support.CallArtillery()); // shop phase
+    assert(!empty_support.CallAirstrike());
+    assert(empty_support.BeginWave());
+    assert(!empty_support.CallArtillery()); // no active enemies
+    assert(!empty_support.CallAirstrike());
+    assert(empty_support.artillery_charges()==1);
+    assert(empty_support.airstrike_charges()==1);
+    empty_support.Tick(0.05f);
+    assert(empty_support.enemies()[0].active);
+    assert(empty_support.CallArtillery());
+    assert(empty_support.artillery_charges()==0);
+    assert(!empty_support.CallAirstrike()); // artillery cleared the only target
+    assert(empty_support.airstrike_charges()==1);
+    for(int i=0;i<33;i++) empty_support.Tick(0.05f);
+    bool next_target=false;
+    for(const Enemy &e:empty_support.enemies()) if(e.active) next_target=true;
+    assert(next_target);
+    assert(empty_support.CallAirstrike());
+    assert(empty_support.airstrike_charges()==0);
+    assert(!empty_support.CallAirstrike());
 
     Campaign turret(Difficulty::Casual,41);
     assert(turret.Start());
@@ -253,6 +284,22 @@ int main() {
         bytes[28]=1; // first wave in period
         assert(game.DeserializeShop(bytes,sizeof(bytes)));
     };
+
+    // An aircraft-only wave is ineligible for artillery, but air support
+    // may destroy it without purchasing the ordinary anti-air upgrade.
+    Campaign air_only(Difficulty::Casual,8);
+    assert(air_only.Start());
+    assert(air_only.Purchase(Upgrade::Artillery));
+    assert(air_only.Purchase(Upgrade::Airstrike));
+    stage_blackcap_night(air_only);
+    assert(air_only.BeginWave());
+    air_only.Tick(0.05f);
+    assert(air_only.enemies()[0].type==UnitType::Aircraft);
+    assert(!air_only.CallArtillery());
+    assert(air_only.artillery_charges()==1);
+    assert(air_only.CallAirstrike());
+    assert(air_only.airstrike_charges()==0);
+    assert(air_only.wave_status().aircraft_destroyed==1);
 
     // Seed 8 deterministically opens late Blackcap with a bomber. Without AA
     // the gun still spends its round, but cannot damage the aircraft.

@@ -400,8 +400,13 @@ void BuildScene(State *s) {
             }
             Text(s,"RELOADING",0,.52f,-1.79f,.038f,.92f,.79f,.54f);
         }
-        Text(s,"ARTY",-2.07f,.97f,-1.79f,.078f,.89f,.81f,.42f);
-        Text(s,"AIR",2.10f,.97f,-1.79f,.078f,.89f,.81f,.42f);
+        char support[24];
+        std::snprintf(support,sizeof(support),"ARTY %u",
+            static_cast<unsigned>(game.artillery_charges()));
+        Text(s,support,-2.07f,.97f,-1.79f,.064f,.89f,.81f,.42f);
+        std::snprintf(support,sizeof(support),"AIR %u",
+            static_cast<unsigned>(game.airstrike_charges()));
+        Text(s,support,2.10f,.97f,-1.79f,.064f,.89f,.81f,.42f);
         if(s->flash>0)Panel(s,0,-.65f,-1.85f,.28f,.20f,1,.82f,.25f);
     } else {
         Panel(s,0,0,-3.0f,4.2f,1.6f,.07f,.10f,.14f);
