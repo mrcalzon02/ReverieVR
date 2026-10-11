@@ -396,13 +396,23 @@ void Campaign::Tick(float seconds) {
             } else Land(e);
         }
     }
-    // Individual soldiers advance toward the parapet between rifle salvos.
-    for (Infantry &trooper : infantry_units_)
-        if (trooper.active) trooper.z = std::min(-1.34f, trooper.z + 0.13f * dt);
-    infantry_timer_ += dt;
-    if (infantry_ && infantry_timer_ >= 4.0f) {
-        infantry_timer_ = 0;
-        integrity_ = std::max(0, integrity_ - infantry_ * 2);
+    // Landed infantry must actually reach the forward firing line before
+    // attacking. Troops still crossing the beach are not instant artillery.
+    uint8_t ready_to_fire = 0;
+    for (Infantry &trooper : infantry_units_) {
+        if (!trooper.active) continue;
+        trooper.z = std::min(-1.34f, trooper.z + 0.13f * dt);
+        if (trooper.z >= -1.34f) ++ready_to_fire;
+    }
+    if (ready_to_fire == 0) {
+        // Clearing the firing line also clears any partial salvo countdown.
+        infantry_timer_ = 0.0f;
+    } else {
+        infantry_timer_ += dt;
+        if (infantry_timer_ >= 4.0f) {
+            infantry_timer_ = 0.0f;
+            integrity_ = std::max(0, integrity_ - ready_to_fire * 2);
+        }
     }
     if (integrity_ == 0) { phase_ = Phase::Defeat; return; }
     if (FinishedWave()) CompleteWave();

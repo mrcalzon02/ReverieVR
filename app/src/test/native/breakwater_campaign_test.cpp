@@ -106,8 +106,14 @@ int main() {
         landed.Tick(0.05f);
     assert(landed.wave_status().troops_landed>0);
     assert(landed.infantry()>0);
+    // Disembarking is not an instant firing position: troops must cross the
+    // exposed beach, then complete a full four-second attack countdown.
     const int32_t integrity=landed.integrity();
-    for(int i=0;i<82;i++) landed.Tick(0.05f);
+    for(int i=0;i<120;i++) landed.Tick(0.05f); // six seconds after first landing
+    assert(landed.integrity()==integrity);
+    for(const Infantry &trooper:landed.infantry_units())
+        if(trooper.active) assert(trooper.z < -1.34f);
+    for(int i=0;i<160;i++) landed.Tick(0.05f);
     assert(landed.integrity()<integrity);
     while(landed.infantry()) {
         landed.Tick(0.05f);
