@@ -63,6 +63,9 @@ public final class VrActivity extends Activity
         "io.github.mrcalzon02.reverievr.REQUEST_CONTROLLER_PAIRING";
 
     private static final float SAFE_VIEWER_FALLBACK_IPD_METERS = 0.060f;
+    private static final int PHONE_CAPTURE_CONSENT_REQUEST = 1207;
+    private final PhoneScreenCaptureSession phoneCapture =
+        new PhoneScreenCaptureSession();
 
     private CardboardView cardboardView;
     private VrShellRenderer renderer;
@@ -318,6 +321,7 @@ public final class VrActivity extends Activity
 
     @Override
     protected void onDestroy() {
+        phoneCapture.close();
         unregisterInputDeviceListener();
         unregisterHeadMotionSensor();
 
@@ -1060,6 +1064,49 @@ public final class VrActivity extends Activity
     @Override
     public void onExitToPhoneRequested() {
         runOnUiThread(this::finish);
+    }
+
+    @Override
+    public void onPhoneCaptureConsentRequested() {
+        runOnUiThread(() -> {
+            if (phoneCapture.isActive()) return;
+            Intent consent = PhoneScreenCaptureSession.consentIntent(this);
+            if (consent == null) {
+                Toast.makeText(this,
+                    "Android screen capture unavailable", Toast.LENGTH_LONG).show();
+                return;
+            }
+            try {
+                startActivityForResult(consent, PHONE_CAPTURE_CONSENT_REQUEST);
+            } catch (RuntimeException failure) {
+                ReverieLog.error("PHONE_CAPTURE",
+                    "Could not launch capture consent", failure);
+                Toast.makeText(this,
+                    "Could not request screen capture permission",
+                    Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    @Override
+    public void onPhoneCaptureDismissed() {
+        runOnUiThread(() -> phoneCapture.close());
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != PHONE_CAPTURE_CONSENT_REQUEST) return;
+        if (resultCode != RESULT_OK) {
+            ReverieLog.milestone("PHONE_CAPTURE", "Screen capture denied");
+            return;
+        }
+        boolean active = phoneCapture.start(this, resultCode, data);
+        ReverieLog.milestone("PHONE_CAPTURE", active
+            ? "Consent accepted; capture frames acquired (VR upload pending)"
+            : "Consent returned but capture session could not start");
+        if (!active) Toast.makeText(this,
+            "Phone screen capture could not start", Toast.LENGTH_LONG).show();
     }
 
     @Override
