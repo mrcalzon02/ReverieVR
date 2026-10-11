@@ -644,8 +644,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         hudUvBuffer = allocate(new float[] {
             280f / HUD_TEXTURE_WIDTH, 284f / HUD_TEXTURE_HEIGHT,
             451f / HUD_TEXTURE_WIDTH, 284f / HUD_TEXTURE_HEIGHT,
-            280f / HUD_TEXTURE_WIDTH, 67f / HUD_TEXTURE_HEIGHT,
-            451f / HUD_TEXTURE_WIDTH, 67f / HUD_TEXTURE_HEIGHT
+            280f / HUD_TEXTURE_WIDTH, 42f / HUD_TEXTURE_HEIGHT,
+            451f / HUD_TEXTURE_WIDTH, 42f / HUD_TEXTURE_HEIGHT
         });
 
         Matrix.setIdentityM(adjustedHeadView, 0);
@@ -1232,7 +1232,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         Matrix.setRotateM(
             yawMatrix,
             0,
-            (float) Math.toDegrees(-yawOffsetRadians),
+            VrHeadingMath.viewCorrectionDegrees(yawOffsetRadians),
             0.0f,
             1.0f,
             0.0f
@@ -2190,10 +2190,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         Matrix.rotateM(
             tempMatrix,
             0,
-            (float) Math.toDegrees(
-                yawOffsetRadians
-                    + (orientationMenuVisible
-                        ? orientationMenuYawRadians : 0.0f)
+            VrHeadingMath.shellPanelRotationDegrees(
+                orientationMenuVisible, orientationMenuYawRadians
             ),
             0.0f,
             1.0f,
@@ -2642,22 +2640,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 frameNanos
             );
 
-            float cosPitch =
-                (float) Math.cos(
-                    virtualPointerPitch
-                );
-            activePointerDirection[0] =
-                (float) Math.sin(
-                    virtualPointerYaw
-                ) * cosPitch;
-            activePointerDirection[1] =
-                (float) Math.sin(
-                    virtualPointerPitch
-                );
-            activePointerDirection[2] =
-                -(float) Math.cos(
-                    virtualPointerYaw
-                ) * cosPitch;
+            VirtualControllerAim.writeDirection(
+                virtualPointerYaw, virtualPointerPitch, activePointerDirection
+            );
             normalizeDirection(
                 activePointerDirection
             );
@@ -3445,12 +3430,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private UiRayHit hitPhonePanelControls(
         float[] origin, float[] direction
     ) {
-        float[] rotatedOrigin = new float[3];
-        float[] rotatedDirection = new float[3];
-        // Shell input is calibrated to its initial yaw. Environment geometry
-        // remains expressed in the uncalibrated world coordinate frame.
-        rotateYaw(origin, yawOffsetRadians, rotatedOrigin);
-        rotateYaw(direction, yawOffsetRadians, rotatedDirection);
+        // Pointer ray and phone panel geometry already share shell coordinates.
+        // Never apply a second yaw offset to the panel hit-test ray.
         float[] pose = new float[16];
         float[] inverse = new float[16];
         Matrix.setIdentityM(pose, 0);
@@ -3460,11 +3441,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         Matrix.translateM(pose, 0, 0.0f, 0.0f, 2.27f);
         if (!Matrix.invertM(inverse, 0, pose, 0)) return UiRayHit.miss();
         float[] point = {
-            rotatedOrigin[0], rotatedOrigin[1], rotatedOrigin[2], 1.0f
+            origin[0], origin[1], origin[2], 1.0f
         };
         float[] vector = {
-            rotatedDirection[0], rotatedDirection[1],
-            rotatedDirection[2], 0.0f
+            direction[0], direction[1],
+            direction[2], 0.0f
         };
         float[] localOrigin = new float[4], localDirection = new float[4];
         Matrix.multiplyMV(localOrigin, 0, inverse, 0, point, 0);
@@ -6964,7 +6945,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Cardboard restores each full eye before rendering this global HUD.
         final float left = 2f * 280f / HUD_TEXTURE_WIDTH - 1f;
         final float right = 2f * 451f / HUD_TEXTURE_WIDTH - 1f;
-        final float top = 1f - 2f * 67f / HUD_TEXTURE_HEIGHT;
+        final float top = 1f - 2f * 42f / HUD_TEXTURE_HEIGHT;
         final float bottom = 1f - 2f * 284f / HUD_TEXTURE_HEIGHT;
         hudVertices[0] = left;
         hudVertices[1] = bottom;
@@ -7025,10 +7006,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint.setShadowLayer(3f, 0f, 1f, Color.BLACK);
             paint.setColor(Color.rgb(225, 244, 230));
             canvas.drawText("P " + batteryLabel(phoneBattery.get()),
-                326f, 188f + shift, paint);
+                350f, 77f + shift, paint);
             paint.setColor(Color.rgb(194, 232, 198));
             canvas.drawText("C " + batteryLabel(controllerBattery.get()),
-                326f, 216f + shift, paint);
+                350f, 103f + shift, paint);
             paint.clearShadowLayer();
             paint.setFakeBoldText(false);
         }

@@ -207,18 +207,19 @@ final class DaydreamControllerAssetRenderer {
                 positionHandle
             );
 
-            part.normals.position(0);
-            GLES20.glVertexAttribPointer(
-                normalHandle,
-                3,
-                GLES20.GL_FLOAT,
-                false,
-                0,
-                part.normals
-            );
-            GLES20.glEnableVertexAttribArray(
-                normalHandle
-            );
+            // The exported button-cap normals vary across small triangles.
+            // A constant top-facing normal removes the apparent kaleidoscope
+            // shimmer while leaving the body and touchpad mesh shading intact.
+            if (DaydreamControllerSurfaceLighting.flatButtonNormal(part.material)) {
+                GLES20.glDisableVertexAttribArray(normalHandle);
+                GLES20.glVertexAttrib3f(normalHandle, 0.0f, 1.0f, 0.0f);
+            } else {
+                part.normals.position(0);
+                GLES20.glVertexAttribPointer(
+                    normalHandle, 3, GLES20.GL_FLOAT, false, 0, part.normals
+                );
+                GLES20.glEnableVertexAttribArray(normalHandle);
+            }
 
             GLES20.glUniform4f(
                 colorHandle,

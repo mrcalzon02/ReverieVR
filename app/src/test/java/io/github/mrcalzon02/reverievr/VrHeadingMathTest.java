@@ -33,6 +33,15 @@ public final class VrHeadingMathTest {
     }
 
     @Test
+    public void startupHeadingCancelsViewYawAndKeepsShellPanelsCentered() {
+        float right = (float) (Math.PI * 0.5);
+        assertEquals(90f, VrHeadingMath.viewCorrectionDegrees(right), EPSILON);
+        assertEquals(-90f, VrHeadingMath.viewCorrectionDegrees(-right), EPSILON);
+        assertEquals(0f, VrHeadingMath.shellPanelRotationDegrees(false, right), EPSILON);
+        assertEquals(90f, VrHeadingMath.shellPanelRotationDegrees(true, right), EPSILON);
+    }
+
+    @Test
     public void forwardMapsToZeroYaw() {
         assertEquals(
             0.0f,

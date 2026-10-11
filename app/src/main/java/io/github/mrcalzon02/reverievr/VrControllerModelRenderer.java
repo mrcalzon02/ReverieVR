@@ -396,7 +396,7 @@ final class VrControllerModelRenderer {
             Matrix.rotateM(
                 rotation,
                 0,
-                (float) Math.toDegrees(virtualYaw),
+                VirtualControllerAim.modelYawDegrees(virtualYaw),
                 0.0f,
                 1.0f,
                 0.0f

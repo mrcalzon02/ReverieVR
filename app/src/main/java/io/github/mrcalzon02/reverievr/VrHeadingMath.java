@@ -30,6 +30,16 @@ final class VrHeadingMath {
         );
     }
 
+    /** Positive heading cancels negative headset yaw in world-to-eye view. */
+    static float viewCorrectionDegrees(float heading) {
+        return (float) Math.toDegrees(heading);
+    }
+
+    /** Panels are already in shell space; only quick menu follows relative head yaw. */
+    static float shellPanelRotationDegrees(boolean quickMenu, float relativeYaw) {
+        return quickMenu ? (float) Math.toDegrees(relativeYaw) : 0f;
+    }
+
     /** The yaw correction to rotate a raw controller aim onto headset forward. */
     static float controllerCalibrationForHeadset(float controllerYaw, float headsetYaw) {
         if (!Float.isFinite(controllerYaw) || !Float.isFinite(headsetYaw)) {
