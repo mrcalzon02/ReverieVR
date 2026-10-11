@@ -56,8 +56,20 @@ final class HomeEnvironmentRenderer {
         quadVerticalZ(-0.68f, 0.68f, -0.72f, 1.05f, -2.27f));
     private final Mesh phonePanelGlass = mesh(
         quadVerticalZ(-0.61f, 0.61f, -0.65f, 0.92f, -2.255f));
-    private final Mesh phonePanelControlRail = mesh(
-        quadVerticalZ(0.20f, 0.61f, 0.80f, 0.92f, -2.245f));
+    private final Mesh[] phonePanelControlKeys = buildPhoneControlKeys();
+    private final float[] phoneBaseMvp = new float[16];
+    private final float[] phonePose = new float[16];
+    private final float[] phoneRotatedMvp = new float[16];
+
+    private static Mesh[] buildPhoneControlKeys() {
+        Mesh[] keys = new Mesh[5];
+        for (int i = 0; i < keys.length; i++) {
+            float top = 1.02f - i * 0.165f;
+            keys[i] = mesh(quadVerticalZ(
+                0.72f, 1.12f, top - 0.145f, top, -2.245f));
+        }
+        return keys;
+    }
     private final Mesh daisTop =
         mesh(quadHorizontal(-1.75f, 1.75f, -4.1f, -1.35f, -1.08f));
     private final Mesh daisFront =
@@ -326,12 +338,28 @@ final class HomeEnvironmentRenderer {
      * surface is deliberately dark until user-consented MediaProjection is
      * available; never depict a fake live Android screen.
      */
-    void drawPhonePanel() {
+    void drawPhonePanel(float yawDegrees, float pitchDegrees, int focusedKey) {
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
+        System.arraycopy(mvp, 0, phoneBaseMvp, 0, 16);
+        Matrix.setIdentityM(phonePose, 0);
+        Matrix.translateM(phonePose, 0, 0.0f, 0.0f, -2.27f);
+        Matrix.rotateM(phonePose, 0, yawDegrees, 0.0f, 1.0f, 0.0f);
+        Matrix.rotateM(phonePose, 0, pitchDegrees, 1.0f, 0.0f, 0.0f);
+        Matrix.translateM(phonePose, 0, 0.0f, 0.0f, 2.27f);
+        Matrix.multiplyMM(phoneRotatedMvp, 0,
+            phoneBaseMvp, 0, phonePose, 0);
+        System.arraycopy(phoneRotatedMvp, 0, mvp, 0, 16);
         draw(phonePanelFrame, 0.08f, 0.12f, 0.16f, 1.0f);
         draw(phonePanelGlass, 0.015f, 0.027f, 0.040f, 1.0f);
-        draw(phonePanelControlRail, 0.12f, 0.36f, 0.48f, 1.0f);
+        for (int i = 0; i < phonePanelControlKeys.length; i++) {
+            boolean focused = focusedKey == i;
+            draw(phonePanelControlKeys[i],
+                focused ? 0.24f : 0.10f,
+                focused ? 0.76f : 0.34f,
+                focused ? 0.85f : 0.48f, 1.0f);
+        }
+        System.arraycopy(phoneBaseMvp, 0, mvp, 0, 16);
     }
 
     /**
