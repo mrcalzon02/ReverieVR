@@ -35,6 +35,10 @@ struct Infantry {
     bool active = false;
 };
 // Shared by the pure-C++ tests and the headset's combat ray.
+// Returns the first positive surface intersection, or the exit if inside.
+// Supports finite non-unit ray directions and rejects malformed input.
+bool RaySphereSurfaceDistance(const float *origin, const float *direction,
+                              const float *center, float radius, float *distance);
 bool RayHitsInfantry(const Infantry &soldier, const float *origin,
                      const float *direction, float *distance);
 struct Stats {

@@ -1,9 +1,39 @@
 #include "breakwater_campaign.h"
 #include <cassert>
+#include <cmath>
+#include <limits>
 #include <iostream>
 using namespace reverie::breakwater;
 
 int main() {
+    // Surface intersection ordering must beat center-distance ordering.
+    // The farther center's larger hull can be the first struck surface.
+    const float rayOrigin[]={0,0,5}, rayForward[]={0,0,-1};
+    const float smallNear[]={0,0,2}, largeFar[]={0,0,1};
+    float smallDepth=0, largeDepth=0;
+    assert(RaySphereSurfaceDistance(rayOrigin,rayForward,smallNear,.2f,&smallDepth));
+    assert(RaySphereSurfaceDistance(rayOrigin,rayForward,largeFar,1.4f,&largeDepth));
+    assert(largeDepth<smallDepth);
+    const float center[]={0,0,0}, tangent[]={1,0,0};
+    float hit=0;
+    assert(RaySphereSurfaceDistance(rayOrigin,rayForward,center,1,&hit));
+    assert(std::abs(hit-4.0f)<0.0001f);
+    assert(RaySphereSurfaceDistance(rayOrigin,rayForward,tangent,1,&hit));
+    assert(std::abs(hit-5.0f)<0.0001f);
+    const float inside[]={0,0,0}, exitRay[]={0,0,1};
+    assert(RaySphereSurfaceDistance(inside,exitRay,center,1,&hit));
+    assert(std::abs(hit-1.0f)<0.0001f);
+    const float scaledRay[]={0,0,-2};
+    assert(RaySphereSurfaceDistance(rayOrigin,scaledRay,center,1,&hit));
+    assert(std::abs(hit-2.0f)<0.0001f);
+    const float behind[]={0,0,10}, zero[]={0,0,0};
+    const float invalid[]={std::numeric_limits<float>::quiet_NaN(),0,5};
+    assert(!RaySphereSurfaceDistance(rayOrigin,rayForward,behind,1,&hit));
+    assert(!RaySphereSurfaceDistance(rayOrigin,zero,center,1,&hit));
+    assert(!RaySphereSurfaceDistance(invalid,rayForward,center,1,&hit));
+    assert(!RaySphereSurfaceDistance(rayOrigin,rayForward,center,-1,&hit));
+    assert(!RaySphereSurfaceDistance(rayOrigin,rayForward,center,1,nullptr));
+
     Campaign c(Difficulty::Casual, 41);
     assert(c.Start() && c.phase() == Phase::Shop);
     assert(c.waves_this_period() == 2);
@@ -105,7 +135,7 @@ int main() {
     const float ray[]={0,0,-1};
     float hitDepth=0;
     assert(RayHitsInfantry(soldier,origin,ray,&hitDepth));
-    assert(hitDepth>0.9f && hitDepth<1.1f);
+    assert(hitDepth>0.69f && hitDepth<0.71f);
     assert(!RayHitsInfantry(soldier,missOrigin,ray,&hitDepth));
     assert(!RayHitsInfantry(soldier,origin,nullptr,&hitDepth));
     for(int i=0;i<10;i++) beach.Tick(0.05f);

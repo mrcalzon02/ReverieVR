@@ -1,6 +1,7 @@
 #include "breakwater_campaign.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace reverie { namespace breakwater {
 namespace {
@@ -20,23 +21,40 @@ const std::array<Location,Campaign::kLocations> &Campaign::Locations() {
 Campaign::Campaign(Difficulty difficulty, uint32_t seed)
     : difficulty_(Tier(difficulty) <= 3 ? difficulty : Difficulty::Regular),
       seed_(seed) {}
+bool RaySphereSurfaceDistance(const float *origin, const float *direction,
+                              const float *center, float radius, float *distance) {
+    if (!origin || !direction || !center || !distance ||
+        !std::isfinite(radius) || radius <= 0.0f) return false;
+    // Double intermediates keep the discriminant stable for finite float rays.
+    // Do not rely on unit length: the input sanitizer normally normalizes,
+    // but host-side tests and future callers may not.
+    double a = 0.0, b = 0.0, c = -static_cast<double>(radius) * radius;
+    for (int i = 0; i < 3; ++i) {
+        if (!std::isfinite(origin[i]) || !std::isfinite(direction[i]) ||
+            !std::isfinite(center[i])) return false;
+        const double offset = static_cast<double>(origin[i]) - center[i];
+        const double ray = direction[i];
+        a += ray * ray;
+        b += offset * ray;
+        c += offset * offset;
+    }
+    if (a <= 0.0 || !std::isfinite(a) || !std::isfinite(b) ||
+        !std::isfinite(c)) return false;
+    const double discriminant = b * b - a * c;
+    if (!std::isfinite(discriminant) || discriminant < 0.0) return false;
+    const double root = std::sqrt(discriminant);
+    double t = (-b - root) / a;
+    if (t <= 0.0) t = (-b + root) / a; // origin inside the hitbox
+    if (!std::isfinite(t) || t <= 0.0 ||
+        t > std::numeric_limits<float>::max()) return false;
+    *distance = static_cast<float>(t);
+    return true;
+}
 bool RayHitsInfantry(const Infantry &soldier, const float *origin,
                      const float *direction, float *distance) {
-    if (!soldier.active || !origin || !direction || !distance) return false;
-    for (int i = 0; i < 3; ++i)
-        if (!std::isfinite(origin[i]) || !std::isfinite(direction[i])) return false;
-    // Rays are already normalized by the native-input sanitizer.
-    constexpr float centerY = -0.66f;
-    constexpr float radius = 0.30f;
-    const float dx = origin[0] - soldier.x;
-    const float dy = origin[1] - centerY;
-    const float dz = origin[2] - soldier.z;
-    const float depth = -(dx * direction[0] + dy * direction[1] + dz * direction[2]);
-    if (!std::isfinite(depth) || depth <= 0.0f) return false;
-    const float missSquared = dx*dx + dy*dy + dz*dz - depth*depth;
-    if (!std::isfinite(missSquared) || missSquared > radius*radius) return false;
-    *distance = depth;
-    return true;
+    if (!soldier.active) return false;
+    const float center[] = {soldier.x, -0.66f, soldier.z};
+    return RaySphereSurfaceDistance(origin, direction, center, 0.30f, distance);
 }
 uint32_t Campaign::Hash(uint32_t tag) const {
     uint32_t x = seed_ ^ tag ^ (static_cast<uint32_t>(location_) * 173u)

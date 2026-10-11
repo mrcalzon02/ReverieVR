@@ -133,19 +133,12 @@ int ShopTarget(const ReverieNativeInputV1 &input) {
 bool AimAtEnemy(const ReverieNativeInputV1 &input,const Enemy &enemy,
                 float *distance) {
     if(!enemy.active)return false;
-    const float cx=enemy.x,cy=enemy.type==UnitType::Aircraft?1.6f:-.63f,cz=enemy.z;
+    const float center[]={enemy.x,
+        enemy.type==UnitType::Aircraft?1.6f:-.63f,enemy.z};
     const float radius=enemy.type==UnitType::Rowboat?.62f:
          enemy.type==UnitType::LandingCraft?.82f:.78f;
-    const float ox=input.pointer_origin[0]-cx;
-    const float oy=input.pointer_origin[1]-cy;
-    const float oz=input.pointer_origin[2]-cz;
-    const float projection=-(ox*input.pointer_direction[0]+
-        oy*input.pointer_direction[1]+oz*input.pointer_direction[2]);
-    if(projection<=0)return false;
-    const float d2=ox*ox+oy*oy+oz*oz-projection*projection;
-    if(d2>radius*radius)return false;
-    *distance=projection;
-    return true;
+    return RaySphereSurfaceDistance(input.pointer_origin,
+        input.pointer_direction,center,radius,distance);
 }
 bool GunWithinTraverse(const float *direction) {
     // Bounded rail-mounted gun: approximately 68 degrees horizontal
