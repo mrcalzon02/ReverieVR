@@ -22,7 +22,7 @@ struct State {
     GLuint program = 0, vbo = 0;
     GLint matrix = -1, position = -1, color = -1;
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
-    float flash = 0.0f, elapsed = 0.0f;
+    float flash = 0.0f, elapsed = 0.0f, reload_ready_flash = 0.0f;
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
     ImpactEffects impacts;
@@ -198,6 +198,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         if(choice>=0 && choice<4) {
             game=Campaign(static_cast<Difficulty>(choice),1049u);
             s->impacts=ImpactEffects{};
+            s->reload_ready_flash=0.0f;
             game.Start();
             SaveState(s);
             Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -266,6 +267,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
         game=Campaign(Difficulty::Regular,1049u);
         s->impacts=ImpactEffects{};
+        s->reload_ready_flash=0.0f;
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
 }
@@ -458,6 +460,8 @@ void BuildScene(State *s) {
                       .93f,.74f,.34f);
             }
             Text(s,"RELOADING",0,.52f,-1.79f,.038f,.92f,.79f,.54f);
+        } else if(s->reload_ready_flash>0.0f) {
+            Text(s,"READY",0,.61f,-1.79f,.048f,.57f,.96f,.58f);
         }
         char support[24];
         std::snprintf(support,sizeof(support),"ARTY %u",
@@ -536,9 +540,15 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     }
     s->elapsed+=copy.delta_seconds;
     s->flash=std::max(0.0f,s->flash-copy.delta_seconds);
+    s->reload_ready_flash=std::max(0.0f,
+        s->reload_ready_flash-copy.delta_seconds);
     s->impacts.Tick(copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
+        const bool was_reloading=s->campaign.reloading();
         s->campaign.Tick(copy.delta_seconds);
+        if(was_reloading && !s->campaign.reloading() &&
+           s->campaign.phase()==Phase::Combat)
+            s->reload_ready_flash=.55f;
         if(s->campaign.phase()==Phase::Shop)SaveState(s);
     }
     if(down)Interact(s,copy,!s->held);
