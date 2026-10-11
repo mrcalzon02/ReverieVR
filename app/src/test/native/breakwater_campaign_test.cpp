@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_combat_input.h"
 #include "breakwater_impacts.h"
 #include <cassert>
 #include <cmath>
@@ -7,6 +8,28 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // Support labels consume held Select after the initial action edge.
+    // They must not fire the gun through the HUD or spend ammunition.
+    assert(HitCombatSupportHud(-2.0f,.95f)==CombatHudTarget::Artillery);
+    assert(HitCombatSupportHud(2.0f,.95f)==CombatHudTarget::Airstrike);
+    assert(HitCombatSupportHud(0.0f,.95f)==CombatHudTarget::None);
+    assert(HitCombatSupportHud(-2.0f,.65f)==CombatHudTarget::None);
+    assert(HitCombatSupportHud(2.0f,1.25f)==CombatHudTarget::None);
+    assert(HitCombatSupportHud(std::numeric_limits<float>::quiet_NaN(),.95f)
+           ==CombatHudTarget::None);
+    assert(RouteCombatInput(CombatHudTarget::Artillery,true)
+           ==CombatInputRoute::Artillery);
+    assert(RouteCombatInput(CombatHudTarget::Airstrike,true)
+           ==CombatInputRoute::Airstrike);
+    assert(RouteCombatInput(CombatHudTarget::Artillery,false)
+           ==CombatInputRoute::NoAction);
+    assert(RouteCombatInput(CombatHudTarget::Airstrike,false)
+           ==CombatInputRoute::NoAction);
+    assert(RouteCombatInput(CombatHudTarget::None,false)
+           ==CombatInputRoute::Gun);
+    assert(RouteCombatInput(CombatHudTarget::None,true)
+           ==CombatInputRoute::Gun);
+
     // Procedural hit feedback uses finite positions and a bounded pulse pool.
     ImpactEffects effects;
     const float muzzle[]={0,0,0}, downward[]={0,-.2f,-1};

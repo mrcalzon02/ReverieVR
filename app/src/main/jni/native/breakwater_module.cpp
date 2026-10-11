@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_combat_input.h"
 #include "breakwater_impacts.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
@@ -217,21 +218,25 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         Feedback(s,done?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(game.phase()==Phase::Combat) {
         float x=0,y=0;
-        if(edge && AimAtPlane(input,-1.8f,&x,&y)>0 && y>.65f && y<1.25f){
-            if(x<-1.05f && x>-3.4f){
-                const auto before=game.enemies();
-                const bool ok=game.CallArtillery();
-                if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),false);
-                Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
-                return;
-            }
-            if(x>1.05f && x<3.4f){
-                const auto before=game.enemies();
-                const bool ok=game.CallAirstrike();
-                if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),true);
-                Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
-                return;
-            }
+        const CombatHudTarget hud = AimAtPlane(input,-1.8f,&x,&y)>0 ?
+            HitCombatSupportHud(x,y) : CombatHudTarget::None;
+        // The support HUD owns its entire hitbox while Select is held.
+        // Without this route, later held frames fire the gun through the UI.
+        const CombatInputRoute route = RouteCombatInput(hud,edge);
+        if(route==CombatInputRoute::NoAction)return;
+        if(route==CombatInputRoute::Artillery){
+            const auto before=game.enemies();
+            const bool ok=game.CallArtillery();
+            if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),false);
+            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
+        }
+        if(route==CombatInputRoute::Airstrike){
+            const auto before=game.enemies();
+            const bool ok=game.CallAirstrike();
+            if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),true);
+            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
         }
         const int target=CombatTarget(input,game);
         // Resolve the impact before a lethal hit deactivates the target.
