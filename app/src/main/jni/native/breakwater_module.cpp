@@ -216,12 +216,16 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         float x=0,y=0;
         if(edge && AimAtPlane(input,-1.8f,&x,&y)>0 && y>.65f && y<1.25f){
             if(x<-1.05f && x>-3.4f){
+                const auto before=game.enemies();
                 const bool ok=game.CallArtillery();
+                if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),false);
                 Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
                 return;
             }
             if(x>1.05f && x<3.4f){
+                const auto before=game.enemies();
                 const bool ok=game.CallAirstrike();
+                if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),true);
                 Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
                 return;
             }
@@ -357,23 +361,29 @@ void BuildScene(State *s) {
     }
     // CPU-updated, fixed-capacity impact pulses render identically in both eyes.
     for(const ImpactPulse &impact:s->impacts.pulses())if(impact.remaining>0.0f) {
-        const bool explosion=impact.kind==ImpactKind::Explosion;
-        const float lifetime=explosion?ImpactEffects::kExplosionLifetime:
-                                       ImpactEffects::kLifetime;
+        const bool artillery=impact.kind==ImpactKind::ArtilleryBlast;
+        const bool airstrike=impact.kind==ImpactKind::AirstrikeBlast;
+        const bool support=artillery || airstrike;
+        const bool explosion=impact.kind==ImpactKind::Explosion || support;
+        const float lifetime=ImpactEffects::LifetimeFor(impact.kind);
         const float progress=std::max(0.0f,1.0f-impact.remaining/lifetime);
-        const float size=explosion?.19f+.54f*progress:.07f+.17f*progress;
+        const float size=support?.30f+.83f*progress:
+                         explosion?.19f+.54f*progress:.07f+.17f*progress;
         const float x=impact.x,y=impact.y,z=impact.z+.035f;
         if(explosion) {
             // Three crossed, expanding vertex-color blast petals darken to smoke.
             // No textures, heap particles or per-eye simulation updates.
             const float fade=1.0f-progress;
-            Triangle(s,x-size,y,z,x,y+size*.9f,z,x+size,y,z,
-                     .22f+.76f*fade,.17f+.48f*fade,.12f+.12f*fade);
+            // Artillery burns amber at the waterline; airstrikes flash pale
+            // around aircraft as well as ships, then fade into dark smoke.
+            const float r=.20f+(airstrike?.70f:.76f)*fade;
+            const float g=.16f+(airstrike?.69f:artillery?.48f:.46f)*fade;
+            const float b=.12f+(airstrike?.72f:artillery?.14f:.12f)*fade;
+            Triangle(s,x-size,y,z,x,y+size*.9f,z,x+size,y,z,r,g,b);
             Triangle(s,x,y-size*.7f,z,x+size*.8f,y,z,x,y+size*.7f,z,
-                     .22f+.58f*fade,.15f+.35f*fade,.12f+.10f*fade);
+                     r*.84f,g*.78f,b*.80f);
             Triangle(s,x,y-size*.65f,z-size*.6f,x,y+size*.85f,z,
-                     x,y-size*.65f,z+size*.6f,
-                     .20f+.60f*fade,.16f+.38f*fade,.13f+.11f*fade);
+                     x,y-size*.65f,z+size*.6f,r*.80f,g*.86f,b*.85f);
         } else if(impact.kind==ImpactKind::Water) {
             Triangle(s,x-size,y+.01f,z-size,x+size,y+.01f,z-size,
                      x,y+size*1.5f,z,.67f,.85f,.96f);

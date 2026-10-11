@@ -52,6 +52,31 @@ int main() {
     blasts.Tick(ImpactEffects::kExplosionLifetime);
     assert(blasts.pulses()[1].remaining==0.0f);
 
+    // Support strikes produce visible blasts only for enemies whose HP
+    // actually changed; lethal targets retain their pre-destruction position.
+    Campaign artillery_game(Difficulty::Casual,41);
+    assert(artillery_game.Start());
+    assert(artillery_game.Purchase(Upgrade::Artillery));
+    assert(artillery_game.BeginWave());
+    artillery_game.Tick(.05f);
+    const auto artillery_before=artillery_game.enemies();
+    assert(artillery_before[0].active);
+    ImpactEffects support_fx;
+    assert(artillery_game.CallArtillery());
+    assert(support_fx.RecordSupportDamage(artillery_before,
+                                        artillery_game.enemies(),false)==1);
+    assert(support_fx.pulses()[0].kind==ImpactKind::ArtilleryBlast);
+    assert(std::abs(support_fx.pulses()[0].x-artillery_before[0].x)<.0001f);
+    assert(std::abs(support_fx.pulses()[0].z-artillery_before[0].z)<.0001f);
+    assert(!artillery_game.enemies()[0].active);
+    assert(std::abs(support_fx.pulses()[0].remaining-
+                    ImpactEffects::kArtilleryLifetime)<.0001f);
+    assert(!artillery_game.CallArtillery());
+    assert(support_fx.RecordSupportDamage(artillery_game.enemies(),
+                                         artillery_game.enemies(),false)==0);
+    support_fx.Tick(ImpactEffects::kArtilleryLifetime);
+    assert(support_fx.pulses()[0].remaining==0.0f);
+
     // Surface intersection ordering must beat center-distance ordering.
     // The farther center's larger hull can be the first struck surface.
     const float rayOrigin[]={0,0,5}, rayForward[]={0,0,-1};
@@ -423,9 +448,18 @@ int main() {
     assert(air_only.BeginWave());
     air_only.Tick(0.05f);
     assert(air_only.enemies()[0].type==UnitType::Aircraft);
+    const auto aircraft_before=air_only.enemies();
+    ImpactEffects air_fx;
     assert(!air_only.CallArtillery());
     assert(air_only.artillery_charges()==1);
+    assert(air_fx.RecordSupportDamage(aircraft_before,air_only.enemies(),false)==0);
     assert(air_only.CallAirstrike());
+    assert(air_fx.RecordSupportDamage(aircraft_before,air_only.enemies(),true)==1);
+    assert(air_fx.pulses()[0].kind==ImpactKind::AirstrikeBlast);
+    assert(std::abs(air_fx.pulses()[0].y-1.6f)<.0001f);
+    assert(std::abs(air_fx.pulses()[0].z-aircraft_before[0].z)<.0001f);
+    assert(std::abs(air_fx.pulses()[0].remaining-
+                    ImpactEffects::kAirstrikeLifetime)<.0001f);
     assert(air_only.airstrike_charges()==0);
     assert(air_only.wave_status().aircraft_destroyed==1);
 
