@@ -400,27 +400,22 @@ final class DaydreamControllerProvider implements ControllerProvider {
 
     @Override
     public String[] getMissingRuntimePermissions() {
-        List<String> missing = new ArrayList<>();
-
-        // Connection to an existing bond does not perform a BLE scan.
-        // Android 8–11 Location gating applies only to new BLE discovery.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-            && context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                != PackageManager.PERMISSION_GRANTED) {
-            missing.add(Manifest.permission.BLUETOOTH_CONNECT);
-            return missing.toArray(new String[0]);
-        }
-
-        if (findBondedDaydreamController() != null) {
+        // A paired Daydream controller reconnects without discovery. Standard
+        // Android HID devices (including the Steam Controller) bypass this
+        // provider entirely and are handled by the input-device router.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             return new String[0];
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            addIfMissing(missing, Manifest.permission.BLUETOOTH_SCAN);
-        } else {
-            addIfMissing(missing, Manifest.permission.ACCESS_FINE_LOCATION);
+        List<String> missing = new ArrayList<>();
+        addIfMissing(missing, Manifest.permission.BLUETOOTH_CONNECT);
+        if (!missing.isEmpty()) {
+            return missing.toArray(new String[0]);
         }
 
+        if (findBondedDaydreamController() == null) {
+            addIfMissing(missing, Manifest.permission.BLUETOOTH_SCAN);
+        }
         return missing.toArray(new String[0]);
     }
 
