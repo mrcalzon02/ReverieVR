@@ -90,9 +90,11 @@ enum VideoProjection {
             || words.contains(" eq360 ");
         boolean sbs = words.contains(" sbs ")
             || words.contains(" sidebyside ")
+            || words.contains(" side by side ")
             || words.contains(" left right ");
         boolean tb = words.contains(" tb ")
             || words.contains(" topbottom ")
+            || words.contains(" top bottom ")
             || words.contains(" overunder ")
             || words.contains(" over under ")
             || words.contains(" ou ");
