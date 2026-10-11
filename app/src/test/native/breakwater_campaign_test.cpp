@@ -62,10 +62,44 @@ int main() {
     assert(landed.integrity()<integrity);
     while(landed.infantry()) {
         landed.Tick(0.05f);
-        landed.FireAtInfantry();
+        for(uint8_t i=0;i<landed.infantry_units().size();++i)
+            if(landed.infantry_units()[i].active && landed.FireAtInfantry(i)) break;
     }
     assert(landed.wave_status().troops_stopped>=1);
     assert(landed.waves_this_period()==2);
+
+    // The campaign allocates independently moving soldiers with real targets.
+    Campaign beach(Difficulty::Casual,41);
+    assert(beach.Start() && beach.BeginWave());
+    for(int i=0;i<360 && beach.infantry()==0;i++) beach.Tick(0.05f);
+    assert(beach.infantry()>0);
+    uint8_t first=255, active=0;
+    for(uint8_t i=0;i<beach.infantry_units().size();i++) {
+        if(!beach.infantry_units()[i].active) continue;
+        if(first==255) first=i;
+        ++active;
+    }
+    assert(active==beach.infantry() && first!=255);
+    const Infantry soldier=beach.infantry_units()[first];
+    const float origin[]={soldier.x,-0.66f,soldier.z+1.0f};
+    const float missOrigin[]={soldier.x+0.6f,-0.66f,soldier.z+1.0f};
+    const float ray[]={0,0,-1};
+    float hitDepth=0;
+    assert(RayHitsInfantry(soldier,origin,ray,&hitDepth));
+    assert(hitDepth>0.9f && hitDepth<1.1f);
+    assert(!RayHitsInfantry(soldier,missOrigin,ray,&hitDepth));
+    assert(!RayHitsInfantry(soldier,origin,nullptr,&hitDepth));
+    for(int i=0;i<10;i++) beach.Tick(0.05f);
+    assert(beach.infantry_units()[first].z>soldier.z);
+    const uint8_t ammoBefore=beach.magazine_left();
+    assert(!beach.FireAtInfantry(static_cast<uint8_t>(Campaign::kMaxInfantry-1)));
+    assert(beach.magazine_left()==ammoBefore);
+    assert(beach.FireAtInfantry(first));
+    assert(!beach.infantry_units()[first].active);
+    assert(beach.infantry()==active-1);
+    assert(beach.magazine_left()==ammoBefore-1);
+    assert(!beach.FireAtInfantry(first));
+    assert(beach.magazine_left()==ammoBefore-1);
 
     // Higher difficulties add more boats and waves, never skip the
     // opening single-passenger rowboat introduction.
@@ -221,7 +255,9 @@ int main() {
         clock.Tick(0.05f);
         for(uint8_t n=0;n<clock.enemies().size();n++)
             if(clock.enemies()[n].active) clock.FireAt(n);
-        if(clock.infantry()>0) clock.FireAtInfantry();
+        if(clock.infantry()>0)
+            for(uint8_t i=0;i<clock.infantry_units().size();++i)
+                if(clock.infantry_units()[i].active && clock.FireAtInfantry(i)) break;
     }
     assert(clock.period()==Period::Night && clock.day()==1);
     assert(clock.wave_index()==1);

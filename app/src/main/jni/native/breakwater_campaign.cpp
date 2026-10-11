@@ -11,6 +11,8 @@ constexpr int kCost[] = {180,200,160,750,260,420,470,140};
 constexpr int kExtra[] = {120,140,100,0,0,0,0,0};
 bool Valid(Upgrade u) { return static_cast<uint8_t>(u) <= 7; }
 uint8_t Tier(Difficulty d) { return static_cast<uint8_t>(d); }
+static_assert(Campaign::kMaxInfantry >= 10u * 6u,
+              "All landing passengers must receive unique soldier slots");
 } // namespace
 const std::array<Location,Campaign::kLocations> &Campaign::Locations() {
     return kPlaces;
@@ -18,6 +20,24 @@ const std::array<Location,Campaign::kLocations> &Campaign::Locations() {
 Campaign::Campaign(Difficulty difficulty, uint32_t seed)
     : difficulty_(Tier(difficulty) <= 3 ? difficulty : Difficulty::Regular),
       seed_(seed) {}
+bool RayHitsInfantry(const Infantry &soldier, const float *origin,
+                     const float *direction, float *distance) {
+    if (!soldier.active || !origin || !direction || !distance) return false;
+    for (int i = 0; i < 3; ++i)
+        if (!std::isfinite(origin[i]) || !std::isfinite(direction[i])) return false;
+    // Rays are already normalized by the native-input sanitizer.
+    constexpr float centerY = -0.66f;
+    constexpr float radius = 0.30f;
+    const float dx = origin[0] - soldier.x;
+    const float dy = origin[1] - centerY;
+    const float dz = origin[2] - soldier.z;
+    const float depth = -(dx * direction[0] + dy * direction[1] + dz * direction[2]);
+    if (!std::isfinite(depth) || depth <= 0.0f) return false;
+    const float missSquared = dx*dx + dy*dy + dz*dz - depth*depth;
+    if (!std::isfinite(missSquared) || missSquared > radius*radius) return false;
+    *distance = depth;
+    return true;
+}
 uint32_t Campaign::Hash(uint32_t tag) const {
     uint32_t x = seed_ ^ tag ^ (static_cast<uint32_t>(location_) * 173u)
         ^ (static_cast<uint32_t>(day_) * 511u)
@@ -132,6 +152,8 @@ uint8_t Campaign::NextCount() const {
 bool Campaign::BeginWave() {
     if (phase_ != Phase::Shop) return false;
     enemies_.fill({});
+    infantry_units_.fill({});
+    infantry_spawn_cursor_ = 0;
     wave_status_ = {};
     infantry_ = 0;
     spawned_ = 0;
@@ -146,6 +168,16 @@ bool Campaign::BeginWave() {
     return true;
 }
 void Campaign::Land(Enemy &e) {
+    // NextCount caps a wave at ten craft, each carrying no more than six.
+    // Append-only slots preserve identity when other soldiers are killed.
+    for (uint8_t passenger = 0; passenger < e.passengers; ++passenger) {
+        Infantry &trooper = infantry_units_[infantry_spawn_cursor_++];
+        const float spread = (static_cast<float>(passenger) -
+            static_cast<float>(e.passengers - 1u) * 0.5f) * 0.27f;
+        trooper.x = std::max(-3.1f, std::min(3.1f, e.x + spread));
+        trooper.z = -2.28f - 0.10f * static_cast<float>(passenger % 2u);
+        trooper.active = true;
+    }
     e.active = false;
     e.landed = true;
     infantry_ = static_cast<uint8_t>(infantry_ + e.passengers);
@@ -181,9 +213,11 @@ bool Campaign::FireAt(uint8_t index) {
     }
     return true;
 }
-bool Campaign::FireAtInfantry() {
-    if (phase_ != Phase::Combat || infantry_ == 0) return false;
+bool Campaign::FireAtInfantry(uint8_t index) {
+    if (phase_ != Phase::Combat || index >= infantry_spawn_cursor_ ||
+        !infantry_units_[index].active) return false;
     if (!BeginGunShot()) return false;
+    infantry_units_[index].active = false;
     --infantry_;
     ++wave_status_.troops_stopped;
     credits_ += 20;
@@ -314,6 +348,9 @@ void Campaign::Tick(float seconds) {
             } else Land(e);
         }
     }
+    // Individual soldiers advance toward the parapet between rifle salvos.
+    for (Infantry &trooper : infantry_units_)
+        if (trooper.active) trooper.z = std::min(-1.34f, trooper.z + 0.13f * dt);
     infantry_timer_ += dt;
     if (infantry_ && infantry_timer_ >= 4.0f) {
         infantry_timer_ = 0;

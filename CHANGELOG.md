@@ -49,6 +49,11 @@ All entries describe verified project/repository changes. Planned work belongs i
 - Added once-allocated procedural birch wall seams, baseboards and furniture to the former White Room, new forest understory, and sparse beach foam/driftwood. The white environment is now labelled Birch Panel Living Room.
 - These changes are repository source edits pending Android build and Galaxy S9/Daydream testing. Native Apps navigation failure and the requested full virtual text-entry keyboard remain unresolved; neither is claimed as repaired.
 
+### Breakwater Battery individual shore-infantry combat
+
+- Replaced the shared shoreline hit region and aggregated formation with bounded, per-passenger in-wave combat slots. Landed troops advance individually; only a ray intersection with a specific live soldier grants a hit. The VR module renders the campaign's soldier positions and removes each soldier on death.
+- Added pure-C++ hitbox and per-soldier regression coverage for movement, near/far pointer hits, rejected targets and ammunition behavior. The existing 80-byte inter-wave save format is unchanged. Android/NDK compilation, on-device aiming/readability and 15-minute thermal tests remain acceptance gates.
+
 ### Breakwater Battery aircraft attack runs
 
 - Replaced the placeholder aircraft shoreline collision with deterministic bomber and strafer behavior. Strafers deliver repeated light attacks while crossing overhead; bombers make a slower single heavy attack and then leave the combat volume. Purchased AA can destroy an aircraft before its attack window, while basic-gun rounds remain ineffective but are still consumed. The generated renderer now gives bombers and strafers visibly different tiny silhouettes. Regression source fixes deterministic late-campaign seeds for bomber damage, strafer bursts and pre-attack AA interception; Android/NDK and physical headset acceptance remain separate gates.

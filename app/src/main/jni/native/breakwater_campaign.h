@@ -29,6 +29,14 @@ struct Enemy {
     uint8_t attacks_remaining = 0;
     float attack_timer = 0;
 };
+struct Infantry {
+    float x = 0;
+    float z = 0;
+    bool active = false;
+};
+// Shared by the pure-C++ tests and the headset's combat ray.
+bool RayHitsInfantry(const Infantry &soldier, const float *origin,
+                     const float *direction, float *distance);
 struct Stats {
     uint16_t fire_delay_ms = 300;
     uint16_t gun_damage = 20;
@@ -47,6 +55,7 @@ class Campaign {
 public:
     static constexpr size_t kSerializedSize = 80;
     static constexpr size_t kMaxEnemies = 12;
+    static constexpr size_t kMaxInfantry = 60; // ten transports x six passengers
     static constexpr uint8_t kLocations = 3;
     static const std::array<Location, kLocations> &Locations();
     explicit Campaign(Difficulty difficulty = Difficulty::Regular,
@@ -57,7 +66,7 @@ public:
     bool BeginWave();
     bool Purchase(Upgrade upgrade);
     bool FireAt(uint8_t index);
-    bool FireAtInfantry();
+    bool FireAtInfantry(uint8_t index);
     bool FireMiss();
     bool CallArtillery();
     bool CallAirstrike();
@@ -78,6 +87,7 @@ public:
     Stats stats() const;
     Status wave_status() const { return wave_status_; }
     const std::array<Enemy,kMaxEnemies> &enemies() const { return enemies_; }
+    const std::array<Infantry,kMaxInfantry> &infantry_units() const { return infantry_units_; }
     int32_t price(Upgrade upgrade) const;
     uint8_t level(Upgrade upgrade) const;
 private:
@@ -102,6 +112,8 @@ private:
     uint8_t airstrike_charges_ = 0;
     std::array<uint8_t,8> upgrades_{};
     std::array<Enemy,kMaxEnemies> enemies_{};
+    std::array<Infantry,kMaxInfantry> infantry_units_{};
+    uint8_t infantry_spawn_cursor_ = 0;
     Status wave_status_{};
     uint8_t remaining_to_spawn_ = 0;
     uint8_t spawned_ = 0;

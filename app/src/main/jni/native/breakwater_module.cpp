@@ -164,6 +164,14 @@ int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game) {
             best=depth; index=i;
         }
     }
+    for(uint8_t i=0;i<game.infantry_units().size();i++) {
+        float depth=0;
+        if(RayHitsInfantry(game.infantry_units()[i],input.pointer_origin,
+                           input.pointer_direction,&depth) && depth<best) {
+            best=depth;
+            index=static_cast<int>(Campaign::kMaxEnemies)+i;
+        }
+    }
     return index;
 }
 constexpr char kSaveSlot[]="breakwater-v1.bin";
@@ -224,11 +232,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         }
         const int target=CombatTarget(input,game);
         bool shot=false;
-        if(target>=0)shot=game.FireAt(static_cast<uint8_t>(target));
-        else if(game.infantry()>0 && GunWithinTraverse(input.pointer_direction) &&
-                AimAtPlane(input,-2.2f,&x,&y)>0 &&
-                std::abs(x)<1.6f && y<.0f && y>-1.3f)
-            shot=game.FireAtInfantry();
+        if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies))
+            shot=game.FireAt(static_cast<uint8_t>(target));
+        else if(target>=static_cast<int>(Campaign::kMaxEnemies))
+            shot=game.FireAtInfantry(static_cast<uint8_t>(target-Campaign::kMaxEnemies));
         else if(GunWithinTraverse(input.pointer_direction))
             shot=game.FireMiss();
         if(shot){
@@ -326,9 +333,10 @@ void BuildScene(State *s) {
             Box(s,e.x,y+.20f,e.z,.31f,.17f,.48f,.25f,.25f,.24f);
         }
     }
-    for(int n=0;n<game.infantry();n++) {
-        const float x=(n%7-3)*.39f;
-        Box(s,x,-.75f,-2.25f,.14f,.48f,.18f,.51f,.45f,.35f);
+    for(const Infantry &trooper:game.infantry_units())if(trooper.active) {
+        // Rendering and combat share the same live soldier position.
+        Box(s,trooper.x,-.76f,trooper.z,.18f,.38f,.17f,.51f,.45f,.35f);
+        Box(s,trooper.x,-.47f,trooper.z,.15f,.16f,.15f,.68f,.58f,.42f);
     }
     if(game.phase()==Phase::Briefing) {
         Panel(s,0,.40f,-3.06f,6.35f,3.6f,.08f,.12f,.16f);
