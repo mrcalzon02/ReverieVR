@@ -288,6 +288,9 @@ void Campaign::Tick(float seconds) {
                 e.attacks_remaining =
                     e.aircraft_pattern == AircraftPattern::Bomber ? 1u : 4u;
                 e.attack_timer = 0.15f;
+            } else if (kind == UnitType::Gunboat) {
+                // Surface gunboats need a warm-up before their first salvo.
+                e.attack_timer = 2.6f;
             }
             --remaining_to_spawn_;
             ++spawned_;
@@ -341,6 +344,16 @@ void Campaign::Tick(float seconds) {
         const float speed = e.type == UnitType::Rowboat ? 0.9f :
             e.type == UnitType::LandingCraft ? 0.62f : 0.76f;
         e.z += speed * dt;
+        if (e.type == UnitType::Gunboat) {
+            e.attack_timer = std::max(0.0f, e.attack_timer - dt);
+            // Unlike troop transports, gunboats threaten the battery from
+            // offshore. Sinking one before the firing line prevents its salvos.
+            if (e.z >= -8.0f && e.z < -2.2f && e.attack_timer <= 0.0f) {
+                integrity_ = std::max(0, integrity_ - 3);
+                ++wave_status_.gunboat_attacks;
+                e.attack_timer = 2.8f;
+            }
+        }
         if (e.z >= -2.2f) {
             if (e.type == UnitType::Gunboat) {
                 integrity_ = std::max(0, integrity_ - 8);

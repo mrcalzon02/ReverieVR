@@ -331,6 +331,11 @@ void BuildScene(State *s) {
                 e.type==UnitType::LandingCraft?1.1f:1.25f;
             Box(s,e.x,y,e.z,width,.29f,1.0f,.40f,.36f,.26f);
             Box(s,e.x,y+.20f,e.z,.31f,.17f,.48f,.25f,.25f,.24f);
+            // The short-lived cannon flash is derived from simulation state,
+            // not updated per eye; it identifies an actual gunboat salvo.
+            if(e.type==UnitType::Gunboat && e.attack_timer>2.64f)
+                Box(s,e.x,y+.32f,e.z+.38f,.18f,.15f,.23f,
+                    .98f,.68f,.24f);
         }
     }
     for(const Infantry &trooper:game.infantry_units())if(trooper.active) {

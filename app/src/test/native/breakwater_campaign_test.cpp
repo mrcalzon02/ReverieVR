@@ -185,6 +185,46 @@ int main() {
     assert(landing_stage.wave_status().boats_sunk>=1);
     assert(landing_stage.wave_status().troops_landed==0);
 
+
+    // Iron Quay day two seed 8 starts with a gunboat. It must be able to
+    // fire from offshore, and early interception must prevent those salvos.
+    auto prepare_gunboat=[](Campaign &game) {
+        uint8_t bytes[Campaign::kSerializedSize]={};
+        assert(game.SerializeShop(bytes,sizeof(bytes)));
+        bytes[16]=1;
+        bytes[20]=2;
+        assert(game.DeserializeShop(bytes,sizeof(bytes)));
+        assert(game.BeginWave());
+        game.Tick(0.05f);
+        assert(game.enemies()[0].type==UnitType::Gunboat);
+    };
+    Campaign firing_ship(Difficulty::Casual,8);
+    assert(firing_ship.Start());
+    prepare_gunboat(firing_ship);
+    for(int i=0;i<70;i++) firing_ship.Tick(0.05f);
+    assert(firing_ship.wave_status().gunboat_attacks==0);
+    assert(firing_ship.integrity()==100);
+    for(int i=0;i<25 && firing_ship.wave_status().gunboat_attacks==0;i++)
+        firing_ship.Tick(0.05f);
+    assert(firing_ship.wave_status().gunboat_attacks==1);
+    assert(firing_ship.integrity()==97);
+    for(int i=0;i<65 && firing_ship.wave_status().gunboat_attacks<2;i++)
+        firing_ship.Tick(0.05f);
+    assert(firing_ship.wave_status().gunboat_attacks==2);
+    assert(firing_ship.integrity()==94);
+
+    Campaign stopped_ship(Difficulty::Casual,8);
+    assert(stopped_ship.Start());
+    prepare_gunboat(stopped_ship);
+    for(int shot=0;shot<7;shot++) {
+        if(shot>0) for(int i=0;i<7;i++) stopped_ship.Tick(0.05f);
+        assert(stopped_ship.FireAt(0));
+    }
+    assert(!stopped_ship.enemies()[0].active);
+    for(int i=0;i<140;i++) stopped_ship.Tick(0.05f);
+    assert(stopped_ship.wave_status().gunboat_attacks==0);
+    assert(stopped_ship.integrity()==100);
+
     auto stage_blackcap_night=[](Campaign &game) {
         uint8_t bytes[Campaign::kSerializedSize]={};
         assert(game.SerializeShop(bytes,sizeof(bytes)));

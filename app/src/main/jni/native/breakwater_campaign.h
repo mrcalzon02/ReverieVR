@@ -50,6 +50,7 @@ struct Status {
     uint8_t troops_stopped = 0;
     uint8_t aircraft_destroyed = 0;
     uint8_t aircraft_attacks = 0;
+    uint8_t gunboat_attacks = 0;
 };
 class Campaign {
 public:
