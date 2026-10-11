@@ -28,13 +28,27 @@ public class SteamControllerMeshTest {
     }
     @Test public void identifiesOnlySpecificValveController() {
         assertTrue(SteamControllerIdentity.matches(0x28de, "Steam Controller"));
+        assertTrue(SteamControllerIdentity.matches(0x28de, "SteamController"));
+        assertTrue(SteamControllerIdentity.matches(0x28de, "Wireless Steam Controller"));
         assertFalse(SteamControllerIdentity.matches(0x28de, "Steam Deck"));
         assertFalse(SteamControllerIdentity.matches(0x1234, "Steam Controller"));
         assertFalse(SteamControllerIdentity.matches(0x28de, "Valve HID"));
         assertTrue(SteamControllerIdentity.matchesAndroidHid(0, "Steam Controller"));
+        // Observed on user's SM-G960U Android 10 Bluetooth settings.
+        assertTrue(SteamControllerIdentity.matchesAndroidHid(0, "SteamController"));
+        assertTrue(SteamControllerIdentity.matchesAndroidHid(0x28de, "SteamController"));
+        assertTrue(SteamControllerIdentity.matchesAndroidHid(0, "steamcontroller"));
+        assertTrue(SteamControllerIdentity.matchesAndroidHid(0, "Valve SteamController"));
+        assertTrue(SteamControllerIdentity.matchesAndroidHid(0, "Wireless Steam Controller"));
         assertTrue(SteamControllerIdentity.matchesAndroidHid(0x28de, "Valve Steam Controller"));
         assertFalse(SteamControllerIdentity.matchesAndroidHid(0x1234, "Steam Controller"));
         assertFalse(SteamControllerIdentity.matchesAndroidHid(0, "Steam Deck"));
         assertFalse(SteamControllerIdentity.matchesAndroidHid(0, "Steam Controller 2026"));
+        assertFalse(SteamControllerIdentity.matchesAndroidHid(0, "SteamController 2026"));
+        assertFalse(SteamControllerIdentity.matchesAndroidHid(0, "Steam"));
+        assertFalse(SteamControllerIdentity.matchesAndroidHid(0, "Valve HID"));
+        assertFalse(SteamControllerIdentity.matchesAndroidHid(0, "Steam Deck"));
+        assertFalse(SteamControllerIdentity.matchesAndroidHid(0x1234, "SteamController"));
+        assertFalse(SteamControllerIdentity.matchesAndroidHid(0, "Wireless Controller"));
     }
 }
