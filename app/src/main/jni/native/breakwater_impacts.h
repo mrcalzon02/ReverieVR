@@ -51,6 +51,12 @@ public:
         return RecordHit(origin,direction,distance,
                          stillActive?ImpactKind::Metal:ImpactKind::Explosion);
     }
+    // Turret impacts are emitted only from an authoritative simulation shot.
+    // A killing hit uses the same longer-lived explosion as the main gun.
+    bool RecordTurretImpact(float x,float z,bool destroyed) {
+        return RecordWorldBlast(x,-.63f,z,
+            destroyed?ImpactKind::Explosion:ImpactKind::Metal);
+    }
     // Compare the exact pre/post-strike enemy slots. This preserves the
     // position of a lethal target and never invents blasts for rejected calls,
     // inactive targets, or aircraft ignored by surface artillery.

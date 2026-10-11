@@ -94,6 +94,42 @@ int main() {
     support_fx.Tick(ImpactEffects::kArtilleryLifetime);
     assert(support_fx.pulses()[0].remaining==0.0f);
 
+    // An actual purchased turret produces a position-accurate shot event,
+    // and a killing shot becomes an explosion rather than a generic spark.
+    Campaign without_turret(Difficulty::Casual,41);
+    assert(without_turret.Start() && without_turret.BeginWave());
+    without_turret.Tick(.05f);
+    assert(without_turret.turret_shot().sequence==0);
+
+    Campaign turret_game(Difficulty::Casual,41);
+    assert(turret_game.Start());
+    assert(turret_game.Purchase(Upgrade::SupportTurret));
+    assert(turret_game.BeginWave());
+    assert(turret_game.turret_shot().sequence==0);
+    turret_game.Tick(.05f);
+    const TurretShotEvent first_turret_shot=turret_game.turret_shot();
+    assert(first_turret_shot.sequence==1 && !first_turret_shot.destroyed);
+    assert(turret_game.enemies()[0].active && turret_game.enemies()[0].hp==5);
+    assert(std::abs(first_turret_shot.z+11.0f)<.0001f);
+    ImpactEffects turret_fx;
+    assert(turret_fx.RecordTurretImpact(first_turret_shot.x,
+                                        first_turret_shot.z,false));
+    assert(turret_fx.pulses()[0].kind==ImpactKind::Metal);
+    assert(std::abs(turret_fx.pulses()[0].z-first_turret_shot.z)<.0001f);
+    for(int frame=0;frame<35 && turret_game.turret_shot().sequence<2;frame++)
+        turret_game.Tick(.05f);
+    const TurretShotEvent lethal_turret_shot=turret_game.turret_shot();
+    assert(lethal_turret_shot.sequence==2 && lethal_turret_shot.destroyed);
+    assert(!turret_game.enemies()[0].active);
+    assert(turret_game.wave_status().boats_sunk==1);
+    assert(turret_fx.RecordTurretImpact(lethal_turret_shot.x,
+                                        lethal_turret_shot.z,true));
+    assert(turret_fx.pulses()[1].kind==ImpactKind::Explosion);
+    assert(std::abs(turret_fx.pulses()[1].remaining-
+                    ImpactEffects::kExplosionLifetime)<.0001f);
+    assert(!turret_fx.RecordTurretImpact(
+        std::numeric_limits<float>::quiet_NaN(),-11.0f,false));
+
     // Surface intersection ordering must beat center-distance ordering.
     // The farther center's larger hull can be the first struck surface.
     const float rayOrigin[]={0,0,5}, rayForward[]={0,0,-1};

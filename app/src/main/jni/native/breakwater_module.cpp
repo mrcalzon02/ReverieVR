@@ -23,6 +23,7 @@ struct State {
     GLint matrix = -1, position = -1, color = -1;
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
     float flash = 0.0f, elapsed = 0.0f, reload_ready_flash = 0.0f;
+    float turret_flash = 0.0f;
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
     ImpactEffects impacts;
@@ -199,6 +200,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             game=Campaign(static_cast<Difficulty>(choice),1049u);
             s->impacts=ImpactEffects{};
             s->reload_ready_flash=0.0f;
+            s->turret_flash=0.0f;
             game.Start();
             SaveState(s);
             Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -268,6 +270,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         game=Campaign(Difficulty::Regular,1049u);
         s->impacts=ImpactEffects{};
         s->reload_ready_flash=0.0f;
+        s->turret_flash=0.0f;
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
 }
@@ -336,8 +339,11 @@ void BuildScene(State *s) {
                  farX-shotRightX*.010f,farY,farZ-shotRightZ*.010f,
                  .98f,.72f,.25f);
     }
-    if(game.stats().turret)
+    if(game.stats().turret) {
         Box(s,2.15f,-.76f,-1.40f,.42f,.32f,1.14f,.36f,.44f,.39f);
+        if(s->turret_flash>0.0f)
+            Box(s,2.15f,-.76f,-2.06f,.20f,.20f,.18f,1.0f,.77f,.32f);
+    }
     for(const Enemy &e:game.enemies())if(e.active) {
         const bool aircraft=e.type==UnitType::Aircraft;
         const float y=aircraft?1.6f:-.68f;
@@ -542,10 +548,17 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->flash=std::max(0.0f,s->flash-copy.delta_seconds);
     s->reload_ready_flash=std::max(0.0f,
         s->reload_ready_flash-copy.delta_seconds);
+    s->turret_flash=std::max(0.0f,s->turret_flash-copy.delta_seconds);
     s->impacts.Tick(copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
         const bool was_reloading=s->campaign.reloading();
+        const uint32_t turret_before=s->campaign.turret_shot().sequence;
         s->campaign.Tick(copy.delta_seconds);
+        const TurretShotEvent turret=s->campaign.turret_shot();
+        if(turret.sequence!=turret_before) {
+            s->impacts.RecordTurretImpact(turret.x,turret.z,turret.destroyed);
+            s->turret_flash=.10f;
+        }
         if(was_reloading && !s->campaign.reloading() &&
            s->campaign.phase()==Phase::Combat)
             s->reload_ready_flash=.55f;

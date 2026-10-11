@@ -181,6 +181,7 @@ bool Campaign::BeginWave() {
     reload_timer_ = 0;
     infantry_timer_ = 0;
     turret_timer_ = 0;
+    turret_shot_ = {};
     magazine_left_ = static_cast<uint8_t>(stats().magazine);
     phase_ = Phase::Combat;
     return true;
@@ -357,12 +358,20 @@ void Campaign::TickStep(float dt) {
                 }
             }
             if (target != nullptr) {
+                // Capture the actual firing event before a lethal hit removes
+                // the craft; the renderer never guesses from enemy-slot diffs.
+                const float hit_x = target->x, hit_z = target->z;
                 target->hp = static_cast<int16_t>(target->hp - 15);
-                if (target->hp <= 0) {
+                const bool destroyed = target->hp <= 0;
+                if (destroyed) {
                     target->active = false;
                     ++wave_status_.boats_sunk;
                     credits_ += 55;
                 }
+                ++turret_shot_.sequence;
+                turret_shot_.x = hit_x;
+                turret_shot_.z = hit_z;
+                turret_shot_.destroyed = destroyed;
                 turret_timer_ = 1.35f;
             }
         }

@@ -48,6 +48,12 @@ struct Stats {
     bool anti_air = false;
     bool turret = false;
 };
+struct TurretShotEvent {
+    uint32_t sequence = 0;
+    float x = 0;
+    float z = 0;
+    bool destroyed = false;
+};
 struct Status {
     uint8_t boats_sunk = 0;
     uint8_t troops_landed = 0;
@@ -93,6 +99,7 @@ public:
     uint8_t airstrike_charges() const { return airstrike_charges_; }
     Stats stats() const;
     Status wave_status() const { return wave_status_; }
+    TurretShotEvent turret_shot() const { return turret_shot_; }
     const std::array<Enemy,kMaxEnemies> &enemies() const { return enemies_; }
     const std::array<Infantry,kMaxInfantry> &infantry_units() const { return infantry_units_; }
     int32_t price(Upgrade upgrade) const;
@@ -123,6 +130,7 @@ private:
     std::array<Infantry,kMaxInfantry> infantry_units_{};
     uint8_t infantry_spawn_cursor_ = 0;
     Status wave_status_{};
+    TurretShotEvent turret_shot_{};
     uint8_t remaining_to_spawn_ = 0;
     uint8_t spawned_ = 0;
     float spawn_timer_ = 0;
