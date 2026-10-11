@@ -100,6 +100,7 @@ public:
 private:
     uint32_t Hash(uint32_t tag) const;
     bool BeginGunShot();
+    void TickStep(float dt);
     bool FinishedWave() const;
     void CompleteWave();
     void Land(Enemy &enemy);

@@ -286,7 +286,18 @@ bool Campaign::CallAirstrike() {
 }
 void Campaign::Tick(float seconds) {
     if (phase_ != Phase::Combat || !std::isfinite(seconds) || seconds <= 0) return;
-    const float dt = std::min(seconds, 0.05f);
+    // The native input ABI accepts up to 0.10s per frame. Previously
+    // discarding everything beyond 0.05s slowed the entire campaign
+    // (spawns, reloads and incoming fire) whenever the headset ran below 20 FPS.
+    // Catch up in bounded substeps, but never simulate a long resume pause.
+    float remaining = std::min(seconds, 0.10f);
+    while (remaining > 0.0f && phase_ == Phase::Combat) {
+        const float dt = std::min(remaining, 0.05f);
+        TickStep(dt);
+        remaining -= dt;
+    }
+}
+void Campaign::TickStep(float dt) {
     fire_timer_ = std::max(0.0f, fire_timer_ - dt);
     if (reload_timer_ > 0) {
         reload_timer_ -= dt;

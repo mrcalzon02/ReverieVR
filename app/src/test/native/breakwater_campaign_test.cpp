@@ -51,6 +51,36 @@ int main() {
         }
     }
     assert(saw_rowboat);
+    // The SDK permits a 0.10-second frame delta. One slow frame must
+    // simulate the same world as two 0.05-second frames, without letting
+    // an arbitrarily long resume pause skip an entire battle.
+    Campaign slow_frame(Difficulty::Casual,41);
+    Campaign split_frame(Difficulty::Casual,41);
+    Campaign long_pause(Difficulty::Casual,41);
+    for(Campaign *game : {&slow_frame,&split_frame,&long_pause}) {
+        assert(game->Start() && game->BeginWave());
+    }
+    for(int frame=0;frame<81;frame++) {
+        slow_frame.Tick(0.10f);
+        split_frame.Tick(0.05f);
+        split_frame.Tick(0.05f);
+        long_pause.Tick(5.0f);
+        assert(slow_frame.phase()==split_frame.phase());
+        assert(slow_frame.integrity()==split_frame.integrity());
+        assert(slow_frame.infantry()==split_frame.infantry());
+        assert(slow_frame.wave_status().boats_sunk==split_frame.wave_status().boats_sunk);
+        for(size_t i=0;i<Campaign::kMaxEnemies;i++) {
+            const Enemy &a=slow_frame.enemies()[i], &b=split_frame.enemies()[i];
+            const Enemy &c=long_pause.enemies()[i];
+            assert(a.active==b.active && a.active==c.active);
+            if(a.active) {
+                assert(a.type==b.type && a.hp==b.hp);
+                assert(a.z==b.z && a.z==c.z);
+            }
+        }
+    }
+    assert(slow_frame.enemies()[0].active);
+    assert(slow_frame.enemies()[0].z>-11.0f);
     Campaign sunk(Difficulty::Casual,41);
     assert(sunk.Start() && sunk.BeginWave());
     for (int i=0;i<180;i++) {
@@ -310,6 +340,22 @@ int main() {
     for(int i=0;i<140;i++) stopped_ship.Tick(0.05f);
     assert(stopped_ship.wave_status().gunboat_attacks==0);
     assert(stopped_ship.integrity()==100);
+
+    // Offshore gunboat salvos also retain their timing across 10 FPS frames.
+    Campaign slow_gunboat(Difficulty::Casual,8), split_gunboat(Difficulty::Casual,8);
+    assert(slow_gunboat.Start() && split_gunboat.Start());
+    prepare_gunboat(slow_gunboat);
+    prepare_gunboat(split_gunboat);
+    for(int frame=0;frame<100;frame++) {
+        slow_gunboat.Tick(0.10f);
+        split_gunboat.Tick(0.05f);
+        split_gunboat.Tick(0.05f);
+    }
+    assert(slow_gunboat.wave_status().gunboat_attacks>=1);
+    assert(slow_gunboat.wave_status().gunboat_attacks==
+           split_gunboat.wave_status().gunboat_attacks);
+    assert(slow_gunboat.integrity()==split_gunboat.integrity());
+    assert(slow_gunboat.enemies()[0].z==split_gunboat.enemies()[0].z);
 
     auto stage_blackcap_night=[](Campaign &game) {
         uint8_t bytes[Campaign::kSerializedSize]={};
