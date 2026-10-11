@@ -1021,6 +1021,8 @@ public final class VrActivity extends Activity
 
         String connectedGamepad =
             AndroidGamepadSupport.firstConnectedGamepadName();
+        String connectedVrController =
+            AndroidGamepadSupport.firstConnectedVrControllerName();
         renderer.setGamepadPointerAvailable(
             connectedGamepad != null
         );
@@ -1040,10 +1042,10 @@ public final class VrActivity extends Activity
             return;
         }
 
-        if (connectedGamepad != null) {
+        if (connectedVrController != null) {
             renderer.setControllerState(
                 true,
-                "Android gamepad ready: " + connectedGamepad
+                "Android controller ready: " + connectedVrController
             );
             renderer.setControllerBattery(-1);
         } else {
