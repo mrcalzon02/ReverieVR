@@ -403,9 +403,21 @@ final class DaydreamControllerProvider implements ControllerProvider {
     public String[] getMissingRuntimePermissions() {
         List<String> missing = new ArrayList<>();
 
+        // Connection to an existing bond does not perform a BLE scan.
+        // Android 8–11 Location gating applies only to new BLE discovery.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            && context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED) {
+            missing.add(Manifest.permission.BLUETOOTH_CONNECT);
+            return missing.toArray(new String[0]);
+        }
+
+        if (findBondedDaydreamController() != null) {
+            return new String[0];
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             addIfMissing(missing, Manifest.permission.BLUETOOTH_SCAN);
-            addIfMissing(missing, Manifest.permission.BLUETOOTH_CONNECT);
         } else {
             addIfMissing(missing, Manifest.permission.ACCESS_FINE_LOCATION);
         }
@@ -430,7 +442,7 @@ final class DaydreamControllerProvider implements ControllerProvider {
         if (missing.length > 0) {
             emitConnection(
                 ConnectionState.PERMISSION_REQUIRED,
-                "Bluetooth permission is required before pairing."
+                "Android permission is required for this Daydream connection or discovery operation."
             );
             return;
         }
@@ -480,8 +492,10 @@ final class DaydreamControllerProvider implements ControllerProvider {
             );
             emitConnection(
                 ConnectionState.ERROR,
-                "Android 8–11 require Location services to be ON for BLE discovery. "
-                    + "Turn on Location, wake the controller, then try Pair again."
+                "Android 8–11 block app BLE discovery when Location is off. "
+                    + "This affects finding a new Daydream controller, not connecting "
+                    + "an existing bond or using an Android Steam Controller HID. "
+                    + "Enable Location only if you need to scan for a new Daydream controller."
             );
             return;
         }
