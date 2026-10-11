@@ -39,45 +39,5 @@ jobs:
   release-apk:
     needs: gate
     if: needs.gate.outputs.publish == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-          submodules: recursive
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
-      - name: Set up Android native toolchain
-        uses: android-actions/setup-android@v3
-      - name: Install NDK and CMake
-        run: sdkmanager --install 'ndk;27.2.12479018' 'cmake;3.22.1'
-      - name: Build a debug APK on GitHub Actions
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x ./gradlew
-          ./gradlew --no-daemon :app:assembleDebug -PsourceRevision="$GITHUB_SHA"
-      - name: Confirm APK output
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -s app/build/outputs/apk/debug/app-debug.apk
-          sha256sum app/build/outputs/apk/debug/app-debug.apk > app-debug.apk.sha256
-          cat app-debug.apk.sha256
-      - name: Publish test APK as GitHub pre-release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SEQUENCE: ${{ needs.gate.outputs.sequence }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          tag="rv-hourly-${SEQUENCE}-${GITHUB_SHA:0:12}"
-          if gh release view "$tag" >/dev/null 2>&1; then
-            echo "Release $tag already exists; skipping duplicate."
-            exit 0
-          fi
-          gh release create "$tag"             app/build/outputs/apk/debug/app-debug.apk             app-debug.apk.sha256             --target "$GITHUB_SHA"             --title "ReverieVR automated test APK #$SEQUENCE"             --notes "Automated DEBUG APK after the $SEQUENCE-th verified hourly development commit. Development/test build, not a signed stable update. Source: $GITHUB_SHA"             --prerelease
+    uses: ./.github/workflows/phone-test-release.yml
+    secrets: inherit
