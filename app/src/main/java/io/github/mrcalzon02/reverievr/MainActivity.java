@@ -2234,7 +2234,9 @@ public final class MainActivity extends Activity
         }
 
         if (pending == PENDING_CONTROLLER_DAYDREAM) {
-            controllerManager.pairDaydreamController();
+            // Android 12+ can need CONNECT before we may inspect bonds.
+            // Re-evaluate once granted: only request SCAN for an unpaired device.
+            beginControllerPairing();
         } else if (pending == PENDING_CONTROLLER_PHONE) {
             showPhoneControllerChooser();
         }
