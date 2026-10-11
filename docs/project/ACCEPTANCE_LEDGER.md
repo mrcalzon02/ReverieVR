@@ -13,6 +13,7 @@ Acceptance states:
 
 | Target | Description | State | Evidence / remaining gate |
 |---|---|---|---|
+| RV-0209 | Original Steam Controller mesh/input visualization | **draft** | Valve March 2016 archive/license/SHA256 inspected; original CAD preserved locally; 22 named parts / 11,882 triangles, OBJ/GLB/GLES2 packing, previews, hashes and regression/readback checks passed. Explicit noncommercial local importer and Drive programming handoff are present; seven parts retain documented topology flags. Renderer/controller integration is handed to the online instance at the user's direction. Exact observed Android reports, APK build and S9 interaction/performance remain; local build stopped on missing Android SDK. No derived geometry is vendored. |
 | RV-0001 | Project governance/bootstrap | **static accepted** | Governance baseline committed and independently read back from remote `main`. |
 | RV-0002 | Framework/runtime/controller-stack selection | **draft** | Cardboard v1.35.0 is pinned for stereo/head tracking/distortion with Vulkan/Unity disabled; direct Android BLE is implemented for Daydream. Build and S9 validation remain before acceptance. |
 | RV-0003 | Android APK skeleton | **static accepted** | GitHub Actions run #6 passed bootstrap verification, JVM tests, `:app:assembleDebug`, `:controller-app:assembleDebug`, APK signature verification and prerelease publication. Galaxy S9 install/launch remains the device gate. |

@@ -26,3 +26,8 @@ diagnostic-intake/.env.*
 # Permanent ReverieVR signing material generated locally.
 # Never commit the keystore, passwords, or GitHub-secret staging file.
 .local/reverievr-signing/
+
+# Local Valve source/imported derivatives and offline converter dependencies.
+.local/steam-controller/
+tools/steam_controller/node_modules/
+tools/steam_controller/__pycache__/

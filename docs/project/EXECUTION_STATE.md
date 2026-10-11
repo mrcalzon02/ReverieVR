@@ -1,7 +1,7 @@
 # ReverieVR Execution State
 
 **Role:** durable operational state  
-**Updated:** 2026-10-05 (America/Sitka)
+**Updated:** 2026-10-10 (America/Anchorage)
 
 ## Authority
 
@@ -18,6 +18,37 @@
 Acceptance: **static accepted**.
 
 ## Current implementation state
+
+### Latest scoped handoff — RV-0209 original Steam Controller assets
+
+Baseline before this change: `133042ffb4517e4bb9a538f13d9cafc328989b6d`, clean
+`main`, fresh remote readback. Earlier component/build evidence below is historical
+and does not describe this handoff's validation environment.
+
+At the user's direction, prepared/uploaded a simplified-model package to Google
+Drive for the online instance to implement programming/hookup. The inspected Valve
+March 2016 ZIP and original CAD are preserved separately outside Git. Exact
+CC BY-NC-SA 4.0 license and SHA256 are recorded in
+`docs/records/STEAM-CONTROLLER-MESH-PROVENANCE.md`. No derived geometry is committed.
+The converter now uses named QEM parts, explicit surface-repair reports, GLB/OBJ
+assembly, precomputed GLES2 buffer data, previews and independent readback.
+
+Verified: 22 parts, 29,734,379 source triangles -> 11,882 output triangles;
+856,384-byte runtime buffer; five regression tests and real-asset/hash/GLB/normal
+readback pass. Previewed assembly and all parts. Seven parts retain reported
+topology flags; this is rendering approximation, not watertight CAD. Drive ZIP
+readback confirmed name and 1,693,956-byte size. Handoff ZIP SHA256:
+`6a847a6bd820a66fd0170643b7993a20e6079859d9f2bb6b58325f3c26ba1537`.
+
+Remaining: renderer/controller hookup by the online instance, exact observed S9
+Android event mappings, Android build and reference-device/performance validation.
+The local Android attempt failed at configuration because no SDK was configured.
+The native-documentation checker failed on unchanged baseline Test Chamber code:
+it requires direct `ReverieNativeCompileShader` consumption although the module
+uses `ReverieNativeBuildProgram`, which calls the shared compiler. No native SDK
+source or validator was altered; that existing guard issue remains. RV-0209 is
+**draft**. No APK, release, device support or thermal acceptance is claimed.
+No branch, PR or GitHub Actions was used.
 
 ### RV-0002 — framework/runtime/controller stack
 

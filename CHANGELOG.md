@@ -6,6 +6,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Original Steam Controller offline model handoff
+
+- Verified Valve's March 2016 separate-parts archive, exact CC BY-NC-SA 4.0 license
+  and SHA256; preserved source CAD separately and kept derived geometry out of Git.
+- Repaired the untested converter at its source: named QEM parts, global budgets,
+  explicit approximation/topology reports, meter-space GLB/OBJ assembly, precomputed
+  GLES2 geometry, previews, hashes and independent readback. Real conversion produced
+  22 parts / 11,882 triangles; five regression tests passed.
+- Uploaded the licensed programming package to Google Drive at the user's direction
+  for online renderer/input hookup. Seven parts retain reported topology flags.
+  Android build stopped at missing SDK; renderer/device/performance gates remain.
+
 ### Phone screen panel — consent and touch-proxy foundation
 
 - Added a pure-Java bounded screen-coordinate mapper with user-authorization gating, pointer contact begin/move/end, cancellation on leaving the panel or revoking authorization, and focused regression source. This intentionally does **not** inject Android events or imply a running mirrored display.

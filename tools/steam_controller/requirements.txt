@@ -1,0 +1,6 @@
+numpy==2.2.6
+matplotlib==3.10.3
+fast-simplification==0.1.13
+trimesh==4.7.4
+scipy==1.15.3
+scikit-image==0.25.2
