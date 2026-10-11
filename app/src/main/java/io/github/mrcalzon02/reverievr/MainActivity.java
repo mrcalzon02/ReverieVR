@@ -579,7 +579,7 @@ public final class MainActivity extends Activity
         boolean providerReady =
             controllerManager != null && controllerManager.isReady();
         String gamepadName =
-            AndroidGamepadSupport.firstConnectedGamepadName();
+            AndroidGamepadSupport.firstConnectedVrControllerName();
         boolean gamepadReady = gamepadName != null;
         boolean vrRuntimeReady =
             vrRuntimePreflight != null
