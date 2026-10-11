@@ -22,7 +22,7 @@ final class PhoneScreenCaptureSession implements AutoCloseable {
     private MediaProjection projection;
     private VirtualDisplay display;
     private ImageReader frames;
-    private long receivedFrames;
+    private volatile long receivedFrames;
     private final MediaProjection.Callback revoked = new MediaProjection.Callback() {
         @Override public void onStop() { releaseResources(); }
     };
