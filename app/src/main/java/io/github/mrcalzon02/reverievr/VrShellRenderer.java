@@ -243,7 +243,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {140, 235, 884, 300},
         {140, 315, 884, 380},
         {140, 395, 884, 460},
-        {140, 475, 884, 540},
+        {140, 475, 493, 540},
+        {531, 475, 884, 540},
         {140, 555, 884, 620}
     };
 
@@ -3849,11 +3850,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (index >= 0 && index <= 2) {
                 int moduleIndex =
                     dosLibraryPage * 3 + index;
-                return moduleIndex < dosModuleIds.length
-                    || (
-                        dosModuleIds.length == 0
-                            && index == 0
-                    );
+                return moduleIndex < dosModuleIds.length;
             }
 
             if (index == 3) {
@@ -3865,7 +3862,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return pageCount > 1;
             }
 
-            return index == 4;
+            return index == 4 || index == 5;
         }
 
         int[][] buttons = activeButtons();
@@ -4536,11 +4533,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
             Math.max(1, (ids.length + 2) / 3);
 
         if (button >= 0 && button <= 2) {
-            if (ids.length == 0 && button == 0) {
-                host.onDosImportRequested();
-                return;
-            }
-
             int moduleIndex =
                 dosLibraryPage * 3 + button;
             if (moduleIndex < ids.length
@@ -4570,6 +4562,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 host.onUiActionRejected();
             }
         } else if (button == 4) {
+            host.onDosImportRequested();
+            return;
+        } else if (button == 5) {
             mode = MODE_HOME;
         }
 
@@ -6551,27 +6546,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
-        String[] labels = new String[5];
+        String[] labels = new String[6];
         for (int slot = 0; slot < 3; slot++) {
             int index = start + slot;
             labels[slot] =
                 index < count
-                    ? shorten(
-                        names[index],
-                        42
-                    )
-                    : (
-                        count == 0 && slot == 0
-                            ? "IMPORT DOS MODULE ON PHONE"
-                            : "—"
-                    );
+                    ? shorten(names[index], 42)
+                    : "—";
         }
 
         labels[3] =
             pageCount > 1
                 ? "NEXT PAGE"
                 : "ONLY PAGE";
-        labels[4] = "BACK TO HOME";
+        labels[4] = "IMPORT DOS MODULE";
+        labels[5] = "BACK TO HOME";
 
         drawButtons(
             canvas,

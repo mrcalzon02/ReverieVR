@@ -86,17 +86,12 @@ public final class MainActivity extends Activity
     private TextView controllerInputTestText;
     private TextView deviceStatusText;
     private TextView updateStatusText;
-    private TextView selectedVideoText;
-    private TextView dosModuleStatusText;
     private TextView loggingStatusText;
     private TextView vrRuntimeStatusText;
 
     private ProgressBar phoneBatteryBar;
     private ProgressBar controllerBatteryBar;
 
-    private Switch batteryHudSwitch;
-    private Switch lookUpRevealSwitch;
-    private Switch showPercentagesSwitch;
     private Switch autoUpdateCheckSwitch;
 
     private Button pairControllerButton;
@@ -106,17 +101,12 @@ public final class MainActivity extends Activity
     private Button checkUpdateButton;
     private Button installUpdateButton;
     private Button enterVrButton;
-    private Button chooseVideoButton;
-    private Button clearVideoButton;
-    private Button importDosButton;
-    private Button clearDosModulesButton;
     private Button exportLogsButton;
     private Button submitDiagnosticsButton;
     private Button clearLogsButton;
     private Button controllerActionButton;
     private View updatePanel;
     private VrRuntimePreflight.Result vrRuntimePreflight;
-    private RadioGroup videoProjectionGroup;
     private RadioGroup loggingModeGroup;
 
     private boolean controllerTestEnabled;
@@ -173,8 +163,6 @@ public final class MainActivity extends Activity
         refreshStaticStatus();
         refreshPhoneBattery();
         refreshControllerPermissionState();
-        refreshMediaStatus();
-        refreshDosModuleStatus();
         controllerManager.addListener(this);
         refreshInputReadiness();
         showPreviousVrStartupFailureIfNeeded();
@@ -265,8 +253,6 @@ public final class MainActivity extends Activity
         refreshStaticStatus();
         refreshPhoneBattery();
         refreshControllerPermissionState();
-        refreshMediaStatus();
-        refreshDosModuleStatus();
         refreshInputReadiness();
     }
 
@@ -324,8 +310,6 @@ public final class MainActivity extends Activity
         controllerInputTestText = findViewById(R.id.controller_input_test);
         deviceStatusText = findViewById(R.id.device_status);
         updateStatusText = findViewById(R.id.update_status);
-        selectedVideoText = findViewById(R.id.selected_video_status);
-        dosModuleStatusText = findViewById(R.id.dos_module_status);
         loggingStatusText = findViewById(R.id.logging_status);
         vrRuntimeStatusText = findViewById(R.id.vr_runtime_status);
         updatePanel = findViewById(R.id.update_panel);
@@ -338,9 +322,6 @@ public final class MainActivity extends Activity
         phoneBatteryBar = findViewById(R.id.phone_battery_bar);
         controllerBatteryBar = findViewById(R.id.controller_battery_bar);
 
-        batteryHudSwitch = findViewById(R.id.battery_hud_switch);
-        lookUpRevealSwitch = findViewById(R.id.look_up_reveal_switch);
-        showPercentagesSwitch = findViewById(R.id.show_percentages_switch);
         autoUpdateCheckSwitch = findViewById(R.id.auto_update_check_switch);
 
         pairControllerButton = findViewById(R.id.pair_controller_button);
@@ -350,31 +331,16 @@ public final class MainActivity extends Activity
         checkUpdateButton = findViewById(R.id.check_update_button);
         installUpdateButton = findViewById(R.id.install_update_button);
         enterVrButton = findViewById(R.id.enter_vr_button);
-        chooseVideoButton = findViewById(R.id.choose_video_button);
-        clearVideoButton = findViewById(R.id.clear_video_button);
-        importDosButton = findViewById(R.id.import_dos_button);
-        clearDosModulesButton =
-            findViewById(R.id.clear_dos_modules_button);
         exportLogsButton = findViewById(R.id.export_logs_button);
         submitDiagnosticsButton =
             findViewById(R.id.submit_diagnostics_button);
         clearLogsButton = findViewById(R.id.clear_logs_button);
-        videoProjectionGroup = findViewById(R.id.video_projection_group);
         loggingModeGroup = findViewById(R.id.logging_mode_group);
     }
 
     private void configurePersistentControls() {
         applyPreferencesToControls();
 
-        batteryHudSwitch.setOnCheckedChangeListener(
-            (button, checked) -> preferences.setBatteryHudEnabled(checked)
-        );
-        lookUpRevealSwitch.setOnCheckedChangeListener(
-            (button, checked) -> preferences.setLookUpRevealEnabled(checked)
-        );
-        showPercentagesSwitch.setOnCheckedChangeListener(
-            (button, checked) -> preferences.setShowPercentagesEnabled(checked)
-        );
         autoUpdateCheckSwitch.setOnCheckedChangeListener(
             (button, checked) -> preferences.setAutoUpdateCheckEnabled(checked)
         );
@@ -391,13 +357,7 @@ public final class MainActivity extends Activity
             }
         );
 
-        videoProjectionGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.video_projection_360) {
-                preferences.setVideoProjection(VideoProjection.MONO_EQUIRECTANGULAR_360);
-            } else if (checkedId == R.id.video_projection_flat) {
-                preferences.setVideoProjection(VideoProjection.FLAT_CINEMA);
-            }
-        });
+
     }
 
     private void configureActions() {
@@ -444,24 +404,6 @@ public final class MainActivity extends Activity
         uiFeedback.bind(
             installUpdateButton,
             this::confirmInstallAvailableUpdate
-        );
-
-        uiFeedback.bind(
-            chooseVideoButton,
-            this::chooseLocalVideo
-        );
-        uiFeedback.bind(
-            clearVideoButton,
-            this::clearSelectedVideo
-        );
-
-        uiFeedback.bind(
-            importDosButton,
-            this::chooseDosContent
-        );
-        uiFeedback.bind(
-            clearDosModulesButton,
-            this::clearDosModules
         );
 
         uiFeedback.bind(
@@ -803,7 +745,7 @@ public final class MainActivity extends Activity
         try {
             startActivityForResult(intent, MEDIA_PICK_REQUEST);
         } catch (ActivityNotFoundException exception) {
-            uiFeedback.failure(chooseVideoButton);
+            uiFeedback.failure();
             Toast.makeText(
                 this,
                 R.string.video_picker_unavailable,
@@ -933,7 +875,7 @@ public final class MainActivity extends Activity
                 persistFlags
             );
         } catch (SecurityException exception) {
-            uiFeedback.failure(chooseVideoButton);
+            uiFeedback.failure();
             Toast.makeText(
                 this,
                 R.string.video_permission_persist_failed,
@@ -945,16 +887,12 @@ public final class MainActivity extends Activity
         if (!previousUri.equals(uri.toString())) {
             releaseSelectedVideoPermission();
         }
-        preferences.setSelectedVideo(
-            uri.toString(),
-            resolveDisplayName(
-                uri,
-                getString(
-                    R.string.selected_video_unknown_name
-                )
-            )
-        );
-        refreshMediaStatus();
+        String displayName = resolveDisplayName(
+            uri, getString(R.string.selected_video_unknown_name));
+        preferences.setSelectedVideo(uri.toString(), displayName);
+        Toast.makeText(this,
+            getString(R.string.selected_video_format, displayName),
+            Toast.LENGTH_SHORT).show();
     }
 
     private void handleSelectedDosContent(Intent data) {
@@ -967,13 +905,9 @@ public final class MainActivity extends Activity
             uri,
             "dos-content"
         );
-        importDosButton.setEnabled(false);
-        dosModuleStatusText.setText(
-            getString(
-                R.string.dos_import_copying_format,
-                displayName
-            )
-        );
+        Toast.makeText(this,
+            getString(R.string.dos_import_copying_format, displayName),
+            Toast.LENGTH_SHORT).show();
 
         dosImportExecutor.execute(() -> {
             try {
@@ -992,9 +926,7 @@ public final class MainActivity extends Activity
                 );
 
                 runOnUiThread(() -> {
-                    importDosButton.setEnabled(true);
-                    refreshDosModuleStatus();
-                    Toast.makeText(
+                                Toast.makeText(
                         this,
                         getString(
                             R.string.dos_import_complete_format,
@@ -1016,9 +948,7 @@ public final class MainActivity extends Activity
                         : exception.getMessage();
 
                 runOnUiThread(() -> {
-                    importDosButton.setEnabled(true);
-                    refreshDosModuleStatus();
-                    uiFeedback.failure(importDosButton);
+                                uiFeedback.failure();
                     Toast.makeText(
                         this,
                         getString(
@@ -2133,7 +2063,8 @@ public final class MainActivity extends Activity
                     ).ensureBundledDoom();
 
                 if (module != null) {
-                    runOnUiThread(this::refreshDosModuleStatus);
+                    ReverieLog.milestone("BUNDLED_CONTENT",
+                        "Bundled DOS content available: " + module.displayName);
                 }
             } catch (Exception exception) {
                 ReverieLog.error(
@@ -2159,84 +2090,13 @@ public final class MainActivity extends Activity
                 DOS_PICK_REQUEST
             );
         } catch (ActivityNotFoundException exception) {
-            uiFeedback.failure(importDosButton);
+            uiFeedback.failure();
             Toast.makeText(
                 this,
                 R.string.dos_picker_unavailable,
                 Toast.LENGTH_LONG
             ).show();
         }
-    }
-
-    private void refreshDosModuleStatus() {
-        if (dosModuleStatusText == null
-            || dosModuleRepository == null) {
-            return;
-        }
-
-        List<DosGameModule> modules =
-            dosModuleRepository.list();
-
-        if (modules.isEmpty()) {
-            dosModuleStatusText.setText(
-                R.string.dos_modules_none
-            );
-            clearDosModulesButton.setEnabled(false);
-            return;
-        }
-
-        DosGameModule latest = modules.get(0);
-        dosModuleStatusText.setText(
-            getString(
-                R.string.dos_modules_status_format,
-                modules.size(),
-                latest.displayName
-            )
-        );
-        clearDosModulesButton.setEnabled(true);
-    }
-
-    private void clearDosModules() {
-        if (dosModuleRepository == null) {
-            return;
-        }
-
-        new AlertDialog.Builder(this)
-            .setTitle(R.string.clear_dos_modules_title)
-            .setMessage(R.string.clear_dos_modules_message)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(
-                R.string.clear_dos_modules_confirm,
-                (dialog, which) -> {
-                    dosModuleRepository.clearAll();
-                    refreshDosModuleStatus();
-                }
-            )
-            .show();
-    }
-
-    private void refreshMediaStatus() {
-        if (!preferences.hasSelectedVideo()) {
-            selectedVideoText.setText(R.string.selected_video_none);
-            clearVideoButton.setEnabled(false);
-            return;
-        }
-
-        String name = preferences.getSelectedVideoDisplayName();
-        if (name.trim().isEmpty()) {
-            name = getString(R.string.selected_video_unknown_name);
-        }
-
-        selectedVideoText.setText(
-            getString(R.string.selected_video_format, name)
-        );
-        clearVideoButton.setEnabled(true);
-    }
-
-    private void clearSelectedVideo() {
-        releaseSelectedVideoPermission();
-        preferences.clearSelectedVideo();
-        refreshMediaStatus();
     }
 
     private void releaseSelectedVideoPermission() {
@@ -2303,11 +2163,6 @@ public final class MainActivity extends Activity
     }
 
     private void applyPreferencesToControls() {
-        batteryHudSwitch.setChecked(preferences.isBatteryHudEnabled());
-        lookUpRevealSwitch.setChecked(preferences.isLookUpRevealEnabled());
-        showPercentagesSwitch.setChecked(
-            preferences.isShowPercentagesEnabled()
-        );
         autoUpdateCheckSwitch.setChecked(
             preferences.isAutoUpdateCheckEnabled()
         );
@@ -2321,12 +2176,7 @@ public final class MainActivity extends Activity
         );
         refreshLoggingStatus();
 
-        VideoProjection projection = preferences.getVideoProjection();
-        videoProjectionGroup.check(
-            projection == VideoProjection.MONO_EQUIRECTANGULAR_360
-                ? R.id.video_projection_360
-                : R.id.video_projection_flat
-        );
+
     }
 
     private void refreshStaticStatus() {
@@ -2709,8 +2559,7 @@ public final class MainActivity extends Activity
                     releaseSelectedVideoPermission();
                     preferences.reset();
                     applyPreferencesToControls();
-                    refreshMediaStatus();
-                    Toast.makeText(
+                                Toast.makeText(
                         this,
                         R.string.settings_reset_complete,
                         Toast.LENGTH_SHORT

@@ -188,6 +188,33 @@
         </LinearLayout>
 
         <LinearLayout
+            style="@style/ReveriePanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/ReverieSectionTitle"
+                android:text="@string/vr_section" />
+
+            <TextView
+                android:id="@+id/vr_runtime_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/vr_runtime_not_ready"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/enter_vr_button"
+                style="@style/ReveriePrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/enter_vr" />
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/update_panel"
             style="@style/ReveriePanel"
             android:layout_width="match_parent"
@@ -303,167 +330,13 @@
                 android:text="@string/clear_logs" />
         </LinearLayout>
 
-        <LinearLayout
-            style="@style/ReveriePanel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
 
-            <TextView
-                style="@style/ReverieSectionTitle"
-                android:text="@string/qol_section" />
 
-            <Switch
-                android:id="@+id/battery_hud_switch"
-                style="@style/ReverieSwitch"
-                android:text="@string/battery_hud_label" />
 
-            <Switch
-                android:id="@+id/look_up_reveal_switch"
-                style="@style/ReverieSwitch"
-                android:text="@string/look_up_reveal_label" />
 
-            <Switch
-                android:id="@+id/show_percentages_switch"
-                style="@style/ReverieSwitch"
-                android:text="@string/show_percentages_label" />
-        </LinearLayout>
 
-        <LinearLayout
-            style="@style/ReveriePanel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
 
-            <TextView
-                style="@style/ReverieSectionTitle"
-                android:text="@string/media_section" />
 
-            <TextView
-                android:id="@+id/selected_video_status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/selected_video_none"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
-
-            <Button
-                android:id="@+id/choose_video_button"
-                style="@style/ReveriePrimaryButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/choose_local_video" />
-
-            <Button
-                android:id="@+id/clear_video_button"
-                style="@style/ReverieSecondaryButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/clear_local_video" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="@string/video_projection_label"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <RadioGroup
-                android:id="@+id/video_projection_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:orientation="vertical">
-
-                <RadioButton
-                    android:id="@+id/video_projection_flat"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/video_projection_flat"
-                    android:textColor="@color/text_primary" />
-
-                <RadioButton
-                    android:id="@+id/video_projection_360"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/video_projection_360"
-                    android:textColor="@color/text_primary" />
-            </RadioGroup>
-        </LinearLayout>
-
-        <LinearLayout
-            style="@style/ReveriePanel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                style="@style/ReverieSectionTitle"
-                android:text="@string/dos_section" />
-
-            <TextView
-                android:id="@+id/dos_module_status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/dos_modules_none"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/dos_import_explanation"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
-
-            <Button
-                android:id="@+id/import_dos_button"
-                style="@style/ReveriePrimaryButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/import_dos_content" />
-
-            <Button
-                android:id="@+id/clear_dos_modules_button"
-                style="@style/ReverieSecondaryButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/clear_dos_modules" />
-        </LinearLayout>
-
-        <LinearLayout
-            style="@style/ReveriePanel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                style="@style/ReverieSectionTitle"
-                android:text="@string/vr_section" />
-
-            <TextView
-                android:id="@+id/vr_runtime_status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/vr_runtime_not_ready"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
-
-            <Button
-                android:id="@+id/enter_vr_button"
-                style="@style/ReveriePrimaryButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/enter_vr" />
-        </LinearLayout>
 
         <LinearLayout
             style="@style/ReveriePanel"

@@ -1,7 +1,11 @@
 # ReverieVR Execution State
 
 **Role:** durable operational state  
-**Updated:** 2026-10-10 (America/Anchorage)
+**Updated:** 2026-10-11 (America/Anchorage)
+
+## 2026-10-11 — Stage A launcher and in-VR import correction
+
+Source change (APK and Galaxy S9 validation pending): Stage B QoL, media, video projection and DOS import panels removed from the pre-VR setup screen. Retained phone/controller status and tests, VR entry, updater, diagnostics and recovery. VR-to-Android document-picker handoff and import storage are preserved. In VR, the DOS library has an always-available Import control alongside paging and Home, even when modules already exist. Static source verification only; not an APK or device acceptance claim.
 
 ## Authority
 

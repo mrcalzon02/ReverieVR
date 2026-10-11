@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ReverieVR</string>
-    <string name="stage_a_title">Stage A — Headset setup</string>
+    <string name="stage_a_title">Headset setup</string>
     <string name="app_version_unknown">Version information unavailable</string>
     <string name="app_version_format">Version %1$s (%2$d) • %3$s</string>
-    <string name="stage_a_description">Prepare the phone and controller here, then enter the headset when the VR runtime reports ready.</string>
+    <string name="stage_a_description">Connect and test a controller, then enter VR. Media, DOS games, 3D models, display settings and home tools are accessed from inside the headset. This screen remains available for updates, diagnostics and recovery.</string>
 
     <string name="device_section">Device &amp; power</string>
     <string name="phone_battery_format">Phone battery: %1$d%%</string>
