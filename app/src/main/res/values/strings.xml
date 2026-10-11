@@ -15,6 +15,9 @@
     <string name="controller_status_unavailable">Controller is not connected.</string>
     <string name="controller_status_explanation">ReverieVR can use the physical Daydream BLE controller, a paired Android phone speaking the historical Daydream controller-emulator protocol, or an Android gamepad/joystick. All are normalized into the same VR action layer.</string>
     <string name="pair_controller">Pair / Sync Daydream controller</string>
+    <string name="select_controller_title">Select active controller</string>
+    <string name="select_controller_format">Active controller: %1$s (tap to switch)</string>
+    <string name="steam_controller_not_connected">Selected Steam Controller disconnected; reconnect in Android Bluetooth.</string>
     <string name="use_phone_controller">Use paired phone as controller</string>
     <string name="phone_controller_choose_title">Choose controller phone</string>
     <string name="phone_controller_no_devices_title">No paired Bluetooth devices</string>

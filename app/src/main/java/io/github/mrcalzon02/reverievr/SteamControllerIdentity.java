@@ -15,5 +15,12 @@ final class SteamControllerIdentity {
             && !normalized.contains("steam deck");
     }
 
+    // BLE HID often omits vendor identity. This conservative name is heuristic.
+    static boolean matchesAndroidHid(int vendorId, String productName) {
+        if (productName == null || (vendorId != 0 && vendorId != VALVE_VENDOR_ID)) return false;
+        String n = productName.trim().toLowerCase(Locale.ROOT);
+        return n.equals("steam controller") || n.equals("valve steam controller");
+    }
+
     private SteamControllerIdentity() {}
 }

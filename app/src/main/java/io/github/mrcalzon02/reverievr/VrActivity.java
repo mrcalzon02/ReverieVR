@@ -509,8 +509,28 @@ public final class VrActivity extends Activity
             || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE;
     }
 
+    private boolean blockedControllerInput(android.view.InputEvent event) {
+        if (event == null) return false;
+        String selected = preferences.getActiveController();
+        boolean steam = AndroidGamepadSupport.isOriginalSteamController(event.getDevice());
+        if (steam) return ReveriePreferences.CONTROLLER_DAYDREAM.equals(selected)
+            || ReveriePreferences.CONTROLLER_PHONE.equals(selected)
+            || ReveriePreferences.CONTROLLER_AUTO.equals(selected) && controllerManager.isReady();
+        return ReveriePreferences.CONTROLLER_STEAM.equals(selected)
+            && AndroidGamepadSupport.isGamepadEvent(event);
+    }
+
+    private boolean selectedSteamMouse(String source) {
+        String selected = preferences.getActiveController();
+        return SteamControllerIdentity.matchesAndroidHid(0, source)
+            && (ReveriePreferences.CONTROLLER_STEAM.equals(selected)
+                || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
+                    && !controllerManager.isReady());
+    }
+
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (blockedControllerInput(event)) return true;
         // The phone is enclosed by the viewer in VR. Clamp pressure can hold
         // these keys down; consume both presses and releases before routing.
         if (event != null && isHeadsetBlockedVolumeKey(event.getKeyCode())) {
@@ -626,6 +646,7 @@ public final class VrActivity extends Activity
 
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        if (blockedControllerInput(event)) return true;
         if (inputRouter != null
             && inputRouter.onGenericMotionEvent(event)) {
             return true;
@@ -640,6 +661,7 @@ public final class VrActivity extends Activity
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
+        if (blockedControllerInput(event)) return true;
         // The display is physically inaccessible inside the headset. Consume
         // touchscreen events before Cardboard can interpret clamp-nub contacts
         // as trigger or navigation input. External mouse input remains routed.
@@ -707,18 +729,16 @@ public final class VrActivity extends Activity
 
     @Override
     public void onBatteryChanged(int percentage, int millivolts) {
-        if (renderer != null && controllerManager.isReady()) {
-            renderer.setControllerBattery(percentage);
-        }
+        refreshInputSourceStatus();
     }
 
     @Override
     public void onControllerStateChanged(
         ControllerSnapshot snapshot
     ) {
-        if (inputRouter == null || snapshot == null) {
-            return;
-        }
+        if (inputRouter == null || snapshot == null
+                || ReveriePreferences.CONTROLLER_STEAM.equals(
+                    preferences.getActiveController())) return;
 
         if (renderer != null) {
             renderer.setControllerPose(snapshot);
@@ -900,6 +920,9 @@ public final class VrActivity extends Activity
         boolean down,
         String source
     ) {
+        if (down && button == VirtualOutput.MOUSE_LEFT && selectedSteamMouse(source)
+                && renderer != null && renderer.handlesSelectAsShellAction())
+            inputRouter.submitAction(VrInputAction.SELECT, source);
         if (isGuestInputSuppressed()) {
             return;
         }
@@ -917,6 +940,8 @@ public final class VrActivity extends Activity
         float deltaY,
         String source
     ) {
+        if (selectedSteamMouse(source) && renderer != null)
+            renderer.nudgeExternalPointer(deltaX, deltaY);
         if (virtualInputBus == null
             || isGuestInputSuppressed()) {
             return;
@@ -1019,37 +1044,27 @@ public final class VrActivity extends Activity
     }
 
     private void refreshInputSourceStatus() {
-        if (renderer == null || controllerManager == null) {
-            return;
-        }
-
-        String connectedGamepad =
-            AndroidGamepadSupport.firstConnectedGamepadName();
-        String connectedVrController =
-            AndroidGamepadSupport.firstConnectedVrControllerName();
-        renderer.setGamepadPointerAvailable(
-            connectedGamepad != null
-        );
-        // Prefer the primary gamepad's actual Android vendor identity,
-        // never Steam platform services or unrelated Valve HID devices.
-        boolean steamPrimary = false;
-        if (!controllerManager.isReady() && connectedGamepad != null) {
-            int[] ids = android.view.InputDevice.getDeviceIds();
-            for (int id : ids) {
-                android.view.InputDevice device =
-                    android.view.InputDevice.getDevice(id);
-                if (device == null) continue;
-                if (SteamControllerIdentity.matches(
-                        device.getVendorId(), device.getName())
-                    && connectedGamepad.equals(device.getName())) {
-                    steamPrimary = true;
-                    break;
-                }
-            }
-        }
+        if (renderer == null || controllerManager == null) return;
+        String selected = preferences.getActiveController();
+        boolean provider = controllerManager.isReady() && (
+            ReveriePreferences.CONTROLLER_AUTO.equals(selected)
+                || ReveriePreferences.CONTROLLER_DAYDREAM.equals(selected)
+                    && "daydream_ble".equals(controllerManager.getActiveProviderId())
+                || ReveriePreferences.CONTROLLER_PHONE.equals(selected)
+                    && "daydream_phone_emulator".equals(controllerManager.getActiveProviderId()));
+        String gamepad = AndroidGamepadSupport.firstConnectedGamepadName();
+        android.view.InputDevice sd = AndroidGamepadSupport.firstConnectedSteamController();
+        String steam = sd == null ? null : sd.getName();
+        boolean steamPrimary = steam != null && (
+            ReveriePreferences.CONTROLLER_STEAM.equals(selected)
+                || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
+                    && !provider && (gamepad == null || steam.equals(gamepad)));
+        String connectedVrController = steamPrimary ? steam
+            : ReveriePreferences.CONTROLLER_AUTO.equals(selected) && !provider ? gamepad : null;
+        renderer.setGamepadPointerAvailable(steamPrimary || connectedVrController != null);
         renderer.setSteamControllerPrimary(steamPrimary);
 
-        if (controllerManager.isReady()) {
+        if (provider) {
             String provider =
                 controllerManager.getActiveProviderDisplayName();
             renderer.setControllerState(
@@ -1069,11 +1084,13 @@ public final class VrActivity extends Activity
                 true,
                 "Android controller ready: " + connectedVrController
             );
-            renderer.setControllerBattery(-1);
+            renderer.setControllerBattery(steamPrimary
+                ? AndroidGamepadSupport.steamBatteryPercentage() : -1);
         } else {
             renderer.setControllerState(
                 false,
-                controllerConnectionMessage
+                ReveriePreferences.CONTROLLER_STEAM.equals(selected)
+                    ? "Selected Steam Controller disconnected" : controllerConnectionMessage
             );
             renderer.setControllerBattery(-1);
         }

@@ -84,6 +84,20 @@ final class ControllerManager implements AutoCloseable {
         phoneEmulatorProvider.startPairing();
     }
 
+    /** Switch to Android HID without unpairing either Bluetooth controller. */
+    void deselectProvider() {
+        ControllerProvider old = activeProvider;
+        activeProvider = null;
+        if (old != null) old.disconnect();
+        connectionState = ControllerProvider.ConnectionState.IDLE;
+        connectionMessage = "Android HID controller selected.";
+        batteryPercentage = -1;
+        batteryMillivolts = -1;
+        lastSnapshot = null;
+        notifyConnection();
+        notifyBattery();
+    }
+
     boolean recenterController() {
         ControllerProvider provider = activeProvider;
         return provider != null && provider.recenter();

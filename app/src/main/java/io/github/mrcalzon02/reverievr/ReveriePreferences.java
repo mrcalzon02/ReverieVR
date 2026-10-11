@@ -23,6 +23,11 @@ final class ReveriePreferences {
     private static final String KEY_HOME_ENVIRONMENT = "home_environment";
     private static final String KEY_VR_POINTER_MODE = "vr_pointer_mode";
     private static final String KEY_CONTROLLER_LEFT_HANDED = "controller_left_handed";
+    private static final String KEY_ACTIVE_CONTROLLER = "selected_controller";
+    static final String CONTROLLER_AUTO = "auto";
+    static final String CONTROLLER_DAYDREAM = "daydream";
+    static final String CONTROLLER_STEAM = "steam";
+    static final String CONTROLLER_PHONE = "phone";
     private static final String KEY_LAST_ACTIVITY_TYPE = "last_activity_type";
     private static final String KEY_LAST_DOS_MODULE_ID = "last_dos_module_id";
     private static final String KEY_LAST_DOS_MODULE_NAME = "last_dos_module_name";
@@ -38,6 +43,19 @@ final class ReveriePreferences {
 
     ReveriePreferences(Context context) {
         preferences = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE);
+    }
+
+    String getActiveController() {
+        String choice = preferences.getString(KEY_ACTIVE_CONTROLLER, CONTROLLER_AUTO);
+        return CONTROLLER_DAYDREAM.equals(choice) || CONTROLLER_STEAM.equals(choice)
+            || CONTROLLER_PHONE.equals(choice) ? choice : CONTROLLER_AUTO;
+    }
+
+    void setActiveController(String choice) {
+        if (!CONTROLLER_AUTO.equals(choice) && !CONTROLLER_DAYDREAM.equals(choice)
+            && !CONTROLLER_STEAM.equals(choice) && !CONTROLLER_PHONE.equals(choice))
+            throw new IllegalArgumentException("Unknown controller");
+        preferences.edit().putString(KEY_ACTIVE_CONTROLLER, choice).apply();
     }
 
     boolean isBatteryHudEnabled() {

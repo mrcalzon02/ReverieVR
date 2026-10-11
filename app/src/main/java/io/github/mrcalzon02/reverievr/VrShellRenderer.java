@@ -840,6 +840,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
     }
 
+    void nudgeExternalPointer(float dx, float dy) {
+        if (!gamepadPointerAvailable || !Float.isFinite(dx) || !Float.isFinite(dy)) return;
+        virtualPointerYaw += dx * 0.003f;
+        virtualPointerPitch -= dy * 0.003f;
+        clampVirtualPointerAngles();
+    }
+
     void setVirtualPointerAxes(
         float horizontal,
         float vertical

@@ -31,5 +31,10 @@ public class SteamControllerMeshTest {
         assertFalse(SteamControllerIdentity.matches(0x28de, "Steam Deck"));
         assertFalse(SteamControllerIdentity.matches(0x1234, "Steam Controller"));
         assertFalse(SteamControllerIdentity.matches(0x28de, "Valve HID"));
+        assertTrue(SteamControllerIdentity.matchesAndroidHid(0, "Steam Controller"));
+        assertTrue(SteamControllerIdentity.matchesAndroidHid(0x28de, "Valve Steam Controller"));
+        assertFalse(SteamControllerIdentity.matchesAndroidHid(0x1234, "Steam Controller"));
+        assertFalse(SteamControllerIdentity.matchesAndroidHid(0, "Steam Deck"));
+        assertFalse(SteamControllerIdentity.matchesAndroidHid(0, "Steam Controller 2026"));
     }
 }

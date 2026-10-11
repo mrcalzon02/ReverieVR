@@ -1,5 +1,6 @@
 package io.github.mrcalzon02.reverievr;
 
+import android.os.Build;
 import android.view.InputDevice;
 import android.view.InputEvent;
 
@@ -43,23 +44,33 @@ final class AndroidGamepadSupport {
         return null;
     }
 
-    static boolean isOriginalSteamController(InputDevice device) {
-        if (device == null) {
-            return false;
+    static InputDevice firstConnectedSteamController() {
+        for (int id : InputDevice.getDeviceIds()) {
+            InputDevice d = InputDevice.getDevice(id);
+            if (isOriginalSteamController(d)) return d;
         }
-        String name = device.getName();
-        if (name == null || !name.toLowerCase(java.util.Locale.ROOT)
-                .contains("steam controller")) {
-            return false;
-        }
-        int sources = device.getSources();
-        boolean usableHid =
-            (sources & InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE
-            || (sources & InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD
-            || isGamepadDevice(device);
-        // Valve's vendor ID helps classify named devices, but different BLE
-        // firmware/Android paths may not expose USB VID/PID reliably.
-        return usableHid;
+        return null;
+    }
+
+    static boolean isOriginalSteamController(InputDevice d) {
+        if (d == null || d.isVirtual() || !SteamControllerIdentity.matchesAndroidHid(
+                d.getVendorId(), d.getName())) return false;
+        int source = d.getSources();
+        return (source & InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE
+            || (source & InputDevice.SOURCE_MOUSE_RELATIVE) == InputDevice.SOURCE_MOUSE_RELATIVE
+            || (source & InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD
+            || isGamepadDevice(d);
+    }
+
+    static int steamBatteryPercentage() {
+        InputDevice d = firstConnectedSteamController();
+        // Reference Galaxy S9 runs Android 10 (API 29): no public InputDevice battery API.
+        if (d == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return -1;
+        android.hardware.BatteryState state = d.getBatteryState();
+        if (!state.isPresent()) return -1;
+        float capacity = state.getCapacity();
+        return Float.isFinite(capacity) && capacity >= 0f && capacity <= 1f
+            ? Math.round(capacity * 100f) : -1;
     }
 
     static boolean isGamepadEvent(InputEvent event) {

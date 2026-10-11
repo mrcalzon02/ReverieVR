@@ -100,6 +100,7 @@ public final class MainActivity extends Activity
     private Switch autoUpdateCheckSwitch;
 
     private Button pairControllerButton;
+    private Button selectControllerButton;
     private Button phoneEmulatorButton;
     private Button testControllerButton;
     private Button checkUpdateButton;
@@ -343,6 +344,7 @@ public final class MainActivity extends Activity
         autoUpdateCheckSwitch = findViewById(R.id.auto_update_check_switch);
 
         pairControllerButton = findViewById(R.id.pair_controller_button);
+        selectControllerButton = findViewById(R.id.select_controller_button);
         phoneEmulatorButton = findViewById(R.id.phone_emulator_button);
         testControllerButton = findViewById(R.id.test_controller_button);
         checkUpdateButton = findViewById(R.id.check_update_button);
@@ -399,6 +401,7 @@ public final class MainActivity extends Activity
     }
 
     private void configureActions() {
+        uiFeedback.bind(selectControllerButton, this::showControllerChooser);
         uiFeedback.bind(
             pairControllerButton,
             this::beginControllerPairing
@@ -499,7 +502,34 @@ public final class MainActivity extends Activity
         );
     }
 
+    private void showControllerChooser() {
+        String choice = preferences.getActiveController();
+        boolean connected = AndroidGamepadSupport.firstConnectedSteamController() != null;
+        String[] entries = { "Automatic", "Daydream controller",
+            connected ? "Original Steam Controller (connected)"
+                : "Original Steam Controller (disconnected)" };
+        int checked = ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice) ? 1
+            : ReveriePreferences.CONTROLLER_STEAM.equals(choice) ? 2
+            : ReveriePreferences.CONTROLLER_AUTO.equals(choice) ? 0 : -1;
+        new AlertDialog.Builder(this).setTitle(R.string.select_controller_title)
+            .setSingleChoiceItems(entries, checked, (dialog, index) -> {
+                if (index == 2) {
+                    preferences.setActiveController(ReveriePreferences.CONTROLLER_STEAM);
+                    controllerManager.deselectProvider();
+                } else if (index == 1) {
+                    preferences.setActiveController(ReveriePreferences.CONTROLLER_DAYDREAM);
+                    if (!controllerManager.isReady()
+                            || !"daydream_ble".equals(controllerManager.getActiveProviderId()))
+                        beginControllerPairing();
+                } else preferences.setActiveController(ReveriePreferences.CONTROLLER_AUTO);
+                dialog.dismiss();
+                refreshInputReadiness();
+            })
+            .setNegativeButton(android.R.string.cancel, null).show();
+    }
+
     private void beginControllerPairing() {
+        preferences.setActiveController(ReveriePreferences.CONTROLLER_DAYDREAM);
         controllerActionButton = pairControllerButton;
         pendingControllerPermissionAction = PENDING_CONTROLLER_DAYDREAM;
         String[] missing = controllerManager.getMissingRuntimePermissions();
@@ -557,6 +587,7 @@ public final class MainActivity extends Activity
             .setItems(labels, (dialog, which) -> {
                 if (which >= 0 && which < targets.size()) {
                     controllerActionButton = phoneEmulatorButton;
+                    preferences.setActiveController(ReveriePreferences.CONTROLLER_PHONE);
                     controllerManager.connectPhoneEmulator(
                         targets.get(which)
                     );
@@ -576,11 +607,24 @@ public final class MainActivity extends Activity
     }
 
     private void refreshInputReadiness() {
-        boolean providerReady =
-            controllerManager != null && controllerManager.isReady();
-        String gamepadName =
-            AndroidGamepadSupport.firstConnectedVrControllerName();
+        String choice = preferences.getActiveController();
+        String activeId = controllerManager.getActiveProviderId();
+        boolean providerReady = controllerManager.isReady() && (
+            ReveriePreferences.CONTROLLER_AUTO.equals(choice)
+                || ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice)
+                    && "daydream_ble".equals(activeId)
+                || ReveriePreferences.CONTROLLER_PHONE.equals(choice)
+                    && "daydream_phone_emulator".equals(activeId));
+        String gamepadName = ReveriePreferences.CONTROLLER_STEAM.equals(choice)
+            ? AndroidGamepadSupport.firstConnectedSteamController() == null ? null
+                : AndroidGamepadSupport.firstConnectedSteamController().getName()
+            : ReveriePreferences.CONTROLLER_AUTO.equals(choice)
+                ? AndroidGamepadSupport.firstConnectedVrControllerName() : null;
         boolean gamepadReady = gamepadName != null;
+        selectControllerButton.setText(getString(R.string.select_controller_format,
+            ReveriePreferences.CONTROLLER_STEAM.equals(choice) ? "Steam Controller"
+                : ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice) ? "Daydream"
+                : ReveriePreferences.CONTROLLER_PHONE.equals(choice) ? "Phone" : "Automatic"));
         boolean vrRuntimeReady =
             vrRuntimePreflight != null
                 && vrRuntimePreflight.available;
@@ -608,9 +652,12 @@ public final class MainActivity extends Activity
                     gamepadName
                 )
             );
+        } else if (ReveriePreferences.CONTROLLER_STEAM.equals(choice)) {
+            controllerStatusText.setText(R.string.steam_controller_not_connected);
         } else {
             controllerStatusText.setText(controllerConnectionMessage);
         }
+        updateSelectedControllerBattery();
 
         if (!providerReady && !gamepadReady && controllerTestEnabled) {
             controllerTestEnabled = false;
@@ -619,6 +666,18 @@ public final class MainActivity extends Activity
                 R.string.controller_test_inactive
             );
         }
+    }
+
+    private void updateSelectedControllerBattery() {
+        String choice = preferences.getActiveController();
+        boolean steam = ReveriePreferences.CONTROLLER_STEAM.equals(choice)
+            || ReveriePreferences.CONTROLLER_AUTO.equals(choice) && !controllerManager.isReady()
+                && AndroidGamepadSupport.firstConnectedSteamController() != null;
+        if (steam) showControllerBattery(AndroidGamepadSupport.steamBatteryPercentage(), -1);
+        else if (controllerManager.isReady())
+            showControllerBattery(controllerManager.getBatteryPercentage(),
+                controllerManager.getBatteryMillivolts());
+        else showControllerBattery(-1, -1);
     }
 
     private void registerInputDeviceListener() {
@@ -2397,7 +2456,10 @@ public final class MainActivity extends Activity
 
     @Override
     public void onBatteryChanged(int percentage, int millivolts) {
-        runOnUiThread(() -> {
+        runOnUiThread(this::updateSelectedControllerBattery);
+    }
+
+    private void showControllerBattery(int percentage, int millivolts) {
             if (percentage >= 0) {
                 controllerBatteryBar.setProgress(percentage);
                 if (millivolts > 0) {
@@ -2430,7 +2492,6 @@ public final class MainActivity extends Activity
                     R.string.controller_battery_unknown
                 );
             }
-        });
     }
 
     @Override
