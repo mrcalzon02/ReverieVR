@@ -291,7 +291,7 @@ final class StandardHidInputRouter {
         }
     }
 
-    private static VirtualKey mapKey(int keyCode) {
+    static VirtualKey mapKey(int keyCode) {
         switch (keyCode) {
             case KeyEvent.KEYCODE_ESCAPE:
                 return VirtualKey.ESCAPE;

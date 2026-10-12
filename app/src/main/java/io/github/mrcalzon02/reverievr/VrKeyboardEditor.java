@@ -22,10 +22,16 @@ final class VrKeyboardEditor {
     static final int EXTERNAL_RIGHT = 4;
     static final int EXTERNAL_TAB = 5;
     static final int EXTERNAL_ENTER = 6;
+    static final int EXTERNAL_NO_TEXT = -1;
+    static final int EXTERNAL_CAPS_TOGGLE = 7;
     private static final int MAX_LENGTH = 2048;
     private final StringBuilder buffer = new StringBuilder();
     private int caret;
-    private boolean shift, caps, symbols;
+    private boolean shift, caps, symbols, physicalShift;
+
+    void setPhysicalShift(boolean down) {
+        physicalShift = down;
+    }
 
     String value() { return buffer.toString(); }
     int cursor() { return caret; }
@@ -39,8 +45,17 @@ final class VrKeyboardEditor {
         if (symbols && row < 4 && !(row == 3 && column == 0))
             return SYMBOLS[row * 10 + column];
         String base = ROWS[row][column];
+        boolean uppercase = caps ^ shift ^ physicalShift;
+        boolean shifted = shift ^ physicalShift;
+        if (!symbols && shifted) {
+            if (row == 0) return SYMBOLS[column];
+            if (row == 2 && column == 9) return ":";
+            if (row == 3 && column == 8) return "<";
+            if (row == 3 && column == 9) return ">";
+        }
         if (base.length() == 1 && Character.isLetter(base.charAt(0))
-            && (caps ^ shift)) return base.toUpperCase(java.util.Locale.US);
+            && uppercase)
+            return base.toUpperCase(java.util.Locale.US);
         return base;
     }
     /**
@@ -57,6 +72,7 @@ final class VrKeyboardEditor {
             case EXTERNAL_RIGHT: return press(4, 5);
             case EXTERNAL_TAB: return insertExact("\t");
             case EXTERNAL_ENTER: return insertExact("\n");
+            case EXTERNAL_CAPS_TOGGLE: return press(4, 0);
             case EXTERNAL_TEXT: return insertExact(text);
             default: return false;
         }

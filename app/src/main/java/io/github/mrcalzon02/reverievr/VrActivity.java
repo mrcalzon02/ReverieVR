@@ -265,6 +265,7 @@ public final class VrActivity extends Activity
         }
 
         registerInputDeviceListener();
+        refreshKeyboardTwinStatus();
         registerHeadMotionSensor();
         registerPerformanceEnvironmentMonitoring();
         enterImmersiveMode();
@@ -297,6 +298,7 @@ public final class VrActivity extends Activity
 
     @Override
     protected void onPause() {
+        if (renderer != null) renderer.setPhysicalKeyboardAttached(false);
         unregisterInputDeviceListener();
         unregisterHeadMotionSensor();
 
@@ -574,6 +576,7 @@ public final class VrActivity extends Activity
 
     @Override
     public void onExternalHidInputPolicyChanged(boolean enabled) {
+        refreshKeyboardTwinStatus();
         if (!enabled) runOnUiThread(() -> {
             // Clear any held HID keys/mouse buttons before the next event;
             // StandardHidInputRouter emits explicit reset releases.
@@ -664,38 +667,58 @@ public final class VrActivity extends Activity
                 event.isCtrlPressed() || event.isAltPressed()
                     || event.isMetaPressed())) return false;
 
-        int action = VrKeyboardEditor.EXTERNAL_TEXT;
+        int eventAction = event.getAction();
+        if (eventAction != KeyEvent.ACTION_DOWN
+            && eventAction != KeyEvent.ACTION_UP) return false;
+        boolean down = eventAction == KeyEvent.ACTION_DOWN;
+        VirtualKey physicalKey =
+            StandardHidInputRouter.mapKey(event.getKeyCode());
+        int action = VrKeyboardEditor.EXTERNAL_NO_TEXT;
         String characters = null;
-        switch (event.getKeyCode()) {
-            case KeyEvent.KEYCODE_DEL:
-                action = VrKeyboardEditor.EXTERNAL_BACKSPACE;
-                break;
-            case KeyEvent.KEYCODE_FORWARD_DEL:
-                action = VrKeyboardEditor.EXTERNAL_DELETE;
-                break;
-            case KeyEvent.KEYCODE_DPAD_LEFT:
-                action = VrKeyboardEditor.EXTERNAL_LEFT;
-                break;
-            case KeyEvent.KEYCODE_DPAD_RIGHT:
-                action = VrKeyboardEditor.EXTERNAL_RIGHT;
-                break;
-            case KeyEvent.KEYCODE_TAB:
-                action = VrKeyboardEditor.EXTERNAL_TAB;
-                break;
-            case KeyEvent.KEYCODE_ENTER:
-            case KeyEvent.KEYCODE_NUMPAD_ENTER:
-                action = VrKeyboardEditor.EXTERNAL_ENTER;
-                break;
-            default:
-                int codePoint = event.getUnicodeChar();
-                if (codePoint < 32 || !Character.isValidCodePoint(codePoint))
-                    return false;
-                characters = new String(Character.toChars(codePoint));
-                break;
+        if (down) {
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEYCODE_SHIFT_LEFT:
+                case KeyEvent.KEYCODE_SHIFT_RIGHT:
+                    break; // physical modifier reflected, not sticky
+                case KeyEvent.KEYCODE_CAPS_LOCK:
+                    if (event.getRepeatCount() == 0)
+                        action = VrKeyboardEditor.EXTERNAL_CAPS_TOGGLE;
+                    break;
+                case KeyEvent.KEYCODE_DEL:
+                    action = VrKeyboardEditor.EXTERNAL_BACKSPACE;
+                    break;
+                case KeyEvent.KEYCODE_FORWARD_DEL:
+                    action = VrKeyboardEditor.EXTERNAL_DELETE;
+                    break;
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    action = VrKeyboardEditor.EXTERNAL_LEFT;
+                    break;
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    action = VrKeyboardEditor.EXTERNAL_RIGHT;
+                    break;
+                case KeyEvent.KEYCODE_TAB:
+                    action = VrKeyboardEditor.EXTERNAL_TAB;
+                    break;
+                case KeyEvent.KEYCODE_ENTER:
+                case KeyEvent.KEYCODE_NUMPAD_ENTER:
+                    action = VrKeyboardEditor.EXTERNAL_ENTER;
+                    break;
+                default:
+                    int codePoint = event.getUnicodeChar();
+                    if (codePoint >= 32
+                        && Character.isValidCodePoint(codePoint)) {
+                        action = VrKeyboardEditor.EXTERNAL_TEXT;
+                        characters = new String(Character.toChars(codePoint));
+                    }
+                    break;
+            }
         }
-        if (event.getAction() == KeyEvent.ACTION_UP) return true;
-        if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
-        return renderer.queuePhysicalKeyboardEdit(action, characters);
+        // Preserve shell/guest bindings for keys not represented by this
+        // editor. Never synthesize Android KeyEvents or echo back into HID.
+        if (action == VrKeyboardEditor.EXTERNAL_NO_TEXT
+            && HomeKeyboardTwin.keyIndex(physicalKey) < 0) return false;
+        return renderer.queuePhysicalKeyboardEdit(
+            action, characters, physicalKey, down, event.getDeviceId());
     }
 
     private boolean routeQuickMenuKeyboardEvent(
@@ -1172,6 +1195,8 @@ public final class VrActivity extends Activity
 
     @Override
     public void onInputDeviceRemoved(int deviceId) {
+        if (renderer != null)
+            renderer.releasePhysicalKeyboardDevice(deviceId);
         if (inputBindingEngine != null) {
             inputBindingEngine.releaseAll();
         }
@@ -1186,7 +1211,35 @@ public final class VrActivity extends Activity
         refreshInputSourceStatus();
     }
 
+    private void refreshKeyboardTwinStatus() {
+        if (renderer == null || preferences == null) return;
+        boolean attached = false;
+        for (int deviceId : android.view.InputDevice.getDeviceIds()) {
+            android.view.InputDevice device =
+                android.view.InputDevice.getDevice(deviceId);
+            if (device == null || device.isVirtual()
+                || AndroidGamepadSupport.isOriginalSteamController(device))
+                continue;
+            int source = device.getSources();
+            boolean keyboard =
+                (source & android.view.InputDevice.SOURCE_KEYBOARD)
+                    == android.view.InputDevice.SOURCE_KEYBOARD;
+            boolean gamepad =
+                (source & android.view.InputDevice.SOURCE_GAMEPAD)
+                    == android.view.InputDevice.SOURCE_GAMEPAD
+                || (source & android.view.InputDevice.SOURCE_JOYSTICK)
+                    == android.view.InputDevice.SOURCE_JOYSTICK;
+            if (keyboard && !gamepad) {
+                attached = true;
+                break;
+            }
+        }
+        renderer.setPhysicalKeyboardAttached(
+            attached && preferences.isExternalHidEnabled());
+    }
+
     private void refreshInputSourceStatus() {
+        refreshKeyboardTwinStatus();
         if (renderer == null || controllerManager == null) return;
         String selected = preferences.getActiveController();
         boolean provider = controllerManager.isReady() && (

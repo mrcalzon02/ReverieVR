@@ -338,6 +338,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final List<NativeModuleRuntime.Descriptor> nativeApps;
     private final List<NativeModuleRuntime.Descriptor> nativeGames;
     private final VrKeyboardEditor keyboardEditor = new VrKeyboardEditor();
+    private final HomeKeyboardTwin keyboardTwin = new HomeKeyboardTwin();
+    private volatile boolean physicalKeyboardAttached;
+    private final ConcurrentLinkedQueue<KeyboardDeviceCommand>
+        keyboardDeviceCommands = new ConcurrentLinkedQueue<>();
+    private final AtomicInteger keyboardDeviceCommandsPending = new AtomicInteger();
+    private static final class KeyboardDeviceCommand {
+        final int deviceId;
+        final boolean removed;
+        KeyboardDeviceCommand(int deviceId, boolean removed) {
+            this.deviceId = deviceId;
+            this.removed = removed;
+        }
+    }
     private boolean phonePanelVisible;
     private float phonePanelYawDegrees;
     private float phonePanelPitchDegrees;
@@ -434,9 +447,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final class KeyboardEditCommand {
         final int action;
         final String text;
-        KeyboardEditCommand(int action, String text) {
+        final VirtualKey key;
+        final boolean down;
+        final int deviceId;
+        KeyboardEditCommand(int action, String text, VirtualKey key,
+                            boolean down, int deviceId) {
             this.action = action;
             this.text = text;
+            this.key = key;
+            this.down = down;
+            this.deviceId = deviceId;
         }
     }
 
@@ -752,30 +772,81 @@ final class VrShellRenderer implements CardboardView.Renderer {
             && !orientationMenuVisible && !rendererFailed;
     }
 
-    boolean queuePhysicalKeyboardEdit(int action, String text) {
+    void setPhysicalKeyboardAttached(boolean attached) {
+        physicalKeyboardAttached = attached;
+    }
+
+    void releasePhysicalKeyboardDevice(int deviceId) {
+        if (keyboardDeviceCommandsPending.incrementAndGet()
+            > MAX_PENDING_HID_TEXT_INPUTS) {
+            keyboardDeviceCommandsPending.decrementAndGet();
+            return;
+        }
+        keyboardDeviceCommands.offer(
+            new KeyboardDeviceCommand(deviceId, true));
+    }
+
+    boolean queuePhysicalKeyboardEdit(int action, String text,
+                                      VirtualKey key, boolean down,
+                                      int deviceId) {
         if (!acceptsPhysicalKeyboardInput()) return false;
         int queued = keyboardEditsPending.incrementAndGet();
         if (queued > MAX_PENDING_HID_TEXT_INPUTS) {
             keyboardEditsPending.decrementAndGet();
             return false;
         }
-        keyboardEdits.offer(new KeyboardEditCommand(action, text));
+        keyboardEdits.offer(new KeyboardEditCommand(
+            action, text, key, down, deviceId));
         return true;
     }
 
-    private void consumePhysicalKeyboardEdits() {
+    private void consumePhysicalKeyboardEdits(long frameNanos) {
+        keyboardTwin.setConnected(physicalKeyboardAttached);
+        KeyboardDeviceCommand command;
+        while ((command = keyboardDeviceCommands.poll()) != null) {
+            keyboardDeviceCommandsPending.decrementAndGet();
+            if (command.removed) keyboardTwin.deviceRemoved(command.deviceId);
+        }
         KeyboardEditCommand edit;
         int consumed = 0;
         while (consumed < MAX_PENDING_HID_TEXT_INPUTS
             && (edit = keyboardEdits.poll()) != null) {
             keyboardEditsPending.decrementAndGet();
             consumed++;
-            if (acceptsPhysicalKeyboardInput()
-                && keyboardEditor.applyExternal(edit.action, edit.text)) {
-                keyboardTextureDirty = true;
-                textureDirty = true;
+            if (!acceptsPhysicalKeyboardInput()) continue;
+            if (edit.key != null) {
+                keyboardTwin.physicalEdge(edit.deviceId,
+                    edit.key, edit.down, frameNanos);
+                if (edit.key == VirtualKey.SHIFT) {
+                    keyboardEditor.setPhysicalShift(
+                        keyboardTwin.held(VirtualKey.SHIFT));
+                }
             }
+            if (edit.down
+                && edit.action != VrKeyboardEditor.EXTERNAL_NO_TEXT) {
+                keyboardEditor.applyExternal(edit.action, edit.text);
+            }
+            keyboardTextureDirty = true;
+            textureDirty = true;
         }
+        if (!acceptsPhysicalKeyboardInput()) {
+            keyboardTwin.releaseAll();
+        }
+        keyboardEditor.setPhysicalShift(
+            keyboardTwin.held(VirtualKey.SHIFT));
+        if (keyboardTwin.updateVisualState(frameNanos)) {
+            keyboardTextureDirty = true;
+            textureDirty = true;
+        }
+    }
+
+    private void pressDigitalKeyboardKey(int key) {
+        keyboardTwin.virtualPress(key, System.nanoTime());
+        if (!keyboardEditor.press(key / 10, key % 10)) {
+            host.onUiActionRejected();
+        }
+        keyboardTextureDirty = true;
+        textureDirty = true;
     }
 
     void requestSelect() {
@@ -1225,7 +1296,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         performanceTracker.recordFrame(frameNanos);
         // External HID events enqueue commands; only Cardboard's GL thread
         // mutates the editor and its rendered keyboard texture.
-        consumePhysicalKeyboardEdits();
+        consumePhysicalKeyboardEdits(frameNanos);
         if (lastPerformanceLogNanos == 0L) {
             lastPerformanceLogNanos = frameNanos;
         } else if (frameNanos - lastPerformanceLogNanos >= 60000000000L) {
@@ -2651,6 +2722,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         keyboardTextureDirty = true;
         keyboardEdits.clear();
         keyboardEditsPending.set(0);
+        keyboardDeviceCommands.clear();
+        keyboardDeviceCommandsPending.set(0);
+        keyboardTwin.releaseAll();
+        keyboardEditor.setPhysicalShift(false);
     }
 
     private boolean updateActivePointer(
@@ -4175,8 +4250,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 int key = hoveredButton - HOME_KEYBOARD_HIT_OFFSET;
                 if (key == 50) {
                     host.onVrKeyboardTextCommitted(keyboardEditor.value());
-                } else if (!keyboardEditor.press(key / 10, key % 10)) {
-                    host.onUiActionRejected();
+                } else {
+                    pressDigitalKeyboardKey(key);
                 }
                 hoveredButton = -1;
                 homeKeyboardHoveredKey = -1;
@@ -4322,8 +4397,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (key == 50) {
                 host.onVrKeyboardTextCommitted(keyboardEditor.value());
                 mode = MODE_HOME;
-            } else if (!keyboardEditor.press(key / 10, key % 10)) {
-                host.onUiActionRejected();
+            } else {
+                pressDigitalKeyboardKey(key);
             }
             keyboardTextureDirty = true;
         } else if (mode == MODE_EMULATOR_CATALOG) {
@@ -6451,7 +6526,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void drawKeyboard(Canvas canvas, Paint paint, int highlightedKey) {
         paint.setColor(Color.WHITE);
         paint.setTextSize(30.0f * uiScale);
-        canvas.drawText("VIRTUAL KEYBOARD - COPY TEXT", 72, 110, paint);
+        canvas.drawText(physicalKeyboardAttached
+            ? "KEYBOARD TWIN - PHYSICAL + VR"
+            : "VIRTUAL KEYBOARD - COPY TEXT", 72, 110, paint);
         paint.setColor(Color.rgb(35, 45, 58));
         canvas.drawRoundRect(72, 133, 952, 211, 10, 10, paint);
         String value = keyboardEditor.value().replace("\n", " ↵ ").replace("\t", " ⇥ ");
@@ -6465,9 +6542,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             75, 224, paint);
         for (int key = 0; key < 50; key++) {
             int[] rect = KEYBOARD_BUTTONS[key];
-            boolean highlighted = highlightedKey == key;
-            paint.setColor(highlighted ? Color.rgb(40, 126, 125)
-                : Color.rgb(42, 54, 66));
+            boolean highlighted = highlightedKey == key
+                || keyboardTwin.illuminated(key, System.nanoTime());
+            paint.setColor(highlighted
+                ? Color.argb(185, 40, 126, 125)
+                : (mode == MODE_HOME ? Color.argb(48, 42, 54, 66)
+                    : Color.rgb(42, 54, 66)));
             canvas.drawRoundRect(rect[0], rect[1], rect[2], rect[3], 9, 9, paint);
             paint.setColor(Color.WHITE);
             String label = keyboardEditor.label(key / 10, key % 10);
@@ -6478,7 +6558,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             canvas.drawText(label, textX, baseline, paint);
         }
         int[] done = KEYBOARD_BUTTONS[50];
-        paint.setColor(highlightedKey == 50 ? Color.rgb(40, 126, 125)
+        paint.setColor(highlightedKey == 50
+            || keyboardTwin.illuminated(50, System.nanoTime())
+            ? Color.rgb(40, 126, 125)
             : Color.rgb(45, 78, 72));
         canvas.drawRoundRect(done[0],done[1],done[2],done[3],8,8,paint);
         paint.setColor(Color.WHITE);
