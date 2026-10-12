@@ -116,7 +116,7 @@ final class DosModuleRepository {
     ) {
         if (module == null) {
             return BuiltInBindingProfiles.byId(
-                BuiltInBindingProfiles.ID_NONE
+                BuiltInBindingProfiles.ID_DOS_STANDARD
             );
         }
 
@@ -144,7 +144,9 @@ final class DosModuleRepository {
         }
 
         return BuiltInBindingProfiles.byId(
-            module.bindingProfileId
+            BuiltInBindingProfiles.isDosProfileId(module.bindingProfileId)
+                ? module.bindingProfileId
+                : BuiltInBindingProfiles.ID_DOS_STANDARD
         );
     }
 
@@ -279,7 +281,7 @@ final class DosModuleRepository {
                 properties.getProperty("contentPath"),
                 properties.getProperty(
                     "bindingProfileId",
-                    BuiltInBindingProfiles.ID_NONE
+                    BuiltInBindingProfiles.ID_DOS_STANDARD
                 ),
                 Long.parseLong(
                     properties.getProperty(
