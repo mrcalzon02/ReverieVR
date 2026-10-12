@@ -60,6 +60,19 @@ final class VrInputRouter {
         this.bindingListener = bindingListener;
     }
 
+    /** Clear stale button and axis edges when changing primary hardware.
+     * Guest-held keys are released separately by InputBindingEngine. */
+    void resetControllerEdges() {
+        previousClick = false;
+        previousMenu = false;
+        previousHome = false;
+        previousVolumeUp = false;
+        previousVolumeDown = false;
+        previousTouching = false;
+        touchStartX = touchStartY = touchLastX = touchLastY = 0;
+        horizontalAxisState = verticalAxisState = 0;
+    }
+
     void onControllerSnapshot(
         ControllerSnapshot snapshot,
         String source
