@@ -129,8 +129,12 @@ from Stage A.** This is not permission for a second required software
 distribution, silent PC installation/execution, a privileged service,
 an always-running Windows agent, or PC-hosted VR emulation. The APK
 currently exports a three-file, human-readable portable PowerShell/cmd
-Windows bundle via Android's Create Document picker; Windows must
-deliberately copy/extract/run it. Its current features launch an
+Windows bundle via Android's Create Document picker **or** an explicitly
+opened, temporary, single-use download URL over trusted private Wi-Fi
+or already authorized USB/ADB port forwarding. Windows must deliberately
+download/copy/extract/run it; the APK may not remotely execute programs,
+advertise a permanent HTTP service or bypass host authorization.
+Its current features launch an
 existing scrcpy installation for selected input/mirroring modes and
 inspect optical-drive availability without raw-disc access. The
 computer's own SMB2/SMB3 sharing remains an alternative source for
