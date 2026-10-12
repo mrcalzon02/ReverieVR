@@ -6,6 +6,15 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Beachhead/Breakwater shore-infantry attack warning
+
+- Added a deterministic shore firing-line salvo estimate to the existing
+  aircraft/gunboat threat API, with real disembarkation and cancellation.
+- Displayed a low-poly SHORE Ns countdown only within six seconds of a
+  possible infantry attack. No textures or new save fields; Android and
+  reference-headset validation remains pending.
+
+
 ### Eleven owner-original songs in every APK + rotating lobby
 
 - After explicit original-ownership and commercial-rights confirmation

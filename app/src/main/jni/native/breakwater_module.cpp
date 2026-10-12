@@ -737,6 +737,16 @@ void BuildScene(State *s) {
             Panel(s,1.58f,.30f,-1.82f,2.20f,.27f,.42f,.29f,.12f);
             Text(s,warning,1.58f,.30f,-1.79f,.039f,1.0f,.90f,.64f);
         }
+        // First landing parties are a real danger, but their warning must
+        // not start until living soldiers can reach and use the firing line.
+        // Keep it clear of the shell's other two threat indicators.
+        if(threats.infantry_seconds>=0.0f && threats.infantry_seconds<=6.0f) {
+            char warning[24];
+            std::snprintf(warning,sizeof(warning),"SHORE %uS",
+                static_cast<unsigned>(std::ceil(threats.infantry_seconds)));
+            Panel(s,0.0f,-.78f,-1.82f,1.86f,.24f,.31f,.28f,.15f);
+            Text(s,warning,0.0f,-.78f,-1.79f,.038f,.98f,.93f,.68f);
+        }
         if(s->battery_damage.active()) {
             char damage[28];
             std::snprintf(damage,sizeof(damage),"HULL HIT -%d",

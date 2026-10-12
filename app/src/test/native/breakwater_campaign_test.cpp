@@ -403,11 +403,19 @@ int main() {
     assert(tactical.FireMiss());
 
     Campaign landed(Difficulty::Casual,41);
-    assert(landed.Start() && landed.BeginWave());
+    assert(landed.Start());
+    assert(landed.incoming_threats().infantry_seconds<0.0f); // shop
+    assert(landed.BeginWave());
+    assert(landed.incoming_threats().infantry_seconds<0.0f); // offshore
     for(int i=0;i<4500 && landed.wave_status().troops_landed==0;i++)
         landed.Tick(0.05f);
     assert(landed.wave_status().troops_landed>0);
     assert(landed.infantry()>0);
+    // Earliest live landing party still needs to traverse the beach and
+    // wait a full salvo period; boats have no imaginary infantry timer.
+    const IncomingThreats approaching_infantry=landed.incoming_threats();
+    assert(approaching_infantry.infantry_seconds>10.0f);
+    assert(approaching_infantry.aircraft_seconds<0.0f);
     // Disembarking is not an instant firing position: troops must cross the
     // exposed beach, then complete a full four-second attack countdown.
     const int32_t integrity=landed.integrity();
@@ -416,12 +424,18 @@ int main() {
     assert(landed.infantry_volley().sequence==0);
     assert(landed.infantry_volley().shooters==0);
     assert(landed.infantry_volley().damage==0);
+    // A living shore party approaches the firing line: the estimate enters
+    // the visible six-second window before any damage occurs.
+    const float shore_countdown=landed.incoming_threats().infantry_seconds;
+    assert(shore_countdown>4.0f && shore_countdown<6.0f);
     for(const Infantry &trooper:landed.infantry_units())
         if(trooper.active) assert(trooper.z < -1.34f);
     for(int i=0;i<160;i++) landed.Tick(0.05f);
     assert(landed.integrity()<integrity);
     const InfantryVolleyEvent first_volley=landed.infantry_volley();
     assert(first_volley.sequence>=1);
+    assert(landed.incoming_threats().infantry_seconds>=0.0f);
+    assert(landed.incoming_threats().infantry_seconds<=4.0f);
     assert(first_volley.shooters>0 && first_volley.shooters<=landed.infantry());
     assert(first_volley.damage>0 && first_volley.damage<=first_volley.shooters*2);
     assert(std::isfinite(first_volley.x) && std::isfinite(first_volley.z));
@@ -437,6 +451,7 @@ int main() {
             if(landed.infantry_units()[i].active && landed.FireAtInfantry(i)) break;
     }
     assert(landed.wave_status().troops_stopped>=1);
+    assert(landed.incoming_threats().infantry_seconds<0.0f);
     assert(landed.waves_this_period()==2);
 
     // Infantry volleys must report the real damage against the final hull
@@ -475,6 +490,7 @@ int main() {
     }
     assert(active==beach.infantry() && first!=255);
     const Infantry soldier=beach.infantry_units()[first];
+    assert(beach.incoming_threats().infantry_seconds>6.0f);
     const float origin[]={soldier.x,-0.66f,soldier.z+1.0f};
     const float missOrigin[]={soldier.x+0.6f,-0.66f,soldier.z+1.0f};
     const float ray[]={0,0,-1};
@@ -492,6 +508,10 @@ int main() {
     assert(!beach.infantry_units()[first].active);
     assert(beach.infantry()==active-1);
     assert(beach.magazine_left()==ammoBefore-1);
+    // The only landed soldier is gone: active offshore transports are not
+    // counted as shooters until they really disembark.
+    if (beach.infantry()==0)
+        assert(beach.incoming_threats().infantry_seconds<0.0f);
     assert(!beach.FireAtInfantry(first));
     assert(beach.magazine_left()==ammoBefore-1);
 

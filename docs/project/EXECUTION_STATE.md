@@ -1,3 +1,16 @@
+## 2026-10-12 — Breakwater shoreline infantry threat warning (source)
+
+Beachhead/Breakwater now predicts a shore infantry salvo from actual
+living, disembarked soldier travel and the shared four-second firing-line
+timer. The new small SHORE Ns indicator appears only within six seconds
+of a plausible attack, complements AIR RAID/GUNBOAT, and clears with its
+shooters; boats still offshore never fabricate a land-soldier threat.
+The per-eye renderer only observes campaign status, and the shop save
+format, controller routes and texture budget are unchanged. A local
+C++17 -Werror standalone fixture passed seven representative
+arrival/timer/cancellation assertions; integrated full native build,
+APK packaging and reference S9 headset validation remain open.
+
 ## 2026-10-12 — Owner original music authorized for *every* APK variant
 
 The owner explicitly reaffirmed that all eleven provided MP3 files are

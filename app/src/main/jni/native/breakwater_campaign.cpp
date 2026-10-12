@@ -343,6 +343,33 @@ IncomingThreats Campaign::incoming_threats() const {
         if (*earliest < 0.0f || until_fire < *earliest)
             *earliest = until_fire;
     }
+    // Only living, disembarked infantry can threaten the parapet. Predict
+    // their first firing-line arrival using the same 0.13 world-unit/second
+    // speed and -1.34 line as TickStep. Once one has arrived, use the
+    // authoritative shared four-second salvo timer. Removing every ready
+    // shooter cancels the existing timer; pending arrivals get a new full
+    // countdown rather than inheriting a dead soldier's partial salvo.
+    constexpr float kInfantryFiringLineZ = -1.34f;
+    constexpr float kInfantryAdvanceSpeed = .13f;
+    constexpr float kInfantrySalvoPeriod = 4.0f;
+    bool shooter_ready = false;
+    float nearest_arrival = -1.0f;
+    for (const Infantry &soldier : infantry_units_) {
+        if (!soldier.active) continue;
+        if (soldier.z >= kInfantryFiringLineZ) {
+            shooter_ready = true;
+            break;
+        }
+        const float until_line = (kInfantryFiringLineZ - soldier.z)
+            / kInfantryAdvanceSpeed;
+        if (nearest_arrival < 0.0f || until_line < nearest_arrival)
+            nearest_arrival = until_line;
+    }
+    if (shooter_ready)
+        warning.infantry_seconds = std::max(0.0f,
+            kInfantrySalvoPeriod - infantry_timer_);
+    else if (nearest_arrival >= 0.0f)
+        warning.infantry_seconds = nearest_arrival + kInfantrySalvoPeriod;
     return warning;
 }
 float Campaign::reload_fraction() const {

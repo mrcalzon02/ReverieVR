@@ -69,6 +69,9 @@ struct IncomingThreats {
     // -1 means no eligible attacker can fire before leaving its attack window.
     float aircraft_seconds = -1.0f;
     float gunboat_seconds = -1.0f;
+    // Earliest actual infantry salvo, including travel to the firing line.
+    // -1 means no living disembarked soldier can fire yet.
+    float infantry_seconds = -1.0f;
 };
 struct TurretShotEvent {
     uint32_t sequence = 0;
