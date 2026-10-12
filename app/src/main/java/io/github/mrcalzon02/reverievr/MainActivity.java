@@ -78,6 +78,8 @@ public final class MainActivity extends Activity
         Executors.newSingleThreadExecutor();
     private final ExecutorService diagnosticExecutor =
         Executors.newSingleThreadExecutor();
+    private final ExecutorService mediaMetadataExecutor =
+        Executors.newSingleThreadExecutor();
 
     private TextView appVersionText;
     private TextView phoneBatteryText;
@@ -279,6 +281,7 @@ public final class MainActivity extends Activity
         }
         dosImportExecutor.shutdownNow();
         diagnosticExecutor.shutdownNow();
+        mediaMetadataExecutor.shutdownNow();
         super.onDestroy();
     }
 
@@ -916,9 +919,52 @@ public final class MainActivity extends Activity
         String displayName = resolveDisplayName(
             uri, getString(R.string.selected_video_unknown_name));
         preferences.setSelectedVideo(uri.toString(), displayName);
+        VideoProjection initialProjection = preferences.getVideoProjection();
         Toast.makeText(this,
             getString(R.string.selected_video_format, displayName),
             Toast.LENGTH_SHORT).show();
+
+        inspectVideoMetadata(uri, initialProjection);
+    }
+
+    /**
+     * File-format discovery starts only after the user picks a document
+     * inside VR. SAF reads are asynchronous and limited to the first 4 MiB.
+     * Never replace a later selection or an in-VR manual projection choice.
+     */
+    private void inspectVideoMetadata(Uri uri, VideoProjection suggested) {
+        mediaMetadataExecutor.execute(() -> {
+            try (java.io.InputStream input =
+                    getContentResolver().openInputStream(uri)) {
+                SpatialMp4Metadata.Result result =
+                    SpatialMp4Metadata.inspect(input);
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()
+                        || !uri.toString().equals(
+                            preferences.getSelectedVideoUri())) {
+                        return;
+                    }
+                    if (result.status == SpatialMp4Metadata.Status.SUPPORTED) {
+                        if (preferences.applyDetectedVideoProjection(
+                                uri.toString(), suggested, result.projection)) {
+                            Toast.makeText(this,
+                                "Video metadata: " + result.projection.displayName(),
+                                Toast.LENGTH_SHORT).show();
+                        }
+                    } else if (result.status
+                            == SpatialMp4Metadata.Status.UNSUPPORTED) {
+                        ReverieLog.incident("VIDEO_METADATA", result.detail);
+                        Toast.makeText(this,
+                            "Spatial metadata needs unsupported projection: "
+                                + result.detail,
+                            Toast.LENGTH_LONG).show();
+                    }
+                });
+            } catch (java.io.IOException | SecurityException error) {
+                ReverieLog.error("VIDEO_METADATA",
+                    "Cannot inspect selected MP4 metadata", error);
+            }
+        });
     }
 
     private void handleSelectedDosContent(Intent data) {

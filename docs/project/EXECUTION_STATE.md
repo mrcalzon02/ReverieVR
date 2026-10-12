@@ -37,6 +37,24 @@ metadata and may include per-frame motion orientation.
 Physical headset stereo/projection/thermal and Android build acceptance pending
 for this new slice; do not claim calibrated VR180 fisheye support.
 
+## 2026-10-11 — RV-0503 bounded MP4 spatial metadata identification
+
+Implemented source-only MP4 Spatial Media v2 inspection behind the existing
+Stage B -> Android document-picker handoff. A dedicated single-thread executor
+reads at most 4 MiB from the selected SAF URI. The pure-JVM parser follows ISO
+BMFF sample-entry box structure rather than searching bytes in video payloads,
+recognizes st3d mono/top-bottom/left-right and sv3d/proj/equi with zero crop
+and pose. Supported metadata overrides filename suggestions only while both
+the chosen URI and initial projection remain unchanged. Files without accessible
+metadata retain the filename hint or 2D default. Unsupported layouts emit an
+honest warning; calibrated mesh, cubemap, custom/reversed eyes, cropped/rotated
+projections and external containers do not get falsely auto-rendered. A bounded
+4-MiB scan may not reach moov boxes at the end of large MP4 files; this is
+reported as unknown rather than guessing.
+New synthetic JVM tests cover supported stereo/spherical variants, malicious
+mdat lookalikes, conflicting tracks, unsupported projection and truncation.
+No APK, real media, or Galaxy S9 acceptance claim for this new slice.
+
 ## Authority
 
 - Repository: `mrcalzon02/ReverieVR`

@@ -222,6 +222,23 @@ final class ReveriePreferences {
             .apply();
     }
 
+    /**
+     * Respect both selection identity and an in-VR format override made while
+     * metadata was being inspected. This check and update run on the UI thread.
+     */
+    boolean applyDetectedVideoProjection(String uri,
+                                         VideoProjection expected,
+                                         VideoProjection detected) {
+        if (uri == null || detected == null
+            || !uri.equals(getSelectedVideoUri())
+            || getVideoProjection() != expected) {
+            return false;
+        }
+        if (detected == expected) return false;
+        setVideoProjection(detected);
+        return true;
+    }
+
     HomeEnvironment getHomeEnvironment() {
         return HomeEnvironment.fromPreference(
             preferences.getString(

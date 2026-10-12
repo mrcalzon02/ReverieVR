@@ -2,7 +2,7 @@
 
 **Status:** adopted as draft implementation boundary  
 **Date:** 2026-10-05  
-**Affected targets:** RV-0500, RV-0501, RV-0503
+**Affected targets:** RV-0500, RV-0501, RV-0502, RV-0503
 
 ## Context
 
@@ -24,6 +24,19 @@ The initial projection set is:
 - mono equirectangular 360° video on an inward-viewed sphere.
 
 The VR shell remains authoritative. Selecting media from the shell enters the player mode; Daydream primary click toggles play/pause; Menu/back stops playback and returns to the same shell. GL-surface recreation replaces the decoder surface and reopens the selected URI rather than retaining a dead SurfaceTexture.
+
+## Spatial metadata extension (2026-10-11)
+
+Following the initial local player, inspection of the selected document's
+ISO-BMFF (MP4) Spatial Media v2 video sample-entry metadata is performed in a
+bounded (4 MiB maximum) asynchronous, offline parser. It recognizes st3d
+packing and uncropped, unrotated sv3d/proj/equi 360-degree projection only.
+The result changes the default display mode solely for the same selected
+content and only if the user has not since changed that mode; unsupported or
+incomplete metadata is not presented as playable VR180 or calibrated fisheye.
+No scans of mdat payload for incidental strings. moov-after-giant-mdat is
+intentionally UNKNOWN; future random-access inspection will need separate SAF
+seekability and bounds validation.
 
 ## Deferred
 
