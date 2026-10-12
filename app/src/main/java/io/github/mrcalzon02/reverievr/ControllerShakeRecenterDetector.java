@@ -72,7 +72,7 @@ final class ControllerShakeRecenterDetector {
         float deviation = gravityReferenceValid
             ? (float) Math.sqrt(impulseX * impulseX
                 + impulseY * impulseY + impulseZ * impulseZ)
-            : Math.abs(metersPerSecondSquared - STANDARD_GRAVITY);
+            : Math.max(0.0f, metersPerSecondSquared - STANDARD_GRAVITY);
 
         if (deviation < IMPULSE_DEVIATION) {
             // Track changing rest orientation slowly, never learn a shake.
