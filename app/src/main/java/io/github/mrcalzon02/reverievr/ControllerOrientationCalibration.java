@@ -4,6 +4,20 @@ package io.github.mrcalzon02.reverievr;
 final class ControllerOrientationCalibration {
     private ControllerOrientationCalibration() {}
 
+    // Home HUD and anchored menu planes face world -Z. Controller shake
+    // calibration targets that stable shell direction, not transient gaze.
+    private static final float[] SHELL_VIEW = {
+        1f, 0f, 0f, 0f,
+        0f, 1f, 0f, 0f,
+        0f, 0f, 1f, 0f,
+        0f, 0f, 0f, 1f
+    };
+
+    static boolean computeToHud(float x, float y, float z, float w,
+                                float[] out) {
+        return compute(SHELL_VIEW, x, y, z, w, out);
+    }
+
     // headView contains the world-to-head rotation. The target rotation
     // is its transpose; correction = target * inverse(controller rotation).
     static boolean compute(float[] headView, float x, float y, float z, float w,
