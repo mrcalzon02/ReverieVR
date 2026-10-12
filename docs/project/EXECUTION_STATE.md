@@ -1,3 +1,22 @@
+## 2026-10-12 — Music-only volume and mute controls (source)
+
+The Native Music Library now exposes three working focusable controls:
+MUSIC -, MUSIC + and MUTE/UNMUTE. They alter the actual local
+`MediaPlayer.setVolume` gain, not Android's stream/phone volume; the
+user's percent and independent mute status persist through
+`ReveriePreferences` and are restored at next launch, including when
+Breakwater uses its owner-original cue. Default 44% maps to the previous
+0.22 absolute player gain, avoiding a startup loudness increase. Range
+is safely bounded to 0..100%, with a peak local gain of 0.5 and 10%
+increments; toggling mute preserves the previously chosen gain. The
+status/button labels refresh from real persisted/player state after
+UI-thread input dispatch. Controls use existing shell raycast/keyboard
+navigation and need no extra audio stream or permissions.
+
+Pure-JVM `MusicVolumePolicyTest` covers unchanged default, clamping,
+mute and stepping; in-headset controller activation, Android Gradle
+build and Galaxy S9 playback/loudness acceptance are still pending.
+
 ## 2026-10-12 — Breakwater shoreline infantry threat warning (source)
 
 Beachhead/Breakwater now predicts a shore infantry salvo from actual

@@ -1662,6 +1662,7 @@ public final class VrActivity extends Activity
     public void onNativeMusicChoose(int index) {
         runOnUiThread(() -> {
             if (menuMusic != null) menuMusic.chooseTrack(index);
+            if (renderer != null) renderer.requestMusicUiRefresh();
         });
     }
 
@@ -1669,6 +1670,7 @@ public final class VrActivity extends Activity
     public void onNativeMusicStep(int direction) {
         runOnUiThread(() -> {
             if (menuMusic != null) menuMusic.stepTrack(direction);
+            if (renderer != null) renderer.requestMusicUiRefresh();
         });
     }
 
@@ -1676,6 +1678,29 @@ public final class VrActivity extends Activity
     public void onNativeMusicTogglePause() {
         runOnUiThread(() -> {
             if (menuMusic != null) menuMusic.toggleUserPause();
+            if (renderer != null) renderer.requestMusicUiRefresh();
+        });
+    }
+
+    @Override
+    public String getNativeMusicVolumeStatus() {
+        return menuMusic == null
+            ? "MUSIC UNAVAILABLE" : menuMusic.musicVolumeStatus();
+    }
+
+    @Override
+    public void onNativeMusicVolumeAdjust(int direction) {
+        runOnUiThread(() -> {
+            if (menuMusic != null) menuMusic.adjustMusicVolume(direction);
+            if (renderer != null) renderer.requestMusicUiRefresh();
+        });
+    }
+
+    @Override
+    public void onNativeMusicToggleMute() {
+        runOnUiThread(() -> {
+            if (menuMusic != null) menuMusic.toggleMusicMute();
+            if (renderer != null) renderer.requestMusicUiRefresh();
         });
     }
 

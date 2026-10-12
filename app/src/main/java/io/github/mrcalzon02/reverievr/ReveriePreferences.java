@@ -11,6 +11,8 @@ final class ReveriePreferences {
     private static final String KEY_BATTERY_HUD = "battery_hud";
     private static final String KEY_LOOK_UP_REVEAL = "look_up_reveal";
     private static final String KEY_SHOW_PERCENTAGES = "show_percentages";
+    private static final String KEY_MUSIC_VOLUME_PERCENT = "music_volume_percent";
+    private static final String KEY_MUSIC_MUTED = "music_muted";
     private static final String KEY_AUTO_UPDATE_CHECK = "auto_update_check";
     private static final String KEY_LOGGING_MODE = "logging_mode";
     private static final String KEY_VR_SETUP_VERSION = "vr_setup_version";
@@ -107,6 +109,24 @@ final class ReveriePreferences {
 
     void setShowPercentagesEnabled(boolean enabled) {
         preferences.edit().putBoolean(KEY_SHOW_PERCENTAGES, enabled).apply();
+    }
+
+    int getMusicVolumePercent() {
+        return MusicVolumePolicy.clamp(preferences.getInt(
+            KEY_MUSIC_VOLUME_PERCENT, MusicVolumePolicy.DEFAULT_PERCENT));
+    }
+
+    void setMusicVolumePercent(int percent) {
+        preferences.edit().putInt(KEY_MUSIC_VOLUME_PERCENT,
+            MusicVolumePolicy.clamp(percent)).apply();
+    }
+
+    boolean isMusicMuted() {
+        return preferences.getBoolean(KEY_MUSIC_MUTED, false);
+    }
+
+    void setMusicMuted(boolean muted) {
+        preferences.edit().putBoolean(KEY_MUSIC_MUTED, muted).apply();
     }
 
     boolean isAutoUpdateCheckEnabled() {

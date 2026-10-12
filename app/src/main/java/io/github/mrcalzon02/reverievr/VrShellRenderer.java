@@ -92,6 +92,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onNativeMusicChoose(int index);
         void onNativeMusicStep(int direction);
         void onNativeMusicTogglePause();
+        void onNativeMusicVolumeAdjust(int direction);
+        void onNativeMusicToggleMute();
+        String getNativeMusicVolumeStatus();
         void onHeadBindingDelta(
             float yawDeltaRadians,
             float pitchDeltaRadians
@@ -245,7 +248,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {290, 520, 445, 585}, // Pause / resume
         {455, 520, 595, 585}, // Next track
         {605, 520, 735, 585}, // Next page
-        {745, 520, 884, 585}  // Home
+        {745, 520, 884, 585}, // Home
+        {140, 599, 360, 648}, // Music-only gain lower
+        {382, 599, 601, 648}, // Music-only gain raise
+        {623, 599, 884, 648}  // Persistent Mute / Unmute
     };
 
     private static final int[][] KEYBOARD_BUTTONS = makeKeyboardButtons();
@@ -4627,6 +4633,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 7:
                     mode = MODE_HOME;
                     break;
+                case 8:
+                    host.onNativeMusicVolumeAdjust(-1);
+                    break;
+                case 9:
+                    host.onNativeMusicVolumeAdjust(1);
+                    break;
+                case 10:
+                    host.onNativeMusicToggleMute();
+                    break;
                 default:
                     host.onUiActionRejected();
                     break;
@@ -6918,6 +6933,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
     }
 
+    // Invoked on the UI thread after music-only control changes; the
+    // renderer recreates the status/labels on its next GL frame.
+    void requestMusicUiRefresh() {
+        textureDirty = true;
+    }
+
     private void drawNativeMusicLibrary(Canvas canvas, Paint paint) {
         paint.setColor(Color.WHITE);
         paint.setTextSize(32.0f * uiScale);
@@ -6939,14 +6960,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
         labels[5] = "NEXT";
         labels[6] = pageCount > 1 ? "PAGE" : "1 PAGE";
         labels[7] = "HOME";
+        labels[8] = "MUSIC -";
+        labels[9] = "MUSIC +";
+        labels[10] = host.getNativeMusicVolumeStatus().contains("MUTED")
+            ? "UNMUTE" : "MUTE";
         drawButtons(canvas, paint, labels, MUSIC_BUTTONS);
         paint.setColor(Color.rgb(141, 214, 192));
-        paint.setTextSize(18.0f * uiScale);
+        paint.setTextSize(17.0f * uiScale);
         canvas.drawText(shorten(host.getNativeMusicStatus(), 71),
-            155, 650, paint);
-        paint.setColor(Color.rgb(150, 162, 174));
+            155, 683, paint);
+        paint.setColor(Color.WHITE);
         paint.setTextSize(16.0f * uiScale);
-        canvas.drawText("Owner-original offline soundtrack • No streaming.", 155, 690, paint);
+        canvas.drawText(host.getNativeMusicVolumeStatus()
+            + "  |  OFFLINE • OWNER MUSIC", 155, 712, paint);
     }
 
     private void drawNativeLibrary(

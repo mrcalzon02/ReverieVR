@@ -6,6 +6,17 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Music library hearing comfort and user control
+
+- Added MUSIC −, MUSIC +, and MUTE/UNMUTE controls to the actual
+  ray-usable native Music Library, with persistent preferences and
+  immediate audio gain changes; does not change Android system volume.
+- A 44% initial music setting preserves previous 0.22 absolute gain;
+  adjustable 0..100% uses bounded steps and retains volume while muted.
+- State/labels refresh after action completion, with pure-JVM policy
+  regression source; Galaxy S9 device and APK testing remain open.
+
+
 ### Beachhead/Breakwater shore-infantry attack warning
 
 - Added a deterministic shore firing-line salvo estimate to the existing

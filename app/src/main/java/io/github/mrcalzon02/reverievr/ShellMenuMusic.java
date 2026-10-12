@@ -13,12 +13,14 @@ import java.io.InputStream;
  * Never streams Suno or retrieves audio from a public profile page.
  */
 final class ShellMenuMusic implements AutoCloseable {
-    private static final float MUSIC_GAIN = 0.22f;
     private static final String LOBBY_PREFS = "reverie_music";
     private static final String LOBBY_COUNTER = "lobby_session";
 
     private final Context context;
     private final NativeMusicCatalog catalog;
+    private final ReveriePreferences musicPreferences;
+    private volatile int volumePercent = MusicVolumePolicy.DEFAULT_PERCENT;
+    private volatile boolean muted;
     private MediaPlayer player;
     private boolean lifecycleActive;
     private boolean shellActive = true;
@@ -31,6 +33,12 @@ final class ShellMenuMusic implements AutoCloseable {
 
     ShellMenuMusic(Context context) {
         this.context = context == null ? null : context.getApplicationContext();
+        musicPreferences = this.context == null
+            ? null : new ReveriePreferences(this.context);
+        if (musicPreferences != null) {
+            volumePercent = musicPreferences.getMusicVolumePercent();
+            muted = musicPreferences.isMusicMuted();
+        }
         NativeMusicCatalog loaded = null;
         if (this.context != null) {
             try (InputStream file = this.context.getAssets().open(
@@ -80,6 +88,38 @@ final class ShellMenuMusic implements AutoCloseable {
         }
         return (userPaused ? "PAUSED: " : "READY: ")
             + catalog.at(currentTrackIndex()).title;
+    }
+
+    String musicVolumeStatus() {
+        return MusicVolumePolicy.display(volumePercent, muted);
+    }
+
+    void adjustMusicVolume(int direction) {
+        if (closed || direction == 0) return;
+        volumePercent = MusicVolumePolicy.adjust(volumePercent, direction);
+        if (musicPreferences != null)
+            musicPreferences.setMusicVolumePercent(volumePercent);
+        applyMusicGain();
+    }
+
+    void toggleMusicMute() {
+        if (closed) return;
+        muted = !muted;
+        if (musicPreferences != null) musicPreferences.setMusicMuted(muted);
+        applyMusicGain();
+    }
+
+    private void applyMusicGain() {
+        MediaPlayer active = player;
+        if (active == null) return;
+        float gain = MusicVolumePolicy.gain(volumePercent, muted);
+        try {
+            active.setVolume(gain, gain);
+        } catch (IllegalStateException exception) {
+            ReverieLog.error("MENU_MUSIC",
+                "Could not apply music-only gain", exception);
+            releasePlayer();
+        }
     }
 
     void chooseTrack(int index) {
@@ -176,7 +216,8 @@ final class ShellMenuMusic implements AutoCloseable {
                 created.prepare();
             }
             created.setLooping(hostedCueIndex >= 0 || catalog.size() == 1);
-            created.setVolume(MUSIC_GAIN, MUSIC_GAIN);
+            float gain = MusicVolumePolicy.gain(volumePercent, muted);
+            created.setVolume(gain, gain);
             created.setOnCompletionListener(finished -> {
                 if (catalog.size() > 1 && hostedCueIndex < 0) {
                     if (manualSelection) {
