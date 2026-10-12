@@ -461,14 +461,23 @@ public final class MainActivity extends Activity
         boolean scrcpy = scrcpySource != null;
         boolean compatiblePad = AndroidGamepadSupport.isScrcpyCompatibleGamepad(scrcpySource)
             && !AndroidGamepadSupport.isScrcpyHid(scrcpySource);
+        String selectedAndroidName=AndroidGamepadSupport.gamepadNameByDescriptor(
+            preferences.getSelectedAndroidGamepadDescriptor());
+        String[] androidDevices=AndroidGamepadSupport.connectedGamepadDescriptors();
         String[] entries = { "Automatic", "Daydream controller",
             connected ? "Original Steam Controller (connected)"
                 : "Original Steam Controller (disconnected)",
             scrcpy ? compatiblePad ? "scrcpy / Xbox-compatible HID (available)"
-                : "scrcpy HID (connected)" : "scrcpy HID (disconnected)" };
+                : "scrcpy HID (connected)" : "scrcpy HID (disconnected)",
+            androidDevices.length==0 ? "Android USB / BT gamepad (not detected)"
+                : "Android USB / BT gamepad: "+
+                    (selectedAndroidName==null ?
+                        androidDevices.length+" available" :
+                        selectedAndroidName+"; tap to cycle") };
         int checked = ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice) ? 1
             : ReveriePreferences.CONTROLLER_STEAM.equals(choice) ? 2
             : ReveriePreferences.CONTROLLER_SCRCPY.equals(choice) ? 3
+            : ReveriePreferences.CONTROLLER_ANDROID.equals(choice) ? 4
             : ReveriePreferences.CONTROLLER_AUTO.equals(choice) ? 0 : -1;
         new AlertDialog.Builder(this).setTitle(R.string.select_controller_title)
             .setSingleChoiceItems(entries, checked, (dialog, index) -> {
@@ -478,6 +487,18 @@ public final class MainActivity extends Activity
                 } else if (index == 3) {
                     preferences.setActiveController(ReveriePreferences.CONTROLLER_SCRCPY);
                     controllerManager.deselectProvider();
+                } else if (index == 4) {
+                    String[] available=AndroidGamepadSupport.connectedGamepadDescriptors();
+                    if(available.length>0) {
+                        String current=preferences.getSelectedAndroidGamepadDescriptor();
+                        String next=ReveriePreferences.CONTROLLER_ANDROID.equals(
+                                preferences.getActiveController())
+                            ? ControllerDeviceSelection.next(available,current)
+                            : ControllerDeviceSelection.retainOrFirst(available,current);
+                        preferences.setSelectedAndroidGamepadDescriptor(next);
+                        preferences.setActiveController(ReveriePreferences.CONTROLLER_ANDROID);
+                        controllerManager.deselectProvider();
+                    } else uiFeedback.failure(selectControllerButton);
                 } else if (index == 1) {
                     preferences.setActiveController(ReveriePreferences.CONTROLLER_DAYDREAM);
                     if (!controllerManager.isReady()
@@ -571,12 +592,8 @@ public final class MainActivity extends Activity
     private void refreshInputReadiness() {
         String choice = preferences.getActiveController();
         String activeId = controllerManager.getActiveProviderId();
-        boolean providerReady = controllerManager.isReady() && (
-            ReveriePreferences.CONTROLLER_AUTO.equals(choice)
-                || ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice)
-                    && "daydream_ble".equals(activeId)
-                || ReveriePreferences.CONTROLLER_PHONE.equals(choice)
-                    && "daydream_phone_emulator".equals(activeId));
+        boolean providerReady=controllerManager.isReady() &&
+            ControllerSourcePolicy.acceptsProvider(choice,activeId);
         android.view.InputDevice steam = AndroidGamepadSupport.firstConnectedSteamController();
         android.view.InputDevice scrcpy =
             AndroidGamepadSupport.firstConnectedScrcpySelectableInput();
@@ -584,6 +601,9 @@ public final class MainActivity extends Activity
             ? steam == null ? null : steam.getName()
             : ReveriePreferences.CONTROLLER_SCRCPY.equals(choice)
                 ? scrcpy == null ? null : scrcpy.getName()
+            : ReveriePreferences.CONTROLLER_ANDROID.equals(choice)
+                ? AndroidGamepadSupport.gamepadNameByDescriptor(
+                    preferences.getSelectedAndroidGamepadDescriptor())
             : ReveriePreferences.CONTROLLER_AUTO.equals(choice)
                 ? AndroidGamepadSupport.firstConnectedVrControllerName() : null;
         boolean gamepadReady = gamepadName != null;
@@ -592,6 +612,7 @@ public final class MainActivity extends Activity
                 : ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice) ? "Daydream"
                 : ReveriePreferences.CONTROLLER_PHONE.equals(choice) ? "Phone"
                 : ReveriePreferences.CONTROLLER_SCRCPY.equals(choice) ? "scrcpy HID"
+                : ReveriePreferences.CONTROLLER_ANDROID.equals(choice) ? "Android USB / BT"
                 : "Automatic"));
         boolean vrRuntimeReady =
             vrRuntimePreflight != null
@@ -624,6 +645,8 @@ public final class MainActivity extends Activity
             controllerStatusText.setText(R.string.steam_controller_not_connected);
         } else if (ReveriePreferences.CONTROLLER_SCRCPY.equals(choice)) {
             controllerStatusText.setText(R.string.scrcpy_hid_not_connected);
+        } else if (ReveriePreferences.CONTROLLER_ANDROID.equals(choice)) {
+            controllerStatusText.setText("Selected Android gamepad unavailable");
         } else {
             controllerStatusText.setText(controllerConnectionMessage);
         }
@@ -645,8 +668,9 @@ public final class MainActivity extends Activity
                 && AndroidGamepadSupport.firstConnectedSteamController() != null;
         controllerManager.refreshSteamBattery(steam);
         if (steam) showControllerBattery(controllerManager.getSteamBatteryPercentage(), -1);
-        else if (controllerManager.isReady()
-            && !ReveriePreferences.CONTROLLER_SCRCPY.equals(choice))
+        else if (controllerManager.isReady() &&
+            ControllerSourcePolicy.acceptsProvider(
+                choice,controllerManager.getActiveProviderId()))
             showControllerBattery(controllerManager.getBatteryPercentage(),
                 controllerManager.getBatteryMillivolts());
         else showControllerBattery(-1, -1);
