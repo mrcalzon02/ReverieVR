@@ -94,6 +94,76 @@ def updateChannelEnabled =
         && phoneTestRunNumber > 0
         && phoneTestSignerSha256.length() == 64
 
+
+/*
+ * Review-pending source MP3s are generated into debug / phoneTest only.
+ * The 'release' variant cannot accidentally inherit these recordings.
+ * Authoritative Git masters are verified on every staging run.
+ */
+def sourceMusicManifest = rootProject.file("music/source/manifest.json")
+def sourceMusicMasters = rootProject.file("music/source/audio")
+def sourceMusicPreview = layout.buildDirectory.dir("generated/sourceMusicPreview")
+def stageSourceMusicPreview = tasks.register("stageSourceMusicPreview") {
+    inputs.file(sourceMusicManifest)
+    inputs.dir(sourceMusicMasters)
+    outputs.dir(sourceMusicPreview)
+    doLast {
+        def manifest = new groovy.json.JsonSlurper().parse(sourceMusicManifest)
+        if (manifest.schema != 1 ||
+            manifest.binary_status != "source-binaries-checked-in" ||
+            !(manifest.tracks instanceof List) || manifest.tracks.size() != 11) {
+            throw new GradleException("Unverified source music inventory")
+        }
+        def digestOf = { File fileToHash ->
+            def digester = java.security.MessageDigest.getInstance("SHA-256")
+            fileToHash.withInputStream { input ->
+                byte[] buf = new byte[65536]
+                int read
+                while ((read = input.read(buf)) != -1)
+                    if (read > 0) digester.update(buf, 0, read)
+            }
+            return digester.digest().collect {
+                String.format("%02x", it & 0xff)
+            }.join("")
+        }
+        File out = sourceMusicPreview.get().asFile
+        project.delete(out)
+        File targetFolder = new File(out, "music/tracks")
+        if (!targetFolder.mkdirs() && !targetFolder.isDirectory())
+            throw new GradleException("Cannot create music preview staging")
+        def ids = new HashSet<String>()
+        def entries = [
+            "# Source-preview music: pending commercial redistribution review",
+            "# id<TAB>title<TAB>source<TAB>license<TAB>sha256"
+        ]
+        manifest.tracks.each { track ->
+            String title = track.title.toString()
+            String id = title.toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "")
+            if (!id.matches("[a-z0-9][a-z0-9_-]{0,79}") ||
+                !ids.add(id) ||
+                track.license != "LicenseRef-Pending-Asset-Rights" ||
+                track.filename != title + ".mp3")
+                throw new GradleException("Invalid source music record: " + title)
+            File master = new File(sourceMusicMasters, track.filename.toString())
+            if (master.canonicalFile.parentFile != sourceMusicMasters.canonicalFile ||
+                !master.isFile() || master.length() != (track.bytes as long) ||
+                digestOf(master) != track.sha256)
+                throw new GradleException("Source music hash/size mismatch: " + title)
+            File staged = new File(targetFolder, id + ".mp3")
+            java.nio.file.Files.copy(master.toPath(), staged.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            if (digestOf(staged) != track.sha256)
+                throw new GradleException("Staged music verification failed: " + title)
+            entries << [id,title,"music/tracks/" + id + ".mp3",
+                        "LicenseRef-Pending-Asset-Rights",track.sha256].join("\t")
+        }
+        new File(out,"music/source_preview.tsv").text =
+            entries.join("\n") + "\n"
+    }
+}
+
 android {
     // Native music player opens packaged Suno tracks as seekable FD slices.
     // Keep approved MP3/WAV assets uncompressed in the APK.
@@ -201,6 +271,12 @@ android {
     }
 
     sourceSets {
+        debug {
+            assets.srcDir(sourceMusicPreview)
+        }
+        phoneTest {
+            assets.srcDir(sourceMusicPreview)
+        }
         main {
             if (bundleDoomShareware) {
                 assets.srcDir(
@@ -238,6 +314,9 @@ dependencies {
 
 
 tasks.configureEach { task ->
+    if (task.name in ["mergeDebugAssets", "mergePhoneTestAssets"]) {
+        task.dependsOn(stageSourceMusicPreview)
+    }
     if (task.name == "preReleaseBuild") {
         task.doFirst {
             if (!excludeDoomShareware

@@ -2,9 +2,9 @@
   "schema": 1,
   "repository": "mrcalzon02/ReverieVR",
   "media_format": "audio/mpeg",
-  "admission": "source-library; not included in APK and not active until individually cleared and packaged",
+  "admission": "Preview only in debug/phoneTest APKs after Gradle verifies each checked-in original; release builds exclude review-pending recordings",
   "binary_status": "source-binaries-checked-in",
-  "notes": "Track assignments are project intent, not proof of gameplay integration, soundtrack selection, or a CC/MIT license. No per-track Suno commercial-use entitlement or official paid-download provenance was provided with these MP3 uploads. Binary source files must be imported and their SHA-256 verified before claiming they are in GitHub.",
+  "notes": "All 11 MP3 binaries now exist in GitHub and are used in development soundtrack previews. The user authorized integration but individual legal/commercial music entitlements are not independently documented; preview is not an unrestricted redistribution grant.",
   "lobby_pool": [
     "starry-cereal (currently packaged)",
     "glass-lobby-drift",
