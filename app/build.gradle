@@ -272,8 +272,9 @@ android {
 
     sourceSets {
         main {
-            // One generated asset set for all build types, not a test-only variant.
-            assets.srcDir(ownerMusicAssets.get().asFile)
+            // Preserve Gradle's producer metadata for AGP asset and lint consumers.
+            // Passing a plain generated File hides the stage task dependency.
+            assets.srcDir(stageOwnerMusicAssets)
             if (bundleDoomShareware) {
                 assets.srcDir(
                     rootProject.file(
@@ -310,15 +311,6 @@ dependencies {
 
 
 tasks.configureEach { task ->
-    // AGP reads main assets in both merge tasks and generated lint models.
-    // This source directory is task-generated; every consumer must declare
-    // the real producer dependency, not merely a file-path ordering hint.
-    if ((task.name.startsWith("merge") && task.name.endsWith("Assets"))
-        || (task.name.startsWith("generate")
-            && task.name.contains("Lint")
-            && task.name.endsWith("Model"))) {
-        task.dependsOn(stageOwnerMusicAssets)
-    }
     if (task.name == "preReleaseBuild") {
         task.doFirst {
             if (!excludeDoomShareware
