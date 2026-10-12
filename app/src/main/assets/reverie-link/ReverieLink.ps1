@@ -72,9 +72,9 @@ while ($true) {
     $choice = (Read-Host 'Choose').Trim().ToUpperInvariant()
     try {
         switch ($choice) {
-            '1' { Start-ScrcpyMode @('--no-video','--no-audio','--gamepad=uhid') }
-            '2' { Start-ScrcpyMode @('--stay-awake','--no-audio','--gamepad=uhid') }
-            '3' { Start-ScrcpyMode @('--tcpip','--no-audio','--gamepad=uhid') }
+            '1' { Start-ScrcpyMode -Arguments @('--no-video','--no-audio','--gamepad=uhid') }
+            '2' { Start-ScrcpyMode -Arguments @('--stay-awake','--no-audio','--gamepad=uhid') }
+            '3' { Start-ScrcpyMode -Arguments @('--tcpip','--no-audio','--gamepad=uhid') }
             '4' { Show-OpticalDrives }
             'Q' { return }
             default { Write-Host 'Unknown choice.' }
