@@ -1019,6 +1019,22 @@ final class VrShellRenderer implements CardboardView.Renderer {
         locomotionControllerSnapshot = snapshot;
     }
 
+    /** Prevent a recently used BLE pose from stealing the new HID aim ray. */
+    void clearTrackedControllerPose() {
+        controllerPoseValid=false;
+        controllerPoseReceivedAtNanos=0L;
+        controllerTouchpadPressed=false;
+        controllerHomePressed=false;
+        controllerAppPressed=false;
+        controllerVolumeUpPressed=false;
+        controllerVolumeDownPressed=false;
+        locomotionControllerSnapshot=null;
+        controllerInertialTranslation.reset();
+        controllerShakeRecenterDetector.reset();
+        controllerModelRenderer.clearGhost();
+        textureDirty=true;
+    }
+
     void setSteamControllerPrimary(boolean primary) {
         controllerModelRenderer.setSteamControllerPrimary(primary);
     }
