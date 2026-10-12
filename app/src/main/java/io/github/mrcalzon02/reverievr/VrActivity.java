@@ -116,6 +116,7 @@ public final class VrActivity extends Activity
     private boolean batteryTemperatureReceiverRegistered;
     private Api29ThermalMonitor api29ThermalMonitor;
     private boolean inputDeviceListenerRegistered;
+    private volatile String pendingControllerSource = "";
     private volatile String activeDosModuleId = "";
     private volatile String controllerConnectionMessage =
         "Controller is not connected.";
@@ -525,28 +526,20 @@ public final class VrActivity extends Activity
     }
 
     private boolean blockedControllerInput(android.view.InputEvent event) {
-        if (event == null) return false;
-        String selected = preferences.getActiveController();
-        boolean steam = AndroidGamepadSupport.isOriginalSteamController(event.getDevice());
-        boolean scrcpy = AndroidGamepadSupport.isScrcpyHid(event.getDevice())
-            || ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
-                && AndroidGamepadSupport.isScrcpyCompatibleGamepad(event.getDevice());
-        if (steam) return ReveriePreferences.CONTROLLER_DAYDREAM.equals(selected)
-            || ReveriePreferences.CONTROLLER_PHONE.equals(selected)
-            || ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
-            || ReveriePreferences.CONTROLLER_AUTO.equals(selected) && controllerManager.isReady();
-        if (scrcpy) return ReveriePreferences.CONTROLLER_STEAM.equals(selected)
-            || ReveriePreferences.CONTROLLER_DAYDREAM.equals(selected)
-            || ReveriePreferences.CONTROLLER_PHONE.equals(selected)
-            || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
-                && (controllerManager.isReady()
-                    || AndroidGamepadSupport.firstConnectedSteamController() != null
-                    || (AndroidGamepadSupport.firstConnectedGamepadName() != null
-                        && !ScrcpyHidIdentity.matchesName(
-                            AndroidGamepadSupport.firstConnectedGamepadName())));
-        return (ReveriePreferences.CONTROLLER_STEAM.equals(selected)
-            || ReveriePreferences.CONTROLLER_SCRCPY.equals(selected))
-            && AndroidGamepadSupport.isGamepadEvent(event);
+        if (event == null || preferences == null) return false;
+        boolean steam=AndroidGamepadSupport.isOriginalSteamController(event.getDevice());
+        boolean gamepad=AndroidGamepadSupport.isGamepadEvent(event);
+        // External keyboards still type into the desk editor independently
+        // of the selected gamepad; the Steam HID itself is a controller.
+        if(!gamepad && !steam)return false;
+        return !ControllerSourcePolicy.acceptsGamepad(
+            preferences.getActiveController(),
+            controllerManager!=null && controllerManager.isReady(),
+            steam,
+            AndroidGamepadSupport.isScrcpyHid(event.getDevice()),
+            AndroidGamepadSupport.isScrcpyCompatibleGamepad(event.getDevice()),
+            gamepad,
+            AndroidGamepadSupport.firstConnectedSteamController()!=null);
     }
 
     /** Respect the persistent external HID preference without blocking a
@@ -883,7 +876,12 @@ public final class VrActivity extends Activity
             && inputBindingEngine != null) {
             inputBindingEngine.releaseAll();
         }
-
+        if(state==ControllerProvider.ConnectionState.READY &&
+           ReveriePreferences.CONTROLLER_DAYDREAM.equals(pendingControllerSource) &&
+           "daydream_ble".equals(controllerManager.getActiveProviderId())) {
+            pendingControllerSource="";
+            applyControllerSource(ReveriePreferences.CONTROLLER_DAYDREAM);
+        }
         refreshInputSourceStatus();
     }
 
@@ -896,9 +894,10 @@ public final class VrActivity extends Activity
     public void onControllerStateChanged(
         ControllerSnapshot snapshot
     ) {
-        if (inputRouter == null || snapshot == null
-                || ReveriePreferences.CONTROLLER_STEAM.equals(
-                    preferences.getActiveController())) return;
+        if (inputRouter == null || snapshot == null ||
+            !ControllerSourcePolicy.acceptsProvider(
+                preferences.getActiveController(),
+                controllerManager.getActiveProviderId())) return;
 
         if (renderer != null) {
             renderer.setControllerPose(snapshot);
@@ -1197,11 +1196,27 @@ public final class VrActivity extends Activity
     public void onInputDeviceRemoved(int deviceId) {
         if (renderer != null)
             renderer.releasePhysicalKeyboardDevice(deviceId);
-        if (inputBindingEngine != null) {
-            inputBindingEngine.releaseAll();
-        }
-        if (standardHidInputRouter != null) {
-            standardHidInputRouter.reset();
+        if (inputBindingEngine != null) inputBindingEngine.releaseAll();
+        if (standardHidInputRouter != null) standardHidInputRouter.reset();
+        if (preferences != null) {
+            String selected=preferences.getActiveController();
+            boolean lost=
+                ReveriePreferences.CONTROLLER_SCRCPY.equals(selected) &&
+                    AndroidGamepadSupport.firstConnectedScrcpySelectableInput()==null
+                || ReveriePreferences.CONTROLLER_STEAM.equals(selected) &&
+                    AndroidGamepadSupport.firstConnectedSteamController()==null
+                || ReveriePreferences.CONTROLLER_ANDROID.equals(selected) &&
+                    !AndroidGamepadSupport.hasConnectedGamepad();
+            if(lost) {
+                // Never strand the headset in a disconnected explicit mode.
+                pendingControllerSource="";
+                preferences.setActiveController(ReveriePreferences.CONTROLLER_AUTO);
+                if (controllerManager != null &&
+                    controllerManager.getMissingRuntimePermissions().length==0)
+                    controllerManager.pairDaydreamController();
+                ReverieLog.incident("VR_CONTROLLER",
+                    "Explicit controller disconnected; reverted to Auto.");
+            }
         }
         refreshInputSourceStatus();
     }
@@ -1242,12 +1257,9 @@ public final class VrActivity extends Activity
         refreshKeyboardTwinStatus();
         if (renderer == null || controllerManager == null) return;
         String selected = preferences.getActiveController();
-        boolean provider = controllerManager.isReady() && (
-            ReveriePreferences.CONTROLLER_AUTO.equals(selected)
-                || ReveriePreferences.CONTROLLER_DAYDREAM.equals(selected)
-                    && "daydream_ble".equals(controllerManager.getActiveProviderId())
-                || ReveriePreferences.CONTROLLER_PHONE.equals(selected)
-                    && "daydream_phone_emulator".equals(controllerManager.getActiveProviderId()));
+        boolean provider = controllerManager.isReady() &&
+            ControllerSourcePolicy.acceptsProvider(
+                selected,controllerManager.getActiveProviderId());
         String gamepad = AndroidGamepadSupport.firstConnectedGamepadName();
         android.view.InputDevice sd = AndroidGamepadSupport.firstConnectedSteamController();
         String steam = sd == null ? null : sd.getName();
@@ -1267,6 +1279,8 @@ public final class VrActivity extends Activity
                     && (gamepad == null || ScrcpyHidIdentity.matchesName(gamepad)));
         String connectedVrController = steamPrimary ? steam
             : scrcpyPrimary ? scrcpy
+            : ReveriePreferences.CONTROLLER_ANDROID.equals(selected)
+                ? gamepad
             : ReveriePreferences.CONTROLLER_AUTO.equals(selected) && !provider
                 ? gamepad : null;
         renderer.setGamepadPointerAvailable(!provider && connectedVrController != null);
@@ -1301,7 +1315,11 @@ public final class VrActivity extends Activity
                 ReveriePreferences.CONTROLLER_STEAM.equals(selected)
                     ? "Selected Steam Controller disconnected"
                     : ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
-                        ? "Selected scrcpy HID disconnected" : controllerConnectionMessage
+                        ? "Selected scrcpy HID disconnected"
+                    : ReveriePreferences.CONTROLLER_ANDROID.equals(selected)
+                        ? "Selected Android gamepad disconnected"
+                    : "Selected "+ControllerSourcePolicy.label(selected)
+                        +": "+controllerConnectionMessage
             );
             renderer.setControllerBattery(-1);
         }
@@ -1393,6 +1411,80 @@ public final class VrActivity extends Activity
         returnToPhonePicker(
             EXTRA_REQUEST_CONTROLLER_PAIRING
         );
+    }
+
+    @Override
+    public String getControllerSourceStatus(String choice) {
+        if(ReveriePreferences.CONTROLLER_AUTO.equals(choice))return "ALWAYS AVAILABLE";
+        if(ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice))
+            return ReveriePreferences.CONTROLLER_DAYDREAM.equals(pendingControllerSource)
+                ? "PAIRING BLE - PREVIOUS SOURCE ACTIVE"
+                : controllerManager!=null && controllerManager.isReady() &&
+                  "daydream_ble".equals(controllerManager.getActiveProviderId())
+                ? "CONNECTED" : "PAIR WHEN SELECTED";
+        if(ReveriePreferences.CONTROLLER_STEAM.equals(choice))
+            return AndroidGamepadSupport.firstConnectedSteamController()!=null
+                ? "CONNECTED" : "NOT DETECTED";
+        if(ReveriePreferences.CONTROLLER_SCRCPY.equals(choice))
+            return AndroidGamepadSupport.firstConnectedScrcpySelectableInput()!=null
+                ? "FORWARDED DEVICE READY" : "START SCRCPY --GAMEPAD=UHID";
+        if(ReveriePreferences.CONTROLLER_ANDROID.equals(choice))
+            return AndroidGamepadSupport.hasConnectedGamepad()
+                ? "ANDROID GAMEPAD READY" : "NOT DETECTED";
+        if(ReveriePreferences.CONTROLLER_PHONE.equals(choice))
+            return controllerManager!=null && controllerManager.isReady() &&
+                "daydream_phone_emulator".equals(controllerManager.getActiveProviderId())
+                ? "CONNECTED" : "PAIR VIA PHONE FIRST";
+        return "UNKNOWN";
+    }
+
+    @Override
+    public boolean onControllerSourceSelected(String choice) {
+        if (preferences==null || controllerManager==null ||
+            !java.util.Arrays.asList(ControllerSourcePolicy.CHOICES).contains(choice))
+            return false;
+        if(choice.equals(preferences.getActiveController())) return true;
+        if(ReveriePreferences.CONTROLLER_STEAM.equals(choice) &&
+           AndroidGamepadSupport.firstConnectedSteamController()==null)return false;
+        if(ReveriePreferences.CONTROLLER_SCRCPY.equals(choice) &&
+           AndroidGamepadSupport.firstConnectedScrcpySelectableInput()==null)return false;
+        if(ReveriePreferences.CONTROLLER_ANDROID.equals(choice) &&
+           !AndroidGamepadSupport.hasConnectedGamepad())return false;
+        if(ReveriePreferences.CONTROLLER_PHONE.equals(choice) &&
+           (!controllerManager.isReady() ||
+            !"daydream_phone_emulator".equals(controllerManager.getActiveProviderId()))) {
+            // Phone-emulator pairing requires Stage A, not an inert VR choice.
+            onControllerPairingRequested();
+            return true;
+        }
+        if(ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice) &&
+           (!controllerManager.isReady() ||
+            !"daydream_ble".equals(controllerManager.getActiveProviderId()))) {
+            if(controllerManager.getMissingRuntimePermissions().length>0) {
+                onControllerPairingRequested();
+                return true;
+            }
+            pendingControllerSource=choice;
+            runOnUiThread(() -> controllerManager.pairDaydreamController());
+            return true;
+        }
+        pendingControllerSource="";
+        applyControllerSource(choice);
+        return true;
+    }
+
+    private void applyControllerSource(String choice) {
+        if(inputBindingEngine!=null)inputBindingEngine.releaseAll();
+        if(standardHidInputRouter!=null)standardHidInputRouter.reset();
+        if(inputRouter!=null)inputRouter.resetControllerEdges();
+        preferences.setActiveController(choice);
+        if(ReveriePreferences.CONTROLLER_STEAM.equals(choice) ||
+           ReveriePreferences.CONTROLLER_SCRCPY.equals(choice) ||
+           ReveriePreferences.CONTROLLER_ANDROID.equals(choice))
+            controllerManager.deselectProvider();
+        ReverieLog.milestone("VR_CONTROLLER",
+            "Explicit Stage B controller source="+choice);
+        refreshInputSourceStatus();
     }
 
     private void returnToPhonePicker(
