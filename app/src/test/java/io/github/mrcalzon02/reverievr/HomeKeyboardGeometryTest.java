@@ -4,14 +4,7 @@ import static org.junit.Assert.*;
 
 public final class HomeKeyboardGeometryTest {
     private static int[][] keys() {
-        int[][] all = new int[51][4];
-        for (int row = 0; row < 5; row++)
-            for (int col = 0; col < 10; col++) {
-                int left = 72 + col * 88, top = 238 + row * 84;
-                all[row*10+col] = new int[]{left, top, left+82, top+74};
-            }
-        all[50] = new int[]{340, 684, 684, 736};
-        return all;
+        return HomeKeyboardGeometry.keyRects();
     }
     private static float[] pointForPixel(int x, int y) {
         return new float[]{
@@ -45,6 +38,45 @@ public final class HomeKeyboardGeometryTest {
         assertEquals(-1, HomeKeyboardGeometry.keyAtRay(
             origin, new float[]{0f, -1f, 2f}, keys()));
     }
+    @Test public void allPhysicalKeycapsShareTheirInputRectangles() {
+        int[][] buttons = keys();
+        assertEquals(51, buttons.length);
+        float[] origin = {0f, 0f, 0f};
+        for (int i = 0; i < buttons.length; i++) {
+            int[] rect = buttons[i];
+            float centerX = HomeKeyboardGeometry.worldX(
+                (rect[0] + rect[2]) * 0.5f);
+            float centerZ = HomeKeyboardGeometry.worldZ(
+                (rect[1] + rect[3]) * 0.5f);
+            assertEquals("Keycap and ray hit differ for key " + i,
+                i, HomeKeyboardGeometry.keyAtRay(
+                    origin,
+                    new float[]{centerX, HomeKeyboardGeometry.TOP_Y,
+                        centerZ},
+                    buttons));
+            assertTrue(centerX > HomeKeyboardGeometry.LEFT);
+            assertTrue(centerX < HomeKeyboardGeometry.RIGHT);
+            assertTrue(centerZ > HomeKeyboardGeometry.BACK_Z);
+            assertTrue(centerZ < HomeKeyboardGeometry.FRONT_Z);
+        }
+    }
+
+    @Test public void raisedCapsAndLegendsSitAboveGrayDais() {
+        assertTrue(HomeKeyboardGeometry.KEYCAP_BASE_Y > -1.08f);
+        assertTrue(HomeKeyboardGeometry.KEYCAP_TOP_Y
+            > HomeKeyboardGeometry.KEYCAP_BASE_Y);
+        assertTrue(HomeKeyboardGeometry.LEGEND_Y
+            > HomeKeyboardGeometry.KEYCAP_TOP_Y);
+        assertEquals(-1.73f, HomeKeyboardGeometry.worldX(0f), 0.0001f);
+        assertEquals(1.73f,
+            HomeKeyboardGeometry.worldX(
+                HomeKeyboardGeometry.WIDTH_PIXELS), 0.0001f);
+        assertEquals(-4.08f, HomeKeyboardGeometry.worldZ(0f), 0.0001f);
+        assertEquals(-1.36f,
+            HomeKeyboardGeometry.worldZ(
+                HomeKeyboardGeometry.HEIGHT_PIXELS), 0.0001f);
+    }
+
     @Test public void gazeAboveDeskCannotTriggerKeys() {
         assertEquals(-1, HomeKeyboardGeometry.keyAtRay(
             new float[]{0f, 0f, 0f}, new float[]{0f, 0.2f, -1f}, keys()));

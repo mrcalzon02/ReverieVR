@@ -139,6 +139,8 @@ final class HomeEnvironmentRenderer {
         mesh(quadHorizontal(-1.75f, 1.75f, -4.1f, -1.35f, -1.08f));
     private final Mesh daisFront =
         mesh(quadVerticalZ(-1.75f, 1.75f, -1.35f, -1.08f, -1.35f));
+    // 51 batched, physically raised keycaps remain visible without labels.
+    private final Mesh keyboardKeycaps = mesh(buildKeyboardKeycaps());
 
     private final Mesh outdoorGround =
         mesh(quadHorizontal(-24.0f, 24.0f, -24.0f, 24.0f, -1.35f));
@@ -190,9 +192,7 @@ final class HomeEnvironmentRenderer {
     void drawEye(
         CardboardView.Eye eye,
         float eyeCorrectionMeters,
-        HomeEnvironment environment,
-        float travelXMeters,
-        float travelZMeters
+        HomeEnvironment environment
     ) {
         HomeEnvironment safe =
             environment == null
@@ -250,12 +250,8 @@ final class HomeEnvironmentRenderer {
             0.0f,
             0.0f
         );
-        // World travel applies to the environment model view, not to the
-        // Cardboard projection or per-eye IPD calibration.
-        Matrix.translateM(
-            correctedEyeView, 0,
-            -travelXMeters, 0.0f, -travelZMeters
-        );
+        // Corrected Cardboard eye view already contains Home locomotion.
+        // A second translation here made the gray dais drift off its keys.
         Matrix.setIdentityM(model, 0);
         Matrix.multiplyMM(
             modelView,
@@ -404,6 +400,7 @@ final class HomeEnvironmentRenderer {
                     0.46f,
                     1.0f
                 );
+                draw(keyboardKeycaps, 0.16f, 0.21f, 0.28f, 1.0f);
                 break;
         }
     }
@@ -569,6 +566,24 @@ final class HomeEnvironmentRenderer {
         append(values, quadVerticalX(5.965f, -5.98f,
             -1.34f, -1.16f, 5.98f));
         return toArray(values);
+    }
+
+    private static float[] buildKeyboardKeycaps() {
+        List<Float> triangles = new ArrayList<>();
+        for (int[] rect : HomeKeyboardGeometry.keyRects()) {
+            float left = HomeKeyboardGeometry.worldX(rect[0]);
+            float right = HomeKeyboardGeometry.worldX(rect[2]);
+            float back = HomeKeyboardGeometry.worldZ(rect[1]);
+            float front = HomeKeyboardGeometry.worldZ(rect[3]);
+            float bottom = HomeKeyboardGeometry.KEYCAP_BASE_Y;
+            float top = HomeKeyboardGeometry.KEYCAP_TOP_Y;
+            append(triangles, quadHorizontal(left, right, back, front, top));
+            append(triangles, quadVerticalZ(left, right, bottom, top, front));
+            append(triangles, quadVerticalZ(right, left, bottom, top, back));
+            append(triangles, quadVerticalX(left, front, bottom, top, back));
+            append(triangles, quadVerticalX(right, back, bottom, top, front));
+        }
+        return toArray(triangles);
     }
 
     private static float[] buildRoomFurniture() {

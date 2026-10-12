@@ -213,17 +213,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int HOME_KEYBOARD_HIT_OFFSET = 1000;
 
     private static int[][] makeKeyboardButtons() {
-        int[][] buttons = new int[51][4];
-        for (int row = 0; row < 5; row++) {
-            for (int col = 0; col < 10; col++) {
-                int left = 72 + col * 88;
-                int top = 238 + row * 84;
-                buttons[row * 10 + col] =
-                    new int[] {left, top, left + 82, top + 74};
-            }
-        }
-        buttons[50] = new int[] {340, 684, 684, 736};
-        return buttons;
+        return HomeKeyboardGeometry.keyRects();
     }
 
     private static final int[][] NATIVE_LIBRARY_BUTTONS = new int[][] {
@@ -607,13 +597,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         };
 
         vertexBuffer = allocate(vertices);
-        // Keyboard occupies the existing horizontal gray dais.
-        // Top of the keyboard texture faces the far end of the slab.
+        // Glyph texture is just above real keycap tops on the dais.
+        // Use exactly the same planar bounds as HomeKeyboardGeometry's hits.
         keyboardSlabVertexBuffer = allocate(new float[] {
-            -1.73f, -1.065f, -1.36f,
-             1.73f, -1.065f, -1.36f,
-            -1.73f, -1.065f, -4.08f,
-             1.73f, -1.065f, -4.08f
+            HomeKeyboardGeometry.LEFT, HomeKeyboardGeometry.LEGEND_Y,
+                HomeKeyboardGeometry.FRONT_Z,
+            HomeKeyboardGeometry.RIGHT, HomeKeyboardGeometry.LEGEND_Y,
+                HomeKeyboardGeometry.FRONT_Z,
+            HomeKeyboardGeometry.LEFT, HomeKeyboardGeometry.LEGEND_Y,
+                HomeKeyboardGeometry.BACK_Z,
+            HomeKeyboardGeometry.RIGHT, HomeKeyboardGeometry.LEGEND_Y,
+                HomeKeyboardGeometry.BACK_Z
         });
         uvBuffer = allocate(uvs);
 
@@ -2003,9 +1997,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             homeEnvironmentRenderer.drawEye(
                 eye,
                 eyeCorrection,
-                homeEnvironment,
-                mode == MODE_HOME ? nativeLocomotion.x() : 0.0f,
-                mode == MODE_HOME ? nativeLocomotion.z() : 0.0f
+                homeEnvironment
             );
             if (mode == MODE_HOME && phonePanelVisible) {
                 homeEnvironmentRenderer.drawPhonePanel(
@@ -2328,7 +2320,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
             if (keyboardTextureDirty) rebuildHomeKeyboardTexture();
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, keyboardTexture);
+            // Transparent pixels must not write depth above the 3D keycaps.
+            GLES20.glDepthMask(false);
             drawTexturedPanel(keyboardSlabVertexBuffer, uvBuffer);
+            GLES20.glDepthMask(true);
         } else {
             drawTexturedPanel(
                 mode == MODE_KEYBOARD && !orientationMenuVisible
@@ -5169,7 +5164,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
         keyboardPaint.reset();
         keyboardPaint.setAntiAlias(true);
-        keyboardCanvas.drawColor(Color.rgb(15, 21, 29));
+        // Clear rather than painting an opaque giant plane over the
+        // physical keycaps; retain only key legends and editor widgets.
+        keyboardCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         drawKeyboard(keyboardCanvas, keyboardPaint, homeKeyboardHoveredKey);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, keyboardTexture);
         if (keyboardTextureStorageInitialized) {
