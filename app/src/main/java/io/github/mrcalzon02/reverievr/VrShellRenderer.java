@@ -3531,7 +3531,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_HOME && phonePanelVisible
             && !orientationMenuVisible) {
-            return hitPhonePanelControls(origin, direction);
+            // The phone screen is a separate vertical surface: its controls
+            // must not disable the keyboard lying on the Home desk.
+            // Prefer whichever target the ray actually reaches first.
+            return nearer(hitPhonePanelControls(origin, direction),
+                hitHomeKeyboard(origin, direction));
         }
 
         if (mode == MODE_KEYBOARD) {
@@ -3591,17 +3595,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     HOME_PIXEL_BOTTOM
                 );
             best = nearer(best, right);
-            if (!phonePanelVisible) {
-                int key = HomeKeyboardGeometry.keyAtRay(
-                    origin, direction, KEYBOARD_BUTTONS);
-                if (key >= 0) {
-                    float distance = HomeKeyboardGeometry.hitDistance(
-                        origin, direction);
-                    best = nearer(best, new UiRayHit(
-                        HOME_KEYBOARD_HIT_OFFSET + key, distance));
-                }
-            }
-            return best;
+            return nearer(best, hitHomeKeyboard(origin, direction));
         }
 
         return hitPanel(
@@ -3617,6 +3611,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
             0,
             TEXTURE_HEIGHT
         );
+    }
+
+    /** Shared desk-key hit path for Home with or without phone mirror. */
+    private UiRayHit hitHomeKeyboard(float[] origin, float[] direction) {
+        int key = HomeKeyboardGeometry.keyAtRay(
+            origin, direction, KEYBOARD_BUTTONS);
+        if (key < 0) return UiRayHit.miss();
+        float t = HomeKeyboardGeometry.hitDistance(origin, direction);
+        return new UiRayHit(HOME_KEYBOARD_HIT_OFFSET + key, t);
     }
 
     private UiRayHit hitTiltedPanel(

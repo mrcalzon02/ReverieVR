@@ -29,6 +29,22 @@ public final class HomeKeyboardGeometryTest {
         assertEquals(50, HomeKeyboardGeometry.keyAtRay(
             origin, pointForPixel(510, 710), keys()));
     }
+    @Test public void independentDeskRayCanHitKeysWithScreenPanelOpen() {
+        // Keyboard ray calculation is independent of any vertical phone
+        // panel. Home must use this same selection path in both states.
+        float[] origin = {0f, 0f, 0f};
+        assertEquals(0, HomeKeyboardGeometry.keyAtRay(
+            origin, pointForPixel(105, 280), keys()));
+        assertEquals(50, HomeKeyboardGeometry.keyAtRay(
+            origin, pointForPixel(515, 707), keys()));
+    }
+    @Test public void missesDeskEdgesAndBackwardRays() {
+        float[] origin = {0f, 0f, 0f};
+        assertEquals(-1, HomeKeyboardGeometry.keyAtRay(
+            origin, new float[]{5f, -1f, -2f}, keys()));
+        assertEquals(-1, HomeKeyboardGeometry.keyAtRay(
+            origin, new float[]{0f, -1f, 2f}, keys()));
+    }
     @Test public void gazeAboveDeskCannotTriggerKeys() {
         assertEquals(-1, HomeKeyboardGeometry.keyAtRay(
             new float[]{0f, 0f, 0f}, new float[]{0f, 0.2f, -1f}, keys()));
