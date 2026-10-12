@@ -1547,9 +1547,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // for five seconds reopens it after a deliberate dismissal.
         boolean phoneOnly = noUsableController(frameNanos);
         gazeFallbackActive = phoneOnly;
+        // Brief pose gaps retain visual continuity and should not
+        // summon a fullscreen recovery modal over hosted gameplay.
+        ControllerSnapshot recoveryPose = locomotionControllerSnapshot;
+        boolean recoveringPose = phoneOnly && recoveryPose != null
+            && ControllerPoseVisibility.holdModel(
+                controllerConnected, controllerPoseValid,
+                recoveryPose.receivedAtNanos, frameNanos);
+        boolean openRecovery = phoneOnly && !recoveringPose;
         boolean hosted = mode == MODE_NATIVE || mode == MODE_DOS
             || mode == MODE_VIDEO || mode == MODE_MODEL_VIEWER;
-        if (!phoneOnly || mode == MODE_HOME) {
+        if (!openRecovery || mode == MODE_HOME) {
             gazeRecoveryMenuShown = false;
             gazeRecoveryDwell.reset();
         } else if (hosted) {
