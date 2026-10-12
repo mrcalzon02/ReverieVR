@@ -26,6 +26,24 @@ Examples:
     ./scripts/scrcpy-reverie.sh --record=reverie-debug.mkv
     scripts\scrcpy-reverie.bat --record=reverie-debug.mkv
 
+## Laptop controllers as a selectable VR input source
+
+The controller connected to the **laptop** can be forwarded as a real Android HID gamepad over scrcpy's optional UHID gamepad transport. This works for wired USB debugging or a previously authorized wireless ADB session:
+
+    scripts\scrcpy-reverie.bat --gamepad=uhid
+
+Linux/macOS:
+
+    ./scripts/scrcpy-reverie.sh --gamepad=uhid
+
+For wireless use, establish a trusted ADB-over-Wi-Fi connection first and run the same scrcpy helper with `--gamepad=uhid`. The scrcpy UHID option depends on a recent scrcpy release, and Android reports its Xbox-360-compatible identity; it is **not** detectable as scrcpy purely from that generic identity. ReverieVR recognizes this identity as eligible **only when SCRCPY / LAPTOP has been explicitly selected**.
+
+While wearing the headset, open **VR Home → Controller → CONTROLLER SOURCE**, then choose **SCRCPY / LAPTOP**. The option rejects activation until a compatible forwarded input device has appeared on Android. The other choices are **AUTO**, **DAYDREAM**, **STEAM CONTROLLER**, **ANDROID USB / BT** (ordinary on-phone HID gamepads), and **PHONE CONTROLLER** (paired via Stage A). Changing controller source updates persistent preferences, makes that source the primary controller for VR shell/game actions, resets previously held keys and tracked pointer pose, and never requires you to leave VR when a compatible controller is already present.
+
+Daydream selection can initiate pairing while leaving the previous controller active until the BLE connection is ready; unavailable phone-controller pairing returns to Stage A rather than presenting a nonfunctional choice. If a selected scrcpy/Steam/Android controller disconnects, VR input switches back to Auto, with a best-effort Daydream reconnection if permissions are already available. The headset's Back menu and Stage A remain recovery paths.
+
+**No Windows USB hubs or optical drives are magically passed through by scrcpy.** A laptop optical drive needs a separate explicit read-only bridge for game-image transfer; the emulator itself handles virtual ISO/CD media and memory cards. A keyboard plugged into the laptop and forwarded as UHID continues to use the normal on-desk keyboard twin rather than being confused with the selected gamepad.
+
 ## Why no audio?
 
 The Galaxy S9 reference software may be Android 10. scrcpy audio forwarding requires Android 11 or newer.
