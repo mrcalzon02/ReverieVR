@@ -6,6 +6,17 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Native Beachhead vessel and shore-infantry silhouette pass
+
+- Replaced identical cuboid surface-ship rendering with original
+  procedural rowboat occupants, landing-craft squad and bow ramp,
+  gunboat cabin/cannon, and minimal wake shapes. Shore infantry gain
+  vertex-color helmet, arm and leg details from their simulation slots.
+- No texture/model imports, additional GL draw calls, save changes or
+  phantom game targets. Local standalone C++ geometry fixture passed;
+  full native/Android compilation and Galaxy S9 device proof pending.
+
+
 ### Music Library actual song indicator
 
 - Add text [NOW] marker for current track and update status/selection

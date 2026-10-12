@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_silhouettes.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
@@ -11,6 +12,63 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // Inspect the exact low-poly vessel recipes used by the headset mesh.
+    const auto vesselShape = [](UnitType kind, uint8_t passengers, bool active) {
+        Enemy craft{};
+        craft.type=kind;craft.passengers=passengers;
+        craft.active=active;craft.x=.6f;craft.z=-5.0f;
+        int boxes=0, triangles=0;
+        EmitVesselSilhouette(craft,
+            [&](float x,float y,float z,float w,float h,float d,
+                float r,float g,float b) {
+                ++boxes;
+                assert(w>0.0f&&h>0.0f&&d>0.0f);
+                assert(std::isfinite(x)&&std::isfinite(y)&&std::isfinite(z));
+                assert(std::isfinite(r)&&std::isfinite(g)&&std::isfinite(b));
+            },
+            [&](float x0,float y0,float z0,float x1,float y1,float z1,
+                float x2,float y2,float z2,float r,float g,float b) {
+                ++triangles;
+                assert(std::isfinite(x0)&&std::isfinite(y0)&&std::isfinite(z0));
+                assert(std::isfinite(x1)&&std::isfinite(y1)&&std::isfinite(z1));
+                assert(std::isfinite(x2)&&std::isfinite(y2)&&std::isfinite(z2));
+                assert(std::isfinite(r)&&std::isfinite(g)&&std::isfinite(b));
+            });
+        return std::array<int,2>{{boxes,triangles}};
+    };
+    assert((vesselShape(UnitType::Rowboat,1,true)==std::array<int,2>{{5,4}}));
+    assert((vesselShape(UnitType::LandingCraft,3,true)==std::array<int,2>{{10,4}}));
+    assert((vesselShape(UnitType::LandingCraft,6,true)==std::array<int,2>{{16,4}}));
+    assert((vesselShape(UnitType::LandingCraft,255,true)==std::array<int,2>{{16,4}}));
+    assert((vesselShape(UnitType::Gunboat,0,true)==std::array<int,2>{{7,4}}));
+    assert((vesselShape(UnitType::Aircraft,0,true)==std::array<int,2>{{0,0}}));
+    assert((vesselShape(UnitType::Rowboat,1,false)==std::array<int,2>{{0,0}}));
+    const Infantry activeInfantry{.3f,-2.0f,true};
+    int soldierBoxes=0,soldierTriangles=0;
+    EmitInfantrySilhouette(activeInfantry,
+        [&](float x,float y,float z,float w,float h,float d,
+            float, float, float) {
+            ++soldierBoxes;
+            assert(std::abs(x-activeInfantry.x)<.15f);
+            assert(std::abs(z-activeInfantry.z)<.15f);
+            assert(w<=.20f&&h<=.36f&&d<=.16f&&y>-.94f);
+        },
+        [&](float x0,float y0,float z0,float x1,float y1,float z1,
+            float x2,float y2,float z2,float, float, float) {
+            ++soldierTriangles;
+            assert(std::isfinite(x0)&&std::isfinite(y0)&&std::isfinite(z0));
+            assert(std::isfinite(x1)&&std::isfinite(y1)&&std::isfinite(z1));
+            assert(std::isfinite(x2)&&std::isfinite(y2)&&std::isfinite(z2));
+            assert(std::abs(x0-activeInfantry.x)<.15f);
+            assert(std::abs(x1-activeInfantry.x)<.15f);
+            assert(std::abs(x2-activeInfantry.x)<.15f);
+        });
+    assert(soldierBoxes==2&&soldierTriangles==5);
+    int inactiveGeometry=0;
+    EmitInfantrySilhouette(Infantry{},
+        [&](auto...){++inactiveGeometry;},[&](auto...){++inactiveGeometry;});
+    assert(inactiveGeometry==0);
+
     // Ballistic trajectory, ray intersection and ghost aim are pure C++.
     // In ordinary MG mode, pointing a straight ray at a far vessel must
     // miss low; raising it compensates for the simulated trajectory drop.

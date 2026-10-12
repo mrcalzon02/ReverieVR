@@ -100,3 +100,28 @@ simulation update for both eyes. Existing 80-byte shop saves and host
 controller bindings are unchanged. Pure C++ prediction tests passed in a
 local -Werror focused fixture; integrated campaign compilation plus actual
 Galaxy S9 input, legibility and frame pacing remain unverified.
+
+
+### Distinct surface-vessel and infantry silhouettes (2026-10-12 source)
+
+Game-private, allocation-free C++17 recipes in
+app/src/main/jni/native/breakwater_silhouettes.h now build distinct
+vertex-color bodies without a model file or texture atlas: narrow pointed
+rowboats with a single embarked human; wide military landing craft with
+high gunwales, bow ramps, and visibly represented 3–6 passengers; and
+long patrol gunboats with wheelhouse, windows and a forward cannon.
+Surface vessels trail two minimal foam wedges. Active shore soldiers
+have separate helmets, arms and split legs. The existing simulation
+positions, passenger manifests and sphere-hit tests remain authoritative.
+Embarked silhouettes are decorative, not independently shootable infantry.
+Inactive ships, dead infantry and aircraft do not emit these recipes.
+They require no RNG, GL calls, dynamic allocation or additional draw calls:
+generated vertex data is appended to the existing shared CPU mesh and VBO
+once per game update, not independently for the two stereo eyes.
+At most 16 box primitives and four direct triangles per surface vessel,
+and two boxes plus five triangles per living shore soldier. This additional
+CPU mesh work must be profiled on the actual Galaxy S9. Integrated native
+test source covers recipe counts, passenger scaling and invalid/inactive
+entities; an isolated C++17 host fixture passed using compatible type
+stubs, not the full NDK build. Headset silhouette legibility, hitbox
+alignment and thermal performance remain open.

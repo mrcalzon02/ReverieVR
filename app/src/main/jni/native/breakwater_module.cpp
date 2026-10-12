@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_silhouettes.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
@@ -527,14 +528,13 @@ void BuildScene(State *s) {
                 Box(s,e.x,y+.02f,e.z+.63f,.24f,.18f,.26f,.49f,.51f,.46f);
             }
         } else {
-            const float width=e.type==UnitType::Rowboat?.7f:
-                e.type==UnitType::LandingCraft?1.1f:1.25f;
-            Box(s,e.x,y,e.z,width,.29f,1.0f,.40f,.36f,.26f);
-            Box(s,e.x,y+.20f,e.z,.31f,.17f,.48f,.25f,.25f,.24f);
-            // The short-lived cannon flash is derived from simulation state,
-            // not updated per eye; it identifies an actual gunboat salvo.
+            // Deterministic boat recipes share one mesh, built once for both eyes.
+            EmitVesselSilhouette(e,
+                [s](auto... arguments) { Box(s,arguments...); },
+                [s](auto... arguments) { Triangle(s,arguments...); });
+            // This flash belongs to the real gunboat attack cooldown.
             if(e.type==UnitType::Gunboat && e.attack_timer>2.64f)
-                Box(s,e.x,y+.32f,e.z+.38f,.18f,.15f,.23f,
+                Box(s,e.x,-.42f,e.z+.76f,.15f,.13f,.17f,
                     .98f,.68f,.24f);
         }
     }
@@ -594,9 +594,10 @@ void BuildScene(State *s) {
         }
     }
     for(const Infantry &trooper:game.infantry_units())if(trooper.active) {
-        // Rendering and combat share the same live soldier position.
-        Box(s,trooper.x,-.76f,trooper.z,.18f,.38f,.17f,.51f,.45f,.35f);
-        Box(s,trooper.x,-.47f,trooper.z,.15f,.16f,.15f,.68f,.58f,.42f);
+        // Authoritative live soldier location, never an extra combat target.
+        EmitInfantrySilhouette(trooper,
+            [s](auto... arguments) { Box(s,arguments...); },
+            [s](auto... arguments) { Triangle(s,arguments...); });
     }
     if(s->gunboat_salvo_flash>0.0f) {
         // A brief world-space tracer starts at the vessel that actually fired.

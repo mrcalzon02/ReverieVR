@@ -1,3 +1,16 @@
+## 2026-10-12 — Breakwater differentiated landing-craft and infantry models (source)
+
+The Beachhead native VR module now generates distinct original primitive
+silhouettes for one-man rowboats, 3–6-person landing craft with ramp,
+gunboats with wheelhouse/weapon, and individually moving infantry with
+helmets and separated limbs. All use existing game coordinates and
+hitboxes, share one batched stereo scene mesh, and add no textures,
+model imports, native ABI or permissions. The C++17 standalone recipe
+fixture passed with compatible public-type stubs; corresponding
+assertions were added to the full-campaign native test source but not
+executed through the Android NDK here. Reference S9 legibility, aiming
+and thermal acceptance remain pending; no new APK generated.
+
 ## 2026-10-12 — Live now-playing selection after music advancement
 
 The active Music Library song has a readable `[NOW]` text marker,
