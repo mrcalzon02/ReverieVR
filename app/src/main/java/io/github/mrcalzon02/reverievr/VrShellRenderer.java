@@ -7748,6 +7748,27 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         123
                     )
             );
+            // Non-color-only state coding for every standard shell button:
+            // thick bright edge rails = focus, circle-slash = unavailable.
+            // Keep this flat PS1-style geometry; no texture/shader allocation.
+            if (focused) {
+                paint.setColor(Color.WHITE);
+                canvas.drawRect(rect[0] + 7, rect[1] + 12,
+                    rect[0] + 14, rect[3] - 12, paint);
+                canvas.drawRect(rect[2] - 14, rect[1] + 12,
+                    rect[2] - 7, rect[3] - 12, paint);
+            } else if (!enabled) {
+                float cx = rect[0] + 27.0f;
+                float cy = (rect[1] + rect[3]) * 0.5f;
+                paint.setColor(Color.rgb(178, 188, 200));
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(2.8f);
+                canvas.drawCircle(cx, cy, 11.0f, paint);
+                canvas.drawLine(cx - 8.0f, cy + 8.0f,
+                    cx + 8.0f, cy - 8.0f, paint);
+                paint.setStyle(Paint.Style.FILL);
+            }
+            paint.setColor(enabled ? Color.WHITE : Color.rgb(178, 188, 200));
             paint.setTextSize(24.0f * uiScale);
             paint.setFakeBoldText(focused);
             float textWidth = paint.measureText(labels[index]);
