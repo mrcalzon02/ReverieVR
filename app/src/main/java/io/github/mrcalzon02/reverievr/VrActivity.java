@@ -1074,6 +1074,13 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public void onBindingRelative(BindingInput input, float delta,
+                                  String source) {
+        if (inputBindingEngine != null && !isGuestInputSuppressed())
+            inputBindingEngine.submitRelative(input, delta);
+    }
+
+    @Override
     public void onHeadBindingDelta(
         float yawDeltaRadians,
         float pitchDeltaRadians
