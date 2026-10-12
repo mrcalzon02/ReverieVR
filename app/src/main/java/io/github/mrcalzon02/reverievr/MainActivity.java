@@ -5,6 +5,8 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -84,6 +86,11 @@ public final class MainActivity extends Activity
         Executors.newSingleThreadExecutor();
     private final ExecutorService mediaMetadataExecutor =
         Executors.newSingleThreadExecutor();
+    private final ExecutorService laptopLinkExecutor =
+        Executors.newSingleThreadExecutor();
+    private LaptopLinkDownloadServer laptopLinkServer;
+    private AlertDialog laptopLinkDownloadDialog;
+    private long laptopLinkShareGeneration;
 
     private TextView appVersionText;
     private TextView phoneBatteryText;
@@ -109,6 +116,7 @@ public final class MainActivity extends Activity
     private Button enterVrButton;
     private Button exportLogsButton;
     private Button exportLaptopLinkButton;
+    private Button shareLaptopLinkButton;
     private Button submitDiagnosticsButton;
     private Button clearLogsButton;
     private Button controllerActionButton;
@@ -265,6 +273,11 @@ public final class MainActivity extends Activity
 
     @Override
     protected void onPause() {
+        // A portable executable must never remain advertised after Stage A
+        // leaves the foreground or the phone is placed in the headset.
+        if (laptopLinkDownloadDialog != null)
+            laptopLinkDownloadDialog.dismiss();
+        stopLaptopLinkShare();
         unregisterInputDeviceListener();
         super.onPause();
     }
@@ -285,6 +298,8 @@ public final class MainActivity extends Activity
             uiFeedback.close();
         }
         dosImportExecutor.shutdownNow();
+        stopLaptopLinkShare();
+        laptopLinkExecutor.shutdownNow();
         if (laptopSmbClient != null) laptopSmbClient.close();
         diagnosticExecutor.shutdownNow();
         mediaMetadataExecutor.shutdownNow();
@@ -348,6 +363,7 @@ public final class MainActivity extends Activity
         enterVrButton = findViewById(R.id.enter_vr_button);
         exportLogsButton = findViewById(R.id.export_logs_button);
         exportLaptopLinkButton = findViewById(R.id.export_laptop_link_button);
+        shareLaptopLinkButton = findViewById(R.id.share_laptop_link_button);
         submitDiagnosticsButton =
             findViewById(R.id.submit_diagnostics_button);
         clearLogsButton = findViewById(R.id.clear_logs_button);
@@ -429,6 +445,10 @@ public final class MainActivity extends Activity
         uiFeedback.bind(
             exportLaptopLinkButton,
             this::chooseLaptopLinkExportDestination
+        );
+        uiFeedback.bind(
+            shareLaptopLinkButton,
+            this::startLaptopLinkShare
         );
 
         boolean diagnosticSubmissionConfigured =
@@ -1133,6 +1153,134 @@ public final class MainActivity extends Activity
         return last == null || last.trim().isEmpty()
             ? safeFallback
             : last;
+    }
+
+    /**
+     * Explicit, one-shot transfer of the existing portable host ZIP.
+     * For USB use adb forward tcp:PORT tcp:PORT then browser localhost;
+     * for Wi-Fi use a private phone IPv4 address on the same trusted LAN.
+     * This transfers NO phone screen pixels or PC commands and never runs
+     * anything on Windows.
+     */
+    private void startLaptopLinkShare() {
+        stopLaptopLinkShare();
+        final long generation = laptopLinkShareGeneration;
+        shareLaptopLinkButton.setEnabled(false);
+        laptopLinkExecutor.execute(() -> {
+            LaptopLinkDownloadServer server;
+            try {
+                server = new LaptopLinkDownloadServer(
+                    path -> getAssets().open(path),
+                    java.net.InetAddress.getByName("0.0.0.0"),
+                    delivered -> runOnUiThread(() ->
+                        finishLaptopLinkShare(generation, delivered)));
+            } catch (IOException | RuntimeException failure) {
+                ReverieLog.error("LAPTOP_LINK",
+                    "Could not start temporary bundled-link download.", failure);
+                runOnUiThread(() -> {
+                    if (generation != laptopLinkShareGeneration ||
+                        isFinishing() || isDestroyed()) return;
+                    stopLaptopLinkShare();
+                    uiFeedback.failure(shareLaptopLinkButton);
+                    new AlertDialog.Builder(this)
+                        .setTitle("Laptop Link unavailable")
+                        .setMessage("Unable to open temporary download link. "
+                            + "Use Export Laptop Link ZIP instead.")
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+                });
+                return;
+            }
+            runOnUiThread(() -> {
+                if (generation != laptopLinkShareGeneration ||
+                    isFinishing() || isDestroyed()) {
+                    server.close();
+                    return;
+                }
+                laptopLinkServer = server;
+                showLaptopLinkDownloadDialog(server);
+            });
+        });
+    }
+
+    private void showLaptopLinkDownloadDialog(LaptopLinkDownloadServer server) {
+        List<String> addresses = LaptopLinkNetworkAddresses.trustedLanIpv4();
+        String wifiUrl = addresses.isEmpty() ? null : server.url(addresses.get(0));
+        String usbUrl = server.url("127.0.0.1");
+        StringBuilder message = new StringBuilder(
+            "Only while this dialog is open (maximum five minutes). "
+            + "The laptop downloads the included ZIP; nothing executes "
+            + "automatically. Use a TRUSTED private Wi-Fi/hotspot only: "
+            + "the download uses HTTP, not encrypted HTTPS.\n\n");
+        if (wifiUrl == null) {
+            message.append("No active private Wi-Fi/hotspot address was detected.\n");
+        } else {
+            message.append("From a laptop on the SAME Wi-Fi network, open:\n")
+                .append(wifiUrl).append("\n");
+            if (addresses.size() > 1)
+                message.append("Other local interfaces are available; "
+                    + "use USB/ADB if the address above is unreachable.\n");
+        }
+        message.append("\nUSB / already-authorized ADB alternative:\n")
+            .append("adb forward tcp:").append(server.port())
+            .append(" tcp:").append(server.port())
+            .append("\nThen open: ").append(usbUrl)
+            .append("\n\nZIP SHA-256 (verify on Windows):\n")
+            .append(server.sha256())
+            .append("\n\nExtract, review, then launch "
+                + "ReverieLink/Start-ReverieLink.cmd yourself.");
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle("Share Laptop Link — one download")
+            .setMessage(message.toString())
+            .setPositiveButton("Copy download URL", null)
+            .setNeutralButton("Copy USB setup", null)
+            .setNegativeButton("Stop sharing", null)
+            .create();
+        laptopLinkDownloadDialog = dialog;
+        dialog.setOnDismissListener(ignored -> stopLaptopLinkShare());
+        dialog.show();
+        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        final String downloadUrl = wifiUrl == null ? usbUrl : wifiUrl;
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(
+            button -> copyLaptopLinkInstructions("ReverieVR Laptop Link URL",
+                downloadUrl));
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(
+            button -> copyLaptopLinkInstructions("ReverieVR Laptop Link USB",
+                "adb forward tcp:" + server.port() + " tcp:" + server.port()
+                    + "\n" + usbUrl));
+    }
+
+    private void copyLaptopLinkInstructions(String title, String value) {
+        ClipboardManager clipboard = (ClipboardManager)
+            getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            clipboard.setPrimaryClip(ClipData.newPlainText(title,value));
+            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void finishLaptopLinkShare(long generation, boolean delivered) {
+        if (generation != laptopLinkShareGeneration ||
+            isFinishing() || isDestroyed()) return;
+        if (laptopLinkDownloadDialog != null)
+            laptopLinkDownloadDialog.dismiss();
+        else stopLaptopLinkShare();
+        Toast.makeText(this,
+            delivered ? "Laptop Link ZIP downloaded. Link closed."
+                : "Laptop Link download expired or interrupted.",
+            Toast.LENGTH_LONG).show();
+    }
+
+    private void stopLaptopLinkShare() {
+        laptopLinkShareGeneration++;
+        LaptopLinkDownloadServer server = laptopLinkServer;
+        laptopLinkServer = null;
+        laptopLinkDownloadDialog = null;
+        if (server != null) server.close();
+        getWindow().clearFlags(
+            android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (shareLaptopLinkButton != null)
+            shareLaptopLinkButton.setEnabled(true);
     }
 
     private void chooseLaptopLinkExportDestination() {
