@@ -47,6 +47,7 @@
 
 
 
+- RV-0230 — **First functional high-contrast shell mode source-committed; Android/Galaxy S9 gate open.** Persistent Quick Settings monochrome toggle changes actual shared VR shell button rendering, including focus rails and shape-coded unavailable state, with >=7:1 designed text contrast and source tests. Still needed: other HUD, nonstandard keyboard and game draw paths, Stage A, distinct protan/deutan/tritan support, low-vision control sizing and user/device contrast acceptance; never imply a grayscale-only button palette completes disability equal access.
 - RV-0200 — VR/display settings.
 - RV-0201 — performance/quality settings and dynamic fallback.
 - RV-0202 — Implement persistent input mapping settings and in-VR binding editor over the virtual keyboard/mouse/joystick output bus.

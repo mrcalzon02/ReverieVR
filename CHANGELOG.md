@@ -6,6 +6,16 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Monochrome high-contrast VR shell control mode
+
+- Added persisted HI CONTRAST toggle to the actual Quick Settings menu;
+  it changes shared VR shell button fills, persistent outlines, focus
+  inversion/rails, disabled symbols and label colors without shaders.
+- Pure-Java palette tests enforce >=7:1 designed label contrast and
+  grayscale-only values; specialized HUD, Stage A, native games and
+  reference-headset optical acceptance remain separate work.
+
+
 ### Native Beachhead vessel and shore-infantry silhouette pass
 
 - Replaced identical cuboid surface-ship rendering with original

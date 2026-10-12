@@ -19,6 +19,8 @@ final class ReveriePreferences {
     private static final String KEY_VR_SETUP_STEP = "vr_setup_step";
     private static final String KEY_USER_IPD_METERS = "user_ipd_meters";
     private static final String KEY_UI_SCALE = "ui_scale";
+    private static final String KEY_SHELL_HIGH_CONTRAST =
+        "shell_high_contrast";
     private static final String KEY_VIDEO_URI = "video_uri";
     private static final String KEY_VIDEO_DISPLAY_NAME = "video_display_name";
     private static final String KEY_VIDEO_PROJECTION = "video_projection";
@@ -184,6 +186,14 @@ final class ReveriePreferences {
         preferences.edit()
             .putFloat(KEY_USER_IPD_METERS, clamp(meters, 0.050f, 0.080f))
             .apply();
+    }
+
+    boolean isShellHighContrastEnabled() {
+        return preferences.getBoolean(KEY_SHELL_HIGH_CONTRAST, false);
+    }
+
+    void setShellHighContrastEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_SHELL_HIGH_CONTRAST, enabled).apply();
     }
 
     float getUiScale() {

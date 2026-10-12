@@ -46,6 +46,28 @@ brightness shifts and UI scaling.
   Video content itself need not be recolored by default, and opt-in video
   transforms must not corrupt stereo/camera metadata.
 
+### Implemented shell contrast option (source)
+
+Quick Settings now has an actual **HI CONTRAST: ON/OFF** control in the
+eleventh button position. It persists in preferences, defaults OFF,
+and changes all `VrShellRenderer.drawButtons` surfaces/labels to a
+monochrome near-black/near-white palette with persistent borders;
+selected buttons invert luminance and retain thick focus rails, while
+disabled controls retain a crossed-circle glyph. The small pure-Java
+palette uses WCAG sRGB relative-luminance calculations and its tests
+require at least 7:1 text-to-button contrast on enabled, focused and
+disabled states. Source-state coverage includes Home shell buttons,
+Quick Settings, Music Library, native game selection, and other panels
+using the shared button renderer. No shader or runtime asset downloads.
+
+The preference is reversible from the same Quick Settings screen
+and is not a global video/media color filter. Specialized HUD elements,
+nonstandard keyboard geometry, native game art and Stage A need their
+own contrast/color-shape audits. **This is not a complete protanopia,
+deuteranopia or tritanopia adaptation**; no actual Galaxy S9 optical
+contrast or affected-user test is claimed yet. Color must not become
+the only carrier of any meaning even when the preference is OFF.
+
 ## Vision, motor, hearing and cognitive access
 
 - Adjustable text and interaction target sizes with no clipped headings,

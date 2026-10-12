@@ -42,6 +42,27 @@ Pure-JVM `MusicVolumePolicyTest` covers unchanged default, clamping,
 mute and stepping; in-headset controller activation, Android Gradle
 build and Galaxy S9 playback/loudness acceptance are still pending.
 
+## 2026-10-12 — Accessible high-contrast shell buttons (source)
+
+Quick Settings exposes a real, persistent `HI CONTRAST: ON/OFF` toggle
+next to the shortened `EXT HID: ON/OFF` cell; neither the earlier menu
+navigation nor dedicated Back/Close buttons were displaced. The mode
+changes the shared shell button draw path to monochrome near-black/
+near-white, draws persistent boundaries, inverts focused button
+background/text and uses dark focus rails over light focus, while
+keeping a circle-slash disabled symbol. It applies to Home, Quick
+Settings, Music Library, native module shelves and other standard
+shell panels using `drawButtons`, without altering Android Media,
+VR optics, native gameplay textures or remote screen content. A
+pure-Java `ShellContrastPalette` exposes luminance contrast checks;
+JUnit regression source demands >=7:1 text/background contrast
+for enabled/focused/disabled and grayscale-only palette entries.
+
+No claim of fully adapted protan/deutan/tritan color vision handling,
+full nonstandard surface coverage, Galaxy S9 lens-measured contrast or
+real low-vision participant acceptance. Android APK build/device
+checks remain outstanding.
+
 ## 2026-10-12 — Breakwater shoreline infantry threat warning (source)
 
 Beachhead/Breakwater now predicts a shore infantry salvo from actual

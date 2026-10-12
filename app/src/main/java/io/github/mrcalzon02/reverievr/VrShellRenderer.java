@@ -201,7 +201,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             {524, 422, 804, 470},
             {220, 480, 500, 528},
             {524, 480, 804, 528},
-            {220, 538, 804, 590}
+            {220, 538, 500, 590}, // External HID
+            {524, 538, 804, 590}  // Monochrome high contrast
         };
 
     private static final int[][] HOME_BUTTONS = new int[][] {
@@ -4821,6 +4822,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 host.onExternalHidInputPolicyChanged(enabled);
                 break;
 
+            case 11:
+                preferences.setShellHighContrastEnabled(
+                    !preferences.isShellHighContrastEnabled());
+                hudTextureDirty = true;
+                break;
+
             default:
                 host.onUiActionRejected();
                 return;
@@ -5953,8 +5960,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 "BACK QUICK",
                 "CLOSE",
                 preferences.isExternalHidEnabled()
-                    ? "EXTERNAL KEYBOARD + MOUSE: ON"
-                    : "EXTERNAL KEYBOARD + MOUSE: OFF"
+                    ? "EXT HID: ON" : "EXT HID: OFF",
+                preferences.isShellHighContrastEnabled()
+                    ? "HI CONTRAST: ON" : "HI CONTRAST: OFF"
             },
             QUICK_SETTINGS_BUTTONS
         );
@@ -8004,39 +8012,38 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 enabled
                     && index == hoveredButton;
 
-            paint.setColor(
-                !enabled
+            boolean highContrast = preferences.isShellHighContrastEnabled();
+            paint.setColor(highContrast
+                ? ShellContrastPalette.background(enabled, focused)
+                : !enabled
                     ? Color.rgb(29, 33, 39)
-                    : (
-                        focused
-                            ? Color.rgb(42, 126, 121)
-                            : Color.rgb(38, 46, 57)
-                    )
-            );
+                    : focused ? Color.rgb(42, 126, 121)
+                              : Color.rgb(38, 46, 57));
             canvas.drawRoundRect(
-                rect[0],
-                rect[1],
-                rect[2],
-                rect[3],
-                18,
-                18,
-                paint
+                rect[0], rect[1], rect[2], rect[3],
+                18, 18, paint
             );
+            if (highContrast) {
+                // All ordinary shell buttons have a persistent visible
+                // boundary, even without hover or any color perception.
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(2.8f);
+                paint.setColor(ShellContrastPalette.border(enabled));
+                canvas.drawRoundRect(
+                    rect[0] + 2f, rect[1] + 2f,
+                    rect[2] - 2f, rect[3] - 2f, 16, 16, paint);
+                paint.setStyle(Paint.Style.FILL);
+            }
 
-            paint.setColor(
-                enabled
-                    ? Color.WHITE
-                    : Color.rgb(
-                        103,
-                        112,
-                        123
-                    )
-            );
+            paint.setColor(highContrast
+                ? ShellContrastPalette.foreground(enabled, focused)
+                : enabled ? Color.WHITE : Color.rgb(103, 112, 123));
             // Non-color-only state coding for every standard shell button:
             // thick bright edge rails = focus, circle-slash = unavailable.
             // Keep this flat PS1-style geometry; no texture/shader allocation.
             if (focused) {
-                paint.setColor(Color.WHITE);
+                paint.setColor(highContrast
+                    ? ShellContrastPalette.FOCUSED_RAIL : Color.WHITE);
                 canvas.drawRect(rect[0] + 7, rect[1] + 12,
                     rect[0] + 14, rect[3] - 12, paint);
                 canvas.drawRect(rect[2] - 14, rect[1] + 12,
@@ -8044,7 +8051,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             } else if (!enabled) {
                 float cx = rect[0] + 27.0f;
                 float cy = (rect[1] + rect[3]) * 0.5f;
-                paint.setColor(Color.rgb(178, 188, 200));
+                paint.setColor(highContrast
+                    ? ShellContrastPalette.DISABLED_TEXT
+                    : Color.rgb(178, 188, 200));
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(2.8f);
                 canvas.drawCircle(cx, cy, 11.0f, paint);
@@ -8052,7 +8061,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     cx + 8.0f, cy - 8.0f, paint);
                 paint.setStyle(Paint.Style.FILL);
             }
-            paint.setColor(enabled ? Color.WHITE : Color.rgb(178, 188, 200));
+            paint.setColor(highContrast
+                ? ShellContrastPalette.foreground(enabled, focused)
+                : enabled ? Color.WHITE : Color.rgb(178, 188, 200));
             paint.setTextSize(24.0f * uiScale);
             paint.setFakeBoldText(focused);
             float textWidth = paint.measureText(labels[index]);
