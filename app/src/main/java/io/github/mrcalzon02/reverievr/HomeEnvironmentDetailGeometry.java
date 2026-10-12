@@ -53,6 +53,20 @@ final class HomeEnvironmentDetailGeometry {
             b.triangle(center - .48f, 2.12f, -5.941f,
                 center - .37f, 2.28f, -5.941f,
                 center - .26f, 2.12f, -5.941f);
+            // Faceted sunrise crest: another twelve triangles across
+            // both murals without bitmaps or runtime geometry work.
+            b.triangle(center + .28f, 1.93f, -5.941f,
+                center + .40f, 2.08f, -5.941f,
+                center + .52f, 1.93f, -5.941f);
+            b.triangle(center + .30f, 2.08f, -5.941f,
+                center + .40f, 2.18f, -5.941f,
+                center + .50f, 2.08f, -5.941f);
+            for (int ray=0;ray<4;ray++) {
+                float x = center - .18f + ray*.20f;
+                b.triangle(x-.03f,2.30f,-5.941f,
+                    x,2.39f,-5.941f,
+                    x+.03f,2.30f,-5.941f);
+            }
         }
         return b.finish();
     }
@@ -142,6 +156,18 @@ final class HomeEnvironmentDetailGeometry {
             b.triangle(x - .10f, y, z, x + .10f, y, z,
                 x, y + .11f, z);
         }
+        // Golden, flat-faceted mushrooms near the tree ring, away from
+        // the desk and central controller/menu rays.
+        for (int i=0;i<8;i++) {
+            float angle=i*.785398f+.28f;
+            float radius=6.18f+(i%2)*1.24f;
+            float x=(float)Math.cos(angle)*radius;
+            float z=(float)Math.sin(angle)*radius;
+            b.facing(x,z,.040f,-1.33f,-1.08f);
+            b.triangle(x-.18f,-1.10f,z,
+                       x,-.97f,z,
+                       x+.18f,-1.10f,z);
+        }
         return b.finish();
     }
 
@@ -218,6 +244,15 @@ final class HomeEnvironmentDetailGeometry {
             float w = 1.1f + (i % 4) * .33f;
             // Above the sea plane, with 13mm depth clearance.
             b.horizontal(x - w, x + w, z - .035f, z + .035f, -1.283f);
+        }
+        // Eight shallow tidal pools at the flanks of the beach.
+        // These share the sea's existing pale-blue detail mesh/material.
+        for(int side : new int[]{-1,1}) {
+            for(int i=0;i<4;i++) {
+                float x=side*(5.15f+(i%2)*.60f);
+                float z=-4.95f-(i/2)*1.33f;
+                b.horizontal(x-.37f,x+.37f,z-.20f,z+.20f,-1.329f);
+            }
         }
         return b.finish();
     }
