@@ -6,6 +6,7 @@ import java.util.List;
 
 final class BuiltInBindingProfiles {
     static final String ID_NONE = "none";
+    static final String ID_DOS_STANDARD = "dos-standard";
     static final String ID_DOS_DOOM_SHAREWARE = "dos-doom-shareware";
     static final String ID_DOS_FPS_HEAD_MOUSE = "dos-fps-head-mouse";
     static final String ID_DOS_CURSOR = "dos-cursor";
@@ -96,6 +97,35 @@ final class BuiltInBindingProfiles {
                 Collections.emptyList()
             )
         );
+
+        // Functional import default: arrows on Daydream pad, mouse at gaze,
+        // trackpad click as mouse button, rocker for Enter/Escape.
+        List<InputBinding> standard = new ArrayList<>();
+        standard.add(InputBinding.digital(BindingInput.SELECT,
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
+        standard.add(InputBinding.analog(BindingInput.HEAD_YAW_DELTA,
+            VirtualOutput.mouseRelativeX(), 650.0f, 0.0f));
+        standard.add(InputBinding.analog(BindingInput.HEAD_PITCH_DELTA,
+            VirtualOutput.mouseRelativeY(), -650.0f, 0.0f));
+        BindingInput[] axes = { BindingInput.TOUCHPAD_Y, BindingInput.TOUCHPAD_Y,
+            BindingInput.TOUCHPAD_X, BindingInput.TOUCHPAD_X };
+        VirtualKey[] keyDirections = { VirtualKey.UP, VirtualKey.DOWN,
+            VirtualKey.LEFT, VirtualKey.RIGHT };
+        for (int i = 0; i < axes.length; i++) {
+            standard.add(i == 0 || i == 2
+                ? InputBinding.negativeThreshold(axes[i],
+                    VirtualOutput.key(keyDirections[i]), 0.35f)
+                : InputBinding.positiveThreshold(axes[i],
+                    VirtualOutput.key(keyDirections[i]), 0.35f));
+            standard.add(i == 0 || i == 2
+                ? InputBinding.negativeThreshold(axes[i],
+                    VirtualOutput.joystickButton(4+i), 0.35f)
+                : InputBinding.positiveThreshold(axes[i],
+                    VirtualOutput.joystickButton(4+i), 0.35f));
+        }
+        addDosMenuBindings(standard);
+        profiles.add(new BindingProfile(ID_DOS_STANDARD,
+            "DOS standard - pad arrows / head mouse", standard));
 
         List<InputBinding> doom = new ArrayList<>();
         doom.add(
