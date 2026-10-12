@@ -8,9 +8,9 @@ public final class HomeKeyboardGeometryTest {
     }
     private static float[] pointForPixel(int x, int y) {
         return new float[]{
-            HomeKeyboardGeometry.LEFT + x/1024f * 3.46f,
-            HomeKeyboardGeometry.TOP_Y,
-            HomeKeyboardGeometry.BACK_Z + y/768f * 2.72f
+            HomeKeyboardGeometry.worldX(x),
+            HomeKeyboardGeometry.legendAt(HomeKeyboardGeometry.worldZ(y)),
+            HomeKeyboardGeometry.worldZ(y)
         };
     }
     @Test public void deskIntersectionsMapToRealKeysAndCopyButton() {
@@ -51,7 +51,7 @@ public final class HomeKeyboardGeometryTest {
             assertEquals("Keycap and ray hit differ for key " + i,
                 i, HomeKeyboardGeometry.keyAtRay(
                     origin,
-                    new float[]{centerX, HomeKeyboardGeometry.TOP_Y,
+                    new float[]{centerX, HomeKeyboardGeometry.legendAt(centerZ),
                         centerZ},
                     buttons));
             assertTrue(centerX > HomeKeyboardGeometry.LEFT);
@@ -67,15 +67,14 @@ public final class HomeKeyboardGeometryTest {
             > HomeKeyboardGeometry.KEYCAP_BASE_Y);
         assertTrue(HomeKeyboardGeometry.LEGEND_Y
             > HomeKeyboardGeometry.KEYCAP_TOP_Y);
-        assertEquals("Visible key label and ray intersection must match",
-            HomeKeyboardGeometry.LEGEND_Y,
-            HomeKeyboardGeometry.TOP_Y, 0.000001f);
-        assertEquals(-1.73f, HomeKeyboardGeometry.worldX(0f), 0.0001f);
-        assertEquals(1.73f,
+        assertTrue(HomeKeyboardGeometry.legendAt(HomeKeyboardGeometry.BACK_Z)
+            > HomeKeyboardGeometry.legendAt(HomeKeyboardGeometry.FRONT_Z));
+        assertEquals(-1.45f, HomeKeyboardGeometry.worldX(0f), 0.0001f);
+        assertEquals(1.45f,
             HomeKeyboardGeometry.worldX(
                 HomeKeyboardGeometry.WIDTH_PIXELS), 0.0001f);
-        assertEquals(-4.08f, HomeKeyboardGeometry.worldZ(0f), 0.0001f);
-        assertEquals(-1.36f,
+        assertEquals(-3.75f, HomeKeyboardGeometry.worldZ(0f), 0.0001f);
+        assertEquals(-1.52f,
             HomeKeyboardGeometry.worldZ(
                 HomeKeyboardGeometry.HEIGHT_PIXELS), 0.0001f);
     }
