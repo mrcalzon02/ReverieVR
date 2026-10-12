@@ -610,7 +610,7 @@ public final class VrActivity extends Activity
             return true;
         }
 
-        if (routeScrcpyHomeKeyboardInput(event)) {
+        if (routeExternalHomeKeyboardInput(event)) {
             return true;
         }
 
@@ -625,17 +625,26 @@ public final class VrActivity extends Activity
     }
 
     /**
-     * The scrcpy UHID keyboard should type into the visible desk editor in
-     * Home, not silently disappear into the guest virtual-input bus.
-     * Do not steal keys from DOS/native games, Daydream, or inactive devices.
+     * Physical Bluetooth/USB keyboards and scrcpy UHID type into the same
+     * desk editor. Android's virtual keyboard, Steam HID compatibility keys
+     * and gamepad action keys remain owned by their existing input paths.
+     * The external-input toggle is enforced before we reach this method.
      */
-    private boolean routeScrcpyHomeKeyboardInput(KeyEvent event) {
-        if (event == null || renderer == null
-            || !renderer.acceptsPhysicalKeyboardInput()
-            || !AndroidGamepadSupport.isScrcpyHid(event.getDevice())
-            || (event.getSource() & android.view.InputDevice.SOURCE_KEYBOARD)
-                != android.view.InputDevice.SOURCE_KEYBOARD
-            || event.isCtrlPressed() || event.isAltPressed()) return false;
+    private boolean routeExternalHomeKeyboardInput(KeyEvent event) {
+        if (event == null || renderer == null) return false;
+        android.view.InputDevice device = event.getDevice();
+        boolean physicalKeyboard = device != null && !device.isVirtual();
+        boolean sourceKeyboard =
+            (event.getSource() & android.view.InputDevice.SOURCE_KEYBOARD)
+                == android.view.InputDevice.SOURCE_KEYBOARD;
+        boolean controllerDevice = AndroidGamepadSupport.isGamepadEvent(event)
+            || AndroidGamepadSupport.isOriginalSteamController(device);
+        if (!ExternalHidInputPolicy.shouldEditHomeKeyboard(
+                preferences.isExternalHidEnabled(),
+                renderer.acceptsPhysicalKeyboardInput(),
+                sourceKeyboard, physicalKeyboard, controllerDevice,
+                event.isCtrlPressed() || event.isAltPressed()
+                    || event.isMetaPressed())) return false;
 
         int action = VrKeyboardEditor.EXTERNAL_TEXT;
         String characters = null;
