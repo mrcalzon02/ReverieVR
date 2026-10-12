@@ -98,15 +98,25 @@ final class LaptopLinkDownloadServer implements AutoCloseable {
     private boolean handle(Socket client) throws IOException {
         InputStream input = client.getInputStream();
         OutputStream output = client.getOutputStream();
+        // Consume the complete bounded HTTP header before writing a ZIP.
+        // Closing a socket with unread headers can otherwise TCP-reset the
+        // response before the laptop finishes receiving the archive.
         ByteArrayOutputStream request = new ByteArrayOutputStream();
-        int n;
-        while ((n = input.read()) != -1 && n != '\n') {
-            if (request.size() >= MAX_REQUEST_BYTES)
-                return false;
+        int n, tail = 0;
+        boolean complete = false;
+        while ((n = input.read()) != -1 && request.size() < MAX_REQUEST_BYTES) {
             request.write(n);
+            tail = ((tail << 8) | n) & 0xffffffff;
+            if (tail == 0x0d0a0d0a || (tail & 0xffff) == 0x0a0a) {
+                complete = true;
+                break;
+            }
         }
-        if (n == -1) return false;
-        String first = request.toString(StandardCharsets.US_ASCII.name()).trim();
+        if (!complete) return false;
+        String header = request.toString(StandardCharsets.US_ASCII.name());
+        int eol = header.indexOf('\n');
+        if (eol < 0) return false;
+        String first = header.substring(0,eol).trim();
         String expected = "GET /reverie-link/" + secret + " HTTP/1.1";
         String legacy = "GET /reverie-link/" + secret + " HTTP/1.0";
         if (!first.equals(expected) && !first.equals(legacy)) {
