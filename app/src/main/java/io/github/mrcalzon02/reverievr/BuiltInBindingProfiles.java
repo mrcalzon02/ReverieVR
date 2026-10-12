@@ -54,9 +54,8 @@ final class BuiltInBindingProfiles {
     private static List<BindingProfile> buildDosProfiles() {
         List<BindingProfile> result = new ArrayList<>();
         for (BindingProfile profile : PROFILES) {
-            if (!ID_NATIVE_STANDARD.equals(
-                    profile.id
-                )) {
+            if (!ID_NATIVE_STANDARD.equals(profile.id)
+                && !ID_NONE.equals(profile.id)) {
                 result.add(profile);
             }
         }
@@ -89,6 +88,9 @@ final class BuiltInBindingProfiles {
                 0.0f
             )
         );
+        // Doom can fire on either its keyboard default or DOS mouse button.
+        doom.add(InputBinding.digital(BindingInput.SELECT,
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
         doom.add(
             InputBinding.negativeThreshold(
                 BindingInput.TOUCHPAD_Y,
@@ -185,22 +187,12 @@ final class BuiltInBindingProfiles {
         );
 
         List<InputBinding> cursor = new ArrayList<>();
-        cursor.add(
-            InputBinding.analog(
-                BindingInput.TOUCHPAD_X,
-                VirtualOutput.mouseAbsoluteX(),
-                1.0f,
-                0.04f
-            )
-        );
-        cursor.add(
-            InputBinding.analog(
-                BindingInput.TOUCHPAD_Y,
-                VirtualOutput.mouseAbsoluteY(),
-                1.0f,
-                0.04f
-            )
-        );
+        cursor.add(InputBinding.analog(
+            BindingInput.TOUCHPAD_REL_X, VirtualOutput.mouseRelativeX(),
+            0.70f, 0.0f));
+        cursor.add(InputBinding.analog(
+            BindingInput.TOUCHPAD_REL_Y, VirtualOutput.mouseRelativeY(),
+            0.70f, 0.0f));
         cursor.add(
             InputBinding.digital(
                 BindingInput.SELECT,
@@ -210,7 +202,7 @@ final class BuiltInBindingProfiles {
         profiles.add(
             new BindingProfile(
                 ID_DOS_CURSOR,
-                "DOS cursor — touchpad pointer",
+                "DOS mouse — touchpad movement / click",
                 cursor
             )
         );
