@@ -1,3 +1,7 @@
+## 2026-10-12 — Galaxy S9 VR startup: GLSL reserved-word repair (source; handset retest pending)
+
+User-supplied Samsung SM-G960U Android 10 phone-test v135001 diagnostic ZIP recorded three repeatable renderer-surface-create failures on 2026-10-12. All failed at VideoSurfaceRenderer fragment-shader compilation, GLSL ES line 23, because `packed` is a reserved identifier. Daydream controller pose packets and the model loader were operating prior to failure; this is not a Bluetooth or location-services failure. Renamed the GLSL fragment shader local to `packedUv` and its sample-transform use without changing the eye crop, external OES sampler, GL lifecycle, phone permissions, or shader execution path. Added a pure-JVM test that inspects the actual runtime shader string for the reserved token and verifies eye crop / SurfaceTexture transform wiring. Triggered the already authorized phone-test build on main. Build, signed APK release, and first-frame/device validation are not claimed until observed remotely and on the S9.
+
 ## 2026-10-12 — Breakwater position-driven low-poly animation (source)
 
 The Beachhead native VR game now derives landing-craft bow-ramp lowering

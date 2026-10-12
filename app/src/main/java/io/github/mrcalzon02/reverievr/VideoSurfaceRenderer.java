@@ -644,8 +644,8 @@ final class VideoSurfaceRenderer {
             + "    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);\n"
             + "    return;\n"
             + "  }\n"
-            + "  vec2 packed = u_EyeRegion.xy + local * u_EyeRegion.zw;\n"
-            + "  vec2 tex = (u_SurfaceTransform * vec4(packed, 0.0, 1.0)).xy;\n"
+            + "  vec2 packedUv = u_EyeRegion.xy + local * u_EyeRegion.zw;\n"
+            + "  vec2 tex = (u_SurfaceTransform * vec4(packedUv, 0.0, 1.0)).xy;\n"
             + "  gl_FragColor = texture2D(u_Texture, tex);\n"
             + "}\n";
 }
