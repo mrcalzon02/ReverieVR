@@ -62,6 +62,30 @@ final class BuiltInBindingProfiles {
         return Collections.unmodifiableList(result);
     }
 
+    /** DOSBox Pure uses a libretro joypad for its own game chooser,
+     * while installed DOS programs also require real keyboard events. */
+    private static void addDosMenuBindings(List<InputBinding> bindings) {
+        bindings.add(InputBinding.digital(BindingInput.SELECT,
+            VirtualOutput.joystickButton(0)));
+        bindings.add(InputBinding.digital(BindingInput.VOLUME_UP,
+            VirtualOutput.key(VirtualKey.ENTER)));
+        bindings.add(InputBinding.digital(BindingInput.VOLUME_DOWN,
+            VirtualOutput.key(VirtualKey.ESCAPE)));
+        // Android / Steam gamepad D-pad works in DOS even without pad touch.
+        bindings.add(InputBinding.digital(BindingInput.GAMEPAD_DPAD_UP,
+            VirtualOutput.key(VirtualKey.UP)));
+        bindings.add(InputBinding.digital(BindingInput.GAMEPAD_DPAD_DOWN,
+            VirtualOutput.key(VirtualKey.DOWN)));
+        bindings.add(InputBinding.digital(BindingInput.GAMEPAD_DPAD_LEFT,
+            VirtualOutput.key(VirtualKey.LEFT)));
+        bindings.add(InputBinding.digital(BindingInput.GAMEPAD_DPAD_RIGHT,
+            VirtualOutput.key(VirtualKey.RIGHT)));
+        bindings.add(InputBinding.analog(BindingInput.GAMEPAD_X,
+            VirtualOutput.joystickAxisX(), 1.0f, 0.15f));
+        bindings.add(InputBinding.analog(BindingInput.GAMEPAD_Y,
+            VirtualOutput.joystickAxisY(), 1.0f, 0.15f));
+    }
+
     private static List<BindingProfile> buildProfiles() {
         List<BindingProfile> profiles = new ArrayList<>();
 
@@ -98,6 +122,8 @@ final class BuiltInBindingProfiles {
                 0.35f
             )
         );
+        doom.add(InputBinding.negativeThreshold(BindingInput.TOUCHPAD_Y,
+            VirtualOutput.joystickButton(4), 0.35f));
         doom.add(
             InputBinding.positiveThreshold(
                 BindingInput.TOUCHPAD_Y,
@@ -105,6 +131,8 @@ final class BuiltInBindingProfiles {
                 0.35f
             )
         );
+        doom.add(InputBinding.positiveThreshold(BindingInput.TOUCHPAD_Y,
+            VirtualOutput.joystickButton(5), 0.35f));
         doom.add(
             InputBinding.negativeThreshold(
                 BindingInput.TOUCHPAD_X,
@@ -112,6 +140,8 @@ final class BuiltInBindingProfiles {
                 0.35f
             )
         );
+        doom.add(InputBinding.negativeThreshold(BindingInput.TOUCHPAD_X,
+            VirtualOutput.joystickButton(6), 0.35f));
         doom.add(
             InputBinding.positiveThreshold(
                 BindingInput.TOUCHPAD_X,
@@ -119,6 +149,9 @@ final class BuiltInBindingProfiles {
                 0.35f
             )
         );
+        doom.add(InputBinding.positiveThreshold(BindingInput.TOUCHPAD_X,
+            VirtualOutput.joystickButton(7), 0.35f));
+        addDosMenuBindings(doom);
         profiles.add(
             new BindingProfile(
                 ID_DOS_DOOM_SHAREWARE,
@@ -178,6 +211,7 @@ final class BuiltInBindingProfiles {
                 0.35f
             )
         );
+        addDosMenuBindings(fps);
         profiles.add(
             new BindingProfile(
                 ID_DOS_FPS_HEAD_MOUSE,
@@ -193,16 +227,21 @@ final class BuiltInBindingProfiles {
         cursor.add(InputBinding.analog(
             BindingInput.TOUCHPAD_REL_Y, VirtualOutput.mouseRelativeY(),
             0.70f, 0.0f));
+        cursor.add(InputBinding.analog(BindingInput.HEAD_YAW_DELTA,
+            VirtualOutput.mouseRelativeX(), 650.0f, 0.0f));
+        cursor.add(InputBinding.analog(BindingInput.HEAD_PITCH_DELTA,
+            VirtualOutput.mouseRelativeY(), -650.0f, 0.0f));
         cursor.add(
             InputBinding.digital(
                 BindingInput.SELECT,
                 VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)
             )
         );
+        addDosMenuBindings(cursor);
         profiles.add(
             new BindingProfile(
                 ID_DOS_CURSOR,
-                "DOS mouse — touchpad movement / click",
+                "DOS pointer — head gaze + touchpad click",
                 cursor
             )
         );
