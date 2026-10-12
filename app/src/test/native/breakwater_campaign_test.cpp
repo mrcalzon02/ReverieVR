@@ -632,6 +632,34 @@ int main() {
     assert(salvo_feedback.Record(97,firing_ship.integrity()));
     assert(salvo_feedback.damage()==3);
 
+    // Offshore gunfire and shoreline collision are different real events.
+    // The surviving ship must cause a blast only when it reaches the shore.
+    assert(firing_ship.gunboat_collision().sequence==0);
+    bool ram_seen=false;
+    for(int frame=0;frame<160 && !ram_seen;frame++) {
+        const int32_t before=firing_ship.integrity();
+        firing_ship.Tick(.05f);
+        const GunboatCollisionEvent ram=firing_ship.gunboat_collision();
+        if(ram.sequence>0) {
+            assert(ram.sequence==1 && ram.damage>0 && ram.damage<=8);
+            assert(before-firing_ship.integrity()>=ram.damage);
+            assert(std::isfinite(ram.x) && std::isfinite(ram.z));
+            assert(ram.z>=-2.2f && ram.z< -2.0f);
+            assert(!firing_ship.enemies()[0].active);
+            ram_seen=true;
+        }
+    }
+    assert(ram_seen);
+    ImpactEffects ram_fx;
+    assert(!ram_fx.RecordGunboatCollision(0,-2.2f,0));
+    assert(!ram_fx.RecordGunboatCollision(0,-2.2f,9));
+    assert(!ram_fx.RecordGunboatCollision(
+        std::numeric_limits<float>::quiet_NaN(),-2.2f,8));
+    assert(ram_fx.RecordGunboatCollision(.65f,-2.19f,8));
+    assert(ram_fx.pulses()[0].kind==ImpactKind::Explosion);
+    assert(std::abs(ram_fx.pulses()[0].x-.65f)<.0001f);
+    assert(std::abs(ram_fx.pulses()[0].z+2.19f)<.0001f);
+
     Campaign stopped_ship(Difficulty::Casual,8);
     assert(stopped_ship.Start());
     prepare_gunboat(stopped_ship);
@@ -644,6 +672,7 @@ int main() {
     for(int i=0;i<140;i++) stopped_ship.Tick(0.05f);
     assert(stopped_ship.wave_status().gunboat_attacks==0);
     assert(stopped_ship.gunboat_salvo().sequence==0);
+    assert(stopped_ship.gunboat_collision().sequence==0);
     assert(stopped_ship.integrity()==100);
 
     // Offshore gunboat salvos also retain their timing across 10 FPS frames.

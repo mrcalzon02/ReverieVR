@@ -57,6 +57,12 @@ public:
         return RecordWorldBlast(x,-.63f,z,
             destroyed?ImpactKind::Explosion:ImpactKind::Metal);
     }
+    // A ram creates a shoreline explosion only after simulation-confirmed
+    // integrity loss. No collision event, no blast.
+    bool RecordGunboatCollision(float x,float z,uint8_t damage) {
+        return damage>0 && damage<=8 &&
+            RecordWorldBlast(x,-.63f,z,ImpactKind::Explosion);
+    }
     // Compare the exact pre/post-strike enemy slots. This preserves the
     // position of a lethal target and never invents blasts for rejected calls,
     // inactive targets, or aircraft ignored by surface artillery.

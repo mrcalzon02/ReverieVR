@@ -863,6 +863,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         const uint32_t volley_before=s->campaign.infantry_volley().sequence;
         const uint32_t air_before=s->campaign.aircraft_attack().sequence;
         const uint32_t gunboat_before=s->campaign.gunboat_salvo().sequence;
+        const uint32_t collision_before=s->campaign.gunboat_collision().sequence;
         const int32_t hull_before=s->campaign.integrity();
         s->campaign.Tick(copy.delta_seconds);
         s->battery_damage.Record(hull_before,s->campaign.integrity());
@@ -880,6 +881,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             const float down[]={0.0f,-1.0f,0.0f};
             s->impacts.RecordHit(parapet,down,.12f,ImpactKind::Metal);
         }
+        const GunboatCollisionEvent collision=s->campaign.gunboat_collision();
+        if(collision.sequence!=collision_before && collision.damage>0)
+            s->impacts.RecordGunboatCollision(collision.x,collision.z,
+                                              collision.damage);
         const AircraftAttackEvent air=s->campaign.aircraft_attack();
         if(air.sequence!=air_before && air.damage>0) {
             // A real bomber hit blasts the parapet; strafers spark against it.

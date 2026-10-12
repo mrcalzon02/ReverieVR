@@ -285,6 +285,7 @@ bool Campaign::BeginWave() {
     infantry_volley_ = {};
     aircraft_attack_ = {};
     gunboat_salvo_ = {};
+    gunboat_collision_ = {};
     // Every installed mount starts a wave with a full magazine. Switching
     // during combat preserves spent rounds per mount and never grants ammo.
     for(uint8_t id=0;id<kWeaponCount;id++) {
@@ -597,7 +598,15 @@ void Campaign::TickStep(float dt) {
         }
         if (e.z >= -2.2f) {
             if (e.type == UnitType::Gunboat) {
+                const int32_t hull_before = integrity_;
                 integrity_ = std::max(0, integrity_ - 8);
+                const int32_t actual_damage = hull_before - integrity_;
+                if (actual_damage > 0) {
+                    ++gunboat_collision_.sequence;
+                    gunboat_collision_.x = e.x;
+                    gunboat_collision_.z = e.z;
+                    gunboat_collision_.damage = static_cast<uint8_t>(actual_damage);
+                }
                 e.active = false;
             } else Land(e);
         }
