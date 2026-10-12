@@ -93,6 +93,28 @@ optical origins. Nor does it restore six-degree head tracking to a recording.
 Status: source slice; GitHub Android build, actual GLES2 shader link, Galaxy S9
 headset viewing and visual distortion proof remain necessary.
 
+## 2026-10-11 — RV-0503 tail-MP4 spatial metadata recognition
+
+The Android Media picker now opens the selected document's SAF file descriptor
+for bounded random-access inspection before falling back to an InputStream
+when seek/position operations are unavailable (as with some content-provider
+pipes). SpatialMp4Metadata retains its pure JVM container decoder, adds a
+SeekableByteChannel path, checks the ftyp/styp header, walks at most 1024
+top-level boxes using complete 32- or 64-bit box lengths and never reads
+the media payload of mdat. Each moov is read and parsed only when its
+complete size fits the 4 MiB limit. Truncated, oversized and malformed
+containers stay UNKNOWN; multiple incompatible spatial tracks are rejected.
+A metadata selection is applied only if the selected URI and initial format
+still match, so an asynchronous result cannot overwrite the user's later
+file choice or manually selected format. No broad file access permission
+or Android background work was added.
+Tests use sparse large video-data sections followed by trailing metadata,
+64-bit box sizes, misleading moov payload inside mdat, conflicting tracks,
+oversized moov, zero-length mdat and incomplete headers.
+Status is source-implemented, pending signed APK/Android tests and reference
+Galaxy S9 playback/thermal verification. Unsupported camera-specific lens
+and mesh calibrations remain separate work.
+
 ## Authority
 
 - Repository: `mrcalzon02/ReverieVR`

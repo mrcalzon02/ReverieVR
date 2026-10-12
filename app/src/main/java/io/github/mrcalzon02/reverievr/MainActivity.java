@@ -928,16 +928,38 @@ public final class MainActivity extends Activity
     }
 
     /**
-     * File-format discovery starts only after the user picks a document
-     * inside VR. SAF reads are asynchronous and limited to the first 4 MiB.
-     * Never replace a later selection or an in-VR manual projection choice.
+     * Discover MP4 eye layout after a document was selected in VR.
+     * Prefer seekable SAF access to reach a trailing moov without scanning
+     * gigabytes of media; streaming providers retain the bounded 4 MiB
+     * prefix fallback. File identity and user format overrides remain safe.
      */
     private void inspectVideoMetadata(Uri uri, VideoProjection suggested) {
         mediaMetadataExecutor.execute(() -> {
-            try (java.io.InputStream input =
-                    getContentResolver().openInputStream(uri)) {
-                SpatialMp4Metadata.Result result =
-                    SpatialMp4Metadata.inspect(input);
+            try {
+                SpatialMp4Metadata.Result detected = null;
+                try (android.os.ParcelFileDescriptor descriptor =
+                         getContentResolver().openFileDescriptor(uri, "r")) {
+                    if (descriptor != null) {
+                        try (java.io.FileInputStream source =
+                                 new java.io.FileInputStream(
+                                     descriptor.getFileDescriptor())) {
+                            detected = SpatialMp4Metadata.inspect(
+                                source.getChannel());
+                        }
+                    }
+                } catch (java.io.IOException | UnsupportedOperationException
+                         seekFailure) {
+                    // SAF can expose pipe-backed or nonseekable providers.
+                    // Reopen through a streaming URI instead of scanning mdat.
+                }
+
+                if (detected == null) {
+                    try (java.io.InputStream input =
+                             getContentResolver().openInputStream(uri)) {
+                        detected = SpatialMp4Metadata.inspect(input);
+                    }
+                }
+                final SpatialMp4Metadata.Result result = detected;
                 runOnUiThread(() -> {
                     if (isFinishing() || isDestroyed()
                         || !uri.toString().equals(

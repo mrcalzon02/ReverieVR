@@ -34,9 +34,19 @@ packing and uncropped, unrotated sv3d/proj/equi 360-degree projection only.
 The result changes the default display mode solely for the same selected
 content and only if the user has not since changed that mode; unsupported or
 incomplete metadata is not presented as playable VR180 or calibrated fisheye.
-No scans of mdat payload for incidental strings. moov-after-giant-mdat is
-intentionally UNKNOWN; future random-access inspection will need separate SAF
-seekability and bounds validation.
+No scans of mdat payload for incidental strings.
+
+The 2026-10-11 follow-on adds a seekable SAF descriptor path: for a provider
+supporting file-channel positioning, parse top-level MP4 box headers only,
+skip mdat by its declared 32-bit or 64-bit length and read complete moov
+boxes of at most 4 MiB even when stored behind gigabytes of media data.
+Never read mdat payload to infer embedded boxes. Limit the number of top-level
+boxes inspected to 1024 to avoid adversarial headers. Invalid/truncated
+containers or oversized moov are UNKNOWN rather than silently guessed.
+SAF pipe-backed descriptors fall back to the original, bounded 4 MiB prefix
+inspection; seek support is not assumed for all providers. No new storage
+permission, native codec dependency, or background file import is required.
+Device, codec, memory and performance acceptance remain separate gates.
 
 ## Deferred
 

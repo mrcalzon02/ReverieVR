@@ -2,6 +2,9 @@ package io.github.mrcalzon02.reverievr;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Conservative, bounded ISO-BMFF Spatial Media v2 track inspection.
@@ -12,6 +15,7 @@ import java.io.InputStream;
 final class SpatialMp4Metadata {
     static final int MAX_SCAN_BYTES = 4 * 1024 * 1024;
     private static final int MAX_DEPTH = 12;
+    private static final int MAX_TOP_LEVEL_BOXES = 1024;
 
     enum Status { UNKNOWN, SUPPORTED, UNSUPPORTED }
 
@@ -106,6 +110,94 @@ final class SpatialMp4Metadata {
         Scan scan = new Scan();
         scanBoxes(bytes, first.end, size, 0, scan);
         return scan.found;
+    }
+
+
+    /**
+     * Seekable SAF/MP4 path. Walk only top-level box headers, skipping mdat
+     * by its declared size (including 64-bit extended sizes); read at most
+     * MAX_SCAN_BYTES of a complete moov into memory. Thus moov at the end of
+     * a many-gigabyte MP4 is reachable without decoding or scanning its
+     * potentially enormous media payload. Unknown, malformed, oversized and
+     * nonseekable inputs never produce invented projections.
+     *
+     * Caller owns the channel and is responsible for fallback to inspect
+     * (InputStream) when a SAF provider only supplies a nonseekable pipe.
+     */
+    static Result inspect(SeekableByteChannel channel) throws IOException {
+        if (channel == null) return Result.unknown();
+        // Calling position first also detects pipe-backed SAF descriptors:
+        // size() alone can report zero for a pipe without throwing ESPIPE.
+        channel.position(0);
+        long length = channel.size();
+        if (length < 16) return Result.unknown();
+        byte[] header = new byte[16];
+        Scan scan = new Scan();
+        long offset = 0;
+        int boxes = 0;
+        while (offset < length && boxes++ < MAX_TOP_LEVEL_BOXES) {
+            if (length - offset < 8
+                || !readExactlyAt(channel, offset, header, 8)) {
+                return Result.unknown();
+            }
+            long size = unsigned32(header, 0);
+            String type = new String(header, 4, 4, StandardCharsets.US_ASCII);
+            if (offset == 0
+                && !"ftyp".equals(type) && !"styp".equals(type)) {
+                return Result.unknown();
+            }
+
+            int headerSize = 8;
+            if (size == 1) {
+                if (length - offset < 16
+                    || !readExactlyAt(channel, offset, header, 16)) {
+                    return Result.unknown();
+                }
+                long high = unsigned32(header, 8);
+                long low = unsigned32(header, 12);
+                if (high > 0x7FFFFFFFL) return Result.unknown();
+                size = (high << 32) | low;
+                headerSize = 16;
+            } else if (size == 0) {
+                size = length - offset; // extends to end of file
+            }
+
+            if (size < headerSize || size > length - offset) {
+                return Result.unknown();
+            }
+
+            if ("moov".equals(type)) {
+                if (size > MAX_SCAN_BYTES) return Result.unknown();
+                byte[] moov = new byte[(int) size];
+                if (!readExactlyAt(channel, offset, moov, moov.length)) {
+                    return Result.unknown();
+                }
+                scanBoxes(moov, 0, moov.length, 0, scan);
+            }
+            offset += size;
+        }
+        // A cap hit before reaching the end means the inspection was not
+        // exhaustive; do not silently accept an incomplete multi-track scan.
+        if (offset != length) return Result.unknown();
+        return scan.found;
+    }
+
+    private static boolean readExactlyAt(
+            SeekableByteChannel channel, long position,
+            byte[] target, int length) throws IOException {
+        channel.position(position);
+        ByteBuffer dest = ByteBuffer.wrap(target, 0, length);
+        int emptyReads = 0;
+        while (dest.hasRemaining()) {
+            int read = channel.read(dest);
+            if (read < 0) return false;
+            if (read == 0) {
+                if (++emptyReads >= 2) return false;
+            } else {
+                emptyReads = 0;
+            }
+        }
+        return true;
     }
 
     private static void scanBoxes(byte[] b, int start, int end,
