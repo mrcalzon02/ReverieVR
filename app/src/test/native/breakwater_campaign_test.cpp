@@ -625,10 +625,11 @@ int main() {
     // not the nominal three-point weapon damage.
     Campaign last_hull(Difficulty::Casual,8);
     assert(last_hull.Start());
-    uint8_t fragile[Campaign::kSerializedSize]={};
-    assert(last_hull.SerializeShop(fragile,sizeof(fragile)));
-    fragile[16]=1; fragile[20]=2; fragile[36]=1; // Iron Quay D2, 1 HP
-    assert(last_hull.DeserializeShop(fragile,sizeof(fragile)));
+    uint8_t low_hull_save[Campaign::kSerializedSize]={};
+    assert(last_hull.SerializeShop(low_hull_save,sizeof(low_hull_save)));
+    low_hull_save[16]=1; low_hull_save[20]=2;
+    low_hull_save[36]=1; // Iron Quay D2, 1 HP
+    assert(last_hull.DeserializeShop(low_hull_save,sizeof(low_hull_save)));
     assert(last_hull.BeginWave());
     for(int i=0;i<150 && last_hull.phase()==Phase::Combat;i++)
         last_hull.Tick(.05f);
