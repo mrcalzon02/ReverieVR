@@ -22,7 +22,7 @@ ReverieVR should:
 1. boot and operate without discontinued Google Daydream servers;
 2. provide a conventional touchscreen boot/setup surface before VR entry;
 3. pair/sync, verify, and recover the reference controller from that touchscreen surface;
-4. transition into a local in-headset VR shell/launcher after controller readiness;
+4. transition into a local in-headset VR shell/launcher whenever the VR display/runtime is ready, with or without a physical controller;
 5. expose complete local settings for the virtual environment and device behavior;
 6. provide seated head-look navigation with configurable physical input;
 7. support local VR video playback;
@@ -49,7 +49,7 @@ This stage is responsible for:
 - controller test/calibration where required;
 - device/runtime diagnostics needed before entering VR;
 - recovery when the VR input path or settings become unusable;
-- an explicit **Enter VR** transition once required readiness checks pass.
+- an explicit **Enter VR** transition when the VR display/runtime is ready; a missing controller must not block headset-only use.
 
 The exact controller transport/pairing implementation is an engineering decision to be verified during framework/runtime and controller-stack research. The user-facing requirement is stable even if the underlying transport changes.
 
@@ -65,6 +65,8 @@ After the user enters VR, the baseline seated interaction model is:
 - **two handset side volume buttons** for volume by default, with remapping only where Android/device behavior safely permits it.
 
 Touchscreen interaction is expected and supported in Stage A. It must not be required for ordinary Stage B operation once VR has been entered successfully.
+
+**Permanent minimum input:** If no controller can deliver usable input, the handset's headset head-tracking must still operate Stage B Home, menus and recovery. The center-of-view gaze ray targets shell buttons. Holding a live, eligible button under gaze for five continuous seconds triggers a single Select, with a visible countdown ring and cancellation on target loss/change; the same target cannot fire repeatedly without refocusing. This fallback overrides a stale controller-only pointer choice, and yields immediately when actual controller input becomes available. A hosted game is not promised analog gameplay through gaze alone: losing controller input while hosted must surface a reachable shell recovery menu; a five-second upward look can reopen the menu after dismissal. Stage A entry must remain accessible with the phone and headset alone whenever the Cardboard runtime works.
 
 The Stage B shell owns platform-global UI and behavior that must survive transitions between the home, media player, and hosted modules. Experiences may supply their own content UI, but they do not replace shell recovery, global settings access, or the global status layer.
 
