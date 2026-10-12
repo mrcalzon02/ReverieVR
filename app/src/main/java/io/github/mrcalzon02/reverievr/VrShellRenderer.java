@@ -359,7 +359,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {100, 450, 480, 515},
         {544, 450, 924, 515},
         {100, 535, 480, 600},
-        {544, 535, 924, 600}
+        {544, 535, 924, 600},
+        {220, 620, 804, 688} // Fullscreen from DOS options
     };
 
     private static final int[][] THREE_BUTTONS = new int[][] {
@@ -5293,6 +5294,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 7:
                 mode = MODE_DOS_OVERLAY;
                 break;
+            case 8:
+                dosRenderer.setFullScreen(!dosRenderer.isFullScreen());
+                break;
             default:
                 return;
         }
@@ -7560,7 +7564,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "DEADZONE -0.02",
             "DEADZONE +0.02",
             "RESET TUNING",
-            "BACK"
+            "BACK",
+            dosRenderer.isFullScreen() ? "FULLSCREEN: ON" : "FULLSCREEN: OFF"
         };
 
         drawButtons(
