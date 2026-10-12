@@ -415,6 +415,7 @@ int main() {
     assert(landed.integrity()==integrity);
     assert(landed.infantry_volley().sequence==0);
     assert(landed.infantry_volley().shooters==0);
+    assert(landed.infantry_volley().damage==0);
     for(const Infantry &trooper:landed.infantry_units())
         if(trooper.active) assert(trooper.z < -1.34f);
     for(int i=0;i<160;i++) landed.Tick(0.05f);
@@ -422,6 +423,7 @@ int main() {
     const InfantryVolleyEvent first_volley=landed.infantry_volley();
     assert(first_volley.sequence>=1);
     assert(first_volley.shooters>0 && first_volley.shooters<=landed.infantry());
+    assert(first_volley.damage>0 && first_volley.damage<=first_volley.shooters*2);
     assert(std::isfinite(first_volley.x) && std::isfinite(first_volley.z));
     bool matched_shooter=false;
     for(const Infantry &trooper:landed.infantry_units())
@@ -436,6 +438,29 @@ int main() {
     }
     assert(landed.wave_status().troops_stopped>=1);
     assert(landed.waves_this_period()==2);
+
+    // Infantry volleys must report the real damage against the final hull
+    // point, rather than the nominal damage from every ready shooter.
+    Campaign last_infantry_hull(Difficulty::Casual,41);
+    assert(last_infantry_hull.Start());
+    uint8_t last_infantry_save[Campaign::kSerializedSize]={};
+    assert(last_infantry_hull.SerializeShop(last_infantry_save,
+                                           sizeof(last_infantry_save)));
+    last_infantry_save[36]=1; // integrity word, little-endian
+    last_infantry_save[37]=0;
+    last_infantry_save[38]=0;
+    last_infantry_save[39]=0;
+    assert(last_infantry_hull.DeserializeShop(last_infantry_save,
+                                              sizeof(last_infantry_save)));
+    assert(last_infantry_hull.BeginWave());
+    for(int i=0;i<1600 && last_infantry_hull.phase()==Phase::Combat;i++)
+        last_infantry_hull.Tick(.05f);
+    assert(last_infantry_hull.phase()==Phase::Defeat);
+    assert(last_infantry_hull.integrity()==0);
+    const InfantryVolleyEvent fatal_volley=last_infantry_hull.infantry_volley();
+    assert(fatal_volley.sequence==1 && fatal_volley.damage==1);
+    assert(fatal_volley.shooters>0);
+    assert(std::isfinite(fatal_volley.x) && std::isfinite(fatal_volley.z));
 
     // The campaign allocates independently moving soldiers with real targets.
     Campaign beach(Difficulty::Casual,41);

@@ -83,6 +83,7 @@ struct InfantryVolleyEvent {
     float x = 0;
     float z = 0;
     uint8_t shooters = 0;
+    uint8_t damage = 0; // actual hull loss, not nominal volley strength
 };
 // The simulation emits this only when an aircraft deals real hull damage.
 struct AircraftAttackEvent {

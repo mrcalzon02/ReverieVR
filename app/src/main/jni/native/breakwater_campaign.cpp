@@ -630,13 +630,18 @@ void Campaign::TickStep(float dt) {
         infantry_timer_ += dt;
         if (infantry_timer_ >= 4.0f) {
             infantry_timer_ = 0.0f;
+            const int32_t hull_before = integrity_;
             integrity_ = std::max(0, integrity_ - ready_to_fire * 2);
-            // Preserve a real gun position through the rendering pass even
-            // if the source infantryman is killed later in this same frame.
-            ++infantry_volley_.sequence;
-            infantry_volley_.x = first_shooter->x;
-            infantry_volley_.z = first_shooter->z;
-            infantry_volley_.shooters = ready_to_fire;
+            const int32_t actual_damage = hull_before - integrity_;
+            // Preserve the real shooter's position, but never emit a
+            // phantom hit when another attacker already destroyed the hull.
+            if (actual_damage > 0) {
+                ++infantry_volley_.sequence;
+                infantry_volley_.x = first_shooter->x;
+                infantry_volley_.z = first_shooter->z;
+                infantry_volley_.shooters = ready_to_fire;
+                infantry_volley_.damage = static_cast<uint8_t>(actual_damage);
+            }
         }
     }
     if (integrity_ == 0) { phase_ = Phase::Defeat; return; }

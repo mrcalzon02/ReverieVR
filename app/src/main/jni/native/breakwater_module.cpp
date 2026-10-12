@@ -896,10 +896,17 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                     ImpactKind::Explosion:ImpactKind::Metal);
         }
         const InfantryVolleyEvent volley=s->campaign.infantry_volley();
-        if(volley.sequence!=volley_before && volley.shooters>0) {
+        if(volley.sequence!=volley_before && volley.damage>0) {
             s->infantry_flash_x=volley.x;
             s->infantry_flash_z=volley.z;
             s->infantry_flash=.15f;
+            // The actual volley also strikes the battery, not just the
+            // shooter's muzzle. Distribute the cheap spark across the
+            // parapet using the real firing position.
+            const float parapet[]={std::max(-.8f,std::min(.8f,volley.x*.25f)),
+                                   -.76f,-.92f};
+            const float down[]={0.0f,-1.0f,0.0f};
+            s->impacts.RecordHit(parapet,down,.10f,ImpactKind::Metal);
         }
         if(was_reloading && !s->campaign.reloading() &&
            s->campaign.phase()==Phase::Combat)
