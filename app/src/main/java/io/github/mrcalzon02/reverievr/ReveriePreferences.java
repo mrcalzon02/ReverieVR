@@ -20,6 +20,7 @@ final class ReveriePreferences {
     private static final String KEY_VIDEO_URI = "video_uri";
     private static final String KEY_VIDEO_DISPLAY_NAME = "video_display_name";
     private static final String KEY_VIDEO_PROJECTION = "video_projection";
+    private static final String KEY_VIDEO_LENS_UNWARP = "video_lens_unwarp";
     private static final String KEY_HOME_ENVIRONMENT = "home_environment";
     private static final String KEY_VR_POINTER_MODE = "vr_pointer_mode";
     private static final String KEY_CONTROLLER_LEFT_HANDED = "controller_left_handed";
@@ -184,6 +185,8 @@ final class ReveriePreferences {
         if (!uri.equals(getSelectedVideoUri())) {
             editor.putString(KEY_VIDEO_PROJECTION,
                 VideoProjection.suggestForFileName(displayName).name());
+            // Optical adjustment belongs to this recording, never the next.
+            editor.putInt(KEY_VIDEO_LENS_UNWARP, 0);
         }
         editor.apply();
     }
@@ -193,7 +196,8 @@ final class ReveriePreferences {
             preferences.edit()
                 .remove(KEY_VIDEO_URI)
                 .remove(KEY_VIDEO_DISPLAY_NAME)
-                .remove(KEY_VIDEO_PROJECTION);
+                .remove(KEY_VIDEO_PROJECTION)
+                .remove(KEY_VIDEO_LENS_UNWARP);
 
         if (LAST_ACTIVITY_MEDIA.equals(
                 getLastActivityType()
@@ -220,6 +224,16 @@ final class ReveriePreferences {
         preferences.edit()
             .putString(KEY_VIDEO_PROJECTION, safe.name())
             .apply();
+    }
+
+    int getVideoLensUnwarpStep() {
+        return HeadsetLensUnwarp.clampStep(
+            preferences.getInt(KEY_VIDEO_LENS_UNWARP, 0));
+    }
+
+    void setVideoLensUnwarpStep(int step) {
+        preferences.edit().putInt(
+            KEY_VIDEO_LENS_UNWARP, HeadsetLensUnwarp.clampStep(step)).apply();
     }
 
     /**

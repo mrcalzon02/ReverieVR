@@ -47,6 +47,7 @@ final class VideoSurfaceRenderer {
 
     private volatile VideoProjection projection = VideoProjection.FLAT_CINEMA;
     private volatile float videoAspectRatio = 16.0f / 9.0f;
+    private volatile float headsetLensUnwarpCoefficient;
 
     private int program;
     private int texture;
@@ -55,6 +56,7 @@ final class VideoSurfaceRenderer {
     private int mvpHandle;
     private int surfaceTransformHandle;
     private int eyeRegionHandle;
+    private int lensUnwarpHandle;
     private int textureHandle;
 
     private SurfaceTexture surfaceTexture;
@@ -96,6 +98,10 @@ final class VideoSurfaceRenderer {
             : projection;
     }
 
+    void setHeadsetLensUnwarp(int step) {
+        headsetLensUnwarpCoefficient = HeadsetLensUnwarp.coefficient(step);
+    }
+
     void setVideoAspectRatio(float aspectRatio) {
         if (Float.isFinite(aspectRatio)
             && aspectRatio >= 0.25f
@@ -114,6 +120,7 @@ final class VideoSurfaceRenderer {
         surfaceTransformHandle =
             GLES20.glGetUniformLocation(program, "u_SurfaceTransform");
         eyeRegionHandle = GLES20.glGetUniformLocation(program, "u_EyeRegion");
+        lensUnwarpHandle = GLES20.glGetUniformLocation(program, "u_LensUnwarp");
         textureHandle = GLES20.glGetUniformLocation(program, "u_Texture");
 
         int[] textures = new int[1];
@@ -230,6 +237,7 @@ final class VideoSurfaceRenderer {
         mvpHandle = -1;
         surfaceTransformHandle = -1;
         eyeRegionHandle = -1;
+        lensUnwarpHandle = -1;
         textureHandle = -1;
         frameAvailable.set(false);
         Matrix.setIdentityM(surfaceTransform, 0);
@@ -349,6 +357,11 @@ final class VideoSurfaceRenderer {
             0
         );
         GLES20.glUniform4fv(eyeRegionHandle, 1, eyeUvRegion, 0);
+        // The recorded-headset path alone may remap the baked source image.
+        // Standard cinema and real spatial modes are always untouched.
+        GLES20.glUniform1f(lensUnwarpHandle,
+            projection.isHeadsetRecording()
+                ? headsetLensUnwarpCoefficient : 0.0f);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture);
@@ -522,8 +535,10 @@ final class VideoSurfaceRenderer {
             + "attribute vec4 a_Position;\n"
             + "attribute vec2 a_TexCoord;\n"
             + "varying vec2 v_TexCoord;\n"
+            + "varying vec2 v_EyeLocalUv;\n"
             + "void main() {\n"
             + "  gl_Position = u_Mvp * a_Position;\n"
+            + "  v_EyeLocalUv = a_TexCoord;\n"
             + "  v_TexCoord = "
             + "(u_SurfaceTransform * vec4(u_EyeRegion.xy + "
             + "a_TexCoord * u_EyeRegion.zw, 0.0, 1.0)).xy;\n"
@@ -533,8 +548,27 @@ final class VideoSurfaceRenderer {
         "#extension GL_OES_EGL_image_external : require\n"
             + "precision mediump float;\n"
             + "uniform samplerExternalOES u_Texture;\n"
+            + "uniform mat4 u_SurfaceTransform;\n"
+            + "uniform vec4 u_EyeRegion;\n"
+            + "uniform float u_LensUnwarp;\n"
             + "varying vec2 v_TexCoord;\n"
+            + "varying vec2 v_EyeLocalUv;\n"
             + "void main() {\n"
-            + "  gl_FragColor = texture2D(u_Texture, v_TexCoord);\n"
+            + "  if (abs(u_LensUnwarp) < 0.0001) {\n"
+            + "    gl_FragColor = texture2D(u_Texture, v_TexCoord);\n"
+            + "    return;\n"
+            + "  }\n"
+            + "  vec2 eye = v_EyeLocalUv * 2.0 - 1.0;\n"
+            + "  float r2 = 0.5 * dot(eye, eye);\n"
+            + "  float radial = 1.0 + u_LensUnwarp * r2;\n"
+            + "  vec2 local = (eye * radial + 1.0) * 0.5;\n"
+            + "  if (any(lessThan(local, vec2(0.0))) ||\n"
+            + "      any(greaterThan(local, vec2(1.0)))) {\n"
+            + "    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);\n"
+            + "    return;\n"
+            + "  }\n"
+            + "  vec2 packed = u_EyeRegion.xy + local * u_EyeRegion.zw;\n"
+            + "  vec2 tex = (u_SurfaceTransform * vec4(packed, 0.0, 1.0)).xy;\n"
+            + "  gl_FragColor = texture2D(u_Texture, tex);\n"
             + "}\n";
 }

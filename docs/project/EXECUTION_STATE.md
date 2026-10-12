@@ -71,6 +71,28 @@ Existing MediaPlayer, SAF permissions and OES texture lifecycle are unchanged.
 Source and JVM-test coverage have been added; cloud APK and reference Galaxy
 S9 + Daydream headset playback remain acceptance gates.
 
+## 2026-10-11 — RV-0505 adjustable optical prewarp recovery
+
+Extended the distinct fixed-eye headset-recording path with in-VR signed
+radial image remapping. Lens -5% / +5% controls appear only for selected
+headset recordings and adjust a radial coefficient from -0.30 to +0.30
+in steps of 0.05. Off is the exact existing passthrough path. The fragment
+shader samples the encoded local eye coordinate after a center-preserving
+radial transform, then maps into the selected SBS/TB eye crop before the
+Android SurfaceTexture producer transform. If the transformed coordinate
+falls outside that eye region, the fragment draws opaque black instead of
+leaking pixels from the adjacent eye. It does not alter 2D cinema, stereoscopic
+cinema, or genuine equirectangular 180/360 media.
+Correction is stored with the selected file, cleared for different media,
+and restored on playback/Resume. Recenter and Home are retained in the expanded
+headset-only in-VR menu. Regression tests check the no-op case, signed bounds,
+center invariance, correction limit clamping and presets.
+This is *not* calibrated optical inversion: real inverse models can require
+source headset radial/tangential lens coefficients and off-center per-eye
+optical origins. Nor does it restore six-degree head tracking to a recording.
+Status: source slice; GitHub Android build, actual GLES2 shader link, Galaxy S9
+headset viewing and visual distortion proof remain necessary.
+
 ## Authority
 
 - Repository: `mrcalzon02/ReverieVR`

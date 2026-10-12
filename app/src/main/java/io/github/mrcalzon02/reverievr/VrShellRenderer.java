@@ -259,6 +259,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {140, 555, 884, 620}
     };
 
+    // Headset recordings have two real optical adjustment controls in VR.
+    // They replace no existing action: Recenter and Home move down one row.
+    private static final int[][] MEDIA_HEADSET_BUTTONS = new int[][] {
+        {140, 235, 884, 290},
+        {140, 304, 884, 359},
+        {140, 373, 884, 428},
+        {140, 445, 493, 500},
+        {531, 445, 884, 500},
+        {140, 520, 884, 575},
+        {140, 595, 884, 650}
+    };
+
     private static final int[][] ENVIRONMENT_BUTTONS = new int[][] {
         {140, 265, 884, 330},
         {140, 345, 884, 410},
@@ -3862,6 +3874,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return index == 4;
         }
 
+        if (mode == MODE_MEDIA_LIBRARY
+            && preferences.getVideoProjection().isHeadsetRecording()
+            && preferences.hasSelectedVideo()) {
+            int step = preferences.getVideoLensUnwarpStep();
+            if (index == 3 && step <= HeadsetLensUnwarp.MIN_STEP) {
+                return false;
+            }
+            if (index == 4 && step >= HeadsetLensUnwarp.MAX_STEP) {
+                return false;
+            }
+        }
+
         if (mode == MODE_DOS_LIBRARY) {
             if (index >= 0 && index <= 2) {
                 int moduleIndex =
@@ -4488,6 +4512,30 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void handleMediaSelection(int button) {
+        boolean headsetMode = preferences.hasSelectedVideo()
+            && preferences.getVideoProjection().isHeadsetRecording();
+
+        if (headsetMode && (button == 3 || button == 4)) {
+            int step = HeadsetLensUnwarp.adjust(
+                preferences.getVideoLensUnwarpStep(),
+                button == 3 ? -1 : 1);
+            preferences.setVideoLensUnwarpStep(step);
+            videoRenderer.setHeadsetLensUnwarp(step);
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
+        if (headsetMode && (button == 5 || button == 6)) {
+            if (button == 5) {
+                requestRecenter();
+            } else {
+                mode = MODE_HOME;
+            }
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
+
         switch (button) {
             case 0:
                 if (!preferences.hasSelectedVideo()) {
@@ -4497,6 +4545,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 videoRenderer.setProjection(
                     preferences.getVideoProjection()
                 );
+                videoRenderer.setHeadsetLensUnwarp(
+                    preferences.getVideoLensUnwarpStep());
                 videoSeekRequestedMillis.set(0);
                 preferences.markLastActivityMedia();
                 mode = MODE_VIDEO;
@@ -4871,7 +4921,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_MEDIA_LIBRARY) {
-            return MEDIA_BUTTONS;
+            return preferences.hasSelectedVideo()
+                && preferences.getVideoProjection().isHeadsetRecording()
+                ? MEDIA_HEADSET_BUTTONS : MEDIA_BUTTONS;
         }
 
         if (mode == MODE_ENVIRONMENT) {
@@ -5987,6 +6039,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             videoRenderer.setProjection(
                 preferences.getVideoProjection()
             );
+            videoRenderer.setHeadsetLensUnwarp(
+                preferences.getVideoLensUnwarpStep());
             videoSeekRequestedMillis.set(0);
             mode = MODE_VIDEO;
             host.onVideoPlaybackRequested();
@@ -6494,21 +6548,26 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "BACK TO HOME"
         };
 
-        drawButtons(
-            canvas,
-            paint,
-            labels,
-            MEDIA_BUTTONS
-        );
-        if (projection.isHeadsetRecording()) {
+        if (projection.isHeadsetRecording()
+            && preferences.hasSelectedVideo()) {
+            int step = preferences.getVideoLensUnwarpStep();
+            String strength = HeadsetLensUnwarp.displayName(step);
+            String[] headsetLabels = new String[] {
+                labels[0], labels[1], labels[2],
+                "LENS -5%", "LENS +5%", labels[3], labels[4]
+            };
+            drawButtons(canvas, paint, headsetLabels,
+                MEDIA_HEADSET_BUTTONS);
             paint.setColor(Color.rgb(166, 179, 197));
             paint.setTextSize(17.0f * uiScale);
-            canvas.drawText(
-                "FIXED EYES: head movement cannot reproject the recording.",
-                92, 664, paint);
-            canvas.drawText(
-                "Prewarped lenses may distort; no inverse warp is applied.",
-                92, 690, paint);
+            canvas.drawText("RADIAL UNWARP: " + strength
+                + " | adjusts the recorded eye, not the headset optics.",
+                92, 695, paint);
+            canvas.drawText("Use OFF for unwarped video; source-specific"
+                + " calibration may still be required.",
+                92, 719, paint);
+        } else {
+            drawButtons(canvas, paint, labels, MEDIA_BUTTONS);
         }
     }
 
