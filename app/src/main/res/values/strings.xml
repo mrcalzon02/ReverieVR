@@ -161,7 +161,8 @@ Available: %2$s</string>
     <string name="reset_settings_confirm">Reset</string>
     <string name="settings_reset_complete">Local ReverieVR settings reset.</string>
     <string name="laptop_link_section">Laptop Link (optional Windows utility)</string>
-    <string name="laptop_link_description">Export the portable Windows link tools included in this APK. Copy the ZIP to the laptop, extract it, and start the launcher yourself. Phone-only VR never requires this utility.</string>
+    <string name="laptop_link_description">The portable Windows link tools are bundled inside this APK. Share a one-time download to your laptop using trusted local Wi-Fi/hotspot or USB/ADB, or export the ZIP manually. Review and launch the tool yourself; phone-only VR never requires it.</string>
+    <string name="laptop_link_share">Share Laptop Link over USB / Wi-Fi (5 min)</string>
     <string name="laptop_link_export">Export Laptop Link ZIP</string>
     <string name="laptop_link_ready">Laptop Link exported. Copy the ZIP to Windows, extract, then run Start-ReverieLink.cmd. It will only act when you choose an operation.</string>
     <string name="laptop_link_failed">Unable to export Laptop Link: %1$s</string>
