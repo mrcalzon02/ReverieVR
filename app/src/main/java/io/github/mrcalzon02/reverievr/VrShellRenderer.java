@@ -1474,6 +1474,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
             lastPerformanceLogNanos = frameNanos;
         }
 
+        // Correct the Cardboard headset's reversed horizontal pivot
+        // before any ray, recenter, menu, controller or stereo calculation.
+        // HeadTransform is frame-local, so its derived Euler/forward calls
+        // must see exactly the same corrected matrix as both eyes.
+        float[] headView = headTransform.getHeadView();
+        if (!HeadYawConvention.correctInPlace(headView)) {
+            ReverieLog.incident("VR_HEADING",
+                "Invalid headset view; keeping neutral orientation for frame.");
+            Matrix.setIdentityM(headView, 0);
+        }
         headTransform.getHeadView(rawHeadView, 0);
         headTransform.getEulerAngles(headEuler, 0);
         headTransform.getForwardVector(headForward, 0);
