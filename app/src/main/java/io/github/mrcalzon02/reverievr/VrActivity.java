@@ -203,6 +203,11 @@ public final class VrActivity extends Activity
         CardboardView.setUseCardboardGlSurfaceView(true);
         cardboardView = new CardboardView(this);
         cardboardView.setStereoRenderMode(true);
+        // Cardboard's two stock overlay buttons are touchscreen-only.
+        // VR deliberately consumes physical touchscreen input to avoid
+        // Daydream headset clamp contacts; retain stereo alignment marker,
+        // remove only the inaccessible close/gear buttons.
+        cardboardView.post(this::hideCardboardTouchControls);
 
         float viewerIpd = readViewerInterLensDistance();
 
@@ -227,13 +232,6 @@ public final class VrActivity extends Activity
         );
         cardboardView.setRenderer(renderer);
         cardboardRendererBound = true;
-        cardboardView.setOnBackButtonClick(this::finish);
-        cardboardView.setOnSettingsButtonClick(
-            () -> inputRouter.submitAction(
-                VrInputAction.MENU,
-                "Cardboard system control"
-            )
-        );
         cardboardView.setOnTriggerEvent(
             () -> inputRouter.submitAction(
                 VrInputAction.SELECT,
@@ -886,6 +884,7 @@ public final class VrActivity extends Activity
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
             enterImmersiveMode();
+            hideCardboardTouchControls();
         }
     }
 
@@ -925,7 +924,8 @@ public final class VrActivity extends Activity
                 controllerManager.getActiveProviderId())) return;
 
         if (renderer != null) {
-            renderer.setControllerPose(snapshot);
+            renderer.setControllerPose(snapshot,
+                "daydream_ble".equals(controllerManager.getActiveProviderId()));
         }
 
         inputRouter.onControllerSnapshot(
@@ -2641,6 +2641,18 @@ public final class VrActivity extends Activity
         return percentage >= 0 && percentage <= 100
             ? percentage
             : -1;
+    }
+
+    private void hideCardboardTouchControls() {
+        if (cardboardView == null) return;
+        // Overlay is owned by CardboardView; its own stereo setup queues
+        // a showAll(), so hide on the UI event queue after initialization.
+        View close = cardboardView.findViewById(
+            com.google.cardboard.sdk.R.id.ui_back_button);
+        View options = cardboardView.findViewById(
+            com.google.cardboard.sdk.R.id.ui_settings_button);
+        if (close != null) close.setVisibility(View.GONE);
+        if (options != null) options.setVisibility(View.GONE);
     }
 
     private void enterImmersiveMode() {
