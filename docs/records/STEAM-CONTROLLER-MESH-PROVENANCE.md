@@ -1,5 +1,10 @@
 # Original Steam Controller mesh provenance and handoff
 
+## 2026-10-11 public distribution correction
+
+The current public `main` tree previously carried `app/src/main/assets/steam_controller_2015/handoff.zip` (1,693,956 bytes; Git blob `8a8b4dc2987612acb7cf3c9e9e401d3c64f760a1`). This is a tracked derivative of Valve CAD carrying the noncommercial license identified below. The earlier paragraph stating no Valve geometry was in Git was inaccurate after integration. The public repository is itself a distribution channel: that archive is removed from the **current tree**, and an app-build check rejects reintroduction through Android's automatically packaged asset path. Steam primary-controller input remains operational with a procedurally built 3D fallback. Existing repository history, downstream clones and earlier APK releases are not purged by a normal forward commit; they need their own audit. Future local import is not implemented, and a runtime download would not evade the noncommercial restriction.
+
+
 Date: 2026-10-10, America/Anchorage. Target: RV-0209 offline mesh preparation.
 Starting main: `133042ffb4517e4bb9a538f13d9cafc328989b6d`.
 Concurrent main advanced to `febe7157f880614dd2a8ef93f839b7a8a17d3df1` during
@@ -21,10 +26,12 @@ session skills; repository doctrine and execution contract were read.
   ShareAlike 4.0 International, copyright 2016 Valve Corporation; commercial
   products require contacting Valve. [License terms](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
-No 2026 second-generation geometry was used. Source ZIP and 22 STLs are preserved
-separately from derivatives in local storage outside Git. The full source license
-is retained unchanged in the handoff. General/commercial redistribution rights
-have not been established; Git contains tooling and records, not Valve geometry.
+No 2026 second-generation geometry was used. Source ZIP and 22 STLs were
+preserved separately from derivatives in local storage outside Git. The full
+source license was retained in the handoff. General/commercial redistribution
+rights have not been established. After the later integration, a reduced
+Valve-derived mesh was temporarily tracked in the public repository; see the
+distribution correction above.
 The local importer requires explicit noncommercial/sharealike acceptance.
 
 ## DEEFM evidence and quality

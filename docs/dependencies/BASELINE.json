@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "baseline": "reverievr-2026-10-11",
+  "policy": "reviewed-update-only",
+  "purpose": "current in-use build/runtime/construction dependency contract; no change of owner license",
+  "application": {
+    "min_android_api": 26,
+    "target_android_api": 36,
+    "compile_android_api": 36,
+    "abis": [
+      "armeabi-v7a",
+      "arm64-v8a"
+    ],
+    "renderer": "OpenGL ES 2 baseline",
+    "reference_device": "Samsung Galaxy S9 / Daydream View"
+  },
+  "toolchain": {
+    "jdk_vendor": "temurin",
+    "jdk_major": 17,
+    "gradle": "9.6.1",
+    "gradle_wrapper_jar_sha256": "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7",
+    "gradle_distribution_sha256": "9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14",
+    "android_gradle_plugin": "9.2.0",
+    "protobuf_gradle_plugin": "0.10.0",
+    "android_sdk_platform": 36,
+    "android_build_tools": "36.0.0",
+    "android_ndk": "29.0.14206865",
+    "cmake": "3.22.1",
+    "java_source": "17"
+  },
+  "ci": {
+    "runner": "ubuntu-latest",
+    "actions": {
+      "actions/checkout": "v4",
+      "actions/setup-java": "v4",
+      "actions/upload-artifact": "v4"
+    },
+    "limitations": [
+      "ubuntu-latest and the three workflow action v4 selectors are still mutable: tracked as risks because existing GitHub Actions have not been modified without explicit authorization.",
+      "JDK 17 selects a major version rather than an exact patch; Android commandline-tools latest and upstream runner images are not byte-locked.",
+      "The pinned toolchain below describes accepted versions/configuration; provenance of exact transitive downloaded Maven binaries must be generated from a trusted resolved build."
+    ]
+  },
+  "source_dependencies": {
+    "cardboard": {
+      "version": "1.35.0",
+      "repo": "https://github.com/googlevr/cardboard.git",
+      "git_commit": "5969239e7c87f4cd64c8ec170ce1e7f4eb559e37",
+      "location": "third_party/cardboard",
+      "license": "Apache-2.0 (upstream subcomponents may differ)",
+      "classification": "native and Android runtime"
+    },
+    "dosbox_pure": {
+      "version": "1.0-preview6",
+      "repo": "https://github.com/schellingb/dosbox-pure.git",
+      "git_commit": "a4a0bab7f8931433588f2fcad9045c85b277373d",
+      "location": "third_party/dosbox-pure/src",
+      "license": "GPL-2.0-or-later",
+      "classification": "native DOS runtime (required for full phone-test build)"
+    },
+    "openktg": {
+      "git_commit": "72f7697c8b5be6fadae41f9ca6312cd5f88fdc4c",
+      "location": "third_party/openktg/src",
+      "license": "LicenseRef-Public-Domain-Upstream",
+      "classification": "vendored native procedural texture construction"
+    }
+  },
+  "gradle_coordinates": {
+    "plugins": {
+      "com.android.application": "9.2.0",
+      "com.android.library": "9.2.0",
+      "com.google.protobuf": "0.10.0"
+    },
+    "runtime_and_test": {
+      "com.google.protobuf:protobuf-javalite": "3.19.4",
+      "junit:junit": "4.13.2",
+      "androidx.appcompat:appcompat": "1.6.1",
+      "com.google.android.gms:play-services-vision": "20.1.3",
+      "com.google.android.material:material": "1.12.0",
+      "org.jspecify:jspecify": "1.0.0"
+    },
+    "build_codegen": {
+      "com.google.protobuf:protoc": "3.19.4"
+    },
+    "resolution": "direct coordinates pinned; transitive Gradle lockfiles and repository verification-metadata.xml not yet generated/reviewed. Do not claim full transitive reproducibility."
+  },
+  "offline_asset_construction": {
+    "python_requirements": {
+      "numpy": "2.2.6",
+      "matplotlib": "3.10.3",
+      "fast-simplification": "0.1.13",
+      "trimesh": "4.7.4",
+      "scipy": "1.15.3",
+      "scikit-image": "0.25.2"
+    },
+    "npm_requirements": {
+      "meshoptimizer": "1.0.1"
+    },
+    "npm_lock_integrity": "sha512-Vix+QlA1YYT3FwmBBZ+49cE5y/b+pRrcXKqGpS5ouh33d3lSp2PoTpCw19E0cKDFWalembrHnIaZetf27a+W2g==",
+    "classification": "asset import and optimization tooling; not packaged or executed in Android runtime"
+  },
+  "assets": {
+    "steam_controller_archive": {
+      "path": "app/src/main/assets/steam_controller_2015/handoff.zip",
+      "git_blob_sha1": "8a8b4dc2987612acb7cf3c9e9e401d3c64f760a1",
+      "size_bytes": 1693956,
+      "license": "CC-BY-NC-SA-4.0 (upstream Valve CAD derivative, subject to validation)",
+      "redistribution": "restricted CC BY-NC-SA, historic public commits/older APKs must be audited; user-local future import not yet supported",
+      "commercial_release": "BLOCK_PENDING_VALVE_PERMISSION",
+      "in_current_tree": false,
+      "classification": "historical Git blob and licensed optional art; removed from default APK source tree"
+    },
+    "daydream_controller_obj": {
+      "path": "app/src/main/assets/models/daydream/vr_controller_daydream.obj",
+      "git_blob_sha1": "21d4b08e240b0cc49d9e4cda2916f8f1372bfdf9",
+      "license": "CC-BY (source states attribution; version not established by local notice), upstream derivative repository GPL-3.0",
+      "redistribution": "preserve model attribution and source GPL notice; legal compatibility review required"
+    },
+    "doom_shareware": {
+      "version": "1.9",
+      "source": "https://www.gamers.org/pub/idgames/idstuff/doom/doom19s.zip",
+      "sha256": "cacf0142b31ca1af00796b4a0339e07992ac5f21bc3f81e7532fe1b5e1b486e6",
+      "location": "third_party/doom-shareware/payload/default-content/doom19s.zip",
+      "license": "LicenseRef-id-Software-Shareware",
+      "redistribution": "original shareware archive only, free/noncommercial releases currently bundle when fetched; independent optionalization still planned"
+    }
+  },
+  "licensing": {
+    "reverievr_original_code": "NO_REPOSITORY_LICENSE_DECLARED_OWNER_DECISION_REQUIRED",
+    "not_a_grant": "This inventory documents upstream licenses. It does not sublicense proprietary data, grant a license to original ReverieVR code, or guarantee GPL/CC compatibility for a combined distribution.",
+    "records": [
+      {
+        "component": "Cardboard",
+        "license": "Apache-2.0",
+        "record": "third_party/README.md"
+      },
+      {
+        "component": "DOSBox Pure",
+        "license": "GPL-2.0-or-later",
+        "record": "third_party/dosbox-pure/README.md"
+      },
+      {
+        "component": "OpenKTG",
+        "license": "public domain statement",
+        "record": "third_party/openktg/LICENSE"
+      },
+      {
+        "component": "Daydream controller model",
+        "license": "CC attribution upstream plus GPL-3.0 derivative repository notice",
+        "record": "app/src/main/assets/models/daydream/THIRD_PARTY.md"
+      },
+      {
+        "component": "Valve Steam Controller CAD-derived asset",
+        "license": "CC-BY-NC-SA-4.0",
+        "record": "docs/records/STEAM-CONTROLLER-MESH-PROVENANCE.md"
+      },
+      {
+        "component": "DOOM shareware sample",
+        "license": "id Software shareware (copyright retained)",
+        "record": "third_party/doom-shareware/README.md"
+      }
+    ],
+    "commercial_distribution": "HOLD: Valve derivative is removed from current main tree, but earlier public history/releases, Daydream model and current DOOM shareware packaging must be reviewed, plus GPL corresponding source.",
+    "third_party_source_release": "Whenever GPL components ship, publish required notices and complete corresponding source/build information for the exact shipped versions."
+  },
+  "known_gaps": [
+    "Gradle transitive dependency lockfiles and SHA-256 verification-metadata not yet generated; must be built from an actual resolved trusted Gradle run, independently reviewed before admission.",
+    "Exact Android SDK commandline-tools revision, JDK 17 patch, GitHub runner OS image revision and upstream repository artifact mirrors not sealed.",
+    "Full legal review of packaged Valve handoff ZIP, Daydream controller derivative, commercial/shareware disposition, and GPL linking boundaries remains pending.",
+    "Emulator catalog source snapshots are optional and not active executable runtime dependencies; their licenses and commit digests must be vetted at install time.",
+    "Public repository source and published APKs are already distributions. Valve archive removed from current tree only; historical commits and releases remain available.",
+    "No repository-level owner license has been approved; third-party CC/GPL obligations do not grant original ReverieVR code a license.",
+    "Automatic runtime downloads are not a workaround for noncommercial/third-party software licensing."
+  ]
+}

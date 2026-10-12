@@ -1,5 +1,30 @@
 # Building ReverieVR
 
+## Frozen dependency and licensing baseline
+
+ReverieVR is a **public distribution** through GitHub. See
+[`docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md`](docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md)
+before shipping source snapshots, assets, or APKs. A public repository alone is
+not a license for original code. GPL/CC obligations apply to the particular
+code and artwork actually distributed, including third-party controller assets.
+
+The main build no longer contains Valve's CC BY-NC-SA Steam Controller CAD
+derivative in `app/src/main/assets/`. That asset was historically tracked;
+existing public commits and older APKs are not retroactively changed. The
+current renderer substitutes a small, original procedurally rendered Steam
+controller shape if the licensed asset is absent. A build with a local copy
+reintroduced into the default Android assets directory is rejected.
+Steam Controller input and detection are independent of the optional mesh.
+No user-import or runtime-downloader feature is yet available.
+
+The active **exact dependency versions, source commits, and known still-floating
+build inputs** belong in `docs/dependencies/BASELINE.json`. Run
+`python3 scripts/verify-dependency-baseline.py` to check the static source
+configuration. The existing `scripts/verify-build-bootstrap.sh` separately
+checks the Gradle wrapper hash, initialized Cardboard checkout and optional
+DOSBox Pure checkout. Neither check alone proves complete Maven transitive
+dependency locks or all-release license compliance.
+
 ## Bootstrap toolchain
 
 ReverieVR now combines:

@@ -8,6 +8,21 @@ ReverieVR is an independent, offline-first Android VR platform intended to resto
 
 The initial reference target is a Samsung Galaxy S9 used with a Daydream View headset and controller. The architecture should remain portable enough to support other compatible Android phones and simple 3DoF viewers where practical.
 
+## Public source and third-party licensing
+
+This is a **publicly distributed source repository**. Public availability does
+not itself provide a license for the original ReverieVR code: no project-wide
+license has been selected by the owner yet. Upstream programs, controller
+models and sample-game data retain their own license restrictions and notices.
+Review [public distribution and licenses](docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md)
+and the [approved dependency baseline](docs/dependencies/BASELINE.json)
+before redistributing, modifying, monetizing or publishing a derivative APK.
+
+The default current tree excludes Valve's noncommercial CAD-derived controller
+mesh; Steam HID hardware remains usable with the independent primitive 3D
+fallback. Earlier public commits and releases are not automatically erased by
+this forward change.
+
 ## Status
 
 **Pre-alpha / foundation bootstrap.**

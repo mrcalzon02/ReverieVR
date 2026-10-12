@@ -31,3 +31,8 @@ diagnostic-intake/.env.*
 .local/steam-controller/
 tools/steam_controller/node_modules/
 tools/steam_controller/__pycache__/
+
+# Never accidentally re-add restricted Valve CAD derivatives to the public
+# source tree or auto-packaged Android assets. The app build also rejects it.
+app/src/main/assets/steam_controller_2015/
+.local/optional-licensed-assets/

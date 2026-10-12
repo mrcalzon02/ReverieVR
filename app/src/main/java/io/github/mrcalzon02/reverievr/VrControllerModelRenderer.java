@@ -157,15 +157,19 @@ final class VrControllerModelRenderer {
                 }
                 zip.closeEntry();
             }
+        } catch (java.io.FileNotFoundException absent) {
+            // The CC BY-NC-SA Valve mesh is deliberately not in the free
+            // default APK. A procedurally built fallback works offline.
+            return null;
         } catch (IOException | OutOfMemoryError failure) {
             ReverieLog.error("STEAM_CONTROLLER",
-                "Real Steam Controller asset failed validation", failure);
+                "Optional user-provided Steam mesh failed validation", failure);
         }
         return null;
     }
 
     void setSteamControllerPrimary(boolean primary) {
-        steamControllerPrimary = primary && steamParts != null;
+        steamControllerPrimary = primary;
     }
 
     private void drawSteamController(CardboardView.Eye eye) {
@@ -194,6 +198,25 @@ final class VrControllerModelRenderer {
             GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, part.count);
         }
         GLES20.glDisableVertexAttribArray(positionHandle);
+    }
+
+    /** Self-authored, very low-poly placeholder: no Valve geometry required. */
+    private void drawSteamFallback(CardboardView.Eye eye) {
+        drawCube(eye, 0.0f, 0.0f, 0.0f,
+            0.255f, 0.040f, 0.113f, 0.25f, 0.28f, 0.33f);
+        drawCube(eye, -0.092f, -0.024f, 0.046f,
+            0.070f, 0.055f, 0.103f, 0.20f, 0.24f, 0.28f);
+        drawCube(eye, 0.092f, -0.024f, 0.046f,
+            0.070f, 0.055f, 0.103f, 0.20f, 0.24f, 0.28f);
+        drawDisc(eye, -0.076f, 0.024f, -0.022f,
+            0.050f, touchpadPressed ? 0.32f : 0.18f,
+            touchpadPressed ? 0.75f : 0.30f, 0.40f);
+        drawDisc(eye, 0.077f, 0.024f, -0.022f,
+            0.050f, 0.18f, 0.30f, 0.40f);
+        drawCube(eye, 0.023f, 0.025f, 0.052f,
+            0.024f, 0.010f, 0.027f, 0.40f, 0.43f, 0.47f);
+        drawCube(eye, 0.065f, 0.025f, 0.052f,
+            0.024f, 0.010f, 0.027f, 0.40f, 0.43f, 0.47f);
     }
 
     void onSurfaceCreated() {
@@ -433,8 +456,9 @@ final class VrControllerModelRenderer {
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
 
-        if (steamControllerPrimary && steamParts != null) {
-            drawSteamController(eye);
+        if (steamControllerPrimary) {
+            if (steamParts != null) drawSteamController(eye);
+            else drawSteamFallback(eye);
             drawEmitter(eye);
             return;
         }

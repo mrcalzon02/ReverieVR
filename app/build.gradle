@@ -2,6 +2,20 @@ plugins {
     id "com.android.application"
 }
 
+// Public-distribution guard: the Valve CC BY-NC-SA mesh must not silently
+// enter an APK through Android's automatic src/main/assets packaging.
+// A separate user-controlled importer may be implemented later.
+def restrictedSteamControllerArchive =
+    file("src/main/assets/steam_controller_2015/handoff.zip")
+if (restrictedSteamControllerArchive.isFile()) {
+    throw new GradleException(
+        "Restricted Steam Controller CAD-derived archive is in the "
+            + "automatically packaged Android assets directory. Move it "
+            + "outside app/src/main/assets; the default distribution "
+            + "must use the procedurally rendered controller fallback."
+    )
+}
+
 def doomSharewareArchive = rootProject.file(
     "third_party/doom-shareware/payload/default-content/doom19s.zip"
 )
