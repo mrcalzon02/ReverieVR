@@ -1,5 +1,6 @@
 #include "breakwater_campaign.h"
 #include "breakwater_damage_feedback.h"
+#include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
 #include "breakwater_impacts.h"
 #include "reverie_native_sdk.h"
@@ -33,6 +34,8 @@ struct State {
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
     ImpactEffects impacts;
     BatteryDamageFeedback battery_damage;
+    AircraftAimFeedback aircraft_aim;
+    AircraftHitFeedback aircraft_hit;
     CombatInputLatch combat_input;
     std::vector<float> mesh;
 };
@@ -210,6 +213,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             s->reload_ready_flash=0.0f;
             s->turret_flash=0.0f;
             s->gunboat_salvo_flash=0.0f;
+            s->aircraft_aim={};
+            s->aircraft_hit=AircraftHitFeedback{};
             game.Start();
             SaveState(s);
             Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -225,6 +230,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->battery_damage=BatteryDamageFeedback{};
                 s->infantry_flash=0.0f;
                 s->gunboat_salvo_flash=0.0f;
+                s->aircraft_aim={};
+                s->aircraft_hit=AircraftHitFeedback{};
             }
         }
         else if(target>=0 && target<8){
@@ -260,6 +267,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         const bool enemyTarget=target>=0 &&
             target<static_cast<int>(Campaign::kMaxEnemies);
         const int16_t targetHp=enemyTarget?game.enemies()[target].hp:0;
+        const Enemy enemyBefore=enemyTarget?game.enemies()[target]:Enemy{};
         if(enemyTarget)
             AimAtEnemy(input,game.enemies()[target],&impactDepth);
         else if(target>=static_cast<int>(Campaign::kMaxEnemies))
@@ -273,6 +281,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         else if(GunWithinTraverse(input.pointer_direction))
             shot=game.FireMiss();
         if(shot){
+            if(enemyTarget)
+                s->aircraft_hit.Record(enemyBefore,game.enemies()[target],true);
             if(impactDepth>0.0f) {
                 if(enemyTarget)
                     s->impacts.RecordDamageHit(input.pointer_origin,input.pointer_direction,
@@ -297,6 +307,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->turret_flash=0.0f;
         s->infantry_flash=0.0f;
         s->gunboat_salvo_flash=0.0f;
+        s->aircraft_aim={};
+        s->aircraft_hit=AircraftHitFeedback{};
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
 }
@@ -420,6 +432,23 @@ void BuildScene(State *s) {
             if(e.type==UnitType::Gunboat && e.attack_timer>2.64f)
                 Box(s,e.x,y+.32f,e.z+.38f,.18f,.15f,.23f,
                     .98f,.68f,.24f);
+        }
+    }
+    if(s->aircraft_aim.visible) {
+        // Four tiny world-space brackets surround only the exact ray-selected
+        // moving aircraft. The bracket is NOT aim assistance or a wide hitbox.
+        const float x=s->aircraft_aim.x,z=s->aircraft_aim.z;
+        const float span=s->aircraft_aim.pattern==AircraftPattern::Bomber?
+            1.49f:1.18f;
+        const float r=s->aircraft_aim.equipped?.36f:1.0f;
+        const float g=s->aircraft_aim.equipped?1.0f:.67f;
+        const float b=s->aircraft_aim.equipped?.58f:.23f;
+        for(int side : {-1,1}) {
+            const float edge=x+static_cast<float>(side)*span;
+            Triangle(s,edge,1.91f,z,edge,1.72f,z,
+                     edge-static_cast<float>(side)*.15f,1.91f,z,r,g,b);
+            Triangle(s,edge,1.28f,z,edge,1.47f,z,
+                     edge-static_cast<float>(side)*.15f,1.28f,z,r,g,b);
         }
     }
     // CPU-updated, fixed-capacity impact pulses render identically in both eyes.
@@ -580,6 +609,32 @@ void BuildScene(State *s) {
             Panel(s,0,-.06f,-1.82f,2.60f,.33f,.42f,.11f,.12f);
             Text(s,damage,0,-.06f,-1.79f,.042f,1.0f,.82f,.77f);
         }
+        if(s->aircraft_aim.visible) {
+            // The user must actually have the target under the shared combat
+            // ray. Do not label nearby but unselected aircraft as locked.
+            char label[40];
+            if(!s->aircraft_aim.equipped) {
+                std::snprintf(label,sizeof(label),"AA REQUIRED");
+                Panel(s,0,-.43f,-1.82f,2.65f,.31f,.38f,.15f,.13f);
+                Text(s,label,0,-.43f,-1.79f,.046f,1.0f,.78f,.53f);
+            } else {
+                std::snprintf(label,sizeof(label),"%s HP %d",
+                    s->aircraft_aim.pattern==AircraftPattern::Bomber?
+                    "BOMBER":"STRAFER",
+                    static_cast<int>(s->aircraft_aim.hp));
+                Panel(s,0,-.43f,-1.82f,3.00f,.31f,.12f,.32f,.23f);
+                Text(s,label,0,-.43f,-1.79f,.046f,.69f,1.0f,.78f);
+            }
+        }
+        if(s->aircraft_hit.active()) {
+            char hit[36];
+            if(s->aircraft_hit.destroyed())
+                std::snprintf(hit,sizeof(hit),"AIRCRAFT DOWN");
+            else
+                std::snprintf(hit,sizeof(hit),"AIR HIT -%d",s->aircraft_hit.damage());
+            Panel(s,0,-.83f,-1.82f,2.70f,.32f,.16f,.33f,.18f);
+            Text(s,hit,0,-.83f,-1.79f,.043f,.76f,1.0f,.62f);
+        }
         if(s->flash>0)Panel(s,0,-.65f,-1.85f,.28f,.20f,1,.82f,.25f);
     } else {
         Panel(s,0,0,-3.0f,4.2f,1.6f,.07f,.10f,.14f);
@@ -663,6 +718,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->gunboat_salvo_flash=std::max(0.0f,
         s->gunboat_salvo_flash-copy.delta_seconds);
     s->battery_damage.Tick(copy.delta_seconds);
+    s->aircraft_hit.Tick(copy.delta_seconds);
     s->impacts.Tick(copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
         const bool was_reloading=s->campaign.reloading();
@@ -731,6 +787,13 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             if(down)s->combat_input.CaptureUiPress();
         }
     }
+    // Cache the actual post-simulation ray intersection once for both eyes.
+    // A target destroyed by this frame's shot no longer receives brackets.
+    s->aircraft_aim={};
+    if(s->campaign.phase()==Phase::Combat &&
+       copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE)
+        s->aircraft_aim=InspectAircraftAim(
+            s->campaign,CombatTarget(copy,s->campaign));
     s->held=down;s->secondary_held=secondary;
     s->scene_dirty=true;
 }

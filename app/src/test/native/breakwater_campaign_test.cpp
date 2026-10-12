@@ -1,5 +1,6 @@
 #include "breakwater_campaign.h"
 #include "breakwater_damage_feedback.h"
+#include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
 #include "breakwater_impacts.h"
 #include <cassert>
@@ -692,6 +693,12 @@ int main() {
     }
     assert(AircraftFlightAt(AircraftPattern::None,1.2f,1.0f,-5.0f).x==1.2f);
     assert(AircraftFlightAt(AircraftPattern::Strafer,1.2f,0.0f,-5.0f).x==0);
+    AircraftHitFeedback hit_feedback;
+    Enemy no_aircraft;
+    assert(!hit_feedback.Record(no_aircraft,no_aircraft,true));
+    hit_feedback.Tick(std::numeric_limits<float>::infinity());
+    assert(!hit_feedback.active());
+
     // Seed 8 deterministically opens late Blackcap with a bomber. Without AA
     // the gun still spends its round, but cannot damage the aircraft.
     Campaign bomber(Difficulty::Casual,8);
@@ -702,6 +709,12 @@ int main() {
     assert(bomber.enemies()[0].active);
     assert(bomber.enemies()[0].type==UnitType::Aircraft);
     assert(bomber.enemies()[0].aircraft_pattern==AircraftPattern::Bomber);
+    const AircraftAimFeedback unarmed_aim=InspectAircraftAim(bomber,0);
+    assert(unarmed_aim.visible && !unarmed_aim.equipped);
+    assert(unarmed_aim.hp==100 && unarmed_aim.pattern==AircraftPattern::Bomber);
+    assert(!InspectAircraftAim(bomber,-1).visible);
+    assert(!InspectAircraftAim(bomber,static_cast<int>(Campaign::kMaxEnemies)).visible);
+    assert(!InspectAircraftAim(bomber,1).visible); // unspawned slot
     const Enemy &bomber_approach=bomber.enemies()[0];
     const AircraftFlightPose bomber_pose=AircraftFlightAt(
         bomber_approach.aircraft_pattern,bomber_approach.flight_center_x,
@@ -715,7 +728,10 @@ int main() {
     assert(bomber.aircraft_attack().sequence==0);
     const int16_t bomber_hp=bomber.enemies()[0].hp;
     const uint8_t bomber_mag=bomber.magazine_left();
+    const Enemy unarmed_before=bomber.enemies()[0];
     assert(bomber.FireAt(0));
+    assert(!hit_feedback.Record(unarmed_before,bomber.enemies()[0],true));
+    assert(!hit_feedback.active());
     assert(bomber.magazine_left()==bomber_mag-1);
     assert(bomber.enemies()[0].hp==bomber_hp);
     for(int i=0;i<140 && bomber.wave_status().aircraft_attacks==0;i++)
@@ -811,16 +827,44 @@ int main() {
     assert(defended.BeginWave());
     defended.Tick(0.05f);
     assert(defended.enemies()[0].type==UnitType::Aircraft);
+    const AircraftAimFeedback armed_aim=InspectAircraftAim(defended,0);
+    assert(armed_aim.visible && armed_aim.equipped && armed_aim.hp==100);
     for(int shot=0;shot<5;shot++) {
         if(shot>0) for(int i=0;i<7;i++) defended.Tick(0.05f);
+        const Enemy before=defended.enemies()[0];
         assert(defended.FireAt(0));
+        assert(hit_feedback.Record(before,defended.enemies()[0],true));
+        assert(hit_feedback.damage()==20);
+        assert(std::abs(hit_feedback.x()-before.x)<.000001f);
+        assert(std::abs(hit_feedback.z()-before.z)<.000001f);
+        assert(hit_feedback.destroyed()==(shot==4));
+        assert(hit_feedback.active());
     }
+    assert(!InspectAircraftAim(defended,0).visible);
+    hit_feedback.Tick(.54f);
+    assert(hit_feedback.active());
+    hit_feedback.Tick(.02f);
+    assert(!hit_feedback.active());
     assert(!defended.enemies()[0].active);
     assert(defended.incoming_threats().aircraft_seconds<0.0f);
     assert(defended.wave_status().aircraft_destroyed==1);
     assert(defended.wave_status().aircraft_attacks==0);
     assert(defended.aircraft_attack().sequence==0);
     assert(defended.integrity()==100);
+
+    // Non-aircraft targets cannot generate false aircraft brackets or hits.
+    Campaign no_target(Difficulty::Casual,41);
+    assert(no_target.Start() && no_target.BeginWave());
+    no_target.Tick(.05f);
+    assert(no_target.enemies()[0].type==UnitType::Rowboat);
+    assert(!InspectAircraftAim(no_target,0).visible);
+    assert(!InspectAircraftAim(no_target,255).visible);
+    // Recorded weapon damage must remain tied to a fired, real aircraft hit.
+    AircraftHitFeedback ignored_hit;
+    const Enemy already_down=defended.enemies()[0];
+    assert(!ignored_hit.Record(already_down,already_down,true));
+    assert(!ignored_hit.Record(unarmed_before,defended.enemies()[0],false));
+    assert(!ignored_hit.active());
 
     // AA is a real three-tier investment: a basic engagement kit, then
     // +15 / +30 aircraft-only damage. The shop shows prices 750/1050/1350
