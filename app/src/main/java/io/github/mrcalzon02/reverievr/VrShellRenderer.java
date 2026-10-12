@@ -541,6 +541,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final AtomicBoolean backRequested =
         new AtomicBoolean();
     private final AtomicBoolean recenterRequested = new AtomicBoolean();
+    private static final long SHAKE_SETTLE_NANOS = 160000000L;
+    private volatile long shakeDetectedAtNanos;
     private final AtomicBoolean controllerPositionRecenterRequested =
         new AtomicBoolean();
     private final AtomicInteger phoneBattery = new AtomicInteger(-1);
@@ -1026,6 +1028,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerAccelerationAtNanos = 0L;
             controllerInertialTranslation.reset();
             controllerShakeRecenterDetector.reset();
+            shakeDetectedAtNanos = 0L;
             controllerPositionRecenterRequested.set(false);
             controllerInertialLastFrameNanos = 0L;
             controllerGravityInitialized = false;
@@ -1078,6 +1081,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerAccelerationAtNanos,
                 accelerationInG
             )) {
+            // Recoil orientation is transient. Calibrate from a fresh
+            // settled snapshot, after the two-impulse gesture completes.
+            shakeDetectedAtNanos = controllerAccelerationAtNanos;
             controllerPositionRecenterRequested.set(true);
         }
         controllerTouchpadPressed =
@@ -1106,6 +1112,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         locomotionControllerSnapshot=null;
         controllerInertialTranslation.reset();
         controllerShakeRecenterDetector.reset();
+        shakeDetectedAtNanos = 0L;
+        controllerPositionRecenterRequested.set(false);
         controllerModelRenderer.clearGhost();
         textureDirty=true;
     }
@@ -1595,7 +1603,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // This only supplies collision probes and future mirror geometry;
         // it does not touch the Cardboard projection or IPD transforms.
         playerHeadRig.update(adjustedHeadView, userIpdMeters);
-        if (controllerPositionRecenterRequested.getAndSet(false)) {
+        if (controllerPositionRecenterRequested.get()
+            && frameNanos - shakeDetectedAtNanos >= SHAKE_SETTLE_NANOS
+            && controllerPositionRecenterRequested.getAndSet(false)) {
             requestSoftControllerRecenter();
         }
         updateControllerInertialTranslation(frameNanos);
