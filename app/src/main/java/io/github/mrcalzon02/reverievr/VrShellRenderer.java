@@ -4145,10 +4145,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     && !nativeApps.isEmpty();
             }
             if (index == 24) {
-                return NativeModuleRuntime.isAvailable()
-                    && !nativeGames.isEmpty();
+                // Phone panel X/Close overrides the hidden Native Games card.
+                return phonePanelVisible || (NativeModuleRuntime.isAvailable()
+                    && !nativeGames.isEmpty());
             }
-            if (phonePanelVisible && index == 24) return true;
             if(index==25)return true;
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
                 && index == 12) {
