@@ -9,10 +9,8 @@ hosted first-party games remain local to the phone. scrcpy is only an
 optional desktop utility for debugging, mirroring, or forwarding
 PC-connected input. There is no required desktop ReverieVR runtime, and
 the phone must still launch, navigate by gaze, and run local media and
-native games without any computer present. Any future PC-side read-only
-optical-drive/file-sharing helper is an optional accessory used only
-while that peripheral is needed; it cannot replace local emulator
-execution or force a second Android app.
+native games without any computer present. Windows built-in SMB file sharing is the preferred optional storage
+source; no custom PC file-service/helper application is authorized.
 
 Ordinary phone/laptop Wi-Fi or a hotspot supports local application
 networking regardless of internet connectivity, but this does **not**
@@ -44,7 +42,45 @@ Examples:
     ./scripts/scrcpy-reverie.sh --record=reverie-debug.mkv
     scripts\scrcpy-reverie.bat --record=reverie-debug.mkv
 
-## Laptop controllers as a selectable VR input source
+## Two connection modes without a second ReverieVR app
+
+**Input-only (low overhead):** Existing scrcpy forwards a PC-connected
+controller without continuously capturing, encoding or displaying the
+phone's screen. The existing helper forwards these flags to scrcpy:
+
+    scripts\scrcpy-reverie.bat --no-video --gamepad=uhid
+
+Or invoke scrcpy itself when using a direct host shell:
+
+    scrcpy --no-video --no-audio --gamepad=uhid
+
+**Input + phone-to-PC mirror:** Keep the original stereo screen mirrored
+and forward the laptop gamepad:
+
+    scripts\scrcpy-reverie.bat --gamepad=uhid
+
+Both modes work on USB and on an *already authorized* ADB/TCP connection.
+On older Galaxy S9 Android versions UHID permission can reject synthetic
+controllers; report the error rather than silently claiming a forwarded
+device. AOA USB gamepad mode is an optional alternative supported by
+scrcpy, but has Windows-device ownership and multi-gamepad limitations;
+do not conflate it with wireless UHID.
+
+**Storage/files:** Windows already speaks SMB2/SMB3. A future SMB client
+within the same ReverieVR APK will connect to a Windows user-shared folder
+using an explicitly provided host, share name and credentials. No
+ReverieVR Windows file server is to be developed. Sharing a laptop's
+optical drive may reveal accessible files but does not automatically
+create ISO/BIN-CUE sector images. Use a locally available lawful disc
+image in the share rather than claiming full optical hardware pass-through.
+
+The phone cannot launch scrcpy on an otherwise uncooperative Windows PC,
+and merely joining its hotspot does not export a Windows controller or
+screen. A user must start or enable the relevant existing host facility;
+the in-headset source selector applies once Android receives that input.
+There is no automatic screen transfer unless the user requests mirroring.
+
+
 
 The controller connected to the **laptop** can be forwarded as a real Android HID gamepad over scrcpy's optional UHID gamepad transport. This works for wired USB debugging or a previously authorized wireless ADB session:
 
