@@ -56,6 +56,34 @@ public class ControllerOrientationCalibrationTest {
         assertEquals(0f,target[2],0.0001f);
     }
 
+
+    @Test public void recenterToHudCancelsCombinedControllerYawPitchAndRoll() {
+        float qx=0.20f, qy=-0.30f, qz=0.10f, qw=0.925f;
+        float norm=(float)Math.sqrt(qx*qx+qy*qy+qz*qz+qw*qw);
+        qx/=norm; qy/=norm; qz/=norm; qw/=norm;
+        float[] forward={
+            -2f*(qx*qz+qw*qy),
+            -2f*(qy*qz-qw*qx),
+            -(1f-2f*qx*qx-2f*qy*qy)
+        };
+        float[] correction=new float[16];
+        assertTrue(ControllerOrientationCalibration.computeToHud(
+            qx,qy,qz,qw,correction));
+        float[] corrected=new float[3];
+        ControllerOrientationCalibration.rotate(
+            correction,true,forward,corrected);
+        assertEquals(0f,corrected[0],0.0003f);
+        assertEquals(0f,corrected[1],0.0003f);
+        assertEquals(-1f,corrected[2],0.0003f);
+    }
+
+    @Test public void invalidRecenterDoesNotOverwritePreviousHudCorrection() {
+        float[] correction=identity();
+        assertFalse(ControllerOrientationCalibration.computeToHud(
+            Float.NaN,0f,0f,1f,correction));
+        assertEquals(1f,correction[0],0f);
+    }
+
     @Test public void rejectsInvalidQuaternionWithoutChangingMatrix() {
         float[] out=identity();
         assertFalse(ControllerOrientationCalibration.compute(identity(),0,0,0,0,out));
