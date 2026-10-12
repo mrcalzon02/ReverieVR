@@ -310,7 +310,13 @@ dependencies {
 
 
 tasks.configureEach { task ->
-    if (task.name.startsWith("merge") && task.name.endsWith("Assets")) {
+    // AGP reads main assets in both merge tasks and generated lint models.
+    // This source directory is task-generated; every consumer must declare
+    // the real producer dependency, not merely a file-path ordering hint.
+    if ((task.name.startsWith("merge") && task.name.endsWith("Assets"))
+        || (task.name.startsWith("generate")
+            && task.name.contains("Lint")
+            && task.name.endsWith("Model"))) {
         task.dependsOn(stageOwnerMusicAssets)
     }
     if (task.name == "preReleaseBuild") {
