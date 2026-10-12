@@ -48,6 +48,27 @@ final class HomeEnvironmentRenderer {
     private final Mesh birchPanelSeams = mesh(buildBirchPanelSeams());
     private final Mesh birchBaseboards = mesh(buildBirchBaseboards());
     private final Mesh roomFurniture = mesh(buildRoomFurniture());
+    // Separate low-poly detail meshes are built once per renderer, not per eye.
+    private final Mesh birchDetailTrim =
+        mesh(HomeEnvironmentDetailGeometry.birchTrim());
+    private final Mesh birchDetailArt =
+        mesh(HomeEnvironmentDetailGeometry.birchWallArt());
+    private final Mesh birchDetailFurniture =
+        mesh(HomeEnvironmentDetailGeometry.birchShelfAccents());
+    private final Mesh forestDetailFoliage =
+        mesh(HomeEnvironmentDetailGeometry.forestLayeredFoliage());
+    private final Mesh forestDetailStones =
+        mesh(HomeEnvironmentDetailGeometry.forestStones());
+    private final Mesh forestDetailFlowers =
+        mesh(HomeEnvironmentDetailGeometry.forestWildflowers());
+    private final Mesh beachDetailRipples =
+        mesh(HomeEnvironmentDetailGeometry.beachSandRipples());
+    private final Mesh beachDetailTufts =
+        mesh(HomeEnvironmentDetailGeometry.beachGrassTufts());
+    private final Mesh beachDetailShells =
+        mesh(HomeEnvironmentDetailGeometry.beachShells());
+    private final Mesh beachDetailWavelets =
+        mesh(HomeEnvironmentDetailGeometry.beachWavelets());
     private final Mesh duneShoreline = mesh(buildShoreline());
     private final Mesh beachDriftwood = mesh(buildDriftwood());
     private final Mesh forestUnderstory = mesh(buildForestUnderstory());
@@ -277,6 +298,9 @@ final class HomeEnvironmentRenderer {
                     1.0f
                 );
                 draw(forestUnderstory, 0.17f, 0.42f, 0.16f, 1.0f);
+                draw(forestDetailFoliage, 0.24f, 0.47f, 0.22f, 1.0f);
+                draw(forestDetailStones, 0.43f, 0.47f, 0.34f, 1.0f);
+                draw(forestDetailFlowers, 0.90f, 0.79f, 0.44f, 1.0f);
                 break;
 
             case DUNE_BEACH:
@@ -310,6 +334,10 @@ final class HomeEnvironmentRenderer {
                 );
                 draw(duneShoreline, 0.88f, 0.91f, 0.83f, 1.0f);
                 draw(beachDriftwood, 0.38f, 0.27f, 0.16f, 1.0f);
+                draw(beachDetailRipples, 0.76f, 0.64f, 0.43f, 1.0f);
+                draw(beachDetailTufts, 0.36f, 0.41f, 0.23f, 1.0f);
+                draw(beachDetailShells, 0.91f, 0.86f, 0.68f, 1.0f);
+                draw(beachDetailWavelets, 0.43f, 0.70f, 0.73f, 1.0f);
                 break;
 
             case WHITE_ROOM:
@@ -359,6 +387,9 @@ final class HomeEnvironmentRenderer {
                 draw(birchPanelSeams, 0.69f, 0.60f, 0.48f, 1.0f);
                 draw(birchBaseboards, 0.78f, 0.70f, 0.56f, 1.0f);
                 draw(roomFurniture, 0.66f, 0.56f, 0.45f, 1.0f);
+                draw(birchDetailTrim, 0.80f, 0.74f, 0.64f, 1.0f);
+                draw(birchDetailArt, 0.39f, 0.51f, 0.49f, 1.0f);
+                draw(birchDetailFurniture, 0.79f, 0.66f, 0.42f, 1.0f);
                 draw(
                     daisTop,
                     0.55f,

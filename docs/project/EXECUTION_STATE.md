@@ -987,3 +987,7 @@ No Galaxy S9, headset, optical, Bluetooth, thermal, or comfort validation has ye
 15. repeat a representative media/control flow under scrcpy for diagnostic capture, then close scrcpy;
 16. perform sustained frame-pacing/thermal acceptance **without scrcpy running**;
 17. capture any build, controller-axis, phone-controller, optical, scrcpy, media-orientation, decode, UI-scale, frame-pacing, or thermal defects for the next repair pass.
+
+## 2026-10-12 — Second layer of details on the three Home backgrounds
+
+Source pass adds stationary deterministic low-poly geometry in the three existing scene presets without renaming their persisted IDs: birch room trim, framed art and console props; forest canopy silhouette depth, stones and meadow blooms; beach wavelets, sand ripples, dune grass and shells. Each scene conditionally draws only its own detail meshes and all meshes are allocated once, with a no-new-texture/no-shader design and JVM vertex-budget and central menu-clearance tests. See `docs/records/HOME-ENVIRONMENT-DETAIL-LAYER.md`. **Not yet Galaxy S9 visual/performance accepted.**
