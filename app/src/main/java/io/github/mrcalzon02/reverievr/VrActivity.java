@@ -575,6 +575,10 @@ public final class VrActivity extends Activity
             return true;
         }
 
+        if (routeScrcpyHomeKeyboardInput(event)) {
+            return true;
+        }
+
         if (inputRouter != null && inputRouter.onKeyEvent(event)) {
             return true;
         }
@@ -583,6 +587,53 @@ public final class VrActivity extends Activity
             return true;
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    /**
+     * The scrcpy UHID keyboard should type into the visible desk editor in
+     * Home, not silently disappear into the guest virtual-input bus.
+     * Do not steal keys from DOS/native games, Daydream, or inactive devices.
+     */
+    private boolean routeScrcpyHomeKeyboardInput(KeyEvent event) {
+        if (event == null || renderer == null
+            || !renderer.acceptsPhysicalKeyboardInput()
+            || !AndroidGamepadSupport.isScrcpyHid(event.getDevice())
+            || (event.getSource() & android.view.InputDevice.SOURCE_KEYBOARD)
+                != android.view.InputDevice.SOURCE_KEYBOARD
+            || event.isCtrlPressed() || event.isAltPressed()) return false;
+
+        int action = VrKeyboardEditor.EXTERNAL_TEXT;
+        String characters = null;
+        switch (event.getKeyCode()) {
+            case KeyEvent.KEYCODE_DEL:
+                action = VrKeyboardEditor.EXTERNAL_BACKSPACE;
+                break;
+            case KeyEvent.KEYCODE_FORWARD_DEL:
+                action = VrKeyboardEditor.EXTERNAL_DELETE;
+                break;
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+                action = VrKeyboardEditor.EXTERNAL_LEFT;
+                break;
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+                action = VrKeyboardEditor.EXTERNAL_RIGHT;
+                break;
+            case KeyEvent.KEYCODE_TAB:
+                action = VrKeyboardEditor.EXTERNAL_TAB;
+                break;
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+                action = VrKeyboardEditor.EXTERNAL_ENTER;
+                break;
+            default:
+                int codePoint = event.getUnicodeChar();
+                if (codePoint < 32 || !Character.isValidCodePoint(codePoint))
+                    return false;
+                characters = new String(Character.toChars(codePoint));
+                break;
+        }
+        if (event.getAction() == KeyEvent.ACTION_UP) return true;
+        if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
+        return renderer.queuePhysicalKeyboardEdit(action, characters);
     }
 
     private boolean routeQuickMenuKeyboardEvent(

@@ -15,6 +15,13 @@ final class VrKeyboardEditor {
         "-","_","'","\"","<",">","?",":",";","\u0060",
         "!","@","SPACE","TAB","LEFT","RIGHT","BACK","DEL","ENTER","CLEAR"
     };
+    static final int EXTERNAL_TEXT = 0;
+    static final int EXTERNAL_BACKSPACE = 1;
+    static final int EXTERNAL_DELETE = 2;
+    static final int EXTERNAL_LEFT = 3;
+    static final int EXTERNAL_RIGHT = 4;
+    static final int EXTERNAL_TAB = 5;
+    static final int EXTERNAL_ENTER = 6;
     private static final int MAX_LENGTH = 2048;
     private final StringBuilder buffer = new StringBuilder();
     private int caret;
@@ -36,6 +43,44 @@ final class VrKeyboardEditor {
             && (caps ^ shift)) return base.toUpperCase(java.util.Locale.US);
         return base;
     }
+    /**
+     * Real USB/Bluetooth/scrcpy keyboard text uses the same caret and editor
+     * as the physical-looking Home desk keys. Do not route it to a guest app.
+     * The text comes from Android's KeyEvent unicode conversion on the input
+     * thread, never from hardcoded US-layout key codes.
+     */
+    boolean applyExternal(int action, String text) {
+        switch (action) {
+            case EXTERNAL_BACKSPACE: return press(4, 6);
+            case EXTERNAL_DELETE: return press(4, 7);
+            case EXTERNAL_LEFT: return press(4, 4);
+            case EXTERNAL_RIGHT: return press(4, 5);
+            case EXTERNAL_TAB: return insertExact("\t");
+            case EXTERNAL_ENTER: return insertExact("\n");
+            case EXTERNAL_TEXT: return insertExact(text);
+            default: return false;
+        }
+    }
+
+    private boolean insertExact(String text) {
+        if (text == null || text.isEmpty() ||
+            buffer.length() + text.length() > MAX_LENGTH) return false;
+        for (int i = 0; i < text.length();) {
+            int codePoint = text.codePointAt(i);
+            // Reject dangling UTF-16 surrogates rather than corrupting
+            // the Home text editor when an external HID sends malformed text.
+            if (codePoint >= Character.MIN_SURROGATE
+                && codePoint <= Character.MAX_SURROGATE) return false;
+            if (Character.isISOControl(codePoint)
+                && codePoint != '\n' && codePoint != '\t') return false;
+            i += Character.charCount(codePoint);
+        }
+        buffer.insert(caret, text);
+        caret += text.length();
+        shift = false;
+        return true;
+    }
+
     boolean press(int row, int column) {
         if (row < 0 || row >= ROWS.length ||
             column < 0 || column >= ROWS[row].length) return false;
@@ -44,13 +89,25 @@ final class VrKeyboardEditor {
             case "SHIFT": shift = !shift; return true;
             case "CAPS": caps = !caps; return true;
             case "SYMS": symbols = !symbols; return true;
-            case "LEFT": caret = Math.max(0, caret - 1); return true;
-            case "RIGHT": caret = Math.min(buffer.length(), caret + 1); return true;
+            case "LEFT":
+                if (caret > 0) caret = Character.offsetByCodePoints(buffer, caret, -1);
+                return true;
+            case "RIGHT":
+                if (caret < buffer.length())
+                    caret = Character.offsetByCodePoints(buffer, caret, 1);
+                return true;
             case "BACK":
-                if (caret > 0) buffer.deleteCharAt(--caret);
+                if (caret > 0) {
+                    int prior = Character.offsetByCodePoints(buffer, caret, -1);
+                    buffer.delete(prior, caret);
+                    caret = prior;
+                }
                 return true;
             case "DEL":
-                if (caret < buffer.length()) buffer.deleteCharAt(caret);
+                if (caret < buffer.length()) {
+                    int next = Character.offsetByCodePoints(buffer, caret, 1);
+                    buffer.delete(caret, next);
+                }
                 return true;
             case "CLEAR": buffer.setLength(0); caret = 0; return true;
             default:

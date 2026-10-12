@@ -19,6 +19,48 @@ public class VrKeyboardEditorTest {
         assertEquals("q",editor.value());
     }
 
+    @Test public void externalHidTypingSharesThePhysicalDeskEditorCaret() {
+        VrKeyboardEditor editor = new VrKeyboardEditor();
+        assertTrue(editor.press(1,0)); // q, entered by controller pointer
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT, "A"));
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT, "é"));
+        assertEquals("qAé", editor.value());
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_LEFT, null));
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT, "🙂"));
+        assertEquals("qA🙂é", editor.value());
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_BACKSPACE, null));
+        assertEquals("qAé", editor.value());
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_ENTER, null));
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TAB, null));
+        assertEquals("qA\n\té", editor.value());
+    }
+
+    @Test public void caretAndDeleteAreUnicodeCodePointSafe() {
+        VrKeyboardEditor editor = new VrKeyboardEditor();
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT, "A🙂B"));
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_LEFT, null));
+        assertEquals(3, editor.cursor());
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_LEFT, null));
+        assertEquals(1, editor.cursor());
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_DELETE, null));
+        assertEquals("AB", editor.value());
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_RIGHT, null));
+        assertEquals(2, editor.cursor());
+    }
+
+    @Test public void rejectsMalformedOrOutOfBoundsExternalText() {
+        VrKeyboardEditor editor = new VrKeyboardEditor();
+        assertFalse(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT, ""));
+        assertFalse(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT, null));
+        assertFalse(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT, "\u0000"));
+        assertFalse(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT,
+            String.valueOf((char)0xD800)));
+        assertFalse(editor.applyExternal(999, "bad"));
+        assertTrue(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT, "x".repeat(2048)));
+        assertFalse(editor.applyExternal(VrKeyboardEditor.EXTERNAL_TEXT, "y"));
+        assertEquals(2048, editor.value().length());
+    }
+
     @Test public void modifiersAndControlKeysHaveRealEffects() {
         VrKeyboardEditor editor = new VrKeyboardEditor();
         assertTrue(editor.press(3,0)); // shift

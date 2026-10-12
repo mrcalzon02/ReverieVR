@@ -20,6 +20,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -409,6 +410,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private final AtomicBoolean firstFrameReported =
         new AtomicBoolean();
+    private static final int MAX_PENDING_HID_TEXT_INPUTS = 64;
+    private final ConcurrentLinkedQueue<KeyboardEditCommand> keyboardEdits =
+        new ConcurrentLinkedQueue<>();
+    private final AtomicInteger keyboardEditsPending = new AtomicInteger();
+    private static final class KeyboardEditCommand {
+        final int action;
+        final String text;
+        KeyboardEditCommand(int action, String text) {
+            this.action = action;
+            this.text = text;
+        }
+    }
+
     private final AtomicBoolean selectRequested =
         new AtomicBoolean();
     private final AtomicBoolean backRequested =
@@ -698,6 +712,38 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return mode == MODE_VIDEO
             || mode == MODE_MODEL_VIEWER
             || hoveredButton >= 0;
+    }
+
+    /** External keyboard input is accepted only while the VR desk is active. */
+    boolean acceptsPhysicalKeyboardInput() {
+        return (mode == MODE_HOME || mode == MODE_KEYBOARD)
+            && !orientationMenuVisible && !rendererFailed;
+    }
+
+    boolean queuePhysicalKeyboardEdit(int action, String text) {
+        if (!acceptsPhysicalKeyboardInput()) return false;
+        int queued = keyboardEditsPending.incrementAndGet();
+        if (queued > MAX_PENDING_HID_TEXT_INPUTS) {
+            keyboardEditsPending.decrementAndGet();
+            return false;
+        }
+        keyboardEdits.offer(new KeyboardEditCommand(action, text));
+        return true;
+    }
+
+    private void consumePhysicalKeyboardEdits() {
+        KeyboardEditCommand edit;
+        int consumed = 0;
+        while (consumed < MAX_PENDING_HID_TEXT_INPUTS
+            && (edit = keyboardEdits.poll()) != null) {
+            keyboardEditsPending.decrementAndGet();
+            consumed++;
+            if (acceptsPhysicalKeyboardInput()
+                && keyboardEditor.applyExternal(edit.action, edit.text)) {
+                keyboardTextureDirty = true;
+                textureDirty = true;
+            }
+        }
     }
 
     void requestSelect() {
@@ -1141,6 +1187,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     ) {
         long frameNanos = System.nanoTime();
         performanceTracker.recordFrame(frameNanos);
+        // External HID events enqueue commands; only Cardboard's GL thread
+        // mutates the editor and its rendered keyboard texture.
+        consumePhysicalKeyboardEdits();
         if (lastPerformanceLogNanos == 0L) {
             lastPerformanceLogNanos = frameNanos;
         } else if (frameNanos - lastPerformanceLogNanos >= 60000000000L) {
@@ -2547,6 +2596,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         keyboardPaint = null;
         keyboardTextureStorageInitialized = false;
         keyboardTextureDirty = true;
+        keyboardEdits.clear();
+        keyboardEditsPending.set(0);
     }
 
     private boolean updateActivePointer(
