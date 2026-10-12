@@ -34,6 +34,16 @@ final class DosSurfaceRenderer {
     private int textureWidth;
     private int textureHeight;
     private float displayAspect = 4.0f / 3.0f;
+    private boolean fullScreen;
+
+    void setFullScreen(boolean enabled) {
+        fullScreen = enabled;
+    }
+
+    boolean isFullScreen() {
+        return fullScreen;
+    }
+
 
     DosSurfaceRenderer(DosSession session) {
         this.session = session;
@@ -197,12 +207,13 @@ final class DosSurfaceRenderer {
             0.0f
         );
 
-        float halfHeight = 0.95f;
-        float halfWidth =
-            Math.min(1.75f, halfHeight * displayAspect);
+        // Game remains to the left of the always-visible DOS options panel.
+        float halfHeight = fullScreen ? 1.08f : 0.80f;
+        float halfWidth = Math.min(fullScreen ? 1.67f : 1.40f,
+            halfHeight * displayAspect);
 
         Matrix.setIdentityM(model, 0);
-        Matrix.translateM(model, 0, 0.0f, 0.0f, -3.2f);
+        Matrix.translateM(model, 0, -0.70f, 0.0f, -3.2f);
         Matrix.scaleM(model, 0, halfWidth, halfHeight, 1.0f);
 
         Matrix.multiplyMM(
