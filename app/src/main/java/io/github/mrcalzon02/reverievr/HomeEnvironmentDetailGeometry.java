@@ -93,7 +93,7 @@ final class HomeEnvironmentDetailGeometry {
         Builder b = new Builder();
         for (int i = 0; i < 24; i++) {
             float theta = i * 2.399963f + .35f;
-            float radius = 5.4f + (i % 5) * .58f;
+            float radius = 5.95f + (i % 5) * .58f;
             float x = (float)Math.cos(theta) * radius;
             float z = (float)Math.sin(theta) * radius;
             float y = -.91f + (i % 3) * .07f;
@@ -121,7 +121,7 @@ final class HomeEnvironmentDetailGeometry {
         Builder b = new Builder();
         for (int i = 0; i < 20; i++) {
             float theta = i * 2.399963f;
-            float r = 4.75f + (i % 5) * .64f;
+            float r = 6.05f + (i % 5) * .64f;
             float x = (float)Math.cos(theta) * r;
             float z = (float)Math.sin(theta) * r;
             for (int blade = 0; blade < 3; blade++) {
@@ -138,7 +138,7 @@ final class HomeEnvironmentDetailGeometry {
         Builder b = new Builder();
         for (int i = 0; i < 26; i++) {
             float theta = i * 2.399963f + .8f;
-            float r = 5.3f + (i % 5) * .66f;
+            float r = 6.10f + (i % 5) * .66f;
             float x = (float)Math.cos(theta) * r;
             float z = (float)Math.sin(theta) * r;
             b.triangle(x - .12f, -1.336f, z - .10f,
