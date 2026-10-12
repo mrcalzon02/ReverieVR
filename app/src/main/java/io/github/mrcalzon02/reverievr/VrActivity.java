@@ -1450,6 +1450,27 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public void onEmulatorCatalogOpened() {
+        // GitHub queries happen off the renderer; merely opening the list
+        // never downloads sources or executables.
+        emulatorSourceExecutor.execute(() -> {
+            for(EmulatorModuleCatalog.Entry entry:EmulatorModuleCatalog.entries()){
+                String current=emulatorSourceStatuses.get(entry.id);
+                if(current!=null && (current.startsWith("DOWNLOADING") ||
+                                     current.startsWith("CHECKING UPSTREAM")))
+                    continue;
+                try {
+                    emulatorSourceStatuses.put(entry.id,
+                        emulatorSourceRepository.inspectUpstream(entry));
+                }catch(java.io.IOException e){
+                    emulatorSourceStatuses.put(entry.id,
+                        "SOURCE UNAVAILABLE: "+e.getMessage());
+                }
+            }
+        });
+    }
+
+    @Override
     public String getEmulatorSourceStatus(String moduleId) {
         final EmulatorModuleCatalog.Entry entry =
             EmulatorModuleCatalog.find(moduleId);
