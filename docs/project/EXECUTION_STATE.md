@@ -22,6 +22,21 @@ implemented. Regression tests cover packing, defaults, aspect and suggestions.
 Status: source-integrated, APK / JVM execution and Galaxy S9 stereo/thermal
 acceptance pending; no device validation claim.
 
+## 2026-10-11 — RV-0501 180-degree equirectangular scene support
+
+Following verified stereo/360 APK build, this source slice adds a distinct
+front-facing half-sphere for 180-degree equirectangular media. It uses the same
+per-eye packed texture-region mapping and Cardboard stereo path as 360-degree
+media, but does not wrap images behind the viewer. Both sphere meshes are
+allocated once per renderer instance. VR users can explicitly choose mono,
+side-by-side or top/bottom 180-degree equirect modes through the Media format
+selector. Only filenames explicitly marked as 180-degree equirectangular
+receive that default; generic VR180 filenames remain conservative because the
+camera-native specification requires calibrated per-eye projection mesh
+metadata and may include per-frame motion orientation.
+Physical headset stereo/projection/thermal and Android build acceptance pending
+for this new slice; do not claim calibrated VR180 fisheye support.
+
 ## Authority
 
 - Repository: `mrcalzon02/ReverieVR`

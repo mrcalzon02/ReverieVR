@@ -12,7 +12,10 @@ enum VideoProjection {
     FLAT_STEREO_TB("3D cinema · top/bottom", false, 2),
     MONO_EQUIRECTANGULAR_360("2D 360°", true, 0),
     STEREO_EQUIRECTANGULAR_360_SBS("3D 360° · side-by-side", true, 1),
-    STEREO_EQUIRECTANGULAR_360_TB("3D 360° · top/bottom", true, 2);
+    STEREO_EQUIRECTANGULAR_360_TB("3D 360° · top/bottom", true, 2),
+    MONO_EQUIRECTANGULAR_180("2D 180° equirect", true, 0),
+    STEREO_EQUIRECTANGULAR_180_SBS("3D 180° equirect · SBS", true, 1),
+    STEREO_EQUIRECTANGULAR_180_TB("3D 180° equirect · top/bottom", true, 2);
 
     private final String label;
     private final boolean immersive;
@@ -34,6 +37,22 @@ enum VideoProjection {
 
     boolean isStereo() {
         return packing != 0;
+    }
+
+    boolean isEquirectangular180() {
+        return this == MONO_EQUIRECTANGULAR_180
+            || this == STEREO_EQUIRECTANGULAR_180_SBS
+            || this == STEREO_EQUIRECTANGULAR_180_TB;
+    }
+
+    /**
+     * 180-degree equirectangular pixels cover the front hemisphere only.
+     * Camera-native VR180 fisheye requires calibrated per-eye mesh metadata;
+     * do not reinterpret it using this projection.
+     */
+    float horizontalSpanRadians() {
+        return isEquirectangular180()
+            ? (float) Math.PI : (float) (Math.PI * 2.0);
     }
 
     VideoProjection next() {
@@ -85,6 +104,15 @@ enum VideoProjection {
         }
         String words = " " + fileName.toLowerCase(Locale.ROOT)
             .replaceAll("[^a-z0-9]+", " ").trim() + " ";
+        // Treat 180 as equirectangular only with an explicit EQ tag.
+        // Bare "VR180" may refer to a camera-specific dual-fisheye mesh.
+        boolean hemisphere = words.contains(" eq180 ")
+            || words.contains(" equirect180 ")
+            || words.contains(" equirectangular180 ")
+            || (words.contains(" 180 ")
+                && (words.contains(" equirectangular ")
+                    || words.contains(" equi ")
+                    || words.contains(" eq ")));
         boolean panorama = words.contains(" 360 ")
             || words.contains(" equirectangular ")
             || words.contains(" eq360 ");
@@ -98,9 +126,22 @@ enum VideoProjection {
             || words.contains(" overunder ")
             || words.contains(" over under ")
             || words.contains(" ou ");
+        // A camera-native VR180 fisheye has calibrated per-eye projection
+        // meshes. Its raw packed frames are not ordinary flat 3D cinema.
+        // Explicit equirectangular 180 tags above remain supported.
+        if (!hemisphere && (words.contains(" vr180 ")
+            || words.contains(" fisheye180 ")
+            || words.contains(" dualfisheye "))) {
+            return FLAT_CINEMA;
+        }
         // Conflicting tags are ambiguous: stay mono and require a user choice.
         if (sbs == tb) {
-            return panorama ? MONO_EQUIRECTANGULAR_360 : FLAT_CINEMA;
+            return hemisphere ? MONO_EQUIRECTANGULAR_180
+                : panorama ? MONO_EQUIRECTANGULAR_360 : FLAT_CINEMA;
+        }
+        if (hemisphere) {
+            return sbs ? STEREO_EQUIRECTANGULAR_180_SBS
+                : STEREO_EQUIRECTANGULAR_180_TB;
         }
         if (panorama) {
             return sbs

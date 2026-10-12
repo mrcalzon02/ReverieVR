@@ -31,6 +31,9 @@ final class VideoSurfaceRenderer {
     private final FloatBuffer sphereVertices;
     private final FloatBuffer sphereUvs;
     private final int sphereVertexCount;
+    private final FloatBuffer hemisphereVertices;
+    private final FloatBuffer hemisphereUvs;
+    private final int hemisphereVertexCount;
 
     private final float[] surfaceTransform = new float[16];
     private final float[] eyeUvRegion = new float[4];
@@ -70,10 +73,17 @@ final class VideoSurfaceRenderer {
             1.0f, 1.0f
         });
 
-        SphereMesh sphere = buildSphere();
+        SphereMesh sphere = buildSphere(
+            VideoProjection.MONO_EQUIRECTANGULAR_360.horizontalSpanRadians());
         sphereVertices = sphere.vertices;
         sphereUvs = sphere.uvs;
         sphereVertexCount = sphere.vertexCount;
+
+        SphereMesh hemisphere = buildSphere(
+            VideoProjection.MONO_EQUIRECTANGULAR_180.horizontalSpanRadians());
+        hemisphereVertices = hemisphere.vertices;
+        hemisphereUvs = hemisphere.uvs;
+        hemisphereVertexCount = hemisphere.vertexCount;
 
         Matrix.setIdentityM(surfaceTransform, 0);
     }
@@ -184,7 +194,7 @@ final class VideoSurfaceRenderer {
         );
 
         if (selected.isImmersive()) {
-            drawSphere(eye);
+            drawSphere(eye, selected.isEquirectangular180());
         } else {
             drawFlat(eye);
         }
@@ -253,7 +263,8 @@ final class VideoSurfaceRenderer {
         drawGeometry(flatVertices, flatUvs, 4, GLES20.GL_TRIANGLE_STRIP);
     }
 
-    private void drawSphere(CardboardView.Eye eye) {
+    private void drawSphere(CardboardView.Eye eye,
+                            boolean frontHemisphere) {
         Matrix.setIdentityM(model, 0);
         Matrix.multiplyMM(modelView, 0, correctedEyeView, 0, model, 0);
         Matrix.multiplyMM(
@@ -266,9 +277,9 @@ final class VideoSurfaceRenderer {
         );
 
         drawGeometry(
-            sphereVertices,
-            sphereUvs,
-            sphereVertexCount,
+            frontHemisphere ? hemisphereVertices : sphereVertices,
+            frontHemisphere ? hemisphereUvs : sphereUvs,
+            frontHemisphere ? hemisphereVertexCount : sphereVertexCount,
             GLES20.GL_TRIANGLES
         );
     }
@@ -323,7 +334,7 @@ final class VideoSurfaceRenderer {
         GLES20.glDisableVertexAttribArray(uvHandle);
     }
 
-    private static SphereMesh buildSphere() {
+    private static SphereMesh buildSphere(float horizontalSpanRadians) {
         int vertexCount =
             SPHERE_LATITUDE_SEGMENTS * SPHERE_LONGITUDE_SEGMENTS * 6;
         float[] vertices = new float[vertexCount * 3];
@@ -345,32 +356,32 @@ final class VideoSurfaceRenderer {
                 float u1 = (longitude + 1) / (float) SPHERE_LONGITUDE_SEGMENTS;
 
                 vertexOffset = putSphereVertex(
-                    vertices, vertexOffset, u0, v0
+                    vertices, vertexOffset, u0, v0, horizontalSpanRadians
                 );
                 uvOffset = putUv(uvs, uvOffset, u0, v0);
 
                 vertexOffset = putSphereVertex(
-                    vertices, vertexOffset, u0, v1
+                    vertices, vertexOffset, u0, v1, horizontalSpanRadians
                 );
                 uvOffset = putUv(uvs, uvOffset, u0, v1);
 
                 vertexOffset = putSphereVertex(
-                    vertices, vertexOffset, u1, v1
+                    vertices, vertexOffset, u1, v1, horizontalSpanRadians
                 );
                 uvOffset = putUv(uvs, uvOffset, u1, v1);
 
                 vertexOffset = putSphereVertex(
-                    vertices, vertexOffset, u0, v0
+                    vertices, vertexOffset, u0, v0, horizontalSpanRadians
                 );
                 uvOffset = putUv(uvs, uvOffset, u0, v0);
 
                 vertexOffset = putSphereVertex(
-                    vertices, vertexOffset, u1, v1
+                    vertices, vertexOffset, u1, v1, horizontalSpanRadians
                 );
                 uvOffset = putUv(uvs, uvOffset, u1, v1);
 
                 vertexOffset = putSphereVertex(
-                    vertices, vertexOffset, u1, v0
+                    vertices, vertexOffset, u1, v0, horizontalSpanRadians
                 );
                 uvOffset = putUv(uvs, uvOffset, u1, v0);
             }
@@ -387,10 +398,11 @@ final class VideoSurfaceRenderer {
         float[] target,
         int offset,
         float u,
-        float v
+        float v,
+        float horizontalSpanRadians
     ) {
         double theta = v * Math.PI;
-        double phi = (u - 0.5) * Math.PI * 2.0;
+        double phi = (u - 0.5) * horizontalSpanRadians;
 
         float sinTheta = (float) Math.sin(theta);
         target[offset++] =

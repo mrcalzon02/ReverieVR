@@ -6400,7 +6400,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 ? (projection.isStereo()
                     ? "PLAY STEREO IN 3D SCENE"
                     : projection.isImmersive()
-                        ? "PLAY 360 IN 3D SCENE"
+                        ? (projection.isEquirectangular180()
+                            ? "PLAY 180 IN 3D SCENE"
+                            : "PLAY 360 IN 3D SCENE")
                         : "PLAY 2D CINEMA")
                 : "CHOOSE MEDIA ON PHONE",
             "FORMAT: " + projection.displayName(),

@@ -12,6 +12,10 @@ public final class VideoProjectionTest {
             VideoProjection.suggestForFileName("wide_3840x1080.mp4"));
         assertEquals(VideoProjection.FLAT_CINEMA,
             VideoProjection.suggestForFileName("3d_sample.mp4"));
+        // Camera-native VR180 normally embeds calibrated mesh projection.
+        // It is not equivalent to a generic 180 equirectangular panorama.
+        assertEquals(VideoProjection.FLAT_CINEMA,
+            VideoProjection.suggestForFileName("VR180_SBS_clip.mp4"));
         assertEquals(VideoProjection.FLAT_CINEMA,
             VideoProjection.fromPreference("unrecognized-format"));
         assertEquals(VideoProjection.FLAT_CINEMA,
@@ -31,6 +35,12 @@ public final class VideoProjectionTest {
             VideoProjection.suggestForFileName("underwater_360_ou.mp4"));
         assertEquals(VideoProjection.MONO_EQUIRECTANGULAR_360,
             VideoProjection.suggestForFileName("clip_360_sbs_tb.mp4"));
+        assertEquals(VideoProjection.STEREO_EQUIRECTANGULAR_180_SBS,
+            VideoProjection.suggestForFileName("beach_180_equirectangular_sbs.mp4"));
+        assertEquals(VideoProjection.STEREO_EQUIRECTANGULAR_180_TB,
+            VideoProjection.suggestForFileName("reef_eq180_top-bottom.mp4"));
+        assertEquals(VideoProjection.MONO_EQUIRECTANGULAR_180,
+            VideoProjection.suggestForFileName("view_equirect180.mp4"));
     }
 
     @Test public void eachEyeGetsOnlyItsOwnHalfOfPackedVideo() {
@@ -59,6 +69,28 @@ public final class VideoProjectionTest {
         assertEquals(16f / 9f,
             VideoProjection.FLAT_CINEMA.eyeDisplayAspect(16f / 9f),
             0.0001f);
+    }
+
+    @Test public void hemisphereCoversFrontHalfNotEntireSphere() {
+        assertEquals((float) Math.PI,
+            VideoProjection.MONO_EQUIRECTANGULAR_180.horizontalSpanRadians(),
+            0.0001f);
+        assertEquals((float) (2 * Math.PI),
+            VideoProjection.MONO_EQUIRECTANGULAR_360.horizontalSpanRadians(),
+            0.0001f);
+        assertTrue(VideoProjection.STEREO_EQUIRECTANGULAR_180_TB
+            .isEquirectangular180());
+        assertFalse(VideoProjection.FLAT_STEREO_SBS.isEquirectangular180());
+    }
+
+    @Test public void stereo180UsesExistingPackedEyeCrop() {
+        float[] region = new float[4];
+        VideoProjection.STEREO_EQUIRECTANGULAR_180_SBS
+            .fillEyeUvRegion(true, region);
+        assertRegion(region, 0, 0, 0.5f, 1);
+        VideoProjection.STEREO_EQUIRECTANGULAR_180_SBS
+            .fillEyeUvRegion(false, region);
+        assertRegion(region, 0.5f, 0, 0.5f, 1);
     }
 
     @Test public void cyclingKeepsMonoAndStereoDistinct() {
