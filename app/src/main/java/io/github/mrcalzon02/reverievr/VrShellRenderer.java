@@ -1474,14 +1474,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
             lastPerformanceLogNanos = frameNanos;
         }
 
-        // Correct the Cardboard headset's reversed horizontal pivot
-        // before any ray, recenter, menu, controller or stereo calculation.
-        // HeadTransform is frame-local, so its derived Euler/forward calls
-        // must see exactly the same corrected matrix as both eyes.
+        // Cardboard supplies a local-to-world head pose, while the
+        // shell and stereo eyes require world-to-eye. Invert the *entire*
+        // rigid pose once for consistent yaw, pitch, roll and translation.
+        // Do not independently mirror axes or touch the battery HUD.
         float[] headView = headTransform.getHeadView();
-        if (!HeadYawConvention.correctInPlace(headView)) {
+        if (!HeadPoseView.invertRigidInPlace(headView)) {
             ReverieLog.incident("VR_HEADING",
-                "Invalid headset view; keeping neutral orientation for frame.");
+                "Invalid headset pose; using neutral view for this frame.");
             Matrix.setIdentityM(headView, 0);
         }
         headTransform.getHeadView(rawHeadView, 0);
