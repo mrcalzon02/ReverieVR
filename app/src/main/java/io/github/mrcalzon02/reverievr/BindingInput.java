@@ -14,6 +14,8 @@ enum BindingInput {
 
     TOUCHPAD_X,
     TOUCHPAD_Y,
+    TOUCHPAD_REL_X,
+    TOUCHPAD_REL_Y,
 
     GAMEPAD_X,
     GAMEPAD_Y,
