@@ -6,6 +6,16 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Beachhead/Breakwater world-position-driven movement
+
+- Added low-cost procedural landing-craft ramp motion, changing wake
+  wedges and alternating infantry stride derived from actual simulation
+  positions. Soldiers stop marching at the real firing line.
+- No independent animation clock, new textures/draw calls, hitboxes, RNG
+  or save fields. Pure C++17 geometry/pose checks passed locally; full
+  Android native build and S9 headset acceptance remain pending.
+
+
 ### Monochrome high-contrast VR shell control mode
 
 - Added persisted CONTRAST toggle to the actual Quick Settings menu;

@@ -1,3 +1,18 @@
+## 2026-10-12 — Breakwater position-driven low-poly animation (source)
+
+The Beachhead native VR game now derives landing-craft bow-ramp lowering
+(z=-3.7..-2.2), two-wedge wake movement and infantry marching gait
+directly from authoritative entity positions. Marching stops at the
+existing z=-1.34 firing line. The animation is computed by pure game-private
+C++ helpers and shares the single world-scene mesh for both eyes; it
+does not add animation clocks, textures, triangles, GL draw calls,
+combat hitboxes, ABI changes or save fields. Nonfinite coordinates fail
+closed. The exact updated recipe SHA was compiled/executed locally
+with a C++17 -Werror standalone geometry fixture; new campaign-test
+assertions were separately compiled/executed against compatible entity
+type stubs. Complete native campaign/NDK/Android compilation,
+Galaxy S9 device visual testing and thermal profiling are pending.
+
 ## 2026-10-12 — Breakwater differentiated landing-craft and infantry models (source)
 
 The Beachhead native VR module now generates distinct original primitive

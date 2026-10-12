@@ -125,3 +125,30 @@ test source covers recipe counts, passenger scaling and invalid/inactive
 entities; an isolated C++17 host fixture passed using compatible type
 stubs, not the full NDK build. Headset silhouette legibility, hitbox
 alignment and thermal performance remain open.
+
+
+### Position-driven low-poly model motion (2026-10-12 source)
+
+The game-private breakwater_silhouettes.h recipes now provide three
+deterministic pose helpers. LandingRampProgress raises the landing-craft
+bow ramp while offshore and lowers its free edge over the last 1.5 world
+units of approach, from z=-3.7 to the actual simulation landing line at
+z=-2.2. VesselWakePhase changes the shape of the existing two foam
+wedges as a function of the live hull's z position. InfantryMarchStride
+alternates left/right limb positions as a function of the individual
+soldier's live x/z location, then holds the legs still from the actual
+front-line z=-1.34 onward. These are procedural geometry poses, not new
+units, hitboxes, physics, or combat animations. Invalid/nonfinite
+coordinates and inactive entities produce no animated geometry.
+
+No animation timer, per-eye state advance, new GL draw, extra triangle,
+bitmap, model dependency, or save-format field was added. The geometry
+still enters the existing once-per-update scene mesh and is reused for
+both eyes. Because the animation phase follows displacement, motion stops
+when simulation movement stops and remains deterministic across
+10 FPS catch-up substeps; this does not prove its headset appearance.
+The pure geometry fixture passed locally with C++17 -Wall -Wextra
+-Wpedantic -Werror, and the corresponding campaign-test assertions
+compiled/passed in a separate isolated harness. The complete native
+campaign/Android build, S9 stereoscopic legibility and actual
+sustained performance remain unverified.

@@ -69,6 +69,86 @@ int main() {
         [&](auto...){++inactiveGeometry;},[&](auto...){++inactiveGeometry;});
     assert(inactiveGeometry==0);
 
+    // The animation poses are spatially driven, deterministic, and never
+    // advance state separately when the right eye renders after the left.
+    const float invalidPose=std::numeric_limits<float>::quiet_NaN();
+    assert(LandingRampProgress(-11.0f)==0.0f);
+    assert(LandingRampProgress(-3.7f)<.0001f);
+    assert(LandingRampProgress(-2.2f)>.9999f);
+    assert(LandingRampProgress(invalidPose)==0.0f);
+    assert(VesselWakePhase(-11.0f)==0.0f);
+    assert(VesselWakePhase(-10.75f)==.5f);
+    assert(VesselWakePhase(-10.5f)==0.0f);
+    assert(VesselWakePhase(invalidPose)==0.0f);
+    for (int i=0;i<=150;i++) {
+        const float z=-3.7f+i*.01f;
+        const float progress=LandingRampProgress(z);
+        assert(progress>=0.0f && progress<=1.0f);
+        if(i) assert(progress>=LandingRampProgress(z-.01f));
+    }
+    Enemy rampCraft{};
+    rampCraft.active=true;
+    rampCraft.type=UnitType::LandingCraft;
+    rampCraft.passengers=4;
+    rampCraft.z=-4.0f;
+    const auto rampTip = [](const Enemy &craft) {
+        float tip=100.0f;
+        int triangleCount=0;
+        EmitVesselSilhouette(craft,[](auto...){},
+            [&](float,float,float,float,float,float,
+                float,float y2,float,float,float,float) {
+                if (triangleCount++==0) tip=y2;
+            });
+        assert(triangleCount==4);
+        return tip;
+    };
+    const float upright=rampTip(rampCraft);
+    rampCraft.z=-2.2f;
+    const float lowered=rampTip(rampCraft);
+    assert(upright>-.47f && lowered< -1.02f);
+    assert(rampTip(rampCraft)==lowered);
+    const auto movingWake = [](const Enemy &craft) {
+        float zRelative=0.0f;
+        int triangles=0;
+        EmitVesselSilhouette(craft,[](auto...){},
+            [&](float,float,float,float,float,float z1,
+                float,float,float,float,float,float) {
+                if(triangles++==2)zRelative=z1-craft.z;
+            });
+        assert(triangles==4);
+        return zRelative;
+    };
+    rampCraft.type=UnitType::Rowboat;
+    rampCraft.passengers=1;
+    rampCraft.z=-10.75f;
+    const float wakeA=movingWake(rampCraft);
+    rampCraft.z=-10.5f;
+    assert(std::abs(wakeA-movingWake(rampCraft))>.03f);
+    Infantry marching{.3f,-2.2f,true};
+    const auto footPosition = [](const Infantry &trooper) {
+        float relativeZ=0.0f;
+        int triangles=0;
+        EmitInfantrySilhouette(trooper,[](auto...){},
+            [&](float,float,float,float,float,float z1,
+                float,float,float,float,float,float) {
+                if(triangles++==2)relativeZ=z1-trooper.z;
+            });
+        assert(triangles==5);
+        return relativeZ;
+    };
+    const float firstStride=InfantryMarchStride(marching);
+    const float firstFoot=footPosition(marching);
+    marching.z=-2.08f;
+    assert(InfantryMarchStride(marching)*firstStride<0.0f);
+    assert(std::abs(footPosition(marching)-firstFoot)>.05f);
+    marching.z=-1.34f;
+    assert(InfantryMarchStride(marching)==0.0f);
+    marching.active=false;
+    assert(InfantryMarchStride(marching)==0.0f);
+    marching.active=true;
+    marching.z=invalidPose;
+    assert(InfantryMarchStride(marching)==0.0f);
+
     // Ballistic trajectory, ray intersection and ghost aim are pure C++.
     // In ordinary MG mode, pointing a straight ray at a far vessel must
     // miss low; raising it compensates for the simulated trajectory drop.
