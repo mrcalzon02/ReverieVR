@@ -2,6 +2,14 @@ plugins {
     id "com.android.application"
 }
 
+// Android's Variant Sources API requires a task-owned DirectoryProperty
+// for generated assets. Gradle then carries the producer dependency into
+// merge, lint, packaging and IDE source models for every build variant.
+abstract class StageOwnerMusicTask extends DefaultTask {
+    @org.gradle.api.tasks.OutputDirectory
+    abstract org.gradle.api.file.DirectoryProperty getOutputDirectory()
+}
+
 // Public-distribution guard: the Valve CC BY-NC-SA mesh must not silently
 // enter an APK through Android's automatic src/main/assets packaging.
 // A separate user-controlled importer may be implemented later.
@@ -103,10 +111,12 @@ def updateChannelEnabled =
 def sourceMusicManifest = rootProject.file("music/source/manifest.json")
 def sourceMusicMasters = rootProject.file("music/source/audio")
 def ownerMusicAssets = layout.buildDirectory.dir("generated/ownerMusicAssets")
-def stageOwnerMusicAssets = tasks.register("stageOwnerMusicAssets") {
+def stageOwnerMusicAssets = tasks.register(
+    "stageOwnerMusicAssets", StageOwnerMusicTask
+) {
     inputs.file(sourceMusicManifest)
     inputs.dir(sourceMusicMasters)
-    outputs.dir(ownerMusicAssets)
+    outputDirectory.set(ownerMusicAssets)
     doLast {
         def manifest = new groovy.json.JsonSlurper().parse(sourceMusicManifest)
         if (manifest.schema != 1 ||
@@ -126,7 +136,7 @@ def stageOwnerMusicAssets = tasks.register("stageOwnerMusicAssets") {
                 String.format("%02x", it & 0xff)
             }.join("")
         }
-        File out = ownerMusicAssets.get().asFile
+        File out = outputDirectory.get().asFile
         project.delete(out)
         File targetFolder = new File(out, "music/tracks")
         if (!targetFolder.mkdirs() && !targetFolder.isDirectory())
@@ -272,9 +282,6 @@ android {
 
     sourceSets {
         main {
-            // Preserve Gradle's producer metadata for AGP asset and lint consumers.
-            // Passing a plain generated File hides the stage task dependency.
-            assets.srcDir(stageOwnerMusicAssets)
             if (bundleDoomShareware) {
                 assets.srcDir(
                     rootProject.file(
@@ -298,6 +305,17 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// AGP's legacy android.sourceSets API does not support providers. Register
+// generated owner music on each variant through the supported Sources API,
+// keeping music verification and staging as a single shared task.
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            stageOwnerMusicAssets, { task -> task.outputDirectory }
+        )
     }
 }
 
