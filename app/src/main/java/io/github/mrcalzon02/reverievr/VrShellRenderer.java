@@ -632,6 +632,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile float virtualPointerPitch;
     private long virtualPointerLastFrameNanos;
     private volatile boolean controllerPointerActive;
+    // Visual-only hold during a short pose gap; never grants guest input.
+    private volatile boolean controllerVisualHoldActive;
     private volatile float controllerPointerDistance = 6.0f;
     private volatile boolean controllerPointerHit;
     private volatile int activeNativePointerKind =
@@ -1025,6 +1027,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerPoseValid = false;
             locomotionControllerSnapshot = null;
             controllerPointerActive = false;
+            controllerVisualHoldActive = false;
             controllerAccelerationAtNanos = 0L;
             controllerInertialTranslation.reset();
             controllerShakeRecenterDetector.reset();
@@ -1103,6 +1106,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     /** Prevent a recently used BLE pose from stealing the new HID aim ray. */
     void clearTrackedControllerPose() {
         controllerPoseValid=false;
+        controllerVisualHoldActive=false;
         controllerPoseReceivedAtNanos=0L;
         controllerTouchpadPressed=false;
         controllerHomePressed=false;
@@ -2510,7 +2514,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         CardboardView.Eye eye,
         float eyeCorrection
     ) {
-        if (!controllerPointerActive) {
+        // Keep the last physical handset mesh visible during a short BLE
+        // pose gap, but never draw its stale interaction ray.
+        if (!controllerPointerActive && !controllerVisualHoldActive) {
             return;
         }
 
@@ -2518,10 +2524,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             eye,
             eyeCorrection
         );
-        pointerRenderer.drawEye(
-            eye,
-            eyeCorrection
-        );
+        if (controllerPointerActive) {
+            pointerRenderer.drawEye(
+                eye,
+                eyeCorrection
+            );
+        }
     }
 
     private void reportRendererFailure(
@@ -2954,6 +2962,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 );
 
         if (useTrackedController) {
+            if (controllerVisualHoldActive && ReverieLog.isDevelopment()) {
+                ReverieLog.dev("VR_CONTROLLER",
+                    "Controller pose stream resumed after visual hold.");
+            }
+            controllerVisualHoldActive = false;
             quaternionForward(
                 controllerOrientationX,
                 controllerOrientationY,
@@ -3068,6 +3081,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 );
 
         if (useVirtualController) {
+            controllerVisualHoldActive = false;
             updateVirtualPointerAngles(
                 frameNanos
             );
@@ -3128,8 +3142,29 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         virtualPointerLastFrameNanos = 0L;
         controllerHeadsetOverlap = false;
-        controllerModelRenderer.hide();
+
+        // The live pose gate remains 750ms, so guests receive no stale
+        // controller actions. Hold only the last 3D model for a brief gap:
+        // the mesh no longer blinks at the exact moment input is suspended.
+        boolean holdModel = pointerMode != VrPointerMode.GAZE
+            && ControllerPoseVisibility.holdModel(
+                controllerConnected, controllerPoseValid,
+                controllerPoseReceivedAtNanos, frameNanos);
+        if (holdModel != controllerVisualHoldActive
+            && ReverieLog.isDevelopment()) {
+            ReverieLog.dev("VR_CONTROLLER", holdModel
+                ? "Pose delayed >750ms; retaining still handset mesh (no input)."
+                : "Pose gap exceeded visual hold or controller disconnected.");
+        }
+        controllerVisualHoldActive = holdModel;
         controllerModelRenderer.clearGhost();
+        if (holdModel) {
+            controllerModelRenderer.setInteractionState(false, false);
+            controllerModelRenderer.setButtonState(
+                false, false, false, false, false);
+        } else {
+            controllerModelRenderer.hide();
+        }
 
         if (pointerMode
             == VrPointerMode.CONTROLLER && !noUsableController(frameNanos)) {
@@ -3484,14 +3519,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean hasFreshControllerPose(
         long frameNanos
     ) {
-        long poseAgeNanos =
-            frameNanos
-                - controllerPoseReceivedAtNanos;
-        return controllerConnected
-            && controllerPoseValid
-            && controllerPoseReceivedAtNanos > 0L
-            && poseAgeNanos >= 0L
-            && poseAgeNanos <= 750000000L;
+        return ControllerPoseVisibility.live(
+            controllerConnected, controllerPoseValid,
+            controllerPoseReceivedAtNanos, frameNanos);
     }
 
     private boolean recenterOnHeadset(
