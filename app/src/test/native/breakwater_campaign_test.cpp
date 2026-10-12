@@ -995,6 +995,21 @@ int main() {
     weapon_latch.Release();
     assert(weapon_latch.Route(CombatHudTarget::None,true)==CombatInputRoute::Gun);
 
+    // Armed SAM consumes exactly one Select edge, including an invalid lock.
+    // Neither pointer drift nor continued holding may fire the main gun.
+    CombatInputLatch sam_fire_latch;
+    assert(!sam_fire_latch.CaptureOneShotPress(false));
+    assert(sam_fire_latch.Route(CombatHudTarget::None,false)==CombatInputRoute::Gun);
+    assert(sam_fire_latch.CaptureOneShotPress(true));
+    assert(!sam_fire_latch.CaptureOneShotPress(true));
+    assert(sam_fire_latch.Route(CombatHudTarget::None,false)==CombatInputRoute::NoAction);
+    assert(sam_fire_latch.Route(CombatHudTarget::Artillery,false)==CombatInputRoute::NoAction);
+    sam_fire_latch.Release();
+    assert(sam_fire_latch.CaptureOneShotPress(true)); // failed lock is still spent
+    assert(sam_fire_latch.Route(CombatHudTarget::None,false)==CombatInputRoute::NoAction);
+    sam_fire_latch.Release();
+    assert(sam_fire_latch.Route(CombatHudTarget::None,true)==CombatInputRoute::Gun);
+
     // Weapon ownership, selection and SAM supplies survive the compact
     // 80-byte v2 shop save, while v1 saves still load as a basic machine gun.
     Campaign arsenal(Difficulty::Casual,8);
@@ -1042,6 +1057,22 @@ int main() {
     assert(old_loaded.selected_weapon()==WeaponKind::MachineGun);
     assert(!old_loaded.owns_weapon(WeaponKind::Flak));
     assert(old_loaded.sam_charges()==0);
+    // A rejected SAM target does not consume a charge; a valid aircraft
+    // interception consumes one charge and destroys exactly one aircraft.
+    Campaign sam_game(Difficulty::Casual,8);
+    assert(sam_game.Start() && sam_game.PurchaseSam());
+    stage_blackcap_night(sam_game);
+    assert(sam_game.BeginWave());
+    sam_game.Tick(.05f);
+    assert(sam_game.enemies()[0].active &&
+           sam_game.enemies()[0].type==UnitType::Aircraft);
+    assert(!sam_game.CallSam(1)); // unoccupied slot
+    assert(sam_game.sam_charges()==1);
+    assert(sam_game.CallSam(0));
+    assert(sam_game.sam_charges()==0);
+    assert(!sam_game.enemies()[0].active);
+    assert(sam_game.wave_status().aircraft_destroyed==1);
+    assert(!sam_game.CallSam(0)); // cannot double-launch
     assert(loaded_arsenal.BeginWave());
     loaded_arsenal.Tick(.05f);
     assert(!loaded_arsenal.SelectWeapon(WeaponKind::HeavyGun));

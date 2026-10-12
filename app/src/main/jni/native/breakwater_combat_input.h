@@ -48,6 +48,13 @@ public:
            route!=CombatInputRoute::NoAction)ui_press_held_=true;
         return route;
     }
+    // A single-shot support action consumes this Select press even when
+    // its target lock fails; holding or dragging cannot trigger another shot.
+    bool CaptureOneShotPress(bool edge) {
+        if(!edge || ui_press_held_)return false;
+        ui_press_held_=true;
+        return true;
+    }
     void CaptureUiPress() { ui_press_held_ = true; }
     void Release() { ui_press_held_ = false; }
 private:

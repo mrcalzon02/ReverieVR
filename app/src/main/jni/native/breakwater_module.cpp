@@ -316,6 +316,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             return;
         }
         if(s->sam_armed) {
+            // SAM targeting is one attempt per Select press. Capture both
+            // valid launches and rejected locks so a held trigger cannot
+            // launch after aim drift or spill into ordinary gunfire.
+            if(!s->combat_input.CaptureOneShotPress(edge))return;
             const int lock=CombatTarget(input,game,true);
             const bool valid=lock>=0 &&
                 lock<static_cast<int>(Campaign::kMaxEnemies) &&
@@ -329,8 +333,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->aircraft_hit.Record(source,game.enemies()[lock],true);
                 s->sam_armed=false;
             }
-            if(edge)Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
-                                 REVERIE_NATIVE_FEEDBACK_FAILURE);
+            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                          REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
         const bool missile=WeaponFor(game.selected_weapon()).uses_ghost;
