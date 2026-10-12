@@ -50,6 +50,7 @@ public final class MainActivity extends Activity
     private static final int LOG_EXPORT_REQUEST = 1204;
     private static final int VR_LAUNCH_REQUEST = 1205;
     private static final int MODEL_PICK_REQUEST = 1206;
+    private static final int LAPTOP_LINK_EXPORT_REQUEST = 1207;
 
     private static final String DIAGNOSTIC_PENDING_PREFS =
         "reverie-diagnostic-pending";
@@ -107,6 +108,7 @@ public final class MainActivity extends Activity
     private Button installUpdateButton;
     private Button enterVrButton;
     private Button exportLogsButton;
+    private Button exportLaptopLinkButton;
     private Button submitDiagnosticsButton;
     private Button clearLogsButton;
     private Button controllerActionButton;
@@ -345,6 +347,7 @@ public final class MainActivity extends Activity
         installUpdateButton = findViewById(R.id.install_update_button);
         enterVrButton = findViewById(R.id.enter_vr_button);
         exportLogsButton = findViewById(R.id.export_logs_button);
+        exportLaptopLinkButton = findViewById(R.id.export_laptop_link_button);
         submitDiagnosticsButton =
             findViewById(R.id.submit_diagnostics_button);
         clearLogsButton = findViewById(R.id.clear_logs_button);
@@ -422,6 +425,10 @@ public final class MainActivity extends Activity
         uiFeedback.bind(
             exportLogsButton,
             this::chooseDiagnosticExportDestination
+        );
+        uiFeedback.bind(
+            exportLaptopLinkButton,
+            this::chooseLaptopLinkExportDestination
         );
 
         boolean diagnosticSubmissionConfigured =
@@ -913,6 +920,9 @@ public final class MainActivity extends Activity
         if (requestCode == LOG_EXPORT_REQUEST) {
             handleDiagnosticExport(data.getData());
         }
+        if (requestCode == LAPTOP_LINK_EXPORT_REQUEST) {
+            exportLaptopLink(data.getData());
+        }
     }
 
     private void handleSelectedVideo(Intent data) {
@@ -1123,6 +1133,72 @@ public final class MainActivity extends Activity
         return last == null || last.trim().isEmpty()
             ? safeFallback
             : last;
+    }
+
+    private void chooseLaptopLinkExportDestination() {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+        intent.putExtra(Intent.EXTRA_TITLE, LaptopLinkBundle.EXPORT_NAME);
+        try {
+            startActivityForResult(intent, LAPTOP_LINK_EXPORT_REQUEST);
+        } catch (ActivityNotFoundException error) {
+            ReverieLog.error("LAPTOP_LINK",
+                "Android cannot choose a Laptop Link export document.", error);
+            uiFeedback.failure(exportLaptopLinkButton);
+            Toast.makeText(this, R.string.laptop_link_picker_missing,
+                Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void exportLaptopLink(Uri destination) {
+        if (destination == null) return;
+        exportLaptopLinkButton.setEnabled(false);
+        dosImportExecutor.execute(() -> {
+            String failure = null;
+            try (java.io.OutputStream output =
+                     getContentResolver().openOutputStream(destination, "w")) {
+                if (output == null)
+                    throw new IOException("No writable destination selected.");
+                LaptopLinkBundle.write(
+                    path -> getAssets().open(path), output);
+            } catch (IOException | RuntimeException exception) {
+                ReverieLog.error("LAPTOP_LINK",
+                    "Optional Windows utility ZIP could not be exported.",
+                    exception);
+                failure = exception.getMessage() == null
+                    ? "Writing the ZIP failed." : exception.getMessage();
+                // The URI came from an explicit Create Document action.
+                // On failure, remove its incomplete output where supported.
+                try {
+                    android.provider.DocumentsContract.deleteDocument(
+                        getContentResolver(), destination);
+                } catch (Exception cleanupFailed) {
+                    ReverieLog.incident("LAPTOP_LINK",
+                        "Export failed; document provider could not remove incomplete ZIP.");
+                }
+            }
+            final String result = failure;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                exportLaptopLinkButton.setEnabled(true);
+                if (result == null) {
+                    new AlertDialog.Builder(this)
+                        .setTitle("Laptop Link exported")
+                        .setMessage(R.string.laptop_link_ready)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+                } else {
+                    uiFeedback.failure(exportLaptopLinkButton);
+                    new AlertDialog.Builder(this)
+                        .setTitle("Laptop Link export failed")
+                        .setMessage(getString(
+                            R.string.laptop_link_failed, result))
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+                }
+            });
+        });
     }
 
     private void chooseDiagnosticExportDestination() {
