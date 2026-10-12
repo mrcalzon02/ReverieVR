@@ -6,6 +6,15 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### In-headset Phone Screen panel size and distance
+
+- Added four actually wired primitive controls on an independent left rail
+  for bounded panel scaling and viewing distance without moving X/Close.
+- Shared the pose used for stereo draw and controller raycast, reused ray
+  scratch buffers, and extended reset to restore the default panel size/depth.
+  This is still a dark experimental housing; live phone display and OS touch
+  are unimplemented. Source tests passed locally; device proof remains.
+
 ### Headset-only gaze dwell frame continuity
 
 - Reject stale gaze after a >500 ms render/sample gap rather than treating a

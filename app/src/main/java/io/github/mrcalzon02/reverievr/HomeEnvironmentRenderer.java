@@ -99,46 +99,48 @@ final class HomeEnvironmentRenderer {
         for (int i = 0; i < glyphs.length; i++) {
             float middle = PhonePanelControlGeometry.top(i)
                 - PhonePanelControlGeometry.KEY_HEIGHT * 0.5f;
+            float cx = (PhonePanelControlGeometry.left(i)
+                + PhonePanelControlGeometry.right(i)) * 0.5f;
             java.util.List<Float> triangles = new java.util.ArrayList<>();
-            // Minus/plus, up/down and home reset; actual mesh marks rather
-            // than empty cyan rectangles or unreadable small bitmap text.
-            if (i <= 1) {
-                append(triangles, quadVerticalZ(
-                    0.85f, 0.99f, middle - 0.012f, middle + 0.012f,
-                    -2.237f));
-                if (i == 1) append(triangles, quadVerticalZ(
-                    0.91f, 0.93f, middle - 0.051f, middle + 0.051f,
-                    -2.236f));
+            // Each rail uses actual tiny low-poly glyphs, not bitmaps.
+            if (i <= 1 || i == PhonePanelControlGeometry.SIZE_SMALLER_INDEX
+                || i == PhonePanelControlGeometry.SIZE_LARGER_INDEX) {
+                append(triangles, quadVerticalZ(cx-0.07f, cx+0.07f,
+                    middle-0.012f, middle+0.012f, -2.237f));
+                if (i == 1 || i == PhonePanelControlGeometry.SIZE_LARGER_INDEX)
+                    append(triangles, quadVerticalZ(cx-0.01f, cx+0.01f,
+                        middle-0.051f, middle+0.051f, -2.236f));
             } else if (i == 2 || i == 3) {
                 float direction = i == 2 ? 1.0f : -1.0f;
                 float tip = middle + direction * 0.048f;
                 float bottom = middle - direction * 0.040f;
-                append(triangles, quadVerticalZ(
-                    0.912f, 0.932f, Math.min(tip,bottom),
-                    Math.max(tip,bottom), -2.237f));
-                append(triangles, quadVerticalZ(
-                    0.86f, 0.98f, tip - 0.010f, tip + 0.010f,
-                    -2.236f));
+                append(triangles, quadVerticalZ(cx-0.01f, cx+0.01f,
+                    Math.min(tip,bottom), Math.max(tip,bottom), -2.237f));
+                append(triangles, quadVerticalZ(cx-0.06f, cx+0.06f,
+                    tip-0.010f, tip+0.010f, -2.236f));
             } else if (i == PhonePanelControlGeometry.CLOSE_INDEX) {
-                // Distinct X for Close: two solid diagonal quads (four
-                // triangles), legible without color and without bitmaps.
-                float x0=0.855f, x1=0.985f;
-                float y0=middle - 0.048f, y1=middle + 0.048f;
+                float x0=cx-0.065f, x1=cx+0.065f;
+                float y0=middle-0.048f, y1=middle+0.048f;
                 float w=0.012f, z=-2.236f;
                 addTriangle(triangles, x0-w,y0,z, x0+w,y0,z, x1+w,y1,z);
                 addTriangle(triangles, x0-w,y0,z, x1+w,y1,z, x1-w,y1,z);
                 addTriangle(triangles, x0-w,y1,z, x0+w,y1,z, x1+w,y0,z);
                 addTriangle(triangles, x0-w,y1,z, x1+w,y0,z, x1-w,y0,z);
+            } else if (i == PhonePanelControlGeometry.DISTANCE_NEARER_INDEX
+                || i == PhonePanelControlGeometry.DISTANCE_FARTHER_INDEX) {
+                float sign = i == PhonePanelControlGeometry.DISTANCE_NEARER_INDEX
+                    ? 1.0f : -1.0f;
+                addTriangle(triangles, cx-0.065f, middle-sign*0.035f, -2.236f,
+                    cx+0.065f, middle-sign*0.035f, -2.236f,
+                    cx, middle+sign*0.055f, -2.236f);
             } else {
-                append(triangles, quadVerticalZ(
-                    0.85f, 0.99f, middle - 0.045f,
-                    middle - 0.027f, -2.237f));
-                append(triangles, quadVerticalZ(
-                    0.85f, 0.87f, middle - 0.045f,
-                    middle + 0.040f, -2.237f));
-                append(triangles, quadVerticalZ(
-                    0.97f, 0.99f, middle - 0.045f,
-                    middle + 0.040f, -2.237f));
+                // Existing roof-shaped orientation reset glyph.
+                append(triangles, quadVerticalZ(cx-0.07f, cx+0.07f,
+                    middle-0.045f, middle-0.027f, -2.237f));
+                append(triangles, quadVerticalZ(cx-0.07f, cx-0.05f,
+                    middle-0.045f, middle+0.040f, -2.237f));
+                append(triangles, quadVerticalZ(cx+0.05f, cx+0.07f,
+                    middle-0.045f, middle+0.040f, -2.237f));
             }
             float[] data = new float[triangles.size()];
             for (int j = 0; j < data.length; j++) data[j] = triangles.get(j);
@@ -156,8 +158,8 @@ final class HomeEnvironmentRenderer {
         for (int i = 0; i < keys.length; i++) {
             float top = PhonePanelControlGeometry.top(i);
             keys[i] = mesh(quadVerticalZ(
-                PhonePanelControlGeometry.LEFT_X,
-                PhonePanelControlGeometry.RIGHT_X,
+                PhonePanelControlGeometry.left(i),
+                PhonePanelControlGeometry.right(i),
                 top - PhonePanelControlGeometry.KEY_HEIGHT, top,
                 PhonePanelControlGeometry.RAY_Z));
         }
@@ -444,15 +446,13 @@ final class HomeEnvironmentRenderer {
      * surface is deliberately dark until user-consented MediaProjection is
      * available; never depict a fake live Android screen.
      */
-    void drawPhonePanel(float yawDegrees, float pitchDegrees, int focusedKey) {
+    void drawPhonePanel(float yawDegrees, float pitchDegrees,
+        float panelScale, float distanceOffset, int focusedKey) {
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
         System.arraycopy(mvp, 0, phoneBaseMvp, 0, 16);
-        Matrix.setIdentityM(phonePose, 0);
-        Matrix.translateM(phonePose, 0, 0.0f, 0.0f, -2.27f);
-        Matrix.rotateM(phonePose, 0, yawDegrees, 0.0f, 1.0f, 0.0f);
-        Matrix.rotateM(phonePose, 0, pitchDegrees, 1.0f, 0.0f, 0.0f);
-        Matrix.translateM(phonePose, 0, 0.0f, 0.0f, 2.27f);
+        PhonePanelPose.write(phonePose, yawDegrees, pitchDegrees,
+            panelScale, distanceOffset);
         Matrix.multiplyMM(phoneRotatedMvp, 0,
             phoneBaseMvp, 0, phonePose, 0);
         System.arraycopy(phoneRotatedMvp, 0, mvp, 0, 16);

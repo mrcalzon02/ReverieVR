@@ -235,7 +235,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     // hitPhonePanelControls; this index table enables activation only.
     // Index 24 is the local Phone Screen Close control, never native games
     // while the panel is visible.
-    private static final int[][] PHONE_PANEL_BUTTONS = new int[25][4];
+    private static final int[][] PHONE_PANEL_BUTTONS = new int[29][4];
 
     private static final int[][] MUSIC_BUTTONS = new int[][] {
         {140, 235, 884, 300},
@@ -403,6 +403,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean phonePanelVisible;
     private float phonePanelYawDegrees;
     private float phonePanelPitchDegrees;
+    private float phonePanelScale = 1.0f;
+    private float phonePanelDistanceOffset;
+    // Raycast scratch is reused once per frame instead of allocating 6 arrays.
+    private final float[] phoneHitPose = new float[16];
+    private final float[] phoneHitInverse = new float[16];
+    private final float[] phoneHitPoint = new float[4];
+    private final float[] phoneHitVector = new float[4];
+    private final float[] phoneHitLocalPoint = new float[4];
+    private final float[] phoneHitLocalVector = new float[4];
     private final FramePerformanceTracker performanceTracker =
         new FramePerformanceTracker();
     private final EyeRenderPerformanceTracker eyeRenderPerformanceTracker =
@@ -2273,7 +2282,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (mode == MODE_HOME && phonePanelVisible) {
                 homeEnvironmentRenderer.drawPhonePanel(
                     phonePanelYawDegrees, phonePanelPitchDegrees,
-                    hoveredButton >= 19 && hoveredButton <= 24
+                    phonePanelScale, phonePanelDistanceOffset,
+                    hoveredButton >= 19 && hoveredButton < 19 + PhonePanelControlGeometry.COUNT
                         ? hoveredButton - 19 : -1);
             }
             if (mode == MODE_HOME
@@ -3814,33 +3824,29 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private UiRayHit hitPhonePanelControls(
         float[] origin, float[] direction
     ) {
-        // Pointer ray and phone panel geometry already share shell coordinates.
-        // Never apply a second yaw offset to the panel hit-test ray.
-        float[] pose = new float[16];
-        float[] inverse = new float[16];
-        Matrix.setIdentityM(pose, 0);
-        Matrix.translateM(pose, 0, 0.0f, 0.0f, -2.27f);
-        Matrix.rotateM(pose, 0, phonePanelYawDegrees, 0.0f, 1.0f, 0.0f);
-        Matrix.rotateM(pose, 0, phonePanelPitchDegrees, 1.0f, 0.0f, 0.0f);
-        Matrix.translateM(pose, 0, 0.0f, 0.0f, 2.27f);
-        if (!Matrix.invertM(inverse, 0, pose, 0)) return UiRayHit.miss();
-        float[] point = {
-            origin[0], origin[1], origin[2], 1.0f
-        };
-        float[] vector = {
-            direction[0], direction[1],
-            direction[2], 0.0f
-        };
-        float[] localOrigin = new float[4], localDirection = new float[4];
-        Matrix.multiplyMV(localOrigin, 0, inverse, 0, point, 0);
-        Matrix.multiplyMV(localDirection, 0, inverse, 0, vector, 0);
-        if (Math.abs(localDirection[2]) < 0.00001f)
+        // Both eyes and the pointer use exactly the same pose, including
+        // scale and depth; never double-apply headset yaw.
+        PhonePanelPose.write(phoneHitPose, phonePanelYawDegrees,
+            phonePanelPitchDegrees, phonePanelScale, phonePanelDistanceOffset);
+        if (!Matrix.invertM(phoneHitInverse, 0, phoneHitPose, 0))
             return UiRayHit.miss();
-        float t = (PhonePanelControlGeometry.RAY_Z - localOrigin[2])
-            / localDirection[2];
+        phoneHitPoint[0]=origin[0];
+        phoneHitPoint[1]=origin[1];
+        phoneHitPoint[2]=origin[2];
+        phoneHitPoint[3]=1.0f;
+        phoneHitVector[0]=direction[0];
+        phoneHitVector[1]=direction[1];
+        phoneHitVector[2]=direction[2];
+        phoneHitVector[3]=0.0f;
+        Matrix.multiplyMV(phoneHitLocalPoint, 0, phoneHitInverse, 0, phoneHitPoint, 0);
+        Matrix.multiplyMV(phoneHitLocalVector, 0, phoneHitInverse, 0, phoneHitVector, 0);
+        if (Math.abs(phoneHitLocalVector[2]) < 0.00001f)
+            return UiRayHit.miss();
+        float t = (PhonePanelControlGeometry.RAY_Z - phoneHitLocalPoint[2])
+            / phoneHitLocalVector[2];
         if (!Float.isFinite(t) || t <= 0.0f) return UiRayHit.miss();
-        float x = localOrigin[0] + t * localDirection[0];
-        float y = localOrigin[1] + t * localDirection[1];
+        float x = phoneHitLocalPoint[0] + t * phoneHitLocalVector[0];
+        float y = phoneHitLocalPoint[1] + t * phoneHitLocalVector[1];
         int control = PhonePanelControlGeometry.indexAtLocal(x, y);
         return control < 0 ? UiRayHit.miss() : new UiRayHit(19 + control, t);
     }
@@ -4165,10 +4171,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return NativeModuleRuntime.isAvailable()
                     && !nativeApps.isEmpty();
             }
+            if (phonePanelVisible && index >= 19)
+                return index < 19 + PhonePanelControlGeometry.COUNT;
             if (index == 24) {
-                // Phone panel X/Close overrides the hidden Native Games card.
-                return phonePanelVisible || (NativeModuleRuntime.isAvailable()
-                    && !nativeGames.isEmpty());
+                return NativeModuleRuntime.isAvailable()
+                    && !nativeGames.isEmpty();
             }
             if(index==25 || index==26)return true;
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
@@ -4183,9 +4190,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
             if (index == 16) {
                 return modelViewer.hasModel();
-            }
-            if (index >= 19 && index <= 24) {
-                return phonePanelVisible;
             }
             return index < HOME_BUTTONS.length;
         }
@@ -4416,6 +4420,32 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_HOME) {
+            if (phonePanelVisible && hoveredButton >= 25
+                && hoveredButton < 19 + PhonePanelControlGeometry.COUNT) {
+                float previous;
+                switch (hoveredButton - 19) {
+                    case PhonePanelControlGeometry.SIZE_SMALLER_INDEX:
+                    case PhonePanelControlGeometry.SIZE_LARGER_INDEX:
+                        previous = phonePanelScale;
+                        phonePanelScale = PhonePanelControlGeometry.adjustedScale(
+                            previous, hoveredButton == 25 ? -1 : 1);
+                        if (previous == phonePanelScale) host.onUiActionRejected();
+                        break;
+                    case PhonePanelControlGeometry.DISTANCE_NEARER_INDEX:
+                    case PhonePanelControlGeometry.DISTANCE_FARTHER_INDEX:
+                        previous = phonePanelDistanceOffset;
+                        phonePanelDistanceOffset = PhonePanelControlGeometry.adjustedDistance(
+                            previous, hoveredButton == 27 ? -1 : 1);
+                        if (previous == phonePanelDistanceOffset) host.onUiActionRejected();
+                        break;
+                    default:
+                        host.onUiActionRejected();
+                        break;
+                }
+                hoveredButton = -1;
+                textureDirty = true;
+                return;
+            }
             if (hoveredButton >= HOME_KEYBOARD_HIT_OFFSET) {
                 int key = hoveredButton - HOME_KEYBOARD_HIT_OFFSET;
                 if (key == 50) {
@@ -4507,6 +4537,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 23:
                     phonePanelYawDegrees = 0.0f;
                     phonePanelPitchDegrees = 0.0f;
+                    phonePanelScale = 1.0f;
+                    phonePanelDistanceOffset = 0.0f;
                     break;
                 case 6:
                     preferences.setBatteryHudEnabled(

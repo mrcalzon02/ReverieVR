@@ -1,3 +1,18 @@
+## 2026-10-12 — Phone panel physical size and viewing-distance controls (source)
+
+The world-space Phone Screen placeholder has a second four-key low-poly
+rail for bounded scale (0.75–1.15x) and depth (-0.30..+0.45m). The existing
+six control identities, X/Close, Back recovery and shell menu are retained.
+One pose routine is now authoritative for the stereo render and controller
+inverse-ray intersection; the raycast reuses frame scratch buffers instead
+of allocating six new arrays per sample. The existing orientation reset
+now restores size and depth too. Six JVM geometry/behavior tests were run
+locally using Java 21 with a minimal compatible JUnit annotation/assert
+harness (not Gradle); Android/NDK compilation and Galaxy S9 headset
+validation remain pending. The panel still intentionally presents a dark
+surface, without MediaProjection, Android pixels or OS gesture dispatch.
+No APK built.
+
 ## 2026-10-12 — Headset-only gaze continuity after render stalls (source)
 
 The existing allocation-free five-second shell and upward-look recovery
