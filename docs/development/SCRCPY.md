@@ -62,6 +62,31 @@ Daydream selection can initiate pairing while leaving the previous controller ac
 
 **No Windows USB hubs or optical drives are magically passed through by scrcpy.** A laptop optical drive needs a separate explicit read-only bridge for game-image transfer; the emulator itself handles virtual ISO/CD media and memory cards. A keyboard plugged into the laptop and forwarded as UHID continues to use the normal on-desk keyboard twin rather than being confused with the selected gamepad.
 
+## Concurrent PC workload and screen sharing
+
+The PC is not a ReverieVR server or a VR graphics coprocessor. It may be
+running voice chat (Discord/TeamSpeak), music, video rendering/transcoding,
+disk-intensive jobs, or unrelated software. ReverieVR neither inspects nor
+controls that work. Keep the VR stereo render loop wholly on Android and
+independent of PC frame timing, host bandwidth, or availability.
+
+Use scrcpy **only when the user wants external phone-to-PC display mirroring
+or PC-forwarded inputs**. It already has a dedicated input-forwarding
+route; ReverieVR should not invent a required second app/daemon to reproduce
+that ability. A mirroring session may consume encoder, network and CPU/GPU
+resources on both devices, so turn it off when unnecessary and measure
+headset performance without it. Input events must not queue behind stream
+frames or any optical-drive transfer.
+
+A future PC-to-phone/window display feed would be a separate, opt-in
+local-only feature, requiring explicit desktop capture authorization,
+secure connection, independent latency/backpressure handling and a clear
+stop action. Do not advertise it as implemented. A phone screen displayed
+*inside* VR is a different local-only MediaProjection feature and must
+never send screen pixels through ReverieVR's controller transport.
+ReverieVR must never scan/OCR or analyze either display source.
+See `docs/records/ADR-0023-OPTIONAL-PC-INTEROPERABILITY-AND-RESOURCE-ISOLATION.md`.
+
 ## Why no audio?
 
 The Galaxy S9 reference software may be Android 10. scrcpy audio forwarding requires Android 11 or newer.
