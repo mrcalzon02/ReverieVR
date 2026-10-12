@@ -123,12 +123,17 @@ phone-controller companion must remain optional.
 A laptop connected over USB or a user-approved local network is an
 **optional peripheral and file source**, not an execution prerequisite. It
 may supply a forwarded controller, keyboard, user-approved read-only files,
-optical-disc image access, or storage. PC-specific device access necessarily
-requires a component on that PC (for example scrcpy for HID forwarding, or
-a minimal optional read-only file provider for laptop-attached drives);
-do **not** expand that into a required second runtime, service, or full
-desktop copy of the VR platform. Disconnecting the PC must preserve the
-handset's core shell, local media, local input, and locally installed games.
+optical-disc image access, or storage. **Do not develop a separate Windows,
+Linux or macOS ReverieVR application, companion agent, file server or
+proprietary HID relay.** Reuse standard, already available tools and
+protocols on the computer: user-launched scrcpy/ADB for mirroring/forwarded
+HID and ordinary OS-provided SMB2/SMB3 sharing for files. A read-only,
+user-configured SMB client belongs inside the existing Android APK, and
+any optional source/image importer must remain there too. The source
+computer must explicitly enable sharing/forwarding as needed; no Android
+APK can unilaterally read a PC's USB peripherals, raw optical sectors,
+or screen pixels. Disconnecting the PC must preserve the handset's core
+shell, local media, local input, and locally installed games.
 Remote media that has not been imported may become unavailable with a
 clear non-fatal message, but unrelated local features cannot fail.
 
