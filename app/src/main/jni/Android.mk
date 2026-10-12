@@ -66,6 +66,39 @@ LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
 LOCAL_LDLIBS += -lGLESv2 -lm
 include $(BUILD_SHARED_LIBRARY)
 
+# Original low-allocation GLES2 classic game module
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+LOCAL_MODULE := reverie_module_classic_pong
+LOCAL_SRC_FILES := native/classic_games_module.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=0
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm
+include $(BUILD_SHARED_LIBRARY)
+
+# Original low-allocation GLES2 classic game module
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+LOCAL_MODULE := reverie_module_classic_snake
+LOCAL_SRC_FILES := native/classic_games_module.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=1
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm
+include $(BUILD_SHARED_LIBRARY)
+
+# Original low-allocation GLES2 classic game module
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+LOCAL_MODULE := reverie_module_classic_chutes_ladders
+LOCAL_SRC_FILES := native/classic_games_module.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=2
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm
+include $(BUILD_SHARED_LIBRARY)
+
 ifdef REVERIE_HAS_DOSBOX_PURE
 
 LOCAL_PATH := $(REVERIE_JNI_PATH)
