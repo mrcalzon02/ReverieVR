@@ -57,6 +57,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onUpdateCheckRequested();
         void onBluetoothSettingsRequested();
         void onControllerPairingRequested();
+        boolean onControllerSourceSelected(String source);
+        String getControllerSourceStatus(String source);
         void onVideoTogglePauseRequested();
         void onVideoSeekRequested(int deltaMillis);
         void onVideoStopRequested();
@@ -140,6 +142,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_NATIVE_GAMES = 14;
     private static final int MODE_EMULATOR_CATALOG = 15;
     private static final int MODE_EMULATOR_CONFIRM = 16;
+    private static final int MODE_CONTROLLER_SOURCE = 17;
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -252,7 +255,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {120, 470, 500, 535},
         {524, 470, 904, 535},
         {120, 555, 500, 620},
-        {524, 555, 904, 620}
+        {524, 555, 904, 620},
+        {120, 638, 904, 704}
+    };
+
+    private static final int[][] CONTROLLER_SOURCE_BUTTONS = new int[][] {
+        {120, 234, 500, 301},
+        {524, 234, 904, 301},
+        {120, 324, 500, 391},
+        {524, 324, 904, 391},
+        {120, 414, 500, 481},
+        {524, 414, 904, 481},
+        {120, 504, 904, 571}
     };
 
     private static final int[][] DOS_LIBRARY_BUTTONS = new int[][] {
@@ -4074,6 +4088,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
         if (mode == MODE_EMULATOR_CONFIRM) return index==0 || index==1;
 
+        if (mode == MODE_CONTROLLER_SOURCE) {
+            return index >= 0 && index < CONTROLLER_SOURCE_BUTTONS.length;
+        }
+
         if (mode == MODE_NATIVE_LIBRARY || mode == MODE_NATIVE_GAMES) {
             int count = currentNativeShelf().size();
             if (index >= 0 && index <= 2) {
@@ -4418,6 +4436,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 default:
                     break;
             }
+        } else if (mode == MODE_CONTROLLER_SOURCE) {
+            handleControllerSourceSelection(hoveredButton);
         } else if (mode == MODE_CONTROLLER) {
             handleControllerSelection(hoveredButton);
         } else if (mode == MODE_KEYBOARD) {
@@ -4776,11 +4796,33 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 mode = MODE_HOME;
                 break;
 
+            case 8:
+                mode = MODE_CONTROLLER_SOURCE;
+                break;
+
             default:
                 host.onUiActionRejected();
                 return;
         }
 
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
+    private void handleControllerSourceSelection(int button) {
+        if (button == 6) {
+            mode = MODE_CONTROLLER;
+        } else if (button >= 0 &&
+                   button < ControllerSourcePolicy.CHOICES.length) {
+            String choice = ControllerSourcePolicy.CHOICES[button];
+            if (host.onControllerSourceSelected(choice)) {
+                mode = MODE_CONTROLLER;
+            } else {
+                host.onUiActionRejected();
+            }
+        } else {
+            host.onUiActionRejected();
+        }
         hoveredButton = -1;
         textureDirty = true;
     }
@@ -5138,6 +5180,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        if (mode == MODE_CONTROLLER_SOURCE) {
+            mode = MODE_CONTROLLER;
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
         if (mode == MODE_EMULATOR_CONFIRM) {
             mode = MODE_EMULATOR_CATALOG;
             hoveredButton = -1;
@@ -5187,6 +5235,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 ? PHONE_PANEL_BUTTONS : HOME_BUTTONS;
         }
 
+        if (mode == MODE_CONTROLLER_SOURCE) {
+            return CONTROLLER_SOURCE_BUTTONS;
+        }
         if (mode == MODE_CONTROLLER) {
             return CONTROLLER_BUTTONS;
         }
@@ -5339,6 +5390,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         } else if (mode == MODE_HOME) {
             drawHome(canvas, paint);
+        } else if (mode == MODE_CONTROLLER_SOURCE) {
+            drawControllerSourcePanel(canvas, paint);
         } else if (mode == MODE_CONTROLLER) {
             drawControllerPanel(canvas, paint);
         } else if (mode == MODE_KEYBOARD) {
@@ -6849,7 +6902,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     ? "HAND: LEFT"
                     : "HAND: RIGHT",
                 "RESET HAND POSITION",
-                "BACK TO HOME"
+                "BACK TO HOME",
+                "CONTROLLER SOURCE: " +
+                    ControllerSourcePolicy.label(preferences.getActiveController())
             };
 
         drawButtons(
@@ -6858,6 +6913,40 @@ final class VrShellRenderer implements CardboardView.Renderer {
             labels,
             CONTROLLER_BUTTONS
         );
+    }
+
+    private void drawControllerSourcePanel(Canvas canvas, Paint paint) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(30.0f * uiScale);
+        canvas.drawText("SELECT CONTROLLER SOURCE", 90, 165, paint);
+        paint.setColor(Color.rgb(180, 198, 214));
+        paint.setTextSize(18.0f * uiScale);
+        canvas.drawText("Current: " +
+            ControllerSourcePolicy.label(preferences.getActiveController()),
+            90, 203, paint);
+        String[] labels = new String[CONTROLLER_SOURCE_BUTTONS.length];
+        for (int i=0; i<ControllerSourcePolicy.CHOICES.length; i++) {
+            String choice=ControllerSourcePolicy.CHOICES[i];
+            String name=ControllerSourcePolicy.label(choice);
+            labels[i]=preferences.getActiveController().equals(choice)
+                ? "[ACTIVE] " + name : name;
+        }
+        labels[6]="BACK TO CONTROLLER";
+        drawButtons(canvas,paint,labels,CONTROLLER_SOURCE_BUTTONS);
+        paint.setColor(Color.rgb(172, 193, 210));
+        paint.setTextSize(16.0f * uiScale);
+        for(int i=0;i<ControllerSourcePolicy.CHOICES.length;i++){
+            int[] rect=CONTROLLER_SOURCE_BUTTONS[i];
+            String state=host.getControllerSourceStatus(
+                ControllerSourcePolicy.CHOICES[i]);
+            canvas.drawText(shorten(state,36),rect[0]+16,rect[3]-8,paint);
+        }
+        paint.setColor(Color.rgb(155, 165, 185));
+        paint.setTextSize(16.0f * uiScale);
+        canvas.drawText("SCRCPY: connect with --gamepad=uhid; USB or Wi-Fi ADB.",
+            90, 618, paint);
+        canvas.drawText("Offline input fallback: Back, Auto, or Stage A pairing.",
+            90, 650, paint);
     }
 
     private void drawMediaLibrary(
