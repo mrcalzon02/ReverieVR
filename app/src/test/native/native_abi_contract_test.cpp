@@ -137,6 +137,19 @@ int main() {
             ),
         "feedback helper must strip unknown flag bits"
     );
+    captured_feedback_flags = 0u;
+    Check(
+        ReverieNativeRequestFeedbackV1(
+            &host, REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE
+                | REVERIE_NATIVE_FEEDBACK_RELOAD_START
+                | REVERIE_NATIVE_FEEDBACK_RELOAD_READY
+        ) != 0 &&
+        captured_feedback_flags ==
+            (REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE
+             | REVERIE_NATIVE_FEEDBACK_RELOAD_START
+             | REVERIE_NATIVE_FEEDBACK_RELOAD_READY),
+        "fixed gameplay sound cues must survive ABI sanitization"
+    );
 
     ReverieNativeModuleDescriptorV1 descriptor = {};
     descriptor.struct_size =

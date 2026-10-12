@@ -39,7 +39,8 @@ This catalog is intentionally broader than the public C ABI. It includes impleme
 |---|---|---|---|
 | Logging | **ABI v1** | `host->log` | Android log bridge; bounded module diagnostics. |
 | Module-private persistence | **ABI v1** | `read_save`, `write_save` | Bounded safe slot names, 64 KiB payload ceiling, atomic replace on write. |
-| Shell feedback cues | **ABI v1 optional host tail** | `request_feedback` + `REVERIE_NATIVE_FEEDBACK_*` | Focus/activation/failure requests are sanitized, coalesced during update, and mapped to existing shell audio cues. |
+| Shell feedback cues | **ABI v1 optional host tail** | `request_feedback` + `REVERIE_NATIVE_FEEDBACK_*` | Focus/activation/failure plus fixed weapon-fire/reload-start/reload-ready cues, coalesced and delivered to shell audio. |
+| Generated gameplay sound bank | **Shell implementation / provisional** | `app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java`, `app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatSound.java` | Three deterministic mono 22,050 Hz PCM samples reused through static AudioTracks; no arbitrary audio/PCM API. |
 | Arbitrary PCM/spatial audio | **Planned** | None | Not implemented. |
 | Haptics | **Planned** | None | Not implemented. |
 

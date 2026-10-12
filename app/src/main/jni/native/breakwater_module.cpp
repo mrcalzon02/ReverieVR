@@ -281,7 +281,9 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->impacts.RecordWaterMiss(input.pointer_origin,input.pointer_direction);
             for(int k=0;k<3;k++)s->shot_direction[k]=input.pointer_direction[k];
             s->flash=.09f;
-            Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            // Use fixed host-owned gameplay sound cues, not the UI confirm beep.
+            Feedback(s,REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE |
+                (game.reloading()?REVERIE_NATIVE_FEEDBACK_RELOAD_START:0u));
         } else if(edge)Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
         game=Campaign(Difficulty::Regular,1049u);
@@ -631,7 +633,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         }
         if(was_reloading && !s->campaign.reloading() &&
            s->campaign.phase()==Phase::Combat)
+        {
             s->reload_ready_flash=.55f;
+            Feedback(s,REVERIE_NATIVE_FEEDBACK_RELOAD_READY);
+        }
         if(s->campaign.phase()==Phase::Shop)SaveState(s);
     }
     bool started_reload=false;
@@ -639,7 +644,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
        s->campaign.phase()==Phase::Combat) {
         started_reload=s->campaign.RequestReload();
         if(started_reload)s->reload_ready_flash=0.0f;
-        Feedback(s,started_reload?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+        Feedback(s,started_reload?REVERIE_NATIVE_FEEDBACK_RELOAD_START:
                   REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
     // Release restores gun ownership; no held UI press can become gunfire.

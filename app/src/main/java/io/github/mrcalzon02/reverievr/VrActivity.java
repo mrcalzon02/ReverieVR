@@ -1276,6 +1276,15 @@ public final class VrActivity extends Activity
                 != 0) {
                 uiFeedback.failure();
             }
+            if ((safeFlags & NativeModuleRuntime.FEEDBACK_WEAPON_FIRE) != 0) {
+                uiFeedback.weaponFire();
+            }
+            if ((safeFlags & NativeModuleRuntime.FEEDBACK_RELOAD_START) != 0) {
+                uiFeedback.reloadStart();
+            }
+            if ((safeFlags & NativeModuleRuntime.FEEDBACK_RELOAD_READY) != 0) {
+                uiFeedback.reloadReady();
+            }
         });
     }
 

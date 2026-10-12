@@ -20,6 +20,7 @@ final class UiFeedback implements AutoCloseable {
     private final AudioManager audioManager;
     private final ControllerSpringSound controllerSpringSound =
         new ControllerSpringSound();
+    private final NativeCombatSound combatSound = new NativeCombatSound();
     private boolean lifecycleActive = true;
     private ToneGenerator toneGenerator;
     private long lastFocusSoundMillis;
@@ -97,9 +98,28 @@ final class UiFeedback implements AutoCloseable {
         });
     }
 
+    void weaponFire() {
+        mainHandler.post(() -> {
+            if (lifecycleActive) combatSound.play(NativeCombatWaveform.FIRE);
+        });
+    }
+
+    void reloadStart() {
+        mainHandler.post(() -> {
+            if (lifecycleActive) combatSound.play(NativeCombatWaveform.RELOAD);
+        });
+    }
+
+    void reloadReady() {
+        mainHandler.post(() -> {
+            if (lifecycleActive) combatSound.play(NativeCombatWaveform.READY);
+        });
+    }
+
     void pauseForLifecycle() {
         lifecycleActive = false;
         controllerSpringSound.stop();
+        combatSound.stop();
     }
 
     void resumeForLifecycle() {
@@ -223,6 +243,7 @@ final class UiFeedback implements AutoCloseable {
     public void close() {
         mainHandler.removeCallbacksAndMessages(null);
         controllerSpringSound.close();
+        combatSound.close();
         if (toneGenerator != null) {
             toneGenerator.release();
             toneGenerator = null;

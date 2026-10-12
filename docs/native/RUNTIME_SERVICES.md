@@ -19,7 +19,7 @@ Current shell-owned native runtime services include:
 - lifecycle pause/resume and GL-context handoff;
 - global HUD continuity;
 - module-private save isolation through the native host;
-- coalesced native focus/activation/failure audio cues through shell `UiFeedback`.
+- coalesced native focus/activation/failure and fixed gameplay weapon/reload audio cues through shell `UiFeedback`.
 
 This document covers the services around the module. Exact C ABI fields remain documented in `API_V1.md`.
 
@@ -148,13 +148,13 @@ The shell/runtime chooses the module-private storage root; the native host valid
 
 ## Native feedback cue service
 
-Native modules may request the shell's existing focus, activation, and failure cues through the optional `ReverieNativeHostV1.request_feedback` tail.
+Native modules may request focus/activation/failure and the three fixed gameplay cues (weapon fire, reload start, reload ready) through the optional `ReverieNativeHostV1.request_feedback` tail.
 
-Requests made during a module update are sanitized and coalesced by flag in the native host. The same JNI update call returns the mask to `NativeModuleRuntime`; `VrShellRenderer` forwards nonzero masks to the activity, which maps them to `UiFeedback.focus()`, `activation()`, and `failure()`.
+Requests made during a native update are sanitized/coalesced by flag and returned through `NativeModuleRuntime`; `VrShellRenderer` forwards them to the activity for `UiFeedback.focus()`, `activation()`, `failure()`, `weaponFire()`, `reloadStart()`, and `reloadReady()`. The three gameplay cues use reusable deterministic static AudioTracks, stopped on pause, with no per-eye sound synthesis. This provides no general PCM or MIDI interface.
 
 Test Chamber requests an activation cue when its tint toggle changes. Red Ledger requests activation for completed targeted actions and failure for a targeted action that cannot complete.
 
-The service is deliberately event-level. It does not accept PCM, sound files, spatial audio buffers, arbitrary tones, or mixer controls. Haptics are also not implemented by this path.
+The service remains event-level. It does not accept module PCM, sound files, positional audio buffers, arbitrary tones, or mixer controls. It provides only named one-shot cues. Haptics are also not implemented by this path.
 
 ## Current limitations and next API candidates
 
