@@ -32,3 +32,32 @@ Log shake accepted/rejected reason, correction start/end, offset length, and int
 
 ## Related player rig
 Future player-rig work should keep eye origins, headset geometry, collision proxy, and optional mirror-renderable avatar separate. Collider must not alter stereo eye calibration.
+
+## Intermittent pose-stream visibility (2026-10-12)
+
+The **input safety timeout remains 750 ms**. If a BLE notification is delayed
+past this limit, the physical controller must stop supplying new pointer
+rays, target selection, held input or guest actions. A transient loss of
+freshness must not make the controller **mesh** blink out at 750 ms, however.
+The shell may retain the last *still, noninteractive* model until 2.25 seconds
+after the last valid sample; it removes this mesh immediately for actual
+disconnection, input-provider switch, invalidated tracking or explicit Gaze
+mode. The translucent recenter ghost/tether is **not** held: it clears
+as soon as active pose tracking becomes stale. Once real samples resume,
+normal tracked model/ray update is immediate.
+
+The GL frame captures one immutable `ControllerSnapshot` for both its
+quaternion-derived ray and its handset model/buttons so sensor callbacks
+cannot interleave two different quaternions in one visible frame. A malformed
+snapshot does not discard the last good packet before its natural timeout.
+Development logging records notification intervals of 300 ms or longer,
+the start/end of short visual holds, and malformed quaternion rejection.
+These logs distinguish sensor-notification delays from present/render stalls;
+a held mesh alone does **not** establish an underlying Bluetooth disconnect.
+
+Deterministic JVM regression source:
+`app/src/test/java/io/github/mrcalzon02/reverievr/ControllerPoseVisibilityTest.java`.
+Unit checks cover 750 ms input gating, 2.25 s visual expiry, prompt
+disconnect invalidation, invalid/future timestamps and immediate recovery.
+Device-level S9 Bluetooth streaming, compositor timing and display stability
+remain open acceptance items.
