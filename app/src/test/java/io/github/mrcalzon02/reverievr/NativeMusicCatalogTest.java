@@ -70,8 +70,17 @@ public final class NativeMusicCatalogTest {
         } catch (IOException expected) {
             // The licensed catalogs remain strictly separated.
         }
+        try {
+            NativeMusicCatalog.parseOwnerMusic(
+                new ByteArrayInputStream(row.getBytes(StandardCharsets.UTF_8)));
+            fail("Pending-rights track must not be admitted to owner music");
+        } catch (IOException expected) {
+            // Previous provisional asset rights are no longer accepted.
+        }
+        String ownerRow = row.replace("LicenseRef-Pending-Asset-Rights",
+            "LicenseRef-Owner-Original-Music");
         NativeMusicCatalog preview = NativeMusicCatalog.parseOwnerMusic(
-            new ByteArrayInputStream(row.getBytes(StandardCharsets.UTF_8)));
+            new ByteArrayInputStream(ownerRow.getBytes(StandardCharsets.UTF_8)));
         assertEquals(1, preview.size());
         invalid("unapproved\tBad\tmusic/tracks/unapproved.mp3\t" +
             "LicenseRef-Pending-Asset-Rights\t" + DIGEST);
@@ -94,11 +103,11 @@ public final class NativeMusicCatalogTest {
             "LicenseRef-Suno-Commercial-Use\t" + DIGEST + "\n";
         String preview =
             "sky-lobby-drift\tSky Lobby Drift\tmusic/tracks/sky-lobby-drift.mp3\t" +
-            "LicenseRef-Pending-Asset-Rights\t" + DIGEST + "\n" +
+            "LicenseRef-Owner-Original-Music\t" + DIGEST + "\n" +
             "mars-des-souvenirs\tMars des Souvenirs\tmusic/tracks/mars-des-souvenirs.mp3\t" +
-            "LicenseRef-Pending-Asset-Rights\t" + DIGEST + "\n" +
+            "LicenseRef-Owner-Original-Music\t" + DIGEST + "\n" +
             "glass-lobby-drift\tGlass Lobby Drift\tmusic/tracks/glass-lobby-drift.mp3\t" +
-            "LicenseRef-Pending-Asset-Rights\t" + DIGEST + "\n";
+            "LicenseRef-Owner-Original-Music\t" + DIGEST + "\n";
         NativeMusicCatalog library = NativeMusicCatalog.combine(
             parse(licensed),NativeMusicCatalog.parseOwnerMusic(
                 new ByteArrayInputStream(preview.getBytes(StandardCharsets.UTF_8))));
