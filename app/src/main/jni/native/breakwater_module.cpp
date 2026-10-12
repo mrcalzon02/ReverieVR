@@ -37,6 +37,8 @@ struct State {
     AircraftAimFeedback aircraft_aim;
     AircraftHitFeedback aircraft_hit;
     CombatInputLatch combat_input;
+    bool armory_page=false, sam_armed=false, ghost_on=false;
+    float ghost_position[3]={}, shot_origin[3]={}, shot_gravity=0;
     std::vector<float> mesh;
 };
 void Feedback(State *s, uint32_t code) {
@@ -140,44 +142,53 @@ int ShopTarget(const ReverieNativeInputV1 &input) {
         if(std::abs(x-(-2.1f+col*1.4f))<.62f &&
            std::abs(y-(.05f-row*.65f))<.27f)return n;
     }
-    if(std::abs(x)<.88f && y<-.82f && y>-1.40f)return 8;
+    if(y<-.82f && y>-1.40f) {
+        if(x>.08f && x<1.88f)return 8;
+        if(x<-.08f && x>-1.88f)return 9;
+    }
     return -1;
 }
 bool AimAtEnemy(const ReverieNativeInputV1 &input,const Enemy &enemy,
-                float *distance) {
+                float gravity,bool ghost,float *distance) {
     if(!enemy.active)return false;
     const float center[]={enemy.x,
         enemy.type==UnitType::Aircraft?1.6f:-.63f,enemy.z};
     const float radius=enemy.type==UnitType::Rowboat?.62f:
          enemy.type==UnitType::LandingCraft?.82f:.78f;
-    return RaySphereSurfaceDistance(input.pointer_origin,
-        input.pointer_direction,center,radius,distance);
+    return ghost?RaySphereSurfaceDistance(input.pointer_origin,
+        input.pointer_direction,center,radius,distance):
+        ProjectileHitsSphere(input.pointer_origin,input.pointer_direction,
+                             gravity,center,radius,distance);
 }
-bool GunWithinTraverse(const float *direction) {
-    // Bounded rail-mounted gun: approximately 68 degrees horizontal
-    // traverse each side, with a generous but finite elevation arc.
-    return direction[2]<-0.18f &&
-        std::abs(direction[0]) <= -direction[2]*2.5f &&
-        std::abs(direction[1]) <= -direction[2]*1.6f;
+bool GunWithinTraverse(const float *direction,WeaponKind weapon) {
+    return WeaponWithinTraverse(direction,weapon);
 }
-int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game) {
+int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game,
+                 bool ghost=false) {
     if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE ||
-       !GunWithinTraverse(input.pointer_direction))return -1;
+       (!ghost && !GunWithinTraverse(input.pointer_direction,
+                                    game.selected_weapon())))return -1;
     float best=1e9f;int index=-1;
     for(uint8_t i=0;i<game.enemies().size();i++) {
         float depth=0;
-        if(AimAtEnemy(input,game.enemies()[i],&depth) && depth<best){
+        if(AimAtEnemy(input,game.enemies()[i],
+                      game.stats().projectile_gravity,ghost,&depth) && depth<best){
             best=depth; index=i;
         }
     }
-    for(uint8_t i=0;i<game.infantry_units().size();i++) {
-        float depth=0;
-        if(RayHitsInfantry(game.infantry_units()[i],input.pointer_origin,
-                           input.pointer_direction,&depth) && depth<best) {
-            best=depth;
-            index=static_cast<int>(Campaign::kMaxEnemies)+i;
+    if(WeaponFor(game.selected_weapon()).anti_infantry && !ghost)
+        for(uint8_t i=0;i<game.infantry_units().size();i++) {
+            const Infantry &trooper=game.infantry_units()[i];
+            if(!trooper.active)continue;
+            const float center[]={trooper.x,-.66f,trooper.z};
+            float depth=0;
+            if(ProjectileHitsSphere(input.pointer_origin,input.pointer_direction,
+                                    game.stats().projectile_gravity,
+                                    center,.30f,&depth) && depth<best) {
+                best=depth;
+                index=static_cast<int>(Campaign::kMaxEnemies)+i;
+            }
         }
-    }
     return index;
 }
 constexpr char kSaveSlot[]="breakwater-v1.bin";
@@ -201,6 +212,23 @@ void LoadState(State *s) {
             "Save rejected; keeping fresh campaign instead of resetting partially.");
     }
 }
+void BallisticWaterImpact(State *s,const ReverieNativeInputV1 &input,
+                          float gravity) {
+    if(input.pointer_direction[2]>=-.0001f)return;
+    float prev[3]={},at[3]={};
+    if(!ProjectilePosition(input.pointer_origin,input.pointer_direction,
+                           .01f,gravity,prev))return;
+    for(float t=.26f;t<=39.76f;t+=.25f) {
+        if(!ProjectilePosition(input.pointer_origin,input.pointer_direction,
+                               t,gravity,at))return;
+        if(prev[1]>-1.10f && at[1]<=-1.10f) {
+            const float down[]={0.0f,-1.0f,0.0f};
+            s->impacts.RecordHit(at,down,.001f,ImpactKind::Water);
+            return;
+        }
+        for(int i=0;i<3;i++)prev[i]=at[i];
+    }
+}
 void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     Campaign &game=s->campaign;
     if(game.phase()==Phase::Briefing) {
@@ -215,6 +243,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             s->gunboat_salvo_flash=0.0f;
             s->aircraft_aim={};
             s->aircraft_hit=AircraftHitFeedback{};
+            s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
             game.Start();
             SaveState(s);
             Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -223,7 +252,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         if(!edge)return;
         const int target=ShopTarget(input);
         bool done=false;
-        if(target==8) {
+        if(target==9) {
+            s->armory_page=!s->armory_page;
+            done=true;
+        } else if(target==8) {
             done=game.BeginWave();
             if(done) {
                 s->combat_input.CaptureUiPress();
@@ -232,12 +264,17 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->gunboat_salvo_flash=0.0f;
                 s->aircraft_aim={};
                 s->aircraft_hit=AircraftHitFeedback{};
+                s->sam_armed=false;
             }
         }
         else if(target>=0 && target<8){
-            done=game.Purchase(static_cast<Upgrade>(target));
-            if(done)SaveState(s);
+            if(s->armory_page) {
+                if(target<kWeaponCount)
+                    done=game.PurchaseWeapon(static_cast<WeaponKind>(target));
+                else if(target==5)done=game.PurchaseSam();
+            } else done=game.Purchase(static_cast<Upgrade>(target));
         }
+        if(done && game.phase()==Phase::Shop)SaveState(s);
         Feedback(s,done?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(game.phase()==Phase::Combat) {
         float x=0,y=0;
@@ -247,6 +284,23 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         // the HUD. Shop START presses also remain captured across phases.
         const CombatInputRoute route = s->combat_input.Route(hud,edge);
         if(route==CombatInputRoute::NoAction)return;
+        if(route>=CombatInputRoute::Weapon0 &&
+           route<=CombatInputRoute::Weapon4) {
+            const WeaponKind kind=static_cast<WeaponKind>(
+                static_cast<uint8_t>(route)-static_cast<uint8_t>(CombatInputRoute::Weapon0));
+            const bool ok=game.SelectWeapon(kind);
+            if(ok)s->sam_armed=false;
+            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                          REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
+        }
+        if(route==CombatInputRoute::Sam) {
+            const bool ok=game.sam_charges()>0 || s->sam_armed;
+            if(ok)s->sam_armed=!s->sam_armed;
+            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                          REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
+        }
         if(route==CombatInputRoute::Artillery){
             const auto before=game.enemies();
             const bool ok=game.CallArtillery();
@@ -261,39 +315,71 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
-        const int target=CombatTarget(input,game);
+        if(s->sam_armed) {
+            const int lock=CombatTarget(input,game,true);
+            const bool valid=lock>=0 &&
+                lock<static_cast<int>(Campaign::kMaxEnemies) &&
+                game.enemies()[lock].type==UnitType::Aircraft;
+            const Enemy source=valid?game.enemies()[lock]:Enemy{};
+            const bool ok=valid && game.CallSam(static_cast<uint8_t>(lock));
+            if(ok) {
+                const float origin[]={source.x,1.6f,source.z};
+                const float down[]={0.0f,-1.0f,0.0f};
+                s->impacts.RecordHit(origin,down,.001f,ImpactKind::AirstrikeBlast);
+                s->aircraft_hit.Record(source,game.enemies()[lock],true);
+                s->sam_armed=false;
+            }
+            if(edge)Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                                 REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
+        }
+        const bool missile=WeaponFor(game.selected_weapon()).uses_ghost;
+        const int target=CombatTarget(input,game,missile);
         // Resolve the impact before a lethal hit deactivates the target.
         float impactDepth=0.0f;
         const bool enemyTarget=target>=0 &&
             target<static_cast<int>(Campaign::kMaxEnemies);
         const int16_t targetHp=enemyTarget?game.enemies()[target].hp:0;
         const Enemy enemyBefore=enemyTarget?game.enemies()[target]:Enemy{};
+        const float gravity=game.stats().projectile_gravity;
         if(enemyTarget)
-            AimAtEnemy(input,game.enemies()[target],&impactDepth);
-        else if(target>=static_cast<int>(Campaign::kMaxEnemies))
-            RayHitsInfantry(game.infantry_units()[target-Campaign::kMaxEnemies],
-                           input.pointer_origin,input.pointer_direction,&impactDepth);
+            AimAtEnemy(input,game.enemies()[target],gravity,missile,&impactDepth);
+        else if(target>=static_cast<int>(Campaign::kMaxEnemies)) {
+            const Infantry &trooper=game.infantry_units()[
+                target-Campaign::kMaxEnemies];
+            const float center[]={trooper.x,-.66f,trooper.z};
+            ProjectileHitsSphere(input.pointer_origin,input.pointer_direction,
+                                 gravity,center,.30f,&impactDepth);
+        }
         bool shot=false;
         if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies))
             shot=game.FireAt(static_cast<uint8_t>(target));
         else if(target>=static_cast<int>(Campaign::kMaxEnemies))
             shot=game.FireAtInfantry(static_cast<uint8_t>(target-Campaign::kMaxEnemies));
-        else if(GunWithinTraverse(input.pointer_direction))
+        else if(GunWithinTraverse(input.pointer_direction,
+                                  game.selected_weapon()))
             shot=game.FireMiss();
         if(shot){
             if(enemyTarget)
                 s->aircraft_hit.Record(enemyBefore,game.enemies()[target],true);
-            if(impactDepth>0.0f) {
-                if(enemyTarget)
-                    s->impacts.RecordDamageHit(input.pointer_origin,input.pointer_direction,
-                        impactDepth,targetHp,game.enemies()[target].hp,
-                        game.enemies()[target].active);
-                else
-                    s->impacts.RecordHit(input.pointer_origin,input.pointer_direction,
-                                         impactDepth,ImpactKind::Sand);
-            } else if(target<0)
-                s->impacts.RecordWaterMiss(input.pointer_origin,input.pointer_direction);
-            for(int k=0;k<3;k++)s->shot_direction[k]=input.pointer_direction[k];
+            float hit[3]={};
+            if(impactDepth>0.0f &&
+               ProjectilePosition(input.pointer_origin,input.pointer_direction,
+                                  impactDepth,missile?0.0f:gravity,hit)) {
+                const float down[]={0.0f,-1.0f,0.0f};
+                if(enemyTarget) {
+                    if(game.enemies()[target].hp<targetHp)
+                        s->impacts.RecordHit(hit,down,.001f,
+                            game.enemies()[target].active?
+                                ImpactKind::Metal:ImpactKind::Explosion);
+                } else s->impacts.RecordHit(hit,down,.001f,ImpactKind::Sand);
+            } else if(target<0 && !missile)
+                BallisticWaterImpact(s,input,gravity);
+            for(int k=0;k<3;k++) {
+                s->shot_direction[k]=input.pointer_direction[k];
+                s->shot_origin[k]=input.pointer_origin[k];
+            }
+            s->shot_gravity=missile?0.0f:gravity;
             s->flash=.09f;
             // Use fixed host-owned gameplay sound cues, not the UI confirm beep.
             Feedback(s,REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE |
@@ -309,6 +395,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->gunboat_salvo_flash=0.0f;
         s->aircraft_aim={};
         s->aircraft_hit=AircraftHitFeedback{};
+        s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
 }
