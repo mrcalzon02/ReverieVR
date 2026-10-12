@@ -768,6 +768,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return orientationMenuVisible;
     }
 
+    /** Hosted content receives B as a game button; Menu/Back recovery
+     * remains available through Start/Mode and the Android Back key. */
+    boolean isHostedGamepadInputActive() {
+        return mode == MODE_NATIVE || mode == MODE_DOS;
+    }
+
     boolean handlesSelectAsShellAction() {
         if (orientationMenuVisible) {
             return true;

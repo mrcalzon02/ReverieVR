@@ -946,6 +946,14 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public boolean shouldDispatchGamepadShellAction(
+        int keyCode, VrInputAction action) {
+        return !(action == VrInputAction.BACK
+            && keyCode == KeyEvent.KEYCODE_BUTTON_B
+            && renderer != null && renderer.isHostedGamepadInputActive());
+    }
+
+    @Override
     public void onInputAction(
         VrInputAction action,
         String source

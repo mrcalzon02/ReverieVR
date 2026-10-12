@@ -6,6 +6,16 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Hosted gamepad B input ownership
+
+- Android face B acts as a native/DOS guest button while a hosted game
+  is active, instead of prematurely invoking shell Back. Outside hosted
+  gameplay, B keeps the familiar Back behavior; Android Back, Start/Mode
+  and Quick Menu remain shell-controlled recovery.
+- Native standard mapping now includes B on joystick 3 and shifts other
+  added gamepad outputs to buttons 4–12. Source tests revised; no
+  Galaxy S9 or controller-model device validation claimed.
+
 ### Common physical gamepad inputs in hosted profiles (source only)
 
 - Normalized Android gamepad face, shoulder, trigger, stick click, D-pad,

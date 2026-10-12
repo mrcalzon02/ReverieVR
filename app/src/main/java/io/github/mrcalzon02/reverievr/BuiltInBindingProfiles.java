@@ -238,9 +238,10 @@ final class BuiltInBindingProfiles {
         );
         // These gamepad mappings are normalized Android HID sources, not
         // per-game vendor-code switches. A still uses SELECT -> button 0;
-        // B is preserved for shell Back until a hosted-context policy is
-        // explicitly admitted, so it is not a default guest action.
+        // Physical B is a hosted game button in the active native/DOS
+        // experience; shell Menu and Android Back remain recoverable.
         BindingInput[] physicalInputs = {
+            BindingInput.GAMEPAD_BUTTON_B,
             BindingInput.GAMEPAD_BUTTON_X,
             BindingInput.GAMEPAD_BUTTON_Y,
             BindingInput.GAMEPAD_BUTTON_L1,

@@ -1,3 +1,15 @@
+## 2026-10-11 — Hosted gamepad B no longer exits active games
+
+The platform now routes physical Android `BUTTON_B` to guest output when
+native/DOS content is actively receiving input, instead of interpreting
+it as an immediate shell Back and exiting/opening the overlay. Standard
+native hosted profile exposes it as virtual joystick button 3 and shifts
+X/Y/shoulder/trigger/stick/select guest indices to 4–12. Outside active
+guest mode B remains shell Back. Android system Back and Start/Mode
+retain shell recovery; in-VR Quick Menu still routes home/recovery.
+JVM profile tests are updated; Gradle, multiple device driver reports
+and Galaxy S9 input/recovery evidence remain outstanding.
+
 ## 2026-10-11 — Shared raw Android gamepad input vocabulary (source)
 
 Introduced physical Android HID A/B/X/Y, L/R shoulders/triggers,

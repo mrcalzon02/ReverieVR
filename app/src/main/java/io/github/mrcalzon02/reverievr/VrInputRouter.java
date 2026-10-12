@@ -8,6 +8,13 @@ final class VrInputRouter {
     interface Listener {
         void onInputAction(VrInputAction action, String source);
 
+        /** A hosted game owns the B face button; Android Back and Menu
+         * remain shell-owned recovery keys. */
+        default boolean shouldDispatchGamepadShellAction(
+            int keyCode, VrInputAction action) {
+            return true;
+        }
+
         default void onPointerAxis(
             float horizontal,
             float vertical,
@@ -263,7 +270,10 @@ final class VrInputRouter {
 
         if (action != null
             && event.getAction() == KeyEvent.ACTION_DOWN
-            && event.getRepeatCount() == 0) {
+            && event.getRepeatCount() == 0
+            && (listener == null
+                || listener.shouldDispatchGamepadShellAction(
+                    event.getKeyCode(), action))) {
             emit(action, source);
         }
 

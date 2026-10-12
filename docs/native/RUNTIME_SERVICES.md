@@ -110,20 +110,22 @@ The current normalized button mapping is:
 - Select → virtual joystick button **0**;
 - the reclaimed `VOLUME_UP` input source → virtual joystick button **1**;
 - the reclaimed `VOLUME_DOWN` input source → virtual joystick button **2**;
-- Android gamepad X, Y, L1, R1, L2, R2, thumbstick L/R click, and Select
+- Android gamepad B, X, Y, L1, R1, L2, R2, thumbstick L/R click, and Select
   (when reported as separate `BUTTON_SELECT`) → virtual joystick buttons
-  **3–11**, respectively;
+  **3–12**, respectively;
 - analog left stick X/Y → the host virtual joystick X/Y axes, independent
   of shell-owned Daydream locomotion, with a 0.15 radial per-axis deadzone.
 
 The source now also preserves individually named physical Android HID
 A/B/X/Y, shoulders, triggers, stick clicks, Back/Start/Mode and D-pad
 digital key edges and analog L/R trigger axes as `BindingInput` values.
-A still produces the normalized Select → native button 0; B still serves
-shell Back and is therefore **not** assigned a default native action.
-The original host-reserved Mode/Start Quick Menu actions retain shell
-precedence; raw observation does not give modules authority to intercept
-recovery. Android vendor-specific axis conventions and remappable shell
+A still produces the normalized Select → native button 0. While a native
+or DOS experience is actively receiving guest input, a physical Android
+`BUTTON_B` is a guest input instead of an immediate shell Back action.
+Outside active guest content (including shell menus) it remains Back.
+Android system Back and physical Start/Mode keep their independent
+shell-owned recovery paths; raw observation does not let a native
+module intercept recovery. Android vendor-specific axis conventions and remappable shell
 action UI need real controller report capture before a supported mapping
 claim. These raw inputs can be used in existing RVBIND1 guest-output
 profiles; there is not yet a complete physical remap editor.
