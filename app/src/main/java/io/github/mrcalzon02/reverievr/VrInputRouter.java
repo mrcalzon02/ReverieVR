@@ -155,6 +155,14 @@ final class VrInputRouter {
                 touchStartY = snapshot.touchY;
             }
 
+            // Relative finger motion drives DOSBox Pure's real mouse device.
+            // Absolute pad coordinates remain available for arrow/axis profiles.
+            if (previousTouching) {
+                emitBindingRelative(BindingInput.TOUCHPAD_REL_X,
+                    snapshot.touchX - touchLastX, source);
+                emitBindingRelative(BindingInput.TOUCHPAD_REL_Y,
+                    snapshot.touchY - touchLastY, source);
+            }
             touchLastX = snapshot.touchX;
             touchLastY = snapshot.touchY;
 
