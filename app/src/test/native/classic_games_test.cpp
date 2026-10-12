@@ -21,10 +21,10 @@ int main() {
     snake.Press();
     snake.Direction(3);
     assert(snake.desired==1); // cannot reverse into the body
-    snake.Step(.25f,0);
+    for(int tick=0;tick<3;tick++)snake.Step(.1f,0);
     assert(snake.snake[0]==6*12+6);
     snake.Direction(0);
-    snake.Step(.25f,0);
+    for(int tick=0;tick<3;tick++)snake.Step(.1f,0);
     assert(snake.snake[0]==5*12+6);
     snake.Direction(3);
     for(int i=0;i<20&&!snake.finished;i++)snake.Step(.25f,0);
@@ -41,11 +41,11 @@ int main() {
     int pos=ladder.position;
     ladder.Press();
     assert(ladder.position==pos); // cannot take the opponent's turn
-    ladder.Step(.8f,0);
+    for(int tick=0;tick<8;tick++)ladder.Step(.1f,0);
     assert(ladder.player_turn&&ladder.rival>=1);
     for(int i=0;i<300&&!ladder.finished;i++) {
         if(ladder.player_turn)ladder.Press();
-        else ladder.Step(.8f,0);
+        else for(int tick=0;tick<8;tick++)ladder.Step(.1f,0);
     }
     assert(ladder.finished&&((ladder.position==100)||(ladder.rival==100)));
     ladder.Press();
