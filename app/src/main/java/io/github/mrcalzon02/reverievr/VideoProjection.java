@@ -15,7 +15,10 @@ enum VideoProjection {
     STEREO_EQUIRECTANGULAR_360_TB("3D 360° · top/bottom", true, 2),
     MONO_EQUIRECTANGULAR_180("2D 180° equirect", true, 0),
     STEREO_EQUIRECTANGULAR_180_SBS("3D 180° equirect · SBS", true, 1),
-    STEREO_EQUIRECTANGULAR_180_TB("3D 180° equirect · top/bottom", true, 2);
+    STEREO_EQUIRECTANGULAR_180_TB("3D 180° equirect · top/bottom", true, 2),
+    HEADSET_RECORDING_MONO("Headset recording · mono", false, 0),
+    HEADSET_RECORDING_SBS("Headset recording · side-by-side", false, 1),
+    HEADSET_RECORDING_TB("Headset recording · top/bottom", false, 2);
 
     private final String label;
     private final boolean immersive;
@@ -37,6 +40,13 @@ enum VideoProjection {
 
     boolean isStereo() {
         return packing != 0;
+    }
+
+    /** Baked eye video is not a head-tracked spatial scene. */
+    boolean isHeadsetRecording() {
+        return this == HEADSET_RECORDING_MONO
+            || this == HEADSET_RECORDING_SBS
+            || this == HEADSET_RECORDING_TB;
     }
 
     boolean isEquirectangular180() {
@@ -72,6 +82,23 @@ enum VideoProjection {
             return packedAspect * 2.0f;
         }
         return packedAspect;
+    }
+
+    /** Aspect-fit a recorded eye in the actual Cardboard eye viewport. */
+    void fillHeadsetFitScale(float packedAspect, float viewportAspect,
+                             float[] out) {
+        out[0] = 1.0f;
+        out[1] = 1.0f;
+        if (!Float.isFinite(packedAspect) || packedAspect <= 0.0f
+            || !Float.isFinite(viewportAspect) || viewportAspect <= 0.0f) {
+            return;
+        }
+        float sourceAspect = eyeDisplayAspect(packedAspect);
+        if (sourceAspect > viewportAspect) {
+            out[1] = viewportAspect / sourceAspect;
+        } else {
+            out[0] = sourceAspect / viewportAspect;
+        }
     }
 
     /**
@@ -133,6 +160,25 @@ enum VideoProjection {
             || words.contains(" fisheye180 ")
             || words.contains(" dualfisheye "))) {
             return FLAT_CINEMA;
+        }
+        // Only explicit *headset output* tags suggest fixed-eye playback.
+        // SBS on its own can mean a regular stereo movie or spatial media.
+        boolean headset = words.contains(" headset ")
+            || words.contains(" hmd ")
+            || words.contains(" headsetcapture ")
+            || words.contains(" hmdcapture ")
+            || words.contains(" vrmirror ");
+        boolean recording = words.contains(" capture ")
+            || words.contains(" recording ")
+            || words.contains(" mirror ")
+            || words.contains(" output ")
+            || words.contains(" headsetcapture ")
+            || words.contains(" hmdcapture ")
+            || words.contains(" vrmirror ");
+        if (headset && recording && !hemisphere && !panorama) {
+            if (sbs && tb) return FLAT_CINEMA;
+            return sbs ? HEADSET_RECORDING_SBS
+                : tb ? HEADSET_RECORDING_TB : HEADSET_RECORDING_MONO;
         }
         // Conflicting tags are ambiguous: stay mono and require a user choice.
         if (sbs == tb) {

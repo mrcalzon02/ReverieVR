@@ -93,6 +93,19 @@ public final class VideoProjectionTest {
         assertRegion(region, 0.5f, 0, 0.5f, 1);
     }
 
+    @Test public void fixedEyeRecordingUsesDistinctStereoRegions() {
+        assertTrue(VideoProjection.HEADSET_RECORDING_SBS.isHeadsetRecording());
+        assertFalse(VideoProjection.FLAT_STEREO_SBS.isHeadsetRecording());
+        assertFalse(VideoProjection.HEADSET_RECORDING_MONO.isImmersive());
+        float[] crop = new float[4];
+        VideoProjection.HEADSET_RECORDING_SBS.fillEyeUvRegion(true, crop);
+        assertRegion(crop, 0, 0, 0.5f, 1);
+        VideoProjection.HEADSET_RECORDING_SBS.fillEyeUvRegion(false, crop);
+        assertRegion(crop, 0.5f, 0, 0.5f, 1);
+        VideoProjection.HEADSET_RECORDING_TB.fillEyeUvRegion(true, crop);
+        assertRegion(crop, 0, 0.5f, 1, 0.5f);
+    }
+
     @Test public void cyclingKeepsMonoAndStereoDistinct() {
         assertFalse(VideoProjection.FLAT_CINEMA.isStereo());
         assertTrue(VideoProjection.FLAT_STEREO_SBS.isStereo());

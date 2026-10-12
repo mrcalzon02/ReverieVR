@@ -6476,7 +6476,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             preferences.getVideoProjection();
         String[] labels = new String[] {
             preferences.hasSelectedVideo()
-                ? (projection.isStereo()
+                ? (projection.isHeadsetRecording()
+                    ? "PLAY FIXED-EYE HEADSET VIDEO"
+                    : projection.isStereo()
                     ? "PLAY STEREO IN 3D SCENE"
                     : projection.isImmersive()
                         ? (projection.isEquirectangular180()
@@ -6498,6 +6500,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
             labels,
             MEDIA_BUTTONS
         );
+        if (projection.isHeadsetRecording()) {
+            paint.setColor(Color.rgb(166, 179, 197));
+            paint.setTextSize(17.0f * uiScale);
+            canvas.drawText(
+                "FIXED EYES: head movement cannot reproject the recording.",
+                92, 664, paint);
+            canvas.drawText(
+                "Prewarped lenses may distort; no inverse warp is applied.",
+                92, 690, paint);
+        }
     }
 
     private void drawEnvironmentMenu(

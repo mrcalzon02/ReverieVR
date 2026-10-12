@@ -55,6 +55,22 @@ New synthetic JVM tests cover supported stereo/spherical variants, malicious
 mdat lookalikes, conflicting tracks, unsupported projection and truncation.
 No APK, real media, or Galaxy S9 acceptance claim for this new slice.
 
+## 2026-10-11 — RV-0505 fixed-eye prerecorded headset output
+
+Headset-output captures can contain baked stereo eye frames with no live
+scene, camera pose or genuine VR navigation. The Media panel now offers mono,
+SBS and top/bottom fixed-eye modes separate from regular stereo cinema and
+180/360 projection. Each decoded video view maps directly to one Cardboard eye
+in clip space, using aspect-fit and no additional head-pose reprojection.
+Explicit headset-capture naming can suggest these modes; generic SBS/TB still
+defaults to cinema, and spatial video keeps its own geometry.
+The optical headset compositor is still active. Lens-prewarped recordings
+may need calibrated inverse optical warp before they can look undistorted:
+that correction is not implemented or claimed. The VR panel tells the user.
+Existing MediaPlayer, SAF permissions and OES texture lifecycle are unchanged.
+Source and JVM-test coverage have been added; cloud APK and reference Galaxy
+S9 + Daydream headset playback remain acceptance gates.
+
 ## Authority
 
 - Repository: `mrcalzon02/ReverieVR`

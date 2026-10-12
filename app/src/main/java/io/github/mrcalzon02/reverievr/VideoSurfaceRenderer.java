@@ -37,6 +37,8 @@ final class VideoSurfaceRenderer {
 
     private final float[] surfaceTransform = new float[16];
     private final float[] eyeUvRegion = new float[4];
+    private final int[] headsetEyeViewport = new int[4];
+    private final float[] headsetFitScale = new float[2];
     private final float[] eyeView = new float[16];
     private final float[] correctedEyeView = new float[16];
     private final float[] model = new float[16];
@@ -193,7 +195,9 @@ final class VideoSurfaceRenderer {
             0.0f
         );
 
-        if (selected.isImmersive()) {
+        if (selected.isHeadsetRecording()) {
+            drawHeadsetRecording();
+        } else if (selected.isImmersive()) {
             drawSphere(eye, selected.isEquirectangular180());
         } else {
             drawFlat(eye);
@@ -239,6 +243,28 @@ final class VideoSurfaceRenderer {
             activeSurface.release();
         }
         frameAvailable.set(false);
+    }
+
+    /**
+     * Headset-output recordings already encode the source's eye views.
+     * Render each one directly in Cardboard clip space, with no head pose
+     * reprojection or invented parallax. Cardboard still owns display lens
+     * correction; prewarped source frames may require calibrated inverse
+     * lens mapping, which is not provided by this mode.
+     */
+    private void drawHeadsetRecording() {
+        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, headsetEyeViewport, 0);
+        int width = headsetEyeViewport[2];
+        int height = headsetEyeViewport[3];
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        VideoProjection selected = projection;
+        selected.fillHeadsetFitScale(
+            videoAspectRatio, width / (float) height, headsetFitScale);
+        Matrix.setIdentityM(mvp, 0);
+        Matrix.scaleM(mvp, 0, headsetFitScale[0], headsetFitScale[1], 1.0f);
+        drawGeometry(flatVertices, flatUvs, 4, GLES20.GL_TRIANGLE_STRIP);
     }
 
     private void drawFlat(CardboardView.Eye eye) {
