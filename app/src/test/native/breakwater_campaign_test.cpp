@@ -677,6 +677,23 @@ int main() {
     assert(air_impact.pulses()[0].kind==ImpactKind::Explosion);
     assert(bomber.incoming_threats().aircraft_seconds<0.0f);
     assert(bomber.integrity()==88);
+    // A lethal bomber hit reports only the integrity actually lost.
+    Campaign fragile(Difficulty::Casual,8);
+    assert(fragile.Start());
+    stage_blackcap_night(fragile);
+    uint8_t fragile_save[Campaign::kSerializedSize]={};
+    assert(fragile.SerializeShop(fragile_save,sizeof(fragile_save)));
+    fragile_save[36]=5; // little-endian integrity field (word 9)
+    assert(fragile.DeserializeShop(fragile_save,sizeof(fragile_save)));
+    assert(fragile.BeginWave());
+    fragile.Tick(.05f);
+    for(int i=0;i<140 && fragile.wave_status().aircraft_attacks==0;i++)
+        fragile.Tick(.05f);
+    assert(fragile.wave_status().aircraft_attacks==1);
+    assert(fragile.integrity()==0 && fragile.phase()==Phase::Defeat);
+    assert(fragile.aircraft_attack().sequence==1);
+    assert(fragile.aircraft_attack().damage==5);
+
     BatteryDamageFeedback bombing_feedback;
     assert(bombing_feedback.Record(100,bomber.integrity()));
     assert(bombing_feedback.damage()==12);
