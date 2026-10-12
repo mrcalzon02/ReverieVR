@@ -271,13 +271,9 @@ android {
     }
 
     sourceSets {
-        debug {
-            assets.srcDir(sourceMusicPreview)
-        }
-        phoneTest {
-            assets.srcDir(sourceMusicPreview)
-        }
         main {
+            // One generated asset set for all build types, not a test-only variant.
+            assets.srcDir(ownerMusicAssets)
             if (bundleDoomShareware) {
                 assets.srcDir(
                     rootProject.file(
@@ -314,8 +310,8 @@ dependencies {
 
 
 tasks.configureEach { task ->
-    if (task.name in ["mergeDebugAssets", "mergePhoneTestAssets"]) {
-        task.dependsOn(stageSourceMusicPreview)
+    if (task.name.startsWith("merge") && task.name.endsWith("Assets")) {
+        task.dependsOn(stageOwnerMusicAssets)
     }
     if (task.name == "preReleaseBuild") {
         task.doFirst {
