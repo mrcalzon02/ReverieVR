@@ -18,6 +18,8 @@ import com.google.cardboard.sdk.Viewport;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -132,6 +134,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_NATIVE_LIBRARY = 11;
     private static final int MODE_KEYBOARD = 12;
     private static final int MODE_MODEL_VIEWER = 13;
+    private static final int MODE_NATIVE_GAMES = 14;
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -184,12 +187,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         };
 
     private static final int[][] HOME_BUTTONS = new int[][] {
-        {42, 180, 230, 238},
-        {42, 248, 230, 306},
-        {42, 316, 230, 374},
-        {42, 384, 230, 442},
-        {42, 452, 230, 510},
-        {42, 520, 230, 578},
+        {42, 180, 230, 226},
+        {42, 233, 230, 279},
+        {42, 286, 230, 332},
+        {42, 339, 230, 385},
+        {42, 392, 230, 438},
+        {42, 445, 230, 491},
         {780, 176, 982, 224},
         {780, 232, 982, 280},
         {780, 288, 982, 336},
@@ -202,7 +205,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {292, 348, 718, 454},
         {292, 476, 718, 526},
         {292, 535, 718, 582},
-        {42, 590, 230, 648}
+        {42, 551, 230, 597},
+        // 19-23 remain reserved for the world-space phone controls.
+        {0, 0, 0, 0},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0},
+        {42, 498, 230, 544} // Native Games
     };
 
     // Virtual targets are intercepted in world-space by
@@ -315,6 +325,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final DosSurfaceRenderer dosRenderer;
     private final NativeModuleRuntime nativeModuleRuntime;
     private final List<NativeModuleRuntime.Descriptor> nativeModules;
+    private final List<NativeModuleRuntime.Descriptor> nativeApps;
+    private final List<NativeModuleRuntime.Descriptor> nativeGames;
     private final VrKeyboardEditor keyboardEditor = new VrKeyboardEditor();
     private boolean phonePanelVisible;
     private float phonePanelYawDegrees;
@@ -549,6 +561,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 preferences.getLoggingMode()
                     == LoggingMode.DEVELOPMENT
             );
+        List<NativeModuleRuntime.Descriptor> apps = new ArrayList<>();
+        List<NativeModuleRuntime.Descriptor> classics = new ArrayList<>();
+        for (NativeModuleRuntime.Descriptor entry : nativeModules) {
+            if (entry.id.startsWith("classic-")) classics.add(entry);
+            else apps.add(entry);
+        }
+        nativeApps = Collections.unmodifiableList(apps);
+        nativeGames = Collections.unmodifiableList(classics);
 
         if (preferences.getLoggingMode()
             == LoggingMode.DEVELOPMENT
@@ -3881,7 +3901,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return index - HOME_KEYBOARD_HIT_OFFSET < KEYBOARD_BUTTONS.length;
             if (index == 2) {
                 return NativeModuleRuntime.isAvailable()
-                    && !nativeModules.isEmpty();
+                    && !nativeApps.isEmpty();
+            }
+            if (index == 24) {
+                return NativeModuleRuntime.isAvailable()
+                    && !nativeGames.isEmpty();
             }
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
                 && index == 12) {
@@ -3906,8 +3930,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return index < KEYBOARD_BUTTONS.length;
         }
 
-        if (mode == MODE_NATIVE_LIBRARY) {
-            int count = nativeModules.size();
+        if (mode == MODE_NATIVE_LIBRARY || mode == MODE_NATIVE_GAMES) {
+            int count = currentNativeShelf().size();
             if (index >= 0 && index <= 2) {
                 int moduleIndex =
                     nativeLibraryPage * 3 + index;
@@ -4128,7 +4152,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     break;
                 case 2:
                     if (NativeModuleRuntime.isAvailable()
-                        && !nativeModules.isEmpty()) {
+                        && !nativeApps.isEmpty()) {
                         nativeLibraryPage = 0;
                         mode = MODE_NATIVE_LIBRARY;
                     } else {
@@ -4147,6 +4171,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 5:
                     host.onExitToPhoneRequested();
                     return;
+                case 24:
+                    if (NativeModuleRuntime.isAvailable()
+                        && !nativeGames.isEmpty()) {
+                        nativeLibraryPage = 0;
+                        mode = MODE_NATIVE_GAMES;
+                    } else host.onUiActionRejected();
+                    break;
                 case 18:
                     phonePanelVisible = !phonePanelVisible;
                     if (phonePanelVisible) host.onPhoneCaptureConsentRequested();
@@ -4248,7 +4279,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 host.onUiActionRejected();
             }
             keyboardTextureDirty = true;
-        } else if (mode == MODE_NATIVE_LIBRARY) {
+        } else if (mode == MODE_NATIVE_LIBRARY
+            || mode == MODE_NATIVE_GAMES) {
             handleNativeLibrarySelection(hoveredButton);
         } else if (mode == MODE_MEDIA_LIBRARY) {
             handleMediaSelection(hoveredButton);
@@ -4449,10 +4481,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         textureDirty = true;
     }
 
+    private List<NativeModuleRuntime.Descriptor> currentNativeShelf() {
+        return mode == MODE_NATIVE_GAMES ? nativeGames : nativeApps;
+    }
+
     private void handleNativeLibrarySelection(
         int button
     ) {
-        int count = nativeModules.size();
+        List<NativeModuleRuntime.Descriptor> shelf = currentNativeShelf();
+        int count = shelf.size();
         int pageCount =
             Math.max(
                 1,
@@ -4465,7 +4502,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
             if (moduleIndex < count) {
                 NativeModuleRuntime.Descriptor module =
-                    nativeModules.get(
+                    shelf.get(
                         moduleIndex
                     );
 
@@ -4913,7 +4950,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             || mode == MODE_ENVIRONMENT
             || mode == MODE_CONTROLLER
             || mode == MODE_KEYBOARD
-            || mode == MODE_NATIVE_LIBRARY) {
+            || mode == MODE_NATIVE_LIBRARY
+            || mode == MODE_NATIVE_GAMES) {
             mode = MODE_HOME;
             hoveredButton = -1;
             textureDirty = true;
@@ -4970,7 +5008,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return KEYBOARD_BUTTONS;
         }
 
-        if (mode == MODE_NATIVE_LIBRARY) {
+        if (mode == MODE_NATIVE_LIBRARY || mode == MODE_NATIVE_GAMES) {
             return NATIVE_LIBRARY_BUTTONS;
         }
 
@@ -5117,7 +5155,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawControllerPanel(canvas, paint);
         } else if (mode == MODE_KEYBOARD) {
             drawKeyboard(canvas, paint);
-        } else if (mode == MODE_NATIVE_LIBRARY) {
+        } else if (mode == MODE_NATIVE_LIBRARY
+            || mode == MODE_NATIVE_GAMES) {
             drawNativeLibrary(canvas, paint);
         } else if (mode == MODE_MEDIA_LIBRARY) {
             drawMediaLibrary(canvas, paint);
@@ -5576,6 +5615,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Media/DOS/Native positions or changing their saved navigation.
         drawHomeButtons(canvas, paint,
             new String[] {leftLabels[6]}, 18, 1);
+        drawHomeButtons(canvas, paint,
+            new String[] {"Native Games"}, 24, 1);
 
         paint.setFakeBoldText(true);
         paint.setColor(Color.WHITE);
@@ -5979,6 +6020,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return "Resume the last valid media, DOS, or native activity.";
             case 14:
                 return "Open controller status, pairing, pointer, and input tools.";
+            case 24:
+                return "Play original native Pong, Snake, and chutes-and-ladders.";
             default:
                 return "Choose a destination or quick option.";
         }
@@ -6355,7 +6398,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         Canvas canvas,
         Paint paint
     ) {
-        int count = nativeModules.size();
+        List<NativeModuleRuntime.Descriptor> shelf = currentNativeShelf();
+        int count = shelf.size();
         int pageCount =
             Math.max(
                 1,
@@ -6371,7 +6415,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(31.0f * uiScale);
         canvas.drawText(
-            "NATIVE APPS",
+            mode == MODE_NATIVE_GAMES ? "NATIVE GAMES" : "NATIVE APPS",
             90,
             175,
             paint
@@ -6408,7 +6452,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             labels[slot] =
                 index < count
                     ? shorten(
-                        nativeModules
+                        shelf
                             .get(index)
                             .displayName,
                         42
