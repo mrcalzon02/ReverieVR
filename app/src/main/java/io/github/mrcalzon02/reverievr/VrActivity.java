@@ -550,8 +550,13 @@ public final class VrActivity extends Activity
         android.view.InputDevice device = event.getDevice();
         // Do not block Android's own virtual keyboard or touchscreen dispatch.
         if (device != null && device.isVirtual()) return false;
+        boolean controllerInput = ExternalHidInputPolicy.controllerOwnsHid(
+            gamepad,
+            AndroidGamepadSupport.isOriginalSteamController(device),
+            mouse,
+            mouse && device != null && selectedShellMouse(device.getName()));
         return ExternalHidInputPolicy.shouldConsume(false, keyboard, mouse,
-            gamepad, recovery);
+            controllerInput, recovery);
     }
 
     @Override

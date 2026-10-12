@@ -32,6 +32,22 @@ public class ExternalHidInputPolicyTest {
         assertFalse(ExternalHidInputPolicy.shouldEditHomeKeyboard(
             true,true,true,true,false,true)); // Ctrl/Alt/Meta shortcut
     }
+    @Test public void aControllerReportingAsHidCannotBeDisabledAsGuestMouse() {
+        assertTrue(ExternalHidInputPolicy.controllerOwnsHid(false,true,true,false));
+        assertFalse(ExternalHidInputPolicy.shouldConsume(false,true,true,
+            ExternalHidInputPolicy.controllerOwnsHid(false,true,true,false),false));
+        // Selected scrcpy HID mouse is a VR pointer. Unselected scrcpy is
+        // still optional guest HID input, and the user's Off choice applies.
+        assertTrue(ExternalHidInputPolicy.controllerOwnsHid(false,false,true,true));
+        assertFalse(ExternalHidInputPolicy.controllerOwnsHid(false,false,true,false));
+        assertTrue(ExternalHidInputPolicy.shouldConsume(false,false,true,
+            ExternalHidInputPolicy.controllerOwnsHid(false,false,true,false),false));
+        assertFalse(ExternalHidInputPolicy.shouldConsume(false,false,true,
+            ExternalHidInputPolicy.controllerOwnsHid(false,false,true,true),false));
+        // Keyboard input from selected scrcpy is not automatically promoted
+        // to a controller action merely because the mouse is selected.
+        assertFalse(ExternalHidInputPolicy.controllerOwnsHid(false,false,false,true));
+    }
     @Test public void shellRecoveryStaysAvailableEvenWhenDisabled() {
         assertFalse(ExternalHidInputPolicy.shouldConsume(false,true,false,false,true));
         assertFalse(ExternalHidInputPolicy.shouldConsume(false,false,true,false,true));

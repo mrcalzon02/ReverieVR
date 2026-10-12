@@ -4,9 +4,19 @@ package io.github.mrcalzon02.reverievr;
 final class ExternalHidInputPolicy {
     private ExternalHidInputPolicy() {}
 
+    /**
+     * Controller ownership has priority over an optional keyboard/mouse gate:
+     * original Steam hardware reports as keyboard/mouse; selected scrcpy HID
+     * mouse input can be the actual VR pointer, not merely guest passthrough.
+     */
+    static boolean controllerOwnsHid(boolean gamepad, boolean originalSteam,
+                                     boolean mouse, boolean selectedVrPointer) {
+        return gamepad || originalSteam || mouse && selectedVrPointer;
+    }
+
     static boolean shouldConsume(boolean enabled, boolean keyboard, boolean mouse,
-                                 boolean gamepad, boolean recovery) {
-        return !enabled && !recovery && !gamepad && (keyboard || mouse);
+                                 boolean controllerInput, boolean recovery) {
+        return !enabled && !recovery && !controllerInput && (keyboard || mouse);
     }
 
     /** Ordinary external Bluetooth/USB keyboards and scrcpy UHID use one
