@@ -55,6 +55,27 @@ public final class ControllerShakeRecenterDetectorTest {
         assertTrue(detector.sample(-2.5f, 0f, 0f, start + 3420000000L));
     }
 
+
+    @Test
+    public void highAccelerationDaydreamShakeRemainsInGUnits() {
+        ControllerShakeRecenterDetector detector =
+            new ControllerShakeRecenterDetector();
+        long start=1000000000L;
+        assertFalse(detector.sample(4.6f,0f,0f,start,true));
+        assertTrue(detector.sample(-4.8f,0f,0f,
+            start+120000000L,true));
+    }
+
+    @Test
+    public void phoneMotionUsesMetersPerSecondSquared() {
+        ControllerShakeRecenterDetector detector =
+            new ControllerShakeRecenterDetector();
+        long start=1000000000L;
+        assertFalse(detector.sample(22f,0f,0f,start,false));
+        assertTrue(detector.sample(-24f,0f,0f,
+            start+140000000L,false));
+    }
+
     @Test
     public void normalGravityDoesNotTrigger() {
         ControllerShakeRecenterDetector detector =
@@ -67,7 +88,7 @@ public final class ControllerShakeRecenterDetectorTest {
                     0.0f,
                     9.81f,
                     0.0f,
-                    start + index * 20000000L
+                    start + index * 20000000L, false
                 )
             );
         }
