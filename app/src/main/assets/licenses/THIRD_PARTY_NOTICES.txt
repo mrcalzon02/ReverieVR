@@ -19,6 +19,15 @@ DOSBox Pure 1.0-preview6, pinned a4a0bab7f8931433588f2fcad9045c85b277373d:
   distribution. https://github.com/schellingb/dosbox-pure
   https://spdx.org/licenses/GPL-2.0-or-later.html
 
+SMBJ 0.15.0 — optional read-only Windows SMB2/SMB3 client:
+  Copyright SMBJ contributors, Apache-2.0.
+  https://github.com/hierynomus/smbj
+  Runtime dependencies from Maven Central: asn-one 0.6.0 (Apache-2.0),
+  Mbassador 1.3.2 (MIT), slf4j-api 2.0.18 (MIT),
+  Bouncy Castle bcprov-jdk18on 1.85.2 (permissive Bouncy Castle).
+  Source and license details: docs/dependencies/SMBJ.md in public repo.
+  This library is embedded in the phone APK; it installs no PC service.
+
 OpenKTG texture generator, Fabian Giesen, 2007:
   Upstream public-domain dedication, retained in third_party/openktg/LICENSE.
 

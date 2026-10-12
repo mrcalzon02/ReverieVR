@@ -73,6 +73,7 @@
     },
     "runtime_and_test": {
       "com.google.protobuf:protobuf-javalite": "3.19.4",
+      "com.hierynomus:smbj": "0.15.0",
       "junit:junit": "4.13.2",
       "androidx.appcompat:appcompat": "1.6.1",
       "com.google.android.gms:play-services-vision": "20.1.3",
@@ -135,6 +136,11 @@
         "record": "third_party/README.md"
       },
       {
+        "component": "SMBJ Windows-share client",
+        "license": "Apache-2.0; runtime deps Apache-2.0/MIT/Bouncy Castle permissive",
+        "record": "docs/dependencies/SMBJ.md"
+      },
+      {
         "component": "DOSBox Pure",
         "license": "GPL-2.0-or-later",
         "record": "third_party/dosbox-pure/README.md"
@@ -172,6 +178,7 @@
   },
   "known_gaps": [
     "Gradle transitive dependency lockfiles and SHA-256 verification-metadata not yet generated; must be built from an actual resolved trusted Gradle run, independently reviewed before admission.",
+    "SMBJ 0.15.0 and transitive Bouncy Castle/SLF4J/Mbassador/ASN.1 dependencies were reviewed for source coordinates and permissive rights, but actual Android minSdk 26 packaging, combined DEX size, and S9 LAN handshake are pending full build/device verification.",
     "Exact Android SDK commandline-tools revision, JDK 17 patch, GitHub runner OS image revision and upstream repository artifact mirrors not sealed.",
     "Full legal review of packaged Valve handoff ZIP, Daydream controller derivative, commercial/shareware disposition, and GPL linking boundaries remains pending.",
     "Emulator catalog source snapshots are optional and not active executable runtime dependencies; their licenses and commit digests must be vetted at install time.",
