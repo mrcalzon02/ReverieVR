@@ -1058,7 +1058,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (!Float.isFinite(lengthSquared)
             || lengthSquared < 0.25f
             || lengthSquared > 2.25f) {
-            controllerPoseValid = false;
+            // A single damaged snapshot must not erase the last usable
+            // pose. The ordinary timestamp gate will safely expire it.
+            if (ReverieLog.isDevelopment())
+                ReverieLog.dev("VR_CONTROLLER",
+                    "Rejected invalid controller quaternion packet.");
             return;
         }
 
@@ -1069,10 +1073,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
         controllerAccelerationX = snapshot.accelXG;
         controllerAccelerationY = snapshot.accelYG;
         controllerAccelerationZ = snapshot.accelZG;
-        controllerPoseReceivedAtNanos =
-            snapshot.receivedAtNanos > 0L
-                ? snapshot.receivedAtNanos
-                : System.nanoTime();
+        long receivedAtNanos = snapshot.receivedAtNanos > 0L
+            ? snapshot.receivedAtNanos : System.nanoTime();
+        long priorPoseAtNanos = controllerPoseReceivedAtNanos;
+        if (priorPoseAtNanos > 0L
+            && receivedAtNanos - priorPoseAtNanos >= 300000000L
+            && ReverieLog.isDevelopment()) {
+            ReverieLog.dev("VR_CONTROLLER",
+                "Pose notification gap: "
+                + (receivedAtNanos - priorPoseAtNanos) / 1000000L
+                + "ms; check BLE stream or foreground scheduling.");
+        }
+        controllerPoseReceivedAtNanos = receivedAtNanos;
         controllerAccelerationAtNanos =
             controllerPoseReceivedAtNanos;
         // Do not suppress a deliberate shake just because a finger is
@@ -2947,10 +2959,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         VrPointerMode pointerMode =
             preferences.getVrPointerMode();
 
-        boolean freshControllerPose =
-            hasFreshControllerPose(
-                frameNanos
-            );
+        // Capture a single immutable BLE snapshot for this entire render.
+        // The provider callback can update the next pose concurrently.
+        ControllerSnapshot trackedPose = locomotionControllerSnapshot;
+        boolean freshControllerPose = trackedPose != null
+            && ControllerPoseVisibility.live(
+                controllerConnected, controllerPoseValid,
+                trackedPose.receivedAtNanos, frameNanos);
 
         boolean useTrackedController =
             freshControllerPose
@@ -2968,10 +2983,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
             controllerVisualHoldActive = false;
             quaternionForward(
-                controllerOrientationX,
-                controllerOrientationY,
-                controllerOrientationZ,
-                controllerOrientationW,
+                trackedPose.orientationX,
+                trackedPose.orientationY,
+                trackedPose.orientationZ,
+                trackedPose.orientationW,
                 controllerForward
             );
             ControllerOrientationCalibration.rotate(
@@ -3041,17 +3056,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     controllerYawCalibrationRadians
                 );
             controllerModelRenderer.setTrackedPose(
-                controllerOrientationX,
-                controllerOrientationY,
-                controllerOrientationZ,
-                controllerOrientationW
+                trackedPose.orientationX,
+                trackedPose.orientationY,
+                trackedPose.orientationZ,
+                trackedPose.orientationW
             );
             controllerModelRenderer.setButtonState(
-                controllerTouchpadPressed,
-                controllerHomePressed,
-                controllerAppPressed,
-                controllerVolumeUpPressed,
-                controllerVolumeDownPressed
+                trackedPose.touchpadPressed,
+                trackedPose.homePressed,
+                trackedPose.menuPressed,
+                trackedPose.volumeUpPressed,
+                trackedPose.volumeDownPressed
             );
             activeNativePointerKind =
                 NativeModuleRuntime.POINTER_TRACKED_CONTROLLER;
@@ -3147,9 +3162,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // controller actions. Hold only the last 3D model for a brief gap:
         // the mesh no longer blinks at the exact moment input is suspended.
         boolean holdModel = pointerMode != VrPointerMode.GAZE
+            && trackedPose != null
             && ControllerPoseVisibility.holdModel(
                 controllerConnected, controllerPoseValid,
-                controllerPoseReceivedAtNanos, frameNanos);
+                trackedPose.receivedAtNanos, frameNanos);
         if (holdModel != controllerVisualHoldActive
             && ReverieLog.isDevelopment()) {
             ReverieLog.dev("VR_CONTROLLER", holdModel
@@ -3519,9 +3535,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean hasFreshControllerPose(
         long frameNanos
     ) {
-        return ControllerPoseVisibility.live(
+        ControllerSnapshot pose = locomotionControllerSnapshot;
+        return pose != null && ControllerPoseVisibility.live(
             controllerConnected, controllerPoseValid,
-            controllerPoseReceivedAtNanos, frameNanos);
+            pose.receivedAtNanos, frameNanos);
     }
 
     private boolean recenterOnHeadset(
