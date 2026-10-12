@@ -150,6 +150,29 @@ large optional assets. A playable core must still meet Android ABI,
 provenance, licensing and runtime validation gates. Downloading a source
 archive alone must not be labeled installation or playability.
 
+**PC workload neutrality and interaction scope:** ReverieVR cannot assume
+the laptop is idle or available for processing; users may be in calls, playing
+music, transcoding large videos, transferring files, or using any other
+application. Its purpose is not to know, enumerate, profile, or manage those
+activities. External interoperability is limited to explicitly selected,
+low-latency input control and consented display/mirroring, plus separately
+approved read-only media access. Never make controller events wait for video
+frames, file transfers, screen capture, or PC CPU/storage operations. Keep
+transports asynchronous, queues bounded, and the local stereo/frame loop
+isolated; on disconnection release external held inputs and preserve the
+headset-only gaze controller.
+
+Phone-to-PC display mirroring through user-started **scrcpy** is an external
+Android/ADB workflow, not an always-on ReverieVR outgoing video stream.
+The phone's internal Phone Screen mirror is local display only: never
+transmit, record, inspect, OCR or analyze its pixels in ReverieVR. A
+future PC-to-phone screen/window feed would need separate active consent,
+narrow scope, secure pairing, local decode, a user-visible stop action and
+headset performance proof. It is **not** an excuse to inspect PC windows,
+applications, audio, or other activity. The governing rationale and
+acceptance gates live in
+`docs/records/ADR-0023-OPTIONAL-PC-INTEROPERABILITY-AND-RESOURCE-ISOLATION.md`.
+
 All new integrations must pass a **phone-only acceptance check**: launch
 offline, enter and exit VR without a controller, use gaze recovery, open
 first-party native content and locally available media, and survive a
