@@ -36,8 +36,10 @@ Future player-rig work should keep eye origins, headset geometry, collision prox
 ## Intermittent pose-stream visibility (2026-10-12)
 
 The **input safety timeout remains 750 ms**. If a BLE notification is delayed
-past this limit, the physical controller must stop supplying new pointer
-rays, target selection, held input or guest actions. A transient loss of
+past this limit, the 3D pointer must stop supplying new tracked rays
+or tracked-pointer target selection. Other virtual keyboard and held-button
+routes remain independently governed by their input buses and require
+separate timeout validation. A transient loss of
 freshness must not make the controller **mesh** blink out at 750 ms, however.
 The shell may retain the last *still, noninteractive* model until 2.25 seconds
 after the last valid sample; it removes this mesh immediately for actual
@@ -61,3 +63,9 @@ Unit checks cover 750 ms input gating, 2.25 s visual expiry, prompt
 disconnect invalidation, invalid/future timestamps and immediate recovery.
 Device-level S9 Bluetooth streaming, compositor timing and display stability
 remain open acceptance items.
+
+
+The phone-only recovery menu also defers automatic opening until a short
+pose delay has exceeded the visual hold interval; an explicitly disconnected
+controller still triggers normal recovery promptly. This prevents brief BLE
+packet gaps from unexpectedly covering a running game with the Quick Menu.
