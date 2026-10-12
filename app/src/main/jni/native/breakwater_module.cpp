@@ -26,6 +26,8 @@ struct State {
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
     float flash = 0.0f, elapsed = 0.0f, reload_ready_flash = 0.0f;
     float turret_flash = 0.0f, infantry_flash = 0.0f;
+    float gunboat_salvo_flash = 0.0f, gunboat_salvo_x = 0.0f;
+    float gunboat_salvo_z = 0.0f;
     float infantry_flash_x = 0.0f, infantry_flash_z = 0.0f;
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
@@ -207,6 +209,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             s->battery_damage=BatteryDamageFeedback{};
             s->reload_ready_flash=0.0f;
             s->turret_flash=0.0f;
+            s->gunboat_salvo_flash=0.0f;
             game.Start();
             SaveState(s);
             Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -221,6 +224,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->combat_input.CaptureUiPress();
                 s->battery_damage=BatteryDamageFeedback{};
                 s->infantry_flash=0.0f;
+                s->gunboat_salvo_flash=0.0f;
             }
         }
         else if(target>=0 && target<8){
@@ -292,6 +296,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->reload_ready_flash=0.0f;
         s->turret_flash=0.0f;
         s->infantry_flash=0.0f;
+        s->gunboat_salvo_flash=0.0f;
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
 }
@@ -459,6 +464,15 @@ void BuildScene(State *s) {
         // Rendering and combat share the same live soldier position.
         Box(s,trooper.x,-.76f,trooper.z,.18f,.38f,.17f,.51f,.45f,.35f);
         Box(s,trooper.x,-.47f,trooper.z,.15f,.16f,.15f,.68f,.58f,.42f);
+    }
+    if(s->gunboat_salvo_flash>0.0f) {
+        // A brief world-space tracer starts at the vessel that actually fired.
+        // It persists if that vessel sinks before the next stereo render.
+        const float x=s->gunboat_salvo_x,z=s->gunboat_salvo_z+.38f;
+        Triangle(s,x-.035f,-.33f,z,x+.035f,-.33f,z,
+                 0.0f,-.75f,-.94f,1.0f,.77f,.31f);
+        Triangle(s,x,-.28f,z,0.0f,-.70f,-.94f,
+                 0.0f,-.80f,-.94f,.95f,.56f,.22f);
     }
     if(s->infantry_flash>0.0f) {
         // One cheap bright muzzle flash at an actual soldier firing position.
@@ -646,6 +660,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->reload_ready_flash-copy.delta_seconds);
     s->turret_flash=std::max(0.0f,s->turret_flash-copy.delta_seconds);
     s->infantry_flash=std::max(0.0f,s->infantry_flash-copy.delta_seconds);
+    s->gunboat_salvo_flash=std::max(0.0f,
+        s->gunboat_salvo_flash-copy.delta_seconds);
     s->battery_damage.Tick(copy.delta_seconds);
     s->impacts.Tick(copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
@@ -653,6 +669,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         const uint32_t turret_before=s->campaign.turret_shot().sequence;
         const uint32_t volley_before=s->campaign.infantry_volley().sequence;
         const uint32_t air_before=s->campaign.aircraft_attack().sequence;
+        const uint32_t gunboat_before=s->campaign.gunboat_salvo().sequence;
         const int32_t hull_before=s->campaign.integrity();
         s->campaign.Tick(copy.delta_seconds);
         s->battery_damage.Record(hull_before,s->campaign.integrity());
@@ -660,6 +677,15 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         if(turret.sequence!=turret_before) {
             s->impacts.RecordTurretImpact(turret.x,turret.z,turret.destroyed);
             s->turret_flash=.10f;
+        }
+        const GunboatSalvoEvent salvo=s->campaign.gunboat_salvo();
+        if(salvo.sequence!=gunboat_before && salvo.damage>0) {
+            s->gunboat_salvo_x=salvo.x;
+            s->gunboat_salvo_z=salvo.z;
+            s->gunboat_salvo_flash=.15f;
+            const float parapet[]={0.0f,-.70f,-.94f};
+            const float down[]={0.0f,-1.0f,0.0f};
+            s->impacts.RecordHit(parapet,down,.12f,ImpactKind::Metal);
         }
         const AircraftAttackEvent air=s->campaign.aircraft_attack();
         if(air.sequence!=air_before && air.damage>0) {
@@ -701,6 +727,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         if(s->campaign.BeginWave()) {
             s->battery_damage=BatteryDamageFeedback{};
             s->infantry_flash=0.0f;
+            s->gunboat_salvo_flash=0.0f;
             if(down)s->combat_input.CaptureUiPress();
         }
     }

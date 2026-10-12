@@ -565,10 +565,16 @@ int main() {
     for(int i=0;i<70;i++) firing_ship.Tick(0.05f);
     assert(firing_ship.wave_status().gunboat_attacks==0);
     assert(firing_ship.integrity()==100);
+    assert(firing_ship.gunboat_salvo().sequence==0);
     for(int i=0;i<25 && firing_ship.wave_status().gunboat_attacks==0;i++)
         firing_ship.Tick(0.05f);
     assert(firing_ship.wave_status().gunboat_attacks==1);
     assert(firing_ship.integrity()==97);
+    const GunboatSalvoEvent first_salvo=firing_ship.gunboat_salvo();
+    assert(first_salvo.sequence==1 && first_salvo.damage==3);
+    assert(std::isfinite(first_salvo.x) && std::isfinite(first_salvo.z));
+    assert(first_salvo.x==firing_ship.enemies()[0].x);
+    assert(first_salvo.z==firing_ship.enemies()[0].z);
     BatteryDamageFeedback salvo_feedback;
     assert(salvo_feedback.Record(100,firing_ship.integrity()));
     assert(salvo_feedback.damage()==3);
@@ -576,6 +582,8 @@ int main() {
         firing_ship.Tick(0.05f);
     assert(firing_ship.wave_status().gunboat_attacks==2);
     assert(firing_ship.integrity()==94);
+    assert(firing_ship.gunboat_salvo().sequence==2);
+    assert(firing_ship.gunboat_salvo().damage==3);
     assert(salvo_feedback.Record(97,firing_ship.integrity()));
     assert(salvo_feedback.damage()==3);
 
@@ -590,6 +598,7 @@ int main() {
     assert(stopped_ship.incoming_threats().gunboat_seconds<0.0f);
     for(int i=0;i<140;i++) stopped_ship.Tick(0.05f);
     assert(stopped_ship.wave_status().gunboat_attacks==0);
+    assert(stopped_ship.gunboat_salvo().sequence==0);
     assert(stopped_ship.integrity()==100);
 
     // Offshore gunboat salvos also retain their timing across 10 FPS frames.
@@ -607,6 +616,25 @@ int main() {
            split_gunboat.wave_status().gunboat_attacks);
     assert(slow_gunboat.integrity()==split_gunboat.integrity());
     assert(slow_gunboat.enemies()[0].z==split_gunboat.enemies()[0].z);
+    assert(slow_gunboat.gunboat_salvo().sequence==
+           split_gunboat.gunboat_salvo().sequence);
+    assert(slow_gunboat.gunboat_salvo().z==
+           split_gunboat.gunboat_salvo().z);
+
+    // Fatal offshore salvos report the actual remaining hull integrity,
+    // not the nominal three-point weapon damage.
+    Campaign last_hull(Difficulty::Casual,8);
+    assert(last_hull.Start());
+    uint8_t fragile[Campaign::kSerializedSize]={};
+    assert(last_hull.SerializeShop(fragile,sizeof(fragile)));
+    fragile[16]=1; fragile[20]=2; fragile[36]=1; // Iron Quay D2, 1 HP
+    assert(last_hull.DeserializeShop(fragile,sizeof(fragile)));
+    assert(last_hull.BeginWave());
+    for(int i=0;i<150 && last_hull.phase()==Phase::Combat;i++)
+        last_hull.Tick(.05f);
+    assert(last_hull.phase()==Phase::Defeat);
+    assert(last_hull.gunboat_salvo().sequence==1);
+    assert(last_hull.gunboat_salvo().damage==1);
 
     auto stage_blackcap_night=[](Campaign &game) {
         uint8_t bytes[Campaign::kSerializedSize]={};

@@ -214,6 +214,7 @@ bool Campaign::BeginWave() {
     turret_shot_ = {};
     infantry_volley_ = {};
     aircraft_attack_ = {};
+    gunboat_salvo_ = {};
     magazine_left_ = static_cast<uint8_t>(stats().magazine);
     phase_ = Phase::Combat;
     return true;
@@ -499,8 +500,16 @@ void Campaign::TickStep(float dt) {
             // offshore. Sinking one before the firing line prevents its salvos.
             if (e.z >= kGunboatAttackStart && e.z < kGunboatAttackEnd &&
                 e.attack_timer <= 0.0f) {
+                const int32_t before = integrity_;
                 integrity_ = std::max(0, integrity_ - 3);
                 ++wave_status_.gunboat_attacks;
+                const int32_t damage = before - integrity_;
+                if (damage > 0) {
+                    ++gunboat_salvo_.sequence;
+                    gunboat_salvo_.x = e.x;
+                    gunboat_salvo_.z = e.z;
+                    gunboat_salvo_.damage = static_cast<uint8_t>(damage);
+                }
                 e.attack_timer = 2.8f;
             }
         }

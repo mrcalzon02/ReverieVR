@@ -89,6 +89,11 @@ struct AircraftAttackEvent {
     AircraftPattern pattern = AircraftPattern::None;
     uint8_t damage = 0;
 };
+struct GunboatSalvoEvent {
+    uint32_t sequence = 0;
+    float x = 0, z = 0; // firing vessel position at the actual salvo
+    uint8_t damage = 0; // actual hull loss, clamped at zero integrity
+};
 struct Status {
     uint8_t boats_sunk = 0;
     uint8_t troops_landed = 0;
@@ -138,6 +143,7 @@ public:
     TurretShotEvent turret_shot() const { return turret_shot_; }
     InfantryVolleyEvent infantry_volley() const { return infantry_volley_; }
     AircraftAttackEvent aircraft_attack() const { return aircraft_attack_; }
+    GunboatSalvoEvent gunboat_salvo() const { return gunboat_salvo_; }
     IncomingThreats incoming_threats() const;
     const std::array<Enemy,kMaxEnemies> &enemies() const { return enemies_; }
     const std::array<Infantry,kMaxInfantry> &infantry_units() const { return infantry_units_; }
@@ -172,6 +178,7 @@ private:
     TurretShotEvent turret_shot_{};
     InfantryVolleyEvent infantry_volley_{};
     AircraftAttackEvent aircraft_attack_{};
+    GunboatSalvoEvent gunboat_salvo_{};
     uint8_t remaining_to_spawn_ = 0;
     uint8_t spawned_ = 0;
     float spawn_timer_ = 0;
