@@ -108,6 +108,54 @@ A reliable route back to Stage A must exist so the user can:
 - inspect diagnostics;
 - retry entry into VR.
 
+### 3.5 Single-APK / phone-first authority
+
+**ReverieVR is a complete phone-resident VR system, not a client for a PC.**
+The canonical Android deliverable is **one ReverieVR APK**. Stage A, Stage B,
+stereo/head tracking, Home, input routing, controller-free gaze-and-dwell
+recovery, native app/game hosting, media viewing, DOS hosting, the emulator
+host infrastructure once implemented, configuration, imported local game
+media, and shell recovery must execute on the handset. Core functionality
+must remain operable without Wi-Fi, internet access, ADB, scrcpy, a laptop,
+a separately installed Android companion, or a desktop helper. Any optional
+phone-controller companion must remain optional.
+
+A laptop connected over USB or a user-approved local network is an
+**optional peripheral and file source**, not an execution prerequisite. It
+may supply a forwarded controller, keyboard, user-approved read-only files,
+optical-disc image access, or storage. PC-specific device access necessarily
+requires a component on that PC (for example scrcpy for HID forwarding, or
+a minimal optional read-only file provider for laptop-attached drives);
+do **not** expand that into a required second runtime, service, or full
+desktop copy of the VR platform. Disconnecting the PC must preserve the
+handset's core shell, local media, local input, and locally installed games.
+Remote media that has not been imported may become unavailable with a
+clear non-fatal message, but unrelated local features cannot fail.
+
+A hotspot hosted by the laptop, the phone's hotspot, or an ordinary Wi-Fi
+router are interchangeable **local IP transports** when network conditions
+allow. Never require an internet router or account. Android Wi-Fi joining
+may still use the platform's existing user-approved network UI. Ordinary
+TCP/UDP application networking does **not** grant Android 10 access to
+Android 11's protected Wireless Debugging feature, does not expose a
+laptop as an Android USB hub, and does not substitute for ADB authorization.
+scrcpy remains an optional external developer/forwarding tool, not a VR
+runtime dependency.
+
+User-requested, license-permitted emulator cores or content can be kept as
+**app-private modules/data managed by this same APK**, without installing a
+second Android package. The initial APK must remain lean: do not bundle the
+full upstream emulator catalog, ROMs, BIOS images, desktop binaries, or
+large optional assets. A playable core must still meet Android ABI,
+provenance, licensing and runtime validation gates. Downloading a source
+archive alone must not be labeled installation or playability.
+
+All new integrations must pass a **phone-only acceptance check**: launch
+offline, enter and exit VR without a controller, use gaze recovery, open
+first-party native content and locally available media, and survive a
+laptop/peripheral disconnect without terminating the shell. Check the
+single APK install/update path separately from any optional component.
+
 ## 4. Performance doctrine
 
 ReverieVR is **performance-first and retro-first**.
