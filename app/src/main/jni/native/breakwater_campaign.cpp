@@ -108,6 +108,7 @@ Stats Campaign::stats() const {
     s.magazine = static_cast<uint16_t>(12 + 4 * upgrades_[2]);
     s.anti_air = upgrades_[3] > 0;
     s.turret = upgrades_[6] > 0;
+    s.projectile_gravity = WeaponFor(WeaponKind::MachineGun).gravity;
     return s;
 }
 uint8_t Campaign::level(Upgrade u) const {

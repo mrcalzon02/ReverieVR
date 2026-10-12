@@ -3,6 +3,7 @@
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
 #include "breakwater_impacts.h"
+#include "breakwater_weapons.h"
 #include <cassert>
 #include <cmath>
 #include <limits>
@@ -10,6 +11,44 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // Ballistic trajectory, ray intersection and ghost aim are pure C++.
+    // In ordinary MG mode, pointing a straight ray at a far vessel must
+    // miss low; raising it compensates for the simulated trajectory drop.
+    const float gun_origin[]={0.0f,-.70f,0.0f};
+    const float direct[]={0.0f,0.0f,-1.0f};
+    const float ship[]={0.0f,-.70f,-9.0f};
+    const float flat_gravity=WeaponFor(WeaponKind::MachineGun).gravity;
+    assert(flat_gravity>0.0f);
+    float distance=0.0f,point[3]={};
+    assert(ProjectilePosition(gun_origin,direct,9.0f,flat_gravity,point));
+    assert(std::abs(point[1]+.70f+flat_gravity*81.0f)<.00001f);
+    assert(!ProjectileHitsSphere(gun_origin,direct,flat_gravity,ship,
+                                 .65f,&distance));
+    const float raised[]={0.0f,.125f,-1.0f};
+    assert(ProjectileHitsSphere(gun_origin,raised,flat_gravity,ship,
+                                .65f,&distance));
+    assert(distance>8.0f&&distance<10.0f);
+    assert(ProjectileHitsSphere(gun_origin,direct,0.0f,ship,
+                                .65f,&distance));
+    assert(!ProjectileHitsSphere(gun_origin,direct,flat_gravity,ship,
+                                -1.0f,&distance));
+    assert(!ProjectileHitsSphere(gun_origin,direct,-.1f,ship,
+                                .65f,&distance));
+    const float high[]={0.0f,2.0f,-.4f};
+    assert(!WeaponWithinTraverse(high,WeaponKind::DirectCannon));
+    assert(!WeaponWithinTraverse(high,WeaponKind::MachineGun));
+    assert(WeaponWithinTraverse(raised,WeaponKind::DirectCannon));
+    const float modest[]={0.0f,.75f,-1.0f};
+    assert(WeaponWithinTraverse(modest,WeaponKind::Flak));
+    assert(!WeaponWithinTraverse(modest,WeaponKind::DirectCannon));
+    assert(WeaponFor(WeaponKind::MissileBattery).uses_ghost);
+    assert(WeaponFor(WeaponKind::Flak).air_capable);
+    float ghost[3]={};
+    assert(GhostAimPoint(gun_origin,high,ghost));
+    assert(ghost[1]>gun_origin[1]+4.0f);
+    const float bad[]={0.0f,std::numeric_limits<float>::quiet_NaN(),-1.0f};
+    assert(!GhostAimPoint(gun_origin,bad,ghost));
+
     // Support labels consume held Select after the initial action edge.
     // They must not fire the gun through the HUD or spend ammunition.
     assert(HitCombatSupportHud(-2.0f,.95f)==CombatHudTarget::Artillery);

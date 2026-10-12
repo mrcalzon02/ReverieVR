@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include "breakwater_weapons.h"
 
 namespace reverie { namespace breakwater {
 enum class Difficulty : uint8_t { Casual, Regular, Veteran, Siege };
@@ -62,6 +63,7 @@ struct Stats {
     uint16_t magazine = 12;
     bool anti_air = false;
     bool turret = false;
+    float projectile_gravity = .014f;
 };
 struct IncomingThreats {
     // -1 means no eligible attacker can fire before leaving its attack window.
