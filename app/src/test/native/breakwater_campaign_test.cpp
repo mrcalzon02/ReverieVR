@@ -1,5 +1,6 @@
 #include "breakwater_campaign.h"
 #include "breakwater_silhouettes.h"
+#include "breakwater_terrain.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
@@ -12,6 +13,57 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // The three battlefields render real shore, not an endless sea under
+    // walking infantry. Validate budget, location identity and bounds.
+    for (uint8_t location=0;location<Campaign::kLocations;location++) {
+        int boxes=0, triangles=0;
+        auto box=[&](float x,float y,float z,float w,float h,float d,
+                     float r,float g,float b) {
+            ++boxes;
+            assert(std::isfinite(x)&&std::isfinite(y)&&std::isfinite(z));
+            assert(w>0&&h>0&&d>0);
+            assert(std::abs(x)<4.0f&&z>=-2.25f&&z<=-.80f);
+            assert(r>=0&&g>=0&&b>=0&&r<=1&&g<=1&&b<=1);
+        };
+        auto triangle=[&](float x0,float y0,float z0,
+                          float x1,float y1,float z1,
+                          float x2,float y2,float z2,
+                          float r,float g,float b) {
+            ++triangles;
+            assert(std::isfinite(x0)&&std::isfinite(y0)&&std::isfinite(z0));
+            assert(std::isfinite(x1)&&std::isfinite(y1)&&std::isfinite(z1));
+            assert(std::isfinite(x2)&&std::isfinite(y2)&&std::isfinite(z2));
+            assert(x0>=-4.0f&&x0<=4.0f);
+            assert(x1>=-4.0f&&x1<=4.0f);
+            assert(x2>=-4.0f&&x2<=4.0f);
+            assert(y0>=-1.10f&&y1>=-1.10f&&y2>=-1.10f);
+            assert(z0>=-2.25f&&z0<=-.80f);
+            assert(z1>=-2.25f&&z1<=-.80f);
+            assert(z2>=-2.25f&&z2<=-.80f);
+            assert(r>=0&&g>=0&&b>=0&&r<=1&&g<=1&&b<=1);
+        };
+        EmitCoastalTerrain(location,false,box,triangle);
+        const int expectedTriangles[]={38,25,28};
+        const int expectedBoxes[]={2,8,8};
+        assert(triangles==expectedTriangles[location]);
+        assert(boxes==expectedBoxes[location]);
+        const CoastPalette day=CoastColors(location,false);
+        const CoastPalette night=CoastColors(location,true);
+        assert(day.sand_r>night.sand_r);
+        assert(day.sand_g>night.sand_g);
+        assert(day.sand_b>night.sand_b);
+        boxes=triangles=0;
+        EmitCoastalTerrain(location,true,box,triangle);
+        assert(triangles==expectedTriangles[location]);
+        assert(boxes==expectedBoxes[location]);
+    }
+    {
+        int boxes=0,triangles=0;
+        EmitCoastalTerrain(Campaign::kLocations,false,
+            [&](auto...){++boxes;},[&](auto...){++triangles;});
+        assert(boxes==0&&triangles==0);
+    }
+
     // Inspect the exact low-poly vessel recipes used by the headset mesh.
     const auto vesselShape = [](UnitType kind, uint8_t passengers, bool active) {
         Enemy craft{};
