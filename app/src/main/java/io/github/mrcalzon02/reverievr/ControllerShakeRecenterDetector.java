@@ -13,11 +13,18 @@ final class ControllerShakeRecenterDetector {
     private float firstImpulseY;
     private float firstImpulseZ;
 
+    boolean sample(float accelerationX, float accelerationY,
+                   float accelerationZ, long timestampNanos) {
+        return sample(accelerationX, accelerationY, accelerationZ,
+            timestampNanos, true);
+    }
+
     boolean sample(
         float accelerationX,
         float accelerationY,
         float accelerationZ,
-        long timestampNanos
+        long timestampNanos,
+        boolean accelerationInG
     ) {
         if (!Float.isFinite(accelerationX)
             || !Float.isFinite(accelerationY)
@@ -36,10 +43,10 @@ final class ControllerShakeRecenterDetector {
             return false;
         }
 
-        float metersPerSecondSquared =
-            magnitude < 4.0f
-                ? magnitude * STANDARD_GRAVITY
-                : magnitude;
+        // Daydream reports g; phone-controller emulation reports m/s^2.
+        // A shake above 4g must not suddenly switch units and disappear.
+        float metersPerSecondSquared = accelerationInG
+            ? magnitude * STANDARD_GRAVITY : magnitude;
         float deviation =
             Math.abs(
                 metersPerSecondSquared
