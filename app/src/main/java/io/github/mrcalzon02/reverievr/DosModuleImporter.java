@@ -40,9 +40,11 @@ final class DosModuleImporter {
             );
         }
 
-        InputStream raw=context.getContentResolver().openInputStream(uri);
-        if(raw==null)throw new IOException("Android could not open the selected file.");
-        return importStream(raw,displayName);
+        try(InputStream raw=context.getContentResolver().openInputStream(uri)) {
+            if(raw==null)
+                throw new IOException("Android could not open the selected file.");
+            return importStream(raw,displayName);
+        }
     }
 
     /** Shared, bounded local importer for SAF and user-approved remote sources. */
