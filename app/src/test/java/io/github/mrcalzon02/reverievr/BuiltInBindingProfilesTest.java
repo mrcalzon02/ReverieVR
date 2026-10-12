@@ -83,4 +83,42 @@ public final class BuiltInBindingProfilesTest {
         assertEquals(button, binding.output.code);
     }
 
+    @Test
+    public void dosProfilesNeverOfferEmptyBindings() {
+        assertFalse(BuiltInBindingProfiles.isDosProfileId(
+            BuiltInBindingProfiles.ID_NONE));
+        org.junit.Assert.assertTrue(BuiltInBindingProfiles.isDosProfileId(
+            BuiltInBindingProfiles.ID_DOS_STANDARD));
+        for (BindingProfile profile : BuiltInBindingProfiles.dosProfiles())
+            org.junit.Assert.assertTrue(profile.id, !profile.bindings.isEmpty());
+    }
+
+    @Test
+    public void standardDosTrackpadProducesArrowsAndMouseClick() {
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine engine = new InputBindingEngine(bus,
+            BuiltInBindingProfiles.byId(BuiltInBindingProfiles.ID_DOS_STANDARD));
+        engine.submitAxis(BindingInput.TOUCHPAD_Y, -0.8f);
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
+        org.junit.Assert.assertTrue(bus.isJoystickButtonDown(4));
+        engine.submitDigital(BindingInput.SELECT, true);
+        org.junit.Assert.assertTrue(bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
+        engine.submitDigital(BindingInput.SELECT, false);
+        engine.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
+        assertFalse(bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
+        assertFalse(bus.isKeyDown(VirtualKey.UP));
+        assertFalse(bus.isJoystickButtonDown(4));
+    }
+
+    @Test
+    public void dosRockerProvidesKeyboardMenuRecovery() {
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine engine = new InputBindingEngine(bus,
+            BuiltInBindingProfiles.byId(BuiltInBindingProfiles.ID_DOS_STANDARD));
+        engine.submitDigital(BindingInput.VOLUME_UP, true);
+        engine.submitDigital(BindingInput.VOLUME_DOWN, true);
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.ENTER));
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.ESCAPE));
+    }
+
 }
