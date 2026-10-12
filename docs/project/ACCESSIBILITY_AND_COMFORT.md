@@ -55,7 +55,27 @@ brightness shifts and UI scaling.
 - One-handed left/right operation, alternate controller layouts, remappable
   physical inputs, sticky/hold-to-toggle options, adjustable long-press,
   dwell select and optional hands-free/gaze fallback while protecting
-  deliberate selection from involuntary motion.
+  deliberate selection from involuntary motion. **Source-implemented emergency
+  fallback:** when no fresh Daydream pose or usable Android-gamepad pointer is
+  available, the VR shell always accepts head-look targeting even if the
+  controller-only pointer preference had been selected. An eligible live UI
+  target held under gaze for **5 continuous seconds** receives one shell
+  Select activation; a circular high-luminance 5-to-1 countdown overlays
+  the focused button at its gaze-ray intersection. Looking off, switching
+  screens, controller recovery, or the system clock moving backwards cancels
+  the timer. Remaining on the same button cannot trigger it again without
+  first looking away. Ordinary external HID input or Daydream tracking
+  immediately takes priority when it returns. The fallback does not pretend
+  to supply analog stick/gameplay input to modules that require it.
+- Stage A **Enter VR** is not gated by a connected controller when Cardboard
+  itself is ready. Without one, headset-only selection can navigate Home,
+  settings, Emulator Modules and recovery. On loss of input during a native
+  game, DOS session, model viewer or video, the global Quick Menu is exposed
+  once; after deliberate dismissal, gaze upward for five seconds to reopen.
+  Repeated gaze dismissal must not reopen the menu every frame. Verify this
+  with physical phone/headset acceptance, including mid-press disconnection
+  and headset-only return to Stage A. Code/test evidence is not a substitute
+  for the reference device proof.
 - Captioned dialogue and meaning-bearing sound effects; adjustable
   background/size/position, offscreen speaker/danger direction cues in
   spatial media, and suitable mono audio fallbacks. Do not rely only on
