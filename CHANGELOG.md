@@ -6,6 +6,14 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Headset-only gaze dwell frame continuity
+
+- Reject stale gaze after a >500 ms render/sample gap rather than treating a
+  paused five-second countdown as a valid continuous hold on resume.
+- Preserve one-shot Select, controller recovery priority and identical safe
+  handling for upward-look Quick Menu reopening. Four local JVM regression
+  cases passed; Android/device acceptance remains outstanding.
+
 ### Classic Games: Checkers, Go 9x9 and Chess
 
 - Implemented source for three new first-party native game modules on the

@@ -7,9 +7,12 @@ package io.github.mrcalzon02.reverievr;
  */
 final class GazeDwellSelection {
     static final long DWELL_NANOS = 5_000_000_000L;
+    /** A stopped renderer must not turn stale gaze into an instant Select. */
+    static final long MAX_SAMPLE_GAP_NANOS = 500_000_000L;
     private int context = Integer.MIN_VALUE;
     private int target = -1;
     private long startedAt;
+    private long lastObservedAt;
     private boolean fired;
     private float progress;
 
@@ -17,6 +20,7 @@ final class GazeDwellSelection {
         context = Integer.MIN_VALUE;
         target = -1;
         startedAt = 0L;
+        lastObservedAt = 0L;
         fired = false;
         progress = 0.0f;
     }
@@ -27,14 +31,18 @@ final class GazeDwellSelection {
             return false;
         }
         if (context != newContext || target != liveTarget
-            || nowNanos < startedAt || startedAt <= 0L) {
+            || nowNanos < startedAt || startedAt <= 0L
+            || (lastObservedAt > 0L && (nowNanos < lastObservedAt
+                || nowNanos - lastObservedAt > MAX_SAMPLE_GAP_NANOS))) {
             context = newContext;
             target = liveTarget;
             startedAt = nowNanos;
+            lastObservedAt = nowNanos;
             fired = false;
             progress = 0.0f;
             return false;
         }
+        lastObservedAt = nowNanos;
         long elapsed = nowNanos - startedAt;
         progress = Math.min(1.0f,
             Math.max(0.0f, (float) ((double) elapsed / DWELL_NANOS)));

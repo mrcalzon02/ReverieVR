@@ -1,3 +1,15 @@
+## 2026-10-12 — Headset-only gaze continuity after render stalls (source)
+
+The existing allocation-free five-second shell and upward-look recovery
+dwell now discards a partial countdown if more than 500 ms elapses
+between actual live gaze samples, or the sampling clock regresses.
+This prevents an application pause, render stall or resume from
+converting stale focus into an immediate Select/Quick Menu action.
+One-shot/no-repeat, controller-return reset and 5-second timing remain.
+Four deterministic JVM cases passed a local Java 21 compile/runner;
+Android build and Galaxy S9/Daydream pause/resume, low-frame-rate and
+controller-free recovery evidence remain open. No APK released.
+
 ## 2026-10-11 — Three Classic board games (source; device proof pending)
 
 The existing native Classic Games build and host allowlist now admit

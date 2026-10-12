@@ -64,7 +64,12 @@ brightness shifts and UI scaling.
   the focused button at its gaze-ray intersection. Looking off, switching
   screens, controller recovery, or the system clock moving backwards cancels
   the timer. Remaining on the same button cannot trigger it again without
-  first looking away. Ordinary external HID input or Daydream tracking
+  first looking away. A gap greater than 500 ms between live gaze samples
+  (for example a paused/stalled renderer or background/resume) resets the
+  countdown, preventing a stale pre-pause target from activating immediately
+  after rendering resumes; ordinary sub-500-ms frame gaps preserve progress.
+  This applies to the upward-look Quick Menu recovery dwell as well.
+  Ordinary external HID input or Daydream tracking
   immediately takes priority when it returns. The fallback does not pretend
   to supply analog stick/gameplay input to modules that require it.
 - Stage A **Enter VR** is not gated by a connected controller when Cardboard
