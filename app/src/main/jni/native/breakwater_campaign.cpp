@@ -189,6 +189,7 @@ bool Campaign::BeginWave() {
     turret_timer_ = 0;
     turret_shot_ = {};
     infantry_volley_ = {};
+    aircraft_attack_ = {};
     magazine_left_ = static_cast<uint8_t>(stats().magazine);
     phase_ = Phase::Combat;
     return true;
@@ -430,9 +431,15 @@ void Campaign::TickStep(float dt) {
             const float attack_end = bomber ? kBomberAttackEnd : kStraferAttackEnd;
             if (e.attacks_remaining > 0 && e.z >= attack_start &&
                 e.z <= attack_end && e.attack_timer <= 0.0f) {
-                integrity_ = std::max(0, integrity_ - (bomber ? 12 : 3));
+                const uint8_t damage = bomber ? 12u : 3u;
+                integrity_ = std::max(0, integrity_ - damage);
                 --e.attacks_remaining;
                 ++wave_status_.aircraft_attacks;
+                ++aircraft_attack_.sequence;
+                aircraft_attack_.x = e.x;
+                aircraft_attack_.z = e.z;
+                aircraft_attack_.pattern = e.aircraft_pattern;
+                aircraft_attack_.damage = damage;
                 e.attack_timer = bomber ? 20.0f : 0.72f;
             }
             // Aircraft make a complete overhead pass rather than colliding

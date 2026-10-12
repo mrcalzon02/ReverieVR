@@ -617,6 +617,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         const bool was_reloading=s->campaign.reloading();
         const uint32_t turret_before=s->campaign.turret_shot().sequence;
         const uint32_t volley_before=s->campaign.infantry_volley().sequence;
+        const uint32_t air_before=s->campaign.aircraft_attack().sequence;
         const int32_t hull_before=s->campaign.integrity();
         s->campaign.Tick(copy.delta_seconds);
         s->battery_damage.Record(hull_before,s->campaign.integrity());
@@ -624,6 +625,16 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         if(turret.sequence!=turret_before) {
             s->impacts.RecordTurretImpact(turret.x,turret.z,turret.destroyed);
             s->turret_flash=.10f;
+        }
+        const AircraftAttackEvent air=s->campaign.aircraft_attack();
+        if(air.sequence!=air_before && air.damage>0) {
+            // A real bomber hit blasts the parapet; strafers spark against it.
+            // No effect is generated for approaching or intercepted aircraft.
+            const float origin[]={air.x,-.77f,-.93f};
+            const float down[]={0.0f,-1.0f,0.0f};
+            s->impacts.RecordHit(origin,down,.10f,
+                air.pattern==AircraftPattern::Bomber?
+                    ImpactKind::Explosion:ImpactKind::Metal);
         }
         const InfantryVolleyEvent volley=s->campaign.infantry_volley();
         if(volley.sequence!=volley_before && volley.shooters>0) {

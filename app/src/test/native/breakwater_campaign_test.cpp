@@ -655,6 +655,7 @@ int main() {
     assert(approaching_bomber.aircraft_seconds>4.0f &&
            approaching_bomber.aircraft_seconds<6.0f);
     assert(approaching_bomber.gunboat_seconds<0.0f);
+    assert(bomber.aircraft_attack().sequence==0);
     const int16_t bomber_hp=bomber.enemies()[0].hp;
     const uint8_t bomber_mag=bomber.magazine_left();
     assert(bomber.FireAt(0));
@@ -663,6 +664,17 @@ int main() {
     for(int i=0;i<140 && bomber.wave_status().aircraft_attacks==0;i++)
         bomber.Tick(0.05f);
     assert(bomber.wave_status().aircraft_attacks==1);
+    const AircraftAttackEvent bomb=bomber.aircraft_attack();
+    assert(bomb.sequence==1 && bomb.pattern==AircraftPattern::Bomber);
+    assert(bomb.damage==12);
+    assert(std::isfinite(bomb.x) && std::isfinite(bomb.z));
+    assert(std::abs(bomb.x-bomber.enemies()[0].x)<.0001f);
+    assert(std::abs(bomb.z-bomber.enemies()[0].z)<.0001f);
+    ImpactEffects air_impact;
+    const float bomb_origin[]={bomb.x,-.77f,-.93f};
+    const float down[]={0.0f,-1.0f,0.0f};
+    assert(air_impact.RecordHit(bomb_origin,down,.10f,ImpactKind::Explosion));
+    assert(air_impact.pulses()[0].kind==ImpactKind::Explosion);
     assert(bomber.incoming_threats().aircraft_seconds<0.0f);
     assert(bomber.integrity()==88);
     BatteryDamageFeedback bombing_feedback;
@@ -681,6 +693,10 @@ int main() {
     for(int i=0;i<110 && strafer.wave_status().aircraft_attacks<4;i++)
         strafer.Tick(0.05f);
     assert(strafer.wave_status().aircraft_attacks==4);
+    const AircraftAttackEvent strafe=strafer.aircraft_attack();
+    assert(strafe.sequence==4 && strafe.pattern==AircraftPattern::Strafer);
+    assert(strafe.damage==3);
+    assert(std::isfinite(strafe.x) && std::isfinite(strafe.z));
     assert(strafer.integrity()==88);
 
     // Purchasing AA turns those otherwise ineffective shots into damage and
@@ -700,6 +716,7 @@ int main() {
     assert(defended.incoming_threats().aircraft_seconds<0.0f);
     assert(defended.wave_status().aircraft_destroyed==1);
     assert(defended.wave_status().aircraft_attacks==0);
+    assert(defended.aircraft_attack().sequence==0);
     assert(defended.integrity()==100);
 
     // Day and night each contain their own shop-separated waves.
