@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_damage_feedback.h"
 #include "breakwater_combat_input.h"
 #include "breakwater_impacts.h"
 #include "reverie_native_sdk.h"
@@ -28,6 +29,7 @@ struct State {
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
     ImpactEffects impacts;
+    BatteryDamageFeedback battery_damage;
     CombatInputLatch combat_input;
     std::vector<float> mesh;
 };
@@ -201,6 +203,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         if(choice>=0 && choice<4) {
             game=Campaign(static_cast<Difficulty>(choice),1049u);
             s->impacts=ImpactEffects{};
+            s->battery_damage=BatteryDamageFeedback{};
             s->reload_ready_flash=0.0f;
             s->turret_flash=0.0f;
             game.Start();
@@ -213,7 +216,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         bool done=false;
         if(target==8) {
             done=game.BeginWave();
-            if(done)s->combat_input.CaptureUiPress();
+            if(done) {
+                s->combat_input.CaptureUiPress();
+                s->battery_damage=BatteryDamageFeedback{};
+            }
         }
         else if(target>=0 && target<8){
             done=game.Purchase(static_cast<Upgrade>(target));
@@ -278,6 +284,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
         game=Campaign(Difficulty::Regular,1049u);
         s->impacts=ImpactEffects{};
+        s->battery_damage=BatteryDamageFeedback{};
         s->reload_ready_flash=0.0f;
         s->turret_flash=0.0f;
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -504,12 +511,25 @@ void BuildScene(State *s) {
             Panel(s,1.58f,.30f,-1.82f,2.20f,.27f,.42f,.29f,.12f);
             Text(s,warning,1.58f,.30f,-1.79f,.039f,1.0f,.90f,.64f);
         }
+        if(s->battery_damage.active()) {
+            char damage[28];
+            std::snprintf(damage,sizeof(damage),"HULL HIT -%d",
+                          s->battery_damage.damage());
+            Panel(s,0,-.06f,-1.82f,2.60f,.33f,.42f,.11f,.12f);
+            Text(s,damage,0,-.06f,-1.79f,.042f,1.0f,.82f,.77f);
+        }
         if(s->flash>0)Panel(s,0,-.65f,-1.85f,.28f,.20f,1,.82f,.25f);
     } else {
         Panel(s,0,0,-3.0f,4.2f,1.6f,.07f,.10f,.14f);
         Text(s,game.phase()==Phase::Victory?"VICTORY":"BATTERY LOST",
              0,.3f,-2.95f,.09f,.9f,.81f,.50f);
         Text(s,"FIRE TO RESTART",0,-.35f,-2.95f,.06f,.87f,.82f,.69f);
+        if(game.phase()==Phase::Defeat && s->battery_damage.active()) {
+            char damage[28];
+            std::snprintf(damage,sizeof(damage),"LAST HIT -%d",
+                          s->battery_damage.damage());
+            Text(s,damage,0,-.75f,-2.95f,.044f,1.0f,.65f,.62f);
+        }
     }
 }
 void DestroyGl(State *s) {
@@ -577,11 +597,14 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->reload_ready_flash=std::max(0.0f,
         s->reload_ready_flash-copy.delta_seconds);
     s->turret_flash=std::max(0.0f,s->turret_flash-copy.delta_seconds);
+    s->battery_damage.Tick(copy.delta_seconds);
     s->impacts.Tick(copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
         const bool was_reloading=s->campaign.reloading();
         const uint32_t turret_before=s->campaign.turret_shot().sequence;
+        const int32_t hull_before=s->campaign.integrity();
         s->campaign.Tick(copy.delta_seconds);
+        s->battery_damage.Record(hull_before,s->campaign.integrity());
         const TurretShotEvent turret=s->campaign.turret_shot();
         if(turret.sequence!=turret_before) {
             s->impacts.RecordTurretImpact(turret.x,turret.z,turret.destroyed);
@@ -605,8 +628,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     // Reload takes priority if both controls are pressed on the same frame.
     if(down && !started_reload)Interact(s,copy,!s->held);
     if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop) {
-        if(s->campaign.BeginWave() && down)
-            s->combat_input.CaptureUiPress();
+        if(s->campaign.BeginWave()) {
+            s->battery_damage=BatteryDamageFeedback{};
+            if(down)s->combat_input.CaptureUiPress();
+        }
     }
     s->held=down;s->secondary_held=secondary;
     s->scene_dirty=true;

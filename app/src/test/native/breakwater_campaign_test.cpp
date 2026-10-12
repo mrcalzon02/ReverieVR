@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_damage_feedback.h"
 #include "breakwater_combat_input.h"
 #include "breakwater_impacts.h"
 #include <cassert>
@@ -104,6 +105,26 @@ int main() {
     assert(allBlasts.RecordHit(muzzle,horizontal,2,ImpactKind::AirstrikeBlast));
     allBlasts.Tick(ImpactEffects::kAirstrikeLifetime);
     assert(allBlasts.RecordHit(muzzle,horizontal,2,ImpactKind::Water));
+
+    // Battery warnings come from actual integrity loss, not predicted threats.
+    BatteryDamageFeedback damage_feedback;
+    assert(!damage_feedback.active());
+    assert(!damage_feedback.Record(100,100));
+    assert(!damage_feedback.Record(100,101));
+    assert(!damage_feedback.Record(101,90));
+    assert(!damage_feedback.Record(100,-1));
+    assert(damage_feedback.Record(100,97));
+    assert(damage_feedback.damage()==3);
+    damage_feedback.Tick(.30f);
+    assert(damage_feedback.active());
+    assert(damage_feedback.Record(97,85));
+    assert(damage_feedback.damage()==12);
+    assert(damage_feedback.remaining()==BatteryDamageFeedback::kDuration);
+    damage_feedback.Tick(std::numeric_limits<float>::quiet_NaN());
+    assert(damage_feedback.active());
+    damage_feedback.Tick(1.0f);
+    assert(!damage_feedback.active());
+    assert(damage_feedback.Record(2,0) && damage_feedback.damage()==2);
 
     // A hit spark requires real damage; lethal hits have longer blast pulses.
     // The unupgraded gun consumes ammo against aircraft without dealing damage.
@@ -533,10 +554,15 @@ int main() {
         firing_ship.Tick(0.05f);
     assert(firing_ship.wave_status().gunboat_attacks==1);
     assert(firing_ship.integrity()==97);
+    BatteryDamageFeedback salvo_feedback;
+    assert(salvo_feedback.Record(100,firing_ship.integrity()));
+    assert(salvo_feedback.damage()==3);
     for(int i=0;i<65 && firing_ship.wave_status().gunboat_attacks<2;i++)
         firing_ship.Tick(0.05f);
     assert(firing_ship.wave_status().gunboat_attacks==2);
     assert(firing_ship.integrity()==94);
+    assert(salvo_feedback.Record(97,firing_ship.integrity()));
+    assert(salvo_feedback.damage()==3);
 
     Campaign stopped_ship(Difficulty::Casual,8);
     assert(stopped_ship.Start());
@@ -626,6 +652,9 @@ int main() {
     assert(bomber.wave_status().aircraft_attacks==1);
     assert(bomber.incoming_threats().aircraft_seconds<0.0f);
     assert(bomber.integrity()==88);
+    BatteryDamageFeedback bombing_feedback;
+    assert(bombing_feedback.Record(100,bomber.integrity()));
+    assert(bombing_feedback.damage()==12);
 
     // Seed 22 opens the same stage with a strafer that peppers the position
     // repeatedly during one overhead pass instead of behaving like a sky-boat.
