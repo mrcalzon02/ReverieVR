@@ -4,6 +4,24 @@ ReverieVR supports scrcpy as a developer diagnostic surface.
 
 It is intentionally **not** required by the APK and should never become a hidden runtime dependency.
 
+**Single-APK phone-first rule:** ReverieVR's entire core VR runtime and
+hosted first-party games remain local to the phone. scrcpy is only an
+optional desktop utility for debugging, mirroring, or forwarding
+PC-connected input. There is no required desktop ReverieVR runtime, and
+the phone must still launch, navigate by gaze, and run local media and
+native games without any computer present. Any future PC-side read-only
+optical-drive/file-sharing helper is an optional accessory used only
+while that peripheral is needed; it cannot replace local emulator
+execution or force a second Android app.
+
+Ordinary phone/laptop Wi-Fi or a hotspot supports local application
+networking regardless of internet connectivity, but this does **not**
+backport Android 11's protected wireless ADB pairing to Android 10.
+Wireless scrcpy on the reference Galaxy S9 may still need USB-authorized
+ADB/TCP setup. A non-ADB phone-to-PC file/input bridge would have a
+separate, explicitly authenticated local protocol, not fictitious USB
+hub pass-through.
+
 ## Quick start
 
 Enable USB debugging on the Android phone, connect it over USB, then run:
