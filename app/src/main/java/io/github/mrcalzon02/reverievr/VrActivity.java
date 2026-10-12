@@ -554,8 +554,7 @@ public final class VrActivity extends Activity
         // AUTO arbitration also selects one Android gamepad, not every
         // gamepad that Android happened to enumerate.
         if (ReveriePreferences.CONTROLLER_AUTO.equals(choice) && gamepad
-            && !steam && !AndroidGamepadSupport.isScrcpyHid(event.getDevice())
-            && !AndroidGamepadSupport.isScrcpyCompatibleGamepad(event.getDevice())) {
+            && !steam) {
             String descriptor=event.getDevice()==null ? null
                 : event.getDevice().getDescriptor();
             return !ControllerDeviceSelection.accepts(
@@ -1300,7 +1299,7 @@ public final class VrActivity extends Activity
         boolean steamPrimary = steam != null && (
             ReveriePreferences.CONTROLLER_STEAM.equals(selected)
                 || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
-                    && !provider && (gamepad == null || steam.equals(gamepad)));
+                    && !provider);
         boolean scrcpyPrimary = scrcpy != null && (
             ReveriePreferences.CONTROLLER_SCRCPY.equals(selected)
                 || ReveriePreferences.CONTROLLER_AUTO.equals(selected)
