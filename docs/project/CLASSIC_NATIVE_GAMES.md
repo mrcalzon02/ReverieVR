@@ -16,7 +16,7 @@ AI framework, internet, telemetry, or OCR.
   movement/promotion for kings, human light side, bounded greedy CPU.
 - **Go:** 9x9, captures, suicide prohibition, simple ko, two passes,
   Chinese-style area scoring and 5.5 komi for CPU White; capture/liberty
-  heuristic CPU. Superko is not implemented.
+  heuristic CPU that can answer a late-game pass. Superko is not implemented.
 - **Chess:** 8x8, legal king-safe movement, castling, en passant, automatic
   queen promotion and checkmate/stalemate detection; weak deterministic
   one-ply CPU. Threefold repetition, 50/75-move draw rules and

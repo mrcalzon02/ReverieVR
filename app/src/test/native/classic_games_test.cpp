@@ -73,6 +73,11 @@ static void TestBoardGames() {
     assert(cpuGo.GoMove(40));
     for(int i=0;i<3;i++)cpuGo.Step(.1f);
     assert(cpuGo.ply==2&&cpuGo.side==1);
+    Boards laterGo;
+    laterGo.Reset(BoardKind::Go);
+    laterGo.ply=50;laterGo.passes=1;laterGo.side=-1;
+    for(int i=0;i<3;i++)laterGo.Step(.1f);
+    assert(laterGo.finished && laterGo.passes==2);
 
     Boards chess;
     chess.Reset(BoardKind::Chess);

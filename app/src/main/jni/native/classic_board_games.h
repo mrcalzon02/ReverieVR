@@ -379,7 +379,12 @@ struct State {
                 if(group.liberties==1)value-=4.5f;
                 if(value>rating){rating=value;best=i;}
             }
-            if(best<0||ply>=155){Pass();return;}
+            // Respect the human's pass in a settled mid/late game;
+            // do not force them to wait for a nearly full 9x9 board.
+            if(best<0||ply>=155||(passes==1&&ply>=40&&rating<4.f)){
+                Pass();
+                return;
+            }
             GoMove(best);
         }else if(kind==Kind::Checkers){
             const bool capture=HasCapture(side,forced);

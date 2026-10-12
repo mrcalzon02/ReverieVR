@@ -42,6 +42,7 @@ struct Module {
     State game;
     reverie::boardgames::State board;
     int boardCursorX=0,boardCursorY=0;
+    bool boardCursorActive=false;
     float cursorRepeat=0.f;
     bool previousSecondary=false;
     GLuint program=0,vbo=0;
@@ -207,7 +208,8 @@ void RebuildBoard(Module *m){
         }
         if(s.selected==cell)
             BoardOutline(m,px,py,gap*.96f,1.f,.99f,.20f);
-        if(m->boardCursorX==x&&m->boardCursorY==y)
+        if(m->boardCursorActive && m->boardCursorX==x &&
+           m->boardCursorY==y)
             BoardOutline(m,px,py,gap*.76f,.93f,.98f,.99f);
     }
     if(s.kind==reverie::boardgames::Kind::Go){
@@ -389,6 +391,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     const float gap=BoardSpacing(m->board);
     const float ax=copy.move_x,ay=copy.move_y;
     if(std::abs(ax)>.55f||std::abs(ay)>.55f){
+        m->boardCursorActive=true;
         m->cursorRepeat+=copy.delta_seconds;
         if(m->cursorRepeat>=.17f){
             m->cursorRepeat=0.f;
@@ -405,6 +408,8 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     if(edge){
         if(m->board.finished) {
             m->board.Reset(m->board.kind);
+            m->boardCursorActive=false;
+            m->boardCursorX=m->boardCursorY=0;
         }else if(m->board.side==1) {
             if(aim && m->board.kind==reverie::boardgames::Kind::Go &&
                hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
@@ -412,6 +417,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             else {
                 int x=m->boardCursorX,y=m->boardCursorY;
                 if(aim){
+                    m->boardCursorActive=false;
                     x=static_cast<int>(std::floor((hx+n*.5f*gap)/gap));
                     y=static_cast<int>(std::floor((n*.5f*gap-hy)/gap));
                 }
