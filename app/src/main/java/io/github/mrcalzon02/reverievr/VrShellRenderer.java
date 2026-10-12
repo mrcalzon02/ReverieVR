@@ -81,6 +81,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         boolean onNativeModulePlaybackRequested(
             String moduleId
         );
+        void onEmulatorCatalogOpened();
+        void onEmulatorSourceDownloadRequested(String moduleId);
+        String getEmulatorSourceStatus(String moduleId);
         void onNativeModuleStopRequested();
         void onHeadBindingDelta(
             float yawDeltaRadians,
@@ -135,6 +138,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_KEYBOARD = 12;
     private static final int MODE_MODEL_VIEWER = 13;
     private static final int MODE_NATIVE_GAMES = 14;
+    private static final int MODE_EMULATOR_CATALOG = 15;
+    private static final int MODE_EMULATOR_CONFIRM = 16;
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -212,7 +217,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {0, 0, 0, 0},
         {0, 0, 0, 0},
         {0, 0, 0, 0},
-        {42, 498, 230, 544} // Native Games
+        {42, 498, 230, 544}, // Native Games
+        {42, 604, 230, 650}  // Emulator Modules
     };
 
     // Virtual targets are intercepted in world-space by
@@ -232,6 +238,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {140, 395, 884, 460},
         {140, 475, 884, 540},
         {140, 555, 884, 620}
+    };
+    private static final int[][] EMULATOR_CONFIRM_BUTTONS = new int[][] {
+        {140, 380, 884, 455},
+        {140, 475, 884, 550}
     };
 
     private static final int[][] CONTROLLER_BUTTONS = new int[][] {
@@ -453,6 +463,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile String activeDosModuleName = "";
     private int dosLibraryPage;
     private int nativeLibraryPage;
+    private int emulatorCatalogPage;
+    private EmulatorModuleCatalog.Entry selectedEmulator;
+    private long lastEmulatorStatusRefreshNanos;
     private boolean nativeSurfaceReady;
     private volatile boolean rendererFailed;
     private volatile boolean orientationMenuVisible;
@@ -1390,6 +1403,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             hudTextureDirty = true;
         }
 
+        if (!orientationMenuVisible &&
+            (mode == MODE_EMULATOR_CATALOG || mode == MODE_EMULATOR_CONFIRM) &&
+            (lastEmulatorStatusRefreshNanos == 0L ||
+             frameNanos-lastEmulatorStatusRefreshNanos>=750000000L)) {
+            lastEmulatorStatusRefreshNanos=frameNanos;
+            textureDirty=true;
+        }
         if (orientationMenuVisible) {
             if (lastQuickMenuStatusRefreshNanos == 0L
                 || frameNanos
@@ -3907,6 +3927,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return NativeModuleRuntime.isAvailable()
                     && !nativeGames.isEmpty();
             }
+            if(index==25)return true;
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
                 && index == 12) {
                 return false;
@@ -3929,6 +3950,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (mode == MODE_KEYBOARD) {
             return index < KEYBOARD_BUTTONS.length;
         }
+
+        if (mode == MODE_EMULATOR_CATALOG) {
+            int count=EmulatorModuleCatalog.entries().size();
+            if(index<3)return emulatorCatalogPage*3+index<count;
+            if(index==3)return count>3;
+            return index==4;
+        }
+        if (mode == MODE_EMULATOR_CONFIRM) return index==0 || index==1;
 
         if (mode == MODE_NATIVE_LIBRARY || mode == MODE_NATIVE_GAMES) {
             int count = currentNativeShelf().size();
@@ -4171,6 +4200,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 5:
                     host.onExitToPhoneRequested();
                     return;
+                case 25:
+                    emulatorCatalogPage=0;
+                    selectedEmulator=null;
+                    mode=MODE_EMULATOR_CATALOG;
+                    host.onEmulatorCatalogOpened();
+                    break;
                 case 24:
                     if (NativeModuleRuntime.isAvailable()
                         && !nativeGames.isEmpty()) {
@@ -4279,6 +4314,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 host.onUiActionRejected();
             }
             keyboardTextureDirty = true;
+        } else if (mode == MODE_EMULATOR_CATALOG) {
+            handleEmulatorCatalogSelection(hoveredButton);
+        } else if (mode == MODE_EMULATOR_CONFIRM) {
+            handleEmulatorConfirmSelection(hoveredButton);
         } else if (mode == MODE_NATIVE_LIBRARY
             || mode == MODE_NATIVE_GAMES) {
             handleNativeLibrarySelection(hoveredButton);
@@ -4479,6 +4518,31 @@ final class VrShellRenderer implements CardboardView.Renderer {
         hoveredButton = -1;
         selectRequested.set(false);
         textureDirty = true;
+    }
+
+    private void handleEmulatorCatalogSelection(int button) {
+        final List<EmulatorModuleCatalog.Entry> entries=EmulatorModuleCatalog.entries();
+        int pages=Math.max(1,(entries.size()+2)/3);
+        if(button>=0&&button<3) {
+            int index=emulatorCatalogPage*3+button;
+            if(index<entries.size()) {
+                selectedEmulator=entries.get(index);
+                mode=MODE_EMULATOR_CONFIRM;
+            } else host.onUiActionRejected();
+        } else if(button==3) {
+            emulatorCatalogPage=(emulatorCatalogPage+1)%pages;
+        } else if(button==4) mode=MODE_HOME;
+        else host.onUiActionRejected();
+        hoveredButton=-1;textureDirty=true;
+    }
+
+    private void handleEmulatorConfirmSelection(int button) {
+        if(button==0&&selectedEmulator!=null) {
+            host.onEmulatorSourceDownloadRequested(selectedEmulator.id);
+            mode=MODE_EMULATOR_CATALOG;
+        } else if(button==1) mode=MODE_EMULATOR_CATALOG;
+        else host.onUiActionRejected();
+        hoveredButton=-1;textureDirty=true;
     }
 
     private List<NativeModuleRuntime.Descriptor> currentNativeShelf() {
@@ -4951,13 +5015,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
             || mode == MODE_CONTROLLER
             || mode == MODE_KEYBOARD
             || mode == MODE_NATIVE_LIBRARY
-            || mode == MODE_NATIVE_GAMES) {
+            || mode == MODE_NATIVE_GAMES
+            || mode == MODE_EMULATOR_CATALOG) {
             mode = MODE_HOME;
             hoveredButton = -1;
             textureDirty = true;
             return;
         }
 
+        if (mode == MODE_EMULATOR_CONFIRM) {
+            mode = MODE_EMULATOR_CATALOG;
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
         if (mode == MODE_DOS_BINDINGS) {
             mode = MODE_DOS_OVERLAY;
             hoveredButton = -1;
@@ -5008,6 +5079,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return KEYBOARD_BUTTONS;
         }
 
+        if (mode == MODE_EMULATOR_CATALOG) return NATIVE_LIBRARY_BUTTONS;
+        if (mode == MODE_EMULATOR_CONFIRM) return EMULATOR_CONFIRM_BUTTONS;
         if (mode == MODE_NATIVE_LIBRARY || mode == MODE_NATIVE_GAMES) {
             return NATIVE_LIBRARY_BUTTONS;
         }
@@ -5155,6 +5228,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawControllerPanel(canvas, paint);
         } else if (mode == MODE_KEYBOARD) {
             drawKeyboard(canvas, paint);
+        } else if (mode == MODE_EMULATOR_CATALOG ||
+                   mode == MODE_EMULATOR_CONFIRM) {
+            drawEmulatorCatalog(canvas,paint);
         } else if (mode == MODE_NATIVE_LIBRARY
             || mode == MODE_NATIVE_GAMES) {
             drawNativeLibrary(canvas, paint);
@@ -5617,6 +5693,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new String[] {leftLabels[6]}, 18, 1);
         drawHomeButtons(canvas, paint,
             new String[] {"Native Games"}, 24, 1);
+        drawHomeButtons(canvas, paint,
+            new String[] {"Emulator Modules"}, 25, 1);
 
         paint.setFakeBoldText(true);
         paint.setColor(Color.WHITE);
@@ -6022,6 +6100,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return "Open controller status, pairing, pointer, and input tools.";
             case 24:
                 return "Play original native Pong, Snake, and chutes-and-ladders.";
+            case 25:
+                return "Browse public emulator source modules, license and download status.";
             default:
                 return "Choose a destination or quick option.";
         }
@@ -6392,6 +6472,59 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(24.0f * uiScale);
         canvas.drawText("COPY + CLOSE", 429, 720, paint);
+    }
+
+    private void drawEmulatorCatalog(Canvas canvas, Paint paint) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31f*uiScale);
+        canvas.drawText(mode==MODE_EMULATOR_CONFIRM?"EMULATOR SOURCE":"EMULATOR MODULES",
+            90,175,paint);
+        paint.setColor(Color.rgb(154,177,193));
+        paint.setTextSize(18f*uiScale);
+        if(mode==MODE_EMULATOR_CONFIRM) {
+            if(selectedEmulator==null)return;
+            EmulatorModuleCatalog.Entry e=selectedEmulator;
+            canvas.drawText(e.system+" / "+e.name+" / "+e.license,90,222,paint);
+            canvas.drawText("Source: github.com/"+e.repository,90,256,paint);
+            canvas.drawText(e.biosMayBeRequired?
+                "Some games need your legally obtained firmware.":
+                "You must supply your own game files.",90,293,paint);
+            canvas.drawText("SOURCE SNAPSHOT ONLY: this does not install a playable core.",
+                90,324,paint);
+            canvas.drawText("Allow this download? No background installation.",
+                90,355,paint);
+            drawButtons(canvas,paint,new String[]{"YES - DOWNLOAD SOURCE","NO - CANCEL"},
+                EMULATOR_CONFIRM_BUTTONS);
+        } else {
+            List<EmulatorModuleCatalog.Entry> entries=EmulatorModuleCatalog.entries();
+            int pages=Math.max(1,(entries.size()+2)/3);
+            int page=Math.min(emulatorCatalogPage,pages-1),start=page*3;
+            canvas.drawText("Public upstream projects / page "+(page+1)+" of "+pages,
+                90,215,paint);
+            String[] labels=new String[5];
+            for(int slot=0;slot<3;slot++){
+                int i=start+slot;
+                labels[slot]=i<entries.size()?
+                    entries.get(i).system+" - "+entries.get(i).name+" / "+
+                    entries.get(i).license:"-";
+            }
+            labels[3]=pages>1?"NEXT PAGE":"ONLY PAGE";
+            labels[4]="BACK TO HOME";
+            drawButtons(canvas,paint,labels,NATIVE_LIBRARY_BUTTONS);
+            for(int slot=0;slot<3;slot++){
+                int i=start+slot;
+                if(i>=entries.size())continue;
+                String status=host.getEmulatorSourceStatus(entries.get(i).id);
+                paint.setColor(Color.rgb(143,177,176));
+                paint.setTextSize(13f*uiScale);
+                canvas.drawText(shorten(status,73),160,
+                    NATIVE_LIBRARY_BUTTONS[slot][3]-9,paint);
+            }
+            paint.setColor(Color.rgb(164,170,187));
+            paint.setTextSize(15f*uiScale);
+            canvas.drawText("Source downloads are inert. Libretro execution is a later gate.",
+                90,685,paint);
+        }
     }
 
     private void drawNativeLibrary(
