@@ -609,13 +609,26 @@ final class HomeEnvironmentRenderer {
             float right = HomeKeyboardGeometry.worldX(rect[2]);
             float back = HomeKeyboardGeometry.worldZ(rect[1]);
             float front = HomeKeyboardGeometry.worldZ(rect[3]);
-            float bottom = HomeKeyboardGeometry.KEYCAP_BASE_Y;
-            float top = HomeKeyboardGeometry.KEYCAP_TOP_Y;
-            append(triangles, quadHorizontal(left, right, back, front, top));
-            append(triangles, quadVerticalZ(left, right, bottom, top, front));
-            append(triangles, quadVerticalZ(right, left, bottom, top, back));
-            append(triangles, quadVerticalX(left, front, bottom, top, back));
-            append(triangles, quadVerticalX(right, back, bottom, top, front));
+            float topBack = HomeKeyboardGeometry.keycapTopAt(back);
+            float topFront = HomeKeyboardGeometry.keycapTopAt(front);
+            float bottomBack = HomeKeyboardGeometry.keycapBaseAt(back);
+            float bottomFront = HomeKeyboardGeometry.keycapBaseAt(front);
+            addTriangle(triangles, left, topBack, back,
+                right, topBack, back, left, topFront, front);
+            addTriangle(triangles, right, topBack, back,
+                right, topFront, front, left, topFront, front);
+            append(triangles, quadVerticalZ(left, right,
+                bottomFront, topFront, front));
+            append(triangles, quadVerticalZ(right, left,
+                bottomBack, topBack, back));
+            addTriangle(triangles, left, bottomBack, back,
+                left, topBack, back, left, topFront, front);
+            addTriangle(triangles, left, bottomBack, back,
+                left, topFront, front, left, bottomFront, front);
+            addTriangle(triangles, right, bottomBack, back,
+                right, topFront, front, right, topBack, back);
+            addTriangle(triangles, right, bottomBack, back,
+                right, bottomFront, front, right, topFront, front);
         }
         return toArray(triangles);
     }
