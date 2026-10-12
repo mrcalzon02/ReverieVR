@@ -212,8 +212,10 @@ final class VrInputRouter {
             mapGamepadKey(event.getKeyCode());
         BindingInput binding =
             mapGamepadBindingKey(event.getKeyCode());
+        BindingInput physical =
+            mapPhysicalGamepadKey(event.getKeyCode());
 
-        if (action == null && binding == null) {
+        if (action == null && binding == null && physical == null) {
             return false;
         }
 
@@ -247,6 +249,15 @@ final class VrInputRouter {
                     false,
                     source
                 );
+            }
+        }
+
+        if (physical != null) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN
+                && event.getRepeatCount() == 0) {
+                emitBindingDigital(physical, true, source);
+            } else if (event.getAction() == KeyEvent.ACTION_UP) {
+                emitBindingDigital(physical, false, source);
             }
         }
 
@@ -328,6 +339,18 @@ final class VrInputRouter {
             rightY,
             sourceName
         );
+        // Android drivers may expose analog triggers via either axis name.
+        // Keep them separate from the face-button shell action policy.
+        float leftTrigger = Math.max(
+            event.getAxisValue(MotionEvent.AXIS_LTRIGGER),
+            event.getAxisValue(MotionEvent.AXIS_BRAKE));
+        float rightTrigger = Math.max(
+            event.getAxisValue(MotionEvent.AXIS_RTRIGGER),
+            event.getAxisValue(MotionEvent.AXIS_GAS));
+        emitBindingAxis(
+            BindingInput.GAMEPAD_TRIGGER_LEFT, clampAxis(leftTrigger), sourceName);
+        emitBindingAxis(
+            BindingInput.GAMEPAD_TRIGGER_RIGHT, clampAxis(rightTrigger), sourceName);
 
         if (listener != null) {
             listener.onPointerAxis(
@@ -523,6 +546,36 @@ final class VrInputRouter {
                 return BindingInput.NAV_DOWN;
             default:
                 return null;
+        }
+    }
+
+    /** Preserve individual Android key identities for hosted remapping.
+     * Shell navigation mapping stays independent of these game-facing edges. */
+    static BindingInput mapPhysicalGamepadKey(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BUTTON_A: return BindingInput.GAMEPAD_BUTTON_A;
+            case KeyEvent.KEYCODE_BUTTON_B: return BindingInput.GAMEPAD_BUTTON_B;
+            case KeyEvent.KEYCODE_BUTTON_X: return BindingInput.GAMEPAD_BUTTON_X;
+            case KeyEvent.KEYCODE_BUTTON_Y: return BindingInput.GAMEPAD_BUTTON_Y;
+            case KeyEvent.KEYCODE_BUTTON_L1: return BindingInput.GAMEPAD_BUTTON_L1;
+            case KeyEvent.KEYCODE_BUTTON_R1: return BindingInput.GAMEPAD_BUTTON_R1;
+            case KeyEvent.KEYCODE_BUTTON_L2: return BindingInput.GAMEPAD_BUTTON_L2;
+            case KeyEvent.KEYCODE_BUTTON_R2: return BindingInput.GAMEPAD_BUTTON_R2;
+            case KeyEvent.KEYCODE_BUTTON_THUMBL:
+                return BindingInput.GAMEPAD_BUTTON_THUMBL;
+            case KeyEvent.KEYCODE_BUTTON_THUMBR:
+                return BindingInput.GAMEPAD_BUTTON_THUMBR;
+            case KeyEvent.KEYCODE_BUTTON_SELECT:
+                return BindingInput.GAMEPAD_BUTTON_SELECT;
+            case KeyEvent.KEYCODE_BUTTON_START:
+                return BindingInput.GAMEPAD_BUTTON_START;
+            case KeyEvent.KEYCODE_BUTTON_MODE:
+                return BindingInput.GAMEPAD_BUTTON_MODE;
+            case KeyEvent.KEYCODE_DPAD_LEFT: return BindingInput.GAMEPAD_DPAD_LEFT;
+            case KeyEvent.KEYCODE_DPAD_RIGHT: return BindingInput.GAMEPAD_DPAD_RIGHT;
+            case KeyEvent.KEYCODE_DPAD_UP: return BindingInput.GAMEPAD_DPAD_UP;
+            case KeyEvent.KEYCODE_DPAD_DOWN: return BindingInput.GAMEPAD_DPAD_DOWN;
+            default: return null;
         }
     }
 

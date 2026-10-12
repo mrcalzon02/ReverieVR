@@ -6,6 +6,17 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Common physical gamepad inputs in hosted profiles (source only)
+
+- Normalized Android gamepad face, shoulder, trigger, stick click, D-pad,
+  Select/Start/Mode key edges and left/right analog trigger axes as distinct
+  bindings without rewriting existing Stage B shell navigation.
+- Extended shared `native-standard` default mappings to expose nine new
+  physical gamepad buttons and left-stick axes, preserving existing Daydream
+  Select/rocker behaviors. B and Menu stay reserved shell paths.
+- Pure JVM regression source added; physical Xbox/DualShock report matching,
+  actual in-headset diagram/remap controls and APK/S9 tests remain pending.
+
 ### Primary Android controller selection (source; handset testing pending)
 
 - Extended the existing in-headset controller chooser: Android USB/BT choice

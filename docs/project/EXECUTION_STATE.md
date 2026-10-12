@@ -1,3 +1,21 @@
+## 2026-10-11 — Shared raw Android gamepad input vocabulary (source)
+
+Introduced physical Android HID A/B/X/Y, L/R shoulders/triggers,
+thumbsticks, Select/Start/Mode and four D-pad key identities into
+`BindingInput`; physical edges are sent separately from shell action
+translation. L/R analog trigger axes now enter the existing analog profile
+pipeline using Android trigger/brake and trigger/gas alternatives.
+The existing `native-standard` profile additionally maps nine buttons
+(X/Y/L1/R1/L2/R2/left-right stick click/Select) to joystick 3-11 and
+left-stick axes to the host joystick, while preserving Daydream
+Select/rocker buttons 0-2. Face B still triggers shell Back and is *not*
+assigned to the default native profile; Menu/Mode remain reserved.
+Generic, Xbox 360 and DualShock may expose these common Android HID
+symbols, but actual hardware label/report verification and a full
+physical shell/guest remap UI remain RV-0227 device-gated work.
+Regression source for button identity, standard native profile and
+hosted codec is added. No APK or handset device claim.
+
 ## 2026-10-11 — Per-device primary Android controller selection (source)
 
 Extends the existing VR controller-source chooser without inventing another

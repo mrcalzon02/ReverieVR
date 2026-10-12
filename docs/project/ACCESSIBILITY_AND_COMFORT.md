@@ -26,6 +26,11 @@ brightness shifts and UI scaling.
 
 - Never encode health, warning, friend/enemy, selectable/disabled, battery,
   targeting, cooldown, or important game information **only in color**.
+  **Implemented shell first slice:** `VrShellRenderer.drawButtons` now
+  adds bright geometric rails on focused controls and a circle-with-slash
+  disabled marker rather than relying on teal/grey hue alone. This is
+  source-level work awaiting actual headset/luminance tests; it does not
+  imply that every specialized native/game UI has passed the rule.
   Pair with stable shapes, names, legends, line styles, hatches, patterns
   and high-luminance separation. Preserve the same meaning across all
   native modules and DOS/media overlays.

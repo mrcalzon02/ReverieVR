@@ -236,6 +236,31 @@ final class BuiltInBindingProfiles {
                 VirtualOutput.joystickButton(2)
             )
         );
+        // These gamepad mappings are normalized Android HID sources, not
+        // per-game vendor-code switches. A still uses SELECT -> button 0;
+        // B is preserved for shell Back until a hosted-context policy is
+        // explicitly admitted, so it is not a default guest action.
+        BindingInput[] physicalInputs = {
+            BindingInput.GAMEPAD_BUTTON_X,
+            BindingInput.GAMEPAD_BUTTON_Y,
+            BindingInput.GAMEPAD_BUTTON_L1,
+            BindingInput.GAMEPAD_BUTTON_R1,
+            BindingInput.GAMEPAD_BUTTON_L2,
+            BindingInput.GAMEPAD_BUTTON_R2,
+            BindingInput.GAMEPAD_BUTTON_THUMBL,
+            BindingInput.GAMEPAD_BUTTON_THUMBR,
+            BindingInput.GAMEPAD_BUTTON_SELECT
+        };
+        for (int i=0; i<physicalInputs.length; i++) {
+            nativeStandard.add(InputBinding.digital(
+                physicalInputs[i], VirtualOutput.joystickButton(3+i)));
+        }
+        // The native game's movement axes are distinct from Daydream's
+        // shell-owned locomotion. Modules choose whether to consume them.
+        nativeStandard.add(InputBinding.analog(
+            BindingInput.GAMEPAD_X, VirtualOutput.joystickAxisX(), 1.0f, 0.15f));
+        nativeStandard.add(InputBinding.analog(
+            BindingInput.GAMEPAD_Y, VirtualOutput.joystickAxisY(), 1.0f, 0.15f));
         profiles.add(
             new BindingProfile(
                 ID_NATIVE_STANDARD,
