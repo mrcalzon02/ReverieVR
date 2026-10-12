@@ -119,6 +119,19 @@ public final class ControllerShakeRecenterDetectorTest {
     }
 
     @Test
+    public void missingAccelerometerSamplesCannotMimicShake() {
+        ControllerShakeRecenterDetector detector =
+            new ControllerShakeRecenterDetector();
+        long start=1000000000L;
+        for (int i=0;i<24;i++)
+            assertFalse(detector.sample(0f,0f,0f,
+                start+i*20000000L,false));
+        for (int i=0;i<24;i++)
+            assertFalse(detector.sample(0f,0f,0f,
+                start+1000000000L+i*20000000L,true));
+    }
+
+    @Test
     public void oneImpactIsNotEnough() {
         ControllerShakeRecenterDetector detector =
             new ControllerShakeRecenterDetector();
