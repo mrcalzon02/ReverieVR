@@ -449,20 +449,33 @@ void BuildScene(State *s) {
         const float shotHorizontal=std::sqrt(shot[0]*shot[0]+shot[2]*shot[2]);
         const float shotRightX=shotHorizontal>.01f?-shot[2]/shotHorizontal:1.0f;
         const float shotRightZ=shotHorizontal>.01f?shot[0]/shotHorizontal:0.0f;
-        const float nearX=sx+shot[0]*1.30f;
-        const float nearY=sy+shot[1]*1.30f;
-        const float nearZ=sz+shot[2]*1.30f;
-        const float farX=sx+shot[0]*7.5f;
-        const float farY=sy+shot[1]*7.5f;
-        const float farZ=sz+shot[2]*7.5f;
-        Triangle(s,nearX+shotRightX*.018f,nearY,nearZ+shotRightZ*.018f,
-                 nearX-shotRightX*.018f,nearY,nearZ-shotRightZ*.018f,
-                 farX+shotRightX*.010f,farY,farZ+shotRightZ*.010f,
-                 .98f,.72f,.25f);
-        Triangle(s,farX+shotRightX*.010f,farY,farZ+shotRightZ*.010f,
-                 nearX-shotRightX*.018f,nearY,nearZ-shotRightZ*.018f,
-                 farX-shotRightX*.010f,farY,farZ-shotRightZ*.010f,
-                 .98f,.72f,.25f);
+        for(int segment=0;segment<9;segment++) {
+            const float t=1.2f+segment*1.3f;
+            float a[3]={},b[3]={};
+            if(!ProjectilePosition(s->shot_origin,shot,t,s->shot_gravity,a) ||
+               !ProjectilePosition(s->shot_origin,shot,t+1.3f,s->shot_gravity,b))
+                break;
+            const float w=.018f-.001f*segment;
+            Triangle(s,a[0]+shotRightX*w,a[1],a[2]+shotRightZ*w,
+                     a[0]-shotRightX*w,a[1],a[2]-shotRightZ*w,
+                     b[0]+shotRightX*w*.7f,b[1],b[2]+shotRightZ*w*.7f,
+                     .98f,.72f,.25f);
+            Triangle(s,b[0]+shotRightX*w*.7f,b[1],b[2]+shotRightZ*w*.7f,
+                     a[0]-shotRightX*w,a[1],a[2]-shotRightZ*w,
+                     b[0]-shotRightX*w*.7f,b[1],b[2]-shotRightZ*w*.7f,
+                     .98f,.72f,.25f);
+        }
+    }
+    if(s->ghost_on) {
+        const float x=s->ghost_position[0],y=s->ghost_position[1],
+                    z=s->ghost_position[2];
+        const float r=s->sam_armed?.96f:.52f;
+        const float g=s->sam_armed?.84f:.94f;
+        const float b=s->sam_armed?.34f:1.0f;
+        const float w=.13f;
+        Triangle(s,x-w,y,z,x,y+w,z,x+w,y,z,r,g,b);
+        Triangle(s,x-w,y,z,x,y-w,z,x+w,y,z,r*.68f,g*.68f,b*.68f);
+        Box(s,x,y,z,.025f,.025f,.025f,1,1,1);
     }
     if(game.stats().turret) {
         Box(s,2.15f,-.76f,-1.40f,.42f,.32f,1.14f,.36f,.44f,.39f);
@@ -622,31 +635,44 @@ void BuildScene(State *s) {
         Text(s,digits,1.05f,.88f,-3.0f,.053f,.90f,.89f,.82f);
         const char *labels[]={"FIRE","POWER","CLIP","ANTI","ARTY","AIR","TURRET","REPAIR"};
         for(int n=0;n<8;n++) {
+            if(s->armory_page && n>=6)continue;
             const float x=-2.1f+(n%4)*1.4f,y=.05f-(n/4)*.65f;
-            const int price=game.price(static_cast<Upgrade>(n));
-            Panel(s,x,y,-3.0f,1.23f,.49f,price<0?.20f:.21f,
-                  price<0?.21f:.32f,price<0?.23f:.26f);
+            const WeaponKind weapon=static_cast<WeaponKind>(n);
+            const bool equipment=s->armory_page && n<kWeaponCount;
+            const bool owned=equipment && game.owns_weapon(weapon);
+            const int price=s->armory_page?
+                (n==5?(game.sam_charges()<3?540:-1):
+                 equipment?(owned?-1:WeaponFor(weapon).purchase_cost):-1):
+                game.price(static_cast<Upgrade>(n));
+            Panel(s,x,y,-3.0f,1.23f,.49f,owned?.18f:price<0?.20f:.21f,
+                  owned?.40f:price<0?.21f:.32f,price<0?.23f:.26f);
             char tier_label[16];
-            if(n==3) {
+            if(!s->armory_page && n==3)
                 std::snprintf(tier_label,sizeof(tier_label),"AA %u/3",
                     static_cast<unsigned>(game.level(Upgrade::AntiAir)));
-            }
-            Text(s,n==3?tier_label:labels[n],
-                 x,y+.10f,-2.98f,.051f,.94f,.92f,.72f);
+            Text(s,s->armory_page?(n==5?"SAM":WeaponFor(weapon).name):
+                 n==3?tier_label:labels[n],
+                 x,y+.10f,-2.98f,.045f,.94f,.92f,.72f);
             char amount[20];
-            if(price<0)std::snprintf(amount,sizeof(amount),"MAX");
+            if(owned)std::snprintf(amount,sizeof(amount),
+                        game.selected_weapon()==weapon?"ACTIVE":"SELECT");
+            else if(price<0)std::snprintf(amount,sizeof(amount),"MAX");
             else std::snprintf(amount,sizeof(amount),"%d",price);
-            Text(s,amount,x,y-.10f,-2.98f,.053f,.89f,.89f,.84f);
+            Text(s,amount,x,y-.10f,-2.98f,.048f,.89f,.89f,.84f);
         }
-        Panel(s,0,-1.11f,-3.0f,1.72f,.48f,.27f,.45f,.33f);
-        Text(s,"START",0,-1.10f,-2.97f,.080f,1,.97f,.78f);
+        Panel(s,.95f,-1.11f,-3.0f,1.72f,.48f,.27f,.45f,.33f);
+        Text(s,"START",.95f,-1.10f,-2.97f,.070f,1,.97f,.78f);
+        Panel(s,-.95f,-1.11f,-3.0f,1.72f,.48f,.24f,.29f,.42f);
+        Text(s,s->armory_page?"UPGRADES":"ARMORY",
+             -.95f,-1.10f,-2.97f,.055f,.84f,.90f,1.0f);
         char credits[32];std::snprintf(credits,sizeof(credits),"CREDITS %d",game.credits());
         Text(s,credits,0,-1.7f,-2.96f,.062f,.90f,.84f,.62f);
     } else if(game.phase()==Phase::Combat) {
         char digits[32];std::snprintf(digits,sizeof(digits),"HULL %d",game.integrity());
         Text(s,digits,0,1.20f,-2.0f,.075f,.92f,.92f,.74f);
         char ammo[32];
-        std::snprintf(ammo,sizeof(ammo),"CLIP %u",
+        std::snprintf(ammo,sizeof(ammo),"%s %u",
+            WeaponFor(game.selected_weapon()).name,
             static_cast<unsigned>(game.magazine_left()));
         Text(s,ammo,0,.93f,-1.79f,.055f,.88f,.9f,.68f);
         if(game.reloading()) {
@@ -672,6 +698,24 @@ void BuildScene(State *s) {
         std::snprintf(support,sizeof(support),"AIR %u",
             static_cast<unsigned>(game.airstrike_charges()));
         Text(s,support,2.10f,.97f,-1.79f,.064f,.89f,.81f,.42f);
+        std::snprintf(support,sizeof(support),"SAM %u",
+            static_cast<unsigned>(game.sam_charges()));
+        Panel(s,0,.97f,-1.82f,1.22f,.32f,
+              s->sam_armed?.42f:.18f,s->sam_armed?.38f:.28f,.14f);
+        Text(s,support,0,.97f,-1.79f,.046f,1.0f,.90f,.63f);
+        for(uint8_t id=0;id<kWeaponCount;id++) {
+            const WeaponKind weapon=static_cast<WeaponKind>(id);
+            const float x=-2.40f+1.20f*id;
+            const bool selected=game.selected_weapon()==weapon;
+            const bool owned=game.owns_weapon(weapon);
+            Panel(s,x,-1.44f,-1.82f,1.04f,.42f,
+                  selected?.24f:.13f,selected?.44f:.22f,owned?.37f:.15f);
+            Text(s,owned?WeaponFor(weapon).name:"LOCKED",
+                 x,-1.44f,-1.79f,.034f,
+                 owned?.90f:.56f,owned?.92f:.59f,owned?.69f:.57f);
+        }
+        if(s->sam_armed)Text(s,"SAM AIM SELECT",0,-1.05f,-1.79f,
+                             .042f,1.0f,.80f,.50f);
         // Threat predictions come from live attack timers and actual firing
         // windows, not a decorative alarm or an unrelated wall-clock timer.
         const IncomingThreats threats=game.incoming_threats();
@@ -793,7 +837,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     const bool down=copy.primary_down!=0;
     const bool secondary=copy.secondary_down!=0;
     if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
-       GunWithinTraverse(copy.pointer_direction)) {
+       !WeaponFor(s->campaign.selected_weapon()).uses_ghost &&
+       GunWithinTraverse(copy.pointer_direction,
+                         s->campaign.selected_weapon())) {
         for(int k=0;k<3;k++)s->gun_direction[k]=copy.pointer_direction[k];
     }
     s->elapsed+=copy.delta_seconds;
@@ -874,13 +920,24 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             if(down)s->combat_input.CaptureUiPress();
         }
     }
-    // Cache the actual post-simulation ray intersection once for both eyes.
-    // A target destroyed by this frame's shot no longer receives brackets.
+    // The phantom sight follows the controller rather than a barrel that
+    // can no longer physically elevate to the target.
+    s->ghost_on=false;
+    if(s->campaign.phase()==Phase::Combat &&
+       copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
+        s->ghost_on=(s->sam_armed ||
+            WeaponFor(s->campaign.selected_weapon()).uses_ghost ||
+            !GunWithinTraverse(copy.pointer_direction,
+                               s->campaign.selected_weapon())) &&
+            GhostAimPoint(copy.pointer_origin,copy.pointer_direction,
+                          s->ghost_position);
+    }
     s->aircraft_aim={};
     if(s->campaign.phase()==Phase::Combat &&
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE)
-        s->aircraft_aim=InspectAircraftAim(
-            s->campaign,CombatTarget(copy,s->campaign));
+        s->aircraft_aim=InspectAircraftAim(s->campaign,CombatTarget(
+            copy,s->campaign,s->sam_armed ||
+            WeaponFor(s->campaign.selected_weapon()).uses_ghost));
     s->held=down;s->secondary_held=secondary;
     s->scene_dirty=true;
 }
