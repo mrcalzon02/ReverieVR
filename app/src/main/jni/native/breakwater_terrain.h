@@ -4,6 +4,7 @@
 #include "breakwater_campaign.h"
 #include <cmath>
 #include <cstdint>
+#include <initializer_list>
 
 namespace reverie { namespace breakwater {
 
