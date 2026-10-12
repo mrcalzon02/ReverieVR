@@ -1478,6 +1478,9 @@ public final class VrActivity extends Activity
         if(standardHidInputRouter!=null)standardHidInputRouter.reset();
         if(inputRouter!=null)inputRouter.resetControllerEdges();
         preferences.setActiveController(choice);
+        if (!ReveriePreferences.CONTROLLER_DAYDREAM.equals(choice) &&
+            !ReveriePreferences.CONTROLLER_PHONE.equals(choice) &&
+            renderer!=null) renderer.clearTrackedControllerPose();
         if(ReveriePreferences.CONTROLLER_STEAM.equals(choice) ||
            ReveriePreferences.CONTROLLER_SCRCPY.equals(choice) ||
            ReveriePreferences.CONTROLLER_ANDROID.equals(choice))
