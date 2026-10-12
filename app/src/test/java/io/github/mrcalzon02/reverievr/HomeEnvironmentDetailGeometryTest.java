@@ -55,6 +55,17 @@ public final class HomeEnvironmentDetailGeometryTest {
         verify("beach",BEACH,240);
     }
 
+    @Test public void newHomeDetailsRemainInExistingBatchBudgets() {
+        // The visual pass extends already-batched meshes. It must not
+        // introduce another texture, draw call or runtime generator.
+        assertEquals(18, HomeEnvironmentDetailGeometry.triangles(
+            HomeEnvironmentDetailGeometry.birchGraphicMotifs()));
+        assertEquals(96, HomeEnvironmentDetailGeometry.triangles(
+            HomeEnvironmentDetailGeometry.forestWildflowers()));
+        assertEquals(50, HomeEnvironmentDetailGeometry.triangles(
+            HomeEnvironmentDetailGeometry.beachWavelets()));
+    }
+
     @Test public void eachEnvironmentIsSeedlessAndDeterministic() {
         assertArrayEquals(HomeEnvironmentDetailGeometry.birchTrim(),
             HomeEnvironmentDetailGeometry.birchTrim(),0f);
