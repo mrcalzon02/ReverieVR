@@ -1,10 +1,12 @@
 package io.github.mrcalzon02.reverievr;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 /**
@@ -13,6 +15,8 @@ import java.io.InputStream;
  */
 final class ShellMenuMusic implements AutoCloseable {
     private static final float MUSIC_GAIN = 0.22f;
+    private static final String LOBBY_PREFS = "reverie_music";
+    private static final String LOBBY_COUNTER = "lobby_session";
 
     private final Context context;
     private final NativeMusicCatalog catalog;
@@ -21,6 +25,9 @@ final class ShellMenuMusic implements AutoCloseable {
     private boolean shellActive = true;
     private volatile boolean userPaused;
     private volatile int selectedIndex;
+    private int lobbyIndex;
+    private int hostedCueIndex = -1;
+    private boolean manualSelection;
     private boolean closed;
 
     ShellMenuMusic(Context context) {
@@ -35,7 +42,31 @@ final class ShellMenuMusic implements AutoCloseable {
                     "Packaged native music catalog is missing or invalid", failure);
             }
         }
+        if (loaded != null && this.context != null) {
+            // Only the debug/phoneTest source set packages this companion
+            // catalog. Release builds do not ship review-pending recordings.
+            try (InputStream preview =
+                     this.context.getAssets().open("music/source_preview.tsv")) {
+                loaded = NativeMusicCatalog.combine(loaded,
+                    NativeMusicCatalog.parseSourcePreview(preview));
+            } catch (FileNotFoundException absentInRelease) {
+                // Expected for the unrestricted release configuration.
+            } catch (IOException problem) {
+                ReverieLog.error("MENU_MUSIC",
+                    "Source-preview music catalog rejected", problem);
+            }
+        }
         catalog = loaded;
+        if (catalog != null && catalog.size() > 0 && this.context != null) {
+            SharedPreferences prefs =
+                this.context.getSharedPreferences(LOBBY_PREFS, Context.MODE_PRIVATE);
+            int previous = prefs.getInt(LOBBY_COUNTER, -1);
+            int session = previous == Integer.MAX_VALUE ? 0 : previous + 1;
+            lobbyIndex = NativeMusicPlaybackPolicy.initialLobbyIndex(
+                catalog, session);
+            selectedIndex = lobbyIndex;
+            prefs.edit().putInt(LOBBY_COUNTER, session).apply();
+        }
     }
 
     String[] trackNames() {
@@ -51,13 +82,14 @@ final class ShellMenuMusic implements AutoCloseable {
             return "NO PACKAGED MUSIC";
         }
         return (userPaused ? "PAUSED: " : "READY: ")
-            + catalog.at(selectedIndex).title;
+            + catalog.at(currentTrackIndex()).title;
     }
 
     void chooseTrack(int index) {
         if (closed || catalog == null || index < 0 || index >= catalog.size())
             return;
         selectedIndex = index;
+        manualSelection = true;
         userPaused = false;
         releasePlayer();
         syncPlayback();
@@ -85,8 +117,28 @@ final class ShellMenuMusic implements AutoCloseable {
     }
 
     void setShellActive(boolean active) {
+        hostedCueIndex = -1;
+        if (active) {
+            // Returning from hosted content restores ambient lobby rotation,
+            // rather than leaving a game's theme playing in Home.
+            manualSelection = false;
+            selectedIndex = lobbyIndex;
+        }
         shellActive = active;
+        releasePlayer();
         syncPlayback();
+    }
+
+    void setHostedNativeModule(String moduleId) {
+        final String id = NativeMusicPlaybackPolicy.cueForNativeModule(moduleId);
+        hostedCueIndex = catalog == null ? -1 : catalog.indexOfId(id);
+        shellActive = hostedCueIndex >= 0;
+        releasePlayer();
+        syncPlayback();
+    }
+
+    private int currentTrackIndex() {
+        return hostedCueIndex >= 0 ? hostedCueIndex : selectedIndex;
     }
 
     private void syncPlayback() {
@@ -110,7 +162,7 @@ final class ShellMenuMusic implements AutoCloseable {
     private void ensurePlayer() {
         if (player != null || context == null || closed || catalog == null)
             return;
-        final NativeMusicCatalog.Track track = catalog.at(selectedIndex);
+        final NativeMusicCatalog.Track track = catalog.at(currentTrackIndex());
         MediaPlayer created = null;
         try {
             if (track.packagedResource()) {
@@ -126,11 +178,17 @@ final class ShellMenuMusic implements AutoCloseable {
                 }
                 created.prepare();
             }
-            created.setLooping(catalog.size() == 1);
+            created.setLooping(hostedCueIndex >= 0 || catalog.size() == 1);
             created.setVolume(MUSIC_GAIN, MUSIC_GAIN);
             created.setOnCompletionListener(finished -> {
-                if (catalog.size() > 1) {
-                    selectedIndex = (selectedIndex + 1) % catalog.size();
+                if (catalog.size() > 1 && hostedCueIndex < 0) {
+                    if (manualSelection) {
+                        selectedIndex = (selectedIndex + 1) % catalog.size();
+                    } else {
+                        lobbyIndex = NativeMusicPlaybackPolicy.nextLobbyIndex(
+                            catalog, lobbyIndex);
+                        selectedIndex = lobbyIndex;
+                    }
                     releasePlayer();
                     syncPlayback();
                 }

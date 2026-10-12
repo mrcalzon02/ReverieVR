@@ -1786,7 +1786,10 @@ public final class VrActivity extends Activity
             return false;
         }
 
-        setShellMenuMusicActive(false);
+        runOnUiThread(() -> {
+            if (menuMusic != null)
+                menuMusic.setHostedNativeModule(moduleId);
+        });
         ReverieLog.milestone(
             "NATIVE_MODULE",
             "Stage B launched module="

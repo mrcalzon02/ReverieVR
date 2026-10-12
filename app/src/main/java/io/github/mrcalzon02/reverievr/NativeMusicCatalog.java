@@ -47,6 +47,19 @@ final class NativeMusicCatalog {
     }
 
     static NativeMusicCatalog parse(InputStream input) throws IOException {
+        return parseCatalog(input, false);
+    }
+
+    /** Phone-test-only source recordings; pending rights are never
+     * silently upgraded to a commercially cleared release catalog. */
+    static NativeMusicCatalog parseSourcePreview(InputStream input)
+        throws IOException {
+        return parseCatalog(input, true);
+    }
+
+    private static NativeMusicCatalog parseCatalog(InputStream input,
+                                                   boolean sourcePreview)
+        throws IOException {
         if (input == null) throw new IOException("Missing music catalog");
         List<Track> rows = new ArrayList<>();
         Set<String> seen = new HashSet<>();
@@ -69,17 +82,51 @@ final class NativeMusicCatalog {
                     || !seen.add(id)
                     || title.isEmpty() || title.length() > 170
                     || title.indexOf((char) 13) >= 0
-                    || !license.equals("LicenseRef-Suno-Commercial-Use")
+                    || !license.equals(sourcePreview
+                        ? "LicenseRef-Pending-Asset-Rights"
+                        : "LicenseRef-Suno-Commercial-Use")
                     || !digest.matches("[a-f0-9]{64}")
-                    || !(source.equals("resource:starry_cereal_menu")
-                        || source.matches(
-                            "music/tracks/[a-z0-9][a-z0-9_-]{0,79}\\.(mp3|wav)")))
+                    || !(sourcePreview
+                        ? source.matches(
+                            "music/tracks/[a-z0-9][a-z0-9_-]{0,79}\\.mp3")
+                        : source.equals("resource:starry_cereal_menu")
+                            || source.matches(
+                                "music/tracks/[a-z0-9][a-z0-9_-]{0,79}\\.(mp3|wav)")))
                     throw new IOException("Unapproved or duplicate music catalog entry");
                 rows.add(new Track(id, title, source, license, digest));
             }
         }
         if (rows.isEmpty()) throw new IOException("Empty music catalog");
         return new NativeMusicCatalog(rows);
+    }
+
+    static NativeMusicCatalog combine(NativeMusicCatalog approved,
+                                      NativeMusicCatalog preview)
+        throws IOException {
+        if (approved == null) throw new IOException("Missing approved catalog");
+        if (preview == null) return approved;
+        if (approved.size() + preview.size() > MAX_TRACKS)
+            throw new IOException("Too many combined music tracks");
+        ArrayList<Track> merged = new ArrayList<>(approved.tracks);
+        Set<String> ids = new HashSet<>();
+        Set<String> sources = new HashSet<>();
+        for (Track track : merged) {
+            ids.add(track.id);
+            sources.add(track.source);
+        }
+        for (Track track : preview.tracks) {
+            if (!ids.add(track.id) || !sources.add(track.source))
+                throw new IOException("Duplicate music id or binary path");
+            merged.add(track);
+        }
+        return new NativeMusicCatalog(merged);
+    }
+
+    int indexOfId(String id) {
+        if (id == null) return -1;
+        for (int i = 0; i < tracks.size(); i++)
+            if (id.equals(tracks.get(i).id)) return i;
+        return -1;
     }
 
     int size() {
