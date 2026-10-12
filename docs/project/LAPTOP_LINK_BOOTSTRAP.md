@@ -1,12 +1,15 @@
 # ReverieVR Laptop Link — single-APK portable Windows bootstrap
 
 **Status (2026-10-12):** first functional handoff implemented in Android source:
-the existing ReverieVR APK includes the portable Windows utility scripts
-and Stage A's **Export Laptop Link ZIP** control. It exports a validated,
-bounded ZIP through Android's system Create Document flow. The Windows
-utility is human-readable PowerShell/cmd and runs only when the owner
-copies, extracts and explicitly starts it on the laptop. Full signed
-Android build and Galaxy S9 + Windows execution still require acceptance.
+the existing ReverieVR APK includes the portable Windows utility scripts,
+Stage A's **Export Laptop Link ZIP** action, and **Share Laptop Link over
+USB / Wi-Fi (5 min)**. The latter advertises a one-use, 160-bit random,
+five-minute URL from an in-app temporary HTTP server. It supports private
+hotspot/Wi-Fi IP access and wired, authorized ADB port forwarding; the
+user explicitly downloads, extracts and starts the helper on Windows.
+No standalone Windows download, service or separate Android package is
+required. Full signed Android build, Galaxy S9 Wi-Fi/ADB round-trip and
+Windows execution still require acceptance.
 It does **not** yet expose raw optical-disc sectors or PC desktop pixels.
 
 ## Owner's architecture
@@ -59,6 +62,44 @@ second APK. It writes via the Android system document URI, off the UI
 thread, and attempts to remove partial output on failure. Export is
 explicit and does not upload desktop or phone data.
 
+## Direct laptop pull from the installed phone APK
+
+An additional Stage A button now starts a tiny temporary download endpoint.
+It serves **only** the existing bounded, three-file ZIP from packaged APK
+assets; it does not browse the phone, expose user media, forward inputs,
+execute code, or automatically install anything on Windows.
+
+- **Wi-Fi / laptop hotspot:** put laptop and phone on the same **trusted
+  private** local network; tap **Share Laptop Link over USB / Wi-Fi (5 min)**,
+  then open the displayed unique `http://PHONE_IPV4:PORT/reverie-link/TOKEN`
+  address in the laptop's browser. There is no Wi-Fi scan or internet
+  dependency. The displayed SHA-256 can be compared with
+  `Get-FileHash .\\ReverieVR-Laptop-Link.zip -Algorithm SHA256`
+  before extracting or running executable scripts.
+- **USB / pre-authorized ADB:** connect/authorize USB debugging; the phone
+  displays `adb forward tcp:PORT tcp:PORT`. Run this command from the PC
+  with Android platform-tools installed (usually alongside scrcpy), then
+  browse the phone-displayed `http://127.0.0.1:PORT/reverie-link/TOKEN`
+  URL on that same computer. The forwarding direction is **PC → Android**.
+  Do not use `adb reverse` for this endpoint.
+- **Security:** transport is normal HTTP, **not TLS**. The URL is a
+  cryptographically random one-time bearer secret; only a trusted
+  isolated network or USB/ADB forwarding is appropriate. Public Wi-Fi
+  and untrusted intermediaries are unsuitable for distributing executable
+  scripts. The server closes after one completed transfer, five minutes,
+  twenty-four invalid requests, Activity backgrounding, or explicit Stop.
+  The URL is never written to ReverieVR diagnostics/logs. It does not
+  install or launch the helper by itself. The user must verify/copy,
+  extract and explicitly run the portable Windows launcher.
+- **Recovery:** the original Android Create Document ZIP export stays
+  available even if neither TCP/IP nor ADB debugging is working. Nothing
+  in phone-only VR depends on this endpoint. It is active only while
+  Stage A is visible with the share dialog open.
+
+The pure-JVM `LaptopLinkDownloadServerTest` exercises one-time HTTP ZIP
+delivery, token rejection and explicit cancellation; headset/Windows
+proof remains separate.
+
 ## Next functional slices
 
 **A. Real optical-disc data:** inspect Windows' read-only optical device
@@ -71,11 +112,12 @@ reads and timeouts, and avoid root/admin or arbitrary filesystem access.
 Prefer a compact signed portable host executable built and carried in the
 APK only once code and legal requirements are verified.
 
-**B. Seamless delivery:** improve delivery beyond manual ZIP copying when
-the USB/network authorization model is proven. A user-approved local
-download endpoint from the phone is feasible; auto-running Windows code
-or silently changing firewall/USB settings is not. Retain exported ZIP
-as a universal fallback.
+**B. Seamless delivery:** source-implemented temporary, consented
+download endpoint for an already authorized USB/ADB forwarding connection
+or trusted private Wi-Fi/hotspot. Retain Create Document ZIP export as
+universal fallback. Device acceptance must prove actual network transfer
+and uninterrupted Windows archive extraction; no silent Windows execution
+or firewall modification is allowed.
 
 **C. PC-to-phone screen panel:** separate from scrcpy's phone-to-PC mirror
 and the local Android MediaProjection panel. A Windows source must be
