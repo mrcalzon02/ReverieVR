@@ -215,6 +215,32 @@
         </LinearLayout>
 
         <LinearLayout
+            style="@style/ReveriePanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/ReverieSectionTitle"
+                android:text="@string/laptop_link_section" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/laptop_link_description"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/export_laptop_link_button"
+                style="@style/ReverieSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/laptop_link_export" />
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/update_panel"
             style="@style/ReveriePanel"
             android:layout_width="match_parent"
