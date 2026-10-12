@@ -89,8 +89,6 @@ final class LaptopLinkDownloadServer implements AutoCloseable {
                     rejected++;
                 }
             }
-        } catch (IOException failure) {
-            // Listener was closed or network became unavailable.
         } finally {
             close();
             if (completion != null) completion.finished(delivered);
@@ -130,8 +128,8 @@ final class LaptopLinkDownloadServer implements AutoCloseable {
         String text = "HTTP/1.1 " + status + "\r\n"
             + "Content-Type: " + type + "\r\n"
             + "Content-Length: " + length + "\r\n"
-            + "Content-Disposition: attachment; filename=\\\""
-            + LaptopLinkBundle.EXPORT_NAME + "\\\"\r\n"
+            + "Content-Disposition: attachment; filename="
+            + LaptopLinkBundle.EXPORT_NAME + "\r\n"
             + "Cache-Control: no-store\r\n"
             + "X-Content-Type-Options: nosniff\r\n"
             + "Referrer-Policy: no-referrer\r\n"
