@@ -115,6 +115,31 @@ Status is source-implemented, pending signed APK/Android tests and reference
 Galaxy S9 playback/thermal verification. Unsupported camera-specific lens
 and mesh calibrations remain separate work.
 
+## 2026-10-11 — RV-0501 calibrated camera VR180 projection
+
+Added the actual calibrated-mesh playback path, not a generic fisheye
+substitute. `Vr180MeshProjection` parses Google Spherical Video v2 mshp
+boxes with CRC32 and raw or raw-deflate encoding; a bounded bit reader
+expands shared coordinate tables, zigzag-delta encoded component and vertex
+indices, and triangle/strip/fan topology. It validates mesh/packing counts,
+range, finite UV and geometry values, rejects unsupported textures, and
+caps decompression, vertices and rendered triangle counts to protect the
+Galaxy S9. `SpatialMp4Metadata` exposes a CALIBRATED_MESH_VR180 projection
+only when the embedded geometry validates, including stereo-custom dual
+meshes. Arbitrary bare-VR180/SBS filenames cannot enable the mode.
+`VideoSurfaceRenderer` now publishes immutable stereo mesh buffers and
+draws the selected eye with its own geometry and correct packed UV crop;
+until a mesh arrives, the immersive frame is cleared black. The app reopens
+the selected document using SAF asynchronously on VR playback, with
+monotonic cancellation against video stop/file changes and activity
+destruction. No additional external libraries or storage permissions.
+Synthetic JVM tests cover raw/deflate mesh, both-eye stereo-custom, parser
+integration, CRC damage, mismatched eye counts and corrupt payloads.
+Remaining acceptance: signed Android/JVM test pass; real recorded VR180
+camera sample; per-eye alignment, stereo depth and performance on Galaxy
+S9/Daydream. `camm` camera-motion metadata and nonzero projection pose are
+not implemented; do not advertise stabilization of handheld camera motion.
+
 ## Authority
 
 - Repository: `mrcalzon02/ReverieVR`

@@ -46,6 +46,7 @@ final class VideoSurfaceRenderer {
     private final float[] mvp = new float[16];
 
     private volatile VideoProjection projection = VideoProjection.FLAT_CINEMA;
+    private volatile CalibratedGeometry calibratedGeometry;
     private volatile float videoAspectRatio = 16.0f / 9.0f;
     private volatile float headsetLensUnwarpCoefficient;
 
@@ -96,6 +97,25 @@ final class VideoSurfaceRenderer {
         this.projection = projection == null
             ? VideoProjection.FLAT_CINEMA
             : projection;
+    }
+
+    /**
+     * Assemble immutable direct vertex/UV buffers off the GL render thread.
+     * Publishing one volatile reference makes both per-eye meshes appear
+     * atomically. Null on stop/file switch prevents stale calibration reuse.
+     */
+    void setCalibratedMesh(Vr180MeshProjection.Projection source) {
+        if (source == null) {
+            calibratedGeometry = null;
+            return;
+        }
+        EyeGeometry[] eyes = new EyeGeometry[source.meshes.length];
+        for (int i = 0; i < eyes.length; i++) {
+            Vr180MeshProjection.EyeMesh mesh = source.meshes[i];
+            eyes[i] = new EyeGeometry(
+                allocate(mesh.xyz), allocate(mesh.uv), mesh.vertexCount);
+        }
+        calibratedGeometry = new CalibratedGeometry(eyes, source.packing);
     }
 
     void setHeadsetLensUnwarp(int step) {
@@ -204,6 +224,8 @@ final class VideoSurfaceRenderer {
 
         if (selected.isHeadsetRecording()) {
             drawHeadsetRecording();
+        } else if (selected == VideoProjection.CALIBRATED_MESH_VR180) {
+            drawCalibratedMesh(eye, calibratedGeometry);
         } else if (selected.isImmersive()) {
             drawSphere(eye, selected.isEquirectangular180());
         } else {
@@ -295,6 +317,40 @@ final class VideoSurfaceRenderer {
         );
 
         drawGeometry(flatVertices, flatUvs, 4, GLES20.GL_TRIANGLE_STRIP);
+    }
+
+    private void drawCalibratedMesh(
+            CardboardView.Eye eye, CalibratedGeometry calibrated) {
+        if (calibrated == null) {
+            // Black while a verified camera mesh is being loaded.
+            return;
+        }
+        boolean left = eye.getEyeType() == CardboardView.Eye.LEFT;
+        if (calibrated.packing == 1) {
+            eyeUvRegion[0] = 0;
+            eyeUvRegion[1] = left ? 0.5f : 0;
+            eyeUvRegion[2] = 1;
+            eyeUvRegion[3] = 0.5f;
+        } else if (calibrated.packing == 2) {
+            eyeUvRegion[0] = left ? 0 : 0.5f;
+            eyeUvRegion[1] = 0;
+            eyeUvRegion[2] = 0.5f;
+            eyeUvRegion[3] = 1;
+        } else {
+            // Camera-defined stereo-custom meshes already carry full-frame UVs.
+            eyeUvRegion[0] = 0;
+            eyeUvRegion[1] = 0;
+            eyeUvRegion[2] = 1;
+            eyeUvRegion[3] = 1;
+        }
+        Matrix.setIdentityM(model, 0);
+        Matrix.multiplyMM(modelView, 0, correctedEyeView, 0, model, 0);
+        Matrix.multiplyMM(mvp, 0,
+            eye.getPerspective(Z_NEAR, Z_FAR), 0, modelView, 0);
+        EyeGeometry surface = calibrated.eyes[
+            calibrated.eyes.length == 1 || left ? 0 : 1];
+        drawGeometry(surface.xyz, surface.uv, surface.vertexCount,
+            GLES20.GL_TRIANGLES);
     }
 
     private void drawSphere(CardboardView.Eye eye,
@@ -510,6 +566,27 @@ final class VideoSurfaceRenderer {
             );
         }
         return shader;
+    }
+
+    private static final class EyeGeometry {
+        final FloatBuffer xyz;
+        final FloatBuffer uv;
+        final int vertexCount;
+
+        EyeGeometry(FloatBuffer xyz, FloatBuffer uv, int vertexCount) {
+            this.xyz = xyz;
+            this.uv = uv;
+            this.vertexCount = vertexCount;
+        }
+    }
+
+    private static final class CalibratedGeometry {
+        final EyeGeometry[] eyes;
+        final int packing;
+        CalibratedGeometry(EyeGeometry[] eyes, int packing) {
+            this.eyes = eyes;
+            this.packing = packing;
+        }
     }
 
     private static final class SphereMesh {

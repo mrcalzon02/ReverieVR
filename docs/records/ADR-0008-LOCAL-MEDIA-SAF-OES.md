@@ -48,12 +48,36 @@ inspection; seek support is not assumed for all providers. No new storage
 permission, native codec dependency, or background file import is required.
 Device, codec, memory and performance acceptance remain separate gates.
 
+## Camera-native VR180 calibrated mesh extension (2026-10-11)
+
+VR180 camera video is not generically equirectangular. Spherical Video v2
+encodes camera projection under `sv3d/proj/mshp`, optionally accompanied by
+`st3d` eye packing and `camm` orientation samples. The app now accepts
+calibrated geometry only when it validates the mesh full-box version, CRC32,
+`raw ` or raw-deflate payload, bounded coordinate table, zigzag deltas,
+triangles/strips/fans, video-texture IDs and one/two eye-mesh consistency.
+Decoded geometry is expanded once to immutable per-eye direct buffers and
+rendered by Cardboard's ordinary per-eye pose/projection path. Packed SBS/TB
+eye crop happens before the SurfaceTexture producer transform; stereo-custom
+meshes keep their encoded whole-frame UV coordinates. An absent or invalid
+mesh leaves the 3D scene black and rejects playback visibly rather than
+pretending it is standard 180 equirectangular video.
+
+The Android VR host reopens the selected persisted SAF URI on its existing
+asynchronous media path to recover projection data after activity recreation;
+a monotonic request epoch rejects stale results after stop/reselection.
+Memory, vertex count, decoded size and metadata scan are explicitly capped.
+There are no new runtime dependencies or broad storage permissions. The
+`camm` camera-motion orientation track is **not yet decoded or synchronized**,
+and nonzero projection pose remains unsupported. Reference handset proof
+and sustained headset comfort/performance tests are not yet complete.
+
 ## Deferred
 
 This decision does not claim:
 
 - SBS or over/under stereoscopic video;
-- 180° projection;
+- camera-motion `camm` synchronization and nonzero projection pose;
 - seeking or a full media library;
 - subtitles;
 - broad codec compatibility;

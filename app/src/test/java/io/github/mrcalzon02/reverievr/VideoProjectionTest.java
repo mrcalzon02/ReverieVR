@@ -111,10 +111,15 @@ public final class VideoProjectionTest {
         assertTrue(VideoProjection.FLAT_STEREO_SBS.isStereo());
         assertTrue(VideoProjection.STEREO_EQUIRECTANGULAR_360_SBS.isImmersive());
         VideoProjection mode = VideoProjection.FLAT_CINEMA;
-        for (int i = 0; i < VideoProjection.values().length; i++) {
+        // Metadata-only calibrated VR180 is deliberately absent from the
+        // manual cycle, since arbitrary files lack valid per-eye meshes.
+        for (int i = 0; i < VideoProjection.values().length - 1; i++) {
             mode = mode.next();
+            assertFalse(mode == VideoProjection.CALIBRATED_MESH_VR180);
         }
         assertEquals(VideoProjection.FLAT_CINEMA, mode);
+        assertEquals(VideoProjection.FLAT_CINEMA,
+            VideoProjection.CALIBRATED_MESH_VR180.next());
     }
 
     private static void assertRegion(float[] region,

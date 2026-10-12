@@ -9,8 +9,9 @@ import java.nio.charset.StandardCharsets;
 /**
  * Conservative, bounded ISO-BMFF Spatial Media v2 track inspection.
  * Supports standard st3d packing and unrotated, uncropped sv3d/proj/equi.
- * Does NOT treat raw video bytes, unknown mesh, or camera VR180 as a known
- * projection. Not a generic MP4 decoder or a whole-file metadata indexer.
+ * Camera-native VR180 is accepted ONLY if mshp CRC and calibrated per-eye
+ * geometry decode and validate. Camera-motion camm stabilization is separate.
+ * Not a generic MP4 decoder or a whole-file metadata indexer.
  */
 final class SpatialMp4Metadata {
     static final int MAX_SCAN_BYTES = 4 * 1024 * 1024;
@@ -23,23 +24,34 @@ final class SpatialMp4Metadata {
         final Status status;
         final VideoProjection projection;
         final String detail;
+        final Vr180MeshProjection.Projection calibratedMesh;
 
-        private Result(Status status, VideoProjection projection, String detail) {
+        private Result(Status status, VideoProjection projection, String detail,
+                       Vr180MeshProjection.Projection calibratedMesh) {
             this.status = status;
             this.projection = projection;
             this.detail = detail;
+            this.calibratedMesh = calibratedMesh;
         }
 
         static Result unknown() {
-            return new Result(Status.UNKNOWN, null, "No supported MP4 spatial metadata found");
+            return new Result(Status.UNKNOWN, null,
+                "No supported MP4 spatial metadata found", null);
         }
 
         static Result supported(VideoProjection projection) {
-            return new Result(Status.SUPPORTED, projection, "MP4 Spatial Media v2");
+            return new Result(Status.SUPPORTED, projection,
+                "MP4 Spatial Media v2", null);
+        }
+
+        static Result calibrated(Vr180MeshProjection.Projection mesh) {
+            return new Result(Status.SUPPORTED,
+                VideoProjection.CALIBRATED_MESH_VR180,
+                "Validated Spherical Video v2 camera projection mesh", mesh);
         }
 
         static Result unsupported(String reason) {
-            return new Result(Status.UNSUPPORTED, null, reason);
+            return new Result(Status.UNSUPPORTED, null, reason, null);
         }
     }
 
@@ -60,6 +72,8 @@ final class SpatialMp4Metadata {
         int stereo = 0;
         boolean hasSpatial;
         boolean equirectangular;
+        int meshBody = -1;
+        int meshEnd = -1;
         boolean unsupported;
         String reason = "Unsupported MP4 spatial projection";
     }
@@ -73,7 +87,9 @@ final class SpatialMp4Metadata {
                 found = next;
             } else if (next.status == Status.SUPPORTED) {
                 if (found.status == Status.SUPPORTED
-                    && found.projection != next.projection) {
+                    && (found.projection != next.projection
+                        || found.calibratedMesh != null
+                        || next.calibratedMesh != null)) {
                     found = Result.unsupported("Conflicting spatial video tracks");
                 } else {
                     found = next;
@@ -260,9 +276,27 @@ final class SpatialMp4Metadata {
             pos = child.end;
         }
         if (!track.hasSpatial && !track.hasStereo) return;
-        if (track.unsupported || track.stereo > 2) {
+        if (track.unsupported || track.stereo > 3) {
             scan.record(Result.unsupported(track.unsupported
                 ? track.reason : "Unsupported st3d stereo layout"));
+            return;
+        }
+        if (track.meshBody >= 0) {
+            try {
+                // Mesh projection is valid only when the metadata gives
+                // enough geometry to render it, never from a file name.
+                scan.record(Result.calibrated(
+                    Vr180MeshProjection.decode(b,
+                        track.meshBody, track.meshEnd, track.stereo)));
+            } catch (java.io.IOException invalidMesh) {
+                scan.record(Result.unsupported(
+                    "Invalid calibrated camera projection: "
+                        + invalidMesh.getMessage()));
+            }
+            return;
+        }
+        if (track.stereo == 3) {
+            scan.record(Result.unsupported("Custom stereo without mesh"));
             return;
         }
         if (track.hasSpatial && !track.equirectangular) {
@@ -347,12 +381,23 @@ final class SpatialMp4Metadata {
                         }
                     }
                 }
-            } else if ("mshp".equals(child.type)
-                    || "cbmp".equals(child.type)) {
+            } else if ("mshp".equals(child.type)) {
+                if (track.meshBody >= 0 || sawEquirect) {
+                    track.unsupported = true;
+                    track.reason = "Conflicting spatial projection types";
+                } else {
+                    track.meshBody = child.body;
+                    track.meshEnd = child.end;
+                }
+            } else if ("cbmp".equals(child.type)) {
                 track.unsupported = true;
-                track.reason = "Calibrated mesh or cubemap projection unsupported";
+                track.reason = "Cubemap projection unsupported";
             }
             pos = child.end;
+        }
+        if (sawEquirect && track.meshBody >= 0) {
+            track.unsupported = true;
+            track.reason = "Conflicting projection types";
         }
         track.equirectangular = sawEquirect && !track.unsupported;
     }

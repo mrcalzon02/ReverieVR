@@ -74,6 +74,9 @@ public final class VrActivity extends Activity
     private UiFeedback uiFeedback;
     private ShellMenuMusic menuMusic;
     private LocalVideoPlayer videoPlayer;
+    private final java.util.concurrent.ExecutorService calibratedMediaExecutor =
+        java.util.concurrent.Executors.newSingleThreadExecutor();
+    private final AtomicInteger calibratedMediaEpoch = new AtomicInteger();
     private InputManager inputManager;
     private VrInputRouter inputRouter;
     private InputBindingManager inputBindingManager;
@@ -321,6 +324,8 @@ public final class VrActivity extends Activity
 
     @Override
     protected void onDestroy() {
+        calibratedMediaEpoch.incrementAndGet();
+        calibratedMediaExecutor.shutdownNow();
         phoneCapture.close();
         unregisterInputDeviceListener();
         unregisterHeadMotionSensor();
@@ -1921,12 +1926,73 @@ public final class VrActivity extends Activity
     public void onVideoPlaybackRequested() {
         runOnUiThread(() -> {
             if (videoPlayer != null && preferences != null) {
+                final String uri = preferences.getSelectedVideoUri();
+                final int requestId = calibratedMediaEpoch.incrementAndGet();
+                if (renderer != null) renderer.setCalibratedVideoMesh(null);
+                if (preferences.getVideoProjection()
+                        == VideoProjection.CALIBRATED_MESH_VR180) {
+                    calibratedMediaExecutor.execute(
+                        () -> loadCalibratedVideoMesh(uri, requestId));
+                }
                 if (menuMusic != null) {
                     menuMusic.setShellActive(false);
                 }
-                videoPlayer.play(preferences.getSelectedVideoUri());
+                videoPlayer.play(uri);
             }
         });
+    }
+
+    private void loadCalibratedVideoMesh(String selectedUri, int requestId) {
+        if (requestId != calibratedMediaEpoch.get()) return;
+        SpatialMp4Metadata.Result detected = null;
+        try {
+            android.net.Uri uri = android.net.Uri.parse(selectedUri);
+            try (android.os.ParcelFileDescriptor descriptor =
+                     getContentResolver().openFileDescriptor(uri, "r")) {
+                if (descriptor != null) {
+                    try (java.io.FileInputStream in =
+                             new java.io.FileInputStream(
+                                 descriptor.getFileDescriptor())) {
+                        detected = SpatialMp4Metadata.inspect(in.getChannel());
+                    }
+                }
+            } catch (java.io.IOException | UnsupportedOperationException
+                     notSeekable) {
+                // SAF pipe-backed providers need bounded prefix inspection.
+            }
+            if (detected == null
+                || detected.status == SpatialMp4Metadata.Status.UNKNOWN) {
+                try (java.io.InputStream input =
+                         getContentResolver().openInputStream(uri)) {
+                    detected = SpatialMp4Metadata.inspect(input);
+                }
+            }
+            final SpatialMp4Metadata.Result result = detected;
+            runOnUiThread(() -> {
+                if (requestId != calibratedMediaEpoch.get()
+                    || isFinishing() || isDestroyed()
+                    || !selectedUri.equals(preferences.getSelectedVideoUri())
+                    || preferences.getVideoProjection()
+                        != VideoProjection.CALIBRATED_MESH_VR180) return;
+                if (result != null
+                    && result.status == SpatialMp4Metadata.Status.SUPPORTED
+                    && result.calibratedMesh != null) {
+                    renderer.setCalibratedVideoMesh(result.calibratedMesh);
+                } else {
+                    if (videoPlayer != null) videoPlayer.stop();
+                    onVideoError("Calibrated VR180 mesh unavailable or invalid.");
+                }
+            });
+        } catch (java.io.IOException | SecurityException problem) {
+            ReverieLog.error("VR180_MESH",
+                "Could not read selected camera calibration", problem);
+            runOnUiThread(() -> {
+                if (requestId != calibratedMediaEpoch.get()
+                    || isFinishing() || isDestroyed()) return;
+                if (videoPlayer != null) videoPlayer.stop();
+                onVideoError("Unable to read the VR180 camera calibration.");
+            });
+        }
     }
 
     @Override
@@ -1949,7 +2015,9 @@ public final class VrActivity extends Activity
 
     @Override
     public void onVideoStopRequested() {
+        calibratedMediaEpoch.incrementAndGet();
         runOnUiThread(() -> {
+            if (renderer != null) renderer.setCalibratedVideoMesh(null);
             if (videoPlayer != null) {
                 videoPlayer.stop();
             }

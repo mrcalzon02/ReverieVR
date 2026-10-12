@@ -18,7 +18,8 @@ enum VideoProjection {
     STEREO_EQUIRECTANGULAR_180_TB("3D 180° equirect · top/bottom", true, 2),
     HEADSET_RECORDING_MONO("Headset recording · mono", false, 0),
     HEADSET_RECORDING_SBS("Headset recording · side-by-side", false, 1),
-    HEADSET_RECORDING_TB("Headset recording · top/bottom", false, 2);
+    HEADSET_RECORDING_TB("Headset recording · top/bottom", false, 2),
+    CALIBRATED_MESH_VR180("3D VR180 · calibrated mesh", true, 0);
 
     private final String label;
     private final boolean immersive;
@@ -39,7 +40,7 @@ enum VideoProjection {
     }
 
     boolean isStereo() {
-        return packing != 0;
+        return packing != 0 || this == CALIBRATED_MESH_VR180;
     }
 
     /** Baked eye video is not a head-tracked spatial scene. */
@@ -67,7 +68,11 @@ enum VideoProjection {
 
     VideoProjection next() {
         VideoProjection[] modes = values();
-        return modes[(ordinal() + 1) % modes.length];
+        int index = (ordinal() + 1) % modes.length;
+        // Calibrated mesh mode is only valid with metadata-backed geometry.
+        // Do not expose an inert manual selector for arbitrary videos.
+        if (modes[index] == CALIBRATED_MESH_VR180) index = 0;
+        return modes[index];
     }
 
     /**

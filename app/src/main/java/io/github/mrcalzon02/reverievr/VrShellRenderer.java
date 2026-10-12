@@ -1089,6 +1089,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         videoRenderer.setVideoAspectRatio(aspectRatio);
     }
 
+    void setCalibratedVideoMesh(Vr180MeshProjection.Projection mesh) {
+        videoRenderer.setCalibratedMesh(mesh);
+    }
+
     void noteInputAction(VrInputAction action, String source) {
         if (action == null) {
             return;
@@ -6594,6 +6598,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             preferences.hasSelectedVideo()
                 ? (projection.isHeadsetRecording()
                     ? "PLAY FIXED-EYE HEADSET VIDEO"
+                    : projection == VideoProjection.CALIBRATED_MESH_VR180
+                        ? "PLAY CAMERA-CALIBRATED VR180"
                     : projection.isStereo()
                     ? "PLAY STEREO IN 3D SCENE"
                     : projection.isImmersive()
