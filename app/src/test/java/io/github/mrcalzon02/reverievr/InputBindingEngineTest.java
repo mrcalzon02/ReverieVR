@@ -122,4 +122,17 @@ public final class InputBindingEngineTest {
         engine.setProfile(second);
         assertFalse(bus.isKeyDown(VirtualKey.CTRL));
     }
+    @Test
+    public void dosPointerRelativeTouchAndHeadMotionReachRealMouse() {
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine engine = new InputBindingEngine(bus,
+            BuiltInBindingProfiles.byId(BuiltInBindingProfiles.ID_DOS_CURSOR));
+        engine.submitRelative(BindingInput.TOUCHPAD_REL_X, 10f);
+        engine.submitRelative(BindingInput.TOUCHPAD_REL_Y, -5f);
+        engine.submitRelative(BindingInput.HEAD_YAW_DELTA, 0.01f);
+        assertEquals(13.5f, bus.consumeMouseRelativeX(), 0.0001f);
+        assertEquals(-3.5f, bus.consumeMouseRelativeY(), 0.0001f);
+        assertEquals(0f, bus.consumeMouseRelativeX(), 0.0001f);
+    }
+
 }
