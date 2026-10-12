@@ -40,7 +40,11 @@ static const BuiltInModuleSpec kBuiltIns[] = {
         "breakwater-battery",
         "Breakwater Battery VR [DEV]",
         "libreverie_module_breakwater.so"
-    }
+    },
+    {"classic-pong", "Classic Pong", "libreverie_module_classic_pong.so"},
+    {"classic-snake", "Classic Snake", "libreverie_module_classic_snake.so"},
+    {"classic-chutes-ladders", "Chutes and Ladders",
+     "libreverie_module_classic_chutes_ladders.so"}
 };
 
 struct NativeSession {
