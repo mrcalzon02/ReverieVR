@@ -2,16 +2,17 @@ package io.github.mrcalzon02.reverievr;
 
 /** Desk keyboard quad and key hit testing in the same 1024x768 UV space. */
 final class HomeKeyboardGeometry {
-    static final float LEFT = -1.73f;
-    static final float RIGHT = 1.73f;
-    static final float FRONT_Z = -1.36f;
-    static final float BACK_Z = -4.08f;
+    static final float LEFT = -1.45f;
+    static final float RIGHT = 1.45f;
+    static final float FRONT_Z = -1.52f;
+    static final float BACK_Z = -3.75f;
     static final float TOP_Y = -1.039f;
     // Dais is at -1.08. A real keycap must rise above it, while the
     // transparent glyph/legend texture floats just above the keycap tops.
     static final float KEYCAP_BASE_Y = -1.069f;
     static final float KEYCAP_TOP_Y = -1.043f;
-    static final float LEGEND_Y = TOP_Y;
+    static final float LEGEND_Y = -1.025f;
+    static final float REAR_RISE_METERS = 0.10f;
     static final int WIDTH_PIXELS = 1024;
     static final int HEIGHT_PIXELS = 768;
 
@@ -40,11 +41,28 @@ final class HomeKeyboardGeometry {
         return BACK_Z + pixel / HEIGHT_PIXELS * (FRONT_Z - BACK_Z);
     }
 
+    static float keyboardRiseAt(float z) {
+        return REAR_RISE_METERS * (FRONT_Z - z) / (FRONT_Z - BACK_Z);
+    }
+    static float keycapBaseAt(float z) {
+        return KEYCAP_BASE_Y + keyboardRiseAt(z);
+    }
+    static float keycapTopAt(float z) {
+        return KEYCAP_TOP_Y + keyboardRiseAt(z);
+    }
+    static float legendAt(float z) {
+        return LEGEND_Y + keyboardRiseAt(z);
+    }
+
     static float hitDistance(float[] origin, float[] ray) {
-        if (origin == null || ray == null || origin.length < 3 || ray.length < 3
-            || !Float.isFinite(ray[1]) || Math.abs(ray[1]) < 0.00001f)
+        if (origin == null || ray == null || origin.length < 3 || ray.length < 3)
             return -1f;
-        float t = (TOP_Y - origin[1]) / ray[1];
+        float slope = REAR_RISE_METERS / (FRONT_Z - BACK_Z);
+        float denominator = ray[1] + slope * ray[2];
+        if (!Float.isFinite(denominator) || Math.abs(denominator) < 0.00001f)
+            return -1f;
+        float t = (LEGEND_Y + slope * (FRONT_Z - origin[2])
+            - origin[1]) / denominator;
         if (!Float.isFinite(t) || t <= 0f) return -1f;
         float x = origin[0] + t * ray[0];
         float z = origin[2] + t * ray[2];
