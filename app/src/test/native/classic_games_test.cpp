@@ -31,6 +31,39 @@ int main() {
     assert(snake.finished);
     snake.Press();
     assert(!snake.finished&&!snake.moving&&snake.length==3);
+    // Near-full boards cannot falsely win due to occupied-cell RNG retries.
+    State crowded;
+    crowded.Reset(Game::Snake);
+    crowded.length=State::kCells-1;
+    crowded.snake.fill(-1);
+    for(int i=0;i<State::kCells-1;i++)crowded.snake[i]=i;
+    for(uint32_t seed=1;seed<=128;seed++) {
+        crowded.seed=seed;
+        crowded.finished=false;
+        crowded.NewFood();
+        assert(!crowded.finished&&crowded.food==State::kCells-1);
+    }
+    crowded.length=State::kCells-2;
+    crowded.snake[State::kCells-2]=-1;
+    bool found_penultimate=false,found_last=false;
+    for(uint32_t seed=1;seed<=128;seed++) {
+        crowded.seed=seed;
+        crowded.finished=false;
+        crowded.NewFood();
+        assert(!crowded.finished);
+        assert(crowded.food==State::kCells-2 ||
+               crowded.food==State::kCells-1);
+        found_penultimate|=crowded.food==State::kCells-2;
+        found_last|=crowded.food==State::kCells-1;
+    }
+    assert(found_penultimate&&found_last);
+    crowded.length=State::kCells;
+    crowded.snake[State::kCells-2]=State::kCells-2;
+    crowded.snake[State::kCells-1]=State::kCells-1;
+    crowded.finished=false;
+    crowded.NewFood();
+    assert(crowded.finished&&crowded.food==-1);
+
     assert(State::Jump(3)==22&&State::Jump(17)==7);
     assert(State::Jump(45)==45&&State::Jump(99)==79);
     State ladder;

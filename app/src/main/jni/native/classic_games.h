@@ -23,14 +23,21 @@ struct State {
         return seed;
     }
     void NewFood() {
-        for(int tries=0;tries<kCells;tries++) {
-            const int cell=static_cast<int>(Random()%kCells);
-            bool occupied=false;
-            for(int i=0;i<length;i++)if(snake[i]==cell)occupied=true;
-            if(!occupied){food=cell;return;}
+        // Select from the actual free cells. Repeated random retries can
+        // falsely end a nearly full board even while food space remains.
+        // One seeded draw and a bounded stack-only scan are deterministic.
+        std::array<uint8_t,kCells> occupied{};
+        for(int i=0;i<length && i<kCells;i++) {
+            const int cell=snake[i];
+            if(cell>=0 && cell<kCells)occupied[cell]=1;
         }
-        food=-1;
-        finished=true;
+        int available=0;
+        for(uint8_t used:occupied)if(!used)++available;
+        if(available==0){food=-1;finished=true;return;}
+        int pick=static_cast<int>(Random()%static_cast<uint32_t>(available));
+        for(int cell=0;cell<kCells;cell++) {
+            if(!occupied[cell] && pick--==0){food=cell;return;}
+        }
     }
     void Reset(Game target) {
         game=target;score=opponent=0;finished=moving=false;
