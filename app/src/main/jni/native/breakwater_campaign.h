@@ -118,6 +118,17 @@ public:
     bool DeserializeShop(const uint8_t *buffer, size_t size);
     bool BeginWave();
     bool Purchase(Upgrade upgrade);
+    bool PurchaseWeapon(WeaponKind weapon);
+    bool SelectWeapon(WeaponKind weapon);
+    bool PurchaseSam();
+    bool CallSam(uint8_t enemy_index);
+    bool owns_weapon(WeaponKind weapon) const {
+        return (owned_weapons_ & (1u << static_cast<uint8_t>(weapon))) != 0;
+    }
+    WeaponKind selected_weapon() const {
+        return static_cast<WeaponKind>(selected_weapon_);
+    }
+    uint8_t sam_charges() const { return sam_charges_; }
     bool FireAt(uint8_t index);
     bool FireAtInfantry(uint8_t index);
     bool FireMiss();
@@ -173,6 +184,12 @@ private:
     uint8_t artillery_charges_ = 0;
     uint8_t airstrike_charges_ = 0;
     std::array<uint8_t,8> upgrades_{};
+    // Save v2 reuses three unused fields in the original 80-byte envelope;
+    // v1 saves are still accepted without requiring a migration file.
+    uint8_t owned_weapons_ = 1;
+    uint8_t selected_weapon_ = 0;
+    uint8_t sam_charges_ = 0;
+    std::array<uint8_t,kWeaponCount> weapon_magazines_{{12,8,6,2,4}};
     std::array<Enemy,kMaxEnemies> enemies_{};
     std::array<Infantry,kMaxInfantry> infantry_units_{};
     uint8_t infantry_spawn_cursor_ = 0;

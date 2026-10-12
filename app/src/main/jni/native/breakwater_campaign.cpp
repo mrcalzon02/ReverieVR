@@ -99,16 +99,23 @@ uint8_t Campaign::waves_this_period() const {
 }
 Stats Campaign::stats() const {
     Stats s;
-    s.fire_delay_ms = static_cast<uint16_t>(300 - 35 * upgrades_[0]);
-    s.gun_damage = static_cast<uint16_t>(20 + 10 * upgrades_[1]);
+    const WeaponSpec spec=WeaponFor(selected_weapon());
+    s.fire_delay_ms = static_cast<uint16_t>(std::max<int>(
+        90, static_cast<int>(spec.fire_delay_ms)-35*upgrades_[0]));
+    s.gun_damage = static_cast<uint16_t>(spec.damage + 10 * upgrades_[1]);
     // AA tier 1 unlocks engagement; tiers 2/3 increase aircraft damage.
     // Surface craft continue to use the normal gun damage unchanged.
     s.anti_air_damage_bonus = static_cast<uint16_t>(
         upgrades_[3] > 1 ? 15 * (upgrades_[3] - 1) : 0);
-    s.magazine = static_cast<uint16_t>(12 + 4 * upgrades_[2]);
-    s.anti_air = upgrades_[3] > 0;
+    const uint16_t rounds_per_tier =
+        selected_weapon()==WeaponKind::MissileBattery ||
+        selected_weapon()==WeaponKind::DirectCannon ? 1u :
+        selected_weapon()==WeaponKind::Flak ? 2u :
+        selected_weapon()==WeaponKind::HeavyGun ? 3u : 4u;
+    s.magazine = static_cast<uint16_t>(spec.magazine + rounds_per_tier*upgrades_[2]);
+    s.anti_air = upgrades_[3] > 0 || spec.air_capable;
     s.turret = upgrades_[6] > 0;
-    s.projectile_gravity = WeaponFor(WeaponKind::MachineGun).gravity;
+    s.projectile_gravity = spec.gravity;
     return s;
 }
 uint8_t Campaign::level(Upgrade u) const {
@@ -141,16 +148,62 @@ bool Campaign::Purchase(Upgrade u) {
     else ++upgrades_[static_cast<uint8_t>(u)];
     return true;
 }
+bool Campaign::PurchaseWeapon(WeaponKind weapon) {
+    if (phase_ != Phase::Shop) return false;
+    const uint8_t id=static_cast<uint8_t>(weapon);
+    if (!WeaponValid(id)) return false;
+    if (owns_weapon(weapon)) return SelectWeapon(weapon);
+    const int32_t cost=WeaponFor(weapon).purchase_cost;
+    if (credits_<cost) return false;
+    credits_-=cost;
+    owned_weapons_=static_cast<uint8_t>(owned_weapons_ | (1u<<id));
+    return SelectWeapon(weapon);
+}
+bool Campaign::SelectWeapon(WeaponKind weapon) {
+    const uint8_t id=static_cast<uint8_t>(weapon);
+    if ((phase_!=Phase::Shop && phase_!=Phase::Combat) ||
+        !WeaponValid(id) || !owns_weapon(weapon) || reloading())return false;
+    if (id==selected_weapon_)return true;
+    weapon_magazines_[selected_weapon_]=magazine_left_;
+    selected_weapon_=id;
+    if (phase_==Phase::Shop) {
+        magazine_left_=static_cast<uint8_t>(stats().magazine);
+        weapon_magazines_[id]=magazine_left_;
+    } else magazine_left_=weapon_magazines_[id];
+    return true;
+}
+bool Campaign::PurchaseSam() {
+    constexpr int32_t kSamCost=540;
+    if (phase_!=Phase::Shop || sam_charges_>=3 || credits_<kSamCost)
+        return false;
+    credits_-=kSamCost;
+    ++sam_charges_;
+    return true;
+}
+bool Campaign::CallSam(uint8_t index) {
+    if (phase_!=Phase::Combat || !sam_charges_ ||
+        index>=enemies_.size() || !enemies_[index].active ||
+        enemies_[index].type!=UnitType::Aircraft) return false;
+    --sam_charges_;
+    Enemy &e=enemies_[index];
+    e.hp=static_cast<int16_t>(e.hp-150);
+    if(e.hp<=0) {
+        e.active=false;
+        ++wave_status_.aircraft_destroyed;
+        credits_+=115;
+    }
+    return true;
+}
 bool Campaign::SerializeShop(uint8_t *out, size_t capacity) const {
     if (phase_ != Phase::Shop || out == nullptr || capacity < kSerializedSize)
         return false;
     const uint32_t words[20] = {
-        0x31574252u, 1u, seed_, static_cast<uint32_t>(difficulty_),
+        0x31574252u, 2u, seed_, static_cast<uint32_t>(difficulty_),
         location_, day_, static_cast<uint32_t>(period_), wave_index_,
         static_cast<uint32_t>(credits_), static_cast<uint32_t>(integrity_),
         artillery_charges_, airstrike_charges_,
         upgrades_[0], upgrades_[1], upgrades_[2], upgrades_[3],
-        upgrades_[4], upgrades_[5], upgrades_[6], upgrades_[7]
+        owned_weapons_, selected_weapon_, upgrades_[6], sam_charges_
     };
     for (size_t i = 0; i < 20; ++i) {
         const uint32_t value = words[i];
@@ -167,15 +220,20 @@ bool Campaign::DeserializeShop(const uint8_t *source, size_t length) {
         for (size_t byte = 0; byte < 4; ++byte)
             data[i] |= static_cast<uint32_t>(source[i * 4u + byte]) << (byte * 8u);
     }
-    if (data[0] != 0x31574252u || data[1] != 1u ||
+    if (data[0] != 0x31574252u || (data[1] != 1u && data[1] != 2u) ||
         data[3] > 3u || data[4] >= kLocations || data[5] == 0 ||
         data[5] > kPlaces[data[4]].days || data[6] > 1u ||
         data[7] == 0 || data[8] > 10000000u ||
         data[9] == 0 || data[9] > 100u ||
         data[10] > 3u || data[11] > 3u ||
         data[12] > 4u || data[13] > 4u || data[14] > 4u ||
-        data[15] > 3u || data[16] != 0u || data[17] != 0u ||
-        data[18] > 1u || data[19] != 0u) return false;
+        data[15] > 3u || data[18] > 1u) return false;
+    if (data[1]==1u && (data[16]!=0u || data[17]!=0u || data[19]!=0u))
+        return false;
+    if (data[1]==2u &&
+        (data[16]==0u || data[16]>31u || (data[16]&1u)==0u ||
+         data[17]>=kWeaponCount || (data[16]&(1u<<data[17]))==0u ||
+         data[19]>3u)) return false;
     Campaign candidate(static_cast<Difficulty>(data[3]), data[2]);
     candidate.phase_ = Phase::Shop;
     candidate.location_ = static_cast<uint8_t>(data[4]);
@@ -187,9 +245,20 @@ bool Campaign::DeserializeShop(const uint8_t *source, size_t length) {
     candidate.integrity_ = static_cast<int32_t>(data[9]);
     candidate.artillery_charges_ = static_cast<uint8_t>(data[10]);
     candidate.airstrike_charges_ = static_cast<uint8_t>(data[11]);
-    for (size_t i = 0; i < candidate.upgrades_.size(); ++i)
+    for (size_t i : {0u,1u,2u,3u,6u})
         candidate.upgrades_[i] = static_cast<uint8_t>(data[12u + i]);
-    candidate.magazine_left_ = static_cast<uint8_t>(candidate.stats().magazine);
+    if(data[1]==2u) {
+        candidate.owned_weapons_=static_cast<uint8_t>(data[16]);
+        candidate.selected_weapon_=static_cast<uint8_t>(data[17]);
+        candidate.sam_charges_=static_cast<uint8_t>(data[19]);
+    }
+    for(uint8_t i=0;i<kWeaponCount;i++) {
+        const WeaponSpec spec=WeaponFor(static_cast<WeaponKind>(i));
+        const uint8_t rounds= i==3 || i==4 ? 1 : i==2 ? 2 : i==1 ? 3 : 4;
+        candidate.weapon_magazines_[i]=static_cast<uint8_t>(
+            spec.magazine+rounds*candidate.upgrades_[2]);
+    }
+    candidate.magazine_left_=candidate.weapon_magazines_[candidate.selected_weapon_];
     *this = candidate; // commit only after every validation succeeds
     return true;
 }
@@ -291,6 +360,7 @@ bool Campaign::BeginGunShot() {
     return true;
 }
 bool Campaign::FireMiss() {
+    if(selected_weapon()==WeaponKind::MissileBattery) return false;
     return BeginGunShot();
 }
 bool Campaign::FireAt(uint8_t index) {
@@ -301,7 +371,9 @@ bool Campaign::FireAt(uint8_t index) {
     // The basic mount may still throw rounds at an aircraft, but without the
     // AA package those rounds cannot damage the fast overhead target.
     const Stats weapon = stats();
-    if (e.type == UnitType::Aircraft && !weapon.anti_air) return true;
+    if (e.type == UnitType::Aircraft &&
+        (selected_weapon()==WeaponKind::DirectCannon || !weapon.anti_air))
+        return true;
     const int damage = weapon.gun_damage +
         (e.type == UnitType::Aircraft ? weapon.anti_air_damage_bonus : 0);
     e.hp = static_cast<int16_t>(e.hp - damage);
@@ -317,6 +389,7 @@ bool Campaign::FireAt(uint8_t index) {
 bool Campaign::FireAtInfantry(uint8_t index) {
     if (phase_ != Phase::Combat || index >= infantry_spawn_cursor_ ||
         !infantry_units_[index].active) return false;
+    if (!WeaponFor(selected_weapon()).anti_infantry) return false;
     if (!BeginGunShot()) return false;
     infantry_units_[index].active = false;
     --infantry_;

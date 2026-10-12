@@ -976,6 +976,65 @@ int main() {
     engage_bomber(aa_tier2,3); // 35 damage
     engage_bomber(aa_tier3,2); // 50 damage
 
+    // Weapon ownership, selection and SAM supplies survive the compact
+    // 80-byte v2 shop save, while v1 saves still load as a basic machine gun.
+    Campaign arsenal(Difficulty::Casual,8);
+    assert(arsenal.Start());
+    uint8_t arsenal_save[Campaign::kSerializedSize]={};
+    assert(arsenal.SerializeShop(arsenal_save,sizeof(arsenal_save)));
+    arsenal_save[32]=0x10; arsenal_save[33]=0x27; // 10000 shop credits
+    assert(arsenal.DeserializeShop(arsenal_save,sizeof(arsenal_save)));
+    assert(arsenal.owns_weapon(WeaponKind::MachineGun));
+    assert(!arsenal.owns_weapon(WeaponKind::Flak));
+    assert(!arsenal.SelectWeapon(WeaponKind::MissileBattery));
+    assert(arsenal.PurchaseWeapon(WeaponKind::Flak));
+    assert(arsenal.selected_weapon()==WeaponKind::Flak);
+    assert(arsenal.stats().anti_air);
+    assert(arsenal.stats().projectile_gravity==.001f);
+    assert(arsenal.PurchaseWeapon(WeaponKind::MissileBattery));
+    assert(arsenal.selected_weapon()==WeaponKind::MissileBattery);
+    assert(arsenal.stats().magazine==2);
+    assert(arsenal.PurchaseWeapon(WeaponKind::DirectCannon));
+    assert(arsenal.stats().projectile_gravity==.026f);
+    assert(arsenal.PurchaseSam());
+    assert(arsenal.sam_charges()==1);
+    assert(arsenal.SerializeShop(arsenal_save,sizeof(arsenal_save)));
+    Campaign loaded_arsenal;
+    assert(loaded_arsenal.DeserializeShop(arsenal_save,sizeof(arsenal_save)));
+    assert(loaded_arsenal.owns_weapon(WeaponKind::MissileBattery));
+    assert(loaded_arsenal.selected_weapon()==WeaponKind::DirectCannon);
+    assert(loaded_arsenal.sam_charges()==1);
+    arsenal_save[64]=0; // zero owned mask invalid in v2
+    assert(!loaded_arsenal.DeserializeShop(arsenal_save,sizeof(arsenal_save)));
+    assert(loaded_arsenal.owns_weapon(WeaponKind::MissileBattery));
+    arsenal_save[64]=static_cast<uint8_t>(31);
+    arsenal_save[68]=9; // invalid selected weapon
+    assert(!loaded_arsenal.DeserializeShop(arsenal_save,sizeof(arsenal_save)));
+    assert(loaded_arsenal.sam_charges()==1);
+    // The original v1 binary format must still restore the default MG.
+    Campaign legacy(Difficulty::Casual,9);
+    assert(legacy.Start());
+    uint8_t legacy_save[Campaign::kSerializedSize]={};
+    assert(legacy.SerializeShop(legacy_save,sizeof(legacy_save)));
+    legacy_save[4]=1; legacy_save[64]=0; legacy_save[68]=0;
+    legacy_save[76]=0;
+    Campaign old_loaded;
+    assert(old_loaded.DeserializeShop(legacy_save,sizeof(legacy_save)));
+    assert(old_loaded.selected_weapon()==WeaponKind::MachineGun);
+    assert(!old_loaded.owns_weapon(WeaponKind::Flak));
+    assert(old_loaded.sam_charges()==0);
+    assert(loaded_arsenal.BeginWave());
+    loaded_arsenal.Tick(.05f);
+    assert(!loaded_arsenal.SelectWeapon(WeaponKind::HeavyGun));
+    assert(loaded_arsenal.SelectWeapon(WeaponKind::MachineGun));
+    assert(loaded_arsenal.selected_weapon()==WeaponKind::MachineGun);
+    // Switch to the owned flak while the default gun is on cooldown.
+    assert(loaded_arsenal.SelectWeapon(WeaponKind::Flak));
+    assert(loaded_arsenal.stats().anti_air);
+    assert(loaded_arsenal.SelectWeapon(WeaponKind::MissileBattery));
+    assert(!loaded_arsenal.FireMiss()); // missiles require genuine lock
+    assert(loaded_arsenal.SelectWeapon(WeaponKind::MachineGun));
+
     // Day and night each contain their own shop-separated waves.
     Campaign clock(Difficulty::Casual,41);
     assert(clock.Start());
