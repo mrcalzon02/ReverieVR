@@ -77,6 +77,11 @@ public final class VrActivity extends Activity
     private final java.util.concurrent.ExecutorService calibratedMediaExecutor =
         java.util.concurrent.Executors.newSingleThreadExecutor();
     private final AtomicInteger calibratedMediaEpoch = new AtomicInteger();
+    private final java.util.concurrent.ExecutorService emulatorSourceExecutor =
+        java.util.concurrent.Executors.newSingleThreadExecutor();
+    private final java.util.concurrent.ConcurrentHashMap<String,String>
+        emulatorSourceStatuses = new java.util.concurrent.ConcurrentHashMap<>();
+    private EmulatorSourceRepository emulatorSourceRepository;
     private InputManager inputManager;
     private VrInputRouter inputRouter;
     private InputBindingManager inputBindingManager;
@@ -157,6 +162,8 @@ public final class VrActivity extends Activity
                 this,
                 dosModuleRepository
             );
+        emulatorSourceRepository =
+            new EmulatorSourceRepository(getFilesDir());
         dosSession =
             new DosSession(
                 this,
@@ -326,6 +333,7 @@ public final class VrActivity extends Activity
     protected void onDestroy() {
         calibratedMediaEpoch.incrementAndGet();
         calibratedMediaExecutor.shutdownNow();
+        emulatorSourceExecutor.shutdownNow();
         phoneCapture.close();
         unregisterInputDeviceListener();
         unregisterHeadMotionSensor();
@@ -1437,6 +1445,50 @@ public final class VrActivity extends Activity
         runOnUiThread(() -> {
             if (menuMusic != null) {
                 menuMusic.setShellActive(active);
+            }
+        });
+    }
+
+    @Override
+    public String getEmulatorSourceStatus(String moduleId) {
+        final EmulatorModuleCatalog.Entry entry =
+            EmulatorModuleCatalog.find(moduleId);
+        if (entry==null)return "UNAPPROVED MODULE";
+        String status=emulatorSourceStatuses.get(moduleId);
+        return status==null ? "SOURCE NOT DOWNLOADED" : status;
+    }
+
+    @Override
+    public void onEmulatorSourceDownloadRequested(String moduleId) {
+        final EmulatorModuleCatalog.Entry entry =
+            EmulatorModuleCatalog.find(moduleId);
+        if (entry==null || emulatorSourceRepository==null) {
+            runOnUiThread(() -> uiFeedback.failure());
+            return;
+        }
+        String prior=emulatorSourceStatuses.putIfAbsent(moduleId,"CHECKING UPSTREAM");
+        if(prior!=null && (prior.startsWith("CHECKING") ||
+                           prior.startsWith("DOWNLOADING"))) {
+            runOnUiThread(() -> uiFeedback.failure());
+            return;
+        }
+        emulatorSourceStatuses.put(moduleId,"CHECKING UPSTREAM");
+        emulatorSourceExecutor.execute(() -> {
+            try {
+                emulatorSourceStatuses.put(moduleId,"DOWNLOADING SOURCE");
+                EmulatorSourceRepository.Result result=
+                    emulatorSourceRepository.download(entry);
+                emulatorSourceStatuses.put(moduleId,result.message);
+                ReverieLog.milestone("EMULATOR_SOURCES",
+                    "Source fetched by explicit VR approval; module="+moduleId+
+                    " commit="+result.commit+" sha256="+result.sha256);
+                runOnUiThread(() -> uiFeedback.activation());
+            } catch(Exception ex) {
+                emulatorSourceStatuses.put(moduleId,
+                    "FAILED: "+ex.getMessage());
+                ReverieLog.incident("EMULATOR_SOURCES",
+                    "Source fetch failed for "+moduleId+": "+ex.getMessage());
+                runOnUiThread(() -> uiFeedback.failure());
             }
         });
     }
