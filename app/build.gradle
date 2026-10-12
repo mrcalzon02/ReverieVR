@@ -231,6 +231,8 @@ android {
 dependencies {
     implementation project(":cardboard")
     implementation "com.google.protobuf:protobuf-javalite:3.19.4"
+    // Optional read-only Windows SMB2/SMB3 import (Apache-2.0). No PC helper.
+    implementation "com.hierynomus:smbj:0.15.0"
     testImplementation "junit:junit:4.13.2"
 }
 
