@@ -619,10 +619,10 @@ public final class MainActivity extends Activity
                 && vrRuntimePreflight.available;
 
         if (enterVrButton != null) {
-            enterVrButton.setEnabled(
-                vrRuntimeReady
-                    && (providerReady || gamepadReady)
-            );
+            // A phone with working head tracking is enough for the shell:
+            // the five-second gaze dwell controller is always the last resort.
+            // Do not gate headset entry on obsolete Bluetooth hardware.
+            enterVrButton.setEnabled(vrRuntimeReady);
         }
         if (testControllerButton != null) {
             testControllerButton.setEnabled(providerReady || gamepadReady);
@@ -648,7 +648,8 @@ public final class MainActivity extends Activity
         } else if (ReveriePreferences.CONTROLLER_ANDROID.equals(choice)) {
             controllerStatusText.setText("Selected Android gamepad unavailable");
         } else {
-            controllerStatusText.setText(controllerConnectionMessage);
+            controllerStatusText.setText(
+                "No controller: look at a button for 5 seconds to select.");
         }
         updateSelectedControllerBattery();
 
