@@ -44,15 +44,15 @@ build and Galaxy S9 playback/loudness acceptance are still pending.
 
 ## 2026-10-12 — Accessible high-contrast shell buttons (source)
 
-Quick Settings exposes a real, persistent `HI CONTRAST: ON/OFF` toggle
+Quick Settings exposes a real, persistent `CONTRAST: ON/OFF` toggle
 next to the shortened `EXT HID: ON/OFF` cell; neither the earlier menu
 navigation nor dedicated Back/Close buttons were displaced. The mode
 changes the shared shell button draw path to monochrome near-black/
 near-white, draws persistent boundaries, inverts focused button
 background/text and uses dark focus rails over light focus, while
-keeping a circle-slash disabled symbol. It applies to Home, Quick
-Settings, Music Library, native module shelves and other standard
-shell panels using `drawButtons`, without altering Android Media,
+keeping a circle-slash disabled symbol. It applies to Home navigation cards (through their separate draw
+routine), Quick Settings, Music Library, native module shelves and other
+standard shell buttons, without altering Android Media,
 VR optics, native gameplay textures or remote screen content. A
 pure-Java `ShellContrastPalette` exposes luminance contrast checks;
 JUnit regression source demands >=7:1 text/background contrast

@@ -48,10 +48,11 @@ brightness shifts and UI scaling.
 
 ### Implemented shell contrast option (source)
 
-Quick Settings now has an actual **HI CONTRAST: ON/OFF** control in the
+Quick Settings now has an actual **CONTRAST: ON/OFF** control in the
 eleventh button position. It persists in preferences, defaults OFF,
-and changes all `VrShellRenderer.drawButtons` surfaces/labels to a
-monochrome near-black/near-white palette with persistent borders;
+and changes all shared `VrShellRenderer.drawButtons` controls **and
+the separately drawn Home navigation buttons** to a monochrome
+near-black/near-white palette with persistent borders;
 selected buttons invert luminance and retain thick focus rails, while
 disabled controls retain a crossed-circle glyph. The small pure-Java
 palette uses WCAG sRGB relative-luminance calculations and its tests
