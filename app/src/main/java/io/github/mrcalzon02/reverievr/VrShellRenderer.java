@@ -108,11 +108,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final float STANDARD_GRAVITY_METERS_PER_SECOND_SQUARED =
         9.80665f;
 
-    private static final int INITIAL_HEADING_STABLE_FRAME_TARGET = 8;
+    private static final int INITIAL_HEADING_STABLE_FRAME_TARGET = 24;
     private static final float INITIAL_HEADING_STABLE_DELTA_RADIANS =
         (float) Math.toRadians(1.5);
     private static final long INITIAL_HEADING_SETTLE_TIMEOUT_NANOS =
-        750000000L;
+        2500000000L;
+    private static final long INITIAL_HEADING_MIN_ACQUIRE_NANOS =
+        1200000000L;
 
     private static final int MODE_SETUP = 0;
     private static final int MODE_HOME = 1;
@@ -3061,11 +3063,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean recenterOnHeadset(
         long frameNanos
     ) {
-        float headsetYaw =
-            VrHeadingMath.yawFromForward(
-                headForward[0],
-                headForward[2]
-            );
+        float headsetYaw = VrHeadingMath.yawFromHeadView(rawHeadView);
         if (!Float.isFinite(headsetYaw)) {
             return false;
         }
@@ -3141,11 +3139,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void updateInitialShellHeading(
         long frameNanos
     ) {
-        float currentYaw =
-            VrHeadingMath.yawFromForward(
-                headForward[0],
-                headForward[2]
-            );
+        float currentYaw = VrHeadingMath.yawFromHeadView(rawHeadView);
         if (!Float.isFinite(currentYaw)) {
             return;
         }
@@ -3179,7 +3173,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         boolean stable =
             initialHeadingStableFrames
-                >= INITIAL_HEADING_STABLE_FRAME_TARGET;
+                >= INITIAL_HEADING_STABLE_FRAME_TARGET
+            && frameNanos - initialHeadingStartedNanos
+                >= INITIAL_HEADING_MIN_ACQUIRE_NANOS;
         boolean timedOut =
             frameNanos
                     - initialHeadingStartedNanos
@@ -3196,11 +3192,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void captureOrientationMenuHeading() {
-        float headsetYaw =
-            VrHeadingMath.yawFromForward(
-                headForward[0],
-                headForward[2]
-            );
+        float headsetYaw = VrHeadingMath.yawFromHeadView(rawHeadView);
         float relativeYaw =
             VrHeadingMath.relativeYaw(
                 headsetYaw,
@@ -6943,10 +6935,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void updateHudVertices() {
         // Cardboard restores each full eye before rendering this global HUD.
-        final float left = 2f * 280f / HUD_TEXTURE_WIDTH - 1f;
+        final float originalLeft = 2f * 280f / HUD_TEXTURE_WIDTH - 1f;
         final float right = 2f * 451f / HUD_TEXTURE_WIDTH - 1f;
         final float top = 1f - 2f * 42f / HUD_TEXTURE_HEIGHT;
-        final float bottom = 1f - 2f * 284f / HUD_TEXTURE_HEIGHT;
+        final float originalBottom = 1f - 2f * 284f / HUD_TEXTURE_HEIGHT;
+        final float left = PowerHudArcGeometry.scaledNearTopRight(originalLeft, right);
+        final float bottom = PowerHudArcGeometry.scaledNearTopRight(originalBottom, top);
         hudVertices[0] = left;
         hudVertices[1] = bottom;
         hudVertices[2] = 0f;
@@ -7001,15 +6995,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (cachedShowPercentages) {
             paint.setStyle(Paint.Style.FILL);
-            paint.setTextSize(21f);
+            paint.setTextSize(18f);
+            paint.setTextAlign(Paint.Align.CENTER);
             paint.setFakeBoldText(true);
             paint.setShadowLayer(3f, 0f, 1f, Color.BLACK);
             paint.setColor(Color.rgb(225, 244, 230));
             canvas.drawText("P " + batteryLabel(phoneBattery.get()),
-                350f, 77f + shift, paint);
+                PowerHudArcGeometry.labelCenterX(PowerHudArcGeometry.OUTER),
+                PowerHudArcGeometry.labelTopBaselineY(PowerHudArcGeometry.OUTER)
+                    + shift, paint);
             paint.setColor(Color.rgb(194, 232, 198));
             canvas.drawText("C " + batteryLabel(controllerBattery.get()),
-                350f, 103f + shift, paint);
+                PowerHudArcGeometry.labelCenterX(PowerHudArcGeometry.INNER),
+                PowerHudArcGeometry.labelTopBaselineY(PowerHudArcGeometry.INNER)
+                    + shift, paint);
             paint.clearShadowLayer();
             paint.setFakeBoldText(false);
         }

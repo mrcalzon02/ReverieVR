@@ -33,6 +33,20 @@ public final class VrHeadingMathTest {
     }
 
     @Test
+    public void deriveHeadingFromRawStereoViewForBothQuarterTurns() {
+        float[] m = new float[16];
+        m[0] = m[5] = m[10] = m[15] = 1f;
+        assertEquals(0f, VrHeadingMath.yawFromHeadView(m), EPSILON);
+        m[0] = 0f; m[2] = 1f; m[8] = -1f; m[10] = 0f;
+        assertEquals((float)(Math.PI / 2f),
+            VrHeadingMath.yawFromHeadView(m), EPSILON);
+        m[2] = -1f; m[8] = 1f;
+        assertEquals((float)(-Math.PI / 2f),
+            VrHeadingMath.yawFromHeadView(m), EPSILON);
+        assertTrue(Float.isNaN(VrHeadingMath.yawFromHeadView(new float[3])));
+    }
+
+    @Test
     public void startupHeadingCancelsViewYawAndKeepsShellPanelsCentered() {
         float right = (float) (Math.PI * 0.5);
         assertEquals(90f, VrHeadingMath.viewCorrectionDegrees(right), EPSILON);

@@ -30,6 +30,12 @@ final class VrHeadingMath {
         );
     }
 
+    /** Yaw directly from the raw world-to-eye basis used by Cardboard. */
+    static float yawFromHeadView(float[] rawView) {
+        if (rawView == null || rawView.length < 16) return Float.NaN;
+        return yawFromForward(-rawView[2], -rawView[10]);
+    }
+
     /** Positive heading cancels negative headset yaw in world-to-eye view. */
     static float viewCorrectionDegrees(float heading) {
         return (float) Math.toDegrees(heading);

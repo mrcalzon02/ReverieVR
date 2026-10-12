@@ -27,6 +27,14 @@ public final class PowerHudArcGeometryTest {
         assertEquals(45f, PowerHudArcGeometry.progress(100), 0.001f);
     }
 
+    @Test public void shrinkBySeventyPercentAndCenterLabels() {
+        assertEquals(0.30f, PowerHudArcGeometry.OUTPUT_SCALE, 0.0001f);
+        assertEquals(399.7f, PowerHudArcGeometry.scaledNearTopRight(280f, 451f),
+            0.0001f);
+        assertTrue(PowerHudArcGeometry.labelCenterX(PowerHudArcGeometry.OUTER) > 330f);
+        assertTrue(PowerHudArcGeometry.labelTopBaselineY(PowerHudArcGeometry.OUTER) < 110f);
+    }
+
     @Test public void lookingUpRevealsTheSameBarsLower() {
         assertEquals(0f, PowerHudArcGeometry.revealY(false), 0f);
         assertEquals(52f, PowerHudArcGeometry.revealY(true), 0f);
