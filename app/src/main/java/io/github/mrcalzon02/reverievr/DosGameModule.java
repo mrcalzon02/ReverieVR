@@ -26,7 +26,7 @@ final class DosGameModule {
         this.bindingProfileId =
             bindingProfileId == null
                 || bindingProfileId.trim().isEmpty()
-                    ? BuiltInBindingProfiles.ID_NONE
+                    ? BuiltInBindingProfiles.ID_DOS_STANDARD
                     : bindingProfileId.trim();
         this.importedAtMillis = importedAtMillis;
     }
