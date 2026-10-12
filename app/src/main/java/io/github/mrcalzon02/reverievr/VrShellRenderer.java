@@ -6608,7 +6608,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             EmulatorModuleCatalog.Entry e=selectedEmulator;
             canvas.drawText(e.system+" / "+e.name+" / "+e.license,90,222,paint);
             canvas.drawText("Source: github.com/"+e.repository,90,256,paint);
-            canvas.drawText(e.biosMayBeRequired?
+            canvas.drawText("play-ps2".equals(e.id)?
+                "Built-in PS2 BIOS; no external BIOS file required.":
+                e.biosMayBeRequired?
                 "Some games need your legally obtained firmware.":
                 "You must supply your own game files.",90,293,paint);
             canvas.drawText("SOURCE SNAPSHOT ONLY: this does not install a playable core.",

@@ -36,14 +36,7 @@ final class EmulatorSourceRepository {
         if(entry==null||EmulatorModuleCatalog.find(entry.id)!=entry)
             throw new IOException("Unapproved emulator.");
         JSONObject remote=getJson(entry.githubApi());
-        JSONObject license=remote.optJSONObject("license");
-        if(remote.optBoolean("private",true) ||
-           remote.optBoolean("archived",true) ||
-           !entry.repository.equalsIgnoreCase(remote.optString("full_name")) ||
-           license==null ||
-           !EmulatorModuleCatalog.approvedLicense(entry,
-                                                  license.optString("spdx_id")))
-            throw new IOException("Repository or license no longer approved.");
+        String pinnedCommit=verifyUpstream(entry,remote);
         String locallyStored=status(entry);
         return locallyStored.startsWith("SOURCE SAVED")
             ? locallyStored : "PUBLIC "+entry.license+" - SOURCE AVAILABLE";
@@ -53,21 +46,7 @@ final class EmulatorSourceRepository {
         if(entry==null||EmulatorModuleCatalog.find(entry.id)!=entry)
             throw new IOException("Unapproved emulator source module.");
         JSONObject metadata=getJson(entry.githubApi());
-        if(metadata.optBoolean("private",true) || metadata.optBoolean("archived",true))
-            throw new IOException("The upstream emulator must remain public and maintained.");
-        if(!entry.repository.equalsIgnoreCase(metadata.optString("full_name")))
-            throw new IOException("Unexpected GitHub repository identity.");
-        JSONObject license=metadata.optJSONObject("license");
-        if(license==null ||
-           !EmulatorModuleCatalog.approvedLicense(entry,license.optString("spdx_id")))
-            throw new IOException("Upstream license changed or could not be verified.");
-        final String branch=metadata.optString("default_branch");
-        if(!branch.matches("[A-Za-z0-9._-]{1,80}"))
-            throw new IOException("Unsafe or unsupported upstream default branch.");
-        JSONObject commit=getJson(entry.githubApi()+"/commits/"+branch);
-        final String sha=commit.optString("sha");
-        if(!EmulatorModuleCatalog.isCommitId(sha))
-            throw new IOException("GitHub did not return an immutable commit id.");
+        final String sha=verifyUpstream(entry,metadata);
         if(!root.isDirectory()&&!root.mkdirs())
             throw new IOException("Could not create the emulator source directory.");
         final File directory=new File(root,entry.id);
@@ -125,6 +104,36 @@ final class EmulatorSourceRepository {
             if(part.exists())part.delete();
             if(manifestPart.exists())manifestPart.delete();
         }
+    }
+    // Fail closed for unidentified licenses. Play! is an explicit exception
+    // requiring the previously reviewed upstream License.txt blob to match
+    // at the exact immutable commit being downloaded; GitHub's NOASSERTION
+    // status alone NEVER grants approval to arbitrary repositories.
+    private static String verifyUpstream(EmulatorModuleCatalog.Entry entry,
+                                         JSONObject metadata)throws IOException {
+        if(metadata.optBoolean("private",true) || metadata.optBoolean("archived",true))
+            throw new IOException("Upstream emulator is not public and active.");
+        if(!entry.repository.equalsIgnoreCase(metadata.optString("full_name")))
+            throw new IOException("Unexpected GitHub repository identity.");
+        final String branch=metadata.optString("default_branch");
+        if(!branch.matches("[A-Za-z0-9._-]{1,80}"))
+            throw new IOException("Unsafe upstream default branch.");
+        JSONObject commit=getJson(entry.githubApi()+"/commits/"+branch);
+        final String sha=commit.optString("sha");
+        if(!EmulatorModuleCatalog.isCommitId(sha))
+            throw new IOException("No immutable GitHub commit identifier.");
+        JSONObject license=metadata.optJSONObject("license");
+        final String spdx=license==null?"":license.optString("spdx_id");
+        if(!EmulatorModuleCatalog.approvedLicense(entry,spdx)) {
+            if(entry.trustedLicenseBlob==null)
+                throw new IOException("Unreviewed upstream license.");
+            JSONObject licenseFile=getJson(entry.githubApi()+
+                "/contents/License.txt?ref="+sha);
+            if(!EmulatorModuleCatalog.approvedLicenseFile(entry,spdx,
+                                                          licenseFile.optString("sha")))
+                throw new IOException("Play! license text changed; review required.");
+        }
+        return sha;
     }
     String status(EmulatorModuleCatalog.Entry entry){
         if(entry==null)return "UNKNOWN";

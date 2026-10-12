@@ -6,11 +6,11 @@
 
 ## UX contract
 
-From **Home → Emulator Modules**, the user sees the catalog of source projects, their target system, license and availability status. The list is a **curated allowlist**, not arbitrary code search. On opening, ReverieVR checks the corresponding public GitHub repository's identity, archive status and SPDX license asynchronously; network failure is shown as unavailable, without silently converting a license failure into approval. Scrolling pages and exiting use the same headset Select/Back input as other Home destinations.
+From **Home → Emulator Modules**, the user sees the catalog of source projects, their target system, license and availability status. The list is a **curated allowlist**, not arbitrary code search. On opening, ReverieVR checks the corresponding public GitHub repository's identity, archive status and verified upstream license asynchronously; network failure is shown as unavailable, without silently converting a license failure into approval. Scrolling pages and exiting use the same headset Select/Back input as other Home destinations.
 
 Selecting a catalog entry opens a separate confirmation page showing source repository, license, hardware/BIOS notes and a clear boundary: **SOURCE SNAPSHOT ONLY — not yet a playable emulator core**. YES explicitly requests a download; NO and Back cancel without network transfer. The app does not install or download an executable, ROM, BIOS or firmware automatically at startup, boot, browsing, or on unrelated program updates. All source download work occurs off the VR rendering thread; the UI displays checking, downloading, saved or failed states, with activation/error feedback.
 
-Downloaded source is pinned to an immutable 40-character Git commit resolved from the verified official public repository after confirming its SPDX license. It arrives from the allowlisted GitHub codeload host, HTTPS only, with redirect blocking and response size cap (96 MiB). The archive is saved privately as inert ZIP data, not extracted or executed, and accompanied by repository identity, license, commit, length and SHA-256 digest; local status revalidates the manifest and archive. A corrupted or interrupted transfer is not marked as saved. No new filesystem permissions are needed; Android INTERNET is already in the manifest.
+Downloaded source is pinned to an immutable 40-character Git commit resolved from the verified official public repository after confirming its license. Play!'s upstream license is a BSD-style two-condition grant in `License.txt`, but GitHub reports `NOASSERTION` rather than a recognized SPDX expression. Play! is allowed only when that exact source license file's reviewed Git blob SHA matches at the pinned upstream commit; a changed or missing license blocks download pending fresh review. This exception does not permit arbitrary `NOASSERTION` repositories. It arrives from the allowlisted GitHub codeload host, HTTPS only, with redirect blocking and response size cap (96 MiB). The archive is saved privately as inert ZIP data, not extracted or executed, and accompanied by repository identity, license, commit, length and SHA-256 digest; local status revalidates the manifest and archive. A corrupted or interrupted transfer is not marked as saved. No new filesystem permissions are needed; Android INTERNET is already in the manifest.
 
 ## Phase 1 curated sources
 
@@ -20,7 +20,8 @@ Downloaded source is pinned to an immutable 40-character Git commit resolved fro
 | Game Boy Advance | mGBA | https://github.com/libretro/mgba | MPL-2.0 | Generally supports use without external BIOS |
 | NES | Nestopia UE | https://github.com/libretro/nestopia | GPL-2.0 | Generally does not require external BIOS |
 | Nintendo DS | melonDS | https://github.com/libretro/melonDS | GPL-3.0 | Some modes and games require user-provided firmware |
-| Original PlayStation | PCSX ReARMed | https://github.com/libretro/pcsx_rearmed | GPL-2.0 | BIOS may be required; user must provide lawful copy |
+| Original PlayStation (PS1) | PCSX ReARMed | https://github.com/libretro/pcsx_rearmed | GPL-2.0 | BIOS may be required; user must provide lawful copy |
+| PlayStation 2 (PS2) | Play! | https://github.com/jpd002/Play- | BSD-style two-condition license, `License.txt` blob pinned for verification (GitHub: `NOASSERTION`) | Built-in HLE BIOS; no separate PS2 BIOS needed |
 
 The pinned source snapshot is **not** equivalent to a compatible `arm64-v8a` Android native module. The application never represents source-package retrieval as a functional installed emulator.
 
@@ -34,7 +35,7 @@ When that host exists, replace **download source** with **INSTALL CORE? YES / NO
 
 ## Capability, licensing and performance gates
 
-Original PlayStation emulation is a target **platform**, not a promise of full-speed compatibility on an S9. Performance must be evaluated per core and title (especially hardware accelerated vs software render), with sustained battery/thermal tests. Each emulator's own license, upstream credits, source disclosure requirements, and any per-core noncommercial clause must be reviewed before shipping executable binaries. GitHub public visibility **does not establish permission to redistribute binaries**. BIOS and game ROM rights are a separate issue; downloading an emulator never grants game-media rights.
+Original PlayStation and PlayStation 2 emulation are target **platforms**, not promises of full-speed compatibility on an S9. Play! uses a built-in high-level BIOS and supports Android/Libretro, but its PS2 compatibility is incomplete; Libretro's Play! OpenGL renderer requires OpenGL 3.0 or GLES 3.2 or newer, and PS2 games can exceed Galaxy S9 thermal and performance budgets. The existing ReverieVR home is GLES2; actual integration must negotiate a separate compatible GL context and validate sustained rendering, input and audio before exposing a PLAY button. Performance must be evaluated per core and title (especially hardware accelerated vs software render), with sustained battery/thermal tests. Each emulator's own license, upstream credits, source disclosure requirements, and any per-core noncommercial clause must be reviewed before shipping executable binaries. GitHub public visibility **does not establish permission to redistribute binaries**. BIOS and game ROM rights are a separate issue; downloading an emulator never grants game-media rights.
 
 ## Verification
 

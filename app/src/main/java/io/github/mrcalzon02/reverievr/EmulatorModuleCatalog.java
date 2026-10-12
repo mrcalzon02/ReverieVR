@@ -11,12 +11,19 @@ import java.util.List;
 final class EmulatorModuleCatalog {
     static final class Entry {
         final String id, system, name, repository, license, coreFile;
+        final String trustedLicenseBlob;
         final boolean biosMayBeRequired;
         Entry(String id,String system,String name,String repository,
               String license,String coreFile,boolean biosMayBeRequired) {
+            this(id,system,name,repository,license,coreFile,biosMayBeRequired,null);
+        }
+        Entry(String id,String system,String name,String repository,
+              String license,String coreFile,boolean biosMayBeRequired,
+              String trustedLicenseBlob) {
             this.id=id;this.system=system;this.name=name;
             this.repository=repository;this.license=license;
             this.coreFile=coreFile;this.biosMayBeRequired=biosMayBeRequired;
+            this.trustedLicenseBlob=trustedLicenseBlob;
         }
         String sourceUrl(){return "https://github.com/"+repository;}
         String githubApi(){return "https://api.github.com/repos/"+repository;}
@@ -36,7 +43,13 @@ final class EmulatorModuleCatalog {
             new Entry("melonds","Nintendo DS","melonDS","libretro/melonDS",
                 "GPL-3.0","melonds_libretro_android.so",true),
             new Entry("pcsx","PlayStation 1","PCSX ReARMed","libretro/pcsx_rearmed",
-                "GPL-2.0","pcsx_rearmed_libretro_android.so",true)
+                "GPL-2.0","pcsx_rearmed_libretro_android.so",true),
+            // Play! is PS2, NOT PS1. Official GitHub cannot infer an SPDX
+            // identifier for its BSD-style License.txt. Check that exact
+            // license file in the resolved immutable commit before download.
+            new Entry("play-ps2","PlayStation 2","Play!","jpd002/Play-",
+                "BSD-style (verified)","play_libretro_android.so",false,
+                "59e926c6b41eb76c874550d2896ef0d540a785e4")
         )
     );
     static List<Entry> entries(){return ENTRIES;}
@@ -54,7 +67,13 @@ final class EmulatorModuleCatalog {
         return true;
     }
     static boolean approvedLicense(Entry entry,String spdx){
-        return entry!=null && entry.license.equals(spdx);
+        return entry!=null && entry.trustedLicenseBlob==null &&
+            entry.license.equals(spdx);
+    }
+    static boolean approvedLicenseFile(Entry entry,String spdx,String blobSha){
+        return entry!=null && entry.trustedLicenseBlob!=null &&
+            "NOASSERTION".equals(spdx) &&
+            entry.trustedLicenseBlob.equals(blobSha);
     }
     private EmulatorModuleCatalog(){}
 }
