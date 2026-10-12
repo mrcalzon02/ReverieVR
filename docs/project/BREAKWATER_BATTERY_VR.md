@@ -152,3 +152,30 @@ The pure geometry fixture passed locally with C++17 -Wall -Wextra
 compiled/passed in a separate isolated harness. The complete native
 campaign/Android build, S9 stereoscopic legibility and actual
 sustained performance remain unverified.
+
+
+### Three distinct procedural shore environments (2026-10-12 source)
+
+The native campaign's Shingle Bay, Iron Quay and Blackcap Island now have
+different **actual world-space shore geometry**, not merely different location
+labels over the same open sea. The original C++17 game-private recipe in
+`app/src/main/jni/native/breakwater_terrain.h` generates six two-triangle
+shore strips above the sea surface, eight tiny surf-edge wedges at the real
+z=-2.20 transport landing line, and location-specific details. Shingle Bay
+has pale shingle chips and driftwood, Iron Quay has masonry seams and rusty
+outer-edge mooring posts, and Blackcap Island has dark basalt outcrops.
+Existing individually targetable soldiers traverse the central beach without
+decorative structures obscuring their assigned gameplay hitboxes.
+
+All three terrain palettes shift for day/night; placement, geometry counts and
+colors are deterministic without a new RNG, texture, material dependency,
+physics layer, target or save field. The recipe is appended to the existing
+once-per-simulation-update vertex-color mesh, and both stereo eyes reuse that
+one buffer with no extra draw calls. Nominal terrain budgets are 38 triangles
+plus two box primitives for Shingle Bay, 25 triangles plus eight boxes for
+Iron Quay, and 28 triangles plus eight boxes for Blackcap Island; generated
+box primitives are still expanded using the existing lightweight Box emitter.
+Native test source checks location identity, night colors, counts, finite
+geometry, color bounds and invalid location rejection. Full native/NDK build,
+physical Galaxy S9 binocular rendering, target visibility and thermal
+acceptance remain outstanding.
