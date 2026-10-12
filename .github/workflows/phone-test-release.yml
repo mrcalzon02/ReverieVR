@@ -12,9 +12,12 @@ on:
 permissions:
   contents: write
 
+# Do not cancel a signed APK after a newer main commit arrives:
+# recurring project work can otherwise starve releases indefinitely.
+# GitHub permits one active run and coalesces superseded pending requests.
 concurrency:
   group: reverievr-phone-test-release
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-release:

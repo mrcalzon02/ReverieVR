@@ -289,3 +289,7 @@ Only after the reference path works:
 - historical Daydream compatibility research where legally and technically appropriate.
 
 Compatibility expansion must not destabilize the Galaxy S9 reference path.
+
+## Prevent phone-test APK build starvation (2026-10-11)
+
+The existing `.github/workflows/phone-test-release.yml` used a global concurrency group with `cancel-in-progress: true`. Automated source updates frequently retriggered the phone-test release before Gradle and persistent signing finished, cancelling runs #107, #108 and #109 despite no compilation failure. The existing workflow now uses the same group with `cancel-in-progress: false`, so a running signed APK build reaches an actual success/failure and pending newer builds may coalesce. This **does not add a new GitHub Actions workflow**, change permissions/signing/artifact names, or run Android Gradle locally. Build/release success must be checked using the completed GitHub Actions job and published artifact readback, not merely the trigger.
