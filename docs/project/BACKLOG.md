@@ -42,6 +42,10 @@
 
 ## P3 — Settings and controls
 
+- RV-0240 — **Planned, phone-side implementation only:** add a read-only SMB2/SMB3 client to the existing ReverieVR APK so a user can enter/select a Windows host and explicitly shared folder over existing local Wi-Fi (including a laptop hotspot), authenticate without storing plaintext credentials, browse bounded filenames asynchronously, and import selected supported ISO/BIN/CUE/CHD/media files to private local storage using atomic writes and hash/size checks. Measure Galaxy S9 library binary/transitive license size, SMB client compatibility, throughput and UI latency before selection; require no proprietary Windows server, new desktop companion app, unapproved network scan, or Android file-storage permission broadening. Keep the shelf and in-VR `Laptop Files` button hidden until browse/import work end-to-end. Use existing scrcpy UHID input and screen mirroring unchanged; its low-overhead control-only `--no-video --no-audio --gamepad=uhid` mode is documented. Never claim exposing raw optical-disc sectors: standard Windows SMB only exposes files, not an automatic disc-image maker. Acceptance: normal offline phone use, paired share read-only import, missing host, interrupted transfer, disconnected controller and no host software development. ADR-0023 governs.
+
+
+
 - RV-0200 — VR/display settings.
 - RV-0201 — performance/quality settings and dynamic fallback.
 - RV-0202 — Implement persistent input mapping settings and in-VR binding editor over the virtual keyboard/mouse/joystick output bus.
