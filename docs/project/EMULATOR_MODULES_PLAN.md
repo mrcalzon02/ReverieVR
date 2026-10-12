@@ -4,6 +4,34 @@
 **Authority:** `docs/project/INSTRUCTIONS.md`, `docs/project/EXECUTION_CONTRACT.md`, `docs/native/README.md`.
 **Execution target:** Samsung Galaxy S9 / Daydream, GLES2, ARM64, controller-first 3DoF seated mode.
 
+## Single APK host boundary (governing)
+
+Emulation is **phone-local**. The ReverieVR APK itself must own the Libretro
+host/adapter, local controller routing, in-headset display, audio, local
+file picker, save states, memory cards, persistent configuration and recovery.
+No desktop application, scrcpy session, remote emulator process, cloud
+catalog service, additional installed Android APK, or external optical drive
+may be required to run an installed core with compatible local game files.
+The source catalog is available offline from its curated embedded metadata;
+online verification/download is only for a user-requested new source/core.
+
+A user-approved, license-compliant compatible core may be downloaded later
+into app-private module storage under the **one installed ReverieVR APK**.
+This must remain optional and its source/binary compatibility, Android
+dynamic-loading rules, and performance remain separately gated. Bundling
+all cores, PlayStation firmware, disc images, or a desktop runtime is not
+part of the baseline. Repositories are discovery/provenance sources, not
+mandatory live dependencies for playing already installed content.
+
+Laptop-attached controllers or optical drives are optional supplements.
+A PC-side bridge may present read-only game images to a phone-side local
+importer or forward events to the phone's own input router, but it must
+never host the game's emulation as a prerequisite. Import and cache media
+locally when practical; loss of a PC link must not affect other native or
+offline games. The emulator handles ISO/BIN-CUE/CHD and virtual save media
+according to its specific supported formats; a separate phone-wide virtual
+CD drive is not a requirement.
+
 ## UX contract
 
 From **Home → Emulator Modules**, the user sees the catalog of source projects, their target system, license and availability status. The list is a **curated allowlist**, not arbitrary code search. On opening, ReverieVR checks the corresponding public GitHub repository's identity, archive status and verified upstream license asynchronously; network failure is shown as unavailable, without silently converting a license failure into approval. Scrolling pages and exiting use the same headset Select/Back input as other Home destinations.
