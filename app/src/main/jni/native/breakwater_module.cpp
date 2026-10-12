@@ -28,6 +28,7 @@ struct State {
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
     ImpactEffects impacts;
+    CombatInputLatch combat_input;
     std::vector<float> mesh;
 };
 void Feedback(State *s, uint32_t code) {
@@ -210,7 +211,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         if(!edge)return;
         const int target=ShopTarget(input);
         bool done=false;
-        if(target==8)done=game.BeginWave();
+        if(target==8) {
+            done=game.BeginWave();
+            if(done)s->combat_input.CaptureUiPress();
+        }
         else if(target>=0 && target<8){
             done=game.Purchase(static_cast<Upgrade>(target));
             if(done)SaveState(s);
@@ -220,9 +224,9 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         float x=0,y=0;
         const CombatHudTarget hud = AimAtPlane(input,-1.8f,&x,&y)>0 ?
             HitCombatSupportHud(x,y) : CombatHudTarget::None;
-        // The support HUD owns its entire hitbox while Select is held.
-        // Without this route, later held frames fire the gun through the UI.
-        const CombatInputRoute route = RouteCombatInput(hud,edge);
+        // Capture support presses until release, even if the aim drifts off
+        // the HUD. Shop START presses also remain captured across phases.
+        const CombatInputRoute route = s->combat_input.Route(hud,edge);
         if(route==CombatInputRoute::NoAction)return;
         if(route==CombatInputRoute::Artillery){
             const auto before=game.enemies();
@@ -596,10 +600,14 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         Feedback(s,started_reload?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
                   REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
+    // Release restores gun ownership; no held UI press can become gunfire.
+    if(!down)s->combat_input.Release();
     // Reload takes priority if both controls are pressed on the same frame.
     if(down && !started_reload)Interact(s,copy,!s->held);
-    if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop)
-        s->campaign.BeginWave();
+    if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop) {
+        if(s->campaign.BeginWave() && down)
+            s->combat_input.CaptureUiPress();
+    }
     s->held=down;s->secondary_held=secondary;
     s->scene_dirty=true;
 }

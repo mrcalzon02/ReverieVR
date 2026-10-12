@@ -21,5 +21,21 @@ constexpr CombatInputRoute RouteCombatInput(CombatHudTarget target, bool edge) {
     return target == CombatHudTarget::Artillery ?
         CombatInputRoute::Artillery : CombatInputRoute::Airstrike;
 }
+// A Select press belongs to its first UI action until release. This also
+// prevents a held shop START press from firing the gun in the next phase.
+class CombatInputLatch {
+public:
+    CombatInputRoute Route(CombatHudTarget target, bool edge) {
+        if (ui_press_held_) return CombatInputRoute::NoAction;
+        const CombatInputRoute route = RouteCombatInput(target, edge);
+        if (route == CombatInputRoute::Artillery ||
+            route == CombatInputRoute::Airstrike) ui_press_held_ = true;
+        return route;
+    }
+    void CaptureUiPress() { ui_press_held_ = true; }
+    void Release() { ui_press_held_ = false; }
+private:
+    bool ui_press_held_ = false;
+};
 }} // namespace reverie::breakwater
 #endif

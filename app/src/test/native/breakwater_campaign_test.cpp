@@ -30,6 +30,37 @@ int main() {
     assert(RouteCombatInput(CombatHudTarget::None,true)
            ==CombatInputRoute::Gun);
 
+    // UI presses remain captured across aim drift and phase transitions.
+    // Releasing Select restores normal held-fire ownership.
+    CombatInputLatch latch;
+    assert(latch.Route(CombatHudTarget::Artillery,true)
+           ==CombatInputRoute::Artillery);
+    assert(latch.Route(CombatHudTarget::Artillery,false)
+           ==CombatInputRoute::NoAction);
+    assert(latch.Route(CombatHudTarget::None,false)
+           ==CombatInputRoute::NoAction); // drag off ARTY while held
+    assert(latch.Route(CombatHudTarget::Airstrike,false)
+           ==CombatInputRoute::NoAction); // cannot activate AIR by dragging
+    latch.Release();
+    assert(latch.Route(CombatHudTarget::None,true)
+           ==CombatInputRoute::Gun);
+    assert(latch.Route(CombatHudTarget::None,false)
+           ==CombatInputRoute::Gun); // held gunfire still works
+    assert(latch.Route(CombatHudTarget::Airstrike,false)
+           ==CombatInputRoute::NoAction); // hovering over HUD blocks gun
+    latch.Release();
+    latch.CaptureUiPress(); // shop START or secondary wave-start with Select held
+    assert(latch.Route(CombatHudTarget::None,false)
+           ==CombatInputRoute::NoAction); // no accidental first-wave shot
+    latch.Release();
+    assert(latch.Route(CombatHudTarget::None,true)
+           ==CombatInputRoute::Gun);
+    latch.Release();
+    assert(latch.Route(CombatHudTarget::Airstrike,true)
+           ==CombatInputRoute::Airstrike);
+    assert(latch.Route(CombatHudTarget::None,false)
+           ==CombatInputRoute::NoAction);
+
     // Procedural hit feedback uses finite positions and a bounded pulse pool.
     ImpactEffects effects;
     const float muzzle[]={0,0,0}, downward[]={0,-.2f,-1};
