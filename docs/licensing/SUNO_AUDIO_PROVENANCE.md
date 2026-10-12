@@ -25,6 +25,18 @@ Sources: https://suno.com/terms-of-service ,
 https://help.suno.com/en/articles/9601665 ,
 https://help.suno.com/en/articles/2410177 .
 
+**2026-10-12 uploaded source candidates:** Eleven additional MP3s were
+supplied directly to the project. A SHA-256/size inventory and intended
+uses are recorded at `music/source/manifest.json`, while the binaries
+remain pending authenticated import to the public repository. No Suno
+track permalinks, generation-plan records, sampling/rework provenance,
+or legal title-by-title clearance accompanied the files. Do not
+automatically presume that all eleven are Suno recordings or that any
+is entitled to commercial APK inclusion. This source-only inventory
+does not modify `assets/music/catalog.tsv`, the native music player,
+or the approved APK license registry. A later approved packaging pass
+must update those together with evidence.
+
 **Build/runtime:**
 - `app/src/main/assets/music/catalog.tsv` is the frozen music index
   shipped in the base APK. This repository currently includes Starry

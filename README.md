@@ -23,6 +23,13 @@ See [the SPDX/REUSE and asset registry](docs/licensing/ASSET_REGISTRY.json)
 and each Release's `DIST-LICENSE-MANIFEST.json` for actual files,
 copyright/attribution records, and unresolved rights.
 
+An additional [eleven-track source music inventory](music/source/README.md)
+records new owner-supplied MP3s and intended uses for the bar project,
+Beachhead-style game, Ministry of Intelligence, and alternate lobby tracks.
+**Their binary upload to GitHub is pending** and they are not yet packaged
+or playable in the current APK. Source-only candidates are not automatically
+licensed as MIT, CC BY or CC0.
+
 The offline **Native Music Library** is available from VR Home, with
 browse/previous/next/pause controls. The catalog is sourced from the owner's
 [Jovian-PostPunkRevival Suno profile](https://suno.com/@jovianpostpunkrevival7375)

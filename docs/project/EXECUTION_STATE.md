@@ -120,6 +120,22 @@ diagnostics, paired controller exchange and optional GitHub release checks.
 Pure JVM geometry regression source is included. APK/Gradle and Galaxy S9
 ray/close/Back testing remain pending.
 
+## 2026-10-12 — 11-track source music handoff catalog (binary import pending)
+
+The user's eleven actual MP3 uploads were independently inventoried
+(66,325,607 bytes total) with SHA-256 and recording durations. The
+source-only manifest under `music/source/manifest.json` identifies the
+bar cue, Beachhead-style cue, Ministry of Intelligence cue, two alternate
+lobby cues, and six general-library sources. The original binary uploads
+are **not in remote GitHub**: the connected GitHub blob API cannot read a
+local binary path, and this runtime has no authenticated filesystem Git
+transport. A locally hash-verified ZIP containing all original MP3s and
+a Windows bounded-retry Git importer was provided for authenticated
+transfer. Do not claim those binaries are hosted until remote read-back.
+No APK/catalog entries were created for absent source audio; Suno
+entitlement and public music redistribution rights remain per-track
+review gates.
+
 # ReverieVR Execution State
 
 **Role:** durable operational state  

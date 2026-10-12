@@ -1,0 +1,147 @@
+{
+  "schema": 1,
+  "repository": "mrcalzon02/ReverieVR",
+  "media_format": "audio/mpeg",
+  "admission": "source-library; not included in APK and not active until individually cleared and packaged",
+  "binary_status": "handoff_required",
+  "notes": "Track assignments are project intent, not proof of gameplay integration, soundtrack selection, or a CC/MIT license. No per-track Suno commercial-use entitlement or official paid-download provenance was provided with these MP3 uploads. Binary source files must be imported and their SHA-256 verified before claiming they are in GitHub.",
+  "lobby_pool": [
+    "starry-cereal (currently packaged)",
+    "glass-lobby-drift",
+    "sky-lobby-drift"
+  ],
+  "tracks": [
+    {
+      "title": "Ballroom of the Dead",
+      "filename": "Ballroom of the Dead.mp3",
+      "relative_path": "music/source/audio/Ballroom of the Dead.mp3",
+      "project": "unassigned",
+      "role": "general-library",
+      "sha256": "e282efccd18c453fab47e582ef85378cbb502b44622f53b553868ffb4b7029a3",
+      "bytes": 4679368,
+      "duration_ms": 194880,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "Deep Embrace",
+      "filename": "Deep Embrace.mp3",
+      "relative_path": "music/source/audio/Deep Embrace.mp3",
+      "project": "unassigned",
+      "role": "general-library",
+      "sha256": "4fab6cdd5699e1ada89466fcbb411d90d6f8438909eb3fd2cbcd33b000ff69ea",
+      "bytes": 11798287,
+      "duration_ms": 480000,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "End Of Deep",
+      "filename": "End Of Deep.mp3",
+      "relative_path": "music/source/audio/End Of Deep.mp3",
+      "project": "unassigned",
+      "role": "general-library",
+      "sha256": "667876f08b63d4da9eed3f085965dbca40523d0b8f05f6c45be1bc87fb27e1a3",
+      "bytes": 7325021,
+      "duration_ms": 312024,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "Glass Lobby Drift",
+      "filename": "Glass Lobby Drift.mp3",
+      "relative_path": "music/source/audio/Glass Lobby Drift.mp3",
+      "project": "reverievr-lobby",
+      "role": "alternate-lobby-music",
+      "sha256": "38ed19c702f83bfb8fccab7816d23c5baaab551318d3ca66e4a8a34121bac566",
+      "bytes": 3955650,
+      "duration_ms": 174048,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "Last Bugle Call",
+      "filename": "Last Bugle Call.mp3",
+      "relative_path": "music/source/audio/Last Bugle Call.mp3",
+      "project": "ministry-of-intelligence",
+      "role": "project-theme",
+      "sha256": "6d0aa4327179f2615670c41b89a332218de6f65fe28e09945a393e67609681ec",
+      "bytes": 4564177,
+      "duration_ms": 197184,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "Mars des Souvenirs",
+      "filename": "Mars des Souvenirs.mp3",
+      "relative_path": "music/source/audio/Mars des Souvenirs.mp3",
+      "project": "beachhead-2000-style-native-game",
+      "role": "project-theme",
+      "sha256": "8ccf02e554919678ceffd9ac5da64f2b7854f01a7ac7c31ed179ea7240332a4d",
+      "bytes": 3067882,
+      "duration_ms": 129960,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "Nowhere King",
+      "filename": "Nowhere King.mp3",
+      "relative_path": "music/source/audio/Nowhere King.mp3",
+      "project": "unassigned",
+      "role": "general-library",
+      "sha256": "5e30d1bce9b0b570fab65f8878d4c6e25494ed7d3629aa99e7523411e30fa3d7",
+      "bytes": 6886102,
+      "duration_ms": 295512,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "Pressure Under Europa",
+      "filename": "Pressure Under Europa.mp3",
+      "relative_path": "music/source/audio/Pressure Under Europa.mp3",
+      "project": "unassigned",
+      "role": "general-library",
+      "sha256": "c1e781c3418dfd1978edfcdda1fd7bb2e5432104afa44a2e625e1b59fa432650",
+      "bytes": 6970552,
+      "duration_ms": 283080,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "Sky Lobby Drift",
+      "filename": "Sky Lobby Drift.mp3",
+      "relative_path": "music/source/audio/Sky Lobby Drift.mp3",
+      "project": "reverievr-lobby",
+      "role": "alternate-lobby-music",
+      "sha256": "f94ca694baedc94a3b1000b725e1c2c08c0016404db9bb5f461f4ec7725cf93c",
+      "bytes": 5121976,
+      "duration_ms": 220608,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "The Last Note Hangs Unresolved",
+      "filename": "The Last Note Hangs Unresolved.mp3",
+      "relative_path": "music/source/audio/The Last Note Hangs Unresolved.mp3",
+      "project": "bar-project",
+      "role": "project-theme",
+      "sha256": "6be461d1d39bfd5f84d63a00562eb1fec905b121c231a4a2fa2c919800f6987d",
+      "bytes": 6568782,
+      "duration_ms": 288840,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    },
+    {
+      "title": "World Below",
+      "filename": "World Below.mp3",
+      "relative_path": "music/source/audio/World Below.mp3",
+      "project": "unassigned",
+      "role": "general-library",
+      "sha256": "e589c09eea37112f89a6c7f7b87b9213cb8cb1d9533b43296087e3cb9055d168",
+      "bytes": 5387810,
+      "duration_ms": 234624,
+      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
+      "license": "LicenseRef-Pending-Asset-Rights"
+    }
+  ]
+}
