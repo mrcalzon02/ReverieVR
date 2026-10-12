@@ -356,6 +356,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     // Stabilizes shell hover only. Never smooths input rays or guest aiming.
     private final VrUiTargetStabilizer uiTargetStabilizer =
         new VrUiTargetStabilizer();
+    private final GazeDwellSelection gazeDwell = new GazeDwellSelection();
+    private final GazeDwellSelection gazeRecoveryDwell = new GazeDwellSelection();
+    private boolean gazeFallbackActive;
+    private boolean gazeRecoveryMenuShown;
+    private int lastGazeProgressTick = -1;
     private int uiFocusMode = -1;
     private boolean uiFocusMenu;
     private boolean uiFocusKeyboardNavigation;
@@ -1444,6 +1449,35 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
+        // Last-resort phone-only operation. No touch, Bluetooth or HID is
+        // needed to keep Home and global recovery usable. The hosted media
+        // menu opens once on controller loss/entry; looking upwards steadily
+        // for five seconds reopens it after a deliberate dismissal.
+        boolean phoneOnly = noUsableController(frameNanos);
+        gazeFallbackActive = phoneOnly;
+        boolean hosted = mode == MODE_NATIVE || mode == MODE_DOS
+            || mode == MODE_VIDEO || mode == MODE_MODEL_VIEWER;
+        if (!phoneOnly || mode == MODE_HOME) {
+            gazeRecoveryMenuShown = false;
+            gazeRecoveryDwell.reset();
+        } else if (hosted) {
+            if (!gazeRecoveryMenuShown && !orientationMenuVisible) {
+                gazeRecoveryMenuShown = true;
+                gazeRecoveryDwell.reset();
+                toggleOrientationMenu();
+            } else if (!orientationMenuVisible &&
+                       gazeRecoveryDwell.update(true,mode,
+                           headForward[1] >= 0.82f ? 0 : -1,frameNanos)) {
+                gazeRecoveryDwell.reset();
+                toggleOrientationMenu();
+            }
+        } else {
+            gazeRecoveryDwell.reset();
+        }
+        if (phoneOnly && keyboardQuickMenuFocusActive) {
+            keyboardQuickMenuFocusActive = false;
+            textureDirty = true;
+        }
         if (orientationMenuVisible) {
             // A Quick Menu is shell HUD content. Follow current headset
             // yaw every frame instead of freezing its world heading at open.
@@ -1896,8 +1930,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 activePointerDirection
             );
         scenePointerHit.reset();
-        if (usingControllerPointer && mode == MODE_HOME
-                && !orientationMenuVisible) {
+        if ((usingControllerPointer || gazeFallbackActive)
+                && mode == MODE_HOME && !orientationMenuVisible) {
             homeEnvironmentRenderer.hitScene(activePointerOrigin,
                 activePointerDirection, preferences.getHomeEnvironment(),
                 scenePointerHit);
@@ -1929,7 +1963,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             orientationMenuVisible && keyboardQuickMenuFocusActive
                 ? hoveredButton
                 : uiTargetStabilizer.update(rawHover, frameNanos, selecting);
-        controllerPointerActive = usingControllerPointer;
+        controllerPointerActive = usingControllerPointer || gazeFallbackActive;
         controllerPointerDistance = geometryCloser
             ? scenePointerHit.distance
             : hasUiTarget ? hit.distance : 6.0f;
@@ -1945,7 +1979,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerPointerHit, pointerPressed
         );
 
-        if (usingControllerPointer) {
+        if (usingControllerPointer || gazeFallbackActive) {
             pointerRenderer.setPointer(
                 true,
                 activePointerOrigin[0],
@@ -1982,9 +2016,32 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
         }
 
+        // Use the raw live hit, not the hysteresis display highlight.
+        // Looking off a button or losing the controller immediately cancels.
+        final int validDwellTarget = rawHover >= 0 && rawHover == newHover
+            && isButtonEnabled(rawHover) ? rawHover : -1;
+        final int dwellContext = mode
+            | (orientationMenuVisible ? 1 << 8 : 0)
+            | (quickMenuSettingsVisible ? 1 << 9 : 0)
+            | (phonePanelVisible ? 1 << 10 : 0);
+        boolean dwellSelect = gazeDwell.update(
+            gazeFallbackActive && !selecting, dwellContext,
+            validDwellTarget, frameNanos);
+        int progressTick = (int) (gazeDwell.progress() * 50f);
+        if (progressTick != lastGazeProgressTick) {
+            lastGazeProgressTick = progressTick;
+            textureDirty = true;
+        }
         if (backRequested.getAndSet(false)) {
+            gazeDwell.reset();
             handleBack();
-        } else if (selecting) {
+        } else if (selecting || dwellSelect) {
+            if (dwellSelect) {
+                lastInputAction = "GAZE SELECT";
+                lastInputSource = "Five-second headset dwell";
+                // Acknowledge automatic selection with existing shell feedback.
+                host.onUiFocusChanged();
+            }
             activateHoveredButton();
         }
     }
@@ -2790,6 +2847,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         keyboardEditor.setPhysicalShift(false);
     }
 
+    private boolean noUsableController(long frameNanos) {
+        return !hasFreshControllerPose(frameNanos) &&
+            !gamepadPointerAvailable;
+    }
+
     private boolean updateActivePointer(
         long frameNanos
     ) {
@@ -2989,7 +3051,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         controllerModelRenderer.clearGhost();
 
         if (pointerMode
-            == VrPointerMode.CONTROLLER) {
+            == VrPointerMode.CONTROLLER && !noUsableController(frameNanos)) {
             activeNativePointerKind =
                 NativeModuleRuntime.POINTER_NONE;
             setActivePointerSource(
@@ -7783,6 +7845,27 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 - ((paint.ascent() + paint.descent()) * 0.5f);
             canvas.drawText(labels[index], x, y, paint);
             paint.setFakeBoldText(false);
+            if (focused && gazeFallbackActive) {
+                // Flat monochrome countdown on the focused UI target.
+                // No new shader, textures, or per-eye selection state.
+                final float cx = rect[2] - 35f;
+                final float cy = (rect[1] + rect[3]) * .5f;
+                paint.setColor(Color.rgb(230, 238, 245));
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(3f);
+                canvas.drawCircle(cx,cy,20f,paint);
+                paint.setStrokeWidth(5f);
+                canvas.drawArc(cx-20f,cy-20f,cx+20f,cy+20f,
+                    -90f,360f*gazeDwell.progress(),false,paint);
+                paint.setStyle(Paint.Style.FILL);
+                paint.setTextSize(17f * uiScale);
+                paint.setFakeBoldText(true);
+                String remaining = Integer.toString(Math.max(1,
+                    (int)Math.ceil(5.0*(1.0-gazeDwell.progress()))));
+                canvas.drawText(remaining,cx-paint.measureText(remaining)*.5f,
+                    cy-(paint.ascent()+paint.descent())*.5f,paint);
+                paint.setFakeBoldText(false);
+            }
         }
     }
 
