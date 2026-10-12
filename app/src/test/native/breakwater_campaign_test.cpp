@@ -444,7 +444,9 @@ int main() {
     assert(!veteran.FireAt(0));
     assert(veteran.Purchase(Upgrade::AntiAir));
     assert(veteran.stats().anti_air);
-    assert(!veteran.Purchase(Upgrade::AntiAir));
+    assert(veteran.stats().anti_air_damage_bonus==0);
+    assert(veteran.price(Upgrade::AntiAir)==1050);
+    assert(!veteran.Purchase(Upgrade::AntiAir)); // insufficient credits
     assert(veteran.Purchase(Upgrade::Artillery));
     assert(veteran.Purchase(Upgrade::Airstrike)==false); // insufficient credits
     assert(veteran.BeginWave());
@@ -735,6 +737,77 @@ int main() {
     assert(defended.wave_status().aircraft_attacks==0);
     assert(defended.aircraft_attack().sequence==0);
     assert(defended.integrity()==100);
+
+    // AA is a real three-tier investment: a basic engagement kit, then
+    // +15 / +30 aircraft-only damage. The shop shows prices 750/1050/1350
+    // and saved campaigns retain the full tier without changing save size.
+    auto funded_aa=[&](uint8_t tiers) {
+        Campaign game(Difficulty::Casual,8);
+        assert(game.Start());
+        uint8_t save[Campaign::kSerializedSize]={};
+        assert(game.SerializeShop(save,sizeof(save)));
+        // Supply earned campaign credits in this deterministic shop fixture.
+        save[32]=0x10; save[33]=0x27; // 10000, little-endian word 8
+        assert(game.DeserializeShop(save,sizeof(save)));
+        assert(game.price(Upgrade::AntiAir)==750);
+        assert(game.stats().anti_air_damage_bonus==0);
+        assert(game.stats().gun_damage==20);
+        assert(!game.stats().anti_air);
+        for(uint8_t tier=0;tier<tiers;++tier) {
+            assert(game.price(Upgrade::AntiAir)==750+300*tier);
+            assert(game.Purchase(Upgrade::AntiAir));
+        }
+        assert(game.level(Upgrade::AntiAir)==tiers);
+        assert(game.stats().anti_air==(tiers>0));
+        assert(game.stats().anti_air_damage_bonus==
+               (tiers>1?15*(tiers-1):0));
+        assert(game.stats().gun_damage==20); // no surface-weapon buff
+        assert(game.credits()==10000-(tiers==0?0:
+            tiers==1?750:tiers==2?1800:3150));
+        if(tiers==3) {
+            assert(game.price(Upgrade::AntiAir)==-1);
+            assert(!game.Purchase(Upgrade::AntiAir));
+        }
+        assert(game.SerializeShop(save,sizeof(save)));
+        Campaign loaded;
+        assert(loaded.DeserializeShop(save,sizeof(save)));
+        assert(loaded.level(Upgrade::AntiAir)==tiers);
+        assert(loaded.stats().anti_air_damage_bonus==
+               game.stats().anti_air_damage_bonus);
+        if(tiers==3) {
+            // Invalid tier 4 is rejected transactionally; the live shop stays
+            // maxed and retains its credits and legal upgraded damage.
+            save[60]=4; // upgrade[3] at serialized word 15
+            assert(!loaded.DeserializeShop(save,sizeof(save)));
+            assert(loaded.level(Upgrade::AntiAir)==3);
+            assert(loaded.credits()==game.credits());
+        }
+        return game;
+    };
+    Campaign aa_tier1=funded_aa(1);
+    Campaign aa_tier2=funded_aa(2);
+    Campaign aa_tier3=funded_aa(3);
+    // All three start the identical deterministic bomber encounter.
+    // Higher AA tiers intercept with fewer shots, without consuming airstrikes
+    // or changing wave attack timing and without changing shell controls.
+    auto engage_bomber=[&](Campaign &game,uint8_t shots) {
+        stage_blackcap_night(game);
+        assert(game.BeginWave());
+        game.Tick(.05f);
+        assert(game.enemies()[0].type==UnitType::Aircraft);
+        assert(game.enemies()[0].hp==100);
+        for(uint8_t shot=0;shot<shots;shot++) {
+            if(shot>0) for(int i=0;i<7;i++) game.Tick(.05f);
+            assert(game.FireAt(0));
+            assert(game.enemies()[0].active==(shot+1<shots));
+        }
+        assert(game.wave_status().aircraft_destroyed==1);
+        assert(game.incoming_threats().aircraft_seconds<0.0f);
+        assert(game.integrity()==100);
+    };
+    engage_bomber(aa_tier1,5); // 20 damage
+    engage_bomber(aa_tier2,3); // 35 damage
+    engage_bomber(aa_tier3,2); // 50 damage
 
     // Day and night each contain their own shop-separated waves.
     Campaign clock(Difficulty::Casual,41);

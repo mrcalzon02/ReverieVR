@@ -9,7 +9,7 @@ constexpr std::array<Location, Campaign::kLocations> kPlaces = {{
     {"Shingle Bay",2}, {"Iron Quay",3}, {"Blackcap Island",4}
 }};
 constexpr int kCost[] = {180,200,160,750,260,420,470,140};
-constexpr int kExtra[] = {120,140,100,0,0,0,0,0};
+constexpr int kExtra[] = {120,140,100,300,0,0,0,0};
 constexpr float kReloadSeconds = 1.15f;
 constexpr float kGunboatSpeed = .76f;
 constexpr float kBomberSpeed = 1.05f, kStraferSpeed = 1.55f;
@@ -81,6 +81,10 @@ Stats Campaign::stats() const {
     Stats s;
     s.fire_delay_ms = static_cast<uint16_t>(300 - 35 * upgrades_[0]);
     s.gun_damage = static_cast<uint16_t>(20 + 10 * upgrades_[1]);
+    // AA tier 1 unlocks engagement; tiers 2/3 increase aircraft damage.
+    // Surface craft continue to use the normal gun damage unchanged.
+    s.anti_air_damage_bonus = static_cast<uint16_t>(
+        upgrades_[3] > 1 ? 15 * (upgrades_[3] - 1) : 0);
     s.magazine = static_cast<uint16_t>(12 + 4 * upgrades_[2]);
     s.anti_air = upgrades_[3] > 0;
     s.turret = upgrades_[6] > 0;
@@ -95,8 +99,8 @@ int32_t Campaign::price(Upgrade u) const {
     if (u == Upgrade::Repair && integrity_ == 100) return -1;
     if ((u == Upgrade::FireRate || u == Upgrade::Damage ||
          u == Upgrade::Magazine) && upgrades_[i] >= 4) return -1;
-    if ((u == Upgrade::AntiAir || u == Upgrade::SupportTurret) &&
-        upgrades_[i] != 0) return -1;
+    if (u == Upgrade::AntiAir && upgrades_[i] >= 3) return -1;
+    if (u == Upgrade::SupportTurret && upgrades_[i] != 0) return -1;
     if (u == Upgrade::Artillery && artillery_charges_ >= 3) return -1;
     if (u == Upgrade::Airstrike && airstrike_charges_ >= 3) return -1;
     return kCost[i] + kExtra[i] * upgrades_[i];
@@ -149,7 +153,7 @@ bool Campaign::DeserializeShop(const uint8_t *source, size_t length) {
         data[9] == 0 || data[9] > 100u ||
         data[10] > 3u || data[11] > 3u ||
         data[12] > 4u || data[13] > 4u || data[14] > 4u ||
-        data[15] > 1u || data[16] != 0u || data[17] != 0u ||
+        data[15] > 3u || data[16] != 0u || data[17] != 0u ||
         data[18] > 1u || data[19] != 0u) return false;
     Campaign candidate(static_cast<Difficulty>(data[3]), data[2]);
     candidate.phase_ = Phase::Shop;
@@ -274,8 +278,11 @@ bool Campaign::FireAt(uint8_t index) {
     if (!BeginGunShot()) return false;
     // The basic mount may still throw rounds at an aircraft, but without the
     // AA package those rounds cannot damage the fast overhead target.
-    if (e.type == UnitType::Aircraft && !stats().anti_air) return true;
-    e.hp = static_cast<int16_t>(e.hp - stats().gun_damage);
+    const Stats weapon = stats();
+    if (e.type == UnitType::Aircraft && !weapon.anti_air) return true;
+    const int damage = weapon.gun_damage +
+        (e.type == UnitType::Aircraft ? weapon.anti_air_damage_bonus : 0);
+    e.hp = static_cast<int16_t>(e.hp - damage);
     if (e.hp <= 0) {
         e.active = false;
         credits_ += e.type == UnitType::Aircraft ? 115 : 55;

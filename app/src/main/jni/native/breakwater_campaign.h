@@ -44,6 +44,8 @@ bool RayHitsInfantry(const Infantry &soldier, const float *origin,
 struct Stats {
     uint16_t fire_delay_ms = 300;
     uint16_t gun_damage = 20;
+    // Additional damage applies to aircraft only after purchasing AA tier 2/3.
+    uint16_t anti_air_damage_bonus = 0;
     uint16_t magazine = 12;
     bool anti_air = false;
     bool turret = false;

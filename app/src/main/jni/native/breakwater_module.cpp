@@ -467,7 +467,13 @@ void BuildScene(State *s) {
             const int price=game.price(static_cast<Upgrade>(n));
             Panel(s,x,y,-3.0f,1.23f,.49f,price<0?.20f:.21f,
                   price<0?.21f:.32f,price<0?.23f:.26f);
-            Text(s,labels[n],x,y+.10f,-2.98f,.051f,.94f,.92f,.72f);
+            char tier_label[16];
+            if(n==3) {
+                std::snprintf(tier_label,sizeof(tier_label),"AA %u/3",
+                    static_cast<unsigned>(game.level(Upgrade::AntiAir)));
+            }
+            Text(s,n==3?tier_label:labels[n],
+                 x,y+.10f,-2.98f,.051f,.94f,.92f,.72f);
             char amount[20];
             if(price<0)std::snprintf(amount,sizeof(amount),"MAX");
             else std::snprintf(amount,sizeof(amount),"%d",price);
