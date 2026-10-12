@@ -1,0 +1,238 @@
+{
+  "schema": 1,
+  "purpose": "Release allowlist and copyright/license inventory; assets and native libraries not listed are rejected by verify-distribution-license.py.",
+  "owner_software": {
+    "license": "MIT",
+    "copyright": "2026 ReverieVR contributors",
+    "scope": "Only independently authored ReverieVR software, not Cardboard/DOSBox/third-party assets; GPL linking review remains."
+  },
+  "first_party_art_policy": {
+    "default": "CC-BY-4.0",
+    "opt_in_waiver": "CC0-1.0",
+    "requirement": "Record creator/rightsholder authority for each actual asset; no automatic retroactive grants."
+  },
+  "pending_public_assets": [
+    {
+      "source": "app/src/main/res/raw/starry_cereal_menu.mp3",
+      "apk": "res/raw/starry_cereal_menu.mp3",
+      "name": "Starry Cereal menu audio",
+      "license": "LicenseRef-Pending-Asset-Rights",
+      "rights": "review-required",
+      "required": true,
+      "notes": "user-supplied; distribution and CC grant not independently verified"
+    },
+    {
+      "source": "app/src/main/res/drawable-nodpi/reverievr_logo.jpg",
+      "apk": "res/drawable-nodpi/reverievr_logo.jpg",
+      "name": "Main logo",
+      "license": "LicenseRef-Pending-Asset-Rights",
+      "rights": "review-required",
+      "required": true,
+      "notes": "ownership/redistribution confirmation outstanding"
+    },
+    {
+      "source": "app/src/main/res/mipmap-nodpi/ic_launcher.jpg",
+      "apk": "res/mipmap-nodpi/ic_launcher.jpg",
+      "name": "Main launcher image",
+      "license": "LicenseRef-Pending-Asset-Rights",
+      "rights": "review-required",
+      "required": true,
+      "notes": "ownership/redistribution confirmation outstanding"
+    },
+    {
+      "source": "controller-app/src/main/res/mipmap-nodpi/ic_launcher.jpg",
+      "apk": "res/mipmap-nodpi/ic_launcher.jpg",
+      "name": "Companion launcher image",
+      "license": "LicenseRef-Pending-Asset-Rights",
+      "rights": "review-required",
+      "required": true,
+      "notes": "ownership/redistribution confirmation outstanding"
+    },
+    {
+      "source": "docs/assets/reverievr-logo.jpg",
+      "apk": null,
+      "name": "Website documentation logo",
+      "license": "LicenseRef-Pending-Asset-Rights",
+      "rights": "review-required",
+      "required": false,
+      "notes": "public in GitHub; not embedded in APK"
+    }
+  ],
+  "apk_assets": {
+    "assets/models/daydream/vr_controller_daydream.obj": {
+      "component": "daydream-controller-model",
+      "license": "LicenseRef-Daydream-Upstream-Review",
+      "rights": "review-required",
+      "required": true,
+      "record": "app/src/main/assets/models/daydream/THIRD_PARTY.md"
+    },
+    "assets/models/daydream/vr_controller_daydream.mtl": {
+      "component": "daydream-controller-model",
+      "license": "LicenseRef-Daydream-Upstream-Review",
+      "rights": "review-required",
+      "required": true,
+      "record": "app/src/main/assets/models/daydream/THIRD_PARTY.md"
+    },
+    "assets/models/daydream/UPSTREAM-LICENSE-GPL-3.0.txt": {
+      "component": "daydream-upstream-notices",
+      "license": "GPL-3.0-only",
+      "rights": "upstream-notice",
+      "required": true,
+      "record": "app/src/main/assets/models/daydream/THIRD_PARTY.md"
+    },
+    "assets/models/daydream/UPSTREAM-README.md": {
+      "component": "daydream-upstream-notices",
+      "license": "LicenseRef-Daydream-Upstream-Review",
+      "rights": "upstream-notice",
+      "required": true,
+      "record": "app/src/main/assets/models/daydream/THIRD_PARTY.md"
+    },
+    "assets/models/daydream/THIRD_PARTY.md": {
+      "component": "daydream-upstream-notices",
+      "license": "CC-BY-4.0",
+      "rights": "project-authored-record",
+      "required": true,
+      "record": "app/src/main/assets/models/daydream/THIRD_PARTY.md"
+    },
+    "assets/models/daydream/vr_controller_daydream.obj.license": {
+      "component": "daydream-upstream-notices",
+      "license": "CC-BY-4.0",
+      "rights": "project-authored-record",
+      "required": true,
+      "record": "app/src/main/assets/models/daydream/vr_controller_daydream.obj.license"
+    },
+    "assets/models/daydream/vr_controller_daydream.mtl.license": {
+      "component": "daydream-upstream-notices",
+      "license": "CC-BY-4.0",
+      "rights": "project-authored-record",
+      "required": true,
+      "record": "app/src/main/assets/models/daydream/vr_controller_daydream.mtl.license"
+    },
+    "assets/licenses/THIRD_PARTY_NOTICES.txt": {
+      "component": "license-notices",
+      "license": "CC-BY-4.0",
+      "rights": "project-authored-record",
+      "required": true,
+      "record": "app/src/main/assets/licenses/THIRD_PARTY_NOTICES.txt"
+    },
+    "assets/default-content/doom19s.zip": {
+      "component": "doom-shareware",
+      "license": "LicenseRef-id-Software-Shareware",
+      "rights": "noncommercial-only",
+      "required": false,
+      "record": "third_party/doom-shareware/README.md",
+      "sha256": "cacf0142b31ca1af00796b4a0339e07992ac5f21bc3f81e7532fe1b5e1b486e6"
+    },
+    "res/raw/starry_cereal_menu.mp3": {
+      "component": "starry-cereal-audio",
+      "license": "LicenseRef-Pending-Asset-Rights",
+      "rights": "review-required",
+      "required": true,
+      "record": "REUSE.toml"
+    },
+    "res/drawable-nodpi/reverievr_logo.jpg": {
+      "component": "reverie-logo",
+      "license": "LicenseRef-Pending-Asset-Rights",
+      "rights": "review-required",
+      "required": true,
+      "record": "REUSE.toml"
+    },
+    "res/mipmap-nodpi/ic_launcher.jpg": {
+      "component": "reverie-icon",
+      "license": "LicenseRef-Pending-Asset-Rights",
+      "rights": "review-required",
+      "required": true,
+      "record": "REUSE.toml"
+    }
+  },
+  "native_libraries": {
+    "libreverie_native_host.so": {
+      "component": "reverie-original-code",
+      "license": "MIT",
+      "rights": "owner-granted",
+      "record": "LICENSE"
+    },
+    "libreverie_dos_host.so": {
+      "component": "reverie-original-code",
+      "license": "MIT",
+      "rights": "owner-granted",
+      "record": "LICENSE"
+    },
+    "libreverie_module_red_ledger.so": {
+      "component": "reverie-original-code",
+      "license": "MIT",
+      "rights": "owner-granted",
+      "record": "LICENSE"
+    },
+    "libreverie_module_breakwater.so": {
+      "component": "reverie-original-code",
+      "license": "MIT",
+      "rights": "owner-granted",
+      "record": "LICENSE"
+    },
+    "libreverie_module_classic_pong.so": {
+      "component": "reverie-original-code",
+      "license": "MIT",
+      "rights": "owner-granted",
+      "record": "LICENSE"
+    },
+    "libreverie_module_classic_snake.so": {
+      "component": "reverie-original-code",
+      "license": "MIT",
+      "rights": "owner-granted",
+      "record": "LICENSE"
+    },
+    "libreverie_module_classic_chutes_ladders.so": {
+      "component": "reverie-original-code",
+      "license": "MIT",
+      "rights": "owner-granted",
+      "record": "LICENSE"
+    },
+    "libreverie_module_test_chamber.so": {
+      "component": "reverie-test-chamber-openktg",
+      "license": "MIT AND LicenseRef-OpenKTG-Public-Domain",
+      "rights": "upstream-and-owner",
+      "record": "third_party/openktg/LICENSE"
+    },
+    "libcardboard_sdk_jni.so": {
+      "component": "google-cardboard",
+      "license": "Apache-2.0",
+      "rights": "upstream-open-source",
+      "record": "third_party/README.md"
+    },
+    "libGfxPluginCardboard.so": {
+      "component": "google-cardboard",
+      "license": "Apache-2.0",
+      "rights": "upstream-open-source",
+      "record": "third_party/README.md"
+    },
+    "libretro.so": {
+      "component": "dosbox-pure",
+      "license": "GPL-2.0-or-later",
+      "rights": "gpl-source-required",
+      "record": "third_party/dosbox-pure/README.md"
+    }
+  },
+  "blocked_apk_prefixes": [
+    "assets/steam_controller_2015/"
+  ],
+  "source_disclosure": {
+    "dosbox-pure": {
+      "commit": "a4a0bab7f8931433588f2fcad9045c85b277373d",
+      "license": "GPL-2.0-or-later",
+      "required_if_binary": "libretro.so",
+      "source_bundle": "GPL-CORRESPONDING-SOURCE.tar.gz",
+      "review": "GPL combining/linking obligations remain subject to review"
+    },
+    "google-cardboard": {
+      "commit": "5969239e7c87f4cd64c8ec170ce1e7f4eb559e37",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/googlevr/cardboard"
+    }
+  },
+  "release_policy": {
+    "phone_test": "ALLOW listed inherited review-required assets only when manifest explicitly publishes review_required array; unregistered or blocked assets fail",
+    "public_commercial": "BLOCK any review-required, noncommercial-only, or incomplete corresponding-source dependencies. Must not imply one MIT license for combined APK."
+  },
+  "source_notice_method": "Android res/ binary files use explicit file-scoped REUSE.toml annotations; Android assets may use adjacent .license files; no sidecars within aapt2 res/ tree."
+}

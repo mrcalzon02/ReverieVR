@@ -71,6 +71,8 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 10
 fi
 python3 scripts/verify-dependency-baseline.py
+python3 scripts/verify-distribution-license.py
+python3 scripts/test-distribution-license.py
 
 echo "ReverieVR build bootstrap verified."
 echo "  Gradle wrapper: $wrapper_hash"

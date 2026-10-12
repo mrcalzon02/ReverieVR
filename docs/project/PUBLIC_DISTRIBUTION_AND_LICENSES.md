@@ -6,19 +6,28 @@
 
 The default source tree and the ordinary APK should use freely redistributable software and artwork where possible. Prefer self-authored, public-domain, permissive-license or free/open-source replacements. Keep restrictive artwork optional, never a hidden hard dependency for hardware input, and never automatically fetch it to evade its license. Users must have the practical freedom to omit it.
 
-**No root ReverieVR license has been granted or selected yet.** Public GitHub visibility is not an open-source license for original code. Select an explicit software license only after the owner approves it and the GPL composition/linking boundaries have been reviewed. Do not apply one blanket Creative Commons license to software, artwork and independently licensed third-party assets.
+**The owner has approved MIT for independently authored ReverieVR software.**
+`LICENSE` now contains the MIT grant, with full text at `LICENSES/MIT.txt`.
+Original creative work is eligible for **CC BY 4.0** after ownership/rights
+are confirmed; **CC0** may be used only through an explicit dedication for a
+specific work. Unverified existing images and music have **no new license
+grant**, even if they appear in the public tree. File-level metadata lives in
+`REUSE.toml`, adjacent asset `.license` records where compatible with
+Android packaging, and `docs/licensing/ASSET_REGISTRY.json`. This does not
+override a third-party rightsholder's conditions or adjudicate the combined
+GPL-covered distribution.
 
 ## Actual included/potentially included components
 
 | Component | Current distribution treatment | Licensing obligations / unresolved issues |
 |---|---|---|
-| Original ReverieVR code and authored procedural 3D | Public source, no declared repository-level license | Owner must approve source license; don't imply proprietary third-party rights are sublicensed |
+| Original ReverieVR code and independently authored procedural geometry | Public source under MIT | Grant limited to original code and authored runtime geometry; package includes separately licensed components |
 | Google Cardboard v1.35.0 | Fixed Git submodule and built SDK | Primarily Apache-2.0; preserve notices and review upstream components separately |
 | DOSBox Pure 1.0-preview6 | Pinned source fetched at build; `libretro.so` packaged by full builds | GPL-2.0-or-later: complete corresponding source, notices and reproducible rebuild material for distributed binary; examine whether combined host/application forms a single GPL-covered work |
 | OpenKTG | Small vendored procedural texture library | Public-domain statement recorded in `third_party/openktg/LICENSE` |
-| Daydream controller OBJ | Currently tracked and packaged | Upstream model described as CC Attribution (version needs verification), derivative repository includes GPL-3.0 text: retain attribution/notice, inspect combination and upgrade alternatives |
+| Daydream controller OBJ/MTL | Currently tracked and packaged with adjacent SPDX sidecars | Original source identified as CC Attribution without precise version; derivative carries GPL-3.0 text. Rights/compatibility review remains explicit |
 | Valve Steam Controller CAD and reduced mesh | **Not in the default current source tree or APK after the policy change**. A low-poly procedural controller fallback remains functional. | Valve original CAD derivatives recorded as CC BY-NC-SA 4.0. Preserve provenance separately. A public, noncommercial-only archive is not a generally open-source/free-culture dependency. Ask permission for commercial use or use independent artwork |
-| Original DOOM Shareware v1.9 | **Currently bundled by free build when fetched**; source archive not tracked | Copyrighted shareware, not open source. Original-archive provenance and noncommercial distribution controls are in `third_party/doom-shareware/README.md`. Needs a separate decision on making it optional without breaking the published sample-game path |
+| Original DOOM Shareware v1.9 | Free phone-test build includes unchanged SHA-pinned archive when fetched; source ZIP not tracked | Copyrighted non-open shareware, not covered by owner MIT. Phone-test manifests label it noncommercial; a commercially open release must omit or obtain permission |
 | Optional emulator-source catalog | Downloads on user request, no playable emulator core from those downloads | Each approved repository has its own license. No BIOS, ROM or commercial game media should be automatically redistributed |
 | Android Gradle/SDK/NDK, CMake, Java and offline mesh tooling | Build/construction dependencies | Tool redistributability differs from compiled app. Record approved versions; do not publicly vendor a complete Android SDK or tools under blanket rights assumptions |
 
@@ -44,3 +53,35 @@ The LGPL/GPL/Apache/open art combination should be reviewed as distinct componen
 * No automatic runtime download of Valve CAD is approved.
 * The existing complete Maven dependency graph, runner-image patch versions, notices in APK binary, GPL corresponding-source archive and legacy releases still require further validation.
 * Releases claiming universal commercial reuse must exclude/relicense noncommercial and restricted material and pass a proper GPL/source review.
+
+## Selected license and reproducible release record (2026-10-11)
+
+* **MIT** grants broad reuse of original source code and self-authored
+  procedural 3D. It does not relicense GPL, Apache, or imported artistic work.
+* **CC BY 4.0** is the default for **verified first-party creative assets**;
+  **CC0** requires explicit file-level dedication. Original source rights
+  for the Starry Cereal track, logo/icon images and the Daydream visual are
+  currently unresolved and must not be relabeled CC BY by assumption.
+* `REUSE.toml` supplies scoped SPDX copyright/license annotations and
+  explicitly marks unverified Android resource binaries. Adjacent
+  `.license` files document the Daydream model. Android `res/` does not
+  admit arbitrary `.license` sidecars, so those are not committed there.
+* `docs/licensing/ASSET_REGISTRY.json` allowlists third-party APK media and
+  native shared libraries. `scripts/verify-distribution-license.py` examines
+  actual signed APK ZIP entries, hashes each licensed payload, rejects
+  unknown/restricted assets, and emits `DIST-LICENSE-MANIFEST.json`.
+  `scripts/test-distribution-license.py` provides an offline SDK-free
+  negative-test suite.
+* The existing phone-test release process creates a DOSBox Pure source archive,
+  includes source/integration instructions, publishes license notices and the
+  version-specific manifest, and hashes all the outputs. It labels inherited
+  unresolved files **provisional/review-required**, not universally licensed.
+  Its `--channel open` gate blocks unresolved or noncommercial assets.
+* The source bundle and APK manifest do not resolve legal questions about
+  DOSBox Pure's GPL linking scope. A review of the combined executable,
+  complete corresponding source and historical APK releases is still required.
+  Public GitHub visibility by itself does not complete those obligations.
+
+Treat every GPL covered dependency and every asset license as a separately
+verified responsibility. In particular, a noncommercial Valve CAD download is
+not made freely licensed by placing it behind a runtime request.

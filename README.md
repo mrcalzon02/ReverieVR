@@ -10,13 +10,18 @@ The initial reference target is a Samsung Galaxy S9 used with a Daydream View he
 
 ## Public source and third-party licensing
 
-This is a **publicly distributed source repository**. Public availability does
-not itself provide a license for the original ReverieVR code: no project-wide
-license has been selected by the owner yet. Upstream programs, controller
-models and sample-game data retain their own license restrictions and notices.
+ReverieVR's independently authored software is now distributed under the
+**[MIT License](LICENSE)**. Verified original project art is eligible for
+**CC BY 4.0** with explicit per-file metadata; **CC0** is reserved for works
+whose rights holders deliberately dedicate them. The assembled APK is not
+blanket MIT: Cardboard, DOSBox Pure, Daydream art, music, icons, and sample
+game content retain their own license conditions.
 Review [public distribution and licenses](docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md)
 and the [approved dependency baseline](docs/dependencies/BASELINE.json)
 before redistributing, modifying, monetizing or publishing a derivative APK.
+See [the SPDX/REUSE and asset registry](docs/licensing/ASSET_REGISTRY.json)
+and each Release's `DIST-LICENSE-MANIFEST.json` for actual files,
+copyright/attribution records, and unresolved rights.
 
 The default current tree excludes Valve's noncommercial CAD-derived controller
 mesh; Steam HID hardware remains usable with the independent primitive 3D

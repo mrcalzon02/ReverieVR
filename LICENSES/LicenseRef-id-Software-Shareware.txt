@@ -1,0 +1,5 @@
+id Software DOOM Shareware v1.9: original proprietary shareware terms.
+Copyright remains with its rights holders. This SPDX LicenseRef is NOT a
+new permission, does not authorize selling shareware, and does not apply to
+the independently licensed GPL DOOM source code. Preserve original ZIP,
+original license material and checksum; see third_party/doom-shareware/README.md.

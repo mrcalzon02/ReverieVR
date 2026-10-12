@@ -175,10 +175,19 @@ def main():
             checked.append(path)
     for item in baseline["licensing"]["records"]:
         content(item["record"])
-    if baseline["licensing"]["reverievr_original_code"] == (
-            "NO_REPOSITORY_LICENSE_DECLARED_OWNER_DECISION_REQUIRED"):
-        if any((ROOT / name).is_file() for name in ("LICENSE", "LICENSE.md", "LICENSE.txt")):
-            fail("root license was added without updating/reviewing owner license declaration")
+    if not baseline["licensing"]["reverievr_original_code"].startswith("MIT;"):
+        fail("owner-approved original software license differs from MIT baseline")
+    else:
+        notice = content("LICENSE")
+        if "MIT License" not in notice or "2026 ReverieVR contributors" not in notice:
+            fail("root MIT license missing or unexpected")
+        else:
+            checked.append("scoped owner MIT grant")
+    contains("REUSE.toml", 'SPDX-License-Identifier = "MIT"',
+             "first-party SPDX/REUSE source classification")
+    contains("docs/licensing/ASSET_REGISTRY.json",
+             '"license": "LicenseRef-Pending-Asset-Rights"',
+             "unverified-asset rights registry")
 
     for name, item in (("cardboard", sources["cardboard"]),
                        ("dosbox_pure", sources["dosbox_pure"])):

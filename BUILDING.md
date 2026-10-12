@@ -4,9 +4,11 @@
 
 ReverieVR is a **public distribution** through GitHub. See
 [`docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md`](docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md)
-before shipping source snapshots, assets, or APKs. A public repository alone is
-not a license for original code. GPL/CC obligations apply to the particular
-code and artwork actually distributed, including third-party controller assets.
+before shipping source snapshots, assets, or APKs. `LICENSE` grants MIT
+only for independently authored ReverieVR software; original art can be CC BY
+4.0 or explicitly dedicated as CC0 once its provenance is verified. GPL/CC
+obligations remain attached to the relevant third-party files, including
+controller assets.
 
 The main build no longer contains Valve's CC BY-NC-SA Steam Controller CAD
 derivative in `app/src/main/assets/`. That asset was historically tracked;
@@ -24,6 +26,35 @@ configuration. The existing `scripts/verify-build-bootstrap.sh` separately
 checks the Gradle wrapper hash, initialized Cardboard checkout and optional
 DOSBox Pure checkout. Neither check alone proves complete Maven transitive
 dependency locks or all-release license compliance.
+
+## Per-file SPDX rights and per-release APK license manifest
+
+- `REUSE.toml` provides scoped SPDX ownership/license annotations. Android
+  binary resource files under `res/` must use that manifest rather than
+  invalid `.license` sidecars; loose assets may have adjacent `.license`.
+- `LICENSES/` holds the unmodified published MIT, CC BY 4.0, CC0, Apache
+  2.0 and GNU GPL license texts, plus explanatory `LicenseRef` records
+  where distribution rights have not yet been established.
+- `docs/licensing/ASSET_REGISTRY.json` is the release-asset/native-library
+  allowlist. Adding APK media/native libraries requires a new reviewed entry.
+- Run `python3 scripts/verify-distribution-license.py` for source/inventory
+  checks, then `python3 scripts/test-distribution-license.py` for offline
+  fail-closed checks. The build bootstrap runs both.
+- The existing phone-test release verifies each signed APK's actual ZIP
+  entries. Unregistered art or binaries and restricted Valve assets fail.
+  Each release carries `DIST-LICENSE-MANIFEST.json`,
+  `THIRD_PARTY_NOTICES.txt`, `GPL-CORRESPONDING-SOURCE.tar.gz`, and
+  SHA-256 checksums. The phone-test manifest explicitly records unresolved
+  attribution as `review_required`; this provisional exception is **not**
+  permission to claim the combined APK is freely licensed for commercial use.
+  `--channel open` disallows those items until verified or replaced.
+- License notices are also packaged inside the handset APK as
+  `assets/licenses/THIRD_PARTY_NOTICES.txt`. A dedicated About→Licenses
+  viewer is not yet implemented.
+
+Source availability and exact per-release notices are not a substitute
+for reviewing combined GPL linking scope or inherited asset rights.
+
 
 ## Bootstrap toolchain
 

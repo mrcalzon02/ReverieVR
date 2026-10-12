@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2026 ReverieVR contributors
+# SPDX-License-Identifier: CC0-1.0
+version = 1
+
+# The owner's original authored software is MIT. Imported upstream code is
+# deliberately not covered by these globs; it keeps its own grant and notices.
+[[annotations]]
+path = ["app/src/main/java/io/github/mrcalzon02/reverievr/**", "controller-app/src/main/java/**", "app/src/main/jni/native/**", "app/src/main/jni/reverie_dos_host.cpp", "app/src/test/**", "controller-app/src/test/**", "cardboard-adapter/src/main/**", "scripts/**", "tools/steam_controller/*.py", "tools/steam_controller/*.mjs", "diagnostic-intake/src/**", "diagnostic-intake/test/**", "app/build.gradle", "controller-app/build.gradle", "cardboard-adapter/build.gradle", "build.gradle", "settings.gradle", ".github/workflows/**", "gradlew", "gradlew.bat"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 ReverieVR contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["app/src/main/res/**/*.xml", "controller-app/src/main/res/**/*.xml", "cardboard-adapter/src/main/res/**/*.xml", "app/src/main/AndroidManifest.xml", "controller-app/src/main/AndroidManifest.xml"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 ReverieVR contributors"
+SPDX-License-Identifier = "MIT"
+
+# Original project prose/documentation, distinct from any quoted or separately
+# licensed third-party excerpts, is licensed CC BY 4.0.
+[[annotations]]
+path = ["README.md", "BUILDING.md", "CHANGELOG.md", "AGENTS.md", "docs/project/**", "docs/native/**", "docs/records/**", "docs/dependencies/**", "docs/licensing/**", "scripts/README-*.md"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 ReverieVR contributors"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ["third_party/openktg/src/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2007 Fabian Giesen"
+SPDX-License-Identifier = "LicenseRef-OpenKTG-Public-Domain"
+
+# The following binaries are NOT designated as CC BY or MIT automatically.
+# They have separate adjacent .license metadata and unresolved rights reviews.
+
+# Android aapt2 rejects .license sidecars in res/raw or drawable resource
+# folders. REUSE annotations supply the same per-file metadata externally.
+[[annotations]]
+path = ["app/src/main/res/raw/starry_cereal_menu.mp3", "app/src/main/res/drawable-nodpi/reverievr_logo.jpg", "app/src/main/res/mipmap-nodpi/ic_launcher.jpg", "controller-app/src/main/res/mipmap-nodpi/ic_launcher.jpg", "docs/assets/reverievr-logo.jpg"]
+precedence = "override"
+SPDX-FileCopyrightText = "NOASSERTION"
+SPDX-License-Identifier = "LicenseRef-Pending-Asset-Rights"
+
+[[annotations]]
+path = ["app/src/main/assets/models/daydream/vr_controller_daydream.obj", "app/src/main/assets/models/daydream/vr_controller_daydream.mtl"]
+precedence = "override"
+SPDX-FileCopyrightText = ["rje", "TechnoBuddhist"]
+SPDX-License-Identifier = "LicenseRef-Daydream-Upstream-Review"

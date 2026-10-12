@@ -1,0 +1,48 @@
+ReverieVR - THIRD PARTY AND PER-ASSET NOTICES (2026-10-11)
+================================================================
+The application carries independently licensed materials. The MIT license
+applies ONLY to ReverieVR-authored original software, not to every part of
+the combined APK. Free/public GitHub access does not transfer copyright.
+
+Owner-authored code: MIT; see public source LICENSE.
+Owner original artwork: CC BY 4.0 only where ownership is established and the
+specific file is marked; CC0 only where explicitly granted by rights holder.
+
+Google Cardboard SDK 1.35.0, pinned 5969239e7c87f4cd64c8ec170ce1e7f4eb559e37:
+  Apache-2.0 primarily; upstream components may differ.
+  https://github.com/googlevr/cardboard
+  https://spdx.org/licenses/Apache-2.0.html
+
+DOSBox Pure 1.0-preview6, pinned a4a0bab7f8931433588f2fcad9045c85b277373d:
+  GPL-2.0-or-later, distinct from the independently authored host.
+  Corresponding source and build instructions must accompany applicable
+  distribution. https://github.com/schellingb/dosbox-pure
+  https://spdx.org/licenses/GPL-2.0-or-later.html
+
+OpenKTG texture generator, Fabian Giesen, 2007:
+  Upstream public-domain dedication, retained in third_party/openktg/LICENSE.
+
+Daydream controller OBJ/MTL:
+  Derived from rje's Sketchfab model c1944c64e06544babc90e9d0aa953551
+  ("CC Attribution", version not established locally). Derivative model:
+  TechnoBuddhist/VR-Controller-Daydream; repository includes GPL-3.0 text.
+  Original/derivative copyright and notices retained within the APK under
+  assets/models/daydream/. Exact combined asset grant requires review.
+  https://github.com/TechnoBuddhist/VR-Controller-Daydream
+
+DOOM Shareware v1.9 (ONLY when included in a free phone-test build):
+  Copyright id Software and relevant rights holders; not open source.
+  Original archive kept unchanged, separate shareware redistribution terms.
+  https://www.gamers.org/pub/idgames/idstuff/doom/doom19s.zip
+
+Starry Cereal music and project logos:
+  Copyright/attribution and free-commercial-license confirmation pending.
+  No MIT, CC BY or CC0 ownership grant is asserted for these assets.
+
+Valve CAD-derived Steam Controller artwork is not bundled by default;
+the original Valve source license is CC BY-NC-SA 4.0. The current controller
+fallback is independently constructed from primitive geometry.
+
+Exact release manifest, included components, archive checksums and review
+flags are available with the matching public GitHub Release alongside the APK.
+Current source licenses: https://github.com/mrcalzon02/ReverieVR/tree/main/LICENSES

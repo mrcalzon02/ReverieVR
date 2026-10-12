@@ -1,3 +1,19 @@
+## 2026-10-11 — Scoped open-source licensing and per-release rights verification
+
+The owner selected **MIT** for independently authored ReverieVR software,
+**CC BY 4.0** for verified owner-created art, and optional **CC0** dedications.
+Third-party code/assets keep upstream licenses. `REUSE.toml` and adjacent
+sidecar records distinguish known from unresolved rights (notably music,
+logos and Daydream visual). Android resource binaries are annotated outside
+their `res/` folders to avoid breaking aapt2. The asset registry and
+`scripts/verify-distribution-license.py` validate the actual packed
+assets/native libraries for each public phone-test APK, with a separately
+stricter `--channel open` for unconditional commercial distribution.
+The existing phone-test workflow packages notices, exact release manifest
+and GPL DOSBox Pure pinned source. The build bootstrap runs offline tests.
+No claim of a complete LGPL/GPL linked-work legal clearance, upstream model
+license resolution, or Android headset device acceptance is made yet.
+
 ## 2026-10-11 — Hosted gamepad B no longer exits active games
 
 The platform now routes physical Android `BUTTON_B` to guest output when

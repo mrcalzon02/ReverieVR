@@ -1,0 +1,8 @@
+Upstream Daydream controller visual attribution and derivative-license review.
+Original model: rje, Sketchfab c1944c64e06544babc90e9d0aa953551,
+described by the derivative README as Creative Commons Attribution without
+an identified version. Derivative: TechnoBuddhist/VR-Controller-Daydream,
+which includes GPL-3.0 licensing text and a README requesting attribution.
+The exact license interaction and obligations for the distributed OBJ/MTL
+require verification. This LicenseRef is a tracking marker, NOT a grant.
+See app/src/main/assets/models/daydream/THIRD_PARTY.md.

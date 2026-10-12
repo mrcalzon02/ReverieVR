@@ -1,0 +1,6 @@
+Unresolved copyright/distribution rights: NOT A LICENSE GRANT.
+The artwork/audio carrying this identifier is already present in a public
+repository or phone-test APK, but available provenance does not establish the
+rights holder's authorization to relicense it as MIT, CC BY, or CC0.
+Until the owner supplies verifiable clearance, its status is REVIEW REQUIRED.
+See docs/licensing/ASSET_REGISTRY.json. This identifier confers no new rights.

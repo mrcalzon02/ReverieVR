@@ -290,6 +290,35 @@ jobs:
           echo "signer_sha=$SIGNER_SHA" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
+      - name: Verify license inventory and package GPL core source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          GPL_SOURCE="$RUNNER_TEMP/reverievr-gpl-source"
+          mkdir -p "$GPL_SOURCE/dosbox-pure" "$GPL_SOURCE/reverie-integration"
+          git -C third_party/dosbox-pure/src archive --format=tar a4a0bab7f8931433588f2fcad9045c85b277373d \
+            | tar -xf - -C "$GPL_SOURCE/dosbox-pure"
+          cp app/src/main/jni/reverie_dos_host.cpp "$GPL_SOURCE/reverie-integration/"
+          cp app/src/main/jni/Android.mk "$GPL_SOURCE/reverie-integration/"
+          cp scripts/fetch-dosbox-pure.sh "$GPL_SOURCE/reverie-integration/"
+          cp third_party/dosbox-pure/README.md "$GPL_SOURCE/reverie-integration/"
+          cp BUILDING.md "$GPL_SOURCE/reverie-integration/"
+          printf '%s\n' \
+            "DOSBox Pure corresponding source commit: a4a0bab7f8931433588f2fcad9045c85b277373d" \
+            "Integrated host/build source for this APK: https://github.com/${GITHUB_REPOSITORY}/tree/${GITHUB_SHA}" \
+            "GPL linked-work compatibility is under review, not presumed resolved." \
+            > "$GPL_SOURCE/README.txt"
+          tar -czf release/GPL-CORRESPONDING-SOURCE.tar.gz -C "$GPL_SOURCE" .
+          cp app/src/main/assets/licenses/THIRD_PARTY_NOTICES.txt release/THIRD_PARTY_NOTICES.txt
+          python3 scripts/verify-distribution-license.py \
+            --apk app/build/outputs/apk/phoneTest/app-phoneTest.apk \
+            --controller-apk controller-app/build/outputs/apk/phoneTest/controller-app-phoneTest.apk \
+            --gpl-source release/GPL-CORRESPONDING-SOURCE.tar.gz \
+            --source-revision "$GITHUB_SHA" \
+            --channel phone-test \
+            --output release/DIST-LICENSE-MANIFEST.json
+
       - name: Stage release
         id: release
         shell: bash
@@ -302,7 +331,9 @@ jobs:
           mkdir -p release
           cp app/build/outputs/apk/phoneTest/app-phoneTest.apk "release/$HEADSET"
           cp controller-app/build/outputs/apk/phoneTest/controller-app-phoneTest.apk "release/$CONTROLLER"
-          (cd release && sha256sum "$HEADSET" "$CONTROLLER" > SHA256SUMS.txt)
+          (cd release && sha256sum "$HEADSET" "$CONTROLLER" \
+            GPL-CORRESPONDING-SOURCE.tar.gz DIST-LICENSE-MANIFEST.json \
+            THIRD_PARTY_NOTICES.txt > SHA256SUMS.txt)
           {
             echo "ReverieVR development phone-test build."
             echo
@@ -315,7 +346,11 @@ jobs:
             echo "In-app update channel: enabled."
             echo "Build type: phoneTest (non-debuggable)."
             echo "This is the permanent ReverieVR direct-distribution signing lineage."
-            echo "Includes the native Procedural Test Chamber, hidden Red Ledger foundation module, DOSBox Pure, verified DOOM Shareware sample, and packaged Daydream controller visual."
+            echo "Includes native modules, DOSBox Pure, verified DOOM Shareware (if present), and Daydream controller art."
+            echo "License records: DIST-LICENSE-MANIFEST.json and THIRD_PARTY_NOTICES.txt."
+            echo "GPL source archive: GPL-CORRESPONDING-SOURCE.tar.gz."
+            echo "This is a provisional phone-test release: review flagged assets in the manifest."
+            echo "The original code is MIT; the combined APK is NOT entirely MIT."
           } > release/RELEASE-NOTES.md
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "headset=$HEADSET" >> "$GITHUB_OUTPUT"
@@ -329,6 +364,9 @@ jobs:
             release/${{ steps.release.outputs.headset }}
             release/${{ steps.release.outputs.controller }}
             release/SHA256SUMS.txt
+            release/DIST-LICENSE-MANIFEST.json
+            release/GPL-CORRESPONDING-SOURCE.tar.gz
+            release/THIRD_PARTY_NOTICES.txt
             release/RELEASE-NOTES.md
           if-no-files-found: error
           retention-days: 14
@@ -343,6 +381,9 @@ jobs:
           HEADSET="release/${{ steps.release.outputs.headset }}"
           CONTROLLER="release/${{ steps.release.outputs.controller }}"
           CHECKSUMS="release/SHA256SUMS.txt"
+          LICENSE_MANIFEST="release/DIST-LICENSE-MANIFEST.json"
+          GPL_SOURCE="release/GPL-CORRESPONDING-SOURCE.tar.gz"
+          NOTICES="release/THIRD_PARTY_NOTICES.txt"
 
           # GitHub release creation can return transient 5xx after the APKs
           # have already built and passed signing verification. Never claim
@@ -362,14 +403,17 @@ jobs:
                 and ([.assets[]
                   | select((.name == $headset
                       or .name == $controller
-                      or .name == "SHA256SUMS.txt")
-                    and .size > 0)] | length == 3)' \
+                      or .name == "SHA256SUMS.txt"
+                      or .name == "DIST-LICENSE-MANIFEST.json"
+                      or .name == "GPL-CORRESPONDING-SOURCE.tar.gz"
+                      or .name == "THIRD_PARTY_NOTICES.txt")
+                    and .size > 0)] | length == 6)' \
               <<< "$payload" >/dev/null
           }
 
           for attempt in 1 2 3 4; do
             if verify_release; then
-              echo "Verified release $TAG and all three assets."
+              echo "Verified release $TAG and all six assets."
               exit 0
             fi
 
@@ -379,10 +423,12 @@ jobs:
               # recreate the tag. Clobber makes upload retry idempotent.
               gh release upload "$TAG" \
                 "$HEADSET" "$CONTROLLER" "$CHECKSUMS" \
+                "$LICENSE_MANIFEST" "$GPL_SOURCE" "$NOTICES" \
                 --clobber --repo "$GITHUB_REPOSITORY" || true
             else
               gh release create "$TAG" \
                 "$HEADSET" "$CONTROLLER" "$CHECKSUMS" \
+                "$LICENSE_MANIFEST" "$GPL_SOURCE" "$NOTICES" \
                 --repo "$GITHUB_REPOSITORY" \
                 --target "$GITHUB_SHA" \
                 --title "ReverieVR Phone Test #$GITHUB_RUN_NUMBER" \
@@ -391,7 +437,7 @@ jobs:
             fi
 
             if verify_release; then
-              echo "Verified release $TAG and all three assets."
+              echo "Verified release $TAG and all six assets."
               exit 0
             fi
             if (( attempt < 4 )); then

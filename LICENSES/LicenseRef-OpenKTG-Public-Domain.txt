@@ -1,0 +1,7 @@
+Original OpenKTG code written 2007 by Fabian "ryg" Giesen.
+The upstream declaration in third_party/openktg/LICENSE reads:
+"I hereby place this code in the public domain."
+
+This LicenseRef preserves the precise upstream provenance. It is not a newly
+created license and does not relicense unrelated code. See
+third_party/openktg/UPSTREAM.md for the immutable upstream revision.

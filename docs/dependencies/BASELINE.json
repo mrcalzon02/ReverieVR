@@ -2,7 +2,7 @@
   "schema": 1,
   "baseline": "reverievr-2026-10-11",
   "policy": "reviewed-update-only",
-  "purpose": "current in-use build/runtime/construction dependency contract; no change of owner license",
+  "purpose": "approved in-use toolchain/dependency freeze and per-component licensing scope; original ReverieVR software MIT (owner selected)",
   "application": {
     "min_android_api": 26,
     "target_android_api": 36,
@@ -126,8 +126,8 @@
     }
   },
   "licensing": {
-    "reverievr_original_code": "NO_REPOSITORY_LICENSE_DECLARED_OWNER_DECISION_REQUIRED",
-    "not_a_grant": "This inventory documents upstream licenses. It does not sublicense proprietary data, grant a license to original ReverieVR code, or guarantee GPL/CC compatibility for a combined distribution.",
+    "reverievr_original_code": "MIT; limited to independently authored project software, not third-party work, source archives, assets with unverified provenance, or a blanket APK license",
+    "not_a_grant": "Third-party license records retain their original scopes. The MIT grant covers owner-authored ReverieVR software; neither the root MIT text nor the release manifest sublicenses third-party assets or resolves the GPL linked-work question.",
     "records": [
       {
         "component": "Cardboard",
@@ -161,7 +161,11 @@
       }
     ],
     "commercial_distribution": "HOLD: Valve derivative is removed from current main tree, but earlier public history/releases, Daydream model and current DOOM shareware packaging must be reviewed, plus GPL corresponding source.",
-    "third_party_source_release": "Whenever GPL components ship, publish required notices and complete corresponding source/build information for the exact shipped versions."
+    "third_party_source_release": "Whenever GPL components ship, publish required notices and complete corresponding source/build information for the exact shipped versions.",
+    "reverievr_original_art_default": "CC-BY-4.0 for confirmed owner-created creative works only; CC0-1.0 by explicit per-file dedication",
+    "licensing_scope_record": "docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md",
+    "asset_registry": "docs/licensing/ASSET_REGISTRY.json",
+    "release_manifest": "DIST-LICENSE-MANIFEST.json (generated from APK actual contents and release-specific GPL source archive)"
   },
   "known_gaps": [
     "Gradle transitive dependency lockfiles and SHA-256 verification-metadata not yet generated; must be built from an actual resolved trusted Gradle run, independently reviewed before admission.",
@@ -169,7 +173,8 @@
     "Full legal review of packaged Valve handoff ZIP, Daydream controller derivative, commercial/shareware disposition, and GPL linking boundaries remains pending.",
     "Emulator catalog source snapshots are optional and not active executable runtime dependencies; their licenses and commit digests must be vetted at install time.",
     "Public repository source and published APKs are already distributions. Valve archive removed from current tree only; historical commits and releases remain available.",
-    "No repository-level owner license has been approved; third-party CC/GPL obligations do not grant original ReverieVR code a license.",
-    "Automatic runtime downloads are not a workaround for noncommercial/third-party software licensing."
+    "Automatic runtime downloads are not a workaround for noncommercial/third-party software licensing.",
+    "Owner-authored MIT code and CC BY/CC0 original art have per-file scope; the license state of music, logos and the Daydream derivative is explicitly review-required.",
+    "Existing public phone-test builds may carry review-required assets, flagged in attached manifests; an unqualified/commercially open release is blocked until their rights are verified or the assets are replaced."
   ]
 }
