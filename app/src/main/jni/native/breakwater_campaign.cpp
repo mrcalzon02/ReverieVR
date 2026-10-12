@@ -188,6 +188,7 @@ bool Campaign::BeginWave() {
     infantry_timer_ = 0;
     turret_timer_ = 0;
     turret_shot_ = {};
+    infantry_volley_ = {};
     magazine_left_ = static_cast<uint8_t>(stats().magazine);
     phase_ = Phase::Combat;
     return true;
@@ -463,10 +464,14 @@ void Campaign::TickStep(float dt) {
     // Landed infantry must actually reach the forward firing line before
     // attacking. Troops still crossing the beach are not instant artillery.
     uint8_t ready_to_fire = 0;
+    const Infantry *first_shooter = nullptr;
     for (Infantry &trooper : infantry_units_) {
         if (!trooper.active) continue;
         trooper.z = std::min(-1.34f, trooper.z + 0.13f * dt);
-        if (trooper.z >= -1.34f) ++ready_to_fire;
+        if (trooper.z >= -1.34f) {
+            ++ready_to_fire;
+            if (first_shooter == nullptr) first_shooter = &trooper;
+        }
     }
     if (ready_to_fire == 0) {
         // Clearing the firing line also clears any partial salvo countdown.
@@ -476,6 +481,12 @@ void Campaign::TickStep(float dt) {
         if (infantry_timer_ >= 4.0f) {
             infantry_timer_ = 0.0f;
             integrity_ = std::max(0, integrity_ - ready_to_fire * 2);
+            // Preserve a real gun position through the rendering pass even
+            // if the source infantryman is killed later in this same frame.
+            ++infantry_volley_.sequence;
+            infantry_volley_.x = first_shooter->x;
+            infantry_volley_.z = first_shooter->z;
+            infantry_volley_.shooters = ready_to_fire;
         }
     }
     if (integrity_ == 0) { phase_ = Phase::Defeat; return; }

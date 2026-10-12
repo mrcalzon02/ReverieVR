@@ -59,6 +59,14 @@ struct TurretShotEvent {
     float z = 0;
     bool destroyed = false;
 };
+// Emitted only when front-line infantry actually damage the battery.
+// The location belongs to one of the living shooters, not an inferred flash.
+struct InfantryVolleyEvent {
+    uint32_t sequence = 0;
+    float x = 0;
+    float z = 0;
+    uint8_t shooters = 0;
+};
 struct Status {
     uint8_t boats_sunk = 0;
     uint8_t troops_landed = 0;
@@ -106,6 +114,7 @@ public:
     Stats stats() const;
     Status wave_status() const { return wave_status_; }
     TurretShotEvent turret_shot() const { return turret_shot_; }
+    InfantryVolleyEvent infantry_volley() const { return infantry_volley_; }
     IncomingThreats incoming_threats() const;
     const std::array<Enemy,kMaxEnemies> &enemies() const { return enemies_; }
     const std::array<Infantry,kMaxInfantry> &infantry_units() const { return infantry_units_; }
@@ -138,6 +147,7 @@ private:
     uint8_t infantry_spawn_cursor_ = 0;
     Status wave_status_{};
     TurretShotEvent turret_shot_{};
+    InfantryVolleyEvent infantry_volley_{};
     uint8_t remaining_to_spawn_ = 0;
     uint8_t spawned_ = 0;
     float spawn_timer_ = 0;

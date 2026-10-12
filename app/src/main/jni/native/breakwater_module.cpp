@@ -25,7 +25,8 @@ struct State {
     GLint matrix = -1, position = -1, color = -1;
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
     float flash = 0.0f, elapsed = 0.0f, reload_ready_flash = 0.0f;
-    float turret_flash = 0.0f;
+    float turret_flash = 0.0f, infantry_flash = 0.0f;
+    float infantry_flash_x = 0.0f, infantry_flash_z = 0.0f;
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
     ImpactEffects impacts;
@@ -219,6 +220,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             if(done) {
                 s->combat_input.CaptureUiPress();
                 s->battery_damage=BatteryDamageFeedback{};
+                s->infantry_flash=0.0f;
             }
         }
         else if(target>=0 && target<8){
@@ -287,6 +289,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->battery_damage=BatteryDamageFeedback{};
         s->reload_ready_flash=0.0f;
         s->turret_flash=0.0f;
+        s->infantry_flash=0.0f;
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
 }
@@ -425,6 +428,14 @@ void BuildScene(State *s) {
         // Rendering and combat share the same live soldier position.
         Box(s,trooper.x,-.76f,trooper.z,.18f,.38f,.17f,.51f,.45f,.35f);
         Box(s,trooper.x,-.47f,trooper.z,.15f,.16f,.15f,.68f,.58f,.42f);
+    }
+    if(s->infantry_flash>0.0f) {
+        // One cheap bright muzzle flash at an actual soldier firing position.
+        // Its short lifetime is updated once, not separately per stereo eye.
+        const float x=s->infantry_flash_x,z=s->infantry_flash_z+.22f;
+        Box(s,x,-.60f,z,.19f,.16f,.14f,1.0f,.78f,.25f);
+        Triangle(s,x-.16f,-.60f,z,x,-.44f,z,x+.16f,-.60f,z,
+                 1.0f,.87f,.40f);
     }
     if(game.phase()==Phase::Briefing) {
         Panel(s,0,.40f,-3.06f,6.35f,3.6f,.08f,.12f,.16f);
@@ -597,11 +608,13 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->reload_ready_flash=std::max(0.0f,
         s->reload_ready_flash-copy.delta_seconds);
     s->turret_flash=std::max(0.0f,s->turret_flash-copy.delta_seconds);
+    s->infantry_flash=std::max(0.0f,s->infantry_flash-copy.delta_seconds);
     s->battery_damage.Tick(copy.delta_seconds);
     s->impacts.Tick(copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
         const bool was_reloading=s->campaign.reloading();
         const uint32_t turret_before=s->campaign.turret_shot().sequence;
+        const uint32_t volley_before=s->campaign.infantry_volley().sequence;
         const int32_t hull_before=s->campaign.integrity();
         s->campaign.Tick(copy.delta_seconds);
         s->battery_damage.Record(hull_before,s->campaign.integrity());
@@ -609,6 +622,12 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         if(turret.sequence!=turret_before) {
             s->impacts.RecordTurretImpact(turret.x,turret.z,turret.destroyed);
             s->turret_flash=.10f;
+        }
+        const InfantryVolleyEvent volley=s->campaign.infantry_volley();
+        if(volley.sequence!=volley_before && volley.shooters>0) {
+            s->infantry_flash_x=volley.x;
+            s->infantry_flash_z=volley.z;
+            s->infantry_flash=.15f;
         }
         if(was_reloading && !s->campaign.reloading() &&
            s->campaign.phase()==Phase::Combat)
@@ -630,6 +649,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop) {
         if(s->campaign.BeginWave()) {
             s->battery_damage=BatteryDamageFeedback{};
+            s->infantry_flash=0.0f;
             if(down)s->combat_input.CaptureUiPress();
         }
     }

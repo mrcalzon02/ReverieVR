@@ -181,6 +181,7 @@ int main() {
     assert(turret_game.Purchase(Upgrade::SupportTurret));
     assert(turret_game.BeginWave());
     assert(turret_game.turret_shot().sequence==0);
+    assert(turret_game.infantry_volley().sequence==0);
     turret_game.Tick(.05f);
     const TurretShotEvent first_turret_shot=turret_game.turret_shot();
     assert(first_turret_shot.sequence==1 && !first_turret_shot.destroyed);
@@ -367,10 +368,22 @@ int main() {
     const int32_t integrity=landed.integrity();
     for(int i=0;i<120;i++) landed.Tick(0.05f); // six seconds after first landing
     assert(landed.integrity()==integrity);
+    assert(landed.infantry_volley().sequence==0);
+    assert(landed.infantry_volley().shooters==0);
     for(const Infantry &trooper:landed.infantry_units())
         if(trooper.active) assert(trooper.z < -1.34f);
     for(int i=0;i<160;i++) landed.Tick(0.05f);
     assert(landed.integrity()<integrity);
+    const InfantryVolleyEvent first_volley=landed.infantry_volley();
+    assert(first_volley.sequence>=1);
+    assert(first_volley.shooters>0 && first_volley.shooters<=landed.infantry());
+    assert(std::isfinite(first_volley.x) && std::isfinite(first_volley.z));
+    bool matched_shooter=false;
+    for(const Infantry &trooper:landed.infantry_units())
+        if(trooper.active && std::abs(trooper.x-first_volley.x)<.001f &&
+           std::abs(trooper.z-first_volley.z)<.001f) matched_shooter=true;
+    assert(matched_shooter);
+    assert(first_volley.z>=-1.34f);
     while(landed.infantry()) {
         landed.Tick(0.05f);
         for(uint8_t i=0;i<landed.infantry_units().size();++i)
