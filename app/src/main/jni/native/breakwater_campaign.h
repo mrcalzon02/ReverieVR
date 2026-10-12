@@ -28,12 +28,25 @@ struct Enemy {
     AircraftPattern aircraft_pattern = AircraftPattern::None;
     uint8_t attacks_remaining = 0;
     float attack_timer = 0;
+    // Spawn-seeded lateral approach, recomputed from forward progress.
+    // No accumulation or RNG per eye/frame and no new save schema fields.
+    float flight_center_x = 0;
+    float flight_sign = 1;
+    float bank = 0;
 };
 struct Infantry {
     float x = 0;
     float z = 0;
     bool active = false;
 };
+struct AircraftFlightPose {
+    float x = 0;
+    float bank = 0; // radians; wing tips rotate about the fuselage
+};
+// Pure, deterministic flight path shared by simulation and native tests.
+// z is authoritative forward progress from the seeded -11 spawn.
+AircraftFlightPose AircraftFlightAt(AircraftPattern pattern,
+                                    float center_x, float sign, float z);
 // Shared by the pure-C++ tests and the headset's combat ray.
 // Returns the first positive surface intersection, or the exit if inside.
 // Supports finite non-unit ray directions and rejects malformed input.

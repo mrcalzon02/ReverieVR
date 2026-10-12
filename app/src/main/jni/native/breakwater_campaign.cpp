@@ -62,6 +62,26 @@ bool RayHitsInfantry(const Infantry &soldier, const float *origin,
     const float center[] = {soldier.x, -0.66f, soldier.z};
     return RaySphereSurfaceDistance(origin, direction, center, 0.30f, distance);
 }
+AircraftFlightPose AircraftFlightAt(AircraftPattern pattern,
+                                    float center_x, float sign, float z) {
+    AircraftFlightPose pose{};
+    if (!std::isfinite(center_x) || !std::isfinite(sign) ||
+        !std::isfinite(z) || (sign != 1.0f && sign != -1.0f)) return pose;
+    pose.x = center_x;
+    if (pattern != AircraftPattern::Bomber &&
+        pattern != AircraftPattern::Strafer) return pose;
+    // A bomber glides with gentle course correction; a fast strafer
+    // snakes across the gun's sightline. Travel, not frame count, drives
+    // lateral motion so a slow frame and split frames agree exactly.
+    const float amplitude = pattern == AircraftPattern::Bomber ? .24f : .76f;
+    const float frequency = pattern == AircraftPattern::Bomber ? .29f : .52f;
+    const float travel = std::max(0.0f,z + 11.0f);
+    const float phase = travel * frequency;
+    pose.x = center_x + sign * amplitude * std::sin(phase);
+    pose.bank = std::max(-.28f,std::min(.28f,
+        -sign * amplitude * frequency * std::cos(phase) * .62f));
+    return pose;
+}
 uint32_t Campaign::Hash(uint32_t tag) const {
     uint32_t x = seed_ ^ tag ^ (static_cast<uint32_t>(location_) * 173u)
         ^ (static_cast<uint32_t>(day_) * 511u)
@@ -387,6 +407,12 @@ void Campaign::TickStep(float dt) {
                 e.attacks_remaining =
                     e.aircraft_pattern == AircraftPattern::Bomber ? 1u : 4u;
                 e.attack_timer = 0.15f;
+                e.flight_center_x = e.x;
+                e.flight_sign = (choice & 0x200u) ? 1.0f : -1.0f;
+                const AircraftFlightPose start = AircraftFlightAt(
+                    e.aircraft_pattern,e.flight_center_x,e.flight_sign,e.z);
+                e.x = start.x;
+                e.bank = start.bank;
             } else if (kind == UnitType::Gunboat) {
                 // Surface gunboats need a warm-up before their first salvo.
                 e.attack_timer = 2.6f;
@@ -433,6 +459,12 @@ void Campaign::TickStep(float dt) {
         if (e.type == UnitType::Aircraft) {
             const bool bomber = e.aircraft_pattern == AircraftPattern::Bomber;
             e.z += (bomber ? kBomberSpeed : kStraferSpeed) * dt;
+            // The same authoritative x drives wing rendering, targeting,
+            // hit impacts and recorded attacking-aircraft coordinates.
+            const AircraftFlightPose pose = AircraftFlightAt(
+                e.aircraft_pattern,e.flight_center_x,e.flight_sign,e.z);
+            e.x = pose.x;
+            e.bank = pose.bank;
             e.attack_timer = std::max(0.0f, e.attack_timer - dt);
             const float attack_start = bomber ? kBomberAttackStart : kStraferAttackStart;
             const float attack_end = bomber ? kBomberAttackEnd : kStraferAttackEnd;

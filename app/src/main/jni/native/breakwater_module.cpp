@@ -372,10 +372,39 @@ void BuildScene(State *s) {
             const bool bomber=e.aircraft_pattern==AircraftPattern::Bomber;
             Box(s,e.x,y,e.z,.34f,.28f,bomber?1.65f:1.20f,
                 bomber?.54f:.67f,bomber?.48f:.58f,bomber?.43f:.48f);
-            Box(s,e.x,y+.02f,e.z,bomber?2.45f:1.85f,.10f,.30f,
-                bomber?.42f:.45f,bomber?.43f:.47f,bomber?.40f:.44f);
-            if(bomber)
+            // Lightweight swept wings have actual banked tip vertices. Their
+            // roll angle comes from the simulation's seeded flight track,
+            // never wall-clock animation or a separate stereo-eye update.
+            const float halfSpan=bomber?1.225f:.925f;
+            const float tipRise=std::sin(e.bank)*halfSpan;
+            for(int side : {-1,1}) {
+                const float sx=static_cast<float>(side);
+                const float rootFront=e.z+(bomber?.22f:.30f);
+                const float rootRear=e.z-(bomber?.38f:.23f);
+                const float tipZ=e.z-(bomber?.28f:.07f);
+                const float tipX=e.x+sx*halfSpan;
+                const float tipY=y+sx*tipRise;
+                Triangle(s,e.x+sx*.15f,y+.02f,rootFront,
+                         tipX,tipY,tipZ,
+                         e.x+sx*.17f,y+.02f,rootRear,
+                         bomber?.42f:.45f,bomber?.43f:.47f,bomber?.40f:.44f);
+                // Parallel bright leading-edge streak makes the silhouette
+                // readable without a normal map or additional texture.
+                Triangle(s,e.x+sx*.16f,y+.035f,rootFront,
+                         tipX,tipY+.025f,tipZ,
+                         e.x+sx*.32f,y+.035f,rootFront-.045f,
+                         bomber?.64f:.70f,bomber?.59f:.67f,bomber?.51f:.56f);
+            }
+            if(bomber) {
+                for(int side : {-1,1}) {
+                    const float sx=static_cast<float>(side);
+                    Box(s,e.x+sx*.64f,y+sx*tipRise*.52f,e.z+.04f,
+                        .23f,.20f,.40f,.30f,.32f,.31f);
+                }
                 Box(s,e.x,y-.17f,e.z+.12f,.58f,.22f,.62f,.31f,.31f,.29f);
+            } else {
+                Box(s,e.x,y+.02f,e.z+.63f,.24f,.18f,.26f,.49f,.51f,.46f);
+            }
         } else {
             const float width=e.type==UnitType::Rowboat?.7f:
                 e.type==UnitType::LandingCraft?1.1f:1.25f;

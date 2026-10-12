@@ -643,6 +643,26 @@ int main() {
     assert(air_only.airstrike_charges()==0);
     assert(air_only.wave_status().aircraft_destroyed==1);
 
+    // Aircraft steering is deterministic, bounded by the seeded center line,
+    // and does not depend on frame splitting or the rendering eye.
+    for(AircraftPattern pattern :
+        {AircraftPattern::Bomber,AircraftPattern::Strafer}) {
+        const float amplitude = pattern==AircraftPattern::Bomber?.24f:.76f;
+        const AircraftFlightPose zero=AircraftFlightAt(pattern,1.2f,1.0f,-11.0f);
+        assert(std::abs(zero.x-1.2f)<.0001f);
+        assert(std::isfinite(zero.bank) && std::abs(zero.bank)<=.28f);
+        for(float z=-11.0f;z<=2.4f;z+=.17f) {
+            const AircraftFlightPose left=AircraftFlightAt(pattern,-.8f,1.0f,z);
+            const AircraftFlightPose right=AircraftFlightAt(pattern,-.8f,-1.0f,z);
+            assert(std::isfinite(left.x) && std::isfinite(left.bank));
+            assert(std::abs(left.x+.8f)<=amplitude+.00001f);
+            assert(std::abs(left.bank)<=.28f);
+            assert(std::abs(left.x+right.x+1.6f)<.00001f);
+            assert(std::abs(left.bank+right.bank)<.00001f);
+        }
+    }
+    assert(AircraftFlightAt(AircraftPattern::None,1.2f,1.0f,-5.0f).x==1.2f);
+    assert(AircraftFlightAt(AircraftPattern::Strafer,1.2f,0.0f,-5.0f).x==0);
     // Seed 8 deterministically opens late Blackcap with a bomber. Without AA
     // the gun still spends its round, but cannot damage the aircraft.
     Campaign bomber(Difficulty::Casual,8);
@@ -653,6 +673,12 @@ int main() {
     assert(bomber.enemies()[0].active);
     assert(bomber.enemies()[0].type==UnitType::Aircraft);
     assert(bomber.enemies()[0].aircraft_pattern==AircraftPattern::Bomber);
+    const Enemy &bomber_approach=bomber.enemies()[0];
+    const AircraftFlightPose bomber_pose=AircraftFlightAt(
+        bomber_approach.aircraft_pattern,bomber_approach.flight_center_x,
+        bomber_approach.flight_sign,bomber_approach.z);
+    assert(std::abs(bomber_approach.x-bomber_pose.x)<.000001f);
+    assert(std::abs(bomber_approach.bank-bomber_pose.bank)<.000001f);
     const IncomingThreats approaching_bomber=bomber.incoming_threats();
     assert(approaching_bomber.aircraft_seconds>4.0f &&
            approaching_bomber.aircraft_seconds<6.0f);
@@ -709,14 +735,43 @@ int main() {
     strafer.Tick(0.05f);
     assert(strafer.enemies()[0].active);
     assert(strafer.enemies()[0].aircraft_pattern==AircraftPattern::Strafer);
+    const Enemy first_strafer=strafer.enemies()[0];
+    const float first_x=first_strafer.x;
     for(int i=0;i<110 && strafer.wave_status().aircraft_attacks<4;i++)
         strafer.Tick(0.05f);
     assert(strafer.wave_status().aircraft_attacks==4);
+    const Enemy late_strafer=strafer.enemies()[0];
+    assert(std::abs(late_strafer.x-first_x)>.10f);
+    assert(std::abs(late_strafer.x-late_strafer.flight_center_x)<=.76001f);
+    const AircraftFlightPose late_pose=AircraftFlightAt(
+        late_strafer.aircraft_pattern,late_strafer.flight_center_x,
+        late_strafer.flight_sign,late_strafer.z);
+    assert(std::abs(late_pose.x-late_strafer.x)<.000001f);
+    assert(std::abs(late_pose.bank-late_strafer.bank)<.000001f);
     const AircraftAttackEvent strafe=strafer.aircraft_attack();
     assert(strafe.sequence==4 && strafe.pattern==AircraftPattern::Strafer);
     assert(strafe.damage==3);
     assert(std::isfinite(strafe.x) && std::isfinite(strafe.z));
     assert(strafer.integrity()==88);
+
+    // A single 0.10-second headset frame and two 0.05-second updates
+    // arrive at the same visual/target pose, including the aircraft bank.
+    Campaign slow_flight(Difficulty::Casual,22);
+    Campaign split_flight(Difficulty::Casual,22);
+    assert(slow_flight.Start() && split_flight.Start());
+    stage_blackcap_night(slow_flight);
+    stage_blackcap_night(split_flight);
+    assert(slow_flight.BeginWave() && split_flight.BeginWave());
+    for(int step=0;step<24;step++) {
+        slow_flight.Tick(.10f);
+        split_flight.Tick(.05f);
+        split_flight.Tick(.05f);
+        const Enemy &slow=slow_flight.enemies()[0];
+        const Enemy &split=split_flight.enemies()[0];
+        assert(slow.type==UnitType::Aircraft && split.type==UnitType::Aircraft);
+        assert(slow.x==split.x && slow.z==split.z && slow.bank==split.bank);
+        assert(slow.hp==split.hp);
+    }
 
     // Purchasing AA turns those otherwise ineffective shots into damage and
     // can destroy the bomber before its attack window begins.
