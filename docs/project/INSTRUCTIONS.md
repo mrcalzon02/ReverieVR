@@ -123,13 +123,21 @@ phone-controller companion must remain optional.
 A laptop connected over USB or a user-approved local network is an
 **optional peripheral and file source**, not an execution prerequisite. It
 may supply a forwarded controller, keyboard, user-approved read-only files,
-optical-disc image access, or storage. **Do not develop a separate Windows,
-Linux or macOS ReverieVR application, companion agent, file server or
-proprietary HID relay.** Reuse standard, already available tools and
-protocols on the computer: user-launched scrcpy/ADB for mirroring/forwarded
-HID and ordinary OS-provided SMB2/SMB3 sharing for files. A read-only,
-user-configured SMB client belongs inside the existing Android APK, and
-any optional source/image importer must remain there too. The source
+optical-disc image access, or storage. **The user has explicitly permitted a small Windows Laptop Link utility
+when it is bundled within the one ReverieVR APK and exported on demand
+from Stage A.** This is not permission for a second required software
+distribution, silent PC installation/execution, a privileged service,
+an always-running Windows agent, or PC-hosted VR emulation. The APK
+currently exports a three-file, human-readable portable PowerShell/cmd
+Windows bundle via Android's Create Document picker; Windows must
+deliberately copy/extract/run it. Its current features launch an
+existing scrcpy installation for selected input/mirroring modes and
+inspect optical-drive availability without raw-disc access. The
+computer's own SMB2/SMB3 sharing remains an alternative source for
+user-approved read-only files, with the client inside this APK.
+A future enhanced host utility may add narrowly authorized device
+protocols, but only after explicit pairing, privacy, compatibility,
+resource and licensing gates. The source
 computer must explicitly enable sharing/forwarding as needed; no Android
 APK can unilaterally read a PC's USB peripherals, raw optical sectors,
 or screen pixels. Disconnecting the PC must preserve the handset's core
