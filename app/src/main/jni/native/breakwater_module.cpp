@@ -1,5 +1,6 @@
 #include "breakwater_campaign.h"
 #include "breakwater_silhouettes.h"
+#include "breakwater_terrain.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
@@ -426,6 +427,13 @@ void BuildScene(State *s) {
                  -20,-1.10f,back-.92f,
                  night?.04f:.09f,night?.15f:.36f,night?.27f:.49f+shimmer);
     }
+    // World-space shore geometry is generated alongside the existing
+    // simulation mesh. The beach ends at the real transport landing line;
+    // only Campaign owns targets, collision and landfall behavior.
+    EmitCoastalTerrain(game.location(),night,
+        [s](auto... arguments) { Box(s,arguments...); },
+        [s](auto... arguments) { Triangle(s,arguments...); });
+
     // Shore parapet, mounted barrel and enemy silhouettes.
     Box(s,0,-1.24f,-.95f,7.8f,.55f,.7f,.37f,.38f,.36f);
     // Gun carriage stays world-anchored. The light two-strip barrel aims
