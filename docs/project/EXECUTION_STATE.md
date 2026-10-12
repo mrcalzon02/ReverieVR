@@ -1,3 +1,14 @@
+## 2026-10-11 — Home ray pointer physical mesh intersections
+
+Source implementation adds a bounded allocation-free ray/triangle hit against
+static cached geometry of all three Home environments, with a normal-aligned
+impact marker, nearest hit selection and depth-respecting beam. Shell UI/keyboard
+targets keep precedence within 35mm to protect clickable keycaps. This is a
+PS1-style no-texture primitive impact indicator; no runtime physics or native
+game mesh collision is claimed. Exact triangle intersection, normals, winding,
+off-surface misses and geometric decal orientation have JVM regressions.
+Galaxy S9 headset runtime, stereo and frame-timing measurements pending.
+
 ## 2026-10-11 — PS1 primitive art direction and three-home recipe layer
 
 Source-level art pass: the existing Birch Living Room, Pastoral Glade and Dune Beach detail generator now produces additional angular wall motifs, fixed-seed fallen logs and faceted tide rocks. Vertex positions are quantized once at build time to 1/128 m; new material tints use deterministic RGB555 values. No image/texture assets, external generation dependency, additional shaders, per-eye CPU geometry generation or destructive scene replacement. Tests enforce bounded triangles, deterministic explicit seeds, repeated-vertex-grid quantization and the unobstructed home interaction corridor. This implements the explicit PlayStation-era/.kkrieger-inspired art philosophy as compact recipes, **not** emulation or a claim of proven quicker boot or improved battery. Existing GitHub APK validation and Galaxy S9 stereo/performance acceptance are separate gates.

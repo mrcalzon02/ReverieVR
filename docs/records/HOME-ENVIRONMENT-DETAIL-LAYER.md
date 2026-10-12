@@ -55,3 +55,29 @@ Sustained Galaxy S9/Daydream View stereo performance, 60fps frame pacing,
 thermal limits, furniture readability, and real headset visual appearance
 remain **device acceptance gates**. A GitHub APK build is source/package
 validation, not a substitute for physical comfort testing.
+
+## Mesh-contact targeting (2026-10-11)
+
+The shell targeting beam now tests the actual static generated triangle meshes
+of the selected Birch Living Room, Forest Glade, or Dune Beach once per Home
+input sample, **not once per eye**. It uses a lightweight bounded AABB rejection
+and exact double-sided ray/triangle intersections, caches mesh CPU geometry at
+construction, and picks the nearest hit within 12 metres. Walls, floors, dune
+features, tree/foliage primitives, furnishing silhouettes and the keyboard
+keycaps are included. Interaction geometry for menu buttons and keyboard
+keeps priority within a 35mm tolerance (to accommodate caps above the input
+plane), avoiding phantom obstruction by tiny decorative geometry. Obstructed
+UI targets no longer hover as if physically reachable.
+
+When a ray reaches an environmental triangle, the beam stops at the surface
+and a texture-free cross is formed in its normal plane, offset 12mm toward
+the viewer to prevent z-fighting; scene depth testing remains active. The
+original non-occluded marker still applies to actual modal/UI targets.
+Both stereo eyes use the same ray sample and collision result. No GPU
+readbacks, new textures, physics engine, per-eye triangulation, world
+deformation, or per-frame mesh synthesis is involved. Native games retain
+their own game-world raycast ownership; this implementation covers the
+three ReverieVR Home backgrounds only. Host JVM tests cover AABB near-miss,
+triangle-only collision, nearest surface, winding, normal polarity, distance
+limit, nonfinite input and wall/floor marker orientation. Physical S9
+stereo/depth/readability and performance acceptance remain pending.

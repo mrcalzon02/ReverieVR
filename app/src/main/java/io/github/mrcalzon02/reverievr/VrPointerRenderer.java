@@ -37,7 +37,11 @@ final class VrPointerRenderer {
     private volatile boolean pressed;
     private final float[] feedbackColor = new float[4];
     // One coherent pointer sample per eye, without per-frame allocation.
-    private final float[] framePointer = new float[8];
+    private final float[] framePointer = new float[12];
+    private volatile boolean surfaceImpact;
+    private volatile float surfaceNormalX;
+    private volatile float surfaceNormalY;
+    private volatile float surfaceNormalZ;
 
     private int program;
     private int positionHandle;
@@ -68,6 +72,16 @@ final class VrPointerRenderer {
     }
 
     synchronized void setPointer(
+        boolean visible, float originX, float originY, float originZ,
+        float directionX, float directionY, float directionZ,
+        float distance, boolean hitting, boolean pressed
+    ) {
+        setPointer(visible, originX, originY, originZ,
+            directionX, directionY, directionZ, distance,
+            hitting, pressed, false, 0f, 0f, 0f);
+    }
+
+    synchronized void setPointer(
         boolean visible,
         float originX,
         float originY,
@@ -77,7 +91,9 @@ final class VrPointerRenderer {
         float directionZ,
         float distance,
         boolean hitting,
-        boolean pressed
+        boolean pressed,
+        boolean surfaceImpact,
+        float normalX, float normalY, float normalZ
     ) {
         // Invalid tracking samples must never reach the GLES2 vertex buffer.
         if (!visible || !PointerRayValidation.valid(
@@ -110,6 +126,13 @@ final class VrPointerRenderer {
         this.endZ = nextEndZ;
         this.hitting = hitting;
         this.pressed = pressed;
+        float normalSquared = normalX * normalX + normalY * normalY
+            + normalZ * normalZ;
+        this.surfaceImpact = surfaceImpact && Float.isFinite(normalSquared)
+            && normalSquared > 0.5f && normalSquared < 1.5f;
+        this.surfaceNormalX = normalX;
+        this.surfaceNormalY = normalY;
+        this.surfaceNormalZ = normalZ;
         this.visible = true;
     }
 
@@ -134,6 +157,10 @@ final class VrPointerRenderer {
             framePointer[5] = endZ;
             framePointer[6] = hitting ? 1f : 0f;
             framePointer[7] = pressed ? 1f : 0f;
+            framePointer[8] = surfaceImpact ? 1f : 0f;
+            framePointer[9] = surfaceNormalX;
+            framePointer[10] = surfaceNormalY;
+            framePointer[11] = surfaceNormalZ;
         }
 
         System.arraycopy(
@@ -168,18 +195,30 @@ final class VrPointerRenderer {
         float markerSize = PointerVisualFeedback.markerSize(visualState);
         PointerVisualFeedback.writeColor(visualState, feedbackColor);
 
-        PointerRibbonGeometry.fill(
-            vertices,
-            framePointer[0], framePointer[1], framePointer[2],
-            framePointer[3], framePointer[4], framePointer[5],
-            markerSize
-        );
+        if (framePointer[8] != 0f) {
+            PointerRibbonGeometry.fillSurface(vertices,
+                framePointer[0], framePointer[1], framePointer[2],
+                framePointer[3], framePointer[4], framePointer[5],
+                markerSize, framePointer[9], framePointer[10], framePointer[11]);
+        } else {
+            PointerRibbonGeometry.fill(vertices,
+                framePointer[0], framePointer[1], framePointer[2],
+                framePointer[3], framePointer[4], framePointer[5],
+                markerSize);
+        }
         vertices.position(0);
 
         boolean depthWasEnabled = GLES20.glIsEnabled(GLES20.GL_DEPTH_TEST);
         GLES20.glGetIntegerv(GLES20.GL_CURRENT_PROGRAM, previousProgram, 0);
         GLES20.glGetVertexAttribiv(positionHandle, GLES20.GL_VERTEX_ATTRIB_ARRAY_ENABLED, previousPositionEnabled, 0);
-        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        if (framePointer[8] != 0f) {
+            // Geometry contact is a real world-space decal. Occlusion must be
+            // handled by the same depth buffer as the scene it intersected.
+            GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+        } else {
+            // Shell UI and modal menus retain their non-occluded selection cue.
+            GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        }
         try {
         GLES20.glUseProgram(program);
         GLES20.glVertexAttribPointer(

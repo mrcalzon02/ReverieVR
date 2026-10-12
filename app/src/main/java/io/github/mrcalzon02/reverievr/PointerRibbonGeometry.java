@@ -32,6 +32,44 @@ final class PointerRibbonGeometry {
              ex + halfWidth, ey + halfBar, ez, ex + halfWidth, ey - halfBar, ez);
     }
 
+    /**
+     * Face a primitive cross directly along the impacted triangle plane.
+     * Small camera-side bias prevents z-fighting, without a decal texture.
+     * The beam ends at the exact nearest triangle intersection.
+     */
+    static void fillSurface(FloatBuffer out, float ox, float oy, float oz,
+                            float ex, float ey, float ez, float markerSize,
+                            float nx, float ny, float nz) {
+        if (out == null || out.remaining() < 54)
+            throw new IllegalArgumentException("Pointer ribbon requires 54 floats");
+        float dx=ex-ox, dy=ey-oy;
+        float xy=(float)Math.sqrt(dx*dx+dy*dy);
+        float px=xy>MIN_LENGTH ? -dy/xy : 1f;
+        float py=xy>MIN_LENGTH ? dx/xy : 0f;
+        quad(out,ox+px*BEAM_HALF_WIDTH,oy+py*BEAM_HALF_WIDTH,oz,
+            ox-px*BEAM_HALF_WIDTH,oy-py*BEAM_HALF_WIDTH,oz,
+            ex+px*BEAM_HALF_WIDTH,ey+py*BEAM_HALF_WIDTH,ez,
+            ex-px*BEAM_HALF_WIDTH,ey-py*BEAM_HALF_WIDTH,ez);
+        float tx,ty,tz;
+        if (Math.abs(ny)>.9f) {tx=1f;ty=0f;tz=0f;}
+        else {
+            tx=nz;ty=0f;tz=-nx;
+            float inv=1f/(float)Math.sqrt(tx*tx+tz*tz);
+            tx*=inv;tz*=inv;
+        }
+        float bx=ny*tz-nz*ty, by=nz*tx-nx*tz, bz=nx*ty-ny*tx;
+        float cx=ex+nx*.012f,cy=ey+ny*.012f,cz=ez+nz*.012f;
+        float w=markerSize*.12f;
+        quad(out,cx-tx*markerSize-bx*w,cy-ty*markerSize-by*w,cz-tz*markerSize-bz*w,
+            cx-tx*markerSize+bx*w,cy-ty*markerSize+by*w,cz-tz*markerSize+bz*w,
+            cx+tx*markerSize-bx*w,cy+ty*markerSize-by*w,cz+tz*markerSize-bz*w,
+            cx+tx*markerSize+bx*w,cy+ty*markerSize+by*w,cz+tz*markerSize+bz*w);
+        quad(out,cx-bx*markerSize-tx*w,cy-by*markerSize-ty*w,cz-bz*markerSize-tz*w,
+            cx-bx*markerSize+tx*w,cy-by*markerSize+ty*w,cz-bz*markerSize+tz*w,
+            cx+bx*markerSize-tx*w,cy+by*markerSize-ty*w,cz+bz*markerSize-tz*w,
+            cx+bx*markerSize+tx*w,cy+by*markerSize+ty*w,cz+bz*markerSize+tz*w);
+    }
+
     private static void quad(FloatBuffer out,
                              float ax, float ay, float az, float bx, float by, float bz,
                              float cx, float cy, float cz, float dx, float dy, float dz) {

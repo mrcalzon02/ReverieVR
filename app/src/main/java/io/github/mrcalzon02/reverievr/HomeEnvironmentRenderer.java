@@ -908,6 +908,64 @@ final class HomeEnvironmentRenderer {
         return result;
     }
 
+    /** One nearest-hit search per Home input sample, never once per eye. */
+    void hitScene(float[] origin, float[] direction,
+                  HomeEnvironment environment, HomeSceneRaycast.Hit hit) {
+        hit.reset();
+        HomeEnvironment active = environment == null
+            ? HomeEnvironment.WHITE_ROOM : environment;
+        switch (active) {
+            case FOREST_GLADE:
+                hit(forestTrunks, origin, direction, hit);
+                hit(forestCanopies, origin, direction, hit);
+                hit(forestUnderstory, origin, direction, hit);
+                hit(forestDetailFoliage, origin, direction, hit);
+                hit(forestDetailStones, origin, direction, hit);
+                hit(forestDetailFlowers, origin, direction, hit);
+                hit(forestDetailFallenWood, origin, direction, hit);
+                hit(outdoorGround, origin, direction, hit);
+                break;
+            case DUNE_BEACH:
+                hit(beachDriftwood, origin, direction, hit);
+                hit(duneRidges, origin, direction, hit);
+                hit(beachGrass, origin, direction, hit);
+                hit(beachDetailRipples, origin, direction, hit);
+                hit(beachDetailTufts, origin, direction, hit);
+                hit(beachDetailShells, origin, direction, hit);
+                hit(beachDetailWavelets, origin, direction, hit);
+                hit(beachDetailRockClusters, origin, direction, hit);
+                hit(duneShoreline, origin, direction, hit);
+                hit(ocean, origin, direction, hit);
+                hit(outdoorGround, origin, direction, hit);
+                break;
+            case WHITE_ROOM:
+            default:
+                hit(whiteFloor, origin, direction, hit);
+                hit(whiteCeiling, origin, direction, hit);
+                hit(whiteBack, origin, direction, hit);
+                hit(whiteFront, origin, direction, hit);
+                hit(whiteLeft, origin, direction, hit);
+                hit(whiteRight, origin, direction, hit);
+                hit(birchPanelSeams, origin, direction, hit);
+                hit(birchBaseboards, origin, direction, hit);
+                hit(roomFurniture, origin, direction, hit);
+                hit(birchDetailTrim, origin, direction, hit);
+                hit(birchDetailArt, origin, direction, hit);
+                hit(birchDetailFurniture, origin, direction, hit);
+                hit(birchDetailMotifs, origin, direction, hit);
+                hit(daisTop, origin, direction, hit);
+                hit(daisFront, origin, direction, hit);
+                // Keycap selection retains a 35mm visual/picking tolerance.
+                hit(keyboardKeycaps, origin, direction, hit);
+                break;
+        }
+    }
+
+    private static void hit(Mesh mesh, float[] origin, float[] direction,
+                            HomeSceneRaycast.Hit out) {
+        HomeSceneRaycast.test(mesh.contact, origin, direction, out);
+    }
+
     private static Mesh mesh(float[] values) {
         FloatBuffer buffer =
             ByteBuffer
@@ -916,10 +974,8 @@ final class HomeEnvironmentRenderer {
                 .asFloatBuffer();
         buffer.put(values);
         buffer.position(0);
-        return new Mesh(
-            buffer,
-            values.length / 3
-        );
+        return new Mesh(buffer, values.length / 3,
+            new HomeSceneRaycast.Mesh(values));
     }
 
     private static int buildProgram(
@@ -997,13 +1053,13 @@ final class HomeEnvironmentRenderer {
     private static final class Mesh {
         final FloatBuffer vertices;
         final int vertexCount;
+        final HomeSceneRaycast.Mesh contact;
 
-        Mesh(
-            FloatBuffer vertices,
-            int vertexCount
-        ) {
+        Mesh(FloatBuffer vertices, int vertexCount,
+             HomeSceneRaycast.Mesh contact) {
             this.vertices = vertices;
             this.vertexCount = vertexCount;
+            this.contact = contact;
         }
     }
 

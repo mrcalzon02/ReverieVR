@@ -419,6 +419,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new ControllerShakeRecenterDetector();
     private final float[] activePointerOrigin = new float[3];
     private final float[] activePointerDirection = new float[3];
+    private final HomeSceneRaycast.Hit scenePointerHit =
+        new HomeSceneRaycast.Hit();
+    private static final float UI_CONTACT_PRIORITY_METERS = 0.035f;
     private final float[] orientationMenuRayOrigin = new float[3];
     private final float[] orientationMenuRayDirection = new float[3];
 
@@ -1777,20 +1780,25 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 activePointerOrigin,
                 activePointerDirection
             );
+        scenePointerHit.reset();
+        if (usingControllerPointer && mode == MODE_HOME
+                && !orientationMenuVisible) {
+            homeEnvironmentRenderer.hitScene(activePointerOrigin,
+                activePointerDirection, preferences.getHomeEnvironment(),
+                scenePointerHit);
+        }
+        boolean hasUiTarget = hit.buttonIndex >= 0 && hit.distance > 0f;
+        boolean geometryCloser = scenePointerHit.hasContact()
+            && (!hasUiTarget || scenePointerHit.distance
+                + UI_CONTACT_PRIORITY_METERS < hit.distance);
         int newHover =
-            orientationMenuVisible
-                    && keyboardQuickMenuFocusActive
-                ? hoveredButton
-                : hit.buttonIndex;
-
-        controllerPointerActive =
-            usingControllerPointer;
-        controllerPointerDistance =
-            hit.distance > 0.0f
-                ? hit.distance
-                : 6.0f;
-        controllerPointerHit =
-            newHover >= 0;
+            orientationMenuVisible && keyboardQuickMenuFocusActive
+                ? hoveredButton : geometryCloser ? -1 : hit.buttonIndex;
+        controllerPointerActive = usingControllerPointer;
+        controllerPointerDistance = geometryCloser
+            ? scenePointerHit.distance
+            : hasUiTarget ? hit.distance : 6.0f;
+        controllerPointerHit = newHover >= 0;
         boolean pointerPressed = false;
         if (usingControllerPointer) {
             pointerPressed = activeNativePointerKind
@@ -1813,7 +1821,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 activePointerDirection[2],
                 controllerPointerDistance,
                 controllerPointerHit,
-                pointerPressed
+                pointerPressed,
+                geometryCloser,
+                scenePointerHit.normalX,
+                scenePointerHit.normalY,
+                scenePointerHit.normalZ
             );
         } else {
             pointerRenderer.hide();
