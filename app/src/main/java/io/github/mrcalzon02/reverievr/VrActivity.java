@@ -1607,6 +1607,12 @@ public final class VrActivity extends Activity
             if ((safeFlags & NativeModuleRuntime.FEEDBACK_RELOAD_READY) != 0) {
                 uiFeedback.reloadReady();
             }
+            if ((safeFlags & NativeModuleRuntime.FEEDBACK_ARTILLERY) != 0) {
+                uiFeedback.artilleryStrike();
+            }
+            if ((safeFlags & NativeModuleRuntime.FEEDBACK_AIRSTRIKE) != 0) {
+                uiFeedback.airstrike();
+            }
         });
     }
 

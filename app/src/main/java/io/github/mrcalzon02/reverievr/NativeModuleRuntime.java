@@ -26,13 +26,17 @@ final class NativeModuleRuntime implements AutoCloseable {
     static final int FEEDBACK_WEAPON_FIRE = 1 << 3;
     static final int FEEDBACK_RELOAD_START = 1 << 4;
     static final int FEEDBACK_RELOAD_READY = 1 << 5;
+    static final int FEEDBACK_ARTILLERY = 1 << 6;
+    static final int FEEDBACK_AIRSTRIKE = 1 << 7;
     static final int FEEDBACK_ALL =
         FEEDBACK_FOCUS
         | FEEDBACK_ACTIVATION
         | FEEDBACK_FAILURE
         | FEEDBACK_WEAPON_FIRE
         | FEEDBACK_RELOAD_START
-        | FEEDBACK_RELOAD_READY;
+        | FEEDBACK_RELOAD_READY
+        | FEEDBACK_ARTILLERY
+        | FEEDBACK_AIRSTRIKE;
 
     static final class Descriptor {
         final String id;

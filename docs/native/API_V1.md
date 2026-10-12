@@ -108,11 +108,13 @@ This append-only host tail accepts a bitmask of implemented shell cue requests:
 - `REVERIE_NATIVE_FEEDBACK_FAILURE`;
 - `REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE`;
 - `REVERIE_NATIVE_FEEDBACK_RELOAD_START`;
-- `REVERIE_NATIVE_FEEDBACK_RELOAD_READY`.
+- `REVERIE_NATIVE_FEEDBACK_RELOAD_READY`;
+- `REVERIE_NATIVE_FEEDBACK_ARTILLERY`;
+- `REVERIE_NATIVE_FEEDBACK_AIRSTRIKE`.
 
 Use `ReverieNativeHostSupportsFeedbackV1` / `ReverieNativeRequestFeedbackV1` so an older v1 host that ends at the save-service prefix remains safe.
 
-The host coalesces flags during each native update and returns them through the existing JNI path. Android maps the original three flags to the same `UiFeedback` cues, and the new weapon/reload flags to distinct procedural static-AudioTrack PCM16 one-shots (22,050 Hz mono). The shell generates samples only at initialization, stops playback on Activity pause, and releases tracks on close. Device latency, audible mix, and playback remain hardware validation gates.
+The host coalesces flags during each native update and returns them through the existing JNI path. Android maps the original three flags to the same `UiFeedback` cues, and the weapon/reload and artillery/airstrike flags to distinct procedural static-AudioTrack PCM16 one-shots (22,050 Hz mono). The shell generates samples only at initialization, stops playback on Activity pause, and releases tracks on close. Device latency, audible mix, and playback remain hardware validation gates.
 
 This is **not** an arbitrary audio submission/mixing API and does **not** provide haptics. Modules must not describe either capability as implemented through this service.
 

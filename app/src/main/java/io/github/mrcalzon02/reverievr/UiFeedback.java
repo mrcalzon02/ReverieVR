@@ -116,6 +116,18 @@ final class UiFeedback implements AutoCloseable {
         });
     }
 
+    void artilleryStrike() {
+        mainHandler.post(() -> {
+            if (lifecycleActive) combatSound.play(NativeCombatWaveform.ARTILLERY);
+        });
+    }
+
+    void airstrike() {
+        mainHandler.post(() -> {
+            if (lifecycleActive) combatSound.play(NativeCombatWaveform.AIRSTRIKE);
+        });
+    }
+
     void pauseForLifecycle() {
         lifecycleActive = false;
         controllerSpringSound.stop();

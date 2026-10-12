@@ -305,14 +305,14 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             const auto before=game.enemies();
             const bool ok=game.CallArtillery();
             if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),false);
-            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ARTILLERY:REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
         if(route==CombatInputRoute::Airstrike){
             const auto before=game.enemies();
             const bool ok=game.CallAirstrike();
             if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),true);
-            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_AIRSTRIKE:REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
         if(s->sam_armed) {

@@ -143,11 +143,15 @@ int main() {
             &host, REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE
                 | REVERIE_NATIVE_FEEDBACK_RELOAD_START
                 | REVERIE_NATIVE_FEEDBACK_RELOAD_READY
+                | REVERIE_NATIVE_FEEDBACK_ARTILLERY
+                | REVERIE_NATIVE_FEEDBACK_AIRSTRIKE
         ) != 0 &&
         captured_feedback_flags ==
             (REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE
              | REVERIE_NATIVE_FEEDBACK_RELOAD_START
-             | REVERIE_NATIVE_FEEDBACK_RELOAD_READY),
+             | REVERIE_NATIVE_FEEDBACK_RELOAD_READY
+             | REVERIE_NATIVE_FEEDBACK_ARTILLERY
+             | REVERIE_NATIVE_FEEDBACK_AIRSTRIKE),
         "fixed gameplay sound cues must survive ABI sanitization"
     );
 

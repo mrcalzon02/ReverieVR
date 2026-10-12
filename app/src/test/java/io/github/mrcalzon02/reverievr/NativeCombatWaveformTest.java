@@ -27,6 +27,16 @@ public final class NativeCombatWaveformTest {
         }
     }
 
+    @Test
+    public void supportCuesHaveDistinctAudioAndLengths() {
+        byte[] gun = NativeCombatWaveform.generatePcm16(NativeCombatWaveform.FIRE);
+        byte[] artillery = NativeCombatWaveform.generatePcm16(NativeCombatWaveform.ARTILLERY);
+        byte[] air = NativeCombatWaveform.generatePcm16(NativeCombatWaveform.AIRSTRIKE);
+        assertTrue(artillery.length > gun.length);
+        assertTrue(air.length > artillery.length);
+        assertTrue(!java.util.Arrays.equals(artillery, air));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void invalidCueRejected() {
         NativeCombatWaveform.generatePcm16(7);
