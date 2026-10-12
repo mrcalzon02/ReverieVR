@@ -140,7 +140,7 @@ def stageSourceMusicPreview = tasks.register("stageSourceMusicPreview") {
             String title = track.title.toString()
             String id = title.toLowerCase(java.util.Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("(^-|-$)", "")
+                .replaceAll('(^-|-$)', "")
             if (!id.matches("[a-z0-9][a-z0-9_-]{0,79}") ||
                 !ids.add(id) ||
                 track.license != "LicenseRef-Pending-Asset-Rights" ||
