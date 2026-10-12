@@ -3,7 +3,7 @@
   "repository": "mrcalzon02/ReverieVR",
   "media_format": "audio/mpeg",
   "admission": "source-library; not included in APK and not active until individually cleared and packaged",
-  "binary_status": "handoff_required",
+  "binary_status": "source-binaries-checked-in",
   "notes": "Track assignments are project intent, not proof of gameplay integration, soundtrack selection, or a CC/MIT license. No per-track Suno commercial-use entitlement or official paid-download provenance was provided with these MP3 uploads. Binary source files must be imported and their SHA-256 verified before claiming they are in GitHub.",
   "lobby_pool": [
     "starry-cereal (currently packaged)",
