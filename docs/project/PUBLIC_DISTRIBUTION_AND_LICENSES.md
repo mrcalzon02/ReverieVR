@@ -73,18 +73,11 @@ The LGPL/GPL/Apache/open art combination should be reviewed as distinct componen
   explicitly marks unverified Android resource binaries. Adjacent
   `.license` files document the Daydream model. Android `res/` does not
   admit arbitrary `.license` sidecars, so those are not committed there.
-* `docs/licensing/ASSET_REGISTRY.json` allowlists third-party APK media and
-  native shared libraries. `scripts/verify-distribution-license.py` examines
-  actual signed APK ZIP entries, hashes each licensed payload, rejects
-  unknown/restricted assets, and emits `DIST-LICENSE-MANIFEST.json`.
-  `scripts/test-distribution-license.py` provides an offline SDK-free
-  negative-test suite.
-* The existing phone-test release process creates a DOSBox Pure source archive,
-  includes source/integration instructions, publishes license notices and the
-  version-specific manifest, and hashes all the outputs. It labels inherited
-  unresolved files **provisional/review-required**, not universally licensed.
-  Its `--channel open` gate blocks unresolved or noncommercial assets.
-* The source bundle and APK manifest do not resolve legal questions about
+* `docs/licensing/ASSET_REGISTRY.json` remains a reference inventory,
+  not a build or release gate.
+* The phone-test release supplies DOSBox Pure corresponding source and
+  third-party notices, alongside SHA-256 checksums for published artifacts.
+* Corresponding source and notices do not resolve legal questions about
   DOSBox Pure's GPL linking scope. A review of the combined executable,
   complete corresponding source and historical APK releases is still required.
   Public GitHub visibility by itself does not complete those obligations.

@@ -19,9 +19,8 @@ game content retain their own license conditions.
 Review [public distribution and licenses](docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md)
 and the [approved dependency baseline](docs/dependencies/BASELINE.json)
 before redistributing, modifying, monetizing or publishing a derivative APK.
-See [the SPDX/REUSE and asset registry](docs/licensing/ASSET_REGISTRY.json)
-and each Release's `DIST-LICENSE-MANIFEST.json` for actual files,
-copyright/attribution records, and unresolved rights.
+See [the SPDX/REUSE asset records](docs/licensing/ASSET_REGISTRY.json)
+for existing copyright, attribution, and unresolved rights information.
 
 **All eleven original tracks are now included in every ReverieVR APK
 variant.** The project owner explicitly confirms ownership and commercial

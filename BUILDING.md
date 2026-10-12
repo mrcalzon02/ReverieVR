@@ -27,7 +27,7 @@ checks the Gradle wrapper hash, initialized Cardboard checkout and optional
 DOSBox Pure checkout. Neither check alone proves complete Maven transitive
 dependency locks or all-release license compliance.
 
-## Per-file SPDX rights and per-release APK license manifest
+## Per-file SPDX rights and source notices
 
 - `REUSE.toml` provides scoped SPDX ownership/license annotations. Android
   binary resource files under `res/` must use that manifest rather than
@@ -35,19 +35,10 @@ dependency locks or all-release license compliance.
 - `LICENSES/` holds the unmodified published MIT, CC BY 4.0, CC0, Apache
   2.0 and GNU GPL license texts, plus explanatory `LicenseRef` records
   where distribution rights have not yet been established.
-- `docs/licensing/ASSET_REGISTRY.json` is the release-asset/native-library
-  allowlist. Adding APK media/native libraries requires a new reviewed entry.
-- Run `python3 scripts/verify-distribution-license.py` for source/inventory
-  checks, then `python3 scripts/test-distribution-license.py` for offline
-  fail-closed checks. The build bootstrap runs both.
-- The existing phone-test release verifies each signed APK's actual ZIP
-  entries. Unregistered art or binaries and restricted Valve assets fail.
-  Each release carries `DIST-LICENSE-MANIFEST.json`,
-  `THIRD_PARTY_NOTICES.txt`, `GPL-CORRESPONDING-SOURCE.tar.gz`, and
-  SHA-256 checksums. The phone-test manifest explicitly records unresolved
-  attribution as `review_required`; this provisional exception is **not**
-  permission to claim the combined APK is freely licensed for commercial use.
-  `--channel open` disallows those items until verified or replaced.
+- `docs/licensing/ASSET_REGISTRY.json` is retained as a reference record,
+  not a build gate.
+- Phone-test releases retain `THIRD_PARTY_NOTICES.txt`,
+  `GPL-CORRESPONDING-SOURCE.tar.gz`, and SHA-256 checksums.
 - License notices are also packaged inside the handset APK as
   `assets/licenses/THIRD_PARTY_NOTICES.txt`. A dedicated About→Licenses
   viewer is not yet implemented.
