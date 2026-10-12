@@ -725,13 +725,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Glyph texture is just above real keycap tops on the dais.
         // Use exactly the same planar bounds as HomeKeyboardGeometry's hits.
         keyboardSlabVertexBuffer = allocate(new float[] {
-            HomeKeyboardGeometry.LEFT, HomeKeyboardGeometry.LEGEND_Y,
+            HomeKeyboardGeometry.LEFT,
+                HomeKeyboardGeometry.legendAt(HomeKeyboardGeometry.FRONT_Z),
                 HomeKeyboardGeometry.FRONT_Z,
-            HomeKeyboardGeometry.RIGHT, HomeKeyboardGeometry.LEGEND_Y,
+            HomeKeyboardGeometry.RIGHT,
+                HomeKeyboardGeometry.legendAt(HomeKeyboardGeometry.FRONT_Z),
                 HomeKeyboardGeometry.FRONT_Z,
-            HomeKeyboardGeometry.LEFT, HomeKeyboardGeometry.LEGEND_Y,
+            HomeKeyboardGeometry.LEFT,
+                HomeKeyboardGeometry.legendAt(HomeKeyboardGeometry.BACK_Z),
                 HomeKeyboardGeometry.BACK_Z,
-            HomeKeyboardGeometry.RIGHT, HomeKeyboardGeometry.LEGEND_Y,
+            HomeKeyboardGeometry.RIGHT,
+                HomeKeyboardGeometry.legendAt(HomeKeyboardGeometry.BACK_Z),
                 HomeKeyboardGeometry.BACK_Z
         });
         uvBuffer = allocate(uvs);
@@ -2611,7 +2615,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, keyboardTexture);
             // Transparent pixels must not write depth above the 3D keycaps.
             GLES20.glDepthMask(false);
+            // Keys are physical geometry. Their legend plane is drawn on top
+            // to avoid low-precision depth-buffer occlusion on Galaxy S9.
+            GLES20.glDisable(GLES20.GL_DEPTH_TEST);
             drawTexturedPanel(keyboardSlabVertexBuffer, uvBuffer);
+            GLES20.glEnable(GLES20.GL_DEPTH_TEST);
             GLES20.glDepthMask(true);
         } else {
             drawTexturedPanel(
