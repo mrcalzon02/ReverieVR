@@ -1034,7 +1034,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         textureDirty = true;
     }
 
-    void setControllerPose(ControllerSnapshot snapshot) {
+    void setControllerPose(ControllerSnapshot snapshot, boolean accelerationInG) {
         if (snapshot == null) {
             return;
         }
@@ -1069,13 +1069,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 : System.nanoTime();
         controllerAccelerationAtNanos =
             controllerPoseReceivedAtNanos;
-        if (snapshot.touching || snapshot.touchpadPressed) {
-            controllerShakeRecenterDetector.cancelPendingImpulse();
-        } else if (controllerShakeRecenterDetector.sample(
+        // Do not suppress a deliberate shake just because a finger is
+        // resting on the pad. Opposing impulses and cooldown filter it.
+        if (controllerShakeRecenterDetector.sample(
                 controllerAccelerationX,
                 controllerAccelerationY,
                 controllerAccelerationZ,
-                controllerAccelerationAtNanos
+                controllerAccelerationAtNanos,
+                accelerationInG
             )) {
             controllerPositionRecenterRequested.set(true);
         }
@@ -3288,40 +3289,44 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void requestSoftControllerRecenter() {
-        if (controllerInertialTranslation.isReturningToCenter()
-            || !controllerConnected
-            || !controllerPoseValid) {
-            return;
-        }
-        // Full 3D shake target: the headset's current forward, pitch,
-        // and roll, expressed in the same adjusted world as the pointer.
-        // Reject stale controller pose; retain the existing calibration
-        // if the headset transform or quaternion is invalid.
+        // An orientation reset must work even during the previous 3-second
+        // positional spring return; only the detector owns gesture cooldown.
         long now = System.nanoTime();
-        if (hasFreshControllerPose(now)
-                && ControllerOrientationCalibration.compute(
-                    adjustedHeadView,
+        if (hasFreshControllerPose(now)) {
+            if (!ControllerOrientationCalibration.computeToHud(
                     controllerOrientationX,
                     controllerOrientationY,
                     controllerOrientationZ,
                     controllerOrientationW,
-                    controllerOrientationCorrection
-                )) {
+                    controllerOrientationCorrection)) {
+                ReverieLog.incident("VR_CONTROLLER",
+                    "Recenter rejected: invalid tracked orientation.");
+                return;
+            }
             fullControllerOrientationCalibration = true;
             controllerYawCalibrationRadians = 0.0f;
             controllerModelRenderer.setYawCalibration(0.0f);
             controllerModelRenderer.setOrientationCorrection(
                 controllerOrientationCorrection
             );
+        } else if (gamepadPointerAvailable) {
+            // HID pads may not expose motion telemetry, but their explicit
+            // menu recenter must still reset the virtual 3D aim to the HUD.
+            virtualPointerYaw = 0.0f;
+            virtualPointerPitch = 0.0f;
+            virtualPointerLastFrameNanos = now;
+        } else {
+            ReverieLog.incident("VR_CONTROLLER",
+                "Recenter rejected: no fresh tracked or virtual controller.");
+            return;
         }
         controllerInertialTranslation.beginReturnToCenter();
         controllerRecenterFeedbackActive = true;
         host.onControllerSpringRecenterRequested();
-        // Preserve tracked quaternion, live motion and gravity reference.
         ReverieLog.milestone(
             "VR_CONTROLLER",
-            "Controller soft recenter started; offset meters="
-                + controllerRecenterOffsetLength()
+            "Controller reoriented to HUD; positional return restarted."
+                + " offset meters=" + controllerRecenterOffsetLength()
         );
     }
 
