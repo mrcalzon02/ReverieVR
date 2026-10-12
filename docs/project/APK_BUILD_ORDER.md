@@ -41,7 +41,7 @@ Required capabilities:
 
 The setup surface must remain intentionally lightweight. It exists to make VR entry reliable, not to become a second full launcher.
 
-**Gate:** from a clean launch, the user can establish/verify controller readiness and deliberately enter VR without requiring any unavailable Google service.
+**Gate:** from a clean launch, the user can enter VR when the handset runtime is ready, even when no controller can be connected, and navigate/recover through five-second gaze dwell. Controller pairing and verification remain available but may not block entry. No unavailable Google service, desktop program, scrcpy session, or network connection may be required.
 
 ## Phase 2 — ReverieVR 3D home and VR menu
 
@@ -87,7 +87,7 @@ The wizard is **versioned**. New critical setup steps may be offered later witho
 
 The menu is not ornamental. It is the control plane for the platform.
 
-**Gate:** all essential VR-shell functions can be operated while the phone is in the headset without touching the screen, the first-run wizard can be completed/skipped/re-entered safely, and the user can intentionally recover to the 2D setup mode when necessary.
+**Gate:** all essential VR-shell functions can be operated while the phone is in the headset without touching the screen or using any external controller; the gaze-only recovery path is verified. The first-run wizard can be completed/skipped/re-entered safely and the user can intentionally recover to the 2D setup mode. Verify baseline phone-only operation offline with no laptop, second Android application, or local router.
 
 ## Phase 3 — Full settings control
 
@@ -289,6 +289,8 @@ Only after the reference path works:
 - historical Daydream compatibility research where legally and technically appropriate.
 
 Compatibility expansion must not destabilize the Galaxy S9 reference path.
+
+Any laptop hotspot, controller forwarding, disc-image import or optional desktop file bridge is an *accessory integration* beyond the phone-only baseline. It must not become a boot, input, runtime, update or game-launch requirement. ReverieVR continues to install as a single APK; user-requested, licensed emulator cores may be stored as app-private optional module data rather than separate Android applications. The laptop never becomes the emulation host for ordinary phone playback.
 
 ## Prevent phone-test APK build starvation (2026-10-11)
 
