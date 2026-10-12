@@ -1,3 +1,35 @@
+## 2026-10-12 — Owner original music authorized for *every* APK variant
+
+The owner explicitly reaffirmed that all eleven provided MP3 files are
+their own original musical products, that they have commercial rights to
+them, and directed inclusion in the normal application. The source manifest,
+REUSE scope, new `LicenseRef-Owner-Original-Music` and
+`docs/licensing/OWNER_ORIGINAL_MUSIC.md` reflect that declaration;
+these are owner-commercial permissions, not MIT, CC BY, CC0, public domain
+or unrestricted third-party music sublicensing.
+
+ReverieVR's `stageOwnerMusicAssets` now verifies master file byte lengths
+and SHA-256, copies all eleven into Gradle generated assets, checks staged
+SHA-256, and generates `music/owner_library.tsv` with owner-original license
+IDs. `main` assets source set and all variant asset-merger tasks depend
+on that stage: debug, phoneTest and release now all include the full
+twelve-track offline library alongside Starry Cereal. The asset registry
+marks all eleven recordings required, commercially authorized, and
+hash-pinned, while the licensing audit validates their source masters,
+authorization, registry mapping and exact bytes. No duplicate Git binary
+blobs, remote music service, desktop companion, OCR or screenshot
+interpretation. APK size increases intentionally by 66,325,607 audio bytes.
+
+Home alternates Starry Cereal/Sky Lobby Drift/Glass Lobby Drift across
+sessions and between songs; Breakwater Battery plays Mars des Souvenirs
+when active. The assigned Ministry and bar cue IDs still await their
+native game modules, while the remaining six records are playable in
+the general offline library.
+
+**Acceptance limitation:** authoring, commits and remote checks do not
+prove Gradle execution, an APK build or Galaxy S9 audio behavior.
+Validate assembled source and playback before claiming device acceptance.
+
 ## 2026-10-12 — Music preview APK allowlist and truthful library label
 
 The optional generated `assets/music/source_preview.tsv` file is now

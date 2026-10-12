@@ -23,28 +23,30 @@ See [the SPDX/REUSE and asset registry](docs/licensing/ASSET_REGISTRY.json)
 and each Release's `DIST-LICENSE-MANIFEST.json` for actual files,
 copyright/attribution records, and unresolved rights.
 
-All [eleven uploaded source MP3s](music/source/README.md) now exist in
-GitHub. **Debug and phone-test builds** stage these recordings, verify
-their hashes and package them in an offline music-preview library.
-Those builds rotate Starry Cereal, Sky Lobby Drift and Glass Lobby Drift
-as three alternative lobby cues across launches and track completions.
-The existing Breakwater Battery (Beachhead-style) game is mapped to
-Mars des Souvenirs while active. The Ministry of Intelligence and bar
-cues are registered for future matching native-module IDs; their games
-are not claimed to exist here. The other six titles appear in the
-test-build music library without automatic game assignment. The extra
-audio adds approximately 66.3 MB to the debug/phone-test APK.
-**Unrestricted release APKs exclude all eleven review-pending files**
-until per-track distribution rights are recorded. The uploaded audio
-is not MIT, CC BY or CC0 by virtue of being on this public repository.
+**All eleven original tracks are now included in every ReverieVR APK
+variant.** The project owner explicitly confirms ownership and commercial
+distribution rights for these MP3s (recorded in
+[Owner Original Music](docs/licensing/OWNER_ORIGINAL_MUSIC.md)).
+They are staged from the [single Git source library](music/source/README.md)
+after exact SHA-256 validation, without duplicating audio commits.
+The full twelve-track Native Music Library is offline and local.
+Starry Cereal, Sky Lobby Drift and Glass Lobby Drift rotate as lobby
+music; the existing Breakwater Battery native game plays Mars des Souvenirs.
+The Last Bugle Call (Ministry of Intelligence) and The Last Note Hangs
+Unresolved (bar project) are mapped to their intended future native module
+IDs, without pretending those games already ship. Six other songs are
+available in the general library. These songs add **66.3 MB** to the base
+APK, intentionally, on every build variant. Commercial use of the songs
+as part of ReverieVR is authorized; the music itself is **not** MIT,
+Creative Commons, CC0 or public domain.
 
 The offline **Native Music Library** is available from VR Home, with
-browse/previous/next/pause controls. The catalog is sourced from the owner's
-[Jovian-PostPunkRevival Suno profile](https://suno.com/@jovianpostpunkrevival7375)
-and accepts only owner-authorized, official paid-plan audio downloads
-(see [Suno music provenance](docs/licensing/SUNO_AUDIO_PROVENANCE.md)).
-Currently Starry Cereal is packaged; the other public-profile songs are **not
-yet in the APK**. Neither the player nor the app needs a Suno connection.
+browse/previous/next/pause controls. It combines the original Starry
+Cereal resource and eleven owner-authorized original recordings.
+The broader [Jovian-PostPunkRevival Suno profile](https://suno.com/@jovianpostpunkrevival7375)
+is not scraped, mirrored or streamed. Other songs from that public
+profile are **not** packaged unless separately imported with the
+appropriate rights and verified bytes. Neither the player nor the app needs a Suno connection.
 Music retains a separate commercial-use license, not MIT or CC BY.
 
 The default current tree excludes Valve's noncommercial CAD-derived controller

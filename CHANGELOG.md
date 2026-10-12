@@ -6,22 +6,21 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
-### Offline preview library and lobby soundtrack rotation
+### Eleven owner-original songs in every APK + rotating lobby
 
-- All eleven supplied MP3 masters have been verified on GitHub. Debug
-  and phone-test builds now generate byte/hash-verified local assets from
-  the authoritative sources, with no duplicate tracked binary payload.
-- The native player accepts an isolated review-pending preview catalog
-  alongside the licensed release catalog: 12 test-build tracks, with
-  Starry Cereal, Sky Lobby Drift and Glass Lobby Drift rotating in Home
-  between sessions and songs.
-- Mars des Souvenirs plays as the existing Breakwater Battery native
-  game's soundtrack; Ministry/bar title bindings remain future module
-  contracts. DOS/video/unmapped native games continue suppressing lobby
-  music.
-- Preview audio is deliberately omitted from unrestricted release
-  builds until title-specific rights have been verified. Test APKs grow
-  about 66.3 MB; Gradle/APK and Galaxy S9 device proof still pending.
+- After explicit original-ownership and commercial-rights confirmation
+  from the owner, all eleven Git-source songs are included in debug,
+  phoneTest and release builds. The new `LicenseRef-Owner-Original-Music`
+  grants project commercial soundtrack use, not a CC/MIT/CC0 music license.
+- Source bytes, staged bytes, catalog and APK asset registry have matching
+  required SHA-256 rules. One master copy per song remains tracked in Git;
+  each APK gains an intentional 66.3 MB of offline soundtrack audio.
+- Native Music Library now combines eleven owner-original titles with
+  Starry Cereal. Lobby cycles Starry Cereal, Sky Lobby Drift and Glass
+  Lobby Drift, and Breakwater Battery uses Mars des Souvenirs.
+- Ministry and bar cue IDs remain future module contracts. Native/DOS/
+  video experiences without assigned music suppress Home music.
+  Gradle/APK and Galaxy S9 validation remain separately pending.
 
 
 ### In-headset Phone Screen panel size and distance

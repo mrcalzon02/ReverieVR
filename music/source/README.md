@@ -1,83 +1,63 @@
-# ReverieVR Source Music Library
+# ReverieVR Owner-Original Music Library
 
-**Inventory:** 11 uploaded MP3s, 66,325,607 bytes (about 63.3 MiB). This
-directory is for soundtrack **source assets**, not automatically packaged
-application data. Track identities, original names, byte counts, SHA-256
-fingerprints and intended use are defined in [manifest.json](manifest.json).
+**11 original MP3 recordings • 66,325,607 bytes (63.3 MiB).**
 
-**Source binaries verified:** All eleven original MP3s are in
-`music/source/audio/` on remote GitHub `main`. They are the only
-tracked masters. Debug and phoneTest Gradle builds now verify their
-byte lengths and SHA-256 checksums, then stage playable copies in
-ignored Gradle build output; the full 66.3 MB is **not duplicated as
-Git-tracked audio**. A separate pending-rights preview catalog
-`music/source_preview.tsv` is generated only for those test variants,
-and the current player combines it with the approved Starry Cereal
-catalog. Unrestricted release variants exclude pending tracks.
-No new streaming or network connection is introduced.
+The project owner explicitly confirms authorship/ownership and commercial
+rights for all eleven recordings as of 2026-10-12, and instructs ReverieVR
+to distribute and play them in normal builds. The authorization is recorded
+in [OWNER_ORIGINAL_MUSIC.md](../../docs/licensing/OWNER_ORIGINAL_MUSIC.md)
+and [LicenseRef-Owner-Original-Music](../../LICENSES/LicenseRef-Owner-Original-Music.txt).
+The music is not licensed under the code's MIT grant, the documentation's
+Creative Commons license, CC0, or public domain.
 
-## Assignments (intent, not shipped playback)
+All eleven original MP3s are checked into `music/source/audio/` on GitHub
+with exact byte lengths and SHA-256 checksums in [manifest.json](manifest.json).
+They are the sole Git-tracked masters. The regular Gradle build uses
+`stageOwnerMusicAssets` to validate, stage and package all eleven
+recordings into `assets/music/tracks/<track-id>.mp3` in **every**
+APK type (debug, phoneTest, release). It also generates
+`assets/music/owner_library.tsv`, combined by the offline native music
+player with the existing Starry Cereal catalog. The extra 66.3 MB is an
+intentional full-APK cost. No additional network request, streaming or
+PC companion is needed.
 
-| Exact source name | Destination | Status |
-|---|---|---|
-| The Last Note Hangs Unresolved.mp3 | Bar project | Source cue, pending import |
-| Mars des Souvenirs.mp3 | Beachhead 2000-style native project | Source cue, pending import |
-| Last Bugle Call.mp3 | Ministry of Intelligence | Source cue, pending import |
-| Sky Lobby Drift.mp3 | ReverieVR lobby alternate | Source cue, pending import |
-| Glass Lobby Drift.mp3 | ReverieVR lobby alternate | Source cue, pending import |
-| Ballroom of the Dead.mp3 | General music library | Unassigned source |
-| Deep Embrace.mp3 | General music library | Unassigned source |
-| End Of Deep.mp3 | General music library | Unassigned source |
-| Nowhere King.mp3 | General music library | Unassigned source |
-| Pressure Under Europa.mp3 | General music library | Unassigned source |
-| World Below.mp3 | General music library | Unassigned source |
+## Original tracks and application routing
 
-Starry Cereal remains the currently packaged default. Sky Lobby Drift and
-Glass Lobby Drift are alternate candidates for a future session/track
-rotation, **not** active lobby playback yet. The user-provided originals
-remain outside `app/src/main/assets` and `app/src/main/res`, so adding
-source files does not silently inflate the phone APK by ~66 MB. The
-`NativeMusicCatalog` must continue advertising *only* audio actually
-present in the APK; a missing source file must not create an inert in-VR
-music item.
+| Original recording | Project or use |
+|---|---|
+| The Last Note Hangs Unresolved.mp3 | Bar project; future native module cue |
+| Mars des Souvenirs.mp3 | Breakwater Battery (Beachhead-style) game's looping music |
+| Last Bugle Call.mp3 | Ministry of Intelligence; future native module cue |
+| Sky Lobby Drift.mp3 | ReverieVR lobby alternative |
+| Glass Lobby Drift.mp3 | ReverieVR lobby alternative |
+| Ballroom of the Dead.mp3 | General music library |
+| Deep Embrace.mp3 | General music library |
+| End Of Deep.mp3 | General music library |
+| Nowhere King.mp3 | General music library |
+| Pressure Under Europa.mp3 | General music library |
+| World Below.mp3 | General music library |
 
-## Rights and distribution boundary
+All eleven recordings are included in the Music Library regardless of
+game assignment. Automatic Home music cycles Starry Cereal, Sky Lobby Drift,
+and Glass Lobby Drift, across session starts and track completion; none
+of the other nine recordings is silently used as lobby music.
+A hosted game with an assigned soundtrack plays that specific cue.
+Unmatched native games, DOS and the video player continue muting
+shell music while playing.
 
-Source transfer does **not** imply MIT, CC BY, CC0 or public-domain rights
-for the audio. Rights and official download/commercial-use entitlement
-have **not** been independently attested per track. Existing Suno-specific
-packaging rules require each song's paid-download and per-track records
-before admission to the distributed APK. Music may also originate outside
-Suno; do not misattribute unidentified uploads.
+The two future bar/Ministry module identifiers exist as *routing policy*
+only, pending their actual admission to ReverieVR. No functionality is
+claimed for modules that are not yet registered.
 
-Publishing these source MP3s to this **public** repository redistributes
-their bytes. Before running the importer with `-Publish`, confirm rights to
-publish the recordings and any included third-party samples. Record a
-file-specific license/provenance review; do not let the repo's software
-MIT or documentation CC BY glob accidentally license these audio files.
-`LicenseRef-Pending-Asset-Rights` means **rights review required**, not
-permission granted.
+## No duplicate imports or alternate licensing
 
-## Completed binary import (historical Windows instructions)
+**Do not reimport these MP3s from an old ZIP.** GitHub already contains
+their exact original binary data and the Gradle build stages it from
+there without creating a second tracked blob directory.
+Do not automatically classify the recordings as public-domain, CC or
+Suno-only content; the explicit original-owner commercial license covers
+this set. New third-party audio requires a separate rights assessment.
 
-From an up-to-date, authenticated local checkout of `main`, extract the
-`Import-ReverieMusic.ps1` script from the supplied music ZIP into the
-checkout root, then execute:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\Import-ReverieMusic.ps1 -Bundle "C:\path\ReverieVR_Source_Music_11_Tracks.zip" -Publish
-```
-
-The importer validates all 11 source MP3 filenames, lengths and SHA-256
-values *before* changing repository content, refuses divergent existing
-files, commits only the specified source binaries, pushes without force,
-retries transient push failures up to three attempts, and reads back
-`origin/main` to verify its commit. If push or read-back fails, the
-local commit stays intact and must **not** be reported as remote success.
-
-The importer finished successfully; the manifest records
-`source-binaries-checked-in`. This historical reimport command is no
-longer required. Test-build music playback is now integrated, while
-an unrestricted commercial/public release still requires individual
-rights and attribution review.
-No GitHub Actions change is necessary.
+Galaxy S9 actual playback/thermals and assembled APK verification remain
+their own device acceptance gates; source commits alone do not prove
+a signed APK was built or installed.
