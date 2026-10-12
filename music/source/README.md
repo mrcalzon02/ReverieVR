@@ -73,6 +73,9 @@ retries transient push failures up to three attempts, and reads back
 `origin/main` to verify its commit. If push or read-back fails, the
 local commit stays intact and must **not** be reported as remote success.
 
-After ingestion, update `binary_status` in the manifest in a separate
-verified remote commit; only then begin individual runtime/rights admission.
+The importer updates `binary_status` to `source-binaries-checked-in`
+**in the same local commit as the eleven hash-verified MP3s**, then pushes
+and reads back remote `main`. This status remains pending on GitHub until
+that commit is actually accepted. Individual APK/runtime/rights admission
+must still occur separately.
 No GitHub Actions change is necessary.
