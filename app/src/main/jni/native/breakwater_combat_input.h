@@ -33,7 +33,9 @@ inline CombatHudTarget HitCombatSupportHud(float x, float y) {
 constexpr CombatInputRoute RouteCombatInput(CombatHudTarget target, bool edge) {
     if (target == CombatHudTarget::None) return CombatInputRoute::Gun;
     if (!edge) return CombatInputRoute::NoAction;
-    return static_cast<CombatInputRoute>(static_cast<uint8_t>(target));
+    // HUD uses None=0, while the route enum reserves Gun=0 and
+    // NoAction=1. Every actionable HUD value is offset by one.
+    return static_cast<CombatInputRoute>(static_cast<uint8_t>(target)+1u);
 }
 // A Select press belongs to its first UI action until release. This also
 // prevents a held shop START press from firing the gun in the next phase.
