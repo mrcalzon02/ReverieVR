@@ -6946,8 +6946,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             155, 650, paint);
         paint.setColor(Color.rgb(150, 162, 174));
         paint.setTextSize(16.0f * uiScale);
-        canvas.drawText("Offline audio. Test-preview tracks await rights review; "
-            + "no Suno streaming.", 155, 690, paint);
+        canvas.drawText("Owner-original offline soundtrack • No streaming.", 155, 690, paint);
     }
 
     private void drawNativeLibrary(

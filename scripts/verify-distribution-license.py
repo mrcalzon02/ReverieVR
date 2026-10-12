@@ -115,6 +115,52 @@ def static_audit(registry, baseline, errors):
                     errors.append("actual music file checksum mismatch: " + source)
         if count > registry.get("music_import_policy", {}).get("max_tracks", 1000):
             errors.append("music catalog exceeds maximum allowed tracks")
+    # Eleven owner-original masters have explicit authorization, checksum,
+    # size, package registry, and source provenance. Fail closed when any
+    # master or package declaration diverges.
+    owner_manifest = ROOT / "music/source/manifest.json"
+    if not owner_manifest.is_file():
+        errors.append("owner-original music manifest missing")
+    else:
+        inventory = load(owner_manifest)
+        tracks = inventory.get("tracks", [])
+        if (inventory.get("schema") != 1
+                or inventory.get("binary_status") != "source-binaries-checked-in"
+                or len(tracks) != 11
+                or inventory.get("rights_attestation", {}).get(
+                    "owner_confirms_commercial_distribution_rights") is not True
+                or inventory.get("rights_attestation", {}).get(
+                    "owner_claims_original_work") is not True):
+            errors.append("owner original music authorization/track count mismatch")
+        import re
+        seen_tracks = set()
+        for track in tracks:
+            title = track.get("title", "")
+            track_id = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+            path = "assets/music/tracks/" + track_id + ".mp3"
+            item = registry["apk_assets"].get(path, {})
+            source_rel = track.get("relative_path", "")
+            master = ROOT / source_rel
+            if (not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,79}", track_id)
+                    or track_id in seen_tracks
+                    or source_rel != "music/source/audio/" + track.get("filename", "")
+                    or track.get("filename") != title + ".mp3"
+                    or track.get("license") != "LicenseRef-Owner-Original-Music"
+                    or item.get("license") != "LicenseRef-Owner-Original-Music"
+                    or item.get("rights") != "commercial-use-authorized"
+                    or item.get("required") is not True
+                    or item.get("sha256") != track.get("sha256")
+                    or item.get("source_master") != source_rel
+                    or not master.is_file()
+                    or master.stat().st_size != track.get("bytes")):
+                errors.append("owner music source/registry conflict: " + title)
+            elif sha256(master.read_bytes()) != track.get("sha256"):
+                errors.append("owner music binary checksum mismatch: " + title)
+            seen_tracks.add(track_id)
+        owner_index = registry["apk_assets"].get(
+            "assets/music/owner_library.tsv", {})
+        if owner_index.get("required") is not True:
+            errors.append("owner-original packaged music catalog missing")
     for name, item in registry["apk_assets"].items():
         if item["license"].startswith("LicenseRef-") and not (
                 ROOT / ("LICENSES/" + item["license"] + ".txt")).is_file():

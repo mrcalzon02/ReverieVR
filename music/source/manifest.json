@@ -2,9 +2,9 @@
   "schema": 1,
   "repository": "mrcalzon02/ReverieVR",
   "media_format": "audio/mpeg",
-  "admission": "Preview only in debug/phoneTest APKs after Gradle verifies each checked-in original; release builds exclude review-pending recordings",
+  "admission": "Included in every ReverieVR APK build (debug, phoneTest, release) from one Git-tracked master per track; content SHA-256 verified before packaging.",
   "binary_status": "source-binaries-checked-in",
-  "notes": "All 11 MP3 binaries now exist in GitHub and are used in development soundtrack previews. The user authorized integration but individual legal/commercial music entitlements are not independently documented; preview is not an unrestricted redistribution grant.",
+  "notes": "On 2026-10-12 the project owner explicitly identified all eleven recordings as their own original musical products and confirmed commercial distribution rights, directing inclusion in ReverieVR. These tracks remain reserved owner music, not MIT/CC BY/CC0/public domain; third-party cloning grants no general royalty-free music license.",
   "lobby_pool": [
     "starry-cereal (currently packaged)",
     "glass-lobby-drift",
@@ -20,8 +20,8 @@
       "sha256": "e282efccd18c453fab47e582ef85378cbb502b44622f53b553868ffb4b7029a3",
       "bytes": 4679368,
       "duration_ms": 194880,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "Deep Embrace",
@@ -32,8 +32,8 @@
       "sha256": "4fab6cdd5699e1ada89466fcbb411d90d6f8438909eb3fd2cbcd33b000ff69ea",
       "bytes": 11798287,
       "duration_ms": 480000,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "End Of Deep",
@@ -44,8 +44,8 @@
       "sha256": "667876f08b63d4da9eed3f085965dbca40523d0b8f05f6c45be1bc87fb27e1a3",
       "bytes": 7325021,
       "duration_ms": 312024,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "Glass Lobby Drift",
@@ -56,8 +56,8 @@
       "sha256": "38ed19c702f83bfb8fccab7816d23c5baaab551318d3ca66e4a8a34121bac566",
       "bytes": 3955650,
       "duration_ms": 174048,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "Last Bugle Call",
@@ -68,8 +68,8 @@
       "sha256": "6d0aa4327179f2615670c41b89a332218de6f65fe28e09945a393e67609681ec",
       "bytes": 4564177,
       "duration_ms": 197184,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "Mars des Souvenirs",
@@ -80,8 +80,8 @@
       "sha256": "8ccf02e554919678ceffd9ac5da64f2b7854f01a7ac7c31ed179ea7240332a4d",
       "bytes": 3067882,
       "duration_ms": 129960,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "Nowhere King",
@@ -92,8 +92,8 @@
       "sha256": "5e30d1bce9b0b570fab65f8878d4c6e25494ed7d3629aa99e7523411e30fa3d7",
       "bytes": 6886102,
       "duration_ms": 295512,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "Pressure Under Europa",
@@ -104,8 +104,8 @@
       "sha256": "c1e781c3418dfd1978edfcdda1fd7bb2e5432104afa44a2e625e1b59fa432650",
       "bytes": 6970552,
       "duration_ms": 283080,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "Sky Lobby Drift",
@@ -116,8 +116,8 @@
       "sha256": "f94ca694baedc94a3b1000b725e1c2c08c0016404db9bb5f461f4ec7725cf93c",
       "bytes": 5121976,
       "duration_ms": 220608,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "The Last Note Hangs Unresolved",
@@ -128,8 +128,8 @@
       "sha256": "6be461d1d39bfd5f84d63a00562eb1fec905b121c231a4a2fa2c919800f6987d",
       "bytes": 6568782,
       "duration_ms": 288840,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     },
     {
       "title": "World Below",
@@ -140,8 +140,16 @@
       "sha256": "e589c09eea37112f89a6c7f7b87b9213cb8cb1d9533b43296087e3cb9055d168",
       "bytes": 5387810,
       "duration_ms": 234624,
-      "rights": "owner-provided; third-party/commercial-reuse entitlement not independently documented",
-      "license": "LicenseRef-Pending-Asset-Rights"
+      "rights": "owner-confirmed original music with commercial usage rights, authorized for ReverieVR distribution",
+      "license": "LicenseRef-Owner-Original-Music"
     }
-  ]
+  ],
+  "rights_attestation": {
+    "date": "2026-10-12",
+    "basis": "Project owner declaration in project conversation",
+    "owner_claims_original_work": true,
+    "owner_confirms_commercial_distribution_rights": true,
+    "approved_scope": "ReverieVR app soundtracks, music library and first-party projects",
+    "free_relicense_granted": false
+  }
 }

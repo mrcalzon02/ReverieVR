@@ -6,7 +6,6 @@ import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 /**
@@ -43,17 +42,15 @@ final class ShellMenuMusic implements AutoCloseable {
             }
         }
         if (loaded != null && this.context != null) {
-            // Only the debug/phoneTest source set packages this companion
-            // catalog. Release builds do not ship review-pending recordings.
-            try (InputStream preview =
-                     this.context.getAssets().open("music/source_preview.tsv")) {
+            // All builds contain the separate owner-original audio catalog.
+            // Keep legacy Suno and owner-commercial provenance distinct.
+            try (InputStream ownerAudio =
+                     this.context.getAssets().open("music/owner_library.tsv")) {
                 loaded = NativeMusicCatalog.combine(loaded,
-                    NativeMusicCatalog.parseSourcePreview(preview));
-            } catch (FileNotFoundException absentInRelease) {
-                // Expected for the unrestricted release configuration.
+                    NativeMusicCatalog.parseOwnerMusic(ownerAudio));
             } catch (IOException problem) {
                 ReverieLog.error("MENU_MUSIC",
-                    "Source-preview music catalog rejected", problem);
+                    "Owner-original music catalog missing or invalid", problem);
             }
         }
         catalog = loaded;

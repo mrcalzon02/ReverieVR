@@ -59,18 +59,18 @@ public final class NativeMusicCatalogTest {
         }
     }
 
-    @Test public void reviewPendingAudioOnlyEntersExplicitPreview()
+    @Test public void ownerOriginalCatalogRequiresSpecificCommercialLicense()
         throws Exception {
         String row = "sky-lobby-drift\tSky Lobby Drift\t" +
             "music/tracks/sky-lobby-drift.mp3\t" +
             "LicenseRef-Pending-Asset-Rights\t" + DIGEST + "\n";
         try {
             parse(row);
-            fail("Review-pending music must not enter licensed catalog");
+            fail("Owner-original audio must not be mislabeled Suno licensed");
         } catch (IOException expected) {
-            // The released catalog is strict.
+            // The licensed catalogs remain strictly separated.
         }
-        NativeMusicCatalog preview = NativeMusicCatalog.parseSourcePreview(
+        NativeMusicCatalog preview = NativeMusicCatalog.parseOwnerMusic(
             new ByteArrayInputStream(row.getBytes(StandardCharsets.UTF_8)));
         assertEquals(1, preview.size());
         invalid("unapproved\tBad\tmusic/tracks/unapproved.mp3\t" +
@@ -100,7 +100,7 @@ public final class NativeMusicCatalogTest {
             "glass-lobby-drift\tGlass Lobby Drift\tmusic/tracks/glass-lobby-drift.mp3\t" +
             "LicenseRef-Pending-Asset-Rights\t" + DIGEST + "\n";
         NativeMusicCatalog library = NativeMusicCatalog.combine(
-            parse(licensed),NativeMusicCatalog.parseSourcePreview(
+            parse(licensed),NativeMusicCatalog.parseOwnerMusic(
                 new ByteArrayInputStream(preview.getBytes(StandardCharsets.UTF_8))));
         assertArrayEquals(new int[]{0,1,3},
             NativeMusicPlaybackPolicy.availableLobbyTracks(library));

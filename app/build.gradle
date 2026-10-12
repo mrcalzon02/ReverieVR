@@ -96,17 +96,17 @@ def updateChannelEnabled =
 
 
 /*
- * Review-pending source MP3s are generated into debug / phoneTest only.
- * The 'release' variant cannot accidentally inherit these recordings.
- * Authoritative Git masters are verified on every staging run.
+ * All eleven owner-authorized songs are staged into every APK variant.
+ * Source remains in one Git location; every original and staged MP3 is
+ * SHA-256 validated before AAPT packages local files. No network runtime.
  */
 def sourceMusicManifest = rootProject.file("music/source/manifest.json")
 def sourceMusicMasters = rootProject.file("music/source/audio")
-def sourceMusicPreview = layout.buildDirectory.dir("generated/sourceMusicPreview")
-def stageSourceMusicPreview = tasks.register("stageSourceMusicPreview") {
+def ownerMusicAssets = layout.buildDirectory.dir("generated/ownerMusicAssets")
+def stageOwnerMusicAssets = tasks.register("stageOwnerMusicAssets") {
     inputs.file(sourceMusicManifest)
     inputs.dir(sourceMusicMasters)
-    outputs.dir(sourceMusicPreview)
+    outputs.dir(ownerMusicAssets)
     doLast {
         def manifest = new groovy.json.JsonSlurper().parse(sourceMusicManifest)
         if (manifest.schema != 1 ||
@@ -126,14 +126,14 @@ def stageSourceMusicPreview = tasks.register("stageSourceMusicPreview") {
                 String.format("%02x", it & 0xff)
             }.join("")
         }
-        File out = sourceMusicPreview.get().asFile
+        File out = ownerMusicAssets.get().asFile
         project.delete(out)
         File targetFolder = new File(out, "music/tracks")
         if (!targetFolder.mkdirs() && !targetFolder.isDirectory())
-            throw new GradleException("Cannot create music preview staging")
+            throw new GradleException("Cannot create owner music staging")
         def ids = new HashSet<String>()
         def entries = [
-            "# Source-preview music: pending commercial redistribution review",
+            "# Owner-original music: commercially authorized for ReverieVR",
             "# id<TAB>title<TAB>source<TAB>license<TAB>sha256"
         ]
         manifest.tracks.each { track ->
@@ -143,7 +143,7 @@ def stageSourceMusicPreview = tasks.register("stageSourceMusicPreview") {
                 .replaceAll('(^-|-$)', "")
             if (!id.matches("[a-z0-9][a-z0-9_-]{0,79}") ||
                 !ids.add(id) ||
-                track.license != "LicenseRef-Pending-Asset-Rights" ||
+                track.license != "LicenseRef-Owner-Original-Music" ||
                 track.filename != title + ".mp3")
                 throw new GradleException("Invalid source music record: " + title)
             File master = new File(sourceMusicMasters, track.filename.toString())
@@ -157,9 +157,9 @@ def stageSourceMusicPreview = tasks.register("stageSourceMusicPreview") {
             if (digestOf(staged) != track.sha256)
                 throw new GradleException("Staged music verification failed: " + title)
             entries << [id,title,"music/tracks/" + id + ".mp3",
-                        "LicenseRef-Pending-Asset-Rights",track.sha256].join("\t")
+                        "LicenseRef-Owner-Original-Music",track.sha256].join("\t")
         }
-        new File(out,"music/source_preview.tsv").text =
+        new File(out,"music/owner_library.tsv").text =
             entries.join("\n") + "\n"
     }
 }

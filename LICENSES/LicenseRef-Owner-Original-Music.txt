@@ -1,0 +1,15 @@
+LicenseRef-Owner-Original-Music: owner-authorized original soundtrack
+
+On 2026-10-12, the ReverieVR project owner explicitly confirmed that the
+eleven recordings listed in music/source/manifest.json are their original
+musical products, that they hold commercial rights, and that they authorize
+their inclusion and use in ReverieVR and its first-party projects.
+
+Commercial distribution and playback as part of ReverieVR's APK and
+first-party games is authorized by the owner. Exact titles and source
+SHA-256 values are retained in music/source/manifest.json.
+
+This is a project-specific grant, NOT MIT, Creative Commons, CC0,
+public domain, an assignment of copyright, or permission for unrelated
+third parties to independently redistribute or resell the recordings.
+Open-source rights in code do not apply to these audio masters.

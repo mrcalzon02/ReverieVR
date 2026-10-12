@@ -13,7 +13,7 @@ import java.util.Set;
 
 /**
  * Versioned offline listing of packaged audio. The approved catalog and
- * debug/phoneTest-only, review-pending preview remain distinct.
+ * separately licensed owner-original music catalog remain distinct.
  * A public Suno URL is not an audio download or a license grant.
  */
 final class NativeMusicCatalog {
@@ -51,15 +51,15 @@ final class NativeMusicCatalog {
         return parseCatalog(input, false);
     }
 
-    /** Phone-test-only source recordings; pending rights are never
-     * silently upgraded to a commercially cleared release catalog. */
-    static NativeMusicCatalog parseSourcePreview(InputStream input)
+    /** Commercially authorized owner-original music remains separately
+     * identified from older Suno-labelled entries, without CC relicensing. */
+    static NativeMusicCatalog parseOwnerMusic(InputStream input)
         throws IOException {
         return parseCatalog(input, true);
     }
 
     private static NativeMusicCatalog parseCatalog(InputStream input,
-                                                   boolean sourcePreview)
+                                                   boolean ownerMusic)
         throws IOException {
         if (input == null) throw new IOException("Missing music catalog");
         List<Track> rows = new ArrayList<>();
@@ -83,11 +83,11 @@ final class NativeMusicCatalog {
                     || !seen.add(id)
                     || title.isEmpty() || title.length() > 170
                     || title.indexOf((char) 13) >= 0
-                    || !license.equals(sourcePreview
-                        ? "LicenseRef-Pending-Asset-Rights"
+                    || !license.equals(ownerMusic
+                        ? "LicenseRef-Owner-Original-Music"
                         : "LicenseRef-Suno-Commercial-Use")
                     || !digest.matches("[a-f0-9]{64}")
-                    || !(sourcePreview
+                    || !(ownerMusic
                         ? source.matches(
                             "music/tracks/[a-z0-9][a-z0-9_-]{0,79}\\.mp3")
                         : source.equals("resource:starry_cereal_menu")

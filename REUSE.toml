@@ -56,14 +56,14 @@ precedence = "override"
 SPDX-FileCopyrightText = ["rje", "TechnoBuddhist"]
 SPDX-License-Identifier = "LicenseRef-Daydream-Upstream-Review"
 
-# Source-only music masters must not inherit the MIT/CC BY grants that
-# cover application code and documentation. Public uploading still needs
-# an actual authorization from the applicable recording rightsholder.
+# Owner expressly confirms all 11 recordings are original and commercially
+# cleared for ReverieVR. Their commercial use is authorized; neither MIT nor
+# CC BY/CC0 rights are granted to downstream music redistributors.
 [[annotations]]
 path = ["music/source/audio/*.mp3"]
 precedence = "override"
-SPDX-FileCopyrightText = "NOASSERTION"
-SPDX-License-Identifier = "LicenseRef-Pending-Asset-Rights"
+SPDX-FileCopyrightText = "2026 ReverieVR music owner"
+SPDX-License-Identifier = "LicenseRef-Owner-Original-Music"
 
 # Metadata/documents are project-authored; these do not relicense MP3s.
 [[annotations]]
