@@ -1,3 +1,15 @@
+## 2026-10-12 — Live now-playing selection after music advancement
+
+The active Music Library song has a readable `[NOW]` text marker,
+independent of color or reticle hue. When the local MediaPlayer
+automatically completes and advances to the next track, a one-shot
+UI-thread callback invalidates the VR music texture so the title and
+selection change immediately on the next GL frame; no frame polling,
+new network traffic, OCR or audio-content analysis. The callback is
+attached after renderer construction and cleared on close. Input-driven
+music buttons retain their existing refresh path. Android build and
+Galaxy S9 device acceptance remain pending.
+
 ## 2026-10-12 — Music-only volume and mute controls (source)
 
 The Native Music Library now exposes three working focusable controls:

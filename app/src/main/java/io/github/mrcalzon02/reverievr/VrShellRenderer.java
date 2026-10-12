@@ -89,6 +89,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onNativeModuleStopRequested();
         String[] getNativeMusicTrackNames();
         String getNativeMusicStatus();
+        int getNativeMusicSelectedIndex();
         void onNativeMusicChoose(int index);
         void onNativeMusicStep(int direction);
         void onNativeMusicTogglePause();
@@ -6950,10 +6951,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
             + (musicCatalogPage + 1) + " / " + pageCount,
             90, 199, paint);
         String[] labels = new String[MUSIC_BUTTONS.length];
+        int nowPlaying = host.getNativeMusicSelectedIndex();
         for (int index = 0; index < 3; index++) {
             int track = musicCatalogPage * 3 + index;
             labels[index] = track < musicCatalogTitles.length
-                ? shorten(musicCatalogTitles[track], 47) : "—";
+                ? (track == nowPlaying ? "[NOW] " : "")
+                    + shorten(musicCatalogTitles[track],
+                        track == nowPlaying ? 39 : 47)
+                : "—";
         }
         labels[3] = "PREVIOUS";
         labels[4] = "PAUSE / PLAY";

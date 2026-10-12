@@ -6,6 +6,11 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Music Library actual song indicator
+
+- Add text [NOW] marker for current track and update status/selection
+  after automatic MediaPlayer completion, without a polling loop.
+
 ### Music library hearing comfort and user control
 
 - Added MUSIC −, MUSIC +, and MUTE/UNMUTE controls to the actual

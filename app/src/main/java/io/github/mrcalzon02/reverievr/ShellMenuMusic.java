@@ -29,6 +29,7 @@ final class ShellMenuMusic implements AutoCloseable {
     private int lobbyIndex;
     private int hostedCueIndex = -1;
     private boolean manualSelection;
+    private Runnable libraryRefresh;
     private boolean closed;
 
     ShellMenuMusic(Context context) {
@@ -72,6 +73,17 @@ final class ShellMenuMusic implements AutoCloseable {
             selectedIndex = lobbyIndex;
             prefs.edit().putInt(LOBBY_COUNTER, session).apply();
         }
+    }
+
+    /** A single UI refresh follows automatic song completion, rather than
+     * polling the player's state on every headset render frame. */
+    void setLibraryRefresh(Runnable callback) {
+        libraryRefresh = callback;
+    }
+
+    private void notifyLibraryRefresh() {
+        Runnable callback = libraryRefresh;
+        if (callback != null) callback.run();
     }
 
     String[] trackNames() {
@@ -229,6 +241,7 @@ final class ShellMenuMusic implements AutoCloseable {
                     }
                     releasePlayer();
                     syncPlayback();
+                    notifyLibraryRefresh();
                 }
             });
             created.setOnErrorListener((failed, what, extra) -> {
@@ -285,6 +298,7 @@ final class ShellMenuMusic implements AutoCloseable {
     @Override
     public void close() {
         closed = true;
+        libraryRefresh = null;
         lifecycleActive = false;
         shellActive = false;
         releasePlayer();

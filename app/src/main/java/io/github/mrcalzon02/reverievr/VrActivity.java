@@ -216,6 +216,9 @@ public final class VrActivity extends Activity
                 this
             );
         renderer.setPhoneBattery(readPhoneBattery());
+        menuMusic.setLibraryRefresh(() -> {
+            if (renderer != null) renderer.requestMusicUiRefresh();
+        });
         refreshDosModuleStatus();
 
         VrStartupGuard.setPhase(
@@ -1656,6 +1659,11 @@ public final class VrActivity extends Activity
     public String getNativeMusicStatus() {
         return menuMusic == null
             ? "MUSIC UNAVAILABLE" : menuMusic.playbackStatus();
+    }
+
+    @Override
+    public int getNativeMusicSelectedIndex() {
+        return menuMusic == null ? -1 : menuMusic.trackIndex();
     }
 
     @Override
