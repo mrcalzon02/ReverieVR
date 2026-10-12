@@ -10,11 +10,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.UUID;
 
 final class DosModuleImporter {
     private static final int BUFFER_SIZE = 64 * 1024;
+    private static final long MAX_CONTENT_BYTES = 8L * 1024 * 1024 * 1024;
 
     private final Context context;
     private final DosModuleRepository repository;
@@ -37,6 +40,15 @@ final class DosModuleImporter {
             );
         }
 
+        InputStream raw=context.getContentResolver().openInputStream(uri);
+        if(raw==null)throw new IOException("Android could not open the selected file.");
+        return importStream(raw,displayName);
+    }
+
+    /** Shared, bounded local importer for SAF and user-approved remote sources. */
+    DosGameModule importStream(InputStream raw,String displayName)
+        throws IOException {
+        if(raw==null)throw new IOException("DOS input stream is unavailable.");
         String safeName =
             sanitizeFileName(displayName);
         if (!DosContentSupport.isSupportedFileName(safeName)) {
@@ -53,10 +65,6 @@ final class DosModuleImporter {
             "DOS_IMPORT",
             "Import start name="
                 + safeName
-                + " uriScheme="
-                + (uri.getScheme() == null
-                    ? "unknown"
-                    : uri.getScheme())
         );
         File directory =
             new File(repository.rootDirectory(), id);
@@ -74,7 +82,7 @@ final class DosModuleImporter {
             new File(contentDirectory, safeName);
 
         try {
-            copy(uri, destination);
+            String sha256=copy(raw, destination);
 
             if (!destination.isFile()
                 || destination.length() <= 0L) {
@@ -103,6 +111,7 @@ final class DosModuleImporter {
                     + module.displayName
                     + " bytes="
                     + destination.length()
+                    + " sha256=" + sha256
                     + " path="
                     + destination.getAbsolutePath()
             );
@@ -119,32 +128,38 @@ final class DosModuleImporter {
         }
     }
 
-    private void copy(Uri uri, File destination)
+    private static String copy(InputStream raw,File destination)
         throws IOException {
-        ContentResolver resolver =
-            context.getContentResolver();
-
-        InputStream raw = resolver.openInputStream(uri);
-        if (raw == null) {
-            throw new IOException(
-                "Android could not open the selected file."
-            );
+        MessageDigest digest;
+        try {
+            digest=MessageDigest.getInstance("SHA-256");
+        } catch(NoSuchAlgorithmException exception) {
+            throw new IOException("SHA-256 is unavailable.",exception);
         }
-
-        byte[] buffer = new byte[BUFFER_SIZE];
-        try (BufferedInputStream input =
-                 new BufferedInputStream(raw);
-             BufferedOutputStream output =
-                 new BufferedOutputStream(
-                     new FileOutputStream(destination)
-                 )) {
+        byte[] buffer=new byte[BUFFER_SIZE];
+        long transferred=0L;
+        try (BufferedInputStream input=new BufferedInputStream(raw);
+             BufferedOutputStream output=new BufferedOutputStream(
+                 new FileOutputStream(destination))) {
             int read;
-            while ((read = input.read(buffer)) >= 0) {
-                if (read > 0) {
-                    output.write(buffer, 0, read);
-                }
+            while((read=input.read(buffer))!=-1) {
+                if(Thread.currentThread().isInterrupted())
+                    throw new IOException("File import was cancelled.");
+                if(read==0)continue;
+                transferred+=read;
+                if(transferred>MAX_CONTENT_BYTES)
+                    throw new IOException("Game file exceeds 8 GiB import limit.");
+                output.write(buffer,0,read);
+                digest.update(buffer,0,read);
             }
+            output.flush();
         }
+        byte[] hash=digest.digest();
+        StringBuilder hex=new StringBuilder(hash.length*2);
+        for(byte b:hash)
+            hex.append(Character.forDigit((b>>>4)&15,16))
+               .append(Character.forDigit(b&15,16));
+        return hex.toString();
     }
 
     private static String sanitizeFileName(
