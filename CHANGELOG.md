@@ -6,6 +6,24 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Offline preview library and lobby soundtrack rotation
+
+- All eleven supplied MP3 masters have been verified on GitHub. Debug
+  and phone-test builds now generate byte/hash-verified local assets from
+  the authoritative sources, with no duplicate tracked binary payload.
+- The native player accepts an isolated review-pending preview catalog
+  alongside the licensed release catalog: 12 test-build tracks, with
+  Starry Cereal, Sky Lobby Drift and Glass Lobby Drift rotating in Home
+  between sessions and songs.
+- Mars des Souvenirs plays as the existing Breakwater Battery native
+  game's soundtrack; Ministry/bar title bindings remain future module
+  contracts. DOS/video/unmapped native games continue suppressing lobby
+  music.
+- Preview audio is deliberately omitted from unrestricted release
+  builds until title-specific rights have been verified. Test APKs grow
+  about 66.3 MB; Gradle/APK and Galaxy S9 device proof still pending.
+
+
 ### In-headset Phone Screen panel size and distance
 
 - Added four actually wired primitive controls on an independent left rail

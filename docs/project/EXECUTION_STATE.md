@@ -1,3 +1,37 @@
+## 2026-10-12 — Live test-build music library, three lobby cues and Breakwater soundtrack
+
+Verified that all 11 source MP3s (66,325,607 bytes total) are present in
+GitHub's authoritative `music/source/audio/`. The Java native music player
+now safely combines licensed `music/catalog.tsv` with a *separate*
+development-only `music/source_preview.tsv` catalog. Each runtime audio
+source is locally packaged and validated by ID/path shape; the Gradle
+`stageSourceMusicPreview` step verifies every file's source length,
+SHA-256 and copied output checksum. Only `debug` and `phoneTest`
+include the eleven recordings (~66.3 MB added). The unrestricted
+`release` variant continues to omit them. The APK asset registry
+contains review-required SHA entries and the existing strict licensed
+Suno-only catalog remains unchanged.
+
+ReverieVR Home rotates among Starry Cereal, Sky Lobby Drift and
+Glass Lobby Drift on successive application sessions and completed
+tracks, not arbitrary song content. Manual Music Library selection
+exposes the 12-track test collection. Starting the existing
+`breakwater-battery` native game suppresses lobby audio and plays
+Mars des Souvenirs as a looping local cue; exit restores Home lobby
+music. The Last Bugle Call/Ministry of Intelligence and The Last Note
+Hangs Unresolved/bar project identifiers remain **future contracts**
+until actual modules with those IDs exist; no unrelated game receives
+their music automatically. Hosted DOS/video/native modules without
+assigned cues retain the existing music suppression.
+
+Title-specific Suno/commercial redistributability is not independently
+documented. Those recordings are explicitly review-pending in test
+builds and excluded from unrestricted `release`; this is no license
+grant. Java regression tests for catalog isolation, duplicate ID
+rejection, lobby rotation and project cue routing are committed.
+Gradle/APK build and Galaxy S9 stereo/thermal/real playback validation
+remain to be established; this state does not claim an APK was built.
+
 ## 2026-10-12 — Phone panel physical size and viewing-distance controls (source)
 
 The world-space Phone Screen placeholder has a second four-key low-poly

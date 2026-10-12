@@ -27,20 +27,25 @@ https://help.suno.com/en/articles/2410177 .
 
 **2026-10-12 uploaded source candidates:** Eleven additional MP3s were
 supplied directly to the project. A SHA-256/size inventory and intended
-uses are recorded at `music/source/manifest.json`, while the binaries
-remain pending authenticated import to the public repository. No Suno
-track permalinks, generation-plan records, sampling/rework provenance,
+uses are recorded at `music/source/manifest.json`, and the binaries are verified in the public repository. Development
+`debug` and `phoneTest` builds now stage hash-verified source music
+into an independent preview catalog labeled
+`LicenseRef-Pending-Asset-Rights`. The unrestricted `release` variant
+excludes these recordings. No Suno track permalinks, generation-plan records, sampling/rework provenance,
 or legal title-by-title clearance accompanied the files. Do not
 automatically presume that all eleven are Suno recordings or that any
-is entitled to commercial APK inclusion. This source-only inventory
-does not modify `assets/music/catalog.tsv`, the native music player,
-or the approved APK license registry. A later approved packaging pass
-must update those together with evidence.
+is entitled to commercial APK inclusion. The licensed `assets/music/catalog.tsv` remains Starry Cereal-only;
+the separately generated development catalog is not falsely labeled
+a Suno-commercial music import. The APK license registry now records
+the eleven preview masters with `review-required` status and exact
+source SHA-256s. Commercial/open-release admission needs separate
+title-specific evidence.
 
 **Build/runtime:**
 - `app/src/main/assets/music/catalog.tsv` is the frozen music index
-  shipped in the base APK. This repository currently includes Starry
-  Cereal alone, in `res/raw/starry_cereal_menu.mp3`.
+  shipped in the base APK. The unrestricted release music catalog includes
+  Starry Cereal alone in `res/raw/starry_cereal_menu.mp3`; debug/phoneTest
+  add eleven review-pending source recordings.
 - The `Music Library` button in the VR Home opens a native local music
   player. It must never depend on Suno's website, network or desktop PC.
 - Additional owner-approved downloadable tracks can be imported as

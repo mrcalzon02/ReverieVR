@@ -5,14 +5,16 @@ directory is for soundtrack **source assets**, not automatically packaged
 application data. Track identities, original names, byte counts, SHA-256
 fingerprints and intended use are defined in [manifest.json](manifest.json).
 
-**Binary ingestion is still pending.** The GitHub connector can commit text
-files and accept complete base64 blobs, but it cannot upload the attached
-66 MB of local MP3s by filesystem path. The supplied
-`ReverieVR_Source_Music_11_Tracks.zip` is an independent, locally verified
-handoff: it contains all eleven original MP3s, the same manifest and a
-Windows `Import-ReverieMusic.ps1` script. Only a successful push followed
-by a remote Git read-back establishes that these binaries are in this
-public repository. Do not mark them as tracked based solely on this index.
+**Source binaries verified:** All eleven original MP3s are in
+`music/source/audio/` on remote GitHub `main`. They are the only
+tracked masters. Debug and phoneTest Gradle builds now verify their
+byte lengths and SHA-256 checksums, then stage playable copies in
+ignored Gradle build output; the full 66.3 MB is **not duplicated as
+Git-tracked audio**. A separate pending-rights preview catalog
+`music/source_preview.tsv` is generated only for those test variants,
+and the current player combines it with the approved Starry Cereal
+catalog. Unrestricted release variants exclude pending tracks.
+No new streaming or network connection is introduced.
 
 ## Assignments (intent, not shipped playback)
 
@@ -56,7 +58,7 @@ MIT or documentation CC BY glob accidentally license these audio files.
 `LicenseRef-Pending-Asset-Rights` means **rights review required**, not
 permission granted.
 
-## Verified binary import (Windows)
+## Completed binary import (historical Windows instructions)
 
 From an up-to-date, authenticated local checkout of `main`, extract the
 `Import-ReverieMusic.ps1` script from the supplied music ZIP into the
@@ -73,9 +75,9 @@ retries transient push failures up to three attempts, and reads back
 `origin/main` to verify its commit. If push or read-back fails, the
 local commit stays intact and must **not** be reported as remote success.
 
-The importer updates `binary_status` to `source-binaries-checked-in`
-**in the same local commit as the eleven hash-verified MP3s**, then pushes
-and reads back remote `main`. This status remains pending on GitHub until
-that commit is actually accepted. Individual APK/runtime/rights admission
-must still occur separately.
+The importer finished successfully; the manifest records
+`source-binaries-checked-in`. This historical reimport command is no
+longer required. Test-build music playback is now integrated, while
+an unrestricted commercial/public release still requires individual
+rights and attribution review.
 No GitHub Actions change is necessary.

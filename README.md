@@ -23,12 +23,20 @@ See [the SPDX/REUSE and asset registry](docs/licensing/ASSET_REGISTRY.json)
 and each Release's `DIST-LICENSE-MANIFEST.json` for actual files,
 copyright/attribution records, and unresolved rights.
 
-An additional [eleven-track source music inventory](music/source/README.md)
-records new owner-supplied MP3s and intended uses for the bar project,
-Beachhead-style game, Ministry of Intelligence, and alternate lobby tracks.
-**Their binary upload to GitHub is pending** and they are not yet packaged
-or playable in the current APK. Source-only candidates are not automatically
-licensed as MIT, CC BY or CC0.
+All [eleven uploaded source MP3s](music/source/README.md) now exist in
+GitHub. **Debug and phone-test builds** stage these recordings, verify
+their hashes and package them in an offline music-preview library.
+Those builds rotate Starry Cereal, Sky Lobby Drift and Glass Lobby Drift
+as three alternative lobby cues across launches and track completions.
+The existing Breakwater Battery (Beachhead-style) game is mapped to
+Mars des Souvenirs while active. The Ministry of Intelligence and bar
+cues are registered for future matching native-module IDs; their games
+are not claimed to exist here. The other six titles appear in the
+test-build music library without automatic game assignment. The extra
+audio adds approximately 66.3 MB to the debug/phone-test APK.
+**Unrestricted release APKs exclude all eleven review-pending files**
+until per-track distribution rights are recorded. The uploaded audio
+is not MIT, CC BY or CC0 by virtue of being on this public repository.
 
 The offline **Native Music Library** is available from VR Home, with
 browse/previous/next/pause controls. The catalog is sourced from the owner's
