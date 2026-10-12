@@ -22,6 +22,9 @@ final class BundledDosContentInstaller {
         "default-content/doom19s.zip";
     private static final String DOOM_SHA256 =
         "cacf0142b31ca1af00796b4a0339e07992ac5f21bc3f81e7532fe1b5e1b486e6";
+    private static final String DOOM_WAD_SHA256 =
+        "1d7d43be501e67d927e415e0b8f3e29c3bf33075e859721816f652a526cac771";
+    private static final long DOOM_WAD_SIZE = 4196020L;
     private static final String CONTENT_DIRECTORY = "content";
     private static final String RUNTIME_DIRECTORY = "runtime";
     private static final String PAYLOAD_FILE = "doom19s.zip";
@@ -187,7 +190,60 @@ final class BundledDosContentInstaller {
             );
         }
 
+        // Local app-private installation completes before DOSBox starts.
+        // No interactive DEICE prompts, typed drive letters or keyboard.
+        ensureInstalledGame(runtime);
         return runtime;
+    }
+
+    private void ensureInstalledGame(File runtime)
+        throws IOException {
+        if (isDoomInstalled(runtime)) {
+            return;
+        }
+        File first = childFile(runtime, "DOOMS_19.1");
+        File second = childFile(runtime, "DOOMS_19.2");
+        File stage = new File(runtime, "DOOMS.reverie-partial");
+        if (stage.exists() && !deleteRecursively(stage)) {
+            throw new IOException("Could not clear incomplete DOOM staging files.");
+        }
+        try {
+            BoundedZipExtractor.ExtractionResult extracted =
+                DoomSharewareRuntimeExtractor.extract(first, second, stage);
+            File contained = childDirectory(stage, "DOOMS");
+            File source = contained == null ? stage : contained;
+            File executable = childFile(source, "DOOM.EXE");
+            File wad = childFile(source, "DOOM1.WAD");
+            if (executable == null || executable.length() == 0
+                || wad == null || wad.length() != DOOM_WAD_SIZE
+                || !DOOM_WAD_SHA256.equalsIgnoreCase(sha256(wad))) {
+                throw new IOException(
+                    "Extracted DOOM shareware files failed integrity verification; "
+                    + "the DOS installer will not be launched."
+                );
+            }
+
+            File installed = new File(runtime, "DOOMS");
+            if (installed.exists() && !deleteRecursively(installed)) {
+                throw new IOException("Could not replace incomplete DOOM installation.");
+            }
+            if (!source.renameTo(installed)) {
+                throw new IOException("Could not finalize installed DOOM game.");
+            }
+            ReverieLog.milestone(
+                "BUNDLED_CONTENT",
+                "Installed original shareware locally without DOS prompts; files="
+                    + extracted.entryCount + " bytes=" + extracted.totalBytes
+            );
+        } finally {
+            if (stage.exists() && !deleteRecursively(stage)) {
+                ReverieLog.warning("BUNDLED_CONTENT",
+                    "Could not clean DOOM staging directory.");
+            }
+        }
+        if (!isDoomInstalled(runtime)) {
+            throw new IOException("Installed DOOM integrity check did not pass.");
+        }
     }
 
     private void writeLaunchMetadata(File runtime)
@@ -203,27 +259,18 @@ final class BundledDosContentInstaller {
             DoomSharewareBootstrapPlan.doomConfig()
         );
 
-        if (isDoomInstalled(runtime)) {
-            if (batch.exists() && !batch.delete()) {
-                throw new IOException(
-                    "Could not remove completed DOOM bootstrap batch."
-                );
-            }
-            writeText(
-                yml,
-                DoomSharewareBootstrapPlan.playYml()
+        if (!isDoomInstalled(runtime)) {
+            throw new IOException(
+                "DOOM is not installed; refusing to enter a DOS installer."
             );
-            return;
         }
-
-        writeText(
-            batch,
-            DoomSharewareBootstrapPlan.bootstrapBatch()
-        );
-        writeText(
-            yml,
-            DoomSharewareBootstrapPlan.installYml()
-        );
+        if (batch.exists() && !batch.delete()) {
+            throw new IOException("Could not disable the obsolete DOS installer batch.");
+        }
+        File dooms = childDirectory(runtime, "DOOMS");
+        writeText(new File(dooms, "DEFAULT.CFG"),
+            DoomSharewareBootstrapPlan.doomConfig());
+        writeText(yml, DoomSharewareBootstrapPlan.playYml());
     }
 
     private static boolean runtimeLooksValid(
@@ -239,14 +286,17 @@ final class BundledDosContentInstaller {
 
     private static boolean isDoomInstalled(
         File runtime
-    ) {
+    ) throws IOException {
         File dooms = childDirectory(runtime, "DOOMS");
         // DEICE may create DOOM.EXE before unpacking all game data.
         // An executable alone must never promote an interrupted install
         // into the direct-play path.
-        return dooms != null
-            && childFile(dooms, "DOOM.EXE") != null
-            && childFile(dooms, "DOOM1.WAD") != null;
+        if (dooms == null) return false;
+        File executable = childFile(dooms, "DOOM.EXE");
+        File wad = childFile(dooms, "DOOM1.WAD");
+        return executable != null && executable.length() > 0
+            && wad != null && wad.length() == DOOM_WAD_SIZE
+            && DOOM_WAD_SHA256.equalsIgnoreCase(sha256(wad));
     }
 
     private static File childFile(

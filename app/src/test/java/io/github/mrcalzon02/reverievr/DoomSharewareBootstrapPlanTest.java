@@ -7,15 +7,12 @@ import org.junit.Test;
 
 public final class DoomSharewareBootstrapPlanTest {
     @Test
-    public void installMetadataRunsBootstrapAndDeiceInputs() {
-        String yml =
-            DoomSharewareBootstrapPlan.installYml();
-
-        assertTrue(yml.contains("run_path: DOSBOX.BAT"));
-        assertTrue(yml.contains("(wait:1500)c"));
-        assertTrue(yml.contains("(wait:900)(enter)"));
-        assertFalse(yml.contains("c(enter)"));
-        assertFalse(yml.contains("y(enter)"));
+    public void firstLaunchNeverRequiresInstallerKeyboardInput() {
+        String yml = DoomSharewareBootstrapPlan.playYml();
+        assertTrue(yml.contains("run_path: C:\\DOOMS\\DOOM.EXE"));
+        assertFalse(yml.contains("run_input:"));
+        assertFalse(yml.contains("DOSBOX.BAT"));
+        assertFalse(yml.contains("DEICE"));
     }
 
     @Test
@@ -30,30 +27,6 @@ public final class DoomSharewareBootstrapPlanTest {
         );
         assertFalse(yml.contains("run_input:"));
         assertFalse(yml.contains("DOSBOX.BAT"));
-    }
-
-    @Test
-    public void bootstrapChainsOriginalInstallerToDoom() {
-        String batch =
-            DoomSharewareBootstrapPlan.bootstrapBatch();
-
-        assertTrue(batch.contains("DEICE.EXE"));
-        assertTrue(
-            batch.contains("DOOMS_19.EXE -d")
-        );
-        assertTrue(
-            batch.contains(
-                "copy REVERIE.CFG DOOMS\\DEFAULT.CFG"
-            )
-        );
-        assertTrue(batch.contains("DOOM.EXE"));
-    }
-
-    @Test
-    public void bootstrapRequiresAnInstalledGameBeforeLaunching() {
-        String batch = DoomSharewareBootstrapPlan.bootstrapBatch();
-        assertTrue(batch.contains("if exist DOOMS\\DOOM.EXE goto CONFIG"));
-        assertTrue(batch.contains("if not exist DOOMS\\DOOM.EXE goto END"));
     }
 
     @Test

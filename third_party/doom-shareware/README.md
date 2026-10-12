@@ -67,8 +67,10 @@ unchanged into app-private DOS-module storage, and registers:
 - module: **DOOM Shareware v1.9**
 - binding profile: `dos-doom-shareware`
 
-The current archive is the original shareware installer distribution. Until the
-DOSBox Pure host's install/autostart flow is finished, the module may initially
-enter the original installation path rather than jumping directly into E1M1.
-That remaining behavior is a runtime implementation task, not a reason to
-repackage the copyrighted archive.
+The original archive remains unchanged in the APK. On first launch,
+ReverieVR expands its numbered split payload locally and validates the
+original shareware WAD and executable **before** starting DOSBox Pure.
+It starts the installed game directly, without any DEICE drive-selection or
+keyboard prompts. Invalid or interrupted extraction returns a runtime error
+instead of launching the historical installer; the app can retry locally
+without a new download.

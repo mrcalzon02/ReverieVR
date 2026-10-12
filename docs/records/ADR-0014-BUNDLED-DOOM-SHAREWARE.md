@@ -102,12 +102,17 @@ creates a separate app-private runtime working directory on the end user's
 device, safely expands the verified outer ZIP there, and generates only
 Reverie-owned launch metadata/configuration alongside the extracted installer.
 
-The generated runtime uses DOSBox Pure's own `DOS.YML` `run_path` /
-`run_input` mechanism to start a small bootstrap batch and supply the original
-DEICE install prompts. The batch then invokes the generated
-`DOOMS_19.EXE -d`, installs a Reverie-generated `DEFAULT.CFG`, and launches
-`DOOM.EXE`. Once `DOOMS/DOOM.EXE` exists, launch metadata is rewritten to
-start the game directly and installer input automation is removed.
+The original numbered installer parts (`DOOMS_19.1`, `DOOMS_19.2`)
+are reconstructed and securely unpacked into an app-private staged directory
+**before DOSBox is started**. The signed original archive is not changed.
+The extracted `DOOM1.WAD` is checked against the expected original
+4,196,020-byte SHA-256 and the executable must be present. Only after
+both exist is the staged directory atomically promoted to `DOOMS/`.
+On every launch, the runtime writes a Reverie-generated `DEFAULT.CFG`,
+removes any legacy installer batch, and writes a `DOS.YML` containing
+a direct `DOOM.EXE` run path. There is **no DOS keyboard automation**,
+no drive-selection prompt, and no possibility of falling back to an
+interactive installer: corrupt content is rejected with a useful error.
 
 The distributed `doom19s.zip` itself is never rewritten. The generated runtime
 tree is derived local state and is not the authoritative redistributed payload.
