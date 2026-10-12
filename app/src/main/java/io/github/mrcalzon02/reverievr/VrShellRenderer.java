@@ -2035,6 +2035,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (progressTick != lastGazeProgressTick) {
             lastGazeProgressTick = progressTick;
             textureDirty = true;
+            if (mode==MODE_HOME && gazeDwell.target()>=HOME_KEYBOARD_HIT_OFFSET)
+                keyboardTextureDirty=true;
         }
         if (backRequested.getAndSet(false)) {
             gazeDwell.reset();
@@ -6676,6 +6678,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 paint
             );
             paint.setFakeBoldText(false);
+            if (focused) drawGazeDwellIndicator(canvas,paint,rect);
         }
     }
 
@@ -6724,6 +6727,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             float baseline = rect[1] + (rect[3]-rect[1]
                 - paint.ascent()-paint.descent())*0.5f;
             canvas.drawText(label, textX, baseline, paint);
+            int gazeIndex = mode == MODE_HOME
+                ? HOME_KEYBOARD_HIT_OFFSET+key : key;
+            if (gazeIndex==gazeDwell.target() && highlightedKey==key)
+                drawGazeDwellIndicator(canvas,paint,rect);
         }
         int[] done = KEYBOARD_BUTTONS[50];
         paint.setColor(highlightedKey == 50
@@ -6734,6 +6741,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(24.0f * uiScale);
         canvas.drawText("COPY + CLOSE", 429, 720, paint);
+        int doneIndex=mode == MODE_HOME ? HOME_KEYBOARD_HIT_OFFSET+50 : 50;
+        if(doneIndex==gazeDwell.target() && highlightedKey==50)
+            drawGazeDwellIndicator(canvas,paint,done);
     }
 
     private void drawEmulatorCatalog(Canvas canvas, Paint paint) {
@@ -7774,6 +7784,33 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setStyle(Paint.Style.FILL);
     }
 
+    /** One identical high-contrast reticle for Home, soft keyboard, and
+     * standard shell controls. Gaze timer and activation run once per frame. */
+    private void drawGazeDwellIndicator(Canvas canvas, Paint paint, int[] rect) {
+        if (!gazeFallbackActive || gazeDwell.target()<0) return;
+        final float cx = Float.isFinite(gazeUiX)
+            ? Math.max(rect[0]+24f,Math.min(rect[2]-24f,gazeUiX))
+            : rect[2]-35f;
+        final float cy = Float.isFinite(gazeUiY)
+            ? Math.max(rect[1]+24f,Math.min(rect[3]-24f,gazeUiY))
+            : (rect[1]+rect[3])*.5f;
+        paint.setColor(Color.rgb(230,238,245));
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(3f);
+        canvas.drawCircle(cx,cy,20f,paint);
+        paint.setStrokeWidth(5f);
+        canvas.drawArc(cx-20f,cy-20f,cx+20f,cy+20f,
+            -90f,360f*gazeDwell.progress(),false,paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(17f*uiScale);
+        paint.setFakeBoldText(true);
+        String remaining=Integer.toString(Math.max(1,
+            (int)Math.ceil(5.0*(1.0-gazeDwell.progress()))));
+        canvas.drawText(remaining,cx-paint.measureText(remaining)*.5f,
+            cy-(paint.ascent()+paint.descent())*.5f,paint);
+        paint.setFakeBoldText(false);
+    }
+
     private void drawButtons(
         Canvas canvas,
         Paint paint,
@@ -7845,34 +7882,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 - ((paint.ascent() + paint.descent()) * 0.5f);
             canvas.drawText(labels[index], x, y, paint);
             paint.setFakeBoldText(false);
-            if (focused && gazeFallbackActive) {
-                // Flat monochrome countdown on the focused UI target.
-                // No new shader, textures, or per-eye selection state.
-                // On planar panels use the *actual center-of-vision ray
-                // intersection*, not the button center. Phone/desk 3D
-                // controls retain a safe in-button marker fallback.
-                final float cx = Float.isFinite(gazeUiX)
-                    ? Math.max(rect[0]+24f,Math.min(rect[2]-24f,gazeUiX))
-                    : rect[2] - 35f;
-                final float cy = Float.isFinite(gazeUiY)
-                    ? Math.max(rect[1]+24f,Math.min(rect[3]-24f,gazeUiY))
-                    : (rect[1] + rect[3]) * .5f;
-                paint.setColor(Color.rgb(230, 238, 245));
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(3f);
-                canvas.drawCircle(cx,cy,20f,paint);
-                paint.setStrokeWidth(5f);
-                canvas.drawArc(cx-20f,cy-20f,cx+20f,cy+20f,
-                    -90f,360f*gazeDwell.progress(),false,paint);
-                paint.setStyle(Paint.Style.FILL);
-                paint.setTextSize(17f * uiScale);
-                paint.setFakeBoldText(true);
-                String remaining = Integer.toString(Math.max(1,
-                    (int)Math.ceil(5.0*(1.0-gazeDwell.progress()))));
-                canvas.drawText(remaining,cx-paint.measureText(remaining)*.5f,
-                    cy-(paint.ascent()+paint.descent())*.5f,paint);
-                paint.setFakeBoldText(false);
-            }
+            if (focused) drawGazeDwellIndicator(canvas, paint, rect);
         }
     }
 
