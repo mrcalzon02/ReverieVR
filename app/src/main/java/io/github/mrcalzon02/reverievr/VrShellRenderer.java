@@ -1903,7 +1903,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             pointerPressed = activeNativePointerKind
                     == NativeModuleRuntime.POINTER_TRACKED_CONTROLLER
                 ? controllerTouchpadPressed
-                : selectRequested.get();
+                : selecting;
         }
         controllerModelRenderer.setInteractionState(
             controllerPointerHit, pointerPressed
