@@ -333,6 +333,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {140, 535, 884, 600}
     };
 
+    // Persistent world-space DOS control console, to the right of the game.
+    private static final float DOS_MENU_LEFT = 1.05f;
+    private static final float DOS_MENU_RIGHT = 2.85f;
+    private static final float DOS_MENU_BOTTOM = -1.04f;
+    private static final float DOS_MENU_TOP = 1.04f;
+    private static final float DOS_MENU_LEFT_Z = -3.45f;
+    private static final float DOS_MENU_RIGHT_Z = -3.05f;
+
     private static final int[][] DOS_OVERLAY_BUTTONS = new int[][] {
         {100, 260, 480, 325},
         {544, 260, 924, 325},
@@ -431,6 +439,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer keyboardSlabVertexBuffer;
+    private final FloatBuffer dosMenuVertexBuffer;
     private Bitmap keyboardBitmap;
     private Canvas keyboardCanvas;
     private Paint keyboardPaint;
@@ -722,6 +731,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         };
 
         vertexBuffer = allocate(vertices);
+        // Raw coordinates match hitTiltedPanel exactly (no contraction).
+        dosMenuVertexBuffer = allocate(new float[] {
+            DOS_MENU_LEFT, DOS_MENU_BOTTOM, DOS_MENU_LEFT_Z,
+            DOS_MENU_RIGHT, DOS_MENU_BOTTOM, DOS_MENU_RIGHT_Z,
+            DOS_MENU_LEFT, DOS_MENU_TOP, DOS_MENU_LEFT_Z,
+            DOS_MENU_RIGHT, DOS_MENU_TOP, DOS_MENU_RIGHT_Z
+        });
         // Glyph texture is just above real keycap tops on the dais.
         // Use exactly the same planar bounds as HomeKeyboardGeometry's hits.
         keyboardSlabVertexBuffer = allocate(new float[] {
@@ -1330,7 +1346,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     boolean isHostedInputSuppressed() {
         return orientationMenuVisible
             || mode == MODE_DOS_OVERLAY
-            || mode == MODE_DOS_BINDINGS;
+            || mode == MODE_DOS_BINDINGS
+            || (mode == MODE_DOS && hoveredButton >= 0);
     }
 
     void setDosModules(
@@ -1747,7 +1764,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_DOS) {
             dosRenderer.updateFrame();
-            selectRequested.set(false);
 
             if (dosExitRequested.getAndSet(false)) {
                 activeDosModuleName = "";
@@ -1762,7 +1778,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 mode = MODE_DOS_OVERLAY;
                 hoveredButton = -1;
                 textureDirty = true;
+                return;
             }
+            updateShellInteraction(frameNanos);
             return;
         }
 
@@ -2011,7 +2029,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             orientationMenuVisible && keyboardQuickMenuFocusActive
                 ? hoveredButton
                 : uiTargetStabilizer.update(rawHover, frameNanos, selecting);
-        controllerPointerActive = usingControllerPointer || gazeFallbackActive;
+        controllerPointerActive = usingControllerPointer || gazeFallbackActive
+            || mode == MODE_DOS;
         controllerPointerDistance = geometryCloser
             ? scenePointerHit.distance
             : hasUiTarget ? hit.distance : 6.0f;
@@ -2347,21 +2366,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_DOS) {
-            dosRenderer.drawEye(
-                eye,
-                eyeCorrection
-            );
-            if (orientationMenuVisible) {
-                drawUiPanel(
-                    eye,
-                    eyeCorrection,
-                    true
-                );
-                drawPointerOverlay(
-                    eye,
-                    eyeCorrection
-                );
-            }
+            dosRenderer.drawEye(eye, eyeCorrection);
+            // Always show the DOS console on the right side of the game.
+            drawUiPanel(eye, eyeCorrection, true);
+            drawPointerOverlay(eye, eyeCorrection);
             return;
         }
 
@@ -2624,7 +2632,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         } else {
             drawTexturedPanel(
                 mode == MODE_KEYBOARD && !orientationMenuVisible
-                    ? keyboardSlabVertexBuffer : vertexBuffer,
+                    ? keyboardSlabVertexBuffer
+                    : (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
+                        || mode == MODE_DOS_BINDINGS) && !orientationMenuVisible
+                        ? dosMenuVertexBuffer : vertexBuffer,
                 uvBuffer
             );
         }
@@ -3904,6 +3915,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
+        if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
+            || mode == MODE_DOS_BINDINGS) {
+            return hitTiltedPanel(origin, direction,
+                DOS_MENU_LEFT, DOS_MENU_RIGHT,
+                DOS_MENU_BOTTOM, DOS_MENU_TOP,
+                DOS_MENU_LEFT_Z, DOS_MENU_RIGHT_Z,
+                0, TEXTURE_WIDTH, 0, TEXTURE_HEIGHT);
+        }
+
         if (mode == MODE_HOME && phonePanelVisible
             && !orientationMenuVisible) {
             // The phone screen is a separate vertical surface: its controls
@@ -4683,7 +4703,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             handleEnvironmentSelection(hoveredButton);
         } else if (mode == MODE_DOS_LIBRARY) {
             handleDosLibrarySelection(hoveredButton);
-        } else if (mode == MODE_DOS_OVERLAY) {
+        } else if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY) {
             handleDosOverlaySelection(hoveredButton);
         } else if (mode == MODE_DOS_BINDINGS) {
             handleDosBindingSelection(hoveredButton);
@@ -4733,8 +4753,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 4:
-                closeOrientationMenu();
-                backRequested.set(true);
+                if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
+                    || mode == MODE_DOS_BINDINGS) {
+                    closeOrientationMenu();
+                    if (mode == MODE_DOS) host.onDosOverlayPauseRequested();
+                    mode = MODE_DOS_BINDINGS;
+                    textureDirty = true;
+                } else {
+                    closeOrientationMenu();
+                    backRequested.set(true);
+                }
                 break;
 
             case 5:
@@ -5171,6 +5199,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 dosExitRequested.set(false);
                 mode = MODE_DOS;
                 hoveredButton = -1;
+                textureDirty = true;
                 return;
             }
             host.onUiActionRejected();
@@ -5196,13 +5225,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void handleDosOverlaySelection(int button) {
         switch (button) {
             case 0:
-                host.onDosOverlayResumeRequested();
-                mode = MODE_DOS;
+                if (mode == MODE_DOS) {
+                    dosRenderer.setFullScreen(!dosRenderer.isFullScreen());
+                } else {
+                    host.onDosOverlayResumeRequested();
+                    mode = MODE_DOS;
+                }
                 break;
             case 1:
                 requestRecenter();
                 break;
             case 2:
+                if (mode == MODE_DOS) host.onDosOverlayPauseRequested();
                 mode = MODE_DOS_BINDINGS;
                 break;
             case 3:
@@ -5485,6 +5519,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (mode == MODE_DOS_LIBRARY) {
             return DOS_LIBRARY_BUTTONS;
         }
+        if (mode == MODE_DOS) return DOS_OVERLAY_BUTTONS;
 
         if (mode == MODE_MEDIA_LIBRARY) {
             return preferences.hasSelectedVideo()
@@ -5570,7 +5605,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 Color.TRANSPARENT,
                 PorterDuff.Mode.CLEAR
             );
-        } else if (mode == MODE_DOS_OVERLAY
+        } else if (mode == MODE_DOS
+            || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS) {
             canvas.drawColor(
                 Color.TRANSPARENT,
@@ -5641,7 +5677,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawEnvironmentMenu(canvas, paint);
         } else if (mode == MODE_DOS_LIBRARY) {
             drawDosLibrary(canvas, paint);
-        } else if (mode == MODE_DOS_OVERLAY) {
+        } else if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY) {
             drawDosOverlay(canvas, paint);
         } else if (mode == MODE_DOS_BINDINGS) {
             drawDosBindingEditor(canvas, paint);
@@ -5774,7 +5810,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 controllerLabel,
                 "BRIGHT -",
                 "BRIGHT +",
-                "BACK",
+                (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
+                    || mode == MODE_DOS_BINDINGS) ? "DOS OPTIONS" : "BACK",
                 "HOME",
                 "EXIT PHONE",
                 "SETTINGS"
@@ -7441,7 +7478,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.rgb(184, 194, 207));
         paint.setTextSize(20.0f * uiScale);
         canvas.drawText(
-            "Paused: "
+            (mode == MODE_DOS ? "Playing: " : "Paused: ")
                 + shorten(activeDosModuleName, 42),
             90,
             210,
@@ -7459,7 +7496,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
 
         String[] labels = new String[] {
-            "RESUME",
+            mode == MODE_DOS
+                ? (dosRenderer.isFullScreen() ? "FULLSCREEN: ON" : "FULLSCREEN: OFF")
+                : "RESUME",
             "RECENTER",
             "BINDINGS",
             "VOLUME -",
