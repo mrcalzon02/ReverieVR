@@ -6,6 +6,15 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Classic Games: Checkers, Go 9x9 and Chess
+
+- Implemented source for three new first-party native game modules on the
+  existing Classic Games shelf, sharing a small GLES2 procedural renderer.
+- Added local low-complexity CPU moves with documented rules boundaries
+  and no network, assets, AI frameworks or OCR. Build/device validation
+  remains a separate acceptance gate.
+
+
 ### Phone panel close control and privacy boundary
 
 - Added a sixth crossed X/Close primitive to the rotating/tilting in-VR

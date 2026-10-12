@@ -1,3 +1,14 @@
+## 2026-10-11 — Three Classic board games (source; device proof pending)
+
+The existing native Classic Games build and host allowlist now admit
+Checkers, 9x9 Go, and Chess. These use `classic_board_games.h` for
+bounded rule-state, CPU heuristics and terminal adjudication; the existing
+GLES2 renderer draws geometric boards and labeled pieces, with ray/cursor
+selection and a Go pass command. NDK builds use three `CLASSIC_GAME_KIND`
+variants, discoverable automatically in the existing `classic-*` shelf.
+Tests, actual Android/Gradle native packaging and S9 thermal/stereo
+controller acceptance remain to verify; no shipped APK claim.
+
 ## 2026-10-11 — Scoped open-source licensing and per-release rights verification
 
 The owner selected **MIT** for independently authored ReverieVR software,

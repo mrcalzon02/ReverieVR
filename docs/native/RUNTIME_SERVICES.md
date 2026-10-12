@@ -239,3 +239,11 @@ The Home desk supports a synchronized **physical-keyboard digital twin** for Blu
 ### Controller-owned keyboard/mouse HID exemption (2026-10-12)
 
 The default-On external keyboard/mouse gate now distinguishes **optional guest HID** from a selected input device performing core VR controller duties. The original Valve Steam Controller's Android BLE keyboard/mouse compatibility profile is controller-owned even when Android does not expose `SOURCE_GAMEPAD`. A scrcpy mouse performing the selected active shell pointer is likewise controller-owned, while an unselected scrcpy mouse remains optional external HID and is gated Off. Selected scrcpy **keyboard** keys are not automatically exempt: they remain external text/guest input except shell-reserved Quick Menu navigation. This avoids disabling the only active headset control path through a setting intended for optional guest peripherals. Device identity checks and controller selection still precede this policy; Gamepad, headset tracking and recovery remain unaffected. JVM tests cover Steam hybrid input, selected/unselected scrcpy mouse, selected-scrcpy keyboard separation, and Off behavior. On-device confirmation remains pending.
+
+## Classic board games and hosted input (2026-10-11)
+
+Classic Checkers, Go 9x9 and Classic Chess use the existing native ABI
+pointer ray and primary/secondary input and optional movement axes.
+Shell stereo, controller identity, pause, Quick Menu, Home, and recovery
+remain host-owned; no raw Bluetooth/HID or new ABI services are added.
+Simulation and local CPU moves run in Update and not in eye rendering.

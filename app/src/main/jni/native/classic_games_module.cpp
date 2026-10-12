@@ -1,4 +1,5 @@
 #include "classic_games.h"
+#include "classic_board_games.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -25,11 +26,24 @@ constexpr char kTitle[]="SNAKE";
 #elif CLASSIC_GAME_KIND == 2
 constexpr char kId[]="classic-chutes-ladders";
 constexpr char kTitle[]="CHUTES AND LADDERS";
+#elif CLASSIC_GAME_KIND == 3
+constexpr char kId[]="classic-checkers";
+constexpr char kTitle[]="CHECKERS";
+#elif CLASSIC_GAME_KIND == 4
+constexpr char kId[]="classic-go";
+constexpr char kTitle[]="GO 9X9";
+#elif CLASSIC_GAME_KIND == 5
+constexpr char kId[]="classic-chess";
+constexpr char kTitle[]="CHESS";
 #else
 #error "Unknown classic game"
 #endif
 struct Module {
     State game;
+    reverie::boardgames::State board;
+    int boardCursorX=0,boardCursorY=0;
+    float cursorRepeat=0.f;
+    bool previousSecondary=false;
     GLuint program=0,vbo=0;
     GLint pos=-1,col=-1,mvp=-1;
     bool down=false,dirty=true,upload=true;
@@ -101,7 +115,128 @@ void Segment(Module *m,float x,float y,float xx,float yy,
 float CellX(int n){const int idx=n-1,row=idx/10,col=idx%10;
     return -1.24f+(row%2==0?col:9-col)*.274f;}
 float CellY(int n){return -1.22f+((n-1)/10)*.274f;}
+
+void Disc(Module *m,float x,float y,float rad,float z,
+          float r,float g,float b){
+    constexpr float pi=3.14159265358979323846f;
+    // Twelve-sided original primitive, rebuilt on simulation changes only.
+    for(int i=0;i<12;i++){
+        float a=(2.f*pi*i)/12.f,aa=(2.f*pi*(i+1))/12.f;
+        Triangle(m,x,y,x+rad*std::cos(a),y+rad*std::sin(a),
+                 x+rad*std::cos(aa),y+rad*std::sin(aa),z,r,g,b);
+    }
+}
+float BoardSpacing(const reverie::boardgames::State &s){
+    return s.Size()==9?.268f:.320f;
+}
+float BoardX(const reverie::boardgames::State &s,int x){
+    return (x-(s.Size()-1)*.5f)*BoardSpacing(s);
+}
+float BoardY(const reverie::boardgames::State &s,int y){
+    return ((s.Size()-1)*.5f-y)*BoardSpacing(s);
+}
+void BoardOutline(Module *m,float x,float y,float length,
+                  float r,float g,float b){
+    const float half=length*.5f;
+    Rect(m,x,y+half,length,.020f,-2.94f,r,g,b);
+    Rect(m,x,y-half,length,.020f,-2.94f,r,g,b);
+    Rect(m,x-half,y,.020f,length,-2.94f,r,g,b);
+    Rect(m,x+half,y,.020f,length,-2.94f,r,g,b);
+}
+void RebuildBoard(Module *m){
+    m->vertices.clear();
+    const reverie::boardgames::State &s=m->board;
+    const int size=s.Size();
+    const float gap=BoardSpacing(s);
+    Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
+    Rect(m,0,0,3.08f,3.08f,-3.045f,.34f,.24f,.15f);
+    Text(m,kTitle,0,1.58f,.082f,.91f,.94f,.94f);
+    for(int y=0;y<size;y++)for(int x=0;x<size;x++){
+        float px=BoardX(s,x),py=BoardY(s,y);
+        const bool dark=(x+y)%2!=0;
+        if(s.kind==reverie::boardgames::Kind::Go){
+            Rect(m,px,py,gap-.015f,gap-.015f,-3.01f,
+                 .69f,.51f,.29f);
+            Rect(m,px,py,gap-.018f,.008f,-2.985f,.19f,.13f,.09f);
+            Rect(m,px,py,.008f,gap-.018f,-2.985f,.19f,.13f,.09f);
+            if((x==2||x==4||x==6)&&(y==2||y==4||y==6))
+                Disc(m,px,py,.023f,-2.979f,.15f,.11f,.09f);
+        }else{
+            Rect(m,px,py,gap-.008f,gap-.008f,-3.00f,
+                 dark?.19f:.77f,dark?.32f:.80f,dark?.35f:.70f);
+        }
+        int cell=y*size+x;
+        const int piece=s.cells[cell];
+        if(piece!=0){
+            if(s.kind==reverie::boardgames::Kind::Go){
+                if(piece>0){
+                    Disc(m,px,py,.108f,-2.947f,.045f,.062f,.074f);
+                    Disc(m,px,py,.021f,-2.935f,.86f,.88f,.79f);
+                }else{
+                    Disc(m,px,py,.108f,-2.947f,.91f,.90f,.79f);
+                    Disc(m,px,py,.021f,-2.935f,.18f,.17f,.14f);
+                }
+            }else{
+                Disc(m,px,py,.125f,-2.947f,
+                     piece>0?.92f:.20f,piece>0?.92f:.23f,
+                     piece>0?.80f:.36f);
+                Disc(m,px,py,.096f,-2.934f,
+                     piece>0?.73f:.42f,piece>0?.79f:.55f,
+                     piece>0?.69f:.65f);
+                if(s.kind==reverie::boardgames::Kind::Chess){
+                    const char letters[]="?PNBRQK";
+                    char label[]={letters[std::abs(piece)],'\0'};
+                    Text(m,label,px,py-.005f,.040f,
+                         piece>0?.05f:.97f,piece>0?.10f:.97f,
+                         piece>0?.16f:.93f);
+                }else if(std::abs(piece)==2){
+                    Text(m,"K",px,py-.005f,.039f,
+                         piece>0?.04f:.97f,piece>0?.09f:.97f,
+                         piece>0?.12f:.93f);
+                }else{
+                    Disc(m,px,py,.031f,-2.927f,
+                         piece>0?.06f:.95f,piece>0?.12f:.94f,
+                         piece>0?.16f:.88f);
+                }
+            }
+        }
+        if(s.lastTo==cell){
+            const float a=gap*.48f;
+            Rect(m,px-a,py-a,.045f,.045f,-2.917f,.95f,.86f,.27f);
+            Rect(m,px+a,py+a,.045f,.045f,-2.917f,.95f,.86f,.27f);
+        }
+        if(s.selected==cell)
+            BoardOutline(m,px,py,gap*.96f,1.f,.99f,.20f);
+        if(m->boardCursorX==x&&m->boardCursorY==y)
+            BoardOutline(m,px,py,gap*.76f,.93f,.98f,.99f);
+    }
+    if(s.kind==reverie::boardgames::Kind::Go){
+        Rect(m,1.94f,-1.25f,.89f,.41f,-2.98f,.23f,.36f,.42f);
+        Text(m,"PASS",1.94f,-1.25f,.067f,1.f,1.f,.89f);
+        Text(m,"TWO PASSES END",0,-1.58f,.048f,.80f,.90f,.87f);
+    }else{
+        Text(m,"SELECT PIECE THEN DESTINATION",0,-1.58f,.040f,
+             .84f,.90f,.87f);
+    }
+    if(s.finished){
+        const char *msg=s.winner==1?"YOU WIN":s.winner==-1?
+            "CPU WINS":"DRAW";
+        Text(m,msg,0,1.34f,.074f,1.f,.91f,.58f);
+        Text(m,"PRESS TO RESTART",1.91f,.66f,.043f,1.f,.95f,.78f);
+    }else{
+        Text(m,s.side==1?"YOUR TURN":"CPU THINKING",
+             0,1.34f,.064f,.95f,.95f,.78f);
+        if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
+            Text(m,"CONTINUE JUMP",1.88f,.63f,.044f,1.f,.90f,.56f);
+    }
+    m->dirty=false;
+    m->upload=true;
+}
 void Rebuild(Module *m){
+#if CLASSIC_GAME_KIND >= 3
+    RebuildBoard(m);
+    return;
+#endif
     m->vertices.clear();
     const State &s=m->game;
     Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
@@ -184,7 +319,13 @@ void DestroyGl(Module *m){
 }
 void *Create(const ReverieNativeHostV1 *){
     Module *m=new(std::nothrow) Module();
-    if(m)m->game.Reset(static_cast<Game>(CLASSIC_GAME_KIND));
+    if(m){
+#if CLASSIC_GAME_KIND >= 3
+        m->board.Reset(static_cast<reverie::boardgames::Kind>(CLASSIC_GAME_KIND));
+#else
+        m->game.Reset(static_cast<Game>(CLASSIC_GAME_KIND));
+#endif
+    }
     return m;
 }
 void Destroy(void *ptr){delete static_cast<Module *>(ptr);}
@@ -236,6 +377,55 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             aim=std::isfinite(hx)&&std::isfinite(hy);
         }
     }
+
+#if CLASSIC_GAME_KIND >= 3
+    const int prevPly=m->board.ply,prevSelected=m->board.selected;
+    const int prevWinner=m->board.winner,prevSide=m->board.side;
+    const bool prevFinished=m->board.finished;
+    const bool second=copy.secondary_down!=0;
+    const bool secondaryEdge=second&&!m->previousSecondary;
+    m->previousSecondary=second;
+    const int n=m->board.Size();
+    const float gap=BoardSpacing(m->board);
+    const float ax=copy.move_x,ay=copy.move_y;
+    if(std::abs(ax)>.55f||std::abs(ay)>.55f){
+        m->cursorRepeat+=copy.delta_seconds;
+        if(m->cursorRepeat>=.17f){
+            m->cursorRepeat=0.f;
+            if(std::abs(ax)>std::abs(ay))
+                m->boardCursorX=std::clamp(m->boardCursorX+(ax>0?1:-1),0,n-1);
+            else
+                m->boardCursorY=std::clamp(m->boardCursorY+(ay>0?1:-1),0,n-1);
+            m->dirty=true;
+        }
+    }else m->cursorRepeat=.17f;
+    if(secondaryEdge && m->board.side==1 &&
+       m->board.kind==reverie::boardgames::Kind::Go)
+        m->board.Pass();
+    if(edge){
+        if(m->board.finished) {
+            m->board.Reset(m->board.kind);
+        }else if(m->board.side==1) {
+            if(aim && m->board.kind==reverie::boardgames::Kind::Go &&
+               hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
+                m->board.Pass();
+            else {
+                int x=m->boardCursorX,y=m->boardCursorY;
+                if(aim){
+                    x=static_cast<int>(std::floor((hx+n*.5f*gap)/gap));
+                    y=static_cast<int>(std::floor((n*.5f*gap-hy)/gap));
+                }
+                if(x>=0&&x<n&&y>=0&&y<n)
+                    m->board.Select(y*n+x);
+            }
+        }
+    }
+    m->board.Step(copy.delta_seconds);
+    if(m->board.ply!=prevPly||m->board.selected!=prevSelected||
+       m->board.side!=prevSide||m->board.finished!=prevFinished||
+       m->board.winner!=prevWinner)m->dirty=true;
+    return;
+#endif
     if(m->game.game==Game::Pong && aim && !m->game.finished)
         m->game.paddle=std::clamp(hx/1.55f,-.78f,.78f);
     if(m->game.game==Game::Snake){

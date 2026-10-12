@@ -44,7 +44,12 @@ static const BuiltInModuleSpec kBuiltIns[] = {
     {"classic-pong", "Classic Pong", "libreverie_module_classic_pong.so"},
     {"classic-snake", "Classic Snake", "libreverie_module_classic_snake.so"},
     {"classic-chutes-ladders", "Chutes and Ladders",
-     "libreverie_module_classic_chutes_ladders.so"}
+     "libreverie_module_classic_chutes_ladders.so"},
+    {"classic-checkers", "Classic Checkers",
+     "libreverie_module_classic_checkers.so"},
+    {"classic-go", "Go 9x9", "libreverie_module_classic_go.so"},
+    {"classic-chess", "Classic Chess",
+     "libreverie_module_classic_chess.so"}
 };
 
 struct NativeSession {

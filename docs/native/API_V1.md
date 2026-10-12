@@ -278,3 +278,10 @@ Small optional services should be added as tail extensions when old v1 modules r
 Before adding a host service, prove that at least one real module needs it and that it belongs to the platform rather than one game's private logic.
 
 Likely future candidates include shell-owned audio submission, haptic requests where hardware supports them, comfort/profile queries, richer action state, and shared generated-asset helpers. These are candidates only; they are not part of ABI v1 until implemented in the authoritative header and host.
+
+## Classic board games (2026-10-11)
+
+The allowlisted ABI-v1 host now recognizes `classic-checkers`,
+`classic-go` and `classic-chess`. All use unchanged descriptor, host
+callbacks and normalized input, not a new ABI. The rules/rendering
+implementation is game-private; see `docs/project/CLASSIC_NATIVE_GAMES.md`.
