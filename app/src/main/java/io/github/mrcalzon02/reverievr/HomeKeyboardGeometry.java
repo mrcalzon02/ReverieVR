@@ -6,12 +6,12 @@ final class HomeKeyboardGeometry {
     static final float RIGHT = 1.73f;
     static final float FRONT_Z = -1.36f;
     static final float BACK_Z = -4.08f;
-    static final float TOP_Y = -1.065f;
+    static final float TOP_Y = -1.039f;
     // Dais is at -1.08. A real keycap must rise above it, while the
     // transparent glyph/legend texture floats just above the keycap tops.
     static final float KEYCAP_BASE_Y = -1.069f;
     static final float KEYCAP_TOP_Y = -1.043f;
-    static final float LEGEND_Y = -1.039f;
+    static final float LEGEND_Y = TOP_Y;
     static final int WIDTH_PIXELS = 1024;
     static final int HEIGHT_PIXELS = 768;
 

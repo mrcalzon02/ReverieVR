@@ -67,6 +67,9 @@ public final class HomeKeyboardGeometryTest {
             > HomeKeyboardGeometry.KEYCAP_BASE_Y);
         assertTrue(HomeKeyboardGeometry.LEGEND_Y
             > HomeKeyboardGeometry.KEYCAP_TOP_Y);
+        assertEquals("Visible key label and ray intersection must match",
+            HomeKeyboardGeometry.LEGEND_Y,
+            HomeKeyboardGeometry.TOP_Y, 0.000001f);
         assertEquals(-1.73f, HomeKeyboardGeometry.worldX(0f), 0.0001f);
         assertEquals(1.73f,
             HomeKeyboardGeometry.worldX(
