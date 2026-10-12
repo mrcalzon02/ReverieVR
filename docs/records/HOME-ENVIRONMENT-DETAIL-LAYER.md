@@ -81,3 +81,24 @@ three ReverieVR Home backgrounds only. Host JVM tests cover AABB near-miss,
 triangle-only collision, nearest surface, winding, normal polarity, distance
 limit, nonfinite input and wall/floor marker orientation. Physical S9
 stereo/depth/readability and performance acceptance remain pending.
+
+## Fourth home detail pass (2026-10-12)
+
+The existing immutable mesh batches now contain a few more deliberately
+low-resolution features without additional materials, draws or application
+subsystems. Both birch-wall art panels gained hard-edged geometric sunrise
+crests and fine roofline rays; the Forest Glade flower mesh now also contains
+eight simple faceted mushrooms dispersed beyond the center desk/menu
+corridor; and the Dune Beach wavelet mesh contains eight small shallow tidal
+pools along the flanks.
+
+These additions extend the original `birchGraphicMotifs`,
+`forestWildflowers` and `beachWavelets` geometries rather than creating
+three more drawable mesh objects. The affected detail batches contain
+18, 96 and 50 triangles respectively. Coarse 1/128-metre vertex snapping,
+existing collision/raycast ownership, original scene-specific triangle caps,
+all three home preference identifiers, and the single-APK low-power contract
+are unchanged. Regression assertions cover the new triangle counts and
+the preexisting scene-bounds, interaction corridor and determinism contracts.
+Android JVM tests, stereoscopic rendering and Galaxy S9 thermal/runtime
+acceptance remain separate gates and are not claimed here.
