@@ -207,6 +207,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int[][] PHONE_PANEL_BUTTONS = new int[24][4];
 
     private static final int[][] KEYBOARD_BUTTONS = makeKeyboardButtons();
+    private static final int HOME_KEYBOARD_HIT_OFFSET = 1000;
 
     private static int[][] makeKeyboardButtons() {
         int[][] buttons = new int[51][4];
@@ -324,6 +325,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer keyboardSlabVertexBuffer;
+    private Bitmap keyboardBitmap;
+    private Canvas keyboardCanvas;
+    private Paint keyboardPaint;
+    private int keyboardTexture;
+    private boolean keyboardTextureStorageInitialized;
+    private boolean keyboardTextureDirty = true;
     private final FloatBuffer uvBuffer;
     private final FloatBuffer homeLeftVertexBuffer;
     private final FloatBuffer homeLeftUvBuffer;
@@ -409,6 +416,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile String lastInputAction = "Waiting for input";
     private volatile String lastInputSource = "No action received yet";
     private volatile boolean textureDirty = true;
+    private int homeKeyboardHoveredKey = -1;
     private volatile boolean dosRuntimeAvailable;
     private volatile String[] dosModuleIds = new String[0];
     private volatile String[] dosModuleNames = new String[0];
@@ -1711,6 +1719,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (newHover != hoveredButton) {
+            if (mode == MODE_HOME
+                && (newHover >= HOME_KEYBOARD_HIT_OFFSET
+                    || hoveredButton >= HOME_KEYBOARD_HIT_OFFSET)) {
+                homeKeyboardHoveredKey = newHover >= HOME_KEYBOARD_HIT_OFFSET
+                    ? newHover - HOME_KEYBOARD_HIT_OFFSET : -1;
+                keyboardTextureDirty = true;
+            }
             hoveredButton =
                 newHover;
             textureDirty = true;
@@ -2086,9 +2101,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        if (!(mode == MODE_HOME && phonePanelVisible)) {
-            drawUiPanel(eye, eyeCorrection, false);
-        }
+        // Home's desk keyboard is a separate texture even with phone panel.
+        drawUiPanel(eye, eyeCorrection, false);
         drawPointerOverlay(
             eye,
             eyeCorrection
@@ -2240,18 +2254,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_HOME
             && !orientationMenuVisible) {
-            drawTexturedPanel(
-                homeLeftVertexBuffer,
-                homeLeftUvBuffer
-            );
-            drawTexturedPanel(
-                homeCenterVertexBuffer,
-                homeCenterUvBuffer
-            );
-            drawTexturedPanel(
-                homeRightVertexBuffer,
-                homeRightUvBuffer
-            );
+            if (!phonePanelVisible) {
+                drawTexturedPanel(homeLeftVertexBuffer, homeLeftUvBuffer);
+                drawTexturedPanel(homeCenterVertexBuffer, homeCenterUvBuffer);
+                drawTexturedPanel(homeRightVertexBuffer, homeRightUvBuffer);
+            }
+            if (keyboardTextureDirty) rebuildHomeKeyboardTexture();
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, keyboardTexture);
+            drawTexturedPanel(keyboardSlabVertexBuffer, uvBuffer);
         } else {
             drawTexturedPanel(
                 mode == MODE_KEYBOARD && !orientationMenuVisible
@@ -2401,10 +2411,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         matrixHandle = GLES20.glGetUniformLocation(program, "u_Mvp");
         textureHandle = GLES20.glGetUniformLocation(program, "u_Texture");
 
-        int[] textures = new int[2];
-        GLES20.glGenTextures(2, textures, 0);
+        int[] textures = new int[3];
+        GLES20.glGenTextures(3, textures, 0);
         texture = textures[0];
         hudTexture = textures[1];
+        keyboardTexture = textures[2];
+        keyboardTextureStorageInitialized = false;
+        keyboardTextureDirty = true;
         textureStorageInitialized = false;
         hudTextureStorageInitialized = false;
         ensureUiBitmap();
@@ -2453,6 +2466,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.GL_CLAMP_TO_EDGE
         );
 
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, keyboardTexture);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+
         textureDirty = true;
         hudTextureDirty = true;
     }
@@ -2481,6 +2504,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.glDeleteTextures(1, new int[] {hudTexture}, 0);
             hudTexture = 0;
         }
+        if (keyboardTexture != 0) {
+            GLES20.glDeleteTextures(1, new int[] {keyboardTexture}, 0);
+            keyboardTexture = 0;
+        }
         if (program != 0) {
             GLES20.glDeleteProgram(program);
             program = 0;
@@ -2501,6 +2528,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         hudBitmap = null;
         hudCanvas = null;
         hudPaint = null;
+        if (keyboardBitmap != null && !keyboardBitmap.isRecycled())
+            keyboardBitmap.recycle();
+        keyboardBitmap = null;
+        keyboardCanvas = null;
+        keyboardPaint = null;
+        keyboardTextureStorageInitialized = false;
+        keyboardTextureDirty = true;
     }
 
     private boolean updateActivePointer(
@@ -3501,21 +3535,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_KEYBOARD) {
-            // The text-entry texture is laid flat on the existing dais;
-            // selection must intersect the same horizontal geometry.
-            final float dy = direction[1];
-            if (Math.abs(dy) < 0.00001f) return UiRayHit.miss();
-            final float distance = (-1.065f - origin[1]) / dy;
-            if (!Float.isFinite(distance) || distance <= 0.0f)
-                return UiRayHit.miss();
-            final float x = origin[0] + distance * direction[0];
-            final float z = origin[2] + distance * direction[2];
-            if (x < -1.73f || x > 1.73f ||
-                z < -4.08f || z > -1.36f)
-                return UiRayHit.miss();
-            final float px = (x + 1.73f) / 3.46f * TEXTURE_WIDTH;
-            final float py = (z + 4.08f) / 2.72f * TEXTURE_HEIGHT;
-            return new UiRayHit(buttonAtPixel(px, py), distance);
+            float t = HomeKeyboardGeometry.hitDistance(origin, direction);
+            if (t <= 0f) return UiRayHit.miss();
+            int key = HomeKeyboardGeometry.keyAtRay(
+                origin, direction, KEYBOARD_BUTTONS);
+            return key >= 0 ? new UiRayHit(key, t) : UiRayHit.miss();
         }
 
         if (mode == MODE_HOME) {
@@ -3566,7 +3590,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     HOME_PIXEL_TOP,
                     HOME_PIXEL_BOTTOM
                 );
-            return nearer(best, right);
+            best = nearer(best, right);
+            if (!phonePanelVisible) {
+                int key = HomeKeyboardGeometry.keyAtRay(
+                    origin, direction, KEYBOARD_BUTTONS);
+                if (key >= 0) {
+                    float distance = HomeKeyboardGeometry.hitDistance(
+                        origin, direction);
+                    best = nearer(best, new UiRayHit(
+                        HOME_KEYBOARD_HIT_OFFSET + key, distance));
+                }
+            }
+            return best;
         }
 
         return hitPanel(
@@ -3775,6 +3810,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_HOME) {
+            if (index >= HOME_KEYBOARD_HIT_OFFSET)
+                return index - HOME_KEYBOARD_HIT_OFFSET < KEYBOARD_BUTTONS.length;
             if (index == 2) {
                 return NativeModuleRuntime.isAvailable()
                     && !nativeModules.isEmpty();
@@ -3990,6 +4027,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_HOME) {
+            if (hoveredButton >= HOME_KEYBOARD_HIT_OFFSET) {
+                int key = hoveredButton - HOME_KEYBOARD_HIT_OFFSET;
+                if (key == 50) {
+                    host.onVrKeyboardTextCommitted(keyboardEditor.value());
+                } else if (!keyboardEditor.press(key / 10, key % 10)) {
+                    host.onUiActionRejected();
+                }
+                hoveredButton = -1;
+                homeKeyboardHoveredKey = -1;
+                keyboardTextureDirty = true;
+                return;
+            }
             switch (hoveredButton) {
                 case 0:
                     mode = MODE_MEDIA_LIBRARY;
@@ -4119,6 +4168,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             } else if (!keyboardEditor.press(key / 10, key % 10)) {
                 host.onUiActionRejected();
             }
+            keyboardTextureDirty = true;
         } else if (mode == MODE_NATIVE_LIBRARY) {
             handleNativeLibrarySelection(hoveredButton);
         } else if (mode == MODE_MEDIA_LIBRARY) {
@@ -4989,6 +5039,28 @@ final class VrShellRenderer implements CardboardView.Renderer {
             textureStorageInitialized = true;
         }
         textureDirty = false;
+    }
+
+    private void rebuildHomeKeyboardTexture() {
+        if (keyboardBitmap == null || keyboardBitmap.isRecycled()) {
+            keyboardBitmap = Bitmap.createBitmap(
+                TEXTURE_WIDTH, TEXTURE_HEIGHT, Bitmap.Config.ARGB_8888);
+            keyboardCanvas = new Canvas(keyboardBitmap);
+            keyboardPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            keyboardTextureStorageInitialized = false;
+        }
+        keyboardPaint.reset();
+        keyboardPaint.setAntiAlias(true);
+        keyboardCanvas.drawColor(Color.rgb(15, 21, 29));
+        drawKeyboard(keyboardCanvas, keyboardPaint, homeKeyboardHoveredKey);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, keyboardTexture);
+        if (keyboardTextureStorageInitialized) {
+            GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0, keyboardBitmap);
+        } else {
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, keyboardBitmap, 0);
+            keyboardTextureStorageInitialized = true;
+        }
+        keyboardTextureDirty = false;
     }
 
     private void ensureUiBitmap() {
@@ -6118,6 +6190,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void drawKeyboard(Canvas canvas, Paint paint) {
+        drawKeyboard(canvas, paint, hoveredButton);
+    }
+
+    private void drawKeyboard(Canvas canvas, Paint paint, int highlightedKey) {
         paint.setColor(Color.WHITE);
         paint.setTextSize(30.0f * uiScale);
         canvas.drawText("VIRTUAL KEYBOARD - COPY TEXT", 72, 110, paint);
@@ -6134,7 +6210,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             75, 224, paint);
         for (int key = 0; key < 50; key++) {
             int[] rect = KEYBOARD_BUTTONS[key];
-            boolean highlighted = hoveredButton == key;
+            boolean highlighted = highlightedKey == key;
             paint.setColor(highlighted ? Color.rgb(40, 126, 125)
                 : Color.rgb(42, 54, 66));
             canvas.drawRoundRect(rect[0], rect[1], rect[2], rect[3], 9, 9, paint);
@@ -6147,7 +6223,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             canvas.drawText(label, textX, baseline, paint);
         }
         int[] done = KEYBOARD_BUTTONS[50];
-        paint.setColor(hoveredButton == 50 ? Color.rgb(40, 126, 125)
+        paint.setColor(highlightedKey == 50 ? Color.rgb(40, 126, 125)
             : Color.rgb(45, 78, 72));
         canvas.drawRoundRect(done[0],done[1],done[2],done[3],8,8,paint);
         paint.setColor(Color.WHITE);
