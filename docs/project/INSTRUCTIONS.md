@@ -152,6 +152,26 @@ A polished Doom/early-3D-scale visual language is acceptable. Visual complexity 
 
 **Stable frame pacing, sensor latency, input latency, thermal sustainability, and legibility inside the headset outrank polygon count and graphical spectacle.**
 
+## 4.1 Mandatory XR equal-access and comfort gate
+
+ReverieVR must be operable by users who cannot distinguish common UI
+hues or rely on two-handed/precision controller motion, hearing-only cues,
+or unrestricted head/neck movement. Before broad/extended headset release,
+perform the evidence-based acceptance matrix in
+`docs/project/ACCESSIBILITY_AND_COMFORT.md` on Stage A, Stage B shell,
+home environments, media, DOS host and every admitted first-party native
+game. Color is never the only representation of a critical state;
+protan/deutan/tritan, grayscale, low-vision, reduced-motion, hearing and
+motor alternatives are design and device-test requirements. Document
+limitations and failed passes, rather than asserting accessibility from
+palette names or code inspection alone. Recovery must not require
+uncomfortable prolonged head movement or a particular controller brand.
+
+All controller layouts and user remapping follow
+`docs/project/CONTROLLER_LAYOUTS_AND_BINDINGS.md`; the selected
+physical controller remains a user choice, and a native game must never
+take exclusive control of shell emergency recovery.
+
 ## 5. Non-goals unless explicitly promoted
 
 The project does not initially promise:

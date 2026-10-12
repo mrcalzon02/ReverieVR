@@ -98,7 +98,8 @@ These source gates have no native ABI change.
 This is **not** the planned per-controller physical button remapping UI:
 RVBIND1 still supports existing normalized BindingInput → guest output
 profiles only. Generic/Xbox 360/DualShock physical layouts, full remap and
-game-specific overrides remain RV-0227. Native modules must continue consuming
+game-specific overrides remain RV-0227 under
+`docs/project/CONTROLLER_LAYOUTS_AND_BINDINGS.md`. Native modules must continue consuming
 normalized hosted inputs and shell-owned recovery, not Android device IDs.
 
 ## Standard native hosted input profile

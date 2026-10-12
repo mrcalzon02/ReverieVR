@@ -28,6 +28,8 @@ The VR home is the shell-owned control plane for settings, recovery, media, and 
 Development is governed by:
 
 - [Project Instructions](docs/project/INSTRUCTIONS.md)
+- [Controller Layouts and Unified Rebinding Contract](docs/project/CONTROLLER_LAYOUTS_AND_BINDINGS.md)
+- [XR Accessibility and Comfort Acceptance Standard](docs/project/ACCESSIBILITY_AND_COMFORT.md)
 - [Repository Execution Contract](docs/project/EXECUTION_CONTRACT.md)
 - [APK Construction Order](docs/project/APK_BUILD_ORDER.md)
 - [Backlog](docs/project/BACKLOG.md)

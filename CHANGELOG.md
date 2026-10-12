@@ -6,6 +6,16 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Controller remapping and XR accessibility design gates
+
+- Elevated multi-controller/device identity, generic/Xbox 360/DualShock
+  physical layouts, stage-separated logical actions, native-game action
+  manifests and per-scope remap editor to an explicit platform contract.
+- Elevated type-specific color-vision, non-color focus, low-vision, motor,
+  auditory, vestibular/comfort and session safety testing to a release gate.
+  These specifications do not assert an implemented arbitrary remap editor.
+
+
 ### Hosted gamepad B input ownership
 
 - Android face B acts as a native/DOS guest button while a hosted game
