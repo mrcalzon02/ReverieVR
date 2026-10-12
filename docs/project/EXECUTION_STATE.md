@@ -1,3 +1,18 @@
+## 2026-10-11 — Shell UI hover stabilization with live-ray Select
+
+Source-only shell interaction refinement: Home panels, desk keys and modal
+menus use allocation-free target-level hysteresis (45ms cross-target
+confirmation and 65ms loss grace) without filtering the pointer ray or
+changing gameplay input. Initial acquisition is immediate. Select consumes
+the live target from the same render-frame raycast rather than a retained
+highlight, preventing stale or occluded key/menu activation. Recentered
+interaction namespaces (menu, mode, keyboard navigation, input kind and pointer
+preference) reset the latch. Focus remains purely visual; physical controller
+feedback uses live contact, not the stale highlight. Deterministic JVM tests
+cover jitter, loss, selection, clock resets and mode clearing. Local pure-Java
+logic check passed; full Android/Gradle build and reference Galaxy S9/Daydream
+pointer latency, stereo readability and accidental-hit checks remain pending.
+
 ## 2026-10-11 — Home ray pointer physical mesh intersections
 
 Source implementation adds a bounded allocation-free ray/triangle hit against

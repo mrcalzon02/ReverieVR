@@ -339,6 +339,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final List<NativeModuleRuntime.Descriptor> nativeGames;
     private final VrKeyboardEditor keyboardEditor = new VrKeyboardEditor();
     private final HomeKeyboardTwin keyboardTwin = new HomeKeyboardTwin();
+    // Stabilizes shell hover only. Never smooths input rays or guest aiming.
+    private final VrUiTargetStabilizer uiTargetStabilizer =
+        new VrUiTargetStabilizer();
+    private int uiFocusMode = -1;
+    private boolean uiFocusMenu;
+    private boolean uiFocusKeyboardNavigation;
+    private int uiFocusPointerKind = -1;
+    private VrPointerMode uiFocusPointerPreference;
     private volatile boolean physicalKeyboardAttached;
     private final ConcurrentLinkedQueue<KeyboardDeviceCommand>
         keyboardDeviceCommands = new ConcurrentLinkedQueue<>();
@@ -1862,14 +1870,34 @@ final class VrShellRenderer implements CardboardView.Renderer {
         boolean geometryCloser = scenePointerHit.hasContact()
             && (!hasUiTarget || scenePointerHit.distance
                 + UI_CONTACT_PRIORITY_METERS < hit.distance);
+        int rawHover = geometryCloser ? -1 : hit.buttonIndex;
+        VrPointerMode pointerPreference = preferences.getVrPointerMode();
+        // Mode, menu, navigation and pointer-source changes must not carry
+        // a stale highlight into a different target index namespace.
+        if (uiFocusMode != mode
+            || uiFocusMenu != orientationMenuVisible
+            || uiFocusKeyboardNavigation != keyboardQuickMenuFocusActive
+            || uiFocusPointerKind != activeNativePointerKind
+            || uiFocusPointerPreference != pointerPreference) {
+            uiTargetStabilizer.reset();
+            uiFocusMode = mode;
+            uiFocusMenu = orientationMenuVisible;
+            uiFocusKeyboardNavigation = keyboardQuickMenuFocusActive;
+            uiFocusPointerKind = activeNativePointerKind;
+            uiFocusPointerPreference = pointerPreference;
+        }
+        // Consume once, on the same frame as raycast. Never let a 65ms
+        // visual grace period activate a key no longer under the live ray.
+        boolean selecting = selectRequested.getAndSet(false);
         int newHover =
             orientationMenuVisible && keyboardQuickMenuFocusActive
-                ? hoveredButton : geometryCloser ? -1 : hit.buttonIndex;
+                ? hoveredButton
+                : uiTargetStabilizer.update(rawHover, frameNanos, selecting);
         controllerPointerActive = usingControllerPointer;
         controllerPointerDistance = geometryCloser
             ? scenePointerHit.distance
             : hasUiTarget ? hit.distance : 6.0f;
-        controllerPointerHit = newHover >= 0;
+        controllerPointerHit = rawHover >= 0;
         boolean pointerPressed = false;
         if (usingControllerPointer) {
             pointerPressed = activeNativePointerKind
@@ -1920,9 +1948,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (backRequested.getAndSet(false)) {
             handleBack();
-        }
-
-        if (selectRequested.getAndSet(false)) {
+        } else if (selecting) {
             activateHoveredButton();
         }
     }

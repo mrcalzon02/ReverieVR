@@ -6,6 +6,19 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Shell UI targeting — bounded focus hysteresis (source; headset proof pending)
+
+- Added a tiny allocation-free hover target stabilizer across VR home cards,
+  3D desk keyboard and shell modal controls: 45ms target-change confirmation,
+  65ms miss grace and immediate initial acquisition. Pointer pose, raycast and
+  hosted game aim retain zero artificial interpolation.
+- Select uses the same frame's live raycast and clears any stale hover before
+  dispatch; UI hover cannot turn a missed or occluded key into an action.
+  Recenter/menu/mode/input-source transitions clear the visual latch. Added
+  deterministic JVM regressions; local pure-Java sanity check passed.
+- Not yet Android/Gradle or Galaxy S9 validated; no APK/release assertion.
+
+
 ### Original Steam Controller offline model handoff
 
 - Verified Valve's March 2016 separate-parts archive, exact CC BY-NC-SA 4.0 license
