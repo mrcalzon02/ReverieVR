@@ -237,7 +237,7 @@ final class BundledDosContentInstaller {
             );
         } finally {
             if (stage.exists() && !deleteRecursively(stage)) {
-                ReverieLog.warning("BUNDLED_CONTENT",
+                ReverieLog.incident("BUNDLED_CONTENT",
                     "Could not clean DOOM staging directory.");
             }
         }
