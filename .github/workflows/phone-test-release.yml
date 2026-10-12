@@ -99,6 +99,16 @@ jobs:
             -o /tmp/breakwater-campaign-test
           /tmp/breakwater-campaign-test
 
+      - name: Validate native classic game simulations
+        shell: bash
+        run: |
+          set -euo pipefail
+          c++ -std=c++17 -Wall -Wextra -Wpedantic -Werror \
+            -I app/src/main/jni/native \
+            app/src/test/native/classic_games_test.cpp \
+            -o /tmp/reverie-classic-games-test
+          /tmp/reverie-classic-games-test
+
       - name: Validate deterministic procedural atlas
         shell: bash
         run: |
