@@ -2046,7 +2046,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerPointerHit, pointerPressed
         );
 
-        if (usingControllerPointer || gazeFallbackActive) {
+        if (usingControllerPointer || gazeFallbackActive || mode == MODE_DOS) {
             pointerRenderer.setPointer(
                 true,
                 activePointerOrigin[0],
