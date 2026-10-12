@@ -4,7 +4,9 @@ package io.github.mrcalzon02.reverievr;
  * Correct the horizontal head-pivot handedness at the Cardboard-to-shell
  * boundary. Cardboard supplies a pose basis whose horizontal pivot currently
  * appears reversed in ReverieVR's world-to-eye path. Correct YAW alone:
- * pitch, roll, translation, IPD and each eye's projection remain untouched.
+ * the vertical axis, IPD and each eye's projection remain untouched.
+ * The existing view translation rotates with its corrected basis; no new
+ * camera translation or artificial movement is added.
  *
  * The correction is applied once per center-head sample, before deriving
  * headset-forward vectors, the yaw offset, ray directions or eye matrices.
