@@ -9,8 +9,15 @@ hosted first-party games remain local to the phone. scrcpy is only an
 optional desktop utility for debugging, mirroring, or forwarding
 PC-connected input. There is no required desktop ReverieVR runtime, and
 the phone must still launch, navigate by gaze, and run local media and
-native games without any computer present. Windows built-in SMB file sharing is the preferred optional storage
-source; no custom PC file-service/helper application is authorized.
+native games without any computer present. Windows built-in SMB file sharing remains the default optional
+file source. The user now explicitly authorizes a **portable Windows
+Laptop Link helper bundled inside the single Android APK**; Stage A
+exports it as a ZIP, the user copies it to the PC, extracts it, and
+manually launches the included CMD/PowerShell menu. There is no Windows
+installer, background service or additional required download.
+The bundled utility currently launches an already installed scrcpy
+instance for selected modes and lists optical drives when asked.
+See `docs/project/LAPTOP_LINK_BOOTSTRAP.md`.
 
 Ordinary phone/laptop Wi-Fi or a hotspot supports local application
 networking regardless of internet connectivity, but this does **not**
