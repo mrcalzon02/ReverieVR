@@ -12,6 +12,25 @@ The inspiration is the same broad discipline that made tiny procedural productio
 
 The goal is not to reproduce any specific historical engine. The goal is to build a ReverieVR-native content pipeline suited to small VR games on constrained Android hardware.
 
+## Governing art direction — PS1 geometry and .kkrieger-style recipe economy
+
+ReverieVR's visual target is primitive-era **PlayStation 3D**, not high-resolution
+modern realism. This applies across shell homerooms, equipment, characters,
+controller twins, and native games: purposeful silhouettes, low-polygon models,
+limited flat/faceted color, tiny nearest-filtered material patterns only where
+they make a visual difference, and restrained CPU/GPU state changes. Deliberate
+chunkiness must not corrupt stereo projections or click-target alignment.
+
+.kkrieger is a **conceptual example** of saving compact generation rules rather
+than expanded asset files, not a library dependency, copied algorithm, or a
+claim that boot-time synthesis automatically makes an APK faster. The current
+Java shell home uses generated color-only triangle meshes and RGB555 palette
+recipes without any new texture atlas; that is already the cheaper path for
+its scene detail. The native Red Ledger RGB565 atlas demonstrates the different
+case where a tiny procedural texture genuinely helps. Always measure startup
+CPU cost, GPU upload size, draw calls, frame pacing and battery/thermal
+separately. Do not synthesize textures in the per-eye draw loop.
+
 ## Governing rule
 
 A generated representation is preferred when it is:

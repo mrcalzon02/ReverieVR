@@ -19,6 +19,27 @@ unchanged. This is a detail pass, **not** a scene replacement.
 - Beach: shoreline-adjacent wavelets, subtle sand ripples, clustered dune grass,
   and light shell/pebble accents, keeping the water and horizon legible.
 
+## Third pass — PS1 silhouette and seeded primitive recipes
+
+The next authored layer adds two motif compositions inside the existing birch
+picture frames, four coarse fallen logs at the outer forest tree ring, and
+six three-face tide rocks at the sides of the beach. Those shapes use compact
+source recipes and fixed integer seeds, not baked assets. Generated vertex
+positions snap to an intentionally coarse 1/128-metre grid **once** during
+construction, and accent colors are selected from a tiny RGB555 palette
+initialized once, making the entire new layer visibly faceted without modern
+smooth-material effects. This is intentionally an approximation of the
+PlayStation-era look; no claim of actual PS1 hardware emulation.
+
+The material choice remains texture-free: no extra PNGs, texture uploads,
+normal maps, fragment-noise passes or per-eye procedural regeneration.
+One additional draw call **per eye in the selected preset** (three small new batches across all presets)
+carry the new accent groups. Each preset gains at most 24 extra triangles,
+and the existing scene-specific caps (95/230/240) remain in force with
+determinism, finite-bounds and interaction-corridor tests. Both eyes use
+the same immutable generated buffers. Reference S9 startup cost, battery,
+thermal and perceived visual quality still require physical measurement.
+
 ## Rendering, comfort, and acceptance
 
 All new meshes are generated deterministically **once** during renderer

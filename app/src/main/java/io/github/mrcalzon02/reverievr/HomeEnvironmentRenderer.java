@@ -14,6 +14,14 @@ import java.util.List;
 final class HomeEnvironmentRenderer {
     private static final float Z_NEAR = 0.10f;
     private static final float Z_FAR = 40.0f;
+    // Tiny RGB555 palette generated once at class initialization. No texture
+    // files or per-eye palette calculations for static room props.
+    private static final float[] BIRCH_MOTIF_COLOR =
+        RetroPrimitiveRecipe.color555(.88f, .70f, .44f);
+    private static final float[] FOREST_WOOD_COLOR =
+        RetroPrimitiveRecipe.color555(.40f, .29f, .17f);
+    private static final float[] BEACH_STONE_COLOR =
+        RetroPrimitiveRecipe.color555(.52f, .48f, .37f);
 
     private final Mesh whiteFloor =
         mesh(quadHorizontal(-6.0f, 6.0f, -6.0f, 6.0f, -1.35f));
@@ -55,12 +63,16 @@ final class HomeEnvironmentRenderer {
         mesh(HomeEnvironmentDetailGeometry.birchWallArt());
     private final Mesh birchDetailFurniture =
         mesh(HomeEnvironmentDetailGeometry.birchShelfAccents());
+    private final Mesh birchDetailMotifs =
+        mesh(HomeEnvironmentDetailGeometry.birchGraphicMotifs());
     private final Mesh forestDetailFoliage =
         mesh(HomeEnvironmentDetailGeometry.forestLayeredFoliage());
     private final Mesh forestDetailStones =
         mesh(HomeEnvironmentDetailGeometry.forestStones());
     private final Mesh forestDetailFlowers =
         mesh(HomeEnvironmentDetailGeometry.forestWildflowers());
+    private final Mesh forestDetailFallenWood =
+        mesh(HomeEnvironmentDetailGeometry.forestFallenWood(0x4f72));
     private final Mesh beachDetailRipples =
         mesh(HomeEnvironmentDetailGeometry.beachSandRipples());
     private final Mesh beachDetailTufts =
@@ -69,6 +81,8 @@ final class HomeEnvironmentRenderer {
         mesh(HomeEnvironmentDetailGeometry.beachShells());
     private final Mesh beachDetailWavelets =
         mesh(HomeEnvironmentDetailGeometry.beachWavelets());
+    private final Mesh beachDetailRockClusters =
+        mesh(HomeEnvironmentDetailGeometry.beachRockClusters(0x6a35));
     private final Mesh duneShoreline = mesh(buildShoreline());
     private final Mesh beachDriftwood = mesh(buildDriftwood());
     private final Mesh forestUnderstory = mesh(buildForestUnderstory());
@@ -297,6 +311,8 @@ final class HomeEnvironmentRenderer {
                 draw(forestDetailFoliage, 0.24f, 0.47f, 0.22f, 1.0f);
                 draw(forestDetailStones, 0.43f, 0.47f, 0.34f, 1.0f);
                 draw(forestDetailFlowers, 0.90f, 0.79f, 0.44f, 1.0f);
+                draw(forestDetailFallenWood, FOREST_WOOD_COLOR[0],
+                    FOREST_WOOD_COLOR[1], FOREST_WOOD_COLOR[2], 1.0f);
                 break;
 
             case DUNE_BEACH:
@@ -334,6 +350,8 @@ final class HomeEnvironmentRenderer {
                 draw(beachDetailTufts, 0.36f, 0.41f, 0.23f, 1.0f);
                 draw(beachDetailShells, 0.91f, 0.86f, 0.68f, 1.0f);
                 draw(beachDetailWavelets, 0.43f, 0.70f, 0.73f, 1.0f);
+                draw(beachDetailRockClusters, BEACH_STONE_COLOR[0],
+                    BEACH_STONE_COLOR[1], BEACH_STONE_COLOR[2], 1.0f);
                 break;
 
             case WHITE_ROOM:
@@ -386,6 +404,8 @@ final class HomeEnvironmentRenderer {
                 draw(birchDetailTrim, 0.80f, 0.74f, 0.64f, 1.0f);
                 draw(birchDetailArt, 0.39f, 0.51f, 0.49f, 1.0f);
                 draw(birchDetailFurniture, 0.79f, 0.66f, 0.42f, 1.0f);
+                draw(birchDetailMotifs, BIRCH_MOTIF_COLOR[0],
+                    BIRCH_MOTIF_COLOR[1], BIRCH_MOTIF_COLOR[2], 1.0f);
                 draw(
                     daisTop,
                     0.55f,

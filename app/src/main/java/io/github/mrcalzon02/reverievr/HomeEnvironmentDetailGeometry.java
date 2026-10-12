@@ -39,6 +39,24 @@ final class HomeEnvironmentDetailGeometry {
         return b.finish();
     }
 
+    /** Two angular wall-panel motifs, built from a handful of hard-edged facets. */
+    static float[] birchGraphicMotifs() {
+        Builder b = new Builder();
+        for (float center : new float[]{-4.25f, 4.25f}) {
+            // Mountains / sun rays: intentionally flat, not photo textures.
+            b.triangle(center - .65f, 1.04f, -5.942f,
+                center - .12f, 1.72f, -5.942f,
+                center + .18f, 1.04f, -5.942f);
+            b.triangle(center - .16f, 1.04f, -5.942f,
+                center + .40f, 1.96f, -5.942f,
+                center + .66f, 1.04f, -5.942f);
+            b.triangle(center - .48f, 2.12f, -5.941f,
+                center - .37f, 2.28f, -5.941f,
+                center - .26f, 2.12f, -5.941f);
+        }
+        return b.finish();
+    }
+
     static float[] birchShelfAccents() {
         Builder b = new Builder();
         // A small cluster of upright books on the left-hand console.
@@ -85,6 +103,29 @@ final class HomeEnvironmentDetailGeometry {
                 x + w, -1.34f, z);
             b.triangle(x - w, -1.34f, z, x + w, -1.34f, z,
                 x, -1.34f, z + .24f);
+        }
+        return b.finish();
+    }
+
+    /**
+     * Fixed-seed fallen logs sit outside the Home gaze/keyboard corridor.
+     * Cardboard trunks need only five or six faces, never cylinders.
+     */
+    static float[] forestFallenWood(int seed) {
+        Builder b = new Builder();
+        float[][] positions = {
+            {-6.0f, -5.4f}, {5.8f, 4.5f}, {-7.1f, 2.2f}, {6.9f, -4.8f}
+        };
+        for (int i = 0; i < positions.length; i++) {
+            float x = positions[i][0] + RetroPrimitiveRecipe.offset(seed, i);
+            float z = positions[i][1] + RetroPrimitiveRecipe.offset(seed, i + 19);
+            // Six triangles per log. Flat, low-slung and deliberately angular.
+            b.horizontal(x - .76f, x + .76f, z - .16f, z + .16f, -1.16f);
+            b.verticalZ(x - .76f, x + .76f, -1.34f, -1.16f, z + .16f);
+            b.triangle(x - .76f, -1.34f, z - .16f,
+                x - .76f, -1.16f, z, x - .76f, -1.34f, z + .16f);
+            b.triangle(x + .76f, -1.34f, z - .16f,
+                x + .76f, -1.34f, z + .16f, x + .76f, -1.16f, z);
         }
         return b.finish();
     }
@@ -148,6 +189,27 @@ final class HomeEnvironmentDetailGeometry {
         return b.finish();
     }
 
+    /** Fixed-seed, three-face tide stones with no bitmap or normal map. */
+    static float[] beachRockClusters(int seed) {
+        Builder b = new Builder();
+        float[][] positions = {
+            {-6.6f,-3.6f}, {-7.8f,-4.8f}, {-5.7f,2.5f},
+            {6.4f,-3.4f}, {8.1f,-5.0f}, {5.9f,2.3f}
+        };
+        for (int i = 0; i < positions.length; i++) {
+            float x = positions[i][0] + RetroPrimitiveRecipe.offset(seed, i);
+            float z = positions[i][1] + RetroPrimitiveRecipe.offset(seed, i + 35);
+            float r = .24f + (i % 3) * .06f;
+            b.triangle(x-r,-1.34f,z-.16f,
+                x,-1.03f,z-.11f, x+r,-1.34f,z-.16f);
+            b.triangle(x+r,-1.34f,z-.16f,
+                x,-1.03f,z-.11f, x+.09f,-1.34f,z+.19f);
+            b.triangle(x+.09f,-1.34f,z+.19f,
+                x,-1.03f,z-.11f, x-r,-1.34f,z-.16f);
+        }
+        return b.finish();
+    }
+
     static float[] beachWavelets() {
         Builder b = new Builder();
         for (int i = 0; i < 17; i++) {
@@ -200,6 +262,13 @@ final class HomeEnvironmentDetailGeometry {
             triangle(x0,bottom,z0,x1,bottom,z1,x1,top,z1);
             triangle(x0,bottom,z0,x1,top,z1,x0,top,z0);
         }
-        float[] finish() {return Arrays.copyOf(values,used);}
+        float[] finish() {
+            float[] packed = Arrays.copyOf(values, used);
+            // PS1-like coarse vertex positions are baked once during boot,
+            // never snapped separately for each Cardboard eye or frame.
+            for (int i = 0; i < packed.length; i++)
+                packed[i] = RetroPrimitiveRecipe.snapPosition(packed[i]);
+            return packed;
+        }
     }
 }

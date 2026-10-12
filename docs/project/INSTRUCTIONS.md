@@ -127,6 +127,27 @@ Default design expectations:
 - dynamic render scale or quality fallback when required to preserve frame pacing;
 - thermal behavior and sustained performance tested on the reference device.
 
+**Art-direction authority (PlayStation-era primitive 3D + procedural-asset discipline):**
+Environments, equipment, native games, and digital models should read as early
+PlayStation-style primitive 3D: strong simple silhouettes, visibly faceted geometry,
+small low-resolution or untextured materials, quantized/limited palettes, and
+deliberately economical scene composition. Do not add modern photorealistic
+materials, reflections, large texture packs, dynamic post-processing, or dense
+meshes as routine detail passes. Preserve accurate controller alignment,
+stereoscopy, readable text/UI, and robust input behavior over stylistic tricks.
+
+Borrow the **procedural-content principle** associated with .kkrieger as
+inspiration—not its engine, binary content, or any assumed performance claim:
+store short deterministic recipes/seed/material tables when cheaper than baked
+assets; generate immutable geometry and any truly needed tiny texture atlas once
+at startup/GL context creation; upload/reuse those resources for both eyes; keep
+the frame loop generation-free. Regenerate only after context loss/recipe changes.
+A texture-free flat-color mesh is preferable to making a procedural texture
+just for the sake of having one. Startup CPU time, APK size, VR frame pacing,
+thermal load, and GPU uploads must be measured independently: generation can
+make startup **slower** if the recipes are too complex. Never claim lower load
+times or battery use without evidence.
+
 A polished Doom/early-3D-scale visual language is acceptable. Visual complexity is allowed only when measured headroom supports it.
 
 **Stable frame pacing, sensor latency, input latency, thermal sustainability, and legibility inside the headset outrank polygon count and graphical spectacle.**

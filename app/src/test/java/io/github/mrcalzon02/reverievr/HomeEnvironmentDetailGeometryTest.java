@@ -7,18 +7,21 @@ public final class HomeEnvironmentDetailGeometryTest {
     private static final float[][] WHITE = {
         HomeEnvironmentDetailGeometry.birchTrim(),
         HomeEnvironmentDetailGeometry.birchWallArt(),
-        HomeEnvironmentDetailGeometry.birchShelfAccents()
+        HomeEnvironmentDetailGeometry.birchShelfAccents(),
+        HomeEnvironmentDetailGeometry.birchGraphicMotifs()
     };
     private static final float[][] FOREST = {
         HomeEnvironmentDetailGeometry.forestLayeredFoliage(),
         HomeEnvironmentDetailGeometry.forestStones(),
-        HomeEnvironmentDetailGeometry.forestWildflowers()
+        HomeEnvironmentDetailGeometry.forestWildflowers(),
+        HomeEnvironmentDetailGeometry.forestFallenWood(0x4f72)
     };
     private static final float[][] BEACH = {
         HomeEnvironmentDetailGeometry.beachSandRipples(),
         HomeEnvironmentDetailGeometry.beachGrassTufts(),
         HomeEnvironmentDetailGeometry.beachShells(),
-        HomeEnvironmentDetailGeometry.beachWavelets()
+        HomeEnvironmentDetailGeometry.beachWavelets(),
+        HomeEnvironmentDetailGeometry.beachRockClusters(0x6a35)
     };
 
     private static void verify(String theme,float[][] meshes,int maxTriangles) {
@@ -59,6 +62,28 @@ public final class HomeEnvironmentDetailGeometryTest {
             HomeEnvironmentDetailGeometry.forestWildflowers(),0f);
         assertArrayEquals(HomeEnvironmentDetailGeometry.beachWavelets(),
             HomeEnvironmentDetailGeometry.beachWavelets(),0f);
+    }
+
+    @Test public void seededPrimitivePropsAreStableButCanVaryBySeed() {
+        assertArrayEquals(HomeEnvironmentDetailGeometry.forestFallenWood(0x4f72),
+            HomeEnvironmentDetailGeometry.forestFallenWood(0x4f72), 0f);
+        assertArrayEquals(HomeEnvironmentDetailGeometry.beachRockClusters(0x6a35),
+            HomeEnvironmentDetailGeometry.beachRockClusters(0x6a35), 0f);
+        assertFalse(java.util.Arrays.equals(
+            HomeEnvironmentDetailGeometry.forestFallenWood(5),
+            HomeEnvironmentDetailGeometry.forestFallenWood(6)));
+        assertFalse(java.util.Arrays.equals(
+            HomeEnvironmentDetailGeometry.beachRockClusters(5),
+            HomeEnvironmentDetailGeometry.beachRockClusters(6)));
+    }
+
+    @Test public void generatedVerticesAreCoarseAndQuantizedAtConstruction() {
+        for (float[][] environment : new float[][][]{WHITE, FOREST, BEACH})
+            for (float[] vertices : environment)
+                for (float value : vertices)
+                    assertEquals(value * RetroPrimitiveRecipe.POSITION_GRID,
+                        Math.round(value * RetroPrimitiveRecipe.POSITION_GRID),
+                        .0001f);
     }
 
     @Test public void usesOnlyCompleteTriangles() {
