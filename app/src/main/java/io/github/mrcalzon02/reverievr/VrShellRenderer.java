@@ -5961,7 +5961,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         drawHomeButtons(canvas, paint,
             new String[] {leftLabels[6]}, 18, 1);
         drawHomeButtons(canvas, paint,
-            new String[] {"Native Games"}, 24, 1);
+            new String[] {"Classic Games"}, 24, 1);
         drawHomeButtons(canvas, paint,
             new String[] {"Emulator Modules"}, 25, 1);
 
@@ -6834,7 +6834,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(31.0f * uiScale);
         canvas.drawText(
-            mode == MODE_NATIVE_GAMES ? "NATIVE GAMES" : "NATIVE APPS",
+            mode == MODE_NATIVE_GAMES ? "CLASSIC GAMES" : "NATIVE APPS",
             90,
             175,
             paint
