@@ -31,6 +31,24 @@ final class EmulatorSourceRepository {
             this.message=message;this.commit=commit;this.sha256=sha256;
         }
     }
+    String inspectUpstream(EmulatorModuleCatalog.Entry entry)
+        throws IOException {
+        if(entry==null||EmulatorModuleCatalog.find(entry.id)!=entry)
+            throw new IOException("Unapproved emulator.");
+        JSONObject remote=getJson(entry.githubApi());
+        JSONObject license=remote.optJSONObject("license");
+        if(remote.optBoolean("private",true) ||
+           remote.optBoolean("archived",true) ||
+           !entry.repository.equalsIgnoreCase(remote.optString("full_name")) ||
+           license==null ||
+           !EmulatorModuleCatalog.approvedLicense(entry,
+                                                  license.optString("spdx_id")))
+            throw new IOException("Repository or license no longer approved.");
+        String locallyStored=status(entry);
+        return locallyStored.startsWith("SOURCE SAVED")
+            ? locallyStored : "PUBLIC "+entry.license+" - SOURCE AVAILABLE";
+    }
+
     Result download(EmulatorModuleCatalog.Entry entry) throws IOException {
         if(entry==null||EmulatorModuleCatalog.find(entry.id)!=entry)
             throw new IOException("Unapproved emulator source module.");
