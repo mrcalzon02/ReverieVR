@@ -36,6 +36,10 @@ final class VrInputRouter {
             float value,
             String source
         );
+
+        default void onBindingRelative(BindingInput input, float delta,
+                                       String source) { }
+
     }
 
     private static final int TOUCH_SWIPE_THRESHOLD = 48;
@@ -473,6 +477,13 @@ final class VrInputRouter {
                 safeSource(source)
             );
         }
+    }
+
+    private void emitBindingRelative(BindingInput input, float delta,
+                                     String source) {
+        BindingListener target = bindingListener;
+        if (target != null && Float.isFinite(delta) && delta != 0.0f)
+            target.onBindingRelative(input, delta, safeSource(source));
     }
 
     private void emitBindingAxis(
