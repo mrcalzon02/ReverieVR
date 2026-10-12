@@ -361,6 +361,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private boolean gazeFallbackActive;
     private boolean gazeRecoveryMenuShown;
     private int lastGazeProgressTick = -1;
+    private float gazeUiX = Float.NaN;
+    private float gazeUiY = Float.NaN;
     private int uiFocusMode = -1;
     private boolean uiFocusMenu;
     private boolean uiFocusKeyboardNavigation;
@@ -1941,6 +1943,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             && (!hasUiTarget || scenePointerHit.distance
                 + UI_CONTACT_PRIORITY_METERS < hit.distance);
         int rawHover = geometryCloser ? -1 : hit.buttonIndex;
+        gazeUiX = rawHover >= 0 ? hit.pixelX : Float.NaN;
+        gazeUiY = rawHover >= 0 ? hit.pixelY : Float.NaN;
         VrPointerMode pointerPreference = preferences.getVrPointerMode();
         // Mode, menu, navigation and pointer-source changes must not carry
         // a stale highlight into a different target index namespace.
@@ -4026,11 +4030,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 );
 
         return new UiRayHit(
-            buttonAtPixel(
-                px,
-                py
-            ),
-            hitDistance
+            buttonAtPixel(px, py), hitDistance, px, py
         );
     }
 
@@ -4082,10 +4082,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         / (worldTop - worldBottom)
                 ) * (pixelBottom - pixelTop);
 
-        return new UiRayHit(
-            buttonAtPixel(px, py),
-            t
-        );
+        return new UiRayHit(buttonAtPixel(px, py), t, px, py);
     }
 
     private int buttonAtPixel(
@@ -4342,15 +4339,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final class UiRayHit {
         final int buttonIndex;
         final float distance;
+        final float pixelX;
+        final float pixelY;
 
-        UiRayHit(
-            int buttonIndex,
-            float distance
-        ) {
+        UiRayHit(int buttonIndex, float distance) {
+            this(buttonIndex, distance, Float.NaN, Float.NaN);
+        }
+        UiRayHit(int buttonIndex, float distance, float pixelX, float pixelY) {
             this.buttonIndex = buttonIndex;
             this.distance = distance;
+            this.pixelX = pixelX;
+            this.pixelY = pixelY;
         }
-
         static UiRayHit miss() {
             return new UiRayHit(-1, -1.0f);
         }
@@ -7848,8 +7848,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (focused && gazeFallbackActive) {
                 // Flat monochrome countdown on the focused UI target.
                 // No new shader, textures, or per-eye selection state.
-                final float cx = rect[2] - 35f;
-                final float cy = (rect[1] + rect[3]) * .5f;
+                // On planar panels use the *actual center-of-vision ray
+                // intersection*, not the button center. Phone/desk 3D
+                // controls retain a safe in-button marker fallback.
+                final float cx = Float.isFinite(gazeUiX)
+                    ? Math.max(rect[0]+24f,Math.min(rect[2]-24f,gazeUiX))
+                    : rect[2] - 35f;
+                final float cy = Float.isFinite(gazeUiY)
+                    ? Math.max(rect[1]+24f,Math.min(rect[3]-24f,gazeUiY))
+                    : (rect[1] + rect[3]) * .5f;
                 paint.setColor(Color.rgb(230, 238, 245));
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(3f);
