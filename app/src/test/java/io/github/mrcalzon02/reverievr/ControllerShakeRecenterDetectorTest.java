@@ -77,6 +77,30 @@ public final class ControllerShakeRecenterDetectorTest {
     }
 
     @Test
+    public void verticalShakeStillTriggersWhenGravityOffsetsRecoil() {
+        ControllerShakeRecenterDetector detector =
+            new ControllerShakeRecenterDetector();
+        long start = 1000000000L;
+        // The resting Y axis already contains 1g. A real recoil can
+        // measure only -0.4g while still changing by -1.4g from rest.
+        assertFalse(detector.sample(0f, 1f, 0f, start, true));
+        assertFalse(detector.sample(0f, 2.6f, 0f,
+            start + 100000000L, true));
+        assertTrue(detector.sample(0f, -0.4f, 0f,
+            start + 220000000L, true));
+    }
+
+    @Test
+    public void phoneRestGravityAndOrientationNoiseDoNotTrigger() {
+        ControllerShakeRecenterDetector detector =
+            new ControllerShakeRecenterDetector();
+        long start=1000000000L;
+        for (int i=0;i<30;i++)
+            assertFalse(detector.sample(0.08f,9.75f,0.05f,
+                start+i*20000000L,false));
+    }
+
+    @Test
     public void normalGravityDoesNotTrigger() {
         ControllerShakeRecenterDetector detector =
             new ControllerShakeRecenterDetector();
