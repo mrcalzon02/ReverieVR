@@ -178,6 +178,18 @@ No full ~80-person formation simulation for the first native game. No giant comb
 
 ---
 
+## RV-GAME-05 — Native Classics Shelf
+
+**Implemented:** a dedicated **Native Games** destination in the in-headset Home menu, separate from DOS Games and Native Apps. It filters original packaged native modules through the existing allowlisted native-module host; there are no external ROMs, emulators or imported game assets.
+
+The first three games are **Classic Pong**, **Classic Snake**, and **Chutes and Ladders** (original generated visuals and generic historic ladder/chute rules, not commercial board artwork). Each builds as its own GLES2 native module from a common small C++ source and a pure, deterministic gameplay kernel:
+
+- Pong: point horizontally or use the touchpad/controller axis to move the bottom paddle; Select serves or restarts, AI defends the opposite side, first to seven wins.
+- Snake: directional touchpad/controller axes or point-and-Select on the four in-scene direction pads; consume food, grow, avoid walls and the tail, Select restarts after losing.
+- Chutes and Ladders: Select rolls the die on your turn, a deterministic CPU opponent takes the following turn automatically, and the generated 100-cell board includes original green ladders and red chutes. First to cell 100 wins, Select restarts.
+  
+All gameplay advances in native Update once per frame, with common cached vertex-color geometry rendered for each stereo eye. No gameplay runs in per-eye rendering. The Home Native Apps listing excludes classic modules, so the categories do not duplicate each other. Controller hardware/comfort/interaction and thermal acceptance on the Galaxy S9 are still pending, and signed APK build status must be checked independently.
+
 ## Recommended implementation order
 
 1. **Between Deliveries** — smallest space, richest direct hand interaction, strongest test of the native-module interaction layer.
