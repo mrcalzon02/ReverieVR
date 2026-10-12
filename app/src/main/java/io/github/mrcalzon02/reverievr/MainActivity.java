@@ -30,6 +30,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -72,6 +74,7 @@ public final class MainActivity extends Activity
     private VrInputRouter inputRouter;
     private DosModuleRepository dosModuleRepository;
     private DosModuleImporter dosModuleImporter;
+    private LaptopSmbClient laptopSmbClient;
     private DiagnosticBundleExporter diagnosticBundleExporter;
     private DiagnosticSubmissionClient diagnosticSubmissionClient;
     private final ExecutorService dosImportExecutor =
@@ -280,6 +283,7 @@ public final class MainActivity extends Activity
             uiFeedback.close();
         }
         dosImportExecutor.shutdownNow();
+        if (laptopSmbClient != null) laptopSmbClient.close();
         diagnosticExecutor.shutdownNow();
         mediaMetadataExecutor.shutdownNow();
         super.onDestroy();
@@ -2196,26 +2200,179 @@ public final class MainActivity extends Activity
     }
 
     private void chooseDosContent() {
+        new AlertDialog.Builder(this)
+            .setTitle("Import DOS game or disc image")
+            .setItems(new String[]{
+                "Phone files (Android picker)",
+                "Laptop files (Windows SMB2/SMB3)"
+            }, (dialog, which) -> {
+                uiFeedback.activation();
+                if (which == 0) chooseLocalDosContent();
+                else showLaptopShareLogin();
+            })
+            .setNegativeButton(android.R.string.cancel,null)
+            .show();
+    }
+
+    private void chooseLocalDosContent() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
-        intent.addFlags(
-            Intent.FLAG_GRANT_READ_URI_PERMISSION
-        );
-
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         try {
-            startActivityForResult(
-                intent,
-                DOS_PICK_REQUEST
-            );
+            startActivityForResult(intent, DOS_PICK_REQUEST);
         } catch (ActivityNotFoundException exception) {
             uiFeedback.failure();
-            Toast.makeText(
-                this,
-                R.string.dos_picker_unavailable,
-                Toast.LENGTH_LONG
-            ).show();
+            Toast.makeText(this,R.string.dos_picker_unavailable,
+                Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void showLaptopShareLogin() {
+        LinearLayout fields=new LinearLayout(this);
+        fields.setOrientation(LinearLayout.VERTICAL);
+        int padding=(int)(16f*getResources().getDisplayMetrics().density);
+        fields.setPadding(padding,padding,padding,padding);
+
+        EditText host=new EditText(this);
+        host.setSingleLine(true);
+        host.setHint("Windows host / LAN IP (e.g. 192.168.137.1)");
+        EditText share=new EditText(this);
+        share.setSingleLine(true);
+        share.setHint("Shared folder name (not a file path)");
+        EditText username=new EditText(this);
+        username.setSingleLine(true);
+        username.setHint("Windows account name");
+        EditText password=new EditText(this);
+        password.setSingleLine(true);
+        password.setHint("Windows account password");
+        password.setInputType(InputType.TYPE_CLASS_TEXT |
+            InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        fields.addView(host);
+        fields.addView(share);
+        fields.addView(username);
+        fields.addView(password);
+
+        new AlertDialog.Builder(this)
+            .setTitle("Connect to laptop share (read only)")
+            .setMessage("Use a Windows folder explicitly shared with your account. "
+                + "No PC companion software or network scanning is needed. "
+                + "Credentials are kept only in memory for this session.")
+            .setView(fields)
+            .setPositiveButton("Connect",(dialog,which)->{
+                char[] secret=password.getText().toString().toCharArray();
+                try {
+                    LaptopSmbClient next=new LaptopSmbClient(
+                        host.getText().toString(),
+                        share.getText().toString(),
+                        username.getText().toString(),
+                        "",
+                        secret);
+                    if(laptopSmbClient!=null) laptopSmbClient.close();
+                    laptopSmbClient=next;
+                    uiFeedback.activation();
+                    browseLaptopShare(next,"");
+                } catch(IOException error) {
+                    uiFeedback.failure();
+                    new AlertDialog.Builder(this)
+                        .setTitle("Invalid Windows share")
+                        .setMessage(error.getMessage())
+                        .setPositiveButton(android.R.string.ok,null).show();
+                } finally {
+                    Arrays.fill(secret,'\0');
+                    password.getText().clear();
+                }
+            })
+            .setNegativeButton(android.R.string.cancel,null)
+            .show();
+    }
+
+    private void browseLaptopShare(LaptopSmbClient client,String path) {
+        Toast.makeText(this,"Reading Windows share…",Toast.LENGTH_SHORT).show();
+        dosImportExecutor.execute(() -> {
+            try {
+                List<LaptopSmbClient.Entry> items=client.list(path);
+                runOnUiThread(() -> {
+                    if(isFinishing() || isDestroyed() || client!=laptopSmbClient)
+                        return;
+                    int back=path.isEmpty()?0:1;
+                    String[] labels=new String[items.size()+back];
+                    if(back==1) labels[0]="[..] Parent directory";
+                    for(int i=0;i<items.size();i++)
+                        labels[i+back]=items.get(i).label();
+                    new AlertDialog.Builder(this)
+                        .setTitle("Laptop share / "+path)
+                        .setMessage(labels.length==0
+                            ? "No compatible DOS files here. Try another folder."
+                            : null)
+                        .setItems(labels,(dialog,selection)->{
+                            uiFeedback.activation();
+                            if(back==1 && selection==0) {
+                                try{
+                                    browseLaptopShare(client,
+                                        LaptopSharePath.parent(path));
+                                }catch(IOException error){showLaptopShareError(error);}
+                                return;
+                            }
+                            LaptopSmbClient.Entry item=items.get(selection-back);
+                            if(item.directory)browseLaptopShare(client,item.path);
+                            else confirmLaptopFileImport(client,item);
+                        })
+                        .setNegativeButton("Close",null)
+                        .show();
+                });
+            } catch(Exception error) {
+                runOnUiThread(() -> {
+                    if(!isFinishing() && !isDestroyed())
+                        showLaptopShareError(error);
+                });
+            }
+        });
+    }
+
+    private void confirmLaptopFileImport(LaptopSmbClient client,
+                                         LaptopSmbClient.Entry entry) {
+        new AlertDialog.Builder(this)
+            .setTitle("Import "+entry.name+"?")
+            .setMessage("Copy this Windows share file to the phone's private "
+                + "DOS library. This is a read-only SMB transfer, not an "
+                + "optical-drive mount. The file remains local afterward.")
+            .setPositiveButton("Import",(dialog,which)->{
+                uiFeedback.activation();
+                Toast.makeText(this,"Importing "+entry.name+"…",
+                    Toast.LENGTH_SHORT).show();
+                dosImportExecutor.execute(() -> {
+                    try {
+                        DosGameModule imported=
+                            client.importDos(entry.path,dosModuleImporter);
+                        runOnUiThread(() -> {
+                            if(isFinishing() || isDestroyed())return;
+                            Toast.makeText(this,"Imported "+imported.displayName,
+                                Toast.LENGTH_LONG).show();
+                        });
+                    } catch(Exception error) {
+                        runOnUiThread(() -> {
+                            if(!isFinishing() && !isDestroyed())
+                                showLaptopShareError(error);
+                        });
+                    }
+                });
+            })
+            .setNegativeButton(android.R.string.cancel,null)
+            .show();
+    }
+
+    private void showLaptopShareError(Exception error) {
+        uiFeedback.failure();
+        // Never expose SMB transport stack dumps or passwords to the UI.
+        String message=error instanceof IOException &&
+            error.getMessage()!=null ? error.getMessage()
+            : "Unable to access that Windows share or file.";
+        new AlertDialog.Builder(this)
+            .setTitle("Laptop files unavailable")
+            .setMessage(message)
+            .setPositiveButton(android.R.string.ok,null)
+            .show();
     }
 
     private void releaseSelectedVideoPermission() {

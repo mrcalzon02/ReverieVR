@@ -126,7 +126,7 @@ final class LaptopSmbClient implements AutoCloseable {
         });
     }
 
-    @Override public synchronized void close() {
+    @Override public void close() {
         closed=true;
         Arrays.fill(password,'\0');
     }
