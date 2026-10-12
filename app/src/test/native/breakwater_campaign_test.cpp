@@ -53,7 +53,12 @@ int main() {
     // They must not fire the gun through the HUD or spend ammunition.
     assert(HitCombatSupportHud(-2.0f,.95f)==CombatHudTarget::Artillery);
     assert(HitCombatSupportHud(2.0f,.95f)==CombatHudTarget::Airstrike);
-    assert(HitCombatSupportHud(0.0f,.95f)==CombatHudTarget::None);
+    assert(HitCombatSupportHud(0.0f,.95f)==CombatHudTarget::Sam);
+    assert(HitCombatSupportHud(-2.4f,-1.44f)==CombatHudTarget::Weapon0);
+    assert(HitCombatSupportHud(2.4f,-1.44f)==CombatHudTarget::Weapon4);
+    assert(RouteCombatInput(CombatHudTarget::Sam,true)==CombatInputRoute::Sam);
+    assert(RouteCombatInput(CombatHudTarget::Sam,false)==CombatInputRoute::NoAction);
+    assert(RouteCombatInput(CombatHudTarget::Weapon2,true)==CombatInputRoute::Weapon2);
     assert(HitCombatSupportHud(-2.0f,.65f)==CombatHudTarget::None);
     assert(HitCombatSupportHud(2.0f,1.25f)==CombatHudTarget::None);
     assert(HitCombatSupportHud(std::numeric_limits<float>::quiet_NaN(),.95f)
@@ -975,6 +980,20 @@ int main() {
     engage_bomber(aa_tier1,5); // 20 damage
     engage_bomber(aa_tier2,3); // 35 damage
     engage_bomber(aa_tier3,2); // 50 damage
+
+    // One Select press remains captured across UI drift for both the switch
+    // strip and SAM launcher, never accidentally firing the basic gun.
+    CombatInputLatch weapon_latch;
+    assert(weapon_latch.Route(CombatHudTarget::Weapon3,true)==
+           CombatInputRoute::Weapon3);
+    assert(weapon_latch.Route(CombatHudTarget::None,false)==
+           CombatInputRoute::NoAction);
+    weapon_latch.Release();
+    assert(weapon_latch.Route(CombatHudTarget::Sam,true)==CombatInputRoute::Sam);
+    assert(weapon_latch.Route(CombatHudTarget::None,false)==
+           CombatInputRoute::NoAction);
+    weapon_latch.Release();
+    assert(weapon_latch.Route(CombatHudTarget::None,true)==CombatInputRoute::Gun);
 
     // Weapon ownership, selection and SAM supplies survive the compact
     // 80-byte v2 shop save, while v1 saves still load as a basic machine gun.

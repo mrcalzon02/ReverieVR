@@ -285,7 +285,15 @@ bool Campaign::BeginWave() {
     infantry_volley_ = {};
     aircraft_attack_ = {};
     gunboat_salvo_ = {};
-    magazine_left_ = static_cast<uint8_t>(stats().magazine);
+    // Every installed mount starts a wave with a full magazine. Switching
+    // during combat preserves spent rounds per mount and never grants ammo.
+    for(uint8_t id=0;id<kWeaponCount;id++) {
+        const WeaponSpec spec=WeaponFor(static_cast<WeaponKind>(id));
+        const uint8_t rounds=id==3 || id==4?1:id==2?2:id==1?3:4;
+        weapon_magazines_[id]=static_cast<uint8_t>(
+            spec.magazine+rounds*upgrades_[2]);
+    }
+    magazine_left_=weapon_magazines_[selected_weapon_];
     phase_ = Phase::Combat;
     return true;
 }
