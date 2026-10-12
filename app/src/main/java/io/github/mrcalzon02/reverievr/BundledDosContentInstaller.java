@@ -80,7 +80,8 @@ final class BundledDosContentInstaller {
                 "DOOM Shareware v1.9",
                 PAYLOAD_FILE,
                 runtime.getAbsolutePath(),
-                existing == null
+                existing == null || !BuiltInBindingProfiles.isDosProfileId(
+                    existing.bindingProfileId)
                     ? BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE
                     : existing.bindingProfileId,
                 0L
