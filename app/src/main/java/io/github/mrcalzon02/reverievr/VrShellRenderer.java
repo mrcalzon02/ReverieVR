@@ -5962,7 +5962,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 preferences.isExternalHidEnabled()
                     ? "EXT HID: ON" : "EXT HID: OFF",
                 preferences.isShellHighContrastEnabled()
-                    ? "HI CONTRAST: ON" : "HI CONTRAST: OFF"
+                    ? "CONTRAST: ON" : "CONTRAST: OFF"
             },
             QUICK_SETTINGS_BUTTONS
         );
@@ -6742,27 +6742,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 enabled
                     && index == hoveredButton;
 
-            paint.setColor(
-                !enabled
-                    ? Color.rgb(
-                        28,
-                        32,
-                        38
-                    )
-                    : (
-                        focused
-                            ? Color.rgb(
-                                24,
-                                112,
-                                151
-                            )
-                            : Color.rgb(
-                                25,
-                                37,
-                                50
-                            )
-                    )
-            );
+            boolean highContrast = preferences.isShellHighContrastEnabled();
+            paint.setColor(highContrast
+                ? ShellContrastPalette.background(enabled, focused)
+                : !enabled
+                    ? Color.rgb(28, 32, 38)
+                    : focused ? Color.rgb(24, 112, 151)
+                              : Color.rgb(25, 37, 50));
             canvas.drawRoundRect(
                 rect[0],
                 rect[1],
@@ -6773,41 +6759,36 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 paint
             );
 
-            if (focused) {
-                paint.setStyle(
-                    Paint.Style.STROKE
-                );
-                paint.setStrokeWidth(3.0f);
-                paint.setColor(
-                    Color.rgb(
-                        68,
-                        220,
-                        245
-                    )
-                );
-                canvas.drawRoundRect(
-                    rect[0] + 1,
-                    rect[1] + 1,
-                    rect[2] - 1,
-                    rect[3] - 1,
-                    13,
-                    13,
-                    paint
-                );
-                paint.setStyle(
-                    Paint.Style.FILL
-                );
+            if (focused || highContrast) {
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(highContrast ? 2.8f : 3.0f);
+                paint.setColor(highContrast
+                    ? ShellContrastPalette.border(enabled)
+                    : Color.rgb(68, 220, 245));
+                canvas.drawRoundRect(rect[0] + 1, rect[1] + 1,
+                    rect[2] - 1, rect[3] - 1, 13, 13, paint);
+                paint.setStyle(Paint.Style.FILL);
+            }
+            if (highContrast && focused) {
+                // A visible focus rail, distinct from label colors.
+                paint.setColor(ShellContrastPalette.FOCUSED_RAIL);
+                canvas.drawRect(rect[2] - 12, rect[1] + 8,
+                    rect[2] - 7, rect[3] - 8, paint);
+            } else if (highContrast && !enabled) {
+                paint.setColor(ShellContrastPalette.DISABLED_TEXT);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(2.4f);
+                float cx = rect[2] - 18;
+                float cy = (rect[1] + rect[3]) * .5f;
+                canvas.drawCircle(cx, cy, 7.5f, paint);
+                canvas.drawLine(cx - 5.5f, cy + 5.5f,
+                    cx + 5.5f, cy - 5.5f, paint);
+                paint.setStyle(Paint.Style.FILL);
             }
 
-            paint.setColor(
-                enabled
-                    ? Color.WHITE
-                    : Color.rgb(
-                        103,
-                        112,
-                        123
-                    )
-            );
+            paint.setColor(highContrast
+                ? ShellContrastPalette.foreground(enabled, focused)
+                : enabled ? Color.WHITE : Color.rgb(103, 112, 123));
             paint.setTextSize(
                 16.0f * uiScale
             );
