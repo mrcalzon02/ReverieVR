@@ -95,9 +95,10 @@ final class HomeEnvironmentRenderer {
     private final Mesh[] phonePanelControlGlyphs = buildPhoneControlGlyphs();
 
     private static Mesh[] buildPhoneControlGlyphs() {
-        Mesh[] glyphs = new Mesh[5];
+        Mesh[] glyphs = new Mesh[PhonePanelControlGeometry.COUNT];
         for (int i = 0; i < glyphs.length; i++) {
-            float middle = 0.9475f - i * 0.165f;
+            float middle = PhonePanelControlGeometry.top(i)
+                - PhonePanelControlGeometry.KEY_HEIGHT * 0.5f;
             java.util.List<Float> triangles = new java.util.ArrayList<>();
             // Minus/plus, up/down and home reset; actual mesh marks rather
             // than empty cyan rectangles or unreadable small bitmap text.
@@ -118,6 +119,16 @@ final class HomeEnvironmentRenderer {
                 append(triangles, quadVerticalZ(
                     0.86f, 0.98f, tip - 0.010f, tip + 0.010f,
                     -2.236f));
+            } else if (i == PhonePanelControlGeometry.CLOSE_INDEX) {
+                // Distinct X for Close: two solid diagonal quads (four
+                // triangles), legible without color and without bitmaps.
+                float x0=0.855f, x1=0.985f;
+                float y0=middle - 0.048f, y1=middle + 0.048f;
+                float w=0.012f, z=-2.236f;
+                addTriangle(triangles, x0-w,y0,z, x0+w,y0,z, x1+w,y1,z);
+                addTriangle(triangles, x0-w,y0,z, x1+w,y1,z, x1-w,y1,z);
+                addTriangle(triangles, x0-w,y1,z, x0+w,y1,z, x1+w,y0,z);
+                addTriangle(triangles, x0-w,y1,z, x1+w,y0,z, x1-w,y0,z);
             } else {
                 append(triangles, quadVerticalZ(
                     0.85f, 0.99f, middle - 0.045f,
@@ -141,11 +152,14 @@ final class HomeEnvironmentRenderer {
     private final float[] phoneRotatedMvp = new float[16];
 
     private static Mesh[] buildPhoneControlKeys() {
-        Mesh[] keys = new Mesh[5];
+        Mesh[] keys = new Mesh[PhonePanelControlGeometry.COUNT];
         for (int i = 0; i < keys.length; i++) {
-            float top = 1.02f - i * 0.165f;
+            float top = PhonePanelControlGeometry.top(i);
             keys[i] = mesh(quadVerticalZ(
-                0.72f, 1.12f, top - 0.145f, top, -2.245f));
+                PhonePanelControlGeometry.LEFT_X,
+                PhonePanelControlGeometry.RIGHT_X,
+                top - PhonePanelControlGeometry.KEY_HEIGHT, top,
+                PhonePanelControlGeometry.RAY_Z));
         }
         return keys;
     }

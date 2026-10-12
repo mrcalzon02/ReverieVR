@@ -226,7 +226,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     // Virtual targets are intercepted in world-space by
     // hitPhonePanelControls; this index table enables activation only.
-    private static final int[][] PHONE_PANEL_BUTTONS = new int[24][4];
+    // Index 24 is the local Phone Screen Close control, never native games
+    // while the panel is visible.
+    private static final int[][] PHONE_PANEL_BUTTONS = new int[25][4];
 
     private static final int[][] KEYBOARD_BUTTONS = makeKeyboardButtons();
     private static final int HOME_KEYBOARD_HIT_OFFSET = 1000;
@@ -2250,7 +2252,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (mode == MODE_HOME && phonePanelVisible) {
                 homeEnvironmentRenderer.drawPhonePanel(
                     phonePanelYawDegrees, phonePanelPitchDegrees,
-                    hoveredButton >= 19 && hoveredButton <= 23
+                    hoveredButton >= 19 && hoveredButton <= 24
                         ? hoveredButton - 19 : -1);
             }
             if (mode == MODE_HOME
@@ -3773,9 +3775,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     /**
      * Mirror the model rotation used by HomeEnvironmentRenderer to translate
-     * pointer intersections into the panel's five world-space control keys.
-     * These targets never dispatch Android screen touches.
+     * pointer intersections into six shared world-space control keys,
+     * including a distinct X/Close control. No OS touch injection.
      */
+    /** One exit path for X/Close and Android Back; never leaves the VR Home. */
+    private void dismissPhonePanel() {
+        if (!phonePanelVisible) return;
+        phonePanelVisible = false;
+        hoveredButton = -1;
+        homeKeyboardHoveredKey = -1;
+        uiTargetStabilizer.reset();
+        host.onPhoneCaptureDismissed(); // revoke any previously open resources
+        textureDirty = true;
+        keyboardTextureDirty = true;
+    }
+
     private UiRayHit hitPhonePanelControls(
         float[] origin, float[] direction
     ) {
@@ -3801,18 +3815,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         Matrix.multiplyMV(localDirection, 0, inverse, 0, vector, 0);
         if (Math.abs(localDirection[2]) < 0.00001f)
             return UiRayHit.miss();
-        float t = (-2.245f - localOrigin[2]) / localDirection[2];
+        float t = (PhonePanelControlGeometry.RAY_Z - localOrigin[2])
+            / localDirection[2];
         if (!Float.isFinite(t) || t <= 0.0f) return UiRayHit.miss();
         float x = localOrigin[0] + t * localDirection[0];
         float y = localOrigin[1] + t * localDirection[1];
-        if (x < 0.72f || x > 1.12f) return UiRayHit.miss();
-        for (int i = 0; i < 5; i++) {
-            float top = 1.02f - 0.165f * i;
-            if (y >= top - 0.145f && y <= top) {
-                return new UiRayHit(19 + i, t);
-            }
-        }
-        return UiRayHit.miss();
+        int control = PhonePanelControlGeometry.indexAtLocal(x, y);
+        return control < 0 ? UiRayHit.miss() : new UiRayHit(19 + control, t);
     }
 
     private UiRayHit calculateUiRayHit(
@@ -4139,6 +4148,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return NativeModuleRuntime.isAvailable()
                     && !nativeGames.isEmpty();
             }
+            if (phonePanelVisible && index == 24) return true;
             if(index==25)return true;
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
                 && index == 12) {
@@ -4153,7 +4163,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (index == 16) {
                 return modelViewer.hasModel();
             }
-            if (index >= 19 && index <= 23) {
+            if (index >= 19 && index <= 24) {
                 return phonePanelVisible;
             }
             return index < HOME_BUTTONS.length;
@@ -4426,6 +4436,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     host.onEmulatorCatalogOpened();
                     break;
                 case 24:
+                    if (phonePanelVisible) {
+                        dismissPhonePanel();
+                        return;
+                    }
                     if (NativeModuleRuntime.isAvailable()
                         && !nativeGames.isEmpty()) {
                         nativeLibraryPage = 0;
@@ -4433,9 +4447,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     } else host.onUiActionRejected();
                     break;
                 case 18:
-                    phonePanelVisible = !phonePanelVisible;
-                    if (phonePanelVisible) host.onPhoneCaptureConsentRequested();
-                    else host.onPhoneCaptureDismissed();
+                    // The preview pipeline is not connected to the 3D
+                    // display yet. Do not prompt for Android capture consent
+                    // merely to acquire and discard phone screen frames.
+                    phonePanelVisible = true;
                     textureDirty = true;
                     break;
                 case 19:
@@ -5245,10 +5260,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_HOME) {
             if (phonePanelVisible) {
-                phonePanelVisible = false;
-                host.onPhoneCaptureDismissed();
-                hoveredButton = -1;
-                textureDirty = true;
+                dismissPhonePanel();
                 return;
             }
             host.onExitToPhoneRequested();

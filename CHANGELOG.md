@@ -6,6 +6,21 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Phone panel close control and privacy boundary
+
+- Added a sixth crossed X/Close primitive to the rotating/tilting in-VR
+  phone panel; controller/gaze raycast uses the same six-key geometry
+  as the renderer, and Close/Back restore Home without exiting VR.
+- Opening the still-dark experimental phone housing no longer
+  triggers Android's screen-capture dialog to acquire frames that
+  the current panel cannot display. MediaProjection consent remains
+  required for any future real local display capture.
+- Documented an absolute no-OCR/no-visual-scan/no-image-analysis rule
+  and no screen-content upload; detailed local state, manually reviewed
+  diagnostics, controller traffic, and optional update requests honestly.
+  Headset and Android build validation remain pending.
+
+
 ### Controller remapping and XR accessibility design gates
 
 - Elevated multi-controller/device identity, generic/Xbox 360/DualShock

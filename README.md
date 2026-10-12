@@ -57,6 +57,50 @@ Development is governed by:
 
 See [CHANGELOG.md](CHANGELOG.md) for verified project changes.
 
+## Screen privacy, local data, and outbound connections
+
+**Strict no-screen-analysis rule:** ReverieVR must **never** use OCR, text
+recognition, visual scanning, computer vision, AI image analysis, object
+recognition, screenshot interpretation, or any other programmatic inspection
+of a user's phone-screen contents. The optional in-headset Phone Screen is
+a **display-only local mirror**, not a scanner or data extractor. Captured
+pixels must never be sent to a server, diagnostic bundle, controller peer,
+or remote analytics service. This is a permanent project design constraint,
+including for future native modules and plugins.
+
+**The user's data remains on the phone.** ReverieVR locally stores
+preferences, controller bindings, diagnostics/logs, selected media references,
+and imported content/game saves as necessary to operate; this is *local*
+storage, not cloud synchronization. We must never describe local storage as
+absent. There is no screen-content upload, background screenshot scanning,
+advertising telemetry, or unrestricted remote phone access.
+
+**Allowed transfers:** controller input/pose information may be exchanged
+with an explicitly connected controller companion or compatible host;
+diagnostic packages may leave the phone **only following an explicit,
+user-reviewed Send/Submit action**, never because a fault occurred.
+Manual ZIP export stays on the handset until the user shares it. Automatic
+diagnostic collection/transmission without per-submission user approval is
+**not authorized**. The separate optional update-check/download feature
+contacts GitHub to request release metadata and APK packages and thus
+necessarily exposes ordinary request metadata (such as the app version
+in User-Agent and the device's network address); it does **not** upload
+media or screen content. Device Bluetooth/ADB/scrcpy traffic initiated by
+the user or other apps is separate from ReverieVR's own diagnostics.
+
+**Android screen-capture permission is not streaming to a ReverieVR server.**
+Android itself requires MediaProjection consent when an app captures the
+display—even if its only destination is a local in-headset texture.
+The current Phone Screen is an experimental 3D housing: it does *not*
+yet render live Android pixels, so opening it must **not** request that
+unnecessary consent. A future functional display bridge must ask through
+the genuine Android dialog at capture time and must not attempt to bypass
+OS permission or secure-content restrictions. The in-VR **X/Close** control
+returns to the normal Home menu and releases any capture resources.
+
+Read the [Phone Screen privacy and lifecycle specification](docs/project/PHONE_SCREEN_PANEL.md)
+before changing screen capture or remote-input behavior.
+
 ## Core principles
 
 **Offline-first:** core VR operation must not require discontinued Google servers.

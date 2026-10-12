@@ -76,6 +76,23 @@ Galaxy S9 headset runtime, stereo and frame-timing measurements pending.
 
 Source-level art pass: the existing Birch Living Room, Pastoral Glade and Dune Beach detail generator now produces additional angular wall motifs, fixed-seed fallen logs and faceted tide rocks. Vertex positions are quantized once at build time to 1/128 m; new material tints use deterministic RGB555 values. No image/texture assets, external generation dependency, additional shaders, per-eye CPU geometry generation or destructive scene replacement. Tests enforce bounded triangles, deterministic explicit seeds, repeated-vertex-grid quantization and the unobstructed home interaction corridor. This implements the explicit PlayStation-era/.kkrieger-inspired art philosophy as compact recipes, **not** emulation or a claim of proven quicker boot or improved battery. Existing GitHub APK validation and Galaxy S9 stereo/performance acceptance are separate gates.
 
+## 2026-10-11 — Phone Screen explicit Close and no pointless capture consent
+
+Sixth geometrically distinct X button added to the adjustable in-home phone
+panel. Renderer and raycast share the same six-key layout, including
+close; X and Back use a single dismissal path that restores Home,
+clears retained hover and releases capture resources without exiting VR.
+The Android consent request was removed from opening the dark prototype
+housing: MediaProjection currently acquires/discards frames without
+rendering them in the headset, so that permission was premature. The
+consented-capture lifecycle source remains dormant until real local
+presentation is implemented. Privacy rule in README and phone-panel
+spec prohibits any OCR/visual scanning/image analysis or export of screen
+pixels; retains accurate disclosures for locally saved state, manual
+diagnostics, paired controller exchange and optional GitHub release checks.
+Pure JVM geometry regression source is included. APK/Gradle and Galaxy S9
+ray/close/Back testing remain pending.
+
 # ReverieVR Execution State
 
 **Role:** durable operational state  

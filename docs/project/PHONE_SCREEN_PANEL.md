@@ -1,10 +1,43 @@
 # Phone Screen Panel — Android Display and Touch Proxy
 
-**Status:** dedicated Home activation and actual static world-space phone housing now integrated into the Home renderer, alongside the coordinate/gesture safety primitive. The housing intentionally displays no Android pixels yet; MediaProjection, permissioned touch dispatch, and functional upper-right orientation controls are still outstanding.
+**Status (2026-10-11):** a dedicated Home activation and adjustable static world-space phone housing exist. The control rail has six working ray targets (yaw left/right, pitch up/down, reset, X/Close). Closing restores the regular Home menu and releases any capture resources. The housing intentionally displays no Android pixels yet; MediaProjection-to-GL display and external touch dispatch remain outstanding. Opening the experimental panel deliberately does not request capture permission while captured frames would only be discarded.
 
 ## User experience
 
-Inside the existing 3D Home environment (birch living room, beach or forest), the player can summon a spatially anchored Android screen panel without leaving Home or replacing the environment. It renders the current handset screen at its authentic aspect ratio and pixel content. The panel is a world-space object and may be repositioned independently of the headset; its controls do not turn the whole world or the Quick Menu. The controller pointer intersects the panel, shows a cursor, and the Daydream touchpad click acts as a touchscreen finger. Press-and-hold plus controller movement becomes a drag/scroll; release finishes the touch. Android Back/Home/Recent Apps and keyboard open through separately identified shell controls. The panel has a distinct upper-right control cluster with orientation controls: yaw left/right, pitch up/down, recenter to headset forward, portrait/landscape presentation, and size/distance adjustment. These controls are VR-owned hit regions, outside the Android touch rectangle, and must consume pointer events without generating proxy taps. The regular ReverieVR Quick Menu always supersedes touch mode. Panel focus can be relinquished without losing the headset session.
+Inside the existing 3D Home environment (birch living room, beach or forest), the player can summon a spatially anchored Android screen panel without leaving Home or replacing the environment. It renders the current handset screen at its authentic aspect ratio and pixel content. The panel is a world-space object and may be repositioned independently of the headset; its controls do not turn the whole world or the Quick Menu. The controller pointer intersects the panel, shows a cursor, and the Daydream touchpad click acts as a touchscreen finger. Press-and-hold plus controller movement becomes a drag/scroll; release finishes the touch. Android Back/Home/Recent Apps and keyboard open through separately identified shell controls. The panel has a distinct right-hand control cluster with implemented yaw left/right, pitch up/down, reset and X/Close; portrait/landscape and size/distance adjustment are future work. These controls are VR-owned hit regions, outside the Android touch rectangle, and must consume pointer events without generating proxy taps. The regular ReverieVR Quick Menu always supersedes touch mode. Panel focus can be relinquished without losing the headset session.
+
+## Non-negotiable screen privacy and transport boundary
+
+**Never OCR, visually scan, recognize text or images, use computer vision,
+perform AI visual inference, or programmatically inspect captured screen
+content.** Future MediaProjection frames may travel *only* through the
+on-device compositor to the locally displayed phone-panel texture. No
+screen pixels, thumbnails, application text, inferred metadata or frame
+extracts may be persisted in logs, used for telemetry, transmitted to a
+controller peer, included in diagnostics, or uploaded. Frames may be
+held transiently in GPU/decoder buffers for display only and destroyed
+when closed/revoked. User-requested screenshot/video capture by Android
+or scrcpy is outside ReverieVR's internal mirror function and must not
+be silently triggered by ReverieVR.
+
+The Android permission dialog uses system wording that can imply
+"streaming" even when capture is entirely local. MediaProjection requires
+Android user consent regardless of network behavior; **do not bypass this**
+for a functional capture mode. Because this prototype currently does not
+present pixels, it must not initiate consent from the Phone Screen open
+button merely to count/discard images. Re-enable consent only with a
+demonstrably working local GL display path, no recursion, a clear explanation
+of the Android prompt, and independent user consent for any permitted
+external-app gesture feature.
+
+Outbound app-generated traffic remains limited to explicit controller
+companion exchange, user-reviewed diagnostic submission, and optional
+GitHub update-check/download requests. Network GETs for updates carry
+ordinary protocol and app-version metadata but no captured screen data.
+Logs, preferences, media references and saves may exist locally; these
+are not cloud storage or permission to upload them. Future automatic
+diagnostic transmission requires a separate design decision and explicit
+consent; it is **not permitted** by this contract.
 
 ## Android architecture and permissions
 
@@ -30,8 +63,8 @@ Do not describe the panel as available until capture + presentation + permission
 
 ## Consented capture lifecycle slice
 
-The Phone Screen activation now invokes Android's own `MediaProjectionManager` consent UI from `VrActivity`. If approved, `PhoneScreenCaptureSession` establishes a matching-size `VirtualDisplay` and an `ImageReader` that acquires and closes the latest frames. Permission denial does not start capture. Dismissing the panel or destroying the Activity releases the virtual display, image reader and projection; the projection's revocation callback also releases capture resources. **The acquired frames are not yet uploaded to a 3D OpenGL screen texture**, so the bezel remains deliberately dark. Android external-app control requires a separate explicit accessibility authorization and does not work yet. Verify the consent and lifecycle behavior on Android 8/9 and newer systems; newer OS versions may impose foreground-service and capture-session restrictions.
+A consented `PhoneScreenCaptureSession` and its `VirtualDisplay`/`ImageReader` resource-lifecycle prototype remain in source for later integration, but **the Home Phone Screen activation no longer invokes Android's consent UI** while frames are not presented on the panel. When previously authorized capture is stopped, closing the panel or destroying the Activity still releases the virtual display, image reader and projection, with a revocation callback. The acquired frames are not yet rendered in OpenGL. Android external-app control requires separate explicit accessibility authorization and does not work yet. A future release that actually connects MediaProjection to the GL texture must restore explicit consent and validate supported Android versions/foreground-service restrictions; never bypass Android's prompt.
 
 ## Implemented activation slice
 
-The existing first six Home navigation buttons remain unchanged. A seventh left-hand `Phone Screen` button is placed beneath `Exit to Phone` and opens a spatially anchored bezel and dark screen in the active Home environment. While displayed, ordinary Home menus are hidden to prevent their occlusion of the panel and their invisible hit regions are disabled. Android Back dismisses the panel and restores Home, rather than exiting ReverieVR. The Quick Menu remains available. The upper-right control rail now has five individually ray-intersectable and visibly marked 3D buttons. Their actions are bounded yaw left, yaw right, pitch up, pitch down and orientation reset (10 degrees per click; yaw limited to ±65 degrees and pitch to ±40 degrees). Intersections use the inverse of the same transformation that positions the panel, so control targets rotate with the panel; button focus changes the key's color. These are world-space shell controls and never dispatch OS touch events. The portrait/landscape toggle, scale/distance controls, live display capture and Android touch bridge are **still not implemented**. No phone display or proxy touch has been claimed.
+The existing first six Home navigation buttons remain unchanged. A seventh left-hand `Phone Screen` button is placed beneath `Exit to Phone` and opens a spatially anchored bezel and dark screen in the active Home environment. While displayed, ordinary Home menus are hidden to prevent their occlusion of the panel and their invisible hit regions are disabled. Android Back dismisses the panel and restores Home, rather than exiting ReverieVR. The Quick Menu remains available. The side control rail now has **six** individually ray-intersectable, visibly marked 3D buttons. Their actions are bounded yaw left/right, pitch up/down, orientation reset and **X/Close** (10 degrees per click; yaw limited to ±65 degrees and pitch to ±40 degrees). The bottom X has a distinct crossed-bars primitive marker that requires no color or texture. Closing restores the normal Home menus, clears UI hover state and releases capture resources without leaving VR. Intersections use the inverse of the same transformation that positions the panel and one shared key layout, so control targets rotate with the panel. These shell controls never dispatch OS touch events. The portrait/landscape toggle, scale/distance controls, live display capture and Android touch bridge are **still not implemented**. No phone display or proxy touch has been claimed.
