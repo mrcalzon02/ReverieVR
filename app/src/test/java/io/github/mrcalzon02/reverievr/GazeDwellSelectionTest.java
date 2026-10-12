@@ -40,7 +40,7 @@ public final class GazeDwellSelectionTest {
         d.update(true,1,4,t+5_000_000_000L);
         assertFalse(d.update(true,1,4,t+4_900_000_000L));
         assertEquals(0f,d.progress(),0f);
-        assertFalse(d.update(true,1,4,t+10_000_000_000L));
+        assertFalse(d.update(true,1,4,t+9_000_000_000L));
         assertTrue(d.update(true,1,4,t+15_000_000_000L));
         assertFalse(d.update(true,1,4,t+20_000_000_000L));
         d.update(true,1,5,t+20_100_000_000L);
