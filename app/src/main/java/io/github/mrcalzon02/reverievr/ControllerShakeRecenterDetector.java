@@ -12,6 +12,12 @@ final class ControllerShakeRecenterDetector {
     private float firstImpulseX;
     private float firstImpulseY;
     private float firstImpulseZ;
+    // Initialized only from calm ~1g samples; an instantaneous jerk on
+    // startup must still be recognized by the fallback magnitude path.
+    private boolean gravityReferenceValid;
+    private float gravityX;
+    private float gravityY;
+    private float gravityZ;
 
     boolean sample(float accelerationX, float accelerationY,
                    float accelerationZ, long timestampNanos) {
@@ -45,15 +51,36 @@ final class ControllerShakeRecenterDetector {
 
         // Daydream reports g; phone-controller emulation reports m/s^2.
         // A shake above 4g must not suddenly switch units and disappear.
-        float metersPerSecondSquared = accelerationInG
-            ? magnitude * STANDARD_GRAVITY : magnitude;
-        float deviation =
-            Math.abs(
-                metersPerSecondSquared
-                    - STANDARD_GRAVITY
-            );
+        float scale = accelerationInG ? STANDARD_GRAVITY : 1.0f;
+        float ax = accelerationX * scale;
+        float ay = accelerationY * scale;
+        float az = accelerationZ * scale;
+        float metersPerSecondSquared = magnitude * scale;
+
+        if (!gravityReferenceValid
+            && metersPerSecondSquared >= STANDARD_GRAVITY * 0.5f
+            && metersPerSecondSquared <= STANDARD_GRAVITY * 1.5f) {
+            gravityX = ax;
+            gravityY = ay;
+            gravityZ = az;
+            gravityReferenceValid = true;
+        }
+
+        float impulseX = gravityReferenceValid ? ax - gravityX : ax;
+        float impulseY = gravityReferenceValid ? ay - gravityY : ay;
+        float impulseZ = gravityReferenceValid ? az - gravityZ : az;
+        float deviation = gravityReferenceValid
+            ? (float) Math.sqrt(impulseX * impulseX
+                + impulseY * impulseY + impulseZ * impulseZ)
+            : Math.abs(metersPerSecondSquared - STANDARD_GRAVITY);
 
         if (deviation < IMPULSE_DEVIATION) {
+            // Track changing rest orientation slowly, never learn a shake.
+            if (gravityReferenceValid && deviation < IMPULSE_DEVIATION * 0.45f) {
+                gravityX += (ax - gravityX) * 0.045f;
+                gravityY += (ay - gravityY) * 0.045f;
+                gravityZ += (az - gravityZ) * 0.045f;
+            }
             return false;
         }
 
@@ -67,7 +94,7 @@ final class ControllerShakeRecenterDetector {
             || timestampNanos - firstImpulseAtNanos
                 > MAX_IMPULSE_GAP_NANOS) {
             recordFirstImpulse(
-                accelerationX, accelerationY, accelerationZ, timestampNanos
+                impulseX, impulseY, impulseZ, timestampNanos
             );
             return false;
         }
@@ -81,17 +108,20 @@ final class ControllerShakeRecenterDetector {
 
         // Two unrelated impacts in the same direction must not recenter
         // the controller. A deliberate shake has an opposing impulse.
-        float dot = firstImpulseX * accelerationX
-            + firstImpulseY * accelerationY
-            + firstImpulseZ * accelerationZ;
+        float dot = firstImpulseX * impulseX
+            + firstImpulseY * impulseY
+            + firstImpulseZ * impulseZ;
         float firstMagnitude = (float) Math.sqrt(
             firstImpulseX * firstImpulseX
                 + firstImpulseY * firstImpulseY
                 + firstImpulseZ * firstImpulseZ
         );
-        if (dot > -0.25f * firstMagnitude * magnitude) {
+        float impulseMagnitude = (float) Math.sqrt(
+            impulseX * impulseX + impulseY * impulseY
+                + impulseZ * impulseZ);
+        if (dot > -0.25f * firstMagnitude * impulseMagnitude) {
             recordFirstImpulse(
-                accelerationX, accelerationY, accelerationZ, timestampNanos
+                impulseX, impulseY, impulseZ, timestampNanos
             );
             return false;
         }
@@ -120,5 +150,7 @@ final class ControllerShakeRecenterDetector {
     void reset() {
         cancelPendingImpulse();
         lastTriggerAtNanos = 0L;
+        gravityReferenceValid = false;
+        gravityX = gravityY = gravityZ = 0.0f;
     }
 }
