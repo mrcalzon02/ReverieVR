@@ -3,8 +3,10 @@ package io.github.mrcalzon02.reverievr;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import java.util.EnumSet;
 
 final class StandardHidInputRouter {
+    static final String RESET_SOURCE = "external HID reset";
     interface Listener {
         void onVirtualKey(
             VirtualKey key,
@@ -38,6 +40,8 @@ final class StandardHidInputRouter {
 
     private final Listener listener;
 
+    private final EnumSet<VirtualKey> heldKeys =
+        EnumSet.noneOf(VirtualKey.class);
     private int previousMouseButtons;
     private boolean mousePositionInitialized;
     private float previousMouseX;
@@ -207,8 +211,12 @@ final class StandardHidInputRouter {
     }
 
     void reset() {
+        for (VirtualKey key : heldKeys.toArray(new VirtualKey[0])) {
+            emitKey(key, false, RESET_SOURCE);
+        }
+        heldKeys.clear();
         if (previousMouseButtons != 0) {
-            emitMouseButtons(0, "mouse disconnected");
+            emitMouseButtons(0, RESET_SOURCE);
         }
         mousePositionInitialized = false;
         previousMouseX = 0.0f;
@@ -271,6 +279,8 @@ final class StandardHidInputRouter {
         boolean down,
         String source
     ) {
+        if (down) heldKeys.add(key);
+        else heldKeys.remove(key);
         Listener target = listener;
         if (target != null) {
             target.onVirtualKey(

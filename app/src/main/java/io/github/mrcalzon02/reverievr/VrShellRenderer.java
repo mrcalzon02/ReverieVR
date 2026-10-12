@@ -30,6 +30,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     interface Host {
         void onVrFirstFrameRendered();
         void onVrKeyboardTextCommitted(String text);
+        void onExternalHidInputPolicyChanged(boolean enabled);
         void onModelImportRequested();
         void onPhoneCaptureConsentRequested();
         void onPhoneCaptureDismissed();
@@ -178,7 +179,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             {220, 422, 500, 470},
             {524, 422, 804, 470},
             {220, 480, 500, 528},
-            {524, 480, 804, 528}
+            {524, 480, 804, 528},
+            {220, 538, 804, 590}
         };
 
     private static final int[][] HOME_BUTTONS = new int[][] {
@@ -4396,6 +4398,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 closeOrientationMenu();
                 return;
 
+            case 10:
+                boolean enabled = !preferences.isExternalHidEnabled();
+                preferences.setExternalHidEnabled(enabled);
+                host.onExternalHidInputPolicyChanged(enabled);
+                break;
+
             default:
                 host.onUiActionRejected();
                 return;
@@ -5441,7 +5449,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 "UI SCALE -",
                 "UI SCALE +",
                 "BACK QUICK",
-                "CLOSE"
+                "CLOSE",
+                preferences.isExternalHidEnabled()
+                    ? "EXTERNAL KEYBOARD + MOUSE: ON"
+                    : "EXTERNAL KEYBOARD + MOUSE: OFF"
             },
             QUICK_SETTINGS_BUTTONS
         );
@@ -5465,15 +5476,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 + Math.round(
                     uiScale * 100.0f
                 )
-                + "% • Back returns to Quick Menu.",
+                + "% • Menu/Start keeps recovery available.",
             220,
-            570,
+            629,
             paint
         );
         canvas.drawText(
-            "Menu/Start closes the panel from either page.",
+            "External HID input routing is independent of device pairing.",
             220,
-            604,
+            654,
             paint
         );
     }

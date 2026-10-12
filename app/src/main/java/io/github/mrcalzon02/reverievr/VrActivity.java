@@ -534,6 +534,35 @@ public final class VrActivity extends Activity
             && AndroidGamepadSupport.isGamepadEvent(event);
     }
 
+    /** Respect the persistent external HID preference without blocking a
+     * gamepad, touchscreen recovery or host-reserved Menu/Back navigation. */
+    private boolean consumeDisabledExternalHid(android.view.InputEvent event,
+                                               boolean recovery) {
+        if (event == null || preferences.isExternalHidEnabled()) return false;
+        int sources = event.getSource();
+        boolean gamepad = AndroidGamepadSupport.isGamepadEvent(event);
+        boolean keyboard = (sources & android.view.InputDevice.SOURCE_KEYBOARD)
+            == android.view.InputDevice.SOURCE_KEYBOARD;
+        boolean mouse = (sources & android.view.InputDevice.SOURCE_MOUSE)
+            == android.view.InputDevice.SOURCE_MOUSE
+            || (sources & android.view.InputDevice.SOURCE_MOUSE_RELATIVE)
+            == android.view.InputDevice.SOURCE_MOUSE_RELATIVE;
+        android.view.InputDevice device = event.getDevice();
+        // Do not block Android's own virtual keyboard or touchscreen dispatch.
+        if (device != null && device.isVirtual()) return false;
+        return ExternalHidInputPolicy.shouldConsume(false, keyboard, mouse,
+            gamepad, recovery);
+    }
+
+    @Override
+    public void onExternalHidInputPolicyChanged(boolean enabled) {
+        if (!enabled) runOnUiThread(() -> {
+            // Clear any held HID keys/mouse buttons before the next event;
+            // StandardHidInputRouter emits explicit reset releases.
+            if (standardHidInputRouter != null) standardHidInputRouter.reset();
+        });
+    }
+
     private boolean selectedShellMouse(String source) {
         String selected = preferences.getActiveController();
         if (SteamControllerIdentity.matchesAndroidHid(0, source))
@@ -572,6 +601,12 @@ public final class VrActivity extends Activity
         }
 
         if (routeQuickMenuKeyboardEvent(event)) {
+            return true;
+        }
+        if (consumeDisabledExternalHid(event,
+                event != null && (event.getKeyCode() == KeyEvent.KEYCODE_MENU
+                    || event.getKeyCode() == KeyEvent.KEYCODE_BACK
+                    || event.getKeyCode() == KeyEvent.KEYCODE_ESCAPE))) {
             return true;
         }
 
@@ -720,6 +755,7 @@ public final class VrActivity extends Activity
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
         if (blockedControllerInput(event)) return true;
+        if (consumeDisabledExternalHid(event, false)) return true;
         if (inputRouter != null
             && inputRouter.onGenericMotionEvent(event)) {
             return true;
@@ -744,6 +780,7 @@ public final class VrActivity extends Activity
             return true;
         }
 
+        if (consumeDisabledExternalHid(event, false)) return true;
         if (event != null) {
             int source = event.getSource();
             boolean mouse =
@@ -867,6 +904,10 @@ public final class VrActivity extends Activity
                 break;
 
             case MENU:
+                // Release held HID guest keys before taking shell focus.
+                if (!renderer.isOrientationMenuVisible()
+                    && standardHidInputRouter != null)
+                    standardHidInputRouter.reset();
                 uiFeedback.activation();
                 renderer.toggleOrientationMenu();
                 break;
@@ -976,7 +1017,8 @@ public final class VrActivity extends Activity
         boolean down,
         String source
     ) {
-        if (isGuestInputSuppressed()) {
+        if (isGuestInputSuppressed()
+            && !(StandardHidInputRouter.RESET_SOURCE.equals(source) && !down)) {
             return;
         }
         if (virtualInputBus != null && key != null) {
@@ -996,7 +1038,8 @@ public final class VrActivity extends Activity
         if (down && button == VirtualOutput.MOUSE_LEFT && selectedShellMouse(source)
                 && renderer != null && renderer.handlesSelectAsShellAction())
             inputRouter.submitAction(VrInputAction.SELECT, source);
-        if (isGuestInputSuppressed()) {
+        if (isGuestInputSuppressed()
+            && !(StandardHidInputRouter.RESET_SOURCE.equals(source) && !down)) {
             return;
         }
         if (virtualInputBus != null) {

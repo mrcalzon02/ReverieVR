@@ -25,6 +25,7 @@ final class ReveriePreferences {
     private static final String KEY_VR_POINTER_MODE = "vr_pointer_mode";
     private static final String KEY_CONTROLLER_LEFT_HANDED = "controller_left_handed";
     private static final String KEY_ACTIVE_CONTROLLER = "selected_controller";
+    private static final String KEY_EXTERNAL_HID_ENABLED = "external_hid_enabled";
     static final String CONTROLLER_AUTO = "auto";
     static final String CONTROLLER_DAYDREAM = "daydream";
     static final String CONTROLLER_STEAM = "steam";
@@ -60,6 +61,15 @@ final class ReveriePreferences {
             && !CONTROLLER_SCRCPY.equals(choice))
             throw new IllegalArgumentException("Unknown controller");
         preferences.edit().putString(KEY_ACTIVE_CONTROLLER, choice).apply();
+    }
+
+    /** External Bluetooth/USB/scrcpy keyboard and mouse routing defaults ON. */
+    boolean isExternalHidEnabled() {
+        return preferences.getBoolean(KEY_EXTERNAL_HID_ENABLED, true);
+    }
+
+    void setExternalHidEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_EXTERNAL_HID_ENABLED, enabled).apply();
     }
 
     boolean isBatteryHudEnabled() {
