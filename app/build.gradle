@@ -273,7 +273,7 @@ android {
     sourceSets {
         main {
             // One generated asset set for all build types, not a test-only variant.
-            assets.srcDir(ownerMusicAssets)
+            assets.srcDir(ownerMusicAssets.get().asFile)
             if (bundleDoomShareware) {
                 assets.srcDir(
                     rootProject.file(
