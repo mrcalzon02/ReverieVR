@@ -99,7 +99,7 @@ final class DosModuleImporter {
                     displayNameWithoutExtension(safeName),
                     safeName,
                     destination.getAbsolutePath(),
-                    BuiltInBindingProfiles.ID_NONE,
+                    BuiltInBindingProfiles.ID_DOS_STANDARD,
                     System.currentTimeMillis()
                 );
 
