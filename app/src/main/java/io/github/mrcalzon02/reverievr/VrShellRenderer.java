@@ -3472,6 +3472,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
 
         yawOffsetRadians = nextYaw;
+        // Recenter moves every shell ray target; discard the old focus.
+        uiTargetStabilizer.reset();
         controllerBodyAnchor.reset();
         controllerAnchorLastFrameNanos = 0L;
         if (preserveControllerDirection) {
