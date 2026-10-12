@@ -87,6 +87,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onEmulatorSourceDownloadRequested(String moduleId);
         String getEmulatorSourceStatus(String moduleId);
         void onNativeModuleStopRequested();
+        String[] getNativeMusicTrackNames();
+        String getNativeMusicStatus();
+        void onNativeMusicChoose(int index);
+        void onNativeMusicStep(int direction);
+        void onNativeMusicTogglePause();
         void onHeadBindingDelta(
             float yawDeltaRadians,
             float pitchDeltaRadians
@@ -143,6 +148,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_EMULATOR_CATALOG = 15;
     private static final int MODE_EMULATOR_CONFIRM = 16;
     private static final int MODE_CONTROLLER_SOURCE = 17;
+    private static final int MODE_MUSIC_LIBRARY = 18;
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -221,7 +227,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {0, 0, 0, 0},
         {0, 0, 0, 0},
         {42, 498, 230, 544}, // Native Games
-        {42, 604, 230, 650}  // Emulator Modules
+        {42, 604, 230, 650}, // Emulator Modules
+        {780, 570, 982, 618} // Native Music
     };
 
     // Virtual targets are intercepted in world-space by
@@ -229,6 +236,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
     // Index 24 is the local Phone Screen Close control, never native games
     // while the panel is visible.
     private static final int[][] PHONE_PANEL_BUTTONS = new int[25][4];
+
+    private static final int[][] MUSIC_BUTTONS = new int[][] {
+        {140, 235, 884, 300},
+        {140, 315, 884, 380},
+        {140, 395, 884, 460},
+        {140, 520, 280, 585}, // Previous track
+        {290, 520, 445, 585}, // Pause / resume
+        {455, 520, 595, 585}, // Next track
+        {605, 520, 735, 585}, // Next page
+        {745, 520, 884, 585}  // Home
+    };
 
     private static final int[][] KEYBOARD_BUTTONS = makeKeyboardButtons();
     private static final int HOME_KEYBOARD_HIT_OFFSET = 1000;
@@ -518,6 +536,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int dosLibraryPage;
     private int nativeLibraryPage;
     private int emulatorCatalogPage;
+    private int musicCatalogPage;
+    private String[] musicCatalogTitles = new String[0];
+    private long lastMusicStatusRefreshNanos;
     private EmulatorModuleCatalog.Entry selectedEmulator;
     private long lastEmulatorStatusRefreshNanos;
     private boolean nativeSurfaceReady;
@@ -4149,7 +4170,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return phonePanelVisible || (NativeModuleRuntime.isAvailable()
                     && !nativeGames.isEmpty());
             }
-            if(index==25)return true;
+            if(index==25 || index==26)return true;
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
                 && index == 12) {
                 return false;
@@ -4171,6 +4192,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_KEYBOARD) {
             return index < KEYBOARD_BUTTONS.length;
+        }
+        if (mode == MODE_MUSIC_LIBRARY) {
+            if (index < 3) {
+                return musicCatalogPage * 3 + index < musicCatalogTitles.length;
+            }
+            if (index == 6) return musicCatalogTitles.length > 3;
+            return index >= 3 && index < MUSIC_BUTTONS.length;
         }
 
         if (mode == MODE_EMULATOR_CATALOG) {
@@ -4429,6 +4457,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 5:
                     host.onExitToPhoneRequested();
                     return;
+                case 26:
+                    musicCatalogTitles = host.getNativeMusicTrackNames();
+                    if (musicCatalogTitles == null)
+                        musicCatalogTitles = new String[0];
+                    musicCatalogPage = 0;
+                    mode = MODE_MUSIC_LIBRARY;
+                    break;
                 case 25:
                     emulatorCatalogPage=0;
                     selectedEmulator=null;
@@ -4537,6 +4572,34 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 default:
                     break;
             }
+        } else if (mode == MODE_MUSIC_LIBRARY) {
+            switch (hoveredButton) {
+                case 0:
+                case 1:
+                case 2:
+                    host.onNativeMusicChoose(musicCatalogPage * 3 + hoveredButton);
+                    break;
+                case 3:
+                    host.onNativeMusicStep(-1);
+                    break;
+                case 4:
+                    host.onNativeMusicTogglePause();
+                    break;
+                case 5:
+                    host.onNativeMusicStep(1);
+                    break;
+                case 6:
+                    musicCatalogPage = (musicCatalogPage + 1)
+                        % Math.max(1, (musicCatalogTitles.length + 2) / 3);
+                    break;
+                case 7:
+                    mode = MODE_HOME;
+                    break;
+                default:
+                    host.onUiActionRejected();
+                    break;
+            }
+            textureDirty = true;
         } else if (mode == MODE_CONTROLLER_SOURCE) {
             handleControllerSourceSelection(hoveredButton);
         } else if (mode == MODE_CONTROLLER) {
@@ -5274,7 +5337,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             || mode == MODE_KEYBOARD
             || mode == MODE_NATIVE_LIBRARY
             || mode == MODE_NATIVE_GAMES
-            || mode == MODE_EMULATOR_CATALOG) {
+            || mode == MODE_EMULATOR_CATALOG
+            || mode == MODE_MUSIC_LIBRARY) {
             mode = MODE_HOME;
             hoveredButton = -1;
             textureDirty = true;
@@ -5344,6 +5408,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
         if (mode == MODE_KEYBOARD) {
             return KEYBOARD_BUTTONS;
+        }
+        if (mode == MODE_MUSIC_LIBRARY) {
+            return MUSIC_BUTTONS;
         }
 
         if (mode == MODE_EMULATOR_CATALOG) return NATIVE_LIBRARY_BUTTONS;
@@ -5497,6 +5564,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawControllerPanel(canvas, paint);
         } else if (mode == MODE_KEYBOARD) {
             drawKeyboard(canvas, paint);
+        } else if (mode == MODE_MUSIC_LIBRARY) {
+            drawNativeMusicLibrary(canvas, paint);
         } else if (mode == MODE_EMULATOR_CATALOG ||
                    mode == MODE_EMULATOR_CONFIRM) {
             drawEmulatorCatalog(canvas,paint);
@@ -5964,6 +6033,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new String[] {"Classic Games"}, 24, 1);
         drawHomeButtons(canvas, paint,
             new String[] {"Emulator Modules"}, 25, 1);
+        drawHomeButtons(canvas, paint,
+            new String[] {"Music Library"}, 26, 1);
 
         paint.setFakeBoldText(true);
         paint.setColor(Color.WHITE);
@@ -6371,6 +6442,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return "Play original native Pong, Snake, and chutes-and-ladders.";
             case 25:
                 return "Browse public emulator source modules, license and download status.";
+            case 26:
+                return "Play locally packaged music from the licensed native music library.";
             default:
                 return "Choose a destination or quick option.";
         }
@@ -6811,6 +6884,38 @@ final class VrShellRenderer implements CardboardView.Renderer {
             canvas.drawText("Source downloads are inert. Libretro execution is a later gate.",
                 90,685,paint);
         }
+    }
+
+    private void drawNativeMusicLibrary(Canvas canvas, Paint paint) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(32.0f * uiScale);
+        canvas.drawText("NATIVE MUSIC LIBRARY", 90, 160, paint);
+        paint.setColor(Color.rgb(170, 188, 205));
+        paint.setTextSize(18.0f * uiScale);
+        int pageCount = Math.max(1, (musicCatalogTitles.length + 2) / 3);
+        canvas.drawText(musicCatalogTitles.length + " packaged tracks  •  page "
+            + (musicCatalogPage + 1) + " / " + pageCount,
+            90, 199, paint);
+        String[] labels = new String[MUSIC_BUTTONS.length];
+        for (int index = 0; index < 3; index++) {
+            int track = musicCatalogPage * 3 + index;
+            labels[index] = track < musicCatalogTitles.length
+                ? shorten(musicCatalogTitles[track], 47) : "—";
+        }
+        labels[3] = "PREVIOUS";
+        labels[4] = "PAUSE / PLAY";
+        labels[5] = "NEXT";
+        labels[6] = pageCount > 1 ? "PAGE" : "1 PAGE";
+        labels[7] = "HOME";
+        drawButtons(canvas, paint, labels, MUSIC_BUTTONS);
+        paint.setColor(Color.rgb(141, 214, 192));
+        paint.setTextSize(18.0f * uiScale);
+        canvas.drawText(shorten(host.getNativeMusicStatus(), 71),
+            155, 650, paint);
+        paint.setColor(Color.rgb(150, 162, 174));
+        paint.setTextSize(16.0f * uiScale);
+        canvas.drawText("Offline-only playback of licensed local audio; "
+            + "Suno streams are not extracted.", 155, 690, paint);
     }
 
     private void drawNativeLibrary(

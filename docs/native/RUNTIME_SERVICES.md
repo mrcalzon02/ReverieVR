@@ -247,3 +247,25 @@ pointer ray and primary/secondary input and optional movement axes.
 Shell stereo, controller identity, pause, Quick Menu, Home, and recovery
 remain host-owned; no raw Bluetooth/HID or new ABI services are added.
 Simulation and local CPU moves run in Update and not in eye rendering.
+
+## Native Music Library (implemented source; Android acceptance pending)
+
+VR Home opens a phone-resident, offline Music Library. The shell's
+`MODE_MUSIC_LIBRARY` is a native 3D-UI interaction panel with three
+selectable songs per page, previous/next track, pause/resume, page switching
+and return to Home. Input remains controller/gaze routed through the shell;
+music playback is owned by `ShellMenuMusic` on the Android UI thread.
+`NativeMusicCatalog` reads the bounded immutable
+`assets/music/catalog.tsv`, which lists only approved local assets.
+The first packaged entry is the owner-authorized Suno Starry Cereal MP3;
+future `assets/music/tracks/<id>.mp3` or `.wav` entries are not accessible
+until explicitly imported and packaged with exact hashes/rights records.
+The media player's `MediaPlayer` is released on track changes or lifecycle
+shutdown. Audio pauses when the shell yields to video/DOS/native content,
+and does not contact or stream Suno. Official paid downloadable Suno files
+and the licensing registry are the only admission path; no stream ripping,
+hidden PC runtime or startup network dependency. The
+`scripts/import-suno-downloads.py` helper is manual and bounded, validates
+owner-rights attestations and hashes, and does not download tracks itself.
+Galaxy S9 decoder/frame pacing, full-catalog size and on-device UI
+acceptance remain outstanding.

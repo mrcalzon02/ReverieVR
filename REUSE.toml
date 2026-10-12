@@ -36,13 +36,30 @@ SPDX-License-Identifier = "LicenseRef-OpenKTG-Public-Domain"
 # Android aapt2 rejects .license sidecars in res/raw or drawable resource
 # folders. REUSE annotations supply the same per-file metadata externally.
 [[annotations]]
-path = ["app/src/main/res/raw/starry_cereal_menu.mp3", "app/src/main/res/drawable-nodpi/reverievr_logo.jpg", "app/src/main/res/mipmap-nodpi/ic_launcher.jpg", "controller-app/src/main/res/mipmap-nodpi/ic_launcher.jpg", "docs/assets/reverievr-logo.jpg"]
+path = ["app/src/main/res/drawable-nodpi/reverievr_logo.jpg", "app/src/main/res/mipmap-nodpi/ic_launcher.jpg", "controller-app/src/main/res/mipmap-nodpi/ic_launcher.jpg", "docs/assets/reverievr-logo.jpg"]
 precedence = "override"
 SPDX-FileCopyrightText = "NOASSERTION"
 SPDX-License-Identifier = "LicenseRef-Pending-Asset-Rights"
+
+# The project owner confirms commercial usage rights for this particular
+# Suno audio track. Commercial rights do not imply a CC BY/CC0 grant or
+# automatic copyright protection; never relicense this as original CC art.
+[[annotations]]
+path = ["app/src/main/res/raw/starry_cereal_menu.mp3"]
+precedence = "override"
+SPDX-FileCopyrightText = "NOASSERTION"
+SPDX-License-Identifier = "LicenseRef-Suno-Commercial-Use"
 
 [[annotations]]
 path = ["app/src/main/assets/models/daydream/vr_controller_daydream.obj", "app/src/main/assets/models/daydream/vr_controller_daydream.mtl"]
 precedence = "override"
 SPDX-FileCopyrightText = ["rje", "TechnoBuddhist"]
 SPDX-License-Identifier = "LicenseRef-Daydream-Upstream-Review"
+
+# Authored offline catalog is a first-party metadata work, NOT a license
+# for the Suno audio to which it points.
+[[annotations]]
+path = ["app/src/main/assets/music/catalog.tsv"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 ReverieVR contributors"
+SPDX-License-Identifier = "CC-BY-4.0"

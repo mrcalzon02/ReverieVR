@@ -35,9 +35,19 @@ DOOM Shareware v1.9 (ONLY when included in a free phone-test build):
   Original archive kept unchanged, separate shareware redistribution terms.
   https://www.gamers.org/pub/idgames/idstuff/doom/doom19s.zip
 
-Starry Cereal music and project logos:
-  Copyright/attribution and free-commercial-license confirmation pending.
-  No MIT, CC BY or CC0 ownership grant is asserted for these assets.
+Starry Cereal music:
+  Suno artist: Jovian-PostPunkRevival
+  https://suno.com/@jovianpostpunkrevival7375
+  ReverieVR owner confirms commercial distribution permission for this
+  track obtained through Suno's paid usage terms. Recorded as
+  LicenseRef-Suno-Commercial-Use (NOT CC BY, CC0 or MIT).
+  Other published profile songs are not bundled without individually
+  approved Suno downloads, exact file hashes and rights checks.
+  https://suno.com/terms-of-service
+
+Project logos:
+  Original creator/redistribution grant not yet verified.
+  No MIT, CC BY or CC0 grant is asserted for those assets.
 
 Valve CAD-derived Steam Controller artwork is not bundled by default;
 the original Valve source license is CC BY-NC-SA 4.0. The current controller

@@ -51,6 +51,10 @@ def static_audit(registry, baseline, errors):
     # Android's aapt2 resource tree cannot contain arbitrary .license files.
     # The REUSE.toml mapping is the authoritative metadata for resource binaries.
     required += [p["source"] for p in registry["pending_public_assets"]]
+    required += [p["source"] for p in registry.get("owner_authorized_assets", [])]
+    required += ["docs/licensing/SUNO_AUDIO_PROVENANCE.md",
+                 "LICENSES/LicenseRef-Suno-Commercial-Use.txt",
+                 "app/src/main/assets/music/catalog.tsv"]
     required += [p["record"] for p in registry["apk_assets"].values()]
     fail_if_absent(ROOT, sorted(set(required)), errors)
     license_data = (ROOT / "LICENSE").read_text(encoding="utf-8") if (
@@ -71,6 +75,46 @@ def static_audit(registry, baseline, errors):
             errors.append("resource binary lacks explicit REUSE annotation: " + asset["source"])
         if asset["required"] and not (ROOT / asset["source"]).is_file():
             errors.append("known existing packaged asset missing: " + asset["source"])
+    for asset in registry.get("owner_authorized_assets", []):
+        if (asset["license"] != "LicenseRef-Suno-Commercial-Use"
+                or asset["rights"] != "commercial-use-authorized"
+                or asset.get("free_relicense_verified") is not False):
+            errors.append("owner-approved Suno audio has invalid license metadata")
+        if asset["source"] not in reuse_text:
+            errors.append("owner audio lacks explicit REUSE entry: " + asset["source"])
+        if len(asset.get("sha256", "")) != 64:
+            errors.append("owner audio SHA-256 missing: " + asset["source"])
+    catalog_file = ROOT / "app/src/main/assets/music/catalog.tsv"
+    if catalog_file.is_file():
+        seen = set()
+        count = 0
+        for row in catalog_file.read_text(encoding="utf-8").splitlines():
+            if not row or row.startswith("#"):
+                continue
+            cells = row.split("\t")
+            if len(cells) != 5:
+                errors.append("invalid music catalog row")
+                continue
+            song_id, title, source, license_id, digest = cells
+            if song_id in seen or not title or license_id != "LicenseRef-Suno-Commercial-Use":
+                errors.append("invalid or duplicate licensed song: " + song_id)
+            seen.add(song_id)
+            count += 1
+            if source.startswith("resource:"):
+                if source != "resource:starry_cereal_menu":
+                    errors.append("unapproved built-in music resource: " + source)
+                if digest != registry["apk_assets"]["res/raw/starry_cereal_menu.mp3"].get("sha256"):
+                    errors.append("existing Starry Cereal checksum mismatch")
+            else:
+                item = registry["apk_assets"].get("assets/" + source)
+                if not item or item.get("sha256") != digest or (
+                    item.get("rights") != "commercial-use-authorized"):
+                    errors.append("unapproved local music in catalog: " + source)
+                music_file = ROOT / "app/src/main/assets" / source
+                if not music_file.is_file() or sha256(music_file.read_bytes()) != digest:
+                    errors.append("actual music file checksum mismatch: " + source)
+        if count > registry.get("music_import_policy", {}).get("max_tracks", 1000):
+            errors.append("music catalog exceeds maximum allowed tracks")
     for name, item in registry["apk_assets"].items():
         if item["license"].startswith("LicenseRef-") and not (
                 ROOT / ("LICENSES/" + item["license"] + ".txt")).is_file():

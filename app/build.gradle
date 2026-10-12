@@ -95,6 +95,11 @@ def updateChannelEnabled =
         && phoneTestSignerSha256.length() == 64
 
 android {
+    // Native music player opens packaged Suno tracks as seekable FD slices.
+    // Keep approved MP3/WAV assets uncompressed in the APK.
+    androidResources {
+        noCompress += ["mp3", "wav"]
+    }
     namespace = "io.github.mrcalzon02.reverievr"
     compileSdk = 36
 

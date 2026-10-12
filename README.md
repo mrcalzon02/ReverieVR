@@ -23,6 +23,15 @@ See [the SPDX/REUSE and asset registry](docs/licensing/ASSET_REGISTRY.json)
 and each Release's `DIST-LICENSE-MANIFEST.json` for actual files,
 copyright/attribution records, and unresolved rights.
 
+The offline **Native Music Library** is available from VR Home, with
+browse/previous/next/pause controls. The catalog is sourced from the owner's
+[Jovian-PostPunkRevival Suno profile](https://suno.com/@jovianpostpunkrevival7375)
+and accepts only owner-authorized, official paid-plan audio downloads
+(see [Suno music provenance](docs/licensing/SUNO_AUDIO_PROVENANCE.md)).
+Currently Starry Cereal is packaged; the other public-profile songs are **not
+yet in the APK**. Neither the player nor the app needs a Suno connection.
+Music retains a separate commercial-use license, not MIT or CC BY.
+
 The default current tree excludes Valve's noncommercial CAD-derived controller
 mesh; Steam HID hardware remains usable with the independent primitive 3D
 fallback. Earlier public commits and releases are not automatically erased by

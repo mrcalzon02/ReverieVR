@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "profile": "https://suno.com/@jovianpostpunkrevival7375",
+  "tracks": [
+    {
+      "id": "replace-with-unique-lowercase-id",
+      "title": "REPLACE WITH TRACK TITLE",
+      "suno_url": "https://suno.com/song/00000000-0000-0000-0000-000000000000",
+      "downloaded_file": "REPLACE_WITH_OFFICIAL_DOWNLOAD.mp3",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "owner_attests_commercial_rights": false,
+      "official_paid_suno_download": false,
+      "no_third_party_remix_or_unlicensed_samples": false
+    }
+  ]
+}

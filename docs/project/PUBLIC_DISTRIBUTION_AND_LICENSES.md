@@ -10,8 +10,12 @@ The default source tree and the ordinary APK should use freely redistributable s
 `LICENSE` now contains the MIT grant, with full text at `LICENSES/MIT.txt`.
 Original creative work is eligible for **CC BY 4.0** after ownership/rights
 are confirmed; **CC0** may be used only through an explicit dedication for a
-specific work. Unverified existing images and music have **no new license
-grant**, even if they appear in the public tree. File-level metadata lives in
+specific work. Unverified existing images have **no new license grant**,
+even if they appear in the public tree. The owner confirms commercial-use rights
+for the bundled Suno `Starry Cereal` music. Its
+`LicenseRef-Suno-Commercial-Use` is **not** a CC BY/CC0/MIT license: other
+published songs may be included only after official Suno paid-plan downloads
+and track-specific provenance checks. File-level metadata lives in
 `REUSE.toml`, adjacent asset `.license` records where compatible with
 Android packaging, and `docs/licensing/ASSET_REGISTRY.json`. This does not
 override a third-party rightsholder's conditions or adjudicate the combined
@@ -60,8 +64,10 @@ The LGPL/GPL/Apache/open art combination should be reviewed as distinct componen
   procedural 3D. It does not relicense GPL, Apache, or imported artistic work.
 * **CC BY 4.0** is the default for **verified first-party creative assets**;
   **CC0** requires explicit file-level dedication. Original source rights
-  for the Starry Cereal track, logo/icon images and the Daydream visual are
-  currently unresolved and must not be relabeled CC BY by assumption.
+  for the logo/icon images and Daydream visual remain unresolved. Owner
+  confirms a paid commercial-use grant for bundled **Starry Cereal**, not
+  CC BY/CC0 rights for its audio or automatic commercial rights for every
+  published song at the same account.
 * `REUSE.toml` supplies scoped SPDX copyright/license annotations and
   explicitly marks unverified Android resource binaries. Adjacent
   `.license` files document the Daydream model. Android `res/` does not

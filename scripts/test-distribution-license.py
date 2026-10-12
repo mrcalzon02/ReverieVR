@@ -20,6 +20,18 @@ class DistributionLicenseTests(unittest.TestCase):
         cls.registry = json.loads(
             (ROOT / "docs/licensing/ASSET_REGISTRY.json").read_text())
 
+    def test_licensed_owner_music_is_not_mislabeled_creative_commons(self):
+        track = self.registry["apk_assets"]["res/raw/starry_cereal_menu.mp3"]
+        self.assertEqual(track["rights"], "commercial-use-authorized")
+        self.assertEqual(track["license"], "LicenseRef-Suno-Commercial-Use")
+        self.assertFalse(track["free_relicense_verified"])
+        self.assertEqual(len(track["sha256"]), 64)
+
+    def test_native_music_catalog_must_be_packaged(self):
+        track = self.registry["apk_assets"]["assets/music/catalog.tsv"]
+        self.assertTrue(track["required"])
+        self.assertEqual(track["rights"], "owner-granted")
+
     def test_restricted_valve_archive_is_rejected(self):
         kind, value = audit.classify(
             "assets/steam_controller_2015/handoff.zip",

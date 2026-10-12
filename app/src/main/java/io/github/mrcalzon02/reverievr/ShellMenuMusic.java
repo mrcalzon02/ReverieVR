@@ -1,23 +1,77 @@
 package io.github.mrcalzon02.reverievr;
 
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * Phone-resident native music player shared by VR Home and Music Library.
+ * Never streams Suno or retrieves audio from a public profile page.
+ */
 final class ShellMenuMusic implements AutoCloseable {
-    private static final float MENU_GAIN = 0.22f;
+    private static final float MUSIC_GAIN = 0.22f;
 
     private final Context context;
-
+    private final NativeMusicCatalog catalog;
     private MediaPlayer player;
     private boolean lifecycleActive;
     private boolean shellActive = true;
+    private volatile boolean userPaused;
+    private volatile int selectedIndex;
     private boolean closed;
 
     ShellMenuMusic(Context context) {
-        this.context =
-            context == null
-                ? null
-                : context.getApplicationContext();
+        this.context = context == null ? null : context.getApplicationContext();
+        NativeMusicCatalog loaded = null;
+        if (this.context != null) {
+            try (InputStream file = this.context.getAssets().open(
+                    NativeMusicCatalog.PATH)) {
+                loaded = NativeMusicCatalog.parse(file);
+            } catch (IOException failure) {
+                ReverieLog.error("MENU_MUSIC",
+                    "Packaged native music catalog is missing or invalid", failure);
+            }
+        }
+        catalog = loaded;
+    }
+
+    String[] trackNames() {
+        return catalog == null ? new String[0] : catalog.titles();
+    }
+
+    int trackIndex() {
+        return selectedIndex;
+    }
+
+    String playbackStatus() {
+        if (catalog == null || catalog.size() == 0) {
+            return "NO PACKAGED MUSIC";
+        }
+        return (userPaused ? "PAUSED: " : "READY: ")
+            + catalog.at(selectedIndex).title;
+    }
+
+    void chooseTrack(int index) {
+        if (closed || catalog == null || index < 0 || index >= catalog.size())
+            return;
+        selectedIndex = index;
+        userPaused = false;
+        releasePlayer();
+        syncPlayback();
+    }
+
+    void stepTrack(int direction) {
+        if (catalog == null || catalog.size() == 0) return;
+        int size = catalog.size();
+        chooseTrack(Math.floorMod(selectedIndex + (direction < 0 ? -1 : 1), size));
+    }
+
+    void toggleUserPause() {
+        userPaused = !userPaused;
+        syncPlayback();
     }
 
     void resumeForLifecycle() {
@@ -36,110 +90,86 @@ final class ShellMenuMusic implements AutoCloseable {
     }
 
     private void syncPlayback() {
-        if (closed) {
-            return;
-        }
-
-        if (!lifecycleActive || !shellActive) {
+        if (closed) return;
+        if (!lifecycleActive || !shellActive || userPaused) {
             pausePlayer();
             return;
         }
-
         ensurePlayer();
         MediaPlayer active = player;
-        if (active == null) {
-            return;
-        }
-
+        if (active == null) return;
         try {
-            if (!active.isPlaying()) {
-                active.start();
-            }
+            if (!active.isPlaying()) active.start();
         } catch (IllegalStateException exception) {
-            ReverieLog.error(
-                "MENU_MUSIC",
-                "Could not start VR shell menu music.",
-                exception
-            );
+            ReverieLog.error("MENU_MUSIC",
+                "Could not start native music player", exception);
             releasePlayer();
         }
     }
 
     private void ensurePlayer() {
-        if (player != null || context == null || closed) {
+        if (player != null || context == null || closed || catalog == null)
             return;
-        }
-
+        final NativeMusicCatalog.Track track = catalog.at(selectedIndex);
+        MediaPlayer created = null;
         try {
-            MediaPlayer created =
-                MediaPlayer.create(
-                    context,
-                    R.raw.starry_cereal_menu
-                );
-            if (created == null) {
-                ReverieLog.incident(
-                    "MENU_MUSIC",
-                    "Android MediaPlayer could not create the packaged Starry Cereal menu track."
-                );
-                return;
-            }
-
-            created.setLooping(true);
-            created.setVolume(
-                MENU_GAIN,
-                MENU_GAIN
-            );
-            created.setOnErrorListener(
-                (failed, what, extra) -> {
-                    ReverieLog.incident(
-                        "MENU_MUSIC",
-                        "Menu music playback error what="
-                            + what
-                            + " extra="
-                            + extra
-                    );
-                    if (player == failed) {
-                        player = null;
-                    }
-                    try {
-                        failed.release();
-                    } catch (RuntimeException ignored) {
-                    }
-                    return true;
+            if (track.packagedResource()) {
+                created = MediaPlayer.create(context, R.raw.starry_cereal_menu);
+                if (created == null) throw new IOException(
+                    "Unable to open packaged Starry Cereal music");
+            } else {
+                created = new MediaPlayer();
+                try (AssetFileDescriptor fd =
+                         context.getAssets().openFd(track.source)) {
+                    created.setDataSource(fd.getFileDescriptor(),
+                        fd.getStartOffset(), fd.getLength());
                 }
-            );
+                created.prepare();
+            }
+            created.setLooping(catalog.size() == 1);
+            created.setVolume(MUSIC_GAIN, MUSIC_GAIN);
+            created.setOnCompletionListener(finished -> {
+                if (catalog.size() > 1) {
+                    selectedIndex = (selectedIndex + 1) % catalog.size();
+                    releasePlayer();
+                    syncPlayback();
+                }
+            });
+            created.setOnErrorListener((failed, what, extra) -> {
+                ReverieLog.incident("MENU_MUSIC",
+                    "Native music decoding error " + what + "/" + extra);
+                if (player == failed) player = null;
+                try {
+                    failed.release();
+                } catch (RuntimeException ignored) {
+                    // Already released by MediaPlayer.
+                }
+                return true;
+            });
             player = created;
-
-            ReverieLog.milestone(
-                "MENU_MUSIC",
-                "Loaded packaged Starry Cereal VR shell ambience."
-            );
-        } catch (RuntimeException exception) {
-            ReverieLog.error(
-                "MENU_MUSIC",
-                "Could not initialize VR shell menu music.",
-                exception
-            );
-            releasePlayer();
+            ReverieLog.milestone("MENU_MUSIC",
+                "Native music loaded: " + track.title);
+        } catch (IOException | RuntimeException failure) {
+            ReverieLog.error("MENU_MUSIC",
+                "Unable to open licensed local audio track " + track.id,
+                failure);
+            if (created != null) {
+                try {
+                    created.release();
+                } catch (RuntimeException ignored) {
+                }
+            }
         }
     }
 
     private void pausePlayer() {
         MediaPlayer active = player;
-        if (active == null) {
-            return;
-        }
-
+        if (active == null) return;
         try {
-            if (active.isPlaying()) {
-                active.pause();
-            }
+            if (active.isPlaying()) active.pause();
         } catch (IllegalStateException exception) {
-            ReverieLog.error(
-                "MENU_MUSIC",
-                "Could not pause VR shell menu music.",
-                exception
-            );
+            ReverieLog.error("MENU_MUSIC",
+                "Unable to pause native music", exception);
             releasePlayer();
         }
     }
@@ -147,13 +177,12 @@ final class ShellMenuMusic implements AutoCloseable {
     private void releasePlayer() {
         MediaPlayer active = player;
         player = null;
-        if (active == null) {
-            return;
-        }
-
-        try {
-            active.release();
-        } catch (RuntimeException ignored) {
+        if (active != null) {
+            try {
+                active.release();
+            } catch (RuntimeException ignored) {
+                // Do not keep an invalid player across a VR lifecycle change.
+            }
         }
     }
 

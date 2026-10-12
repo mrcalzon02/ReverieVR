@@ -1646,6 +1646,39 @@ public final class VrActivity extends Activity
         });
     }
 
+    @Override
+    public String[] getNativeMusicTrackNames() {
+        return menuMusic == null
+            ? new String[0] : menuMusic.trackNames();
+    }
+
+    @Override
+    public String getNativeMusicStatus() {
+        return menuMusic == null
+            ? "MUSIC UNAVAILABLE" : menuMusic.playbackStatus();
+    }
+
+    @Override
+    public void onNativeMusicChoose(int index) {
+        runOnUiThread(() -> {
+            if (menuMusic != null) menuMusic.chooseTrack(index);
+        });
+    }
+
+    @Override
+    public void onNativeMusicStep(int direction) {
+        runOnUiThread(() -> {
+            if (menuMusic != null) menuMusic.stepTrack(direction);
+        });
+    }
+
+    @Override
+    public void onNativeMusicTogglePause() {
+        runOnUiThread(() -> {
+            if (menuMusic != null) menuMusic.toggleUserPause();
+        });
+    }
+
     private void setShellMenuMusicActive(
         boolean active
     ) {

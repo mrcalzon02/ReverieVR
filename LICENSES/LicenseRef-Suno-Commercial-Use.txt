@@ -1,0 +1,12 @@
+LicenseRef-Suno-Commercial-Use: NOT an SPDX open-content license.
+This is a provenance/distribution label for the artist's Suno-generated
+tracks in ReverieVR. The user identifies the public artist account as
+https://suno.com/@jovianpostpunkrevival7375 and confirms commercial rights
+for Starry Cereal. Each additional song requires an authorized download
+through Suno's approved channels and per-track commercial entitlement
+under the terms applicable to that track, including its creation/remix
+history. The holder grants use inside ReverieVR's published builds; this
+record does NOT assert CC BY, CC0, public domain, exclusive copyright or
+an unrestricted third-party relicensing right.
+See https://suno.com/terms-of-service and
+https://help.suno.com/en/articles/9601665.

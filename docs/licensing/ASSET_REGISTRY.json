@@ -13,15 +13,6 @@
   },
   "pending_public_assets": [
     {
-      "source": "app/src/main/res/raw/starry_cereal_menu.mp3",
-      "apk": "res/raw/starry_cereal_menu.mp3",
-      "name": "Starry Cereal menu audio",
-      "license": "LicenseRef-Pending-Asset-Rights",
-      "rights": "review-required",
-      "required": true,
-      "notes": "user-supplied; distribution and CC grant not independently verified"
-    },
-    {
       "source": "app/src/main/res/drawable-nodpi/reverievr_logo.jpg",
       "apk": "res/drawable-nodpi/reverievr_logo.jpg",
       "name": "Main logo",
@@ -125,10 +116,12 @@
     },
     "res/raw/starry_cereal_menu.mp3": {
       "component": "starry-cereal-audio",
-      "license": "LicenseRef-Pending-Asset-Rights",
-      "rights": "review-required",
+      "license": "LicenseRef-Suno-Commercial-Use",
+      "rights": "commercial-use-authorized",
       "required": true,
-      "record": "REUSE.toml"
+      "record": "docs/licensing/SUNO_AUDIO_PROVENANCE.md",
+      "free_relicense_verified": false,
+      "sha256": "dd0240297ea62fe2002b736ce2b43002cafc307ad76e32d795587012ffb99c00"
     },
     "res/drawable-nodpi/reverievr_logo.jpg": {
       "component": "reverie-logo",
@@ -143,6 +136,13 @@
       "rights": "review-required",
       "required": true,
       "record": "REUSE.toml"
+    },
+    "assets/music/catalog.tsv": {
+      "component": "reverie-offline-music-index",
+      "license": "CC-BY-4.0",
+      "rights": "owner-granted",
+      "required": true,
+      "record": "docs/licensing/SUNO_AUDIO_PROVENANCE.md"
     }
   },
   "native_libraries": {
@@ -231,8 +231,39 @@
     }
   },
   "release_policy": {
-    "phone_test": "ALLOW listed inherited review-required assets only when manifest explicitly publishes review_required array; unregistered or blocked assets fail",
-    "public_commercial": "BLOCK any review-required, noncommercial-only, or incomplete corresponding-source dependencies. Must not imply one MIT license for combined APK."
+    "phone_test": "Suno commercial-use-authorized tracks with official downloaded source and SHA-256 may be packaged. Owner-confirmed existing Starry Cereal is admitted; all future additions need recorded individual entitlement. Missing/uncleared binaries fail.",
+    "public_commercial": "Other review-required and noncommercial-only assets still block unrestricted commercial/open release; Suno-licensed audio grants commercial APK use but not a CC BY/CC0 grant to downstream distributors."
   },
-  "source_notice_method": "Android res/ binary files use explicit file-scoped REUSE.toml annotations; Android assets may use adjacent .license files; no sidecars within aapt2 res/ tree."
+  "source_notice_method": "Android res/ binary files use explicit file-scoped REUSE.toml annotations; Android assets may use adjacent .license files; no sidecars within aapt2 res/ tree. Suno library index and approved audio tracks use per-file REUSE annotations.",
+  "owner_authorized_assets": [
+    {
+      "source": "app/src/main/res/raw/starry_cereal_menu.mp3",
+      "apk": "res/raw/starry_cereal_menu.mp3",
+      "name": "Starry Cereal menu audio",
+      "license": "LicenseRef-Suno-Commercial-Use",
+      "rights": "commercial-use-authorized",
+      "required": true,
+      "notes": "Project owner confirms Suno commercial rights for this specific track; permitted commercial use in the VR application's soundtrack, but no open-content sublicense or guaranteed copyright protection is asserted.",
+      "evidence": "Owner declaration (2026-10-11); Suno Pro/Premier commercial-use terms https://suno.com/terms-of-service and https://help.suno.com/en/articles/9601665; transaction/download details are not published.",
+      "free_relicense_verified": false,
+      "sha256": "dd0240297ea62fe2002b736ce2b43002cafc307ad76e32d795587012ffb99c00"
+    }
+  ],
+  "public_suno_catalog": {
+    "artist": "Jovian-PostPunkRevival",
+    "profile_url": "https://suno.com/@jovianpostpunkrevival7375",
+    "public_profile_song_count_at_review": 738,
+    "index_file": "app/src/main/assets/music/catalog.tsv",
+    "status": "only owner-approved officially downloaded tracks admitted to packaged library",
+    "self_contained_runtime": true
+  },
+  "music_import_policy": {
+    "max_tracks": 1000,
+    "requires_official_download": true,
+    "requires_paid_commercial_entitlement": true,
+    "requires_source_sha256": true,
+    "requires_private_owner_attestation": true,
+    "allows_stream_ripping": false,
+    "allows_public_profile_as_license_proof": false
+  }
 }

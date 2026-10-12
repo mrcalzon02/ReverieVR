@@ -165,7 +165,10 @@
     "reverievr_original_art_default": "CC-BY-4.0 for confirmed owner-created creative works only; CC0-1.0 by explicit per-file dedication",
     "licensing_scope_record": "docs/project/PUBLIC_DISTRIBUTION_AND_LICENSES.md",
     "asset_registry": "docs/licensing/ASSET_REGISTRY.json",
-    "release_manifest": "DIST-LICENSE-MANIFEST.json (generated from APK actual contents and release-specific GPL source archive)"
+    "release_manifest": "DIST-LICENSE-MANIFEST.json (generated from APK actual contents and release-specific GPL source archive)",
+    "music_profile": "https://suno.com/@jovianpostpunkrevival7375",
+    "music_license": "LicenseRef-Suno-Commercial-Use (per-track official download and rights record required, not a general CC grant)",
+    "native_music_catalog": "app/src/main/assets/music/catalog.tsv"
   },
   "known_gaps": [
     "Gradle transitive dependency lockfiles and SHA-256 verification-metadata not yet generated; must be built from an actual resolved trusted Gradle run, independently reviewed before admission.",
@@ -174,7 +177,8 @@
     "Emulator catalog source snapshots are optional and not active executable runtime dependencies; their licenses and commit digests must be vetted at install time.",
     "Public repository source and published APKs are already distributions. Valve archive removed from current tree only; historical commits and releases remain available.",
     "Automatic runtime downloads are not a workaround for noncommercial/third-party software licensing.",
-    "Owner-authored MIT code and CC BY/CC0 original art have per-file scope; the license state of music, logos and the Daydream derivative is explicitly review-required.",
-    "Existing public phone-test builds may carry review-required assets, flagged in attached manifests; an unqualified/commercially open release is blocked until their rights are verified or the assets are replaced."
+    "Owner has commercial-use entitlement to currently packaged Starry Cereal on Suno; song is not CC BY. Logo and Daydream derivative remain review-required.",
+    "Existing public phone-test builds may carry review-required assets, flagged in attached manifests; an unqualified/commercially open release is blocked until their rights are verified or the assets are replaced.",
+    "Artist profile lists 738 songs, but only Starry Cereal is packaged so far; other official downloads and individual rights checks not supplied. APK size may prevent all tracks in one build."
   ]
 }

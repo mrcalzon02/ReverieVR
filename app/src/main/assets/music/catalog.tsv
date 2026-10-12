@@ -1,0 +1,5 @@
+# ReverieVR native Suno music catalog v1
+# id<TAB>title<TAB>source<TAB>license<TAB>sha256
+# Entries are exact locally packaged audio; public streaming links are NOT files.
+# Import only Suno-approved official downloads with recorded commercial rights.
+starry-cereal	Starry Cereal	resource:starry_cereal_menu	LicenseRef-Suno-Commercial-Use	dd0240297ea62fe2002b736ce2b43002cafc307ad76e32d795587012ffb99c00
