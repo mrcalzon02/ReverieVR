@@ -286,6 +286,14 @@
       "role": "general-library",
       "distribution": "debug/phoneTest only; omitted from unrestricted release",
       "free_relicense_verified": false
+    },
+    "assets/music/source_preview.tsv": {
+      "component": "source-music-phone-test-index",
+      "license": "CC-BY-4.0",
+      "rights": "project-authored-record",
+      "required": false,
+      "record": "music/source/README.md",
+      "distribution": "debug/phoneTest only; generated from checked-in source manifest"
     }
   },
   "native_libraries": {

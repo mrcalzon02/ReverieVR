@@ -12,8 +12,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Versioned, entirely offline list of approved audio files actually packaged
- * with the APK. A public Suno URL is not an audio download or a license grant.
+ * Versioned offline listing of packaged audio. The approved catalog and
+ * debug/phoneTest-only, review-pending preview remain distinct.
+ * A public Suno URL is not an audio download or a license grant.
  */
 final class NativeMusicCatalog {
     static final String PATH = "music/catalog.tsv";

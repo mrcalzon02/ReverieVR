@@ -1,3 +1,13 @@
+## 2026-10-12 — Music preview APK allowlist and truthful library label
+
+The optional generated `assets/music/source_preview.tsv` file is now
+explicitly registered as first-party test catalog metadata, while all
+eleven actual MP3 contents retain exact SHA-256 and `review-required`
+licensing in the APK audit. This repairs a missing allowlist entry for
+the phoneTest asset verifier. The Music Library no longer incorrectly
+describes preview-pending recordings as universally "licensed local
+audio". No download, stream or remote service was added.
+
 ## 2026-10-12 — Live test-build music library, three lobby cues and Breakwater soundtrack
 
 Verified that all 11 source MP3s (66,325,607 bytes total) are present in
