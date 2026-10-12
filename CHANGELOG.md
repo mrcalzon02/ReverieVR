@@ -6,6 +6,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Primary Android controller selection (source; handset testing pending)
+
+- Extended the existing in-headset controller chooser: Android USB/BT choice
+  now selects a specific connected gamepad and cycles devices on repeated
+  activation, persisting its Android HID descriptor instead of transient ID.
+- Routed controller keys and axes only from the chosen device, while AUTO
+  accepts only one ordinary Android gamepad. Duplicate/unavailable descriptors
+  fail closed; device removal retains the existing Auto recovery transition.
+- Updated hosted input contract, acceptance ledger and multi-controller
+  regression source. No full controller rebind editor or S9 verification claimed.
+
+
 ### Shell UI targeting — bounded focus hysteresis (source; headset proof pending)
 
 - Added a tiny allocation-free hover target stabilizer across VR home cards,

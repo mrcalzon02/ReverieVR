@@ -532,14 +532,37 @@ public final class VrActivity extends Activity
         // External keyboards still type into the desk editor independently
         // of the selected gamepad; the Steam HID itself is a controller.
         if(!gamepad && !steam)return false;
-        return !ControllerSourcePolicy.acceptsGamepad(
-            preferences.getActiveController(),
+        String choice = preferences.getActiveController();
+        boolean sourceAllowed = ControllerSourcePolicy.acceptsGamepad(
+            choice,
             controllerManager!=null && controllerManager.isReady(),
             steam,
             AndroidGamepadSupport.isScrcpyHid(event.getDevice()),
             AndroidGamepadSupport.isScrcpyCompatibleGamepad(event.getDevice()),
             gamepad,
             AndroidGamepadSupport.firstConnectedSteamController()!=null);
+        if (!sourceAllowed) return true;
+        // A category is not an individual primary controller. On the
+        // Android route, admit only the exact user-picked physical device.
+        if (ReveriePreferences.CONTROLLER_ANDROID.equals(choice)) {
+            String descriptor=event.getDevice()==null ? null
+                : event.getDevice().getDescriptor();
+            return !ControllerDeviceSelection.accepts(
+                preferences.getSelectedAndroidGamepadDescriptor(),
+                descriptor,AndroidGamepadSupport.connectedGamepadDescriptors());
+        }
+        // AUTO arbitration also selects one Android gamepad, not every
+        // gamepad that Android happened to enumerate.
+        if (ReveriePreferences.CONTROLLER_AUTO.equals(choice) && gamepad
+            && !steam && !AndroidGamepadSupport.isScrcpyHid(event.getDevice())
+            && !AndroidGamepadSupport.isScrcpyCompatibleGamepad(event.getDevice())) {
+            String descriptor=event.getDevice()==null ? null
+                : event.getDevice().getDescriptor();
+            return !ControllerDeviceSelection.accepts(
+                AndroidGamepadSupport.firstConnectedGamepadDescriptor(),
+                descriptor,AndroidGamepadSupport.connectedGamepadDescriptors());
+        }
+        return false;
     }
 
     /** Respect the persistent external HID preference without blocking a
@@ -1206,7 +1229,9 @@ public final class VrActivity extends Activity
                 || ReveriePreferences.CONTROLLER_STEAM.equals(selected) &&
                     AndroidGamepadSupport.firstConnectedSteamController()==null
                 || ReveriePreferences.CONTROLLER_ANDROID.equals(selected) &&
-                    !AndroidGamepadSupport.hasConnectedGamepad();
+                    !ControllerDeviceSelection.contains(
+                        AndroidGamepadSupport.connectedGamepadDescriptors(),
+                        preferences.getSelectedAndroidGamepadDescriptor());
             if(lost) {
                 // Never strand the headset in a disconnected explicit mode.
                 pendingControllerSource="";
@@ -1260,7 +1285,11 @@ public final class VrActivity extends Activity
         boolean provider = controllerManager.isReady() &&
             ControllerSourcePolicy.acceptsProvider(
                 selected,controllerManager.getActiveProviderId());
-        String gamepad = AndroidGamepadSupport.firstConnectedGamepadName();
+        String gamepad = ReveriePreferences.CONTROLLER_ANDROID.equals(selected)
+            ? AndroidGamepadSupport.gamepadNameByDescriptor(
+                preferences.getSelectedAndroidGamepadDescriptor())
+            : AndroidGamepadSupport.gamepadNameByDescriptor(
+                AndroidGamepadSupport.firstConnectedGamepadDescriptor());
         android.view.InputDevice sd = AndroidGamepadSupport.firstConnectedSteamController();
         String steam = sd == null ? null : sd.getName();
         android.view.InputDevice scrcpyDevice =
@@ -1428,9 +1457,14 @@ public final class VrActivity extends Activity
         if(ReveriePreferences.CONTROLLER_SCRCPY.equals(choice))
             return AndroidGamepadSupport.firstConnectedScrcpySelectableInput()!=null
                 ? "FORWARDED DEVICE READY" : "START SCRCPY --GAMEPAD=UHID";
-        if(ReveriePreferences.CONTROLLER_ANDROID.equals(choice))
-            return AndroidGamepadSupport.hasConnectedGamepad()
-                ? "ANDROID GAMEPAD READY" : "NOT DETECTED";
+        if(ReveriePreferences.CONTROLLER_ANDROID.equals(choice)) {
+            String[] available = AndroidGamepadSupport.connectedGamepadDescriptors();
+            String active = preferences.getSelectedAndroidGamepadDescriptor();
+            String name = AndroidGamepadSupport.gamepadNameByDescriptor(active);
+            return available.length == 0 ? "NO UNAMBIGUOUS GAMEPAD FOUND"
+                : name == null ? available.length + " GAMEPAD(S): TAP TO SELECT"
+                : name + " (" + available.length + "): TAP TO CYCLE";
+        }
         if(ReveriePreferences.CONTROLLER_PHONE.equals(choice))
             return controllerManager!=null && controllerManager.isReady() &&
                 "daydream_phone_emulator".equals(controllerManager.getActiveProviderId())
@@ -1443,6 +1477,18 @@ public final class VrActivity extends Activity
         if (preferences==null || controllerManager==null ||
             !java.util.Arrays.asList(ControllerSourcePolicy.CHOICES).contains(choice))
             return false;
+        if (ReveriePreferences.CONTROLLER_ANDROID.equals(choice)) {
+            String[] connected = AndroidGamepadSupport.connectedGamepadDescriptors();
+            if (connected.length == 0) return false;
+            String old = preferences.getSelectedAndroidGamepadDescriptor();
+            String next = ReveriePreferences.CONTROLLER_ANDROID.equals(
+                    preferences.getActiveController())
+                ? ControllerDeviceSelection.next(connected, old)
+                : ControllerDeviceSelection.retainOrFirst(connected, old);
+            preferences.setSelectedAndroidGamepadDescriptor(next);
+            applyControllerSource(choice); // atomically release previous pressed inputs
+            return true;
+        }
         if(choice.equals(preferences.getActiveController())) return true;
         if(ReveriePreferences.CONTROLLER_STEAM.equals(choice) &&
            AndroidGamepadSupport.firstConnectedSteamController()==null)return false;

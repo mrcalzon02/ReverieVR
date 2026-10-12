@@ -8,6 +8,41 @@ final class AndroidGamepadSupport {
     private AndroidGamepadSupport() {
     }
 
+    /** Sorted, unambiguous physical HID descriptors, not transient Android IDs. */
+    static String[] connectedGamepadDescriptors() {
+        java.util.ArrayList<String> found = new java.util.ArrayList<>();
+        for (int id : InputDevice.getDeviceIds()) {
+            InputDevice device = InputDevice.getDevice(id);
+            if (device != null && !device.isVirtual()
+                && isGamepadDevice(device))
+                found.add(device.getDescriptor());
+        }
+        return ControllerDeviceSelection.selectable(
+            found.toArray(new String[0]));
+    }
+
+    static String firstConnectedGamepadDescriptor() {
+        String[] found = connectedGamepadDescriptors();
+        return found.length == 0 ? "" : found[0];
+    }
+
+    static InputDevice gamepadByDescriptor(String descriptor) {
+        if (!ControllerDeviceSelection.contains(
+                connectedGamepadDescriptors(), descriptor)) return null;
+        for (int id : InputDevice.getDeviceIds()) {
+            InputDevice d = InputDevice.getDevice(id);
+            if (d != null && !d.isVirtual()
+                && isGamepadDevice(d)
+                && descriptor.equals(d.getDescriptor())) return d;
+        }
+        return null;
+    }
+
+    static String gamepadNameByDescriptor(String descriptor) {
+        InputDevice d = gamepadByDescriptor(descriptor);
+        return d == null ? null : d.getName();
+    }
+
     static boolean hasConnectedGamepad() {
         return firstConnectedGamepadName() != null;
     }

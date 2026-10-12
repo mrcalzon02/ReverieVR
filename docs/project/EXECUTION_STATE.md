@@ -1,3 +1,21 @@
+## 2026-10-11 — Per-device primary Android controller selection (source)
+
+Extends the existing VR controller-source chooser without inventing another
+launcher screen. Choosing Android USB/BT selects an exact non-ambiguous Android
+InputDevice descriptor; tapping that row again cycles sorted, connected
+gamepads. Device descriptors, not transient device IDs, persist. All gamepad
+KeyEvent/MotionEvent ingress is gated to that exact device; AUTO admits at most
+one ordinary Android gamepad rather than all attached gamepads. Missing or
+duplicate descriptors are not trusted to represent a unique physical device.
+Switches release existing virtual/hosted key state and reset input edges.
+The existing emergency disconnection rule reverts to Auto if the explicitly
+selected Android controller disappears; it does not silently promote another
+device while the explicit selection remains connected. Controller status now
+reports selected device name and count. No new Android permissions.
+Pure JVM selector regression source: selection, cycling, duplicates,
+disconnect, missing devices. Android build/S9 multi-controller, reconnect,
+scrcpy and routing validation remain open.
+
 ## 2026-10-11 — Shell UI hover stabilization with live-ray Select
 
 Source-only shell interaction refinement: Home panels, desk keys and modal

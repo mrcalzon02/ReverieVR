@@ -4832,7 +4832,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                    button < ControllerSourcePolicy.CHOICES.length) {
             String choice = ControllerSourcePolicy.CHOICES[button];
             if (host.onControllerSourceSelected(choice)) {
-                mode = MODE_CONTROLLER;
+                // Stay here to let the user cycle explicitly between
+                // multiple USB/BT Android gamepads with the same button.
+                if (!ReveriePreferences.CONTROLLER_ANDROID.equals(choice))
+                    mode = MODE_CONTROLLER;
             } else {
                 host.onUiActionRejected();
             }
@@ -6946,6 +6949,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             String name=ControllerSourcePolicy.label(choice);
             labels[i]=preferences.getActiveController().equals(choice)
                 ? "[ACTIVE] " + name : name;
+            if (ReveriePreferences.CONTROLLER_ANDROID.equals(choice))
+                labels[i] = "ANDROID GAMEPAD: SELECT / NEXT";
         }
         labels[6]="BACK TO CONTROLLER";
         drawButtons(canvas,paint,labels,CONTROLLER_SOURCE_BUTTONS);
@@ -6961,7 +6966,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setTextSize(16.0f * uiScale);
         canvas.drawText("SCRCPY: connect with --gamepad=uhid; USB or Wi-Fi ADB.",
             90, 618, paint);
-        canvas.drawText("Offline input fallback: Back, Auto, or Stage A pairing.",
+        canvas.drawText("Tap Android Gamepad again to choose a different device.",
             90, 650, paint);
     }
 

@@ -25,6 +25,7 @@ final class ReveriePreferences {
     private static final String KEY_VR_POINTER_MODE = "vr_pointer_mode";
     private static final String KEY_CONTROLLER_LEFT_HANDED = "controller_left_handed";
     private static final String KEY_ACTIVE_CONTROLLER = "selected_controller";
+    private static final String KEY_ANDROID_GAMEPAD_DESCRIPTOR = "android_gamepad_descriptor";
     private static final String KEY_EXTERNAL_HID_ENABLED = "external_hid_enabled";
     static final String CONTROLLER_AUTO = "auto";
     static final String CONTROLLER_DAYDREAM = "daydream";
@@ -63,6 +64,16 @@ final class ReveriePreferences {
             && !CONTROLLER_SCRCPY.equals(choice) && !CONTROLLER_ANDROID.equals(choice))
             throw new IllegalArgumentException("Unknown controller");
         preferences.edit().putString(KEY_ACTIVE_CONTROLLER, choice).apply();
+    }
+
+    String getSelectedAndroidGamepadDescriptor() {
+        return preferences.getString(KEY_ANDROID_GAMEPAD_DESCRIPTOR, "");
+    }
+
+    void setSelectedAndroidGamepadDescriptor(String descriptor) {
+        if (descriptor == null || descriptor.trim().isEmpty())
+            throw new IllegalArgumentException("A real controller descriptor is required");
+        preferences.edit().putString(KEY_ANDROID_GAMEPAD_DESCRIPTOR, descriptor).apply();
     }
 
     /** External Bluetooth/USB/scrcpy keyboard and mouse routing defaults ON. */

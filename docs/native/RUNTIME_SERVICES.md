@@ -84,6 +84,23 @@ A native module:
 - may still use ABI movement axes for non-camera game mechanics when appropriate;
 - must keep persistent simulation changes in `update`, not per-eye rendering.
 
+## Hardware controller ownership and device-specific remapping
+
+The Stage B controller-source menu has a source-family choice and now a
+specific Android USB/BT gamepad selector: repeated selection of the Android
+row cycles *unambiguous* connected device descriptors. Only that device
+sends KeyEvent/MotionEvent input to the shell/hosted binding engine. When
+explicitly selected hardware disconnects, the recovery rule switches to
+Auto rather than trapping the headset. AUTO routes only one ordinary gamepad
+at a time; original Daydream/Steam/scrcpy priority remains separate.
+These source gates have no native ABI change.
+
+This is **not** the planned per-controller physical button remapping UI:
+RVBIND1 still supports existing normalized BindingInput → guest output
+profiles only. Generic/Xbox 360/DualShock physical layouts, full remap and
+game-specific overrides remain RV-0227. Native modules must continue consuming
+normalized hosted inputs and shell-owned recovery, not Android device IDs.
+
 ## Standard native hosted input profile
 
 Native modules launch under one shared `native-standard` binding profile rather than game-id-specific profiles.
