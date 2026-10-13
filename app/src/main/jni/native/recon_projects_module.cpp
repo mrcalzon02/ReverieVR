@@ -75,7 +75,7 @@ const char *G(char c){
     }
 }
 void Text(State *s,const char *str,float y,float size,float r,float g,float b){
-    size_t n=strlen(str);
+    size_t n=std::strlen(str);
     float start=-2.f*static_cast<float>(n)*size;
     for(size_t k=0;k<n;k++){
         char ch=str[k];if(ch>='a'&&ch<='z')ch=static_cast<char>(ch-'a'+'A');
@@ -131,7 +131,7 @@ void DrawBoard(State *s){
             Text(s,"FILE ASSESSMENT",-.88f,.033f,.83f,.91f,.90f);
             Text(s,labels[s->choice%4],-1.18f,.040f,1.f,.81f,.36f);
         }else{
-            snprintf(text,sizeof(text),"TRUST %+d  EFFECT %+d",
+            std::snprintf(text,sizeof(text),"TRUST %+d  EFFECT %+d",
                      s->result.credibility_delta,s->result.operational_effect);
             Text(s,text,-.84f,.040f,.96f,.82f,.38f);
             Text(s,"SELECT NEW SORTIE",-1.17f,.033f,.84f,.90f,.86f);
@@ -170,10 +170,10 @@ void DrawBoard(State *s){
         Text(s,"SELECT FILE DEBRIEF",-.54f,.040f,1.f,.83f,.35f);
         break;
     case sim::Phase::Debriefed:
-        snprintf(text,sizeof(text),"INTEL %+d  FUEL %d",
+        std::snprintf(text,sizeof(text),"INTEL %+d  FUEL %d",
                  s->debrief.information_value,s->debrief.fuel_remaining);
         Text(s,text,.56f,.046f,.94f,.82f,.42f);
-        snprintf(text,sizeof(text),"VEHICLE %d",s->debrief.vehicle_condition);
+        std::snprintf(text,sizeof(text),"VEHICLE %d",s->debrief.vehicle_condition);
         Text(s,text,.05f,.045f,.80f,.89f,.87f);
         if(s->debrief.unnecessary_force)
             Text(s,"UNNECESSARY FORCE",- .37f,.039f,1.f,.52f,.43f);
