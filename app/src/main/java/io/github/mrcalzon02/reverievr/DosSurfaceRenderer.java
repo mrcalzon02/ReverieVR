@@ -39,6 +39,7 @@ final class DosSurfaceRenderer {
     private final float[] gazeUv = new float[2];
     private int gazeUvHandle;
     private int gazeVisibleHandle;
+    private int frameSizeHandle;
 
     void setFullScreen(boolean enabled) {
         fullScreen = enabled;
@@ -100,6 +101,7 @@ final class DosSurfaceRenderer {
             GLES20.glGetUniformLocation(program, "u_Texture");
         gazeUvHandle = GLES20.glGetUniformLocation(program, "u_GazeUv");
         gazeVisibleHandle = GLES20.glGetUniformLocation(program, "u_GazeVisible");
+        frameSizeHandle = GLES20.glGetUniformLocation(program, "u_FrameSize");
 
         int[] textures = new int[1];
         GLES20.glGenTextures(1, textures, 0);
@@ -297,6 +299,8 @@ final class DosSurfaceRenderer {
         GLES20.glUniform1i(textureHandle, 0);
         GLES20.glUniform2f(gazeUvHandle, gazeUv[0], gazeUv[1]);
         GLES20.glUniform1f(gazeVisibleHandle, gazeVisible ? 1.0f : 0.0f);
+        GLES20.glUniform2f(frameSizeHandle,
+            Math.max(1, textureWidth), Math.max(1, textureHeight));
 
         GLES20.glDrawArrays(
             GLES20.GL_TRIANGLE_STRIP,
@@ -336,6 +340,7 @@ final class DosSurfaceRenderer {
         textureHandle = -1;
         gazeUvHandle = -1;
         gazeVisibleHandle = -1;
+        frameSizeHandle = -1;
         gazeVisible = false;
         uploadedSerial = 0L;
         textureWidth = 0;
@@ -438,14 +443,20 @@ final class DosSurfaceRenderer {
             + "uniform sampler2D u_Texture;\n"
             + "uniform vec2 u_GazeUv;\n"
             + "uniform float u_GazeVisible;\n"
+            + "uniform vec2 u_FrameSize;\n"
             + "varying vec2 v_TexCoord;\n"
             + "void main() {\n"
             + "  vec4 raw = texture2D(u_Texture, v_TexCoord);\n"
             + "  vec4 col = vec4(raw.b, raw.g, raw.r, 1.0);\n"
-            + "  vec2 d = abs(v_TexCoord - u_GazeUv);\n"
-            + "  if (u_GazeVisible > 0.5 && ((d.x < 0.002 && d.y < 0.018)\n"
-            + "      || (d.y < 0.003 && d.x < 0.014)))\n"
-            + "      col = vec4(0.15, 0.98, 0.88, 1.0);\n"
+            + "  vec2 d = abs((v_TexCoord - u_GazeUv) * u_FrameSize);\n"
+            + "  if (u_GazeVisible > 0.5) {\n"
+            + "    bool outline = (d.x <= 2.5 && d.y <= 14.0)\n"
+            + "        || (d.y <= 2.5 && d.x <= 14.0);\n"
+            + "    bool fill = (d.x <= 1.25 && d.y <= 12.0)\n"
+            + "        || (d.y <= 1.25 && d.x <= 12.0);\n"
+            + "    if (outline) col = vec4(0.02, 0.03, 0.05, 1.0);\n"
+            + "    if (fill) col = vec4(0.93, 1.0, 0.96, 1.0);\n"
+            + "  }\n"
             + "  gl_FragColor = col;\n"
             + "}\n";
 }
