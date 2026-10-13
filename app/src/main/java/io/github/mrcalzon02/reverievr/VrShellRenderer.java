@@ -8089,10 +8089,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Cardboard restores each full eye before rendering this global HUD.
         final float originalLeft = 2f * 280f / HUD_TEXTURE_WIDTH - 1f;
         final float right = 2f * 451f / HUD_TEXTURE_WIDTH - 1f;
-        final float top = 1f - 2f * 42f / HUD_TEXTURE_HEIGHT;
+        final float originalTop = 1f - 2f * 42f / HUD_TEXTURE_HEIGHT;
         final float originalBottom = 1f - 2f * 284f / HUD_TEXTURE_HEIGHT;
         final float left = PowerHudArcGeometry.scaledNearTopRight(originalLeft, right);
-        final float bottom = PowerHudArcGeometry.scaledNearTopRight(originalBottom, top);
+        // Move both arc bars and percentage labels 10% down in each eye.
+        // Keep the original quad height, texture crop and look-up reveal.
+        final float top = PowerHudArcGeometry.lowerInViewport(originalTop);
+        final float bottom = PowerHudArcGeometry.lowerInViewport(
+            PowerHudArcGeometry.scaledNearTopRight(originalBottom, originalTop));
         hudVertices[0] = left;
         hudVertices[1] = bottom;
         hudVertices[2] = 0f;

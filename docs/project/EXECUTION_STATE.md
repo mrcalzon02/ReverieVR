@@ -1,3 +1,7 @@
+## 2026-10-13 — User-requested battery power bars shifted 10% lower (source, device proof pending)
+
+Moved both phone and controller battery arcs together by exactly one-tenth of each full Cardboard eye's height (vertical clip-space offset -0.20). The shift is applied only to the existing small HUD quad's normalized display vertices, after its established 0.30 size scaling; no arc radius, label location within the artwork, percentage size, charge value, adaptive look-up reveal, headset/view matrices or controller transforms changed. Added an invariant test for the 10% shift and unchanged quad height. Validate physical lens visibility and comfort on the S9 before declaring device acceptance.
+
 ## 2026-10-13 — DOS Daydream directional navigation in dedicated mouse modes (source committed, handset pending)
 
 Repaired missing Daydream touchpad keyboard/RetroPad navigation in `dos-head-mouse` and `dos-controller-mouse` while keeping their exclusive orientation-driven guest-mouse sources and Select click. The shared mapping emits four arrow keys with 0.35 axis thresholds plus DOSBox Pure RetroPad buttons 4–7; release neutralizes the inputs. The `dos-touchpad-mouse` profile remains pure swipe-to-mouse and must not emit simultaneous arrow events. Existing DOS standard, FPS, DOOM, HUD, headset orientation and controller pose transforms remain untouched. Added targeted source regression tests. The authoritative GitHub source is committed; Android build and Galaxy S9 device testing have not been demonstrated.

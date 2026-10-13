@@ -11,6 +11,12 @@ final class PowerHudArcGeometry {
     static final float DROP = 52.0f;
     /** 70% smaller than the previous version, anchored at eye top-right. */
     static final float OUTPUT_SCALE = 0.30f;
+    // Eye NDC spans -1..+1: a 0.20 downward shift equals 10% of the
+    // visible eye height. Translate the entire cropped quad, not its UVs.
+    static final float VIEWPORT_DOWN_NDC = 0.20f;
+    static float lowerInViewport(float eyeY) {
+        return eyeY - VIEWPORT_DOWN_NDC;
+    }
     static float scaledNearTopRight(float value, float anchor) {
         return anchor + (value - anchor) * OUTPUT_SCALE;
     }
