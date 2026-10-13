@@ -72,6 +72,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onDosBindingProfileCycleRequested(
             int direction
         );
+        void onDosBindingProfileSelected(String profileId);
         void onDosBindingSensitivityAdjustRequested(
             int direction
         );
@@ -142,6 +143,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_NATIVE = 5;
     private static final int MODE_DOS_OVERLAY = 6;
     private static final int MODE_DOS_BINDINGS = 7;
+    private static final int MODE_DOS_BINDING_TUNING = 19;
     private static final int MODE_MEDIA_LIBRARY = 8;
     private static final int MODE_ENVIRONMENT = 9;
     private static final int MODE_CONTROLLER = 10;
@@ -1400,6 +1402,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return orientationMenuVisible
             || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING
             || (mode == MODE_DOS && hoveredButton >= 0);
     }
 
@@ -1505,7 +1508,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         headTransform.getEulerAngles(headEuler, 0);
         headTransform.getForwardVector(headForward, 0);
         if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
-            || mode == MODE_DOS_BINDINGS)
+            || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING)
             dosRenderer.setHeadGaze(headForward);
 
         if (!shellHeadingInitialized) {
@@ -1707,6 +1711,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 mode == MODE_DOS
                     || mode == MODE_DOS_OVERLAY
                     || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING
             ) {
                 dosRenderer.updateFrame();
             } else if (mode == MODE_NATIVE) {
@@ -1851,7 +1856,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_DOS_OVERLAY
-            || mode == MODE_DOS_BINDINGS) {
+            || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING) {
             dosRenderer.updateFrame();
 
             if (dosExitRequested.getAndSet(false)) {
@@ -2440,7 +2446,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_DOS_OVERLAY
-            || mode == MODE_DOS_BINDINGS) {
+            || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING) {
             dosRenderer.drawEye(eye, eyeCorrection);
             drawUiPanel(eye, eyeCorrection, true);
             drawPointerOverlay(
@@ -2704,7 +2711,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 mode == MODE_KEYBOARD && !orientationMenuVisible
                     ? keyboardSlabVertexBuffer
                     : (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
-                        || mode == MODE_DOS_BINDINGS) && !orientationMenuVisible
+                        || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING) && !orientationMenuVisible
                         ? dosMenuVertexBuffer : vertexBuffer,
                 uvBuffer
             );
@@ -4017,7 +4025,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
-            || mode == MODE_DOS_BINDINGS) {
+            || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING) {
             return hitTiltedPanel(origin, direction,
                 DOS_MENU_LEFT, DOS_MENU_RIGHT,
                 DOS_MENU_BOTTOM, DOS_MENU_TOP,
@@ -4806,6 +4815,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             handleDosOverlaySelection(hoveredButton);
         } else if (mode == MODE_DOS_BINDINGS) {
             handleDosBindingSelection(hoveredButton);
+        } else if (mode == MODE_DOS_BINDING_TUNING) {
+            handleDosBindingTuningSelection(hoveredButton);
         } else {
             handleSetupSelection(hoveredButton);
         }
@@ -4853,7 +4864,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
             case 4:
                 if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
-                    || mode == MODE_DOS_BINDINGS) {
+                    || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING) {
                     closeOrientationMenu();
                     if (mode == MODE_DOS) host.onDosOverlayPauseRequested();
                     mode = MODE_DOS_BINDINGS;
@@ -4980,6 +4992,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             mode == MODE_DOS
                 || mode == MODE_DOS_OVERLAY
                 || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING
         ) {
             activeDosModuleName = "";
             host.onDosStopRequested();
@@ -5407,6 +5420,25 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void handleDosBindingSelection(int button) {
+        String id = null;
+        switch (button) {
+            case 0: id = BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE; break;
+            case 1: id = BuiltInBindingProfiles.ID_DOS_CONTROLLER_MOUSE; break;
+            case 2: id = BuiltInBindingProfiles.ID_DOS_TOUCHPAD_MOUSE; break;
+            case 3: id = BuiltInBindingProfiles.ID_DOS_CURSOR; break;
+            case 4: id = BuiltInBindingProfiles.ID_DOS_STANDARD; break;
+            case 5: id = BuiltInBindingProfiles.ID_DOS_FPS_HEAD_MOUSE; break;
+            case 6: mode = MODE_DOS_BINDING_TUNING; break;
+            case 7: mode = MODE_DOS_OVERLAY; break;
+            case 8: dosRenderer.setFullScreen(!dosRenderer.isFullScreen()); break;
+            default: return;
+        }
+        if (id != null) host.onDosBindingProfileSelected(id);
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
+    private void handleDosBindingTuningSelection(int button) {
         switch (button) {
             case 0:
                 host.onDosBindingProfileCycleRequested(-1);
@@ -5430,7 +5462,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 host.onDosBindingResetRequested();
                 break;
             case 7:
-                mode = MODE_DOS_OVERLAY;
+                mode = MODE_DOS_BINDINGS;
                 break;
             case 8:
                 dosRenderer.setFullScreen(!dosRenderer.isFullScreen());
@@ -5599,6 +5631,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             textureDirty = true;
             return;
         }
+        if (mode == MODE_DOS_BINDING_TUNING) {
+            mode = MODE_DOS_BINDINGS;
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
         if (mode == MODE_DOS_BINDINGS) {
             mode = MODE_DOS_OVERLAY;
             hoveredButton = -1;
@@ -5680,7 +5718,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return DOS_OVERLAY_BUTTONS;
         }
 
-        if (mode == MODE_DOS_BINDINGS) {
+        if (mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING) {
             return DOS_BINDING_BUTTONS;
         }
 
@@ -5752,7 +5791,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         } else if (mode == MODE_DOS
             || mode == MODE_DOS_OVERLAY
-            || mode == MODE_DOS_BINDINGS) {
+            || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING) {
             canvas.drawColor(
                 Color.TRANSPARENT,
                 PorterDuff.Mode.CLEAR
@@ -5826,6 +5866,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawDosOverlay(canvas, paint);
         } else if (mode == MODE_DOS_BINDINGS) {
             drawDosBindingEditor(canvas, paint);
+        } else if (mode == MODE_DOS_BINDING_TUNING) {
+            drawDosBindingTuning(canvas, paint);
         } else {
             drawSetup(canvas, paint);
         }
@@ -5956,7 +5998,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 "BRIGHT -",
                 "BRIGHT +",
                 (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
-                    || mode == MODE_DOS_BINDINGS) ? "DOS OPTIONS" : "BACK",
+                    || mode == MODE_DOS_BINDINGS
+            || mode == MODE_DOS_BINDING_TUNING) ? "DOS OPTIONS" : "BACK",
                 "HOME",
                 "EXIT PHONE",
                 "SETTINGS"
@@ -7666,14 +7709,38 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
     }
 
-    private void drawDosBindingEditor(
+    private void drawDosBindingEditor(Canvas canvas, Paint paint) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31.0f * uiScale);
+        canvas.drawText("DOS MOUSE CONTROL", 90, 175, paint);
+        paint.setColor(Color.rgb(184,194,207));
+        paint.setTextSize(19.0f * uiScale);
+        canvas.drawText("Active: " + shorten(
+            host.getActiveBindingProfileName(), 45), 90, 210, paint);
+        canvas.drawText("Select clicks; Menu keeps recovery accessible.",
+            90, 240, paint);
+        String[] labels = {
+            "HEADSET VIEW -> MOUSE",
+            "CONTROLLER AIM -> MOUSE",
+            "TOUCHPAD -> MOUSE",
+            "HEAD + TOUCHPAD",
+            "PAD ARROWS + HEAD",
+            "DOS FPS HEAD LOOK",
+            "ADVANCED / TUNING",
+            "BACK",
+            dosRenderer.isFullScreen() ? "FULLSCREEN: ON" : "FULLSCREEN: OFF"
+        };
+        drawButtons(canvas, paint, labels, DOS_BINDING_BUTTONS);
+    }
+
+    private void drawDosBindingTuning(
         Canvas canvas,
         Paint paint
     ) {
         paint.setColor(Color.WHITE);
         paint.setTextSize(31.0f * uiScale);
         canvas.drawText(
-            "DOS BINDINGS",
+            "DOS ADVANCED BINDINGS",
             90,
             175,
             paint
@@ -7709,7 +7776,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "DEADZONE -0.02",
             "DEADZONE +0.02",
             "RESET TUNING",
-            "BACK",
+            "MOUSE SOURCES",
             dosRenderer.isFullScreen() ? "FULLSCREEN: ON" : "FULLSCREEN: OFF"
         };
 

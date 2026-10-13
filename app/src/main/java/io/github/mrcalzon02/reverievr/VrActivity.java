@@ -92,6 +92,9 @@ public final class VrActivity extends Activity
     private BundledDosContentInstaller bundledDosContentInstaller;
     private DosSession dosSession;
     private NativeModuleRuntime nativeModuleRuntime;
+    private long dosControllerMouseLastPoseNanos;
+    private float dosControllerMousePreviousYaw;
+    private float dosControllerMousePreviousPitch;
     private SensorManager sensorManager;
     private Sensor linearAccelerationSensor;
     private boolean headMotionSensorRegistered;
@@ -928,10 +931,62 @@ public final class VrActivity extends Activity
                 "daydream_ble".equals(controllerManager.getActiveProviderId()));
         }
 
+        routeDosControllerMouse(snapshot);
         inputRouter.onControllerSnapshot(
             snapshot,
             controllerManager.getActiveProviderDisplayName()
         );
+    }
+
+    // Emit relative cursor motion only while the controller-mouse DOS
+    // profile is active. Dropped samples, menu entry and tracking loss rearm.
+    private void routeDosControllerMouse(ControllerSnapshot pose) {
+        if (inputBindingManager == null || inputBindingEngine == null
+            || activeDosModuleId == null || activeDosModuleId.isEmpty()
+            || isGuestInputSuppressed()
+            || !BuiltInBindingProfiles.ID_DOS_CONTROLLER_MOUSE.equals(
+                inputBindingManager.getProfile().id)) {
+            dosControllerMouseLastPoseNanos = 0L;
+            return;
+        }
+        long time = pose.receivedAtNanos;
+        float x = pose.orientationX, y = pose.orientationY;
+        float z = pose.orientationZ, w = pose.orientationW;
+        float norm = x*x+y*y+z*z+w*w;
+        if (!Float.isFinite(norm) || norm < 0.25f || norm > 2.25f
+            || time <= 0L) {
+            dosControllerMouseLastPoseNanos = 0L;
+            return;
+        }
+        float inv = (float)(1.0/Math.sqrt(norm));
+        x *= inv; y *= inv; z *= inv; w *= inv;
+        float forwardY = -2.0f*(y*z-w*x);
+        // At vertical pointing the yaw angle is undefined. Rearm.
+        if (Math.abs(forwardY) > 0.985f) {
+            dosControllerMouseLastPoseNanos = 0L;
+            return;
+        }
+        float yaw = (float)Math.atan2(2.0f*(x*z+w*y),
+            1.0f-2.0f*(x*x+y*y));
+        float pitch = (float)Math.asin(Math.max(-1.0f,
+            Math.min(1.0f,forwardY)));
+        if (dosControllerMouseLastPoseNanos > 0L
+            && time > dosControllerMouseLastPoseNanos
+            && time-dosControllerMouseLastPoseNanos < 250000000L) {
+            float dyaw = yaw-dosControllerMousePreviousYaw;
+            if (dyaw > Math.PI) dyaw -= (float)(2.0*Math.PI);
+            if (dyaw < -Math.PI) dyaw += (float)(2.0*Math.PI);
+            float dpitch = pitch-dosControllerMousePreviousPitch;
+            if (Math.abs(dyaw)<0.35f && Math.abs(dpitch)<0.35f) {
+                inputBindingEngine.submitRelative(
+                    BindingInput.CONTROLLER_YAW_DELTA,dyaw);
+                inputBindingEngine.submitRelative(
+                    BindingInput.CONTROLLER_PITCH_DELTA,dpitch);
+            }
+        }
+        dosControllerMousePreviousYaw = yaw;
+        dosControllerMousePreviousPitch = pitch;
+        dosControllerMouseLastPoseNanos = time;
     }
 
     @Override
@@ -1900,6 +1955,7 @@ public final class VrActivity extends Activity
         inputBindingManager.beginHostedProfile(
             hostedProfile
         );
+        dosControllerMouseLastPoseNanos = 0L;
         activeDosModuleId = module.id;
 
         if (!dosSession.start(module)) {
@@ -1931,6 +1987,7 @@ public final class VrActivity extends Activity
 
     @Override
     public void onDosOverlayPauseRequested() {
+        dosControllerMouseLastPoseNanos = 0L;
         if (inputBindingEngine != null) {
             inputBindingEngine.releaseAll();
         }
@@ -2075,23 +2132,23 @@ public final class VrActivity extends Activity
         int next =
             (current + step + profiles.size())
                 % profiles.size();
-        BindingProfile selected = profiles.get(next);
+        onDosBindingProfileSelected(profiles.get(next).id);
+    }
 
-        if (!dosModuleRepository.updateBindingProfileId(
-            module.id,
-            selected.id
-        )) {
+    @Override
+    public void onDosBindingProfileSelected(String profileId) {
+        if (dosModuleRepository == null || inputBindingManager == null
+            || !inputBindingManager.isHostedProfileActive()
+            || !BuiltInBindingProfiles.isDosProfileId(profileId)) return;
+        DosGameModule module = activeDosModule();
+        if (module == null
+            || !dosModuleRepository.updateBindingProfileId(module.id,profileId))
             return;
-        }
-
-        inputBindingManager.setHostedProfile(selected);
-        ReverieLog.milestone(
-            "DOS_BINDING",
-            "Module="
-                + module.id
-                + " selected profile="
-                + selected.id
-        );
+        inputBindingManager.setHostedProfile(
+            BuiltInBindingProfiles.byId(profileId));
+        dosControllerMouseLastPoseNanos = 0L;
+        ReverieLog.milestone("DOS_BINDING",
+            "Module="+module.id+" selected profile="+profileId);
     }
 
     @Override
@@ -2222,6 +2279,7 @@ public final class VrActivity extends Activity
     @Override
     public void onDosStopRequested() {
         activeDosModuleId = "";
+        dosControllerMouseLastPoseNanos = 0L;
         if (dosSession != null) {
             dosSession.stop();
         }

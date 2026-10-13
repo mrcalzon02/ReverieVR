@@ -1,3 +1,7 @@
+## DOS mouse-source selection (2026-10-13 source integration)
+
+DOS Quick Menu → Bindings opens **DOS Mouse Control** with direct choices for **Headset View → Mouse**, **Controller Aim → Mouse**, **Touchpad → Mouse**, **Head + Touchpad**, plus retained **Pad Arrows + Head** and **DOS FPS Head Look** layouts. **Advanced / Tuning** retains profile cycling, sensitivity, deadzone and reset controls; a selection is persisted per imported DOS module using the existing repository metadata and takes effect in its currently running session. All mouse modes keep Select → guest left-click, Android gamepad D-pad / shell recovery, and use the existing DOS libretro relative-mouse input. Controller orientation is read from valid Daydream pose snapshots only while its DOS profile is active, normalized and converted to yaw/pitch deltas; stale samples, loss of tracking and vertical singularities rearm without injecting large jumps. The mode changes guest mouse input, never headset orientation or controller calibration; no separate desktop app or APK is required. Android and S9 end-to-end input acceptance remain unverified.
+
 # ReverieVR Native Runtime Services
 
 **Status:** implemented first-party runtime services; higher-level configuration surface remains provisional and S9 comfort validation is still required where noted.

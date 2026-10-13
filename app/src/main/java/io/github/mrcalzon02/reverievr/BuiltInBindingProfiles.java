@@ -10,6 +10,9 @@ final class BuiltInBindingProfiles {
     static final String ID_DOS_DOOM_SHAREWARE = "dos-doom-shareware";
     static final String ID_DOS_FPS_HEAD_MOUSE = "dos-fps-head-mouse";
     static final String ID_DOS_CURSOR = "dos-cursor";
+    static final String ID_DOS_HEAD_MOUSE = "dos-head-mouse";
+    static final String ID_DOS_CONTROLLER_MOUSE = "dos-controller-mouse";
+    static final String ID_DOS_TOUCHPAD_MOUSE = "dos-touchpad-mouse";
     static final String ID_NATIVE_STANDARD =
         "native-standard";
     static final String ID_NATIVE_CLASSICS =
@@ -285,6 +288,41 @@ final class BuiltInBindingProfiles {
                 cursor
             )
         );
+
+        // Independent DOS cursor sources. Only the active profile drives
+        // the guest pointer; Select remains left click in each mode.
+        List<InputBinding> headMouse = new ArrayList<>();
+        headMouse.add(InputBinding.analog(BindingInput.HEAD_YAW_DELTA,
+            VirtualOutput.mouseRelativeX(), 650.0f, 0.0f));
+        headMouse.add(InputBinding.analog(BindingInput.HEAD_PITCH_DELTA,
+            VirtualOutput.mouseRelativeY(), -650.0f, 0.0f));
+        headMouse.add(InputBinding.digital(BindingInput.SELECT,
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
+        addDosMenuBindings(headMouse);
+        profiles.add(new BindingProfile(ID_DOS_HEAD_MOUSE,
+            "DOS mouse - headset view", headMouse));
+
+        List<InputBinding> controllerMouse = new ArrayList<>();
+        controllerMouse.add(InputBinding.analog(BindingInput.CONTROLLER_YAW_DELTA,
+            VirtualOutput.mouseRelativeX(), 650.0f, 0.0f));
+        controllerMouse.add(InputBinding.analog(BindingInput.CONTROLLER_PITCH_DELTA,
+            VirtualOutput.mouseRelativeY(), -650.0f, 0.0f));
+        controllerMouse.add(InputBinding.digital(BindingInput.SELECT,
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
+        addDosMenuBindings(controllerMouse);
+        profiles.add(new BindingProfile(ID_DOS_CONTROLLER_MOUSE,
+            "DOS mouse - controller rotation", controllerMouse));
+
+        List<InputBinding> padMouse = new ArrayList<>();
+        padMouse.add(InputBinding.analog(BindingInput.TOUCHPAD_REL_X,
+            VirtualOutput.mouseRelativeX(), 0.70f, 0.0f));
+        padMouse.add(InputBinding.analog(BindingInput.TOUCHPAD_REL_Y,
+            VirtualOutput.mouseRelativeY(), 0.70f, 0.0f));
+        padMouse.add(InputBinding.digital(BindingInput.SELECT,
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
+        addDosMenuBindings(padMouse);
+        profiles.add(new BindingProfile(ID_DOS_TOUCHPAD_MOUSE,
+            "DOS mouse - touchpad swipe", padMouse));
 
         List<InputBinding> nativeStandard =
             new ArrayList<>();
