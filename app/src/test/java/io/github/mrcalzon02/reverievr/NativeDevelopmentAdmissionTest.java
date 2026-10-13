@@ -5,6 +5,8 @@ public class NativeDevelopmentAdmissionTest {
     @Test public void newShooterAndBarAreDevOnly() {
         assertTrue(NativeModuleRuntime.isDevelopmentOnly(NativeModuleRuntime.ID_BREAKWATER_BATTERY));
         assertTrue(NativeModuleRuntime.isDevelopmentOnly(NativeModuleRuntime.ID_RED_LEDGER));
+        assertTrue(NativeModuleRuntime.isDevelopmentOnly(NativeModuleRuntime.ID_LANTERN_DESK));
+        assertTrue(NativeModuleRuntime.isDevelopmentOnly(NativeModuleRuntime.ID_FORWARD_DETACHMENT));
         assertFalse(NativeModuleRuntime.isDevelopmentOnly("procedural-test-chamber"));
     }
 }

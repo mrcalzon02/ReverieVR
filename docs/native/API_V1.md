@@ -19,6 +19,8 @@
 
 Native modules are trusted libraries packaged inside the APK and admitted through the host's compile-time allowlist. ABI v1 is deliberately *not* a plugin loader for arbitrary code from writable storage.
 
+**2026-10-13 catalogue review:** the host allowlist includes Development-only `ministry-lantern-desk` and `iron-sight-forward-detachment`. Their two GLES2 libraries compile a common finite-state presentation source against separate original C++ kernel sources, reuse the same ABI v1, and are gated both at enumeration and launch. No ABI structure, callback or persistence protocol changed. Their source board interactions are not evidence of a signed APK or Galaxy S9 validation.
+
 ## Entry point
 
 Every ABI-v1 module exports:

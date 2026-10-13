@@ -72,7 +72,7 @@ Do not begin with the complete supplier/faction/cast catalogue. Do not implement
 
 ## RV-GAME-02 — Ministry of Intelligence: Lantern Desk VR
 
-**Current implementation boundary:** a deterministic pure C++ evidence kernel now implements sector assignment, sortie completion, procedurally rasterized 16×16 photos, an Orchard civilian false-positive candidate, graded assessments and operational consequences. The public photo exposes observations, not hidden World Truth. This is **not** a launchable VR game: desk examination, annotations, persistence and device acceptance remain unimplemented.
+**Current implementation boundary:** a deterministic pure C++ evidence kernel now implements sector assignment, sortie completion, procedurally rasterized 16×16 photos, an Orchard civilian false-positive candidate, graded assessments and operational consequences. The public photo exposes observations, not hidden World Truth. A new Development-only native GLES2 board now connects these observations to sector selection and report filing; no full desk, annotations, persistence, signed APK proof or device acceptance yet.
 
 **Source concept:** *Ministry of Intelligence*, the standalone intelligence-command game formerly developed as *Second Lantern*. It must remain separate from older IronSight material.
 
@@ -119,7 +119,7 @@ Do not convert it into a tactical RTS. Do not expose World Truth through conveni
 
 ## RV-GAME-03 — Iron Sight: Forward Detachment VR
 
-**Current implementation boundary:** a deterministic pure C++ patrol kernel now exercises main-road versus ridge-route resource costs, ambiguous observable contact clues, action consequences, safe return and once-only debrief. It is **not** packaged as a launchable module: 3D sector, controls, squad handling, persistence and device acceptance remain unimplemented.
+**Current implementation boundary:** a deterministic pure C++ patrol kernel now exercises main-road versus ridge-route resource costs, ambiguous observable contact clues, action consequences, safe return and once-only debrief. A new Development-only native GLES2 choice board now exposes route selection, observations, decisions, return and debrief; no 3D sector, squad handling, persistence, signed APK proof or device acceptance yet.
 
 **Source concept:** *Iron Sight*, centered on a forward reconnaissance detachment operating in the ambiguous Barsofagrod conflict: patrols, route security, reconnaissance, interdiction, logistics, liaison, ROE, uncertain civilians, deception, IED risk, and survival through discipline rather than indiscriminate combat.
 
@@ -188,7 +188,7 @@ The first three games are **Classic Pong**, **Classic Snake**, and **Chutes and 
 - Snake: directional touchpad/controller axes or point-and-Select on the four in-scene direction pads; consume food, grow, avoid walls and the tail, Select restarts after losing.
 - Chutes and Ladders: Select rolls the die on your turn, a deterministic CPU opponent takes the following turn automatically, and the generated 100-cell board includes original green ladders and red chutes. First to cell 100 wins, Select restarts.
   
-All gameplay advances in native Update once per frame, with common cached vertex-color geometry rendered for each stereo eye. No gameplay runs in per-eye rendering. **2026-10-12 source-only launcher update:** the in-headset **Native Apps / Projects** catalogue now includes actual native classic-game modules alongside packaged non-classic projects and working shell applications. **Native Games** is a convenient second entry point to the same six classic modules and any admitted native project games. This intentional duplicated discovery does not bundle a second game or APK. Red Ledger and Breakwater Battery remain Development-logging-gated and appear only in a Development session; the runtime independently preserves that gate. Ministry of Intelligence and Forward Detachment are pure simulation kernels, not playable VR modules, and are not listed. Controller hardware/comfort/interaction and thermal acceptance on the Galaxy S9 remain pending; signed APK build status must be checked independently.
+All gameplay advances in native Update once per frame, with common cached vertex-color geometry rendered for each stereo eye. No gameplay runs in per-eye rendering. **2026-10-12 source-only launcher update:** the in-headset **Native Apps / Projects** catalogue now includes actual native classic-game modules alongside packaged non-classic projects and working shell applications. **Native Games** is a convenient second entry point to the same six classic modules and any admitted native project games. This intentional duplicated discovery does not bundle a second game or APK. Red Ledger and Breakwater Battery remain Development-logging-gated and appear only in a Development session; the runtime independently preserves that gate. Ministry of Intelligence and Forward Detachment now have Development-only native decision boards registered in the build and launch catalogues; these are limited kernel demonstrations, not full games or device-accepted builds. Controller hardware/comfort/interaction and thermal acceptance on the Galaxy S9 remain pending; signed APK build status must be checked independently.
 
 ## Recommended implementation order
 

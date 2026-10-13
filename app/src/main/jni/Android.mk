@@ -55,6 +55,27 @@ LOCAL_LDLIBS += -lGLESv2 -lm
 
 include $(BUILD_SHARED_LIBRARY)
 
+# Development-only recon project boards; existing ABI v1 host and kernels.
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+LOCAL_MODULE := reverie_module_lantern_desk
+LOCAL_SRC_FILES := native/recon_projects_module.cpp native/lantern_desk_simulation.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DRECON_PROJECT_KIND=0
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm
+include $(BUILD_SHARED_LIBRARY)
+
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+LOCAL_MODULE := reverie_module_forward_detachment
+LOCAL_SRC_FILES := native/recon_projects_module.cpp native/forward_detachment_simulation.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DRECON_PROJECT_KIND=1
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm
+include $(BUILD_SHARED_LIBRARY)
+
 # Development-only seated-defense native module
 LOCAL_PATH := $(REVERIE_JNI_PATH)
 include $(CLEAR_VARS)
