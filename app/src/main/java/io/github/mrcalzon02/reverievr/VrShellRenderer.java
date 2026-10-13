@@ -153,6 +153,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_EMULATOR_CONFIRM = 16;
     private static final int MODE_CONTROLLER_SOURCE = 17;
     private static final int MODE_MUSIC_LIBRARY = 18;
+    private static final String INTERNAL_MODEL_VIEWER_ID = "reverie-model-viewer";
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -681,6 +682,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     == LoggingMode.DEVELOPMENT
             );
         List<NativeModuleRuntime.Descriptor> apps = new ArrayList<>();
+        // This shell-owned viewer is already functional; unlike planned
+        // editors, it has a real launch/import path and belongs on Apps.
+        apps.add(new NativeModuleRuntime.Descriptor(
+            INTERNAL_MODEL_VIEWER_ID, "3D Model Viewer (OBJ)"));
         List<NativeModuleRuntime.Descriptor> classics = new ArrayList<>();
         for (NativeModuleRuntime.Descriptor entry : nativeModules) {
             if (entry.id.startsWith("classic-")) classics.add(entry);
@@ -4278,8 +4283,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (index >= HOME_KEYBOARD_HIT_OFFSET)
                 return index - HOME_KEYBOARD_HIT_OFFSET < KEYBOARD_BUTTONS.length;
             if (index == 2) {
-                return NativeModuleRuntime.isAvailable()
-                    && !nativeApps.isEmpty();
+                return !nativeApps.isEmpty();
             }
             if (phonePanelVisible && index >= 19)
                 return index < 19 + PhonePanelControlGeometry.COUNT;
@@ -4577,8 +4581,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     mode = MODE_DOS_LIBRARY;
                     break;
                 case 2:
-                    if (NativeModuleRuntime.isAvailable()
-                        && !nativeApps.isEmpty()) {
+                    if (!nativeApps.isEmpty()) {
                         nativeLibraryPage = 0;
                         mode = MODE_NATIVE_LIBRARY;
                     } else {
@@ -5033,6 +5036,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     shelf.get(
                         moduleIndex
                     );
+
+                if (module != null && INTERNAL_MODEL_VIEWER_ID.equals(module.id)) {
+                    if (modelViewer.hasModel() && modelViewer.load()) {
+                        viewerTouchActive = false;
+                        mode = MODE_MODEL_VIEWER;
+                    } else {
+                        // Import uses the existing approved Stage A picker.
+                        host.onModelImportRequested();
+                    }
+                    hoveredButton = -1;
+                    textureDirty = true;
+                    return;
+                }
 
                 if (module != null
                     && host.onNativeModulePlaybackRequested(
