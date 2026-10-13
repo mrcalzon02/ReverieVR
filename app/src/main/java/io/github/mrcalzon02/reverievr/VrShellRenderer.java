@@ -156,6 +156,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final String INTERNAL_MODEL_VIEWER_ID = "reverie-model-viewer";
     private static final String INTERNAL_MEDIA_PLAYER_ID = "reverie-media-player";
     private static final String INTERNAL_MUSIC_PLAYER_ID = "reverie-music-player";
+    private static final String INTERNAL_TEXT_EDITOR_ID = "reverie-text-editor";
+    private static final String INTERNAL_CONTROLLER_LAB_ID = "reverie-controller-lab";
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -683,22 +685,36 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 preferences.getLoggingMode()
                     == LoggingMode.DEVELOPMENT
             );
+        // Show only packaged native modules and functional shell applications.
+        // Do not create launch buttons for simulation-only concepts.
+        // Development modules are filtered before this by the host catalogue.
         List<NativeModuleRuntime.Descriptor> apps = new ArrayList<>();
-        // This shell-owned viewer is already functional; unlike planned
-        // editors, it has a real launch/import path and belongs on Apps.
+        List<NativeModuleRuntime.Descriptor> games = new ArrayList<>();
+        List<NativeModuleRuntime.Descriptor> classics = new ArrayList<>();
+        for (NativeModuleRuntime.Descriptor entry : nativeModules) {
+            if (entry.id.startsWith("classic-")) {
+                classics.add(entry);
+            } else {
+                apps.add(entry);
+            }
+            if (NativeModuleRuntime.isDevelopmentOnly(entry.id)) {
+                games.add(entry);
+            }
+        }
         apps.add(new NativeModuleRuntime.Descriptor(
             INTERNAL_MODEL_VIEWER_ID, "3D Model Viewer (OBJ)"));
         apps.add(new NativeModuleRuntime.Descriptor(
             INTERNAL_MEDIA_PLAYER_ID, "Local Video Player"));
         apps.add(new NativeModuleRuntime.Descriptor(
             INTERNAL_MUSIC_PLAYER_ID, "Music Library"));
-        List<NativeModuleRuntime.Descriptor> classics = new ArrayList<>();
-        for (NativeModuleRuntime.Descriptor entry : nativeModules) {
-            if (entry.id.startsWith("classic-")) classics.add(entry);
-            else apps.add(entry);
-        }
+        apps.add(new NativeModuleRuntime.Descriptor(
+            INTERNAL_TEXT_EDITOR_ID, "VR Text Pad / Keyboard"));
+        apps.add(new NativeModuleRuntime.Descriptor(
+            INTERNAL_CONTROLLER_LAB_ID, "Controller Lab / Bindings"));
+        apps.addAll(classics);
+        games.addAll(classics);
         nativeApps = Collections.unmodifiableList(apps);
-        nativeGames = Collections.unmodifiableList(classics);
+        nativeGames = Collections.unmodifiableList(games);
 
         if (preferences.getLoggingMode()
             == LoggingMode.DEVELOPMENT
@@ -5072,6 +5088,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     return;
                 }
 
+                if (module != null && INTERNAL_TEXT_EDITOR_ID.equals(module.id)) {
+                    mode = MODE_KEYBOARD;
+                    hoveredButton = -1;
+                    textureDirty = true;
+                    return;
+                }
+                if (module != null && INTERNAL_CONTROLLER_LAB_ID.equals(module.id)) {
+                    controllerTrainingReturn = false;
+                    mode = MODE_CONTROLLER;
+                    hoveredButton = -1;
+                    textureDirty = true;
+                    return;
+                }
+
                 if (module != null
                     && host.onNativeModulePlaybackRequested(
                         module.id
@@ -6246,7 +6276,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         drawHomeButtons(canvas, paint,
             new String[] {leftLabels[6]}, 18, 1);
         drawHomeButtons(canvas, paint,
-            new String[] {"Classic Games"}, 24, 1);
+            new String[] {"Native Games"}, 24, 1);
         drawHomeButtons(canvas, paint,
             new String[] {"Emulator Modules"}, 25, 1);
         drawHomeButtons(canvas, paint,
@@ -6627,7 +6657,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 1:
                 return "Browse and launch imported DOS game modules.";
             case 2:
-                return "Launch ReverieVR-native modules.";
+                return "Open packaged games, native projects and first-party apps.";
             case 3:
                 return "Change the persistent 3D home environment.";
             case 4:
@@ -7150,7 +7180,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(31.0f * uiScale);
         canvas.drawText(
-            mode == MODE_NATIVE_GAMES ? "CLASSIC GAMES" : "NATIVE APPS",
+            mode == MODE_NATIVE_GAMES ? "NATIVE GAMES" : "NATIVE APPS / PROJECTS",
             90,
             175,
             paint
@@ -7167,7 +7197,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         canvas.drawText(
             String.format(
                 Locale.US,
-                "%d modules  •  page %d / %d",
+                "%d launchable entries  •  page %d / %d",
                 count,
                 page + 1,
                 pageCount
@@ -7198,7 +7228,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         labels[3] =
             pageCount > 1
-                ? "NEXT PAGE"
+                ? "NEXT PAGE (" + ((page + 1) % pageCount + 1) + " / " + pageCount + ")"
                 : "ONLY PAGE";
         labels[4] = "BACK TO HOME";
 
@@ -7207,6 +7237,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint,
             labels,
             NATIVE_LIBRARY_BUTTONS
+        );
+        paint.setColor(Color.rgb(164, 180, 194));
+        paint.setTextSize(15.0f * uiScale);
+        canvas.drawText(
+            "Only functional titles. [DEV] previews require Development logging.",
+            90, 679, paint
         );
     }
 

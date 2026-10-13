@@ -23,6 +23,12 @@ Current shell-owned native runtime services include:
 
 This document covers the services around the module. Exact C ABI fields remain documented in `API_V1.md`.
 
+## Launcher discovery and runtime admission
+
+The in-headset **Native Apps / Projects** shelf lists packaged, admitted native modules (including classic games) plus genuine shell applications: OBJ model viewer/import, local video, packaged music, VR text pad and controller/binding laboratory. **Native Games** is a direct shortcut for classic games and admitted first-party project-game previews. Every packaged native game launches through the existing `NativeModuleRuntime.start` path with the same hosted input and recovery; the shell application handlers remain owned by the shell.
+
+`between-deliveries-red-ledger` and `breakwater-battery` remain Development-only. The native catalogue excludes them outside Development logging, and runtime admission independently enforces the same restriction. Ministry of Intelligence and Forward Detachment have deterministic kernels but no renderable VR modules and are not presented as launchable. This describes source routing, not Galaxy S9 device or signed APK acceptance.
+
 ## Bounded view-relative locomotion
 
 ### Current implementation

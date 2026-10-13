@@ -10,6 +10,8 @@ The immersive viewer is presently a **shell-native renderer** (`ObjMeshViewerRen
 
 ## Working source-level path
 
+The existing viewer is also available under **Native Apps / Projects → 3D Model Viewer (OBJ)**. It opens a validated imported model when available, otherwise invokes the existing Stage A import picker. This is an immersive viewer, not a separate APK or editing tool.
+
 1. On VR Home, choose **IMPORT / REPLACE OBJ MODEL** in the center panel. The shell requests the Android `ACTION_OPEN_DOCUMENT` picker by returning safely to the 2D Activity. Select a `.obj` file.
 2. The 2D importer copies at most 8 MiB into temporary app-private storage, parses and validates the OBJ before atomically replacing the previous `model-viewer.obj`.
 3. Re-enter VR and choose **OPEN 3D MODEL — IMMERSIVE VR**. The Open action is unavailable until a model has been imported; Import/Replace remains available after an import.
