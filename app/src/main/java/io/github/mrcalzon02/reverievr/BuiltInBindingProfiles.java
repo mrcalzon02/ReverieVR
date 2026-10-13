@@ -100,6 +100,26 @@ final class BuiltInBindingProfiles {
             VirtualOutput.joystickAxisY(), 1.0f, 0.15f));
     }
 
+    private static void addDosTouchpadArrows(List<InputBinding> bindings) {
+        BindingInput[] axes = {BindingInput.TOUCHPAD_Y, BindingInput.TOUCHPAD_Y,
+            BindingInput.TOUCHPAD_X, BindingInput.TOUCHPAD_X};
+        VirtualKey[] keys = {VirtualKey.UP, VirtualKey.DOWN,
+            VirtualKey.LEFT, VirtualKey.RIGHT};
+        for (int i = 0; i < axes.length; i++) {
+            boolean negative = i == 0 || i == 2;
+            bindings.add(negative
+                ? InputBinding.negativeThreshold(axes[i],
+                    VirtualOutput.key(keys[i]), 0.35f)
+                : InputBinding.positiveThreshold(axes[i],
+                    VirtualOutput.key(keys[i]), 0.35f));
+            bindings.add(negative
+                ? InputBinding.negativeThreshold(axes[i],
+                    VirtualOutput.joystickButton(4 + i), 0.35f)
+                : InputBinding.positiveThreshold(axes[i],
+                    VirtualOutput.joystickButton(4 + i), 0.35f));
+        }
+    }
+
     private static List<BindingProfile> buildProfiles() {
         List<BindingProfile> profiles = new ArrayList<>();
 
@@ -298,6 +318,7 @@ final class BuiltInBindingProfiles {
             VirtualOutput.mouseRelativeY(), -650.0f, 0.0f));
         headMouse.add(InputBinding.digital(BindingInput.SELECT,
             VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
+        addDosTouchpadArrows(headMouse);
         addDosMenuBindings(headMouse);
         profiles.add(new BindingProfile(ID_DOS_HEAD_MOUSE,
             "DOS mouse - headset view", headMouse));
@@ -309,6 +330,7 @@ final class BuiltInBindingProfiles {
             VirtualOutput.mouseRelativeY(), -650.0f, 0.0f));
         controllerMouse.add(InputBinding.digital(BindingInput.SELECT,
             VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
+        addDosTouchpadArrows(controllerMouse);
         addDosMenuBindings(controllerMouse);
         profiles.add(new BindingProfile(ID_DOS_CONTROLLER_MOUSE,
             "DOS mouse - controller rotation", controllerMouse));
