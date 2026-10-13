@@ -154,6 +154,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_CONTROLLER_SOURCE = 17;
     private static final int MODE_MUSIC_LIBRARY = 18;
     private static final String INTERNAL_MODEL_VIEWER_ID = "reverie-model-viewer";
+    private static final String INTERNAL_MEDIA_PLAYER_ID = "reverie-media-player";
+    private static final String INTERNAL_MUSIC_PLAYER_ID = "reverie-music-player";
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -686,6 +688,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // editors, it has a real launch/import path and belongs on Apps.
         apps.add(new NativeModuleRuntime.Descriptor(
             INTERNAL_MODEL_VIEWER_ID, "3D Model Viewer (OBJ)"));
+        apps.add(new NativeModuleRuntime.Descriptor(
+            INTERNAL_MEDIA_PLAYER_ID, "Local Video Player"));
+        apps.add(new NativeModuleRuntime.Descriptor(
+            INTERNAL_MUSIC_PLAYER_ID, "Music Library"));
         List<NativeModuleRuntime.Descriptor> classics = new ArrayList<>();
         for (NativeModuleRuntime.Descriptor entry : nativeModules) {
             if (entry.id.startsWith("classic-")) classics.add(entry);
@@ -5050,6 +5056,22 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     return;
                 }
 
+                if (module != null && INTERNAL_MEDIA_PLAYER_ID.equals(module.id)) {
+                    mode = MODE_MEDIA_LIBRARY;
+                    hoveredButton = -1;
+                    textureDirty = true;
+                    return;
+                }
+                if (module != null && INTERNAL_MUSIC_PLAYER_ID.equals(module.id)) {
+                    musicCatalogTitles = host.getNativeMusicTrackNames();
+                    if (musicCatalogTitles == null) musicCatalogTitles = new String[0];
+                    musicCatalogPage = 0;
+                    mode = MODE_MUSIC_LIBRARY;
+                    hoveredButton = -1;
+                    textureDirty = true;
+                    return;
+                }
+
                 if (module != null
                     && host.onNativeModulePlaybackRequested(
                         module.id
@@ -7165,9 +7187,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             labels[slot] =
                 index < count
                     ? shorten(
-                        shelf
-                            .get(index)
-                            .displayName,
+                        INTERNAL_MODEL_VIEWER_ID.equals(shelf.get(index).id)
+                            && !modelViewer.hasModel()
+                            ? "3D MODEL VIEWER - IMPORT OBJ"
+                            : shelf.get(index).displayName,
                         42
                     )
                     : "—";
