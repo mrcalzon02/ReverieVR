@@ -146,6 +146,47 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
+    public void independentDosAimProfilesRetainTouchpadDirections() {
+        String[] ids = {
+            BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE,
+            BuiltInBindingProfiles.ID_DOS_CONTROLLER_MOUSE
+        };
+        for (String id : ids) {
+            VirtualInputBus bus = new VirtualInputBus();
+            InputBindingEngine engine = new InputBindingEngine(
+                bus, BuiltInBindingProfiles.byId(id));
+            engine.submitAxis(BindingInput.TOUCHPAD_X, 0.8f);
+            engine.submitAxis(BindingInput.TOUCHPAD_Y, -0.8f);
+            org.junit.Assert.assertTrue(id, bus.isKeyDown(VirtualKey.RIGHT));
+            org.junit.Assert.assertTrue(id, bus.isKeyDown(VirtualKey.UP));
+            org.junit.Assert.assertTrue(id, bus.isJoystickButtonDown(7));
+            org.junit.Assert.assertTrue(id, bus.isJoystickButtonDown(4));
+            engine.submitAxis(BindingInput.TOUCHPAD_X, 0f);
+            engine.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
+            assertFalse(id, bus.isKeyDown(VirtualKey.RIGHT));
+            assertFalse(id, bus.isKeyDown(VirtualKey.UP));
+            assertFalse(id, bus.isJoystickButtonDown(7));
+            assertFalse(id, bus.isJoystickButtonDown(4));
+            engine.submitDigital(BindingInput.SELECT, true);
+            org.junit.Assert.assertTrue(id,
+                bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
+        }
+    }
+
+    @Test
+    public void touchpadMouseDoesNotEmitArrowsWhenSwiping() {
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine engine = new InputBindingEngine(bus,
+            BuiltInBindingProfiles.byId(
+                BuiltInBindingProfiles.ID_DOS_TOUCHPAD_MOUSE));
+        engine.submitRelative(BindingInput.TOUCHPAD_REL_X, 18f);
+        engine.submitAxis(BindingInput.TOUCHPAD_X, 0.8f);
+        assertEquals(12.6f, bus.consumeMouseRelativeX(), 0.0001f);
+        assertFalse(bus.isKeyDown(VirtualKey.RIGHT));
+        assertFalse(bus.isJoystickButtonDown(7));
+    }
+
+    @Test
     public void dosRockerProvidesKeyboardMenuRecovery() {
         VirtualInputBus bus = new VirtualInputBus();
         InputBindingEngine engine = new InputBindingEngine(bus,
