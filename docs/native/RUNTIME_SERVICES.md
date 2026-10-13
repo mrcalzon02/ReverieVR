@@ -110,7 +110,7 @@ normalized hosted inputs and shell-owned recovery, not Android device IDs.
 
 ## Standard native hosted input profile
 
-Native modules launch under one shared `native-standard` binding profile rather than game-id-specific profiles.
+Immersive native modules launch under the shared `native-standard` binding profile. The six packaged `classic-*` games use the `native-classics` variant, which preserves all standard native buttons and HID gamepad axes but additionally forwards the centered Daydream touchpad X/Y to native joystick axes. These classic games do not declare shell-locomotion capability: their analog pad is gameplay direction, not world travel. This corrects otherwise nonfunctional Daydream paddle/turn/board-cursor navigation.
 
 The current normalized button mapping is:
 
@@ -139,9 +139,9 @@ profiles; there is not yet a complete physical remap editor.
 
 Those `VOLUME_*` names identify the Android/hardware input sources; under the native hosted profile they are game buttons and do not perform system volume control. Volume adjustment remains a shell/menu responsibility.
 
-Touchpad travel is deliberately **not** mapped into joystick movement by this profile. Shell-owned locomotion consumes the touchpad separately when the module declares `REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION`, preventing movement from being applied twice.
+Touchpad travel is deliberately **not** mapped into joystick movement by the `native-standard` profile. Shell-owned locomotion consumes it separately when a module declares `REVERIE_NATIVE_CAPABILITY_SHELL_LOCOMOTION`, preventing double movement. The classic-specific `native-classics` profile extends those same button mappings with touchpad axes at a 0.28 deadzone. Controller touch release emits neutral X/Y. `BuiltInBindingProfiles.nativeProfileForModule()` owns the selection policy so `VrActivity` does not hard-code separate classic title IDs.
 
-A newly admitted native game receives this standard profile without adding a game-id branch in `VrActivity`. A future need for materially different native input semantics should become an explicit reusable capability/profile contract rather than another hard-coded module-name switch.
+New immersive game modules retain `native-standard`; only the small classic games opt into the analogue pad contract. This is not a change to head movement, controller calibration, HUD, or native ABI.
 
 ## Pointer service
 

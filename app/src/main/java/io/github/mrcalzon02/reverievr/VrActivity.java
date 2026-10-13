@@ -1804,7 +1804,7 @@ public final class VrActivity extends Activity
         }
 
         final String hostedProfileId =
-            BuiltInBindingProfiles.ID_NATIVE_STANDARD;
+            BuiltInBindingProfiles.nativeProfileForModule(moduleId);
 
         inputBindingManager.beginHostedProfile(
             hostedProfileId

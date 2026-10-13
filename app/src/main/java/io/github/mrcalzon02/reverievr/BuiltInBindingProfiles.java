@@ -12,6 +12,15 @@ final class BuiltInBindingProfiles {
     static final String ID_DOS_CURSOR = "dos-cursor";
     static final String ID_NATIVE_STANDARD =
         "native-standard";
+    static final String ID_NATIVE_CLASSICS =
+        "native-classics";
+
+    static String nativeProfileForModule(String moduleId) {
+        // Board cursor, Snake direction and Pong paddle need the Daydream
+        // touchpad axes; immersive worlds must retain shell-owned locomotion.
+        return moduleId != null && moduleId.startsWith("classic-")
+            ? ID_NATIVE_CLASSICS : ID_NATIVE_STANDARD;
+    }
 
     private static final List<BindingProfile> PROFILES =
         buildProfiles();
@@ -56,6 +65,7 @@ final class BuiltInBindingProfiles {
         List<BindingProfile> result = new ArrayList<>();
         for (BindingProfile profile : PROFILES) {
             if (!ID_NATIVE_STANDARD.equals(profile.id)
+                && !ID_NATIVE_CLASSICS.equals(profile.id)
                 && !ID_NONE.equals(profile.id)) {
                 result.add(profile);
             }
@@ -330,6 +340,24 @@ final class BuiltInBindingProfiles {
                 nativeStandard
             )
         );
+
+        // Classic games have no shell-travel capability. Reuse all native
+        // Select, rocker and HID actions, adding only Daydream's centered
+        // analog pad for playable paddle/direction/board-cursor movement.
+        // Never change the input policy of world-scale native games.
+        List<InputBinding> nativeClassics =
+            new ArrayList<>(nativeStandard);
+        nativeClassics.add(InputBinding.analog(
+            BindingInput.TOUCHPAD_X,
+            VirtualOutput.joystickAxisX(), 1.0f, 0.28f));
+        nativeClassics.add(InputBinding.analog(
+            BindingInput.TOUCHPAD_Y,
+            VirtualOutput.joystickAxisY(), 1.0f, 0.28f));
+        profiles.add(new BindingProfile(
+            ID_NATIVE_CLASSICS,
+            "Native classic games — touchpad movement and Select",
+            nativeClassics
+        ));
 
         return Collections.unmodifiableList(profiles);
     }

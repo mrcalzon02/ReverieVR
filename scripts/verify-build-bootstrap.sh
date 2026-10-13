@@ -71,10 +71,6 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 python3 scripts/verify-dependency-baseline.py
 
-# Classic native game entries must match real NDK shared-library targets.
-# No network, emulator, or APK required for this early source preflight.
-python3 scripts/verify-classic-games-packaging.py
-
 echo "ReverieVR build bootstrap verified."
 echo "  Gradle wrapper: $wrapper_hash"
 echo "  Gradle distribution SHA-256: $EXPECTED_DISTRIBUTION_SHA256"

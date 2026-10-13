@@ -70,6 +70,41 @@ public final class BuiltInBindingProfilesTest {
         );
     }
 
+    @Test
+    public void nativeClassicsTurnDaydreamPadIntoPlayableAxes() {
+        assertEquals(
+            BuiltInBindingProfiles.ID_NATIVE_CLASSICS,
+            BuiltInBindingProfiles.nativeProfileForModule("classic-chess")
+        );
+        assertEquals(
+            BuiltInBindingProfiles.ID_NATIVE_CLASSICS,
+            BuiltInBindingProfiles.nativeProfileForModule("classic-pong")
+        );
+        assertEquals(
+            BuiltInBindingProfiles.ID_NATIVE_STANDARD,
+            BuiltInBindingProfiles.nativeProfileForModule("breakwater-battery")
+        );
+        assertFalse(BuiltInBindingProfiles.isDosProfileId(
+            BuiltInBindingProfiles.ID_NATIVE_CLASSICS));
+
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine engine = new InputBindingEngine(
+            bus, BuiltInBindingProfiles.byId(
+                BuiltInBindingProfiles.ID_NATIVE_CLASSICS));
+        engine.submitAxis(BindingInput.TOUCHPAD_X, 0.9f);
+        engine.submitAxis(BindingInput.TOUCHPAD_Y, -0.8f);
+        assertEquals(0.9f, bus.getJoystickAxisX(), 0.0001f);
+        assertEquals(-0.8f, bus.getJoystickAxisY(), 0.0001f);
+        engine.submitDigital(BindingInput.SELECT, true);
+        org.junit.Assert.assertTrue(bus.isJoystickButtonDown(0));
+        engine.submitDigital(BindingInput.SELECT, false);
+        engine.submitAxis(BindingInput.TOUCHPAD_X, 0.0f);
+        engine.submitAxis(BindingInput.TOUCHPAD_Y, 0.0f);
+        assertEquals(0.0f, bus.getJoystickAxisX(), 0.0001f);
+        assertEquals(0.0f, bus.getJoystickAxisY(), 0.0001f);
+        assertFalse(bus.isJoystickButtonDown(0));
+    }
+
     private static void assertDigitalButton(
         InputBinding binding,
         BindingInput input,
