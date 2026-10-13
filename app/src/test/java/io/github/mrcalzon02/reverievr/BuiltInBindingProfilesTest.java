@@ -187,6 +187,25 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
+    public void dosHeadsetMouseCorrectsBothGuestPointerAxesOnly() {
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine engine = new InputBindingEngine(bus,
+            BuiltInBindingProfiles.byId(
+                BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE));
+        engine.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
+        engine.submitRelative(BindingInput.HEAD_PITCH_DELTA, .01f);
+        assertEquals(-6.5f, bus.consumeMouseRelativeX(), .001f);
+        assertEquals(6.5f, bus.consumeMouseRelativeY(), .001f);
+        // The separate controller-aim profile must retain its own direction.
+        VirtualInputBus controller = new VirtualInputBus();
+        InputBindingEngine controllerEngine = new InputBindingEngine(controller,
+            BuiltInBindingProfiles.byId(
+                BuiltInBindingProfiles.ID_DOS_CONTROLLER_MOUSE));
+        controllerEngine.submitRelative(BindingInput.CONTROLLER_YAW_DELTA, .01f);
+        assertEquals(6.5f, controller.consumeMouseRelativeX(), .001f);
+    }
+
+    @Test
     public void dosRockerProvidesKeyboardMenuRecovery() {
         VirtualInputBus bus = new VirtualInputBus();
         InputBindingEngine engine = new InputBindingEngine(bus,

@@ -195,7 +195,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             {220, 392, 500, 448},
             {524, 392, 804, 448},
             {220, 464, 500, 520},
-            {524, 464, 804, 520}
+            {524, 464, 804, 520},
+            {372, 538, 652, 592} // Explicit CLOSE MENU
         };
 
     private static final int[][] QUICK_SETTINGS_BUTTONS =
@@ -1575,10 +1576,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
-        // Last-resort phone-only operation. No touch, Bluetooth or HID is
-        // needed to keep Home and global recovery usable. The hosted media
-        // menu opens once on controller loss/entry; looking upwards steadily
-        // for five seconds reopens it after a deliberate dismissal.
+        // Phone-only recovery stays available, but short BLE/controller pose
+        // gaps must never summon a modal over DOS gameplay on their own.
+        // Require a deliberate five-second upwards gaze to open Quick Menu.
         boolean phoneOnly = noUsableController(frameNanos);
         gazeFallbackActive = phoneOnly;
         // Brief pose gaps retain visual continuity and should not
@@ -1592,16 +1592,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         boolean hosted = mode == MODE_NATIVE || mode == MODE_DOS
             || mode == MODE_VIDEO || mode == MODE_MODEL_VIEWER;
         if (!openRecovery || mode == MODE_HOME) {
-            gazeRecoveryMenuShown = false;
             gazeRecoveryDwell.reset();
         } else if (hosted) {
-            if (!gazeRecoveryMenuShown && !orientationMenuVisible) {
+            // After activation, require lowering the head to re-arm.
+            // Looking up continuously cannot reopen a dismissed menu.
+            if (headForward[1] < 0.70f) gazeRecoveryMenuShown = false;
+            if (!orientationMenuVisible && !gazeRecoveryMenuShown &&
+                    gazeRecoveryDwell.update(true, mode,
+                        headForward[1] >= 0.82f ? 0 : -1, frameNanos)) {
                 gazeRecoveryMenuShown = true;
-                gazeRecoveryDwell.reset();
-                toggleOrientationMenu();
-            } else if (!orientationMenuVisible &&
-                       gazeRecoveryDwell.update(true,mode,
-                           headForward[1] >= 0.82f ? 0 : -1,frameNanos)) {
                 gazeRecoveryDwell.reset();
                 toggleOrientationMenu();
             }
@@ -2258,7 +2257,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // use their own stereo views without shrinking either Cardboard eye.
         final float contentScale = (mode == MODE_NATIVE
             || mode == MODE_MODEL_VIEWER
-            || mode == MODE_VIDEO)
+            || mode == MODE_VIDEO
+            || (mode == MODE_DOS && dosRenderer.isFullScreen()))
             ? 1.0f : EYE_CONTENT_VIEWPORT_SCALE;
         int contentWidth =
             Math.max(
@@ -2450,9 +2450,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_DOS) {
             dosRenderer.drawEye(eye, eyeCorrection);
-            // Always show the DOS console on the right side of the game.
-            drawUiPanel(eye, eyeCorrection, true);
-            drawPointerOverlay(eye, eyeCorrection);
+            // Fullscreen hides the floating side console and its ray target.
+            // Universal Quick Menu still renders over the full-eye game.
+            if (!dosRenderer.isFullScreen() || orientationMenuVisible) {
+                drawUiPanel(eye, eyeCorrection, true);
+                drawPointerOverlay(eye, eyeCorrection);
+            }
             return;
         }
 
@@ -4035,6 +4038,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
+        if (mode == MODE_DOS && dosRenderer.isFullScreen()) {
+            // The windowed options rail is invisible in full-eye DOS mode.
+            return UiRayHit.miss();
+        }
         if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS
             || mode == MODE_DOS_BINDING_TUNING) {
@@ -4900,6 +4907,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 quickMenuSettingsVisible = true;
                 hoveredButton = -1;
                 textureDirty = true;
+                break;
+
+            case 8:
+                closeOrientationMenu();
                 break;
 
             default:
@@ -6013,7 +6024,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             || mode == MODE_DOS_BINDING_TUNING) ? "DOS OPTIONS" : "BACK",
                 "HOME",
                 "EXIT PHONE",
-                "SETTINGS"
+                "SETTINGS",
+                "CLOSE MENU"
             },
             ORIENTATION_MENU_BUTTONS
         );

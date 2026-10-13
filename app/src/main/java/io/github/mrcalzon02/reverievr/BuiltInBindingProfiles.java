@@ -312,10 +312,13 @@ final class BuiltInBindingProfiles {
         // Independent DOS cursor sources. Only the active profile drives
         // the guest pointer; Select remains left click in each mode.
         List<InputBinding> headMouse = new ArrayList<>();
+        // The Cardboard view Euler deltas have the opposite pointer polarity
+        // to the DOS guest's horizontal/right and vertical/down mouse axes.
+        // Correct this binding, not the physical headset view matrices.
         headMouse.add(InputBinding.analog(BindingInput.HEAD_YAW_DELTA,
-            VirtualOutput.mouseRelativeX(), 650.0f, 0.0f));
+            VirtualOutput.mouseRelativeX(), -650.0f, 0.0f));
         headMouse.add(InputBinding.analog(BindingInput.HEAD_PITCH_DELTA,
-            VirtualOutput.mouseRelativeY(), -650.0f, 0.0f));
+            VirtualOutput.mouseRelativeY(), 650.0f, 0.0f));
         headMouse.add(InputBinding.digital(BindingInput.SELECT,
             VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
         addDosTouchpadArrows(headMouse);
