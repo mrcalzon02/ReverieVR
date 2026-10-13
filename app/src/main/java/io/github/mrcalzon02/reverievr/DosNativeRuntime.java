@@ -35,6 +35,8 @@ final class DosNativeRuntime implements AutoCloseable {
     private volatile float guestPointerY = 0.5f;
     private float previousAbsoluteX = 0.5f;
     private float previousAbsoluteY = 0.5f;
+    private float fractionalMouseX;
+    private float fractionalMouseY;
 
     private long handle;
     private ByteBuffer frameBuffer;
@@ -73,11 +75,24 @@ final class DosNativeRuntime implements AutoCloseable {
     void updateInput(VirtualInputBus bus) {
         requireOpen();
         if (bus == null) {
+            fractionalMouseX = 0.0f;
+            fractionalMouseY = 0.0f;
             nativeReleaseAllInput(handle);
             return;
         }
 
         bus.capture(inputSnapshot);
+        // A slow 3DoF aim may generate less than one native mouse tick
+        // per frame. Carry the fractional pixels into the next DOS frame
+        // instead of rounding them away permanently.
+        float totalX = clampRelative(inputSnapshot.mouseRelativeX
+            + fractionalMouseX);
+        float totalY = clampRelative(inputSnapshot.mouseRelativeY
+            + fractionalMouseY);
+        float relativeX = Math.round(totalX);
+        float relativeY = Math.round(totalY);
+        fractionalMouseX = totalX - relativeX;
+        fractionalMouseY = totalY - relativeY;
 
         // Honor explicit absolute HID movement where supplied; otherwise
         // integrate the same rounded/clamped relative units delivered to the
@@ -90,15 +105,13 @@ final class DosNativeRuntime implements AutoCloseable {
             guestPointerX = clamp01(absoluteX);
         } else {
             guestPointerX = clamp01(guestPointerX
-                + Math.round(clampRelative(inputSnapshot.mouseRelativeX))
-                    / POINTER_MOUSE_WIDTH);
+                + relativeX / POINTER_MOUSE_WIDTH);
         }
         if (absoluteY != previousAbsoluteY) {
             guestPointerY = clamp01(absoluteY);
         } else {
             guestPointerY = clamp01(guestPointerY
-                + Math.round(clampRelative(inputSnapshot.mouseRelativeY))
-                    / POINTER_MOUSE_HEIGHT);
+                + relativeY / POINTER_MOUSE_HEIGHT);
         }
         previousAbsoluteX = absoluteX;
         previousAbsoluteY = absoluteY;
@@ -108,8 +121,8 @@ final class DosNativeRuntime implements AutoCloseable {
             RETRO_KEY_MAP,
             inputSnapshot.keys,
             inputSnapshot.mouseButtons,
-            inputSnapshot.mouseRelativeX,
-            inputSnapshot.mouseRelativeY,
+            relativeX,
+            relativeY,
             guestPointerX,
             guestPointerY,
             inputSnapshot.mouseWheel,
@@ -240,6 +253,8 @@ final class DosNativeRuntime implements AutoCloseable {
     }
 
     void releaseAllInput() {
+        fractionalMouseX = 0.0f;
+        fractionalMouseY = 0.0f;
         if (handle != 0L) {
             nativeReleaseAllInput(handle);
         }

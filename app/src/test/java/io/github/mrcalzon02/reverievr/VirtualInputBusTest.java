@@ -51,6 +51,61 @@ public final class VirtualInputBusTest {
     }
 
     @Test
+    public void tapCompletedBetweenFramesIsDeliveredExactlyOnce() {
+        VirtualInputBus bus = new VirtualInputBus();
+        VirtualInputSnapshot frame = new VirtualInputSnapshot();
+        bus.applyDigital(
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT), true);
+        bus.applyDigital(
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT), false);
+        bus.applyDigital(VirtualOutput.key(VirtualKey.ENTER), true);
+        bus.applyDigital(VirtualOutput.key(VirtualKey.ENTER), false);
+        bus.applyDigital(VirtualOutput.joystickButton(0), true);
+        bus.applyDigital(VirtualOutput.joystickButton(0), false);
+
+        bus.capture(frame);
+        assertTrue(frame.mouseButtons[VirtualOutput.MOUSE_LEFT]);
+        assertTrue(frame.keys[VirtualKey.ENTER.ordinal()]);
+        assertTrue(frame.joystickButtons[0]);
+        bus.capture(frame);
+        assertFalse(frame.mouseButtons[VirtualOutput.MOUSE_LEFT]);
+        assertFalse(frame.keys[VirtualKey.ENTER.ordinal()]);
+        assertFalse(frame.joystickButtons[0]);
+    }
+
+    @Test
+    public void heldMouseButtonReleasesOnNextFrameWithoutExtraPress() {
+        VirtualInputBus bus = new VirtualInputBus();
+        VirtualInputSnapshot frame = new VirtualInputSnapshot();
+        bus.applyDigital(
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT), true);
+        bus.capture(frame);
+        assertTrue(frame.mouseButtons[VirtualOutput.MOUSE_LEFT]);
+        bus.capture(frame);
+        assertTrue(frame.mouseButtons[VirtualOutput.MOUSE_LEFT]);
+        bus.applyDigital(
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT), false);
+        bus.capture(frame);
+        assertFalse(frame.mouseButtons[VirtualOutput.MOUSE_LEFT]);
+    }
+
+    @Test
+    public void shellRecoveryDiscardsUnobservedGuestPress() {
+        VirtualInputBus bus = new VirtualInputBus();
+        VirtualInputSnapshot frame = new VirtualInputSnapshot();
+        bus.applyDigital(VirtualOutput.key(VirtualKey.ESCAPE), true);
+        bus.applyDigital(VirtualOutput.key(VirtualKey.ESCAPE), false);
+        bus.applyDigital(
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_RIGHT), true);
+        bus.applyDigital(
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_RIGHT), false);
+        bus.releaseAll();
+        bus.capture(frame);
+        assertFalse(frame.keys[VirtualKey.ESCAPE.ordinal()]);
+        assertFalse(frame.mouseButtons[VirtualOutput.MOUSE_RIGHT]);
+    }
+
+    @Test
     public void absoluteMousePositionIsClamped() {
         VirtualInputBus bus = new VirtualInputBus();
 

@@ -9,6 +9,15 @@ final class VirtualInputBus {
     private final boolean[] joystickButtons =
         new boolean[MAX_JOYSTICK_BUTTONS];
 
+    // Press/release can happen entirely between two DOS/native poll frames.
+    // Retain the unseen rising edge for one capture without changing held
+    // state, so a brief click, key tap or joystick activation is not lost.
+    private final boolean[] pendingKeyPresses = new boolean[keys.length];
+    private final boolean[] pendingMousePresses =
+        new boolean[mouseButtons.length];
+    private final boolean[] pendingJoystickPresses =
+        new boolean[joystickButtons.length];
+
     private float mouseRelativeX;
     private float mouseRelativeY;
     private float mouseAbsoluteX = 0.5f;
@@ -29,6 +38,9 @@ final class VirtualInputBus {
         switch (output.kind) {
             case KEY:
                 if (output.code >= 0 && output.code < keys.length) {
+                    if (down && !keys[output.code]) {
+                        pendingKeyPresses[output.code] = true;
+                    }
                     keys[output.code] = down;
                     generation++;
                 }
@@ -37,6 +49,9 @@ final class VirtualInputBus {
             case MOUSE_BUTTON:
                 if (output.code >= 0
                     && output.code < mouseButtons.length) {
+                    if (down && !mouseButtons[output.code]) {
+                        pendingMousePresses[output.code] = true;
+                    }
                     mouseButtons[output.code] = down;
                     generation++;
                 }
@@ -45,6 +60,9 @@ final class VirtualInputBus {
             case JOYSTICK_BUTTON:
                 if (output.code >= 0
                     && output.code < joystickButtons.length) {
+                    if (down && !joystickButtons[output.code]) {
+                        pendingJoystickPresses[output.code] = true;
+                    }
                     joystickButtons[output.code] = down;
                     generation++;
                 }
@@ -114,27 +132,20 @@ final class VirtualInputBus {
             return;
         }
 
-        System.arraycopy(
-            keys,
-            0,
-            target.keys,
-            0,
-            keys.length
-        );
-        System.arraycopy(
-            mouseButtons,
-            0,
-            target.mouseButtons,
-            0,
-            mouseButtons.length
-        );
-        System.arraycopy(
-            joystickButtons,
-            0,
-            target.joystickButtons,
-            0,
-            joystickButtons.length
-        );
+        for (int i = 0; i < keys.length; i++) {
+            target.keys[i] = keys[i] || pendingKeyPresses[i];
+            pendingKeyPresses[i] = false;
+        }
+        for (int i = 0; i < mouseButtons.length; i++) {
+            target.mouseButtons[i] = mouseButtons[i]
+                || pendingMousePresses[i];
+            pendingMousePresses[i] = false;
+        }
+        for (int i = 0; i < joystickButtons.length; i++) {
+            target.joystickButtons[i] = joystickButtons[i]
+                || pendingJoystickPresses[i];
+            pendingJoystickPresses[i] = false;
+        }
 
         target.mouseRelativeX = mouseRelativeX;
         target.mouseRelativeY = mouseRelativeY;
@@ -207,12 +218,15 @@ final class VirtualInputBus {
     synchronized void releaseAll() {
         for (int index = 0; index < keys.length; index++) {
             keys[index] = false;
+            pendingKeyPresses[index] = false;
         }
         for (int index = 0; index < mouseButtons.length; index++) {
             mouseButtons[index] = false;
+            pendingMousePresses[index] = false;
         }
         for (int index = 0; index < joystickButtons.length; index++) {
             joystickButtons[index] = false;
+            pendingJoystickPresses[index] = false;
         }
 
         mouseRelativeX = 0.0f;
