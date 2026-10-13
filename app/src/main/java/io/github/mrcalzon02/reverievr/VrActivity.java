@@ -92,7 +92,7 @@ public final class VrActivity extends Activity
     private BundledDosContentInstaller bundledDosContentInstaller;
     private DosSession dosSession;
     private NativeModuleRuntime nativeModuleRuntime;
-    private long dosControllerMouseLastPoseNanos;
+    private volatile long dosControllerMouseLastPoseNanos;
     private float dosControllerMousePreviousYaw;
     private float dosControllerMousePreviousPitch;
     private SensorManager sensorManager;
@@ -1986,11 +1986,19 @@ public final class VrActivity extends Activity
     }
 
     @Override
-    public void onDosOverlayPauseRequested() {
+    public void onDosGuestInputFocusLost() {
+        // Also clears pending quick taps from VirtualInputBus: suppressing
+        // future input without releasing an existing press leaves a DOS
+        // mouse button stuck when the player targets the options overlay.
         dosControllerMouseLastPoseNanos = 0L;
         if (inputBindingEngine != null) {
             inputBindingEngine.releaseAll();
         }
+    }
+
+    @Override
+    public void onDosOverlayPauseRequested() {
+        onDosGuestInputFocusLost();
         if (standardHidInputRouter != null) {
             standardHidInputRouter.reset();
         }

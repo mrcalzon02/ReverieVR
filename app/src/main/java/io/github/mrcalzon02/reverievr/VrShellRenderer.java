@@ -65,6 +65,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         boolean onDosPlaybackRequested(String moduleId);
         void onDosOverlayPauseRequested();
         void onDosOverlayResumeRequested();
+        // DOS hands off held/queued guest input when a shell UI takes focus.
+        void onDosGuestInputFocusLost();
         void onVolumeAdjustRequested(int direction);
         void onBrightnessAdjustRequested(int direction);
         String getActiveBindingProfileName();
@@ -996,6 +998,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         selectRequested.set(false);
         backRequested.set(false);
         if (opening) {
+            // The universal Quick Menu may be invoked by the controller
+            // OR by headset-only recovery; both must release DOS guest input
+            // before the shell starts consuming Select and navigation.
+            if (mode == MODE_DOS) {
+                host.onDosGuestInputFocusLost();
+            }
             /*
              * The current headset pose belongs to the renderer thread.
              * Defer quick-menu placement to onNewFrameInternal() so opening
@@ -2135,6 +2143,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (newHover != hoveredButton) {
+            // Once a DOS shell button owns the aim ray, no held gameplay
+            // click/key (or unseen one-frame pulse) may follow it into the
+            // options overlay. Do this once when entering UI focus; not on
+            // each frame or when moving between shell buttons.
+            if (mode == MODE_DOS && !orientationMenuVisible
+                && newHover >= 0 && hoveredButton < 0) {
+                host.onDosGuestInputFocusLost();
+            }
             if (mode == MODE_HOME
                 && (newHover >= HOME_KEYBOARD_HIT_OFFSET
                     || hoveredButton >= HOME_KEYBOARD_HIT_OFFSET)) {
