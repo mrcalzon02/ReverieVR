@@ -1507,11 +1507,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         headTransform.getHeadView(rawHeadView, 0);
         headTransform.getEulerAngles(headEuler, 0);
         headTransform.getForwardVector(headForward, 0);
-        if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
-            || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING)
-            dosRenderer.setHeadGaze(headForward);
-
         if (!shellHeadingInitialized) {
             updateInitialShellHeading(
                 frameNanos

@@ -127,6 +127,13 @@ final class DosSession implements AutoCloseable {
         return running;
     }
 
+    // Render thread reads the position already delivered to libretro's
+    // absolute pointer channel. No copied framebuffer or extra input poll.
+    boolean copyGuestPointer(float[] outUv) {
+        DosNativeRuntime active = runtime;
+        return running && active != null && active.copyGuestPointer(outUv);
+    }
+
     String getLastError() {
         return lastError == null ? "" : lastError;
     }

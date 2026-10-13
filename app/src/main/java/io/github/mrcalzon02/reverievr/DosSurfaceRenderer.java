@@ -35,10 +35,10 @@ final class DosSurfaceRenderer {
     private int textureHeight;
     private float displayAspect = 4.0f / 3.0f;
     private boolean fullScreen;
-    private boolean gazeVisible;
-    private final float[] gazeUv = new float[2];
-    private int gazeUvHandle;
-    private int gazeVisibleHandle;
+    private boolean pointerVisible;
+    private final float[] pointerUv = new float[2];
+    private int pointerUvHandle;
+    private int pointerVisibleHandle;
     private int frameSizeHandle;
 
     void setFullScreen(boolean enabled) {
@@ -48,28 +48,6 @@ final class DosSurfaceRenderer {
     boolean isFullScreen() {
         return fullScreen;
     }
-
-    void setHeadGaze(float[] forward) {
-        gazeVisible = false;
-        if (forward == null || forward.length < 3
-            || !Float.isFinite(forward[0])
-            || !Float.isFinite(forward[1])
-            || !Float.isFinite(forward[2])
-            || forward[2] >= -0.0001f) return;
-        float halfHeight = fullScreen ? 1.08f : 0.80f;
-        float halfWidth = Math.min(fullScreen ? 1.67f : 1.40f,
-            halfHeight * displayAspect);
-        float distance = -3.2f / forward[2];
-        float x = distance * forward[0];
-        float y = distance * forward[1];
-        float u = 0.5f + (x + 0.70f) / (2.0f * halfWidth);
-        float v = 0.5f - y / (2.0f * halfHeight);
-        gazeVisible = Float.isFinite(u) && Float.isFinite(v)
-            && u >= 0.0f && u <= 1.0f && v >= 0.0f && v <= 1.0f;
-        gazeUv[0] = u;
-        gazeUv[1] = v;
-    }
-
 
     DosSurfaceRenderer(DosSession session) {
         this.session = session;
@@ -99,8 +77,8 @@ final class DosSurfaceRenderer {
             GLES20.glGetUniformLocation(program, "u_Mvp");
         textureHandle =
             GLES20.glGetUniformLocation(program, "u_Texture");
-        gazeUvHandle = GLES20.glGetUniformLocation(program, "u_GazeUv");
-        gazeVisibleHandle = GLES20.glGetUniformLocation(program, "u_GazeVisible");
+        pointerUvHandle = GLES20.glGetUniformLocation(program, "u_PointerUv");
+        pointerVisibleHandle = GLES20.glGetUniformLocation(program, "u_PointerVisible");
         frameSizeHandle = GLES20.glGetUniformLocation(program, "u_FrameSize");
 
         int[] textures = new int[1];
@@ -225,6 +203,7 @@ final class DosSurfaceRenderer {
             return;
         }
 
+        pointerVisible = session != null && session.copyGuestPointer(pointerUv);
         System.arraycopy(eye.getEyeView(), 0, eyeView, 0, 16);
         Matrix.translateM(
             correctedEyeView,
@@ -297,8 +276,8 @@ final class DosSurfaceRenderer {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
         GLES20.glUniform1i(textureHandle, 0);
-        GLES20.glUniform2f(gazeUvHandle, gazeUv[0], gazeUv[1]);
-        GLES20.glUniform1f(gazeVisibleHandle, gazeVisible ? 1.0f : 0.0f);
+        GLES20.glUniform2f(pointerUvHandle, pointerUv[0], pointerUv[1]);
+        GLES20.glUniform1f(pointerVisibleHandle, pointerVisible ? 1.0f : 0.0f);
         GLES20.glUniform2f(frameSizeHandle,
             Math.max(1, textureWidth), Math.max(1, textureHeight));
 
@@ -338,10 +317,10 @@ final class DosSurfaceRenderer {
         uvHandle = -1;
         mvpHandle = -1;
         textureHandle = -1;
-        gazeUvHandle = -1;
-        gazeVisibleHandle = -1;
+        pointerUvHandle = -1;
+        pointerVisibleHandle = -1;
         frameSizeHandle = -1;
-        gazeVisible = false;
+        pointerVisible = false;
         uploadedSerial = 0L;
         textureWidth = 0;
         textureHeight = 0;
@@ -441,15 +420,15 @@ final class DosSurfaceRenderer {
     private static final String FRAGMENT_SHADER =
         "precision mediump float;\n"
             + "uniform sampler2D u_Texture;\n"
-            + "uniform vec2 u_GazeUv;\n"
-            + "uniform float u_GazeVisible;\n"
+            + "uniform vec2 u_PointerUv;\n"
+            + "uniform float u_PointerVisible;\n"
             + "uniform vec2 u_FrameSize;\n"
             + "varying vec2 v_TexCoord;\n"
             + "void main() {\n"
             + "  vec4 raw = texture2D(u_Texture, v_TexCoord);\n"
             + "  vec4 col = vec4(raw.b, raw.g, raw.r, 1.0);\n"
-            + "  vec2 d = abs((v_TexCoord - u_GazeUv) * u_FrameSize);\n"
-            + "  if (u_GazeVisible > 0.5) {\n"
+            + "  vec2 d = abs((v_TexCoord - u_PointerUv) * u_FrameSize);\n"
+            + "  if (u_PointerVisible > 0.5) {\n"
             + "    bool outline = (d.x <= 2.5 && d.y <= 14.0)\n"
             + "        || (d.y <= 2.5 && d.x <= 14.0);\n"
             + "    bool fill = (d.x <= 1.25 && d.y <= 12.0)\n"

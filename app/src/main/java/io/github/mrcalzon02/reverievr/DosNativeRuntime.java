@@ -26,6 +26,16 @@ final class DosNativeRuntime implements AutoCloseable {
     private final VirtualInputSnapshot inputSnapshot =
         new VirtualInputSnapshot();
 
+    // DOSBox Pure receives both a relative mouse and a normalized libretro
+    // pointer. Their positions must not diverge when an input source (head,
+    // controller, touchpad) only generates relative movement.
+    private static final float POINTER_MOUSE_WIDTH = 640.0f;
+    private static final float POINTER_MOUSE_HEIGHT = 480.0f;
+    private volatile float guestPointerX = 0.5f;
+    private volatile float guestPointerY = 0.5f;
+    private float previousAbsoluteX = 0.5f;
+    private float previousAbsoluteY = 0.5f;
+
     private long handle;
     private ByteBuffer frameBuffer;
     private ByteBuffer audioBuffer;
@@ -69,6 +79,30 @@ final class DosNativeRuntime implements AutoCloseable {
 
         bus.capture(inputSnapshot);
 
+        // Honor explicit absolute HID movement where supplied; otherwise
+        // integrate the same rounded/clamped relative units delivered to the
+        // native RETRO_DEVICE_MOUSE into RETRO_DEVICE_POINTER coordinates.
+        // This makes pointer-based launchers clickable without requiring an
+        // external physical mouse and keeps the VR cursor tied to the guest.
+        float absoluteX = inputSnapshot.mouseAbsoluteX;
+        float absoluteY = inputSnapshot.mouseAbsoluteY;
+        if (absoluteX != previousAbsoluteX) {
+            guestPointerX = clamp01(absoluteX);
+        } else {
+            guestPointerX = clamp01(guestPointerX
+                + Math.round(clampRelative(inputSnapshot.mouseRelativeX))
+                    / POINTER_MOUSE_WIDTH);
+        }
+        if (absoluteY != previousAbsoluteY) {
+            guestPointerY = clamp01(absoluteY);
+        } else {
+            guestPointerY = clamp01(guestPointerY
+                + Math.round(clampRelative(inputSnapshot.mouseRelativeY))
+                    / POINTER_MOUSE_HEIGHT);
+        }
+        previousAbsoluteX = absoluteX;
+        previousAbsoluteY = absoluteY;
+
         nativeUpdateInput(
             handle,
             RETRO_KEY_MAP,
@@ -76,13 +110,31 @@ final class DosNativeRuntime implements AutoCloseable {
             inputSnapshot.mouseButtons,
             inputSnapshot.mouseRelativeX,
             inputSnapshot.mouseRelativeY,
-            inputSnapshot.mouseAbsoluteX,
-            inputSnapshot.mouseAbsoluteY,
+            guestPointerX,
+            guestPointerY,
             inputSnapshot.mouseWheel,
             inputSnapshot.joystickAxisX,
             inputSnapshot.joystickAxisY,
             inputSnapshot.joystickButtons
         );
+    }
+
+    boolean copyGuestPointer(float[] outUv) {
+        if (outUv == null || outUv.length < 2 || handle == 0L) {
+            return false;
+        }
+        outUv[0] = guestPointerX;
+        outUv[1] = guestPointerY;
+        return true;
+    }
+
+    private static float clamp01(float value) {
+        return Math.max(0.0f, Math.min(1.0f, value));
+    }
+
+    private static float clampRelative(float value) {
+        if (!Float.isFinite(value)) return 0.0f;
+        return Math.max(-32767.0f, Math.min(32767.0f, value));
     }
 
     void runFrame() {
