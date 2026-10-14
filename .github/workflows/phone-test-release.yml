@@ -252,6 +252,9 @@ jobs:
                 | grep -Fx "lib/$ABI/libreverie_module_${MODULE}.so"
             done
           done
+          # Confirm the actual loadable ELF symbols, Android CPU class and
+          # private dependencies. Merely finding a .so in the APK is not enough.
+          python3 scripts/verify-native-module-exports.py "$APK"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_dos_host.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_dos_host.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libcardboard_sdk_jni.so"
