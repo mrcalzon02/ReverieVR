@@ -130,8 +130,8 @@ public final class InputBindingEngineTest {
         engine.submitRelative(BindingInput.TOUCHPAD_REL_X, 10f);
         engine.submitRelative(BindingInput.TOUCHPAD_REL_Y, -5f);
         engine.submitRelative(BindingInput.HEAD_YAW_DELTA, 0.01f);
-        // Corrected DOS headset yaw is negative: 10*.70 + .01*(-650) = .5.
-        assertEquals(0.5f, bus.consumeMouseRelativeX(), 0.0001f);
+        // Restored DOS cursor yaw: 10*.70 + .01*(650) = 13.5.
+        assertEquals(13.5f, bus.consumeMouseRelativeX(), 0.0001f);
         assertEquals(-3.5f, bus.consumeMouseRelativeY(), 0.0001f);
         assertEquals(0f, bus.consumeMouseRelativeX(), 0.0001f);
     }

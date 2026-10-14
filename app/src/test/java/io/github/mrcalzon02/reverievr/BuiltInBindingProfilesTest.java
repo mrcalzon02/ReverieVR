@@ -212,22 +212,26 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
-    public void doomAndCursorHeadYawMatchDedicatedDosHeadsetMousePolarity() {
+    public void doomAndCursorRestoreHeadYawWithoutChangingOtherAimProfiles() {
         for (String id : new String[] {
                 BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE,
-                BuiltInBindingProfiles.ID_DOS_CURSOR,
-                BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE
+                BuiltInBindingProfiles.ID_DOS_CURSOR
         }) {
             VirtualInputBus bus = new VirtualInputBus();
             InputBindingEngine engine = new InputBindingEngine(bus,
                 BuiltInBindingProfiles.byId(id));
             engine.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
-            assertEquals(id + " positive yaw", -6.5f,
+            assertEquals(id + " positive yaw", 6.5f,
                 bus.consumeMouseRelativeX(), .001f);
             engine.submitRelative(BindingInput.HEAD_YAW_DELTA, -.01f);
-            assertEquals(id + " negative yaw", 6.5f,
+            assertEquals(id + " negative yaw", -6.5f,
                 bus.consumeMouseRelativeX(), .001f);
         }
+        VirtualInputBus independent = new VirtualInputBus();
+        InputBindingEngine headMouse = new InputBindingEngine(independent,
+            BuiltInBindingProfiles.byId(BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE));
+        headMouse.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
+        assertEquals(-6.5f, independent.consumeMouseRelativeX(), .001f);
     }
 
     @Test
@@ -261,9 +265,9 @@ public final class BuiltInBindingProfilesTest {
         engine.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
         assertFalse(bus.isKeyDown(VirtualKey.UP));
 
-        // Horizontal turn follows the corrected headset-view polarity.
+        // Only horizontal Doom guest turning was restored; pitch stays held.
         engine.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
-        assertEquals(-6.5f, bus.consumeMouseRelativeX(), .001f);
+        assertEquals(6.5f, bus.consumeMouseRelativeX(), .001f);
         assertEquals(0f, bus.consumeMouseRelativeY(), .001f);
     }
 

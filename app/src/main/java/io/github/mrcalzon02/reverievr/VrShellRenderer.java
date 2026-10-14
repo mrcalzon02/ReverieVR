@@ -114,6 +114,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final float HUD_LOOK_UP_THRESHOLD = 0.72f;
     private static final float SHELL_VIEW_CONTRACTION = 0.81f;
     private static final float EYE_CONTENT_VIEWPORT_SCALE = 0.738f;
+    // Fullscreen DOS remains binocular and excludes the VR room, but a
+    // little black edge is essential on Daydream optics: 10% each side.
+    private static final float DOS_FULLSCREEN_VIEWPORT_SCALE = 0.80f;
 
     private static final float PANEL_HALF_WIDTH =
         1.70f * SHELL_VIEW_CONTRACTION;
@@ -2306,11 +2309,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Media is a full eye-owned 3D scene, not a menu texture inset.
         // Flat cinema stays a world-space surface; packed 3D and panoramas
         // use their own stereo views without shrinking either Cardboard eye.
-        final float contentScale = (mode == MODE_NATIVE
-            || mode == MODE_MODEL_VIEWER
-            || mode == MODE_VIDEO
-            || (mode == MODE_DOS && dosRenderer.isFullScreen()))
-            ? 1.0f : EYE_CONTENT_VIEWPORT_SCALE;
+        final float contentScale =
+            mode == MODE_DOS && dosRenderer.isFullScreen()
+                ? DOS_FULLSCREEN_VIEWPORT_SCALE
+                : (mode == MODE_NATIVE
+                    || mode == MODE_MODEL_VIEWER
+                    || mode == MODE_VIDEO)
+                    ? 1.0f : EYE_CONTENT_VIEWPORT_SCALE;
         int contentWidth =
             Math.max(
                 1,
@@ -8298,8 +8303,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         final float left = PowerHudArcGeometry.inwardInViewport(
             PowerHudArcGeometry.scaledNearTopRight(
                 originalLeft, 2f * 451f / HUD_TEXTURE_WIDTH - 1f));
-        // Keep both downward shifts; restore the prior outer-edge X.
-        // Preserve the quad size, texture crop and look-up reveal.
+        // Move both arcs and their labels up/left by 15% of an eye.
+        // Preserve quad size, cropped UVs and look-up reveal behavior.
         final float top = PowerHudArcGeometry.lowerInViewport(originalTop);
         final float bottom = PowerHudArcGeometry.lowerInViewport(
             PowerHudArcGeometry.scaledNearTopRight(originalBottom, originalTop));
