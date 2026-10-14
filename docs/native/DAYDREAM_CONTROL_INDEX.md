@@ -19,8 +19,9 @@
 | Head yaw relative movement | HEAD_YAW_DELTA | VR look/aim | Doom turning uses guest mouse X | Native camera/aim according to module |
 | Head pitch relative movement | HEAD_PITCH_DELTA | VR look/aim | Selected DOS mouse profile | Native camera/aim according to module |
 | Absolute head inclination | HEAD_PITCH_UP_AXIS | Normal VR look | Bundled Doom look up = Up/Forward, look down = Down/Back past ~12° with ~8.5° release; original Doom has no vertical freelook | Unmapped unless module explicitly supports |
-| Head extremely upward/downward | HEAD_LOOK_EXTREME_UP/DOWN | Detected and logged; Quick Menu recovery remains deliberate | No automatic guest action | Unmapped |
-| Sharp head yaw impulse | HEAD_SHARP_LEFT/RIGHT | Detected and logged, no automatic recenter | No automatic guest action | Unmapped |
+| Head extremely upward/downward | HEAD_LOOK_EXTREME_UP/DOWN | Normalized pulse and ghost log; Quick Menu recovery remains deliberate | No automatic guest action | Unmapped unless opted in |
+| Sharp head yaw impulse | HEAD_SHARP_LEFT/RIGHT | Normalized pulse and ghost log, no automatic recenter | No automatic guest action | Unmapped unless opted in |
+| Head roll above ~17° | HEAD_ROLL_POSITIVE/NEGATIVE | Normalized pulse at ±0.29 radians; rearms below ±0.17; signed until calibrated | No automatic guest action | Unmapped unless opted in |
 
 The **ghost-grey control feed** is an eye-locked, middle-left, six-line rolling readout. It shows **recognized events**, not raw 60Hz pose packets. Lines have no background, fade over 12 seconds, and are not clickable. It has independent GLES texture/geometry from battery power arcs.
 

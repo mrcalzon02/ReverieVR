@@ -104,6 +104,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             float pitchDeltaRadians
         );
         void onHeadBindingUpAxis(float upAxis);
+        void onHeadBindingRollAxis(float rollRadians);
     }
 
     private static final int TEXTURE_WIDTH = 1024;
@@ -1570,9 +1571,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Forward-vector Y is positive when the wearer looks UP. Unlike
         // Euler deltas it remains held when the head stops moving, allowing
         // Doom to hold Forward/Back, including its keyboard-driven menus.
-        if (mode == MODE_DOS) {
-            host.onHeadBindingUpAxis(headForward[1]);
-        }
+        // Absolute look and roll events are observable even in Home.
+        // The hosted Doom-only pitch binding remains protected in Activity.
+        host.onHeadBindingUpAxis(headForward[1]);
+        host.onHeadBindingRollAxis(headEuler[2]);
 
         if (ReverieLog.isDevelopment()) {
             ReverieLog.dev(

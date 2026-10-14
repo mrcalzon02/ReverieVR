@@ -34,6 +34,14 @@ public final class DaydreamGestureRecognizerTest {
         assertEquals(2, events.size());
     }
 
+    @Test public void longPressOnReleaseSurvivesMissingSamples() {
+        feed(100, true, 1f);
+        feed(950, false, 1f);
+        assertEquals("DAYDREAM_PRESS_HOLD+", events.get(0));
+        assertEquals("DAYDREAM_PRESS_HOLD-", events.get(1));
+        assertEquals(2, events.size());
+    }
+
     @Test public void shakeRequiresStrongImpulseAndRearm() {
         feed(100, false, 1f); feed(200, false, 2.7f);
         feed(500, false, 3f);

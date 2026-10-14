@@ -38,6 +38,13 @@ final class DaydreamGestureRecognizer {
             sink.onGesture(BindingInput.DAYDREAM_PRESS_HOLD, true);
         }
         if (!click && pressed) {
+            // A lost intermediate BLE packet must not discard a long press.
+            if (!held && pressedSince > 0L
+                    && now - pressedSince >= LONG_PRESS_NANOS) {
+                held = true;
+                pendingTap = 0L;
+                sink.onGesture(BindingInput.DAYDREAM_PRESS_HOLD, true);
+            }
             if (held) {
                 sink.onGesture(BindingInput.DAYDREAM_PRESS_HOLD, false);
             } else if (pressedSince > 0L

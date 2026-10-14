@@ -1149,7 +1149,27 @@ public final class VrActivity extends Activity
     }
 
     private int lastExtremeHead;
+    private int lastHeadRoll;
     private long lastSharpTurnAtNanos;
+
+    @Override
+    public void onHeadBindingRollAxis(float rollRadians) {
+        // Signed roll until S9 calibration establishes left/right polarity.
+        // No physical head-view transform is modified.
+        if (Math.abs(rollRadians) < 0.17f) lastHeadRoll = 0;
+        int direction = rollRadians >= 0.29f ? 1
+            : rollRadians <= -0.29f ? -1 : 0;
+        if (direction != 0 && direction != lastHeadRoll) {
+            lastHeadRoll = direction;
+            BindingInput event = direction > 0
+                ? BindingInput.HEAD_ROLL_POSITIVE
+                : BindingInput.HEAD_ROLL_NEGATIVE;
+            if (renderer != null)
+                renderer.noteControlEvent(event.name().replace('_', ' '));
+            if (inputBindingEngine != null && !isGuestInputSuppressed())
+                inputBindingEngine.pulse(event);
+        }
+    }
 
     @Override
     public void onHeadBindingUpAxis(float upAxis) {
@@ -1159,8 +1179,13 @@ public final class VrActivity extends Activity
         if (Math.abs(upAxis) < 0.76f) lastExtremeHead = 0;
         if (extreme != 0 && extreme != lastExtremeHead) {
             lastExtremeHead = extreme;
-            if (renderer != null) renderer.noteControlEvent(
-                extreme > 0 ? "HEAD EXTREME UP" : "HEAD EXTREME DOWN");
+            BindingInput event = extreme > 0
+                ? BindingInput.HEAD_LOOK_EXTREME_UP
+                : BindingInput.HEAD_LOOK_EXTREME_DOWN;
+            if (renderer != null)
+                renderer.noteControlEvent(event.name().replace('_', ' '));
+            if (inputBindingEngine != null && !isGuestInputSuppressed())
+                inputBindingEngine.pulse(event);
         }
         // Only the bundled Doom profile interprets absolute vertical gaze
         // as held movement/menu arrows. Other DOS games remain unmodified.
@@ -1190,8 +1215,11 @@ public final class VrActivity extends Activity
         if (Math.abs(yawDeltaRadians) > 0.16f
             && now - lastSharpTurnAtNanos > 850000000L) {
             lastSharpTurnAtNanos = now;
-            if (renderer != null) renderer.noteControlEvent(
-                yawDeltaRadians > 0 ? "HEAD SHARP RIGHT" : "HEAD SHARP LEFT");
+            BindingInput event = yawDeltaRadians > 0
+                ? BindingInput.HEAD_SHARP_RIGHT : BindingInput.HEAD_SHARP_LEFT;
+            if (renderer != null)
+                renderer.noteControlEvent(event.name().replace('_', ' '));
+            inputBindingEngine.pulse(event);
         }
         inputBindingEngine.submitRelative(
             BindingInput.HEAD_YAW_DELTA,
