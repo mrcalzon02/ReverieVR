@@ -1,3 +1,7 @@
+## Bounded GLES shader and program-link failure diagnostics (2026-10-13)
+
+The existing `ReverieNativeCompileShader` and `ReverieNativeBuildProgram` APIs remain source-compatible and retain their resource creation/deletion contract. Optional `ReverieNativeCompileShaderDiagnosticV1` and `ReverieNativeBuildProgramDiagnosticV1` variants accept a caller-owned, bounded output buffer. They capture the GLES driver shader/program info log **only on compile/link failure**; normal successful compilation has no extra driver queries or heap allocations. A missing log yields an explicit stage-specific fallback. The six classic games share the same source module and now report these messages through the existing ABI-v1 host logging callback if their shader cannot be created, compiled, or linked. Other modules continue using the original interfaces unchanged.
+
 # ReverieVR Native Core Utilities
 
 **Status:** implemented provisional shared utility layer.

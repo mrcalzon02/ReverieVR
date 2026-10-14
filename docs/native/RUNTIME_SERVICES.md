@@ -1,3 +1,7 @@
+## Native classic-game shader diagnostics (2026-10-13)
+
+The six classic modules (Pong, Snake, Chutes and Ladders, Checkers, Go, Chess) use the shared shader builder's new bounded diagnostic variant. If a Galaxy S9 GLES2 driver rejects their vertex shader, fragment shader, or program link, the first-party module reports the failing stage and available driver information through the already-implemented host logging callback. The host carries that bounded guest error into the existing in-headset failure notice, alongside the module id and GLES error code. No new UI, module ABI, game rules, head/controller calibration, successful GL path or charge HUD transformation was introduced. Signed build and real-phone test remain pending.
+
 ## Native module GL-context creation isolation (2026-10-13)
 
 An inherited shell GLES error flag can predate a module's shader/VBO setup as well as its eye render. The native host now isolates inherited errors before invoking either `on_gl_context_created` or `render_eye`, logging at most one inherited-error warning per active module session. The module's own lifecycle callbacks and fail-closed policy are unchanged; reported GL creation failures now identify their module and available GL code for the in-headset failure notice. This is not a workaround for failed guest shader compilation or unsupported hardware.

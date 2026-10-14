@@ -39,6 +39,7 @@ constexpr char kTitle[]="CHESS";
 #error "Unknown classic game"
 #endif
 struct Module {
+    const ReverieNativeHostV1 *host=nullptr;
     State game;
     reverie::boardgames::State board;
     int boardCursorX=0,boardCursorY=0;
@@ -319,9 +320,10 @@ void DestroyGl(Module *m){
     if(m->program)glDeleteProgram(m->program);
     m->vbo=m->program=0;m->dirty=m->upload=true;
 }
-void *Create(const ReverieNativeHostV1 *){
+void *Create(const ReverieNativeHostV1 *host){
     Module *m=new(std::nothrow) Module();
     if(m){
+        m->host=host;
 #if CLASSIC_GAME_KIND >= 3
         m->board.Reset(static_cast<reverie::boardgames::Kind>(CLASSIC_GAME_KIND));
 #else
@@ -343,7 +345,14 @@ int32_t GlCreate(void *ptr){
         "void main(){gl_FragColor=vec4(v_Col,1.);}";
     const ReverieNativeGlAttributeBindingV1 bindings[]={
         {0u,"a_Pos"},{1u,"a_Col"}};
-    m->program=ReverieNativeBuildProgram(vs,fs,bindings,2);
+    char shaderDiagnostic[256] = {};
+    m->program=ReverieNativeBuildProgramDiagnosticV1(
+        vs,fs,bindings,2,shaderDiagnostic,sizeof(shaderDiagnostic));
+    if(!m->program){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+            "ReverieClassicGL",shaderDiagnostic[0] != ' '
+                ? shaderDiagnostic : "GLES2 shader program unavailable");
+    }
     if(m->program){
         m->pos=glGetAttribLocation(m->program,"a_Pos");
         m->col=glGetAttribLocation(m->program,"a_Col");

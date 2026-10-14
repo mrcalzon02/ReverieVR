@@ -65,6 +65,8 @@ struct NativeSession {
     std::string storage_root;
     bool gl_ready = false;
     bool warned_inherited_gl_error = false;
+    // Stored only for a failed GL creation callback, not a global log sink.
+    std::string last_guest_error;
     std::atomic<uint32_t> pending_feedback_flags{0u};
 };
 
@@ -160,6 +162,12 @@ void HostLog(
         "%s",
         message != nullptr ? message : ""
     );
+    if (level == REVERIE_NATIVE_LOG_ERROR
+        && g_callback_session != nullptr && message != nullptr) {
+        // Preserve the *guest's* bounded error while the GL callback is
+        // active; the later host failure must not erase shader diagnostics.
+        g_callback_session->last_guest_error.assign(message, 0, 192);
+    }
 }
 
 bool IsSafeSaveSlot(const char *slot) {
@@ -785,6 +793,7 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeOnSurfaceCreated(
     // The parent shell has already drawn/created GLES resources. A stale GL
     // flag from that work must not fail a valid guest initialization.
     DrainInheritedGlErrors(session, "context-create", -1);
+    session->last_guest_error.clear();
     {
         CallbackSessionScope scope(session);
         session->gl_ready =
@@ -799,7 +808,9 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeOnSurfaceCreated(
         std::snprintf(error_text, sizeof(error_text), "0x%x",
             static_cast<unsigned>(guest_error));
         SetError(std::string("Native GL initialization failed module=")
-            + session->spec->id + " guest_GL=" + error_text);
+            + session->spec->id + " guest_GL=" + error_text
+            + (session->last_guest_error.empty()
+                ? "" : " detail=" + session->last_guest_error));
         return JNI_FALSE;
     }
 
