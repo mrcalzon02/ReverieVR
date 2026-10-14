@@ -1,3 +1,7 @@
+## Native game shader error presentation (2026-10-13)
+
+The native Home and library failure footer are short. When the host's full error includes a `detail=` segment from a module's GLES shader compiler/linker, the shell displays that useful bounded driver message first rather than truncating it behind a long JNI prefix. The full module id, native host error and shader detail remain in the diagnostics incident, and the existing fail-closed start/GL/render handling is unchanged. No input, view, controller or battery HUD changes.
+
 ## Native classic-game shader diagnostics (2026-10-13)
 
 The six classic modules (Pong, Snake, Chutes and Ladders, Checkers, Go, Chess) use the shared shader builder's new bounded diagnostic variant. If a Galaxy S9 GLES2 driver rejects their vertex shader, fragment shader, or program link, the first-party module reports the failing stage and available driver information through the already-implemented host logging callback. The host carries that bounded guest error into the existing in-headset failure notice, alongside the module id and GLES error code. No new UI, module ABI, game rules, head/controller calibration, successful GL path or charge HUD transformation was introduced. Signed build and real-phone test remain pending.

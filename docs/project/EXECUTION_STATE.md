@@ -1,3 +1,7 @@
+## 2026-10-13 — Native launch failure hints prioritize shader details
+
+Followed up the six-classic shader diagnostic work by surfacing the native host's `detail=` portion first in the existing headset Home/native shelf footer (which truncates long text). The original complete error is still written to the diagnostic incident for accurate troubleshooting. Successful launch, shader GLSL, module ABI, controller, headset view and charge overlay are unchanged. Signed APK/device acceptance pending.
+
 ## 2026-10-13 — Classic-game shader driver diagnostics
 
 Signed Phone Test #160 succeeded, including direct ELF verification of all 24 host/module objects and their exported native launch symbols; handset GLES2 launch remains unconfirmed. Targeted the final blind spot that `ReverieNativeBuildProgram` deletes failed shaders/programs without preserving the Adreno/compiler/linker info log, so a real shader compile failure could still appear as `guest_GL=0x0`. Added optional bounded diagnostics to the existing shared shader builder while retaining the original helper signatures. All six classic games now request the error buffer and emit failures via their existing ABI-v1 log callback; the JNI host retains that bounded guest message only for a failed GL creation callback and appends it to the module/GL code in the existing VR failure notice/diagnostics. Normal successful rendering, gameplay, headset matrices, HUD, and input are unchanged. Android release build and Galaxy S9 test pending.

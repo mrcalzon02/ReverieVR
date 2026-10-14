@@ -5086,12 +5086,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
             ? "native module" : moduleId;
         String error = nativeModuleRuntime == null
             ? "" : nativeModuleRuntime.getLastError();
-        lastNativeFailureReason = error.isEmpty()
-            ? "Module could not start or draw." : error;
+        // The Home hint fits only 54 glyphs. Prefer a module-reported shader
+        // error over the lengthy JNI/GL prefix, which would hide the useful
+        // driver log. The incident retains the complete unabridged error.
+        int detailIndex = error.indexOf(" detail=");
+        lastNativeFailureReason = detailIndex >= 0
+            ? error.substring(detailIndex + " detail=".length())
+            : error.isEmpty() ? "Module could not start or draw." : error;
         textureDirty = true;
         ReverieLog.incident("NATIVE_MODULE",
             "In-headset launch failure id=" + lastNativeFailureId
-                + " reason=" + lastNativeFailureReason);
+                + " reason=" + error);
     }
 
     private void clearNativeModuleFailure() {
