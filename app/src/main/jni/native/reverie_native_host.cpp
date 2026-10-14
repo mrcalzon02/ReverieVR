@@ -1,6 +1,7 @@
 #include "reverie_native_sdk.h"
 
 #include <android/log.h>
+#include <GLES2/gl2.h>
 #include <dlfcn.h>
 #include <jni.h>
 
@@ -63,6 +64,7 @@ struct NativeSession {
     void *instance = nullptr;
     std::string storage_root;
     bool gl_ready = false;
+    bool warned_inherited_gl_error = false;
     std::atomic<uint32_t> pending_feedback_flags{0u};
 };
 
@@ -945,18 +947,37 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeRenderEye(
         return JNI_FALSE;
     }
 
+    // Native games check GL errors after their own draw. Without isolating
+    // the call boundary, an error left by the surrounding Cardboard/shell
+    // renderer can be misattributed to *every* game, immediately ejecting it
+    // to Home despite valid guest drawing. Record that inherited error and
+    // clear it BEFORE invoking the guest; do not clear genuine guest errors.
+    GLenum first_inherited_error = GL_NO_ERROR;
+    for (int drain = 0; drain < 8; ++drain) {
+        const GLenum error = glGetError();
+        if (error == GL_NO_ERROR) break;
+        if (first_inherited_error == GL_NO_ERROR) first_inherited_error = error;
+    }
+    if (first_inherited_error != GL_NO_ERROR
+        && !session->warned_inherited_gl_error) {
+        session->warned_inherited_gl_error = true;
+        __android_log_print(ANDROID_LOG_WARN, "ReverieNativeHost",
+            "Inherited GL error before module=%s eye=%d: 0x%x",
+            session->spec->id, static_cast<int>(eye_index),
+            static_cast<unsigned>(first_inherited_error));
+    }
+
     int32_t rendered = 0;
     {
         CallbackSessionScope scope(session);
-        rendered =
-            session->api->render_eye(
-                session->instance,
-                &eye
-            );
+        rendered = session->api->render_eye(session->instance, &eye);
     }
 
     if (rendered == 0) {
-        SetError("Native module render callback reported failure.");
+        SetError(std::string("Native module render failed: ")
+            + session->spec->id + " eye="
+            + std::to_string(static_cast<int>(eye_index))
+            + ". Review guest GL diagnostics.");
         return JNI_FALSE;
     }
 

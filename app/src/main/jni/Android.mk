@@ -19,7 +19,7 @@ LOCAL_SRC_FILES := native/reverie_native_host.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -llog -ldl
+LOCAL_LDLIBS += -llog -ldl -lGLESv2
 
 include $(BUILD_SHARED_LIBRARY)
 

@@ -2103,8 +2103,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             orientationMenuVisible && keyboardQuickMenuFocusActive
                 ? hoveredButton
                 : uiTargetStabilizer.update(rawHover, frameNanos, selecting);
-        controllerPointerActive = usingControllerPointer || gazeFallbackActive
-            || mode == MODE_DOS;
+        // Gaze selection already has shell hover and a five-second dwell cue.
+        // An idle ray originating at the headset itself appears as a blue
+        // spike in the center of vision when a controller pose goes stale.
+        controllerPointerActive = usingControllerPointer;
         controllerPointerDistance = geometryCloser
             ? scenePointerHit.distance
             : hasUiTarget ? hit.distance : 6.0f;
@@ -2120,7 +2122,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerPointerHit, pointerPressed
         );
 
-        if (usingControllerPointer || gazeFallbackActive || mode == MODE_DOS) {
+        if (usingControllerPointer) {
             pointerRenderer.setPointer(
                 true,
                 activePointerOrigin[0],
