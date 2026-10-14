@@ -2235,11 +2235,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             previousScissor,
             0
         );
-        GLES20.glGetIntegerv(
-            GLES20.GL_SCISSOR_TEST,
-            scissorEnabled,
-            0
-        );
+        // GL_SCISSOR_TEST is an enable capability, not a viewport integer
+        // query. glGetIntegerv here can set GL_INVALID_ENUM, which native
+        // games otherwise inherit and misread as their own render failure.
+        scissorEnabled[0] = GLES20.glIsEnabled(GLES20.GL_SCISSOR_TEST)
+            ? 1 : 0;
 
         if (eyeViewport[2] <= 0
             || eyeViewport[3] <= 0) {

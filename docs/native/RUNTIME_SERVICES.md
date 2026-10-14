@@ -1,3 +1,7 @@
+## Native game entry: GL scissor capability fix (2026-10-13)
+
+The shell now reads the GLES2 `GL_SCISSOR_TEST` enable flag with `GLES20.glIsEnabled`, preserving the original scissor-state restore behavior. The previous `glGetIntegerv(GL_SCISSOR_TEST,...)` query is not the documented capability query and can introduce an inherited `GL_INVALID_ENUM` into the first native draw; every native module checks OpenGL errors when rendering, so the shared error could force a false return to Home. Native host GL-error isolation remains an independent diagnostic defense, not a replacement for correcting the bad shell query. Actual Galaxy S9 native launch and dual-eye render still require physical proof.
+
 ## Headset-only pointer beam suppression (2026-10-13)
 
 Shell fallback to headset gaze retains live hit testing, focus highlights and five-second dwell selection, including controller-loss and DOS operation. The projected blue pointer ribbon is now rendered **only** for a live tracked controller or explicitly selected virtual gamepad pointer; losing a controller does not generate a beam from the headset's origin. This changes no native input ray, game rules, actual controller beam, camera pose or system power HUD. Device visual confirmation remains pending.
