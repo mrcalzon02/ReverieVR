@@ -1,3 +1,7 @@
+## Native module GL-context creation isolation (2026-10-13)
+
+An inherited shell GLES error flag can predate a module's shader/VBO setup as well as its eye render. The native host now isolates inherited errors before invoking either `on_gl_context_created` or `render_eye`, logging at most one inherited-error warning per active module session. The module's own lifecycle callbacks and fail-closed policy are unchanged; reported GL creation failures now identify their module and available GL code for the in-headset failure notice. This is not a workaround for failed guest shader compilation or unsupported hardware.
+
 ## In-headset native launch failure evidence (2026-10-13)
 
 The native games/apps shelf and Home now show the title id and last bounded native host error when a packaged module fails to start, initialize its GL surface, or render an eye. The runtime still stops failed modules and releases its hosted binding profile; this is **not** a retry loop or a failure bypass. The displayed failure text is cleared by the next successful native-module launch. The existing Android incident diagnostics remain authoritative for the full error and are unchanged. Normal Back/Home and successful game navigation are unchanged; user-facing headset acceptance remains pending.

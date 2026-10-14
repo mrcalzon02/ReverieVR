@@ -110,6 +110,28 @@ std::string GetError() {
     return g_last_error;
 }
 
+// Isolate pre-existing Cardboard/shell errors at BOTH guest lifecycle entry
+// points. Draining only before render is too late for modules that inspect GL
+// errors while creating shaders and buffers in on_gl_context_created.
+// Errors raised by the guest after this boundary remain guest-owned.
+void DrainInheritedGlErrors(NativeSession *session, const char *phase,
+                            int eye_index) {
+    GLenum first = GL_NO_ERROR;
+    for (int i = 0; i < 8; ++i) {
+        GLenum error = glGetError();
+        if (error == GL_NO_ERROR) break;
+        if (first == GL_NO_ERROR) first = error;
+    }
+    if (first != GL_NO_ERROR && session != nullptr
+        && !session->warned_inherited_gl_error) {
+        session->warned_inherited_gl_error = true;
+        __android_log_print(ANDROID_LOG_WARN, "ReverieNativeHost",
+            "Inherited GL error module=%s phase=%s eye=%d code=0x%x",
+            session->spec != nullptr ? session->spec->id : "unknown",
+            phase, eye_index, static_cast<unsigned>(first));
+    }
+}
+
 void HostLog(
     int32_t level,
     const char *tag,
@@ -760,6 +782,9 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeOnSurfaceCreated(
         return JNI_FALSE;
     }
 
+    // The parent shell has already drawn/created GLES resources. A stale GL
+    // flag from that work must not fail a valid guest initialization.
+    DrainInheritedGlErrors(session, "context-create", -1);
     {
         CallbackSessionScope scope(session);
         session->gl_ready =
@@ -769,7 +794,12 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeOnSurfaceCreated(
     }
 
     if (!session->gl_ready) {
-        SetError("Native module failed to initialize its GL resources.");
+        const GLenum guest_error = glGetError();
+        char error_text[24];
+        std::snprintf(error_text, sizeof(error_text), "0x%x",
+            static_cast<unsigned>(guest_error));
+        SetError(std::string("Native GL initialization failed module=")
+            + session->spec->id + " guest_GL=" + error_text);
         return JNI_FALSE;
     }
 
@@ -947,25 +977,10 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeRenderEye(
         return JNI_FALSE;
     }
 
-    // Native games check GL errors after their own draw. Without isolating
-    // the call boundary, an error left by the surrounding Cardboard/shell
-    // renderer can be misattributed to *every* game, immediately ejecting it
-    // to Home despite valid guest drawing. Record that inherited error and
-    // clear it BEFORE invoking the guest; do not clear genuine guest errors.
-    GLenum first_inherited_error = GL_NO_ERROR;
-    for (int drain = 0; drain < 8; ++drain) {
-        const GLenum error = glGetError();
-        if (error == GL_NO_ERROR) break;
-        if (first_inherited_error == GL_NO_ERROR) first_inherited_error = error;
-    }
-    if (first_inherited_error != GL_NO_ERROR
-        && !session->warned_inherited_gl_error) {
-        session->warned_inherited_gl_error = true;
-        __android_log_print(ANDROID_LOG_WARN, "ReverieNativeHost",
-            "Inherited GL error before module=%s eye=%d: 0x%x",
-            session->spec->id, static_cast<int>(eye_index),
-            static_cast<unsigned>(first_inherited_error));
-    }
+    // Per-eye checks stay independent from the context-creation boundary.
+    // Never clear errors produced by the guest itself.
+    DrainInheritedGlErrors(session, "render-eye",
+        static_cast<int>(eye_index));
 
     int32_t rendered = 0;
     {
