@@ -47,17 +47,21 @@ struct Module {
     bool boardCursorActive=false;
     float cursorRepeat=0.f;
     bool previousSecondary=false;
-    GLuint program=0,vbo=0;
+    GLuint program=0,vbo=0,staticVbo=0;
     GLint pos=-1,col=-1,mvp=-1;
-    bool down=false,dirty=true,upload=true;
-    std::vector<float> vertices;
+    bool down=false,dirty=true,upload=true,staticPass=false;
+    GLsizei staticCount=0;
+    std::vector<float> vertices,staticVertices;
 };
+std::vector<float> &Emit(Module *m){
+    return m->staticPass ? m->staticVertices : m->vertices;
+}
 void Triangle(Module *m,float ax,float ay,float bx,float by,float cx,float cy,
               float z,float r,float g,float b){
-    reverie::flatmesh::Triangle(m->vertices,ax,ay,bx,by,cx,cy,z,r,g,b);
+    reverie::flatmesh::Triangle(Emit(m),ax,ay,bx,by,cx,cy,z,r,g,b);
 }
 void Rect(Module *m,float x,float y,float w,float h,float z,float r,float g,float b){
-    reverie::flatmesh::Rect(m->vertices,x,y,w,h,z,r,g,b);
+    reverie::flatmesh::Rect(Emit(m),x,y,w,h,z,r,g,b);
 }
 const char *Glyph(char c){
     switch(c){
@@ -99,14 +103,14 @@ void Text(Module *m,const char *s,float x,float y,float scale,
 }
 void Segment(Module *m,float x,float y,float xx,float yy,float width,
              float r,float g,float b){
-    reverie::flatmesh::Segment(m->vertices,x,y,xx,yy,width,-2.87f,r,g,b);
+    reverie::flatmesh::Segment(Emit(m),x,y,xx,yy,width,-2.87f,r,g,b);
 }
 float CellX(int n){const int idx=n-1,row=idx/10,col=idx%10;
     return -1.24f+(row%2==0?col:9-col)*.274f;}
 float CellY(int n){return -1.22f+((n-1)/10)*.274f;}
 
 void Disc(Module *m,float x,float y,float rad,float z,float r,float g,float b){
-    reverie::flatmesh::Disc(m->vertices,x,y,rad,z,r,g,b);
+    reverie::flatmesh::Disc(Emit(m),x,y,rad,z,r,g,b);
 }
 float BoardSpacing(const reverie::boardgames::State &s){
     return s.Size()==9?.268f:.320f;
@@ -125,28 +129,33 @@ void BoardOutline(Module *m,float x,float y,float length,
     Rect(m,x-half,y,.020f,length,-2.94f,r,g,b);
     Rect(m,x+half,y,.020f,length,-2.94f,r,g,b);
 }
-void RebuildBoard(Module *m){
-    m->vertices.clear();
+void RebuildBoard(Module *m,bool fixed){
+    m->staticPass=fixed;
+    if(fixed)m->staticVertices.clear();
+    else m->vertices.clear();
     const reverie::boardgames::State &s=m->board;
     const int size=s.Size();
     const float gap=BoardSpacing(s);
-    Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
-    Rect(m,0,0,3.08f,3.08f,-3.045f,.34f,.24f,.15f);
-    Text(m,kTitle,0,1.58f,.082f,.91f,.94f,.94f);
+    if(fixed){
+        Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
+        Rect(m,0,0,3.08f,3.08f,-3.045f,.34f,.24f,.15f);
+        Text(m,kTitle,0,1.58f,.082f,.91f,.94f,.94f);
+    }
     for(int y=0;y<size;y++)for(int x=0;x<size;x++){
         float px=BoardX(s,x),py=BoardY(s,y);
         const bool dark=(x+y)%2!=0;
-        if(s.kind==reverie::boardgames::Kind::Go){
+        if(fixed && s.kind==reverie::boardgames::Kind::Go){
             Rect(m,px,py,gap-.015f,gap-.015f,-3.01f,
                  .69f,.51f,.29f);
             Rect(m,px,py,gap-.018f,.008f,-2.985f,.19f,.13f,.09f);
             Rect(m,px,py,.008f,gap-.018f,-2.985f,.19f,.13f,.09f);
             if((x==2||x==4||x==6)&&(y==2||y==4||y==6))
                 Disc(m,px,py,.023f,-2.979f,.15f,.11f,.09f);
-        }else{
+        }else if(fixed){
             Rect(m,px,py,gap-.008f,gap-.008f,-3.00f,
                  dark?.19f:.77f,dark?.32f:.80f,dark?.35f:.70f);
         }
+        if(!fixed){
         int cell=y*size+x;
         const int piece=s.cells[cell];
         if(piece!=0){
@@ -192,43 +201,50 @@ void RebuildBoard(Module *m){
         if(m->boardCursorActive && m->boardCursorX==x &&
            m->boardCursorY==y)
             BoardOutline(m,px,py,gap*.76f,.93f,.98f,.99f);
+        }
     }
-    if(s.kind==reverie::boardgames::Kind::Go){
+    if(fixed && s.kind==reverie::boardgames::Kind::Go){
         Rect(m,1.94f,-1.25f,.89f,.41f,-2.98f,.23f,.36f,.42f);
         Text(m,"PASS",1.94f,-1.25f,.067f,1.f,1.f,.89f);
         Text(m,"TWO PASSES END",0,-1.58f,.048f,.80f,.90f,.87f);
-    }else{
+    }else if(fixed){
         Text(m,"SELECT PIECE THEN DESTINATION",0,-1.58f,.040f,
              .84f,.90f,.87f);
     }
-    if(s.finished){
+    if(!fixed && s.finished){
         const char *msg=s.winner==1?"YOU WIN":s.winner==-1?
             "CPU WINS":"DRAW";
         Text(m,msg,0,1.34f,.074f,1.f,.91f,.58f);
         Text(m,"PRESS TO RESTART",1.91f,.66f,.043f,1.f,.95f,.78f);
-    }else{
+    }else if(!fixed){
         Text(m,s.side==1?"YOUR TURN":"CPU THINKING",
              0,1.34f,.064f,.95f,.95f,.78f);
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
             Text(m,"CONTINUE JUMP",1.88f,.63f,.044f,1.f,.90f,.56f);
     }
-    m->dirty=false;
-    m->upload=true;
+    if(fixed)m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
+    else {m->dirty=false;m->upload=true;}
 }
-void Rebuild(Module *m){
+void Rebuild(Module *m,bool fixed){
 #if CLASSIC_GAME_KIND >= 3
-    RebuildBoard(m);
+    RebuildBoard(m,fixed);
     return;
 #endif
-    m->vertices.clear();
+    m->staticPass=fixed;
+    if(fixed)m->staticVertices.clear();
+    else m->vertices.clear();
     const State &s=m->game;
-    Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
-    Text(m,kTitle,0,1.57f,.092f,.78f,.94f,.96f);
+    if(fixed){
+        Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
+        Text(m,kTitle,0,1.57f,.092f,.78f,.94f,.96f);
+    }
     char status[48];
     if(s.game==Game::Pong){
+        if(fixed){
         Rect(m,0,0,3.7f,2.60f,-3.04f,.08f,.13f,.20f);
         for(int i=0;i<9;i++)
             Rect(m,0,-1.16f+i*.29f,.032f,.13f,-2.99f,.30f,.39f,.43f);
+        }else{
         Rect(m,s.paddle*1.55f,-1.12f,.68f,.075f,-2.96f,.33f,.95f,.78f);
         Rect(m,s.ai*1.55f,1.12f,.68f,.075f,-2.96f,.98f,.60f,.44f);
         Rect(m,s.ball_x*1.55f,s.ball_y*1.22f,.11f,.11f,-2.93f,.94f,.95f,.70f);
@@ -237,13 +253,16 @@ void Rebuild(Module *m){
         Text(m,s.finished?"PRESS TO RESTART":
              s.moving?"MOVE PADDLE TO BLOCK":"PRESS TO SERVE",
              0,-1.46f,.040f,.70f,.83f,.83f);
+        }
     }else if(s.game==Game::Snake){
+        if(fixed){
         Rect(m,0,0,2.63f,2.62f,-3.04f,.06f,.16f,.15f);
         for(int y=0;y<State::kGrid;y++)for(int x=0;x<State::kGrid;x++){
             const float px=(x-5.5f)*.21f,py=(5.5f-y)*.21f;
             Rect(m,px,py,.19f,.19f,-3.0f,
                  (x+y)%2?.085f:.075f,.19f,.18f);
         }
+        }else{
         if(s.food>=0){
             const int x=s.food%12,y=s.food/12;
             Rect(m,(x-5.5f)*.21f,(5.5f-y)*.21f,
@@ -255,6 +274,8 @@ void Rebuild(Module *m){
                  (5.5f-(cell/12))*.21f,.185f,.185f,-2.94f,
                  i==0?.76f:.32f,i==0?1.f:.82f,.45f);
         }
+        }
+        if(fixed){
         const char *dirs[]={"UP","RIGHT","DOWN","LEFT"};
         const float x[]={0,2.02f,0,-2.02f};
         const float y[]={1.02f,0,-1.02f,0};
@@ -263,12 +284,15 @@ void Rebuild(Module *m){
                  -2.97f,.20f,.33f,.39f);
             Text(m,dirs[i],x[i],y[i],.052f,.85f,.93f,.88f);
         }
+        }else{
         std::snprintf(status,sizeof(status),"FOOD %d",s.score);
         Text(m,status,0,1.34f,.06f,.86f,.91f,.68f);
         Text(m,s.finished?"PRESS TO RESTART":
              s.moving?"POINT TO TURN":"PRESS TO START",
              0,-1.48f,.043f,.78f,.90f,.83f);
+        }
     }else{
+        if(fixed){
         Rect(m,0,0,2.85f,2.86f,-3.04f,.15f,.16f,.17f);
         for(int n=1;n<=100;n++){
             const float x=CellX(n),y=CellY(n);
@@ -282,23 +306,29 @@ void Rebuild(Module *m){
             Segment(m,CellX(from),CellY(from),CellX(to),CellY(to),
                     .055f,i<5?.32f:.95f,i<5?.96f:.40f,.50f);
         }
+        Rect(m,0,-1.56f,2.8f,.29f,-2.97f,.22f,.33f,.35f);
+        }else{
         if(s.position>0)Rect(m,CellX(s.position)-.06f,CellY(s.position),
                              .11f,.15f,-2.92f,.32f,.96f,.73f);
         if(s.rival>0)Rect(m,CellX(s.rival)+.06f,CellY(s.rival),
                           .11f,.15f,-2.92f,1.f,.61f,.47f);
         std::snprintf(status,sizeof(status),"YOU %d   CPU %d",s.position,s.rival);
         Text(m,status,0,1.36f,.047f,.94f,.89f,.68f);
-        Rect(m,0,-1.56f,2.8f,.29f,-2.97f,.22f,.33f,.35f);
         Text(m,s.finished?(s.position==100?"YOU WIN PRESS":"CPU WINS PRESS"):
              s.player_turn?"SELECT TO ROLL":"CPU ROLLING",
              0,-1.56f,.045f,1,.96f,.78f);
+        }
     }
-    m->dirty=false;m->upload=true;
+    if(fixed)m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
+    else {m->dirty=false;m->upload=true;}
 }
 void DestroyGl(Module *m){
     if(m->vbo)glDeleteBuffers(1,&m->vbo);
+    if(m->staticVbo)glDeleteBuffers(1,&m->staticVbo);
     if(m->program)glDeleteProgram(m->program);
-    m->vbo=m->program=0;m->dirty=m->upload=true;
+    m->vbo=m->staticVbo=m->program=0;
+    m->staticCount=0;
+    m->dirty=m->upload=true;
 }
 void *Create(const ReverieNativeHostV1 *host){
     Module *m=new(std::nothrow) Module();
@@ -317,7 +347,7 @@ int32_t GlCreate(void *ptr){
     Module *m=static_cast<Module *>(ptr);if(!m)return 0;
     ReverieNativeGlStateV1 saved={};
     ReverieNativeGlStateCaptureV1(&saved);
-    m->program=m->vbo=0;
+    m->program=m->vbo=m->staticVbo=0;
     const char *vs="uniform mat4 u_Mvp; attribute vec3 a_Pos;"
         "attribute vec3 a_Col;varying vec3 v_Col;"
         "void main(){gl_Position=u_Mvp*vec4(a_Pos,1.);v_Col=a_Col;}";
@@ -338,8 +368,30 @@ int32_t GlCreate(void *ptr){
         m->col=glGetAttribLocation(m->program,"a_Col");
         m->mvp=glGetUniformLocation(m->program,"u_Mvp");
         glGenBuffers(1,&m->vbo);
+        glGenBuffers(1,&m->staticVbo);
     }
-    const bool ok=m->program&&m->vbo&&m->pos>=0&&m->col>=0&&m->mvp>=0;
+    bool ok=m->program&&m->vbo&&m->staticVbo&&
+        m->pos>=0&&m->col>=0&&m->mvp>=0;
+    if(ok){
+        // Bake immutable primitives once per GL context, for both eyes.
+        Rebuild(m,true);
+        glBindBuffer(GL_ARRAY_BUFFER,m->staticVbo);
+        glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(
+            m->staticVertices.size()*sizeof(float)),
+            m->staticVertices.data(),GL_STATIC_DRAW);
+        const GLenum error=glGetError();
+        if(error!=GL_NO_ERROR){
+            char detail[80];
+            std::snprintf(detail,sizeof(detail),
+                "Classic static geometry GL error 0x%x",
+                static_cast<unsigned>(error));
+            ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+                               "ReverieClassicGL",detail);
+            ok=false;
+        }
+        // Deterministic recipe stays in source; release expanded CPU copy.
+        std::vector<float>().swap(m->staticVertices);
+    }
     if(!ok)DestroyGl(m);
     m->dirty=m->upload=true;
     ReverieNativeGlStateRestoreV1(&saved);
@@ -462,9 +514,9 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
 }
 int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
     Module *m=static_cast<Module *>(ptr);
-    if(!m||!ReverieNativeEyeRenderableV1(eye)||!m->program||!m->vbo)
-        return 0;
-    if(m->dirty)Rebuild(m);
+    if(!m||!ReverieNativeEyeRenderableV1(eye)||!m->program||
+       !m->vbo||!m->staticVbo)return 0;
+    if(m->dirty)Rebuild(m,false);
     ReverieNativeGlStateV1 prior={};
     ReverieNativeGlAttribStateV1 a={},b={};
     ReverieNativeGlStateCaptureV1(&prior);
@@ -479,14 +531,20 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
     }
     glEnableVertexAttribArray(static_cast<GLuint>(m->pos));
     glEnableVertexAttribArray(static_cast<GLuint>(m->col));
-    glVertexAttribPointer(static_cast<GLuint>(m->pos),3,GL_FLOAT,
-                          GL_FALSE,6*sizeof(float),reinterpret_cast<void *>(0));
-    glVertexAttribPointer(static_cast<GLuint>(m->col),3,GL_FLOAT,
-                          GL_FALSE,6*sizeof(float),
-                          reinterpret_cast<void *>(3*sizeof(float)));
     float vp[16];ReverieNativeMat4Multiply(vp,eye->projection,eye->view);
     glUniformMatrix4fv(m->mvp,1,GL_FALSE,vp);
-    glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(m->vertices.size()/6));
+    const auto drawLayer=[&](GLuint buffer,GLsizei count){
+        if(count<=0)return;
+        glBindBuffer(GL_ARRAY_BUFFER,buffer);
+        glVertexAttribPointer(static_cast<GLuint>(m->pos),3,GL_FLOAT,
+                              GL_FALSE,6*sizeof(float),reinterpret_cast<void *>(0));
+        glVertexAttribPointer(static_cast<GLuint>(m->col),3,GL_FLOAT,
+                              GL_FALSE,6*sizeof(float),
+                              reinterpret_cast<void *>(3*sizeof(float)));
+        glDrawArrays(GL_TRIANGLES,0,count);
+    };
+    drawLayer(m->staticVbo,m->staticCount);
+    drawLayer(m->vbo,static_cast<GLsizei>(m->vertices.size()/6));
     ReverieNativeGlAttribRestoreV1(&b);
     ReverieNativeGlAttribRestoreV1(&a);
     ReverieNativeGlStateRestoreV1(&prior);

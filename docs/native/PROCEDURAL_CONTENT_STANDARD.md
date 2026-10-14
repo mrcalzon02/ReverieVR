@@ -153,6 +153,10 @@ Complex authored meshes remain valid when they are smaller, clearer, or material
 
 `app/src/main/jni/native/reverie_native_flat_mesh.h` is a provisional C++17 CPU-only primitive builder used by all six classics and both recon boards. It emits deterministic XYZ/RGB triangle recipes; the caller owns GL upload, context recovery and update cadence. Snake and Chutes and Ladders now skip rebuilding/uploading when their visible state is unchanged. This is not a generalized serialized model system, and Galaxy S9 performance remains unmeasured.
 
+### Classic layered geometry reference
+
+The six packaged classics now construct immutable board/grid/title recipes once at GLES context creation through the existing flat-geometry helper and upload a `GL_STATIC_DRAW` buffer. The module releases expanded static CPU vertices and rebuilds them only after GL context loss. Moving game elements use an independent `GL_DYNAMIC_DRAW` buffer rebuilt when visible state changes. Each eye draws both unchanged buffers without stepping gameplay. This provisional, game-owned technique trades an additional draw call for reduced CPU work and GPU traffic; S9 thermal/frame-pacing acceptance remains open. It does not introduce a new native ABI.
+
 ## Interaction geometry
 
 Game interaction does not require production-render mesh precision by default.
