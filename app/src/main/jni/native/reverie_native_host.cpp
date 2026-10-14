@@ -166,7 +166,7 @@ void HostLog(
         && g_callback_session != nullptr && message != nullptr) {
         // Preserve the *guest's* bounded error while the GL callback is
         // active; the later host failure must not erase shader diagnostics.
-        g_callback_session->last_guest_error.assign(message, 0, 192);
+        g_callback_session->last_guest_error.assign(message, strnlen(message, 192));
     }
 }
 
