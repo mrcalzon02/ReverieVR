@@ -24,6 +24,9 @@ enum BindingInput {
 
     HEAD_YAW_DELTA,
     HEAD_PITCH_DELTA,
+    // Head forward vector Y, positive for looking up. Absolute per-frame
+    // value, unlike the moving-only pitch delta used by mouse profiles.
+    HEAD_PITCH_UP_AXIS,
 
     // Physical Android HID button IDs, independent of the labels on
     // generic / Xbox 360 / DualShock faceplates. The shell still reserves

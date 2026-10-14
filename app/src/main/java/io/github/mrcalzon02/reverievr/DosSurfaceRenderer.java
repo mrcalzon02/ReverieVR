@@ -22,7 +22,6 @@ final class DosSurfaceRenderer {
     private final float[] model = new float[16];
     private final float[] modelView = new float[16];
     private final float[] mvp = new float[16];
-    private final int[] viewport = new int[4];
 
     private int program;
     private int texture;
@@ -206,18 +205,11 @@ final class DosSurfaceRenderer {
 
         pointerVisible = session != null && session.copyGuestPointer(pointerUv);
         if (fullScreen) {
-            // Real fullscreen: draw an eye-fixed flat image against the full
-            // Cardboard eye viewport, not a slightly enlarged 3D console.
-            // Preserve the DOS display aspect (letterbox when needed).
-            GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, viewport, 0);
-            float eyeAspect = viewport[3] > 0
-                ? (float) viewport[2] / viewport[3] : 1.0f;
-            float screenAspect = displayAspect > 0.0f
-                ? displayAspect : 4.0f / 3.0f;
-            float scaleX = Math.min(1.0f, screenAspect / eyeAspect);
-            float scaleY = Math.min(1.0f, eyeAspect / screenAspect);
+            // Fill every pixel of EACH eye's native Cardboard viewport.
+            // Deliberate full bleed: no 3D screen, room, aspect margins or
+            // stereo panorama. Raw DOS pixels are independently drawn to
+            // both eyes as a stable 2D image.
             Matrix.setIdentityM(mvp, 0);
-            Matrix.scaleM(mvp, 0, scaleX, scaleY, 1.0f);
         } else {
             System.arraycopy(eye.getEyeView(), 0, eyeView, 0, 16);
             Matrix.translateM(correctedEyeView, 0, eyeView, 0,

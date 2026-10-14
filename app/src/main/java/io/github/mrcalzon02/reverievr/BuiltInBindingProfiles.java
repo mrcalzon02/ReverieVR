@@ -175,6 +175,17 @@ final class BuiltInBindingProfiles {
                 0.0f
             )
         );
+        // Original DOS Doom has NO free vertical camera pitch. Use head
+        // inclination as actual Up/Down guest keyboard controls instead:
+        // in-game Forward/Back, and UP/DOWN navigation in Doom menus.
+        // Entry at sin(12 deg)~.21; InputBindingEngine releases at 70%
+        // of that angle threshold to prevent neutral-zone chatter.
+        doom.add(InputBinding.positiveThreshold(
+            BindingInput.HEAD_PITCH_UP_AXIS,
+            VirtualOutput.key(VirtualKey.UP), 0.21f));
+        doom.add(InputBinding.negativeThreshold(
+            BindingInput.HEAD_PITCH_UP_AXIS,
+            VirtualOutput.key(VirtualKey.DOWN), 0.21f));
         // Doom can fire on either its keyboard default or DOS mouse button.
         doom.add(InputBinding.digital(BindingInput.SELECT,
             VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));

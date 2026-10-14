@@ -142,7 +142,7 @@ final class InputBindingEngine {
                     updateThreshold(
                         index,
                         binding.output,
-                        safeValue >= binding.threshold
+                        safeValue >= thresholdFor(binding, index)
                     );
                     break;
 
@@ -150,7 +150,7 @@ final class InputBindingEngine {
                     updateThreshold(
                         index,
                         binding.output,
-                        safeValue <= -binding.threshold
+                        safeValue <= -thresholdFor(binding, index)
                     );
                     break;
 
@@ -220,6 +220,15 @@ final class InputBindingEngine {
         bus.releaseAll();
     }
 
+    private float thresholdFor(InputBinding binding, int index) {
+        // Head tilt uses a directional dead zone with hysteresis: enter
+        // around +/-12 degrees, release around +/-8.5 degrees. Only the
+        // absolute head-pitch input receives this new treatment.
+        return binding.input == BindingInput.HEAD_PITCH_UP_AXIS
+            && thresholdStates[index]
+            ? binding.threshold * 0.70f : binding.threshold;
+    }
+
     private void updateThreshold(
         int index,
         VirtualOutput output,
@@ -243,7 +252,17 @@ final class InputBindingEngine {
             );
         }
 
-        bus.applyDigital(output, active);
+        // Head pitch and the Daydream touchpad can both hold the same Doom
+        // Up/Down key. Releasing one source must not cancel the other.
+        boolean stillActive = false;
+        for (int other = 0; other < thresholdStates.length; other++) {
+            if (thresholdStates[other]
+                && profile.bindings.get(other).output.equals(output)) {
+                stillActive = true;
+                break;
+            }
+        }
+        bus.applyDigital(output, stillActive);
     }
 
     private static float clampAxis(float value) {

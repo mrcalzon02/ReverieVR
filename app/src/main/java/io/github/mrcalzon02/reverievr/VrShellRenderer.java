@@ -103,6 +103,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             float yawDeltaRadians,
             float pitchDeltaRadians
         );
+        void onHeadBindingUpAxis(float upAxis);
     }
 
     private static final int TEXTURE_WIDTH = 1024;
@@ -1538,6 +1539,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
         previousBindingYaw = bindingYaw;
         previousBindingPitch = bindingPitch;
+        // Forward-vector Y is positive when the wearer looks UP. Unlike
+        // Euler deltas it remains held when the head stops moving, allowing
+        // Doom to hold Forward/Back, including its keyboard-driven menus.
+        if (mode == MODE_DOS) {
+            host.onHeadBindingUpAxis(headForward[1]);
+        }
 
         if (ReverieLog.isDevelopment()) {
             ReverieLog.dev(
@@ -1855,6 +1862,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
 
             if (backRequested.getAndSet(false)) {
+                // Fullscreen and the in-room DOS options are mutually
+                // exclusive: Back restores the window before DOS options.
+                if (dosRenderer.isFullScreen()) {
+                    dosRenderer.setFullScreen(false);
+                }
                 host.onDosOverlayPauseRequested();
                 mode = MODE_DOS_OVERLAY;
                 hoveredButton = -1;
@@ -2394,8 +2406,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             ? correctionHalf
             : -correctionHalf;
 
+        // Fullscreen DOS replaces the home/room entirely in BOTH eye passes.
+        // Windowed DOS still retains its world-space environment and console.
         if (mode != MODE_NATIVE && mode != MODE_MODEL_VIEWER
-            && mode != MODE_VIDEO) {
+            && mode != MODE_VIDEO
+            && !(mode == MODE_DOS && dosRenderer.isFullScreen())) {
             HomeEnvironment homeEnvironment =
                 preferences.getHomeEnvironment();
             homeEnvironmentRenderer.drawEye(
@@ -2460,8 +2475,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_DOS) {
             dosRenderer.drawEye(eye, eyeCorrection);
-            // Fullscreen hides the floating side console and its ray target.
-            // Universal Quick Menu still renders over the full-eye game.
+            // Neither the room nor DOS options render above fullscreen.
+            // Only the distinct, deliberately opened UNIVERSAL Quick Menu
+            // can appear on top of the eye-fixed DOS image.
             if (!dosRenderer.isFullScreen() || orientationMenuVisible) {
                 drawUiPanel(eye, eyeCorrection, true);
                 drawPointerOverlay(eye, eyeCorrection);
@@ -5486,7 +5502,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 5: id = BuiltInBindingProfiles.ID_DOS_FPS_HEAD_MOUSE; break;
             case 6: mode = MODE_DOS_BINDING_TUNING; break;
             case 7: mode = MODE_DOS_OVERLAY; break;
-            case 8: dosRenderer.setFullScreen(!dosRenderer.isFullScreen()); break;
+            case 8:
+                dosRenderer.setFullScreen(!dosRenderer.isFullScreen());
+                if (dosRenderer.isFullScreen()) {
+                    host.onDosOverlayResumeRequested();
+                    mode = MODE_DOS;
+                }
+                break;
             default: return;
         }
         if (id != null) host.onDosBindingProfileSelected(id);
@@ -5522,6 +5544,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
             case 8:
                 dosRenderer.setFullScreen(!dosRenderer.isFullScreen());
+                if (dosRenderer.isFullScreen()) {
+                    host.onDosOverlayResumeRequested();
+                    mode = MODE_DOS;
+                }
                 break;
             default:
                 return;

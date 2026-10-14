@@ -24,17 +24,22 @@ final class HomeEnvironmentRenderer {
         RetroPrimitiveRecipe.color555(.52f, .48f, .37f);
 
     private final Mesh whiteFloor =
-        mesh(quadHorizontal(-6.0f, 6.0f, -6.0f, 6.0f, -1.35f));
+        mesh(closeWhiteRoomRearBackdrop(quadHorizontal(-6.0f, 6.0f,
+            -6.0f, 6.0f, -1.35f)));
     private final Mesh whiteCeiling =
-        mesh(quadHorizontal(-6.0f, 6.0f, -6.0f, 6.0f, 4.0f));
+        mesh(closeWhiteRoomRearBackdrop(quadHorizontal(-6.0f, 6.0f,
+            -6.0f, 6.0f, 4.0f)));
     private final Mesh whiteBack =
-        mesh(quadVerticalZ(-6.0f, 6.0f, -1.35f, 4.0f, -6.0f));
+        mesh(closeWhiteRoomRearBackdrop(quadVerticalZ(-6.0f, 6.0f,
+            -1.35f, 4.0f, -6.0f)));
     private final Mesh whiteFront =
         mesh(quadVerticalZ(6.0f, -6.0f, -1.35f, 4.0f, 6.0f));
     private final Mesh whiteLeft =
-        mesh(quadVerticalX(-6.0f, 6.0f, -1.35f, 4.0f, -6.0f));
+        mesh(closeWhiteRoomRearBackdrop(quadVerticalX(-6.0f, 6.0f,
+            -1.35f, 4.0f, -6.0f)));
     private final Mesh whiteRight =
-        mesh(quadVerticalX(6.0f, -6.0f, -1.35f, 4.0f, 6.0f));
+        mesh(closeWhiteRoomRearBackdrop(quadVerticalX(6.0f, -6.0f,
+            -1.35f, 4.0f, 6.0f)));
     private final Mesh mirrorFrame = mesh(
         quadVerticalX(2.17f, -1.02f, -0.92f, 0.92f, 1.02f));
     private final Mesh mirrorGlass = mesh(
@@ -53,18 +58,20 @@ final class HomeEnvironmentRenderer {
         ByteBuffer.allocateDirect(mirrorRibbonScratch.length * 4)
             .order(ByteOrder.nativeOrder()).asFloatBuffer();
     // Low-poly 1990s birch living-room details, allocated once.
-    private final Mesh birchPanelSeams = mesh(buildBirchPanelSeams());
-    private final Mesh birchBaseboards = mesh(buildBirchBaseboards());
+    private final Mesh birchPanelSeams =
+        mesh(closeWhiteRoomRearBackdrop(buildBirchPanelSeams()));
+    private final Mesh birchBaseboards =
+        mesh(closeWhiteRoomRearBackdrop(buildBirchBaseboards()));
     private final Mesh roomFurniture = mesh(buildRoomFurniture());
     // Separate low-poly detail meshes are built once per renderer, not per eye.
     private final Mesh birchDetailTrim =
-        mesh(HomeEnvironmentDetailGeometry.birchTrim());
+        mesh(closeWhiteRoomRearBackdrop(HomeEnvironmentDetailGeometry.birchTrim()));
     private final Mesh birchDetailArt =
-        mesh(HomeEnvironmentDetailGeometry.birchWallArt());
+        mesh(closeWhiteRoomRearBackdrop(HomeEnvironmentDetailGeometry.birchWallArt()));
     private final Mesh birchDetailFurniture =
         mesh(HomeEnvironmentDetailGeometry.birchShelfAccents());
     private final Mesh birchDetailMotifs =
-        mesh(HomeEnvironmentDetailGeometry.birchGraphicMotifs());
+        mesh(closeWhiteRoomRearBackdrop(HomeEnvironmentDetailGeometry.birchGraphicMotifs()));
     private final Mesh forestDetailFoliage =
         mesh(HomeEnvironmentDetailGeometry.forestLayeredFoliage());
     private final Mesh forestDetailStones =
@@ -991,6 +998,20 @@ final class HomeEnvironmentRenderer {
     private static void hit(Mesh mesh, float[] origin, float[] direction,
                             HomeSceneRaycast.Hit out) {
         HomeSceneRaycast.test(mesh.contact, origin, direction, out);
+    }
+
+    // Narrow just the rear half of the white room, from z=-6 to about
+    // z=-4.8, so its walls/art feel connected to the VR screens at z=-3.
+    // The desk, controls, furniture, mirror and outdoors retain their exact
+    // positions. Pre-transform the mesh ONCE so its raycast geometry agrees
+    // with the displayed triangles (no per-eye transform or extra draw cost).
+    static float[] closeWhiteRoomRearBackdrop(float[] vertices) {
+        for (int i = 2; i < vertices.length; i += 3) {
+            if (vertices[i] < -3.5f) {
+                vertices[i] = -3.5f + (vertices[i] + 3.5f) * 0.52f;
+            }
+        }
+        return vertices;
     }
 
     private static Mesh mesh(float[] values) {

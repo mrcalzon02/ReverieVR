@@ -206,6 +206,43 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
+    public void doomHeadTiltNavigatesMenuAndMovesWithNeutralDeadzone() {
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine engine = new InputBindingEngine(bus,
+            BuiltInBindingProfiles.byId(
+                BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE));
+        // Up is forward and menu UP; Down is backward and menu DOWN.
+        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .18f);
+        assertFalse(bus.isKeyDown(VirtualKey.UP));
+        assertFalse(bus.isKeyDown(VirtualKey.DOWN));
+        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .27f);
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
+        assertFalse(bus.isKeyDown(VirtualKey.DOWN));
+        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .17f);
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
+        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .11f);
+        assertFalse(bus.isKeyDown(VirtualKey.UP));
+        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, -.26f);
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.DOWN));
+        assertFalse(bus.isKeyDown(VirtualKey.UP));
+        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, 0.0f);
+        assertFalse(bus.isKeyDown(VirtualKey.DOWN));
+
+        // Touchpad and headset may hold the same key simultaneously.
+        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .4f);
+        engine.submitAxis(BindingInput.TOUCHPAD_Y, -.8f);
+        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, 0f);
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
+        engine.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
+        assertFalse(bus.isKeyDown(VirtualKey.UP));
+
+        // Horizontal turn remains the existing Doom mouse mapping.
+        engine.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
+        assertEquals(6.5f, bus.consumeMouseRelativeX(), .001f);
+        assertEquals(0f, bus.consumeMouseRelativeY(), .001f);
+    }
+
+    @Test
     public void dosRockerProvidesKeyboardMenuRecovery() {
         VirtualInputBus bus = new VirtualInputBus();
         InputBindingEngine engine = new InputBindingEngine(bus,

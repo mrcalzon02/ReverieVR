@@ -1136,6 +1136,20 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public void onHeadBindingUpAxis(float upAxis) {
+        // Only the bundled Doom profile interprets absolute vertical gaze
+        // as held movement/menu arrows. Other DOS games remain unmodified.
+        if (inputBindingEngine == null
+            || !BundledDosContentInstaller.DOOM_MODULE_ID.equals(
+                activeDosModuleId)) {
+            return;
+        }
+        inputBindingEngine.submitAxis(
+            BindingInput.HEAD_PITCH_UP_AXIS,
+            isGuestInputSuppressed() ? 0.0f : upAxis);
+    }
+
+    @Override
     public void onHeadBindingDelta(
         float yawDeltaRadians,
         float pitchDeltaRadians
