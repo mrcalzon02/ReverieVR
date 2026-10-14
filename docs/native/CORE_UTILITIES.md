@@ -10,6 +10,7 @@ The existing `ReverieNativeCompileShader` and `ReverieNativeBuildProgram` APIs r
 
 - `app/src/main/jni/native/reverie_native_math.h`
 - `app/src/main/jni/native/reverie_native_gl_utils.h`
+- `app/src/main/jni/native/reverie_native_flat_mesh.h`
 
 **Synchronization:** governed by `docs/native/CONTRACT_INDEX.md`. These utilities exist because at least two real native modules independently needed the same implementation.
 
@@ -67,6 +68,10 @@ The helper owns only the repeated link lifecycle:
 - deletes and returns zero for a failed program link.
 
 Shader source, attribute names/index choices, uniform lookups, program-specific validation, and module-facing diagnostics remain game-owned. Test Chamber currently supplies two attribute bindings; Red Ledger supplies four.
+
+## Flat procedural mesh utility
+
+`reverie_native_flat_mesh.h` provides C++17 `Vertex`, `Triangle`, `Rect`, `Segment` and `Disc` routines in `reverie::flatmesh`. They append deterministic XYZ/RGB float vertices to caller-owned vectors, with no bitmaps, GLES imports, ABI changes or new assets. Rectangles/segments use two triangles and discs use twelve. All six classics and both recon boards consume these recipes. Their gameplay, 3x5 font, shader, draw timing, and GPU ownership remain local. This is not yet a serialized model-recipe language; S9 energy benefit is unmeasured.
 
 ## What does not belong here yet
 

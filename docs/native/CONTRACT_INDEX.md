@@ -32,6 +32,7 @@ Do not use "documentation will be updated later" as a normal completion state.
 | Native C ABI layout, version, callbacks, constants | `app/src/main/jni/native/reverie_native_module.h` | `docs/native/API_V1.md` | Implemented ABI v1 |
 | Shared native ABI-consumption helpers | `app/src/main/jni/native/reverie_native_sdk.h` | `docs/native/SDK_HELPERS.md` | Implemented provisional SDK helper layer |
 | Shared native GL state guard | `app/src/main/jni/native/reverie_native_gl_state.h` | `docs/native/GL_RENDERING_STANDARD.md` | Implemented focused guard; device validation pending |
+| Shared flat mesh generator | `app/src/main/jni/native/reverie_native_flat_mesh.h` | `docs/native/CORE_UTILITIES.md` | Implemented provisional C++17 triangle/rectangle/segment/disc helper |
 | Shared native matrix/shader core utilities | `app/src/main/jni/native/reverie_native_math.h`, `app/src/main/jni/native/reverie_native_gl_utils.h` | `docs/native/CORE_UTILITIES.md` | Implemented provisional shared utilities |
 | Native host loading/save/feedback behavior | `app/src/main/jni/native/reverie_native_host.cpp` | `docs/native/API_V1.md`, `docs/native/RUNTIME_SERVICES.md` | Implemented |
 | Java/native runtime bridge and module-id/input boundary | `app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java` | `docs/native/API_V1.md` | Implemented |

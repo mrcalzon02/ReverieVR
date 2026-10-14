@@ -4,6 +4,7 @@
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
+#include "reverie_native_flat_mesh.h"
 #include <GLES2/gl2.h>
 #include <algorithm>
 #include <cmath>
@@ -51,21 +52,12 @@ struct Module {
     bool down=false,dirty=true,upload=true;
     std::vector<float> vertices;
 };
-void Vertex(Module *m,float x,float y,float z,float r,float g,float b){
-    auto &a=m->vertices;
-    a.insert(a.end(),{x,y,z,r,g,b});
+void Triangle(Module *m,float ax,float ay,float bx,float by,float cx,float cy,
+              float z,float r,float g,float b){
+    reverie::flatmesh::Triangle(m->vertices,ax,ay,bx,by,cx,cy,z,r,g,b);
 }
-void Triangle(Module *m,float ax,float ay,float bx,float by,
-              float cx,float cy,float z,float r,float g,float b){
-    Vertex(m,ax,ay,z,r,g,b);
-    Vertex(m,bx,by,z,r,g,b);
-    Vertex(m,cx,cy,z,r,g,b);
-}
-void Rect(Module *m,float x,float y,float w,float h,
-          float z,float r,float g,float b){
-    const float l=x-w*.5f,q=x+w*.5f,d=y-h*.5f,t=y+h*.5f;
-    Triangle(m,l,d,q,d,q,t,z,r,g,b);
-    Triangle(m,l,d,q,t,l,t,z,r,g,b);
+void Rect(Module *m,float x,float y,float w,float h,float z,float r,float g,float b){
+    reverie::flatmesh::Rect(m->vertices,x,y,w,h,z,r,g,b);
 }
 const char *Glyph(char c){
     switch(c){
@@ -105,28 +97,16 @@ void Text(Module *m,const char *s,float x,float y,float scale,
         px+=4*scale;
     }
 }
-void Segment(Module *m,float x,float y,float xx,float yy,
-             float width,float r,float g,float b){
-    const float dx=xx-x,dy=yy-y;
-    const float length=std::sqrt(dx*dx+dy*dy);
-    if(length<.00001f)return;
-    const float px=-dy/length*width*.5f,py=dx/length*width*.5f;
-    Triangle(m,x+px,y+py,x-px,y-py,xx+px,yy+py,-2.87f,r,g,b);
-    Triangle(m,xx+px,yy+py,x-px,y-py,xx-px,yy-py,-2.87f,r,g,b);
+void Segment(Module *m,float x,float y,float xx,float yy,float width,
+             float r,float g,float b){
+    reverie::flatmesh::Segment(m->vertices,x,y,xx,yy,width,-2.87f,r,g,b);
 }
 float CellX(int n){const int idx=n-1,row=idx/10,col=idx%10;
     return -1.24f+(row%2==0?col:9-col)*.274f;}
 float CellY(int n){return -1.22f+((n-1)/10)*.274f;}
 
-void Disc(Module *m,float x,float y,float rad,float z,
-          float r,float g,float b){
-    constexpr float pi=3.14159265358979323846f;
-    // Twelve-sided original primitive, rebuilt on simulation changes only.
-    for(int i=0;i<12;i++){
-        float a=(2.f*pi*i)/12.f,aa=(2.f*pi*(i+1))/12.f;
-        Triangle(m,x,y,x+rad*std::cos(a),y+rad*std::sin(a),
-                 x+rad*std::cos(aa),y+rad*std::sin(aa),z,r,g,b);
-    }
+void Disc(Module *m,float x,float y,float rad,float z,float r,float g,float b){
+    reverie::flatmesh::Disc(m->vertices,x,y,rad,z,r,g,b);
 }
 float BoardSpacing(const reverie::boardgames::State &s){
     return s.Size()==9?.268f:.320f;
@@ -441,6 +421,14 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
        m->board.winner!=prevWinner)m->dirty=true;
     return;
 #endif
+    // Snapshot only what the generated screen actually displays.
+    const bool oldMoving=m->game.moving,oldFinished=m->game.finished;
+    const bool oldTurn=m->game.player_turn;
+    const int oldScore=m->game.score,oldOpponent=m->game.opponent;
+    const int oldHead=m->game.snake[0],oldFood=m->game.food;
+    const int oldPosition=m->game.position,oldRival=m->game.rival;
+    const float oldPaddle=m->game.paddle,oldAi=m->game.ai;
+    const float oldBallX=m->game.ball_x,oldBallY=m->game.ball_y;
     if(m->game.game==Game::Pong && aim && !m->game.finished)
         m->game.paddle=std::clamp(hx/1.55f,-.78f,.78f);
     if(m->game.game==Game::Snake){
@@ -458,7 +446,19 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     }
     if(edge)m->game.Press();
     m->game.Step(copy.delta_seconds,copy.move_x);
-    m->dirty=true;
+    const State &now=m->game;
+    bool visible=now.moving!=oldMoving||now.finished!=oldFinished;
+    if(now.game==Game::Pong)
+        visible|=now.score!=oldScore||now.opponent!=oldOpponent||
+            now.paddle!=oldPaddle||now.ai!=oldAi||
+            now.ball_x!=oldBallX||now.ball_y!=oldBallY;
+    else if(now.game==Game::Snake)
+        visible|=now.snake[0]!=oldHead||now.food!=oldFood||
+            now.score!=oldScore;
+    else
+        visible|=now.position!=oldPosition||now.rival!=oldRival||
+            now.player_turn!=oldTurn;
+    if(visible)m->dirty=true;
 }
 int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
     Module *m=static_cast<Module *>(ptr);

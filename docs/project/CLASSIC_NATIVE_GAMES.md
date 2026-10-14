@@ -30,6 +30,10 @@ press after a finished match resets the game. Each AI decision occurs in
 unit rules, APK packaging, stereo and Galaxy S9 interaction testing are
 independent gates.
 
+## Shared compact geometry and idle frame savings (2026-10-14)
+
+All six classics now use `reverie_native_flat_mesh.h` for unchanged shapes, shared with the two recon-board modules. Pong rebuilds on visible paddle/ball/status changes; Snake on head/food/score/status; Chutes and Ladders on token, turn and finish changes. Simulation remains independent of both stereo eye renders. Inactive frames no longer regenerate all 144 Snake grid cells or 100 Chutes cells and re-upload the VBO. Geometry parameters, gameplay, shell controls and ABI v1 remain unchanged. Host geometry assertions are added to `classic_games_test.cpp`; S9 compilation/runtime remains to be verified.
+
 ## Gameplay and input
 
 Pong uses a controller-directed paddle and a simulated opposing paddle, with first to seven points ending the match. Snake uses a 12×12 board, cardinal controller direction, food growth, and wall/body collision. Chutes and Ladders uses a 100-cell serpentine board with seeded dice, turn-taking, and fixed chute/ladder destinations. Simulation is updated once per frame; stereo rendering observes that state without advancing game rules.

@@ -21,6 +21,7 @@ SDK_HEADER = Path("app/src/main/jni/native/reverie_native_sdk.h")
 GL_STATE_HEADER = Path("app/src/main/jni/native/reverie_native_gl_state.h")
 MATH_HEADER = Path("app/src/main/jni/native/reverie_native_math.h")
 GL_UTILS_HEADER = Path("app/src/main/jni/native/reverie_native_gl_utils.h")
+FLAT_MESH_HEADER = Path("app/src/main/jni/native/reverie_native_flat_mesh.h")
 HOST_CPP = Path("app/src/main/jni/native/reverie_native_host.cpp")
 RUNTIME_JAVA = Path(
     "app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java"
@@ -78,6 +79,7 @@ SYNC_MAP = {
     GL_STATE_HEADER: {GL_RENDERING_DOC},
     MATH_HEADER: {CORE_UTILITIES_DOC},
     GL_UTILS_HEADER: {CORE_UTILITIES_DOC},
+    FLAT_MESH_HEADER: {CORE_UTILITIES_DOC},
     HOST_CPP: {API_DOC},
     RUNTIME_JAVA: {API_DOC},
     MATERIAL_H: {PROCEDURAL_DOC},
@@ -118,6 +120,7 @@ def check_current_content() -> None:
     gl_state_header = read(GL_STATE_HEADER)
     math_header = read(MATH_HEADER)
     gl_utils_header = read(GL_UTILS_HEADER)
+    flat_mesh_header = read(FLAT_MESH_HEADER)
     host = read(HOST_CPP)
     runtime = read(RUNTIME_JAVA)
     test_chamber_cpp = read(TEST_CHAMBER_CPP)
@@ -143,6 +146,12 @@ def check_current_content() -> None:
     sdk_doc = read(SDK_DOC)
     gl_rendering_doc = read(GL_RENDERING_DOC)
     core_utilities_doc = read(CORE_UTILITIES_DOC)
+    for token in ("Vertex", "Triangle", "Rect", "Segment", "Disc"):
+        require(
+            f"inline void {token}(" in flat_mesh_header
+            and f"`{token}`" in core_utilities_doc,
+            f"flat-mesh helper/doc drift: {token}",
+        )
     runtime_services_doc = read(RUNTIME_SERVICES_DOC)
     procedural_doc = read(PROCEDURAL_DOC)
     systems_catalog = read(SYSTEMS_CATALOG_DOC)

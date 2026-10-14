@@ -1,10 +1,27 @@
 #include "classic_games.h"
 #include "classic_board_games.h"
+#include "reverie_native_flat_mesh.h"
 #include <cassert>
 #include <cmath>
 #include <iostream>
 using namespace reverie::classics;
 
+static void TestFlatGeometry(){
+    using namespace reverie::flatmesh;
+    std::vector<float> a,b;
+    Rect(a,0.f,0.f,2.f,2.f,-3.f,1.f,.5f,0.f);
+    Rect(b,0.f,0.f,2.f,2.f,-3.f,1.f,.5f,0.f);
+    assert(a==b&&a.size()==36u);
+    assert(a[0]==-1.f&&a[1]==-1.f&&a[2]==-3.f);
+    assert(a[6]==1.f&&a[7]==-1.f);
+    Segment(a,0.f,0.f,1.f,0.f,.1f,-2.f,1.f,1.f,1.f);
+    assert(a.size()==72u);
+    Segment(a,0.f,0.f,0.f,0.f,.1f,-2.f,1.f,1.f,1.f);
+    assert(a.size()==72u);
+    Disc(a,0.f,0.f,.25f,-2.f,1.f,1.f,1.f);
+    assert(a.size()==288u);
+    for(float f:a)assert(std::isfinite(f));
+}
 static void TestBoardGames() {
     using Boards = reverie::boardgames::State;
     using BoardKind = reverie::boardgames::Kind;
@@ -127,6 +144,7 @@ static void TestBoardGames() {
 }
 
 int main() {
+    TestFlatGeometry();
     State a,b;
     a.Reset(Game::Pong);b.Reset(Game::Pong);
     assert(!a.moving && !a.finished);

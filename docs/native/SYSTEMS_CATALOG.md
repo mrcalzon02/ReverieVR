@@ -71,6 +71,7 @@ Native modules consume normalized actions/rays. They do not parse BLE packets, A
 | System | Maturity | Authoritative source | Standard |
 |---|---|---|---|
 | Guest GL state isolation | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_gl_state.h` | `docs/native/GL_RENDERING_STANDARD.md` |
+| Flat colored mesh recipes | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_flat_mesh.h` | `docs/native/CORE_UTILITIES.md` | Header-only parameterized XYZ/RGB triangles, rectangles, segments and discs used in the six classics and two recon boards. |
 | Column-major 4×4 multiply | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_math.h` | `docs/native/CORE_UTILITIES.md` |
 | GLES shader compile/program-link helpers | **Shared SDK / provisional** | `app/src/main/jni/native/reverie_native_gl_utils.h` | `docs/native/CORE_UTILITIES.md` | Shader compile plus caller-declared attribute bindings and fail-closed program linking; shader text/policy remain game-owned. |
 | Headset/eye wireframe and collider probe | **Shell-only reference** | `app/src/main/java/io/github/mrcalzon02/reverievr/PlayerHeadRig.java` | `docs/records/PLAYER-HEAD-RIG-CONTRACT.md` | Center-head pose, IPD-separated eye markers and oriented-box collision; white-room diagnostic mirror uses `HeadsetMirrorProjection` to reflect the headset and handset proxy in stereo, not full scene reflections or a game-facing ABI. |

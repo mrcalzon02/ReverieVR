@@ -2,6 +2,7 @@
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
+#include "reverie_native_flat_mesh.h"
 #if !defined(RECON_PROJECT_KIND) || (RECON_PROJECT_KIND != 0 && RECON_PROJECT_KIND != 1)
 #error "Select a recon project"
 #endif
@@ -42,13 +43,8 @@ struct State {
     GLint pos=-1,col=-1,mvp=-1;
     std::vector<float> mesh;
 };
-void V(State *s,float x,float y,float z,float r,float g,float b){
-    s->mesh.insert(s->mesh.end(),{x,y,z,r,g,b});
-}
 void Rect(State *s,float x,float y,float w,float h,float z,float r,float g,float b){
-    const float l=x-w*.5f,q=x+w*.5f,d=y-h*.5f,t=y+h*.5f;
-    V(s,l,d,z,r,g,b);V(s,q,d,z,r,g,b);V(s,q,t,z,r,g,b);
-    V(s,l,d,z,r,g,b);V(s,q,t,z,r,g,b);V(s,l,t,z,r,g,b);
+    reverie::flatmesh::Rect(s->mesh,x,y,w,h,z,r,g,b);
 }
 const char *G(char c){
     switch(c){

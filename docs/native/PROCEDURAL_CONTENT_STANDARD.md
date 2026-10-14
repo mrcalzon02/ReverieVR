@@ -149,6 +149,10 @@ The recipe should compile into tightly packed runtime geometry once. This is a d
 
 Complex authored meshes remain valid when they are smaller, clearer, or materially better than a generated primitive approximation.
 
+### Shared flat-colored primitive builder
+
+`app/src/main/jni/native/reverie_native_flat_mesh.h` is a provisional C++17 CPU-only primitive builder used by all six classics and both recon boards. It emits deterministic XYZ/RGB triangle recipes; the caller owns GL upload, context recovery and update cadence. Snake and Chutes and Ladders now skip rebuilding/uploading when their visible state is unchanged. This is not a generalized serialized model system, and Galaxy S9 performance remains unmeasured.
+
 ## Interaction geometry
 
 Game interaction does not require production-render mesh precision by default.
