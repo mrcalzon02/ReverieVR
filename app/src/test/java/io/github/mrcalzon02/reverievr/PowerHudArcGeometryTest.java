@@ -38,13 +38,17 @@ public final class PowerHudArcGeometryTest {
     @Test public void powerHudMovesDownByTenPercentOfEachEyeWithoutResizing() {
         // A full eye covers 2 units of normalized clip-space height.
         assertEquals(0.10f, PowerHudArcGeometry.VIEWPORT_DOWN_NDC / 2f, 0.0001f);
+        assertEquals(0.20f, PowerHudArcGeometry.EXTRA_DOWN_NDC / 2f, 0.0001f);
+        assertEquals(0.20f, PowerHudArcGeometry.EXTRA_INWARD_NDC / 2f, 0.0001f);
         float originalTop = 1f - 2f * 42f / 512f;
         float originalBottom = PowerHudArcGeometry.scaledNearTopRight(
             1f - 2f * 284f / 512f, originalTop);
         float loweredTop = PowerHudArcGeometry.lowerInViewport(originalTop);
         float loweredBottom = PowerHudArcGeometry.lowerInViewport(originalBottom);
-        assertEquals(originalTop - 0.20f, loweredTop, 0.0001f);
-        assertEquals(originalBottom - 0.20f, loweredBottom, 0.0001f);
+        assertEquals(originalTop - 0.60f, loweredTop, 0.0001f);
+        assertEquals(originalBottom - 0.60f, loweredBottom, 0.0001f);
+        assertEquals(0.42f,
+            PowerHudArcGeometry.inwardInViewport(0.82f), 0.0001f);
         assertEquals(originalTop - originalBottom,
             loweredTop - loweredBottom, 0.0001f);
         assertEquals(0.30f, PowerHudArcGeometry.OUTPUT_SCALE, 0.0001f);

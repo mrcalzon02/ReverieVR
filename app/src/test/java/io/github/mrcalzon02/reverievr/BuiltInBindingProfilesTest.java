@@ -19,7 +19,7 @@ public final class BuiltInBindingProfilesTest {
             BuiltInBindingProfiles.ID_NATIVE_STANDARD,
             profile.id
         );
-        assertEquals(15, profile.bindings.size());
+        assertEquals(18, profile.bindings.size());
 
         assertDigitalButton(
             profile.bindings.get(0),
@@ -50,12 +50,18 @@ public final class BuiltInBindingProfilesTest {
             BindingInput.GAMEPAD_BUTTON_Y, 5);
         assertDigitalButton(profile.bindings.get(12),
             BindingInput.GAMEPAD_BUTTON_SELECT, 12);
-        assertEquals(BindingInput.GAMEPAD_X, profile.bindings.get(13).input);
+        assertEquals(BindingInput.DAYDREAM_TAP, profile.bindings.get(13).input);
+        assertEquals(13, profile.bindings.get(13).output.code);
+        assertEquals(BindingInput.DAYDREAM_DOUBLE_TAP, profile.bindings.get(14).input);
+        assertEquals(14, profile.bindings.get(14).output.code);
+        assertEquals(BindingInput.DAYDREAM_PRESS_HOLD, profile.bindings.get(15).input);
+        assertEquals(15, profile.bindings.get(15).output.code);
+        assertEquals(BindingInput.GAMEPAD_X, profile.bindings.get(16).input);
         assertEquals(VirtualOutputKind.JOYSTICK_AXIS_X,
-            profile.bindings.get(13).output.kind);
-        assertEquals(BindingInput.GAMEPAD_Y, profile.bindings.get(14).input);
+            profile.bindings.get(16).output.kind);
+        assertEquals(BindingInput.GAMEPAD_Y, profile.bindings.get(17).input);
         assertEquals(VirtualOutputKind.JOYSTICK_AXIS_Y,
-            profile.bindings.get(14).output.kind);
+            profile.bindings.get(17).output.kind);
         for (InputBinding binding : profile.bindings) {
             assertFalse(binding.input == BindingInput.GAMEPAD_BUTTON_MODE);
         }

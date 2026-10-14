@@ -62,6 +62,8 @@ final class VrInputRouter {
 
     private int horizontalAxisState;
     private int verticalAxisState;
+    private final DaydreamGestureRecognizer gestures =
+        new DaydreamGestureRecognizer();
 
     VrInputRouter(Listener listener) {
         this.listener = listener;
@@ -82,6 +84,8 @@ final class VrInputRouter {
         previousTouching = false;
         touchStartX = touchStartY = touchLastX = touchLastY = 0;
         horizontalAxisState = verticalAxisState = 0;
+        gestures.reset((input, down) ->
+            emitBindingDigital(input, down, "Daydream gesture reset"));
     }
 
     void onControllerSnapshot(
@@ -91,6 +95,10 @@ final class VrInputRouter {
         if (snapshot == null) {
             return;
         }
+
+        gestures.accept(snapshot.receivedAtNanos, snapshot.touchpadPressed,
+            snapshot.accelXG, snapshot.accelYG, snapshot.accelZG,
+            (input, down) -> emitBindingDigital(input, down, source));
 
         if (ReverieLog.isDevelopment()) {
             ReverieLog.dev(

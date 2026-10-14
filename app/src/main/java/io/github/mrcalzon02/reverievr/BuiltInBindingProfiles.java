@@ -401,6 +401,15 @@ final class BuiltInBindingProfiles {
             nativeStandard.add(InputBinding.digital(
                 physicalInputs[i], VirtualOutput.joystickButton(3+i)));
         }
+        // Native ABI has joystick buttons 13-15 free. Distinct Daydream
+        // gestures are opt-in secondary actions; primary SELECT still works
+        // immediately and platform Menu/Home remain reserved for recovery.
+        nativeStandard.add(InputBinding.digital(
+            BindingInput.DAYDREAM_TAP, VirtualOutput.joystickButton(13)));
+        nativeStandard.add(InputBinding.digital(
+            BindingInput.DAYDREAM_DOUBLE_TAP, VirtualOutput.joystickButton(14)));
+        nativeStandard.add(InputBinding.digital(
+            BindingInput.DAYDREAM_PRESS_HOLD, VirtualOutput.joystickButton(15)));
         // The native game's movement axes are distinct from Daydream's
         // shell-owned locomotion. Modules choose whether to consume them.
         nativeStandard.add(InputBinding.analog(

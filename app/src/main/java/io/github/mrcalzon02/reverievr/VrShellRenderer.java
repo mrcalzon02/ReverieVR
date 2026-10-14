@@ -467,6 +467,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final FloatBuffer homeRightUvBuffer;
     private final FloatBuffer hudVertexBuffer;
     private final FloatBuffer hudUvBuffer;
+    private final FloatBuffer controlFeedVertexBuffer;
+    private final FloatBuffer controlFeedUvBuffer;
+    private final ControlEventHistory controlHistory = new ControlEventHistory();
+    private final String[] controlFeedLines =
+        new String[ControlEventHistory.CAPACITY];
+    private final long[] controlFeedTimes =
+        new long[ControlEventHistory.CAPACITY];
 
     private final float[] rawHeadView = new float[16];
     private final float[] adjustedHeadView = new float[16];
@@ -602,6 +609,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int program;
     private int texture;
     private int hudTexture;
+    private int controlFeedTexture;
+    private Bitmap controlFeedBitmap;
+    private Canvas controlFeedCanvas;
+    private Paint controlFeedPaint;
+    private boolean controlFeedTextureAllocated;
+    private long controlFeedLastRefreshNanos;
     private Bitmap uiBitmap;
     private Canvas uiCanvas;
     private Paint uiPaint;
@@ -859,6 +872,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
 
         hudVertexBuffer = allocate(new float[12]);
+        // A small, separate center-left binocular overlay for recent controls.
+        // Text is drawn only when events arrive or a fade tick is due.
+        controlFeedVertexBuffer = allocate(new float[] {
+            -0.98f, -0.34f, 0f,
+            -0.23f, -0.34f, 0f,
+            -0.98f,  0.30f, 0f,
+            -0.23f,  0.30f, 0f
+        });
+        controlFeedUvBuffer = allocate(new float[] {
+            0f, 1f, 1f, 1f, 0f, 0f, 1f, 0f
+        });
         // Crop the quad to the arc region: no full-eye transparent overdraw.
         hudUvBuffer = allocate(new float[] {
             280f / HUD_TEXTURE_WIDTH, 284f / HUD_TEXTURE_HEIGHT,
@@ -1047,6 +1071,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             timestampNanos > 0L
                 ? timestampNanos
                 : System.nanoTime();
+    }
+
+    void noteControlEvent(String description) {
+        controlHistory.record(description, System.nanoTime());
     }
 
     void setPhoneBattery(int percentage) {
@@ -2357,6 +2385,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 eyeViewport[3]
             );
             drawPowerHudOverlay();
+            drawControlFeedOverlay();
         } catch (RuntimeException | LinkageError failure) {
             reportRendererFailure(
                 "draw-eye",
@@ -2901,11 +2930,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         matrixHandle = GLES20.glGetUniformLocation(program, "u_Mvp");
         textureHandle = GLES20.glGetUniformLocation(program, "u_Texture");
 
-        int[] textures = new int[3];
-        GLES20.glGenTextures(3, textures, 0);
+        int[] textures = new int[4];
+        GLES20.glGenTextures(4, textures, 0);
         texture = textures[0];
         hudTexture = textures[1];
         keyboardTexture = textures[2];
+        controlFeedTexture = textures[3];
+        controlFeedTextureAllocated = false;
+        controlFeedLastRefreshNanos = 0L;
         keyboardTextureStorageInitialized = false;
         keyboardTextureDirty = true;
         textureStorageInitialized = false;
@@ -2966,6 +2998,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
             GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
 
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, controlFeedTexture);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
         textureDirty = true;
         hudTextureDirty = true;
     }
@@ -2994,6 +3035,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.glDeleteTextures(1, new int[] {hudTexture}, 0);
             hudTexture = 0;
         }
+        if (controlFeedTexture != 0) {
+            GLES20.glDeleteTextures(1, new int[] {controlFeedTexture}, 0);
+            controlFeedTexture = 0;
+        }
         if (keyboardTexture != 0) {
             GLES20.glDeleteTextures(1, new int[] {keyboardTexture}, 0);
             keyboardTexture = 0;
@@ -3018,6 +3063,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         hudBitmap = null;
         hudCanvas = null;
         hudPaint = null;
+        if (controlFeedBitmap != null && !controlFeedBitmap.isRecycled()) {
+            controlFeedBitmap.recycle();
+        }
+        controlFeedBitmap = null;
+        controlFeedCanvas = null;
+        controlFeedPaint = null;
+        controlFeedTextureAllocated = false;
+        controlFeedLastRefreshNanos = 0L;
         if (keyboardBitmap != null && !keyboardBitmap.isRecycled())
             keyboardBitmap.recycle();
         keyboardBitmap = null;
@@ -8101,6 +8154,70 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
     }
 
+    private void drawControlFeedOverlay() {
+        if (program == 0 || controlFeedTexture == 0) return;
+        final long now = System.nanoTime();
+        if (!controlHistory.hasRecent(now)) return;
+        if (controlFeedLastRefreshNanos == 0L
+                || controlHistory.isDirty()
+                || now - controlFeedLastRefreshNanos >= 500000000L) {
+            if (controlFeedBitmap == null || controlFeedBitmap.isRecycled()) {
+                controlFeedBitmap = Bitmap.createBitmap(
+                    448, 320, Bitmap.Config.ARGB_8888);
+                controlFeedCanvas = new Canvas(controlFeedBitmap);
+                controlFeedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            }
+            Canvas canvas = controlFeedCanvas;
+            Paint paint = controlFeedPaint;
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+            int count = controlHistory.copyRecent(
+                now, controlFeedLines, controlFeedTimes);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setTextSize(24f);
+            paint.setTypeface(android.graphics.Typeface.MONOSPACE);
+            for (int i = 0; i < count; i++) {
+                float fraction = 1f - Math.min(1f,
+                    controlFeedTimes[i] / (float) ControlEventHistory.TTL_NANOS);
+                paint.setColor(Color.argb(
+                    (int) (112f * fraction), 176, 180, 186));
+                canvas.drawText(controlFeedLines[i], 10f,
+                    45f + i * 44f, paint);
+            }
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, controlFeedTexture);
+            if (controlFeedTextureAllocated) {
+                GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0,
+                    0, 0, controlFeedBitmap);
+            } else {
+                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D,
+                    0, controlFeedBitmap, 0);
+                controlFeedTextureAllocated = true;
+            }
+            controlFeedLastRefreshNanos = now;
+        }
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        GLES20.glUseProgram(program);
+        controlFeedVertexBuffer.position(0);
+        GLES20.glVertexAttribPointer(positionHandle, 3,
+            GLES20.GL_FLOAT, false, 0, controlFeedVertexBuffer);
+        GLES20.glEnableVertexAttribArray(positionHandle);
+        controlFeedUvBuffer.position(0);
+        GLES20.glVertexAttribPointer(uvHandle, 2,
+            GLES20.GL_FLOAT, false, 0, controlFeedUvBuffer);
+        GLES20.glEnableVertexAttribArray(uvHandle);
+        GLES20.glUniformMatrix4fv(matrixHandle, 1, false,
+            hudIdentity, 0);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, controlFeedTexture);
+        GLES20.glUniform1i(textureHandle, 0);
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLES20.glDisable(GLES20.GL_BLEND);
+        GLES20.glDisableVertexAttribArray(positionHandle);
+        GLES20.glDisableVertexAttribArray(uvHandle);
+    }
+
     private void drawPowerHudOverlay() {
         if (!preferences.isBatteryHudEnabled()
             || program == 0
@@ -8173,11 +8290,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private void updateHudVertices() {
         // Cardboard restores each full eye before rendering this global HUD.
         final float originalLeft = 2f * 280f / HUD_TEXTURE_WIDTH - 1f;
-        final float right = 2f * 451f / HUD_TEXTURE_WIDTH - 1f;
+        final float right = PowerHudArcGeometry.inwardInViewport(
+            2f * 451f / HUD_TEXTURE_WIDTH - 1f);
         final float originalTop = 1f - 2f * 42f / HUD_TEXTURE_HEIGHT;
         final float originalBottom = 1f - 2f * 284f / HUD_TEXTURE_HEIGHT;
-        final float left = PowerHudArcGeometry.scaledNearTopRight(originalLeft, right);
-        // Move both arc bars and percentage labels 10% down in each eye.
+        final float left = PowerHudArcGeometry.inwardInViewport(
+            PowerHudArcGeometry.scaledNearTopRight(
+                originalLeft, 2f * 451f / HUD_TEXTURE_WIDTH - 1f));
+        // Preserve the prior 10% and move 20% further down/in per eye.
         // Keep the original quad height, texture crop and look-up reveal.
         final float top = PowerHudArcGeometry.lowerInViewport(originalTop);
         final float bottom = PowerHudArcGeometry.lowerInViewport(

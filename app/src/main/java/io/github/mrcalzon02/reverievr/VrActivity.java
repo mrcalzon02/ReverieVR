@@ -1021,6 +1021,13 @@ public final class VrActivity extends Activity
         }
 
         renderer.noteInputAction(action, source);
+        if (action == VrInputAction.NAV_LEFT
+            || action == VrInputAction.NAV_RIGHT
+            || action == VrInputAction.NAV_UP
+            || action == VrInputAction.NAV_DOWN
+            || action == VrInputAction.MENU) {
+            renderer.noteControlEvent(action.name().replace('_', ' '));
+        }
 
         switch (action) {
             case SELECT:
@@ -1100,6 +1107,12 @@ public final class VrActivity extends Activity
         boolean down,
         String source
     ) {
+        if (renderer != null && input != null
+            && (down || input == BindingInput.DAYDREAM_PRESS_HOLD)) {
+            renderer.noteControlEvent(
+                input.name().replace('_', ' ')
+                + (down ? "" : " RELEASE"));
+        }
         if (isGuestInputSuppressed()) {
             return;
         }
@@ -1135,8 +1148,20 @@ public final class VrActivity extends Activity
             inputBindingEngine.submitRelative(input, delta);
     }
 
+    private int lastExtremeHead;
+    private long lastSharpTurnAtNanos;
+
     @Override
     public void onHeadBindingUpAxis(float upAxis) {
+        int extreme = upAxis >= 0.87f ? 1 :
+            upAxis <= -0.87f ? -1 : 0;
+        // Re-arm below about 50 degrees, preventing noise near the peak.
+        if (Math.abs(upAxis) < 0.76f) lastExtremeHead = 0;
+        if (extreme != 0 && extreme != lastExtremeHead) {
+            lastExtremeHead = extreme;
+            if (renderer != null) renderer.noteControlEvent(
+                extreme > 0 ? "HEAD EXTREME UP" : "HEAD EXTREME DOWN");
+        }
         // Only the bundled Doom profile interprets absolute vertical gaze
         // as held movement/menu arrows. Other DOS games remain unmodified.
         if (inputBindingEngine == null
@@ -1159,6 +1184,15 @@ public final class VrActivity extends Activity
             return;
         }
 
+        // Sharp head turns are visible as diagnostics, not automatically
+        // bound to a game action or the headset recenter command.
+        final long now = System.nanoTime();
+        if (Math.abs(yawDeltaRadians) > 0.16f
+            && now - lastSharpTurnAtNanos > 850000000L) {
+            lastSharpTurnAtNanos = now;
+            if (renderer != null) renderer.noteControlEvent(
+                yawDeltaRadians > 0 ? "HEAD SHARP RIGHT" : "HEAD SHARP LEFT");
+        }
         inputBindingEngine.submitRelative(
             BindingInput.HEAD_YAW_DELTA,
             yawDeltaRadians
