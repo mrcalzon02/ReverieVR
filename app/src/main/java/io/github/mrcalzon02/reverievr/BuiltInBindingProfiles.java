@@ -161,6 +161,8 @@ final class BuiltInBindingProfiles {
             "DOS standard - pad arrows / head mouse", standard));
 
         List<InputBinding> doom = new ArrayList<>();
+        // Reuse headset-view yaw polarity for the DOS guest pointer.
+        // The opposite sign turns looking left into moving right.
         doom.add(
             InputBinding.digital(
                 BindingInput.SELECT,
@@ -171,7 +173,7 @@ final class BuiltInBindingProfiles {
             InputBinding.analog(
                 BindingInput.HEAD_YAW_DELTA,
                 VirtualOutput.mouseRelativeX(),
-                650.0f,
+                -650.0f,
                 0.0f
             )
         );
@@ -301,8 +303,9 @@ final class BuiltInBindingProfiles {
         cursor.add(InputBinding.analog(
             BindingInput.TOUCHPAD_REL_Y, VirtualOutput.mouseRelativeY(),
             0.70f, 0.0f));
+        // Match the verified DOS headset-mouse yaw mapping.
         cursor.add(InputBinding.analog(BindingInput.HEAD_YAW_DELTA,
-            VirtualOutput.mouseRelativeX(), 650.0f, 0.0f));
+            VirtualOutput.mouseRelativeX(), -650.0f, 0.0f));
         cursor.add(InputBinding.analog(BindingInput.HEAD_PITCH_DELTA,
             VirtualOutput.mouseRelativeY(), -650.0f, 0.0f));
         cursor.add(

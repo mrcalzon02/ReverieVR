@@ -212,6 +212,25 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
+    public void doomAndCursorHeadYawMatchDedicatedDosHeadsetMousePolarity() {
+        for (String id : new String[] {
+                BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE,
+                BuiltInBindingProfiles.ID_DOS_CURSOR,
+                BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE
+        }) {
+            VirtualInputBus bus = new VirtualInputBus();
+            InputBindingEngine engine = new InputBindingEngine(bus,
+                BuiltInBindingProfiles.byId(id));
+            engine.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
+            assertEquals(id + " positive yaw", -6.5f,
+                bus.consumeMouseRelativeX(), .001f);
+            engine.submitRelative(BindingInput.HEAD_YAW_DELTA, -.01f);
+            assertEquals(id + " negative yaw", 6.5f,
+                bus.consumeMouseRelativeX(), .001f);
+        }
+    }
+
+    @Test
     public void doomHeadTiltNavigatesMenuAndMovesWithNeutralDeadzone() {
         VirtualInputBus bus = new VirtualInputBus();
         InputBindingEngine engine = new InputBindingEngine(bus,
@@ -242,9 +261,9 @@ public final class BuiltInBindingProfilesTest {
         engine.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
         assertFalse(bus.isKeyDown(VirtualKey.UP));
 
-        // Horizontal turn remains the existing Doom mouse mapping.
+        // Horizontal turn follows the corrected headset-view polarity.
         engine.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
-        assertEquals(6.5f, bus.consumeMouseRelativeX(), .001f);
+        assertEquals(-6.5f, bus.consumeMouseRelativeX(), .001f);
         assertEquals(0f, bus.consumeMouseRelativeY(), .001f);
     }
 
