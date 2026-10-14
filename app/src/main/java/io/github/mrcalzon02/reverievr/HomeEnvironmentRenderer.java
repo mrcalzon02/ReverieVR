@@ -1000,15 +1000,15 @@ final class HomeEnvironmentRenderer {
         HomeSceneRaycast.test(mesh.contact, origin, direction, out);
     }
 
-    // Narrow just the rear half of the white room, from z=-6 to about
-    // z=-4.8, so its walls/art feel connected to the VR screens at z=-3.
+    // Pull the white room's rear backdrop forward, from z=-6 to z=-4.1,
+    // visually connecting the room to the VR screens at about z=-3.
     // The desk, controls, furniture, mirror and outdoors retain their exact
     // positions. Pre-transform the mesh ONCE so its raycast geometry agrees
     // with the displayed triangles (no per-eye transform or extra draw cost).
     static float[] closeWhiteRoomRearBackdrop(float[] vertices) {
         for (int i = 2; i < vertices.length; i += 3) {
             if (vertices[i] < -3.5f) {
-                vertices[i] = -3.5f + (vertices[i] + 3.5f) * 0.52f;
+                vertices[i] = -3.5f + (vertices[i] + 3.5f) * 0.24f;
             }
         }
         return vertices;

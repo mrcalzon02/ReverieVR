@@ -1,3 +1,7 @@
+## 2026-10-13 — White room brought closer to screens; DOS fullscreen audited
+
+Confirmed the current DOS fullscreen rendering uses a complete per-eye viewport, identity matrix rather than a 3D plane, and excludes world room rendering; DOS Back exits fullscreen before opening the in-room DOS options. An explicitly opened universal Quick Menu may remain accessible for safe headset recovery; it is not the DOS options rail. Adjusted only the white room rear backdrop depth transformation from 0.52 to 0.24 (rear wall approximately z=-4.1 instead of -4.8, screens remain near -3). Room furniture, UI panel placement, screen geometry, controller targets, other homerooms, tracked headset optics and power display untouched. Needs signed APK and physical headset acceptance.
+
 ## 2026-10-13 — Isolate Daydream inferred gestures from Steam/HID providers
 
 Constrained the new click/double/hold and high-acceleration gesture recognizer in VrInputRouter to snapshots whose provider identifies as Daydream. Non-Daydream snapshots reset held semantic-gesture state, avoiding accidental joystick13–15 controls from Steam or other controllers. Existing raw SELECT, pointer pose, touch and platform Menu/Home routing remains unchanged. Source gate and documentation updated together; #165 release does not include this gate, so next signed source release must include it.
