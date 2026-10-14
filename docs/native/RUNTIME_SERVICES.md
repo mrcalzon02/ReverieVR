@@ -1,3 +1,7 @@
+## In-headset native launch failure evidence (2026-10-13)
+
+The native games/apps shelf and Home now show the title id and last bounded native host error when a packaged module fails to start, initialize its GL surface, or render an eye. The runtime still stops failed modules and releases its hosted binding profile; this is **not** a retry loop or a failure bypass. The displayed failure text is cleared by the next successful native-module launch. The existing Android incident diagnostics remain authoritative for the full error and are unchanged. Normal Back/Home and successful game navigation are unchanged; user-facing headset acceptance remains pending.
+
 ## Native game entry: GL scissor capability fix (2026-10-13)
 
 The shell now reads the GLES2 `GL_SCISSOR_TEST` enable flag with `GLES20.glIsEnabled`, preserving the original scissor-state restore behavior. The previous `glGetIntegerv(GL_SCISSOR_TEST,...)` query is not the documented capability query and can introduce an inherited `GL_INVALID_ENUM` into the first native draw; every native module checks OpenGL errors when rendering, so the shared error could force a false return to Home. Native host GL-error isolation remains an independent diagnostic defense, not a replacement for correcting the bad shell query. Actual Galaxy S9 native launch and dual-eye render still require physical proof.

@@ -581,6 +581,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private EmulatorModuleCatalog.Entry selectedEmulator;
     private long lastEmulatorStatusRefreshNanos;
     private boolean nativeSurfaceReady;
+    // A genuine guest failure must be readable inside the headset, not just
+    // disappear into the Android log after an immediate return to Home.
+    private String lastNativeFailureId = "";
+    private String lastNativeFailureReason = "";
     private volatile boolean rendererFailed;
     private volatile boolean orientationMenuVisible;
     private boolean quickMenuSettingsVisible;
@@ -1734,6 +1738,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                             null
                         );
                     } else {
+                        noteNativeModuleFailure(
+                            nativeModuleRuntime.getActiveModuleId());
                         host.onNativeModuleStopRequested();
                         closeOrientationMenu();
                         mode = MODE_HOME;
@@ -1821,6 +1827,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 nativeSurfaceReady =
                     nativeModuleRuntime.onSurfaceCreated();
                 if (!nativeSurfaceReady) {
+                    noteNativeModuleFailure(
+                        nativeModuleRuntime.getActiveModuleId());
                     host.onNativeModuleStopRequested();
                     mode = MODE_HOME;
                     hoveredButton = -1;
@@ -2520,6 +2528,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     );
 
             if (!rendered) {
+                noteNativeModuleFailure(nativeModuleRuntime == null
+                    ? "" : nativeModuleRuntime.getActiveModuleId());
                 if (nativeSurfaceReady
                     && nativeModuleRuntime != null) {
                     nativeModuleRuntime.releaseSurface();
@@ -5071,6 +5081,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
         hoveredButton=-1;textureDirty=true;
     }
 
+    private void noteNativeModuleFailure(String moduleId) {
+        lastNativeFailureId = moduleId == null || moduleId.isEmpty()
+            ? "native module" : moduleId;
+        String error = nativeModuleRuntime == null
+            ? "" : nativeModuleRuntime.getLastError();
+        lastNativeFailureReason = error.isEmpty()
+            ? "Module could not start or draw." : error;
+        textureDirty = true;
+        ReverieLog.incident("NATIVE_MODULE",
+            "In-headset launch failure id=" + lastNativeFailureId
+                + " reason=" + lastNativeFailureReason);
+    }
+
+    private void clearNativeModuleFailure() {
+        lastNativeFailureId = "";
+        lastNativeFailureReason = "";
+    }
+
     private List<NativeModuleRuntime.Descriptor> currentNativeShelf() {
         return mode == MODE_NATIVE_GAMES ? nativeGames : nativeApps;
     }
@@ -5139,18 +5167,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     return;
                 }
 
-                if (module != null
-                    && host.onNativeModulePlaybackRequested(
-                        module.id
-                    )) {
-                    preferences.markLastActivityNative(
-                        module.id,
-                        module.displayName
-                    );
-                    nativeSurfaceReady = false;
-                    mode = MODE_NATIVE;
-                    hoveredButton = -1;
-                    return;
+                if (module != null) {
+                    if (host.onNativeModulePlaybackRequested(module.id)) {
+                        clearNativeModuleFailure();
+                        preferences.markLastActivityNative(
+                            module.id, module.displayName);
+                        nativeSurfaceReady = false;
+                        mode = MODE_NATIVE;
+                        hoveredButton = -1;
+                        return;
+                    }
+                    noteNativeModuleFailure(module.id);
                 }
             }
 
@@ -6567,23 +6594,22 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint.setFakeBoldText(false);
         }
 
-        paint.setColor(Color.rgb(126, 205, 221));
         paint.setTextSize(13.0f * uiScale);
-        canvas.drawText(
-            homeHelpText(hoveredButton),
-            292,
-            676,
-            paint
-        );
-
-        paint.setColor(Color.rgb(143, 160, 179));
-        paint.setTextSize(13.0f * uiScale);
-        canvas.drawText(
-            "Look or point • click to select",
-            292,
-            700,
-            paint
-        );
+        if (!lastNativeFailureReason.isEmpty()) {
+            paint.setColor(Color.rgb(245, 181, 108));
+            canvas.drawText(
+                "NATIVE FAILED: " + shorten(lastNativeFailureId, 29),
+                292, 676, paint);
+            canvas.drawText(
+                shorten(lastNativeFailureReason, 54),
+                292, 700, paint);
+        } else {
+            paint.setColor(Color.rgb(126, 205, 221));
+            canvas.drawText(homeHelpText(hoveredButton), 292, 676, paint);
+            paint.setColor(Color.rgb(143, 160, 179));
+            canvas.drawText("Look or point • click to select",
+                292, 700, paint);
+        }
 
         paint.setColor(Color.WHITE);
         paint.setTextSize(23.0f * uiScale);
@@ -6919,13 +6945,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     preferences
                         .getLastNativeModuleId()
                 );
-            if (module != null
-                && host.onNativeModulePlaybackRequested(
-                    module.id
-                )) {
-                nativeSurfaceReady = false;
-                mode = MODE_NATIVE;
-                return true;
+            if (module != null) {
+                if (host.onNativeModulePlaybackRequested(module.id)) {
+                    clearNativeModuleFailure();
+                    nativeSurfaceReady = false;
+                    mode = MODE_NATIVE;
+                    return true;
+                }
+                noteNativeModuleFailure(module.id);
             }
         }
 
@@ -7306,12 +7333,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
             labels,
             NATIVE_LIBRARY_BUTTONS
         );
-        paint.setColor(Color.rgb(164, 180, 194));
         paint.setTextSize(15.0f * uiScale);
-        canvas.drawText(
-            "Only functional titles. [DEV] previews require Development logging.",
-            90, 679, paint
-        );
+        if (!lastNativeFailureReason.isEmpty()) {
+            paint.setColor(Color.rgb(245, 181, 108));
+            canvas.drawText(
+                "FAILED: " + shorten(lastNativeFailureId, 49),
+                90, 672, paint);
+            canvas.drawText(shorten(lastNativeFailureReason, 92),
+                90, 706, paint);
+        } else {
+            paint.setColor(Color.rgb(164, 180, 194));
+            canvas.drawText(
+                "Only functional titles. [DEV] previews require Development logging.",
+                90, 679, paint);
+        }
     }
 
     private void drawControllerPanel(

@@ -1,3 +1,7 @@
+## 2026-10-13 — Native launch failure made visible in the headset
+
+After successful signed phone-test #157, a remaining defect was identified in failure reporting: failed JNI create, module GL initialization or per-eye render returned to Home without any in-headset explanation. The native shelf/Home now shows a bounded module identifier and actual JNI runtime error; the message survives the failed module's normal shutdown and clears after a successful native launch. Errors are still logged and terminate the failed module: no stubs, bypasses, retries, new controls, camera/UI layout changes or different Back behavior. Existing signed build/device testing remains the acceptance gate.
+
 ## 2026-10-13 — Remove shell-generated GL scissor error at native-game launch
 
 Focused correction in `VrShellRenderer.onDrawEye`: replace `glGetIntegerv(GL_SCISSOR_TEST)` with `glIsEnabled(GL_SCISSOR_TEST)`, the supported GLES2 enable-state query. The prior query could contaminate a native game's own `glGetError` on first eye and produce the observed immediate Home return. Existing original scissor state restoration and viewport/scissor rectangles remain the same; no headset/view, input, power HUD or geometry change. Native GL host boundary remains diagnostic defense. Signed APK build and Galaxy S9 runtime test pending.
