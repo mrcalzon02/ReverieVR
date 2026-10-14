@@ -4913,6 +4913,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     || mode == MODE_DOS_BINDINGS
             || mode == MODE_DOS_BINDING_TUNING) {
                     closeOrientationMenu();
+                    // Quick Menu -> Bindings is also an exit from immersive
+                    // DOS: no DOS options may overlay full-eye gameplay.
+                    if (dosRenderer.isFullScreen()) {
+                        dosRenderer.setFullScreen(false);
+                    }
                     if (mode == MODE_DOS) host.onDosOverlayPauseRequested();
                     mode = MODE_DOS_BINDINGS;
                     textureDirty = true;
