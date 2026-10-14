@@ -940,8 +940,21 @@ int main() {
     low_hull_save[36]=1; // Iron Quay D2, 1 HP
     assert(last_hull.DeserializeShop(low_hull_save,sizeof(low_hull_save)));
     assert(last_hull.BeginWave());
-    for(int i=0;i<150 && last_hull.phase()==Phase::Combat;i++)
+    // A fatal salvo stops the same substep before the next attacker moves.
+    // Previously the rest of the enemy loop continued after lethal damage.
+    bool stopped_at_fatal_salvo=false;
+    for(int i=0;i<150 && last_hull.phase()==Phase::Combat;i++) {
+        const bool second_alive=last_hull.enemies()[1].active;
+        const float second_z=last_hull.enemies()[1].z;
         last_hull.Tick(.05f);
+        if(last_hull.phase()==Phase::Defeat) {
+            assert(second_alive);
+            assert(last_hull.enemies()[1].active);
+            assert(last_hull.enemies()[1].z==second_z);
+            stopped_at_fatal_salvo=true;
+        }
+    }
+    assert(stopped_at_fatal_salvo);
     assert(last_hull.phase()==Phase::Defeat);
     assert(last_hull.gunboat_salvo().sequence==1);
     assert(last_hull.gunboat_salvo().damage==1);

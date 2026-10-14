@@ -8,7 +8,7 @@ A stationary coastal-defense gun battery faces a gradually escalating amphibious
 
 The campaign has three defended locations: **Shingle Bay (two days), Iron Quay (three days), and Blackcap Island (four days)**. Every day and night is a separate wave period with a shop after **every** wave. Initial Casual/Regular/Veteran/Siege wave schedules per day are 2/3/4/5 and per night 1/2/3/4, increasing on later maps and days with a ceiling of eight per period.
 
-Briefing → inter-wave Shop → Combat → Shop → next wave → sunset/night → sunrise/day → next location → Victory. Integrity falling to zero means Defeat. Nothing automatically skips the shop.
+Briefing → inter-wave Shop → Combat → Shop → next wave → sunset/night → sunrise/day → next location → Victory. Integrity falling to zero means Defeat. Fatal aircraft strikes, offshore gunboat salvos and gunboat shoreline collisions end the current simulation substep immediately after recording real damage. Later active attackers and infantry do not move, fire or disembark after the battery is destroyed; the terminal impact event remains available to the renderer. Native regression holds a second already-spawned attacker stationary on a fatal salvo. Nothing automatically skips the shop.
 
 The native input contract permits frame deltas up to 0.10 seconds. The campaign now advances that time in bounded 0.05-second substeps, rather than silently dropping half the elapsed time at 10 FPS. This preserves boat movement, spawn cadence, reloads and hostile attack timing on slow frames, while capping long pause/resume catch-up to 0.10 seconds. Deterministic native regressions compare one slow frame against two half-frames, including offshore gunboat salvos. Headset frame-pacing acceptance remains outstanding.
 

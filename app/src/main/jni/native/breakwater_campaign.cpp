@@ -595,6 +595,8 @@ void Campaign::TickStep(float dt) {
                     aircraft_attack_.damage = static_cast<uint8_t>(actual_damage);
                 }
                 e.attack_timer = bomber ? 20.0f : 0.72f;
+                // A fatal strike ends this substep; no later enemy acts.
+                if (integrity_ == 0) { phase_ = Phase::Defeat; return; }
             }
             // Aircraft make a complete overhead pass rather than colliding
             // with the beach. Surviving attackers leave the combat volume.
@@ -621,6 +623,7 @@ void Campaign::TickStep(float dt) {
                     gunboat_salvo_.damage = static_cast<uint8_t>(damage);
                 }
                 e.attack_timer = 2.8f;
+                if (integrity_ == 0) { phase_ = Phase::Defeat; return; }
             }
         }
         if (e.z >= -2.2f) {
@@ -635,6 +638,7 @@ void Campaign::TickStep(float dt) {
                     gunboat_collision_.damage = static_cast<uint8_t>(actual_damage);
                 }
                 e.active = false;
+                if (integrity_ == 0) { phase_ = Phase::Defeat; return; }
             } else Land(e);
         }
     }
