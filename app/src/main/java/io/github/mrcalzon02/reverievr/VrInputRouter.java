@@ -96,9 +96,18 @@ final class VrInputRouter {
             return;
         }
 
-        gestures.accept(snapshot.receivedAtNanos, snapshot.touchpadPressed,
-            snapshot.accelXG, snapshot.accelYG, snapshot.accelZG,
-            (input, down) -> emitBindingDigital(input, down, source));
+        // Only the original Daydream provider has this particular click/
+        // acceleration gesture contract. Never silently assign synthesized
+        // Daydream gestures to a Steam or generic controller.
+        if (source != null && source.toLowerCase(
+                java.util.Locale.ROOT).contains("daydream")) {
+            gestures.accept(snapshot.receivedAtNanos, snapshot.touchpadPressed,
+                snapshot.accelXG, snapshot.accelYG, snapshot.accelZG,
+                (input, down) -> emitBindingDigital(input, down, source));
+        } else {
+            gestures.reset((input, down) ->
+                emitBindingDigital(input, down, "Daydream gesture reset"));
+        }
 
         if (ReverieLog.isDevelopment()) {
             ReverieLog.dev(

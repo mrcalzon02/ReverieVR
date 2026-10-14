@@ -1,3 +1,7 @@
+## 2026-10-13 — Isolate Daydream inferred gestures from Steam/HID providers
+
+Constrained the new click/double/hold and high-acceleration gesture recognizer in VrInputRouter to snapshots whose provider identifies as Daydream. Non-Daydream snapshots reset held semantic-gesture state, avoiding accidental joystick13–15 controls from Steam or other controllers. Existing raw SELECT, pointer pose, touch and platform Menu/Home routing remains unchanged. Source gate and documentation updated together; #165 release does not include this gate, so next signed source release must include it.
+
 ## 2026-10-13 — Finish normalized signed-roll and extreme-look inputs
 
 Added HEAD_ROLL_POSITIVE/NEGATIVE semantic pulses for Cardboard Euler roll beyond ±0.29 radians, rearming below 0.17, with signed naming until Galaxy S9 verifies direction. The existing extreme-up/down and sharp yaw events now pulse BindingInput IDs as well as showing in the ghost overlay; no default game binds these safety-adjacent gestures. Activity still limits sustained head-up axis guest movement to bundled Doom only. Hardened long-press recognition against dropped intermediate BLE packets. No changes to headset pose matrices, controller geometry, power HUD, ghost overlay position or automatic Menu behavior. Android and physical-device validation pending.

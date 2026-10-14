@@ -1,3 +1,5 @@
+The double-tap, long-press and acceleration shake recognizer is **Daydream-provider-specific**: generic HID and Steam Controller sources still produce their original physical button and axis events, without receiving synthesized Daydream-only gestures. Switching providers releases held gesture state rather than leaking a game button across devices.
+
 # Daydream control index and game binding vocabulary
 
 **Reference hardware:** original Daydream View controller + Galaxy S9. The controller is tracked in **three rotational degrees of freedom** and reports orientation, angular rate, linear acceleration, touchpad contact coordinates, touchpad physical click, Menu, Home and volume up/down. There is no positional tracking, separate trigger button, dedicated analog stick, pressure sensor or inherent double-tap/long-press switch. The following semantic gestures are inferred in software and must be reference-device tested for false positives.
