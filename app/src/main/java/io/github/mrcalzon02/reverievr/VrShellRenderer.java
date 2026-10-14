@@ -8299,8 +8299,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         final float left = PowerHudArcGeometry.inwardInViewport(
             PowerHudArcGeometry.scaledNearTopRight(
                 originalLeft, 2f * 451f / HUD_TEXTURE_WIDTH - 1f));
-        // Preserve the prior 10% and move 20% further down/in per eye.
-        // Keep the original quad height, texture crop and look-up reveal.
+        // Keep both downward shifts; restore the prior outer-edge X.
+        // Preserve the quad size, texture crop and look-up reveal.
         final float top = PowerHudArcGeometry.lowerInViewport(originalTop);
         final float bottom = PowerHudArcGeometry.lowerInViewport(
             PowerHudArcGeometry.scaledNearTopRight(originalBottom, originalTop));

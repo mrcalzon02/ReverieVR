@@ -14,10 +14,10 @@ final class PowerHudArcGeometry {
     // Eye NDC spans -1..+1: a 0.20 downward shift equals 10% of the
     // visible eye height. Translate the entire cropped quad, not its UVs.
     static final float VIEWPORT_DOWN_NDC = 0.20f;
-    // Further user-requested shift: each full eye is 2 NDC units across.
-    // 0.40 NDC is an additional 20% of that eye, down and inward.
+    // An eye spans 2 NDC units; retain its 20% extra downward shift.
+    // Undo the 20% inward offset to restore the outer-edge position.
     static final float EXTRA_DOWN_NDC = 0.40f;
-    static final float EXTRA_INWARD_NDC = 0.40f;
+    static final float EXTRA_INWARD_NDC = 0.0f;
     static float lowerInViewport(float eyeY) {
         return eyeY - VIEWPORT_DOWN_NDC - EXTRA_DOWN_NDC;
     }
