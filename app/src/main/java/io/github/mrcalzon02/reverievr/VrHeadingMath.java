@@ -37,6 +37,27 @@ final class VrHeadingMath {
     }
 
     /** Positive heading cancels negative headset yaw in world-to-eye view. */
+    /**
+     * Apply recenter yaw on the world side of a Cardboard world-to-eye view.
+     * Multiplying yaw * headView instead rotates around the head's local Y:
+     * at nonzero headings, ordinary up/down pitch then becomes camera roll.
+     * This computes headView * yaw without allocations or touching IPD.
+     */
+    static void applyWorldYawToHeadView(
+        float[] output, float[] headView, float[] yawMatrix
+    ) {
+        float cosine = yawMatrix[0];
+        float sine = yawMatrix[8];
+        for (int row = 0; row < 4; row++) {
+            float x = headView[row];
+            float z = headView[8 + row];
+            output[row] = x * cosine - z * sine;
+            output[4 + row] = headView[4 + row];
+            output[8 + row] = x * sine + z * cosine;
+            output[12 + row] = headView[12 + row];
+        }
+    }
+
     static float viewCorrectionDegrees(float heading) {
         return (float) Math.toDegrees(heading);
     }

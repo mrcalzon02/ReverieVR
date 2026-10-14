@@ -1672,13 +1672,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
         updateNativeLocomotion(frameNanos);
 
-        Matrix.multiplyMM(
+        // Apply shell recenter on WORLD coordinates. Pre-multiplying
+        // yawMatrix in eye space converts vertical pitch into sideways roll.
+        VrHeadingMath.applyWorldYawToHeadView(
             adjustedHeadView,
-            0,
-            yawMatrix,
-            0,
             rawHeadView,
-            0
+            yawMatrix
         );
         Matrix.translateM(
             adjustedHeadView,

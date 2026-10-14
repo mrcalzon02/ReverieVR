@@ -56,6 +56,67 @@ public final class VrHeadingMathTest {
     }
 
     @Test
+    public void pitchRemainsPitchAfterRecenterAtBothQuarterTurns() {
+        // Cardboard world-to-eye = pitch * inverse(world heading).
+        // Recenter MUST apply its yaw on the right/world side. Otherwise
+        // looking up/down couples into roll when initially facing sideways.
+        for (float headingSign : new float[] {-1f, 1f}) {
+            float[] recenterYaw = {
+                0f, 0f, -headingSign, 0f,
+                0f, 1f, 0f, 0f,
+                headingSign, 0f, 0f, 0f,
+                0f, 0f, 0f, 1f
+            };
+            for (float pitchDegrees : new float[] {-60f, -30f, 0f, 30f, 60f}) {
+                float pitchRadians = (float) Math.toRadians(pitchDegrees);
+                float cosine = (float) Math.cos(pitchRadians);
+                float sine = (float) Math.sin(pitchRadians);
+                float[] rawHeadView = {
+                    0f, -sine * headingSign, cosine * headingSign, 0f,
+                    0f, cosine, sine, 0f,
+                    -headingSign, 0f, 0f, 0f,
+                    0f, 0f, 0f, 1f
+                };
+                float[] corrected = new float[16];
+                VrHeadingMath.applyWorldYawToHeadView(
+                    corrected, rawHeadView, recenterYaw);
+                // An unrolled view keeps world up on camera X=0.
+                assertEquals(0f, corrected[4], EPSILON);
+                assertEquals(1f, corrected[0], EPSILON);
+                assertEquals(0f, corrected[8], EPSILON);
+                assertEquals(cosine, corrected[5], EPSILON);
+                assertEquals(sine, corrected[6], EPSILON);
+                assertEquals(-sine, corrected[9], EPSILON);
+                assertEquals(cosine, corrected[10], EPSILON);
+            }
+        }
+    }
+
+    @Test
+    public void noRecenterPreservesActualHeadRollAndTranslation() {
+        float c = (float) Math.cos(Math.PI / 6.0);
+        float s = (float) Math.sin(Math.PI / 6.0);
+        float[] rolled = {
+            c, s, 0f, 0f,
+            -s, c, 0f, 0f,
+            0f, 0f, 1f, 0f,
+            2f, -3f, 4f, 1f
+        };
+        float[] identityYaw = {
+            1f, 0f, 0f, 0f,
+            0f, 1f, 0f, 0f,
+            0f, 0f, 1f, 0f,
+            0f, 0f, 0f, 1f
+        };
+        float[] corrected = new float[16];
+        VrHeadingMath.applyWorldYawToHeadView(
+            corrected, rolled, identityYaw);
+        for (int index = 0; index < 16; index++) {
+            assertEquals(rolled[index], corrected[index], EPSILON);
+        }
+    }
+
+    @Test
     public void forwardMapsToZeroYaw() {
         assertEquals(
             0.0f,
