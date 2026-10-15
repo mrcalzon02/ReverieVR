@@ -56,6 +56,11 @@ struct State {
     Kind kind=Kind::Checkers;
     Board cells{};
     std::unordered_set<Board,GoBoardHash> goHistory;
+    // Review and mark dead stones before accepting Chinese area scoring.
+    std::array<uint8_t,kCapacity> goDead{};
+    bool goReview=false;
+    int goReviewRevision=0;
+    float goBlackScore=0.f,goWhiteScore=0.f;
     int side=1, winner=0, selected=-1, forced=-1, ply=0, passes=0;
     int enPassant=-1, castles=15, lastFrom=-1, lastTo=-1;
     bool finished=false;
@@ -67,7 +72,9 @@ struct State {
     uint32_t Random(){seed^=seed<<13;seed^=seed>>17;seed^=seed<<5;return seed;}
     static int Sign(int n){return n>0?1:(n<0?-1:0);}
     void Reset(Kind type) {
-        kind=type;cells.fill(0);goHistory.clear();chessHistory.clear();
+        kind=type;cells.fill(0);goHistory.clear();goDead.fill(0);
+        goReview=false;goReviewRevision=0;
+        goBlackScore=goWhiteScore=0.f;chessHistory.clear();
         checkerHistory.clear();checkerQuietPlies=0;
         halfMoves=0;promotionChoice=5;side=1;winner=0;
         selected=forced=-1;ply=passes=0;enPassant=-1;castles=15;
@@ -422,7 +429,7 @@ struct State {
         return true;
     }
     bool GoMove(int index) {
-        if(kind!=Kind::Go||finished)return false;
+        if(kind!=Kind::Go||finished||goReview)return false;
         Board after{};
         int captured=0;
         if(!SimulateGo(index,after,captured))return false;
@@ -430,11 +437,23 @@ struct State {
         selected=-1;lastFrom=-1;lastTo=index;
         side=-side;++ply;return true;
     }
+    bool ToggleGoDead(int index) {
+        if(kind!=Kind::Go||!goReview||finished||
+           index<0||index>=kCapacity||cells[index]==0)return false;
+        const Group group=Flood(cells,index);
+        const uint8_t next=goDead[index]?0:1;
+        for(int i=0;i<group.count;i++)goDead[group.stones[i]]=next;
+        selected=index;++goReviewRevision;
+        return true;
+    }
+    // Count accepted dead stones as vacant points for Chinese area score.
     void ScoreGo(){
+        Board counted=cells;
+        for(int i=0;i<kCapacity;i++)if(goDead[i])counted[i]=0;
         float black=0.f,white=7.5f; // Chinese 19x19 area komi
         std::array<uint8_t,kCapacity> visited{};
         for(int i=0;i<kCapacity;i++){
-            if(cells[i]!=0){if(cells[i]>0)black++;else white++;continue;}
+            if(counted[i]!=0){if(counted[i]>0)black++;else white++;continue;}
             if(visited[i])continue;
             std::array<int,kCapacity> queue{};int front=0,end=1,border=0;
             queue[0]=i;visited[i]=1;
@@ -445,21 +464,37 @@ struct State {
                     int xx=x+dx[d],yy=y+dy[d];
                     if(xx<0||yy<0||xx>=kGoSize||yy>=kGoSize)continue;
                     int other=yy*kGoSize+xx;
-                    if(cells[other]>0)border|=1;
-                    else if(cells[other]<0)border|=2;
+                    if(counted[other]>0)border|=1;
+                    else if(counted[other]<0)border|=2;
                     else if(!visited[other]){visited[other]=1;queue[end++]=other;}
                 }
             }
             if(border==1)black+=end;
             if(border==2)white+=end;
         }
+        goBlackScore=black;goWhiteScore=white;
         winner=black>white?1:-1;finished=true;
     }
+    bool AcceptGoScore() {
+        if(kind!=Kind::Go||!goReview||finished)return false;
+        ScoreGo();goReview=false;++goReviewRevision;
+        return true;
+    }
+    bool ResumeGoPlay() {
+        if(kind!=Kind::Go||!goReview||finished)return false;
+        goReview=false;goDead.fill(0);passes=0;
+        side=1;selected=-1;lastFrom=lastTo=-1;
+        ++goReviewRevision;
+        return true;
+    }
     bool Pass(){
-        if(kind!=Kind::Go||finished)return false;
+        if(kind!=Kind::Go||finished||goReview)return false;
         selected=-1;lastFrom=-1;lastTo=-1;
         ++passes;++ply;side=-side;
-        if(passes>=2)ScoreGo();
+        if(passes>=2){
+            goReview=true;goDead.fill(0);++goReviewRevision;
+            side=1; // review, or resume play for unsettled groups
+        }
         return true;
     }
 
@@ -667,7 +702,8 @@ struct State {
     bool Select(int square) {
         if(finished){Reset(kind);return true;}
         if(side!=1)return false;
-        if(kind==Kind::Go)return GoMove(square);
+        if(kind==Kind::Go)
+            return goReview?ToggleGoDead(square):GoMove(square);
         const int cap=Size()*Size();
         if(square<0||square>=cap)return false;
         if(kind==Kind::Checkers){

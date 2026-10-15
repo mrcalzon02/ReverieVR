@@ -91,11 +91,14 @@
 
 ## Native classics fidelity backlog
 
-- **Go 19×19:** Full 361-intersection board, exact positional-superko,
-  standard-sized coordinates, full-board score traversal and CPU turn
-  allocation source implemented. Complete negotiated dead-stone/scoring
-  phase, seki adjudication, ruleset options and stronger bounded AI. Accept
-  CPU strength, spatial accuracy and small-stone readability on S9.
+- **Go 19×19:** Full 361-intersection board and positional superko.
+  Two passes now open a functional group-by-group dead-stone review,
+  with SCORE to accept Chinese area count or RESUME to continue play.
+  The review UI renders marked groups and final numerical scores;
+  original stones are preserved. Remaining: a CPU capable of disputing
+  marks / negotiating dead stones, seki adjudication, ruleset options
+  and a strong bounded opponent. Native, APK, controller precision,
+  small-stone readability and thermal performance need device proof.
 - **Chess:** Source now supports claimable threefold/50-move draws,
   automatic fivefold/75-move draws, a safe subset of dead-material draws,
   and selectable queen/rook/bishop/knight promotions; native test, signed

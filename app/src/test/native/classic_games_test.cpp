@@ -219,7 +219,41 @@ static void TestBoardGames() {
     Boards emptyGo;
     emptyGo.Reset(BoardKind::Go);
     assert(emptyGo.Pass()&&!emptyGo.finished);
-    assert(emptyGo.Pass()&&emptyGo.finished&&emptyGo.winner==-1);
+    assert(emptyGo.Pass()&&emptyGo.goReview&&!emptyGo.finished);
+    assert(!emptyGo.Pass()&&!emptyGo.GoMove(at(3,3)));
+    assert(emptyGo.AcceptGoScore()&&emptyGo.finished&&emptyGo.winner==-1);
+    assert(emptyGo.goBlackScore==0.f&&emptyGo.goWhiteScore==7.5f);
+
+    // Two passes invite dead-group review, rather than automatically
+    // assigning a result while players may dispute living/dead stones.
+    Boards reviewGo;
+    reviewGo.Reset(BoardKind::Go);
+    reviewGo.cells[at(2,2)]=1;reviewGo.cells[at(2,3)]=1;
+    reviewGo.cells[at(5,5)]=-1;
+    assert(reviewGo.Pass()&&reviewGo.Pass()&&reviewGo.goReview);
+    assert(reviewGo.ToggleGoDead(at(2,2)));
+    assert(reviewGo.goDead[at(2,2)]&&reviewGo.goDead[at(2,3)]);
+    assert(!reviewGo.goDead[at(5,5)]);
+    assert(reviewGo.ToggleGoDead(at(2,3)));
+    assert(!reviewGo.goDead[at(2,2)]&&!reviewGo.goDead[at(2,3)]);
+    assert(!reviewGo.ToggleGoDead(at(1,1))); // cannot mark empty points
+    assert(reviewGo.ToggleGoDead(at(5,5)));
+    assert(reviewGo.ResumeGoPlay()&&!reviewGo.goReview);
+    assert(reviewGo.cells[at(5,5)]==-1&&!reviewGo.goDead[at(5,5)]);
+    assert(reviewGo.passes==0&&reviewGo.side==1);
+    assert(reviewGo.GoMove(at(10,10))); // real play resumed
+
+    // Removed dead white stones count as surrounded black territory;
+    // preserve original board until scoring is accepted.
+    Boards settled;
+    settled.Reset(BoardKind::Go);
+    settled.cells.fill(1);settled.cells[at(9,9)]=-1;
+    assert(settled.Pass()&&settled.Pass());
+    assert(settled.ToggleGoDead(at(9,9)));
+    assert(settled.AcceptGoScore()&&settled.finished);
+    assert(settled.goBlackScore==361.f&&settled.goWhiteScore==7.5f);
+    assert(settled.winner==1&&settled.cells[at(9,9)]==-1);
+    assert(!settled.ResumeGoPlay());
     Boards cpuGo;
     cpuGo.Reset(BoardKind::Go);
     assert(cpuGo.GoMove(at(9,9)));

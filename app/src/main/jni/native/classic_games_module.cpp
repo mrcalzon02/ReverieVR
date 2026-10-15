@@ -205,26 +205,45 @@ void RebuildBoard(Module *m,bool fixed){
         }
         if(s.selected==cell)
             BoardOutline(m,px,py,gap*.96f,1.f,.99f,.20f);
+        if(s.kind==reverie::boardgames::Kind::Go && s.goReview &&
+           s.goDead[cell])
+            BoardOutline(m,px,py,gap*.92f,.98f,.30f,.24f);
         if(m->boardCursorActive && m->boardCursorX==x &&
            m->boardCursorY==y)
             BoardOutline(m,px,py,gap*.76f,.93f,.98f,.99f);
         }
     }
     if(fixed && s.kind==reverie::boardgames::Kind::Go){
-        Rect(m,1.94f,-1.25f,.89f,.41f,-2.98f,.23f,.36f,.42f);
-        Text(m,"PASS",1.94f,-1.25f,.067f,1.f,1.f,.89f);
-        Text(m,"TWO PASSES END",0,-1.58f,.048f,.80f,.90f,.87f);
+        Text(m,"TWO PASSES: REVIEW DEAD GROUPS",0,-1.58f,.040f,
+             .80f,.90f,.87f);
     }else if(fixed){
         Text(m,"SELECT PIECE THEN DESTINATION",0,-1.58f,.040f,
              .84f,.90f,.87f);
+    }
+    if(!fixed && s.kind==reverie::boardgames::Kind::Go &&
+       !s.finished){
+        Rect(m,1.94f,-1.25f,.89f,.41f,-2.98f,.23f,.36f,.42f);
+        Text(m,s.goReview?"SCORE":"PASS",1.94f,-1.25f,.053f,
+             1.f,1.f,.89f);
+        if(s.goReview){
+            Rect(m,-1.94f,-1.25f,.89f,.41f,-2.98f,.23f,.36f,.42f);
+            Text(m,"RESUME",-1.94f,-1.25f,.047f,1.f,1.f,.89f);
+        }
     }
     if(!fixed && s.finished){
         const char *msg=s.winner==1?"YOU WIN":s.winner==-1?
             "CPU WINS":"DRAW";
         Text(m,msg,0,1.34f,.074f,1.f,.91f,.58f);
+        if(s.kind==reverie::boardgames::Kind::Go){
+            char scored[64];
+            std::snprintf(scored,sizeof(scored),"BLACK %.1f  WHITE %.1f",
+                          s.goBlackScore,s.goWhiteScore);
+            Text(m,scored,0,1.15f,.044f,.95f,.96f,.85f);
+        }
         Text(m,"PRESS TO RESTART",1.91f,.66f,.043f,1.f,.95f,.78f);
     }else if(!fixed){
-        Text(m,s.side==1?"YOUR TURN":"CPU THINKING",
+        Text(m,s.kind==reverie::boardgames::Kind::Go&&s.goReview
+             ?"MARK DEAD GROUPS":s.side==1?"YOUR TURN":"CPU THINKING",
              0,1.34f,.064f,.95f,.95f,.78f);
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
             Text(m,"CONTINUE JUMP",1.88f,.63f,.044f,1.f,.90f,.56f);
@@ -509,6 +528,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     const int prevPly=m->board.ply,prevSelected=m->board.selected;
     const int prevWinner=m->board.winner,prevSide=m->board.side;
     const bool prevFinished=m->board.finished;
+    const int prevGoReviewRevision=m->board.goReviewRevision;
     const bool second=copy.secondary_down!=0;
     const bool secondaryEdge=second&&!m->previousSecondary;
     m->previousSecondary=second;
@@ -528,8 +548,10 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         }
     }else m->cursorRepeat=.17f;
     if(secondaryEdge && m->board.side==1){
-        if(m->board.kind==reverie::boardgames::Kind::Go)
-            m->board.Pass();
+        if(m->board.kind==reverie::boardgames::Kind::Go){
+            if(m->board.goReview)m->board.AcceptGoScore();
+            else m->board.Pass();
+        }
         else if(m->board.kind==reverie::boardgames::Kind::Chess){
             m->board.CyclePromotion();
             m->dirty=true;
@@ -542,8 +564,13 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             m->boardCursorX=m->boardCursorY=0;
         }else if(m->board.side==1) {
             if(aim && m->board.kind==reverie::boardgames::Kind::Go &&
-               hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
-                m->board.Pass();
+               hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f){
+                if(m->board.goReview)m->board.AcceptGoScore();
+                else m->board.Pass();
+            }else if(aim && m->board.kind==reverie::boardgames::Kind::Go &&
+                     m->board.goReview &&
+                     hx> -2.42f&&hx< -1.49f&&hy<-.99f&&hy> -1.50f)
+                m->board.ResumeGoPlay();
             else if(aim &&
                     m->board.kind==reverie::boardgames::Kind::Chess &&
                     m->board.ChessDrawClaimable() &&
@@ -569,7 +596,8 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     m->board.Step(copy.delta_seconds);
     if(m->board.ply!=prevPly||m->board.selected!=prevSelected||
        m->board.side!=prevSide||m->board.finished!=prevFinished||
-       m->board.winner!=prevWinner)m->dirty=true;
+       m->board.winner!=prevWinner||
+       m->board.goReviewRevision!=prevGoReviewRevision)m->dirty=true;
     return;
 #endif
     // Snapshot only what the generated screen actually displays.

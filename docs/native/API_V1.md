@@ -335,8 +335,12 @@ The allowlisted `classic-go` module now presents a 19×19 board and uses
 361-point state, capture/liberty calculation, exact positional-superko
 history and 7.5-komi area scoring. No ABI-v1 structures, callbacks or
 shell/game authority boundaries changed. Standard chess/checkers retain
-8×8 geometry. Dead-stone settlement and strong Go search are not yet
-implemented; see `docs/project/CLASSIC_NATIVE_GAMES.md`.
+8×8 geometry. Two passes now expose a game-private manual
+dead-group review using the existing primary/secondary input: select a
+group to toggle its dead status, SCORE to accept the adjusted area count
+or RESUME to continue playing. The shell-host ABI is unchanged. Autonomous
+CPU adjudication of disputed groups, seki recognition and strong Go
+search remain outstanding; see `docs/project/CLASSIC_NATIVE_GAMES.md`.
 
 ## English draughts / Checkers draw claims (2026-10-15)
 

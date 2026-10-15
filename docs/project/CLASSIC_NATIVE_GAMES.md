@@ -44,15 +44,20 @@ regulation 19×19 board, not a small-board approximation. The rules engine,
 Go's original 9×9-only cutoff, board arrays, scoring traversal and liberties
 were expanded, with tests for distant-corner placement and edge captures.
 
-- **Go:** 19×19, positional superko backed by exact whole-board state
-  comparisons (not only previous-move ko); capture and no-suicide; consecutive
-  legal passes; Chinese-style area scoring at 7.5 komi. Pass is supported
-  by the on-board PASS target or native secondary action. CPU now searches
-  all intersections and skips clearly self-filled eyes / self-atari; it no
-  longer forces a pass after 155 moves. **Still incomplete for full competition
-  rules:** negotiated dead-stone removal before scoring, seki scoring
-  adjudication, and selectable scoring rulesets. The current CPU remains a
-  bounded heuristic opponent, not a strong Go engine.
+- **Go:** 19×19, exact positional superko, captures and no-suicide.
+  Two consecutive passes now begin an **explicit scoring-review phase**,
+  instead of silently finishing the game. Select a group to mark or unmark
+  all its stones as dead; the right SCORE control confirms Chinese area
+  scoring (7.5-point white komi) and displays the actual black/white
+  scores. RESUME on the left restores play with every original stone,
+  clears marked groups and restarts the pass sequence. Native Secondary
+  operates PASS during normal play and SCORE during review. These controls
+  share the existing VR pointer/select surface and do not change Home.
+  This does not yet provide an independently adjudicating Go opponent:
+  the CPU accepts human dead-group markings; automatic life/death
+  judgment, seki settlement and configurable rulesets remain open.
+  The CPU searches all 361 intersections but is a basic heuristic
+  player, not a strong competitive Go engine.
 - **Checkers:** WCDF American/English 8×8: 12 men per side,
   compulsory diagonal capture, complete multiple jumps, and crowning
   ending the turn. Draw claims are available on three completed
