@@ -25,10 +25,16 @@ final class DosModuleRepository {
     private final File root;
 
     DosModuleRepository(Context context) {
-        root = new File(
-            context.getFilesDir(),
-            ROOT
-        );
+        this(new File(context.getFilesDir(), ROOT));
+    }
+
+    // Pure filesystem constructor also makes large-library persistence
+    // testable without an Android device or fake ContentResolver.
+    DosModuleRepository(File rootDirectory) {
+        if (rootDirectory == null) {
+            throw new IllegalArgumentException("DOS library root is required.");
+        }
+        root = rootDirectory;
     }
 
     File rootDirectory() {

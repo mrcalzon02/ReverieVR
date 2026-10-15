@@ -18,15 +18,6 @@ final class BundledDosContentInstaller {
     static final String DOOM_MODULE_ID =
         "bundled-doom-shareware-1.9";
 
-    static final String KEN_MODULE_ID =
-        "bundled-kens-labyrinth-2.1";
-    private static final String KEN_ASSET = "default-content/labfull.zip";
-    private static final String KEN_SHA256 =
-        "643aa0ca8d1a7d2c88afecd952da00f3b912be8b83c4c1d2f4ab9b50491fadfd";
-    private static final String KEN_PAYLOAD_FILE = "labfull.zip";
-    private static final String KEN_BOOTSTRAP_MARKER =
-        ".reverie-ken-bootstrap-v1";
-
     private static final String DOOM_ASSET =
         "default-content/doom19s.zip";
     private static final String DOOM_SHA256 =
@@ -106,95 +97,111 @@ final class BundledDosContentInstaller {
     }
 
 
-    // The original ZIP is verified before extraction and kept unchanged in
-    // the APK. Runtime files are app-private, never a second Android package.
-    DosGameModule ensureBundledKen() throws IOException {
-        if (!BuildConfig.KENS_LABYRINTH_BUNDLED) {
-            return null;
+    // Install all actually packaged archive-based games independently.
+    // One damaged title must not prevent other games from appearing.
+    void ensureBundledArchives() {
+        for (BundledDosArchiveCatalog.Entry entry :
+                BundledDosArchiveCatalog.all()) {
+            if (!entry.packaged) continue;
+            try {
+                ensureBundledArchive(entry);
+            } catch (IOException exception) {
+                ReverieLog.error("BUNDLED_CONTENT",
+                    "Could not install bundled DOS game: " + entry.displayName,
+                    exception);
+            }
         }
-        File directory = new File(repository.rootDirectory(), KEN_MODULE_ID);
+    }
+
+    private DosGameModule ensureBundledArchive(
+        BundledDosArchiveCatalog.Entry entry
+    ) throws IOException {
+        if (!entry.packaged) return null;
+        File directory = new File(repository.rootDirectory(), entry.id);
         File payload = new File(
-            new File(directory, CONTENT_DIRECTORY), KEN_PAYLOAD_FILE);
-        DosGameModule existing = repository.findById(KEN_MODULE_ID);
+            new File(directory, CONTENT_DIRECTORY), entry.archiveFileName);
+        DosGameModule existing = repository.findById(entry.id);
         if (!payload.isFile()
-            || !KEN_SHA256.equalsIgnoreCase(sha256(payload))) {
-            if (directory.exists() && !deleteRecursively(directory)) {
-                throw new IOException("Cannot remove invalid Ken's Labyrinth content.");
+            || !entry.archiveSha256.equalsIgnoreCase(sha256(payload))) {
+            // Content repair must not destroy user-customized bindings or
+            // module metadata, even when a payload is missing or damaged.
+            File contentDir = payload.getParentFile();
+            File runtimeDir = new File(directory, RUNTIME_DIRECTORY);
+            if ((contentDir.exists() && !deleteRecursively(contentDir))
+                || (runtimeDir.exists() && !deleteRecursively(runtimeDir))) {
+                throw new IOException("Cannot repair bundled DOS game content.");
             }
-            File content = payload.getParentFile();
-            if (!content.mkdirs() && !content.isDirectory()) {
-                throw new IOException("Cannot create Ken's Labyrinth content directory.");
+            if (!contentDir.mkdirs() && !contentDir.isDirectory()) {
+                throw new IOException("Cannot create bundled DOS game content directory.");
             }
-            copyVerifiedAsset(payload, KEN_ASSET, KEN_SHA256);
+            copyVerifiedAsset(payload, entry.assetPath, entry.archiveSha256);
         }
         File runtime = new File(directory, RUNTIME_DIRECTORY);
-        File marker = new File(runtime, KEN_BOOTSTRAP_MARKER);
-        File executable = findKenExecutable(runtime);
+        File marker = new File(runtime, entry.markerName);
+        File executable = findBundledExecutable(runtime, entry.executableName, 3);
         if (!marker.isFile() || executable == null || executable.length() == 0) {
             if (runtime.exists() && !deleteRecursively(runtime)) {
-                throw new IOException("Cannot reset Ken's Labyrinth runtime.");
+                throw new IOException("Cannot reset bundled DOS game runtime.");
             }
             if (!runtime.mkdirs() && !runtime.isDirectory()) {
-                throw new IOException("Cannot create Ken's Labyrinth runtime.");
+                throw new IOException("Cannot create bundled DOS game runtime.");
             }
             try (InputStream input = new BufferedInputStream(
                     new FileInputStream(payload))) {
-                BoundedZipExtractor.extract(input, runtime, 256,
-                    64L * 1024L * 1024L);
+                BoundedZipExtractor.extract(input, runtime,
+                    entry.maxEntries, entry.maxExpandedBytes);
             } catch (IOException failure) {
                 deleteRecursively(runtime);
                 throw failure;
             }
-            executable = findKenExecutable(runtime);
+            executable = findBundledExecutable(runtime, entry.executableName, 3);
             if (executable == null || executable.length() == 0) {
                 deleteRecursively(runtime);
-                throw new IOException(
-                    "Original Ken's Labyrinth archive has no KEN.EXE.");
+                throw new IOException("Bundled " + entry.displayName
+                    + " archive has no " + entry.executableName);
             }
-            writeText(marker, "RVKEN1\nsha256=" + KEN_SHA256 + "\n");
+            writeText(marker,
+                "RVARCH1\nsha256=" + entry.archiveSha256 + "\n");
         }
         String rootPath = runtime.getCanonicalPath() + File.separator;
         String executablePath = executable.getCanonicalPath();
         if (!executablePath.startsWith(rootPath)) {
-            throw new IOException("Ken's Labyrinth launch path escapes runtime.");
+            throw new IOException("Bundled DOS game launch path escapes runtime.");
         }
         String dosExecutable = executablePath.substring(rootPath.length())
             .replace(File.separatorChar, (char) 92);
         writeText(new File(runtime, DOS_YML),
             "run_path: C:" + (char) 92 + dosExecutable + "\n");
         DosGameModule module = new DosGameModule(
-            KEN_MODULE_ID,
-            "Ken's Labyrinth v2.1 (Freeware)",
-            KEN_PAYLOAD_FILE,
+            entry.id,
+            entry.displayName,
+            entry.archiveFileName,
             runtime.getAbsolutePath(),
             existing == null || !BuiltInBindingProfiles.isDosProfileId(
                 existing.bindingProfileId)
-                ? BuiltInBindingProfiles.ID_DOS_KENS_LABYRINTH
-                : existing.bindingProfileId,
-            0L
-        );
+                ? entry.bindingProfileId : existing.bindingProfileId,
+            0L);
         repository.save(module);
         ReverieLog.milestone("BUNDLED_CONTENT",
-            "Verified and installed Ken's Labyrinth v2.1 freeware runtime.");
+            "Verified and installed bundled DOS game: " + entry.displayName);
         return module;
     }
 
-    private static File findKenExecutable(File runtime) {
-        File rootExecutable = childFile(runtime, "KEN.EXE");
-        if (rootExecutable != null) {
-            return rootExecutable;
-        }
-        if (!runtime.isDirectory()) {
-            return null;
-        }
-        File[] children = runtime.listFiles(File::isDirectory);
-        if (children != null) {
-            for (File child : children) {
-                File candidate = childFile(child, "KEN.EXE");
-                if (candidate != null) {
-                    return candidate;
-                }
-            }
+    private static File findBundledExecutable(
+        File directory, String filename, int remainingDepth
+    ) {
+        File found = childFile(directory, filename);
+        if (found != null) return found;
+        if (remainingDepth <= 0 || !directory.isDirectory()) return null;
+        File[] children = directory.listFiles(File::isDirectory);
+        if (children == null) return null;
+        // Give all entries a deterministic choice if the archive has
+        // similarly named executable files in different subdirectories.
+        java.util.Arrays.sort(children,
+            (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+        for (File child : children) {
+            found = findBundledExecutable(child, filename, remainingDepth - 1);
+            if (found != null) return found;
         }
         return null;
     }
@@ -202,8 +209,10 @@ final class BundledDosContentInstaller {
     DosGameModule prepareForLaunch(
         DosGameModule module
     ) throws IOException {
-        if (module != null && KEN_MODULE_ID.equals(module.id)) {
-            return ensureBundledKen();
+        BundledDosArchiveCatalog.Entry archiveEntry =
+            module == null ? null : BundledDosArchiveCatalog.findById(module.id);
+        if (archiveEntry != null) {
+            return ensureBundledArchive(archiveEntry);
         }
         if (module == null
             || !DOOM_MODULE_ID.equals(module.id)) {

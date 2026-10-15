@@ -2002,7 +2002,7 @@ public final class VrActivity extends Activity
 
         if (module != null
             && (BundledDosContentInstaller.DOOM_MODULE_ID.equals(module.id)
-                || BundledDosContentInstaller.KEN_MODULE_ID.equals(module.id))
+                || BundledDosArchiveCatalog.findById(module.id) != null)
             && bundledDosContentInstaller != null) {
             try {
                 module =

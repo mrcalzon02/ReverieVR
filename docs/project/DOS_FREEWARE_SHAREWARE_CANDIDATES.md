@@ -17,3 +17,40 @@ No false playable shelf entries and no downloading installers on the user's
 phone during play. Home/O is reserved for VR Quick Menu, with separate
 minus/App and volume +/− rocker controls. In head-as-mouse profiles, head
 orientation provides mouse XY while the touchpad can emit four digital keys.
+
+## Library capacity and integration contract (2026-10-14)
+
+The DOS library is a dynamically enumerated app-private module repository,
+not a three-game roster. The VR shelf exposes **three selection slots per page**
+and calculates additional pages from the installed-module count. The
+`DosLibraryPaging` contract is shared by drawing, enabled hit targets,
+selection, and wraparound; JVM tests enumerate all slots at 0, 1, 3, 7, 51 and
+100 games, plus integer boundary behavior. Library persistence tests populate
+51 separate installed-game directories, reopen the repository, and verify
+independent bindings after a profile change. None of those tests substitutes
+for an APK + S9 interaction check.
+
+Bundled DOS content is a separate question from shelf capacity. Legacy
+DOOM retains its proven split-installer preparation. Standard complete ZIP
+games use `BundledDosArchiveCatalog` descriptors: unique module ID, title,
+verified unchanged archive path and SHA-256, executable path/name, extraction
+bounds, profile, release packaging flag, and local installation marker.
+`BundledDosContentInstaller` iterates packaged descriptors, continues
+installing other titles when one fails with an explicit error log, and
+registers a game **only after verified extraction and executable discovery**.
+It preserves each game's independent saved binding metadata when damaged
+content must be reinstalled. Adding another title still requires verified
+original rights, its release fetch/packaging setup, declared digest, and
+appropriate control preset; merely adding a title to this candidate document
+does not create a playable game.
+
+The existing Android importer accepts game files up to **8 GiB each**, but
+there is no promise of limitless phone storage. Bundled ZIP extraction has
+per-title limits, and the phone needs enough usable space for both the
+unchanged original archive and extracted runtime/save data. The signed
+ReverieVR phone-test APK was **94,235,418 bytes** on the last checked release
+(`phone-test-184-1`), before these capacity-source changes; projected
+future APK growth must be measured, not assumed. A noncommercial freeware
+archive can be excluded from different distribution variants without
+fabricating a download-on-play requirement. Offline local games remain the
+default; no laptop or external app is required.

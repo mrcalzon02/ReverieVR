@@ -1475,10 +1475,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         dosModuleIds = ids;
         dosModuleNames = names;
 
-        int pageCount = Math.max(1, (count + 2) / 3);
-        if (dosLibraryPage >= pageCount) {
-            dosLibraryPage = pageCount - 1;
-        }
+        dosLibraryPage = DosLibraryPaging.clampPage(dosLibraryPage, count);
 
         textureDirty = true;
     }
@@ -4525,18 +4522,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_DOS_LIBRARY) {
             if (index >= 0 && index <= 2) {
-                int moduleIndex =
-                    dosLibraryPage * 3 + index;
-                return moduleIndex < dosModuleIds.length;
+                return DosLibraryPaging.moduleIndex(
+                    dosLibraryPage, index, dosModuleIds.length) >= 0;
             }
 
             if (index == 3) {
-                int pageCount =
-                    Math.max(
-                        1,
-                        (dosModuleIds.length + 2) / 3
-                    );
-                return pageCount > 1;
+                return DosLibraryPaging.pageCount(dosModuleIds.length) > 1;
             }
 
             return index == 4 || index == 5;
@@ -5493,13 +5484,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void handleDosLibrarySelection(int button) {
         String[] ids = dosModuleIds;
-        int pageCount =
-            Math.max(1, (ids.length + 2) / 3);
+        int pageCount = DosLibraryPaging.pageCount(ids.length);
 
-        if (button >= 0 && button <= 2) {
-            int moduleIndex =
-                dosLibraryPage * 3 + button;
-            if (moduleIndex < ids.length
+        if (button >= 0 && button < DosLibraryPaging.PAGE_SIZE) {
+            int moduleIndex = DosLibraryPaging.moduleIndex(
+                dosLibraryPage, button, ids.length);
+            if (moduleIndex >= 0
                 && host.onDosPlaybackRequested(
                     ids[moduleIndex]
                 )) {
@@ -5520,9 +5510,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             host.onUiActionRejected();
         } else if (button == 3) {
             if (pageCount > 1) {
-                dosLibraryPage =
-                    (dosLibraryPage + 1)
-                        % pageCount;
+                dosLibraryPage = DosLibraryPaging.nextPage(
+                    dosLibraryPage, ids.length);
             } else {
                 host.onUiActionRejected();
             }
@@ -7782,11 +7771,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     ) {
         String[] names = dosModuleNames;
         int count = names.length;
-        int pageCount =
-            Math.max(1, (count + 2) / 3);
-        int page =
-            Math.min(dosLibraryPage, pageCount - 1);
-        int start = page * 3;
+        int pageCount = DosLibraryPaging.pageCount(count);
+        int page = DosLibraryPaging.clampPage(dosLibraryPage, count);
 
         paint.setColor(Color.WHITE);
         paint.setTextSize(31.0f * uiScale);
@@ -7813,12 +7799,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
 
         String[] labels = new String[6];
-        for (int slot = 0; slot < 3; slot++) {
-            int index = start + slot;
-            labels[slot] =
-                index < count
-                    ? shorten(names[index], 42)
-                    : "—";
+        for (int slot = 0; slot < DosLibraryPaging.PAGE_SIZE; slot++) {
+            int index = DosLibraryPaging.moduleIndex(page, slot, count);
+            labels[slot] = index >= 0
+                ? shorten(names[index], 42) : "—";
         }
 
         labels[3] =

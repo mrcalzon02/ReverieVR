@@ -2394,7 +2394,7 @@ public final class MainActivity extends Activity
 
     private void installBundledDosContent() {
         if (!BuildConfig.DOOM_SHAREWARE_BUNDLED
-            && !BuildConfig.KENS_LABYRINTH_BUNDLED) {
+            && BundledDosArchiveCatalog.all().stream().noneMatch(e -> e.packaged)) {
             return;
         }
         dosImportExecutor.execute(() -> {
@@ -2414,17 +2414,7 @@ public final class MainActivity extends Activity
                     exception
                 );
             }
-            try {
-                DosGameModule module = installer.ensureBundledKen();
-                if (module != null) {
-                    ReverieLog.milestone("BUNDLED_CONTENT",
-                        "Bundled DOS content available: " + module.displayName);
-                }
-            } catch (Exception exception) {
-                ReverieLog.error("BUNDLED_CONTENT",
-                    "Default Ken's Labyrinth module could not be installed.",
-                    exception);
-            }
+            installer.ensureBundledArchives();
         });
     }
 
