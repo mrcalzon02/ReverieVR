@@ -590,6 +590,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile int dosLibraryScrollFirst;
     private float dosLibraryTouchRemainder;
     private int uiFocusDosListOffset = -1;
+    private volatile int dosListRevision;
+    private int uiFocusDosListRevision = -1;
     private int nativeLibraryPage;
     private int emulatorCatalogPage;
     private int musicCatalogPage;
@@ -1484,10 +1486,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         dosModuleNames = names;
         dosLibraryScrollFirst = first;
 
-        if (changed && mode == MODE_DOS_LIBRARY) {
-            // Never activate an old hover after a new game shifts its row.
-            hoveredButton = -1;
-            uiTargetStabilizer.reset();
+        if (changed) {
+            // The renderer consumes this revision on its own frame thread.
+            // Never mutate UiTargetStabilizer from a library refresh callback.
+            dosListRevision++;
+            if (mode == MODE_DOS_LIBRARY) hoveredButton = -1;
         }
         textureDirty = true;
     }
@@ -2213,7 +2216,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // a stale highlight into a different target index namespace.
         if (uiFocusMode != mode
             || (mode == MODE_DOS_LIBRARY
-                && uiFocusDosListOffset != dosLibraryScrollFirst)
+                && (uiFocusDosListOffset != dosLibraryScrollFirst
+                    || uiFocusDosListRevision != dosListRevision))
             || uiFocusMenu != orientationMenuVisible
             || uiFocusKeyboardNavigation != keyboardQuickMenuFocusActive
             || uiFocusPointerKind != activeNativePointerKind
@@ -2221,6 +2225,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             uiTargetStabilizer.reset();
             uiFocusMode = mode;
             uiFocusDosListOffset = dosLibraryScrollFirst;
+            uiFocusDosListRevision = dosListRevision;
             uiFocusMenu = orientationMenuVisible;
             uiFocusKeyboardNavigation = keyboardQuickMenuFocusActive;
             uiFocusPointerKind = activeNativePointerKind;
