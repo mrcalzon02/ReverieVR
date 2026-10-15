@@ -57,6 +57,25 @@ Soundtracks should evoke **early Sierra MIDI composition** through new melodies 
 
 **Actual native MIDI playback does not yet exist.** The current module has host-owned feedback cues only. The shared note-event sequencer, software synthesis and audio-focus service must be implemented and measured on the S9 before calling music functional. Reference: docs/native/MIDI_MUSIC_STANDARD.md.
 
+### Explicit restart and checkpoint invalidation (2026-10-14 source)
+
+Selecting **FIRE TO RESTART** after victory or defeat now starts a fresh
+difficulty-selection briefing and atomically invalidates the prior saved shop
+checkpoint. The game uses the existing ABI-v1 host's supported zero-byte save
+write at the original `breakwater-v1.bin` slot, not a new delete callback or
+save schema. A successfully read empty slot means "no campaign to resume";
+a missing slot also starts fresh, while malformed non-empty saves still fail
+closed. Choosing the next difficulty writes a new normal 80-byte shop snapshot.
+If the host supports saves but invalidation fails, the game still restarts in
+memory but reports failure through the shell cue and native log; reopening
+before a successful new snapshot may resume the old campaign.
+
+The checkpoint helper has C++17 regression assertions for the zero-byte host
+write contract, successful/failed slot interpretations, missing/invalid host
+service and write errors. An isolated host-side fixture passed; the full native
+suite, Android APK, restart/relaunch persistence and Galaxy S9 proof remain
+separate gates. No other game, music, GL or controller behavior changes.
+
 ## Acceptance gates
 
 1. Native C++ tests for boat HP, 1-passenger rowboat, 3–6 military landing party, prevented landing, individual infantry allocation/advancement/ray-hit discrimination, infantry danger, upgrade behavior, turret and anti-air restrictions.

@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_checkpoint.h"
 #include "breakwater_silhouettes.h"
 #include "breakwater_terrain.h"
 #include "breakwater_damage_feedback.h"
@@ -193,21 +194,20 @@ int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game,
         }
     return index;
 }
-constexpr char kSaveSlot[]="breakwater-v1.bin";
 bool SaveState(State *s) {
     if(!ReverieNativeHostSupportsSaveV1(s->host))return false;
     uint8_t bytes[Campaign::kSerializedSize]={};
     if(!s->campaign.SerializeShop(bytes,sizeof(bytes)))return false;
-    return s->host->write_save(kSaveSlot,bytes,
+    return s->host->write_save(kCheckpointSlot,bytes,
         static_cast<uint32_t>(sizeof(bytes)))==REVERIE_NATIVE_SAVE_OK;
 }
 void LoadState(State *s) {
     if(!ReverieNativeHostSupportsSaveV1(s->host))return;
     uint8_t bytes[Campaign::kSerializedSize]={};
     uint32_t size=0;
-    const int32_t status=s->host->read_save(kSaveSlot,bytes,
+    const int32_t status=s->host->read_save(kCheckpointSlot,bytes,
         static_cast<uint32_t>(sizeof(bytes)),&size);
-    if(status==REVERIE_NATIVE_SAVE_NOT_FOUND)return;
+    if(status==REVERIE_NATIVE_SAVE_NOT_FOUND || IsClearedCheckpoint(status,size))return;
     if(status!=REVERIE_NATIVE_SAVE_OK || size!=sizeof(bytes) ||
        !s->campaign.DeserializeShop(bytes,size)) {
         ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,"Breakwater",
@@ -392,6 +392,13 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 (game.reloading()?REVERIE_NATIVE_FEEDBACK_RELOAD_START:0u));
         } else if(edge)Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
+        // A restart must not resurrect the old shop checkpoint after app exit.
+        // Keep the in-memory restart usable on hosts without save support.
+        const bool checkpoint_cleared =
+            !ReverieNativeHostSupportsSaveV1(s->host) || ClearCheckpoint(s->host);
+        if(!checkpoint_cleared)
+            ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,"Breakwater",
+                "Restarted in memory, but clearing the old checkpoint failed.");
         game=Campaign(Difficulty::Regular,1049u);
         s->impacts=ImpactEffects{};
         s->battery_damage=BatteryDamageFeedback{};
@@ -402,7 +409,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->aircraft_aim={};
         s->aircraft_hit=AircraftHitFeedback{};
         s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
-        Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        Feedback(s,checkpoint_cleared?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                          REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
 }
 void BuildScene(State *s) {

@@ -1,3 +1,18 @@
+## 2026-10-14 — Breakwater restart invalidates old persisted campaign (source)
+
+Inspected native Breakwater's defeat/victory restart and ABI-v1 save callbacks.
+The in-memory reset previously left `breakwater-v1.bin` holding the previous
+shop checkpoint, which could resume on a subsequent app launch before a new
+difficulty had been selected. The native host already accepts and atomically
+renames a zero-byte save payload. Added a game-private checkpoint helper:
+on explicit restart replace the old slot with an empty one, treat a successful
+zero-length read as no active save, and preserve existing normal 80-byte
+v1/v2 campaign checkpoint handling. A failed write logs a warning and triggers
+failure feedback without blocking gameplay. Tested success, rejected host
+services, read-state policy and failed writes in an isolated C++17 -Werror
+fixture. Integrated full native/NDK test and signed APK build, device
+restart/re-entry and save durability remain unverified.
+
 ## 2026-10-13 — White room brought closer to screens; DOS fullscreen audited
 
 Confirmed the current DOS fullscreen rendering uses a complete per-eye viewport, identity matrix rather than a 3D plane, and excludes world room rendering; DOS Back exits fullscreen before opening the in-room DOS options. An explicitly opened universal Quick Menu may remain accessible for safe headset recovery; it is not the DOS options rail. Adjusted only the white room rear backdrop depth transformation from 0.52 to 0.24 (rear wall approximately z=-4.1 instead of -4.8, screens remain near -3). Room furniture, UI panel placement, screen geometry, controller targets, other homerooms, tracked headset optics and power display untouched. Needs signed APK and physical headset acceptance.

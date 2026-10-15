@@ -6,13 +6,52 @@
 #include "breakwater_combat_input.h"
 #include "breakwater_impacts.h"
 #include "breakwater_weapons.h"
+#include "breakwater_checkpoint.h"
 #include <cassert>
 #include <cmath>
+#include <cstring>
 #include <limits>
 #include <iostream>
 using namespace reverie::breakwater;
 
 int main() {
+    // Pressing FIRE TO RESTART must atomically invalidate the previous
+    // inter-wave save. This is a game-private zero-byte ABI-v1 slot, not
+    // a change to campaign serialization or a deletion API.
+    {
+        static unsigned clear_writes=0;
+        ReverieNativeHostV1 host{};
+        host.struct_size=sizeof(host);
+        host.abi_version=REVERIE_NATIVE_MODULE_ABI_VERSION;
+        host.read_save=[](const char*,void*,uint32_t,uint32_t*)->int32_t {
+            return REVERIE_NATIVE_SAVE_NOT_FOUND;
+        };
+        host.write_save=[](const char* slot,const void* data,uint32_t size)->int32_t {
+            assert(std::strcmp(slot,"breakwater-v1.bin")==0);
+            assert(data==nullptr && size==0u);
+            ++clear_writes;
+            return REVERIE_NATIVE_SAVE_OK;
+        };
+        assert(ClearCheckpoint(&host));
+        assert(clear_writes==1);
+        assert(IsClearedCheckpoint(REVERIE_NATIVE_SAVE_OK,0u));
+        assert(!IsClearedCheckpoint(REVERIE_NATIVE_SAVE_NOT_FOUND,0u));
+        assert(!IsClearedCheckpoint(REVERIE_NATIVE_SAVE_ERROR,0u));
+        assert(!IsClearedCheckpoint(REVERIE_NATIVE_SAVE_OK,80u));
+        host.write_save=[](const char*,const void*,uint32_t)->int32_t {
+            return REVERIE_NATIVE_SAVE_ERROR;
+        };
+        assert(!ClearCheckpoint(&host));
+        host.abi_version=REVERIE_NATIVE_MODULE_ABI_VERSION+1u;
+        assert(!ClearCheckpoint(&host));
+        host.abi_version=REVERIE_NATIVE_MODULE_ABI_VERSION;
+        host.struct_size=REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE-1u;
+        assert(!ClearCheckpoint(&host));
+        host.struct_size=sizeof(host);
+        host.read_save=nullptr;
+        assert(!ClearCheckpoint(&host));
+        assert(!ClearCheckpoint(nullptr));
+    }
     // The three battlefields render real shore, not an endless sea under
     // walking infantry. Validate budget, location identity and bounds.
     for (uint8_t location=0;location<Campaign::kLocations;location++) {

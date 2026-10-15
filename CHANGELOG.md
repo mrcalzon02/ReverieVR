@@ -6,6 +6,17 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater campaign restart saves
+
+- FIRE TO RESTART now clears the previous shop checkpoint through an atomic
+  zero-byte write supported by native ABI v1, avoiding the old campaign
+  reappearing if the application exits before a new difficulty is selected.
+- Empty slots are deliberate fresh-start markers; malformed non-empty saves
+  still fail closed. Save-clear failure emits a warning and failure cue, without
+  trapping gameplay. Added C++17 regression coverage; full NDK/Android and
+  Galaxy S9 relaunch validation remain pending.
+
+
 ### Beachhead/Breakwater world-position-driven movement
 
 - Added low-cost procedural landing-craft ramp motion, changing wake
