@@ -4,6 +4,7 @@
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
+#include "breakwater_pointer_focus.h"
 #include "breakwater_impacts.h"
 #include "breakwater_weapons.h"
 #include "breakwater_checkpoint.h"
@@ -15,6 +16,45 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // Quick Menu takes away the pointer: enemy waves, shop and held buttons
+    // cannot act again until a valid pointer returns and buttons release.
+    {
+        PointerFocusGate focus;
+        bool primary=true, secondary=true;
+        assert(focus.Filter(true,primary,secondary) && primary && secondary);
+        assert(!focus.Filter(false,primary,secondary));
+        assert(!primary && !secondary);
+        primary=secondary=true;
+        assert(focus.Filter(true,primary,secondary));
+        assert(!primary && !secondary);
+        primary=false;secondary=true;
+        assert(focus.Filter(true,primary,secondary));
+        assert(!primary && !secondary);
+        primary=secondary=true;
+        assert(focus.Filter(true,primary,secondary));
+        assert(primary && !secondary);
+        primary=secondary=false;
+        assert(focus.Filter(true,primary,secondary));
+        primary=secondary=true;
+        assert(focus.Filter(true,primary,secondary));
+        assert(primary && secondary);
+        focus.RequireRelease(); // Android lifecycle pause
+        primary=secondary=true;
+        assert(focus.Filter(true,primary,secondary));
+        assert(!primary && !secondary);
+        primary=secondary=false;
+        assert(focus.Filter(true,primary,secondary));
+        primary=secondary=true;
+        assert(focus.Filter(true,primary,secondary));
+        assert(primary && secondary);
+        assert(!focus.Filter(false,primary,secondary));
+        primary=secondary=false;
+        assert(!focus.Filter(false,primary,secondary));
+        assert(focus.Filter(true,primary,secondary));
+        primary=secondary=true;
+        assert(focus.Filter(true,primary,secondary));
+        assert(primary && secondary);
+    }
     // Pressing FIRE TO RESTART must atomically invalidate the previous
     // inter-wave save. This is a game-private zero-byte ABI-v1 slot, not
     // a change to campaign serialization or a deletion API.

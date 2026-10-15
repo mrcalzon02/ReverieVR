@@ -6,6 +6,17 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater gameplay focus and Quick Menu suspension
+
+- Stop Breakwater's invasion simulation while the shell owns its pointer
+  (including Quick Menu) or the calibrated controller ray is unavailable.
+  No incoming damage, reload progress, or attack advances without gameplay
+  input; normal frame callbacks still run.
+- Require release of Select and secondary buttons after focus loss or
+  Android pause before another press is admitted. Game-private C++17
+  regression passed in isolation; full NDK/Android and S9 proof pending.
+
+
 ### Breakwater campaign restart saves
 
 - FIRE TO RESTART now clears the previous shop checkpoint through an atomic

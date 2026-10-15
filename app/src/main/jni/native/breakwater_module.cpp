@@ -5,6 +5,7 @@
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
+#include "breakwater_pointer_focus.h"
 #include "breakwater_impacts.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
@@ -40,6 +41,7 @@ struct State {
     AircraftAimFeedback aircraft_aim;
     AircraftHitFeedback aircraft_hit;
     CombatInputLatch combat_input;
+    PointerFocusGate pointer_focus;
     bool armory_page=false, sam_armed=false, ghost_on=false;
     float ghost_position[3]={}, shot_origin[3]={}, shot_gravity=0;
     std::vector<float> mesh;
@@ -858,15 +860,34 @@ void GlRelease(void *instance) {
     State *s=static_cast<State *>(instance);if(s)DestroyGl(s);
 }
 void Resume(void *) {}
-void Pause(void *) {}
+void Pause(void *instance) {
+    State *s=static_cast<State *>(instance);
+    if(!s)return;
+    s->pointer_focus.RequireRelease();
+    s->held=false;
+    s->secondary_held=false;
+    s->combat_input.Release();
+}
 void Update(void *instance,const ReverieNativeInputV1 *input) {
     State *s=static_cast<State *>(instance);
     if(!s || !ReverieNativeInputHasPointerV1(input))return;
     ReverieNativeInputV1 copy=*input;
     ReverieNativeSanitizeBaseInputV1(&copy);
     ReverieNativeSanitizePointerV1(&copy);
-    const bool down=copy.primary_down!=0;
-    const bool secondary=copy.secondary_down!=0;
+    bool down=copy.primary_down!=0;
+    bool secondary=copy.secondary_down!=0;
+    // Quick Menu/temporary controller loss withdraws the gameplay ray.
+    // Do not advance enemies, reloads, effects, or score while defenseless.
+    if(!s->pointer_focus.Filter(
+            copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE,down,secondary)) {
+        s->held=false;
+        s->secondary_held=false;
+        s->combat_input.Release();
+        return;
+    }
+    // Only fresh post-focus button presses can enter any game action.
+    copy.primary_down=down?1u:0u;
+    copy.secondary_down=secondary?1u:0u;
     if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
        !WeaponFor(s->campaign.selected_weapon()).uses_ghost &&
        GunWithinTraverse(copy.pointer_direction,

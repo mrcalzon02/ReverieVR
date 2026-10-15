@@ -1,3 +1,19 @@
+## 2026-10-14 — Breakwater suspends combat during native pointer loss (source)
+
+The universal Quick Menu sends native modules update frames with POINTER_NONE.
+Breakwater previously advanced waves and incoming attacks during those frames
+even though the player could not target or fire. Added a game-private
+PointerFocusGate and a focused early-out after native input sanitization:
+without a usable controller ray, no Breakwater simulation or combat input
+advances, while the native shell and rendering lifecycle remain unchanged.
+Both game buttons require observed release after focus returns; the same
+release policy applies to Android module pause. An isolated C++17
+-Wall/-Wextra/-Wpedantic/-Werror focus regression passed, covering retained
+buttons, loss and return, independent release and lifecycle pause.
+Integrated full native test/NDK build and Galaxy S9 headset/menu testing
+remain outstanding; no shared ABI, shell optics, DOS, other games or
+battery HUD changes.
+
 ## 2026-10-14 — Breakwater restart invalidates old persisted campaign (source)
 
 Inspected native Breakwater's defeat/victory restart and ABI-v1 save callbacks.
