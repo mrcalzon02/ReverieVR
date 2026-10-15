@@ -105,8 +105,11 @@
   automatic fivefold/75-move draws, a safe subset of dead-material draws,
   and selectable queen/rook/bishop/knight promotions; native test, signed
   APK and S9 controls acceptance remain required. CPU now evaluates
-  adversarial legal replies with depth 2 in openings and depth 3 in
-  lower-material endings. Remaining: selectable stronger AI levels,
+  adversarial legal replies with selectable 2/3/4-ply iterative alpha-beta
+  and 1,500/6,000/12,000-node caps, all promotion variants and horizon
+  stalemate. Prospective draw claims and materially losing CPU claims
+  are implemented. All three board CPUs use snapshot workers; renderer
+  timing and worker destruction latency still require S9 measurement. Remaining:
   tournament clock options, draw offers/resignation UI and exhaustive
   dead-position adjudication.
 - **Checkers:** Source tracks exact repetition and 40 moves per
@@ -179,3 +182,4 @@ full DOS key-down/up semantics, modifier keys and shell-safe focus
 handoff. Keep the universal Quick Menu recoverable, do not trap held
 keyboard keys and leave the simplified Doom profile unaffected.
 This is backlog only; do not expose a nonfunctional keyboard control.
+
