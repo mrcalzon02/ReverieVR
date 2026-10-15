@@ -1,3 +1,26 @@
+## 2026-10-15 — Breakwater nearby-cover relocation and synchronous destruction orders (source)
+
+Extended the existing landing-party AI rather than adding another
+behavior system. Riflemen whose assigned barricade is destroyed now
+reoccupy the nearest live Blackcap barrier if it is within 1.90 world
+units of their current position. They retain their original fallback
+lane, physically cross to the new station, and cannot participate in
+salvos until the authoritative lateral movement is complete. If no
+nearby structure survives (including Iron Quay's spaced defenses),
+they return to the exposed lane as before. `FireAtCover` refreshes
+covered riflemen's orders synchronously on destruction, eliminating
+a one-frame stale claim on nonexistent cover. The existing incoming
+threat predictor and actual combat update use the same helper.
+
+Scoped C++ regression source now exercises multiple successive
+Blackcap wall losses, no teleport, delayed readiness, final open-lane
+recovery and synchronous Iron Quay orders on the actual damaging
+shot. This commit does not change player weapons, per-soldier hit
+spheres, stereo drawing, existing atlas/GL, controls, shop persistence
+or enemy counts. Native suite execution, Android/NDK build, signed APK
+publication and physical S9/Daydream acceptance remain unverified
+in this connector-only development run.
+
 ## 2026-10-15 — Breakwater landing-craft cover AI and regroup (source)
 
 Extended the actual campaign's already destructible shoreline cover

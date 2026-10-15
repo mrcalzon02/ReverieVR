@@ -8,6 +8,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater adjacent-cover reassignment after destruction
+
+- Synchronously invalidate a rifleman's destroyed barricade order on the
+  actual killing shot, rather than carrying stale cover into the next
+  frame or SHORE countdown.
+- At Blackcap, send displaced riflemen to the nearest surviving nearby
+  barricade and make their lateral travel interrupt firing. Continue
+  falling back to open lanes at Iron Quay or when all local shelter is
+  gone. Preserve actual hit spheres, stereo assets and 80-byte saves.
+- Extend native regression source for sequential loss, readiness and
+  immediate destructive-hit routing. NDK/S9 acceptance remains pending.
+
 ### Breakwater landing-party cover-seeking and tactical regroup
 
 - Make landing-craft riflemen at later coastal locations move behind

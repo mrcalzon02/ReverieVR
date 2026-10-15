@@ -449,6 +449,14 @@ bool Campaign::FireAtCover(uint8_t index) {
     // individual shots. A destroyed wall cannot block future targeting.
     wall.hp=static_cast<int16_t>(std::max(0,
         static_cast<int>(wall.hp)-static_cast<int>(stats().gun_damage)));
+    if(wall.hp==0) {
+        // Retarget battle-only orders in the authoritative hit substep.
+        // A wall destroyed by a shot cannot remain a usable station for
+        // the next render or immediate incoming-fire prediction.
+        for(Infantry &trooper:infantry_units_)
+            if(trooper.active && trooper.cover_slot==static_cast<int8_t>(index))
+                RefreshInfantryCover(trooper,shore_cover_);
+    }
     return true;
 }
 bool Campaign::CallArtillery() {

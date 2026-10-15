@@ -61,8 +61,39 @@ inline void RefreshInfantryCover(
     const int slot=static_cast<int>(unit.cover_slot);
     if(slot<static_cast<int>(walls.size()) &&
        walls[static_cast<size_t>(slot)].hp>0)return;
-    // A destroyed barricade no longer counts as a firing station.
-    // Regroup toward the original lane and normal rifle firing line.
+    // Only a valid former cover order may relocate: malformed slots and
+    // non-rifle roles fail back to the original open firing lane.
+    if(slot<static_cast<int>(walls.size()) && unit.active &&
+       unit.tactic==InfantryTactic::Rifle && std::isfinite(unit.x) &&
+       std::isfinite(unit.open_lane_x)) {
+        // Close-set Blackcap barricades form a secondary defensive line;
+        // widely separated Iron Quay walls are too far to reoccupy.
+        // Pick from the actual surviving barriers, never a ghost wall.
+        float nearest=1.90f;
+        int replacement=-1;
+        for(size_t i=0;i<walls.size();++i) {
+            const ShoreCover &candidate=walls[i];
+            if(static_cast<int>(i)==slot || candidate.hp<=0 ||
+               !std::isfinite(candidate.x) || !std::isfinite(candidate.z))
+                continue;
+            const float distance=std::abs(unit.x-candidate.x);
+            if(distance<nearest) {
+                nearest=distance;
+                replacement=static_cast<int>(i);
+            }
+        }
+        if(replacement>=0) {
+            const ShoreCover &next=walls[static_cast<size_t>(replacement)];
+            unit.cover_slot=static_cast<int8_t>(replacement);
+            unit.cover_line_z=next.z-.29f;
+            unit.lane_x=std::max(-3.1f,std::min(3.1f,
+                next.x+(unit.x<=next.x?-.15f:.15f)));
+            unit.regrouping=false;
+            return;
+        }
+    }
+    // No usable nearby wall. Travel back to the original exposed lane;
+    // regrouping must remain set until lateral motion really completes.
     unit.cover_slot=-1;
     unit.regrouping=true;
     unit.cover_line_z=0.0f;

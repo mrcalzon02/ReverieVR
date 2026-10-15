@@ -186,24 +186,31 @@ x-coordinate, and a cover firing-line z-coordinate. `AssignInfantryCover` sets a
 landing. `AdvanceInfantry`, `InfantryReady`, and
 `InfantrySecondsToReady` share cover-aware station and lateral
 movement logic with the actual authoritative `Campaign::TickStep`.
-If that *same physical barricade* is reduced to zero HP,
-`RefreshInfantryCover` releases its attached riflemen on the next
-simulation step, explicitly marks the lateral return as in progress,
-and only clears that state upon reaching the original x lane.
-They also advance toward the original z=-1.34 firing line. A soldier does not teleport, automatically
-regain cover, or stay indefinitely behind a destroyed obstacle.
-`incoming_threats()` evaluates that release on an isolated snapshot,
-so the SHORE warning reacts to a wall destroyed between ticks.
+If that *same physical barricade* is reduced to zero HP, the
+authoritative `FireAtCover` hit immediately refreshes attached
+riflemen's orders. A soldier on Blackcap can reoccupy the nearest
+still-intact barricade within 1.90 world units of its *current*
+position, keeping its original fallback lane and moving laterally
+in real simulation time. That longer route delays its firing
+readiness and the SHORE warning; no soldier teleports or shoots
+while crossing to a new station. Iron Quay's widely spaced barriers
+have no close alternate, so their riflemen regroup toward the
+original x lane and z=-1.34 exposed firing line. If Blackcap
+alternatives are subsequently destroyed, the same open-lane fallback
+applies. `RefreshInfantryCover` also runs during simulation updates
+and read-only `incoming_threats()` prediction; an invalid slot never
+becomes permission to claim a different wall.
 
 Cover assignment is intentionally confined to larger landing-craft
 parties at later locations. No new enemy count, hitbox, damage value,
 audio bus, UI panel, GL draw call, sprite atlas cell, Daydream mapping
 or shop checkpoint field is introduced. The 80-byte save remains
 unchanged because all cover/infantry orders are battle-only.
-Pure role regressions and an Iron Quay seeded landing-craft scenario
-now verify selecting an existing wall, moving behind it, destroying
-that *same* wall with actual ammunition and cooldown, and returning
-to the real fallback lane. A standalone C++17 `-Wall -Wextra
+Pure role regressions, Blackcap multi-wall relocation assertions and
+an Iron Quay seeded landing-craft scenario now exercise selecting
+live walls, moving to covered stations, destroying the claimed wall
+with real ammunition/cooldown, immediate order changes and eventual
+open-lane fallback. A standalone C++17 `-Wall -Wextra
 -Wpedantic -Werror` exercise of the extracted helper caught and
 corrected an actual lost-lateral-regrouping defect before commit.
 Full repository-native/Android NDK builds

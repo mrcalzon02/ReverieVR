@@ -205,6 +205,51 @@ int main() {
         assert(invalid.lane_x==invalid.open_lane_x);
     }
 
+    // A close Blackcap wall is a genuine alternative defensive position.
+    // Relocation changes the ordered lane, never teleports the soldier or
+    // silently resumes shooting while the soldier crosses exposed ground.
+    {
+        auto walls=MakeShoreCover(2);
+        Infantry soldier{};
+        soldier.active=true;
+        soldier.tactic=InfantryTactic::Rifle;
+        soldier.x=-.63f;
+        soldier.z=-2.28f;
+        soldier.lane_x=soldier.x;
+        AssignInfantryCover(soldier,walls,0);
+        assert(soldier.cover_slot==1);
+        AdvanceInfantry(soldier,10.0f);
+        assert(InfantryReady(soldier));
+        const float originalX=soldier.open_lane_x;
+        const float physicalX=soldier.x;
+        walls[1].hp=0;
+        RefreshInfantryCover(soldier,walls);
+        assert(soldier.cover_slot==2);
+        assert(soldier.open_lane_x==originalX);
+        assert(std::abs(soldier.lane_x-.63f)<.00001f);
+        assert(soldier.x==physicalX);
+        assert(!InfantryReady(soldier));
+        const float flankEta=InfantrySecondsToReady(soldier);
+        assert(flankEta>6.0f && flankEta<7.0f);
+        AdvanceInfantry(soldier,flankEta+1.0f);
+        assert(InfantryReady(soldier));
+        assert(std::abs(soldier.z+1.48f)<.00001f);
+        walls[2].hp=0;
+        RefreshInfantryCover(soldier,walls);
+        assert(soldier.cover_slot==3); // another intact near neighbor
+        walls[3].hp=0;
+        RefreshInfantryCover(soldier,walls);
+        assert(soldier.cover_slot==-1);
+        assert(soldier.regrouping);
+        assert(soldier.lane_x==originalX);
+        assert(!InfantryReady(soldier));
+        AdvanceInfantry(soldier,30.0f);
+        assert(InfantryReady(soldier));
+        assert(!soldier.regrouping);
+        assert(soldier.x==originalX);
+        assert(std::abs(soldier.z+1.34f)<.00001f);
+    }
+
     // Landing-craft tactics are real simulation positions, not a separate
     // animation timer or fake HUD threats. Early rowboats remain riflemen.
     {
@@ -1796,7 +1841,12 @@ int main() {
         static_cast<size_t>(covered_wall)].hp==0);
     const Infantry& beforeRegroup=tactic_landing.infantry_units()[
         static_cast<size_t>(covered_slot)];
-    assert(beforeRegroup.cover_slot==covered_wall);
+    // Cover destruction resolves this order during the actual gun hit,
+    // not one simulation frame later.
+    assert(beforeRegroup.cover_slot==-1);
+    assert(beforeRegroup.regrouping ||
+           beforeRegroup.x==protectedBefore.open_lane_x);
+    assert(beforeRegroup.lane_x==protectedBefore.open_lane_x);
     const IncomingThreats immediateWarning=tactic_landing.incoming_threats();
     assert(std::isfinite(immediateWarning.infantry_seconds));
     assert(beforeRegroup.active);
