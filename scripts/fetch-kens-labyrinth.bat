@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-set "SOURCE_URL=https://advsys.net/ken/LABFULL.ZIP"
+set "SOURCE_URL=https://advsys.net/ken/klab/labfull.zip"
 set "EXPECTED_SHA256=5baf67ed3795be0dff3f32819f0c20fa84d3a00d667215d7a1146a7971c81072"
 set "ROOT=%~dp0.."
 set "DEST=%ROOT%\third_party\kens-labyrinth\payload\default-content\labfull.zip"

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 # Author-hosted original DOS freeware package, never repackaged.
-SOURCE_URL="https://advsys.net/ken/LABFULL.ZIP"
+SOURCE_URL="https://advsys.net/ken/klab/labfull.zip"
 EXPECTED_SHA256="5baf67ed3795be0dff3f32819f0c20fa84d3a00d667215d7a1146a7971c81072"
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 DEST="$ROOT/third_party/kens-labyrinth/payload/default-content/labfull.zip"

@@ -2,7 +2,7 @@
 
 Ken Silverman's official game and download:
 https://advsys.net/ken/klab.htm
-https://advsys.net/ken/LABFULL.ZIP
+https://advsys.net/ken/klab/labfull.zip
 
 The game is copyrighted **freeware**, not open source/public domain.
 Retain the original complete archive, attribution and distribution files.
