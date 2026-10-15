@@ -53,17 +53,19 @@ were expanded, with tests for distant-corner placement and edge captures.
   rules:** negotiated dead-stone removal before scoring, seki scoring
   adjudication, and selectable scoring rulesets. The current CPU remains a
   bounded heuristic opponent, not a strong Go engine.
-- **Checkers:** American/English 8×8, forced captures, multiple
-  jumps and crowning, with deterministic bounded CPU. Added WCDF-style
-  claimable draws for an identical third position or 40 moves per side
-  without a capture or movement of any uncrowned man. A conditional on-board
-  CLAIM DRAW action appears only for valid human-turn claims and cannot
-  interrupt a forced multi-jump. Draw agreement, tournament adjudication,
-  optional time controls and resignation remain open. The CPU now searches
-  three full adversarial turns (CPU-human-CPU) with alpha-beta pruning,
-  evaluates complete compulsory multi-jump sequences as a single turn,
-  and scores material, promotion and mobility instead of choosing a
-  greedy one-landing action. Stronger difficulty tiers remain open.
+- **Checkers:** WCDF American/English 8×8: 12 men per side,
+  compulsory diagonal capture, complete multiple jumps, and crowning
+  ending the turn. Draw claims are available on three completed
+  occurrences **or in anticipation of a legal third repetition next
+  turn**, and after 40 moves *per side* without a man advancing or a
+  capture. Forced multi-jumps cannot be interrupted by a draw claim.
+  The CPU may exercise a genuine draw claim when losing; it still
+  honors complete capture sequences. Alpha-beta evaluates four
+  complete turns in the opening and up to six in sparse endgames,
+  with a hard 6,000/12,000-node budget and forced-capture quiescence
+  extensions at leaf nodes. Difficulty settings, negotiated draws,
+  resignation and clocks remain pending, as does Daydream-device AI
+  latency profiling. Rule reference: https://nccheckers.org/NCCA/WCDF%20Checker%20-%20Draughts%20-%20English%20Rules.htm
 - **Chess:** standard 8×8, king-safe moves, castling and en passant,
   four promotion pieces (queen, rook, bishop, knight), checkmate and
   stalemate. FIDE drawn-game handling now tracks exact positions with

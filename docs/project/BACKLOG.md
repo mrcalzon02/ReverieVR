@@ -104,13 +104,15 @@
   lower-material endings. Remaining: selectable stronger AI levels,
   tournament clock options, draw offers/resignation UI and exhaustive
   dead-position adjudication.
-- **Checkers:** Source now tracks exact position repetition and WCDF
-  40-moves-per-side no-progress claim eligibility, with an accessible
-  conditional board claim action and regression tests. Draw agreement,
-  tournament procedures and S9 device acceptance remain open.
-  Three-turn alpha-beta search with full capture-sequence enumeration is
-  implemented; native simulation and signed-device testing remain gates.
-  Configurable deeper difficulty levels are still pending.
+- **Checkers:** Source tracks exact repetition and 40 moves per
+  side without progress; the claim action now also handles a legal
+  *prospective* third occurrence per WCDF 1.32.1. A losing CPU can
+  exercise an earned draw claim. Alpha-beta now searches full forced
+  capture sequences with leaf capture extensions and a bounded 4–6
+  complete-turn horizon (6k–12k nodes). Native tests cover the
+  prospective claim, CPU draw, capture quiescence and node limits.
+  Negotiated draws, tournament procedures, configurable difficulty
+  and actual Galaxy S9 performance/latency remain acceptance work.
 - **Pong / Breakout:** Source corrected: Pong has left/right vertical
   paddles, wall bounce, first to 11 and bounded CPU play; Breakout has two
   112-brick walls, original 7/5/3/1 row scores, speed milestones and paddle

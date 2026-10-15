@@ -92,19 +92,45 @@ struct State {
 
     // WCDF / English draughts (8x8) requires correct move progress and
     // repetition for valid 40-move-each / third-occurrence claims.
-    ChessPosition CurrentCheckerPosition() const {
+    static ChessPosition CheckerPositionAfter(const Board &board,
+                                               int playerToMove) {
         ChessPosition p;
-        std::copy_n(cells.begin(),64,p.pieces.begin());
-        p.side=static_cast<int8_t>(side);
+        std::copy_n(board.begin(),64,p.pieces.begin());
+        p.side=static_cast<int8_t>(playerToMove);
         return p;
+    }
+    ChessPosition CurrentCheckerPosition() const {
+        return CheckerPositionAfter(cells,side);
     }
     int CheckerRepetitions() const {
         auto it=checkerHistory.find(CurrentCheckerPosition());
         return it==checkerHistory.end()?0:it->second;
     }
+    bool CheckerProspectiveRepetition() const {
+        if(kind!=Kind::Checkers||finished||forced>=0)return false;
+        // WCDF 1.32.1 allows a claim before a third identical
+        // occurrence, if the next legal complete turn will create it.
+        // Multiple jumps must be evaluated as a single turn.
+        bool repeated=false;
+        for(const auto &entry:checkerHistory)if(entry.second>=2){
+            repeated=true;break;
+        }
+        if(!repeated)return false;
+        for(const auto &turn:CheckerTurns(cells,side)) {
+            const auto next=CheckerPositionAfter(turn.after,-side);
+            auto it=checkerHistory.find(next);
+            if(it!=checkerHistory.end()&&it->second>=2)return true;
+        }
+        return false;
+    }
+    bool CheckerDrawAvailable(int player) const {
+        return kind==Kind::Checkers&&!finished&&side==player&&
+            forced<0&&(checkerQuietPlies>=80||
+                       CheckerRepetitions()>=3||
+                       CheckerProspectiveRepetition());
+    }
     bool CheckerDrawClaimable() const {
-        return kind==Kind::Checkers&&!finished&&side==1&&forced<0&&
-            (checkerQuietPlies>=80||CheckerRepetitions()>=3);
+        return CheckerDrawAvailable(1);
     }
     bool ClaimCheckerDraw() {
         if(!CheckerDrawClaimable())return false;
@@ -264,42 +290,74 @@ struct State {
         }
         return value;
     }
-    static int SearchCheckers(const Board &board,int player,int depth,
-                               int alpha,int beta) {
-        if(depth<=0)return CheckerPositionValue(board);
-        const auto moves=CheckerTurns(board,player);
-        if(moves.empty())return player==-1?-30000-depth:30000+depth;
+    // Evaluate a complete adversarial turn at every search node. A normal
+    // horizon at depth zero must not stop in the middle of a *forced*
+    // capture response: limited capture quiescence extends those leaves.
+    // The explicit node cap protects Daydream-era phone frame pacing.
+    static int SearchCheckersBounded(const Board &board,int player,int depth,
+                                    int alpha,int beta,int &nodes,int budget,
+                                    int captureExtensions) {
+        if(++nodes>budget)return CheckerPositionValue(board);
+        const auto turns=CheckerTurns(board,player);
+        if(turns.empty())return player==-1?-30000-depth:30000+depth;
+        const bool forcedCapture=std::abs(turns.front().firstTo
+            -turns.front().from)>=14;
+        if(depth<=0&&(!forcedCapture||captureExtensions<=0))
+            return CheckerPositionValue(board);
+        const int nextDepth=depth>0?depth-1:0;
+        const int nextExtensions=depth>0?captureExtensions:
+                                  captureExtensions-1;
         if(player==-1){
             int best=-300000;
-            for(const auto &move:moves){
-                best=std::max(best,SearchCheckers(move.after,1,depth-1,
-                                                   alpha,beta));
+            for(const auto &turn:turns){
+                const int value=SearchCheckersBounded(turn.after,1,nextDepth,
+                    alpha,beta,nodes,budget,nextExtensions);
+                best=std::max(best,value);
                 alpha=std::max(alpha,best);
-                if(beta<=alpha)break;
+                if(beta<=alpha||nodes>=budget)break;
             }
             return best;
         }
         int best=300000;
-        for(const auto &move:moves){
-            best=std::min(best,SearchCheckers(move.after,-1,depth-1,
-                                               alpha,beta));
+        for(const auto &turn:turns){
+            const int value=SearchCheckersBounded(turn.after,-1,nextDepth,
+                alpha,beta,nodes,budget,nextExtensions);
+            best=std::min(best,value);
             beta=std::min(beta,best);
-            if(beta<=alpha)break;
+            if(beta<=alpha||nodes>=budget)break;
         }
         return best;
     }
-    // Three full turns of bounded adversarial play (CPU-human-CPU),
-    // including mandatory multi-jumps, instead of a greedy one-ply score.
+    static int SearchCheckers(const Board &board,int player,int depth,
+                               int alpha,int beta) {
+        int nodes=0;
+        return SearchCheckersBounded(board,player,depth,alpha,beta,
+                                    nodes,12000,3);
+    }
+    // The opening uses four complete turns; light-material endgames can
+    // afford five or six. The total node budget remains hard-bounded.
     bool PlayCheckerCpuTurn(){
         if(kind!=Kind::Checkers||finished||side!=-1)return false;
+        // A trailing opponent exercises its genuine right to claim a
+        // WCDF draw rather than repeating an indefinitely lost position.
+        if(CheckerDrawAvailable(-1)&&CheckerPositionValue(cells)<-100){
+            finished=true;winner=0;return true;
+        }
         const auto moves=CheckerTurns(cells,-1,forced);
+        int material=0;
+        for(int i=0;i<64;i++)material+=cells[i]!=0;
+        const int replies=material<=5?5:material<=10?4:3;
+        const int budget=material<=10?12000:6000;
+        int nodes=0;
         int bestScore=std::numeric_limits<int>::min();
         int from=-1,to=-1;
         for(const auto &move:moves){
-            const int value=SearchCheckers(move.after,1,2,-300000,300000);
+            const int value=SearchCheckersBounded(move.after,1,replies,
+                -300000,300000,nodes,budget,3);
             if(value>bestScore){
                 bestScore=value;from=move.from;to=move.firstTo;
             }
+            if(nodes>=budget)break;
         }
         if(from<0){
             finished=true;winner=1;

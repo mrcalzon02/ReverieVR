@@ -89,6 +89,56 @@ static void TestBoardGames() {
     kings.forced=32;
     assert(!kings.CheckerDrawClaimable());
 
+    // WCDF 1.32.1: a player may claim immediately if any *next legal
+    // complete turn* would repeat a board/side position for the third time.
+    Boards upcoming;
+    upcoming.Reset(BoardKind::Checkers);
+    upcoming.cells.fill(0);upcoming.cells[41]=2;upcoming.cells[14]=-2;
+    upcoming.side=1;upcoming.checkerHistory.clear();
+    upcoming.checkerHistory[upcoming.CurrentCheckerPosition()]=1;
+    const auto possible=Boards::CheckerTurns(upcoming.cells,1);
+    bool recordedFuture=false;
+    for(const auto &turn:possible)if(turn.from==41&&turn.firstTo==32){
+        auto next=Boards::CheckerPositionAfter(turn.after,-1);
+        upcoming.checkerHistory[next]=2;
+        recordedFuture=true;break;
+    }
+    assert(recordedFuture);
+    assert(upcoming.CheckerRepetitions()==1);
+    assert(upcoming.CheckerProspectiveRepetition());
+    assert(upcoming.CheckerDrawClaimable());
+    assert(upcoming.ClaimCheckerDraw()&&upcoming.finished);
+    assert(upcoming.cells[41]==2&&upcoming.cells[32]==0);
+    upcoming.Reset(BoardKind::Checkers);
+    assert(!upcoming.CheckerProspectiveRepetition());
+    upcoming.forced=40;
+    assert(!upcoming.CheckerDrawClaimable());
+
+    // CPU can claim a genuine 40-move quiet draw rather than losing by
+    // refusing a claim its human opponent could have made.
+    Boards cpuDraw;
+    cpuDraw.Reset(BoardKind::Checkers);
+    cpuDraw.cells.fill(0);
+    cpuDraw.cells[41]=2;cpuDraw.cells[44]=1;cpuDraw.cells[14]=-2;
+    cpuDraw.side=-1;cpuDraw.checkerQuietPlies=80;
+    assert(Boards::CheckerPositionValue(cpuDraw.cells)<-100);
+    assert(cpuDraw.CheckerDrawAvailable(-1));
+    assert(cpuDraw.PlayCheckerCpuTurn());
+    assert(cpuDraw.finished&&cpuDraw.winner==0);
+
+    // Quiescence must search a mandatory capture beyond the regular
+    // depth-zero horizon; static evaluation would miss the takedown.
+    Boards::Board forcedBoard{};
+    forcedBoard[18]=-1;forcedBoard[27]=1;
+    const int staticScore=Boards::CheckerPositionValue(forcedBoard);
+    const int withCapture=Boards::SearchCheckers(
+        forcedBoard,-1,0,-300000,300000);
+    assert(withCapture>staticScore);
+    int nodes=0;
+    Boards::SearchCheckersBounded(
+        forcedBoard,-1,5,-300000,300000,nodes,8,2);
+    assert(nodes>0&&nodes<=9);
+
     // AI search enumerates *complete* mandatory capture sequences, not
     // isolated first jumps. This prevents a greedy move that ignores a
     // vulnerable continuation or illegally ends a forced multi-jump.
