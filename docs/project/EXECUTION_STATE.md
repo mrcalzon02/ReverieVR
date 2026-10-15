@@ -1,3 +1,21 @@
+## 2026-10-15 — Breakwater recorded-sound queue and CC0 intake (plan only)
+
+Audited the actual shell-owned audio implementation: NativeCombatWaveform
+currently synthesizes and NativeCombatSound preloads five short PCM16
+cues (shared gun report, reload, ready, artillery, airstrike). The native
+ABI v1 request_feedback path exposes only a limited bitmask, so it
+cannot yet represent five distinct weapons or every gunboat/infantry/
+aircraft and collision event as separate audio without additional
+backward-compatible routing. Prioritized recorded SFX production from
+verified CC0 landing pages (Kenney Impact Sounds, RPG Audio, Interface
+Sounds; qubodup's CC0 RTS War Unit pack) and distinguished the Sonniss
+finished-game-use license from publicly redistributable sound samples.
+Recorded a staged P0/P1/P2 intake and source-proof/attribution/hash,
+codec, voice, timing, pause and S9 verification contract in the existing
+Breakwater spec and RV-0640 backlog. **No SFX files downloaded,
+redistributed, mixed, licensed individually, integrated, or released
+in this planning slice.**
+
 ## 2026-10-15 — Breakwater state-driven enemy sprite variants (source)
 
 Advanced the existing 16-cell 128x128 procedural atlas into a single

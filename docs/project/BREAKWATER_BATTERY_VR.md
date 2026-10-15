@@ -202,6 +202,87 @@ stereo/thermal proof remain **unverified**.
 
 Follow the tiny pre-PlayStation, early-PC 3D aesthetic: simple vertex-color meshes, procedurally striped sea, day/night palette, chunky silhouettes and a 3×5 generated pixel-card text renderer. Future recipe-driven additions: richer weather, authored cloud variants, per-location distant silhouettes, procedural RGB565 materials and sprite-based effects. Landing ramps, wakes, impact effects, coastal terrain and the first 360-degree clouds are already implemented. No large texture packs, modern PBR, heavy shaders, imported licensed game materials or duplicated per-eye scene simulation.
 
+## Breakwater sound-effects acquisition and integration queue (2026-10-15)
+
+**Current verified implementation:** ReverieVR's Java `NativeCombatWaveform`
+generates five compact 22,050-Hz PCM16 mono sounds at module start:
+`FIRE` (one common report for all five weapons), `RELOAD`,
+`READY`, `ARTILLERY`, and `AIRSTRIKE`. `NativeCombatSound`
+preloads them in short static `AudioTrack` voices and routes them
+through `UiFeedback`; primary fire has two voices and other cues
+have one. Shell feedback already includes focus, confirm and rejection.
+**No recorded Breakwater SFX are packaged or bound today.**
+`Mars des Souvenirs` belongs to owner-original background MUSIC and is
+a separate catalog/playback concern, not a sound-effects substitute.
+
+**Source policy:** CC0 1.0 is preferred for every asset committed to this
+public source repository or its redistributable APK. Explicitly capture
+per-file creator, original page, license, local filename, content SHA-256,
+edit/normalization recipe and accepted in-game use. Do not assume
+"royalty-free" means redistributable as raw public-repository audio.
+Do not hotlink or ship entire source packs. Candidate sites must be
+auditioned; being CC0 does **not** mean an effect is suitable or already
+downloaded. Provisional, verified collection landing pages:
+
+| Candidate collection | License at source | Intended auditions |
+|---|---|---|
+| Kenney [Impact Sounds](https://kenney.nl/assets/impact-sounds) (130 files) | CC0 | metal/hull hits, debris, surf impact transients |
+| Kenney [RPG Audio](https://kenney.nl/assets/rpg-audio) (50 files) | CC0 | equipment, footsteps, reload hardware |
+| Kenney [Interface Sounds](https://kenney.nl/assets/interface-sounds) (100 files) | CC0 | shop accept/reject, unlock, ready cues |
+| [OpenGameArt: qubodup Sci-Fi RTS War Unit Sounds](https://opengameart.org/content/sci-fi-rts-war-unit-sounds) | CC0 on the collection page; verify each chosen file | military-flavored command, artillery, radio and explosions |
+
+Do **not** put Sonniss GDC bundle WAVs or other library-licensed
+raw effects in public GitHub as reusable assets: its current EULA allows
+game synchronization but prohibits independent sound-library/sample
+redistribution. Those could be considered only in an appropriately
+licensed finished-game packaging process. Avoid firearm recordings
+with uncertain provenance, unverified Freesound variants, third-party
+music embedded in SFX, and overly futuristic sci-fi effects.
+
+### Ordered in-game cue queue
+
+| Order | Cue IDs / design | Exact playback trigger | Current status |
+|---|---|---|---|
+| P0.1 | `gun_machine`, `gun_heavy`, `gun_flak`, `gun_missile`, `gun_cannon` | A **successful** `BeginGunShot` / `FireAt` / `FireMiss`, identified by active `WeaponKind`; respect actual fire cadence and suppress rejected fire | Shared procedural `FIRE` exists; distinct recorded samples not ingested |
+| P0.2 | `impact_metal`, `impact_sand`, `impact_water`, `boat_destroyed` | Real `ImpactEffects` events, projectile/water collision or lethal target impact; never speculative proximity | Visual events exist; recorded audio unbound |
+| P0.3 | `battery_hit`, `gunboat_salvo`, `infantry_volley`, `aircraft_bomb`, `aircraft_strafe` | Simulation `BatteryDamageFeedback`, `GunboatSalvoEvent`, `InfantryVolleyEvent`, `AircraftAttackEvent` **only after positive damage**; do not double-trigger for one sequence | Native authoritative events exist; recorded audio unbound |
+| P1.1 | `boat_motor`, `row_oars`, `ramp_drop`, `aircraft_flyby` | Actual visible enemy travel or landing state, per-actor distance/pan and gated lifecycle; no per-frame re-trigger | No ambient/vehicle loops yet |
+| P1.2 | `reload_mechanism`, `reload_ready`, `shop_purchase`, `action_reject`, `sam_launch` | Explicit successful/failed action and reload transition; never click noise for passive selection | First two synthesized; generic shell UI cues exist |
+| P2.1 | `surf_loop`, `coastal_wind`, `night_air`, optional `gull_distant` | Location and day/night state, bounded loop voices, lifecycle focus/mute transitions | Not implemented |
+| P2.2 | `mission_start`, `wave_clear`, `victory`, `defeat`, optional radio stingers | Real campaign phase transition once, never per-eye/per-frame | Not implemented |
+
+### Implementation dependencies and nonnegotiable gates
+
+1. **Select and clear** a *small* number of individually licensed CC0
+   candidates; audition them for plausible generic late-1990s/2000s
+   Western military texture, avoid copied recognizable weapon/vehicle
+   recordings, keep the author/source/license text and SHA-256 alongside
+   any admitted binaries. No license audit workflow or mass pack mirror.
+2. Normalize peaks, trim silence, and build very short mono effects for
+   immediate cues. Evaluate compact compressed assets for longer loops.
+   Preserve local/offline operation: playback must work without PC,
+   network or extraction from the APK.
+3. Existing native ABI v1 feedback is a small **bitmask**, not an
+   arbitrary audio-event bus; it currently exposes `WEAPON_FIRE`,
+   `RELOAD_START`, `RELOAD_READY`, `ARTILLERY`, `AIRSTRIKE`
+   plus UI states. Do **not** repurpose those bits as new cue IDs or
+   infer which weapon fired from Java. Route differentiated events
+   through an explicit backward-compatible, tested host/module path
+   before claiming that unique weapon SFX or NPC SFX work.
+4. Trigger at most once per real sequence or shot; avoid sound in
+   `BuildScene` / per-eye `Draw`. Limit simultaneous voices, prioritize
+   player shots, incoming damage and target hits over distant ambience,
+   and stop/fade loops on Quick Menu, pause, route loss and game exit.
+   Retain synthesized host cues as graceful fallback if sample loading
+   fails. Avoid a new settings screen until actual audio-mix controls
+   exist.
+5. Gate promotion on the existing Android ARM NDK/Java build, successful
+   event-to-sound integration tests, verified original file provenance,
+   signed installable APK read-back, headphone stereo/latency test,
+   music coexistence, 15-minute Galaxy S9 load/thermal test and APK-size
+   comparison. **Nothing in this intake queue counts as an ingested
+   audio file, an audible cue, or a released APK.**
+
 ## Original MIDI-era music for every native game
 
 Soundtracks should evoke **early Sierra MIDI composition** through new melodies and lightweight note-event sequences, not copied tunes or proprietary instrument banks. Breakwater cues: harbor brass title, shop intermission, daytime battle, night assault, aircraft-warning sting, victory/defeat. Red Ledger: weary smoky noir. Lantern Desk: chamber-intelligence tension. Forward Detachment: measured snare and low winds.
