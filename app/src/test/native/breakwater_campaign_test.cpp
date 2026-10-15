@@ -175,6 +175,21 @@ int main() {
         RefreshInfantryCover(rifle,destroyed);
         assert(rifle.cover_slot==-1); // never reacquire destroyed cover
 
+        // A troop starting between Iron Quay defenses may be within
+        // 1.90 of another barricade but the structures themselves are
+        // not neighbors. Losing center cover must still trigger fallback.
+        Infantry between{};
+        between.active=true;
+        between.tactic=InfantryTactic::Rifle;
+        between.x=1.0f;
+        between.z=-2.28f;
+        between.lane_x=between.x;
+        AssignInfantryCover(between,iron,0);
+        assert(between.cover_slot==1);
+        RefreshInfantryCover(between,destroyed);
+        assert(between.cover_slot==-1 && between.regrouping);
+        assert(between.lane_x==between.open_lane_x);
+
         Infantry distant=rifle;
         distant.x=3.1f;distant.lane_x=distant.x;
         AssignInfantryCover(distant,iron,0);

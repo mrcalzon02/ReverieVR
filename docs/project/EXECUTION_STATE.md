@@ -3,7 +3,7 @@
 Extended the existing landing-party AI rather than adding another
 behavior system. Riflemen whose assigned barricade is destroyed now
 reoccupy the nearest live Blackcap barrier if it is within 1.90 world
-units of their current position. They retain their original fallback
+units of both their current position and the former barricade. They retain their original fallback
 lane, physically cross to the new station, and cannot participate in
 salvos until the authoritative lateral movement is complete. If no
 nearby structure survives (including Iron Quay's spaced defenses),
@@ -12,8 +12,8 @@ covered riflemen's orders synchronously on destruction, eliminating
 a one-frame stale claim on nonexistent cover. The existing incoming
 threat predictor and actual combat update use the same helper.
 
-Scoped C++ regression source now exercises multiple successive
-Blackcap wall losses, no teleport, delayed readiness, final open-lane
+Scoped C++ regression source now exercises false-adjacency
+Iron Quay approaches, multiple successive Blackcap wall losses, no teleport, delayed readiness, final open-lane
 recovery and synchronous Iron Quay orders on the actual damaging
 shot. This commit does not change player weapons, per-soldier hit
 spheres, stereo drawing, existing atlas/GL, controls, shop persistence

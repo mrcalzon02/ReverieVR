@@ -65,16 +65,20 @@ inline void RefreshInfantryCover(
     // non-rifle roles fail back to the original open firing lane.
     if(slot<static_cast<int>(walls.size()) && unit.active &&
        unit.tactic==InfantryTactic::Rifle && std::isfinite(unit.x) &&
-       std::isfinite(unit.open_lane_x)) {
+       std::isfinite(unit.open_lane_x) &&
+       std::isfinite(walls[static_cast<size_t>(slot)].x)) {
         // Close-set Blackcap barricades form a secondary defensive line;
-        // widely separated Iron Quay walls are too far to reoccupy.
+        // require proximity both to the unit AND to its former station.
+        // Iron Quay's separated barriers must not become a phantom route
+        // simply because a soldier was still approaching the first wall.
         // Pick from the actual surviving barriers, never a ghost wall.
         float nearest=1.90f;
         int replacement=-1;
         for(size_t i=0;i<walls.size();++i) {
             const ShoreCover &candidate=walls[i];
             if(static_cast<int>(i)==slot || candidate.hp<=0 ||
-               !std::isfinite(candidate.x) || !std::isfinite(candidate.z))
+               !std::isfinite(candidate.x) || !std::isfinite(candidate.z) ||
+               std::abs(candidate.x-walls[static_cast<size_t>(slot)].x)>1.90f)
                 continue;
             const float distance=std::abs(unit.x-candidate.x);
             if(distance<nearest) {

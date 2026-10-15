@@ -189,8 +189,8 @@ movement logic with the actual authoritative `Campaign::TickStep`.
 If that *same physical barricade* is reduced to zero HP, the
 authoritative `FireAtCover` hit immediately refreshes attached
 riflemen's orders. A soldier on Blackcap can reoccupy the nearest
-still-intact barricade within 1.90 world units of its *current*
-position, keeping its original fallback lane and moving laterally
+still-intact barricade within 1.90 world units of both its *current*
+position and former barricade, keeping its original fallback lane and moving laterally
 in real simulation time. That longer route delays its firing
 readiness and the SHORE warning; no soldier teleports or shoots
 while crossing to a new station. Iron Quay's widely spaced barriers
