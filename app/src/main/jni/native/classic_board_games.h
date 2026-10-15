@@ -653,7 +653,13 @@ struct State {
     }
     int SearchChess(int depth,int alpha,int beta) const {
         if(ChessDeadPosition())return 0;
-        if(depth<=0)return ChessBoardValue(cells);
+        // A leaf can itself be checkmate; material alone would otherwise
+        // reward allowing mate-in-one at the end of the reply horizon.
+        if(depth<=0){
+            if(KingInCheck(cells,side)&&!HasChessMove())
+                return side==-1?-50000:50000;
+            return ChessBoardValue(cells);
+        }
         bool found=false;
         const bool maximizing=side==-1;
         int best=maximizing?-300000:300000;

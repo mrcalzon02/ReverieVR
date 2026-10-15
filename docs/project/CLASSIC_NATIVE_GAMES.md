@@ -77,6 +77,8 @@ were expanded, with tests for distant-corner placement and edge captures.
   by default. The CPU now evaluates legal human responses through bounded alpha-beta
   search and uses a deeper third ply in lower-material endings. It is still
   a lightweight phone-friendly opponent, not a tournament-grade engine;
+  its search leaves explicitly recognize checkmate so it cannot
+  mistakenly value a mate-in-one loss as a material gain;
   it does not yet claim draws itself, offer agreed draws, or support clocks.
   The native GUI needs Galaxy S9 acceptance for claim/promotion controls.
 

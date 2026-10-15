@@ -293,6 +293,19 @@ static void TestBoardGames() {
     // The CPU now searches legal human replies before choosing a move.
     // A hanging rook must be captured when safe instead of following
     // the previous greedy centralization heuristic.
+    // A horizon leaf must still recognize mate, not reward it
+    // as a material advantage for the player who is checkmated.
+    Boards matedLeaf;
+    matedLeaf.Reset(BoardKind::Chess);
+    matedLeaf.cells.fill(0);
+    matedLeaf.cells[7]=-6;  // black king h8
+    matedLeaf.cells[14]=5;  // white queen g7
+    matedLeaf.cells[21]=6;  // white king f6
+    matedLeaf.side=-1;
+    assert(matedLeaf.KingInCheck(matedLeaf.cells,-1));
+    assert(!matedLeaf.HasChessMove());
+    assert(matedLeaf.SearchChess(0,-300000,300000)==-50000);
+
     Boards tacticalChess;
     tacticalChess.Reset(BoardKind::Chess);
     tacticalChess.cells.fill(0);
