@@ -797,6 +797,20 @@ int main() {
     encoded[28]=0xffu; // invalid wave index, at word 7
     assert(!restored.DeserializeShop(encoded,sizeof(encoded)));
     assert(restored.credits()==credit_before);
+    // Corrupt high bytes used to wrap a 32-bit wave index to a valid
+    // uint8_t wave 1. Reject both cases without changing the live shop.
+    encoded[28]=1u;
+    encoded[29]=1u; // 257: low byte is a legal wave 1
+    assert(!restored.DeserializeShop(encoded,sizeof(encoded)));
+    assert(restored.credits()==credit_before);
+    assert(restored.level(Upgrade::Damage)==1);
+    encoded[29]=0u;
+    encoded[30]=1u; // 65537: still narrows to wave 1
+    assert(!restored.DeserializeShop(encoded,sizeof(encoded)));
+    assert(restored.credits()==credit_before);
+    encoded[30]=0u;
+    assert(restored.DeserializeShop(encoded,sizeof(encoded)));
+    assert(restored.wave_index()==1);
     assert(writer.BeginWave());
     assert(!writer.SerializeShop(encoded,sizeof(encoded)));
 

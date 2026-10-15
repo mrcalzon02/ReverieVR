@@ -223,7 +223,7 @@ bool Campaign::DeserializeShop(const uint8_t *source, size_t length) {
     if (data[0] != 0x31574252u || (data[1] != 1u && data[1] != 2u) ||
         data[3] > 3u || data[4] >= kLocations || data[5] == 0 ||
         data[5] > kPlaces[data[4]].days || data[6] > 1u ||
-        data[7] == 0 || data[8] > 10000000u ||
+        data[7] == 0 || data[7] > 8u || data[8] > 10000000u ||
         data[9] == 0 || data[9] > 100u ||
         data[10] > 3u || data[11] > 3u ||
         data[12] > 4u || data[13] > 4u || data[14] > 4u ||
