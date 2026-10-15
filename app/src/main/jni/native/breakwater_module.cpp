@@ -41,7 +41,7 @@ struct State {
     float turret_flash = 0.0f, infantry_flash = 0.0f;
     float gunboat_salvo_flash = 0.0f, gunboat_salvo_x = 0.0f;
     float gunboat_salvo_z = 0.0f;
-    float infantry_flash_x = 0.0f, infantry_flash_z = 0.0f;
+    uint64_t infantry_firing_mask=0u;
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
     ImpactEffects impacts;
@@ -278,6 +278,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->wrecks.Clear();
                 s->battery_damage=BatteryDamageFeedback{};
                 s->infantry_flash=0.0f;
+                s->infantry_firing_mask=0u;
                 s->gunboat_salvo_flash=0.0f;
                 s->aircraft_aim={};s->surface_aim={};
                 s->aircraft_hit=AircraftHitFeedback{};
@@ -435,6 +436,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->reload_ready_flash=0.0f;
         s->turret_flash=0.0f;
         s->infantry_flash=0.0f;
+        s->infantry_firing_mask=0u;
         s->gunboat_salvo_flash=0.0f;
         s->aircraft_aim={};s->surface_aim={};
         s->aircraft_hit=AircraftHitFeedback{};
@@ -660,10 +662,14 @@ void BuildScene(State *s) {
                      r*.75f,g*.75f,b*.75f);
         }
     }
-    for(const Infantry &trooper:game.infantry_units())if(trooper.active) {
-        // Simulation-owned soldier with a two-frame positional march.
-        // Sprite cards never allocate additional infantry or hitboxes.
-        const SpriteId pose=InfantrySprite(trooper);
+    for(size_t slot=0;slot<game.infantry_units().size();++slot) {
+        const Infantry &trooper=game.infantry_units()[slot];
+        if(!trooper.active)continue;
+        // The snapshot identifies actual ready shooters from a confirmed
+        // volley. Only their existing 2D cards change to fire frames.
+        const bool firing=s->infantry_flash>0.0f &&
+            InfantryFiringPose(trooper,s->infantry_firing_mask,slot);
+        const SpriteId pose=InfantrySprite(trooper,firing);
         AppendSprite(s->sprite_mesh,pose,trooper.x,-.67f,trooper.z,
                      .40f,.70f);
     }
@@ -676,14 +682,8 @@ void BuildScene(State *s) {
         Triangle(s,x,-.28f,z,0.0f,-.70f,-.94f,
                  0.0f,-.80f,-.94f,.95f,.56f,.22f);
     }
-    if(s->infantry_flash>0.0f) {
-        // One cheap bright muzzle flash at an actual soldier firing position.
-        // Its short lifetime is updated once, not separately per stereo eye.
-        const float x=s->infantry_flash_x,z=s->infantry_flash_z+.22f;
-        Box(s,x,-.60f,z,.19f,.16f,.14f,1.0f,.78f,.25f);
-        Triangle(s,x-.16f,-.60f,z,x,-.44f,z,x+.16f,-.60f,z,
-                 1.0f,.87f,.40f);
-    }
+    // Infantry muzzle flashes live in the firing sprite tiles above;
+    // do not draw a duplicate generic 3D flash at one arbitrary shooter.
     if(game.phase()==Phase::Briefing) {
         Panel(s,0,.40f,-3.06f,6.35f,3.6f,.08f,.12f,.16f);
         Text(s,"BREAKWATER",0,1.45f,-3.0f,.082f,.98f,.86f,.58f);
@@ -993,6 +993,8 @@ void Pause(void *instance) {
     s->held=false;
     s->secondary_held=false;
     s->combat_input.Release();
+    s->infantry_flash=0.0f;
+    s->infantry_firing_mask=0u;
     s->surface_aim={};s->aircraft_aim={};
     s->scene_dirty=true;
 }
@@ -1011,6 +1013,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->held=false;
         s->secondary_held=false;
         s->combat_input.Release();
+        s->infantry_flash=0.0f;
+        s->infantry_firing_mask=0u;
         s->surface_aim={};s->aircraft_aim={};
         s->scene_dirty=true;
         return;
@@ -1078,8 +1082,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         }
         const InfantryVolleyEvent volley=s->campaign.infantry_volley();
         if(volley.sequence!=volley_before && volley.damage>0) {
-            s->infantry_flash_x=volley.x;
-            s->infantry_flash_z=volley.z;
+            s->infantry_firing_mask=volley.firing_mask;
             s->infantry_flash=.15f;
             // The actual volley also strikes the battery, not just the
             // shooter's muzzle. Distribute the cheap spark across the
@@ -1114,6 +1117,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             s->wrecks.Clear();
             s->battery_damage=BatteryDamageFeedback{};
             s->infantry_flash=0.0f;
+            s->infantry_firing_mask=0u;
             s->gunboat_salvo_flash=0.0f;
             if(down)s->combat_input.CaptureUiPress();
         }

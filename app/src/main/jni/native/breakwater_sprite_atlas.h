@@ -18,7 +18,9 @@ enum class SpriteId : uint8_t {
     MissilePod, DirectCannon, ArtillerySupport, AirstrikeSupport,
     SamSupport, RepairSupport, RowboatOars, LandingRampHalf,
     LandingRampOpen, GunboatSalvo, StraferBankLeft, StraferBankRight,
-    BomberBankLeft, BomberBankRight, InfantrySupport, Count
+    BomberBankLeft, BomberBankRight, InfantrySupport,
+    InfantryRifleReady, InfantryRifleFire,
+    InfantryFlankReady, InfantryFlankFire, InfantrySupportFire, Count
 };
 constexpr int kSpriteTile = 32;
 constexpr int kSpriteAtlasWidth = 128;
@@ -309,6 +311,43 @@ inline SpritePixels BuildSpriteAtlas() {
     Triangle(pixels,support,26,17,24,10,27,11,steel);
     Triangle(pixels,support,28,17,30,10,31,11,steel);
     Rect(pixels,support,10,15,12,22,sand);
+
+    // Five additional original poses occupy existing vacant atlas cells.
+    // Idle/march, deployed and live-volley fire remain visually distinct
+    // in the generic 2000s military sprite language.
+    const SpriteColor flash{248,207,91}, ember{235,146,57};
+    const SpriteId rifleReady=SpriteId::InfantryRifleReady;
+    sprite_detail::CopyTile(pixels,SpriteId::InfantryStrideA,rifleReady);
+    Rect(pixels,rifleReady,11,5,16,8,dark);
+    Rect(pixels,rifleReady,18,5,23,8,dark);
+    Rect(pixels,rifleReady,11,8,15,13,olive);
+    Rect(pixels,rifleReady,19,8,23,13,olive);
+    Rect(pixels,rifleReady,9,14,14,18,steel);
+
+    const SpriteId flankReady=SpriteId::InfantryFlankReady;
+    sprite_detail::CopyTile(pixels,rifleReady,flankReady);
+    Rect(pixels,flankReady,8,13,14,17,olive);
+    Rect(pixels,flankReady,22,15,29,17,steel);
+    Triangle(pixels,flankReady,8,13,13,15,11,19,dark);
+    Rect(pixels,flankReady,24,19,30,21,dark);
+
+    const SpriteId rifleFire=SpriteId::InfantryRifleFire;
+    sprite_detail::CopyTile(pixels,rifleReady,rifleFire);
+    Triangle(pixels,rifleFire,27,15,31,18,27,21,flash);
+    Triangle(pixels,rifleFire,28,16,31,18,28,20,ember);
+    Rect(pixels,rifleFire,29,17,32,19,flash);
+
+    const SpriteId flankFire=SpriteId::InfantryFlankFire;
+    sprite_detail::CopyTile(pixels,flankReady,flankFire);
+    Triangle(pixels,flankFire,26,14,31,18,26,22,flash);
+    Triangle(pixels,flankFire,27,15,31,18,27,21,ember);
+    Rect(pixels,flankFire,29,17,32,19,flash);
+
+    const SpriteId supportFire=SpriteId::InfantrySupportFire;
+    sprite_detail::CopyTile(pixels,support,supportFire);
+    Triangle(pixels,supportFire,27,14,31,18,27,22,flash);
+    Triangle(pixels,supportFire,28,16,31,18,28,20,ember);
+    Rect(pixels,supportFire,29,17,32,19,flash);
     return pixels;
 }
 
@@ -344,12 +383,20 @@ inline SpriteId EnemySprite(const Enemy &enemy) {
     return SpriteId::Count;
 }
 
-// Infantry share exact Campaign positions/ray hitboxes. Only support
-// gunners need a distinct silhouette; moving riflemen/flankers use the
-// two existing positional stride frames.
-inline SpriteId InfantrySprite(const Infantry &soldier) {
-    if(soldier.tactic==InfantryTactic::Support)
-        return SpriteId::InfantrySupport;
+// Sprite poses are selected from the true soldier lane and a snapshot of
+// one actual damaging volley, never a guessed firing interval. No new
+// hit spheres, render clocks or stereo-specific billboard animation.
+inline SpriteId InfantrySprite(const Infantry &soldier,bool firing=false) {
+    const bool ready=InfantryReady(soldier);
+    if(soldier.tactic==InfantryTactic::Support && ready)
+        return firing?SpriteId::InfantrySupportFire:
+                      SpriteId::InfantrySupport;
+    if(ready) {
+        const bool flanking=InfantryFlanking(soldier.tactic);
+        return flanking?
+            (firing?SpriteId::InfantryFlankFire:SpriteId::InfantryFlankReady):
+            (firing?SpriteId::InfantryRifleFire:SpriteId::InfantryRifleReady);
+    }
     return InfantryMarchStride(soldier)>=0.0f?
         SpriteId::InfantryStrideA:SpriteId::InfantryStrideB;
 }

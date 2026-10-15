@@ -82,14 +82,37 @@ int main() {
         support.active=true;support.x=-.1f;support.z=-2.38f;
         support.tactic=InfantryTactic::Support;
         support.lane_x=support.x;
-        assert(InfantrySprite(support)==SpriteId::InfantrySupport);
-        assert(InfantrySprite(rifle)==SpriteId::InfantryStrideA);
+        assert(InfantrySprite(support)==SpriteId::InfantryStrideA ||
+               InfantrySprite(support)==SpriteId::InfantryStrideB);
+        assert(InfantrySprite(rifle)==SpriteId::InfantryRifleReady);
+        assert(InfantrySprite(rifle,true)==SpriteId::InfantryRifleFire);
+        assert(InfantrySprite(flank)==SpriteId::InfantryFlankReady);
+        assert(InfantrySprite(flank,true)==SpriteId::InfantryFlankFire);
+        assert(InfantrySprite(support,true)==SpriteId::InfantryStrideA ||
+               InfantrySprite(support,true)==SpriteId::InfantryStrideB);
+        assert(!InfantryFiringPose(rifle,0u,0));
+        assert(!InfantryFiringPose(rifle,1u,1));
+        assert(InfantryFiringPose(rifle,1u,0));
+        assert(!InfantryFiringPose(rifle,~uint64_t{0},Campaign::kMaxInfantry));
+        assert(InfantrySprite(right,true)==SpriteId::InfantryFlankFire);
         const float supportTime=InfantrySecondsToReady(support);
         assert(supportTime>5.0f && supportTime<8.0f);
         AdvanceInfantry(support,100.0f);
         assert(InfantryReady(support));
         assert(std::abs(support.z+1.68f)<.00002f);
         assert(InfantryMarchStride(support)==0.0f);
+        assert(InfantrySprite(support)==SpriteId::InfantrySupport);
+        assert(InfantrySprite(support,true)==SpriteId::InfantrySupportFire);
+        assert(InfantrySprite(rifle)==SpriteId::InfantryRifleReady);
+        // An advancing soldier cannot show a firearm muzzle flash even
+        // if a stale bitmap bit was accidentally carried over.
+        Infantry approaching=rifle;
+        approaching.z=-2.05f;
+        assert(InfantrySprite(approaching,true)==
+               SpriteId::InfantryStrideA ||
+               InfantrySprite(approaching,true)==
+               SpriteId::InfantryStrideB);
+        assert(!InfantryFiringPose(approaching,1u,0));
         Infantry malformed=support;
         malformed.x=std::numeric_limits<float>::quiet_NaN();
         assert(InfantrySecondsToReady(malformed)<0.0f);
@@ -127,6 +150,44 @@ int main() {
             else assert(art[supportOffset+3]==0);
         }
         assert(ink>25 && supportHash!=rifleHash);
+        const std::array<SpriteId,5> poses={{
+            SpriteId::InfantryRifleReady,SpriteId::InfantryRifleFire,
+            SpriteId::InfantryFlankReady,SpriteId::InfantryFlankFire,
+            SpriteId::InfantrySupportFire
+        }};
+        std::array<uint64_t,5> hashes{};
+        for(size_t i=0;i<poses.size();++i) {
+            const int cell=static_cast<int>(poses[i]);
+            const int px=(cell%4)*32,py=(cell/4)*32;
+            uint64_t h=14695981039346656037ull;
+            int visible=0,transparent=0;
+            for(int y=0;y<32;++y)for(int x=0;x<32;++x) {
+                const size_t offset=static_cast<size_t>(
+                    ((py+y)*kSpriteAtlasWidth+px+x)*4);
+                for(int ch=0;ch<4;++ch) {
+                    h^=art[offset+ch];
+                    h*=1099511628211ull;
+                }
+                if(art[offset+3]==255)++visible;
+                else {assert(art[offset+3]==0);++transparent;}
+            }
+            assert(visible>25 && transparent>50);
+            hashes[i]=h;
+            std::vector<float> card;
+            assert(AppendSprite(card,poses[i],-.5f,-.67f,-1.34f,
+                                .40f,.70f));
+            assert(card.size()==30);
+            for(size_t n=0;n<card.size();n+=5) {
+                assert(card[n+3]>=static_cast<float>(px)/kSpriteAtlasWidth);
+                assert(card[n+3]<=static_cast<float>(px+32)/kSpriteAtlasWidth);
+                assert(card[n+4]>=static_cast<float>(py)/kSpriteAtlasHeight);
+                assert(card[n+4]<=static_cast<float>(py+32)/kSpriteAtlasHeight);
+            }
+        }
+        for(size_t a=0;a<hashes.size();++a)
+            for(size_t b=a+1;b<hashes.size();++b)
+                assert(hashes[a]!=hashes[b]);
+        assert(sizeof(SpritePixels)==128u*1024u);
     }
 
     // A wreck is produced only by an authoritative death transition.
@@ -425,7 +486,7 @@ int main() {
         const std::array<SpriteId,4> supportIds={{
             SpriteId::ArtillerySupport,SpriteId::AirstrikeSupport,
             SpriteId::SamSupport,SpriteId::RepairSupport}};
-        assert(static_cast<int>(SpriteId::Count)==25);
+        assert(static_cast<int>(SpriteId::Count)==30);
         assert(sizeof(SpritePixels)==128u*1024u);
         std::array<uint64_t,4> supportHashes{};
         for(size_t id=0;id<supportIds.size();++id) {
@@ -552,8 +613,8 @@ int main() {
         assert(EnemySprite(e)==SpriteId::Bomber);
         e.type=static_cast<UnitType>(255);
         assert(EnemySprite(e)==SpriteId::Count);
-        // The seven unused atlas cells stay completely transparent.
-        for(int cell=25;cell<32;++cell) {
+        // The two unused atlas cells stay completely transparent.
+        for(int cell=30;cell<32;++cell) {
             const int col=cell%4,row=cell/4;
             for(int y=0;y<32;++y)
                 for(int x=0;x<32;++x) {
@@ -1262,6 +1323,22 @@ int main() {
     for(int i=0;i<160;i++) landed.Tick(0.05f);
     assert(landed.integrity()<integrity);
     const InfantryVolleyEvent first_volley=landed.infantry_volley();
+    // The same authoritative active/ready roster is used for the firing
+    // animation snapshot. No dead or still-advancing soldier flashes.
+    const uint64_t firingMask=first_volley.firing_mask;
+    size_t displayed=0;
+    for(size_t slot=0;slot<Campaign::kMaxInfantry;++slot) {
+        const Infantry &unit=landed.infantry_units()[slot];
+        const bool shown=InfantryFiringPose(unit,firingMask,slot);
+        if(shown) {
+            assert(unit.active && InfantryReady(unit));
+            assert(InfantrySprite(unit,true)!=InfantrySprite(unit,false));
+            ++displayed;
+        } else if(!unit.active || !InfantryReady(unit)) {
+            assert(!InfantryFiringPose(unit,~uint64_t{0},slot));
+        }
+    }
+    assert(displayed>0 && displayed==first_volley.shooters);
     assert(first_volley.sequence>=1);
     assert(landed.incoming_threats().infantry_seconds>=0.0f);
     assert(landed.incoming_threats().infantry_seconds<=4.0f);

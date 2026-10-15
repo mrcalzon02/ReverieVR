@@ -105,6 +105,7 @@ struct InfantryVolleyEvent {
     float z = 0;
     uint8_t shooters = 0;
     uint8_t damage = 0; // actual hull loss, not nominal volley strength
+    uint64_t firing_mask = 0; // exact ready slots at this one salvo substep
 };
 // The simulation emits this only when an aircraft deals real hull damage.
 struct AircraftAttackEvent {

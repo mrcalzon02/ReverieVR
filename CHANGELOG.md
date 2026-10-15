@@ -6,6 +6,22 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater verified-volley infantry firing sprites
+
+- Added five new infantry ready/flash silhouettes (rifle, flank, rear
+  support) inside the existing 128-KiB atlas, reaching 30 of 32 tiles.
+  Only live soldiers in the real volley event switch into a brief
+  muzzle-flash frame; the single generic 3D soldier flash was removed.
+- Capture the exact participating shooter mask in Campaign::TickStep,
+  preventing later arrivals during the same input frame from appearing
+  to have fired. Reuse the existing flash lifetime and reset state
+  on pause/focus loss and new waves; retain target, damage, controls,
+  saves, shaders, texture footprint and GL draw-call count.
+- Add native assertions for true-roster match, unit pose gating,
+  alpha/UV validity and sprite uniqueness. Full NDK/phone proof remains
+  outstanding.
+
+
 ### Breakwater landing-party flanking and support-gunner behavior
 
 - Assign actual landing-craft passengers to rifle, left/right flank

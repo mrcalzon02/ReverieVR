@@ -72,8 +72,9 @@ separate acceptance gates.
 ## Sprite atlas and 2.5D mounted weapons — current source (2026-10-15)
 
 **Implementation:** `breakwater_sprite_atlas.h` produces an original, fixed
-128×256 RGBA atlas with 24 occupied 32×32 cells (eight reserved): two
-infantry march frames; rowboat and travel-driven oar stroke; landing
+128×256 RGBA atlas with 30 occupied 32×32 cells (two reserved): two
+infantry march frames plus ready/firing soldier and support-gunner poses;
+rowboat and travel-driven oar stroke; landing
 craft with closed, half-lowered and open ramp; gunboat and firing flash;
 neutral/left-bank/right-bank strafer and bomber; five mounted weapons;
 and four artillery/airstrike/SAM/repair support symbols. Their muted olive, slate-steel, sand and
@@ -166,6 +167,43 @@ weapon vulnerability, malformed coordinates and phase/slot guards.
 Full Android NDK compile, visual alignment at headset depth, binocular
 readability and physical controller tests remain outstanding.
 
+## Authentic infantry firing poses and confirmed-volley muzzle flashes (2026-10-15 source)
+
+The original single generic 3D flash beside the first infantry shooter
+has been replaced by **individual 2D muzzle-flash art on the actual
+soldiers who participated in a damaging volley**. Riflemen gain a
+deployed firing-line stance and a firing frame, left/right flankers
+share a distinctive deployed lateral-stance pair, and the rear support
+gunner uses a heavier steady silhouette with its own firing frame.
+Marching soldiers keep their two existing stride frames. The already
+allocated **128×256 RGBA texture remains 128 KiB**, with 30 of 32 tiles
+occupied and the last two left transparent for future effects.
+
+The authoritative `Campaign::TickStep` now captures a 60-bit
+`InfantryVolleyEvent::firing_mask` in the exact 0.05-second
+substep when the real battery-damaging salvo occurs. The mask is a
+*transient* event field; it is not serialized, and there is no new
+player-control or audio protocol. The module's existing 0.15-second
+infantry flash timer gates an individual firing frame per bit only
+while that soldier remains alive and actually at their tactical
+firing line. The pose selection and roster are evaluated only once
+for the shared VR scene; stereo eyes consume the same batched atlas
+and campaign-driven movement. Recording at the actual substep prevents
+soldiers arriving later in the same 0.10-second input update from
+appearing to have fired retroactively. Clearing the timer and bitmap
+on pause/focus loss and mission/wave transitions prevents stale flashes.
+The pre-existing parapet hit spark remains tied to actual hull damage;
+the duplicate decorative world-space muzzle box is removed.
+
+No hitboxes, aim assistance, health, damage, volley timing, weather,
+textures, GL draw passes, controller mappings or save schema changed.
+C++ regression source checks the real volley mask against the event's
+authoritative shooter count, guards against inactive/advancing troops,
+checks pose selection for all four tactical roles, verifies distinct
+pixel cells, atlas UVs, alpha masks and the unchanged 128-KiB memory
+budget. Host fixture checks and full NDK/Galaxy S9 rendering acceptance
+must not be conflated; physical headset proof remains outstanding.
+
 ## Landing-party flanking and rear support tactics (2026-10-15 source)
 
 Single-passenger rowboat infantry retain their original straightforward
@@ -191,9 +229,10 @@ troops still cancels the accumulated four-second group salvo, and the
 next arrivals must wait their own full period. The original one-rowboat
 timing and threat prediction are deliberately preserved.
 
-A distinct original support-gunner silhouette uses **one of the eight
-previously blank cells** in the already-allocated 128×256 RGBA sprite
-atlas: 25 filled cells, seven still reserved, **128 KiB unchanged**.
+The first support-gunner silhouette used **one of the eight
+previously blank cells** in the 128×256 RGBA atlas. The later
+confirmed-volley sprite update fills five more cells, bringing the
+current total to **30 filled cells, two reserved, 128 KiB unchanged**.
 Flankers use existing two-frame march sprites, following their actual
 lateral position. No new render pass, texture, input, sound events, save
 fields or new infantry allocations. C++ regression coverage was added for
@@ -207,12 +246,12 @@ remain unverified.
 ## State-driven enemy sprite animation (2026-10-15 source)
 
 The original 16-cell (128×128) procedural RGBA sheet now occupies a
-128×256 power-of-two atlas (128 KiB) with 24 original silhouettes. Eight
+128×256 power-of-two atlas (128 KiB) with 24 original silhouettes before infantry pose expansion. Eight
 new cells animate the **rowboat oar stroke**, **half/open landing ramp**,
 **gunboat firing flash**, and distinct **left/right bank** for both
 strafer and bomber. All icons, weapon views, previous sprites and HUD
-stay inside the same atlas, with eight additional cells reserved for
-future frames. No new sampler, texture, shader, draw pass or gameplay
+stay inside the same atlas, with eight initially spare cells (subsequent soldier art now leaves
+two spare). No new sampler, texture, shader, draw pass or gameplay
 object is introduced.
 
 `EnemySprite(const Enemy&)` is a pure presentation-only selector.

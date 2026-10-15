@@ -62,6 +62,16 @@ inline bool InfantryReady(const Infantry &unit) {
         (std::isfinite(unit.lane_x) &&
          std::abs(unit.lane_x-unit.x)<.00001f);
 }
+// The actual Campaign::TickStep event stores its firing-mask at the
+// moment of damage, before subsequent substeps/arrivals can change it.
+static_assert(Campaign::kMaxInfantry<=64,
+              "infantry fire roster must fit the fixed 64-bit mask");
+inline bool InfantryFiringPose(
+    const Infantry &soldier,uint64_t mask,size_t index
+) {
+    return index<Campaign::kMaxInfantry &&
+        (mask & (uint64_t{1}<<index))!=0 && InfantryReady(soldier);
+}
 inline void AdvanceInfantry(Infantry &unit,float seconds) {
     if(!unit.active || !std::isfinite(seconds) || seconds<=0.0f ||
        !std::isfinite(unit.x) || !std::isfinite(unit.z))return;

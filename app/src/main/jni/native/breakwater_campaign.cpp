@@ -643,12 +643,16 @@ void Campaign::TickStep(float dt) {
     // at a rear firing line. All remain individually targetable soldiers.
     uint8_t ready_to_fire = 0;
     int32_t nominal_damage = 0;
+    uint64_t firing_mask = 0;
     const Infantry *first_shooter = nullptr;
-    for (Infantry &trooper : infantry_units_) {
+    static_assert(kMaxInfantry<=64,"volley roster must fit uint64_t");
+    for (size_t slot=0;slot<infantry_units_.size();++slot) {
+        Infantry &trooper=infantry_units_[slot];
         if (!trooper.active) continue;
         AdvanceInfantry(trooper,dt);
         if (InfantryReady(trooper)) {
             ++ready_to_fire;
+            firing_mask|=(uint64_t{1}<<slot);
             nominal_damage += InfantryShotDamage(trooper.tactic);
             if (first_shooter == nullptr) first_shooter = &trooper;
         }
@@ -669,6 +673,7 @@ void Campaign::TickStep(float dt) {
                 infantry_volley_.z = first_shooter->z;
                 infantry_volley_.shooters = ready_to_fire;
                 infantry_volley_.damage = static_cast<uint8_t>(actual_damage);
+                infantry_volley_.firing_mask = firing_mask;
             }
         }
     }
