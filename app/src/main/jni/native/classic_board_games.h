@@ -138,7 +138,7 @@ struct State {
             const int dx[4]={1,-1,0,0},dy[4]={0,0,1,-1};
             for(int i=0;i<4;i++){
                 int xx=x+dx[i],yy=y+dy[i];
-                if(xx<0||xx>=9||yy<0||yy>=9)continue;
+                if(xx<0||xx>=kGoSize||yy<0||yy>=kGoSize)continue;
                 int next=yy*kGoSize+xx;
                 if(board[next]==0){
                     if(!libertySeen[next]){libertySeen[next]=1;++g.liberties;}
@@ -160,7 +160,7 @@ struct State {
         const int dx[4]={1,-1,0,0},dy[4]={0,0,1,-1};
         for(int i=0;i<4;i++){
             int nx=x+dx[i],ny=y+dy[i];
-            if(nx<0||nx>=9||ny<0||ny>=9)continue;
+            if(nx<0||nx>=kGoSize||ny<0||ny>=kGoSize)continue;
             int other=ny*kGoSize+nx;
             if(after[other]!=-side||checked[other])continue;
             Group g=Flood(after,other,&checked);
