@@ -24,6 +24,21 @@ public final class DosLibraryScrollTest {
     }
 
     @Test
+    public void libraryRefreshKeepsVisibleAnchorWithoutHidingNewTopImports() {
+        String[] oldIds = {"latest", "new", "Ken", "Jetpack",
+            "Squarez", "DOOM", "a", "b", "c"};
+        String[] nextIds = {"fresh", "latest", "new", "Ken", "Jetpack",
+            "Squarez", "DOOM", "a", "b", "c"};
+        assertEquals(3, DosLibraryScroll.retainAnchor(oldIds, 2, nextIds));
+        assertEquals(0, DosLibraryScroll.retainAnchor(oldIds, 0, nextIds));
+        assertEquals(2, DosLibraryScroll.retainAnchor(oldIds, 2,
+            new String[]{"fresh", "latest", "other", "Jetpack",
+                "Squarez", "DOOM", "a", "b", "c"}));
+        assertEquals(0, DosLibraryScroll.retainAnchor(oldIds, 8,
+            new String[]{"DOOM"}));
+    }
+
+    @Test
     public void rowsAndExtremeScrollValuesStayBounded() {
         assertEquals(0, DosLibraryScroll.maxFirst(5));
         assertEquals(2, DosLibraryScroll.maxFirst(7));

@@ -101,11 +101,16 @@ final class DosModuleRepository {
             }
         }
 
+        // Imported games are newest-first. Bundled games share timestamp
+        // zero, so break ties by title and then immutable ID; filesystem
+        // enumeration order must not shuffle the VR scrolling shelf.
         result.sort(
             Comparator.comparingLong(
-                (DosGameModule module) ->
-                    module.importedAtMillis
+                (DosGameModule module) -> module.importedAtMillis
             ).reversed()
+             .thenComparing(module -> module.displayName,
+                String.CASE_INSENSITIVE_ORDER)
+             .thenComparing(module -> module.id)
         );
         return Collections.unmodifiableList(result);
     }

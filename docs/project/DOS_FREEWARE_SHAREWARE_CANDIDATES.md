@@ -34,7 +34,11 @@ unchanged. `DosLibraryScroll` is shared by drawing, enabled hit targets
 and selection; pure JVM tests cover 0, 1, 3, 5, 7, 51, 100 and 301
 games plus integer boundary behavior. Library persistence tests populate
 51 separate installed-game directories, reopen the repository and verify
-independent bindings after a profile change. Controller-swipe tests verify
+independent bindings after a profile change. Built-in games with equal
+import timestamps have deterministic alphabetical/ID tie-breaking rather than
+filesystem-dependent order; when refreshed mid-scroll, the shelf anchors the
+first visible game by its ID and resets a stale hover to prevent unintended
+launches. Controller-swipe tests verify
 that library swipes don't accidentally trigger navigation at finger lift,
 while other menus keep normal swipe navigation. Real Galaxy S9 + Daydream
 shelf readability, scroll comfort, and selection remain a device gate.

@@ -57,4 +57,39 @@ public final class DosModuleRepositoryCapacityTest {
         assertEquals(BuiltInBindingProfiles.ID_DOS_STANDARD,
             reopened.findById("game-9").bindingProfileId);
     }
+    @Test
+    public void equalTimestampBundledGamesKeepStableAlphabeticalOrder()
+        throws Exception {
+        File root = temp.newFolder("freeware-collection");
+        DosModuleRepository library = new DosModuleRepository(root);
+        String[][] games = {
+            {"z-jet", "Jetpack"},
+            {"a-squarez", "Squarez Deluxe"},
+            {"z-doom", "DOOM Shareware"},
+            {"b-jet", "Jetpack"}
+        };
+        for (String[] game : games) {
+            File directory = new File(root, game[0]);
+            assertTrue(directory.mkdirs());
+            File zip = new File(directory, "original.zip");
+            try (FileOutputStream output = new FileOutputStream(zip)) {
+                output.write(1);
+            }
+            library.save(new DosGameModule(
+                game[0], game[1], "original.zip",
+                zip.getAbsolutePath(), BuiltInBindingProfiles.ID_DOS_STANDARD,
+                0L));
+        }
+        List<DosGameModule> expected = library.list();
+        assertEquals("DOOM Shareware", expected.get(0).displayName);
+        assertEquals("a-squarez", expected.get(3).id);
+        assertEquals("b-jet", expected.get(1).id);
+        assertEquals("z-jet", expected.get(2).id);
+        for (int iteration = 0; iteration < 3; iteration++) {
+            List<DosGameModule> again = new DosModuleRepository(root).list();
+            for (int i = 0; i < expected.size(); i++) {
+                assertEquals(expected.get(i).id, again.get(i).id);
+            }
+        }
+    }
 }

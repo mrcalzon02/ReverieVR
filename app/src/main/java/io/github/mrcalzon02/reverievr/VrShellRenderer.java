@@ -1477,12 +1477,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
             names[index] = module.displayName;
         }
 
+        int first = DosLibraryScroll.retainAnchor(
+            dosModuleIds, dosLibraryScrollFirst, ids);
+        boolean changed = !java.util.Arrays.equals(dosModuleIds, ids);
         dosModuleIds = ids;
         dosModuleNames = names;
+        dosLibraryScrollFirst = first;
 
-        dosLibraryScrollFirst = DosLibraryScroll.clampFirst(
-            dosLibraryScrollFirst, count);
-
+        if (changed && mode == MODE_DOS_LIBRARY) {
+            // Never activate an old hover after a new game shifts its row.
+            hoveredButton = -1;
+            uiTargetStabilizer.reset();
+        }
         textureDirty = true;
     }
 
