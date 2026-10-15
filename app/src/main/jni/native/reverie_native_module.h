@@ -52,6 +52,17 @@ enum ReverieNativeFeedbackFlagV1 {
         | REVERIE_NATIVE_FEEDBACK_AIRSTRIKE
 };
 
+// Optional ordered one-shot sound events (unlike coalesced UI flags).
+// IDs are shared shell sounds, not module-provided PCM or file paths.
+enum ReverieNativeSoundCueV1 {
+    REVERIE_NATIVE_SOUND_WEAPON_MACHINE = 1u,
+    REVERIE_NATIVE_SOUND_WEAPON_HEAVY = 2u,
+    REVERIE_NATIVE_SOUND_WEAPON_FLAK = 3u,
+    REVERIE_NATIVE_SOUND_WEAPON_MISSILE = 4u,
+    REVERIE_NATIVE_SOUND_WEAPON_CANNON = 5u,
+    REVERIE_NATIVE_SOUND_MAX_V1 = REVERIE_NATIVE_SOUND_WEAPON_CANNON
+};
+
 typedef struct ReverieNativeHostV1 {
     uint32_t struct_size;
     uint32_t abi_version;
@@ -85,6 +96,13 @@ typedef struct ReverieNativeHostV1 {
     void (*request_feedback)(
         uint32_t flags
     );
+
+    // Optional ABI-v1 append-only tail. Each valid request is one ordered
+    // event, not a bitmask; old modules/hosts keep using request_feedback.
+    // The shell bounds per-frame queue capacity and owns all audio data.
+    void (*request_sound)(
+        uint32_t cue_id
+    );
 } ReverieNativeHostV1;
 
 #define REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE \
@@ -96,6 +114,9 @@ typedef struct ReverieNativeHostV1 {
 #define REVERIE_NATIVE_HOST_V1_FEEDBACK_MIN_SIZE \
     ((uint32_t)(offsetof(ReverieNativeHostV1, request_feedback) \
         + sizeof(((ReverieNativeHostV1 *)0)->request_feedback)))
+#define REVERIE_NATIVE_HOST_V1_SOUND_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeHostV1, request_sound) \
+        + sizeof(((ReverieNativeHostV1 *)0)->request_sound)))
 
 typedef struct ReverieNativeModuleDescriptorV1 {
     uint32_t struct_size;

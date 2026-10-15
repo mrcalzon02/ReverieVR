@@ -1,3 +1,19 @@
+## 2026-10-15 — Breakwater typed weapon audio events (source, device pending)
+
+Implemented five original, differentiated synthesized weapon reports for
+Machine, Heavy, Flak, Missile and Cannon rather than reusing only the same
+machine-gun waveform. An optional append-only ABI-v1 host callback
+`request_sound(cue_id)` transports successful shots from Breakwater into
+a bounded ordered packet (maximum eight sound cues per native update),
+drained by a single no-allocation JNI `long`. The shell dispatches to
+reusable preloaded Android AudioTracks; older hosts still receive the
+original generic `WEAPON_FIRE`. Explicit tests cover ABI prefix
+compatibility, invalid cue IDs, preserving repeated events, queue
+overflow and pause clearing, plus deterministic distinct Java PCM
+reports. No Android APK compile, Galaxy S9 playback/latency or recorded
+third-party SFX integration was completed in this source slice; the
+CC0 intake register remains the authority for eventual samples.
+
 ## 2026-10-15 — Breakwater source README linked in project management (documentation only)
 
 Created `docs/project/BREAKWATER_SOUND_SOURCES.md` as the canonical

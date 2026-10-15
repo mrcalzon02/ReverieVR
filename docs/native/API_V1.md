@@ -58,6 +58,7 @@ Current minimum-prefix constants are:
 - `REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE` — host header plus logging service;
 - `REVERIE_NATIVE_HOST_V1_SAVE_MIN_SIZE` — host prefix through read/write save services;
 - `REVERIE_NATIVE_HOST_V1_FEEDBACK_MIN_SIZE` — host prefix through shell feedback cue requests;
+- `REVERIE_NATIVE_HOST_V1_SOUND_MIN_SIZE` — optional host prefix through ordered named sound cue requests;
 - `REVERIE_NATIVE_DESCRIPTOR_V1_SIZE` — exact frozen ABI-v1 descriptor size;
 - `REVERIE_NATIVE_DESCRIPTOR_V1_MIN_SIZE` — compatibility alias to that exact frozen size;
 - `REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE` — base timing/movement/button input;
@@ -95,7 +96,7 @@ Module ids are treated as storage/security identifiers, not display strings. Cur
 
 ## Host services
 
-`ReverieNativeHostV1` currently exposes four services.
+`ReverieNativeHostV1` currently exposes five services (the fifth is an optional append-only ordered-sound tail).
 
 ### Logging
 
@@ -114,6 +115,26 @@ Supported levels are debug, info, warn, and error.
 `write_save(slot, data, size)`
 
 Save slots are scoped by the host to the active packaged module. A module does not receive an arbitrary filesystem path.
+
+### Ordered sound cues (optional latest ABI-v1 tail)
+
+`request_sound(cue_id)` requests one shell-owned, validated sound per
+successful action. It is **not** a bitmask and cannot accept PCM, paths,
+loop sources or arbitrary cue IDs. The initial IDs
+`REVERIE_NATIVE_SOUND_WEAPON_MACHINE` through
+`REVERIE_NATIVE_SOUND_WEAPON_CANNON` (1–5) provide five distinct
+Breakwater reports. Host-side `ReverieNativeSoundQueueV1` bounds each
+packet to eight ordered one-byte IDs; the shell drains once per native
+update using `NativeModuleRuntime.nativeDrainSoundCues()`, forwarding
+each ID to the same reusable `NativeCombatSound` mixer. Pause clears
+outstanding events. The callback is appended **after**
+`request_feedback`, capability gated by
+`REVERIE_NATIVE_HOST_V1_SOUND_MIN_SIZE`; older hosts continue
+receiving legacy `WEAPON_FIRE` fallback from modules that call
+`ReverieNativeRequestSoundV1`. It does not change the mandatory
+module API descriptor, callback positions or the ABI version.
+These five first-party synthesized fallback reports are **not**
+downloaded CC0 samples; the P0 recorded sound intake is still open.
 
 ### Shell feedback cues
 

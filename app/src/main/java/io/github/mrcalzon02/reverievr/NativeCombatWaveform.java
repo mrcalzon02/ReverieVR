@@ -4,15 +4,25 @@ package io.github.mrcalzon02.reverievr;
 final class NativeCombatWaveform {
     static final int SAMPLE_RATE = 22050;
     static final int FIRE = 0, RELOAD = 1, READY = 2;
-    static final int ARTILLERY = 3, AIRSTRIKE = 4, COUNT = 5;
+    static final int ARTILLERY = 3, AIRSTRIKE = 4;
+    // Byte-sized native ordered sound ids 1–5 map to this private bank
+    // without changing the generic shell feedback/voice cue indices.
+    static final int MACHINE = 5, HEAVY = 6, FLAK = 7;
+    static final int MISSILE = 8, CANNON = 9, COUNT = 10;
 
     private NativeCombatWaveform() {}
+
+    // The native ABI uses ordered cue IDs 1..5 (not the PCM bank's
+    // integer constants 5..9). This mapping is pure JVM-testable.
+    static int weaponCueForNativeEvent(int id) {
+        return id>=1 && id<=5 ? MACHINE+id-1 : -1;
+    }
 
     // Two overlapping reports are enough for the upgraded 160ms gun cycle;
     // all other cues retain one preloaded static voice.
     static int voiceCount(int cue) {
         if (cue < 0 || cue >= COUNT) throw new IllegalArgumentException("Unknown cue");
-        return cue == FIRE ? 2 : 1;
+        return cue == FIRE || cue == MACHINE ? 2 : 1;
     }
 
     static int durationMillis(int cue) {
@@ -21,6 +31,11 @@ final class NativeCombatWaveform {
         if (cue == READY) return 100;
         if (cue == ARTILLERY) return 520;
         if (cue == AIRSTRIKE) return 650;
+        if (cue == MACHINE) return 170;
+        if (cue == HEAVY) return 240;
+        if (cue == FLAK) return 270;
+        if (cue == MISSILE) return 390;
+        if (cue == CANNON) return 360;
         throw new IllegalArgumentException("Unknown cue");
     }
 
@@ -44,6 +59,38 @@ final class NativeCombatWaveform {
                     220.0 * Math.exp(-22.0 * t)) / SAMPLE_RATE;
                 signal = envelope * (0.48 * noise * Math.exp(-12.0 * t)
                     + 0.35 * Math.sin(phase) * Math.exp(-10.0 * t));
+            } else if (cue >= MACHINE && cue <= CANNON) {
+                // Distinct original synthesizer recipes, not a second
+                // short gunshot played at five arbitrary playback speeds.
+                // One-shot envelopes carry weight without sample packs.
+                if (cue == MACHINE) {
+                    phase += 2.0 * Math.PI * (122.0 +
+                        245.0 * Math.exp(-27.0 * t)) / SAMPLE_RATE;
+                    signal = envelope * (0.53 * noise * Math.exp(-17.0 * t)
+                        + .32 * Math.sin(phase) * Math.exp(-12.0 * t));
+                } else if (cue == HEAVY) {
+                    phase += 2.0 * Math.PI * (57.0 +
+                        172.0 * Math.exp(-16.0 * t)) / SAMPLE_RATE;
+                    signal = envelope * (.43 * noise * Math.exp(-9.0 * t)
+                        + .47 * Math.sin(phase) * Math.exp(-9.5 * t));
+                } else if (cue == FLAK) {
+                    phase += 2.0 * Math.PI * (86.0 +
+                        300.0 * Math.exp(-30.0 * t)) / SAMPLE_RATE;
+                    double snap = Math.exp(-52.0 * t);
+                    signal = envelope * (.69 * noise * snap +
+                        .28 * Math.sin(phase) * Math.exp(-14.0 * t));
+                } else if (cue == MISSILE) {
+                    phase += 2.0 * Math.PI * (470.0 -
+                        310.0 * p) / SAMPLE_RATE;
+                    double exhaust = Math.exp(-5.0 * t);
+                    signal = envelope * exhaust *
+                        (.39 * noise + .45 * Math.sin(phase));
+                } else {
+                    phase += 2.0 * Math.PI * (48.0 +
+                        125.0 * Math.exp(-11.0 * t)) / SAMPLE_RATE;
+                    signal = envelope * (.40 * noise * Math.exp(-8.0 * t)
+                        + .51 * Math.sin(phase) * Math.exp(-7.0 * t));
+                }
             } else if (cue == RELOAD) {
                 double clack = Math.exp(-58.0 * t) + (t >= 0.115 ?
                     .85 * Math.exp(-70.0 * (t - 0.115)) : 0.0);

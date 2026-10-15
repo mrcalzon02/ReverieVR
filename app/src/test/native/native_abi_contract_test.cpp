@@ -1,4 +1,5 @@
 #include "reverie_native_sdk.h"
+#include "reverie_native_sound_queue.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -11,6 +12,8 @@ namespace {
 int failures = 0;
 int captured_log_count = 0;
 uint32_t captured_feedback_flags = 0u;
+uint32_t captured_sound_cue = 0u;
+unsigned captured_sound_calls = 0u;
 
 void Check(bool condition, const char *message) {
     if (!condition) {
@@ -49,6 +52,10 @@ void DummyFeedback(
 ) {
     captured_feedback_flags |= flags;
 }
+void DummySound(uint32_t cue_id) {
+    captured_sound_cue=cue_id;
+    ++captured_sound_calls;
+}
 
 }  // namespace
 
@@ -83,6 +90,7 @@ int main() {
     host.read_save = DummyReadSave;
     host.write_save = DummyWriteSave;
     host.request_feedback = DummyFeedback;
+    host.request_sound = DummySound;
 
     Check(
         ReverieNativeHostSupportsLogV1(&host) != 0,
@@ -154,6 +162,56 @@ int main() {
              | REVERIE_NATIVE_FEEDBACK_AIRSTRIKE),
         "fixed gameplay sound cues must survive ABI sanitization"
     );
+
+    // New host fields are strictly append-only, so older v1 hosts can
+    // still offer their original feedback and save callbacks safely.
+    Check(REVERIE_NATIVE_HOST_V1_SOUND_MIN_SIZE
+            > REVERIE_NATIVE_HOST_V1_FEEDBACK_MIN_SIZE,
+          "ordered sound-event tail must follow feedback");
+    Check(ReverieNativeHostSupportsSoundV1(&host) == 0,
+          "feedback-only host must not expose ordered audio");
+    Check(ReverieNativeRequestSoundV1(&host,
+              REVERIE_NATIVE_SOUND_WEAPON_MACHINE) == 0,
+          "old host cannot accept ordered sound cues");
+    host.struct_size = REVERIE_NATIVE_HOST_V1_SOUND_MIN_SIZE;
+    Check(ReverieNativeHostSupportsSoundV1(&host) != 0,
+          "current host should expose ordered sound service");
+    for(uint32_t cue=REVERIE_NATIVE_SOUND_WEAPON_MACHINE;
+        cue<=REVERIE_NATIVE_SOUND_MAX_V1;++cue) {
+        Check(ReverieNativeRequestSoundV1(&host,cue) != 0,
+              "valid ordered cue should dispatch");
+    }
+    Check(captured_sound_calls==5u &&
+          captured_sound_cue==REVERIE_NATIVE_SOUND_WEAPON_CANNON,
+          "one callback per distinct weapon report");
+    Check(ReverieNativeRequestSoundV1(&host,0u)==0 &&
+          ReverieNativeRequestSoundV1(&host,9999u)==0 &&
+          captured_sound_calls==5u,
+          "invalid cue ids rejected without reaching host");
+    host.request_sound=nullptr;
+    Check(ReverieNativeRequestSoundV1(&host,
+          REVERIE_NATIVE_SOUND_WEAPON_MACHINE)==0,
+          "missing sound callback must fail closed");
+    host.request_sound=DummySound;
+
+    // The actual host uses this exact bounded ordered queue.
+    ReverieNativeSoundQueueV1 ordered;
+    Check(!ordered.Push(0u) && !ordered.Push(9999u) &&
+          ordered.count==0u,"invalid sound IDs never enter queue");
+    for(uint32_t index=0u;index<8u;++index)
+        Check(ordered.Push(1u+(index%5u)),"first eight ordered cues accepted");
+    Check(!ordered.Push(1u),"ninth queued sound must fail boundedly");
+    uint64_t packet=ordered.Drain();
+    for(uint32_t index=0u;index<8u;++index) {
+        const uint32_t cue=static_cast<uint32_t>(packet & 255u);
+        Check(cue==1u+(index%5u),"order and multiplicity preserved");
+        packet>>=8u;
+    }
+    Check(packet==0u && ordered.count==0u && ordered.packed==0u,
+          "drain must clear queue");
+    ordered.Push(2u);
+    ordered.Clear();
+    Check(ordered.Drain()==0u,"pause clears unplayed requests");
 
     ReverieNativeModuleDescriptorV1 descriptor = {};
     descriptor.struct_size =

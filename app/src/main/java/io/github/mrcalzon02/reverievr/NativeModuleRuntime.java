@@ -410,6 +410,12 @@ final class NativeModuleRuntime implements AutoCloseable {
         ) & FEEDBACK_ALL;
     }
 
+    // Eight ordered one-byte sound IDs packed by the native host.
+    // This is drained once per authoritative update, not per eye.
+    synchronized long drainSoundCues() {
+        return handle==0L ? 0L : nativeDrainSoundCues(handle);
+    }
+
     synchronized boolean renderEye(
         int eyeIndex,
         float[] view,
@@ -504,6 +510,8 @@ final class NativeModuleRuntime implements AutoCloseable {
     private static native void nativePause(
         long handle
     );
+
+    private static native long nativeDrainSoundCues(long handle);
 
     private static native int nativeUpdate(
         long handle,

@@ -396,9 +396,14 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             }
             s->shot_gravity=missile?0.0f:gravity;
             s->flash=.09f;
-            // Use fixed host-owned gameplay sound cues, not the UI confirm beep.
-            Feedback(s,REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE |
-                (game.reloading()?REVERIE_NATIVE_FEEDBACK_RELOAD_START:0u));
+            // A successful shot emits exactly one typed, ordered audio
+            // event. Older ABI-v1 hosts continue using the original report.
+            const uint32_t cue=REVERIE_NATIVE_SOUND_WEAPON_MACHINE+
+                static_cast<uint32_t>(game.selected_weapon());
+            if(!ReverieNativeRequestSoundV1(s->host,cue))
+                Feedback(s,REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE);
+            if(game.reloading())
+                Feedback(s,REVERIE_NATIVE_FEEDBACK_RELOAD_START);
         } else if(edge)Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
         // A restart must not resurrect the old shop checkpoint after app exit.

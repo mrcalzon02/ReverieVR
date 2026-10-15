@@ -6,6 +6,20 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater typed per-weapon playback foundation
+
+- Added a backward-compatible native v1 ordered sound-cue tail
+  separate from legacy feedback flags, plus eight-event bounded
+  host packet/drain. Successful shots select one of five distinct
+  preloaded synthesized fallback reports; existing generic
+  sound continues on older hosts. No files downloaded, new
+  UI controls, or additional playback clocks.
+- Extended ABI/JVM regressions for old-host gating, event order,
+  overflow, invalid IDs and distinct deterministic PCM. The
+  full native/Android build, recorded sample ingestion and
+  reference-device sound testing remain open.
+
+
 ### Breakwater sourced CC0 audio README in project management
 
 - Added the canonical `docs/project/BREAKWATER_SOUND_SOURCES.md`

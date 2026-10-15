@@ -41,11 +41,33 @@ public final class NativeCombatWaveformTest {
     public void rapidGunfireUsesTwoReusableVoices() {
         assertEquals(2, NativeCombatWaveform.voiceCount(NativeCombatWaveform.FIRE));
         for (int cue = 1; cue < NativeCombatWaveform.COUNT; cue++)
-            assertEquals(1, NativeCombatWaveform.voiceCount(cue));
+            assertEquals(cue==NativeCombatWaveform.MACHINE?2:1,
+                NativeCombatWaveform.voiceCount(cue));
         // The maximum fire-rate upgrade reduces 300ms to 160ms. A single
         // 180ms report would be cut short; two voices can alternate safely.
         assertTrue(NativeCombatWaveform.durationMillis(NativeCombatWaveform.FIRE) > 160);
         assertTrue(NativeCombatWaveform.durationMillis(NativeCombatWaveform.FIRE) <= 320);
+    }
+
+    @Test
+    public void fiveWeaponReportsHaveUniquePcmAndBoundedSize() {
+        java.util.HashSet<Integer> signatures=new java.util.HashSet<>();
+        assertEquals(-1,NativeCombatWaveform.weaponCueForNativeEvent(0));
+        assertEquals(-1,NativeCombatWaveform.weaponCueForNativeEvent(6));
+        for(int id=1;id<=5;id++)
+            assertEquals(NativeCombatWaveform.MACHINE+id-1,
+                NativeCombatWaveform.weaponCueForNativeEvent(id));
+        for (int id=NativeCombatWaveform.MACHINE;
+             id<=NativeCombatWaveform.CANNON;id++) {
+            byte[] pcm=NativeCombatWaveform.generatePcm16(id);
+            assertTrue(pcm.length>5000 && pcm.length<25000);
+            assertTrue(signatures.add(java.util.Arrays.hashCode(pcm)));
+        }
+        assertEquals(5,signatures.size());
+        assertEquals(170,NativeCombatWaveform.durationMillis(
+            NativeCombatWaveform.MACHINE));
+        assertEquals(360,NativeCombatWaveform.durationMillis(
+            NativeCombatWaveform.CANNON));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -55,6 +77,6 @@ public final class NativeCombatWaveformTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidCueRejected() {
-        NativeCombatWaveform.generatePcm16(7);
+        NativeCombatWaveform.generatePcm16(NativeCombatWaveform.COUNT);
     }
 }

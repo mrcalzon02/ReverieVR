@@ -104,6 +104,13 @@ final class UiFeedback implements AutoCloseable {
         });
     }
 
+    void nativeWeaponFire(int cueId) {
+        if (cueId < 1 || cueId > 5) return;
+        mainHandler.post(() -> {
+            if (lifecycleActive) combatSound.playNativeWeapon(cueId);
+        });
+    }
+
     void reloadStart() {
         mainHandler.post(() -> {
             if (lifecycleActive) combatSound.play(NativeCombatWaveform.RELOAD);

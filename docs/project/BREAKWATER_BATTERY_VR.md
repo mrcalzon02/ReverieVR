@@ -204,14 +204,19 @@ Follow the tiny pre-PlayStation, early-PC 3D aesthetic: simple vertex-color mesh
 
 ## Breakwater sound-effects acquisition and integration queue (2026-10-15)
 
-**Current verified implementation:** ReverieVR's Java `NativeCombatWaveform`
-generates five compact 22,050-Hz PCM16 mono sounds at module start:
-`FIRE` (one common report for all five weapons), `RELOAD`,
-`READY`, `ARTILLERY`, and `AIRSTRIKE`. `NativeCombatSound`
-preloads them in short static `AudioTrack` voices and routes them
-through `UiFeedback`; primary fire has two voices and other cues
-have one. Shell feedback already includes focus, confirm and rejection.
-**No recorded Breakwater SFX are packaged or bound today.**
+**Source implementation (2026-10-15):** ReverieVR's Java
+`NativeCombatWaveform` generates ten compact 22,050-Hz PCM16
+mono sounds at module initialization: the original generic
+`FIRE`, `RELOAD`, `READY`, `ARTILLERY` and `AIRSTRIKE`,
+plus original differentiated `MACHINE`, `HEAVY`, `FLAK`,
+`MISSILE`, `CANNON` reports. `NativeCombatSound` preloads
+them into bounded static `AudioTrack` voices and routes them
+through `UiFeedback`. The optional append-only host
+`request_sound(cue_id)` path accepts ordered weapon IDs from
+successful simulation shots; the old `request_feedback(WEAPON_FIRE)`
+still serves older hosts. Shell focus/confirm/reject sounds remain
+independent. **No third-party recorded Breakwater SFX have been
+imported, compiled or bound.**
 `Mars des Souvenirs` belongs to owner-original background MUSIC and is
 a separate catalog/playback concern, not a sound-effects substitute.
 
@@ -260,13 +265,14 @@ music embedded in SFX, and overly futuristic sci-fi effects.
    immediate cues. Evaluate compact compressed assets for longer loops.
    Preserve local/offline operation: playback must work without PC,
    network or extraction from the APK.
-3. Existing native ABI v1 feedback is a small **bitmask**, not an
-   arbitrary audio-event bus; it currently exposes `WEAPON_FIRE`,
-   `RELOAD_START`, `RELOAD_READY`, `ARTILLERY`, `AIRSTRIKE`
-   plus UI states. Do **not** repurpose those bits as new cue IDs or
-   infer which weapon fired from Java. Route differentiated events
-   through an explicit backward-compatible, tested host/module path
-   before claiming that unique weapon SFX or NPC SFX work.
+3. The generic native feedback path remains a small coalesced
+   **bitmask**, not an audio bus. A separate, optional ABI-v1 tail
+   now dispatches ordered `request_sound(cue_id)` requests for the
+   five weapon types; it preserves duplicates with a bounded queue,
+   reuses the shell mixer, and falls back to `WEAPON_FIRE` on older
+   hosts. Do **not** repurpose legacy feedback bits as sound IDs.
+   Broader typed NPC, spatial and recorded-sample routing remains
+   future work, and source implementation is not device acceptance.
 4. Trigger at most once per real sequence or shot; avoid sound in
    `BuildScene` / per-eye `Draw`. Limit simultaneous voices, prioritize
    player shots, incoming damage and target hits over distant ambience,

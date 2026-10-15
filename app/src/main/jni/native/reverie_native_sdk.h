@@ -99,6 +99,27 @@ static inline int ReverieNativeRequestFeedbackV1(
     return 1;
 }
 
+static inline int ReverieNativeHostSupportsSoundV1(
+    const ReverieNativeHostV1 *host
+) {
+    return host != NULL
+        && host->abi_version == REVERIE_NATIVE_MODULE_ABI_VERSION
+        && host->struct_size >= REVERIE_NATIVE_HOST_V1_SOUND_MIN_SIZE
+        && host->request_sound != NULL;
+}
+
+// Sound cue requests carry exactly one logical event, not coalesced flags.
+// Host-owned fallback must be used when this optional tail is absent.
+static inline int ReverieNativeRequestSoundV1(
+    const ReverieNativeHostV1 *host, uint32_t cue_id
+) {
+    if (!ReverieNativeHostSupportsSoundV1(host)
+        || cue_id < REVERIE_NATIVE_SOUND_WEAPON_MACHINE
+        || cue_id > REVERIE_NATIVE_SOUND_MAX_V1) return 0;
+    host->request_sound(cue_id);
+    return 1;
+}
+
 static inline int ReverieNativeDescriptorHasMandatoryV1(
     const ReverieNativeModuleDescriptorV1 *descriptor
 ) {

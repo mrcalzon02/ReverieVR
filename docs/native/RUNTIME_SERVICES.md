@@ -265,6 +265,27 @@ Test Chamber requests an activation cue when its tint toggle changes. Red Ledger
 
 The service remains event-level. It does not accept module PCM, sound files, positional audio buffers, arbitrary tones, or mixer controls. It provides only named one-shot cues. Haptics are also not implemented by this path.
 
+### Ordered first-party weapon cues (2026-10-15)
+
+The new optional `request_sound(uint32_t cue_id)` host tail supports
+the five named weapon reports only. Breakwater chooses the ID from its
+actual `WeaponKind` on a successful shot; old hosts receive the
+unchanged generic `WEAPON_FIRE` bit instead. The host stores up to
+eight ordered cue bytes without allocating or losing duplicates,
+drains at most once per native update through a packed JNI `long`,
+and clears on pause/stop. `VrShellRenderer` forwards each cue through
+`VrActivity.onNativeModuleSoundCueRequested` to `UiFeedback` and
+`NativeCombatSound`, which preload five additional original
+22,050-Hz mono PCM16 reports (machine, heavy, flak, missile, cannon).
+The existing generic shot, reload/ready, artillery and airstrike
+sounds remain as fallbacks; no secondary music playback is changed.
+
+This is not a streaming/spatial mixer and it contains **no externally
+sourced recorded SFX**. NPC volleys, hull impacts, aircraft and ambient
+loops are future separately typed cues. Complete Android/NDK build,
+signed APK and S9 latency/stereo/thermal tests remain unverified.
+See `docs/project/BREAKWATER_SOUND_SOURCES.md`.
+
 ## Current limitations and next API candidates
 
 The following are **not** yet stable generalized services:

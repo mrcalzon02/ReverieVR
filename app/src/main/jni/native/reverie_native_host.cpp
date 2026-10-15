@@ -1,4 +1,5 @@
 #include "reverie_native_sdk.h"
+#include "reverie_native_sound_queue.h"
 
 #include <android/log.h>
 #include <GLES2/gl2.h>
@@ -6,6 +7,7 @@
 #include <jni.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <atomic>
 #include <cerrno>
 #include <cmath>
@@ -70,6 +72,11 @@ struct NativeSession {
     // Stored only for a failed GL creation callback, not a global log sink.
     std::string last_guest_error;
     std::atomic<uint32_t> pending_feedback_flags{0u};
+    // Ordered 8-bit cue IDs, bounded to eight per JNI update/drain.
+    // A mutex protects callbacks if guest work eventually leaves the GL
+    // thread. No per-event memory allocation and no per-eye requests.
+    std::mutex sound_mutex;
+    ReverieNativeSoundQueueV1 pending_sounds;
 };
 
 std::mutex g_error_mutex;
@@ -404,13 +411,22 @@ void HostRequestFeedback(
     );
 }
 
+void HostRequestSound(uint32_t cue_id) {
+    NativeSession *session=g_callback_session;
+    if(session==nullptr || cue_id<REVERIE_NATIVE_SOUND_WEAPON_MACHINE ||
+        cue_id>REVERIE_NATIVE_SOUND_MAX_V1) return;
+    std::lock_guard<std::mutex> guard(session->sound_mutex);
+    session->pending_sounds.Push(cue_id);
+}
+
 const ReverieNativeHostV1 kHostServices = {
     sizeof(ReverieNativeHostV1),
     REVERIE_NATIVE_MODULE_ABI_VERSION,
     HostLog,
     HostReadSave,
     HostWriteSave,
-    HostRequestFeedback
+    HostRequestFeedback,
+    HostRequestSound
 };
 
 const BuiltInModuleSpec *FindSpec(const char *id) {
@@ -868,7 +884,22 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativePause(
         && session->instance != nullptr) {
         CallbackSessionScope scope(session);
         session->api->pause(session->instance);
+        // Never replay combat sounds after a paused native session resumes.
+        std::lock_guard<std::mutex> guard(session->sound_mutex);
+        session->pending_sounds.Clear();
     }
+}
+
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeDrainSoundCues(
+    JNIEnv *, jclass, jlong handle
+) {
+    NativeSession *session=FromHandle(handle);
+    if(session==nullptr)return 0;
+    std::lock_guard<std::mutex> guard(session->sound_mutex);
+    const uint64_t packet=session->pending_sounds.Drain();
+    return static_cast<jlong>(packet);
 }
 
 extern "C"
@@ -931,6 +962,12 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
         session->instance,
         &input
     );
+    // Quick Menu/controller loss yields POINTER_NONE; never carry a
+    // previous sound burst forward into resumed gameplay.
+    if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE) {
+        std::lock_guard<std::mutex> guard(session->sound_mutex);
+        session->pending_sounds.Clear();
+    }
 
     return static_cast<jint>(
         session->pending_feedback_flags.exchange(

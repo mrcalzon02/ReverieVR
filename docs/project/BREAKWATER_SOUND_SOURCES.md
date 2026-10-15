@@ -40,7 +40,17 @@ Each link goes to an original asset/download page, **not an unverified mirror**.
 | P1 | `boat_motor`, `row_oars`, `ramp_drop`, `aircraft_flyby`, `sam_launch`, UI/shop | BW-SFX-002, -003, -006, -010 | Correct on/off/one-shot transitions, stereo direction, pause/Quick Menu ownership |
 | P2 | `surf_loop`, `coastal_wind`, `night_air`, wave/mission stingers | BW-SFX-008, -009 plus new individually checked sources | Smooth low-voice, quiet loop beds; phase/location correct; music remains audible |
 
-**Technical gate:** the existing native feedback ABI is an 8-bit-category-like flags bitmask, **not a sound-event queue**. Source acquisition does not authorize falsely claiming unique weapon sounds already play; implement explicit backward-compatible event routing and sample bank with true one-shot and lifecycle control before any runtime acceptance. Keep existing synthesized `FIRE`, `RELOAD`, `READY`, `ARTILLERY`, and `AIRSTRIKE` as fallback.
+**Technical gate update (2026-10-15 source):** the legacy
+`request_feedback` remains a coalesced bitmask. A separate optional
+`request_sound` ABI-v1 host tail now carries five ordered weapon
+IDs and uses a bounded eight-event packet/JNI drain; five
+**original synthesized** differentiated reports are preloaded in
+Android and generic `FIRE`, `RELOAD`, `READY`, `ARTILLERY`
+and `AIRSTRIKE` remain fallback cues. The source records only an
+implementation, **not Android compilation, verified headset audio,
+downloaded CC0 files or released APK**. Event IDs for impacts,
+vehicle and aircraft sounds and actual per-file CC0 intake remain
+pending.
 
 ## Per-file intake record (copy a row when a sound is actually admitted)
 

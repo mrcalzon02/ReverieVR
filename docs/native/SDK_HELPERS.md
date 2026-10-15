@@ -36,7 +36,27 @@ Returns true only when the append-only host prefix includes the `request_feedbac
 
 ### `ReverieNativeRequestFeedbackV1`
 
-Submits only the implemented `REVERIE_NATIVE_FEEDBACK_FOCUS`, `REVERIE_NATIVE_FEEDBACK_ACTIVATION`, and `REVERIE_NATIVE_FEEDBACK_FAILURE` bits when the host supports feedback. Unknown bits are stripped before the callback. The current host coalesces repeated flags until the end of the native update.
+Submits only implemented feedback flags: focus, activation, failure,
+generic weapon fire, reload start/ready, artillery, and airstrike.
+Unknown bits are stripped before the callback. The existing feedback
+path coalesces repeated flags until the end of each native update;
+ordered weapon-specific reports instead use `ReverieNativeRequestSoundV1`.
+
+### `ReverieNativeHostSupportsSoundV1`
+
+Checks ABI version, host struct-size prefix and non-null
+`request_sound` at the optional ABI-v1 tail. Older logging/save/
+feedback-only hosts must return false without reading the tail.
+
+### `ReverieNativeRequestSoundV1`
+
+Requests exactly one named ordered sound ID in the range
+`REVERIE_NATIVE_SOUND_WEAPON_MACHINE` through
+`REVERIE_NATIVE_SOUND_WEAPON_CANNON`. Returns false on old hosts,
+invalid IDs or null callbacks, allowing the original feedback
+sound to play as fallback. It is not a raw PCM transport or a flag
+bitmask. The host separately bounds ordered event delivery to eight
+requests per update.
 
 ### `ReverieNativeDescriptorHasMandatoryV1`
 

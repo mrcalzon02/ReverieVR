@@ -47,6 +47,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onNativeModuleFeedbackRequested(
             int feedbackFlags
         );
+        void onNativeModuleSoundCueRequested(int cueId);
         void onControllerSpringRecenterRequested();
         PerformanceEnvironmentSnapshot
             getPerformanceEnvironmentSnapshot();
@@ -2178,6 +2179,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
             host.onNativeModuleFeedbackRequested(
                 feedbackFlags
             );
+        }
+        // An ordered (non-bitmask) event stream preserves distinct weapon
+        // identity and multiple events in one native update. Audio never
+        // runs in left/right-eye draw callbacks.
+        long cues=nativeModuleRuntime.drainSoundCues();
+        for(int n=0;n<8 && cues!=0L;n++) {
+            int cueId=(int)(cues & 255L);
+            if(cueId==0)break;
+            host.onNativeModuleSoundCueRequested(cueId);
+            cues >>>=8;
         }
     }
 
