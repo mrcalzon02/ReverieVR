@@ -320,3 +320,27 @@ within this one workflow are gate and build, not two workflows.
 This change does not modify a running historical Actions job retroactively.
 Verify the next qualifying push produces a single signed-release workflow
 run and that its APK is published before claiming release completion.
+
+## Two-job dependency verifier compatibility (2026-10-15)
+
+Phone Test #176 (`649bcc3f`) exposed an outdated assumption in
+`scripts/verify-dependency-baseline.py`: it accepted **one** occurrence
+of `runs-on: ubuntu-latest` in the sole release workflow. Since
+the consolidation that workflow legitimately has **two** jobs (gate
+and build-and-release), both pinned to the same approved runner.
+The existing check therefore failed at "Fetch pinned third-party build
+inputs" before it could compile an APK.
+
+The dependency baseline now requires **exactly those two known jobs**
+inside the one authorized phone-test workflow and validates the same
+approved runner for **each** job independently. Unexpected jobs,
+unrecognized runners, changed action selectors, hashes, SDK tools
+or dependencies still fail closed. The fix does not remove or bypass
+the bootstrap verification.
+
+The earlier Phone Test #174 signed and verified its APK, preserved
+an Actions artifact, but failed GitHub Release publication with HTTP
+403 because its source commit predates changes to workflow files in
+the default branch. This cannot be solved by silently relabeling
+another commit's APK. A new source-aligned phone-test trigger is
+required. All device/headset acceptance remains pending.

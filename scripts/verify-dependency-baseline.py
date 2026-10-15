@@ -243,11 +243,33 @@ def main():
     else:
         checked.append("offline meshoptimizer npm tarball integrity")
 
-    # Existing authorized APK workflow may not float its build runners/actions.
+    # The ONE authorized release workflow contains two jobs: a lightweight
+    # gate and the signed APK builder. Check every job's exact runner pin;
+    # never accept additional jobs or a mixed runner family silently.
     workflow = content(".github/workflows/phone-test-release.yml")
-    exactly(".github/workflows/phone-test-release.yml",
-            r'^\s*runs-on:\s*(ubuntu-[\w.]+)\s*$',
-            ci["runner"], "GitHub runner family")
+    workflow_jobs = workflow.split("\njobs:\n", 1)
+    if len(workflow_jobs) != 2:
+        fail("GitHub APK workflow is missing the top-level jobs section")
+    else:
+        jobs_source = workflow_jobs[1]
+        boundaries = list(re.finditer(
+            r"^  ([a-z][a-z0-9_-]*):[ \t]*$",
+            jobs_source, re.M))
+        job_names = [match.group(1) for match in boundaries]
+        if job_names != ["gate", "build-and-release"]:
+            fail(f"GitHub APK workflow jobs changed: {job_names}")
+        for index, match in enumerate(boundaries):
+            next_start = (boundaries[index + 1].start()
+                          if index + 1 < len(boundaries)
+                          else len(jobs_source))
+            body = jobs_source[match.end():next_start]
+            runners = re.findall(r"^    runs-on:[ \t]*([^\s]+)[ \t]*$",
+                                 body, re.M)
+            if runners != [ci["runner"]]:
+                fail(f"GitHub runner for {match.group(1)}: "
+                     f"expected {ci['runner']!r}, found {runners!r}")
+            else:
+                checked.append(f"GitHub runner family ({match.group(1)})")
     for name, sha in ci["actions"].items():
         contains(".github/workflows/phone-test-release.yml",
                  f"uses: {name}@{sha}", f"workflow action pin {name}")
