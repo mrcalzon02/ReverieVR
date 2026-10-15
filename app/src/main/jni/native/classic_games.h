@@ -14,7 +14,7 @@ struct State {
     int score=0, opponent=0;
     bool finished=false, moving=false, player_turn=true;
     float clock=0, paddle=0, ai=0, ball_x=0, ball_y=0;
-    float velocity_x=.46f, velocity_y=-.67f;
+    float velocity_x=.55f, velocity_y=.25f;
     int length=3, heading=1, desired=1, food=0;
     std::array<int,kCells> snake{};
     int position=0, rival=0, die=0;
@@ -42,7 +42,7 @@ struct State {
     void Reset(Game target) {
         game=target;score=opponent=0;finished=moving=false;
         player_turn=true;clock=0;paddle=ai=ball_x=ball_y=0;
-        velocity_x=.46f;velocity_y=-.67f;
+        velocity_x=.55f;velocity_y=.25f;
         length=3;heading=desired=1;
         snake.fill(-1);
         snake[0]=6*kGrid+5;snake[1]=6*kGrid+4;snake[2]=6*kGrid+3;
@@ -76,26 +76,38 @@ struct State {
         if(!std::isfinite(seconds)||seconds<=0)return;
         const float dt=std::min(seconds,.1f);
         if(game==Game::Pong) {
+            // Original left/right table-tennis court: one point for a miss,
+            // vertical paddles, ceiling/floor ricochet, first to 11.
             if(std::isfinite(axis)&&std::abs(axis)>.12f)
                 paddle=std::clamp(paddle+axis*dt*1.8f,-.78f,.78f);
-            ai=std::clamp(ai+std::clamp(ball_x-ai,-dt*.87f,dt*.87f),-.78f,.78f);
+            ai=std::clamp(ai+std::clamp(ball_y-ai,-dt*.87f,dt*.87f),
+                          -.78f,.78f);
             if(!moving||finished)return;
             ball_x+=velocity_x*dt;
             ball_y+=velocity_y*dt;
-            if(ball_x> .96f){ball_x=.96f;velocity_x=-std::abs(velocity_x);}
-            if(ball_x<-.96f){ball_x=-.96f;velocity_x= std::abs(velocity_x);}
-            if(ball_y<-.87f) {
-                if(std::abs(ball_x-paddle)<.26f) {
-                    ball_y=-.87f;velocity_y=std::abs(velocity_y);
-                    velocity_x+=(ball_x-paddle)*.31f;
-                } else {++opponent;moving=false;ball_x=ball_y=0;}
+            if(ball_y>.93f){ball_y=.93f;velocity_y=-std::abs(velocity_y);}
+            if(ball_y<-.93f){ball_y=-.93f;velocity_y=std::abs(velocity_y);}
+            if(ball_x<-.87f&&velocity_x<0.f
+               &&std::abs(ball_y-paddle)<.27f) {
+                ball_x=-.87f;velocity_x=std::min(1.2f,
+                    std::abs(velocity_x)*1.025f);
+                velocity_y=std::clamp(velocity_y
+                    +(ball_y-paddle)*.35f,-.90f,.90f);
             }
-            if(ball_y>.87f) {
-                if(std::abs(ball_x-ai)<.24f) {
-                    ball_y=.87f;velocity_y=-std::abs(velocity_y);
-                } else {++score;moving=false;ball_x=ball_y=0;}
+            if(ball_x>.87f&&velocity_x>0.f
+               &&std::abs(ball_y-ai)<.26f) {
+                ball_x=.87f;velocity_x=-std::min(1.2f,
+                    std::abs(velocity_x)*1.025f);
+                velocity_y=std::clamp(velocity_y
+                    +(ball_y-ai)*.35f,-.90f,.90f);
             }
-            finished=(score>=7||opponent>=7);
+            if(ball_x>1.05f) {
+                ++score;moving=false;ball_x=ball_y=0;
+            }
+            if(ball_x< -1.05f) {
+                ++opponent;moving=false;ball_x=ball_y=0;
+            }
+            finished=(score>=11||opponent>=11);
         } else if(game==Game::Snake) {
             if(!moving||finished)return;
             clock+=dt;

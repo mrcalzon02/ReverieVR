@@ -99,9 +99,12 @@
 - **Chess:** Draw rules (50/75 moves, repetition, insufficient material),
   underpromotion selection, time controls and deeper search AI pending.
 - **Checkers:** Ruleset draw limits/repetition and CPU lookahead pending.
-- **Pong / Breakout:** Compare against original arcade layouts, scoring and
-  game modes; restore gameplay fidelity without adding proprietary assets.
-  Native-device acceptance and thermal proof remain open.
+- **Pong / Breakout:** Source corrected: Pong has left/right vertical
+  paddles, wall bounce, first to 11 and bounded CPU play; Breakout has two
+  112-brick walls, original 7/5/3/1 row scores, speed milestones and paddle
+  shrink. Complete original two-human Pong support and any optional arcade
+  game variants remain separate scope. Native tests, Android build, S9
+  interaction, and sustained thermal proof remain acceptance gates.
 
 ## P5 — Module host
 

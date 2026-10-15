@@ -9,11 +9,14 @@ Original arcade **Classic Breakout** is a seventh built-in native module
 ABI v1 loader and colored-triangle GLES2 renderer as the six shipped classics;
 there is no external ROM, game executable, art download, music dependency or
 separate Android application. Static court and title geometry are uploaded
-once per GL context, while only the paddle, ball, remaining bricks, score,
+once per GL context, while only the paddle, ball, remaining bricks, wall number, score,
 lives and status are rebuilt on visible state changes.
 
-- 10 columns × 5 rows (50 unique bricks), 10 points per brick, three lives;
-  hitting all bricks wins, losing the third ball ends the match.
+- 14 columns × 8 rows (112 bricks per wall), row-weighted 7/5/3/1 points
+  from top to bottom, three lives and two successive walls;
+  top-wall rebound narrows the paddle and paddle-contact milestones
+  increase speed;
+  clearing both walls wins, losing the third ball ends the match.
 - Press Select/touchpad click to serve, and press after win or loss to
   reset. Sideways Daydream touchpad movement, compatible external axis, or
   tracked-controller pointer moves the paddle. O/Home remains a shell action.
@@ -73,7 +76,7 @@ All six classics now generate their immutable title frames, court/board grid, an
 
 ## Gameplay and input
 
-Pong uses a controller-directed paddle and a simulated opposing paddle, with first to seven points ending the match. Snake uses a 12×12 board, cardinal controller direction, food growth, and wall/body collision. Chutes and Ladders uses a 100-cell serpentine board with seeded dice, turn-taking, and fixed chute/ladder destinations. Simulation is updated once per frame; stereo rendering observes that state without advancing game rules.
+Pong now restores the original horizontal court with left/right opposing vertical paddles, upper/lower wall rebounds, contact-angle effects and a first-to-11 score. The human controls the left paddle using vertical Daydream input or head-tracked pointer height; the right paddle remains a bounded CPU opponent rather than falsely claiming the original two-human arcade mode. Snake uses a 12×12 board, cardinal controller direction, food growth, and wall/body collision. Chutes and Ladders uses a 100-cell serpentine board with seeded dice, turn-taking, and fixed chute/ladder destinations. Simulation is updated once per frame; stereo rendering observes that state without advancing game rules.
 
 ## Snake food-placement correctness
 

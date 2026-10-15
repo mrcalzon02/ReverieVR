@@ -184,7 +184,10 @@ static void TestBreakout() {
     using reverie::classics::Breakout;
     Breakout game;
     game.Reset();
-    assert(game.lives==3&&game.score==0&&game.remaining==50);
+    assert(game.lives==3&&game.score==0&&game.remaining==112);
+    assert(game.wall==1&&Breakout::kColumns==14&&Breakout::kRows==8);
+    assert(Breakout::BrickValue(0)==7&&Breakout::BrickValue(2)==5);
+    assert(Breakout::BrickValue(4)==3&&Breakout::BrickValue(7)==1);
     assert(!game.moving&&!game.finished);
     game.SetPaddle(.5f);
     game.Step(.05f,0.f);
@@ -216,7 +219,7 @@ static void TestBreakout() {
     game.ballY=Breakout::BrickY(0)-.080f;
     game.velocityY=.7f;
     game.Tick();
-    assert(game.bricks[0]==0&&game.remaining==49&&game.score==10);
+    assert(game.bricks[0]==0&&game.remaining==111&&game.score==7);
     assert(game.velocityY<0.f);
     // Paddle contact reverses descent and permits directional deflection.
     game.ballX=game.paddle+.1f;
@@ -236,16 +239,27 @@ static void TestBreakout() {
     assert(game.lives==0&&game.finished&&!game.won);
     game.Press();assert(game.lives==3&&!game.finished&&!game.moving);
 
-    // Clearing the final remaining brick wins without a paid input.
-    game.Press();game.bricks.fill(0);game.bricks[9]=1;
-    game.remaining=1;
+    // Reaching the top wall after a red-row hit halves the paddle.
+    game.Press();game.topRowBroken=true;game.ballY=.915f;
+    game.velocityY=.7f;game.Tick();
+    assert(game.narrowPaddle&&game.PaddleWidth()<.25f);
+    // Original two-wall campaign: first clearance installs the second
+    // full 112-brick wall; only the second clearance wins.
+    game.bricks.fill(0);game.bricks[9]=1;game.remaining=1;
     game.ballX=Breakout::BrickX(9);
     game.ballY=Breakout::BrickY(0)-.080f;
     game.velocityY=.7f;
     game.Tick();
-    assert(game.remaining==0&&game.score==10);
+    assert(game.wall==2&&game.remaining==112&&game.score==7);
+    assert(!game.finished&&game.moving);
+    game.bricks.fill(0);game.bricks[9]=1;game.remaining=1;
+    game.ballX=Breakout::BrickX(9);
+    game.ballY=Breakout::BrickY(0)-.080f;
+    game.velocityY=.7f;game.Tick();
+    assert(game.remaining==0&&game.score==14);
     assert(game.finished&&game.won&&!game.moving);
-    game.Press();assert(game.remaining==50&&!game.finished);
+    game.Press();
+    assert(game.remaining==112&&game.wall==1&&!game.finished);
     std::cout<<"Classic Breakout physics, scoring and lives passed\\n";
 }
 
@@ -263,6 +277,26 @@ int main() {
     }
     assert(std::isfinite(a.ball_x)&&a.score+a.opponent>=0);
     assert(a.score==b.score&&a.opponent==b.opponent);
+    // Full arcade court: opposing side paddles, ricochet off ceiling,
+    // first to eleven instead of the seven-point prototype.
+    State pong;
+    pong.Reset(Game::Pong);
+    pong.Press();pong.paddle=.2f;pong.ball_x=-.87f;
+    pong.ball_y=.20f;pong.velocity_x=-.55f;
+    pong.velocity_y=0.f;
+    pong.Step(.02f,0.f);
+    assert(pong.velocity_x>0.f); // human paddle returned the ball
+    pong.Reset(Game::Pong);pong.Press();
+    pong.score=10;pong.ball_x=1.045f;pong.ball_y=.60f;
+    pong.velocity_x=.55f;pong.velocity_y=0.f;
+    pong.Step(.02f,0.f);
+    assert(pong.score==11&&pong.finished);
+    pong.Press();
+    assert(pong.score==0&&!pong.finished&&!pong.moving);
+    pong.Press();pong.opponent=10;pong.ball_x=-1.045f;
+    pong.ball_y=.60f;pong.velocity_x=-.55f;pong.velocity_y=0.f;
+    pong.Step(.02f,0.f);
+    assert(pong.opponent==11&&pong.finished);
     State snake;
     snake.Reset(Game::Snake);
     assert(snake.length==3&&snake.food>=0&&snake.food<State::kCells);

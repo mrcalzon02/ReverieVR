@@ -251,15 +251,15 @@ void Rebuild(Module *m,bool fixed){
             const int row=i/Breakout::kColumns;
             const float shade=row*.095f;
             Rect(m,Breakout::BrickX(i%Breakout::kColumns),
-                 Breakout::BrickY(row),.18f,.112f,-2.97f,
+                 Breakout::BrickY(row),.130f,.104f,-2.97f,
                  .85f-shade,.62f+shade*.48f,.37f+shade);
         }
-        Rect(m,s.paddle,-.82f,.40f,.060f,-2.95f,
+        Rect(m,s.paddle,-.82f,s.PaddleWidth(),.060f,-2.95f,
              .28f,.91f,.73f);
         Disc(m,s.ballX,s.ballY,.049f,-2.92f,.95f,.96f,.77f);
         char status[48];
-        std::snprintf(status,sizeof(status),"SCORE %d LIVES %d",
-                      s.score,s.lives);
+        std::snprintf(status,sizeof(status),"SCORE %d LIVES %d WALL %d",
+                      s.score,s.lives,s.wall);
         Text(m,status,0,1.35f,.055f,.90f,.95f,.81f);
         Text(m,s.finished
              ? (s.won?"YOU WIN PRESS":"GAME OVER PRESS")
@@ -289,8 +289,8 @@ void Rebuild(Module *m,bool fixed){
         for(int i=0;i<9;i++)
             Rect(m,0,-1.16f+i*.29f,.032f,.13f,-2.99f,.30f,.39f,.43f);
         }else{
-        Rect(m,s.paddle*1.55f,-1.12f,.68f,.075f,-2.96f,.33f,.95f,.78f);
-        Rect(m,s.ai*1.55f,1.12f,.68f,.075f,-2.96f,.98f,.60f,.44f);
+        Rect(m,-1.40f,s.paddle*1.19f,.075f,.56f,-2.96f,.33f,.95f,.78f);
+        Rect(m,1.40f,s.ai*1.19f,.075f,.56f,-2.96f,.98f,.60f,.44f);
         Rect(m,s.ball_x*1.55f,s.ball_y*1.22f,.11f,.11f,-2.93f,.94f,.95f,.70f);
         std::snprintf(status,sizeof(status),"%d : %d",s.score,s.opponent);
         Text(m,status,0,1.31f,.07f,1,1,.79f);
@@ -545,7 +545,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     const float oldPaddle=m->game.paddle,oldAi=m->game.ai;
     const float oldBallX=m->game.ball_x,oldBallY=m->game.ball_y;
     if(m->game.game==Game::Pong && aim && !m->game.finished)
-        m->game.paddle=std::clamp(hx/1.55f,-.78f,.78f);
+        m->game.paddle=std::clamp(hy/1.19f,-.78f,.78f);
     if(m->game.game==Game::Snake){
         if(std::abs(copy.move_x)>.4f||std::abs(copy.move_y)>.4f){
             const float x=copy.move_x,y=copy.move_y;
@@ -560,7 +560,8 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         }
     }
     if(edge)m->game.Press();
-    m->game.Step(copy.delta_seconds,copy.move_x);
+    m->game.Step(copy.delta_seconds,
+                 m->game.game==Game::Pong?copy.move_y:copy.move_x);
     const State &now=m->game;
     bool visible=now.moving!=oldMoving||now.finished!=oldFinished;
     if(now.game==Game::Pong)

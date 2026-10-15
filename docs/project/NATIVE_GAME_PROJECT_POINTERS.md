@@ -184,11 +184,11 @@ No full ~80-person formation simulation for the first native game. No giant comb
 
 The first three games are **Classic Pong**, **Classic Snake**, and **Chutes and Ladders** (original generated visuals and generic historic ladder/chute rules, not commercial board artwork). Each builds as its own GLES2 native module from a common small C++ source and a pure, deterministic gameplay kernel:
 
-- Pong: point horizontally or touch/slide left/right on the Daydream pad to move the bottom paddle; Select serves or restarts, AI defends the opposite side, first to seven wins.
+- Pong: point vertically or touch/slide up/down on the Daydream pad to move the left paddle vertically; Select serves or restarts, the CPU defends the right side, first to eleven wins. The source restores opposing vertical paddles, wall bounces and contact angle; full original two-human play is still an optional future mode.
 - Snake: touch the upper/lower/left/right portion of the Daydream pad to turn, use a gamepad stick, or point-and-Select on the in-scene direction pads; consume food, grow, avoid walls and the tail, Select restarts after losing.
 - Chutes and Ladders: Select rolls the die on your turn, a deterministic CPU opponent takes the following turn automatically, and the generated 100-cell board includes original green ladders and red chutes. First to cell 100 wins, Select restarts.
   
-The seventh original game, **Classic Breakout**, runs a 50-brick, three-life
+The seventh original game, **Classic Breakout**, runs two full 112-brick walls, three-life
 paddle-and-ball arcade match in its own packaged GLES2 module. Move the
 paddle with touchpad horizontal input, gamepad axis, or the tracked-controller
 pointer; Select serves and restarts. Geometry and frame-state changes use the
