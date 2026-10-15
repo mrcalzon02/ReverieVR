@@ -2,6 +2,27 @@
 
 **Status:** Source-implemented; Galaxy S9 + Daydream controller acceptance pending. These original games use the native ABI v1 module host and the common `classic_games_module.cpp` renderer, compiled separately for Pong, Snake, and Chutes and Ladders. This is game-private implementation documentation; the platform contract remains `docs/native/README.md`.
 
+## Chutes and Ladders — complete classic board (2026-10-15)
+
+Chutes and Ladders now uses the common 100-square board's complete nine
+ladders and ten chutes rather than the previous arbitrary five of each.
+One fixed source table drives **both** the exact game rules and the line
+geometry, preventing mismatches. Squares are numbered in the one-time
+static board mesh; colored connections sit behind the player tokens, and
+the latest six-outcome spin appears beside both positions.
+
+Both human and automatic CPU spins must reach square 100 **exactly**;
+an overshoot leaves the pawn in place and passes the turn. Landing on
+square 80 climbs directly to 100. The RNG and alternating turns are
+unchanged; Chutes and Ladders is luck-based rather than an adversarial
+search game. Native regression coverage now checks all 19 transitions,
+no repeated start squares, human/CPU overshoots, exact victory, the
+80-to-100 ladder, and full-match completion. Reference:
+https://assets-us-01.kc-usercontent.com/500e0a65-283d-00ef-33b2-7f1f20488fe2/9993cf54-5c86-40a4-b386-c0194b98bb9a/B77420920_Retro_Chutes_and_Ladders_INST_15_FAR.pdf
+
+This is a source implementation; integrated Android compilation and
+S9/Daydream headset readability still require independent verification.
+
 ## Chess search and nonblocking CPU turns (2026-10-15)
 
 Chess now enumerates all four promotions for both colors throughout search,

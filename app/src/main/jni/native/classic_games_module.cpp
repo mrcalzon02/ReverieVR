@@ -114,7 +114,7 @@ void Text(Module *m,const char *s,float x,float y,float scale,
 }
 void Segment(Module *m,float x,float y,float xx,float yy,float width,
              float r,float g,float b){
-    reverie::flatmesh::Segment(Emit(m),x,y,xx,yy,width,-2.87f,r,g,b);
+    reverie::flatmesh::Segment(Emit(m),x,y,xx,yy,width,-2.965f,r,g,b);
 }
 float CellX(int n){const int idx=n-1,row=idx/10,col=idx%10;
     return -1.24f+(row%2==0?col:9-col)*.274f;}
@@ -393,12 +393,15 @@ void Rebuild(Module *m,bool fixed){
             const bool dark=(((n-1)/10+(n-1)%10)%2)==0;
             Rect(m,x,y,.258f,.258f,-2.99f,
                  dark?.19f:.24f,dark?.26f:.31f,dark?.32f:.37f);
+            char label[4];
+            std::snprintf(label,sizeof(label),"%d",n);
+            Text(m,label,x,y+.073f,.017f,.76f,.84f,.85f);
         }
-        const int start[]={3,8,28,58,75,17,54,62,87,99};
-        for(int i=0;i<10;i++){
-            const int from=start[i],to=State::Jump(from);
-            Segment(m,CellX(from),CellY(from),CellX(to),CellY(to),
-                    .055f,i<5?.32f:.95f,i<5?.96f:.40f,.50f);
+        for(const auto &link:State::kBoardLinks){
+            Segment(m,CellX(link.from),CellY(link.from),
+                    CellX(link.to),CellY(link.to),.037f,
+                    link.to>link.from?.32f:.95f,
+                    link.to>link.from?.96f:.40f,.50f);
         }
         Rect(m,0,-1.56f,2.8f,.29f,-2.97f,.22f,.33f,.35f);
         }else{
@@ -406,7 +409,12 @@ void Rebuild(Module *m,bool fixed){
                              .11f,.15f,-2.92f,.32f,.96f,.73f);
         if(s.rival>0)Rect(m,CellX(s.rival)+.06f,CellY(s.rival),
                           .11f,.15f,-2.92f,1.f,.61f,.47f);
-        std::snprintf(status,sizeof(status),"YOU %d   CPU %d",s.position,s.rival);
+        if(s.die>0)
+            std::snprintf(status,sizeof(status),"YOU %d CPU %d SPIN %d",
+                          s.position,s.rival,s.die);
+        else
+            std::snprintf(status,sizeof(status),"YOU %d CPU %d",
+                          s.position,s.rival);
         Text(m,status,0,1.36f,.047f,.94f,.89f,.68f);
         Text(m,s.finished?(s.position==100?"YOU WIN PRESS":"CPU WINS PRESS"):
              s.player_turn?"SELECT TO ROLL":"CPU ROLLING",

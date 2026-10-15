@@ -727,8 +727,59 @@ int main() {
     crowded.NewFood();
     assert(crowded.finished&&crowded.food==-1);
 
-    assert(State::Jump(3)==22&&State::Jump(17)==7);
-    assert(State::Jump(45)==45&&State::Jump(99)==79);
+    // Complete classic board: nine ladders and ten chutes. Every
+    // displayed connection comes from the same table as gameplay.
+    assert(State::kBoardLinks.size()==19);
+    std::array<bool,101> startUsed{};
+    int up=0,down=0;
+    for(const auto &link:State::kBoardLinks){
+        assert(link.from>=1&&link.from<100);
+        assert(link.to>=1&&link.to<=100);
+        assert(!startUsed[link.from]);
+        startUsed[link.from]=true;
+        assert(State::Jump(link.from)==link.to);
+        if(link.to>link.from)++up;
+        else ++down;
+    }
+    assert(up==9&&down==10);
+    assert(State::Jump(1)==38&&State::Jump(9)==31);
+    assert(State::Jump(47)==26&&State::Jump(49)==11);
+    assert(State::Jump(80)==100&&State::Jump(98)==78);
+    assert(State::Jump(45)==45&&State::Jump(99)==99);
+    // No bounce, clamp-to-win or phantom ladder when the spinner passes 100.
+    assert(State::AdvanceChutes(0,1)==38);
+    assert(State::AdvanceChutes(46,1)==26);
+    assert(State::AdvanceChutes(79,1)==100);
+    assert(State::AdvanceChutes(97,3)==100);
+    assert(State::AdvanceChutes(97,4)==97);
+    assert(State::AdvanceChutes(99,2)==99);
+    assert(State::AdvanceChutes(99,1)==100);
+    // The real human and CPU turn paths must obey the same exact-spin rule.
+    uint32_t overshootSeed=0,oneSeed=0;
+    for(uint32_t candidate=1;candidate<=64;candidate++){
+        State probe;probe.Reset(Game::ChutesLadders);probe.seed=candidate;
+        const int roll=static_cast<int>(probe.Random()%6u)+1;
+        if(roll>=3 && overshootSeed==0)overshootSeed=candidate;
+        if(roll==1 && oneSeed==0)oneSeed=candidate;
+    }
+    assert(overshootSeed!=0&&oneSeed!=0);
+    State overshoot;overshoot.Reset(Game::ChutesLadders);
+    overshoot.position=98;overshoot.seed=overshootSeed;
+    overshoot.Press();
+    assert(overshoot.die>=3&&overshoot.position==98);
+    assert(!overshoot.finished&&!overshoot.player_turn);
+    State cpuOvershoot;cpuOvershoot.Reset(Game::ChutesLadders);
+    cpuOvershoot.rival=98;cpuOvershoot.player_turn=false;
+    cpuOvershoot.seed=overshootSeed;cpuOvershoot.clock=.71f;
+    cpuOvershoot.Step(.02f,0.f);
+    assert(cpuOvershoot.die>=3&&cpuOvershoot.rival==98);
+    assert(!cpuOvershoot.finished&&cpuOvershoot.player_turn);
+    State winFrom80;winFrom80.Reset(Game::ChutesLadders);
+    winFrom80.position=79;winFrom80.seed=oneSeed;winFrom80.Press();
+    assert(winFrom80.die==1&&winFrom80.position==100&&winFrom80.finished);
+    State exactWin;exactWin.Reset(Game::ChutesLadders);
+    exactWin.position=99;exactWin.seed=oneSeed;exactWin.Press();
+    assert(exactWin.position==100&&exactWin.finished);
     State ladder;
     ladder.Reset(Game::ChutesLadders);
     assert(ladder.player_turn&&ladder.position==0);

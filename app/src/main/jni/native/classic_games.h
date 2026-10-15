@@ -9,6 +9,15 @@ namespace reverie { namespace classics {
 enum class Game : uint8_t { Pong=0, Snake=1, ChutesLadders=2 };
 struct State {
     static constexpr int kGrid=12, kCells=kGrid*kGrid;
+    struct BoardLink {int from,to;};
+    // Common 100-square Chutes and Ladders layout. Keep simulation and
+    // immutable board rendering backed by this one authoritative table.
+    inline static constexpr std::array<BoardLink,19> kBoardLinks{{
+        {1,38},{4,14},{9,31},{21,42},{28,84},{36,44},
+        {51,67},{71,91},{80,100},
+        {16,6},{47,26},{49,11},{56,53},{62,19},
+        {64,60},{87,24},{93,73},{95,75},{98,78}
+    }};
     Game game=Game::Pong;
     uint32_t seed=0x5a17c0deu;
     int score=0, opponent=0;
@@ -59,18 +68,20 @@ struct State {
         if(game==Game::Snake){moving=true;return;}
         if(!player_turn)return;
         die=static_cast<int>(Random()%6u)+1;
-        position=Jump(std::min(100,position+die));
+        position=AdvanceChutes(position,die);
         if(position==100)finished=true;
         player_turn=false;clock=0;
     }
     static int Jump(int tile) {
-        switch(tile) {
-            case 3:return 22;case 8:return 30;case 28:return 55;
-            case 58:return 77;case 75:return 94;
-            case 17:return 7;case 54:return 34;case 62:return 18;
-            case 87:return 36;case 99:return 79;
-            default:return tile;
-        }
+        for(const auto &link:kBoardLinks)if(link.from==tile)return link.to;
+        return tile;
+    }
+    static int AdvanceChutes(int tile,int roll) {
+        // Rule: an overshooting spin forfeits movement (including any
+        // chute/ladder); square 80's ladder is the other way to win.
+        if(tile<0||tile>=100||roll<1||roll>6||tile+roll>100)
+            return tile;
+        return Jump(tile+roll);
     }
     void Step(float seconds,float axis) {
         if(!std::isfinite(seconds)||seconds<=0)return;
@@ -133,7 +144,7 @@ struct State {
             clock+=dt;
             if(clock>=.72f) {
                 die=static_cast<int>(Random()%6u)+1;
-                rival=Jump(std::min(100,rival+die));
+                rival=AdvanceChutes(rival,die);
                 if(rival==100)finished=true;
                 player_turn=true;clock=0;
             }
