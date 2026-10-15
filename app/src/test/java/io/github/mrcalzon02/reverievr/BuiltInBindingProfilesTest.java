@@ -193,15 +193,17 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
-    public void dosHeadsetMouseCorrectsBothGuestPointerAxesOnly() {
+    public void dosHeadsetMouseMatchesWorking3dCameraAxes() {
         VirtualInputBus bus = new VirtualInputBus();
         InputBindingEngine engine = new InputBindingEngine(bus,
             BuiltInBindingProfiles.byId(
                 BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE));
         engine.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
         engine.submitRelative(BindingInput.HEAD_PITCH_DELTA, .01f);
-        assertEquals(-6.5f, bus.consumeMouseRelativeX(), .001f);
-        assertEquals(6.5f, bus.consumeMouseRelativeY(), .001f);
+        // +Yaw = physical look right => mouse right.
+        // +Pitch = physical look up => mouse up (negative screen Y).
+        assertEquals(6.5f, bus.consumeMouseRelativeX(), .001f);
+        assertEquals(-6.5f, bus.consumeMouseRelativeY(), .001f);
         // The separate controller-aim profile must retain its own direction.
         VirtualInputBus controller = new VirtualInputBus();
         InputBindingEngine controllerEngine = new InputBindingEngine(controller,
@@ -212,10 +214,13 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
-    public void doomAndCursorRestoreHeadYawWithoutChangingOtherAimProfiles() {
+    public void allHeadsetDosProfilesShare3dCameraHorizontalPolarity() {
         for (String id : new String[] {
                 BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE,
-                BuiltInBindingProfiles.ID_DOS_CURSOR
+                BuiltInBindingProfiles.ID_DOS_CURSOR,
+                BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE,
+                BuiltInBindingProfiles.ID_DOS_STANDARD,
+                BuiltInBindingProfiles.ID_DOS_FPS_HEAD_MOUSE
         }) {
             VirtualInputBus bus = new VirtualInputBus();
             InputBindingEngine engine = new InputBindingEngine(bus,
@@ -227,11 +232,22 @@ public final class BuiltInBindingProfilesTest {
             assertEquals(id + " negative yaw", -6.5f,
                 bus.consumeMouseRelativeX(), .001f);
         }
-        VirtualInputBus independent = new VirtualInputBus();
-        InputBindingEngine headMouse = new InputBindingEngine(independent,
-            BuiltInBindingProfiles.byId(BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE));
-        headMouse.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
-        assertEquals(-6.5f, independent.consumeMouseRelativeX(), .001f);
+    }
+
+    @Test
+    public void everyDosHeadsetMouseModeMovesUpWithPositiveHeadPitch() {
+        for (String id : new String[] {
+                BuiltInBindingProfiles.ID_DOS_CURSOR,
+                BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE,
+                BuiltInBindingProfiles.ID_DOS_STANDARD,
+                BuiltInBindingProfiles.ID_DOS_FPS_HEAD_MOUSE
+        }) {
+            VirtualInputBus bus = new VirtualInputBus();
+            InputBindingEngine engine = new InputBindingEngine(bus,
+                BuiltInBindingProfiles.byId(id));
+            engine.submitRelative(BindingInput.HEAD_PITCH_DELTA, .01f);
+            assertEquals(id, -6.5f, bus.consumeMouseRelativeY(), .001f);
+        }
     }
 
     @Test

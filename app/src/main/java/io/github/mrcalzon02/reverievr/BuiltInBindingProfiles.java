@@ -161,9 +161,9 @@ final class BuiltInBindingProfiles {
             "DOS standard - pad arrows / head mouse", standard));
 
         List<InputBinding> doom = new ArrayList<>();
-        // Doom-specific horizontal guest turning: restore the mapping
-        // predating 48475333 after reference headset reported inversion.
-        // Keep vertical head tilt and other DOS aim profiles unchanged.
+        // Guest yaw from the same 3D head view is positive to the RIGHT.
+        // The original Doom mouse turns horizontally; vertical head tilt
+        // separately drives its Forward/Back keys.
         doom.add(
             InputBinding.digital(
                 BindingInput.SELECT,
@@ -304,8 +304,8 @@ final class BuiltInBindingProfiles {
         cursor.add(InputBinding.analog(
             BindingInput.TOUCHPAD_REL_Y, VirtualOutput.mouseRelativeY(),
             0.70f, 0.0f));
-        // Restore the original DOS cursor horizontal motion only.
-        // Do not alter vertical movement or the dedicated headset-mouse mode.
+        // Shared 3D head-view axes: right is positive X, up is negative Y
+        // in the DOS guest mouse coordinate system.
         cursor.add(InputBinding.analog(BindingInput.HEAD_YAW_DELTA,
             VirtualOutput.mouseRelativeX(), 650.0f, 0.0f));
         cursor.add(InputBinding.analog(BindingInput.HEAD_PITCH_DELTA,
@@ -328,13 +328,12 @@ final class BuiltInBindingProfiles {
         // Independent DOS cursor sources. Only the active profile drives
         // the guest pointer; Select remains left click in each mode.
         List<InputBinding> headMouse = new ArrayList<>();
-        // The Cardboard view Euler deltas have the opposite pointer polarity
-        // to the DOS guest's horizontal/right and vertical/down mouse axes.
-        // Correct this binding, not the physical headset view matrices.
+        // All headset-mouse modes use the SAME 3D-view-based axes.
+        // Positive input yaw is right; positive pitch is up.
         headMouse.add(InputBinding.analog(BindingInput.HEAD_YAW_DELTA,
-            VirtualOutput.mouseRelativeX(), -650.0f, 0.0f));
+            VirtualOutput.mouseRelativeX(), 650.0f, 0.0f));
         headMouse.add(InputBinding.analog(BindingInput.HEAD_PITCH_DELTA,
-            VirtualOutput.mouseRelativeY(), 650.0f, 0.0f));
+            VirtualOutput.mouseRelativeY(), -650.0f, 0.0f));
         headMouse.add(InputBinding.digital(BindingInput.SELECT,
             VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
         addDosTouchpadArrows(headMouse);

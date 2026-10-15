@@ -1559,18 +1559,25 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
-        float bindingPitch = headEuler[0];
-        float bindingYaw = headEuler[1];
-        if (bindingHeadInitialized) {
-            host.onHeadBindingDelta(
-                wrapAngle(bindingYaw - previousBindingYaw),
-                bindingPitch - previousBindingPitch
-            );
-        } else {
+        // Use the exact Cardboard 3D camera orientation for DOS controls.
+        // Euler yaw/pitch previously coupled at steep up/down gaze and
+        // caused repeated left/right inversions. The projected camera
+        // right axis stays defined at vertical gaze; positive = right.
+        float bindingYaw = VrHeadingMath.guestYawRightFromHeadView(rawHeadView);
+        float bindingPitch = VrHeadingMath.guestPitchUpFromHeadView(rawHeadView);
+        if (Float.isFinite(bindingYaw) && Float.isFinite(bindingPitch)) {
+            if (bindingHeadInitialized) {
+                host.onHeadBindingDelta(
+                    wrapAngle(bindingYaw - previousBindingYaw),
+                    bindingPitch - previousBindingPitch
+                );
+            }
             bindingHeadInitialized = true;
+            previousBindingYaw = bindingYaw;
+            previousBindingPitch = bindingPitch;
+        } else {
+            bindingHeadInitialized = false;
         }
-        previousBindingYaw = bindingYaw;
-        previousBindingPitch = bindingPitch;
         // Forward-vector Y is positive when the wearer looks UP. Unlike
         // Euler deltas it remains held when the head stops moving, allowing
         // Doom to hold Forward/Back, including its keyboard-driven menus.

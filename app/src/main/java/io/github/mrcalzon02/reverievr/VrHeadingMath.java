@@ -36,6 +36,33 @@ final class VrHeadingMath {
         return yawFromForward(-rawView[2], -rawView[10]);
     }
 
+    /**
+     * Guest-control axes taken from the SAME world-to-eye head matrix as
+     * the working 3D camera. Cardboard Euler yaw/pitch are deliberately not
+     * used: Euler decomposition near vertical gaze can transfer motion
+     * between axes. The camera right basis retains its horizontal heading
+     * even when forward points straight up or down.
+     *
+     * Positive yaw means looking RIGHT; positive pitch means looking UP.
+     * The DOS mouse then uses +X for right and -Y for up.
+     * These helpers never alter the actual headset view/projection.
+     */
+    static float guestYawRightFromHeadView(float[] view) {
+        if (view == null || view.length < 16) return Float.NaN;
+        final float rightX = view[0];
+        final float rightZ = view[8];
+        final float horizontalLength = rightX*rightX + rightZ*rightZ;
+        if (!Float.isFinite(horizontalLength) || horizontalLength < 0.0004f)
+            return Float.NaN;
+        return (float) Math.atan2(rightZ, rightX);
+    }
+
+    static float guestPitchUpFromHeadView(float[] view) {
+        if (view == null || view.length < 16 || !Float.isFinite(view[6]))
+            return Float.NaN;
+        return (float) Math.asin(Math.max(-1f, Math.min(1f, -view[6])));
+    }
+
     /** Positive heading cancels negative headset yaw in world-to-eye view. */
     /**
      * Apply recenter yaw on the world side of a Cardboard world-to-eye view.

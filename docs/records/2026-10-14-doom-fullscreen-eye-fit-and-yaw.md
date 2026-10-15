@@ -37,6 +37,21 @@ discarding any source pixels or reallocating per eye. The 320x200 Doom guest
 uses 4:3 and other DOS modes use their own catalog aspect. Added focused
 host-side fit regressions; device validation is still required.
 
+Camera-driven DOS input follow-up: the 3D scene already receives a
+world-to-eye matrix from Cardboard with correct orientation. The DOS
+controller previously used Cardboard's separate Euler yaw/pitch values,
+which can couple near vertical gaze; earlier patches flipped profile
+signs instead of using the known-good camera basis. The shell now emits
+right-positive yaw from the 3D camera's projected right vector and
+up-positive pitch from its forward Y basis, including when looking
+straight up or down. The same consistent +X/-Y mapping is used by all
+built-in headset mouse profiles; Doom retains its absolute pitch-driven
+Up/Down keys because original DOS Doom has no free vertical look.
+Neither optical view transforms nor 3D scene orientation were changed.
+Added synthetic 3D camera pose coverage across yaw/pitch combinations
+including vertical poles plus profile input polarity tests. Device test
+remains the final arbiter.
+
 Validation evidence: synchronized existing JVM test assertions for Doom pitch,
 horizontal-only sign, DOS touch+head relative mouse, and HUD geometry.
 Source read-back and commit verification only until an actual Gradle compile,

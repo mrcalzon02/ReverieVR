@@ -46,6 +46,44 @@ public final class VrHeadingMathTest {
         assertTrue(Float.isNaN(VrHeadingMath.yawFromHeadView(new float[3])));
     }
 
+    /** Matrix matches the 3D camera world-to-eye rotation, not Euler. */
+    private static float[] cameraView(float yawRight, float pitchUp) {
+        float cy=(float)Math.cos(yawRight), sy=(float)Math.sin(yawRight);
+        float cp=(float)Math.cos(pitchUp), sp=(float)Math.sin(pitchUp);
+        return new float[] {
+            cy, -sp*sy, -cp*sy, 0f,
+            0f, cp, -sp, 0f,
+            sy, sp*cy, cp*cy, 0f,
+            0f, 0f, 0f, 1f
+        };
+    }
+
+    @Test
+    public void guestAxesFollow3dCameraIndependentlyForAllPitchDirections() {
+        for (int pitch : new int[] {-90,-89,-60,-30,0,30,60,89,90}) {
+            for (int yaw : new int[] {-90,-45,0,45,90}) {
+                float[] v=cameraView((float)Math.toRadians(yaw),
+                    (float)Math.toRadians(pitch));
+                assertEquals("yaw at pitch " + pitch, (float)Math.toRadians(yaw),
+                    VrHeadingMath.guestYawRightFromHeadView(v), 0.0002f);
+                assertEquals("pitch at yaw " + yaw, (float)Math.toRadians(pitch),
+                    VrHeadingMath.guestPitchUpFromHeadView(v), 0.0002f);
+            }
+        }
+    }
+
+    @Test
+    public void guestViewRejectsBadMatricesInsteadOfSpikingMouse() {
+        assertTrue(Float.isNaN(VrHeadingMath.guestYawRightFromHeadView(null)));
+        assertTrue(Float.isNaN(VrHeadingMath.guestPitchUpFromHeadView(new float[2])));
+        float[] invalid=cameraView(0f,0f);
+        invalid[8]=Float.POSITIVE_INFINITY;
+        assertTrue(Float.isNaN(VrHeadingMath.guestYawRightFromHeadView(invalid)));
+        invalid=cameraView(0f,0f);
+        invalid[6]=Float.NaN;
+        assertTrue(Float.isNaN(VrHeadingMath.guestPitchUpFromHeadView(invalid)));
+    }
+
     @Test
     public void startupHeadingCancelsViewYawAndKeepsShellPanelsCentered() {
         float right = (float) (Math.PI * 0.5);
