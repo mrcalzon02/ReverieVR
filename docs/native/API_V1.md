@@ -308,6 +308,15 @@ shelf discovers it from the allowlist, rather than a separately installed
 archive. Native rules tests, signed APK asset/exports check and Daydream
 headset testing remain independent acceptance steps.
 
+## Full-sized Go rendering and gameplay scope (2026-10-15)
+
+The allowlisted `classic-go` module now presents a 19×19 board and uses
+361-point state, capture/liberty calculation, exact positional-superko
+history and 7.5-komi area scoring. No ABI-v1 structures, callbacks or
+shell/game authority boundaries changed. Standard chess/checkers retain
+8×8 geometry. Dead-stone settlement and strong Go search are not yet
+implemented; see `docs/project/CLASSIC_NATIVE_GAMES.md`.
+
 ## Classic board games (2026-10-11)
 
 The allowlisted ABI-v1 host now recognizes `classic-checkers`,

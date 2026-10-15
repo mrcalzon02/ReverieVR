@@ -5,29 +5,39 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <unordered_set>
 
 namespace reverie { namespace boardgames {
 
 enum class Kind : uint8_t { Checkers=3, Go=4, Chess=5 };
 struct State {
-    // White/human = +1, black/CPU = -1; Go human plays black with no komi.
-    // Chess signs are the same; chess boards have 8 columns, Go has 9.
-    static constexpr int kCapacity=81;
+    // Human plays Black (+1); CPU plays White (-1).
+    // Go is full 19x19, chess and checkers retain standard 8x8.
+    static constexpr int kGoSize=19,kCapacity=kGoSize*kGoSize;
+    using Board=std::array<int8_t,kCapacity>;
+    struct GoBoardHash {
+        size_t operator()(const Board &b) const noexcept {
+            uint64_t hash=1469598103934665603ull;
+            for(int8_t cell:b){hash^=static_cast<uint8_t>(cell+1);
+                hash*=1099511628211ull;}
+            return static_cast<size_t>(hash);
+        }
+    };
     Kind kind=Kind::Checkers;
-    std::array<int8_t,kCapacity> cells{};
-    std::array<int8_t,kCapacity> previousGo{}; // board before last move (simple ko)
+    Board cells{};
+    std::unordered_set<Board,GoBoardHash> goHistory;
     int side=1, winner=0, selected=-1, forced=-1, ply=0, passes=0;
     int enPassant=-1, castles=15, lastFrom=-1, lastTo=-1;
     bool finished=false;
     float clock=0.f;
     uint32_t seed=0x7e51bd03u;
-    int Size() const { return kind==Kind::Go?9:8; }
+    int Size() const { return kind==Kind::Go?kGoSize:8; }
     int Index(int x,int y) const {return y*Size()+x;}
     bool Inside(int x,int y) const {return x>=0 && y>=0 && x<Size() && y<Size();}
     uint32_t Random(){seed^=seed<<13;seed^=seed>>17;seed^=seed<<5;return seed;}
     static int Sign(int n){return n>0?1:(n<0?-1:0);}
     void Reset(Kind type) {
-        kind=type;cells.fill(0);previousGo.fill(0);side=1;winner=0;
+        kind=type;cells.fill(0);goHistory.clear();side=1;winner=0;
         selected=forced=-1;ply=passes=0;enPassant=-1;castles=15;
         lastFrom=lastTo=-1;clock=0;finished=false;
         if(type==Kind::Checkers){
@@ -41,6 +51,8 @@ struct State {
                 cells[Index(x,0)]=-back[x];cells[Index(x,1)]=-1;
                 cells[Index(x,6)]=1;cells[Index(x,7)]=back[x];
             }
+        } else if(type==Kind::Go) {
+            goHistory.insert(cells);
         }
     }
 
@@ -107,27 +119,27 @@ struct State {
         return true;
     }
 
-    // 9x9 Go with captures, suicide prohibition, simple ko, two-pass ending,
-    // and Chinese-style area (stones + exclusively enclosed empty regions).
+    // Go: 19x19, captures, suicide prohibition, positional superko,
+    // two-pass ending and Chinese stone+territory area scoring.
     struct Group {
-        std::array<int,81> stones{};
+        std::array<int,kCapacity> stones{};
         int count=0, liberties=0;
     };
-    Group Flood(const std::array<int8_t,81>& board,int start,
-                std::array<uint8_t,81>* optionalSeen=nullptr) const {
+    Group Flood(const Board& board,int start,
+                std::array<uint8_t,kCapacity>* optionalSeen=nullptr) const {
         Group g;
-        if(start<0||start>=81||board[start]==0)return g;
-        std::array<uint8_t,81> seen{};
-        std::array<uint8_t,81> libertySeen{};
+        if(start<0||start>=kCapacity||board[start]==0)return g;
+        std::array<uint8_t,kCapacity> seen{};
+        std::array<uint8_t,kCapacity> libertySeen{};
         g.stones[g.count++]=start;seen[start]=1;
         const int color=board[start];
         for(int index=0;index<g.count;index++){
-            int cell=g.stones[index],x=cell%9,y=cell/9;
+            int cell=g.stones[index],x=cell%kGoSize,y=cell/kGoSize;
             const int dx[4]={1,-1,0,0},dy[4]={0,0,1,-1};
             for(int i=0;i<4;i++){
                 int xx=x+dx[i],yy=y+dy[i];
                 if(xx<0||xx>=9||yy<0||yy>=9)continue;
-                int next=yy*9+xx;
+                int next=yy*kGoSize+xx;
                 if(board[next]==0){
                     if(!libertySeen[next]){libertySeen[next]=1;++g.liberties;}
                 }else if(board[next]==color&&!seen[next]){
@@ -139,17 +151,17 @@ struct State {
             (*optionalSeen)[g.stones[i]]=1;
         return g;
     }
-    bool SimulateGo(int index,std::array<int8_t,81>& after,int& captures) const {
-        if(index<0||index>=81||cells[index]!=0)return false;
+    bool SimulateGo(int index,Board& after,int& captures) const {
+        if(index<0||index>=kCapacity||cells[index]!=0)return false;
         after=cells;after[index]=static_cast<int8_t>(side);
         captures=0;
-        std::array<uint8_t,81> checked{};
-        const int x=index%9,y=index/9;
+        std::array<uint8_t,kCapacity> checked{};
+        const int x=index%kGoSize,y=index/kGoSize;
         const int dx[4]={1,-1,0,0},dy[4]={0,0,1,-1};
         for(int i=0;i<4;i++){
             int nx=x+dx[i],ny=y+dy[i];
             if(nx<0||nx>=9||ny<0||ny>=9)continue;
-            int other=ny*9+nx;
+            int other=ny*kGoSize+nx;
             if(after[other]!=-side||checked[other])continue;
             Group g=Flood(after,other,&checked);
             if(g.liberties==0) {
@@ -158,34 +170,34 @@ struct State {
             }
         }
         if(Flood(after,index).liberties==0)return false;
-        // Only disallow *immediate* recapture of previous whole-board state.
-        if(ply>0&&after==previousGo)return false;
+        // Full board equality, not just immediate ko.
+        if(goHistory.find(after)!=goHistory.end())return false;
         return true;
     }
     bool GoMove(int index) {
         if(kind!=Kind::Go||finished)return false;
-        std::array<int8_t,81> after{};
+        Board after{};
         int captured=0;
         if(!SimulateGo(index,after,captured))return false;
-        previousGo=cells;cells=after;passes=0;
+        cells=after;goHistory.insert(cells);passes=0;
         selected=-1;lastFrom=-1;lastTo=index;
         side=-side;++ply;return true;
     }
     void ScoreGo(){
-        float black=0.f,white=5.5f; // standard small-board komi
-        std::array<uint8_t,81> visited{};
-        for(int i=0;i<81;i++){
+        float black=0.f,white=7.5f; // Chinese 19x19 area komi
+        std::array<uint8_t,kCapacity> visited{};
+        for(int i=0;i<kCapacity;i++){
             if(cells[i]!=0){if(cells[i]>0)black++;else white++;continue;}
             if(visited[i])continue;
-            std::array<int,81> queue{};int front=0,end=1,border=0;
+            std::array<int,kCapacity> queue{};int front=0,end=1,border=0;
             queue[0]=i;visited[i]=1;
             while(front<end){
-                int p=queue[front++],x=p%9,y=p/9;
+                int p=queue[front++],x=p%kGoSize,y=p/kGoSize;
                 const int dx[4]={1,-1,0,0},dy[4]={0,0,1,-1};
                 for(int d=0;d<4;d++){
                     int xx=x+dx[d],yy=y+dy[d];
-                    if(xx<0||yy<0||xx>=9||yy>=9)continue;
-                    int other=yy*9+xx;
+                    if(xx<0||yy<0||xx>=kGoSize||yy>=kGoSize)continue;
+                    int other=yy*kGoSize+xx;
                     if(cells[other]>0)border|=1;
                     else if(cells[other]<0)border|=2;
                     else if(!visited[other]){visited[other]=1;queue[end++]=other;}
@@ -198,7 +210,7 @@ struct State {
     }
     bool Pass(){
         if(kind!=Kind::Go||finished)return false;
-        previousGo=cells;selected=-1;lastFrom=-1;lastTo=-1;
+        selected=-1;lastFrom=-1;lastTo=-1;
         ++passes;++ply;side=-side;
         if(passes>=2)ScoreGo();
         return true;
@@ -206,7 +218,7 @@ struct State {
 
     // Chess: fixed-position legality, king safety, castling, en passant,
     // queen auto-promotion and no-legal-move checkmate/stalemate.
-    bool Attacked(const std::array<int8_t,81>& b,int square,int attacker) const {
+    bool Attacked(const Board& b,int square,int attacker) const {
         const int tx=square%8,ty=square/8;
         for(int from=0;from<64;from++){
             int piece=b[from];if(Sign(piece)!=attacker)continue;
@@ -241,13 +253,13 @@ struct State {
         }
         return false;
     }
-    bool KingInCheck(const std::array<int8_t,81>& b,int player) const {
+    bool KingInCheck(const Board& b,int player) const {
         int king=-1;
         for(int i=0;i<64;i++)if(b[i]==player*6){king=i;break;}
         return king<0 || Attacked(b,king,-player);
     }
     // Only invoked on a pseudo-legal move; assumes indexes and ownership.
-    void ApplyChess(std::array<int8_t,81>& b,int from,int to,
+    void ApplyChess(Board& b,int from,int to,
                     int& newEnPassant,int& newCastles) const {
         const int piece=b[from],target=b[to],player=Sign(piece);
         const int fx=from%8,tx=to%8;
@@ -317,7 +329,7 @@ struct State {
             }
         }
         if(!legal)return false;
-        std::array<int8_t,81> tmp=cells;
+        Board tmp=cells;
         int ep=enPassant,cs=castles;
         ApplyChess(tmp,from,to,ep,cs);
         return !KingInCheck(tmp,side);
@@ -362,29 +374,35 @@ struct State {
         clock=0;
         if(kind==Kind::Go){
             int best=-1;float rating=-1e8f;
-            for(int i=0;i<81;i++)if(cells[i]==0){
-                std::array<int8_t,81> result{};int captured=0;
+            const int dx[4]={1,-1,0,0},dy[4]={0,0,1,-1};
+            for(int i=0;i<kCapacity;i++)if(cells[i]==0){
+                Board result{};int captured=0;
                 if(!SimulateGo(i,result,captured))continue;
-                const int x=i%9,y=i/9;
-                const int dist=std::abs(x-4)+std::abs(y-4);
-                int neighbors=0;
-                for(int j : {i-9,i+9,i-1,i+1}){
-                    if(j<0||j>=81||(j==i-1&&x==0)||
-                       (j==i+1&&x==8))continue;
-                    if(cells[j]==-1)neighbors++;
+                const int x=i%kGoSize,y=i/kGoSize;
+                const int edge=std::min(x,kGoSize-1-x)
+                    +std::min(y,kGoSize-1-y);
+                int allies=0,enemies=0,open=0;
+                for(int d=0;d<4;d++){
+                    const int xx=x+dx[d],yy=y+dy[d];
+                    if(xx<0||xx>=kGoSize||yy<0||yy>=kGoSize)continue;
+                    const int color=cells[yy*kGoSize+xx];
+                    if(color==-1)allies++;
+                    else if(color==1)enemies++;
+                    else open++;
                 }
-                const auto group=Flood(result,i);
-                float value=captured*12.f+group.liberties*.16f
-                    -neighbors*.23f-dist*.08f+(Random()%97u)*.0001f;
-                if(group.liberties==1)value-=4.5f;
+                // Protect own eyes and avoid immediate self-atari.
+                if(allies==4&&enemies==0&&captured==0)continue;
+                const Group group=Flood(result,i);
+                if(group.liberties<=1&&captured==0)continue;
+                float value=captured*22.f+group.liberties*.16f
+                    +enemies*.50f+allies*.15f+open*.11f
+                    -std::abs(edge-6)*.07f
+                    +(Random()%97u)*.0001f;
                 if(value>rating){rating=value;best=i;}
             }
-            // Respect the human's pass in a settled mid/late game;
-            // do not force them to wait for a nearly full 9x9 board.
-            if(best<0||ply>=155||(passes==1&&ply>=40&&rating<4.f)){
-                Pass();
-                return;
-            }
+            // No arbitrary 9x9 turn limit; pass when no useful legal
+            // non-eye / non-self-atari play remains.
+            if(best<0){Pass();return;}
             GoMove(best);
         }else if(kind==Kind::Checkers){
             const bool capture=HasCapture(side,forced);
@@ -415,7 +433,7 @@ struct State {
                     int score=values[std::abs(cells[to])]*12;
                     const int piece=std::abs(cells[from]);
                     if(piece==1&&to/8==7)score+=9500;
-                    std::array<int8_t,81> after=cells;
+                    Board after=cells;
                     int ep=enPassant,cs=castles;
                     ApplyChess(after,from,to,ep,cs);
                     if(Attacked(after,to,1))score-=values[piece]*6;

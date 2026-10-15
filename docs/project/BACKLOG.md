@@ -89,6 +89,20 @@
 - RV-0304 — **Implemented; S9 gate pending:** Reuse stereo GL viewport/scissor query buffers (six fewer short-lived arrays per frame), reuse viewport readback in eye diagnostics, and report separate Development-only left/right CPU submission avg/p95/p99/max once per minute (600 samples/eye). Log battery percentage with existing frame/thermal data. CPU submission is not GPU/compositor time; confirm real stereo visuals and sustained S9 frame/thermal behavior.
 - RV-0303 — Procedural-first native asset/power budget: compact seeded recipes, one-time generation and cached GPU uploads, low-cost shading, no per-frame texture synthesis, and measured S9 CPU/GPU/battery/thermal acceptance. Track per-eye cost and stereo correctness; never trade VR frame pacing for a marketing battery target.
 
+## Native classics fidelity backlog
+
+- **Go 19×19:** Full 361-intersection board, exact positional-superko,
+  standard-sized coordinates, full-board score traversal and CPU turn
+  allocation source implemented. Complete negotiated dead-stone/scoring
+  phase, seki adjudication, ruleset options and stronger bounded AI. Accept
+  CPU strength, spatial accuracy and small-stone readability on S9.
+- **Chess:** Draw rules (50/75 moves, repetition, insufficient material),
+  underpromotion selection, time controls and deeper search AI pending.
+- **Checkers:** Ruleset draw limits/repetition and CPU lookahead pending.
+- **Pong / Breakout:** Compare against original arcade layouts, scoring and
+  game modes; restore gameplay fidelity without adding proprietary assets.
+  Native-device acceptance and thermal proof remain open.
+
 ## P5 — Module host
 
 - RV-0400 — Define and implement versioned native module ABI/lifecycle with a compile-time allowlist, packaged native-library loading, shell-owned GL/lifecycle/input/recovery services, and fail-closed ABI validation. ADR-0015 governs the first implementation.

@@ -33,7 +33,7 @@ constexpr char kId[]="classic-checkers";
 constexpr char kTitle[]="CHECKERS";
 #elif CLASSIC_GAME_KIND == 4
 constexpr char kId[]="classic-go";
-constexpr char kTitle[]="GO 9X9";
+constexpr char kTitle[]="GO 19X19";
 #elif CLASSIC_GAME_KIND == 5
 constexpr char kId[]="classic-chess";
 constexpr char kTitle[]="CHESS";
@@ -120,7 +120,7 @@ void Disc(Module *m,float x,float y,float rad,float z,float r,float g,float b){
     reverie::flatmesh::Disc(Emit(m),x,y,rad,z,r,g,b);
 }
 float BoardSpacing(const reverie::boardgames::State &s){
-    return s.Size()==9?.268f:.320f;
+    return s.Size()==reverie::boardgames::State::kGoSize?.128f:.320f;
 }
 float BoardX(const reverie::boardgames::State &s,int x){
     return (x-(s.Size()-1)*.5f)*BoardSpacing(s);
@@ -156,7 +156,7 @@ void RebuildBoard(Module *m,bool fixed){
                  .69f,.51f,.29f);
             Rect(m,px,py,gap-.018f,.008f,-2.985f,.19f,.13f,.09f);
             Rect(m,px,py,.008f,gap-.018f,-2.985f,.19f,.13f,.09f);
-            if((x==2||x==4||x==6)&&(y==2||y==4||y==6))
+            if((x==3||x==9||x==15)&&(y==3||y==9||y==15))
                 Disc(m,px,py,.023f,-2.979f,.15f,.11f,.09f);
         }else if(fixed){
             Rect(m,px,py,gap-.008f,gap-.008f,-3.00f,
@@ -168,11 +168,11 @@ void RebuildBoard(Module *m,bool fixed){
         if(piece!=0){
             if(s.kind==reverie::boardgames::Kind::Go){
                 if(piece>0){
-                    Disc(m,px,py,.108f,-2.947f,.045f,.062f,.074f);
-                    Disc(m,px,py,.021f,-2.935f,.86f,.88f,.79f);
+                    Disc(m,px,py,gap*.42f,-2.947f,.045f,.062f,.074f);
+                    Disc(m,px,py,gap*.08f,-2.935f,.86f,.88f,.79f);
                 }else{
-                    Disc(m,px,py,.108f,-2.947f,.91f,.90f,.79f);
-                    Disc(m,px,py,.021f,-2.935f,.18f,.17f,.14f);
+                    Disc(m,px,py,gap*.42f,-2.947f,.91f,.90f,.79f);
+                    Disc(m,px,py,gap*.08f,-2.935f,.18f,.17f,.14f);
                 }
             }else{
                 Disc(m,px,py,.125f,-2.947f,

@@ -60,42 +60,78 @@ static void TestBoardGames() {
     assert(crown.CheckerMove(9,0));
     assert(crown.cells[0]==2);
 
+    // Regulation 19x19 Go board with 361 playable intersections.
+    const auto at=[](int x,int y){return y*19+x;};
     Boards go;
     go.Reset(BoardKind::Go);
-    assert(go.Size()==9);
-    go.cells[40]=-1;go.cells[31]=1;go.cells[39]=1;go.cells[41]=1;
-    assert(go.GoMove(49)); // fourth liberty removed captures black
-    assert(go.cells[40]==0&&go.cells[49]==1);
-    assert(!go.GoMove(49)); // cannot place on occupied point
+    assert(go.Size()==19&&Boards::kCapacity==361);
+    assert(go.Inside(18,18)&&!go.Inside(19,18));
+    assert(go.GoMove(at(18,18)));
+    assert(go.cells[at(18,18)]==1);
+    assert(go.goHistory.size()==2);
+    // Capture against the edge of the full-sized grid.
+    Boards edgeGo;
+    edgeGo.Reset(BoardKind::Go);
+    edgeGo.cells[at(18,18)]=-1;
+    edgeGo.cells[at(17,18)]=1;
+    edgeGo.side=1;
+    assert(edgeGo.GoMove(at(18,17)));
+    assert(edgeGo.cells[at(18,18)]==0);
+    assert(!edgeGo.GoMove(at(18,17)));
     Boards suicide;
     suicide.Reset(BoardKind::Go);
-    suicide.cells[31]=-1;suicide.cells[39]=-1;
-    suicide.cells[41]=-1;suicide.cells[49]=-1;
-    assert(!suicide.GoMove(40));
-    // Simple ko: immediate board-position recreation is forbidden.
+    suicide.cells[at(9,8)]=-1;
+    suicide.cells[at(8,9)]=-1;
+    suicide.cells[at(10,9)]=-1;
+    suicide.cells[at(9,10)]=-1;
+    assert(!suicide.GoMove(at(9,9)));
+    // Ko: recapturing the prior whole-board shape is forbidden. The
+    // setup board is added to history exactly as a played game would.
     Boards ko;
     ko.Reset(BoardKind::Go);
-    ko.cells[2*9+2]=1;
-    ko.cells[1*9+2]=-1;ko.cells[2*9+1]=-1;ko.cells[2*9+3]=-1;
-    ko.cells[3*9+1]=1;ko.cells[3*9+3]=1;ko.cells[4*9+2]=1;
+    ko.cells[at(2,2)]=1;
+    ko.cells[at(2,1)]=-1;ko.cells[at(1,2)]=-1;ko.cells[at(3,2)]=-1;
+    ko.cells[at(1,3)]=1;ko.cells[at(3,3)]=1;ko.cells[at(2,4)]=1;
+    ko.goHistory.insert(ko.cells);
     ko.side=-1;
-    assert(ko.GoMove(3*9+2));
-    assert(ko.cells[2*9+2]==0);
-    assert(!ko.GoMove(2*9+2));
+    assert(ko.GoMove(at(2,3)));
+    assert(ko.cells[at(2,2)]==0);
+    assert(!ko.GoMove(at(2,2)));
+    // Positional superko rejects an earlier shape even if it was not
+    // the immediately previous board, without hash-only false matches.
+    Boards repeat;
+    repeat.Reset(BoardKind::Go);
+    Boards::Board forbidden=repeat.cells;
+    forbidden[at(9,9)]=1;
+    repeat.goHistory.insert(forbidden);
+    assert(!repeat.GoMove(at(9,9)));
+    assert(repeat.cells[at(9,9)]==0);
+    // Both players may pass, and the 7.5 komi decides an empty board.
     Boards emptyGo;
     emptyGo.Reset(BoardKind::Go);
     assert(emptyGo.Pass()&&!emptyGo.finished);
-    assert(emptyGo.Pass()&&emptyGo.finished&&emptyGo.winner==-1); // komi
+    assert(emptyGo.Pass()&&emptyGo.finished&&emptyGo.winner==-1);
     Boards cpuGo;
     cpuGo.Reset(BoardKind::Go);
-    assert(cpuGo.GoMove(40));
+    assert(cpuGo.GoMove(at(9,9)));
     for(int i=0;i<3;i++)cpuGo.Step(.1f);
     assert(cpuGo.ply==2&&cpuGo.side==1);
+    assert(cpuGo.goHistory.size()==3);
+    // The CPU should still respond late on a regulation board, instead
+    // of auto-passing at the obsolete 155-ply 9x9 cutoff.
     Boards laterGo;
     laterGo.Reset(BoardKind::Go);
-    laterGo.ply=50;laterGo.passes=1;laterGo.side=-1;
+    laterGo.ply=160;laterGo.side=-1;
     for(int i=0;i<3;i++)laterGo.Step(.1f);
-    assert(laterGo.finished && laterGo.passes==2);
+    assert(laterGo.ply==161&&!laterGo.finished&&laterGo.side==1);
+    // AI only passes a board with no useful legal placement.
+    Boards surrounded;
+    surrounded.Reset(BoardKind::Go);
+    surrounded.cells.fill(-1);surrounded.side=-1;
+    surrounded.cells[at(9,9)]=0;
+    surrounded.goHistory.insert(surrounded.cells);
+    surrounded.Step(.3f);
+    assert(surrounded.passes==1&&surrounded.side==1);
 
     Boards chess;
     chess.Reset(BoardKind::Chess);

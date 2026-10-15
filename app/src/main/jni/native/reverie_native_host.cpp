@@ -52,7 +52,7 @@ static const BuiltInModuleSpec kBuiltIns[] = {
      "libreverie_module_classic_chutes_ladders.so"},
     {"classic-checkers", "Classic Checkers",
      "libreverie_module_classic_checkers.so"},
-    {"classic-go", "Go 9x9", "libreverie_module_classic_go.so"},
+    {"classic-go", "Go 19x19", "libreverie_module_classic_go.so"},
     {"classic-chess", "Classic Chess",
      "libreverie_module_classic_chess.so"},
     {"classic-breakout", "Classic Breakout",

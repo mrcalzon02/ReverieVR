@@ -32,33 +32,36 @@ performance, binocular presentation, scroll selection, paddle sensitivity,
 small text legibility, sustained battery, and end-to-end game feel. The
 existing six classic games retain their previous modes and controls.
 
-## Checkers, Go 9x9 and Chess (2026-10-11 source)
+## Checkers, regulation Go 19×19, and Chess (2026-10-15 rule correction)
 
-Three more packaged native ABI-v1 modules are registered as `classic-checkers`,
-`classic-go` and `classic-chess`. They share the low-poly GLES2 Classic
-Games renderer, existing native shelf, host-owned pointer, stereo, Quick Menu
-and recovery. Rule/CPU state is a private `classic_board_games.h` game engine,
-updated exactly once per frame, never during each eye draw. Procedural
-triangle-only pieces/boards and tiny fonts require no additional image,
-AI framework, internet, telemetry, or OCR.
+Checkers (8×8) and Chess (8×8) keep their standard board sizes.
+The Go module `classic-go` now has all **361 intersections** of the
+regulation 19×19 board, not a small-board approximation. The rules engine,
+19×19 renderer, nine star points, and native host title update together.
+Go's original 9×9-only cutoff, board arrays, scoring traversal and liberties
+were expanded, with tests for distant-corner placement and edge captures.
 
-- **Checkers:** American/English rules, 8x8, forced captures and chains,
-  movement/promotion for kings, human light side, bounded greedy CPU.
-- **Go:** 9x9, captures, suicide prohibition, simple ko, two passes,
-  Chinese-style area scoring and 5.5 komi for CPU White; capture/liberty
-  heuristic CPU that can answer a late-game pass. Superko is not implemented.
-- **Chess:** 8x8, legal king-safe movement, castling, en passant, automatic
-  queen promotion and checkmate/stalemate detection; weak deterministic
-  one-ply CPU. Threefold repetition, 50/75-move draw rules and
-  underpromotion selection are not yet included.
+- **Go:** 19×19, positional superko backed by exact whole-board state
+  comparisons (not only previous-move ko); capture and no-suicide; consecutive
+  legal passes; Chinese-style area scoring at 7.5 komi. Pass is supported
+  by the on-board PASS target or native secondary action. CPU now searches
+  all intersections and skips clearly self-filled eyes / self-atari; it no
+  longer forces a pass after 155 moves. **Still incomplete for full competition
+  rules:** negotiated dead-stone removal before scoring, seki scoring
+  adjudication, and selectable scoring rulesets. The current CPU remains a
+  bounded heuristic opponent, not a strong Go engine.
+- **Checkers:** American/English 8×8, forced captures, multiple jumps,
+  crowning, deterministic greedy CPU. Draw by repetition/40-move rule and
+  voluntary resign are not yet implemented.
+- **Chess:** standard 8×8, king-safe moves, castling, en passant, auto-queen
+  promotions, checkmate and stalemate, deterministic one-ply CPU. Threefold/
+  fivefold repetition, 50/75-move draw adjudication and underpromotion are
+  not yet included. No claim of strong/competitive chess AI.
 
-Select a piece then a destination (or directly place in Go). Go PASS is
-an on-board selectable command or a host secondary action. Board cursor
-also accepts bounded movement axes when no ray is available. A primary
-press after a finished match resets the game. Each AI decision occurs in
-`Update`, never `Draw`. This is a source admission; native compilation,
-unit rules, APK packaging, stereo and Galaxy S9 interaction testing are
-independent gates.
+For all three, choose a piece and a destination (or place in Go).
+Rules and CPU advance only once per native Update, never separately in
+stereo-eye draws. CPU quality, Go legibility at 361 intersections, endgame
+adjudication and controller precision need S9/Daydream testing.
 
 ## Shared compact geometry and idle frame savings (2026-10-14)
 
