@@ -6,6 +6,7 @@
 #include "breakwater_sky.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
+#include "breakwater_surface_aim.h"
 #include "breakwater_combat_input.h"
 #include "breakwater_pointer_focus.h"
 #include "breakwater_impacts.h"
@@ -45,6 +46,7 @@ struct State {
     ImpactEffects impacts;
     BatteryDamageFeedback battery_damage;
     AircraftAimFeedback aircraft_aim;
+    SurfaceAimFeedback surface_aim;
     AircraftHitFeedback aircraft_hit;
     CombatInputLatch combat_input;
     PointerFocusGate pointer_focus;
@@ -252,7 +254,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             s->reload_ready_flash=0.0f;
             s->turret_flash=0.0f;
             s->gunboat_salvo_flash=0.0f;
-            s->aircraft_aim={};
+            s->aircraft_aim={};s->surface_aim={};
             s->aircraft_hit=AircraftHitFeedback{};
             s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
             game.Start();
@@ -273,7 +275,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->battery_damage=BatteryDamageFeedback{};
                 s->infantry_flash=0.0f;
                 s->gunboat_salvo_flash=0.0f;
-                s->aircraft_aim={};
+                s->aircraft_aim={};s->surface_aim={};
                 s->aircraft_hit=AircraftHitFeedback{};
                 s->sam_armed=false;
             }
@@ -420,7 +422,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->turret_flash=0.0f;
         s->infantry_flash=0.0f;
         s->gunboat_salvo_flash=0.0f;
-        s->aircraft_aim={};
+        s->aircraft_aim={};s->surface_aim={};
         s->aircraft_hit=AircraftHitFeedback{};
         s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
         Feedback(s,checkpoint_cleared?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
@@ -547,6 +549,39 @@ void BuildScene(State *s) {
             bank=std::isfinite(e.bank)?e.bank:0.0f;
         }
         AppendSprite(s->sprite_mesh,sprite,e.x,y,e.z,width,height,bank);
+    }
+    if(s->surface_aim.visible) {
+        // Same exact CombatTarget ray as weapon damage. These small world-
+        // space corner marks are UI only; they do not widen the hit sphere.
+        const SurfaceAimFeedback &target=s->surface_aim;
+        const float x=target.x,z=target.z+.045f;
+        const float span=target.half_width;
+        const float top=target.infantry?-.31f:-.20f;
+        const float bottom=target.infantry?-.99f:-1.02f;
+        const float red=target.vulnerable?.47f:1.0f;
+        const float green=target.vulnerable?.92f:.53f;
+        const float blue=target.vulnerable?.53f:.27f;
+        for(int side : {-1,1}) {
+            const float edge=x+side*span;
+            const float tip=edge-side*.105f;
+            Triangle(s,edge,top,z,tip,top,z,edge,top-.13f,z,
+                     red,green,blue);
+            Triangle(s,edge,bottom,z,tip,bottom,z,edge,bottom+.13f,z,
+                     red,green,blue);
+        }
+        if(!target.infantry) {
+            // A two-triangle status strip reports actual remaining hull,
+            // without adding fonts over tiny moving boat silhouettes.
+            const float fraction=SurfaceHullFraction(target);
+            const float width=span*1.80f;
+            const float barY=top+.14f;
+            Panel(s,x,barY,z+.004f,width,.065f,.10f,.13f,.14f);
+            if(fraction>0.0f) {
+                const float fill=width*fraction;
+                Panel(s,x-width*.5f+fill*.5f,barY,z+.008f,
+                      fill,.044f,red,green,blue);
+            }
+        }
     }
     if(s->aircraft_aim.visible) {
         // Four tiny world-space brackets surround only the exact ray-selected
@@ -800,6 +835,23 @@ void BuildScene(State *s) {
                 Text(s,label,0,-.43f,-1.79f,.046f,.69f,1.0f,.78f);
             }
         }
+        if(s->surface_aim.visible) {
+            const SurfaceAimFeedback &target=s->surface_aim;
+            char label[36];
+            if(target.infantry)
+                std::snprintf(label,sizeof(label),
+                    target.vulnerable?"INFANTRY":"INFANTRY NO SHOT");
+            else
+                std::snprintf(label,sizeof(label),"%s HP %d/%d",
+                    target.type==UnitType::Rowboat?"ROWBOAT":
+                    target.type==UnitType::LandingCraft?"LANDER":"GUNBOAT",
+                    static_cast<int>(target.hp),
+                    static_cast<int>(target.max_hp));
+            Panel(s,0,-.43f,-1.82f,3.02f,.31f,.12f,.29f,.24f);
+            Text(s,label,0,-.43f,-1.79f,.040f,
+                 target.vulnerable?.75f:1.0f,
+                 target.vulnerable?1.0f:.68f,.70f);
+        }
         if(s->aircraft_hit.active()) {
             char hit[36];
             if(s->aircraft_hit.destroyed())
@@ -920,6 +972,8 @@ void Pause(void *instance) {
     s->held=false;
     s->secondary_held=false;
     s->combat_input.Release();
+    s->surface_aim={};s->aircraft_aim={};
+    s->scene_dirty=true;
 }
 void Update(void *instance,const ReverieNativeInputV1 *input) {
     State *s=static_cast<State *>(instance);
@@ -936,6 +990,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->held=false;
         s->secondary_held=false;
         s->combat_input.Release();
+        s->surface_aim={};s->aircraft_aim={};
+        s->scene_dirty=true;
         return;
     }
     // Only fresh post-focus button presses can enter any game action.
@@ -1049,12 +1105,17 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             GhostAimPoint(copy.pointer_origin,copy.pointer_direction,
                           s->ghost_position);
     }
-    s->aircraft_aim={};
+    s->aircraft_aim={};s->surface_aim={};
     if(s->campaign.phase()==Phase::Combat &&
-       copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE)
-        s->aircraft_aim=InspectAircraftAim(s->campaign,CombatTarget(
-            copy,s->campaign,s->sam_armed ||
-            WeaponFor(s->campaign.selected_weapon()).uses_ghost));
+       copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
+        const int target=CombatTarget(copy,s->campaign,s->sam_armed ||
+            WeaponFor(s->campaign.selected_weapon()).uses_ghost);
+        s->aircraft_aim=InspectAircraftAim(s->campaign,target);
+        // SAM targeting accepts aircraft only; never advertise a
+        // valid surface lock while the special missile mode is armed.
+        if(!s->sam_armed)
+            s->surface_aim=InspectSurfaceAim(s->campaign,target);
+    }
     s->held=down;s->secondary_held=secondary;
     s->scene_dirty=true;
 }

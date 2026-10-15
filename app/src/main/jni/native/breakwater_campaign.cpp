@@ -504,9 +504,7 @@ void Campaign::TickStep(float dt) {
                 (progression >= 5u && (choice % 4u == 0u)) ? UnitType::Gunboat :
                 (progression >= 3u && (choice % 3u == 0u)) ? UnitType::LandingCraft :
                 UnitType::Rowboat;
-            const int hp = kind == UnitType::Rowboat ? 20 :
-                kind == UnitType::LandingCraft ? 85 :
-                kind == UnitType::Gunboat ? 125 : 100;
+            const int hp = EnemyStartingHp(kind);
             e = {kind, (static_cast<int>(choice % 9u) - 4) * 0.65f,
                  -11.0f, static_cast<int16_t>(hp),
                  static_cast<uint8_t>(kind == UnitType::Rowboat ? 1 :

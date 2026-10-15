@@ -1,3 +1,25 @@
+## 2026-10-15 — Breakwater exact-ray boat/infantry target feedback (source)
+
+Added a surface/infantry targeting presentation that consumes the exact
+`CombatTarget` slot already used by firing, without touching hit spheres,
+combat eligibility, damage, persistence or host controls. Selected
+rowboats/landers/gunboats now show world-space green aiming corner
+brackets and a compact real-hull-HP strip; selected individual
+shore soldiers have tighter brackets. The target HUD shares the
+existing aircraft status region instead of introducing another tab
+or permanent overlay. The new small pure header rejects malformed,
+inactive/aircraft/noncombat targets and treats soldier vulnerability
+according to active weapon capability. Special SAM-armed mode cannot
+advertise surface-target locks. All target-state reset/focus cases
+remain deterministic for both stereo eyes.
+
+Centralized original spawn HP values (20/85/125/100) in
+`EnemyStartingHp` so simulation and reticle cannot drift. Target
+regression source covers correct maxima, fractional display, invalid
+positions, ineligible weapon/soldier combinations and phase guards.
+Android/NDK compilation, real headset marker legibility/alignment,
+and interactive test proof remain unverified; no new APK was released.
+
 ## 2026-10-15 — Breakwater typed weapon audio events (source, device pending)
 
 Implemented five original, differentiated synthesized weapon reports for

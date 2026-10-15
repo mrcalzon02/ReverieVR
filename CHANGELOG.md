@@ -6,6 +6,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater exact-ray target identification and hull indicators
+
+- Extended in-world target brackets from aircraft to boats and individual
+  shore infantry, consuming exactly the same projectile-selection result
+  as combat. Display compact remaining-hull bars and one relevant
+  target-status line; keep SAM air-only targeting distinct.
+- Centralized spawn HP in the authoritative campaign rules, added pure
+  target-state tests, and preserved damage, targeting volumes, controls,
+  saves, shader/texture count and single shared stereo geometry.
+  Full native/Android build and physical S9 tests remain open.
+
+
 ### Breakwater typed per-weapon playback foundation
 
 - Added a backward-compatible native v1 ordered sound-cue tail

@@ -5,6 +5,7 @@
 #include "breakwater_sky.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
+#include "breakwater_surface_aim.h"
 #include "breakwater_combat_input.h"
 #include "breakwater_pointer_focus.h"
 #include "breakwater_impacts.h"
@@ -18,6 +19,94 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // A precise target reticle is informational only: all ship and
+    // soldier tests below leave hit spheres and Campaign state untouched.
+    {
+        assert(EnemyStartingHp(UnitType::Rowboat)==20);
+        assert(EnemyStartingHp(UnitType::LandingCraft)==85);
+        assert(EnemyStartingHp(UnitType::Gunboat)==125);
+        assert(EnemyStartingHp(UnitType::Aircraft)==100);
+        assert(EnemyStartingHp(static_cast<UnitType>(255))==0);
+        assert(SurfaceBaseHp(UnitType::Rowboat)==20);
+        assert(SurfaceBaseHp(UnitType::LandingCraft)==85);
+        assert(SurfaceBaseHp(UnitType::Gunboat)==125);
+        assert(SurfaceBaseHp(UnitType::Aircraft)==0);
+        assert(SurfaceBaseHp(static_cast<UnitType>(255))==0);
+        Enemy e{};
+        e.active=true;e.type=UnitType::Rowboat;
+        e.x=1.20f;e.z=-5.0f;e.hp=15;
+        const auto row=InspectSurfaceEnemy(e,WeaponKind::MachineGun);
+        assert(row.visible && !row.infantry && row.vulnerable);
+        assert(row.max_hp==20 && row.hp==15);
+        assert(std::abs(SurfaceHullFraction(row)-.75f)<.00001f);
+        assert(row.x==e.x && row.z==e.z);
+        assert(row.half_width>.3f && row.half_width<.80f);
+        assert(!InspectSurfaceEnemy(e,WeaponKind::Flak).infantry);
+        e.type=UnitType::LandingCraft;e.hp=42;
+        auto craft=InspectSurfaceEnemy(e,WeaponKind::DirectCannon);
+        assert(craft.visible && craft.max_hp==85 && craft.hp==42);
+        assert(SurfaceHullFraction(craft)>.49f &&
+               SurfaceHullFraction(craft)<.50f);
+        e.type=UnitType::Gunboat;e.hp=115;
+        const auto gunboat=InspectSurfaceEnemy(e,WeaponKind::HeavyGun);
+        assert(gunboat.visible && gunboat.max_hp==125);
+        assert(SurfaceHullFraction(gunboat)>.90f);
+        e.hp=500;
+        assert(InspectSurfaceEnemy(e,WeaponKind::MissileBattery).hp==125);
+        assert(SurfaceHullFraction(InspectSurfaceEnemy(
+                   e,WeaponKind::MissileBattery))==1.0f);
+        e.hp=0;
+        assert(!InspectSurfaceEnemy(e,WeaponKind::MachineGun).visible);
+        e.hp=20;e.active=false;
+        assert(!InspectSurfaceEnemy(e,WeaponKind::MachineGun).visible);
+        e.active=true;e.type=UnitType::Aircraft;
+        assert(!InspectSurfaceEnemy(e,WeaponKind::Flak).visible);
+        e.type=UnitType::Rowboat;
+        e.x=std::numeric_limits<float>::quiet_NaN();
+        assert(!InspectSurfaceEnemy(e,WeaponKind::Flak).visible);
+        e.x=0;e.z=std::numeric_limits<float>::infinity();
+        assert(!InspectSurfaceEnemy(e,WeaponKind::Flak).visible);
+
+        Infantry troop{};
+        troop.active=true;troop.x=.22f;troop.z=-1.7f;
+        const auto rifle=InspectSurfaceInfantry(troop,WeaponKind::MachineGun);
+        const auto flak=InspectSurfaceInfantry(troop,WeaponKind::Flak);
+        assert(rifle.visible && rifle.infantry && rifle.vulnerable);
+        assert(flak.visible && flak.infantry && !flak.vulnerable);
+        assert(rifle.x==troop.x && rifle.z==troop.z);
+        assert(SurfaceHullFraction(rifle)==0.0f);
+        troop.active=false;
+        assert(!InspectSurfaceInfantry(troop,WeaponKind::MachineGun).visible);
+        troop.active=true;
+        troop.z=std::numeric_limits<float>::quiet_NaN();
+        assert(!InspectSurfaceInfantry(troop,WeaponKind::HeavyGun).visible);
+        Campaign game(Difficulty::Regular,1);
+        assert(!InspectSurfaceAim(game,0).visible);
+        assert(!InspectSurfaceAim(game,-1).visible);
+        assert(!InspectSurfaceAim(game,255).visible);
+        assert(game.Start());
+        assert(!InspectSurfaceAim(game,0).visible);
+        assert(game.BeginWave());
+        assert(!InspectSurfaceAim(game,0).visible); // not yet spawned
+        game.Tick(.10f);
+        int activeSlot=-1;
+        for(size_t i=0;i<game.enemies().size();++i)
+            if(game.enemies()[i].active) {
+                activeSlot=static_cast<int>(i);break;
+            }
+        assert(activeSlot>=0);
+        const auto selected=InspectSurfaceAim(game,activeSlot);
+        assert(selected.visible && !selected.infantry);
+        assert(selected.x==game.enemies()[static_cast<size_t>(activeSlot)].x);
+        assert(selected.z==game.enemies()[static_cast<size_t>(activeSlot)].z);
+        assert(selected.hp==game.enemies()[static_cast<size_t>(activeSlot)].hp);
+        assert(!InspectSurfaceAim(game,-1).visible);
+        assert(!InspectSurfaceAim(game,
+            static_cast<int>(Campaign::kMaxEnemies+
+                             Campaign::kMaxInfantry)).visible);
+        assert(SurfaceHullFraction(SurfaceAimFeedback{})==0.0f);
+    }
+
     // All three coastlines have a closed 360-degree layered sky in both
     // day/night modes. The renderer consumes these triangles only once per
     // shared stereo scene build; the recipe does not own gameplay state.

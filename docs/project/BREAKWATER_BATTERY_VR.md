@@ -138,6 +138,34 @@ single 128-KiB RGBA atlas and one additional masked draw per eye until
 measured device proof justifies more. Materialized artwork must be explicitly imported,
 registered and verified before being reported as in-game.
 
+## Exact-ray surface targeting and hull-condition display (2026-10-15 source)
+
+Breakwater now extends its aircraft-specific targeting brackets to *only*
+the boat or individual infantry slot selected by the authoritative
+`CombatTarget` ballistic intersection. Rowboats, landing craft and
+gunboats display compact world-space corner brackets and a narrow
+remaining-hull bar, derived from their actual current and spawn HP.
+Disembarked infantry receive tighter person-sized corner brackets, with
+the actual weapon's anti-infantry capability reflected in the marker
+color. The existing target-status region carries one succinct
+`ROWBOAT / LANDER / GUNBOAT HP N/M` or `INFANTRY` label;
+only the currently targeted unit appears, preventing HUD clutter.
+
+`EnemyStartingHp(UnitType)` in the campaign rules is the single source
+for 20/85/125 surface and 100 aircraft starting HP; the rendering
+helper reuses it. The display introduces **no aim assistance, altered
+combat hit spheres, damage, simulation state, serialized data, textures,
+GL shader, additional draw call, controller binding or input target**.
+The markers are ordinary triangles and two small panels in the existing
+shared vertex-color mesh. Target inspection happens once per game
+update; the two VR eyes receive the same markers. Focus loss, pause,
+new wave and campaign restart clear selection. In SAM-only armed mode,
+a selected boat is not falsely advertised as a valid missile lock.
+Native C++ regression cases cover unit types, damaged/clamped HP,
+weapon vulnerability, malformed coordinates and phase/slot guards.
+Full Android NDK compile, visual alignment at headset depth, binocular
+readability and physical controller tests remain outstanding.
+
 ## State-driven enemy sprite animation (2026-10-15 source)
 
 The original 16-cell (128×128) procedural RGBA sheet now occupies a

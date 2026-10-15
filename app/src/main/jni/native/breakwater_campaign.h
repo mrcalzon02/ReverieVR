@@ -11,6 +11,17 @@ enum class Phase : uint8_t { Briefing, Shop, Combat, Victory, Defeat };
 enum class Period : uint8_t { Day, Night };
 enum class UnitType : uint8_t { Rowboat, LandingCraft, Gunboat, Aircraft };
 enum class AircraftPattern : uint8_t { None, Strafer, Bomber };
+// Shared spawn health also drives damage visualization. Do not duplicate
+// balance values in renderer-only code, HUDs, or saved-state adapters.
+constexpr int16_t EnemyStartingHp(UnitType type) {
+    switch(type) {
+        case UnitType::Rowboat: return 20;
+        case UnitType::LandingCraft: return 85;
+        case UnitType::Gunboat: return 125;
+        case UnitType::Aircraft: return 100;
+        default: return 0;
+    }
+}
 enum class Upgrade : uint8_t {
     FireRate, Damage, Magazine, AntiAir, Artillery, Airstrike, SupportTurret, Repair
 };
