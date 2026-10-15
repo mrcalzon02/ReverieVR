@@ -130,10 +130,14 @@ were expanded, with tests for distant-corner placement and edge captures.
   The CPU may exercise a genuine draw claim when losing; it still
   honors complete capture sequences. Alpha-beta evaluates four
   complete turns in the opening and up to six in sparse endgames,
-  with a hard 6,000/12,000-node budget and forced-capture quiescence
-  extensions at leaf nodes. Difficulty settings, negotiated draws,
-  resignation and clocks remain pending, as does Daydream-device AI
-  latency profiling. Rule reference: https://nccheckers.org/NCCA/WCDF%20Checker%20-%20Draughts%20-%20English%20Rules.htm
+  with three real selectable search levels: Easy 1,500 nodes,
+  Normal 6,000 nodes and Hard 12,000 nodes, preserving forced-capture
+  quiescence at leaf nodes. Iterative deepening now commits only fully
+  evaluated depths, preventing a node-cap interruption from favoring
+  partially searched candidate moves. The AI button and Secondary
+  cycle difficulty during the human turn and restart preserves it.
+  Negotiated draws, resignation and clocks remain pending, as does
+  Daydream-device AI latency profiling. Rule reference: https://nccheckers.org/NCCA/WCDF%20Checker%20-%20Draughts%20-%20English%20Rules.htm
 - **Chess:** standard 8×8, king-safe moves, castling and en passant,
   four promotion pieces (queen, rook, bishop, knight), checkmate and
   stalemate. FIDE drawn-game handling now tracks exact positions with

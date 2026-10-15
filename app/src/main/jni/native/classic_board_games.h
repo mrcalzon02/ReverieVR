@@ -55,6 +55,7 @@ struct State {
     int checkerQuietPlies=0;
     int halfMoves=0,promotionChoice=5;
     int chessDifficulty=1,chessSearchNodes=0;
+    int checkerDifficulty=1,checkerSearchNodes=0;
     Kind kind=Kind::Checkers;
     Board cells{};
     std::unordered_set<Board,GoBoardHash> goHistory;
@@ -305,8 +306,13 @@ struct State {
     // The explicit node cap protects Daydream-era phone frame pacing.
     static int SearchCheckersBounded(const Board &board,int player,int depth,
                                     int alpha,int beta,int &nodes,int budget,
-                                    int captureExtensions) {
-        if(++nodes>budget)return CheckerPositionValue(board);
+                                    int captureExtensions,
+                                    bool *exhausted=nullptr) {
+        if(nodes>=budget){
+            if(exhausted)*exhausted=true;
+            return CheckerPositionValue(board);
+        }
+        ++nodes;
         const auto turns=CheckerTurns(board,player);
         if(turns.empty())return player==-1?-30000-depth:30000+depth;
         const bool forcedCapture=std::abs(turns.front().firstTo
@@ -320,7 +326,8 @@ struct State {
             int best=-300000;
             for(const auto &turn:turns){
                 const int value=SearchCheckersBounded(turn.after,1,nextDepth,
-                    alpha,beta,nodes,budget,nextExtensions);
+                    alpha,beta,nodes,budget,nextExtensions,exhausted);
+                if(exhausted&&*exhausted)break;
                 best=std::max(best,value);
                 alpha=std::max(alpha,best);
                 if(beta<=alpha||nodes>=budget)break;
@@ -330,7 +337,8 @@ struct State {
         int best=300000;
         for(const auto &turn:turns){
             const int value=SearchCheckersBounded(turn.after,-1,nextDepth,
-                alpha,beta,nodes,budget,nextExtensions);
+                alpha,beta,nodes,budget,nextExtensions,exhausted);
+            if(exhausted&&*exhausted)break;
             best=std::min(best,value);
             beta=std::min(beta,best);
             if(beta<=alpha||nodes>=budget)break;
@@ -343,36 +351,44 @@ struct State {
         return SearchCheckersBounded(board,player,depth,alpha,beta,
                                     nodes,12000,3);
     }
-    // The opening uses four complete turns; light-material endgames can
-    // afford five or six. The total node budget remains hard-bounded.
+    // Search only completed iterations; accepting a partially evaluated
+    // root candidate on node exhaustion biases the move order. Difficulty
+    // selects real search effort without weakening compulsory captures.
     bool PlayCheckerCpuTurn(){
         if(kind!=Kind::Checkers||finished||side!=-1)return false;
-        // A trailing opponent exercises its genuine right to claim a
-        // WCDF draw rather than repeating an indefinitely lost position.
+        checkerSearchNodes=0;
         if(CheckerDrawAvailable(-1)&&CheckerPositionValue(cells)<-100){
             finished=true;winner=0;return true;
         }
         const auto moves=CheckerTurns(cells,-1,forced);
+        if(moves.empty()){
+            finished=true;winner=1;return false;
+        }
         int material=0;
         for(int i=0;i<64;i++)material+=cells[i]!=0;
-        const int replies=material<=5?5:material<=10?4:3;
-        const int budget=material<=10?12000:6000;
-        int nodes=0;
-        int bestScore=std::numeric_limits<int>::min();
-        int from=-1,to=-1;
-        for(const auto &move:moves){
-            const int value=SearchCheckersBounded(move.after,1,replies,
-                -300000,300000,nodes,budget,3);
-            if(value>bestScore){
-                bestScore=value;from=move.from;to=move.firstTo;
+        const int level=std::clamp(checkerDifficulty,0,2);
+        const int budget=level==0?1500:level==1?6000:12000;
+        const int baseDepth=material<=5?6:material<=10?5:4;
+        const int targetDepth=std::max(1,baseDepth+level-1);
+        CheckerTurn best=moves.front();
+        for(int depth=1;depth<=targetDepth;depth++){
+            CheckerTurn iterationBest=best;
+            int bestScore=std::numeric_limits<int>::min();
+            int alpha=-300000;
+            bool exhausted=false;
+            for(const auto &move:moves){
+                const int value=SearchCheckersBounded(move.after,1,depth-1,
+                    alpha,300000,checkerSearchNodes,budget,3,&exhausted);
+                if(exhausted)break;
+                if(value>bestScore){
+                    bestScore=value;iterationBest=move;
+                }
+                alpha=std::max(alpha,bestScore);
             }
-            if(nodes>=budget)break;
+            if(exhausted)break;
+            best=iterationBest;
         }
-        if(from<0){
-            finished=true;winner=1;
-            return false;
-        }
-        return CheckerMove(from,to);
+        return CheckerMove(best.from,best.firstTo);
     }
 
     // Go: 19x19, captures, suicide prohibition, positional superko,

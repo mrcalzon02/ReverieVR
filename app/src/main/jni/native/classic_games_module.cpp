@@ -253,6 +253,14 @@ void RebuildBoard(Module *m,bool fixed){
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
             Text(m,"CONTINUE JUMP",1.88f,.63f,.044f,1.f,.90f,.56f);
         if(s.kind==reverie::boardgames::Kind::Checkers &&
+           s.side==1){
+            Rect(m,1.94f,-.65f,.96f,.39f,-2.98f,
+                 m->boardControlHover==1?.38f:.23f,.36f,.42f);
+            Text(m,s.checkerDifficulty==0?"AI EASY":
+                   s.checkerDifficulty==2?"AI HARD":"AI NORMAL",
+                 1.94f,-.65f,.042f,1.f,1.f,.89f);
+        }
+        if(s.kind==reverie::boardgames::Kind::Checkers &&
            s.CheckerDrawClaimable()){
             Rect(m,1.94f,-1.25f,.96f,.39f,-2.98f,
                  .23f,.36f,.42f);
@@ -551,7 +559,8 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     const bool secondaryEdge=second&&!m->previousSecondary;
     m->previousSecondary=second;
     const int controlHover=aim&&!m->board.finished&&m->board.side==1&&
-        m->board.kind==reverie::boardgames::Kind::Chess&&
+        (m->board.kind==reverie::boardgames::Kind::Chess||
+         m->board.kind==reverie::boardgames::Kind::Checkers)&&
         hx>1.49f&&hx<2.42f&&hy<-.45f&&hy>-.85f?1:0;
     if(controlHover!=m->boardControlHover){
         m->boardControlHover=controlHover;m->dirty=true;
@@ -585,6 +594,12 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             m->dirty=true;
             ReverieNativeRequestFeedbackV1(m->host,
                 REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }else if(m->board.kind==reverie::boardgames::Kind::Checkers &&
+                 m->board.forced<0){
+            m->board.checkerDifficulty=(m->board.checkerDifficulty+1)%3;
+            m->dirty=true;
+            ReverieNativeRequestFeedbackV1(m->host,
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         }
     }
     if(edge){
@@ -603,9 +618,13 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                      hx> -2.42f&&hx< -1.49f&&hy<-.99f&&hy> -1.50f)
                 m->board.ResumeGoPlay();
             else if(aim &&
-                    m->board.kind==reverie::boardgames::Kind::Chess &&
+                    (m->board.kind==reverie::boardgames::Kind::Chess||
+                     m->board.kind==reverie::boardgames::Kind::Checkers) &&
                     hx>1.49f&&hx<2.42f&&hy<-.45f&&hy>-.85f){
-                m->board.chessDifficulty=(m->board.chessDifficulty+1)%3;
+                int &difficulty=
+                    m->board.kind==reverie::boardgames::Kind::Chess
+                        ?m->board.chessDifficulty:m->board.checkerDifficulty;
+                difficulty=(difficulty+1)%3;
                 ReverieNativeRequestFeedbackV1(m->host,
                     REVERIE_NATIVE_FEEDBACK_ACTIVATION);
                 m->dirty=true;

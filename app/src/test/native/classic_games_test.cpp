@@ -177,6 +177,28 @@ static void TestBoardGames() {
     initialAi.side=-1;
     assert(initialAi.PlayCheckerCpuTurn());
     assert(initialAi.side==1&&initialAi.ply==1);
+    // Each level is bounded; a move is still legal on all three modes.
+    // The budget is shared by all iterative depths, never per candidate.
+    for(int level=0;level<3;level++){
+        Boards difficulty;difficulty.Reset(BoardKind::Checkers);
+        difficulty.checkerDifficulty=level;difficulty.side=-1;
+        assert(difficulty.PlayCheckerCpuTurn());
+        assert(difficulty.checkerSearchNodes>0);
+        assert(difficulty.checkerSearchNodes<=
+               (level==0?1500:level==1?6000:12000));
+        assert(difficulty.side==1||difficulty.forced>=0);
+        assert(difficulty.cells!=Boards::Board{});
+        difficulty.Reset(BoardKind::Checkers);
+        assert(difficulty.checkerDifficulty==level);
+    }
+    // An incomplete search must advertise exhaustion, rather than
+    // quietly presenting a partial branch score as a completed result.
+    Boards::Board cappedBoard{};
+    cappedBoard[18]=-1;cappedBoard[27]=1;
+    int checked=0;bool exhausted=false;
+    Boards::SearchCheckersBounded(cappedBoard,-1,4,-300000,300000,
+                                 checked,1,3,&exhausted);
+    assert(exhausted&&checked==1);
 
     // Regulation 19x19 Go board with 361 playable intersections.
     const auto at=[](int x,int y){return y*19+x;};
