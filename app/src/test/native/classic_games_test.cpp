@@ -254,6 +254,27 @@ static void TestBoardGames() {
     assert(settled.goBlackScore==361.f&&settled.goWhiteScore==7.5f);
     assert(settled.winner==1&&settled.cells[at(9,9)]==-1);
     assert(!settled.ResumeGoPlay());
+    // The CPU must finish an already winning game after Black passes,
+    // rather than creating filler moves indefinitely on an empty board.
+    Boards winningCpu;
+    winningCpu.Reset(BoardKind::Go);
+    assert(winningCpu.Pass());
+    for(int tick=0;tick<3;tick++)winningCpu.Step(.1f);
+    assert(winningCpu.goReview&&!winningCpu.finished);
+    assert(winningCpu.passes==2&&winningCpu.side==1);
+    assert(winningCpu.AcceptGoScore()&&winningCpu.winner==-1);
+
+    // Eye preservation must include the edge and corner, where only
+    // two or three orthogonal neighbors exist.
+    Boards goEyes;
+    goEyes.Reset(BoardKind::Go);
+    goEyes.cells.fill(-1);
+    goEyes.cells[at(0,0)]=0;goEyes.cells[at(9,9)]=0;
+    assert(goEyes.IsGoEye(goEyes.cells,at(0,0),-1));
+    assert(goEyes.IsGoEye(goEyes.cells,at(9,9),-1));
+    goEyes.cells[at(1,1)]=1;
+    assert(!goEyes.IsGoEye(goEyes.cells,at(0,0),-1));
+
     Boards cpuGo;
     cpuGo.Reset(BoardKind::Go);
     assert(cpuGo.GoMove(at(9,9)));

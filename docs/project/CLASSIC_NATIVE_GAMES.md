@@ -56,8 +56,10 @@ were expanded, with tests for distant-corner placement and edge captures.
   This does not yet provide an independently adjudicating Go opponent:
   the CPU accepts human dead-group markings; automatic life/death
   judgment, seki settlement and configurable rulesets remain open.
-  The CPU searches all 361 intersections but is a basic heuristic
-  player, not a strong competitive Go engine.
+  The CPU searches all 361 intersections, protects basic edge/corner
+  eyes and reciprocates Black's pass when its current 7.5-komi area
+  estimate already leads. It is still a heuristic opponent with no
+  independently validated life/death agreement or advanced search.
 - **Checkers:** WCDF American/English 8×8: 12 men per side,
   compulsory diagonal capture, complete multiple jumps, and crowning
   ending the turn. Draw claims are available on three completed

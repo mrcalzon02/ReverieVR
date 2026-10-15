@@ -95,7 +95,9 @@
   Two passes now open a functional group-by-group dead-stone review,
   with SCORE to accept Chinese area count or RESUME to continue play.
   The review UI renders marked groups and final numerical scores;
-  original stones are preserved. Remaining: a CPU capable of disputing
+  original stones are preserved. CPU now reciprocates a Black pass when
+  current Chinese-area score wins for White and preserves basic true
+  eyes on edges and corners. Remaining: a CPU capable of disputing
   marks / negotiating dead stones, seki adjudication, ruleset options
   and a strong bounded opponent. Native, APK, controller precision,
   small-stone readability and thermal performance need device proof.

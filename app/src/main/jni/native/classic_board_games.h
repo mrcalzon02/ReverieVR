@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 #include <limits>
+#include <utility>
 
 namespace reverie { namespace boardgames {
 
@@ -447,7 +448,7 @@ struct State {
         return true;
     }
     // Count accepted dead stones as vacant points for Chinese area score.
-    void ScoreGo(){
+    std::pair<float,float> GoArea() const {
         Board counted=cells;
         for(int i=0;i<kCapacity;i++)if(goDead[i])counted[i]=0;
         float black=0.f,white=7.5f; // Chinese 19x19 area komi
@@ -472,8 +473,30 @@ struct State {
             if(border==1)black+=end;
             if(border==2)white+=end;
         }
-        goBlackScore=black;goWhiteScore=white;
-        winner=black>white?1:-1;finished=true;
+        return {black,white};
+    }
+    void ScoreGo(){
+        const auto area=GoArea();
+        goBlackScore=area.first;goWhiteScore=area.second;
+        winner=goBlackScore>goWhiteScore?1:-1;finished=true;
+    }
+    bool IsGoEye(const Board &board,int square,int player) const {
+        if(square<0||square>=kCapacity||board[square]!=0)return false;
+        const int x=square%kGoSize,y=square/kGoSize;
+        const int dx[4]={1,-1,0,0},dy[4]={0,0,1,-1};
+        for(int d=0;d<4;d++){
+            const int nx=x+dx[d],ny=y+dy[d];
+            if(nx<0||nx>=kGoSize||ny<0||ny>=kGoSize)continue;
+            if(board[ny*kGoSize+nx]!=player)return false;
+        }
+        int hostileDiagonals=0;
+        for(int yy=-1;yy<=1;yy+=2)for(int xx=-1;xx<=1;xx+=2){
+            const int nx=x+xx,ny=y+yy;
+            if(nx<0||nx>=kGoSize||ny<0||ny>=kGoSize)continue;
+            if(board[ny*kGoSize+nx]==-player)++hostileDiagonals;
+        }
+        const bool edge=x==0||y==0||x==kGoSize-1||y==kGoSize-1;
+        return hostileDiagonals<=(edge?0:1);
     }
     bool AcceptGoScore() {
         if(kind!=Kind::Go||!goReview||finished)return false;
@@ -807,6 +830,13 @@ struct State {
         if(clock<.28f)return;
         clock=0;
         if(kind==Kind::Go){
+            // White has the 7.5-point komi. If Black has passed and
+            // current Chinese-area scoring already wins for the CPU,
+            // agree to end play instead of pointlessly filling eyes.
+            if(passes==1){
+                const auto area=GoArea();
+                if(area.second>area.first){Pass();return;}
+            }
             int best=-1;float rating=-1e8f;
             const int dx[4]={1,-1,0,0},dy[4]={0,0,1,-1};
             for(int i=0;i<kCapacity;i++)if(cells[i]==0){
@@ -825,7 +855,7 @@ struct State {
                     else open++;
                 }
                 // Protect own eyes and avoid immediate self-atari.
-                if(allies==4&&enemies==0&&captured==0)continue;
+                if(captured==0&&IsGoEye(cells,i,-1))continue;
                 const Group group=Flood(result,i);
                 if(group.liberties<=1&&captured==0)continue;
                 float value=captured*22.f+group.liberties*.16f
