@@ -10,12 +10,16 @@ def phoneTestRunAttempt =
     (project.findProperty("phoneTestRunAttempt") ?: "0")
         .toString()
         .toInteger()
+// Match the headset APK's timestamp-based versionCode, including
+// restarted GitHub workflow run numbers and the exact build epoch.
+def phoneTestBuildEpochSeconds =
+    (project.findProperty("phoneTestBuildEpochSeconds")
+        ?: java.time.Instant.now().epochSecond)
+        .toString()
+        .toLong()
 def phoneTestVersionCode =
     phoneTestRunNumber > 0
-        ? (
-            phoneTestRunNumber * 1000
-                + Math.max(phoneTestRunAttempt, 1)
-        )
+        ? (phoneTestBuildEpochSeconds - 1577836800L).intValue()
         : 1
 
 def phoneTestKeystorePath =
