@@ -130,7 +130,7 @@ static void TestBoardGames() {
     surrounded.cells.fill(-1);surrounded.side=-1;
     surrounded.cells[at(9,9)]=0;
     surrounded.goHistory.insert(surrounded.cells);
-    surrounded.Step(.3f);
+    for(int i=0;i<3;i++)surrounded.Step(.1f);
     assert(surrounded.passes==1&&surrounded.side==1);
 
     Boards chess;
