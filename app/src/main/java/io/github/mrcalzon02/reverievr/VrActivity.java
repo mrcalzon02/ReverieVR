@@ -825,6 +825,15 @@ public final class VrActivity extends Activity
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
         if (blockedControllerInput(event)) return true;
         if (consumeDisabledExternalHid(event, false)) return true;
+        // Ordinary USB/Bluetooth mouse-wheel input scrolls the DOS shelf.
+        // Leave guest mouse input untouched outside that menu.
+        if (event != null
+            && event.getActionMasked() == MotionEvent.ACTION_SCROLL
+            && renderer != null
+            && renderer.scrollDosLibraryWheel(
+                event.getAxisValue(MotionEvent.AXIS_VSCROLL))) {
+            return true;
+        }
         if (inputRouter != null
             && inputRouter.onGenericMotionEvent(event)) {
             return true;
@@ -1004,6 +1013,18 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public boolean usesDosLibraryTouchScroll() {
+        return renderer != null && renderer.isDosLibraryScrollable();
+    }
+
+    @Override
+    public void onDosLibraryTouchScroll(float deltaY, boolean ended) {
+        if (renderer != null) {
+            renderer.scrollDosLibraryTouch(deltaY, ended);
+        }
+    }
+
+    @Override
     public boolean usesDaydreamDosGameControls() {
         return renderer != null && renderer.isDosGameControlFocused();
     }
@@ -1090,15 +1111,15 @@ public final class VrActivity extends Activity
                 break;
 
             case NAV_UP:
-                renderer.requestPointerNavigation(
-                    VrInputAction.NAV_UP
-                );
+                if (!renderer.requestDosLibraryScroll(VrInputAction.NAV_UP)) {
+                    renderer.requestPointerNavigation(VrInputAction.NAV_UP);
+                }
                 break;
 
             case NAV_DOWN:
-                renderer.requestPointerNavigation(
-                    VrInputAction.NAV_DOWN
-                );
+                if (!renderer.requestDosLibraryScroll(VrInputAction.NAV_DOWN)) {
+                    renderer.requestPointerNavigation(VrInputAction.NAV_DOWN);
+                }
                 break;
 
             default:

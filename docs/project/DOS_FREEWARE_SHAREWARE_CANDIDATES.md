@@ -21,14 +21,21 @@ orientation provides mouse XY while the touchpad can emit four digital keys.
 ## Library capacity and integration contract (2026-10-14)
 
 The DOS library is a dynamically enumerated app-private module repository,
-not a three-game roster. The VR shelf exposes **three selection slots per page**
-and calculates additional pages from the installed-module count. The
-`DosLibraryPaging` contract is shared by drawing, enabled hit targets,
-selection, and wraparound; JVM tests enumerate all slots at 0, 1, 3, 7, 51 and
-100 games, plus integer boundary behavior. Library persistence tests populate
-51 separate installed-game directories, reopen the repository, and verify
-independent bindings after a profile change. None of those tests substitutes
-for an APK + S9 interaction check.
+not a three-game roster. **The menu is now a vertically scrollable list,
+not a page-tab system.** Five selectable game rows remain visible in a
+fixed viewport, with Import and Back fixed below, plus a proportional scroll
+indicator. Daydream touchpad vertical swipes advance the list by individual
+rows while a finger moves; swipes do not also fire NAV commands on release.
+Up/Down navigation and a USB/Bluetooth mouse wheel scroll the shelf as
+fallbacks. The O/Home quick menu and in-game digital key bindings are
+unchanged. `DosLibraryScroll` is shared by drawing, enabled hit targets
+and selection; pure JVM tests cover 0, 1, 3, 5, 7, 51, 100 and 301
+games plus integer boundary behavior. Library persistence tests populate
+51 separate installed-game directories, reopen the repository and verify
+independent bindings after a profile change. Controller-swipe tests verify
+that library swipes don't accidentally trigger navigation at finger lift,
+while other menus keep normal swipe navigation. Real Galaxy S9 + Daydream
+shelf readability, scroll comfort, and selection remain a device gate.
 
 Bundled DOS content is a separate question from shelf capacity. Legacy
 DOOM retains its proven split-installer preparation. Standard complete ZIP

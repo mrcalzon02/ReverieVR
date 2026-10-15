@@ -19,6 +19,15 @@ final class VrInputRouter {
             return false;
         }
 
+        /** Capture finger movement for a scrollable VR DOS library only. */
+        default boolean usesDosLibraryTouchScroll() {
+            return false;
+        }
+
+        default void onDosLibraryTouchScroll(float deltaY, boolean ended) {
+            // Existing clients without this shelf need no scroll callback.
+        }
+
         default void onPointerAxis(
             float horizontal,
             float vertical,
@@ -59,6 +68,7 @@ final class VrInputRouter {
     private boolean previousVolumeDown;
 
     private boolean previousTouching;
+    private boolean libraryScrollTouch;
     private int touchStartX;
     private int touchStartY;
     private int touchLastX;
@@ -86,6 +96,7 @@ final class VrInputRouter {
         previousVolumeUp = false;
         previousVolumeDown = false;
         previousTouching = false;
+        libraryScrollTouch = false;
         touchStartX = touchStartY = touchLastX = touchLastY = 0;
         horizontalAxisState = verticalAxisState = 0;
         gestures.reset((input, down) ->
@@ -182,15 +193,24 @@ final class VrInputRouter {
             if (!previousTouching) {
                 touchStartX = snapshot.touchX;
                 touchStartY = snapshot.touchY;
+                libraryScrollTouch = !dosGame && listener != null
+                    && listener.usesDosLibraryTouchScroll();
             }
 
             // Relative finger motion drives DOSBox Pure's real mouse device.
             // Absolute pad coordinates remain available for arrow/axis profiles.
             if (previousTouching) {
-                emitBindingRelative(BindingInput.TOUCHPAD_REL_X,
-                    snapshot.touchX - touchLastX, source);
-                emitBindingRelative(BindingInput.TOUCHPAD_REL_Y,
-                    snapshot.touchY - touchLastY, source);
+                if (libraryScrollTouch) {
+                    if (listener != null && !snapshot.touchpadPressed) {
+                        listener.onDosLibraryTouchScroll(
+                            snapshot.touchY - touchLastY, false);
+                    }
+                } else {
+                    emitBindingRelative(BindingInput.TOUCHPAD_REL_X,
+                        snapshot.touchX - touchLastX, source);
+                    emitBindingRelative(BindingInput.TOUCHPAD_REL_Y,
+                        snapshot.touchY - touchLastY, source);
+                }
             }
             touchLastX = snapshot.touchX;
             touchLastY = snapshot.touchY;
@@ -220,8 +240,13 @@ final class VrInputRouter {
             int deltaX = touchLastX - touchStartX;
             int deltaY = touchLastY - touchStartY;
 
-            // DOS touchpad directions are held keys, not shell swipes.
-            if (!dosGame && Math.abs(deltaX) >= TOUCH_SWIPE_THRESHOLD
+            // A library scroll never becomes an extra NAV action on lift.
+            // DOS guest touchpad directions remain held keyboard keys.
+            if (libraryScrollTouch) {
+                if (listener != null) {
+                    listener.onDosLibraryTouchScroll(0f, true);
+                }
+            } else if (!dosGame && Math.abs(deltaX) >= TOUCH_SWIPE_THRESHOLD
                 && Math.abs(deltaX) > Math.abs(deltaY)) {
                 emit(
                     deltaX > 0
@@ -246,6 +271,7 @@ final class VrInputRouter {
         previousVolumeUp = snapshot.volumeUpPressed;
         previousVolumeDown = snapshot.volumeDownPressed;
         previousTouching = snapshot.touching;
+        if (!snapshot.touching) libraryScrollTouch = false;
     }
 
     static VrInputAction daydreamHomeAction(boolean dosGame) {

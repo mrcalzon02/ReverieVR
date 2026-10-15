@@ -312,13 +312,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {120, 504, 904, 571}
     };
 
+    // Five continuously scrollable rows; Import and Home stay fixed.
+    // Reserve the right gutter for the visible scroll-position indicator.
     private static final int[][] DOS_LIBRARY_BUTTONS = new int[][] {
-        {140, 235, 884, 300},
-        {140, 315, 884, 380},
-        {140, 395, 884, 460},
-        {140, 475, 493, 540},
-        {531, 475, 884, 540},
-        {140, 555, 884, 620}
+        {140, 232, 844, 284},
+        {140, 296, 844, 348},
+        {140, 360, 844, 412},
+        {140, 424, 844, 476},
+        {140, 488, 844, 540},
+        {140, 573, 485, 635},
+        {499, 573, 844, 635}
     };
 
     private static final int[][] MEDIA_BUTTONS = new int[][] {
@@ -584,7 +587,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile String[] dosModuleIds = new String[0];
     private volatile String[] dosModuleNames = new String[0];
     private volatile String activeDosModuleName = "";
-    private int dosLibraryPage;
+    private volatile int dosLibraryScrollFirst;
+    private float dosLibraryTouchRemainder;
+    private int uiFocusDosListOffset = -1;
     private int nativeLibraryPage;
     private int emulatorCatalogPage;
     private int musicCatalogPage;
@@ -1475,9 +1480,65 @@ final class VrShellRenderer implements CardboardView.Renderer {
         dosModuleIds = ids;
         dosModuleNames = names;
 
-        dosLibraryPage = DosLibraryPaging.clampPage(dosLibraryPage, count);
+        dosLibraryScrollFirst = DosLibraryScroll.clampFirst(
+            dosLibraryScrollFirst, count);
 
         textureDirty = true;
+    }
+
+    boolean isDosLibraryScrollable() {
+        return mode == MODE_DOS_LIBRARY && !orientationMenuVisible;
+    }
+
+    // Daydream finger motion scrolls the actual list without stealing
+    // controller click, Home, or any DOS session's holdable keyboard arrows.
+    void scrollDosLibraryTouch(float deltaY, boolean ended) {
+        if (ended) {
+            dosLibraryTouchRemainder = 0f;
+            return;
+        }
+        if (!isDosLibraryScrollable() || !Float.isFinite(deltaY)) return;
+        dosLibraryTouchRemainder -= deltaY;
+        int rows = (int) (dosLibraryTouchRemainder
+            / DosLibraryScroll.TOUCH_PIXELS_PER_ROW);
+        if (rows == 0) return;
+        dosLibraryTouchRemainder -= rows
+            * DosLibraryScroll.TOUCH_PIXELS_PER_ROW;
+        if (!moveDosLibraryScroll(rows)) {
+            // No stored overscroll debt at either end of the list.
+            dosLibraryTouchRemainder = 0f;
+        }
+    }
+
+    boolean requestDosLibraryScroll(VrInputAction action) {
+        if (!isDosLibraryScrollable()) return false;
+        if (action == VrInputAction.NAV_DOWN) {
+            moveDosLibraryScroll(1);
+            return true;
+        }
+        if (action == VrInputAction.NAV_UP) {
+            moveDosLibraryScroll(-1);
+            return true;
+        }
+        return false;
+    }
+
+    boolean scrollDosLibraryWheel(float ticks) {
+        if (!isDosLibraryScrollable() || !Float.isFinite(ticks)
+            || ticks == 0f) return false;
+        int rows = Math.min(12, Math.max(1,
+            (int) Math.ceil(Math.abs(ticks))));
+        return moveDosLibraryScroll(ticks > 0f ? -rows : rows);
+    }
+
+    private boolean moveDosLibraryScroll(int rows) {
+        int next = DosLibraryScroll.move(
+            dosLibraryScrollFirst, rows, dosModuleIds.length);
+        if (next == dosLibraryScrollFirst) return false;
+        dosLibraryScrollFirst = next;
+        hoveredButton = -1;
+        textureDirty = true;
+        return true;
     }
 
     void requestVideoSeek(int deltaMillis) {
@@ -2145,12 +2206,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Mode, menu, navigation and pointer-source changes must not carry
         // a stale highlight into a different target index namespace.
         if (uiFocusMode != mode
+            || (mode == MODE_DOS_LIBRARY
+                && uiFocusDosListOffset != dosLibraryScrollFirst)
             || uiFocusMenu != orientationMenuVisible
             || uiFocusKeyboardNavigation != keyboardQuickMenuFocusActive
             || uiFocusPointerKind != activeNativePointerKind
             || uiFocusPointerPreference != pointerPreference) {
             uiTargetStabilizer.reset();
             uiFocusMode = mode;
+            uiFocusDosListOffset = dosLibraryScrollFirst;
             uiFocusMenu = orientationMenuVisible;
             uiFocusKeyboardNavigation = keyboardQuickMenuFocusActive;
             uiFocusPointerKind = activeNativePointerKind;
@@ -4521,16 +4585,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_DOS_LIBRARY) {
-            if (index >= 0 && index <= 2) {
-                return DosLibraryPaging.moduleIndex(
-                    dosLibraryPage, index, dosModuleIds.length) >= 0;
+            if (index >= 0 && index < DosLibraryScroll.VISIBLE_ROWS) {
+                return DosLibraryScroll.indexAt(dosLibraryScrollFirst,
+                    index, dosModuleIds.length) >= 0;
             }
-
-            if (index == 3) {
-                return DosLibraryPaging.pageCount(dosModuleIds.length) > 1;
-            }
-
-            return index == 4 || index == 5;
+            return index == 5 || index == 6;
         }
 
         int[][] buttons = activeButtons();
@@ -4728,7 +4787,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     mode = MODE_MEDIA_LIBRARY;
                     break;
                 case 1:
-                    dosLibraryPage = 0;
+                    dosLibraryScrollFirst = 0;
+                    dosLibraryTouchRemainder = 0f;
                     mode = MODE_DOS_LIBRARY;
                     break;
                 case 2:
@@ -5484,23 +5544,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void handleDosLibrarySelection(int button) {
         String[] ids = dosModuleIds;
-        int pageCount = DosLibraryPaging.pageCount(ids.length);
-
-        if (button >= 0 && button < DosLibraryPaging.PAGE_SIZE) {
-            int moduleIndex = DosLibraryPaging.moduleIndex(
-                dosLibraryPage, button, ids.length);
-            if (moduleIndex >= 0
-                && host.onDosPlaybackRequested(
-                    ids[moduleIndex]
-                )) {
-                activeDosModuleName =
-                    moduleIndex < dosModuleNames.length
-                        ? dosModuleNames[moduleIndex]
-                        : "DOS session";
+        if (button >= 0 && button < DosLibraryScroll.VISIBLE_ROWS) {
+            int moduleIndex = DosLibraryScroll.indexAt(
+                dosLibraryScrollFirst, button, ids.length);
+            if (moduleIndex >= 0 && host.onDosPlaybackRequested(
+                    ids[moduleIndex])) {
+                activeDosModuleName = moduleIndex < dosModuleNames.length
+                    ? dosModuleNames[moduleIndex] : "DOS session";
                 preferences.markLastActivityDos(
-                    ids[moduleIndex],
-                    activeDosModuleName
-                );
+                    ids[moduleIndex], activeDosModuleName);
                 dosExitRequested.set(false);
                 mode = MODE_DOS;
                 hoveredButton = -1;
@@ -5508,20 +5560,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return;
             }
             host.onUiActionRejected();
-        } else if (button == 3) {
-            if (pageCount > 1) {
-                dosLibraryPage = DosLibraryPaging.nextPage(
-                    dosLibraryPage, ids.length);
-            } else {
-                host.onUiActionRejected();
-            }
-        } else if (button == 4) {
+        } else if (button == 5) {
             host.onDosImportRequested();
             return;
-        } else if (button == 5) {
+        } else if (button == 6) {
             mode = MODE_HOME;
+        } else {
+            host.onUiActionRejected();
         }
-
         hoveredButton = -1;
         textureDirty = true;
     }
@@ -7765,59 +7811,54 @@ final class VrShellRenderer implements CardboardView.Renderer {
         ) + environment.displayName.toUpperCase(Locale.US);
     }
 
-    private void drawDosLibrary(
-        Canvas canvas,
-        Paint paint
-    ) {
+    private void drawDosLibrary(Canvas canvas, Paint paint) {
         String[] names = dosModuleNames;
         int count = names.length;
-        int pageCount = DosLibraryPaging.pageCount(count);
-        int page = DosLibraryPaging.clampPage(dosLibraryPage, count);
+        int first = DosLibraryScroll.clampFirst(
+            dosLibraryScrollFirst, count);
+        int shown = Math.min(DosLibraryScroll.VISIBLE_ROWS,
+            Math.max(0, count - first));
 
         paint.setColor(Color.WHITE);
         paint.setTextSize(31.0f * uiScale);
-        canvas.drawText(
-            "DOS LIBRARY",
-            90,
-            175,
-            paint
-        );
+        canvas.drawText("DOS LIBRARY", 90, 175, paint);
 
         paint.setColor(Color.rgb(150, 162, 177));
         paint.setTextSize(20.0f * uiScale);
-        canvas.drawText(
-            String.format(
-                Locale.US,
-                "%d modules  •  page %d / %d",
-                count,
-                page + 1,
-                pageCount
-            ),
-            90,
-            215,
-            paint
-        );
+        canvas.drawText(count == 0
+            ? "No games installed • Import a DOS game below"
+            : String.format(Locale.US,
+                "%d games  •  showing %d–%d  •  swipe touchpad to scroll",
+                count, first + 1, first + shown),
+            90, 215, paint);
 
-        String[] labels = new String[6];
-        for (int slot = 0; slot < DosLibraryPaging.PAGE_SIZE; slot++) {
-            int index = DosLibraryPaging.moduleIndex(page, slot, count);
-            labels[slot] = index >= 0
-                ? shorten(names[index], 42) : "—";
+        String[] labels = new String[DOS_LIBRARY_BUTTONS.length];
+        for (int row = 0; row < DosLibraryScroll.VISIBLE_ROWS; row++) {
+            int index = DosLibraryScroll.indexAt(first, row, count);
+            labels[row] = index >= 0 ? shorten(names[index], 42) : "—";
         }
+        labels[5] = "IMPORT DOS GAME";
+        labels[6] = "BACK TO HOME";
+        drawButtons(canvas, paint, labels, DOS_LIBRARY_BUTTONS);
 
-        labels[3] =
-            pageCount > 1
-                ? "NEXT PAGE"
-                : "ONLY PAGE";
-        labels[4] = "IMPORT DOS MODULE";
-        labels[5] = "BACK TO HOME";
-
-        drawButtons(
-            canvas,
-            paint,
-            labels,
-            activeButtons()
-        );
+        // A fixed track and proportional thumb, instead of page tabs.
+        // No gesture-sensitive rectangle overlaps these game hitboxes.
+        float top = DOS_LIBRARY_BUTTONS[0][1];
+        float bottom = DOS_LIBRARY_BUTTONS[4][3];
+        float trackHeight = bottom - top;
+        boolean contrast = preferences.isShellHighContrastEnabled();
+        paint.setColor(contrast ? Color.GRAY : Color.rgb(38, 46, 57));
+        canvas.drawRoundRect(858, top, 880, bottom, 11, 11, paint);
+        float thumbHeight = count <= DosLibraryScroll.VISIBLE_ROWS
+            ? trackHeight : Math.max(28.0f,
+                trackHeight * DosLibraryScroll.VISIBLE_ROWS / count);
+        float travel = trackHeight - thumbHeight;
+        float ratio = count <= DosLibraryScroll.VISIBLE_ROWS ? 0.0f
+            : first / (float) DosLibraryScroll.maxFirst(count);
+        float thumbTop = top + travel * ratio;
+        paint.setColor(contrast ? Color.WHITE : Color.rgb(92, 187, 181));
+        canvas.drawRoundRect(860, thumbTop, 878,
+            thumbTop + thumbHeight, 9, 9, paint);
     }
 
     private void drawDosOverlay(
