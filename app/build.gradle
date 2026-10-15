@@ -55,12 +55,14 @@ def phoneTestRunAttempt =
     (project.findProperty("phoneTestRunAttempt") ?: "0")
         .toString()
         .toInteger()
+// GitHub workflow run numbers can reset when the release workflow changes.
+// Use build time for Android's monotonically increasing install versionCode;
+// the run/attempt remain human-readable release identifiers only.
+// Seconds since 2020 fit inside Android's signed 32-bit versionCode through 2088.
+def phoneTestBuildEpochSeconds = java.time.Instant.now().epochSecond
 def phoneTestVersionCode =
     phoneTestRunNumber > 0
-        ? (
-            phoneTestRunNumber * 1000
-                + Math.max(phoneTestRunAttempt, 1)
-        )
+        ? (phoneTestBuildEpochSeconds - 1577836800L).intValue()
         : 1
 def phoneTestSignerSha256 =
     (project.findProperty("phoneTestSignerSha256") ?: "")
@@ -225,6 +227,11 @@ android {
             "int",
             "PHONE_TEST_RUN_ATTEMPT",
             phoneTestRunAttempt.toString()
+        )
+        buildConfigField(
+            "long",
+            "PHONE_TEST_BUILD_EPOCH_SECONDS",
+            (phoneTestRunNumber > 0 ? phoneTestBuildEpochSeconds : 0L).toString() + "L"
         )
         buildConfigField(
             "String",
