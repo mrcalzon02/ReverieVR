@@ -119,8 +119,13 @@ were expanded, with tests for distant-corner placement and edge captures.
   judgment, seki settlement and configurable rulesets remain open.
   The CPU searches all 361 intersections, protects basic edge/corner
   eyes and reciprocates Black's pass when its current 7.5-komi area
-  estimate already leads. It is still a heuristic opponent with no
-  independently validated life/death agreement or advanced search.
+  estimate already leads. Tactical move evaluation now recognizes
+  connected white groups in atari, rewards legal escapes that preserve
+  their stones, and rejects new self-atari even when making a capture.
+  Native regression cases include a one-liberty rescue and the mirrored
+  forced capture on the full 19×19 board. This remains a heuristic
+  opponent, not independently validated life/death judgment or advanced
+  territory search. The Android build / Galaxy S9 gates are separate.
 - **Checkers:** WCDF American/English 8×8: 12 men per side,
   compulsory diagonal capture, complete multiple jumps, and crowning
   ending the turn. Draw claims are available on three completed

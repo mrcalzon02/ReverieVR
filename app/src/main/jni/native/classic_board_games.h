@@ -902,6 +902,22 @@ struct State {
                 const auto area=GoArea();
                 if(area.second>area.first){Pass();return;}
             }
+            // Cache endangered connected groups once. Without this,
+            // random positional bonuses can sacrifice a group in atari
+            // even when its last liberty is a legal, safe escape.
+            std::array<uint8_t,kCapacity> inspected{};
+            std::array<int,kCapacity> atariAnchor{};
+            std::array<int,kCapacity> atariSize{};
+            int atariCount=0;
+            for(int stone=0;stone<kCapacity;stone++)
+                if(cells[stone]==-1&&!inspected[stone]){
+                    const Group group=Flood(cells,stone,&inspected);
+                    if(group.liberties==1){
+                        atariAnchor[atariCount]=stone;
+                        atariSize[atariCount]=group.count;
+                        ++atariCount;
+                    }
+                }
             int best=-1;float rating=-1e8f;
             const int dx[4]={1,-1,0,0},dy[4]={0,0,1,-1};
             for(int i=0;i<kCapacity;i++)if(cells[i]==0){
@@ -922,8 +938,15 @@ struct State {
                 // Protect own eyes and avoid immediate self-atari.
                 if(captured==0&&IsGoEye(cells,i,-1))continue;
                 const Group group=Flood(result,i);
-                if(group.liberties<=1&&captured==0)continue;
-                float value=captured*22.f+group.liberties*.16f
+                // Capturing an enemy is no excuse to put an entire
+                // connected white group into immediate counter-atari.
+                if(group.liberties<=1)continue;
+                int rescued=0;
+                for(int j=0;j<atariCount;j++)
+                    if(Flood(result,atariAnchor[j]).liberties>=2)
+                        rescued+=atariSize[j];
+                float value=captured*22.f+rescued*45.f
+                    +group.liberties*.16f
                     +enemies*.50f+allies*.15f+open*.11f
                     -std::abs(edge-6)*.07f
                     +(Random()%97u)*.0001f;

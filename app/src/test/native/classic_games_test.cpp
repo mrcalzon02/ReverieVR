@@ -312,6 +312,34 @@ static void TestBoardGames() {
     for(int i=0;i<3;i++)cpuGo.Step(.1f);
     assert(cpuGo.ply==2&&cpuGo.side==1);
     assert(cpuGo.goHistory.size()==3);
+    // Immediate tactical defense must outweigh arbitrary open-board
+    // expansion: White in atari can save its threatened center stone.
+    Boards saveGo;
+    saveGo.Reset(BoardKind::Go);
+    saveGo.cells.fill(0);
+    saveGo.cells[at(9,9)]=-1;
+    saveGo.cells[at(8,9)]=1;
+    saveGo.cells[at(10,9)]=1;
+    saveGo.cells[at(9,8)]=1;
+    saveGo.side=-1;
+    assert(saveGo.Flood(saveGo.cells,at(9,9)).liberties==1);
+    for(int tick=0;tick<3;tick++)saveGo.Step(.1f);
+    assert(saveGo.cells[at(9,10)]==-1);
+    assert(saveGo.Flood(saveGo.cells,at(9,9)).liberties>=2);
+    assert(saveGo.side==1&&!saveGo.finished);
+    // In the mirrored position, White must complete the actual capture.
+    Boards captureGo;
+    captureGo.Reset(BoardKind::Go);
+    captureGo.cells.fill(0);
+    captureGo.cells[at(9,9)]=1;
+    captureGo.cells[at(8,9)]=-1;
+    captureGo.cells[at(10,9)]=-1;
+    captureGo.cells[at(9,8)]=-1;
+    captureGo.side=-1;
+    for(int tick=0;tick<3;tick++)captureGo.Step(.1f);
+    assert(captureGo.cells[at(9,9)]==0);
+    assert(captureGo.cells[at(9,10)]==-1);
+    assert(captureGo.side==1);
     // The CPU should still respond late on a regulation board, instead
     // of auto-passing at the obsolete 155-ply 9x9 cutoff.
     Boards laterGo;
