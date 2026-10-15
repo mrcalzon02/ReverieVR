@@ -99,7 +99,9 @@
 - **Chess:** Source now supports claimable threefold/50-move draws,
   automatic fivefold/75-move draws, a safe subset of dead-material draws,
   and selectable queen/rook/bishop/knight promotions; native test, signed
-  APK and S9 controls acceptance remain required. Remaining: stronger AI,
+  APK and S9 controls acceptance remain required. CPU now evaluates
+  adversarial legal replies with depth 2 in openings and depth 3 in
+  lower-material endings. Remaining: selectable stronger AI levels,
   tournament clock options, draw offers/resignation UI and exhaustive
   dead-position adjudication.
 - **Checkers:** Source now tracks exact position repetition and WCDF

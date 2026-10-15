@@ -290,6 +290,28 @@ static void TestBoardGames() {
     dead.cells[56]=4;
     assert(!dead.ChessDeadPosition()); // a rook can still mate
 
+    // The CPU now searches legal human replies before choosing a move.
+    // A hanging rook must be captured when safe instead of following
+    // the previous greedy centralization heuristic.
+    Boards tacticalChess;
+    tacticalChess.Reset(BoardKind::Chess);
+    tacticalChess.cells.fill(0);
+    tacticalChess.cells[4]=-6;tacticalChess.cells[60]=6;
+    tacticalChess.cells[0]=-4;tacticalChess.cells[8]=4;
+    tacticalChess.side=-1;tacticalChess.castles=0;
+    auto nextChess=tacticalChess.ChessAfter(0,8);
+    assert(nextChess.cells[8]==-4&&nextChess.cells[0]==0);
+    assert(nextChess.side==1);
+    assert(nextChess.SearchChess(1,-300000,300000)>-10000);
+    assert(tacticalChess.PlayChessCpuTurn());
+    assert(tacticalChess.cells[8]==-4);
+    assert(tacticalChess.side==1);
+    Boards openingChess;
+    openingChess.Reset(BoardKind::Chess);
+    openingChess.side=-1;
+    assert(openingChess.PlayChessCpuTurn());
+    assert(openingChess.ply==1&&openingChess.side==1);
+
     Boards cpuChess;
     cpuChess.Reset(BoardKind::Chess);
     assert(cpuChess.ChessMove(52,36));

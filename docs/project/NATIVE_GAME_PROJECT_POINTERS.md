@@ -200,7 +200,9 @@ and cycling queen/rook/bishop/knight with the existing native Secondary
 action. A conditional on-board CLAIM DRAW command supports an earned
 FIDE draw claim without taking over the shell Home button. Fivefold
 repetition and 75 moves without pawn/capture end automatically; weak
-one-ply AI is still an acknowledged development limitation.
+CPU now searches actual legal human replies with alpha-beta pruning,
+increasing to three plies when fewer pieces remain; stronger difficulty
+settings and S9 runtime profiling remain development items.
 
 Checkers records WCDF-style repetition and no-progress draw eligibility.
 When a valid draw claim is available, a single temporary CLAIM DRAW

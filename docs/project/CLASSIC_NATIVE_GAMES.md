@@ -74,8 +74,10 @@ were expanded, with tests for distant-corner placement and edge captures.
   material states (lone kings, solitary minor piece, same-color bishops).
   Select a pawn on the seventh rank and use native Secondary to cycle
   the promotion choice before placing it; ordinary moves still queen
-  by default. The CPU remains deterministic one-ply and does not yet
-  claim draws itself, offer agreed draws, or support tournament clocks.
+  by default. The CPU now evaluates legal human responses through bounded alpha-beta
+  search and uses a deeper third ply in lower-material endings. It is still
+  a lightweight phone-friendly opponent, not a tournament-grade engine;
+  it does not yet claim draws itself, offer agreed draws, or support clocks.
   The native GUI needs Galaxy S9 acceptance for claim/promotion controls.
 
 For all three, choose a piece and a destination (or place in Go).

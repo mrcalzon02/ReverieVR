@@ -622,6 +622,84 @@ struct State {
         return selected>=0&&ChessMove(selected,square);
     }
 
+    // Light, bounded adversarial chess opponent. Material evaluations are
+    // from the CPU (negative pieces) perspective, and both players search
+    // *legal king-safe replies*, not only destination-square captures.
+    static int ChessBoardValue(const Board &board){
+        static const int values[7]={0,100,320,330,500,900,0};
+        int score=0;
+        for(int at=0;at<64;at++){
+            const int piece=board[at];
+            if(piece==0)continue;
+            int value=values[std::abs(piece)];
+            if(std::abs(piece)==1)
+                value+=5*(piece<0?at/8:7-at/8);
+            value+=3*(3-std::abs(at%8-3));
+            score+=piece<0?value:-value;
+        }
+        return score;
+    }
+    State ChessAfter(int from,int to) const {
+        State result;
+        result.kind=Kind::Chess;
+        result.cells=cells;
+        result.side=side;
+        result.enPassant=enPassant;
+        result.castles=castles;
+        result.ApplyChess(result.cells,from,to,result.enPassant,
+                          result.castles);
+        result.side=-side;
+        return result;
+    }
+    int SearchChess(int depth,int alpha,int beta) const {
+        if(ChessDeadPosition())return 0;
+        if(depth<=0)return ChessBoardValue(cells);
+        bool found=false;
+        const bool maximizing=side==-1;
+        int best=maximizing?-300000:300000;
+        for(int from=0;from<64;from++)if(Sign(cells[from])==side)
+        for(int to=0;to<64;to++)if(ChessLegal(from,to)){
+            found=true;
+            State next=ChessAfter(from,to);
+            const int value=next.SearchChess(depth-1,alpha,beta);
+            if(maximizing){
+                best=std::max(best,value);
+                alpha=std::max(alpha,best);
+            }else{
+                best=std::min(best,value);
+                beta=std::min(beta,best);
+            }
+            if(beta<=alpha)return best;
+        }
+        if(!found){
+            if(!KingInCheck(cells,side))return 0;
+            return maximizing?-50000-depth:50000+depth;
+        }
+        return best;
+    }
+    bool PlayChessCpuTurn(){
+        if(kind!=Kind::Chess||finished||side!=-1)return false;
+        int pieces=0;
+        for(int i=0;i<64;i++)pieces+=cells[i]!=0;
+        // Early game: respond to every candidate move; endings gain a
+        // third full ply. Keeps search bounded on a Daydream-era phone.
+        const int replies=pieces<=12?2:1;
+        int bestScore=-300000,bestFrom=-1,bestTo=-1;
+        for(int from=0;from<64;from++)if(Sign(cells[from])==-1)
+        for(int to=0;to<64;to++)if(ChessLegal(from,to)){
+            State next=ChessAfter(from,to);
+            const int value=next.SearchChess(replies,-300000,300000);
+            if(bestFrom<0||value>bestScore){
+                bestScore=value;bestFrom=from;bestTo=to;
+            }
+        }
+        if(bestFrom<0){
+            finished=true;winner=KingInCheck(cells,side)?1:0;
+            return false;
+        }
+        return ChessMove(bestFrom,bestTo);
+    }
+
     // One bounded deterministic response per CPU turn, evaluated on Update.
     void Step(float delta) {
         if(side!=-1||finished||!std::isfinite(delta)||delta<=0)return;
@@ -663,24 +741,7 @@ struct State {
         }else if(kind==Kind::Checkers){
             PlayCheckerCpuTurn();
         }else if(kind==Kind::Chess){
-            int bestFrom=-1,bestTo=-1,bestScore=-10000000;
-            for(int from=0;from<64;from++)if(Sign(cells[from])==side)
-                for(int to=0;to<64;to++)if(ChessLegal(from,to)){
-                    static const int values[]={0,100,310,330,500,900,20000};
-                    int score=values[std::abs(cells[to])]*12;
-                    const int piece=std::abs(cells[from]);
-                    if(piece==1&&to/8==7)score+=9500;
-                    Board after=cells;
-                    int ep=enPassant,cs=castles;
-                    ApplyChess(after,from,to,ep,cs);
-                    if(Attacked(after,to,1))score-=values[piece]*6;
-                    if(KingInCheck(after,1))score+=60;
-                    score+=18-std::abs(to%8-3)*3-std::abs(to/8-3)*3;
-                    score+=static_cast<int>(Random()%11u);
-                    if(score>bestScore){bestScore=score;bestFrom=from;bestTo=to;}
-                }
-            if(bestFrom>=0)ChessMove(bestFrom,bestTo);
-            else {finished=true;winner=KingInCheck(cells,side)?1:0;}
+            PlayChessCpuTurn();
         }
     }
 };
