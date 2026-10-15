@@ -105,8 +105,10 @@
 - **Checkers:** Source now tracks exact position repetition and WCDF
   40-moves-per-side no-progress claim eligibility, with an accessible
   conditional board claim action and regression tests. Draw agreement,
-  tournament procedures, stronger CPU search and S9 device acceptance
-  remain open.
+  tournament procedures and S9 device acceptance remain open.
+  Three-turn alpha-beta search with full capture-sequence enumeration is
+  implemented; native simulation and signed-device testing remain gates.
+  Configurable deeper difficulty levels are still pending.
 - **Pong / Breakout:** Source corrected: Pong has left/right vertical
   paddles, wall bounce, first to 11 and bounded CPU play; Breakout has two
   112-brick walls, original 7/5/3/1 row scores, speed milestones and paddle

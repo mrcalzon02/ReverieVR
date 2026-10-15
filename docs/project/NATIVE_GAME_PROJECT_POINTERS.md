@@ -205,7 +205,10 @@ one-ply AI is still an acknowledged development limitation.
 Checkers records WCDF-style repetition and no-progress draw eligibility.
 When a valid draw claim is available, a single temporary CLAIM DRAW
 target appears on the board; ordinary click-to-move, compulsory captures
-and continued jumps are unchanged.
+and continued jumps are unchanged. The CPU searches full forced-jump
+sequences through three alternating complete turns with alpha-beta pruning,
+rather than evaluating a single capture landing. Difficulty controls and
+the S9 response-time check remain outstanding.
 
 The Checkers, full-size 19×19 Go and Chess boards additionally allow Daydream touchpad direction to move a visible cell cursor and Select to choose a piece/destination; tracked-controller ray selection still works. The Go PASS target is point-and-Select or the existing native secondary action. The `native-classics` hosted input profile exists specifically to make these actions reach the games; immersive native projects retain `native-standard` and their shell locomotion.
 

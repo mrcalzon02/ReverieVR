@@ -59,7 +59,11 @@ were expanded, with tests for distant-corner placement and edge captures.
   without a capture or movement of any uncrowned man. A conditional on-board
   CLAIM DRAW action appears only for valid human-turn claims and cannot
   interrupt a forced multi-jump. Draw agreement, tournament adjudication,
-  optional time controls, resignation and stronger AI remain open.
+  optional time controls and resignation remain open. The CPU now searches
+  three full adversarial turns (CPU-human-CPU) with alpha-beta pruning,
+  evaluates complete compulsory multi-jump sequences as a single turn,
+  and scores material, promotion and mobility instead of choosing a
+  greedy one-landing action. Stronger difficulty tiers remain open.
 - **Chess:** standard 8×8, king-safe moves, castling and en passant,
   four promotion pieces (queen, rook, bishop, knight), checkmate and
   stalemate. FIDE drawn-game handling now tracks exact positions with

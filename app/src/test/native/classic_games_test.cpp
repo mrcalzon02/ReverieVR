@@ -89,6 +89,36 @@ static void TestBoardGames() {
     kings.forced=32;
     assert(!kings.CheckerDrawClaimable());
 
+    // AI search enumerates *complete* mandatory capture sequences, not
+    // isolated first jumps. This prevents a greedy move that ignores a
+    // vulnerable continuation or illegally ends a forced multi-jump.
+    Boards aiJumps;
+    aiJumps.Reset(BoardKind::Checkers);
+    aiJumps.cells.fill(0);
+    aiJumps.cells[18]=-1;aiJumps.cells[27]=1;aiJumps.cells[45]=1;
+    const auto sequences=Boards::CheckerTurns(aiJumps.cells,-1);
+    assert(!sequences.empty());
+    bool foundDouble=false;
+    for(const auto &turn:sequences){
+        if(turn.from==18&&turn.firstTo==36&&
+           turn.after[54]==-1&&turn.after[27]==0&&
+           turn.after[45]==0)foundDouble=true;
+    }
+    assert(foundDouble);
+    assert(aiJumps.SearchCheckers(aiJumps.cells,-1,2,
+                                  -300000,300000)>-30000);
+    aiJumps.side=-1;
+    assert(aiJumps.PlayCheckerCpuTurn());
+    assert(aiJumps.cells[36]==-1&&aiJumps.forced==36);
+    assert(aiJumps.PlayCheckerCpuTurn());
+    assert(aiJumps.cells[54]==-1&&aiJumps.cells[45]==0);
+    assert(aiJumps.side==1&&aiJumps.forced==-1);
+    Boards initialAi;
+    initialAi.Reset(BoardKind::Checkers);
+    initialAi.side=-1;
+    assert(initialAi.PlayCheckerCpuTurn());
+    assert(initialAi.side==1&&initialAi.ply==1);
+
     // Regulation 19x19 Go board with 361 playable intersections.
     const auto at=[](int x,int y){return y*19+x;};
     Boards go;

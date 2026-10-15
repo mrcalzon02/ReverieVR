@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <unordered_set>
 #include <unordered_map>
+#include <vector>
+#include <limits>
 
 namespace reverie { namespace boardgames {
 
@@ -175,6 +177,135 @@ struct State {
         ++checkerHistory[CurrentCheckerPosition()];
         if(!HasCheckerMove(side)){finished=true;winner=-side;}
         return true;
+    }
+
+    // Complete-turn English draughts move generation for the CPU. A move
+    // includes every mandatory jump before the opponent can reply. This is
+    // independent of the GUI's one-landing-at-a-time controller interaction.
+    struct CheckerTurn {
+        Board after{};
+        int from=-1,firstTo=-1;
+    };
+    static void ContinueCheckerJumps(const Board &board,int at,int player,
+                                     int rootFrom,int firstTo,
+                                     std::vector<CheckerTurn>& out){
+        const int piece=board[at],x=at%8,y=at/8;
+        bool advanced=false;
+        for(int dy : {-2,2})for(int dx : {-2,2}){
+            if(std::abs(piece)==1&&Sign(dy)!=-player)continue;
+            const int tx=x+dx,ty=y+dy;
+            if(tx<0||tx>=8||ty<0||ty>=8)continue;
+            const int target=ty*8+tx,mid=(y+dy/2)*8+x+dx/2;
+            if(board[target]!=0||Sign(board[mid])!=-player)continue;
+            Board after=board;
+            after[target]=after[at];after[at]=0;after[mid]=0;
+            const bool crowned=std::abs(piece)==1&&
+                ty==(player==1?0:7);
+            if(crowned)after[target]=static_cast<int8_t>(player*2);
+            advanced=true;
+            if(crowned)out.push_back({after,rootFrom,firstTo});
+            else ContinueCheckerJumps(after,target,player,rootFrom,firstTo,
+                                      out);
+        }
+        if(!advanced)out.push_back({board,rootFrom,firstTo});
+    }
+    static std::vector<CheckerTurn> CheckerTurns(const Board &board,
+                                                 int player,int forced=-1){
+        std::vector<CheckerTurn> jumps;
+        for(int from=0;from<64;from++){
+            if((forced>=0&&forced!=from)||Sign(board[from])!=player)continue;
+            const int piece=board[from],x=from%8,y=from/8;
+            for(int dy : {-2,2})for(int dx : {-2,2}){
+                if(std::abs(piece)==1&&Sign(dy)!=-player)continue;
+                const int tx=x+dx,ty=y+dy;
+                if(tx<0||tx>=8||ty<0||ty>=8)continue;
+                const int to=ty*8+tx,mid=(y+dy/2)*8+x+dx/2;
+                if(board[to]!=0||Sign(board[mid])!=-player)continue;
+                Board after=board;
+                after[to]=after[from];after[from]=0;after[mid]=0;
+                const bool crown=std::abs(piece)==1&&
+                    ty==(player==1?0:7);
+                if(crown){
+                    after[to]=static_cast<int8_t>(player*2);
+                    jumps.push_back({after,from,to});
+                }else ContinueCheckerJumps(after,to,player,from,to,jumps);
+            }
+        }
+        if(!jumps.empty()||forced>=0)return jumps;
+        std::vector<CheckerTurn> steps;
+        for(int from=0;from<64;from++)if(Sign(board[from])==player){
+            const int piece=board[from],x=from%8,y=from/8;
+            for(int dy : {-1,1})for(int dx : {-1,1}){
+                if(std::abs(piece)==1&&Sign(dy)!=-player)continue;
+                const int tx=x+dx,ty=y+dy;
+                if(tx<0||tx>=8||ty<0||ty>=8)continue;
+                const int to=ty*8+tx;
+                if(board[to]!=0)continue;
+                Board after=board;
+                after[to]=after[from];after[from]=0;
+                if(std::abs(piece)==1&&ty==(player==1?0:7))
+                    after[to]=static_cast<int8_t>(player*2);
+                steps.push_back({after,from,to});
+            }
+        }
+        return steps;
+    }
+    static int CheckerPositionValue(const Board &board){
+        int value=0;
+        for(int i=0;i<64;i++){
+            const int piece=board[i];
+            if(piece==0)continue;
+            int score=std::abs(piece)==2?190:100;
+            // Kings matter, men advance, center squares support mobility.
+            if(std::abs(piece)==1)
+                score+=(piece<0?i/8:7-i/8)*5;
+            score+=6-std::abs(i%8-3)*2;
+            value+=piece<0?score:-score;
+        }
+        return value;
+    }
+    static int SearchCheckers(const Board &board,int player,int depth,
+                               int alpha,int beta) {
+        if(depth<=0)return CheckerPositionValue(board);
+        const auto moves=CheckerTurns(board,player);
+        if(moves.empty())return player==-1?-30000-depth:30000+depth;
+        if(player==-1){
+            int best=-300000;
+            for(const auto &move:moves){
+                best=std::max(best,SearchCheckers(move.after,1,depth-1,
+                                                   alpha,beta));
+                alpha=std::max(alpha,best);
+                if(beta<=alpha)break;
+            }
+            return best;
+        }
+        int best=300000;
+        for(const auto &move:moves){
+            best=std::min(best,SearchCheckers(move.after,-1,depth-1,
+                                               alpha,beta));
+            beta=std::min(beta,best);
+            if(beta<=alpha)break;
+        }
+        return best;
+    }
+    // Three full turns of bounded adversarial play (CPU-human-CPU),
+    // including mandatory multi-jumps, instead of a greedy one-ply score.
+    bool PlayCheckerCpuTurn(){
+        if(kind!=Kind::Checkers||finished||side!=-1)return false;
+        const auto moves=CheckerTurns(cells,-1,forced);
+        int bestScore=std::numeric_limits<int>::min();
+        int from=-1,to=-1;
+        for(const auto &move:moves){
+            const int value=SearchCheckers(move.after,1,2,-300000,300000);
+            if(value>bestScore){
+                bestScore=value;from=move.from;to=move.firstTo;
+            }
+        }
+        if(from<0){
+            finished=true;winner=1;
+            return false;
+        }
+        return CheckerMove(from,to);
     }
 
     // Go: 19x19, captures, suicide prohibition, positional superko,
@@ -530,26 +661,7 @@ struct State {
             if(best<0){Pass();return;}
             GoMove(best);
         }else if(kind==Kind::Checkers){
-            const bool capture=HasCapture(side,forced);
-            int bestFrom=-1,bestTo=-1,bestScore=-1000000;
-            for(int from=0;from<64;from++)if(Sign(cells[from])==side &&
-                   (forced<0||forced==from)){
-                int x=from%8,y=from/8;
-                for(int dx : {-2,-1,1,2})for(int dy : {-2,-1,1,2}){
-                    if(std::abs(dx)!=std::abs(dy))continue;
-                    int xx=x+dx,yy=y+dy;
-                    if(xx<0||yy<0||xx>=8||yy>=8)continue;
-                    int to=yy*8+xx;
-                    bool jump=CheckersCapture(from,to);
-                    if(capture?!jump:!jump&&!CheckersStep(from,to))continue;
-                    int score=(jump?200:0)+(std::abs(cells[from])==1?
-                        (yy==(side==1?0:7)?85:0):15)
-                        -std::abs(xx-3)*2+static_cast<int>(Random()%5u);
-                    if(score>bestScore){bestScore=score;bestFrom=from;bestTo=to;}
-                }
-            }
-            if(bestFrom>=0)CheckerMove(bestFrom,bestTo);
-            else {finished=true;winner=1;}
+            PlayCheckerCpuTurn();
         }else if(kind==Kind::Chess){
             int bestFrom=-1,bestTo=-1,bestScore=-10000000;
             for(int from=0;from<64;from++)if(Sign(cells[from])==side)
