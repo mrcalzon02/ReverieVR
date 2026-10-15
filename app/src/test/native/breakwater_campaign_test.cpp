@@ -2,6 +2,7 @@
 #include "breakwater_silhouettes.h"
 #include "breakwater_sprite_atlas.h"
 #include "breakwater_terrain.h"
+#include "breakwater_sky.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
@@ -17,6 +18,57 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // All three coastlines have a closed 360-degree layered sky in both
+    // day/night modes. The renderer consumes these triangles only once per
+    // shared stereo scene build; the recipe does not own gameplay state.
+    {
+        auto sky=[](uint8_t location,bool night) {
+            std::vector<float> mesh;
+            EmitSkyPanorama(location,night,[&](float ax,float ay,float az,
+                float bx,float by,float bz,float cx,float cy,float cz,
+                float r,float g,float b) {
+                const float values[]={ax,ay,az,bx,by,bz,cx,cy,cz};
+                for(float value:values)mesh.push_back(value);
+                // Reject invalid or overbright source art.
+                assert(std::isfinite(r) && std::isfinite(g) &&
+                       std::isfinite(b));
+                assert(r>=0 && r<=1 && g>=0 && g<=1 && b>=0 && b<=1);
+            });
+            return mesh;
+        };
+        const SkyPoint front=SkyAt(0,kSkyRadius,0,0);
+        const SkyPoint back=SkyAt(kSkyPi,kSkyRadius,0,0);
+        assert(std::abs(front.x)<.0001f && front.z< -25.5f);
+        assert(std::abs(back.x)<.0001f && back.z>25.5f);
+        for(uint8_t location=0;location<Campaign::kLocations;++location) {
+            for(bool night : {false,true}) {
+                const auto mesh=sky(location,night);
+                const int plumes=location==1?3:location==2?1:0;
+                const size_t expected=static_cast<size_t>(
+                    (kSkySegments*kSkyBands*2+(night?8:12)*3+10+
+                     (night?48:0)+plumes*2)*9);
+                assert(mesh.size()==expected);
+                assert(mesh==sky(location,night));
+                bool left=false,right=false,frontSeen=false,backSeen=false;
+                for(size_t i=0;i<mesh.size();i+=3) {
+                    const float x=mesh[i],y=mesh[i+1],z=mesh[i+2];
+                    assert(std::isfinite(x) && std::isfinite(y) &&
+                           std::isfinite(z));
+                    assert(y>=-4.001f && y<=17.001f);
+                    const float radius=std::sqrt(x*x+z*z);
+                    assert(radius>24.0f && radius<27.5f);
+                    left|=x< -20.0f;right|=x>20.0f;
+                    frontSeen|=z< -20.0f;backSeen|=z>20.0f;
+                }
+                assert(left && right && frontSeen && backSeen);
+            }
+        }
+        assert(sky(255,false).empty());
+        assert(sky(255,true).empty());
+        assert(sky(0,false)!=sky(0,true));
+        assert(sky(0,false)!=sky(1,false));
+        assert(sky(1,false)!=sky(2,false));
+    }
     // Every authored RGBA sprite has opaque military-colored pixels and
     // transparent edges. World cards are constant-six-vertex impostors.
     {

@@ -6,6 +6,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater complete 360-degree atmospheric panorama
+
+- Replace the one-sided ten-strip sky wall with a 360-degree, seven-band,
+  sixteen-sector cylindrical backdrop. Add original flat cloud layers,
+  day sun/night moon, nighttime stars, and distant industrial smoke unique
+  to each location. Stay entirely inside the existing vertex-color draw.
+- Keep game-state timing, enemy hit volumes, weapon systems, texture atlas,
+  menu and shell integration unchanged. Add deterministic day/night/location
+  geometry, compass coverage and triangle-budget tests. Standalone host
+  C++17 fixture passed; Android NDK/headset render remains unverified.
+
+
 ### Breakwater compact support-action HUD sprites
 
 - Filled the four remaining 32x32 cells of Breakwater's existing 128x128

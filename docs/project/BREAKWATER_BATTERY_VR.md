@@ -97,8 +97,9 @@ world-stable XY planes facing the defended battery, with aircraft roll taken
 from existing simulated banking; their position is not independently
 recomputed for the left and right eyes. Depth testing and nearest texture
 sampling are retained, with fragment discard avoiding alpha-sort/blend
-dependencies. The sky remains the existing gradient geometry. The gun
-pedestal and hand-aimed barrel remain anchored in 3D, while its visible
+dependencies. The formerly flat forward sky is now a fully wrapped
+world-space atmospheric panorama. The gun pedestal and hand-aimed barrel
+remain anchored in 3D, while its visible
 housing is now an equipment-specific 2.5D foreground card instead of
 identical generic boxes for every weapon. It is not finished production
 sprite artwork. The world-space housing follows the selected weapon in
@@ -126,16 +127,47 @@ frames with readable helmet, vest and rifle; (3) bomber/strafer underside,
 oblique and bank variants; (4) additional depth/aim variants of the five mounted weapon cards;
 (5) optional bespoke HUD panel styling after headset readability tests
 (the functional support icons and equipment selection already use the
-atlas); (6) horizon, cloud, distant smoke and night sky cards. Author all
+atlas); (6) optional authored texture-based atmospheric refinements after the
+procedural 360-degree sky passes headset acceptance. Author all
 replacement art with transparent backgrounds, fixed local foot/waterline/
 center-mass anchors and no copied real military unit markings. Keep the
 small 64-KiB RGBA atlas and one additional masked draw per eye until
 measured device proof justifies more. Materialized artwork must be explicitly imported,
 registered and verified before being reported as in-game.
 
+## 360-degree atmospheric sky (2026-10-15 source)
+
+The first front-facing ten-strip sky wall is replaced with
+`breakwater_sky.h`'s complete sixteen-sector, seven-band cylindrical
+panorama, at world radius 25.6, behind the sea's farthest z=-24.08 strip.
+Head yaw/roll therefore cannot reveal the old horizontal side edges.
+The same render recipe adds 8–12 far low-poly cloud cutouts, a fixed
+sun or moon disc, 24 tiny nighttime star diamonds, and a few distant
+smoke plumes (three at Iron Quay, one at Blackcap Island, none at
+Shingle Bay). The three coastlines each have a distinct atmospheric
+cast, day/night gradients and deterministic appearance.
+
+The panorama uses **270–312 vertex-color triangles** in the existing
+world mesh and **no new draw call, atlas cell, shader, dynamic texture,
+input surface, gameplay collider or CPU simulation tick**. It is
+generated once for the two stereo eyes. Clouds, sun/moon and smoke are
+2D cutout geometry in cylindrical world space, not finished authored
+image-generation assets or per-eye head-facing stickers. Coastal
+terrain, combat selection volumes, mounted gun and boat/infantry
+simulation remain unmodified. At the present radius the sky is a
+world-anchored VR panorama, not a head-position-translated skydome;
+seated movement and reference-device comfort remain acceptance gates.
+
+A matching isolated C++17 `-Wall -Wextra -Wpedantic -Werror` fixture
+passed for six day/night-location combinations, exact triangle budgets,
+determinism, +X/-X/+Z/-Z cardinal coverage, finite bounded positions,
+palette distinctions and invalid-location empty output. Full native
+suite, Android NDK compile, far-plane clipping and phone headset
+stereo/thermal proof remain **unverified**.
+
 ## Runtime art and visuals
 
-Follow the tiny pre-PlayStation, early-PC 3D aesthetic: simple vertex-color meshes, procedurally striped sea, day/night palette, chunky silhouettes and a 3×5 generated pixel-card text renderer. Future recipe-driven additions: landing ramps, wakes, smoke/explosion cards, weather, sky/cloud noise, per-location terrain, procedural RGB565 material atlas, distant fog and sprite-based effects. No large texture packs, modern PBR, heavy shaders, imported licensed game materials or duplicated per-eye scene simulation.
+Follow the tiny pre-PlayStation, early-PC 3D aesthetic: simple vertex-color meshes, procedurally striped sea, day/night palette, chunky silhouettes and a 3×5 generated pixel-card text renderer. Future recipe-driven additions: richer weather, authored cloud variants, per-location distant silhouettes, procedural RGB565 materials and sprite-based effects. Landing ramps, wakes, impact effects, coastal terrain and the first 360-degree clouds are already implemented. No large texture packs, modern PBR, heavy shaders, imported licensed game materials or duplicated per-eye scene simulation.
 
 ## Original MIDI-era music for every native game
 

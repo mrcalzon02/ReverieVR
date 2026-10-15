@@ -3,6 +3,7 @@
 #include "breakwater_silhouettes.h"
 #include "breakwater_sprite_atlas.h"
 #include "breakwater_terrain.h"
+#include "breakwater_sky.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_combat_input.h"
@@ -426,14 +427,11 @@ void BuildScene(State *s) {
     s->mesh.clear();
     s->sprite_mesh.clear();
     const bool night=game.period()==Period::Night;
-    // Generated sky bands and large sparse sea strips, no image assets.
-    for(int row=0;row<10;row++) {
-        const float bottom=-.2f+row*1.7f;
-        Panel(s,0,bottom+.86f,-26.5f,42.0f,1.73f,
-              night?.025f+.008f*row:.13f+.035f*row,
-              night?.045f+.010f*row:.24f+.035f*row,
-              night?.08f+.012f*row:.36f+.03f*row);
-    }
+    // 360-degree layered horizon: no frontal backdrop edges when head turns.
+    // Fixed panorama, clouds, sun/moon and distant smoke are shared by both
+    // eyes and stay farther away than every gameplay target and sea strip.
+    EmitSkyPanorama(game.location(),night,
+        [s](auto... arguments) { Triangle(s,arguments...); });
     for(int z=0;z<24;z++) {
         const float back=-2.0f-z*.92f;
         const float shimmer=.02f*std::sin(s->elapsed*1.6f+z*.7f);

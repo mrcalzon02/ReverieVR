@@ -1,3 +1,19 @@
+## 2026-10-15 — Breakwater full-circle sky and location atmosphere (source)
+
+Replaced the flat, forward-facing sky strips with a 16-sector, seven-band
+vertex-color panorama at 25.6 world units, beyond the existing sea
+geometry. Added 8–12 cloud cutout triangles per arc, a sun/moon,
+twenty-four night stars, and Shingle/Iron Quay/Blackcap atmospheric
+variation with distant industrial smoke. The deterministic world-space
+sky is generated once per changed scene and submitted with the existing
+untextured mesh. No separate texture, shader, draw, atlas growth,
+headset-bound object, gameplay state, or collision logic. Isolated
+C++17 -Wall -Wextra -Wpedantic -Werror regression fixture passed all six
+location/day/night permutations with 270–312 triangles, full 360-degree
+coverage, bounded finite vertices and deterministic reuse. Full native
+test integration, Android NDK compile, phone clipping and stereo
+legibility remain outstanding; no APK was built or released.
+
 ## 2026-10-15 — Breakwater compact combat and shop support icons (source)
 
 Extended the existing 128x128 sprite atlas to all sixteen cells without
