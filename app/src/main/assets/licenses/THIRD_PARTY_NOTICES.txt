@@ -50,6 +50,14 @@ Ken's Labyrinth v2.1 (only in free phone-test builds):
   Original unmodified archive, original attribution and files preserved.
   Author's page: https://advsys.net/ken/klab.htm
 
+Jetpack 1.5 and Squarez Deluxe (only when included in free builds):
+  Copyright Adam Pedersen / Adept Software. Original 1998 DOS games,
+  published as freeware, NOT MIT or public-domain game data. Retain
+  all files and notices from the unchanged game archive.
+  Author: https://www.adeptsoftware.com/jetpack/
+  Squarez: https://www.adeptsoftware.com/squarez/
+  Notice: https://www.classicdosgames.com/licenses.html
+
 Starry Cereal music:
   Suno artist: Jovian-PostPunkRevival
   https://suno.com/@jovianpostpunkrevival7375

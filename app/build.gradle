@@ -39,6 +39,13 @@ def kenArchive = rootProject.file(
 def excludeKensLabyrinth = project.hasProperty("excludeKensLabyrinth")
 def bundleKensLabyrinth = !excludeKensLabyrinth && kenArchive.isFile()
 
+// Adept Software's original freeware 1.5 ZIP; one source, two games.
+def jetpackArchive = rootProject.file(
+    "third_party/jetpack/payload/default-content/jetpak15.zip"
+)
+def excludeJetpack = project.hasProperty("excludeJetpack")
+def bundleJetpack = !excludeJetpack && jetpackArchive.isFile()
+
 def dosboxPureAndroidMk = rootProject.file(
     "third_party/dosbox-pure/src/jni/Android.mk"
 )
@@ -230,6 +237,11 @@ android {
             bundleKensLabyrinth.toString()
         )
         buildConfigField(
+            "boolean",
+            "JETPACK_BUNDLED",
+            bundleJetpack.toString()
+        )
+        buildConfigField(
             "String",
             "DIAGNOSTIC_INTAKE_URL",
             "\"${diagnosticIntakeUrlEscaped}\""
@@ -319,6 +331,11 @@ android {
                     )
                 )
             }
+            if (bundleJetpack) {
+                assets.srcDir(rootProject.file(
+                    "third_party/jetpack/payload"
+                ))
+            }
         }
     }
 
@@ -376,6 +393,13 @@ tasks.configureEach { task ->
                     "Release builds include Ken's Labyrinth by default. "
                     + "Run scripts/fetch-kens-labyrinth.sh (or .bat), "
                     + "or pass -PexcludeKensLabyrinth for a no-Ken build."
+                )
+            }
+            if (!excludeJetpack && !jetpackArchive.isFile()) {
+                throw new GradleException(
+                    "Release builds include Jetpack and Squarez by default. "
+                    + "Run scripts/fetch-jetpack.sh or pass "
+                    + "-PexcludeJetpack to omit both games."
                 )
             }
         }

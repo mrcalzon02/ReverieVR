@@ -122,6 +122,14 @@
       "record": "third_party/kens-labyrinth/README.md",
       "sha256": "643aa0ca8d1a7d2c88afecd952da00f3b912be8b83c4c1d2f4ab9b50491fadfd"
     },
+    "assets/default-content/jetpak15.zip": {
+      "component": "jetpack-squarez-freeware",
+      "license": "LicenseRef-Jetpack-Squarez-Freeware",
+      "rights": "noncommercial-only",
+      "required": false,
+      "record": "third_party/jetpack/README.md",
+      "sha256": "03f4979149bdeeb43091517e0f33f92b14cc2e5d7531e0c524749c3383fc9d4c"
+    },
     "res/raw/starry_cereal_menu.mp3": {
       "component": "starry-cereal-audio",
       "license": "LicenseRef-Suno-Commercial-Use",

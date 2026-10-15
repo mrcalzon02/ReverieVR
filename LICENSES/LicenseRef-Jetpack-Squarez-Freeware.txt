@@ -1,0 +1,15 @@
+Jetpack 1.5 and Squarez Deluxe — Adept Software freeware distribution
+
+Adam Pedersen (Adept Software) released the complete DOS game pair for
+free distribution and continues to host the original combined ZIP at:
+https://www.adeptsoftware.com/jetpack/jetpak15.zip
+https://www.adeptsoftware.com/jetpack/
+https://www.adeptsoftware.com/squarez/
+
+The game content is copyrighted freeware, not public domain or licensed
+under ReverieVR's MIT software license. Keep the original archive and
+its attribution/license files intact. No separate permission to sell
+the game contents is asserted. The default phone-test inclusion is for
+free builds, and -PexcludeJetpack removes both games when appropriate.
+
+Reference: https://www.classicdosgames.com/licenses.html

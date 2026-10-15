@@ -57,10 +57,39 @@ final class BundledDosArchiveCatalog {
         BuildConfig.KENS_LABYRINTH_BUNDLED
     );
 
-    // Add verified future default titles here. Game rights, original archive
-    // provenance, digest, Gradle packaging and bindings remain independent.
+    // The same original ZIP legitimately contains two complete DOS games.
+    // Independent module IDs, launch executables, saves and binding profiles
+    // share its exact same archive SHA and unchanged packaged asset.
+    static final Entry JETPACK = new Entry(
+        "bundled-jetpack-1.5",
+        "Jetpack v1.5 (Freeware)",
+        "default-content/jetpak15.zip",
+        "jetpak15.zip",
+        "03f4979149bdeeb43091517e0f33f92b14cc2e5d7531e0c524749c3383fc9d4c",
+        "JETPACK.EXE",
+        ".reverie-jetpack-bootstrap-v1",
+        BuiltInBindingProfiles.ID_DOS_JETPACK,
+        256, 64L * 1024L * 1024L,
+        BuildConfig.JETPACK_BUNDLED
+    );
+
+    static final Entry SQUAREZ = new Entry(
+        "bundled-squarez-deluxe",
+        "Squarez Deluxe (Freeware)",
+        "default-content/jetpak15.zip",
+        "jetpak15.zip",
+        "03f4979149bdeeb43091517e0f33f92b14cc2e5d7531e0c524749c3383fc9d4c",
+        "SQUAREZ.EXE",
+        ".reverie-squarez-bootstrap-v1",
+        BuiltInBindingProfiles.ID_DOS_SQUAREZ,
+        256, 64L * 1024L * 1024L,
+        BuildConfig.JETPACK_BUNDLED
+    );
+
+    // Game media rights, original provenance, verified hashes and bindings
+    // remain independently declared before titles enter the live library.
     private static final List<Entry> ALL = Collections.unmodifiableList(
-        Arrays.asList(KENS_LABYRINTH));
+        Arrays.asList(KENS_LABYRINTH, JETPACK, SQUAREZ));
 
     static List<Entry> all() { return ALL; }
 

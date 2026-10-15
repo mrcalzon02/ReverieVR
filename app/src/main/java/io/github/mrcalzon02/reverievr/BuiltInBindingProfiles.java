@@ -9,6 +9,8 @@ final class BuiltInBindingProfiles {
     static final String ID_DOS_STANDARD = "dos-standard";
     static final String ID_DOS_DOOM_SHAREWARE = "dos-doom-shareware";
     static final String ID_DOS_KENS_LABYRINTH = "dos-kens-labyrinth";
+    static final String ID_DOS_JETPACK = "dos-jetpack";
+    static final String ID_DOS_SQUAREZ = "dos-squarez";
     static final String ID_DOS_FPS_HEAD_MOUSE = "dos-fps-head-mouse";
     static final String ID_DOS_CURSOR = "dos-cursor";
     static final String ID_DOS_HEAD_MOUSE = "dos-head-mouse";
@@ -265,6 +267,28 @@ final class BuiltInBindingProfiles {
         addDosMenuBindings(ken);
         profiles.add(new BindingProfile(ID_DOS_KENS_LABYRINTH,
             "DOS Ken's Labyrinth — move / fire / use", ken));
+
+        // Jetpack: arrows move, ALT jump/thrust, CTRL phase.
+        List<InputBinding> jetpack = new ArrayList<>();
+        addDosTouchpadArrows(jetpack);
+        jetpack.add(InputBinding.digital(BindingInput.SELECT,
+            VirtualOutput.key(VirtualKey.ALT)));
+        jetpack.add(InputBinding.digital(BindingInput.DAYDREAM_APP_BUTTON,
+            VirtualOutput.key(VirtualKey.CTRL)));
+        addDosMenuBindings(jetpack);
+        profiles.add(new BindingProfile(ID_DOS_JETPACK,
+            "DOS Jetpack — move / thrust / phase", jetpack));
+
+        // Squarez one-player: arrows move, Ctrl rotate, Alt place.
+        List<InputBinding> squarez = new ArrayList<>();
+        addDosTouchpadArrows(squarez);
+        squarez.add(InputBinding.digital(BindingInput.SELECT,
+            VirtualOutput.key(VirtualKey.CTRL)));
+        squarez.add(InputBinding.digital(BindingInput.DAYDREAM_APP_BUTTON,
+            VirtualOutput.key(VirtualKey.ALT)));
+        addDosMenuBindings(squarez);
+        profiles.add(new BindingProfile(ID_DOS_SQUAREZ,
+            "DOS Squarez — move / rotate / place", squarez));
 
         List<InputBinding> doom = new ArrayList<>();
         // Guest yaw from the same 3D head view is positive to the RIGHT.

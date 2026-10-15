@@ -14,6 +14,7 @@ third_party/dosbox-pure/src/
 # Original third-party DOOM shareware archive fetched for packaging
 third_party/doom-shareware/payload/default-content/doom19s.zip
 third_party/kens-labyrinth/payload/default-content/labfull.zip
+third_party/jetpack/payload/default-content/jetpak15.zip
 
 # Diagnostic intake local tooling/state and secrets
 diagnostic-intake/node_modules/

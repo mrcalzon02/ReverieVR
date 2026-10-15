@@ -11,6 +11,8 @@ are supplied. Downloadable != freely redistributable; freeware != open source.
 | One Must Fall 2097 | Candidate only — not bundled | Joystick-compatible fighter; needs verified untouched ZIP, unattended startup and control test. Author permission discussion https://forums.unrealengine.com/t/who-owns-the-rights-to-one-must-fall-2097-and-is-it-freeware/405924 |
 | Tyrian 2000 | Candidate only — not bundled | Four directions and fire; freeware game-data terms and original DOS ZIP digest still need checking. https://github.com/opentyrian/opentyrian/wiki/FAQ |
 | Raptor: Call of the Shadows (episode 1) | Candidate only — not bundled | Direction/aim plus primary/special fire; original Apogee shareware rights, archive hash, and direct-play startup not yet established. No full-game data. |
+| Jetpack 1.5 | **Source integration + packaging added; signed APK and headset launch acceptance pending** | Adept author-hosted `jetpak15.zip`, 494745 bytes, SHA-256 `03f4979149bdeeb43091517e0f33f92b14cc2e5d7531e0c524749c3383fc9d4c`; pad movement, click held Alt thrust/jump, minus/App Ctrl phase. |
+| Squarez Deluxe | **Source integration + packaging added; signed APK and headset launch acceptance pending** | Shares the same original Jetpack ZIP, but uses its own `SQUAREZ.EXE` launch, binding profile, and saves; pad arrows, click Ctrl rotate, minus/App Alt place. |
 | Bio Menace | Candidate only — not bundled | Directions, fire, jump; historical Apogee freeware release; still need verified original ZIP and redistribution scope. |
 
 No false playable shelf entries and no downloading installers on the user's
