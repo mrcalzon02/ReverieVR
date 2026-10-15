@@ -8,6 +8,20 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater pinned infantry movement and accurate SHORE arrival
+
+- Suppressed riflemen now physically hold position for their real
+  suppression time rather than advancing while their firing pose is
+  disabled. On cover destruction they retain the already-assigned
+  replacement/fallback route, then move after suppression ends.
+- Consume only the held part of the last update so remainder advances
+  movement deterministically at both supported headset frame lengths.
+  SHORE arrival now adds pin recovery and remaining lateral/forward
+  movement instead of incorrectly overlapping the two durations.
+- Test stationary pinned units, mid-step release, seeded real-wall
+  destruction, and split-step time equivalence with unchanged sprites,
+  hit shapes, controls and shop save. Device acceptance pending.
+
 ### Breakwater suppression at occupied shoreline cover
 
 - Successful shots into a barricade now pin only assigned riflemen

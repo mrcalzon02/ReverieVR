@@ -163,8 +163,11 @@ inline float InfantrySecondsToReady(const Infantry &unit) {
         (InfantryLineZ(unit)-unit.z)/InfantrySpeed(unit.tactic));
     const float xLeft=InfantryNeedsLane(unit)?
         std::abs(unit.lane_x-unit.x)/kInfantryLateralSpeed:0.0f;
-    return std::max(std::max(zLeft,xLeft),
-                    InfantryPinned(unit)?unit.pinned_seconds:0.0f);
+    // A pinned rifleman cannot cover ground until the flinch ends.
+    // Suppression and subsequent travel therefore take consecutive time,
+    // not the maximum of two overlapping clocks.
+    return (InfantryPinned(unit)?unit.pinned_seconds:0.0f) +
+        std::max(zLeft,xLeft);
 }
 inline bool InfantryReady(const Infantry &unit) {
     if(!unit.active || !std::isfinite(unit.z) ||
@@ -187,8 +190,15 @@ inline bool InfantryFiringPose(
 inline void AdvanceInfantry(Infantry &unit,float seconds) {
     if(!unit.active || !std::isfinite(seconds) || seconds<=0.0f ||
        !std::isfinite(unit.x) || !std::isfinite(unit.z))return;
-    if(InfantryPinned(unit))
-        unit.pinned_seconds=std::max(0.0f,unit.pinned_seconds-seconds);
+    if(InfantryPinned(unit)) {
+        // Consume only the pinned portion of this simulation step.
+        // If it expires mid-step, use the remaining time for movement;
+        // this keeps a 0.10s frame and two 0.05s frames consistent.
+        const float hold=std::min(seconds,unit.pinned_seconds);
+        unit.pinned_seconds=std::max(0.0f,unit.pinned_seconds-hold);
+        seconds-=hold;
+        if(seconds<=0.0f)return;
+    }
     unit.z=std::min(InfantryLineZ(unit),
                     unit.z+InfantrySpeed(unit.tactic)*seconds);
     if(!InfantryNeedsLane(unit) || !std::isfinite(unit.lane_x))return;

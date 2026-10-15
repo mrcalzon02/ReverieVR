@@ -195,6 +195,39 @@ int main() {
         AdvanceInfantry(pinned,.80f);
         assert(!InfantryPinned(pinned) && InfantryReady(pinned));
         assert(InfantrySprite(pinned)==SpriteId::InfantryRifleReady);
+        // A pinned soldier ordered to evacuate destroyed cover stops
+        // while flinching, then travels for the remainder of the frame.
+        // The HUD readiness estimate must include BOTH phases.
+        Infantry displaced=pinned;
+        displaced.cover_slot=-1;
+        displaced.regrouping=true;
+        displaced.x=.15f;displaced.z=-1.46f;
+        displaced.lane_x=.95f;
+        displaced.open_lane_x=.95f;
+        displaced.pinned_seconds=kInfantryPinSeconds;
+        const float delayEta=InfantrySecondsToReady(displaced);
+        assert(delayEta>5.40f && delayEta<5.43f);
+        Infantry split=displaced;
+        AdvanceInfantry(displaced,.75f);
+        assert(std::abs(displaced.x-.15f)<.00001f);
+        assert(std::abs(displaced.z+1.46f)<.00001f);
+        assert(InfantryPinned(displaced));
+        AdvanceInfantry(displaced,.60f);
+        assert(!InfantryPinned(displaced));
+        assert(displaced.x>.15f && displaced.z>-1.46f);
+        assert(std::abs(InfantrySecondsToReady(displaced)-
+                        (delayEta-1.35f))<.001f);
+        // The same elapsed time split into native 0.05s substeps
+        // cannot advance a rifleman during suppression.
+        for(int part=0;part<27;++part)AdvanceInfantry(split,.05f);
+        assert(std::abs(split.x-displaced.x)<.0002f);
+        assert(std::abs(split.z-displaced.z)<.0002f);
+        assert(std::abs(split.pinned_seconds-displaced.pinned_seconds)<.0002f);
+        AdvanceInfantry(displaced,InfantrySecondsToReady(displaced)+.15f);
+        assert(InfantryReady(displaced));
+        assert(!displaced.regrouping);
+        assert(std::abs(displaced.x-.95f)<.00002f);
+
         Infantry remote=pinned;remote.z=-2.20f;
         assert(!CoverSheltersInfantry(remote,iron[1],1));
         Infantry flanking=pinned;flanking.tactic=InfantryTactic::FlankLeft;
@@ -1915,12 +1948,18 @@ int main() {
     assert(beforeRegroup.regrouping ||
            beforeRegroup.x==protectedBefore.open_lane_x);
     assert(beforeRegroup.lane_x==protectedBefore.open_lane_x);
+    const float regroupX=beforeRegroup.x,regroupZ=beforeRegroup.z;
     const IncomingThreats immediateWarning=tactic_landing.incoming_threats();
     assert(std::isfinite(immediateWarning.infantry_seconds));
     assert(beforeRegroup.active);
     tactic_landing.Tick(.05f);
     const Infantry &afterRegroup=tactic_landing.infantry_units()[
         static_cast<size_t>(covered_slot)];
+    // The lethal barricade shot also provokes a real brief halt:
+    // the soldier remains targetable at the old physical coordinates.
+    assert(InfantryPinned(afterRegroup));
+    assert(std::abs(afterRegroup.x-regroupX)<.00001f);
+    assert(std::abs(afterRegroup.z-regroupZ)<.00001f);
     assert(afterRegroup.cover_slot==-1);
     assert(afterRegroup.regrouping ||
            afterRegroup.x==protectedBefore.open_lane_x);

@@ -181,9 +181,13 @@ and the wall still takes its usual damage. No automatic soldier damage,
 new target or invulnerability is introduced.
 
 Pinned riflemen remain individually hittable at the **unchanged**
-position and hit sphere; they move according to their existing orders
-but cannot contribute to a volley or show a false firing flash while
-the counter is positive. A fresh hit restarts the counter. The shared
+position and hit sphere. Their movement now **halts** for the remaining
+suppression time, even if the same shot destroyed the barricade and
+assigned a retreat or nearby alternative. They cannot contribute to a
+volley or show a false firing flash while the counter is positive.
+Once it expires, movement resumes without teleporting; if suppression
+ends during an update, the remainder of that update advances movement.
+An additional hit restarts suppression. The shared
 `InfantryReady`, `InfantrySecondsToReady` and `AdvanceInfantry`
 functions drive both real salvo eligibility and SHORE countdown;
 the simulation never advances independently for each stereo eye.
@@ -194,8 +198,10 @@ other art/weapon silhouettes and the single sprite draw remain intact.
 
 Regression cases exercise real hit/ammo/damage coupling on a seeded
 Iron Quay landing party, isolated proximity and role restrictions,
-the exact pin duration, no firing pose during suppression, and the
-new atlas tile/UV bounds. The existing 80-byte shop save, controller,
+the exact pin duration, physically stationary covered-to-exposed
+retreat, matching arrival prediction including recovery-plus-travel,
+0.05/0.10-second frame-split equivalence, no firing pose during
+suppression, and the new atlas tile/UV bounds. The existing 80-byte shop save, controller,
 shell HUD and enemy collision geometry are untouched. Device stereo
 visibility and sustained frame timing remain subject to S9 testing.
 

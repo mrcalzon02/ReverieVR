@@ -1,3 +1,27 @@
+## 2026-10-15 — Breakwater pinned-movement and SHORE timing repair (source)
+
+The previous pinned-infantry mechanic blocked firing but still advanced
+the affected soldier's x/z coordinates, including during retreat from
+a freshly destroyed wall. The same shared readiness ETA incorrectly
+used the maximum of remaining suppression and travel time, although
+the corrected movement behavior must perform them consecutively.
+Repaired `AdvanceInfantry` to consume suppression time first, then
+spend any remaining fraction of the physics step on real travel; pinned
+soldiers stay physically targetable and stationary without freezing
+the overall combat clock. `InfantrySecondsToReady` now adds remaining
+suppression to the standard lateral/forward movement ETA. All warning,
+volley, sprite and targeting consumers use these authoritative helpers.
+
+Extended native regressions to verify pinned no-movement, expiration
+mid-step, additive arrival ETA, equivalent 0.05s versus split larger
+steps, and a seeded wall destruction where the resulting exposed-lane
+movement genuinely waits for pin expiration. No sprite additions, other
+game rules, new runtime input or persistence fields. Preceding release
+`phone-test-252-1` at commit `de5cc1f7` completed native tests,
+Android/NDK build, APK verification and publication; this new slice
+requires fresh CI before claiming those gates again. Physical Galaxy
+S9/Daydream scene and input acceptance remains pending.
+
 ## 2026-10-15 — Breakwater occupied-cover suppression and sprite state (source)
 
 Built a source-level player-initiated suppression mechanic into the
