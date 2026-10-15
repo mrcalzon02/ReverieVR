@@ -2,7 +2,7 @@
 set -eu
 # Co-author Maciej Miasik's CC BY-SA 2.5 registered Heartlight PC DOS build,
 # hosted through DOS Games Archive. Preserve ZIP bytes and all README terms.
-URL="https://www.dosgamesarchive.com/file.php?id=2352"
+SOURCE_URLS="https://www.classicdosgames.com/files/hl.zip https://classicdosgames.com/files/hl.zip https://www.dosgamesarchive.com/file.php?id=2352"
 EXPECTED_BYTES=466104
 EXPECTED_MD5="df6e57581ad95255fc457ab2815616be"
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
@@ -10,7 +10,27 @@ DEST="$ROOT/third_party/heartlight/payload/default-content/hl.zip"
 TMP="$DEST.tmp"
 mkdir -p "$(dirname "$DEST")"
 trap 'rm -f "$TMP"' EXIT
-curl --fail --location --proto '=https' --tlsv1.2 "$URL" --output "$TMP"
+# Try the rightsholder-authorized archive site's direct ZIP first, then
+# the alternate DOS Games Archive endpoint. A 200/zero-byte response never
+# counts as success. Each URL is separately checked against the same original
+# archived file fingerprint before it is accepted.
+for url in $SOURCE_URLS; do
+    rm -f "$TMP"
+    echo "Checking Heartlight source $url"
+    if ! curl --fail --location --proto '=https' --tlsv1.2 \
+        --connect-timeout 12 --max-time 50 "$url" --output "$TMP"; then
+        continue
+    fi
+    candidateSize="$(wc -c < "$TMP" | tr -d ' ')"
+    if [ "$candidateSize" = "$EXPECTED_BYTES" ]; then
+        break
+    fi
+    echo "Heartlight source returned $candidateSize bytes (expected $EXPECTED_BYTES)." >&2
+done
+if [ ! -f "$TMP" ]; then
+    echo "No Heartlight archive source returned a readable file." >&2
+    exit 1
+fi
 size="$(wc -c < "$TMP" | tr -d ' ')"
 if [ "$size" != "$EXPECTED_BYTES" ]; then
     echo "Heartlight archive size mismatch: expected $EXPECTED_BYTES, got $size" >&2
