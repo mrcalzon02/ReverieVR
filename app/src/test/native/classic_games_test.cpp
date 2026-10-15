@@ -1,6 +1,8 @@
 #include "classic_games.h"
 #include "classic_breakout.h"
 #include "classic_board_games.h"
+#include "classic_board_cpu.h"
+#include <thread>
 #include "reverie_native_flat_mesh.h"
 #include <cassert>
 #include <cmath>
@@ -22,6 +24,13 @@ static void TestFlatGeometry(){
     Disc(a,0.f,0.f,.25f,-2.f,1.f,1.f,1.f);
     assert(a.size()==288u);
     for(float f:a)assert(std::isfinite(f));
+}
+static int ChessPerft(const reverie::boardgames::State &board,int depth){
+    if(depth==0)return 1;
+    int count=0;
+    for(const auto &move:board.ChessTurns())
+        count+=ChessPerft(board.ChessAfter(move.from,move.to,move.promotion),depth-1);
+    return count;
 }
 static void TestBoardGames() {
     using Boards = reverie::boardgames::State;
@@ -411,6 +420,118 @@ static void TestBoardGames() {
     assert(!matedLeaf.HasChessMove());
     assert(matedLeaf.SearchChess(0,-300000,300000)==-50000);
 
+    {
+    Boards stale=matedLeaf;
+    stale.cells[14]=0;stale.cells[13]=5;
+    assert(!stale.KingInCheck(stale.cells,-1)&&!stale.HasChessMove());
+    assert(stale.SearchChess(0,-300000,300000)==0);
+
+    // Complete legal knight cycles, without injecting repetition counts.
+    Boards prospective;
+    prospective.Reset(BoardKind::Chess);
+    for(int round=0;round<2;round++){
+        assert(prospective.ChessMove(62,45));
+        assert(prospective.ChessMove(6,21));
+        if(round==0){
+            assert(prospective.ChessMove(45,62));
+            assert(prospective.ChessMove(21,6));
+        }
+    }
+    assert(!prospective.ChessDrawClaimable());
+    assert(prospective.ChessMove(45,62));
+    assert(prospective.ChessRepetitions()==2);
+    int intendedFrom=-1,intendedTo=-1;
+    assert(prospective.ChessDrawAvailable(-1,&intendedFrom,&intendedTo));
+    assert(intendedFrom==21&&intendedTo==6);
+    const auto beforeClaim=prospective.cells;
+    assert(prospective.ClaimChessDraw(-1));
+    assert(prospective.finished&&prospective.winner==0);
+    assert(prospective.cells==beforeClaim&&prospective.ply==7);
+
+    Boards fifty;
+    fifty.Reset(BoardKind::Chess);
+    fifty.halfMoves=99;
+    assert(fifty.ChessDrawClaimable()); // intended quiet knight move
+    assert(fifty.ClaimChessDraw());
+    assert(fifty.lastFrom>=0&&fifty.lastTo>=0&&fifty.ply==0);
+    fifty.Reset(BoardKind::Chess);
+    fifty.halfMoves=98;
+    assert(!fifty.ChessDrawClaimable());
+    fifty.halfMoves=99;
+    assert(fifty.ChessAfter(52,36).halfMoves==0); // pawn resets progress
+    assert(fifty.ChessAfter(62,45).halfMoves==100);
+
+    // Both colors generate all four promotions, not only a queen.
+    for(int player : {1,-1}){
+        Boards promote;
+        promote.Reset(BoardKind::Chess);promote.cells.fill(0);
+        promote.cells[60]=6;promote.cells[4]=-6;
+        promote.side=player;promote.castles=0;
+        const int from=player==1?8:48,to=player==1?0:56;
+        promote.cells[from]=static_cast<int8_t>(player);
+        int variants=0;
+        for(const auto &turn:promote.ChessTurns())if(turn.from==from&&turn.to==to){
+            ++variants;
+            assert(promote.ChessAfter(from,to,turn.promotion).cells[to]
+                   ==player*turn.promotion);
+        }
+        assert(variants==4);
+        for(int piece=2;piece<=5;piece++){
+            Boards applied=promote;applied.promotionChoice=piece;
+            assert(applied.ChessMove(from,to,piece));
+            assert(applied.cells[to]==player*piece);
+        }
+    }
+    Boards cpuDraw;
+    cpuDraw.Reset(BoardKind::Chess);cpuDraw.cells.fill(0);
+    cpuDraw.cells[4]=-6;cpuDraw.cells[60]=6;cpuDraw.cells[56]=5;
+    cpuDraw.side=-1;cpuDraw.castles=0;cpuDraw.halfMoves=100;
+    assert(cpuDraw.PlayChessCpuTurn());
+    assert(cpuDraw.finished&&cpuDraw.winner==0&&cpuDraw.ply==0);
+    int nodes=0;bool exhausted=false;
+    Boards budgeted;budgeted.Reset(BoardKind::Chess);
+    budgeted.SearchChessBounded(4,-300000,300000,nodes,7,exhausted);
+    assert(exhausted&&nodes==7);
+    for(int level=0;level<3;level++){
+        Boards limited;limited.Reset(BoardKind::Chess);
+        limited.chessDifficulty=level;limited.side=-1;
+        assert(limited.PlayChessCpuTurn());
+        assert(limited.chessSearchNodes>0);
+        assert(limited.chessSearchNodes<=(level==0?1500:level==1?6000:12000));
+        assert(limited.side==1&&!limited.KingInCheck(limited.cells,-1));
+    }
+
+    }
+    Boards perft;perft.Reset(BoardKind::Chess);
+    assert(ChessPerft(perft,1)==20);
+    assert(ChessPerft(perft,2)==400);
+    assert(ChessPerft(perft,3)==8902);
+    Boards pinnedEp; pinnedEp.Reset(BoardKind::Chess);
+    pinnedEp.cells.fill(0);pinnedEp.castles=0;
+    pinnedEp.cells[28]=1;pinnedEp.cells[27]=-1;
+    pinnedEp.cells[60]=6;pinnedEp.cells[4]=-4;pinnedEp.cells[0]=-6;
+    pinnedEp.enPassant=19;
+    assert(!pinnedEp.ChessLegal(28,19)); // exposes own king to rook
+    assert(pinnedEp.CurrentChessPosition().enPassant==-1);
+
+    // Worker results cannot mutate the live board until Update polls them.
+    for(auto kind:{BoardKind::Chess,BoardKind::Checkers,BoardKind::Go}){
+        Boards live;live.Reset(kind);live.side=-1;
+        const auto initial=live.cells;
+        reverie::boardgames::CpuWorker worker;
+        assert(worker.Start(live));
+        assert(!worker.Start(live)); // exactly one in-flight response
+        assert(live.cells==initial&&live.ply==0);
+        const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(10);
+        while(!worker.Poll(live)){
+            assert(std::chrono::steady_clock::now()<deadline);
+            std::this_thread::yield();
+        }
+        assert(!worker.Busy()&&live.ply>0);
+        assert(live.side==1||live.finished||live.forced>=0);
+        assert(!worker.Poll(live)); // no duplicate turn commit
+    }
+
     Boards tacticalChess;
     tacticalChess.Reset(BoardKind::Chess);
     tacticalChess.cells.fill(0);
@@ -437,7 +558,7 @@ static void TestBoardGames() {
     assert(cpuChess.ply==2&&cpuChess.side==1);
     assert(!cpuChess.KingInCheck(cpuChess.cells,-1));
 
-    std::cout<<"Checkers, Go 9x9 and Chess deterministic rules/CPU passed\\n";
+    std::cout<<"Checkers, Go 19x19 and Chess deterministic rules/CPU passed\\n";
 }
 
 static void TestBreakout() {
@@ -628,3 +749,4 @@ int main() {
     TestBoardGames();
     std::cout<<"Classic games deterministic simulation passed\n";
 }
+

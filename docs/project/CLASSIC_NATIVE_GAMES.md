@@ -2,6 +2,46 @@
 
 **Status:** Source-implemented; Galaxy S9 + Daydream controller acceptance pending. These original games use the native ABI v1 module host and the common `classic_games_module.cpp` renderer, compiled separately for Pong, Snake, and Chutes and Ladders. This is game-private implementation documentation; the platform contract remains `docs/native/README.md`.
 
+## Chess search and nonblocking CPU turns (2026-10-15)
+
+Chess now enumerates all four promotions for both colors throughout search,
+recognizes horizon stalemate, preserves move-count progress in hypothetical
+positions, and gives checkmate precedence over automatic move-count draws.
+Iterative alpha-beta keeps only completed iterations, orders captures and
+promotions first, and has hard total budgets of 1,500 / 6,000 / 12,000 visited
+positions at Easy / Normal / Hard, with target depths of 2 / 3 / 4 plies.
+The compact AI button cycles difficulty; Secondary does the same when no
+piece is selected and retains promotion cycling for a selected seventh-rank
+pawn. Restart preserves the selected difficulty.
+
+The claim action also handles an identified legal intended move creating a
+third repetition or reaching 100 quiet half-moves. It records the chosen
+intended move in lastFrom/lastTo without playing it or handing over the turn.
+A materially losing CPU can exercise the same earned claim. This implements
+FIDE 9.2.1.1 / 9.3.1 in the untimed computer-game interface; tournament
+scoresheets, arbiter penalties and clocks remain outside this interface.
+Reference: https://handbook.fide.com/chapter/e012023
+
+Chess, Checkers and Go CPU responses now run on one game-private worker per
+module, using an owned snapshot. Update polls without waiting and commits a
+completed result once; both eyes keep rendering the unchanged live board
+while it thinks. Workers never call GLES or host services. Destruction joins
+the worker before native-library unload. Pause can leave computation running,
+but results are applied only after Update resumes. Launch/worker exceptions
+are logged and show a restartable CPU error rather than inventing a draw.
+This removes synchronous search from Update, but thread startup, snapshot
+copying, result transfer, unload latency and sustained S9 thermal cost still
+need measurement. No native ABI or shell recovery change.
+
+Deterministic coverage includes legal repetition cycles, prospective claims,
+pawn-progress reset, horizon stalemate, both-color promotion generation and
+execution, CPU draw claims, exact node caps, all difficulty levels, and
+worker snapshot isolation / one-time result consumption for all three games.
+Host strict C++17 tests and ABI tests pass. The existing native doc guard
+currently fails on an unrelated pre-existing Test Chamber shader-consumption
+anchor (BuildProgram calls CompileShader indirectly); it has not been weakened.
+Android signed-build and physical headset validation are separate gates.
+
 ## Breakout (2026-10-15 source addition)
 
 Original arcade **Classic Breakout** is a seventh built-in native module
@@ -83,12 +123,12 @@ were expanded, with tests for distant-corner placement and edge captures.
   material states (lone kings, solitary minor piece, same-color bishops).
   Select a pawn on the seventh rank and use native Secondary to cycle
   the promotion choice before placing it; ordinary moves still queen
-  by default. The CPU now evaluates legal human responses through bounded alpha-beta
-  search and uses a deeper third ply in lower-material endings. It is still
+  by default. The CPU now evaluates legal human responses through iterative bounded alpha-beta
+  search at the selectable levels described above. It is still
   a lightweight phone-friendly opponent, not a tournament-grade engine;
   its search leaves explicitly recognize checkmate so it cannot
   mistakenly value a mate-in-one loss as a material gain;
-  it does not yet claim draws itself, offer agreed draws, or support clocks.
+  it can claim an earned draw while materially losing; agreed draws and clocks remain open.
   The native GUI needs Galaxy S9 acceptance for claim/promotion controls.
 
 For all three, choose a piece and a destination (or place in Go).
@@ -117,3 +157,4 @@ Pong now restores the original horizontal court with left/right opposing vertica
 ## Authority
 
 Game simulation: `app/src/main/jni/native/classic_games.h`. Game UI and input: `app/src/main/jni/native/classic_games_module.cpp`. Module allowlist: `app/src/main/jni/native/reverie_native_host.cpp`. Build wiring: `app/src/main/jni/Android.mk`. Native tests: `app/src/test/native/classic_games_test.cpp`. Shell recovery and controller routing remain shell-owned.
+

@@ -1,3 +1,39 @@
+Warning: truncated output (original token count: 32890)
+Total output lines: 1697
+
+## 2026-10-15 — Classic Chess rules/search and board CPU isolation
+
+Starting authoritative main: `30248bc387939bca53dbb636352732512835c3aa`.
+Implemented prospective repetition/50-move claims and losing CPU claims,
+all-promotion legal search, horizon stalemate, hypothetical move counters,
+iterative alpha-beta with selectable 1,500/6,000/12,000-node budgets, and
+one snapshot CPU worker for Chess/Checkers/Go. Compact AI controls are wired.
+Native ABI, host archive allowlist and Home recovery architecture unchanged.
+Also replaces an actual NUL source character in the shader diagnostic's
+terminator with the equivalent escaped C++ literal.
+
+Strict C++17 deterministic classic suite passes, including complete knight
+cycles, all promotion choices, budget caps and worker isolation. Native ABI
+contract passes. Native documentation guard fails on a pre-existing Test
+Chamber direct CompileShader anchor despite its indirect use via BuildProgram;
+no tests or guards were loosened. All seven module profiles pass strict host syntax/type checking against
+unmodified Khronos GLES2 headers. Local Android toolchain and headset
+are unavailable. Signed APK verification must use the existing workflow.
+
+Reconciled release evidence: runs 38712661653 and 38713685050 succeeded and
+published phone-test-219-1 / phone-test-221-1 for 1e74564 / da1adde. Latest
+published release at inspection was phone-test-236-1 for 25f7f31, versionCode
+214251043, permanent signer 464dc2d100c3bb14deac1da680d29418cc22e60e1857852cb54541f7d7787f7c.
+Run 38787358790 for starting main succeeded only at its gate; build-and-release
+was skipped. It is not Android compilation or release proof for 30248bc.
+
+Remaining: full dead-position adjudication, search repetition evaluation,
+Go independent disputed-dead-stone settlement and stronger strategy, Checkers
+configurable difficulty, genuine two-human Pong, full arcade/endgame audit,
+and physical S9 control/stereo/latency/thermal acceptance. This unit does not
+claim all classics complete. Existing authorized signed workflow is requested
+through its established phone-test-trigger marker, with no new workflow.
+
 ## 2026-10-15 — Breakwater deterministic landing-party tactics (source)
 
 Advanced landing craft from a uniform straight-line troop attack to
@@ -638,184 +674,7 @@ Source-level art pass: the existing Birch Living Room, Pastoral Glade and Dune B
 ## 2026-10-11 — Phone Screen explicit Close and no pointless capture consent
 
 Sixth geometrically distinct X button added to the adjustable in-home phone
-panel. Renderer and raycast share the same six-key layout, including
-close; X and Back use a single dismissal path that restores Home,
-clears retained hover and releases capture resources without exiting VR.
-The Android consent request was removed from opening the dark prototype
-housing: MediaProjection currently acquires/discards frames without
-rendering them in the headset, so that permission was premature. The
-consented-capture lifecycle source remains dormant until real local
-presentation is implemented. Privacy rule in README and phone-panel
-spec prohibits any OCR/visual scanning/image analysis or export of screen
-pixels; retains accurate disclosures for locally saved state, manual
-diagnostics, paired controller exchange and optional GitHub release checks.
-Pure JVM geometry regression source is included. APK/Gradle and Galaxy S9
-ray/close/Back testing remain pending.
-
-## 2026-10-12 — 11-track source music handoff catalog (binary import pending)
-
-The user's eleven actual MP3 uploads were independently inventoried
-(66,325,607 bytes total) with SHA-256 and recording durations. The
-source-only manifest under `music/source/manifest.json` identifies the
-bar cue, Beachhead-style cue, Ministry of Intelligence cue, two alternate
-lobby cues, and six general-library sources. The original binary uploads
-are **not in remote GitHub**: the connected GitHub blob API cannot read a
-local binary path, and this runtime has no authenticated filesystem Git
-transport. A locally hash-verified ZIP containing all original MP3s and
-a Windows bounded-retry Git importer was provided for authenticated
-transfer. Do not claim those binaries are hosted until remote read-back.
-No APK/catalog entries were created for absent source audio; Suno
-entitlement and public music redistribution rights remain per-track
-review gates.
-
-# ReverieVR Execution State
-
-**Role:** durable operational state  
-**Updated:** 2026-10-11 (America/Anchorage)
-
-## 2026-10-11 — Stage A launcher and in-VR import correction
-
-Source change (APK and Galaxy S9 validation pending): Stage B QoL, media, video projection and DOS import panels removed from the pre-VR setup screen. Retained phone/controller status and tests, VR entry, updater, diagnostics and recovery. VR-to-Android document-picker handoff and import storage are preserved. In VR, the DOS library has an always-available Import control alongside paging and Home, even when modules already exist. Static source verification only; not an APK or device acceptance claim.
-
-## 2026-10-11 — RV-0502 media scene / stereo video source slice
-
-The media pipeline now distinguishes ordinary 2D cinema and 360-degree content from
-explicitly configured packed stereoscopic side-by-side and top/bottom layouts
-(including equirectangular 360-degree variants). Both Cardboard eyes receive the
-proper packed UV region before the external SurfaceTexture transform, with
-aspect correction per eye for flat cinema. Video occupies the full physical eye
-viewport rather than the inset menu rectangle and does not render the home
-environment behind it. The in-VR Media panel cycles modes; selecting a different
-video resets to a conservative filename hint or 2D fallback. Unrecognized 3D
-metadata is **not** detected automatically. VR180 fisheye decoding is not
-implemented. Regression tests cover packing, defaults, aspect and suggestions.
-Status: source-integrated, APK / JVM execution and Galaxy S9 stereo/thermal
-acceptance pending; no device validation claim.
-
-## 2026-10-11 — RV-0501 180-degree equirectangular scene support
-
-Following verified stereo/360 APK build, this source slice adds a distinct
-front-facing half-sphere for 180-degree equirectangular media. It uses the same
-per-eye packed texture-region mapping and Cardboard stereo path as 360-degree
-media, but does not wrap images behind the viewer. Both sphere meshes are
-allocated once per renderer instance. VR users can explicitly choose mono,
-side-by-side or top/bottom 180-degree equirect modes through the Media format
-selector. Only filenames explicitly marked as 180-degree equirectangular
-receive that default; generic VR180 filenames remain conservative because the
-camera-native specification requires calibrated per-eye projection mesh
-metadata and may include per-frame motion orientation.
-Physical headset stereo/projection/thermal and Android build acceptance pending
-for this new slice; do not claim calibrated VR180 fisheye support.
-
-## 2026-10-11 — RV-0503 bounded MP4 spatial metadata identification
-
-Implemented source-only MP4 Spatial Media v2 inspection behind the existing
-Stage B -> Android document-picker handoff. A dedicated single-thread executor
-reads at most 4 MiB from the selected SAF URI. The pure-JVM parser follows ISO
-BMFF sample-entry box structure rather than searching bytes in video payloads,
-recognizes st3d mono/top-bottom/left-right and sv3d/proj/equi with zero crop
-and pose. Supported metadata overrides filename suggestions only while both
-the chosen URI and initial projection remain unchanged. Files without accessible
-metadata retain the filename hint or 2D default. Unsupported layouts emit an
-honest warning; calibrated mesh, cubemap, custom/reversed eyes, cropped/rotated
-projections and external containers do not get falsely auto-rendered. A bounded
-4-MiB scan may not reach moov boxes at the end of large MP4 files; this is
-reported as unknown rather than guessing.
-New synthetic JVM tests cover supported stereo/spherical variants, malicious
-mdat lookalikes, conflicting tracks, unsupported projection and truncation.
-No APK, real media, or Galaxy S9 acceptance claim for this new slice.
-
-## 2026-10-11 — RV-0505 fixed-eye prerecorded headset output
-
-Headset-output captures can contain baked stereo eye frames with no live
-scene, camera pose or genuine VR navigation. The Media panel now offers mono,
-SBS and top/bottom fixed-eye modes separate from regular stereo cinema and
-180/360 projection. Each decoded video view maps directly to one Cardboard eye
-in clip space, using aspect-fit and no additional head-pose reprojection.
-Explicit headset-capture naming can suggest these modes; generic SBS/TB still
-defaults to cinema, and spatial video keeps its own geometry.
-The optical headset compositor is still active. Lens-prewarped recordings
-may need calibrated inverse optical warp before they can look undistorted:
-that correction is not implemented or claimed. The VR panel tells the user.
-Existing MediaPlayer, SAF permissions and OES texture lifecycle are unchanged.
-Source and JVM-test coverage have been added; cloud APK and reference Galaxy
-S9 + Daydream headset playback remain acceptance gates.
-
-## 2026-10-11 — RV-0505 adjustable optical prewarp recovery
-
-Extended the distinct fixed-eye headset-recording path with in-VR signed
-radial image remapping. Lens -5% / +5% controls appear only for selected
-headset recordings and adjust a radial coefficient from -0.30 to +0.30
-in steps of 0.05. Off is the exact existing passthrough path. The fragment
-shader samples the encoded local eye coordinate after a center-preserving
-radial transform, then maps into the selected SBS/TB eye crop before the
-Android SurfaceTexture producer transform. If the transformed coordinate
-falls outside that eye region, the fragment draws opaque black instead of
-leaking pixels from the adjacent eye. It does not alter 2D cinema, stereoscopic
-cinema, or genuine equirectangular 180/360 media.
-Correction is stored with the selected file, cleared for different media,
-and restored on playback/Resume. Recenter and Home are retained in the expanded
-headset-only in-VR menu. Regression tests check the no-op case, signed bounds,
-center invariance, correction limit clamping and presets.
-This is *not* calibrated optical inversion: real inverse models can require
-source headset radial/tangential lens coefficients and off-center per-eye
-optical origins. Nor does it restore six-degree head tracking to a recording.
-Status: source slice; GitHub Android build, actual GLES2 shader link, Galaxy S9
-headset viewing and visual distortion proof remain necessary.
-
-## 2026-10-11 — RV-0503 tail-MP4 spatial metadata recognition
-
-The Android Media picker now opens the selected document's SAF file descriptor
-for bounded random-access inspection before falling back to an InputStream
-when seek/position operations are unavailable (as with some content-provider
-pipes). SpatialMp4Metadata retains its pure JVM container decoder, adds a
-SeekableByteChannel path, checks the ftyp/styp header, walks at most 1024
-top-level boxes using complete 32- or 64-bit box lengths and never reads
-the media payload of mdat. Each moov is read and parsed only when its
-complete size fits the 4 MiB limit. Truncated, oversized and malformed
-containers stay UNKNOWN; multiple incompatible spatial tracks are rejected.
-A metadata selection is applied only if the selected URI and initial format
-still match, so an asynchronous result cannot overwrite the user's later
-file choice or manually selected format. No broad file access permission
-or Android background work was added.
-Tests use sparse large video-data sections followed by trailing metadata,
-64-bit box sizes, misleading moov payload inside mdat, conflicting tracks,
-oversized moov, zero-length mdat and incomplete headers.
-Status is source-implemented, pending signed APK/Android tests and reference
-Galaxy S9 playback/thermal verification. Unsupported camera-specific lens
-and mesh calibrations remain separate work.
-
-## 2026-10-11 — RV-0501 calibrated camera VR180 projection
-
-Added the actual calibrated-mesh playback path, not a generic fisheye
-substitute. `Vr180MeshProjection` parses Google Spherical Video v2 mshp
-boxes with CRC32 and raw or raw-deflate encoding; a bounded bit reader
-expands shared coordinate tables, zigzag-delta encoded component and vertex
-indices, and triangle/strip/fan topology. It validates mesh/packing counts,
-range, finite UV and geometry values, rejects unsupported textures, and
-caps decompression, vertices and rendered triangle counts to protect the
-Galaxy S9. `SpatialMp4Metadata` exposes a CALIBRATED_MESH_VR180 projection
-only when the embedded geometry validates, including stereo-custom dual
-meshes. Arbitrary bare-VR180/SBS filenames cannot enable the mode.
-`VideoSurfaceRenderer` now publishes immutable stereo mesh buffers and
-draws the selected eye with its own geometry and correct packed UV crop;
-until a mesh arrives, the immersive frame is cleared black. The app reopens
-the selected document using SAF asynchronously on VR playback, with
-monotonic cancellation against video stop/file changes and activity
-destruction. No additional external libraries or storage permissions.
-Synthetic JVM tests cover raw/deflate mesh, both-eye stereo-custom, parser
-integration, CRC damage, mismatched eye counts and corrupt payloads.
-Remaining acceptance: signed Android/JVM test pass; real recorded VR180
-camera sample; per-eye alignment, stereo depth and performance on Galaxy
-S9/Daydream. `camm` camera-motion metadata and nonzero projection pose are
-not implemented; do not advertise stabilization of handheld camera motion.
-
-## Authority
-
-- Repository: `mrcalzon02/ReverieVR`
-- Branch: `main`
-- Current implementation baseline immediately below this documentation update: `c70026f8e5bd307bd5f53d46c862a87b629bff20`.
-- Remote readback confirmed the Stage A application, verified Gradle wrapper, direct Daydream BLE backend, pinned Cardboard submodule, Stage B VR activity/renderer, first local-media vertical slice, unit-test sources, and build instructions are present on `main`.
+panel. Renderer and raycast share the …2890 tokens truncated…ain`.
 - Cardboard submodule is pinned to `5969239e7c87f4cd64c8ec170ce1e7f4eb559e37` (v1.35.0).
 
 ## Last completed governance target
@@ -1661,3 +1520,4 @@ No Galaxy S9, headset, optical, Bluetooth, thermal, or comfort validation has ye
 ## 2026-10-12 — Second layer of details on the three Home backgrounds
 
 Source pass adds stationary deterministic low-poly geometry in the three existing scene presets without renaming their persisted IDs: birch room trim, framed art and console props; forest canopy silhouette depth, stones and meadow blooms; beach wavelets, sand ripples, dune grass and shells. Each scene conditionally draws only its own detail meshes and all meshes are allocated once, with a no-new-texture/no-shader design and JVM vertex-budget and central menu-clearance tests. See `docs/records/HOME-ENVIRONMENT-DETAIL-LAYER.md`. **Not yet Galaxy S9 visual/performance accepted.**
+

@@ -1,6 +1,7 @@
 #include "classic_games.h"
 #include "classic_breakout.h"
 #include "classic_board_games.h"
+#include "classic_board_cpu.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -47,6 +48,9 @@ struct Module {
     const ReverieNativeHostV1 *host=nullptr;
     State game;
     reverie::boardgames::State board;
+    reverie::boardgames::CpuWorker cpu;
+    bool cpuFailed=false;
+    int boardControlHover=0;
 #if CLASSIC_GAME_KIND == 6
     Breakout breakout;
 #endif
@@ -243,7 +247,8 @@ void RebuildBoard(Module *m,bool fixed){
         Text(m,"PRESS TO RESTART",1.91f,.66f,.043f,1.f,.95f,.78f);
     }else if(!fixed){
         Text(m,s.kind==reverie::boardgames::Kind::Go&&s.goReview
-             ?"MARK DEAD GROUPS":s.side==1?"YOUR TURN":"CPU THINKING",
+             ?"MARK DEAD GROUPS":m->cpuFailed?"CPU ERROR RESTART":
+             s.side==1?"YOUR TURN":"CPU THINKING",
              0,1.34f,.064f,.95f,.95f,.78f);
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
             Text(m,"CONTINUE JUMP",1.88f,.63f,.044f,1.f,.90f,.56f);
@@ -254,6 +259,11 @@ void RebuildBoard(Module *m,bool fixed){
             Text(m,"CLAIM DRAW",1.94f,-1.25f,.042f,1.f,1.f,.89f);
         }
         if(s.kind==reverie::boardgames::Kind::Chess&&s.side==1){
+            Rect(m,1.94f,-.65f,.96f,.39f,-2.98f,
+                 m->boardControlHover==1?.38f:.23f,.36f,.42f);
+            Text(m,s.chessDifficulty==0?"AI EASY":
+                   s.chessDifficulty==2?"AI HARD":"AI NORMAL",
+                 1.94f,-.65f,.042f,1.f,1.f,.89f);
             if(s.selected>=0&&s.selected<64&&
                s.cells[s.selected]==1&&s.selected/8==1){
                 const char *promo=s.promotionChoice==4?"PROMO ROOK":
@@ -447,7 +457,7 @@ int32_t GlCreate(void *ptr){
         vs,fs,bindings,2,shaderDiagnostic,sizeof(shaderDiagnostic));
     if(!m->program){
         ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
-            "ReverieClassicGL",shaderDiagnostic[0] != ' '
+            "ReverieClassicGL",shaderDiagnostic[0] != '\0'
                 ? shaderDiagnostic : "GLES2 shader program unavailable");
     }
     if(m->program){
@@ -532,6 +542,14 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     const bool second=copy.secondary_down!=0;
     const bool secondaryEdge=second&&!m->previousSecondary;
     m->previousSecondary=second;
+    const int controlHover=aim&&!m->board.finished&&m->board.side==1&&
+        m->board.kind==reverie::boardgames::Kind::Chess&&
+        hx>1.49f&&hx<2.42f&&hy<-.45f&&hy>-.85f?1:0;
+    if(controlHover!=m->boardControlHover){
+        m->boardControlHover=controlHover;m->dirty=true;
+        if(controlHover)ReverieNativeRequestFeedbackV1(m->host,
+                                      REVERIE_NATIVE_FEEDBACK_FOCUS);
+    }
     const int n=m->board.Size();
     const float gap=BoardSpacing(m->board);
     const float ax=copy.move_x,ay=copy.move_y;
@@ -553,12 +571,17 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             else m->board.Pass();
         }
         else if(m->board.kind==reverie::boardgames::Kind::Chess){
-            m->board.CyclePromotion();
+            if(m->board.selected<0)
+                m->board.chessDifficulty=(m->board.chessDifficulty+1)%3;
+            else m->board.CyclePromotion();
             m->dirty=true;
+            ReverieNativeRequestFeedbackV1(m->host,
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         }
     }
     if(edge){
-        if(m->board.finished) {
+        if(m->board.finished||m->cpuFailed) {
+            m->cpuFailed=false;
             m->board.Reset(m->board.kind);
             m->boardCursorActive=false;
             m->boardCursorX=m->boardCursorY=0;
@@ -572,6 +595,13 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                      hx> -2.42f&&hx< -1.49f&&hy<-.99f&&hy> -1.50f)
                 m->board.ResumeGoPlay();
             else if(aim &&
+                    m->board.kind==reverie::boardgames::Kind::Chess &&
+                    hx>1.49f&&hx<2.42f&&hy<-.45f&&hy>-.85f){
+                m->board.chessDifficulty=(m->board.chessDifficulty+1)%3;
+                ReverieNativeRequestFeedbackV1(m->host,
+                    REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+                m->dirty=true;
+            }else if(aim &&
                     m->board.kind==reverie::boardgames::Kind::Chess &&
                     m->board.ChessDrawClaimable() &&
                     hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
@@ -593,7 +623,15 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             }
         }
     }
-    m->board.Step(copy.delta_seconds);
+    try {
+        if(m->cpu.Poll(m->board))m->dirty=true;
+        if(!m->cpuFailed&&!m->cpu.Busy()&&m->board.side==-1&&
+           !m->board.finished)m->cpu.Start(m->board);
+    }catch(const std::exception &error){
+        m->cpuFailed=true;m->dirty=true;
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+                            "ClassicCpu",error.what());
+    }
     if(m->board.ply!=prevPly||m->board.selected!=prevSelected||
        m->board.side!=prevSide||m->board.finished!=prevFinished||
        m->board.winner!=prevWinner||
@@ -690,3 +728,4 @@ extern "C" __attribute__((visibility("default")))
 const ReverieNativeModuleApiV1 *reverie_native_module_entry_v1(void){
     return &api;
 }
+

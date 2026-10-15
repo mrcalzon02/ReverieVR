@@ -54,6 +54,7 @@ struct State {
     std::unordered_map<ChessPosition,int,ChessHash> checkerHistory;
     int checkerQuietPlies=0;
     int halfMoves=0,promotionChoice=5;
+    int chessDifficulty=1,chessSearchNodes=0;
     Kind kind=Kind::Checkers;
     Board cells{};
     std::unordered_set<Board,GoBoardHash> goHistory;
@@ -582,13 +583,36 @@ struct State {
         auto it=chessHistory.find(CurrentChessPosition());
         return it==chessHistory.end()?0:it->second;
     }
-    bool ChessDrawClaimable() const {
-        return kind==Kind::Chess&&!finished&&side==1&&
-            (halfMoves>=100||ChessRepetitions()>=3);
+    bool ChessDrawAvailable(int player,int *intendedFrom=nullptr,
+                            int *intendedTo=nullptr) const {
+        if(kind!=Kind::Chess||finished||side!=player)return false;
+        if(halfMoves>=100||ChessRepetitions()>=3)return true;
+        bool repeated=false;
+        for(const auto &entry:chessHistory)if(entry.second>=2){
+            repeated=true;break;
+        }
+        if(halfMoves<99&&!repeated)return false;
+        // FIDE 9.2.1.1 / 9.3.1: identify a specific legal intended
+        // move before claiming. Never play it and give away the turn.
+        for(int from=0;from<64;from++)if(Sign(cells[from])==side)
+        for(int to=0;to<64;to++)if(ChessLegal(from,to)){
+            State next=ChessAfter(from,to,promotionChoice);
+            const auto it=chessHistory.find(next.CurrentChessPosition());
+            if(next.halfMoves>=100||
+               (it!=chessHistory.end()&&it->second>=2)){
+                if(intendedFrom)*intendedFrom=from;
+                if(intendedTo)*intendedTo=to;
+                return true;
+            }
+        }
+        return false;
     }
-    bool ClaimChessDraw() {
-        if(!ChessDrawClaimable())return false;
-        finished=true;winner=0;return true;
+    bool ChessDrawClaimable() const {return ChessDrawAvailable(1);}
+    bool ClaimChessDraw(int player=1) {
+        int from=-1,to=-1;
+        if(!ChessDrawAvailable(player,&from,&to))return false;
+        if(from>=0){lastFrom=from;lastTo=to;}
+        finished=true;winner=0;selected=-1;return true;
     }
     void CyclePromotion(){
         if(kind!=Kind::Chess||finished||side!=1||
@@ -701,7 +725,7 @@ struct State {
             for(int to=0;to<64;to++)if(ChessLegal(from,to))return true;
         return false;
     }
-    bool ChessMove(int from,int to) {
+    bool ChessMove(int from,int to,int cpuPromotion=5) {
         if(kind!=Kind::Chess||finished||!ChessLegal(from,to))return false;
         const int piece=cells[from],taken=cells[to];
         const bool enPassantCapture=std::abs(piece)==1&&
@@ -709,7 +733,7 @@ struct State {
         halfMoves=(std::abs(piece)==1||taken!=0||enPassantCapture)
             ?0:halfMoves+1;
         ApplyChess(cells,from,to,enPassant,castles,
-                   side==1?promotionChoice:5);
+                   side==1?promotionChoice:cpuPromotion);
         promotionChoice=5;
         selected=-1;lastFrom=from;lastTo=to;side=-side;++ply;
         const int repeats=++chessHistory[CurrentChessPosition()];
@@ -756,71 +780,96 @@ struct State {
         }
         return score;
     }
-    State ChessAfter(int from,int to) const {
+    State ChessAfter(int from,int to,int promotion=5) const {
         State result;
         result.kind=Kind::Chess;
         result.cells=cells;
         result.side=side;
         result.enPassant=enPassant;
         result.castles=castles;
+        result.halfMoves=(std::abs(cells[from])==1||cells[to]!=0)
+            ?0:halfMoves+1;
         result.ApplyChess(result.cells,from,to,result.enPassant,
-                          result.castles);
+                          result.castles,promotion);
         result.side=-side;
         return result;
     }
-    int SearchChess(int depth,int alpha,int beta) const {
-        if(ChessDeadPosition())return 0;
-        // A leaf can itself be checkmate; material alone would otherwise
-        // reward allowing mate-in-one at the end of the reply horizon.
-        if(depth<=0){
-            if(KingInCheck(cells,side)&&!HasChessMove())
-                return side==-1?-50000:50000;
-            return ChessBoardValue(cells);
-        }
-        bool found=false;
-        const bool maximizing=side==-1;
-        int best=maximizing?-300000:300000;
+    struct ChessTurn {int from,to,promotion,order;};
+    std::vector<ChessTurn> ChessTurns() const {
+        std::vector<ChessTurn> moves;
         for(int from=0;from<64;from++)if(Sign(cells[from])==side)
         for(int to=0;to<64;to++)if(ChessLegal(from,to)){
-            found=true;
-            State next=ChessAfter(from,to);
-            const int value=next.SearchChess(depth-1,alpha,beta);
-            if(maximizing){
-                best=std::max(best,value);
-                alpha=std::max(alpha,best);
-            }else{
-                best=std::min(best,value);
-                beta=std::min(beta,best);
+            const bool promote=std::abs(cells[from])==1&&
+                (to/8==0||to/8==7);
+            for(int promotion=5;promotion>=(promote?2:5);--promotion){
+                const int order=10*std::abs(cells[to])-
+                    std::abs(cells[from])+(promote?promotion*10:0);
+                moves.push_back({from,to,promotion,order});
             }
-            if(beta<=alpha)return best;
         }
-        if(!found){
-            if(!KingInCheck(cells,side))return 0;
-            return maximizing?-50000-depth:50000+depth;
+        std::stable_sort(moves.begin(),moves.end(),
+            [](const ChessTurn &a,const ChessTurn &b){return a.order>b.order;});
+        return moves;
+    }
+    int SearchChessBounded(int depth,int alpha,int beta,int &nodes,
+                           int budget,bool &exhausted) const {
+        if(nodes>=budget){exhausted=true;return ChessBoardValue(cells);}
+        ++nodes;
+        const auto moves=ChessTurns();
+        // Stalemate is a draw even at the material-evaluation horizon.
+        // Mate takes priority over the automatic move-count draw.
+        if(moves.empty())return KingInCheck(cells,side)
+            ?(side==-1?-50000-depth:50000+depth):0;
+        if(ChessDeadPosition()||halfMoves>=150)return 0;
+        if(depth<=0)return ChessBoardValue(cells);
+        const bool maximizing=side==-1;
+        int best=maximizing?-300000:300000;
+        for(const auto &move:moves){
+            State next=ChessAfter(move.from,move.to,move.promotion);
+            const int value=next.SearchChessBounded(depth-1,alpha,beta,
+                                                    nodes,budget,exhausted);
+            if(exhausted)return value;
+            if(maximizing){best=std::max(best,value);alpha=std::max(alpha,best);}
+            else {best=std::min(best,value);beta=std::min(beta,best);}
+            if(beta<=alpha)break;
         }
         return best;
     }
+    int SearchChess(int depth,int alpha,int beta) const {
+        int nodes=0;bool exhausted=false;
+        return SearchChessBounded(depth,alpha,beta,nodes,12000,exhausted);
+    }
     bool PlayChessCpuTurn(){
         if(kind!=Kind::Chess||finished||side!=-1)return false;
-        int pieces=0;
-        for(int i=0;i<64;i++)pieces+=cells[i]!=0;
-        // Early game: respond to every candidate move; endings gain a
-        // third full ply. Keeps search bounded on a Daydream-era phone.
-        const int replies=pieces<=12?2:1;
-        int bestScore=-300000,bestFrom=-1,bestTo=-1;
-        for(int from=0;from<64;from++)if(Sign(cells[from])==-1)
-        for(int to=0;to<64;to++)if(ChessLegal(from,to)){
-            State next=ChessAfter(from,to);
-            const int value=next.SearchChess(replies,-300000,300000);
-            if(bestFrom<0||value>bestScore){
-                bestScore=value;bestFrom=from;bestTo=to;
-            }
-        }
-        if(bestFrom<0){
+        chessSearchNodes=0;
+        if(ChessBoardValue(cells)<0&&ClaimChessDraw(-1))return true;
+        const auto moves=ChessTurns();
+        if(moves.empty()){
             finished=true;winner=KingInCheck(cells,side)?1:0;
             return false;
         }
-        return ChessMove(bestFrom,bestTo);
+        const int level=std::clamp(chessDifficulty,0,2);
+        const int budget=level==0?1500:level==1?6000:12000;
+        const int maxDepth=level+2;
+        ChessTurn best=moves.front();
+        // Keep only fully completed iterations. A budget cutoff must
+        // never favor candidates merely because they were visited first.
+        for(int depth=1;depth<=maxDepth;depth++){
+            ChessTurn iterationBest=best;
+            int bestScore=-300000,alpha=-300000;
+            bool exhausted=false;
+            for(const auto &move:moves){
+                State next=ChessAfter(move.from,move.to,move.promotion);
+                const int value=next.SearchChessBounded(depth-1,alpha,300000,
+                                          chessSearchNodes,budget,exhausted);
+                if(exhausted)break;
+                if(value>bestScore){bestScore=value;iterationBest=move;}
+                alpha=std::max(alpha,bestScore);
+            }
+            if(exhausted)break;
+            best=iterationBest;
+        }
+        return ChessMove(best.from,best.to,best.promotion);
     }
 
     // One bounded deterministic response per CPU turn, evaluated on Update.
@@ -877,3 +926,4 @@ struct State {
 };
 }} // namespace reverie::boardgames
 #endif
+
