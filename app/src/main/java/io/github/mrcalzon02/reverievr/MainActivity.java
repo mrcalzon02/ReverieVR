@@ -2393,21 +2393,15 @@ public final class MainActivity extends Activity
     }
 
     private void installBundledDosContent() {
-        if (!BuildConfig.DOOM_SHAREWARE_BUNDLED) {
-            ReverieLog.milestone(
-                "BUNDLED_CONTENT",
-                "DOOM Shareware is not bundled in this build."
-            );
+        if (!BuildConfig.DOOM_SHAREWARE_BUNDLED
+            && !BuildConfig.KENS_LABYRINTH_BUNDLED) {
             return;
         }
-
         dosImportExecutor.execute(() -> {
+            BundledDosContentInstaller installer =
+                new BundledDosContentInstaller(this, dosModuleRepository);
             try {
-                DosGameModule module =
-                    new BundledDosContentInstaller(
-                        this,
-                        dosModuleRepository
-                    ).ensureBundledDoom();
+                DosGameModule module = installer.ensureBundledDoom();
 
                 if (module != null) {
                     ReverieLog.milestone("BUNDLED_CONTENT",
@@ -2419,6 +2413,17 @@ public final class MainActivity extends Activity
                     "Default DOOM Shareware module could not be installed.",
                     exception
                 );
+            }
+            try {
+                DosGameModule module = installer.ensureBundledKen();
+                if (module != null) {
+                    ReverieLog.milestone("BUNDLED_CONTENT",
+                        "Bundled DOS content available: " + module.displayName);
+                }
+            } catch (Exception exception) {
+                ReverieLog.error("BUNDLED_CONTENT",
+                    "Default Ken's Labyrinth module could not be installed.",
+                    exception);
             }
         });
     }

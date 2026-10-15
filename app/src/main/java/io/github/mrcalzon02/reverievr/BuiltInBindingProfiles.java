@@ -8,6 +8,7 @@ final class BuiltInBindingProfiles {
     static final String ID_NONE = "none";
     static final String ID_DOS_STANDARD = "dos-standard";
     static final String ID_DOS_DOOM_SHAREWARE = "dos-doom-shareware";
+    static final String ID_DOS_KENS_LABYRINTH = "dos-kens-labyrinth";
     static final String ID_DOS_FPS_HEAD_MOUSE = "dos-fps-head-mouse";
     static final String ID_DOS_CURSOR = "dos-cursor";
     static final String ID_DOS_HEAD_MOUSE = "dos-head-mouse";
@@ -252,6 +253,18 @@ final class BuiltInBindingProfiles {
         addDosMenuBindings(standard);
         profiles.add(new BindingProfile(ID_DOS_STANDARD,
             "DOS standard - pad arrows / head mouse", standard));
+
+        // Keyboard-driven freeware FPS: arrows, Ctrl/fire, Space/use.
+        // The physical O/Home remains in the VR shell, never guest mapped.
+        List<InputBinding> ken = new ArrayList<>();
+        addDosTouchpadArrows(ken);
+        ken.add(InputBinding.digital(BindingInput.SELECT,
+            VirtualOutput.key(VirtualKey.CTRL)));
+        ken.add(InputBinding.digital(BindingInput.DAYDREAM_APP_BUTTON,
+            VirtualOutput.key(VirtualKey.SPACE)));
+        addDosMenuBindings(ken);
+        profiles.add(new BindingProfile(ID_DOS_KENS_LABYRINTH,
+            "DOS Ken's Labyrinth — move / fire / use", ken));
 
         List<InputBinding> doom = new ArrayList<>();
         // Guest yaw from the same 3D head view is positive to the RIGHT.

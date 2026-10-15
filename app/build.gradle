@@ -32,6 +32,13 @@ def excludeDoomShareware =
 def bundleDoomShareware =
     !excludeDoomShareware && doomSharewareArchive.isFile()
 
+// Original Ken Silverman freeware ZIP, excluded from commercial variants.
+def kenArchive = rootProject.file(
+    "third_party/kens-labyrinth/payload/default-content/labfull.zip"
+)
+def excludeKensLabyrinth = project.hasProperty("excludeKensLabyrinth")
+def bundleKensLabyrinth = !excludeKensLabyrinth && kenArchive.isFile()
+
 def dosboxPureAndroidMk = rootProject.file(
     "third_party/dosbox-pure/src/jni/Android.mk"
 )
@@ -218,6 +225,11 @@ android {
             bundleDoomShareware.toString()
         )
         buildConfigField(
+            "boolean",
+            "KENS_LABYRINTH_BUNDLED",
+            bundleKensLabyrinth.toString()
+        )
+        buildConfigField(
             "String",
             "DIAGNOSTIC_INTAKE_URL",
             "\"${diagnosticIntakeUrlEscaped}\""
@@ -300,6 +312,13 @@ android {
                     )
                 )
             }
+            if (bundleKensLabyrinth) {
+                assets.srcDir(
+                    rootProject.file(
+                        "third_party/kens-labyrinth/payload"
+                    )
+                )
+            }
         }
     }
 
@@ -350,6 +369,13 @@ tasks.configureEach { task ->
                         + "(or .bat), or pass "
                         + "-PexcludeDoomShareware for a build that "
                         + "intentionally omits the shareware content."
+                )
+            }
+            if (!excludeKensLabyrinth && !kenArchive.isFile()) {
+                throw new GradleException(
+                    "Release builds include Ken's Labyrinth by default. "
+                    + "Run scripts/fetch-kens-labyrinth.sh (or .bat), "
+                    + "or pass -PexcludeKensLabyrinth for a no-Ken build."
                 )
             }
         }

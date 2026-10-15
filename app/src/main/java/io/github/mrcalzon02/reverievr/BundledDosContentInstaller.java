@@ -18,6 +18,15 @@ final class BundledDosContentInstaller {
     static final String DOOM_MODULE_ID =
         "bundled-doom-shareware-1.9";
 
+    static final String KEN_MODULE_ID =
+        "bundled-kens-labyrinth-2.1";
+    private static final String KEN_ASSET = "default-content/labfull.zip";
+    private static final String KEN_SHA256 =
+        "5baf67ed3795be0dff3f32819f0c20fa84d3a00d667215d7a1146a7971c81072";
+    private static final String KEN_PAYLOAD_FILE = "labfull.zip";
+    private static final String KEN_BOOTSTRAP_MARKER =
+        ".reverie-ken-bootstrap-v1";
+
     private static final String DOOM_ASSET =
         "default-content/doom19s.zip";
     private static final String DOOM_SHA256 =
@@ -96,9 +105,106 @@ final class BundledDosContentInstaller {
         return module;
     }
 
+
+    // The original ZIP is verified before extraction and kept unchanged in
+    // the APK. Runtime files are app-private, never a second Android package.
+    DosGameModule ensureBundledKen() throws IOException {
+        if (!BuildConfig.KENS_LABYRINTH_BUNDLED) {
+            return null;
+        }
+        File directory = new File(repository.rootDirectory(), KEN_MODULE_ID);
+        File payload = new File(
+            new File(directory, CONTENT_DIRECTORY), KEN_PAYLOAD_FILE);
+        DosGameModule existing = repository.findById(KEN_MODULE_ID);
+        if (!payload.isFile()
+            || !KEN_SHA256.equalsIgnoreCase(sha256(payload))) {
+            if (directory.exists() && !deleteRecursively(directory)) {
+                throw new IOException("Cannot remove invalid Ken's Labyrinth content.");
+            }
+            File content = payload.getParentFile();
+            if (!content.mkdirs() && !content.isDirectory()) {
+                throw new IOException("Cannot create Ken's Labyrinth content directory.");
+            }
+            copyVerifiedAsset(payload, KEN_ASSET, KEN_SHA256);
+        }
+        File runtime = new File(directory, RUNTIME_DIRECTORY);
+        File marker = new File(runtime, KEN_BOOTSTRAP_MARKER);
+        File executable = findKenExecutable(runtime);
+        if (!marker.isFile() || executable == null || executable.length() == 0) {
+            if (runtime.exists() && !deleteRecursively(runtime)) {
+                throw new IOException("Cannot reset Ken's Labyrinth runtime.");
+            }
+            if (!runtime.mkdirs() && !runtime.isDirectory()) {
+                throw new IOException("Cannot create Ken's Labyrinth runtime.");
+            }
+            try (InputStream input = new BufferedInputStream(
+                    new FileInputStream(payload))) {
+                BoundedZipExtractor.extract(input, runtime, 256,
+                    64L * 1024L * 1024L);
+            } catch (IOException failure) {
+                deleteRecursively(runtime);
+                throw failure;
+            }
+            executable = findKenExecutable(runtime);
+            if (executable == null || executable.length() == 0) {
+                deleteRecursively(runtime);
+                throw new IOException(
+                    "Original Ken's Labyrinth archive has no KEN.EXE.");
+            }
+            writeText(marker, "RVKEN1\nsha256=" + KEN_SHA256 + "\n");
+        }
+        String rootPath = runtime.getCanonicalPath() + File.separator;
+        String executablePath = executable.getCanonicalPath();
+        if (!executablePath.startsWith(rootPath)) {
+            throw new IOException("Ken's Labyrinth launch path escapes runtime.");
+        }
+        String dosExecutable = executablePath.substring(rootPath.length())
+            .replace(File.separatorChar, (char) 92);
+        writeText(new File(runtime, DOS_YML),
+            "run_path: C:" + (char) 92 + dosExecutable + "\n");
+        DosGameModule module = new DosGameModule(
+            KEN_MODULE_ID,
+            "Ken's Labyrinth v2.1 (Freeware)",
+            KEN_PAYLOAD_FILE,
+            runtime.getAbsolutePath(),
+            existing == null || !BuiltInBindingProfiles.isDosProfileId(
+                existing.bindingProfileId)
+                ? BuiltInBindingProfiles.ID_DOS_KENS_LABYRINTH
+                : existing.bindingProfileId,
+            0L
+        );
+        repository.save(module);
+        ReverieLog.milestone("BUNDLED_CONTENT",
+            "Verified and installed Ken's Labyrinth v2.1 freeware runtime.");
+        return module;
+    }
+
+    private static File findKenExecutable(File runtime) {
+        File rootExecutable = childFile(runtime, "KEN.EXE");
+        if (rootExecutable != null) {
+            return rootExecutable;
+        }
+        if (!runtime.isDirectory()) {
+            return null;
+        }
+        File[] children = runtime.listFiles(File::isDirectory);
+        if (children != null) {
+            for (File child : children) {
+                File candidate = childFile(child, "KEN.EXE");
+                if (candidate != null) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
+    }
+
     DosGameModule prepareForLaunch(
         DosGameModule module
     ) throws IOException {
+        if (module != null && KEN_MODULE_ID.equals(module.id)) {
+            return ensureBundledKen();
+        }
         if (module == null
             || !DOOM_MODULE_ID.equals(module.id)) {
             return module;
@@ -375,6 +481,12 @@ final class BundledDosContentInstaller {
 
     private void copyVerifiedAsset(File destination)
         throws IOException {
+        copyVerifiedAsset(destination, DOOM_ASSET, DOOM_SHA256);
+    }
+
+    private void copyVerifiedAsset(
+        File destination, String assetName, String expectedSha256
+    ) throws IOException {
         MessageDigest digest = sha256Digest();
         File partial =
             new File(
@@ -384,7 +496,7 @@ final class BundledDosContentInstaller {
         partial.delete();
 
         try (InputStream raw =
-                 context.getAssets().open(DOOM_ASSET);
+                 context.getAssets().open(assetName);
              BufferedInputStream input =
                  new BufferedInputStream(raw);
              FileOutputStream fileOutput =
@@ -405,11 +517,11 @@ final class BundledDosContentInstaller {
         }
 
         String actual = hex(digest.digest());
-        if (!DOOM_SHA256.equals(actual)) {
+        if (!expectedSha256.equals(actual)) {
             partial.delete();
             throw new IOException(
-                "Bundled doom19s.zip checksum mismatch. Expected "
-                    + DOOM_SHA256
+                "Bundled DOS archive checksum mismatch. Expected "
+                    + expectedSha256
                     + " but found "
                     + actual
             );
@@ -419,13 +531,13 @@ final class BundledDosContentInstaller {
             && !destination.delete()) {
             partial.delete();
             throw new IOException(
-                "Could not replace bundled DOOM payload."
+                "Could not replace bundled DOS payload."
             );
         }
         if (!partial.renameTo(destination)) {
             partial.delete();
             throw new IOException(
-                "Could not finalize bundled DOOM payload."
+                "Could not finalize bundled DOS payload."
             );
         }
     }

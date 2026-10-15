@@ -2001,9 +2001,8 @@ public final class VrActivity extends Activity
             dosModuleRepository.findById(moduleId);
 
         if (module != null
-            && BundledDosContentInstaller.DOOM_MODULE_ID.equals(
-                module.id
-            )
+            && (BundledDosContentInstaller.DOOM_MODULE_ID.equals(module.id)
+                || BundledDosContentInstaller.KEN_MODULE_ID.equals(module.id))
             && bundledDosContentInstaller != null) {
             try {
                 module =
@@ -2012,7 +2011,7 @@ public final class VrActivity extends Activity
             } catch (java.io.IOException exception) {
                 ReverieLog.error(
                     "BUNDLED_CONTENT",
-                    "Could not prepare bundled DOOM for launch.",
+                    "Could not prepare bundled DOS game for launch.",
                     exception
                 );
                 module = null;

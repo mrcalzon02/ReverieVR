@@ -1,0 +1,11 @@
+Ken's Labyrinth v2.1 — historical DOS freeware (copyrighted)
+Author and source: Ken Silverman, https://advsys.net/ken/klab.htm
+
+This is a documentation identifier for original third-party DOS game data.
+The author hosts the full game as freeware. No MIT, CC0, GPL or public-domain
+grant is claimed for its original game binaries, artwork or sound.
+Preserve author attribution and original archive/files. ReverieVR's default
+packaging treats this content as FREE/NONCOMMERCIAL only, unless separate
+written commercial redistribution permission is obtained. When uncertain,
+omit the game from a distributed APK using -PexcludeKensLabyrinth.
+Do not use the ReverieVR source-code license to relicense this material.

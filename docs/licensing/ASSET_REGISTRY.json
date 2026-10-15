@@ -114,6 +114,14 @@
       "record": "third_party/doom-shareware/README.md",
       "sha256": "cacf0142b31ca1af00796b4a0339e07992ac5f21bc3f81e7532fe1b5e1b486e6"
     },
+    "assets/default-content/labfull.zip": {
+      "component": "kens-labyrinth-freeware",
+      "license": "LicenseRef-Kens-Labyrinth-Freeware",
+      "rights": "noncommercial-only",
+      "required": false,
+      "record": "third_party/kens-labyrinth/README.md",
+      "sha256": "5baf67ed3795be0dff3f32819f0c20fa84d3a00d667215d7a1146a7971c81072"
+    },
     "res/raw/starry_cereal_menu.mp3": {
       "component": "starry-cereal-audio",
       "license": "LicenseRef-Suno-Commercial-Use",

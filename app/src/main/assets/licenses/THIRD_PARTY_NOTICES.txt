@@ -44,6 +44,12 @@ DOOM Shareware v1.9 (ONLY when included in a free phone-test build):
   Original archive kept unchanged, separate shareware redistribution terms.
   https://www.gamers.org/pub/idgames/idstuff/doom/doom19s.zip
 
+Ken's Labyrinth v2.1 (only in free phone-test builds):
+  Copyright Ken Silverman and applicable rights holders. The DOS game is
+  freeware, not open-source content under ReverieVR's MIT license.
+  Original unmodified archive, original attribution and files preserved.
+  Author's page: https://advsys.net/ken/klab.htm
+
 Starry Cereal music:
   Suno artist: Jovian-PostPunkRevival
   https://suno.com/@jovianpostpunkrevival7375
