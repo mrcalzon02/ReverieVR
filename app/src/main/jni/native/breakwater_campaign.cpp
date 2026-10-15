@@ -313,6 +313,9 @@ void Campaign::Land(Enemy &e) {
         trooper.active = true;
         trooper.tactic = AssignInfantryTactic(e.type,passenger);
         trooper.lane_x = InfantryLaneX(trooper.x,trooper.tactic);
+        trooper.open_lane_x=trooper.lane_x;
+        if(e.type==UnitType::LandingCraft)
+            AssignInfantryCover(trooper,shore_cover_,passenger);
     }
     e.active = false;
     e.landed = true;
@@ -354,8 +357,13 @@ IncomingThreats Campaign::incoming_threats() const {
     // as AdvanceInfantry, rather than guessing from the first rifleman.
     bool shooter_ready = false;
     float nearest_arrival = -1.0f;
-    for (const Infantry &soldier : infantry_units_) {
-        if (!soldier.active) continue;
+    for (const Infantry &original : infantry_units_) {
+        if (!original.active) continue;
+        // Destruction of a wall takes effect on the threat predictor
+        // immediately, even before the next physics update can mutate
+        // the soldier's original station/order.
+        Infantry soldier=original;
+        RefreshInfantryCover(soldier,shore_cover_);
         if (InfantryReady(soldier)) {
             shooter_ready = true;
             break;
@@ -661,6 +669,7 @@ void Campaign::TickStep(float dt) {
     for (size_t slot=0;slot<infantry_units_.size();++slot) {
         Infantry &trooper=infantry_units_[slot];
         if (!trooper.active) continue;
+        RefreshInfantryCover(trooper,shore_cover_);
         AdvanceInfantry(trooper,dt);
         if (InfantryReady(trooper)) {
             ++ready_to_fire;

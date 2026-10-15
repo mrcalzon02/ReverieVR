@@ -127,6 +127,84 @@ int main() {
                            &blocked)==-1);
     }
 
+    // Cover-seeking landing-party riflemen truly maneuver behind live
+    // obstacles and fall back to their open lane if cover is destroyed.
+    {
+        Infantry rifle{};
+        rifle.active=true;
+        rifle.tactic=InfantryTactic::Rifle;
+        rifle.x=.24f;rifle.z=-2.28f;rifle.lane_x=rifle.x;
+        const auto iron=MakeShoreCover(1);
+        const auto none=MakeShoreCover(0);
+        const float originalLine=InfantryLineZ(rifle);
+        assert(originalLine==-1.34f);
+        AssignInfantryCover(rifle,none,0);
+        assert(rifle.cover_slot==-1 && rifle.lane_x==.24f);
+        assert(InfantryLineZ(rifle)==originalLine);
+        AssignInfantryCover(rifle,iron,0);
+        assert(rifle.cover_slot==1);
+        assert(InfantryCoverOrdered(rifle));
+        assert(InfantryLineZ(rifle)<-1.34f);
+        assert(std::abs(InfantryLineZ(rifle)-(-1.46f))<.00001f);
+        assert(rifle.open_lane_x==.24f);
+        assert(std::abs(rifle.lane_x-.15f)<.00001f);
+        const float coveredEta=InfantrySecondsToReady(rifle);
+        assert(coveredEta>5.0f && coveredEta<7.0f);
+        assert(!InfantryReady(rifle));
+        AdvanceInfantry(rifle,2.0f);
+        assert(rifle.x<.24f && rifle.z>-2.28f);
+        AdvanceInfantry(rifle,30.0f);
+        assert(InfantryReady(rifle) && rifle.x==rifle.lane_x);
+        assert(std::abs(rifle.z+1.46f)<.00001f);
+        assert(InfantrySecondsToReady(rifle)<.00001f);
+        auto destroyed=iron;
+        destroyed[1].hp=0;
+        RefreshInfantryCover(rifle,destroyed);
+        assert(rifle.cover_slot==-1);
+        assert(rifle.regrouping); // lateral return must not be skipped
+        assert(rifle.lane_x==rifle.open_lane_x);
+        assert(!InfantryReady(rifle)); // must regroup to exposed line
+        const float retreatEta=InfantrySecondsToReady(rifle);
+        assert(retreatEta>.0f && retreatEta<2.0f);
+        AdvanceInfantry(rifle,retreatEta+1.0f);
+        assert(InfantryReady(rifle));
+        assert(!rifle.regrouping);
+        assert(std::abs(rifle.z+1.34f)<.00001f);
+        assert(std::abs(rifle.x-.24f)<.00001f);
+        assert(InfantryLineZ(rifle)==originalLine);
+        RefreshInfantryCover(rifle,destroyed);
+        assert(rifle.cover_slot==-1); // never reacquire destroyed cover
+
+        Infantry distant=rifle;
+        distant.x=3.1f;distant.lane_x=distant.x;
+        AssignInfantryCover(distant,iron,0);
+        // Outer Iron Quay wall at 2.35 remains close enough for a
+        // local fallback, but the unit must never teleport there.
+        assert(distant.cover_slot==2);
+        assert(distant.x==3.1f);
+        Infantry flanker=rifle;
+        flanker.tactic=InfantryTactic::FlankLeft;
+        flanker.cover_slot=-1;
+        flanker.lane_x=flanker.x-.85f;
+        AssignInfantryCover(flanker,iron,2);
+        assert(flanker.cover_slot==-1);
+        assert(InfantryLineZ(flanker)==-1.34f);
+        Infantry support=rifle;
+        support.tactic=InfantryTactic::Support;
+        AssignInfantryCover(support,iron,3);
+        assert(support.cover_slot==-1);
+        assert(InfantryLineZ(support)==-1.68f);
+
+        Infantry invalid=rifle;
+        invalid.x=std::numeric_limits<float>::quiet_NaN();
+        AssignInfantryCover(invalid,iron,0);
+        assert(invalid.cover_slot==-1);
+        invalid=rifle;invalid.cover_slot=127;
+        RefreshInfantryCover(invalid,iron);
+        assert(invalid.cover_slot==-1);
+        assert(invalid.lane_x==invalid.open_lane_x);
+    }
+
     // Landing-craft tactics are real simulation positions, not a separate
     // animation timer or fake HUD threats. Early rowboats remain riflemen.
     {
@@ -1664,11 +1742,26 @@ int main() {
     assert(tactic_landing.DeserializeShop(stage_bytes,sizeof(stage_bytes)));
     assert(tactic_landing.BeginWave());
     bool found_flank=false;
+    bool found_cover=false;
+    int covered_slot=-1;
+    int covered_wall=-1;
     for(int tick=0;tick<480 && tactic_landing.phase()==Phase::Combat;
         ++tick) {
         tactic_landing.Tick(.05f);
         for(const Infantry &unit:tactic_landing.infantry_units()) {
             if(!unit.active)continue;
+            if(unit.tactic==InfantryTactic::Rifle &&
+               unit.cover_slot>=0) {
+                found_cover=true;
+                covered_slot=static_cast<int>(
+                    &unit-&tactic_landing.infantry_units()[0]);
+                covered_wall=unit.cover_slot;
+                assert(unit.open_lane_x>=-3.1f &&
+                       unit.open_lane_x<=3.1f);
+                assert(unit.cover_line_z<-1.34f);
+                assert(tactic_landing.shore_cover()[
+                    static_cast<size_t>(covered_wall)].hp>0);
+            }
             if(unit.tactic==InfantryTactic::FlankLeft ||
                unit.tactic==InfantryTactic::FlankRight) {
                 found_flank=true;
@@ -1676,10 +1769,45 @@ int main() {
                 assert(std::abs(unit.lane_x-unit.x)<=.85f+.0001f);
             }
         }
-        if(found_flank)break;
+        if(found_flank && found_cover)break;
     }
-    assert(found_flank);
+    assert(found_flank && found_cover);
+    assert(covered_slot>=0 && covered_wall>=0);
     assert(tactic_landing.wave_status().troops_landed>=3);
+    // Shoot the exact barricade claimed by a real landed rifleman.
+    // Confirm its instantaneous warning stops treating the dead wall
+    // as a usable firing station and a later tick repositions the unit.
+    const Infantry protectedBefore=tactic_landing.infantry_units()[
+        static_cast<size_t>(covered_slot)];
+    const int16_t startingCover=tactic_landing.shore_cover()[
+        static_cast<size_t>(covered_wall)].hp;
+    int coverShots=0;
+    while(tactic_landing.shore_cover()[
+          static_cast<size_t>(covered_wall)].hp>0 &&
+          tactic_landing.phase()==Phase::Combat && coverShots<12) {
+        for(int step=0;step<4;++step)tactic_landing.Tick(.10f);
+        assert(tactic_landing.FireAtCover(
+            static_cast<uint8_t>(covered_wall)));
+        ++coverShots;
+    }
+    assert(coverShots>=5 && coverShots<=9);
+    assert(startingCover>0);
+    assert(tactic_landing.shore_cover()[
+        static_cast<size_t>(covered_wall)].hp==0);
+    const Infantry& beforeRegroup=tactic_landing.infantry_units()[
+        static_cast<size_t>(covered_slot)];
+    assert(beforeRegroup.cover_slot==covered_wall);
+    const IncomingThreats immediateWarning=tactic_landing.incoming_threats();
+    assert(std::isfinite(immediateWarning.infantry_seconds));
+    assert(beforeRegroup.active);
+    tactic_landing.Tick(.05f);
+    const Infantry &afterRegroup=tactic_landing.infantry_units()[
+        static_cast<size_t>(covered_slot)];
+    assert(afterRegroup.cover_slot==-1);
+    assert(afterRegroup.regrouping ||
+           afterRegroup.x==protectedBefore.open_lane_x);
+    assert(afterRegroup.lane_x==protectedBefore.open_lane_x);
+    assert(InfantryLineZ(afterRegroup)==-1.34f);
 
     // Iron Quay day two seed 8 starts with a gunboat. It must be able to
     // fire from offshore, and early interception must prevent those salvos.

@@ -1,3 +1,30 @@
+## 2026-10-15 — Breakwater landing-craft cover AI and regroup (source)
+
+Extended the actual campaign's already destructible shoreline cover
+into a tactical infantry destination. Riflemen arriving from landing
+craft at Iron Quay or Blackcap Island now choose the closest intact
+barrier within a bounded radius, move laterally/forward behind its
+real ballistic obstruction, and use that station for firing readiness
+and the incoming SHORE countdown. Flankers, rear support gunners and
+rowboat infantry retain their preceding behavior. Destroying the
+assigned barricade removes its protected station, so the soldier
+advances to its original open firing lane instead of teleporting or
+remaining behind nonexistent cover. Read-only threat prediction
+immediately recognizes the loss of a wall before the next tick.
+Only transient battle Infantry fields and shared deterministic
+movement helpers changed. The focused C++17 `-Werror` cover AI
+exercise initially exposed a missing lateral-regroup command after
+wall destruction; adding an explicit regrouping flag and clearing it
+only on lane arrival fixed the root cause. The rerun passed; the 80-byte shop save, hit spheres,
+player weapon behavior, shaders, atlas and controls are preserved.
+
+Added native regression source for empty Shingle Bay, real Iron Quay
+barrier selection, lateral movement, readiness/ETA, wall loss/fallback,
+invalid indices and a seeded actual landing-craft arrival followed
+by weapon-driven destruction of that same barrier. Full integrated
+native C++ suite, NDK APK compile, stereo and physical S9 test remain
+unverified; no APK was released in this slice.
+
 ## 2026-10-15 — Breakwater ballistic-cover obstacle implementation (source)
 
 Implemented battle-owned destructible beach barricades at Iron Quay

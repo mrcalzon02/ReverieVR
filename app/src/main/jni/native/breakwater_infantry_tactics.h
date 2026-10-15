@@ -22,6 +22,56 @@ inline InfantryTactic AssignInfantryTactic(UnitType vessel,uint8_t passenger) {
         default: return InfantryTactic::Rifle;
     }
 }
+// Riflemen from larger landing parties can occupy existing live shore
+// barricades. No new unit, collision shape, RNG or saved-state field.
+inline void AssignInfantryCover(
+    Infantry &unit,
+    const std::array<ShoreCover,Campaign::kMaxCover>& walls,
+    uint8_t passenger
+) {
+    unit.open_lane_x=unit.lane_x;
+    unit.cover_slot=-1;
+    unit.regrouping=false;
+    unit.cover_line_z=0.0f;
+    if(!unit.active || unit.tactic!=InfantryTactic::Rifle ||
+       !std::isfinite(unit.x))return;
+    float bestDistance=1.18f;
+    int chosen=-1;
+    for(size_t i=0;i<walls.size();++i) {
+        const ShoreCover& wall=walls[i];
+        if(wall.hp<=0 || !std::isfinite(wall.x) ||
+           !std::isfinite(wall.z))continue;
+        const float distance=std::abs(unit.x-wall.x);
+        if(distance<bestDistance) {
+            bestDistance=distance;
+            chosen=static_cast<int>(i);
+        }
+    }
+    if(chosen<0)return;
+    const ShoreCover &wall=walls[static_cast<size_t>(chosen)];
+    unit.cover_slot=static_cast<int8_t>(chosen);
+    unit.cover_line_z=wall.z-.29f;
+    const float offset=passenger%2u==0u?.15f:-.15f;
+    unit.lane_x=std::max(-3.1f,std::min(3.1f,wall.x+offset));
+}
+inline void RefreshInfantryCover(
+    Infantry &unit,const std::array<ShoreCover,Campaign::kMaxCover>& walls
+) {
+    if(unit.cover_slot<0)return;
+    const int slot=static_cast<int>(unit.cover_slot);
+    if(slot<static_cast<int>(walls.size()) &&
+       walls[static_cast<size_t>(slot)].hp>0)return;
+    // A destroyed barricade no longer counts as a firing station.
+    // Regroup toward the original lane and normal rifle firing line.
+    unit.cover_slot=-1;
+    unit.regrouping=true;
+    unit.cover_line_z=0.0f;
+    unit.lane_x=unit.open_lane_x;
+}
+inline bool InfantryCoverOrdered(const Infantry &unit) {
+    return unit.cover_slot>=0 && unit.tactic==InfantryTactic::Rifle &&
+        std::isfinite(unit.cover_line_z);
+}
 inline bool InfantryFlanking(InfantryTactic tactic) {
     return tactic==InfantryTactic::FlankLeft ||
            tactic==InfantryTactic::FlankRight;
@@ -35,6 +85,14 @@ inline float InfantryLaneX(float start,InfantryTactic tactic) {
 inline float InfantryLineZ(InfantryTactic tactic) {
     return tactic==InfantryTactic::Support?-1.68f:-1.34f;
 }
+inline float InfantryLineZ(const Infantry &unit) {
+    return InfantryCoverOrdered(unit)?unit.cover_line_z:
+                                      InfantryLineZ(unit.tactic);
+}
+inline bool InfantryNeedsLane(const Infantry &unit) {
+    return InfantryFlanking(unit.tactic) || InfantryCoverOrdered(unit) ||
+           unit.regrouping;
+}
 inline float InfantrySpeed(InfantryTactic tactic) {
     return tactic==InfantryTactic::Support?.105f:
            InfantryFlanking(tactic)?.135f:.13f;
@@ -46,19 +104,19 @@ inline uint8_t InfantryShotDamage(InfantryTactic tactic) {
 inline float InfantrySecondsToReady(const Infantry &unit) {
     if(!unit.active || !std::isfinite(unit.z) ||
        !std::isfinite(unit.x) ||
-       (InfantryFlanking(unit.tactic) && !std::isfinite(unit.lane_x)))
+       (InfantryNeedsLane(unit) && !std::isfinite(unit.lane_x)))
         return -1.0f;
     const float zLeft=std::max(0.0f,
-        (InfantryLineZ(unit.tactic)-unit.z)/InfantrySpeed(unit.tactic));
-    const float xLeft=InfantryFlanking(unit.tactic)?
+        (InfantryLineZ(unit)-unit.z)/InfantrySpeed(unit.tactic));
+    const float xLeft=InfantryNeedsLane(unit)?
         std::abs(unit.lane_x-unit.x)/kInfantryLateralSpeed:0.0f;
     return std::max(zLeft,xLeft);
 }
 inline bool InfantryReady(const Infantry &unit) {
     if(!unit.active || !std::isfinite(unit.z) ||
        !std::isfinite(unit.x) ||
-       unit.z<InfantryLineZ(unit.tactic)-.00001f)return false;
-    return !InfantryFlanking(unit.tactic) ||
+       unit.z<InfantryLineZ(unit)-.00001f)return false;
+    return !InfantryNeedsLane(unit) ||
         (std::isfinite(unit.lane_x) &&
          std::abs(unit.lane_x-unit.x)<.00001f);
 }
@@ -75,14 +133,16 @@ inline bool InfantryFiringPose(
 inline void AdvanceInfantry(Infantry &unit,float seconds) {
     if(!unit.active || !std::isfinite(seconds) || seconds<=0.0f ||
        !std::isfinite(unit.x) || !std::isfinite(unit.z))return;
-    unit.z=std::min(InfantryLineZ(unit.tactic),
+    unit.z=std::min(InfantryLineZ(unit),
                     unit.z+InfantrySpeed(unit.tactic)*seconds);
-    if(!InfantryFlanking(unit.tactic) || !std::isfinite(unit.lane_x))return;
+    if(!InfantryNeedsLane(unit) || !std::isfinite(unit.lane_x))return;
     const float step=kInfantryLateralSpeed*seconds;
     if(unit.x<unit.lane_x)
         unit.x=std::min(unit.lane_x,unit.x+step);
     else if(unit.x>unit.lane_x)
         unit.x=std::max(unit.lane_x,unit.x-step);
+    if(unit.regrouping && unit.x==unit.lane_x)
+        unit.regrouping=false;
 }
 
 }} // namespace reverie::breakwater

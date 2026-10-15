@@ -57,6 +57,12 @@ struct Infantry {
     // state: the campaign checkpoint can still save shop state in 80 bytes.
     InfantryTactic tactic = InfantryTactic::Rifle;
     float lane_x = 0;
+    // Battle-only cover order. The original lane remains the fallback
+    // destination if the associated barricade gets destroyed.
+    int8_t cover_slot = -1;
+    bool regrouping = false;
+    float open_lane_x = 0;
+    float cover_line_z = 0;
 };
 struct ShoreCover {
     float x = 0.0f;

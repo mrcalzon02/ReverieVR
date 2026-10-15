@@ -167,6 +167,48 @@ weapon vulnerability, malformed coordinates and phase/slot guards.
 Full Android NDK compile, visual alignment at headset depth, binocular
 readability and physical controller tests remain outstanding.
 
+## Infantry cover-seeking and post-destruction regrouping (2026-10-15 source)
+
+Landing-craft **riflemen** at Iron Quay and Blackcap Island now seek
+their nearest *living* shoreline barricade when disembarking within
+1.18 world units of that structure. A covered rifleman advances both
+forward and laterally to a firing station 0.29 world units *behind*
+the selected barricade, offset slightly inside its physical width.
+This puts the existing ballistic cover between the battery and
+that actual infantry hit sphere; it does not confer artificial damage
+reduction or invulnerability. Flankers retain their separate side
+lanes, support gunners retain their rear-line role, and rowboat
+riflemen preserve their original uncomplicated approach.
+
+The existing transient `Infantry` state now retains one signed cover
+slot, an explicit lateral-regrouping flag, an open-ground fallback
+x-coordinate, and a cover firing-line z-coordinate. `AssignInfantryCover` sets a deterministic order at
+landing. `AdvanceInfantry`, `InfantryReady`, and
+`InfantrySecondsToReady` share cover-aware station and lateral
+movement logic with the actual authoritative `Campaign::TickStep`.
+If that *same physical barricade* is reduced to zero HP,
+`RefreshInfantryCover` releases its attached riflemen on the next
+simulation step, explicitly marks the lateral return as in progress,
+and only clears that state upon reaching the original x lane.
+They also advance toward the original z=-1.34 firing line. A soldier does not teleport, automatically
+regain cover, or stay indefinitely behind a destroyed obstacle.
+`incoming_threats()` evaluates that release on an isolated snapshot,
+so the SHORE warning reacts to a wall destroyed between ticks.
+
+Cover assignment is intentionally confined to larger landing-craft
+parties at later locations. No new enemy count, hitbox, damage value,
+audio bus, UI panel, GL draw call, sprite atlas cell, Daydream mapping
+or shop checkpoint field is introduced. The 80-byte save remains
+unchanged because all cover/infantry orders are battle-only.
+Pure role regressions and an Iron Quay seeded landing-craft scenario
+now verify selecting an existing wall, moving behind it, destroying
+that *same* wall with actual ammunition and cooldown, and returning
+to the real fallback lane. A standalone C++17 `-Wall -Wextra
+-Wpedantic -Werror` exercise of the extracted helper caught and
+corrected an actual lost-lateral-regrouping defect before commit.
+Full repository-native/Android NDK builds
+and Galaxy S9 device performance remain separate acceptance gates.
+
 ## Destructible shoreline cover with true ballistic blocking (2026-10-15 source)
 
 The native campaign now owns up to **four actual destructible shoreline

@@ -6,6 +6,22 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater landing-party cover-seeking and tactical regroup
+
+- Make landing-craft riflemen at later coastal locations move behind
+  nearby existing **destructible** barricades. Assigned stations use
+  the real wall position and protected x-span rather than a cosmetic
+  crouch/armor statistic. Flankers, support troops and opening
+  rowboat waves retain their distinct behavior.
+- Release squads to their original lanes when their physical wall is
+  destroyed. Share covered arrival/readiness with live simulation
+  and SHORE warning, including immediate warning correction on
+  destroyed cover between ticks. Save schema, hitboxes and all
+  Daydream inputs stay unchanged.
+- Add pure unit-route checks and a real seeded landing/destroy/regroup
+  regression. Android/NDK and device acceptance still outstanding.
+
+
 ### Breakwater destructible shoreline cover and true shot occlusion
 
 - Add four-slot, transient, campaign-owned cover with 3 Iron Quay
