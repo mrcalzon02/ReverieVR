@@ -222,14 +222,12 @@ edit/normalization recipe and accepted in-game use. Do not assume
 "royalty-free" means redistributable as raw public-repository audio.
 Do not hotlink or ship entire source packs. Candidate sites must be
 auditioned; being CC0 does **not** mean an effect is suitable or already
-downloaded. Provisional, verified collection landing pages:
-
-| Candidate collection | License at source | Intended auditions |
-|---|---|---|
-| Kenney [Impact Sounds](https://kenney.nl/assets/impact-sounds) (130 files) | CC0 | metal/hull hits, debris, surf impact transients |
-| Kenney [RPG Audio](https://kenney.nl/assets/rpg-audio) (50 files) | CC0 | equipment, footsteps, reload hardware |
-| Kenney [Interface Sounds](https://kenney.nl/assets/interface-sounds) (100 files) | CC0 | shop accept/reject, unlock, ready cues |
-| [OpenGameArt: qubodup Sci-Fi RTS War Unit Sounds](https://opengameart.org/content/sci-fi-rts-war-unit-sounds) | CC0 on the collection page; verify each chosen file | military-flavored command, artillery, radio and explosions |
+downloaded. The authoritative, directly linked README-style source record is
+[Breakwater Sound Sources](BREAKWATER_SOUND_SOURCES.md): twelve individually
+identified candidate pages, source authors, CC0 claims, cue-to-source
+priorities, audition gates and one naval sound pack **held for provenance
+review**. Keep source/licensing links there rather than duplicating a
+second candidate list in this specification.
 
 Do **not** put Sonniss GDC bundle WAVs or other library-licensed
 raw effects in public GitHub as reusable assets: its current EULA allows

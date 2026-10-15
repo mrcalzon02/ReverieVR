@@ -83,6 +83,7 @@ Development is governed by:
 - [Architecture/Decision Records](docs/records/README.md)
 - [Native Game Developer Handbook](docs/native/README.md)
 - [Classic Native Games implementation notes](docs/project/CLASSIC_NATIVE_GAMES.md)
+- [Breakwater sound-source README/register](docs/project/BREAKWATER_SOUND_SOURCES.md) — linked royalty-free candidates, licensing and SFX intake status
 - [AI Agent Entry Point](AGENTS.md)
 
 See [CHANGELOG.md](CHANGELOG.md) for verified project changes.

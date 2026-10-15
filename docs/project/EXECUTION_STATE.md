@@ -1,3 +1,21 @@
+## 2026-10-15 — Breakwater source README linked in project management (documentation only)
+
+Created `docs/project/BREAKWATER_SOUND_SOURCES.md` as the canonical
+README-style project-management source register, linked from the repository
+root README, the Breakwater gameplay plan and the RV-0640 backlog. Recorded
+12 exact original sound-source pages and their stated CC0 licenses,
+source authors, P0/P1/P2 target uses, item-level asset-intake fields
+and statuses. Kenney collections, the original Free Firearm Sound Library,
+OpenGameArt CC0 bangs/explosions/wave/engine files and the revised
+qubodup RTS pack were checked against their public source pages.
+The Tiny Naval Battle set is marked **HOLD** rather than generically
+approved, because its public discussion documents disputed sound
+provenance and earlier substitutions. Sonniss GDC remains excluded
+from the raw open-source asset bank under its 2026 redistribution EULA.
+No external sound files downloaded, credited as acquired, imported,
+packaged or hooked up; the five host procedural SFX still provide
+actual in-game audio. Android NDK/device sound acceptance unchanged.
+
 ## 2026-10-15 — Breakwater recorded-sound queue and CC0 intake (plan only)
 
 Audited the actual shell-owned audio implementation: NativeCombatWaveform

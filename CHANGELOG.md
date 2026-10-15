@@ -6,6 +6,17 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater sourced CC0 audio README in project management
+
+- Added the canonical `docs/project/BREAKWATER_SOUND_SOURCES.md`
+  with twelve linked candidate source pages, source authors, page-stated
+  licenses, P0/P1/P2 cue assignments, acceptance metadata and a
+  documented hold on provenance-disputed naval explosions. Linked it
+  from repository README, Breakwater spec and RV-0640 backlog;
+  preserved the existing five synthesized sound cues and did not
+  import or ship any external recordings.
+
+
 ### Breakwater campaign-state enemy sprite animation
 
 - Expand the original 128x128, 16-cell sprite atlas to one 128x256,
