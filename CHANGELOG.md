@@ -6,6 +6,19 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater five distinct 2.5D gun housings and selection art
+
+- Extended the existing compact RGBA enemy atlas from 128x64 to 128x128
+  (64 KiB) with five original machine, heavy, flak, missile and direct-fire
+  cannon housing sprites. The selected card draws ahead of the fixed 3D
+  pedestal while the existing barrel follows the controller's firing aim.
+- Reused the matching sprite in each compact weapon HUD selection panel;
+  all cards still share the existing masked GLES2 batch, atlas and shader.
+  Weapon mechanics, save schema, stereo matrices and shell controls remain
+  unchanged. Native C++ regression assertions cover weapon selection,
+  per-cell pixel identity, bounded UVs and failure cases; real NDK/phone
+  performance proof is still pending.
+
 ### Breakwater first real textured enemy sprites
 
 - Replace live box-built boats, infantry and banked aircraft silhouettes in

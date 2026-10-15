@@ -1,3 +1,18 @@
+## 2026-10-15 — Breakwater 2.5D mounted weapon artwork (source)
+
+Expanded the previous 7-sprite 128x64 enemy atlas to 12-sprite 128x128
+(64 KiB) with original compact machine gun, heavy gun, flak, box launcher
+and direct-fire cannon weapon silhouettes. The currently selected campaign
+weapon controls one 2.5D foreground gun-housing card, layered over the
+fixed mount/pedestal and in front of the existing genuinely hand-aimed
+barrel triangles. All five HUD selection panels reuse the same equipment
+sprite IDs, existing atlas upload and one shared textured batch per eye;
+no HUD tabs, second texture, new GL draw call, ballistics or ABI changes.
+C++ regression assertions were added for all weapon mappings, distinct
+sprite pixel coverage, UV cell boundaries and invalid input. No Android
+NDK compile or Galaxy S9 stereo/comfort/performance evidence was available
+from this run; those gates remain explicitly open.
+
 ## 2026-10-14 — Breakwater textured enemy sprite architecture (source)
 
 Started the approved sprite-forward art direction with a game-private

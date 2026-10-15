@@ -69,12 +69,13 @@ both-button holding, independent release, fresh press and lifecycle pause.
 Full native/NDK build and S9 Quick Menu/connection-interruption proof remain
 separate acceptance gates.
 
-## First working enemy sprite atlas — GLES2 vertical slice (2026-10-14 source)
+## Sprite atlas and 2.5D mounted weapons — current source (2026-10-15)
 
 **Implementation:** `breakwater_sprite_atlas.h` produces an original, fixed
-128×64 RGBA atlas of seven 32×32 cells: two positional infantry stride frames,
-one-man rowboat, broad-ramp landing craft, angular patrol gunboat, compact
-strafer and twin-engine bomber. Their muted olive, slate-steel, sand and
+128×128 RGBA atlas of twelve 32×32 cells: two positional infantry stride
+frames, one-man rowboat, broad-ramp landing craft, angular patrol gunboat,
+compact strafer, twin-engine bomber, and five distinct machine/heavy/flak/
+missile/cannon defense-emplacement silhouettes. Their muted olive, slate-steel, sand and
 gunmetal shapes are generic late-1990s/early-2000s American/European-inspired
 military arcade styling, **not replicas, military insignia or imported art**.
 Art can later be replaced cell-for-cell without changing the gameplay ABI.
@@ -82,19 +83,26 @@ Currently these are code-authored pixel sprites, not image-generator files.
 
 The native Breakwater GLES2 module now uploads this atlas once per GL context,
 renders one hard-alpha-masked world card per live enemy and infantry slot,
-and batches all cards into **one extra textured draw per eye**. The world,
-shore terrain, water, emplacement and 3D target volumes remain authoritative
-and unmodified. Textured cards use original enemy/infantry x/z positions,
+and batches all cards into **one extra textured draw per eye**. The same batch
+now also carries the selected weapon's near-field, controller-reactive body
+card and a compact selection icon for each of the five weapon HUD slots.
+The world, shore terrain, water, emplacement and 3D target volumes remain
+authoritative and unmodified. Textured cards use original enemy/infantry x/z positions,
 world-stable XY planes facing the defended battery, with aircraft roll taken
 from existing simulated banking; their position is not independently
 recomputed for the left and right eyes. Depth testing and nearest texture
 sampling are retained, with fragment discard avoiding alpha-sort/blend
-dependencies. The sky remains the existing gradient geometry and the
-mounted weapon remains 3D for this first conversion; neither is mislabeled
-as finished sprite artwork.
+dependencies. The sky remains the existing gradient geometry. The gun
+pedestal and hand-aimed barrel remain anchored in 3D, while its visible
+housing is now an equipment-specific 2.5D foreground card instead of
+identical generic boxes for every weapon. It is not finished production
+sprite artwork. The world-space housing follows the selected weapon in
+Campaign, while controller aim still drives the barrel; no new input
+bindings or ballistics are introduced.
 
-Native host-side C++17 tests check atlas coverage, transparency, tile UVs,
-finite six-vertex card geometry, aircraft bank and fail-closed dimensions.
+Native regression assertions check atlas coverage, transparency, tile UVs,
+finite six-vertex card geometry, aircraft bank, fail-closed dimensions,
+all five weapon enum-to-art mappings, unique pixel identities and cell bounds.
 Static verification is not a substitute for an Android ARM NDK compile,
 actual GLES2 shader/texture creation, near-plane stereo readability, distant
 pixel aliasing, realistic FPS measurements or a Galaxy S9 wave trial.
@@ -108,13 +116,13 @@ The art contract is **3D shoreline and emplacement + 2D enemy sprites +
 Production sheet order: (1) directional rowboat/landing craft/gunboat sets
 including ramp and wake states; (2) eight-direction infantry idle/march/fire
 frames with readable helmet, vest and rifle; (3) bomber/strafer underside,
-oblique and bank variants; (4) machine/heavy/flak/missile/cannon layered
-weapon cards; (5) HUD weapon, AA, artillery, airstrike, status and shop
-icons; (6) horizon, cloud, distant smoke and night sky cards. Author all
+oblique and bank variants; (4) additional depth/aim variants of the five mounted weapon cards;
+(5) support-action HUD icons and panels (equipment selection uses atlas
+sprites already); (6) horizon, cloud, distant smoke and night sky cards. Author all
 replacement art with transparent backgrounds, fixed local foot/waterline/
 center-mass anchors and no copied real military unit markings. Keep the
-small atlas and 1–2 additional draw-call budgets until measured device
-proof justifies more. Materialized artwork must be explicitly imported,
+small 64-KiB RGBA atlas and one additional masked draw per eye until
+measured device proof justifies more. Materialized artwork must be explicitly imported,
 registered and verified before being reported as in-game.
 
 ## Runtime art and visuals

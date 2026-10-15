@@ -6,17 +6,19 @@
 #include <cstdint>
 #include <initializer_list>
 #include <vector>
+#include "breakwater_weapons.h"
 
 namespace reverie { namespace breakwater {
 // Game-private original RGBA sprites. One tiny atlas, no imported/licensed art,
 // runtime image decoder, network lookup or per-eye sprite animation state.
 enum class SpriteId : uint8_t {
     InfantryStrideA, InfantryStrideB, Rowboat, LandingCraft,
-    Gunboat, Strafer, Bomber, Count
+    Gunboat, Strafer, Bomber, MachineGun, HeavyGun, FlakGun,
+    MissilePod, DirectCannon, Count
 };
 constexpr int kSpriteTile = 32;
 constexpr int kSpriteAtlasWidth = 128;
-constexpr int kSpriteAtlasHeight = 64;
+constexpr int kSpriteAtlasHeight = 128;
 using SpritePixels = std::array<uint8_t,
     kSpriteAtlasWidth * kSpriteAtlasHeight * 4>;
 
@@ -121,9 +123,74 @@ inline SpritePixels BuildSpriteAtlas() {
     Triangle(pixels,bomber,14,12,7,7,14,9,steel);
     Triangle(pixels,bomber,19,12,26,7,19,9,steel);
     Rect(pixels,bomber,15,20,18,26,dark);
+
+    // Five distinct, generic early-2000s Western defense-emplacement
+    // silhouettes. All face the player at the fixed battery and deliberately
+    // omit real service markings. Barrel articulation stays world-space.
+    const SpriteId machine=SpriteId::MachineGun;
+    Rect(pixels,machine,12,12,21,22,hull);
+    Rect(pixels,machine,14,20,19,31,steel);
+    Rect(pixels,machine,15,22,18,30,dark);
+    Rect(pixels,machine,10,15,13,20,olive);
+    Rect(pixels,machine,21,15,24,20,olive);
+    Rect(pixels,machine,10,10,23,13,metal);
+    Rect(pixels,machine,13,8,20,10,dark);
+
+    const SpriteId heavy=SpriteId::HeavyGun;
+    Rect(pixels,heavy,8,11,25,24,hull);
+    Rect(pixels,heavy,11,13,22,21,steel);
+    Rect(pixels,heavy,14,21,19,31,metal);
+    Rect(pixels,heavy,15,23,18,29,dark);
+    Rect(pixels,heavy,6,9,10,19,olive);
+    Rect(pixels,heavy,23,9,27,19,olive);
+    Rect(pixels,heavy,10,8,23,11,dark);
+    Rect(pixels,heavy,12,5,21,8,metal);
+
+    const SpriteId flak=SpriteId::FlakGun;
+    Rect(pixels,flak,5,7,28,21,olive);
+    Rect(pixels,flak,8,10,25,19,dark);
+    Rect(pixels,flak,11,13,22,19,steel);
+    Rect(pixels,flak,10,19,14,31,metal);
+    Rect(pixels,flak,19,19,23,31,metal);
+    Rect(pixels,flak,11,21,13,29,dark);
+    Rect(pixels,flak,20,21,22,29,dark);
+    Triangle(pixels,flak,3,9,8,6,8,20,steel);
+    Triangle(pixels,flak,29,9,25,6,25,20,steel);
+
+    const SpriteId missile=SpriteId::MissilePod;
+    Rect(pixels,missile,5,7,28,28,hull);
+    Rect(pixels,missile,7,9,26,25,metal);
+    for (int x : {9,17}) for (int y : {11,19}) {
+        Rect(pixels,missile,x,y,x+6,y+6,dark);
+        Rect(pixels,missile,x+1,y+1,x+5,y+5,steel);
+        Rect(pixels,missile,x+2,y+2,x+4,y+4,dark);
+    }
+    Rect(pixels,missile,9,5,24,8,olive);
+
+    const SpriteId cannon=SpriteId::DirectCannon;
+    Rect(pixels,cannon,5,7,28,19,olive);
+    Rect(pixels,cannon,8,10,25,22,hull);
+    Rect(pixels,cannon,12,17,21,30,steel);
+    Rect(pixels,cannon,14,19,19,30,dark);
+    Rect(pixels,cannon,10,11,23,16,metal);
+    Rect(pixels,cannon,3,6,8,13,dark);
+    Rect(pixels,cannon,25,6,30,13,dark);
+    Rect(pixels,cannon,13,4,20,7,steel);
     return pixels;
 }
 
+inline SpriteId WeaponSprite(WeaponKind weapon) {
+    switch(weapon) {
+        case WeaponKind::HeavyGun: return SpriteId::HeavyGun;
+        case WeaponKind::Flak: return SpriteId::FlakGun;
+        case WeaponKind::MissileBattery: return SpriteId::MissilePod;
+        case WeaponKind::DirectCannon: return SpriteId::DirectCannon;
+        default: return SpriteId::MachineGun;
+    }
+}
+
+// Source art IDs are independent of the save schema and the campaign's
+// persisted weapon indices. No runtime table allocations or conversions.
 inline bool AppendSprite(std::vector<float> &mesh, SpriteId id,
                          float x,float y,float z,float width,float height,
                          float bank=0.0f) {

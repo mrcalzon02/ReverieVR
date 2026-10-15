@@ -451,12 +451,22 @@ void BuildScene(State *s) {
         [s](auto... arguments) { Box(s,arguments...); },
         [s](auto... arguments) { Triangle(s,arguments...); });
 
-    // Shore parapet, mounted barrel and enemy silhouettes.
+    // The terrain and heavy parapet remain 3D; only the switchable gun
+    // housing becomes art. Keep a small fixed pedestal beneath the card.
     Box(s,0,-1.24f,-.95f,7.8f,.55f,.7f,.37f,.38f,.36f);
-    // Gun carriage stays world-anchored. The light two-strip barrel aims
-    // with the hand, not with headset rotation or the scene camera.
-    Box(s,0,-.83f,-.64f,.68f,.42f,.46f,.27f,.29f,.31f);
+    Box(s,0,-1.01f,-.88f,.55f,.19f,.34f,.27f,.29f,.31f);
     const float *aim=s->gun_direction;
+    // Game-owned selection, not an independent visual equip state. A
+    // forward sprite sits in front of the pedestal and behind the reticle.
+    // The existing world-space barrel below still follows hand aim.
+    const WeaponKind equipped=game.selected_weapon();
+    const float housingWidth=equipped==WeaponKind::Flak?1.10f:
+        equipped==WeaponKind::MissileBattery?1.05f:
+        equipped==WeaponKind::HeavyGun?1.02f:
+        equipped==WeaponKind::DirectCannon?1.10f:.82f;
+    AppendSprite(s->sprite_mesh,WeaponSprite(equipped),
+                 aim[0]*.07f,-.77f+aim[1]*.06f,-.53f,
+                 housingWidth,.70f);
     const float horizontal=std::sqrt(aim[0]*aim[0]+aim[2]*aim[2]);
     const float rightX=horizontal>.01f?-aim[2]/horizontal:1.0f;
     const float rightZ=horizontal>.01f?aim[0]/horizontal:0.0f;
@@ -715,8 +725,12 @@ void BuildScene(State *s) {
             const bool owned=game.owns_weapon(weapon);
             Panel(s,x,-1.44f,-1.82f,1.04f,.42f,
                   selected?.24f:.13f,selected?.44f:.22f,owned?.37f:.15f);
+            // HUD reuses the very same equipment art. No HUD-only icon
+            // cache, texture upload or extra draw call is necessary.
+            AppendSprite(s->sprite_mesh,WeaponSprite(weapon),
+                         x,-1.33f,-1.77f,.27f,.18f);
             Text(s,owned?WeaponFor(weapon).name:"LOCKED",
-                 x,-1.44f,-1.79f,.034f,
+                 x,-1.54f,-1.79f,.033f,
                  owned?.90f:.56f,owned?.92f:.59f,owned?.69f:.57f);
         }
         if(s->sam_armed)Text(s,"SAM AIM SELECT",0,-1.05f,-1.79f,

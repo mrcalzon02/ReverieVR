@@ -46,6 +46,49 @@ int main() {
             assert(sprites[i+3]>=0.0f && sprites[i+3]<=1.0f);
             assert(sprites[i+4]>=0.0f && sprites[i+4]<=1.0f);
         }
+        // These are five distinct visual identities, mapped directly from
+        // the same saved weapon enum that owns combat ballistics and selection.
+        const std::array<SpriteId,kWeaponCount> expected={{
+            SpriteId::MachineGun,SpriteId::HeavyGun,SpriteId::FlakGun,
+            SpriteId::MissilePod,SpriteId::DirectCannon}};
+        std::array<uint64_t,kWeaponCount> signatures{};
+        for(uint8_t id=0;id<kWeaponCount;++id) {
+            const SpriteId visual=WeaponSprite(static_cast<WeaponKind>(id));
+            assert(visual==expected[id]);
+            const int slot=static_cast<int>(visual);
+            const int ox=(slot%4)*kSpriteTile,oy=(slot/4)*kSpriteTile;
+            uint64_t signature=14695981039346656037ull;
+            int opaque=0,transparent=0;
+            for(int y=0;y<kSpriteTile;++y)
+                for(int x=0;x<kSpriteTile;++x) {
+                    const size_t pixel=static_cast<size_t>(
+                        ((oy+y)*kSpriteAtlasWidth+ox+x)*4);
+                    for(int ch=0;ch<4;++ch) {
+                        signature^=pixels[pixel+ch];
+                        signature*=1099511628211ull;
+                    }
+                    if(pixels[pixel+3]==255)++opaque;
+                    else {assert(pixels[pixel+3]==0);++transparent;}
+                }
+            assert(opaque>40 && transparent>100);
+            signatures[id]=signature;
+            std::vector<float> card;
+            assert(AppendSprite(card,visual,0,-.77f,-.53f,1.10f,.70f));
+            assert(card.size()==30);
+            for(size_t vertex=0;vertex<card.size();vertex+=5) {
+                const float u=card[vertex+3],v=card[vertex+4];
+                assert(u>=static_cast<float>(ox)/kSpriteAtlasWidth);
+                assert(u<=static_cast<float>(ox+32)/kSpriteAtlasWidth);
+                assert(v>=static_cast<float>(oy)/kSpriteAtlasHeight);
+                assert(v<=static_cast<float>(oy+32)/kSpriteAtlasHeight);
+            }
+        }
+        for(size_t a=0;a<signatures.size();++a)
+            for(size_t b=a+1;b<signatures.size();++b)
+                assert(signatures[a]!=signatures[b]);
+        // Unknown weapon enum values never index beyond the atlas.
+        assert(WeaponSprite(static_cast<WeaponKind>(255))==
+            SpriteId::MachineGun);
         const size_t before=sprites.size();
         assert(!AppendSprite(sprites,SpriteId::Count,0,0,0,1,1));
         assert(!AppendSprite(sprites,SpriteId::InfantryStrideA,
