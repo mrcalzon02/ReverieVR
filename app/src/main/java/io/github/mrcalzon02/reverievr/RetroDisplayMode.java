@@ -54,4 +54,19 @@ final class RetroDisplayMode {
     float virtualScreenWidth(float screenHeight) {
         return screenHeight * displayAspect();
     }
+
+    // Aspect-fit a guest image into an existing pixel viewport. Call both
+    // methods with the SAME original width/height, before centering the
+    // result. No allocations in the two-eye rendering path.
+    static int fittedWidth(int maxWidth, int maxHeight, float aspect) {
+        if (maxWidth <= 0 || maxHeight <= 0
+            || !Float.isFinite(aspect) || aspect <= 0f) return 0;
+        return Math.min(maxWidth, Math.max(1, Math.round(maxHeight * aspect)));
+    }
+
+    static int fittedHeight(int maxWidth, int maxHeight, float aspect) {
+        if (maxWidth <= 0 || maxHeight <= 0
+            || !Float.isFinite(aspect) || aspect <= 0f) return 0;
+        return Math.min(maxHeight, Math.max(1, Math.round(maxWidth / aspect)));
+    }
 }

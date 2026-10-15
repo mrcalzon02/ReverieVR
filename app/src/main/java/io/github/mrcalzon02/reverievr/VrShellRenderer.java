@@ -2330,6 +2330,19 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     eyeViewport[3] * contentScale
                 )
             );
+        if (mode == MODE_DOS && dosRenderer.isFullScreen()) {
+            // Historic VGA 320x200 is 4:3 on a monitor, not the raw
+            // per-eye framebuffer shape. Preserve that intended aspect
+            // inside the existing 80% optical safety inset, with no crop,
+            // no VR-room plane, and no modifications to eye projections.
+            final int insetWidth = contentWidth;
+            final int insetHeight = contentHeight;
+            final float guestAspect = dosRenderer.getDisplayAspect();
+            contentWidth = RetroDisplayMode.fittedWidth(
+                insetWidth, insetHeight, guestAspect);
+            contentHeight = RetroDisplayMode.fittedHeight(
+                insetWidth, insetHeight, guestAspect);
+        }
         int contentX =
             eyeViewport[0]
                 + (eyeViewport[2] - contentWidth)

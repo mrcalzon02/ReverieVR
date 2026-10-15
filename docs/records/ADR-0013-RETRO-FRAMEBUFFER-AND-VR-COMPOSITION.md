@@ -92,6 +92,18 @@ The pipeline is:
 `guest framebuffer -> aspect/pixel correction -> texture -> virtual screen or
 module surface -> Cardboard per-eye composition/distortion`
 
+## Immersive DOS follow-up (2026-10-14)
+
+Immersive DOS uses a centered 80% safety inset inside each raw Cardboard
+eye. A regression was identified: the fullscreen quad was stretched to the
+eye/inset aspect, ignoring the already-resolved guest display aspect.
+The compositor now aspect-fits a guest's intended display shape **within**
+that inset, centers it and clears the unused eye regions black. Doom 320x200
+therefore retains 4:3 proportions instead of displaying as the eye's arbitrary
+framebuffer aspect. No 3D room plane, image crop, stereo projection change,
+or dynamic texture-regeneration step is involved. Windowed mode continues
+using its existing world-space display aspect.
+
 ## Consequences
 
 Doom's 320x200 output can look like the 4:3 display it expected while the VR

@@ -58,6 +58,30 @@ public final class RetroDisplayModeCatalogTest {
     }
 
     @Test
+    public void fullscreenDosPreservesVgaFourByThreeInsideEyeInset() {
+        float aspect = RetroDisplayModeCatalog.resolve(320, 200)
+            .displayAspect();
+        // Typical one-eye inset: 80% of a 1480x1440 eye.
+        assertEquals(1184, RetroDisplayMode.fittedWidth(1184, 1152, aspect));
+        assertEquals(888, RetroDisplayMode.fittedHeight(1184, 1152, aspect));
+        // A wider eye is height-limited instead; no image is cropped.
+        assertEquals(1024, RetroDisplayMode.fittedWidth(1184, 768, aspect));
+        assertEquals(768, RetroDisplayMode.fittedHeight(1184, 768, aspect));
+    }
+
+    @Test
+    public void fullscreenFitAlsoKeepsNonFourByThreeGuestModes() {
+        float aspect = RetroDisplayModeCatalog.resolve(1280, 1024)
+            .displayAspect();
+        assertEquals(1000, RetroDisplayMode.fittedWidth(1000, 800, aspect));
+        assertEquals(800, RetroDisplayMode.fittedHeight(1000, 800, aspect));
+        float wide = RetroDisplayModeCatalog.resolve(240, 160)
+            .displayAspect();
+        assertEquals(1000, RetroDisplayMode.fittedWidth(1000, 800, wide));
+        assertEquals(667, RetroDisplayMode.fittedHeight(1000, 800, wide));
+    }
+
+    @Test
     public void integerScaleDoesNotInventFractionalPixelSteps() {
         assertEquals(
             3,

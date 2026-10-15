@@ -29,6 +29,14 @@ IPD, power-artwork scale, shell input routing, or unrelated game changes:
    Doom held up/down keyboard pitch binding and every other input profile
    unchanged; no Cardboard physical view-matrix change.
 
+Follow-up correction (same date, separate source commit): The fullscreen
+renderer initially centered the 80% inset but still stretched the DOS texture
+to that inset's pixel aspect. The shared `RetroDisplayMode` fit calculation
+now centers the recorded DOS display aspect inside the inset without
+discarding any source pixels or reallocating per eye. The 320x200 Doom guest
+uses 4:3 and other DOS modes use their own catalog aspect. Added focused
+host-side fit regressions; device validation is still required.
+
 Validation evidence: synchronized existing JVM test assertions for Doom pitch,
 horizontal-only sign, DOS touch+head relative mouse, and HUD geometry.
 Source read-back and commit verification only until an actual Gradle compile,

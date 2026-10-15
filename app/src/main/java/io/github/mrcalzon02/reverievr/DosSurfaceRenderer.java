@@ -49,6 +49,10 @@ final class DosSurfaceRenderer {
         return fullScreen;
     }
 
+    float getDisplayAspect() {
+        return displayAspect;
+    }
+
     DosSurfaceRenderer(DosSession session) {
         this.session = session;
         vertices = allocate(new float[] {
@@ -205,10 +209,10 @@ final class DosSurfaceRenderer {
 
         pointerVisible = session != null && session.copyGuestPointer(pointerUv);
         if (fullScreen) {
-            // Fill every pixel of EACH eye's native Cardboard viewport.
-            // Deliberate full bleed: no 3D screen, room, aspect margins or
-            // stereo panorama. Raw DOS pixels are independently drawn to
-            // both eyes as a stable 2D image.
+            // Fill the shell's independently aspect-fitted per-eye DOS
+            // viewport, without a 3D plane or the VR room. The host keeps
+            // black optical margins and the intended 4:3/other guest aspect. 
+            // Source texels remain independently displayed to both eyes.
             Matrix.setIdentityM(mvp, 0);
         } else {
             System.arraycopy(eye.getEyeView(), 0, eyeView, 0, 16);
