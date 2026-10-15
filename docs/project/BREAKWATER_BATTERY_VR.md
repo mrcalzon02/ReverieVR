@@ -167,6 +167,38 @@ weapon vulnerability, malformed coordinates and phase/slot guards.
 Full Android NDK compile, visual alignment at headset depth, binocular
 readability and physical controller tests remain outstanding.
 
+## Riflemen pinned by a real hit against occupied cover (2026-10-15 source)
+
+A successful player shot into a **living barricade** now briefly pins
+only riflemen physically close to that same assigned structure.
+The test uses the actual cover width, current soldier x/z position,
+slot ownership and original wall coordinates before applying damage;
+troops still coming from the surf, rowboat infantry, flankers, support
+gunners and soldiers at another wall are unaffected. A 1.20-second
+battle-only suppression counter begins on every qualifying hit, even
+when that hit destroys the wall. The gun still consumes normal ammo
+and the wall still takes its usual damage. No automatic soldier damage,
+new target or invulnerability is introduced.
+
+Pinned riflemen remain individually hittable at the **unchanged**
+position and hit sphere; they move according to their existing orders
+but cannot contribute to a volley or show a false firing flash while
+the counter is positive. A fresh hit restarts the counter. The shared
+`InfantryReady`, `InfantrySecondsToReady` and `AdvanceInfantry`
+functions drive both real salvo eligibility and SHORE countdown;
+the simulation never advances independently for each stereo eye.
+Their displayed card switches to a distinct original rifle-lowered
+defensive pose whenever suppression is active, occupying cell 31
+(0-based slot 30) of the existing 128-KiB, 32-cell atlas. All
+other art/weapon silhouettes and the single sprite draw remain intact.
+
+Regression cases exercise real hit/ammo/damage coupling on a seeded
+Iron Quay landing party, isolated proximity and role restrictions,
+the exact pin duration, no firing pose during suppression, and the
+new atlas tile/UV bounds. The existing 80-byte shop save, controller,
+shell HUD and enemy collision geometry are untouched. Device stereo
+visibility and sustained frame timing remain subject to S9 testing.
+
 ## Infantry cover-seeking and post-destruction regrouping (2026-10-15 source)
 
 Landing-craft **riflemen** at Iron Quay and Blackcap Island now seek

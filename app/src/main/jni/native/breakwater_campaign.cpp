@@ -445,17 +445,20 @@ bool Campaign::FireAtCover(uint8_t index) {
     if(phase_!=Phase::Combat || index>=shore_cover_.size() ||
        shore_cover_[index].hp<=0 || !BeginGunShot())return false;
     ShoreCover &wall=shore_cover_[index];
+    const ShoreCover wall_before=wall;
     // Cover absorbs the actual selected mount damage and persists across
     // individual shots. A destroyed wall cannot block future targeting.
     wall.hp=static_cast<int16_t>(std::max(0,
         static_cast<int>(wall.hp)-static_cast<int>(stats().gun_damage)));
-    if(wall.hp==0) {
-        // Retarget battle-only orders in the authoritative hit substep.
-        // A wall destroyed by a shot cannot remain a usable station for
-        // the next render or immediate incoming-fire prediction.
-        for(Infantry &trooper:infantry_units_)
-            if(trooper.active && trooper.cover_slot==static_cast<int8_t>(index))
-                RefreshInfantryCover(trooper,shore_cover_);
+    // The hit suppresses only soldiers physically occupying this wall.
+    // Use its pre-hit geometry even if the same shot finishes destruction.
+    // Destroyed-wall rerouting remains immediate and authoritative.
+    for(Infantry &trooper:infantry_units_) {
+        if(!trooper.active || trooper.cover_slot!=static_cast<int8_t>(index))
+            continue;
+        if(CoverSheltersInfantry(trooper,wall_before,index))
+            trooper.pinned_seconds=kInfantryPinSeconds;
+        if(wall.hp==0)RefreshInfantryCover(trooper,shore_cover_);
     }
     return true;
 }

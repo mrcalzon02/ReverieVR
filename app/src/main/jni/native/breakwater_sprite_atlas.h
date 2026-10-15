@@ -20,7 +20,8 @@ enum class SpriteId : uint8_t {
     LandingRampOpen, GunboatSalvo, StraferBankLeft, StraferBankRight,
     BomberBankLeft, BomberBankRight, InfantrySupport,
     InfantryRifleReady, InfantryRifleFire,
-    InfantryFlankReady, InfantryFlankFire, InfantrySupportFire, Count
+    InfantryFlankReady, InfantryFlankFire, InfantrySupportFire,
+    InfantryPinned, Count
 };
 constexpr int kSpriteTile = 32;
 constexpr int kSpriteAtlasWidth = 128;
@@ -348,6 +349,17 @@ inline SpritePixels BuildSpriteAtlas() {
     Triangle(pixels,supportFire,27,14,31,18,27,22,flash);
     Triangle(pixels,supportFire,28,16,31,18,28,20,ember);
     Rect(pixels,supportFire,29,17,32,19,flash);
+
+    // An occupied wall struck by a round forces a distinct defensive
+    // rifle-low silhouette. Body/head remain aligned to the same hit sphere.
+    // The existing 128-KiB atlas has spare cells; no new GL resource.
+    const SpriteId pinned=SpriteId::InfantryPinned;
+    sprite_detail::CopyTile(pixels,rifleReady,pinned);
+    sprite_detail::ClearRect(pixels,pinned,19,15,32,21);
+    Rect(pixels,pinned,18,11,21,18,olive);
+    Rect(pixels,pinned,16,16,21,20,olive);
+    Rect(pixels,pinned,18,21,29,23,dark);
+    Rect(pixels,pinned,25,22,28,23,metal);
     return pixels;
 }
 
@@ -387,6 +399,7 @@ inline SpriteId EnemySprite(const Enemy &enemy) {
 // one actual damaging volley, never a guessed firing interval. No new
 // hit spheres, render clocks or stereo-specific billboard animation.
 inline SpriteId InfantrySprite(const Infantry &soldier,bool firing=false) {
+    if(InfantryPinned(soldier))return SpriteId::InfantryPinned;
     const bool ready=InfantryReady(soldier);
     if(soldier.tactic==InfantryTactic::Support && ready)
         return firing?SpriteId::InfantrySupportFire:

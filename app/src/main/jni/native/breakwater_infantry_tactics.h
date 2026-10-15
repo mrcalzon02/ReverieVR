@@ -2,6 +2,7 @@
 #define REVERIE_BREAKWATER_INFANTRY_TACTICS_H
 
 #include "breakwater_campaign.h"
+#include "breakwater_cover.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -9,6 +10,7 @@
 namespace reverie { namespace breakwater {
 
 constexpr float kInfantrySalvoPeriod=4.0f;
+constexpr float kInfantryPinSeconds=1.20f;
 
 // Preserve the original single rifleman on each early rowboat. Larger
 // landing parties add two lateral maneuver troops and a rear support gunner,
@@ -103,6 +105,22 @@ inline void RefreshInfantryCover(
     unit.cover_line_z=0.0f;
     unit.lane_x=unit.open_lane_x;
 }
+// Only riflemen physically at the actual struck wall can be suppressed.
+// Troops still in the surf and other units are not protected by this wall.
+inline bool CoverSheltersInfantry(const Infantry &unit,
+                                 const ShoreCover &wall,int wallSlot) {
+    return wallSlot>=0 && wallSlot<static_cast<int>(Campaign::kMaxCover) &&
+        unit.active && unit.tactic==InfantryTactic::Rifle &&
+        unit.cover_slot==wallSlot && wall.hp>0 &&
+        std::isfinite(unit.x) && std::isfinite(unit.z) &&
+        std::isfinite(wall.x) && std::isfinite(wall.z) &&
+        std::abs(unit.x-wall.x)<=CoverWidth(wall)*.5f+.16f &&
+        unit.z>=wall.z-.68f && unit.z<=wall.z+.03f;
+}
+inline bool InfantryPinned(const Infantry &unit) {
+    return unit.active && std::isfinite(unit.pinned_seconds) &&
+        unit.pinned_seconds>0.0f;
+}
 inline bool InfantryCoverOrdered(const Infantry &unit) {
     return unit.cover_slot>=0 && unit.tactic==InfantryTactic::Rifle &&
         std::isfinite(unit.cover_line_z);
@@ -145,11 +163,12 @@ inline float InfantrySecondsToReady(const Infantry &unit) {
         (InfantryLineZ(unit)-unit.z)/InfantrySpeed(unit.tactic));
     const float xLeft=InfantryNeedsLane(unit)?
         std::abs(unit.lane_x-unit.x)/kInfantryLateralSpeed:0.0f;
-    return std::max(zLeft,xLeft);
+    return std::max(std::max(zLeft,xLeft),
+                    InfantryPinned(unit)?unit.pinned_seconds:0.0f);
 }
 inline bool InfantryReady(const Infantry &unit) {
     if(!unit.active || !std::isfinite(unit.z) ||
-       !std::isfinite(unit.x) ||
+       !std::isfinite(unit.x) || InfantryPinned(unit) ||
        unit.z<InfantryLineZ(unit)-.00001f)return false;
     return !InfantryNeedsLane(unit) ||
         (std::isfinite(unit.lane_x) &&
@@ -168,6 +187,8 @@ inline bool InfantryFiringPose(
 inline void AdvanceInfantry(Infantry &unit,float seconds) {
     if(!unit.active || !std::isfinite(seconds) || seconds<=0.0f ||
        !std::isfinite(unit.x) || !std::isfinite(unit.z))return;
+    if(InfantryPinned(unit))
+        unit.pinned_seconds=std::max(0.0f,unit.pinned_seconds-seconds);
     unit.z=std::min(InfantryLineZ(unit),
                     unit.z+InfantrySpeed(unit.tactic)*seconds);
     if(!InfantryNeedsLane(unit) || !std::isfinite(unit.lane_x))return;

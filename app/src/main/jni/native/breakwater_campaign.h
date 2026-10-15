@@ -63,6 +63,8 @@ struct Infantry {
     bool regrouping = false;
     float open_lane_x = 0;
     float cover_line_z = 0;
+    // Transient battle-only firing suppression; never part of shop saves.
+    float pinned_seconds = 0.0f;
 };
 struct ShoreCover {
     float x = 0.0f;

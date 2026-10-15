@@ -175,6 +175,31 @@ int main() {
         RefreshInfantryCover(rifle,destroyed);
         assert(rifle.cover_slot==-1); // never reacquire destroyed cover
 
+        // Actual occupied cover can pin a soldier for a finite time;
+        // remote soldiers and flanking units are not magically pinned.
+        Infantry pinned=rifle;
+        assert(!CoverSheltersInfantry(pinned,iron[1],1));
+        pinned.x=.15f;pinned.z=-1.46f;
+        pinned.lane_x=.15f;pinned.cover_slot=1;
+        pinned.cover_line_z=-1.46f;
+        assert(CoverSheltersInfantry(pinned,iron[1],1));
+        assert(!CoverSheltersInfantry(pinned,iron[0],0));
+        pinned.pinned_seconds=kInfantryPinSeconds;
+        assert(InfantryPinned(pinned) && !InfantryReady(pinned));
+        assert(std::abs(InfantrySecondsToReady(pinned)-1.20f)<.00001f);
+        assert(InfantrySprite(pinned)==SpriteId::InfantryPinned);
+        assert(InfantrySprite(pinned,true)==SpriteId::InfantryPinned);
+        assert(!InfantryFiringPose(pinned,1u,0));
+        AdvanceInfantry(pinned,.45f);
+        assert(InfantryPinned(pinned) && !InfantryReady(pinned));
+        AdvanceInfantry(pinned,.80f);
+        assert(!InfantryPinned(pinned) && InfantryReady(pinned));
+        assert(InfantrySprite(pinned)==SpriteId::InfantryRifleReady);
+        Infantry remote=pinned;remote.z=-2.20f;
+        assert(!CoverSheltersInfantry(remote,iron[1],1));
+        Infantry flanking=pinned;flanking.tactic=InfantryTactic::FlankLeft;
+        assert(!CoverSheltersInfantry(flanking,iron[1],1));
+
         // A troop starting between Iron Quay defenses may be within
         // 1.90 of another barricade but the structures themselves are
         // not neighbors. Losing center cover must still trigger fallback.
@@ -394,12 +419,12 @@ int main() {
             else assert(art[supportOffset+3]==0);
         }
         assert(ink>25 && supportHash!=rifleHash);
-        const std::array<SpriteId,5> poses={{
+        const std::array<SpriteId,6> poses={{
             SpriteId::InfantryRifleReady,SpriteId::InfantryRifleFire,
             SpriteId::InfantryFlankReady,SpriteId::InfantryFlankFire,
-            SpriteId::InfantrySupportFire
+            SpriteId::InfantrySupportFire,SpriteId::InfantryPinned
         }};
-        std::array<uint64_t,5> hashes{};
+        std::array<uint64_t,6> hashes{};
         for(size_t i=0;i<poses.size();++i) {
             const int cell=static_cast<int>(poses[i]);
             const int px=(cell%4)*32,py=(cell/4)*32;
@@ -730,7 +755,7 @@ int main() {
         const std::array<SpriteId,4> supportIds={{
             SpriteId::ArtillerySupport,SpriteId::AirstrikeSupport,
             SpriteId::SamSupport,SpriteId::RepairSupport}};
-        assert(static_cast<int>(SpriteId::Count)==30);
+        assert(static_cast<int>(SpriteId::Count)==31);
         assert(sizeof(SpritePixels)==128u*1024u);
         std::array<uint64_t,4> supportHashes{};
         for(size_t id=0;id<supportIds.size();++id) {
@@ -857,8 +882,8 @@ int main() {
         assert(EnemySprite(e)==SpriteId::Bomber);
         e.type=static_cast<UnitType>(255);
         assert(EnemySprite(e)==SpriteId::Count);
-        // The two unused atlas cells stay completely transparent.
-        for(int cell=30;cell<32;++cell) {
+        // The remaining atlas cell stays completely transparent.
+        for(int cell=31;cell<32;++cell) {
             const int col=cell%4,row=cell/4;
             for(int y=0;y<32;++y)
                 for(int x=0;x<32;++x) {
@@ -1837,8 +1862,36 @@ int main() {
     // Shoot the exact barricade claimed by a real landed rifleman.
     // Confirm its instantaneous warning stops treating the dead wall
     // as a usable firing station and a later tick repositions the unit.
+    // Let this real rifleman physically reach the barricade before
+    // testing a nonlethal shot against occupied shelter.
+    for(int step=0;step<180 &&
+        tactic_landing.phase()==Phase::Combat &&
+        !InfantryReady(tactic_landing.infantry_units()[
+            static_cast<size_t>(covered_slot)]);++step)
+        tactic_landing.Tick(.05f);
+    assert(tactic_landing.phase()==Phase::Combat);
     const Infantry protectedBefore=tactic_landing.infantry_units()[
         static_cast<size_t>(covered_slot)];
+    assert(InfantryReady(protectedBefore));
+    assert(CoverSheltersInfantry(protectedBefore,
+        tactic_landing.shore_cover()[static_cast<size_t>(covered_wall)],
+        covered_wall));
+    const int16_t beforePinHp=tactic_landing.shore_cover()[
+        static_cast<size_t>(covered_wall)].hp;
+    const uint8_t beforePinAmmo=tactic_landing.magazine_left();
+    assert(tactic_landing.FireAtCover(static_cast<uint8_t>(covered_wall)));
+    const Infantry &pinnedByShot=tactic_landing.infantry_units()[
+        static_cast<size_t>(covered_slot)];
+    assert(pinnedByShot.pinned_seconds==kInfantryPinSeconds);
+    assert(!InfantryReady(pinnedByShot));
+    assert(InfantrySprite(pinnedByShot)==SpriteId::InfantryPinned);
+    assert(tactic_landing.magazine_left()+1==beforePinAmmo);
+    assert(tactic_landing.shore_cover()[
+        static_cast<size_t>(covered_wall)].hp<beforePinHp);
+    tactic_landing.Tick(.05f);
+    assert(tactic_landing.infantry_units()[
+        static_cast<size_t>(covered_slot)].pinned_seconds<
+        kInfantryPinSeconds);
     const int16_t startingCover=tactic_landing.shore_cover()[
         static_cast<size_t>(covered_wall)].hp;
     int coverShots=0;
@@ -1850,7 +1903,7 @@ int main() {
             static_cast<uint8_t>(covered_wall)));
         ++coverShots;
     }
-    assert(coverShots>=5 && coverShots<=9);
+    assert(coverShots>=4 && coverShots<=9);
     assert(startingCover>0);
     assert(tactic_landing.shore_cover()[
         static_cast<size_t>(covered_wall)].hp==0);

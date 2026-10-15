@@ -1,3 +1,27 @@
+## 2026-10-15 — Breakwater occupied-cover suppression and sprite state (source)
+
+Built a source-level player-initiated suppression mechanic into the
+existing authoritative barricade damage path. A live wall hit pins only
+an assigned rifleman actually close to that cover in x/z, using the
+same physical width as projectile obstruction. The finite 1.20-second
+counter disables the soldier's contribution to live volleys and alters
+the shared SHORE arrival estimate; an additional shot refreshes it.
+The ordinary player shot still costs ammunition and damages the wall;
+there are no free infantry kills or phantom effects. Destruction still
+reroutes affected soldiers on the exact hit substep, including pinned
+soldiers. All game state advances once per update and is read by both
+eyes. The same original 128-KiB atlas now contains a distinct lowered-
+rifle defensive silhouette in cell 30 (31st used of 32); no new draw,
+GLES resource, soldier hit shape or save format is needed.
+
+Added focused helper and actual seeded Iron Quay shot integration
+regressions; updated prior atlas count and vacant-cell assertions. The
+previous main-branch phone-test #38809370812 successfully built/verified
+its APK, but that run predates this change. This slice needs its own
+native-test and Android NDK evidence and still requires physical
+Galaxy S9 headset acceptance. Requested verification via the existing
+signed phone-test trigger, not a newly created workflow.
+
 ## 2026-10-15 — Phone-test updater versionCode mismatch (source repair)
 
 Confirmed against published `phone-test-248-1`: release notes declare signed APK Android versionCode 214260770, whereas the installed verifier derived 248001 from the run/attempt tag. Replaced the stale run-number equality check with strict single-value Android versionCode extraction from the GitHub release's existing published notes; retain SHA-256, package-name, signer and newer-version checks. Removed obsolete versionCode derivation and added positive/negative source regression tests. Existing installed packages with the old check need a one-time in-place manual APK installation from the authoritative GitHub release; uninstall is not required. A signed APK release is requested using the established phone-test trigger; CI and physical-device update validation remain pending until observed.

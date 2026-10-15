@@ -8,6 +8,19 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater suppression at occupied shoreline cover
+
+- Successful shots into a barricade now pin only assigned riflemen
+  physically near the struck structure for 1.20 simulation seconds.
+  While pinned they keep their normal hit spheres and movement but
+  cannot fire; repeat hits refresh the timer. Ammo use, real wall HP,
+  weapon cooldown and instantaneous destroyed-wall routing are preserved.
+- The existing atlas's 31st tile now supplies an original defensive
+  rifle-lowered silhouette; no new memory allocation or GL draw. Native
+  regression adds fixed-timer, atlas and seeded real-hit checks.
+- Uses the established phone-test release/build path for verification;
+  physical stereo headset acceptance remains pending.
+
 ### Breakwater adjacent-cover reassignment after destruction
 
 - Synchronously invalidate a rifleman's destroyed barricade order on the
