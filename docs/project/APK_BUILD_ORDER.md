@@ -295,3 +295,28 @@ Any laptop hotspot, controller forwarding, disc-image import or optional desktop
 ## Prevent phone-test APK build starvation (2026-10-11)
 
 The existing `.github/workflows/phone-test-release.yml` used a global concurrency group with `cancel-in-progress: true`. Automated source updates frequently retriggered the phone-test release before Gradle and persistent signing finished, cancelling runs #107, #108 and #109 despite no compilation failure. The existing workflow now uses the same group with `cancel-in-progress: false`, so a running signed APK build reaches an actual success/failure and pending newer builds may coalesce. This **does not add a new GitHub Actions workflow**, change permissions/signing/artifact names, or run Android Gradle locally. Build/release success must be checked using the completed GitHub Actions job and published artifact readback, not merely the trigger.
+
+## Unified phone-test release workflow (2026-10-15)
+
+Previously `.github/workflows/reverievr-hourly-apk-release.yml` ran on every
+push to `main` and conditionally called the reusable
+`phone-test-release.yml`, while the latter also received its own push
+event on marker/workflow-file changes. A single commit therefore created
+two visible Actions workflow runs, and workflow-file changes could also
+request an unintended extra APK.
+
+The redundant hourly workflow was removed. The **existing**
+`.github/workflows/phone-test-release.yml` is the sole entrypoint and
+handles push/manual events itself: explicit workflow dispatch builds;
+a changed `.github/phone-test-trigger` marker builds; every **second**
+`[rv-hourly]` development commit builds; all other pushes exit after
+the lightweight gate with no APK job. Consequently one pushed commit
+creates at most one release-workflow run, and non-release source updates
+do not waste an Android build. The signed build, static validation,
+checksum/signature and ELF checks, signing identity, release naming and
+`cancel-in-progress: false` concurrency remain unchanged. The two jobs
+within this one workflow are gate and build, not two workflows.
+
+This change does not modify a running historical Actions job retroactively.
+Verify the next qualifying push produces a single signed-release workflow
+run and that its APK is published before claiming release completion.

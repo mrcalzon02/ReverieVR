@@ -1,26 +1,70 @@
-name: Build phone test release
+name: ReverieVR signed phone-test APK
 
+# A single workflow owns the trigger, release cadence and APK publication.
+# Run once per main push or explicit dispatch; the gate skips non-release
+# pushes without invoking another GitHub Actions workflow.
 on:
-  workflow_call:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - .github/workflows/phone-test-release.yml
-      - .github/phone-test-trigger
 
 permissions:
   contents: write
 
-# Do not cancel a signed APK after a newer main commit arrives:
-# recurring project work can otherwise starve releases indefinitely.
-# GitHub permits one active run and coalesces superseded pending requests.
+# Retain the established non-cancelling signed-release queue. A newer
+# development commit must not interrupt signing or APK publication.
 concurrency:
   group: reverievr-phone-test-release
   cancel-in-progress: false
 
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.decision.outputs.publish }}
+    steps:
+      - name: Checkout release history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Decide whether to publish an APK
+        id: decision
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Explicit Run workflow always requests a signed phone-test APK.
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # The established one-line marker is the manual, push-based
+          # release trigger. Changes to workflow configuration by
+          # themselves must not accidentally start an APK build.
+          if git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" \
+              | grep -Fxq '.github/phone-test-trigger'; then
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Retain the existing cadence: the second, fourth, sixth, etc.
+          # verified [rv-hourly] development commit publishes one APK.
+          subject="$(git log -1 --format=%s "$GITHUB_SHA")"
+          if [[ "$subject" == '[rv-hourly] '* ]]; then
+            sequence="$(git log --format=%s "$GITHUB_SHA" \
+              | grep -Ec '^\[rv-hourly\] ' || true)"
+            if ((sequence > 0 && sequence % 2 == 0)); then
+              echo 'publish=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          echo 'publish=false' >> "$GITHUB_OUTPUT"
+
   build-and-release:
+    needs: gate
+    if: needs.gate.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
