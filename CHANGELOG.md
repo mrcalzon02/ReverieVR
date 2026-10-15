@@ -6,6 +6,23 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater destructible shoreline cover and true shot occlusion
+
+- Add four-slot, transient, campaign-owned cover with 3 Iron Quay
+  concrete barricades and 4 Blackcap basalt obstacles, preserving
+  the unobstructed Shingle Bay introduction.
+- Calculate projectile obstruction against full X/Z slabs and actual
+  parabolic Y position, including grazing shots entering a top face.
+  Cover takes selected-weapon damage, costs ammunition, shrinks with
+  damage and disappears when destroyed. Render with existing 3D
+  vertex-color geometry and existing material impact effects.
+- Reuse compact target status for COVER HP, leave SAM/missile ghost
+  targeting, saves, infantry health, 2D sprites, audio and Daydream
+  bindings unchanged. Native regression source covers object lifecycles,
+  ballistic top impacts, misses, cooldown and clear opening waves.
+  Full Android NDK and phone acceptance remain outstanding.
+
+
 ### Breakwater verified-volley infantry firing sprites
 
 - Added five new infantry ready/flash silhouettes (rifle, flank, rear

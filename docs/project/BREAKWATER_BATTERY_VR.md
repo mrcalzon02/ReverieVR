@@ -167,6 +167,48 @@ weapon vulnerability, malformed coordinates and phase/slot guards.
 Full Android NDK compile, visual alignment at headset depth, binocular
 readability and physical controller tests remain outstanding.
 
+## Destructible shoreline cover with true ballistic blocking (2026-10-15 source)
+
+The native campaign now owns up to **four actual destructible shoreline
+barricades**, rebuilt on each wave and always rendered using the same
+positions, widths and heights used for ballistic collision.
+Shingle Bay's initial rowboat introduction deliberately remains open.
+Iron Quay deploys three low concrete barriers (105 HP each), and
+Blackcap Island deploys four heavier basalt barriers (170 HP each)
+near the later infantry firing approaches. As shots wear them down,
+they shrink and eventually disappear. A destroyed barrier no longer
+blocks subsequent gunfire. These are obstacles to the player's
+projectiles, not invulnerable infantry or fake armor damage.
+
+The single authoritative `CombatTarget` selection now orders
+real enemy sphere hits, individual infantry hits and physical cover
+hits by **projectile travel time**. For cover, a continuous parabolic
+slab calculation intersects the correct X and Z extents and the Y
+range, including shots that first enter through the upper surface
+after clearing the front edge. It uses the same weapon gravity as
+existing trajectory and hit tests. A cover strike consumes
+ammunition, respects the selected gun's normal firing cadence, and
+subtracts actual gun damage from that barricade; existing impact
+effects show stone or metal sparks at the intersection. Holding aim
+on cover displays one compact `COVER HP/MAX` target readout.
+The block geometry is emitted through the existing stereo-shared
+vertex-color batch: **no new GL shader, texture, sampler, draw call,
+model dependency, or permanent HUD panel**. Projectile hits and
+rendered obstructions derive from one `breakwater_cover.h` source.
+
+Cover health is battle-only state. It is not added to the 80-byte
+shop checkpoint; between waves cover respawns, and all three
+campaign locations retain their original enemy, infantry, attack
+and victory progression. SAM and missile ghost targeting remain
+unchanged, and no Daydream input binding has moved.
+Regression coverage checks empty opening beach, location templates,
+partial damage and destruction, ammunition/cooldown behavior,
+wall rendering/alpha-independent geometry, exact ballistic occlusion,
+top-entry hits, misses around and above obstacles, and zero-length
+or malformed ray rejection. Full native Android/NDK build,
+Galaxy S9 physical stereo/occlusion inspection, and stable headset
+framerate are still outstanding.
+
 ## Authentic infantry firing poses and confirmed-volley muzzle flashes (2026-10-15 source)
 
 The original single generic 3D flash beside the first infantry shooter

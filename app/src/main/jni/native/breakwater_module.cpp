@@ -3,6 +3,7 @@
 #include "breakwater_silhouettes.h"
 #include "breakwater_sprite_atlas.h"
 #include "breakwater_terrain.h"
+#include "breakwater_cover.h"
 #include "breakwater_sky.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
@@ -49,6 +50,7 @@ struct State {
     BatteryDamageFeedback battery_damage;
     AircraftAimFeedback aircraft_aim;
     SurfaceAimFeedback surface_aim;
+    int cover_aim_index=-1;
     AircraftHitFeedback aircraft_hit;
     CombatInputLatch combat_input;
     PointerFocusGate pointer_focus;
@@ -205,6 +207,15 @@ int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game,
                 index=static_cast<int>(Campaign::kMaxEnemies)+i;
             }
         }
+    // Physical cover occludes only when its exact ballistic hit is closer.
+    if(!ghost) {
+        float wallDepth=0.0f;
+        const int wall=CoverTarget(game,input.pointer_origin,
+            input.pointer_direction,game.stats().projectile_gravity,
+            &wallDepth);
+        if(wall>=0 && wallDepth<best)
+            index=kCoverTargetBase+wall;
+    }
     return index;
 }
 bool SaveState(State *s) {
@@ -257,7 +268,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             s->reload_ready_flash=0.0f;
             s->turret_flash=0.0f;
             s->gunboat_salvo_flash=0.0f;
-            s->aircraft_aim={};s->surface_aim={};
+            s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;
             s->aircraft_hit=AircraftHitFeedback{};
             s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
             game.Start();
@@ -280,7 +291,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->infantry_flash=0.0f;
                 s->infantry_firing_mask=0u;
                 s->gunboat_salvo_flash=0.0f;
-                s->aircraft_aim={};s->surface_aim={};
+                s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;
                 s->aircraft_hit=AircraftHitFeedback{};
                 s->sam_armed=false;
             }
@@ -368,23 +379,35 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         float impactDepth=0.0f;
         const bool enemyTarget=target>=0 &&
             target<static_cast<int>(Campaign::kMaxEnemies);
+        const bool infantryTarget=target>=static_cast<int>(
+            Campaign::kMaxEnemies) && target<kCoverTargetBase;
+        const bool coverTarget=target>=kCoverTargetBase &&
+            target<kCoverTargetEnd;
         const int16_t targetHp=enemyTarget?game.enemies()[target].hp:0;
         const Enemy enemyBefore=enemyTarget?game.enemies()[target]:Enemy{};
         const float gravity=game.stats().projectile_gravity;
         if(enemyTarget)
             AimAtEnemy(input,game.enemies()[target],gravity,missile,&impactDepth);
-        else if(target>=static_cast<int>(Campaign::kMaxEnemies)) {
+        else if(infantryTarget) {
             const Infantry &trooper=game.infantry_units()[
                 target-Campaign::kMaxEnemies];
             const float center[]={trooper.x,-.66f,trooper.z};
             ProjectileHitsSphere(input.pointer_origin,input.pointer_direction,
                                  gravity,center,.30f,&impactDepth);
+        } else if(coverTarget) {
+            ProjectileHitsCover(input.pointer_origin,
+                input.pointer_direction,gravity,
+                game.shore_cover()[target-kCoverTargetBase],&impactDepth);
         }
         bool shot=false;
         if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies))
             shot=game.FireAt(static_cast<uint8_t>(target));
-        else if(target>=static_cast<int>(Campaign::kMaxEnemies))
-            shot=game.FireAtInfantry(static_cast<uint8_t>(target-Campaign::kMaxEnemies));
+        else if(infantryTarget)
+            shot=game.FireAtInfantry(static_cast<uint8_t>(
+                target-Campaign::kMaxEnemies));
+        else if(coverTarget)
+            shot=game.FireAtCover(static_cast<uint8_t>(
+                target-kCoverTargetBase));
         else if(GunWithinTraverse(input.pointer_direction,
                                   game.selected_weapon()))
             shot=game.FireMiss();
@@ -403,7 +426,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                         s->impacts.RecordHit(hit,down,.001f,
                             game.enemies()[target].active?
                                 ImpactKind::Metal:ImpactKind::Explosion);
-                } else s->impacts.RecordHit(hit,down,.001f,ImpactKind::Sand);
+                } else if(infantryTarget || coverTarget)
+                    s->impacts.RecordHit(hit,down,.001f,
+                        coverTarget && game.location()==1u ?
+                            ImpactKind::Metal:ImpactKind::Sand);
             } else if(target<0 && !missile)
                 BallisticWaterImpact(s,input,gravity);
             for(int k=0;k<3;k++) {
@@ -438,7 +464,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->infantry_flash=0.0f;
         s->infantry_firing_mask=0u;
         s->gunboat_salvo_flash=0.0f;
-        s->aircraft_aim={};s->surface_aim={};
+        s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;
         s->aircraft_hit=AircraftHitFeedback{};
         s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
         Feedback(s,checkpoint_cleared?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
@@ -471,6 +497,9 @@ void BuildScene(State *s) {
     EmitCoastalTerrain(game.location(),night,
         [s](auto... arguments) { Box(s,arguments...); },
         [s](auto... arguments) { Triangle(s,arguments...); });
+    for(const ShoreCover &barrier:game.shore_cover())
+        EmitShoreCover(game.location(),barrier,night,
+            [s](auto... arguments) { Box(s,arguments...); });
 
     // The terrain and heavy parapet remain 3D; only the switchable gun
     // housing becomes art. Keep a small fixed pedestal beneath the card.
@@ -856,6 +885,18 @@ void BuildScene(State *s) {
                 Text(s,label,0,-.43f,-1.79f,.046f,.69f,1.0f,.78f);
             }
         }
+        if(s->cover_aim_index>=0 &&
+           s->cover_aim_index<static_cast<int>(Campaign::kMaxCover)) {
+            const ShoreCover &wall=game.shore_cover()[
+                static_cast<size_t>(s->cover_aim_index)];
+            if(wall.hp>0) {
+                char label[36];
+                std::snprintf(label,sizeof(label),"COVER %d/%d",
+                    static_cast<int>(wall.hp),static_cast<int>(wall.max_hp));
+                Panel(s,0,-.43f,-1.82f,3.02f,.31f,.12f,.29f,.24f);
+                Text(s,label,0,-.43f,-1.79f,.040f,.95f,.89f,.64f);
+            }
+        }
         if(s->surface_aim.visible) {
             const SurfaceAimFeedback &target=s->surface_aim;
             char label[36];
@@ -995,7 +1036,7 @@ void Pause(void *instance) {
     s->combat_input.Release();
     s->infantry_flash=0.0f;
     s->infantry_firing_mask=0u;
-    s->surface_aim={};s->aircraft_aim={};
+    s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;
     s->scene_dirty=true;
 }
 void Update(void *instance,const ReverieNativeInputV1 *input) {
@@ -1015,7 +1056,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->combat_input.Release();
         s->infantry_flash=0.0f;
         s->infantry_firing_mask=0u;
-        s->surface_aim={};s->aircraft_aim={};
+        s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;
         s->scene_dirty=true;
         return;
     }
@@ -1134,11 +1175,13 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             GhostAimPoint(copy.pointer_origin,copy.pointer_direction,
                           s->ghost_position);
     }
-    s->aircraft_aim={};s->surface_aim={};
+    s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;
     if(s->campaign.phase()==Phase::Combat &&
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
         const int target=CombatTarget(copy,s->campaign,s->sam_armed ||
             WeaponFor(s->campaign.selected_weapon()).uses_ghost);
+        s->cover_aim_index=target>=kCoverTargetBase &&
+            target<kCoverTargetEnd?target-kCoverTargetBase:-1;
         s->aircraft_aim=InspectAircraftAim(s->campaign,target);
         // SAM targeting accepts aircraft only; never advertise a
         // valid surface lock while the special missile mode is armed.

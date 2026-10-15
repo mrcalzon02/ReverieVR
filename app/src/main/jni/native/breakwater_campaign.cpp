@@ -1,5 +1,6 @@
 #include "breakwater_campaign.h"
 #include "breakwater_infantry_tactics.h"
+#include "breakwater_cover.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -272,6 +273,7 @@ bool Campaign::BeginWave() {
     if (phase_ != Phase::Shop) return false;
     enemies_.fill({});
     infantry_units_.fill({});
+    shore_cover_ = MakeShoreCover(location_);
     infantry_spawn_cursor_ = 0;
     wave_status_ = {};
     infantry_ = 0;
@@ -429,6 +431,16 @@ bool Campaign::FireAtInfantry(uint8_t index) {
     --infantry_;
     ++wave_status_.troops_stopped;
     credits_ += 20;
+    return true;
+}
+bool Campaign::FireAtCover(uint8_t index) {
+    if(phase_!=Phase::Combat || index>=shore_cover_.size() ||
+       shore_cover_[index].hp<=0 || !BeginGunShot())return false;
+    ShoreCover &wall=shore_cover_[index];
+    // Cover absorbs the actual selected mount damage and persists across
+    // individual shots. A destroyed wall cannot block future targeting.
+    wall.hp=static_cast<int16_t>(std::max(0,
+        static_cast<int>(wall.hp)-static_cast<int>(stats().gun_damage)));
     return true;
 }
 bool Campaign::CallArtillery() {

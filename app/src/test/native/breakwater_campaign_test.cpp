@@ -11,6 +11,7 @@
 #include "breakwater_pointer_focus.h"
 #include "breakwater_impacts.h"
 #include "breakwater_wrecks.h"
+#include "breakwater_cover.h"
 #include "breakwater_weapons.h"
 #include "breakwater_checkpoint.h"
 #include <cassert>
@@ -21,6 +22,111 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // Real shoreline cover must share geometry with physics, block only
+    // lower/parabolic shots, take actual ammunition and disappear on death.
+    {
+        const auto shingle=MakeShoreCover(0);
+        for(const ShoreCover &wall:shingle)assert(wall.hp==0);
+        const auto iron=MakeShoreCover(1);
+        const auto basalt=MakeShoreCover(2);
+        for(size_t i=0;i<4;++i) {
+            assert(iron[i].hp>0 || i==3);
+            assert(basalt[i].hp>0);
+            if(iron[i].hp>0) {
+                assert(iron[i].hp==iron[i].max_hp);
+                assert(CoverHeight(iron[i])>.43f);
+            }
+        }
+        float distance=0.0f;
+        const float origin[]={0.0f,-.70f,0.0f};
+        const float straight[]={0.0f,0.0f,-1.0f};
+        const int wall=CoverTargetFromArray(iron,origin,straight,.014f,&distance);
+        assert(wall==1 && distance>1.0f && distance<1.2f);
+        const float behind[]={0.0f,-.66f,-1.65f};
+        float soldierDepth=0;
+        assert(ProjectileHitsSphere(origin,straight,.014f,
+                                   behind,.30f,&soldierDepth));
+        assert(distance<soldierDepth);
+        // Enter through the TOP while moving through the wall's Z
+        // thickness. A front-face-only ray test would wrongly miss it.
+        const float topOrigin[]={0.0f,-.40f,0.0f};
+        const float descending[]={0.0f,-.16f,-1.0f};
+        float topHit=0;
+        assert(ProjectileHitsCover(topOrigin,descending,.014f,
+                                   iron[1],&topHit));
+        assert(topHit>1.05f && topHit<1.29f);
+        float topPoint[3]={};
+        assert(ProjectilePosition(topOrigin,descending,topHit,
+                                  .014f,topPoint));
+        assert(topPoint[1]<=kCoverBaseY+CoverHeight(iron[1])+.001f);
+        const float above[]={0.0f,-.18f,0.0f};
+        const float aside[]={1.0f,-.70f,0.0f};
+        assert(!ProjectileHitsCover(above,straight,.014f,
+                                   iron[1],&distance));
+        assert(!ProjectileHitsCover(aside,straight,.014f,
+                                   iron[1],&distance));
+        const float noTravel[]={0.0f,0.0f,0.0f};
+        assert(!ProjectileHitsCover(origin,noTravel,.014f,
+                                   iron[1],&distance));
+        const float wrongWay[]={0.0f,0.0f,1.0f};
+        assert(!ProjectileHitsCover(origin,wrongWay,.014f,
+                                   iron[1],&distance));
+        const float nan[]={std::numeric_limits<float>::quiet_NaN(),
+                           0.0f,0.0f};
+        assert(!ProjectileHitsCover(nan,straight,.014f,
+                                   iron[1],&distance));
+        const auto inspectRender=[](const ShoreCover &part,uint8_t location) {
+            size_t boxes=0;
+            EmitShoreCover(location,part,false,[&](auto... args) {
+                const float values[]={args...};
+                static_assert(sizeof...(args)==9,
+                    "Cover box consumes x,y,z,w,h,d,r,g,b");
+                for(float val:values)assert(std::isfinite(val));
+                assert(values[3]>0.0f && values[4]>0.0f);
+                ++boxes;
+            });
+            return boxes;
+        };
+        assert(inspectRender(iron[1],1)==4);
+        assert(inspectRender(shingle[0],0)==0);
+
+        Campaign fighting(Difficulty::Casual,1234);
+        assert(fighting.Start());
+        uint8_t shop[Campaign::kSerializedSize]={};
+        assert(fighting.SerializeShop(shop,sizeof(shop)));
+        shop[16]=1; // Iron Quay, same documented checkpoint field
+        assert(fighting.DeserializeShop(shop,sizeof(shop)));
+        assert(fighting.BeginWave());
+        assert(fighting.shore_cover()[1].hp==105);
+        assert(!fighting.FireAtCover(3)); // slot does not exist at Iron Quay
+        assert(!fighting.FireAtCover(4)); // out of fixed pool
+        const uint8_t originalAmmo=fighting.magazine_left();
+        assert(fighting.FireAtCover(1));
+        assert(fighting.shore_cover()[1].hp==85);
+        assert(CoverHeight(fighting.shore_cover()[1])<
+               CoverHeight(iron[1]));
+        assert(fighting.magazine_left()==originalAmmo-1);
+        assert(!fighting.FireAtCover(1)); // weapon cooldown
+        size_t shots=1;
+        while(fighting.shore_cover()[1].hp>0 && shots<12) {
+            // Campaign::Tick caps input delta to 0.10 seconds; advance
+            // through real frames rather than expecting .35s in one call.
+            for(int frame=0;frame<4;++frame)fighting.Tick(.10f);
+            assert(fighting.FireAtCover(1));
+            ++shots;
+        }
+        assert(shots==6 && fighting.shore_cover()[1].hp==0);
+        assert(CoverHeight(fighting.shore_cover()[1])==0.0f);
+        float blocked=0.0f;
+        assert(CoverTarget(fighting,origin,straight,.014f,&blocked)==-1);
+        assert(!fighting.FireAtCover(1));
+        assert(inspectRender(fighting.shore_cover()[1],1)==0);
+        Campaign shingleCampaign(Difficulty::Casual,44);
+        assert(shingleCampaign.Start() && shingleCampaign.BeginWave());
+        assert(CoverTarget(shingleCampaign,origin,straight,.014f,
+                           &blocked)==-1);
+    }
+
     // Landing-craft tactics are real simulation positions, not a separate
     // animation timer or fake HUD threats. Early rowboats remain riflemen.
     {

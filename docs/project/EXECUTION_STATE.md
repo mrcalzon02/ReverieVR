@@ -1,3 +1,28 @@
+## 2026-10-15 — Breakwater ballistic-cover obstacle implementation (source)
+
+Implemented battle-owned destructible beach barricades at Iron Quay
+and Blackcap Island; Shingle Bay's initial rowboat introduction has
+no obstacles. A shared cover geometry/physics source provides the
+same x/z/height/degradation parameters to the rendered low-poly
+box walls and a continuous parabolic projectile obstruction test,
+including top-face entry after the front face. `CombatTarget`
+compares enemy sphere and cover intersections by travel time. A
+barrier intercepts player gunfire, consumes normal magazine rounds,
+obeys weapon cadence, loses actual gun damage, shrinks with damage,
+and disappears when HP reaches zero. The existing single target
+status readout shows `COVER N/M`; existing impact effects show
+material-dependent hits. Missile and SAM aircraft ghost locks are
+unmodified. Up to four cover states are transient Campaign members
+and restore at BeginWave without changing saves, infantry damage,
+enemy hitboxes, controls, stereo draws or textures.
+
+Native regression source now covers clear Shingle Bay, populated
+later locations, ballistic near/top hits and misses, fixed cover
+render volume, cooldown and full destructibility/reload. Isolated
+trajectory arithmetic checked; full repo C++ suite, NDK/APK
+compile and physical Galaxy S9 headset proof still pending.
+No APK publication was performed in this development slice.
+
 ## 2026-10-15 — Breakwater per-soldier firing poses (source)
 
 Extended the original 128-KiB code-authored sprite atlas to use

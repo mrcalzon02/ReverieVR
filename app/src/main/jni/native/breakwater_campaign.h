@@ -58,6 +58,12 @@ struct Infantry {
     InfantryTactic tactic = InfantryTactic::Rifle;
     float lane_x = 0;
 };
+struct ShoreCover {
+    float x = 0.0f;
+    float z = 0.0f;
+    int16_t hp = 0;
+    int16_t max_hp = 0;
+};
 struct AircraftFlightPose {
     float x = 0;
     float bank = 0; // radians; wing tips rotate about the fuselage
@@ -139,6 +145,7 @@ public:
     static constexpr size_t kSerializedSize = 80;
     static constexpr size_t kMaxEnemies = 12;
     static constexpr size_t kMaxInfantry = 60; // ten transports x six passengers
+    static constexpr size_t kMaxCover = 4; // tiny location-specific barricades
     static constexpr uint8_t kLocations = 3;
     static const std::array<Location, kLocations> &Locations();
     explicit Campaign(Difficulty difficulty = Difficulty::Regular,
@@ -161,6 +168,7 @@ public:
     uint8_t sam_charges() const { return sam_charges_; }
     bool FireAt(uint8_t index);
     bool FireAtInfantry(uint8_t index);
+    bool FireAtCover(uint8_t index);
     bool FireMiss();
     bool RequestReload();
     bool CallArtillery();
@@ -191,6 +199,7 @@ public:
     IncomingThreats incoming_threats() const;
     const std::array<Enemy,kMaxEnemies> &enemies() const { return enemies_; }
     const std::array<Infantry,kMaxInfantry> &infantry_units() const { return infantry_units_; }
+    const std::array<ShoreCover,kMaxCover> &shore_cover() const { return shore_cover_; }
     int32_t price(Upgrade upgrade) const;
     uint8_t level(Upgrade upgrade) const;
 private:
@@ -223,6 +232,7 @@ private:
     std::array<uint8_t,kWeaponCount> weapon_magazines_{{12,8,6,2,4}};
     std::array<Enemy,kMaxEnemies> enemies_{};
     std::array<Infantry,kMaxInfantry> infantry_units_{};
+    std::array<ShoreCover,kMaxCover> shore_cover_{};
     uint8_t infantry_spawn_cursor_ = 0;
     Status wave_status_{};
     TurretShotEvent turret_shot_{};
