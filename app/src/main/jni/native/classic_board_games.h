@@ -47,6 +47,9 @@ struct State {
         }
     };
     std::unordered_map<ChessPosition,int,ChessHash> chessHistory;
+    // WCDF positions are distinguished by pieces/kings and side to move.
+    std::unordered_map<ChessPosition,int,ChessHash> checkerHistory;
+    int checkerQuietPlies=0;
     int halfMoves=0,promotionChoice=5;
     Kind kind=Kind::Checkers;
     Board cells{};
@@ -63,6 +66,7 @@ struct State {
     static int Sign(int n){return n>0?1:(n<0?-1:0);}
     void Reset(Kind type) {
         kind=type;cells.fill(0);goHistory.clear();chessHistory.clear();
+        checkerHistory.clear();checkerQuietPlies=0;
         halfMoves=0;promotionChoice=5;side=1;winner=0;
         selected=forced=-1;ply=passes=0;enPassant=-1;castles=15;
         lastFrom=lastTo=-1;clock=0;finished=false;
@@ -71,6 +75,7 @@ struct State {
                 if((x+y)%2)cells[Index(x,y)]=-1;
             for(int y=5;y<8;y++)for(int x=0;x<8;x++)
                 if((x+y)%2)cells[Index(x,y)]=1;
+            checkerHistory.emplace(CurrentCheckerPosition(),1);
         } else if(type==Kind::Chess) {
             static const int8_t back[8]={4,2,3,5,6,3,2,4};
             for(int x=0;x<8;x++){
@@ -81,6 +86,27 @@ struct State {
         } else if(type==Kind::Go) {
             goHistory.insert(cells);
         }
+    }
+
+    // WCDF / English draughts (8x8) requires correct move progress and
+    // repetition for valid 40-move-each / third-occurrence claims.
+    ChessPosition CurrentCheckerPosition() const {
+        ChessPosition p;
+        std::copy_n(cells.begin(),64,p.pieces.begin());
+        p.side=static_cast<int8_t>(side);
+        return p;
+    }
+    int CheckerRepetitions() const {
+        auto it=checkerHistory.find(CurrentCheckerPosition());
+        return it==checkerHistory.end()?0:it->second;
+    }
+    bool CheckerDrawClaimable() const {
+        return kind==Kind::Checkers&&!finished&&side==1&&forced<0&&
+            (checkerQuietPlies>=80||CheckerRepetitions()>=3);
+    }
+    bool ClaimCheckerDraw() {
+        if(!CheckerDrawClaimable())return false;
+        finished=true;winner=0;return true;
     }
 
     // American/English checkers: forced captures, continuation, crowning ends turn.
@@ -134,6 +160,10 @@ struct State {
         if(!capture && (forced>=0||HasCapture(side)||!CheckersStep(from,to)))
             return false;
         const int old=cells[from];
+        // Only completed king-only noncapturing turns contribute to the
+        // 40 moves per side with no man advancement or captured piece.
+        checkerQuietPlies=(capture||std::abs(old)==1)
+            ?0:checkerQuietPlies+1;
         cells[to]=cells[from];cells[from]=0;
         if(capture)cells[(from+to)/2]=0;
         const bool crown=std::abs(old)==1 &&
@@ -142,6 +172,7 @@ struct State {
         lastFrom=from;lastTo=to;selected=-1;++ply;
         if(capture&&!crown&&HasCapture(side,to)){forced=to;return true;}
         forced=-1;side=-side;
+        ++checkerHistory[CurrentCheckerPosition()];
         if(!HasCheckerMove(side)){finished=true;winner=-side;}
         return true;
     }

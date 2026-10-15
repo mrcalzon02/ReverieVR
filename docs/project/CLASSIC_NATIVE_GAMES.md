@@ -53,9 +53,13 @@ were expanded, with tests for distant-corner placement and edge captures.
   rules:** negotiated dead-stone removal before scoring, seki scoring
   adjudication, and selectable scoring rulesets. The current CPU remains a
   bounded heuristic opponent, not a strong Go engine.
-- **Checkers:** American/English 8×8, forced captures, multiple jumps,
-  crowning, deterministic greedy CPU. Draw by repetition/40-move rule and
-  voluntary resign are not yet implemented.
+- **Checkers:** American/English 8×8, forced captures, multiple
+  jumps and crowning, with deterministic bounded CPU. Added WCDF-style
+  claimable draws for an identical third position or 40 moves per side
+  without a capture or movement of any uncrowned man. A conditional on-board
+  CLAIM DRAW action appears only for valid human-turn claims and cannot
+  interrupt a forced multi-jump. Draw agreement, tournament adjudication,
+  optional time controls, resignation and stronger AI remain open.
 - **Chess:** standard 8×8, king-safe moves, castling and en passant,
   four promotion pieces (queen, rook, bishop, knight), checkmate and
   stalemate. FIDE drawn-game handling now tracks exact positions with

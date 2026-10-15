@@ -60,6 +60,35 @@ static void TestBoardGames() {
     assert(crown.CheckerMove(9,0));
     assert(crown.cells[0]==2);
 
+    // WCDF English/American checkers: draw claims require either an
+    // identical third position or 40 turns per side without capture or
+    // movement of an uncrowned man. Forced capture chains cannot claim.
+    Boards drawCheckers;
+    drawCheckers.Reset(BoardKind::Checkers);
+    assert(drawCheckers.checkerHistory.size()==1);
+    assert(!drawCheckers.CheckerDrawClaimable());
+    auto checkersPosition=drawCheckers.CurrentCheckerPosition();
+    drawCheckers.checkerHistory[checkersPosition]=3;
+    assert(drawCheckers.CheckerRepetitions()==3);
+    assert(drawCheckers.ClaimCheckerDraw());
+    assert(drawCheckers.finished&&drawCheckers.winner==0);
+    Boards progress;
+    progress.Reset(BoardKind::Checkers);
+    progress.checkerQuietPlies=79;
+    assert(progress.CheckerMove(40,33)); // white man advances
+    assert(progress.checkerQuietPlies==0);
+    Boards kings;
+    kings.Reset(BoardKind::Checkers);
+    kings.cells.fill(0);
+    kings.cells[41]=2;kings.cells[14]=-2;
+    kings.side=1;kings.checkerQuietPlies=79;
+    assert(kings.CheckerMove(41,32)); // quiet king move
+    assert(kings.checkerQuietPlies==80);
+    kings.side=1;kings.forced=-1;
+    assert(kings.CheckerDrawClaimable());
+    kings.forced=32;
+    assert(!kings.CheckerDrawClaimable());
+
     // Regulation 19x19 Go board with 361 playable intersections.
     const auto at=[](int x,int y){return y*19+x;};
     Boards go;

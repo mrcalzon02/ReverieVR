@@ -317,6 +317,15 @@ shell/game authority boundaries changed. Standard chess/checkers retain
 8×8 geometry. Dead-stone settlement and strong Go search are not yet
 implemented; see `docs/project/CLASSIC_NATIVE_GAMES.md`.
 
+## English draughts / Checkers draw claims (2026-10-15)
+
+The native `classic-checkers` engine now tracks side-aware exact board
+repetition and 40 moves per player without a capture or uncrowned-man
+advance. Valid human-turn claims expose the same temporary on-board
+CLAIM DRAW pointer target as Chess, without changing any shared ABI
+callback, secondary action, shell input routing or Home. WCDF draw
+agreements/arbitration and higher-depth search remain future work.
+
 ## Chess native game rules and controller extension (2026-10-15)
 
 The classic Chess engine now supports alternate promotion pieces, dead

@@ -228,6 +228,12 @@ void RebuildBoard(Module *m,bool fixed){
              0,1.34f,.064f,.95f,.95f,.78f);
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
             Text(m,"CONTINUE JUMP",1.88f,.63f,.044f,1.f,.90f,.56f);
+        if(s.kind==reverie::boardgames::Kind::Checkers &&
+           s.CheckerDrawClaimable()){
+            Rect(m,1.94f,-1.25f,.96f,.39f,-2.98f,
+                 .23f,.36f,.42f);
+            Text(m,"CLAIM DRAW",1.94f,-1.25f,.042f,1.f,1.f,.89f);
+        }
         if(s.kind==reverie::boardgames::Kind::Chess&&s.side==1){
             if(s.selected>=0&&s.selected<64&&
                s.cells[s.selected]==1&&s.selected/8==1){
@@ -543,6 +549,11 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                     m->board.ChessDrawClaimable() &&
                     hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
                 m->board.ClaimChessDraw();
+            else if(aim &&
+                    m->board.kind==reverie::boardgames::Kind::Checkers &&
+                    m->board.CheckerDrawClaimable() &&
+                    hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
+                m->board.ClaimCheckerDraw();
             else {
                 int x=m->boardCursorX,y=m->boardCursorY;
                 if(aim){

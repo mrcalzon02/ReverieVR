@@ -102,7 +102,11 @@
   APK and S9 controls acceptance remain required. Remaining: stronger AI,
   tournament clock options, draw offers/resignation UI and exhaustive
   dead-position adjudication.
-- **Checkers:** Ruleset draw limits/repetition and CPU lookahead pending.
+- **Checkers:** Source now tracks exact position repetition and WCDF
+  40-moves-per-side no-progress claim eligibility, with an accessible
+  conditional board claim action and regression tests. Draw agreement,
+  tournament procedures, stronger CPU search and S9 device acceptance
+  remain open.
 - **Pong / Breakout:** Source corrected: Pong has left/right vertical
   paddles, wall bounce, first to 11 and bounded CPU play; Breakout has two
   112-brick walls, original 7/5/3/1 row scores, speed milestones and paddle
