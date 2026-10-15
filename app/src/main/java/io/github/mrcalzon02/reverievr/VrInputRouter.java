@@ -15,6 +15,10 @@ final class VrInputRouter {
             return true;
         }
 
+        default boolean usesDaydreamDosGameControls() {
+            return false;
+        }
+
         default void onPointerAxis(
             float horizontal,
             float vertical,
@@ -127,6 +131,14 @@ final class VrInputRouter {
         );
         // The Daydream App/Menu button is shell-owned. Do not leak it into
         // hosted content as Back before the modal shell menu can intercept it.
+        final boolean dosGame = listener != null
+            && listener.usesDaydreamDosGameControls();
+        emitBindingDigitalEdge(
+            BindingInput.DAYDREAM_APP_BUTTON,
+            snapshot.menuPressed,
+            previousMenu,
+            source
+        );
         emitBindingDigitalEdge(
             BindingInput.RECENTER,
             snapshot.homePressed,
@@ -152,18 +164,14 @@ final class VrInputRouter {
             VrInputAction.SELECT,
             source
         );
-        emitPressedEdge(
-            snapshot.menuPressed,
-            previousMenu,
-            VrInputAction.MENU,
-            source
-        );
-        emitPressedEdge(
-            snapshot.homePressed,
-            previousHome,
-            VrInputAction.RECENTER,
-            source
-        );
+        // App/minus becomes held DOS mouse button 2, not Shell Menu.
+        if (!dosGame) {
+            emitPressedEdge(snapshot.menuPressed, previousMenu,
+                VrInputAction.MENU, source);
+        }
+        // Home/zero owns the universal Quick Menu during DOS play.
+        emitPressedEdge(snapshot.homePressed, previousHome,
+            daydreamHomeAction(dosGame), source);
         /*
          * The physical controller's volume rocker is a pair of hosted-input
          * buttons in ReverieVR. Do not also emit Android/system volume actions;
@@ -212,7 +220,8 @@ final class VrInputRouter {
             int deltaX = touchLastX - touchStartX;
             int deltaY = touchLastY - touchStartY;
 
-            if (Math.abs(deltaX) >= TOUCH_SWIPE_THRESHOLD
+            // DOS touchpad directions are held keys, not shell swipes.
+            if (!dosGame && Math.abs(deltaX) >= TOUCH_SWIPE_THRESHOLD
                 && Math.abs(deltaX) > Math.abs(deltaY)) {
                 emit(
                     deltaX > 0
@@ -220,7 +229,8 @@ final class VrInputRouter {
                         : VrInputAction.NAV_LEFT,
                     source
                 );
-            } else if (Math.abs(deltaY) >= TOUCH_SWIPE_THRESHOLD) {
+            } else if (!dosGame
+                && Math.abs(deltaY) >= TOUCH_SWIPE_THRESHOLD) {
                 emit(
                     deltaY > 0
                         ? VrInputAction.NAV_DOWN
@@ -236,6 +246,10 @@ final class VrInputRouter {
         previousVolumeUp = snapshot.volumeUpPressed;
         previousVolumeDown = snapshot.volumeDownPressed;
         previousTouching = snapshot.touching;
+    }
+
+    static VrInputAction daydreamHomeAction(boolean dosGame) {
+        return dosGame ? VrInputAction.MENU : VrInputAction.RECENTER;
     }
 
     boolean onKeyEvent(KeyEvent event) {

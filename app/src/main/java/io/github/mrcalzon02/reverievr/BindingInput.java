@@ -2,6 +2,8 @@ package io.github.mrcalzon02.reverievr;
 
 enum BindingInput {
     SELECT,
+    // Daydream App/minus is distinct from Home and the volume rocker.
+    DAYDREAM_APP_BUTTON,
     BACK,
     RECENTER,
     VOLUME_UP,

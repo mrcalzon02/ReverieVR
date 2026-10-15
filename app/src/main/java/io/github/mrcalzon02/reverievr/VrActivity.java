@@ -1004,6 +1004,11 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public boolean usesDaydreamDosGameControls() {
+        return renderer != null && renderer.isDosGameControlFocused();
+    }
+
+    @Override
     public boolean shouldDispatchGamepadShellAction(
         int keyCode, VrInputAction action) {
         return !(action == VrInputAction.BACK

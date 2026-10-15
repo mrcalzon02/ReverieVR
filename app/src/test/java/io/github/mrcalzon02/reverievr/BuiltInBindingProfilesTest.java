@@ -326,6 +326,91 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
+    public void doomTouchpadAndAppMouseButtonsHoldIndependently() {
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine e = new InputBindingEngine(bus,
+            BuiltInBindingProfiles.byId(
+                BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE));
+        e.submitDigital(BindingInput.SELECT, true);
+        e.submitDigital(BindingInput.DAYDREAM_APP_BUTTON, true);
+        org.junit.Assert.assertTrue(bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
+        org.junit.Assert.assertTrue(bus.isMouseButtonDown(VirtualOutput.MOUSE_RIGHT));
+        e.submitDigital(BindingInput.SELECT, false);
+        org.junit.Assert.assertFalse(bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
+        org.junit.Assert.assertTrue(bus.isMouseButtonDown(VirtualOutput.MOUSE_RIGHT));
+        e.submitDigital(BindingInput.DAYDREAM_APP_BUTTON, false);
+        org.junit.Assert.assertFalse(bus.isMouseButtonDown(VirtualOutput.MOUSE_RIGHT));
+    }
+
+    @Test
+    public void doomTouchpadDirectionsAreHeldWhileTouched() {
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine e = new InputBindingEngine(bus,
+            BuiltInBindingProfiles.byId(
+                BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE));
+        for (int i = 0; i < 3; i++) {
+            e.submitAxis(BindingInput.TOUCHPAD_X, -.8f);
+            e.submitAxis(BindingInput.TOUCHPAD_Y, -.8f);
+            org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.LEFT));
+            org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
+        }
+        e.submitAxis(BindingInput.TOUCHPAD_X, 0f);
+        e.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
+        org.junit.Assert.assertFalse(bus.isKeyDown(VirtualKey.LEFT));
+        org.junit.Assert.assertFalse(bus.isKeyDown(VirtualKey.UP));
+    }
+
+    @Test
+    public void doomVolumeCyclesNumericWeaponsNotMenuKeys() {
+        VirtualInputBus bus = new VirtualInputBus();
+        InputBindingEngine e = new InputBindingEngine(bus,
+            BuiltInBindingProfiles.byId(
+                BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE));
+        VirtualInputSnapshot frame = new VirtualInputSnapshot();
+        e.submitDigital(BindingInput.VOLUME_UP, true);
+        e.submitDigital(BindingInput.VOLUME_UP, true);
+        bus.capture(frame);
+        org.junit.Assert.assertTrue(frame.keys[VirtualKey.DIGIT_3.ordinal()]);
+        org.junit.Assert.assertFalse(frame.keys[VirtualKey.DIGIT_4.ordinal()]);
+        org.junit.Assert.assertFalse(frame.keys[VirtualKey.ENTER.ordinal()]);
+        org.junit.Assert.assertFalse(frame.keys[VirtualKey.ESCAPE.ordinal()]);
+        e.submitDigital(BindingInput.VOLUME_UP, false);
+        e.submitDigital(BindingInput.VOLUME_DOWN, true);
+        bus.capture(frame);
+        org.junit.Assert.assertTrue(frame.keys[VirtualKey.DIGIT_2.ordinal()]);
+        e.submitDigital(BindingInput.VOLUME_DOWN, false);
+        e.releaseAll();
+        e.submitDigital(BindingInput.VOLUME_UP, true);
+        bus.capture(frame);
+        org.junit.Assert.assertTrue(frame.keys[VirtualKey.DIGIT_3.ordinal()]);
+    }
+
+    @Test
+    public void previousStockDoomProfileUpgradesButTuningSurvives() {
+        BindingProfile current = BuiltInBindingProfiles.byId(
+            BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE);
+        java.util.List<InputBinding> previous = new java.util.ArrayList<>();
+        for (InputBinding b : current.bindings) {
+            if (b.input == BindingInput.DAYDREAM_APP_BUTTON) continue;
+            previous.add(b);
+            if (b.input == BindingInput.SELECT
+                && b.output.equals(VirtualOutput.joystickButton(0))) {
+                previous.add(InputBinding.digital(BindingInput.VOLUME_UP,
+                    VirtualOutput.key(VirtualKey.ENTER)));
+                previous.add(InputBinding.digital(BindingInput.VOLUME_DOWN,
+                    VirtualOutput.key(VirtualKey.ESCAPE)));
+            }
+        }
+        BindingProfile stock = BindingProfileCodec.decode(
+            BindingProfileCodec.encode(current.withBindings(previous)));
+        org.junit.Assert.assertSame(current,
+            BuiltInBindingProfiles.upgradeLegacyStockHeadMouse(stock));
+        BindingProfile tuned = BindingProfileTuner.adjustAnalogScale(stock, 1.1f);
+        org.junit.Assert.assertSame(tuned,
+            BuiltInBindingProfiles.upgradeLegacyStockHeadMouse(tuned));
+    }
+
+    @Test
     public void dosRockerProvidesKeyboardMenuRecovery() {
         VirtualInputBus bus = new VirtualInputBus();
         InputBindingEngine engine = new InputBindingEngine(bus,

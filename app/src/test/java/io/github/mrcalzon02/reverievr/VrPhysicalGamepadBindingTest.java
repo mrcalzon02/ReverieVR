@@ -27,4 +27,12 @@ public final class VrPhysicalGamepadBindingTest {
             KeyEvent.KEYCODE_VOLUME_DOWN));
         assertNull(VrInputRouter.mapPhysicalGamepadKey(KeyEvent.KEYCODE_UNKNOWN));
     }
+    @Test
+    public void daydreamHomeUsesQuickMenuOnlyDuringDosPlay() {
+        org.junit.Assert.assertEquals(VrInputAction.MENU,
+            VrInputRouter.daydreamHomeAction(true));
+        org.junit.Assert.assertEquals(VrInputAction.RECENTER,
+            VrInputRouter.daydreamHomeAction(false));
+    }
+
 }

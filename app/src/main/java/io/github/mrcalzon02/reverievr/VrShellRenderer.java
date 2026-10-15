@@ -911,6 +911,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return mode == MODE_NATIVE || mode == MODE_DOS;
     }
 
+    boolean isDosGameControlFocused() {
+        return mode == MODE_DOS && !orientationMenuVisible;
+    }
+
     boolean handlesSelectAsShellAction() {
         if (orientationMenuVisible) {
             return true;

@@ -68,6 +68,8 @@ final class BuiltInBindingProfiles {
         if (!oldHead && !oldDoom && !oldCursor) return saved;
 
         final BindingProfile current = byId(saved.id);
+        if (oldDoom && isUnchangedLegacyDoomLayout(saved, current))
+            return current;
         if (!current.displayName.equals(saved.displayName)
             || current.bindings.size() != saved.bindings.size())
             return saved;
@@ -96,6 +98,40 @@ final class BuiltInBindingProfiles {
             oldSigns++;
         }
         return oldSigns == (oldHead ? 2 : 1) ? current : saved;
+    }
+
+    /** Match ONLY the shipped Doom layout from before App/right-click and
+     * rocker weapon cycling. Never discard user-tuned or remapped bindings. */
+    private static boolean isUnchangedLegacyDoomLayout(
+        BindingProfile saved, BindingProfile current) {
+        if (!current.displayName.equals(saved.displayName)) return false;
+        List<InputBinding> expected = new ArrayList<>();
+        boolean hasJoySelect = false;
+        for (InputBinding now : current.bindings) {
+            if (now.input == BindingInput.DAYDREAM_APP_BUTTON) continue;
+            expected.add(now);
+            if (now.input == BindingInput.SELECT
+                && now.output.equals(VirtualOutput.joystickButton(0))) {
+                hasJoySelect = true;
+                expected.add(InputBinding.digital(BindingInput.VOLUME_UP,
+                    VirtualOutput.key(VirtualKey.ENTER)));
+                expected.add(InputBinding.digital(BindingInput.VOLUME_DOWN,
+                    VirtualOutput.key(VirtualKey.ESCAPE)));
+            }
+        }
+        if (!hasJoySelect || expected.size() != saved.bindings.size())
+            return false;
+        for (int i = 0; i < expected.size(); i++) {
+            InputBinding a = saved.bindings.get(i), b = expected.get(i);
+            if (a.input != b.input || !a.output.equals(b.output)
+                || a.transform != b.transform
+                || a.deadzone != b.deadzone || a.threshold != b.threshold)
+                return false;
+            if (a.scale != b.scale && !(a.input == BindingInput.HEAD_YAW_DELTA
+                && a.output.equals(VirtualOutput.mouseRelativeX())
+                && a.scale == -b.scale)) return false;
+        }
+        return true;
     }
 
     static List<BindingProfile> dosProfiles() {
@@ -129,12 +165,19 @@ final class BuiltInBindingProfiles {
     /** DOSBox Pure uses a libretro joypad for its own game chooser,
      * while installed DOS programs also require real keyboard events. */
     private static void addDosMenuBindings(List<InputBinding> bindings) {
+        addDosMenuBindings(bindings, true);
+    }
+
+    private static void addDosMenuBindings(
+        List<InputBinding> bindings, boolean rockerForMenu) {
         bindings.add(InputBinding.digital(BindingInput.SELECT,
             VirtualOutput.joystickButton(0)));
-        bindings.add(InputBinding.digital(BindingInput.VOLUME_UP,
-            VirtualOutput.key(VirtualKey.ENTER)));
-        bindings.add(InputBinding.digital(BindingInput.VOLUME_DOWN,
-            VirtualOutput.key(VirtualKey.ESCAPE)));
+        if (rockerForMenu) {
+            bindings.add(InputBinding.digital(BindingInput.VOLUME_UP,
+                VirtualOutput.key(VirtualKey.ENTER)));
+            bindings.add(InputBinding.digital(BindingInput.VOLUME_DOWN,
+                VirtualOutput.key(VirtualKey.ESCAPE)));
+        }
         // Android / Steam gamepad D-pad works in DOS even without pad touch.
         bindings.add(InputBinding.digital(BindingInput.GAMEPAD_DPAD_UP,
             VirtualOutput.key(VirtualKey.UP)));
@@ -239,9 +282,12 @@ final class BuiltInBindingProfiles {
         doom.add(InputBinding.negativeThreshold(
             BindingInput.HEAD_PITCH_UP_AXIS,
             VirtualOutput.key(VirtualKey.DOWN), 0.21f));
-        // Doom can fire on either its keyboard default or DOS mouse button.
+        // Touchpad click = held mouse 1; physical App/minus = held mouse 2.
+        // DOOM.CFG already configures mouse button 2 for strafing.
         doom.add(InputBinding.digital(BindingInput.SELECT,
             VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
+        doom.add(InputBinding.digital(BindingInput.DAYDREAM_APP_BUTTON,
+            VirtualOutput.mouseButton(VirtualOutput.MOUSE_RIGHT)));
         doom.add(
             InputBinding.negativeThreshold(
                 BindingInput.TOUCHPAD_Y,
@@ -278,7 +324,8 @@ final class BuiltInBindingProfiles {
         );
         doom.add(InputBinding.positiveThreshold(BindingInput.TOUCHPAD_X,
             VirtualOutput.joystickButton(7), 0.35f));
-        addDosMenuBindings(doom);
+        // Volume +/- selects Doom weapon slots, never Enter/Escape.
+        addDosMenuBindings(doom, false);
         profiles.add(
             new BindingProfile(
                 ID_DOS_DOOM_SHAREWARE,

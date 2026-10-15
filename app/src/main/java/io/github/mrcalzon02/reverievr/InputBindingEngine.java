@@ -8,6 +8,16 @@ final class InputBindingEngine {
     private BindingProfile profile;
     private boolean[] thresholdStates = new boolean[0];
 
+    // Vanilla Doom uses numeric slots 1..7; it has no next-weapon key.
+    private static final VirtualKey[] DOOM_WEAPON_KEYS = {
+        VirtualKey.DIGIT_1, VirtualKey.DIGIT_2, VirtualKey.DIGIT_3,
+        VirtualKey.DIGIT_4, VirtualKey.DIGIT_5, VirtualKey.DIGIT_6,
+        VirtualKey.DIGIT_7
+    };
+    private int doomWeaponSlot = 1; // pistol, zero indexed
+    private boolean doomVolumeUpHeld;
+    private boolean doomVolumeDownHeld;
+
     InputBindingEngine(
         VirtualInputBus bus,
         BindingProfile profile
@@ -31,6 +41,9 @@ final class InputBindingEngine {
 
         this.profile = profile;
         thresholdStates = new boolean[profile.bindings.size()];
+        doomWeaponSlot = 1;
+        doomVolumeUpHeld = false;
+        doomVolumeDownHeld = false;
 
         ReverieLog.milestone(
             "BINDING",
@@ -62,6 +75,13 @@ final class InputBindingEngine {
         }
 
         List<InputBinding> bindings = profile.bindings;
+        if (BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE.equals(profile.id)
+            && (input == BindingInput.VOLUME_UP
+                || input == BindingInput.VOLUME_DOWN)
+            && !hasExplicitDigitalBinding(bindings, input)) {
+            cycleDoomWeapon(input, down);
+            return;
+        }
         for (int index = 0; index < bindings.size(); index++) {
             InputBinding binding = bindings.get(index);
             if (binding.input != input
@@ -83,6 +103,31 @@ final class InputBindingEngine {
 
             bus.applyDigital(binding.output, down);
         }
+    }
+
+    private static boolean hasExplicitDigitalBinding(
+        List<InputBinding> bindings, BindingInput input) {
+        for (InputBinding binding : bindings) {
+            if (binding.input == input
+                && binding.transform == BindingTransform.DIGITAL) return true;
+        }
+        return false;
+    }
+
+    private void cycleDoomWeapon(BindingInput input, boolean down) {
+        boolean wasDown = input == BindingInput.VOLUME_UP
+            ? doomVolumeUpHeld : doomVolumeDownHeld;
+        if (input == BindingInput.VOLUME_UP) doomVolumeUpHeld = down;
+        else doomVolumeDownHeld = down;
+        if (!down || wasDown) return;
+        int count = DOOM_WEAPON_KEYS.length;
+        doomWeaponSlot = (doomWeaponSlot
+            + (input == BindingInput.VOLUME_UP ? 1 : count - 1)) % count;
+        VirtualOutput selected =
+            VirtualOutput.key(DOOM_WEAPON_KEYS[doomWeaponSlot]);
+        // VirtualInputBus retains the press edge until the DOS poll.
+        bus.applyDigital(selected, true);
+        bus.applyDigital(selected, false);
     }
 
     synchronized void submitAxis(
@@ -214,6 +259,8 @@ final class InputBindingEngine {
     }
 
     synchronized void releaseAll() {
+        doomVolumeUpHeld = false;
+        doomVolumeDownHeld = false;
         for (int index = 0; index < thresholdStates.length; index++) {
             thresholdStates[index] = false;
         }

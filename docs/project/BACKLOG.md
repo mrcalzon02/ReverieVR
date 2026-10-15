@@ -132,3 +132,12 @@
 - additional handset/controller compatibility;
 - network/social services;
 - graphically intensive experiences.
+
+## Future DOS in-eye ghost keyboard (deferred)
+
+For text-based DOS programs, add a summonable binocular digital
+keyboard overlay supporting controller-pointed hunt-and-peck typing,
+full DOS key-down/up semantics, modifier keys and shell-safe focus
+handoff. Keep the universal Quick Menu recoverable, do not trap held
+keyboard keys and leave the simplified Doom profile unaffected.
+This is backlog only; do not expose a nonfunctional keyboard control.
