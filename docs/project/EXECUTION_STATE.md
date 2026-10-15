@@ -1,3 +1,20 @@
+## 2026-10-15 — Breakwater state-driven enemy sprite variants (source)
+
+Advanced the existing 16-cell 128x128 procedural atlas into a single
+24-sprite 128x256 (128 KiB) texture with eight additional unused slots.
+The new variants are rowboat oars (derived from true hull progress),
+half-lowered and fully open landing craft ramps (authoritative beach
+distance), a gunboat salvo flash (existing attack_timer firing window),
+and left/right aircraft-bank silhouettes for both bomber and strafer
+(simulation-owned bank angles). Replaced the generic enemy sprite
+selection with a pure function; no per-eye animation counters, new
+target colliders, combat changes, extra draw pass or asset downloads.
+Removed the duplicate 3D gunboat flash in favor of the same timing
+inside the sprite. Added native regression coverage for variant
+pixel masks/hashes, UV bounds, state transitions and atlas budget.
+Full native/Android NDK compile, real S9 appearance and runtime FPS
+remain unverified; no APK compiled or published.
+
 ## 2026-10-15 — Breakwater full-circle sky and location atmosphere (source)
 
 Replaced the flat, forward-facing sky strips with a 16-sector, seven-band

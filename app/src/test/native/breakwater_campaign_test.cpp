@@ -143,8 +143,8 @@ int main() {
         const std::array<SpriteId,4> supportIds={{
             SpriteId::ArtillerySupport,SpriteId::AirstrikeSupport,
             SpriteId::SamSupport,SpriteId::RepairSupport}};
-        assert(static_cast<int>(SpriteId::Count)==16);
-        assert(sizeof(SpritePixels)==64u*1024u);
+        assert(static_cast<int>(SpriteId::Count)==24);
+        assert(sizeof(SpritePixels)==128u*1024u);
         std::array<uint64_t,4> supportHashes{};
         for(size_t id=0;id<supportIds.size();++id) {
             const int slot=static_cast<int>(supportIds[id]);
@@ -189,6 +189,97 @@ int main() {
         }
         assert(ShopSupportSprite(true,255)==SpriteId::Count);
         assert(ShopSupportSprite(false,255)==SpriteId::Count);
+        // Eight original animation tiles extend the same atlas without a
+        // second texture or draw call. Each variant has independently
+        // rendered pixel content and legal per-cell UV coordinates.
+        const std::array<SpriteId,8> animated={{
+            SpriteId::RowboatOars,SpriteId::LandingRampHalf,
+            SpriteId::LandingRampOpen,SpriteId::GunboatSalvo,
+            SpriteId::StraferBankLeft,SpriteId::StraferBankRight,
+            SpriteId::BomberBankLeft,SpriteId::BomberBankRight
+        }};
+        std::array<uint64_t,8> variantHashes{};
+        for(size_t id=0;id<animated.size();++id) {
+            const int cell=static_cast<int>(animated[id]);
+            const int col=cell%4,row=cell/4;
+            int opaque=0,clear=0;
+            uint64_t hash=14695981039346656037ull;
+            for(int y=0;y<kSpriteTile;++y)
+                for(int x=0;x<kSpriteTile;++x) {
+                    const size_t pixel=static_cast<size_t>(
+                        ((row*32+y)*kSpriteAtlasWidth+col*32+x)*4);
+                    for(int ch=0;ch<4;++ch) {
+                        hash^=pixels[pixel+ch];
+                        hash*=1099511628211ull;
+                    }
+                    if(pixels[pixel+3]==255)++opaque;
+                    else { assert(pixels[pixel+3]==0);++clear; }
+                }
+            assert(opaque>20 && clear>50);
+            variantHashes[id]=hash;
+            std::vector<float> card;
+            assert(AppendSprite(card,animated[id],.5f,-.6f,-6.0f,
+                                1.0f,.65f,.15f));
+            assert(card.size()==30);
+            for(size_t i=0;i<card.size();i+=5) {
+                assert(card[i+3]>=static_cast<float>(col*32)/kSpriteAtlasWidth);
+                assert(card[i+3]<=static_cast<float>(col*32+32)/kSpriteAtlasWidth);
+                assert(card[i+4]>=static_cast<float>(row*32)/kSpriteAtlasHeight);
+                assert(card[i+4]<=static_cast<float>(row*32+32)/kSpriteAtlasHeight);
+            }
+        }
+        for(size_t a=0;a<variantHashes.size();++a)
+            for(size_t b=a+1;b<variantHashes.size();++b)
+                assert(variantHashes[a]!=variantHashes[b]);
+
+        // Pose transitions follow real movement, landing and attack
+        // state; replaying a given state must never depend on render time.
+        Enemy e{};
+        e.active=true;e.type=UnitType::Rowboat;e.z=-10.9f;
+        assert(EnemySprite(e)==SpriteId::Rowboat);
+        e.z=-10.6f;
+        assert(EnemySprite(e)==SpriteId::RowboatOars);
+        assert(EnemySprite(e)==EnemySprite(e));
+        e.type=UnitType::LandingCraft;e.z=-3.8f;
+        assert(EnemySprite(e)==SpriteId::LandingCraft);
+        e.z=-3.0f;
+        assert(EnemySprite(e)==SpriteId::LandingRampHalf);
+        e.z=-2.4f;
+        assert(EnemySprite(e)==SpriteId::LandingRampOpen);
+        e.type=UnitType::Gunboat;e.attack_timer=2.0f;
+        assert(EnemySprite(e)==SpriteId::Gunboat);
+        e.attack_timer=2.65f;
+        assert(EnemySprite(e)==SpriteId::GunboatSalvo);
+        e.attack_timer=std::numeric_limits<float>::quiet_NaN();
+        assert(EnemySprite(e)==SpriteId::Gunboat);
+        e.type=UnitType::Aircraft;e.aircraft_pattern=AircraftPattern::Strafer;
+        e.bank=0.0f;
+        assert(EnemySprite(e)==SpriteId::Strafer);
+        e.bank=-.15f;
+        assert(EnemySprite(e)==SpriteId::StraferBankLeft);
+        e.bank=.15f;
+        assert(EnemySprite(e)==SpriteId::StraferBankRight);
+        e.aircraft_pattern=AircraftPattern::Bomber;
+        e.bank=0.0f;
+        assert(EnemySprite(e)==SpriteId::Bomber);
+        e.bank=-.023f;
+        assert(EnemySprite(e)==SpriteId::BomberBankLeft);
+        e.bank=.023f;
+        assert(EnemySprite(e)==SpriteId::BomberBankRight);
+        e.bank=std::numeric_limits<float>::quiet_NaN();
+        assert(EnemySprite(e)==SpriteId::Bomber);
+        e.type=static_cast<UnitType>(255);
+        assert(EnemySprite(e)==SpriteId::Count);
+        // The eight unused atlas cells stay completely transparent.
+        for(int cell=24;cell<32;++cell) {
+            const int col=cell%4,row=cell/4;
+            for(int y=0;y<32;++y)
+                for(int x=0;x<32;++x) {
+                    const size_t alpha=static_cast<size_t>(
+                        ((row*32+y)*kSpriteAtlasWidth+col*32+x)*4+3);
+                    assert(pixels[alpha]==0);
+                }
+        }
         // Unknown weapon enum values never index beyond the atlas.
         assert(WeaponSprite(static_cast<WeaponKind>(255))==
             SpriteId::MachineGun);

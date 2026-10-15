@@ -7,6 +7,7 @@
 #include <initializer_list>
 #include <vector>
 #include "breakwater_weapons.h"
+#include "breakwater_silhouettes.h"
 
 namespace reverie { namespace breakwater {
 // Game-private original RGBA sprites. One tiny atlas, no imported/licensed art,
@@ -15,11 +16,13 @@ enum class SpriteId : uint8_t {
     InfantryStrideA, InfantryStrideB, Rowboat, LandingCraft,
     Gunboat, Strafer, Bomber, MachineGun, HeavyGun, FlakGun,
     MissilePod, DirectCannon, ArtillerySupport, AirstrikeSupport,
-    SamSupport, RepairSupport, Count
+    SamSupport, RepairSupport, RowboatOars, LandingRampHalf,
+    LandingRampOpen, GunboatSalvo, StraferBankLeft, StraferBankRight,
+    BomberBankLeft, BomberBankRight, Count
 };
 constexpr int kSpriteTile = 32;
 constexpr int kSpriteAtlasWidth = 128;
-constexpr int kSpriteAtlasHeight = 128;
+constexpr int kSpriteAtlasHeight = 256;
 using SpritePixels = std::array<uint8_t,
     kSpriteAtlasWidth * kSpriteAtlasHeight * 4>;
 
@@ -35,6 +38,30 @@ inline void Rect(SpritePixels &pixels, SpriteId id, int x0, int y0,
                 ((row*kSpriteTile+y)*kSpriteAtlasWidth + col*kSpriteTile+x)*4);
             pixels[offset]=c.r; pixels[offset+1]=c.g;
             pixels[offset+2]=c.b; pixels[offset+3]=255;
+        }
+}
+// Copy one fixed 32x32 tile; variants never require another runtime atlas.
+inline void CopyTile(SpritePixels &pixels, SpriteId from, SpriteId to) {
+    const int fx=static_cast<int>(from)%4, fy=static_cast<int>(from)/4;
+    const int tx=static_cast<int>(to)%4, ty=static_cast<int>(to)/4;
+    for(int y=0;y<kSpriteTile;++y)
+        for(int x=0;x<kSpriteTile;++x)
+            for(int ch=0;ch<4;++ch) {
+                const size_t src=static_cast<size_t>(
+                    ((fy*32+y)*kSpriteAtlasWidth+fx*32+x)*4+ch);
+                const size_t dst=static_cast<size_t>(
+                    ((ty*32+y)*kSpriteAtlasWidth+tx*32+x)*4+ch);
+                pixels[dst]=pixels[src];
+            }
+}
+inline void ClearRect(SpritePixels &pixels, SpriteId id,
+                      int x0,int y0,int x1,int y1) {
+    const int col=static_cast<int>(id)%4,row=static_cast<int>(id)/4;
+    for(int y=(y0<0?0:y0);y<y1 && y<32;++y)
+        for(int x=(x0<0?0:x0);x<x1 && x<32;++x) {
+            const size_t offset=static_cast<size_t>(
+                ((row*32+y)*kSpriteAtlasWidth+col*32+x)*4);
+            for(int ch=0;ch<4;++ch)pixels[offset+ch]=0;
         }
 }
 inline void Triangle(SpritePixels &pixels, SpriteId id,
@@ -215,7 +242,96 @@ inline SpritePixels BuildSpriteAtlas() {
     Rect(pixels,repair,16,24,19,29,steel);
     Rect(pixels,repair,23,24,26,29,steel);
     Rect(pixels,repair,8,5,17,8,olive);
+
+    // Frame variants reflect real campaign travel, attack cooldown and
+    // banking. They are original retro-military sprites, not real equipment.
+    const SpriteId oars=SpriteId::RowboatOars;
+    sprite_detail::CopyTile(pixels,SpriteId::Rowboat,oars);
+    Triangle(pixels,oars,7,13,2,22,10,13,metal);
+    Triangle(pixels,oars,24,13,30,22,22,13,metal);
+    Rect(pixels,oars,2,22,5,24,sand);
+    Rect(pixels,oars,28,22,31,24,sand);
+
+    for(SpriteId id : {SpriteId::LandingRampHalf,SpriteId::LandingRampOpen}) {
+        sprite_detail::CopyTile(pixels,SpriteId::LandingCraft,id);
+        sprite_detail::ClearRect(pixels,id,11,5,22,15);
+        const bool open=id==SpriteId::LandingRampOpen;
+        if(open) {
+            Rect(pixels,id,7,4,26,9,metal);
+            Rect(pixels,id,8,9,25,11,steel);
+            Triangle(pixels,id,7,5,26,5,16,1,sand);
+            Rect(pixels,id,10,4,12,9,dark);
+            Rect(pixels,id,21,4,23,9,dark);
+        } else {
+            Rect(pixels,id,10,5,23,10,metal);
+            Triangle(pixels,id,10,10,23,10,16,18,steel);
+            Rect(pixels,id,10,5,23,7,dark);
+        }
+    }
+
+    const SpriteId salvo=SpriteId::GunboatSalvo;
+    sprite_detail::CopyTile(pixels,SpriteId::Gunboat,salvo);
+    Triangle(pixels,salvo,28,12,31,15,28,18,amber);
+    Rect(pixels,salvo,27,14,30,16,metal);
+
+    // Wing-tip height and engine pod position encode the bank sign in
+    // the authored art; the small existing world-space card roll remains.
+    for(int direction : {-1,1}) {
+        const int lift=direction*4;
+        const SpriteId strafer=direction<0?
+            SpriteId::StraferBankLeft:SpriteId::StraferBankRight;
+        Rect(pixels,strafer,15,11,18,29,steel);
+        Triangle(pixels,strafer,15,21,3,17+lift,15,17,olive);
+        Triangle(pixels,strafer,18,21,29,17-lift,18,17,olive);
+        Triangle(pixels,strafer,15,12,8,8+lift/2,15,9,steel);
+        Triangle(pixels,strafer,18,12,25,8-lift/2,18,9,steel);
+        Rect(pixels,strafer,15,15,18,24,dark);
+        Rect(pixels,strafer,15,24,18,29,metal);
+
+        const SpriteId bomber=direction<0?
+            SpriteId::BomberBankLeft:SpriteId::BomberBankRight;
+        Rect(pixels,bomber,14,8,19,29,steel);
+        Triangle(pixels,bomber,14,23,1,14+lift,14,16,olive);
+        Triangle(pixels,bomber,19,23,31,14-lift,19,16,olive);
+        Rect(pixels,bomber,5,16+lift/2,9,22+lift/2,hull);
+        Rect(pixels,bomber,24,16-lift/2,28,22-lift/2,hull);
+        Triangle(pixels,bomber,14,12,7,7+lift/2,14,9,steel);
+        Triangle(pixels,bomber,19,12,26,7-lift/2,19,9,steel);
+        Rect(pixels,bomber,15,20,18,26,dark);
+    }
     return pixels;
+}
+
+// All animation selection derives from authoritative simulation state.
+// No independent render timers, additional enemies or modified hit volumes.
+inline SpriteId EnemySprite(const Enemy &enemy) {
+    switch(enemy.type) {
+        case UnitType::Rowboat:
+            return VesselWakePhase(enemy.z) >= .5f ?
+                SpriteId::RowboatOars:SpriteId::Rowboat;
+        case UnitType::LandingCraft: {
+            const float ramp=LandingRampProgress(enemy.z);
+            return ramp>=.70f?SpriteId::LandingRampOpen:
+                   ramp>=.30f?SpriteId::LandingRampHalf:
+                               SpriteId::LandingCraft;
+        }
+        case UnitType::Gunboat:
+            return std::isfinite(enemy.attack_timer) &&
+                enemy.attack_timer>2.64f?
+                SpriteId::GunboatSalvo:SpriteId::Gunboat;
+        case UnitType::Aircraft: {
+            if(!std::isfinite(enemy.bank))return enemy.aircraft_pattern==
+                AircraftPattern::Bomber?SpriteId::Bomber:SpriteId::Strafer;
+            const bool bomber=enemy.aircraft_pattern==AircraftPattern::Bomber;
+            const float threshold=bomber?.012f:.080f;
+            if(enemy.bank < -threshold) return bomber?
+                SpriteId::BomberBankLeft:SpriteId::StraferBankLeft;
+            if(enemy.bank > threshold) return bomber?
+                SpriteId::BomberBankRight:SpriteId::StraferBankRight;
+            return bomber?SpriteId::Bomber:SpriteId::Strafer;
+        }
+    }
+    return SpriteId::Count;
 }
 
 inline SpriteId WeaponSprite(WeaponKind weapon) {

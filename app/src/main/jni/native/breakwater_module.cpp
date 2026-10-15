@@ -524,25 +524,24 @@ void BuildScene(State *s) {
     // movement, world positions, hit volumes, attacks, landfall and score.
     // Forward-facing world cards use the SAME mesh for both stereo eyes.
     for(const Enemy &e:game.enemies())if(e.active) {
+        // Ship ramp/oars, gunboat flashes and bank-aware aircraft art are
+        // selected purely from the live simulation pose, with no new
+        // animation clocks or per-eye scene changes.
+        const SpriteId sprite=EnemySprite(e);
         const bool aircraft=e.type==UnitType::Aircraft;
-        SpriteId sprite=SpriteId::Rowboat;
         float width=.99f,height=.71f,y=-.66f,bank=0.0f;
         if(e.type==UnitType::LandingCraft) {
-            sprite=SpriteId::LandingCraft;width=1.24f;height=.86f;y=-.70f;
+            width=1.24f;height=.86f;y=-.70f;
         } else if(e.type==UnitType::Gunboat) {
-            sprite=SpriteId::Gunboat;width=1.37f;height=.96f;y=-.68f;
+            width=1.37f;height=.96f;y=-.68f;
         } else if(aircraft) {
             const bool bomber=e.aircraft_pattern==AircraftPattern::Bomber;
-            sprite=bomber?SpriteId::Bomber:SpriteId::Strafer;
             width=bomber?2.55f:2.02f;
             height=bomber?1.35f:1.08f;
             y=1.6f;
-            bank=e.bank;
+            bank=std::isfinite(e.bank)?e.bank:0.0f;
         }
         AppendSprite(s->sprite_mesh,sprite,e.x,y,e.z,width,height,bank);
-        if(e.type==UnitType::Gunboat && e.attack_timer>2.64f)
-            Box(s,e.x,-.42f,e.z+.76f,.15f,.13f,.17f,
-                .98f,.68f,.24f);
     }
     if(s->aircraft_aim.visible) {
         // Four tiny world-space brackets surround only the exact ray-selected

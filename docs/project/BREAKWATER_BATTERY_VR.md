@@ -72,11 +72,11 @@ separate acceptance gates.
 ## Sprite atlas and 2.5D mounted weapons — current source (2026-10-15)
 
 **Implementation:** `breakwater_sprite_atlas.h` produces an original, fixed
-128×128 RGBA atlas of sixteen 32×32 cells: two positional infantry stride
-frames, one-man rowboat, broad-ramp landing craft, angular patrol gunboat,
-compact strafer, twin-engine bomber, five distinct machine/heavy/flak/
-missile/cannon defense-emplacement silhouettes, and four support symbols
-for artillery, airstrike, SAM and repair. Their muted olive, slate-steel, sand and
+128×256 RGBA atlas with 24 occupied 32×32 cells (eight reserved): two
+infantry march frames; rowboat and travel-driven oar stroke; landing
+craft with closed, half-lowered and open ramp; gunboat and firing flash;
+neutral/left-bank/right-bank strafer and bomber; five mounted weapons;
+and four artillery/airstrike/SAM/repair support symbols. Their muted olive, slate-steel, sand and
 gunmetal shapes are generic late-1990s/early-2000s American/European-inspired
 military arcade styling, **not replicas, military insignia or imported art**.
 Art can later be replaced cell-for-cell without changing the gameplay ABI.
@@ -110,7 +110,8 @@ Native regression assertions check atlas coverage, transparency, tile UVs,
 finite six-vertex card geometry, aircraft bank, fail-closed dimensions,
 all five weapon enum-to-art mappings, all four support icons, both shop-page
 icon mappings, unmapped/invalid shop cells, unique pixel identities and
-cell bounds. The 16-cell atlas still occupies exactly 64 KiB of RGBA data.
+cell bounds. The expanded 24-sprite atlas occupies 128 KiB of RGBA
+data; the final eight cells are deliberately transparent/reserved.
 Static verification is not a substitute for an Android ARM NDK compile,
 actual GLES2 shader/texture creation, near-plane stereo readability, distant
 pixel aliasing, realistic FPS measurements or a Galaxy S9 wave trial.
@@ -121,19 +122,51 @@ reference geometry but no longer draw live units.
 
 The art contract is **3D shoreline and emplacement + 2D enemy sprites +
 2.5D near-field weapon cards + textured HUD + layered atmospheric sky**.
-Production sheet order: (1) directional rowboat/landing craft/gunboat sets
-including ramp and wake states; (2) eight-direction infantry idle/march/fire
-frames with readable helmet, vest and rifle; (3) bomber/strafer underside,
-oblique and bank variants; (4) additional depth/aim variants of the five mounted weapon cards;
+Production sheet order: (1) deeper boat direction and detail studies
+(current code art already animates oars, ramps and gunboat salvos);
+(2) eight-direction infantry idle/march/fire frames with readable
+helmet, vest and rifle; (3) aircraft underside and oblique detail
+(current code art already supports left/neutral/right bank);
+(4) additional depth/aim variants of the five mounted weapon cards;
 (5) optional bespoke HUD panel styling after headset readability tests
 (the functional support icons and equipment selection already use the
 atlas); (6) optional authored texture-based atmospheric refinements after the
 procedural 360-degree sky passes headset acceptance. Author all
 replacement art with transparent backgrounds, fixed local foot/waterline/
 center-mass anchors and no copied real military unit markings. Keep the
-small 64-KiB RGBA atlas and one additional masked draw per eye until
+single 128-KiB RGBA atlas and one additional masked draw per eye until
 measured device proof justifies more. Materialized artwork must be explicitly imported,
 registered and verified before being reported as in-game.
+
+## State-driven enemy sprite animation (2026-10-15 source)
+
+The original 16-cell (128×128) procedural RGBA sheet now occupies a
+128×256 power-of-two atlas (128 KiB) with 24 original silhouettes. Eight
+new cells animate the **rowboat oar stroke**, **half/open landing ramp**,
+**gunboat firing flash**, and distinct **left/right bank** for both
+strafer and bomber. All icons, weapon views, previous sprites and HUD
+stay inside the same atlas, with eight additional cells reserved for
+future frames. No new sampler, texture, shader, draw pass or gameplay
+object is introduced.
+
+`EnemySprite(const Enemy&)` is a pure presentation-only selector.
+Rowboat stroke follows the existing vessel travel-phase helper.
+Landing ramps change from closed to partially lowered to open while
+the authoritative craft moves from z=-3.7 to the real beach z=-2.2.
+Gunboats use their existing near-fire attack timer, matching the old
+muzzle-flash predicate; this removes the duplicate 3D flash box.
+Aircraft select neutral/left/right wingtip silhouettes from the live
+simulation bank angle, with the existing small world-space roll
+retained. A read-back of one frame never increments animation and
+both eyes see the same selection. Existing hitboxes, attack windows,
+target ray, infantry spawn, saves and movement are untouched.
+
+Added native C++ test cases for all pose transitions, atlas mask
+coverage, unique appearance, per-tile UV bounds, invalid bank/cooldown
+handling, 128 KiB atlas budget and unused-cell transparency. Full
+Android native/NDK build, Galaxy S9 sprite readability and frame-rate
+evidence are still required; source-level checks do not establish
+physical-device performance.
 
 ## 360-degree atmospheric sky (2026-10-15 source)
 

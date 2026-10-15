@@ -6,6 +6,20 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater campaign-state enemy sprite animation
+
+- Expand the original 128x128, 16-cell sprite atlas to one 128x256,
+  24-sprite atlas (128 KiB), reserving its other eight cells. Rowboat
+  oars cycle by actual travel, landing craft ramps open near shore,
+  gunboats show actual salvo fire, and strafers/bombers switch to
+  visibly distinct left/right bank silhouettes from simulation roll.
+- Keep one textured batched draw per eye, shared world-space hitboxes,
+  weapon/sky/HUD art, controller handling and save format unchanged.
+  Add native C++ tests for pose selection, sprite uniqueness,
+  UV/alpha validity and bounded atlas size. Full NDK/phone gates
+  remain outstanding.
+
+
 ### Breakwater complete 360-degree atmospheric panorama
 
 - Replace the one-sided ten-strip sky wall with a 360-degree, seven-band,
