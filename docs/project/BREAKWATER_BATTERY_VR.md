@@ -166,6 +166,44 @@ weapon vulnerability, malformed coordinates and phase/slot guards.
 Full Android NDK compile, visual alignment at headset depth, binocular
 readability and physical controller tests remain outstanding.
 
+## Landing-party flanking and rear support tactics (2026-10-15 source)
+
+Single-passenger rowboat infantry retain their original straightforward
+advance to z=-1.34 at 0.13 units/second and the authoritative four-second
+shared volley timer. Later landing craft now deterministically assign
+**riflemen**, **left flankers**, **right flankers**, and **rear support gunners**
+from their actual passenger order. Flankers move toward separate side lanes
+at 0.19 units/second while continuing to advance at 0.135 units/second;
+their own firing line is the original z=-1.34, and they cannot contribute
+to a volley until both forward and lateral travel are finished. Rear
+support gunners advance more slowly (0.105 units/second) and deploy behind
+the lead troops at z=-1.68. They contribute 1 hull damage to a real
+volley instead of the rifleman's 2. All infantry are still individually
+targetable at their **actual moved x/z coordinates**; hit spheres, player
+weapon eligibility and the underlying campaign fire rate are untouched.
+
+The pure game-private `breakwater_infantry_tactics.h` is shared between
+`Campaign::Land`, the authoritative `TickStep` movement/volley, and
+`incoming_threats()`. The SHORE countdown therefore considers both
+the correct tactic-specific forward distance and lateral maneuver, rather
+than incorrectly predicting the old uniform sprint. Loss of all ready
+troops still cancels the accumulated four-second group salvo, and the
+next arrivals must wait their own full period. The original one-rowboat
+timing and threat prediction are deliberately preserved.
+
+A distinct original support-gunner silhouette uses **one of the eight
+previously blank cells** in the already-allocated 128×256 RGBA sprite
+atlas: 25 filled cells, seven still reserved, **128 KiB unchanged**.
+Flankers use existing two-frame march sprites, following their actual
+lateral position. No new render pass, texture, input, sound events, save
+fields or new infantry allocations. C++ regression coverage was added for
+role assignment, lateral bounds and speed, readiness and ETA, support
+damage, one-shot state guards, finite values, atlas transparency/identity
+and a real seeded Iron Quay landing-craft disembarkation. Focused
+C++17 -Werror movement/prediction fixture passed; full integrated native
+suite, Android NDK build, and S9 target readability/performance tests
+remain unverified.
+
 ## State-driven enemy sprite animation (2026-10-15 source)
 
 The original 16-cell (128×128) procedural RGBA sheet now occupies a
@@ -402,9 +440,11 @@ Breakwater now derives a brief **HULL HIT -N** warning from the authoritative ca
 
 The combat HUD now displays a small **SHORE Ns** warning in the six-second
 window before a genuine infantry firing-line salvo. The campaign computes
-this from each living, actually disembarked soldier's travel to z=-1.34 at
-0.13 world units/second, plus the four-second shared salvo interval. Once
-any soldier has reached the line, the display follows the actual shared
+this from the actual disembarked soldier's maneuver plan: riflemen follow
+the original z=-1.34 / 0.13-unit advance, flankers must also reach
+their lateral lane, and support gunners fire from z=-1.68. The four-second
+shared salvo interval remains unchanged. Once any soldier has reached
+its real firing station, the display follows the actual shared
 salvo timer, including resets after an attack. Sinking a transport before
 landing never creates a phantom infantry warning; eliminating every ready
 shooter cancels their partial countdown and unready survivors must still

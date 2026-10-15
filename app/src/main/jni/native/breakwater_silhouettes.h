@@ -1,6 +1,6 @@
 #ifndef REVERIE_BREAKWATER_SILHOUETTES_H
 #define REVERIE_BREAKWATER_SILHOUETTES_H
-#include "breakwater_campaign.h"
+#include "breakwater_infantry_tactics.h"
 #include <algorithm>
 #include <cmath>
 
@@ -22,7 +22,7 @@ inline float VesselWakePhase(float z) {
 inline float InfantryMarchStride(const Infantry &soldier) {
     // Infantry freeze their stride upon reaching the real firing line.
     if (!soldier.active || !std::isfinite(soldier.x) ||
-        !std::isfinite(soldier.z) || soldier.z >= -1.34f) return 0.0f;
+        !std::isfinite(soldier.z) || InfantryReady(soldier)) return 0.0f;
     float phase = std::fmod((soldier.z + 2.4f) * 4.0f +
                             (soldier.x + 4.0f) * .37f, 1.0f);
     if (phase < 0.0f) phase += 1.0f;

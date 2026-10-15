@@ -1,3 +1,28 @@
+## 2026-10-15 — Breakwater deterministic landing-party tactics (source)
+
+Advanced landing craft from a uniform straight-line troop attack to
+simulated rifle, left flank, right flank and rear support roles,
+assigned from the real craft passenger manifest. Flankers move
+laterally and forward to a specific firing lane, support gunners stop
+behind the leading firing line and contribute half the normal hull
+damage, and riflemen still use the existing direct approach. The
+authoritative shooter eligibility, volley damage and SHORE threat ETA
+share one set of movement/readiness helpers, maintaining the original
+four-second cadence and clear-on-no-ready-shooter behavior.
+Initial one-passenger rowboats keep their original movement and ETA.
+
+Reused the procedural 128-KiB RGBA sheet for a distinct support gunner
+sprite (25/32 cells occupied) with no new texture or draw pass;
+flankers reuse the walking infantry frames and hitboxes follow their
+simulation-owned x/z coordinates. No checkpoint size or host bindings
+changed. Regression source covers tactical roles, lateral and firing
+line movement, per-role damage, invalid inputs, sprite identity and
+a real seeded landing-craft disembarkation. A focused extracted
+C++17 -Wall -Wextra -Wpedantic -Werror movement/prediction fixture
+passed locally. Full repo-native suite, Android/NDK compilation,
+S9 stereo and performance acceptance are still unverified; no
+APK was created or released.
+
 ## 2026-10-15 — Breakwater confirmed-kill wreck debris (source)
 
 Implemented a fixed eight-slot WreckEffects visual pool for grounded,

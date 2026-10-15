@@ -18,7 +18,7 @@ enum class SpriteId : uint8_t {
     MissilePod, DirectCannon, ArtillerySupport, AirstrikeSupport,
     SamSupport, RepairSupport, RowboatOars, LandingRampHalf,
     LandingRampOpen, GunboatSalvo, StraferBankLeft, StraferBankRight,
-    BomberBankLeft, BomberBankRight, Count
+    BomberBankLeft, BomberBankRight, InfantrySupport, Count
 };
 constexpr int kSpriteTile = 32;
 constexpr int kSpriteAtlasWidth = 128;
@@ -299,6 +299,16 @@ inline SpritePixels BuildSpriteAtlas() {
         Triangle(pixels,bomber,19,12,26,7-lift/2,19,9,steel);
         Rect(pixels,bomber,15,20,18,26,dark);
     }
+    // Distinct silhouette for the landing-craft rear support gunner:
+    // a prone-height compact heavier weapon, magazine and folded bipod.
+    const SpriteId support=SpriteId::InfantrySupport;
+    sprite_detail::CopyTile(pixels,SpriteId::InfantryStrideA,support);
+    Rect(pixels,support,19,17,31,20,dark);
+    Rect(pixels,support,19,13,23,18,steel);
+    Rect(pixels,support,22,11,25,15,metal);
+    Triangle(pixels,support,26,17,24,10,27,11,steel);
+    Triangle(pixels,support,28,17,30,10,31,11,steel);
+    Rect(pixels,support,10,15,12,22,sand);
     return pixels;
 }
 
@@ -332,6 +342,16 @@ inline SpriteId EnemySprite(const Enemy &enemy) {
         }
     }
     return SpriteId::Count;
+}
+
+// Infantry share exact Campaign positions/ray hitboxes. Only support
+// gunners need a distinct silhouette; moving riflemen/flankers use the
+// two existing positional stride frames.
+inline SpriteId InfantrySprite(const Infantry &soldier) {
+    if(soldier.tactic==InfantryTactic::Support)
+        return SpriteId::InfantrySupport;
+    return InfantryMarchStride(soldier)>=0.0f?
+        SpriteId::InfantryStrideA:SpriteId::InfantryStrideB;
 }
 
 inline SpriteId WeaponSprite(WeaponKind weapon) {

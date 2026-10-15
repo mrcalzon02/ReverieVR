@@ -663,8 +663,7 @@ void BuildScene(State *s) {
     for(const Infantry &trooper:game.infantry_units())if(trooper.active) {
         // Simulation-owned soldier with a two-frame positional march.
         // Sprite cards never allocate additional infantry or hitboxes.
-        const SpriteId pose=InfantryMarchStride(trooper)>=0.0f?
-            SpriteId::InfantryStrideA:SpriteId::InfantryStrideB;
+        const SpriteId pose=InfantrySprite(trooper);
         AppendSprite(s->sprite_mesh,pose,trooper.x,-.67f,trooper.z,
                      .40f,.70f);
     }

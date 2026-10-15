@@ -46,10 +46,17 @@ struct Enemy {
     float flight_sign = 1;
     float bank = 0;
 };
+enum class InfantryTactic : uint8_t {
+    Rifle, FlankLeft, FlankRight, Support
+};
 struct Infantry {
     float x = 0;
     float z = 0;
     bool active = false;
+    // A deterministic landing-craft assignment. Only transient combat
+    // state: the campaign checkpoint can still save shop state in 80 bytes.
+    InfantryTactic tactic = InfantryTactic::Rifle;
+    float lane_x = 0;
 };
 struct AircraftFlightPose {
     float x = 0;

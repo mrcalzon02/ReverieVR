@@ -6,6 +6,22 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater landing-party flanking and support-gunner behavior
+
+- Assign actual landing-craft passengers to rifle, left/right flank
+  and rear support roles. Flankers travel sideways to assigned lanes;
+  support gunners stop short of the original line and contribute
+  one damage per salvo instead of two. Rowboat riflemen keep the
+  opening-wave movement and four-second volley cadence.
+- Route prediction, position advancement and shooter eligibility
+  through shared deterministic helpers. Add one distinct support
+  infantry sprite in an unused 128-KiB atlas cell, without new
+  physics hitboxes, draw calls, inputs, audio cues or save fields.
+- Add seeded campaign disembarkation and unit-helper tests. Focused
+  C++17 -Werror movement fixture passed; integrated NDK/phone tests
+  and signed APK release remain open.
+
+
 ### Breakwater real-kill boat and aircraft wreck fragments
 
 - Render short world-anchored sinking hull shards and falling aircraft

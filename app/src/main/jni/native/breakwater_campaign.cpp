@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_infantry_tactics.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -308,6 +309,8 @@ void Campaign::Land(Enemy &e) {
         trooper.x = std::max(-3.1f, std::min(3.1f, e.x + spread));
         trooper.z = -2.28f - 0.10f * static_cast<float>(passenger % 2u);
         trooper.active = true;
+        trooper.tactic = AssignInfantryTactic(e.type,passenger);
+        trooper.lane_x = InfantryLaneX(trooper.x,trooper.tactic);
     }
     e.active = false;
     e.landed = true;
@@ -343,27 +346,22 @@ IncomingThreats Campaign::incoming_threats() const {
         if (*earliest < 0.0f || until_fire < *earliest)
             *earliest = until_fire;
     }
-    // Only living, disembarked infantry can threaten the parapet. Predict
-    // their first firing-line arrival using the same 0.13 world-unit/second
-    // speed and -1.34 line as TickStep. Once one has arrived, use the
-    // authoritative shared four-second salvo timer. Removing every ready
-    // shooter cancels the existing timer; pending arrivals get a new full
-    // countdown rather than inheriting a dead soldier's partial salvo.
-    constexpr float kInfantryFiringLineZ = -1.34f;
-    constexpr float kInfantryAdvanceSpeed = .13f;
-    constexpr float kInfantrySalvoPeriod = 4.0f;
+    // Shared firing cadence remains four seconds, but each deployed
+    // soldier owns an actual tactic-dependent lane, forward speed and
+    // firing line. The HUD uses precisely the same arrival calculation
+    // as AdvanceInfantry, rather than guessing from the first rifleman.
     bool shooter_ready = false;
     float nearest_arrival = -1.0f;
     for (const Infantry &soldier : infantry_units_) {
         if (!soldier.active) continue;
-        if (soldier.z >= kInfantryFiringLineZ) {
+        if (InfantryReady(soldier)) {
             shooter_ready = true;
             break;
         }
-        const float until_line = (kInfantryFiringLineZ - soldier.z)
-            / kInfantryAdvanceSpeed;
-        if (nearest_arrival < 0.0f || until_line < nearest_arrival)
-            nearest_arrival = until_line;
+        const float until_ready = InfantrySecondsToReady(soldier);
+        if(until_ready<0.0f)continue;
+        if (nearest_arrival < 0.0f || until_ready < nearest_arrival)
+            nearest_arrival = until_ready;
     }
     if (shooter_ready)
         warning.infantry_seconds = std::max(0.0f,
@@ -640,30 +638,31 @@ void Campaign::TickStep(float dt) {
             } else Land(e);
         }
     }
-    // Landed infantry must actually reach the forward firing line before
-    // attacking. Troops still crossing the beach are not instant artillery.
+    // Riflemen hold the old frontal line. Landing-craft flankers travel
+    // toward side lanes while advancing, and support gunners stop short
+    // at a rear firing line. All remain individually targetable soldiers.
     uint8_t ready_to_fire = 0;
+    int32_t nominal_damage = 0;
     const Infantry *first_shooter = nullptr;
     for (Infantry &trooper : infantry_units_) {
         if (!trooper.active) continue;
-        trooper.z = std::min(-1.34f, trooper.z + 0.13f * dt);
-        if (trooper.z >= -1.34f) {
+        AdvanceInfantry(trooper,dt);
+        if (InfantryReady(trooper)) {
             ++ready_to_fire;
+            nominal_damage += InfantryShotDamage(trooper.tactic);
             if (first_shooter == nullptr) first_shooter = &trooper;
         }
     }
     if (ready_to_fire == 0) {
-        // Clearing the firing line also clears any partial salvo countdown.
+        // Losing all ready soldiers cancels the partial salvo charge.
         infantry_timer_ = 0.0f;
     } else {
         infantry_timer_ += dt;
-        if (infantry_timer_ >= 4.0f) {
+        if (infantry_timer_ >= kInfantrySalvoPeriod) {
             infantry_timer_ = 0.0f;
             const int32_t hull_before = integrity_;
-            integrity_ = std::max(0, integrity_ - ready_to_fire * 2);
+            integrity_ = std::max(0, integrity_ - nominal_damage);
             const int32_t actual_damage = hull_before - integrity_;
-            // Preserve the real shooter's position, but never emit a
-            // phantom hit when another attacker already destroyed the hull.
             if (actual_damage > 0) {
                 ++infantry_volley_.sequence;
                 infantry_volley_.x = first_shooter->x;

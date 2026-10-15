@@ -1,5 +1,6 @@
 #include "breakwater_campaign.h"
 #include "breakwater_silhouettes.h"
+#include "breakwater_infantry_tactics.h"
 #include "breakwater_sprite_atlas.h"
 #include "breakwater_terrain.h"
 #include "breakwater_sky.h"
@@ -20,6 +21,114 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // Landing-craft tactics are real simulation positions, not a separate
+    // animation timer or fake HUD threats. Early rowboats remain riflemen.
+    {
+        assert(AssignInfantryTactic(UnitType::Rowboat,0)==InfantryTactic::Rifle);
+        assert(AssignInfantryTactic(UnitType::LandingCraft,0)==InfantryTactic::Rifle);
+        assert(AssignInfantryTactic(UnitType::LandingCraft,1)==InfantryTactic::FlankLeft);
+        assert(AssignInfantryTactic(UnitType::LandingCraft,2)==InfantryTactic::FlankRight);
+        assert(AssignInfantryTactic(UnitType::LandingCraft,3)==InfantryTactic::Support);
+        assert(AssignInfantryTactic(UnitType::LandingCraft,5)==InfantryTactic::FlankLeft);
+        assert(InfantryShotDamage(InfantryTactic::Rifle)==2);
+        assert(InfantryShotDamage(InfantryTactic::FlankLeft)==2);
+        assert(InfantryShotDamage(InfantryTactic::Support)==1);
+        assert(InfantryLineZ(InfantryTactic::Support)<InfantryLineZ(InfantryTactic::Rifle));
+        assert(InfantryLaneX(-3.0f,InfantryTactic::FlankLeft)==-3.1f);
+        assert(InfantryLaneX(3.0f,InfantryTactic::FlankRight)==3.1f);
+        assert(InfantryLaneX(.5f,InfantryTactic::Rifle)==.5f);
+        Infantry rifle{};
+        rifle.active=true;rifle.x=.35f;rifle.z=-2.28f;
+        rifle.tactic=InfantryTactic::Rifle;rifle.lane_x=rifle.x;
+        const float rifleSeconds=InfantrySecondsToReady(rifle);
+        assert(rifleSeconds>7.0f && rifleSeconds<8.0f);
+        assert(!InfantryReady(rifle));
+        AdvanceInfantry(rifle,rifleSeconds);
+        assert(InfantryReady(rifle));
+        assert(std::abs(rifle.z+1.34f)<.00002f);
+        const float stoppedZ=rifle.z;
+        AdvanceInfantry(rifle,1.0f);
+        assert(rifle.z==stoppedZ);
+        assert(InfantrySecondsToReady(rifle)<.0001f);
+
+        Infantry flank{};
+        flank.active=true;flank.x=.4f;flank.z=-2.28f;
+        flank.tactic=InfantryTactic::FlankLeft;
+        flank.lane_x=InfantryLaneX(flank.x,flank.tactic);
+        assert(flank.lane_x<flank.x);
+        const float flankArrival=InfantrySecondsToReady(flank);
+        assert(flankArrival>0.0f);
+        const float oldX=flank.x;
+        AdvanceInfantry(flank,1.0f);
+        assert(flank.x<oldX && flank.z>-2.28f);
+        assert(!InfantryReady(flank));
+        AdvanceInfantry(flank,100.0f);
+        assert(InfantryReady(flank));
+        assert(flank.x==flank.lane_x);
+        assert(InfantryMarchStride(flank)==0.0f);
+        assert(InfantrySecondsToReady(flank)<.0001f);
+        Infantry right=flank;
+        right.tactic=InfantryTactic::FlankRight;
+        right.x=0.0f;right.z=-2.28f;right.lane_x=.85f;
+        const float arrivalBefore=InfantrySecondsToReady(right);
+        AdvanceInfantry(right,.05f);
+        assert(InfantrySecondsToReady(right)<arrivalBefore);
+        assert(right.x>0.0f);
+        AdvanceInfantry(right,100.0f);
+        assert(InfantryReady(right));
+        assert(right.x==right.lane_x);
+
+        Infantry support{};
+        support.active=true;support.x=-.1f;support.z=-2.38f;
+        support.tactic=InfantryTactic::Support;
+        support.lane_x=support.x;
+        assert(InfantrySprite(support)==SpriteId::InfantrySupport);
+        assert(InfantrySprite(rifle)==SpriteId::InfantryStrideA);
+        const float supportTime=InfantrySecondsToReady(support);
+        assert(supportTime>5.0f && supportTime<8.0f);
+        AdvanceInfantry(support,100.0f);
+        assert(InfantryReady(support));
+        assert(std::abs(support.z+1.68f)<.00002f);
+        assert(InfantryMarchStride(support)==0.0f);
+        Infantry malformed=support;
+        malformed.x=std::numeric_limits<float>::quiet_NaN();
+        assert(InfantrySecondsToReady(malformed)<0.0f);
+        assert(!InfantryReady(malformed));
+        AdvanceInfantry(malformed,.05f);
+        malformed=support;
+        malformed.active=false;
+        assert(InfantrySecondsToReady(malformed)<0.0f);
+        assert(!InfantryReady(malformed));
+        malformed=support;
+        malformed.tactic=InfantryTactic::FlankLeft;
+        malformed.lane_x=std::numeric_limits<float>::infinity();
+        assert(InfantrySecondsToReady(malformed)<0.0f);
+        assert(!InfantryReady(malformed));
+
+        // The extra support silhouette occupies one already-empty cell;
+        // no atlas expansion or new GL texture.
+        assert(sizeof(SpritePixels)==128u*1024u);
+        const SpritePixels art=BuildSpriteAtlas();
+        const int supportCell=static_cast<int>(SpriteId::InfantrySupport);
+        const int col=supportCell%4,row=supportCell/4;
+        uint64_t supportHash=14695981039346656037ull;
+        uint64_t rifleHash=14695981039346656037ull;
+        int ink=0;
+        for(int y=0;y<32;++y)for(int x=0;x<32;++x) {
+            const size_t supportOffset=static_cast<size_t>(
+                ((row*32+y)*kSpriteAtlasWidth+col*32+x)*4);
+            const size_t rifleOffset=static_cast<size_t>(
+                (y*kSpriteAtlasWidth+x)*4);
+            for(int k=0;k<4;++k) {
+                supportHash=(supportHash^art[supportOffset+k])*1099511628211ull;
+                rifleHash=(rifleHash^art[rifleOffset+k])*1099511628211ull;
+            }
+            if(art[supportOffset+3]==255)++ink;
+            else assert(art[supportOffset+3]==0);
+        }
+        assert(ink>25 && supportHash!=rifleHash);
+    }
+
     // A wreck is produced only by an authoritative death transition.
     // It survives enemy deactivation visually, without becoming a target.
     {
@@ -316,7 +425,7 @@ int main() {
         const std::array<SpriteId,4> supportIds={{
             SpriteId::ArtillerySupport,SpriteId::AirstrikeSupport,
             SpriteId::SamSupport,SpriteId::RepairSupport}};
-        assert(static_cast<int>(SpriteId::Count)==24);
+        assert(static_cast<int>(SpriteId::Count)==25);
         assert(sizeof(SpritePixels)==128u*1024u);
         std::array<uint64_t,4> supportHashes{};
         for(size_t id=0;id<supportIds.size();++id) {
@@ -443,8 +552,8 @@ int main() {
         assert(EnemySprite(e)==SpriteId::Bomber);
         e.type=static_cast<UnitType>(255);
         assert(EnemySprite(e)==SpriteId::Count);
-        // The eight unused atlas cells stay completely transparent.
-        for(int cell=24;cell<32;++cell) {
+        // The seven unused atlas cells stay completely transparent.
+        for(int cell=25;cell<32;++cell) {
             const int col=cell%4,row=cell/4;
             for(int y=0;y<32;++y)
                 for(int x=0;x<32;++x) {
@@ -1366,6 +1475,28 @@ int main() {
     assert(landing_stage.wave_status().boats_sunk>=1);
     assert(landing_stage.wave_status().troops_landed==0);
 
+    // Identical seeded landing-craft progression, but allow the troops to
+    // disembark. Real Campaign::Land must actually assign maneuver roles.
+    Campaign tactic_landing;
+    assert(tactic_landing.DeserializeShop(stage_bytes,sizeof(stage_bytes)));
+    assert(tactic_landing.BeginWave());
+    bool found_flank=false;
+    for(int tick=0;tick<480 && tactic_landing.phase()==Phase::Combat;
+        ++tick) {
+        tactic_landing.Tick(.05f);
+        for(const Infantry &unit:tactic_landing.infantry_units()) {
+            if(!unit.active)continue;
+            if(unit.tactic==InfantryTactic::FlankLeft ||
+               unit.tactic==InfantryTactic::FlankRight) {
+                found_flank=true;
+                assert(unit.lane_x>=-3.1f && unit.lane_x<=3.1f);
+                assert(std::abs(unit.lane_x-unit.x)<=.85f+.0001f);
+            }
+        }
+        if(found_flank)break;
+    }
+    assert(found_flank);
+    assert(tactic_landing.wave_status().troops_landed>=3);
 
     // Iron Quay day two seed 8 starts with a gunboat. It must be able to
     // fire from offshore, and early interception must prevent those salvos.
