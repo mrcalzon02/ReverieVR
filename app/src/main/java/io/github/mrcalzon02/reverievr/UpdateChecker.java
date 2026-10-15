@@ -37,6 +37,7 @@ final class UpdateChecker implements AutoCloseable {
         final String apkDigest;
         final int phoneTestRun;
         final int phoneTestAttempt;
+        final long publishedEpochSeconds;
 
         Release(
             String version,
@@ -46,7 +47,8 @@ final class UpdateChecker implements AutoCloseable {
             String apkUrl,
             String apkDigest,
             int phoneTestRun,
-            int phoneTestAttempt
+            int phoneTestAttempt,
+            long publishedEpochSeconds
         ) {
             this.version = version;
             this.title = title;
@@ -56,6 +58,7 @@ final class UpdateChecker implements AutoCloseable {
             this.apkDigest = apkDigest;
             this.phoneTestRun = phoneTestRun;
             this.phoneTestAttempt = phoneTestAttempt;
+            this.publishedEpochSeconds = publishedEpochSeconds;
         }
     }
 
@@ -287,6 +290,15 @@ final class UpdateChecker implements AutoCloseable {
         Release left,
         Release right
     ) {
+        // Prefer actual release chronology to resettable CI run counters.
+        if (left.publishedEpochSeconds > 0
+            && right.publishedEpochSeconds > 0
+            && left.publishedEpochSeconds != right.publishedEpochSeconds) {
+            return Long.compare(
+                left.publishedEpochSeconds,
+                right.publishedEpochSeconds
+            );
+        }
         if (left.phoneTestRun > 0
             && right.phoneTestRun > 0) {
             if (left.phoneTestRun != right.phoneTestRun) {
@@ -364,6 +376,14 @@ final class UpdateChecker implements AutoCloseable {
 
         PhoneTestTag phoneTest =
             PhoneTestTag.parse(tagName);
+        long publishedEpochSeconds = 0L;
+        try {
+            publishedEpochSeconds = java.time.Instant.parse(
+                releaseJson.optString("published_at", "")
+            ).getEpochSecond();
+        } catch (java.time.format.DateTimeParseException ignored) {
+            // A missing publication date is not proof of a newer APK.
+        }
 
         return new Release(
             tagName,
@@ -373,7 +393,8 @@ final class UpdateChecker implements AutoCloseable {
             apkUrl,
             apkDigest,
             phoneTest == null ? 0 : phoneTest.run,
-            phoneTest == null ? 0 : phoneTest.attempt
+            phoneTest == null ? 0 : phoneTest.attempt,
+            publishedEpochSeconds
         );
     }
 
@@ -383,6 +404,17 @@ final class UpdateChecker implements AutoCloseable {
         int currentPhoneTestRun,
         int currentPhoneTestAttempt
     ) {
+        if (release.phoneTestRun > 0
+            && BuildConfig.PHONE_TEST_BUILD_EPOCH_SECONDS > 0L) {
+            return isPublishedReleaseNewer(
+                release.phoneTestRun,
+                release.phoneTestAttempt,
+                release.publishedEpochSeconds,
+                currentPhoneTestRun,
+                currentPhoneTestAttempt,
+                BuildConfig.PHONE_TEST_BUILD_EPOCH_SECONDS
+            );
+        }
         if (release.phoneTestRun > 0) {
             return isPhoneTestNewer(
                 release.phoneTestRun,
@@ -396,6 +428,27 @@ final class UpdateChecker implements AutoCloseable {
             release.version,
             currentVersion
         );
+    }
+
+    static boolean isPublishedReleaseNewer(
+        int candidateRun,
+        int candidateAttempt,
+        long candidatePublishedSeconds,
+        int currentRun,
+        int currentAttempt,
+        long currentBuildSeconds
+    ) {
+        if (candidateRun <= 0 || currentRun <= 0
+            || candidatePublishedSeconds <= 0
+            || currentBuildSeconds <= 0) {
+            return false;
+        }
+        // The installed build's own release may be published after compiling.
+        if (candidateRun == currentRun
+            && candidateAttempt <= currentAttempt) {
+            return false;
+        }
+        return candidatePublishedSeconds > currentBuildSeconds;
     }
 
     static boolean isPhoneTestNewer(
