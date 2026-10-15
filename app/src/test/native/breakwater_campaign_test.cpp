@@ -1,5 +1,6 @@
 #include "breakwater_campaign.h"
 #include "breakwater_silhouettes.h"
+#include "breakwater_sprite_atlas.h"
 #include "breakwater_terrain.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
@@ -16,6 +17,46 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // Every authored RGBA sprite has opaque military-colored pixels and
+    // transparent edges. World cards are constant-six-vertex impostors.
+    {
+        const SpritePixels pixels=BuildSpriteAtlas();
+        for(int id=0;id<static_cast<int>(SpriteId::Count);++id) {
+            int visible=0,transparent=0;
+            const int ox=(id%4)*kSpriteTile,oy=(id/4)*kSpriteTile;
+            for(int y=0;y<kSpriteTile;++y)
+                for(int x=0;x<kSpriteTile;++x) {
+                    const size_t a=static_cast<size_t>(
+                        ((oy+y)*kSpriteAtlasWidth+ox+x)*4+3);
+                    if(pixels[a]==255)++visible;
+                    else {assert(pixels[a]==0);++transparent;}
+                }
+            assert(visible>20 && transparent>50);
+        }
+        std::vector<float> sprites;
+        for(int id=0;id<static_cast<int>(SpriteId::Count);++id)
+            assert(AppendSprite(sprites,static_cast<SpriteId>(id),
+                0.0f,-.6f,-5.0f,1.0f,.75f));
+        assert(sprites.size()==static_cast<size_t>(
+            static_cast<int>(SpriteId::Count)*30));
+        for(size_t i=0;i<sprites.size();i+=5) {
+            assert(std::isfinite(sprites[i]));
+            assert(std::isfinite(sprites[i+1]));
+            assert(std::isfinite(sprites[i+2]));
+            assert(sprites[i+3]>=0.0f && sprites[i+3]<=1.0f);
+            assert(sprites[i+4]>=0.0f && sprites[i+4]<=1.0f);
+        }
+        const size_t before=sprites.size();
+        assert(!AppendSprite(sprites,SpriteId::Count,0,0,0,1,1));
+        assert(!AppendSprite(sprites,SpriteId::InfantryStrideA,
+            0,0,0,0,1));
+        assert(!AppendSprite(sprites,SpriteId::Bomber,
+            0,0,0,1,std::numeric_limits<float>::quiet_NaN()));
+        assert(sprites.size()==before);
+        assert(AppendSprite(sprites,SpriteId::Bomber,
+            0,1.6f,-9.0f,2.4f,1.3f,.22f));
+        assert(sprites.size()==before+30);
+    }
     // Quick Menu takes away the pointer: enemy waves, shop and held buttons
     // cannot act again until a valid pointer returns and buttons release.
     {

@@ -6,6 +6,19 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater first real textured enemy sprites
+
+- Replace live box-built boats, infantry and banked aircraft silhouettes in
+  Breakwater's render path with original code-authored pixel sprite cards.
+  A compact seven-cell RGBA atlas uploads once per GL context and uses one
+  batched textured GLES2 draw per eye, with deterministic stereo geometry,
+  nearest sampling and masked depth-tested alpha.
+- Retain terrain, collision/hitbox ownership, all weapon mechanics and shell
+  input. Add test assertions for pixel coverage, transparent background and
+  six-vertex UV/world geometry. NDK compilation, real-device appearance
+  and sustained performance remain unverified.
+
+
 ### Breakwater gameplay focus and Quick Menu suspension
 
 - Stop Breakwater's invasion simulation while the shell owns its pointer

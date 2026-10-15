@@ -1,6 +1,7 @@
 #include "breakwater_campaign.h"
 #include "breakwater_checkpoint.h"
 #include "breakwater_silhouettes.h"
+#include "breakwater_sprite_atlas.h"
 #include "breakwater_terrain.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
@@ -28,6 +29,10 @@ struct State {
     Campaign campaign{Difficulty::Regular, 1049u};
     GLuint program = 0, vbo = 0;
     GLint matrix = -1, position = -1, color = -1;
+    GLuint sprite_program = 0, sprite_vbo = 0, sprite_texture = 0;
+    GLint sprite_matrix = -1, sprite_position = -1, sprite_uv = -1;
+    GLint sprite_sampler = -1, sprite_tint = -1;
+    bool sprite_gpu_dirty = true;
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
     float flash = 0.0f, elapsed = 0.0f, reload_ready_flash = 0.0f;
     float turret_flash = 0.0f, infantry_flash = 0.0f;
@@ -45,6 +50,7 @@ struct State {
     bool armory_page=false, sam_armed=false, ghost_on=false;
     float ghost_position[3]={}, shot_origin[3]={}, shot_gravity=0;
     std::vector<float> mesh;
+    std::vector<float> sprite_mesh;
 };
 void Feedback(State *s, uint32_t code) {
     ReverieNativeRequestFeedbackV1(s->host, code);
@@ -418,6 +424,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
 void BuildScene(State *s) {
     auto &game=s->campaign;
     s->mesh.clear();
+    s->sprite_mesh.clear();
     const bool night=game.period()==Period::Night;
     // Generated sky bands and large sparse sea strips, no image assets.
     for(int row=0;row<10;row++) {
@@ -505,56 +512,29 @@ void BuildScene(State *s) {
         if(s->turret_flash>0.0f)
             Box(s,2.15f,-.76f,-2.06f,.20f,.20f,.18f,1.0f,.77f,.32f);
     }
+    // One atlas card per live enemy: the campaign continues owning all
+    // movement, world positions, hit volumes, attacks, landfall and score.
+    // Forward-facing world cards use the SAME mesh for both stereo eyes.
     for(const Enemy &e:game.enemies())if(e.active) {
         const bool aircraft=e.type==UnitType::Aircraft;
-        const float y=aircraft?1.6f:-.68f;
-        if(aircraft) {
+        SpriteId sprite=SpriteId::Rowboat;
+        float width=.99f,height=.71f,y=-.66f,bank=0.0f;
+        if(e.type==UnitType::LandingCraft) {
+            sprite=SpriteId::LandingCraft;width=1.24f;height=.86f;y=-.70f;
+        } else if(e.type==UnitType::Gunboat) {
+            sprite=SpriteId::Gunboat;width=1.37f;height=.96f;y=-.68f;
+        } else if(aircraft) {
             const bool bomber=e.aircraft_pattern==AircraftPattern::Bomber;
-            Box(s,e.x,y,e.z,.34f,.28f,bomber?1.65f:1.20f,
-                bomber?.54f:.67f,bomber?.48f:.58f,bomber?.43f:.48f);
-            // Lightweight swept wings have actual banked tip vertices. Their
-            // roll angle comes from the simulation's seeded flight track,
-            // never wall-clock animation or a separate stereo-eye update.
-            const float halfSpan=bomber?1.225f:.925f;
-            const float tipRise=std::sin(e.bank)*halfSpan;
-            for(int side : {-1,1}) {
-                const float sx=static_cast<float>(side);
-                const float rootFront=e.z+(bomber?.22f:.30f);
-                const float rootRear=e.z-(bomber?.38f:.23f);
-                const float tipZ=e.z-(bomber?.28f:.07f);
-                const float tipX=e.x+sx*halfSpan;
-                const float tipY=y+sx*tipRise;
-                Triangle(s,e.x+sx*.15f,y+.02f,rootFront,
-                         tipX,tipY,tipZ,
-                         e.x+sx*.17f,y+.02f,rootRear,
-                         bomber?.42f:.45f,bomber?.43f:.47f,bomber?.40f:.44f);
-                // Parallel bright leading-edge streak makes the silhouette
-                // readable without a normal map or additional texture.
-                Triangle(s,e.x+sx*.16f,y+.035f,rootFront,
-                         tipX,tipY+.025f,tipZ,
-                         e.x+sx*.32f,y+.035f,rootFront-.045f,
-                         bomber?.64f:.70f,bomber?.59f:.67f,bomber?.51f:.56f);
-            }
-            if(bomber) {
-                for(int side : {-1,1}) {
-                    const float sx=static_cast<float>(side);
-                    Box(s,e.x+sx*.64f,y+sx*tipRise*.52f,e.z+.04f,
-                        .23f,.20f,.40f,.30f,.32f,.31f);
-                }
-                Box(s,e.x,y-.17f,e.z+.12f,.58f,.22f,.62f,.31f,.31f,.29f);
-            } else {
-                Box(s,e.x,y+.02f,e.z+.63f,.24f,.18f,.26f,.49f,.51f,.46f);
-            }
-        } else {
-            // Deterministic boat recipes share one mesh, built once for both eyes.
-            EmitVesselSilhouette(e,
-                [s](auto... arguments) { Box(s,arguments...); },
-                [s](auto... arguments) { Triangle(s,arguments...); });
-            // This flash belongs to the real gunboat attack cooldown.
-            if(e.type==UnitType::Gunboat && e.attack_timer>2.64f)
-                Box(s,e.x,-.42f,e.z+.76f,.15f,.13f,.17f,
-                    .98f,.68f,.24f);
+            sprite=bomber?SpriteId::Bomber:SpriteId::Strafer;
+            width=bomber?2.55f:2.02f;
+            height=bomber?1.35f:1.08f;
+            y=1.6f;
+            bank=e.bank;
         }
+        AppendSprite(s->sprite_mesh,sprite,e.x,y,e.z,width,height,bank);
+        if(e.type==UnitType::Gunboat && e.attack_timer>2.64f)
+            Box(s,e.x,-.42f,e.z+.76f,.15f,.13f,.17f,
+                .98f,.68f,.24f);
     }
     if(s->aircraft_aim.visible) {
         // Four tiny world-space brackets surround only the exact ray-selected
@@ -612,10 +592,12 @@ void BuildScene(State *s) {
         }
     }
     for(const Infantry &trooper:game.infantry_units())if(trooper.active) {
-        // Authoritative live soldier location, never an extra combat target.
-        EmitInfantrySilhouette(trooper,
-            [s](auto... arguments) { Box(s,arguments...); },
-            [s](auto... arguments) { Triangle(s,arguments...); });
+        // Simulation-owned soldier with a two-frame positional march.
+        // Sprite cards never allocate additional infantry or hitboxes.
+        const SpriteId pose=InfantryMarchStride(trooper)>=0.0f?
+            SpriteId::InfantryStrideA:SpriteId::InfantryStrideB;
+        AppendSprite(s->sprite_mesh,pose,trooper.x,-.67f,trooper.z,
+                     .40f,.70f);
     }
     if(s->gunboat_salvo_flash>0.0f) {
         // A brief world-space tracer starts at the vessel that actually fired.
@@ -816,8 +798,12 @@ void BuildScene(State *s) {
 void DestroyGl(State *s) {
     if(s->vbo)glDeleteBuffers(1,&s->vbo);
     if(s->program)glDeleteProgram(s->program);
+    if(s->sprite_vbo)glDeleteBuffers(1,&s->sprite_vbo);
+    if(s->sprite_program)glDeleteProgram(s->sprite_program);
+    if(s->sprite_texture)glDeleteTextures(1,&s->sprite_texture);
     s->vbo=0;s->program=0;
-    s->scene_dirty=true;s->gpu_dirty=true;
+    s->sprite_vbo=0;s->sprite_program=0;s->sprite_texture=0;
+    s->scene_dirty=true;s->gpu_dirty=true;s->sprite_gpu_dirty=true;
 }
 void *Create(const ReverieNativeHostV1 *host) {
     if(!ReverieNativeHostSupportsLogV1(host))return nullptr;
@@ -825,6 +811,7 @@ void *Create(const ReverieNativeHostV1 *host) {
     if(!s)return nullptr;
     s->host=host;
     s->mesh.reserve(81920);
+    s->sprite_mesh.reserve(3000);
     // New players choose their difficulty. Returning players restore shop state.
     LoadState(s);
     return s;
@@ -836,6 +823,7 @@ int32_t GlCreate(void *instance) {
     ReverieNativeGlStateV1 previous={};
     ReverieNativeGlStateCaptureV1(&previous);
     s->vbo=0;s->program=0;
+    s->sprite_vbo=0;s->sprite_program=0;s->sprite_texture=0;
     const char *vs="uniform mat4 u_Mvp; attribute vec3 a_Pos; attribute vec3 a_Col;"
                    "varying vec3 v_Col;void main(){gl_Position=u_Mvp*vec4(a_Pos,1.);"
                    "v_Col=a_Col;}";
@@ -849,10 +837,47 @@ int32_t GlCreate(void *instance) {
         s->matrix=glGetUniformLocation(s->program,"u_Mvp");
         glGenBuffers(1,&s->vbo);
     }
+    // A single opaque-alpha atlas keeps textured enemies to one draw call
+    // per eye; the old untextured world remains a separate shared mesh.
+    const char *svs="uniform mat4 u_Mvp;attribute vec3 a_Pos;"
+        "attribute vec2 a_Uv;varying vec2 v_Uv;"
+        "void main(){gl_Position=u_Mvp*vec4(a_Pos,1.0);v_Uv=a_Uv;}";
+    const char *sfs="precision mediump float;uniform sampler2D u_Atlas;"
+        "uniform vec3 u_Tint;varying vec2 v_Uv;"
+        "void main(){vec4 pixel=texture2D(u_Atlas,v_Uv);"
+        "if(pixel.a<0.5)discard;gl_FragColor=vec4(pixel.rgb*u_Tint,1.0);}";
+    const ReverieNativeGlAttributeBindingV1 spriteBindings[]={
+        {0u,"a_Pos"},{1u,"a_Uv"}};
+    s->sprite_program=ReverieNativeBuildProgram(
+        svs,sfs,spriteBindings,2);
+    if(s->sprite_program) {
+        s->sprite_position=glGetAttribLocation(s->sprite_program,"a_Pos");
+        s->sprite_uv=glGetAttribLocation(s->sprite_program,"a_Uv");
+        s->sprite_matrix=glGetUniformLocation(s->sprite_program,"u_Mvp");
+        s->sprite_sampler=glGetUniformLocation(s->sprite_program,"u_Atlas");
+        s->sprite_tint=glGetUniformLocation(s->sprite_program,"u_Tint");
+        glGenBuffers(1,&s->sprite_vbo);
+        glGenTextures(1,&s->sprite_texture);
+        if(s->sprite_texture) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D,s->sprite_texture);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+            const SpritePixels atlas=BuildSpriteAtlas();
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,kSpriteAtlasWidth,
+                kSpriteAtlasHeight,0,GL_RGBA,GL_UNSIGNED_BYTE,atlas.data());
+        }
+    }
     const bool okay=s->program && s->vbo && s->position>=0 &&
-        s->color>=0 && s->matrix>=0;
+        s->color>=0 && s->matrix>=0 && s->sprite_program &&
+        s->sprite_vbo && s->sprite_texture &&
+        s->sprite_position>=0 && s->sprite_uv>=0 &&
+        s->sprite_matrix>=0 && s->sprite_sampler>=0 &&
+        s->sprite_tint>=0 && glGetError()==GL_NO_ERROR;
     if(!okay)DestroyGl(s);
-    s->scene_dirty=true;s->gpu_dirty=true;
+    s->scene_dirty=true;s->gpu_dirty=true;s->sprite_gpu_dirty=true;
     ReverieNativeGlStateRestoreV1(&previous);
     return okay?1:0;
 }
@@ -1007,10 +1032,11 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
 }
 int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
     State *s=static_cast<State *>(instance);
-    if(!s || !ReverieNativeEyeRenderableV1(eye) || !s->program || !s->vbo)return 0;
+    if(!s || !ReverieNativeEyeRenderableV1(eye) || !s->program || !s->vbo ||
+       !s->sprite_program || !s->sprite_vbo || !s->sprite_texture)return 0;
     if(s->scene_dirty) {
         BuildScene(s);
-        s->scene_dirty=false;s->gpu_dirty=true;
+        s->scene_dirty=false;s->gpu_dirty=true;s->sprite_gpu_dirty=true;
     }
     ReverieNativeGlStateV1 prior={};
     ReverieNativeGlAttribStateV1 pa={},ca={};
@@ -1035,6 +1061,32 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
     ReverieNativeMat4Multiply(vp,eye->projection,eye->view);
     glUniformMatrix4fv(s->matrix,1,GL_FALSE,vp);
     glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->mesh.size()/6));
+    if(!s->sprite_mesh.empty()) {
+        glUseProgram(s->sprite_program);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,s->sprite_texture);
+        glUniform1i(s->sprite_sampler,0);
+        const bool night=s->campaign.period()==Period::Night;
+        glUniform3f(s->sprite_tint,night?.52f:1.0f,
+            night?.63f:1.0f,night?.72f:1.0f);
+        glBindBuffer(GL_ARRAY_BUFFER,s->sprite_vbo);
+        if(s->sprite_gpu_dirty) {
+            glBufferData(GL_ARRAY_BUFFER,
+                static_cast<GLsizeiptr>(s->sprite_mesh.size()*sizeof(float)),
+                s->sprite_mesh.data(),GL_DYNAMIC_DRAW);
+            s->sprite_gpu_dirty=false;
+        }
+        glEnableVertexAttribArray(static_cast<GLuint>(s->sprite_position));
+        glEnableVertexAttribArray(static_cast<GLuint>(s->sprite_uv));
+        glVertexAttribPointer(static_cast<GLuint>(s->sprite_position),3,
+            GL_FLOAT,GL_FALSE,5*sizeof(float),reinterpret_cast<void*>(0));
+        glVertexAttribPointer(static_cast<GLuint>(s->sprite_uv),2,
+            GL_FLOAT,GL_FALSE,5*sizeof(float),
+            reinterpret_cast<void*>(3*sizeof(float)));
+        glUniformMatrix4fv(s->sprite_matrix,1,GL_FALSE,vp);
+        glDrawArrays(GL_TRIANGLES,0,
+            static_cast<GLsizei>(s->sprite_mesh.size()/5));
+    }
     ReverieNativeGlAttribRestoreV1(&ca);
     ReverieNativeGlAttribRestoreV1(&pa);
     ReverieNativeGlStateRestoreV1(&prior);

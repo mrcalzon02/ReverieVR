@@ -1,3 +1,18 @@
+## 2026-10-14 — Breakwater textured enemy sprite architecture (source)
+
+Started the approved sprite-forward art direction with a game-private
+GLES2 RGBA atlas (128x64; seven 32x32 cells) and six-vertex cards for
+all live infantry/boats/aircraft. Silhouettes use generic, original
+turn-of-the-millennium Western military design cues: helmet/vest/rifle,
+rowboat, ramped troop carrier, patrol boat, strafer and heavier bomber.
+The existing world geometry and campaign hit volumes remain unchanged,
+and the single world-space sprite mesh is reused between stereo eyes.
+One texture/one additional batched draw per eye, created and destroyed with
+the GL context, nearest-neighbor hard-alpha discard. No external art
+downloads, imagery claims, or copyrighted model sources. Isolated host
+C++17 atlas/billboard fixture passed -Wall -Wextra -Wpedantic -Werror;
+full native/NDK build, Galaxy S9 rendering and thermal tests are open.
+
 ## 2026-10-14 — Breakwater suspends combat during native pointer loss (source)
 
 The universal Quick Menu sends native modules update frames with POINTER_NONE.
