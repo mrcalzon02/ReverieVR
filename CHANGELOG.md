@@ -6,6 +6,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater real-kill boat and aircraft wreck fragments
+
+- Render short world-anchored sinking hull shards and falling aircraft
+  debris only from authoritative destruction transitions. Integrates
+  confirmed player, SAM, artillery, airstrike and support-turret kills
+  without introducing new damage, targets or simulation state.
+- Reuse the same stereo-safe vertex-color render batch: at most eight
+  wrecks, nine triangles per wreck, 1.8 simulation seconds. Add
+  deterministic lifetime, validation, saturation and reset tests.
+  Real Android/NDK and reference-device acceptance remain pending.
+
+
 ### Breakwater exact-ray target identification and hull indicators
 
 - Extended in-world target brackets from aircraft to boats and individual

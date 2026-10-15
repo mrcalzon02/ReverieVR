@@ -10,6 +10,7 @@
 #include "breakwater_combat_input.h"
 #include "breakwater_pointer_focus.h"
 #include "breakwater_impacts.h"
+#include "breakwater_wrecks.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -44,6 +45,7 @@ struct State {
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
     ImpactEffects impacts;
+    WreckEffects wrecks;
     BatteryDamageFeedback battery_damage;
     AircraftAimFeedback aircraft_aim;
     SurfaceAimFeedback surface_aim;
@@ -250,6 +252,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         if(choice>=0 && choice<4) {
             game=Campaign(static_cast<Difficulty>(choice),1049u);
             s->impacts=ImpactEffects{};
+            s->wrecks.Clear();
             s->battery_damage=BatteryDamageFeedback{};
             s->reload_ready_flash=0.0f;
             s->turret_flash=0.0f;
@@ -272,6 +275,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             done=game.BeginWave();
             if(done) {
                 s->combat_input.CaptureUiPress();
+                s->wrecks.Clear();
                 s->battery_damage=BatteryDamageFeedback{};
                 s->infantry_flash=0.0f;
                 s->gunboat_salvo_flash=0.0f;
@@ -317,14 +321,20 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         if(route==CombatInputRoute::Artillery){
             const auto before=game.enemies();
             const bool ok=game.CallArtillery();
-            if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),false);
+            if(ok) {
+                s->impacts.RecordSupportDamage(before,game.enemies(),false);
+                s->wrecks.RecordTransitions(before,game.enemies());
+            }
             Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ARTILLERY:REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
         if(route==CombatInputRoute::Airstrike){
             const auto before=game.enemies();
             const bool ok=game.CallAirstrike();
-            if(ok)s->impacts.RecordSupportDamage(before,game.enemies(),true);
+            if(ok) {
+                s->impacts.RecordSupportDamage(before,game.enemies(),true);
+                s->wrecks.RecordTransitions(before,game.enemies());
+            }
             Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_AIRSTRIKE:REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
@@ -344,6 +354,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 const float down[]={0.0f,-1.0f,0.0f};
                 s->impacts.RecordHit(origin,down,.001f,ImpactKind::AirstrikeBlast);
                 s->aircraft_hit.Record(source,game.enemies()[lock],true);
+                s->wrecks.RecordDestroyed(source,game.enemies()[lock]);
                 s->sam_armed=false;
             }
             Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
@@ -377,8 +388,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                                   game.selected_weapon()))
             shot=game.FireMiss();
         if(shot){
-            if(enemyTarget)
+            if(enemyTarget) {
                 s->aircraft_hit.Record(enemyBefore,game.enemies()[target],true);
+                s->wrecks.RecordDestroyed(enemyBefore,game.enemies()[target]);
+            }
             float hit[3]={};
             if(impactDepth>0.0f &&
                ProjectilePosition(input.pointer_origin,input.pointer_direction,
@@ -417,6 +430,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 "Restarted in memory, but clearing the old checkpoint failed.");
         game=Campaign(Difficulty::Regular,1049u);
         s->impacts=ImpactEffects{};
+        s->wrecks.Clear();
         s->battery_damage=BatteryDamageFeedback{};
         s->reload_ready_flash=0.0f;
         s->turret_flash=0.0f;
@@ -600,6 +614,14 @@ void BuildScene(State *s) {
                      edge-static_cast<float>(side)*.15f,1.28f,z,r,g,b);
         }
     }
+    // A destroyed enemy is already gone from the authoritative simulation,
+    // but its last recorded position carries a brief 3D wreck silhouette.
+    // Shared scene geometry is built once, identically for both eyes.
+    for(const WreckPulse &wreck:s->wrecks.pulses())
+        if(wreck.remaining>0.0f)
+            EmitWreckFragments(wreck,[s](auto... vertices) {
+                Triangle(s,vertices...);
+            });
     // CPU-updated, fixed-capacity impact pulses render identically in both eyes.
     for(const ImpactPulse &impact:s->impacts.pulses())if(impact.remaining>0.0f) {
         const bool artillery=impact.kind==ImpactKind::ArtilleryBlast;
@@ -1014,6 +1036,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->battery_damage.Tick(copy.delta_seconds);
     s->aircraft_hit.Tick(copy.delta_seconds);
     s->impacts.Tick(copy.delta_seconds);
+    s->wrecks.Tick(copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
         const bool was_reloading=s->campaign.reloading();
         const uint32_t turret_before=s->campaign.turret_shot().sequence;
@@ -1022,7 +1045,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         const uint32_t gunboat_before=s->campaign.gunboat_salvo().sequence;
         const uint32_t collision_before=s->campaign.gunboat_collision().sequence;
         const int32_t hull_before=s->campaign.integrity();
+        const auto enemies_before=s->campaign.enemies();
         s->campaign.Tick(copy.delta_seconds);
+        s->wrecks.RecordTransitions(enemies_before,s->campaign.enemies());
         s->battery_damage.Record(hull_before,s->campaign.integrity());
         const TurretShotEvent turret=s->campaign.turret_shot();
         if(turret.sequence!=turret_before) {
@@ -1087,6 +1112,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     if(down && !started_reload)Interact(s,copy,!s->held);
     if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop) {
         if(s->campaign.BeginWave()) {
+            s->wrecks.Clear();
             s->battery_damage=BatteryDamageFeedback{};
             s->infantry_flash=0.0f;
             s->gunboat_salvo_flash=0.0f;

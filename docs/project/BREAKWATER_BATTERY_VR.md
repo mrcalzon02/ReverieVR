@@ -350,6 +350,37 @@ separate gates. No other game, music, GL or controller behavior changes.
 
 Do not promote the prototype to the normal launcher until the hardware gates have been met.
 
+### Confirmed enemy-destruction wreck fragments (2026-10-15 source)
+
+The original impact pool now has an adjacent, game-private
+`breakwater_wrecks.h` visual layer. An aircraft, rowboat, landing craft
+or gunboat emits eight short metal-shard triangles plus a transient smoke
+triangle **only when a real, previously active enemy's HP crosses to zero
+and the authoritative campaign deactivates it**. The hull disappears from
+gameplay immediately, as before; debris remains anchored at its last
+actual simulation position and gradually spreads/sinks or falls for 1.8
+simulation seconds. The existing hit/explosion effect still plays
+separately. No body or fragment becomes a new target.
+
+All destruction paths route through the same event check: successful
+player gunfire, SAM kills, artillery and airstrike batch results, and
+simulation-owned support turret kills. Disembarkation, offscreen
+aircraft departure, ship arrival, mere damage and rejected calls create
+no wreck. Invalid coordinates cannot place debris, and a fixed eight-slot
+pool drops additional visuals under saturation rather than evicting
+currently visible wrecks. Each pulse generates at most nine triangles,
+or **72 triangles total**, in the existing untextured geometry batch
+shared by both stereo eyes. Wreck lifetime advances only in normal
+unpaused campaign updates; it is cleared at new campaign and wave
+start. No new atlas, shader, GL draw, sound, control binding, gameplay
+HP, collision sphere or save field is introduced.
+
+Native regression source covers kill-vs-damage and landing guards,
+invalid input, location retention, aircraft/boat geometry, finite
+vertices, lifetime expiry, pool saturation, slot recovery and reset.
+Full Android/NDK build, Galaxy S9 stereoscopic debris readability,
+performance and thermal acceptance remain **unverified**.
+
 ### Impact pool saturation behavior
 
 The eight-slot impact pool prefers expired entries, then active minor effects. Minor sparks, dust, and splashes cannot evict live explosions when the pool is full; fresh explosion and support-blast effects may replace existing blasts when necessary. This is deterministic and allocation-free. Native regression tests cover retention, saturated rejection, and slot reuse after expiration. Physical headset validation remains outstanding.

@@ -1,3 +1,22 @@
+## 2026-10-15 — Breakwater confirmed-kill wreck debris (source)
+
+Implemented a fixed eight-slot WreckEffects visual pool for grounded,
+deterministic 3D destruction fragments. Player gunfire, SAM, artillery,
+airstrike, and simulation-owned support turret kills call the same
+simulation before/after active/HP transition detector; landing,
+offscreen escape, boat ramming the battery, unconfirmed hit sparks and
+nonlethal shots are excluded. Each qualifying enemy leaves four
+metal shard pairs plus a short smoke wedge (up to nine triangles) at
+its original death coordinates for 1.8 simulation seconds, sinking or
+falling without modifying enemy HP, active state, physics, target
+selection, save schema, controls, textures, shaders or draw calls.
+A saturated pool drops surplus decoration without evicting live wrecks.
+The existing ImpactEffects flashes remain in place. Native test source
+asserts death transitions, finite geometry, deterministic triangle
+budget, pause/expiry behavior, saturation, reuse and reset.
+No NDK or Android build or physical headset visual/thermal proof was
+completed; no APK was created in this slice.
+
 ## 2026-10-15 — Breakwater exact-ray boat/infantry target feedback (source)
 
 Added a surface/infantry targeting presentation that consumes the exact

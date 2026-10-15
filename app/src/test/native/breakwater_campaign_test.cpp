@@ -9,6 +9,7 @@
 #include "breakwater_combat_input.h"
 #include "breakwater_pointer_focus.h"
 #include "breakwater_impacts.h"
+#include "breakwater_wrecks.h"
 #include "breakwater_weapons.h"
 #include "breakwater_checkpoint.h"
 #include <cassert>
@@ -19,6 +20,89 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // A wreck is produced only by an authoritative death transition.
+    // It survives enemy deactivation visually, without becoming a target.
+    {
+        WreckEffects wrecks;
+        Enemy before{};before.active=true;
+        before.type=UnitType::LandingCraft;
+        before.x=1.25f;before.z=-5.5f;before.hp=30;
+        Enemy after=before;
+        after.hp=10;
+        assert(!wrecks.RecordDestroyed(before,after)); // damaged, alive
+        after.active=false;after.hp=0;
+        assert(wrecks.RecordDestroyed(before,after));
+        assert(!wrecks.RecordDestroyed(after,after));
+        assert(wrecks.pulses()[0].remaining==WreckEffects::kDuration);
+        assert(wrecks.pulses()[0].x==before.x);
+        assert(wrecks.pulses()[0].z==before.z);
+        assert(wrecks.pulses()[0].type==UnitType::LandingCraft);
+        assert(!wrecks.RecordDestroyed(before,before));
+        after.hp=10; // transport reached shore / retreated, not killed
+        assert(!wrecks.RecordDestroyed(before,after));
+        after.hp=0;before.active=false;
+        assert(!wrecks.RecordDestroyed(before,after));
+        before.active=true;before.hp=30;
+        before.x=std::numeric_limits<float>::quiet_NaN();
+        assert(!wrecks.RecordDestroyed(before,after));
+        before.x=1.25f;before.z=std::numeric_limits<float>::infinity();
+        assert(!wrecks.RecordDestroyed(before,after));
+
+        int triangles=0;
+        auto countTriangles=[&](auto... values) {
+            static_assert(sizeof...(values)==12,"xyz + rgb triangle contract");
+            const float components[]={values...};
+            for(float component:components)assert(std::isfinite(component));
+            ++triangles;
+        };
+        EmitWreckFragments(wrecks.pulses()[0],countTriangles);
+        assert(triangles==9);
+        WreckPulse airplane{-.7f,-6.1f,WreckEffects::kDuration,
+                            UnitType::Aircraft,2};
+        triangles=0;
+        EmitWreckFragments(airplane,countTriangles);
+        assert(triangles==9);
+        WreckPulse invalid=airplane;
+        invalid.remaining=std::numeric_limits<float>::quiet_NaN();
+        triangles=0;
+        EmitWreckFragments(invalid,countTriangles);
+        assert(triangles==0);
+        invalid=airplane;invalid.type=static_cast<UnitType>(255);
+        EmitWreckFragments(invalid,countTriangles);
+        assert(triangles==0);
+        wrecks.Tick(std::numeric_limits<float>::quiet_NaN());
+        assert(wrecks.pulses()[0].remaining==WreckEffects::kDuration);
+        wrecks.Tick(.60f);
+        assert(wrecks.pulses()[0].remaining<WreckEffects::kDuration);
+        assert(wrecks.pulses()[0].remaining>0.0f);
+        triangles=0;EmitWreckFragments(wrecks.pulses()[0],countTriangles);
+        assert(triangles==9);
+        wrecks.Tick(2.0f);
+        triangles=0;EmitWreckFragments(wrecks.pulses()[0],countTriangles);
+        assert(triangles==0);
+
+        WreckEffects batch;
+        std::array<Enemy,Campaign::kMaxEnemies> start{},finish{};
+        for(size_t i=0;i<10;++i) {
+            start[i].active=true;start[i].hp=20;
+            start[i].type=i%3==0?UnitType::Aircraft:UnitType::Rowboat;
+            start[i].x=static_cast<float>(i)*.24f;
+            start[i].z=-8.0f;
+            finish[i]=start[i];finish[i].active=false;finish[i].hp=0;
+        }
+        // Fixed capacity, never overwrites a still-fading wreck in
+        // mass simultaneous artillery/airstrike destruction.
+        assert(batch.RecordTransitions(start,finish)==WreckEffects::kCapacity);
+        assert(batch.RecordTransitions(start,finish)==0);
+        for(const WreckPulse& pulse:batch.pulses())
+            assert(pulse.remaining==WreckEffects::kDuration);
+        batch.Tick(2.0f);
+        assert(batch.RecordTransitions(start,finish)==WreckEffects::kCapacity);
+        batch.Clear();
+        for(const WreckPulse& pulse:batch.pulses())
+            assert(pulse.remaining==0.0f);
+    }
+
     // A precise target reticle is informational only: all ship and
     // soldier tests below leave hit spheres and Campaign state untouched.
     {
