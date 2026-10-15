@@ -135,7 +135,14 @@ final class DosModuleRepository {
                     && BuiltInBindingProfiles.isDosProfileId(
                         decoded.id
                     )) {
-                    return decoded;
+                    BindingProfile current =
+                        BuiltInBindingProfiles.upgradeLegacyStockHeadMouse(decoded);
+                    if (current != decoded) {
+                        ReverieLog.milestone("DOS_BINDING",
+                            "Restored legacy stock headset mouse profile for "
+                                + module.id);
+                    }
+                    return current;
                 }
             } catch (IOException
                 | RuntimeException ignored) {

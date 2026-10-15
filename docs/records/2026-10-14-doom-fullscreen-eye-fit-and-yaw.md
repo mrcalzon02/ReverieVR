@@ -48,6 +48,11 @@ straight up or down. The same consistent +X/-Y mapping is used by all
 built-in headset mouse profiles; Doom retains its absolute pitch-driven
 Up/Down keys because original DOS Doom has no free vertical look.
 Neither optical view transforms nor 3D scene orientation were changed.
+Legacy full snapshots of the old bundled Doom/DOS cursor/headset-mouse
+built-ins can be stored per module and otherwise take precedence over
+source fixes. At module resolution, exact unchanged legacy preset copies
+are upgraded to the current mapping; genuinely tuned/custom profiles
+remain preserved. No saved binding files are deleted or overwritten.
 Added synthetic 3D camera pose coverage across yaw/pitch combinations
 including vertical poles plus profile input polarity tests. Device test
 remains the final arbiter.

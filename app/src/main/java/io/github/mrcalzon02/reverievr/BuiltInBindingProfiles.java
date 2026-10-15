@@ -48,6 +48,56 @@ final class BuiltInBindingProfiles {
         return PROFILES.get(0);
     }
 
+    /**
+     * Refresh ONLY an untouched copy of one of the obsolete shipped
+     * headset-mouse presets. Previous releases saved these full presets
+     * in module-local RVBIND1 files; changing the built-in defaults alone
+     * cannot fix such an existing installation.
+     *
+     * Do not rewrite any tuned deadzone, sensitivity, command or layout.
+     * Explicit user-customized configurations continue to take precedence.
+     */
+    static BindingProfile upgradeLegacyStockHeadMouse(BindingProfile saved) {
+        if (saved == null) return null;
+        final boolean oldHead =
+            ID_DOS_HEAD_MOUSE.equals(saved.id);
+        final boolean oldDoom =
+            ID_DOS_DOOM_SHAREWARE.equals(saved.id);
+        final boolean oldCursor =
+            ID_DOS_CURSOR.equals(saved.id);
+        if (!oldHead && !oldDoom && !oldCursor) return saved;
+
+        final BindingProfile current = byId(saved.id);
+        if (!current.displayName.equals(saved.displayName)
+            || current.bindings.size() != saved.bindings.size())
+            return saved;
+
+        int oldSigns = 0;
+        for (int i=0; i<saved.bindings.size(); i++) {
+            final InputBinding before = saved.bindings.get(i);
+            final InputBinding now = current.bindings.get(i);
+            if (before.input != now.input
+                || !before.output.equals(now.output)
+                || before.transform != now.transform
+                || before.deadzone != now.deadzone
+                || before.threshold != now.threshold)
+                return saved;
+            if (before.scale == now.scale) continue;
+            final boolean legacyYaw =
+                before.input == BindingInput.HEAD_YAW_DELTA
+                && before.output.equals(VirtualOutput.mouseRelativeX());
+            final boolean legacyPitch = oldHead
+                && before.input == BindingInput.HEAD_PITCH_DELTA
+                && before.output.equals(VirtualOutput.mouseRelativeY());
+            if ((!legacyYaw && !legacyPitch)
+                || before.scale != -now.scale
+                || Math.abs(now.scale) != 650.0f)
+                return saved;
+            oldSigns++;
+        }
+        return oldSigns == (oldHead ? 2 : 1) ? current : saved;
+    }
+
     static List<BindingProfile> dosProfiles() {
         return DOS_PROFILES;
     }

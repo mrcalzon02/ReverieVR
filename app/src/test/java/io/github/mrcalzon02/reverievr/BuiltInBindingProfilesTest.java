@@ -235,6 +235,44 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
+    public void staleBundledHeadMouseProfilesUpgradeWithoutDiscardingTuning() {
+        for (String id : new String[] {
+                BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE,
+                BuiltInBindingProfiles.ID_DOS_CURSOR,
+                BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE
+        }) {
+            BindingProfile current = BuiltInBindingProfiles.byId(id);
+            java.util.List<InputBinding> old = new java.util.ArrayList<>();
+            for (InputBinding b : current.bindings) {
+                boolean staleYaw = b.input == BindingInput.HEAD_YAW_DELTA
+                    && b.output.equals(VirtualOutput.mouseRelativeX());
+                boolean stalePitch =
+                    BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE.equals(id)
+                    && b.input == BindingInput.HEAD_PITCH_DELTA
+                    && b.output.equals(VirtualOutput.mouseRelativeY());
+                old.add(staleYaw || stalePitch
+                    ? new InputBinding(b.input, b.output, b.transform,
+                        -b.scale, b.deadzone, b.threshold) : b);
+            }
+            BindingProfile stored = BindingProfileCodec.decode(
+                BindingProfileCodec.encode(current.withBindings(old)));
+            BindingProfile effective =
+                BuiltInBindingProfiles.upgradeLegacyStockHeadMouse(stored);
+            VirtualInputBus bus = new VirtualInputBus();
+            InputBindingEngine engine = new InputBindingEngine(bus, effective);
+            engine.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
+            assertEquals(id, 6.5f, bus.consumeMouseRelativeX(), .001f);
+
+            BindingProfile tuned = BindingProfileTuner.adjustAnalogScale(
+                stored, 1.10f);
+            org.junit.Assert.assertSame(id + " user's tuning preserved",
+                tuned, BuiltInBindingProfiles.upgradeLegacyStockHeadMouse(tuned));
+            org.junit.Assert.assertSame(id + " already-current preserved",
+                current, BuiltInBindingProfiles.upgradeLegacyStockHeadMouse(current));
+        }
+    }
+
+    @Test
     public void everyDosHeadsetMouseModeMovesUpWithPositiveHeadPitch() {
         for (String id : new String[] {
                 BuiltInBindingProfiles.ID_DOS_CURSOR,
