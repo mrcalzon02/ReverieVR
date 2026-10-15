@@ -63,6 +63,31 @@ public final class UpdateCheckerTest {
     }
 
     @Test
+    public void restartedWorkflowStillFindsNewerPublishedRelease() {
+        // Installed Phone Test #352: current workflow was replaced,
+        // so the newer release is #173 despite a smaller run number.
+        assertTrue(UpdateChecker.isPublishedReleaseNewer(
+            173, 1, 1792020000L,
+            352, 1, 1792019000L
+        ));
+        // A stale release from the earlier workflow is not an update.
+        assertFalse(UpdateChecker.isPublishedReleaseNewer(
+            352, 1, 1792018000L,
+            173, 1, 1792019000L
+        ));
+        // A build must not offer its own release, which publishes
+        // after the APK's compilation timestamp.
+        assertFalse(UpdateChecker.isPublishedReleaseNewer(
+            173, 1, 1792020000L,
+            173, 1, 1792019000L
+        ));
+        assertTrue(UpdateChecker.isPublishedReleaseNewer(
+            173, 2, 1792020000L,
+            173, 1, 1792019000L
+        ));
+    }
+
+    @Test
     public void trustedDigestRequiresSha256AndFullHex() {
         assertTrue(
             UpdateChecker.isValidSha256Digest(
