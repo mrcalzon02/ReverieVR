@@ -2,6 +2,36 @@
 
 **Status:** Source-implemented; Galaxy S9 + Daydream controller acceptance pending. These original games use the native ABI v1 module host and the common `classic_games_module.cpp` renderer, compiled separately for Pong, Snake, and Chutes and Ladders. This is game-private implementation documentation; the platform contract remains `docs/native/README.md`.
 
+## Breakout (2026-10-15 source addition)
+
+Original arcade **Classic Breakout** is a seventh built-in native module
+(`classic-breakout`) in the existing **Native Games** shelf. It uses the same
+ABI v1 loader and colored-triangle GLES2 renderer as the six shipped classics;
+there is no external ROM, game executable, art download, music dependency or
+separate Android application. Static court and title geometry are uploaded
+once per GL context, while only the paddle, ball, remaining bricks, score,
+lives and status are rebuilt on visible state changes.
+
+- 10 columns × 5 rows (50 unique bricks), 10 points per brick, three lives;
+  hitting all bricks wins, losing the third ball ends the match.
+- Press Select/touchpad click to serve, and press after win or loss to
+  reset. Sideways Daydream touchpad movement, compatible external axis, or
+  tracked-controller pointer moves the paddle. O/Home remains a shell action.
+- Native CPU-only `classic_breakout.h` implements bounded fixed 10 ms
+  physics steps, wall/brick/paddle contact, one-brick-per-tick collision,
+  scored removal, ball-loss/serve recovery, and explicit win/loss states.
+- `classic_games_test.cpp` exercises determinism across split frame
+  updates, unstarted ball anchoring, paddle clamping/nonfinite protection,
+  walls, single-brick scoring, bounce, lives, final-brick victory and restart.
+- Native module: `reverie_module_classic_breakout`, built through the
+  existing `Android.mk` profile (`CLASSIC_GAME_KIND=6`), admitted only
+  through the host's packaged C++ allowlist. No native ABI version change.
+
+Source admission and signed APK verification are separate from real S9/Daydream
+performance, binocular presentation, scroll selection, paddle sensitivity,
+small text legibility, sustained battery, and end-to-end game feel. The
+existing six classic games retain their previous modes and controls.
+
 ## Checkers, Go 9x9 and Chess (2026-10-11 source)
 
 Three more packaged native ABI-v1 modules are registered as `classic-checkers`,
@@ -32,7 +62,7 @@ independent gates.
 
 ## Shared compact geometry and idle frame savings (2026-10-14)
 
-All six classics now use `reverie_native_flat_mesh.h` for unchanged shapes, shared with the two recon-board modules. Pong rebuilds on visible paddle/ball/status changes; Snake on head/food/score/status; Chutes and Ladders on token, turn and finish changes. Simulation remains independent of both stereo eye renders. Inactive frames no longer regenerate all 144 Snake grid cells or 100 Chutes cells and re-upload the VBO. Geometry parameters, gameplay, shell controls and ABI v1 remain unchanged. Host geometry assertions are added to `classic_games_test.cpp`; S9 compilation/runtime remains to be verified.
+The original six classics now use `reverie_native_flat_mesh.h` for unchanged shapes, shared with the two recon-board modules. Pong rebuilds on visible paddle/ball/status changes; Snake on head/food/score/status; Chutes and Ladders on token, turn and finish changes. Simulation remains independent of both stereo eye renders. Inactive frames no longer regenerate all 144 Snake grid cells or 100 Chutes cells and re-upload the VBO. Geometry parameters, gameplay, shell controls and ABI v1 remain unchanged. Host geometry assertions are added to `classic_games_test.cpp`; S9 compilation/runtime remains to be verified.
 
 ## Static GPU scene / dynamic GPU scene (2026-10-14 implementation)
 

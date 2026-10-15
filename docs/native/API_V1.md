@@ -297,6 +297,17 @@ Before adding a host service, prove that at least one real module needs it and t
 
 Likely future candidates include shell-owned audio submission, haptic requests where hardware supports them, comfort/profile queries, richer action state, and shared generated-asset helpers. These are candidates only; they are not part of ABI v1 until implemented in the authoritative header and host.
 
+## Classic Breakout game module (2026-10-15)
+
+The `classic-breakout` native module uses the *unchanged* ABI v1 API and
+the same allowlisted, packaged-library mechanism as the six original
+classics. Its C++ gameplay state is isolated in `classic_breakout.h`; the
+existing `classic_games_module.cpp` implements the colored-mesh rendering
+and action handling under `CLASSIC_GAME_KIND=6`. The existing native games
+shelf discovers it from the allowlist, rather than a separately installed
+archive. Native rules tests, signed APK asset/exports check and Daydream
+headset testing remain independent acceptance steps.
+
 ## Classic board games (2026-10-11)
 
 The allowlisted ABI-v1 host now recognizes `classic-checkers`,

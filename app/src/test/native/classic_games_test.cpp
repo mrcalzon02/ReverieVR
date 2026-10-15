@@ -1,4 +1,5 @@
 #include "classic_games.h"
+#include "classic_breakout.h"
 #include "classic_board_games.h"
 #include "reverie_native_flat_mesh.h"
 #include <cassert>
@@ -143,8 +144,78 @@ static void TestBoardGames() {
     std::cout<<"Checkers, Go 9x9 and Chess deterministic rules/CPU passed\\n";
 }
 
+static void TestBreakout() {
+    using reverie::classics::Breakout;
+    Breakout game;
+    game.Reset();
+    assert(game.lives==3&&game.score==0&&game.remaining==50);
+    assert(!game.moving&&!game.finished);
+    game.SetPaddle(.5f);
+    game.Step(.05f,0.f);
+    assert(game.ballX==game.paddle&&!game.moving);
+    game.Press();
+    assert(game.moving);
+    Breakout split=game;
+    game.Step(.05f,.45f);
+    split.Step(.025f,.45f);
+    split.Step(.025f,.45f);
+    assert(std::fabs(game.ballX-split.ballX)<.0001f);
+    assert(std::fabs(game.ballY-split.ballY)<.0001f);
+    assert(game.score==split.score&&game.remaining==split.remaining);
+    assert(game.paddle>0.f);
+    const float oldPaddle=game.paddle;
+    game.SetPaddle(INFINITY);
+    assert(game.paddle==oldPaddle);
+    game.SetPaddle(-999.f);
+    assert(game.paddle>=-.77f&&game.paddle<=.77f);
+
+    // One wall bounce must keep the ball inside its court.
+    game.ballX=.94f;game.ballY=-.2f;game.velocityX=.5f;
+    game.velocityY=.7f;
+    game.Tick();
+    assert(game.ballX<=.94f&&game.velocityX<0.f);
+    // A real brick collision changes exactly one tile and awards points.
+    game.Reset();game.Press();
+    game.ballX=Breakout::BrickX(0);
+    game.ballY=Breakout::BrickY(0)-.080f;
+    game.velocityY=.7f;
+    game.Tick();
+    assert(game.bricks[0]==0&&game.remaining==49&&game.score==10);
+    assert(game.velocityY<0.f);
+    // Paddle contact reverses descent and permits directional deflection.
+    game.ballX=game.paddle+.1f;
+    game.ballY=-.75f;game.velocityY=-.7f;
+    game.Tick();
+    assert(game.velocityY>0.f&&game.lives==3);
+
+    // Falling below the bottom consumes exactly one life, then requires
+    // an explicit new serve; a finished match restarts with a press.
+    game.ballY=-.986f;game.ballX=.5f;
+    game.velocityY=-.7f;
+    game.Tick();
+    assert(game.lives==2&&!game.moving&&!game.finished);
+    game.Press();assert(game.moving);
+    game.lives=1;game.ballY=-.986f;game.velocityY=-.7f;
+    game.Tick();
+    assert(game.lives==0&&game.finished&&!game.won);
+    game.Press();assert(game.lives==3&&!game.finished&&!game.moving);
+
+    // Clearing the final remaining brick wins without a paid input.
+    game.Press();game.bricks.fill(0);game.bricks[9]=1;
+    game.remaining=1;
+    game.ballX=Breakout::BrickX(9);
+    game.ballY=Breakout::BrickY(0)-.080f;
+    game.velocityY=.7f;
+    game.Tick();
+    assert(game.remaining==0&&game.score==10);
+    assert(game.finished&&game.won&&!game.moving);
+    game.Press();assert(game.remaining==50&&!game.finished);
+    std::cout<<"Classic Breakout physics, scoring and lives passed\\n";
+}
+
 int main() {
     TestFlatGeometry();
+    TestBreakout();
     State a,b;
     a.Reset(Game::Pong);b.Reset(Game::Pong);
     assert(!a.moving && !a.finished);

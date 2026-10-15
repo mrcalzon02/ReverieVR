@@ -1,4 +1,5 @@
 #include "classic_games.h"
+#include "classic_breakout.h"
 #include "classic_board_games.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
@@ -36,6 +37,9 @@ constexpr char kTitle[]="GO 9X9";
 #elif CLASSIC_GAME_KIND == 5
 constexpr char kId[]="classic-chess";
 constexpr char kTitle[]="CHESS";
+#elif CLASSIC_GAME_KIND == 6
+constexpr char kId[]="classic-breakout";
+constexpr char kTitle[]="BREAKOUT";
 #else
 #error "Unknown classic game"
 #endif
@@ -43,6 +47,9 @@ struct Module {
     const ReverieNativeHostV1 *host=nullptr;
     State game;
     reverie::boardgames::State board;
+#if CLASSIC_GAME_KIND == 6
+    Breakout breakout;
+#endif
     int boardCursorX=0,boardCursorY=0;
     bool boardCursorActive=false;
     float cursorRepeat=0.f;
@@ -226,6 +233,43 @@ void RebuildBoard(Module *m,bool fixed){
     else {m->dirty=false;m->upload=true;}
 }
 void Rebuild(Module *m,bool fixed){
+#if CLASSIC_GAME_KIND == 6
+    m->staticPass=fixed;
+    if(fixed)m->staticVertices.clear();
+    else m->vertices.clear();
+    const Breakout &s=m->breakout;
+    if(fixed){
+        Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
+        Text(m,kTitle,0,1.57f,.092f,.78f,.94f,.96f);
+        Rect(m,0,0,2.07f,2.03f,-3.04f,.08f,.13f,.20f);
+        // Court edges and rules are static; bricks and ball are dynamic.
+        Rect(m,-1.015f,0,.025f,2.03f,-3.01f,.28f,.45f,.49f);
+        Rect(m,1.015f,0,.025f,2.03f,-3.01f,.28f,.45f,.49f);
+        Text(m,"MOVE PAD SELECT SERVE",0,-1.50f,.042f,.75f,.90f,.83f);
+    }else{
+        for(int i=0;i<Breakout::kBricks;i++)if(s.bricks[i]){
+            const int row=i/Breakout::kColumns;
+            const float shade=row*.095f;
+            Rect(m,Breakout::BrickX(i%Breakout::kColumns),
+                 Breakout::BrickY(row),.18f,.112f,-2.97f,
+                 .85f-shade,.62f+shade*.48f,.37f+shade);
+        }
+        Rect(m,s.paddle,-.82f,.40f,.060f,-2.95f,
+             .28f,.91f,.73f);
+        Disc(m,s.ballX,s.ballY,.049f,-2.92f,.95f,.96f,.77f);
+        char status[48];
+        std::snprintf(status,sizeof(status),"SCORE %d LIVES %d",
+                      s.score,s.lives);
+        Text(m,status,0,1.35f,.055f,.90f,.95f,.81f);
+        Text(m,s.finished
+             ? (s.won?"YOU WIN PRESS":"GAME OVER PRESS")
+             : (s.moving?"CLEAR ALL BRICKS":"PRESS TO SERVE"),
+             0,-1.37f,.043f,.90f,.89f,.74f);
+    }
+    if(fixed)m->staticCount=static_cast<GLsizei>(
+        m->staticVertices.size()/6);
+    else {m->dirty=false;m->upload=true;}
+#else
 #if CLASSIC_GAME_KIND >= 3
     RebuildBoard(m,fixed);
     return;
@@ -321,6 +365,7 @@ void Rebuild(Module *m,bool fixed){
     }
     if(fixed)m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
     else {m->dirty=false;m->upload=true;}
+#endif // CLASSIC_GAME_KIND == 6
 }
 void DestroyGl(Module *m){
     if(m->vbo)glDeleteBuffers(1,&m->vbo);
@@ -334,8 +379,10 @@ void *Create(const ReverieNativeHostV1 *host){
     Module *m=new(std::nothrow) Module();
     if(m){
         m->host=host;
-#if CLASSIC_GAME_KIND >= 3
+#if CLASSIC_GAME_KIND >= 3 && CLASSIC_GAME_KIND <= 5
         m->board.Reset(static_cast<reverie::boardgames::Kind>(CLASSIC_GAME_KIND));
+#elif CLASSIC_GAME_KIND == 6
+        m->breakout.Reset();
 #else
         m->game.Reset(static_cast<Game>(CLASSIC_GAME_KIND));
 #endif
@@ -421,6 +468,22 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         }
     }
 
+#if CLASSIC_GAME_KIND == 6
+    Breakout &game=m->breakout;
+    const float oldPaddle=game.paddle,oldBallX=game.ballX;
+    const float oldBallY=game.ballY;
+    const int oldLives=game.lives,oldScore=game.score;
+    const bool oldMoving=game.moving,oldFinished=game.finished;
+    if(aim&&!game.finished)
+        game.SetPaddle(hx/1.08f);
+    if(edge)game.Press();
+    game.Step(copy.delta_seconds,aim?0.f:copy.move_x);
+    if(game.paddle!=oldPaddle||game.ballX!=oldBallX||
+       game.ballY!=oldBallY||game.lives!=oldLives||
+       game.score!=oldScore||game.moving!=oldMoving||
+       game.finished!=oldFinished)m->dirty=true;
+    return;
+#else
 #if CLASSIC_GAME_KIND >= 3
     const int prevPly=m->board.ply,prevSelected=m->board.selected;
     const int prevWinner=m->board.winner,prevSide=m->board.side;
@@ -511,6 +574,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         visible|=now.position!=oldPosition||now.rival!=oldRival||
             now.player_turn!=oldTurn;
     if(visible)m->dirty=true;
+#endif // CLASSIC_GAME_KIND == 6
 }
 int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
     Module *m=static_cast<Module *>(ptr);
