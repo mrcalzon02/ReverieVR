@@ -37,6 +37,22 @@ public final class NativeCombatWaveformTest {
         assertTrue(!java.util.Arrays.equals(artillery, air));
     }
 
+    @Test
+    public void rapidGunfireUsesTwoReusableVoices() {
+        assertEquals(2, NativeCombatWaveform.voiceCount(NativeCombatWaveform.FIRE));
+        for (int cue = 1; cue < NativeCombatWaveform.COUNT; cue++)
+            assertEquals(1, NativeCombatWaveform.voiceCount(cue));
+        // The maximum fire-rate upgrade reduces 300ms to 160ms. A single
+        // 180ms report would be cut short; two voices can alternate safely.
+        assertTrue(NativeCombatWaveform.durationMillis(NativeCombatWaveform.FIRE) > 160);
+        assertTrue(NativeCombatWaveform.durationMillis(NativeCombatWaveform.FIRE) <= 320);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidVoiceCueRejected() {
+        NativeCombatWaveform.voiceCount(NativeCombatWaveform.COUNT);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void invalidCueRejected() {
         NativeCombatWaveform.generatePcm16(7);

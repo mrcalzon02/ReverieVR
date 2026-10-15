@@ -8,6 +8,13 @@ final class NativeCombatWaveform {
 
     private NativeCombatWaveform() {}
 
+    // Two overlapping reports are enough for the upgraded 160ms gun cycle;
+    // all other cues retain one preloaded static voice.
+    static int voiceCount(int cue) {
+        if (cue < 0 || cue >= COUNT) throw new IllegalArgumentException("Unknown cue");
+        return cue == FIRE ? 2 : 1;
+    }
+
     static int durationMillis(int cue) {
         if (cue == FIRE) return 180;
         if (cue == RELOAD) return 230;
