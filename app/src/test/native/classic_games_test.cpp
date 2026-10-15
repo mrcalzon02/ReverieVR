@@ -170,6 +170,67 @@ static void TestBoardGames() {
     assert(mate.Select(-1)); // restart from a completed game
     assert(!mate.finished&&mate.cells[60]==6);
 
+    // Native chess: underpromotion, dead positions, claimable and
+    // automatic FIDE draw rules. Repetition identity retains castling.
+    Boards promotion;
+    promotion.Reset(BoardKind::Chess);
+    promotion.cells.fill(0);
+    promotion.cells[60]=6;promotion.cells[4]=-6;promotion.cells[8]=1;
+    promotion.castles=0;
+    promotion.selected=8;
+    promotion.CyclePromotion(); // rook
+    promotion.CyclePromotion(); // bishop
+    promotion.CyclePromotion(); // knight
+    assert(promotion.promotionChoice==2);
+    assert(promotion.ChessMove(8,0));
+    assert(promotion.cells[0]==2 && promotion.promotionChoice==5);
+    assert(promotion.finished&&promotion.winner==0); // K+N vs K
+
+    Boards claim;
+    claim.Reset(BoardKind::Chess);
+    assert(!claim.ChessDrawClaimable());
+    claim.halfMoves=100;
+    assert(claim.ChessDrawClaimable());
+    assert(claim.ClaimChessDraw()&&claim.finished&&claim.winner==0);
+    claim.Reset(BoardKind::Chess);
+    auto current=claim.CurrentChessPosition();
+    claim.chessHistory[current]=3;
+    assert(claim.ChessRepetitions()==3);
+    assert(claim.ClaimChessDraw());
+
+    Boards seventyFive;
+    seventyFive.Reset(BoardKind::Chess);
+    seventyFive.cells.fill(0);
+    seventyFive.cells[60]=6;seventyFive.cells[4]=-6;
+    seventyFive.cells[56]=4;seventyFive.cells[7]=-4;
+    seventyFive.castles=0;seventyFive.halfMoves=149;
+    assert(seventyFive.ChessMove(56,48));
+    assert(seventyFive.halfMoves==150);
+    assert(seventyFive.finished&&seventyFive.winner==0);
+
+    Boards fivefold;
+    fivefold.Reset(BoardKind::Chess);
+    fivefold.cells.fill(0);
+    fivefold.cells[60]=6;fivefold.cells[4]=-6;
+    fivefold.cells[56]=4;fivefold.cells[7]=-4;
+    fivefold.castles=0;
+    auto resultPos=fivefold.CurrentChessPosition();
+    resultPos.pieces[56]=0;resultPos.pieces[48]=4;
+    resultPos.side=-1;resultPos.castles=0;resultPos.enPassant=-1;
+    fivefold.chessHistory[resultPos]=4;
+    assert(fivefold.ChessMove(56,48));
+    assert(fivefold.finished&&fivefold.winner==0);
+    assert(fivefold.ChessRepetitions()==5);
+
+    Boards dead;
+    dead.Reset(BoardKind::Chess);
+    dead.cells.fill(0);dead.cells[60]=6;dead.cells[4]=-6;
+    assert(dead.ChessDeadPosition());
+    dead.cells[58]=3;
+    assert(dead.ChessDeadPosition()); // lone bishop is insufficient
+    dead.cells[56]=4;
+    assert(!dead.ChessDeadPosition()); // a rook can still mate
+
     Boards cpuChess;
     cpuChess.Reset(BoardKind::Chess);
     assert(cpuChess.ChessMove(52,36));

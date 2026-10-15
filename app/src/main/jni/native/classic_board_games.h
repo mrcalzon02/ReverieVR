@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace reverie { namespace boardgames {
 
@@ -23,6 +24,30 @@ struct State {
             return static_cast<size_t>(hash);
         }
     };
+    // Position identity includes side, castling and only effective
+    // en-passant rights (FIDE Article 9.2).
+    struct ChessPosition {
+        std::array<int8_t,64> pieces{};
+        int8_t side=1,castles=0,enPassant=-1;
+        bool operator==(const ChessPosition &other) const noexcept {
+            return pieces==other.pieces&&side==other.side&&
+                castles==other.castles&&enPassant==other.enPassant;
+        }
+    };
+    struct ChessHash {
+        size_t operator()(const ChessPosition &p) const noexcept {
+            uint64_t hash=1469598103934665603ull;
+            for(int8_t cell:p.pieces) {
+                hash^=static_cast<uint8_t>(cell+8);hash*=1099511628211ull;
+            }
+            hash^=static_cast<uint8_t>(p.side+1);hash*=1099511628211ull;
+            hash^=static_cast<uint8_t>(p.castles);hash*=1099511628211ull;
+            hash^=static_cast<uint8_t>(p.enPassant+1);
+            return static_cast<size_t>(hash);
+        }
+    };
+    std::unordered_map<ChessPosition,int,ChessHash> chessHistory;
+    int halfMoves=0,promotionChoice=5;
     Kind kind=Kind::Checkers;
     Board cells{};
     std::unordered_set<Board,GoBoardHash> goHistory;
@@ -37,7 +62,8 @@ struct State {
     uint32_t Random(){seed^=seed<<13;seed^=seed>>17;seed^=seed<<5;return seed;}
     static int Sign(int n){return n>0?1:(n<0?-1:0);}
     void Reset(Kind type) {
-        kind=type;cells.fill(0);goHistory.clear();side=1;winner=0;
+        kind=type;cells.fill(0);goHistory.clear();chessHistory.clear();
+        halfMoves=0;promotionChoice=5;side=1;winner=0;
         selected=forced=-1;ply=passes=0;enPassant=-1;castles=15;
         lastFrom=lastTo=-1;clock=0;finished=false;
         if(type==Kind::Checkers){
@@ -51,6 +77,7 @@ struct State {
                 cells[Index(x,0)]=-back[x];cells[Index(x,1)]=-1;
                 cells[Index(x,6)]=1;cells[Index(x,7)]=back[x];
             }
+            chessHistory.emplace(CurrentChessPosition(),1);
         } else if(type==Kind::Go) {
             goHistory.insert(cells);
         }
@@ -258,9 +285,64 @@ struct State {
         for(int i=0;i<64;i++)if(b[i]==player*6){king=i;break;}
         return king<0 || Attacked(b,king,-player);
     }
+    ChessPosition CurrentChessPosition() const {
+        ChessPosition p;
+        std::copy_n(cells.begin(),64,p.pieces.begin());
+        p.side=static_cast<int8_t>(side);
+        p.castles=static_cast<int8_t>(castles);
+        // En-passant counts for repetition only if it is a legal option.
+        if(enPassant>=0&&enPassant<64)for(int dx : {-1,1}){
+            const int from=enPassant+side*8+dx;
+            if(from>=0&&from<64&&cells[from]==side &&
+               std::abs(from%8-enPassant%8)==1&&ChessLegal(from,enPassant)){
+                p.enPassant=static_cast<int8_t>(enPassant);break;
+            }
+        }
+        return p;
+    }
+    int ChessRepetitions() const {
+        auto it=chessHistory.find(CurrentChessPosition());
+        return it==chessHistory.end()?0:it->second;
+    }
+    bool ChessDrawClaimable() const {
+        return kind==Kind::Chess&&!finished&&side==1&&
+            (halfMoves>=100||ChessRepetitions()>=3);
+    }
+    bool ClaimChessDraw() {
+        if(!ChessDrawClaimable())return false;
+        finished=true;winner=0;return true;
+    }
+    void CyclePromotion(){
+        if(kind!=Kind::Chess||finished||side!=1||
+           selected<0||selected>=64||cells[selected]!=1||
+           selected/8!=1)return;
+        promotionChoice=promotionChoice==5?4:
+            promotionChoice==4?3:promotionChoice==3?2:5;
+    }
+    bool ChessDeadPosition() const {
+        // Safe FIDE dead-position cases. Don't declare draws where mating
+        // sequences are still possible (e.g., K+2N vs K).
+        int minors=0,bishops=0,knights=0,bishopColor=-1;
+        for(int i=0;i<64;i++){
+            const int p=std::abs(cells[i]);
+            if(p==0||p==6)continue;
+            if(p==1||p==4||p==5)return false;
+            ++minors;
+            if(p==2)++knights;
+            if(p==3) {
+                ++bishops;
+                const int color=(i/8+i%8)%2;
+                if(bishopColor<0)bishopColor=color;
+                else if(bishopColor!=color)bishopColor=2;
+            }
+        }
+        if(minors<=1)return true;
+        return knights==0&&bishops==minors&&bishopColor<2;
+    }
     // Only invoked on a pseudo-legal move; assumes indexes and ownership.
     void ApplyChess(Board& b,int from,int to,
-                    int& newEnPassant,int& newCastles) const {
+                    int& newEnPassant,int& newCastles,
+                    int promotion=5) const {
         const int piece=b[from],target=b[to],player=Sign(piece);
         const int fx=from%8,tx=to%8;
         if(std::abs(piece)==1&&to==enPassant&&target==0&&fx!=tx)
@@ -273,7 +355,9 @@ struct State {
         b[to]=b[from];b[from]=0;newEnPassant=-1;
         if(std::abs(piece)==1){
             if(std::abs(to/8-from/8)==2)newEnPassant=(from+to)/2;
-            if(to/8==(player==1?0:7))b[to]=static_cast<int8_t>(player*5);
+            if(to/8==(player==1?0:7))b[to]=static_cast<int8_t>(
+                player*(promotion==2||promotion==3||promotion==4
+                    ?promotion:5));
         }
         if(std::abs(piece)==6)newCastles &= player==1?~3:~12;
         if(from==63||to==63)newCastles&=~1;
@@ -341,11 +425,21 @@ struct State {
     }
     bool ChessMove(int from,int to) {
         if(kind!=Kind::Chess||finished||!ChessLegal(from,to))return false;
-        ApplyChess(cells,from,to,enPassant,castles);
+        const int piece=cells[from],taken=cells[to];
+        const bool enPassantCapture=std::abs(piece)==1&&
+            to==enPassant&&taken==0&&from%8!=to%8;
+        halfMoves=(std::abs(piece)==1||taken!=0||enPassantCapture)
+            ?0:halfMoves+1;
+        ApplyChess(cells,from,to,enPassant,castles,
+                   side==1?promotionChoice:5);
+        promotionChoice=5;
         selected=-1;lastFrom=from;lastTo=to;side=-side;++ply;
+        const int repeats=++chessHistory[CurrentChessPosition()];
+        // Mate takes precedence over the 75-move automatic draw.
         if(!HasChessMove()){
-            finished=true;
-            winner=KingInCheck(cells,side)?-side:0;
+            finished=true;winner=KingInCheck(cells,side)?-side:0;
+        }else if(ChessDeadPosition()||halfMoves>=150||repeats>=5){
+            finished=true;winner=0;
         }
         return true;
     }

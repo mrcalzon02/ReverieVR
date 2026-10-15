@@ -317,6 +317,18 @@ shell/game authority boundaries changed. Standard chess/checkers retain
 8×8 geometry. Dead-stone settlement and strong Go search are not yet
 implemented; see `docs/project/CLASSIC_NATIVE_GAMES.md`.
 
+## Chess native game rules and controller extension (2026-10-15)
+
+The classic Chess engine now supports alternate promotion pieces, dead
+position detection, exact repetition history, 50-move and threefold
+claimability, plus automatic 75-move/fivefold termination using FIDE's
+2023 Laws of Chess Article 9. Source-level claims are scoped to these
+rules; the one-ply AI is not presented as competitive. The existing
+secondary native-game input cycles promotion after selecting a
+seventh-rank pawn; the existing primary pointer action on the
+conditional on-board CLAIM DRAW target adjudicates a legitimate
+claim. No ABI, host input binding or shell quick-menu control changed.
+
 ## Classic board games (2026-10-11)
 
 The allowlisted ABI-v1 host now recognizes `classic-checkers`,

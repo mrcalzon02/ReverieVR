@@ -228,6 +228,21 @@ void RebuildBoard(Module *m,bool fixed){
              0,1.34f,.064f,.95f,.95f,.78f);
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
             Text(m,"CONTINUE JUMP",1.88f,.63f,.044f,1.f,.90f,.56f);
+        if(s.kind==reverie::boardgames::Kind::Chess&&s.side==1){
+            if(s.selected>=0&&s.selected<64&&
+               s.cells[s.selected]==1&&s.selected/8==1){
+                const char *promo=s.promotionChoice==4?"PROMO ROOK":
+                    s.promotionChoice==3?"PROMO BISHOP":
+                    s.promotionChoice==2?"PROMO KNIGHT":"PROMO QUEEN";
+                Text(m,promo,1.88f,.66f,.036f,.91f,.92f,.75f);
+            }
+            if(s.ChessDrawClaimable()){
+                Rect(m,1.94f,-1.25f,.96f,.39f,-2.98f,
+                     .23f,.36f,.42f);
+                Text(m,"CLAIM DRAW",1.94f,-1.25f,.042f,
+                     1.f,1.f,.89f);
+            }
+        }
     }
     if(fixed)m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
     else {m->dirty=false;m->upload=true;}
@@ -506,9 +521,14 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             m->dirty=true;
         }
     }else m->cursorRepeat=.17f;
-    if(secondaryEdge && m->board.side==1 &&
-       m->board.kind==reverie::boardgames::Kind::Go)
-        m->board.Pass();
+    if(secondaryEdge && m->board.side==1){
+        if(m->board.kind==reverie::boardgames::Kind::Go)
+            m->board.Pass();
+        else if(m->board.kind==reverie::boardgames::Kind::Chess){
+            m->board.CyclePromotion();
+            m->dirty=true;
+        }
+    }
     if(edge){
         if(m->board.finished) {
             m->board.Reset(m->board.kind);
@@ -518,6 +538,11 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             if(aim && m->board.kind==reverie::boardgames::Kind::Go &&
                hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
                 m->board.Pass();
+            else if(aim &&
+                    m->board.kind==reverie::boardgames::Kind::Chess &&
+                    m->board.ChessDrawClaimable() &&
+                    hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
+                m->board.ClaimChessDraw();
             else {
                 int x=m->boardCursorX,y=m->boardCursorY;
                 if(aim){

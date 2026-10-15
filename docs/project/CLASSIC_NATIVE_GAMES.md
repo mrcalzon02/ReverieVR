@@ -56,10 +56,19 @@ were expanded, with tests for distant-corner placement and edge captures.
 - **Checkers:** American/English 8×8, forced captures, multiple jumps,
   crowning, deterministic greedy CPU. Draw by repetition/40-move rule and
   voluntary resign are not yet implemented.
-- **Chess:** standard 8×8, king-safe moves, castling, en passant, auto-queen
-  promotions, checkmate and stalemate, deterministic one-ply CPU. Threefold/
-  fivefold repetition, 50/75-move draw adjudication and underpromotion are
-  not yet included. No claim of strong/competitive chess AI.
+- **Chess:** standard 8×8, king-safe moves, castling and en passant,
+  four promotion pieces (queen, rook, bishop, knight), checkmate and
+  stalemate. FIDE drawn-game handling now tracks exact positions with
+  side-to-move, castling rights and effective en-passant; an on-board
+  claim-draw action becomes available after threefold repetition or 50 full
+  moves without capture/pawn progress. Fivefold and 75-move termination
+  are automatic, with mate taking precedence. Detects unequivocal dead
+  material states (lone kings, solitary minor piece, same-color bishops).
+  Select a pawn on the seventh rank and use native Secondary to cycle
+  the promotion choice before placing it; ordinary moves still queen
+  by default. The CPU remains deterministic one-ply and does not yet
+  claim draws itself, offer agreed draws, or support tournament clocks.
+  The native GUI needs Galaxy S9 acceptance for claim/promotion controls.
 
 For all three, choose a piece and a destination (or place in Go).
 Rules and CPU advance only once per native Update, never separately in

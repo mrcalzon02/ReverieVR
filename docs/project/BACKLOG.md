@@ -96,8 +96,12 @@
   allocation source implemented. Complete negotiated dead-stone/scoring
   phase, seki adjudication, ruleset options and stronger bounded AI. Accept
   CPU strength, spatial accuracy and small-stone readability on S9.
-- **Chess:** Draw rules (50/75 moves, repetition, insufficient material),
-  underpromotion selection, time controls and deeper search AI pending.
+- **Chess:** Source now supports claimable threefold/50-move draws,
+  automatic fivefold/75-move draws, a safe subset of dead-material draws,
+  and selectable queen/rook/bishop/knight promotions; native test, signed
+  APK and S9 controls acceptance remain required. Remaining: stronger AI,
+  tournament clock options, draw offers/resignation UI and exhaustive
+  dead-position adjudication.
 - **Checkers:** Ruleset draw limits/repetition and CPU lookahead pending.
 - **Pong / Breakout:** Source corrected: Pong has left/right vertical
   paddles, wall bounce, first to 11 and bounded CPU play; Breakout has two
