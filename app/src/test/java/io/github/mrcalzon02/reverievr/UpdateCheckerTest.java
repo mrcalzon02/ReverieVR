@@ -114,31 +114,6 @@ public final class UpdateCheckerTest {
     }
 
     @Test
-    public void phoneTestTagMapsToRerunSafeVersionCode() {
-        org.junit.Assert.assertEquals(
-            32001,
-            UpdateChecker.versionCodeForPhoneTest(
-                32,
-                1
-            )
-        );
-        org.junit.Assert.assertEquals(
-            32002,
-            UpdateChecker.versionCodeForPhoneTest(
-                32,
-                2
-            )
-        );
-        org.junit.Assert.assertEquals(
-            0,
-            UpdateChecker.versionCodeForPhoneTest(
-                0,
-                1
-            )
-        );
-    }
-
-    @Test
     public void headsetAssetRejectsControllerCompanion() {
         assertTrue(
             UpdateChecker.isHeadsetApkAssetName(

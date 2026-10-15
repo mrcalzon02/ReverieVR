@@ -1,3 +1,7 @@
+## 2026-10-15 — Phone-test updater versionCode mismatch (source repair)
+
+Confirmed against published `phone-test-248-1`: release notes declare signed APK Android versionCode 214260770, whereas the installed verifier derived 248001 from the run/attempt tag. Replaced the stale run-number equality check with strict single-value Android versionCode extraction from the GitHub release's existing published notes; retain SHA-256, package-name, signer and newer-version checks. Removed obsolete versionCode derivation and added positive/negative source regression tests. Existing installed packages with the old check need a one-time in-place manual APK installation from the authoritative GitHub release; uninstall is not required. A signed APK release is requested using the established phone-test trigger; CI and physical-device update validation remain pending until observed.
+
 ## 2026-10-15 — Breakwater nearby-cover relocation and synchronous destruction orders (source)
 
 Extended the existing landing-party AI rather than adding another

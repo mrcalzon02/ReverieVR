@@ -75,11 +75,13 @@ After the first stable-signed build is installed:
    - GitHub SHA-256 asset digest;
    - exact ReverieVR package ID;
    - strictly newer Android versionCode;
-   - versionCode matching the `phone-test-<run>-<attempt>` tag;
+   - exact Android versionCode declared in the GitHub release notes (the phone-test tag identifies a workflow run, not a versionCode);
    - downloaded APK certificate matching the permanent distribution signer;
    - installed ReverieVR certificate matching the same signer;
 6. Android performs the in-place package replacement;
 7. verify selected environment, settings, imported-module metadata, and other app data remain present.
+
+**Recovery from the earlier updater mismatch:** Existing installed builds still compare `versionCode` to `run * 1000 + attempt` and will reject newer timestamp-numbered APKs before installation. For this one transition, download the **headset** APK directly from an authoritative GitHub Release using Android's browser/files UI and install it over the existing app; do not uninstall or clear app data. Android enforces signer/version continuity. Once this corrected build is installed, subsequent in-app updates use the published release's explicit Android versionCode. If Android declines the install, inspect the actual package/signing/version rejection instead of uninstalling blindly.
 
 ## CI invariants
 
@@ -87,7 +89,7 @@ Published phone-test APKs now:
 
 - use the non-debuggable `phoneTest` build type;
 - require all four persistent-signing secrets;
-- use Android versionCode `GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT`;
+- use Android versionCode `build UTC epoch seconds - 1577836800` (seconds since 2020-01-01), shared across headset and controller;
 - derive the signing certificate SHA-256 before building;
 - compile that public fingerprint into the update verifier;
 - verify the final APK signer equals that fingerprint;

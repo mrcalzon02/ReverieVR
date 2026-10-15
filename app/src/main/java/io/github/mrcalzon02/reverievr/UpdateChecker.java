@@ -515,23 +515,6 @@ final class UpdateChecker implements AutoCloseable {
                 .matches();
     }
 
-    static int versionCodeForPhoneTest(
-        int run,
-        int attempt
-    ) {
-        if (run <= 0 || attempt <= 0) {
-            return 0;
-        }
-
-        long value =
-            (long) run * 1000L
-                + attempt;
-        if (value > Integer.MAX_VALUE) {
-            return 0;
-        }
-        return (int) value;
-    }
-
     private static String readAll(InputStream stream)
         throws IOException {
         StringBuilder builder =

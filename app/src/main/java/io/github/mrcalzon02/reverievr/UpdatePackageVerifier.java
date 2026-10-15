@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.security.MessageDigest;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 final class UpdatePackageVerifier {
     static final class Result {
@@ -43,6 +45,36 @@ final class UpdatePackageVerifier {
     }
 
     private UpdatePackageVerifier() {}
+
+    // GitHub's phone-test tag is a workflow run identifier, not the
+    // timestamp-based Android versionCode recorded in release notes.
+    private static final Pattern DECLARED_ANDROID_VERSION_CODE =
+        Pattern.compile("(?m)^Android versionCode: ([0-9]{1,10})\\r?$");
+
+    static long declaredPhoneTestVersionCode(String releaseNotes) {
+        if (releaseNotes == null) {
+            return -1L;
+        }
+
+        Matcher matcher =
+            DECLARED_ANDROID_VERSION_CODE.matcher(releaseNotes);
+        long declared = -1L;
+        while (matcher.find()) {
+            if (declared > 0L) {
+                // Ambiguous release metadata must not authorize installs.
+                return -1L;
+            }
+            try {
+                declared = Long.parseLong(matcher.group(1));
+            } catch (NumberFormatException exception) {
+                return -1L;
+            }
+            if (declared <= 0L || declared > 2_100_000_000L) {
+                return -1L;
+            }
+        }
+        return declared;
+    }
 
     static Result verify(
         Activity activity,
@@ -150,16 +182,14 @@ final class UpdatePackageVerifier {
             );
         }
 
-        int expectedVersionCode =
-            UpdateChecker.versionCodeForPhoneTest(
-                release.phoneTestRun,
-                release.phoneTestAttempt
-            );
-        if (expectedVersionCode <= 0
-            || candidateVersionCode
-                != expectedVersionCode) {
+        long expectedVersionCode =
+            release.phoneTestRun > 0
+                ? declaredPhoneTestVersionCode(release.notes)
+                : -1L;
+        if (expectedVersionCode <= 0L
+            || candidateVersionCode != expectedVersionCode) {
             return Result.fail(
-                "Downloaded APK versionCode does not match its GitHub phone-test tag."
+                "Downloaded APK versionCode does not match the Android versionCode declared in its GitHub release."
             );
         }
 

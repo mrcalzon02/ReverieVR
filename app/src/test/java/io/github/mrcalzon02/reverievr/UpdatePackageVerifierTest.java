@@ -7,6 +7,63 @@ import org.junit.Test;
 
 public final class UpdatePackageVerifierTest {
     @Test
+    public void releaseNotesDeclareTimestampVersionIndependentOfRunTag() {
+        // The real Phone Test #248 uses run 248, attempt 1,
+        // and timestamp-based Android versionCode 214260770.
+        assertEquals(
+            214260770L,
+            UpdatePackageVerifier.declaredPhoneTestVersionCode(
+                "Run: 248 attempt 1\nAndroid versionCode: 214260770\n"
+            )
+        );
+        assertEquals(
+            214260770L,
+            UpdatePackageVerifier.declaredPhoneTestVersionCode(
+                "Android versionCode: 214260770\r\n"
+            )
+        );
+    }
+
+    @Test
+    public void absentMalformedOrRepeatedVersionMetadataIsRejected() {
+        assertEquals(
+            -1L,
+            UpdatePackageVerifier.declaredPhoneTestVersionCode(null)
+        );
+        assertEquals(
+            -1L,
+            UpdatePackageVerifier.declaredPhoneTestVersionCode(
+                "Run: 248 attempt 1\n"
+            )
+        );
+        assertEquals(
+            -1L,
+            UpdatePackageVerifier.declaredPhoneTestVersionCode(
+                "Android versionCode: 214260770-extra\n"
+            )
+        );
+        assertEquals(
+            -1L,
+            UpdatePackageVerifier.declaredPhoneTestVersionCode(
+                "Android versionCode: 0\n"
+            )
+        );
+        assertEquals(
+            -1L,
+            UpdatePackageVerifier.declaredPhoneTestVersionCode(
+                "Android versionCode: 2100000001\n"
+            )
+        );
+        assertEquals(
+            -1L,
+            UpdatePackageVerifier.declaredPhoneTestVersionCode(
+                "Android versionCode: 214260770\n"
+                    + "Android versionCode: 214260771\n"
+            )
+        );
+    }
+
+    @Test
     public void digestNormalizationRequiresTrustedShape() {
         String hex =
             "0123456789abcdef"
