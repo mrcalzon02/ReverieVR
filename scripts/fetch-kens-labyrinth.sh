@@ -2,7 +2,7 @@
 set -eu
 # Author-hosted original DOS freeware package, never repackaged.
 SOURCE_URL="https://advsys.net/ken/klab/labfull.zip"
-EXPECTED_SHA256="5baf67ed3795be0dff3f32819f0c20fa84d3a00d667215d7a1146a7971c81072"
+EXPECTED_SHA256="643aa0ca8d1a7d2c88afecd952da00f3b912be8b83c4c1d2f4ab9b50491fadfd"
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 DEST="$ROOT/third_party/kens-labyrinth/payload/default-content/labfull.zip"
 TMP="$DEST.tmp"
@@ -21,6 +21,17 @@ else
     rm -f "$TMP"
     echo "SHA-256 tool is required." >&2
     exit 127
+fi
+ACTUAL_BYTES="$(wc -c < "$TMP" | tr -d ' ')"
+if [ "$ACTUAL_BYTES" != "940242" ]; then
+    echo "Ken's Labyrinth author ZIP size mismatch: $ACTUAL_BYTES bytes." >&2
+    rm -f "$TMP"
+    exit 1
+fi
+if ! unzip -tq "$TMP" >/dev/null; then
+    echo "Ken's Labyrinth archive failed ZIP integrity check." >&2
+    rm -f "$TMP"
+    exit 1
 fi
 if [ "$ACTUAL" != "$EXPECTED_SHA256" ]; then
     rm -f "$TMP"

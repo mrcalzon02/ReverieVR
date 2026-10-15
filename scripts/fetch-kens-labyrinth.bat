@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 set "SOURCE_URL=https://advsys.net/ken/klab/labfull.zip"
-set "EXPECTED_SHA256=5baf67ed3795be0dff3f32819f0c20fa84d3a00d667215d7a1146a7971c81072"
+set "EXPECTED_SHA256=643aa0ca8d1a7d2c88afecd952da00f3b912be8b83c4c1d2f4ab9b50491fadfd"
 set "ROOT=%~dp0.."
 set "DEST=%ROOT%\third_party\kens-labyrinth\payload\default-content\labfull.zip"
 set "TMP=%DEST%.tmp"
@@ -15,6 +15,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '%SOURCE_URL%' -OutFile '%TMP%'"
 if errorlevel 1 exit /b 1
 for /f "delims=" %%A in ('powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA256 '%TMP%').Hash.ToLowerInvariant()"') do set "ACTUAL=%%A"
+for /f "delims=" %%A in ('powershell -NoProfile -Command "(Get-Item '%TMP%').Length"') do set "ACTUAL_BYTES=%%A"
+if not "!ACTUAL_BYTES!"=="940242" (
+    echo Ken's Labyrinth official ZIP size mismatch.
+    del /f /q "%TMP%"
+    exit /b 1
+)
 if /I not "!ACTUAL!"=="%EXPECTED_SHA256%" (
     echo Ken's Labyrinth SHA-256 mismatch.
     del /f /q "%TMP%"

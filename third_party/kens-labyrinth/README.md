@@ -8,9 +8,13 @@ The game is copyrighted **freeware**, not open source/public domain.
 Retain the original complete archive, attribution and distribution files.
 A right to sell the game or license its data as MIT is **not** asserted.
 
-* Expected original archive SHA-256: `5baf67ed3795be0dff3f32819f0c20fa84d3a00d667215d7a1146a7971c81072`
+* Expected original archive SHA-256: `643aa0ca8d1a7d2c88afecd952da00f3b912be8b83c4c1d2f4ab9b50491fadfd`
 * Reported archive size: 940,242 bytes; executable: `KEN.EXE`
-* Historical checksum corroboration: https://ken-s-labyrinth.softonic.com/
+* Official author-hosted archive SHA-256 observed in GitHub build log for
+  phone test #38684850929 (2026-10-15); the older Softonic mirror archives
+  a different checksum and is NOT the release payload.
+* Official page lists 940,242 bytes; fetch script verifies that exact size,
+  SHA-256 and ZIP structure before admitting the archive into the APK.
 * Source archive not tracked in Git. Linux/macOS and Windows fetch scripts
   verify SHA-256 before packaging the original untouched ZIP.
 * Free/noncommercial APK content only; `-PexcludeKensLabyrinth` omits it

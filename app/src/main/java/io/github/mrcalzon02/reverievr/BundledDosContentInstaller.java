@@ -22,7 +22,7 @@ final class BundledDosContentInstaller {
         "bundled-kens-labyrinth-2.1";
     private static final String KEN_ASSET = "default-content/labfull.zip";
     private static final String KEN_SHA256 =
-        "5baf67ed3795be0dff3f32819f0c20fa84d3a00d667215d7a1146a7971c81072";
+        "643aa0ca8d1a7d2c88afecd952da00f3b912be8b83c4c1d2f4ab9b50491fadfd";
     private static final String KEN_PAYLOAD_FILE = "labfull.zip";
     private static final String KEN_BOOTSTRAP_MARKER =
         ".reverie-ken-bootstrap-v1";
