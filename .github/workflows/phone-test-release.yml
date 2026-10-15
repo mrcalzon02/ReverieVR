@@ -94,11 +94,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          chmod +x gradlew scripts/fetch-dosbox-pure.sh scripts/fetch-doom-shareware.sh scripts/fetch-kens-labyrinth.sh scripts/fetch-heartlight.sh scripts/verify-build-bootstrap.sh
+          chmod +x gradlew scripts/fetch-dosbox-pure.sh scripts/fetch-doom-shareware.sh scripts/fetch-kens-labyrinth.sh scripts/fetch-jetpack.sh scripts/verify-build-bootstrap.sh
           ./scripts/fetch-dosbox-pure.sh
           ./scripts/fetch-doom-shareware.sh
           ./scripts/fetch-kens-labyrinth.sh
-          ./scripts/fetch-heartlight.sh
+          ./scripts/fetch-jetpack.sh
           ./scripts/verify-build-bootstrap.sh
 
       - name: Validate diagnostic intake source
