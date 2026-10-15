@@ -2,6 +2,28 @@
 
 **Status:** Source-implemented; Galaxy S9 + Daydream controller acceptance pending. These original games use the native ABI v1 module host and the common `classic_games_module.cpp` renderer, compiled separately for Pong, Snake, and Chutes and Ladders. This is game-private implementation documentation; the platform contract remains `docs/native/README.md`.
 
+## Reversi 8×8 — eighth complete native classic (2026-10-15)
+
+New built-in module `classic-reversi` implements a full 8×8 match:
+four-disc opening, eight-direction flipping, forced automatic passes when a
+player has no legal move, and terminal scoring by Black/White disc counts
+even if inaccessible vacant squares remain. The human is Black and plays
+first. White is a CPU with bounded iterative alpha-beta: four-ply maximum,
+4,000 visited positions across all iterations, discard-on-exhaustion root
+choices, terminal score priority, and positional/corner/mobility evaluation.
+
+The shared native board renderer marks legal Black destinations, shows
+live and final counts, and reports an automatic pass without adding a
+separate tab. Daydream cursor, head/controller ray and Select are reused.
+Select restarts the completed match; Home stays shell-owned. Existing
+game-private CPU snapshot workers prevent search from running within
+the two stereo rendering passes. Native regression coverage includes
+opening legality, flipping, no-op illegal moves, pass handling,
+Black/White/draw adjudication, worker isolation, CPU corner capture
+and search budget. No third-party ROM or new framework is needed.
+Native/Android compilation, stereo readability, controller precision
+and sustained Galaxy S9 performance remain separate evidence gates.
+
 ## Chutes and Ladders — complete classic board (2026-10-15)
 
 Chutes and Ladders now uses the common 100-square board's complete nine

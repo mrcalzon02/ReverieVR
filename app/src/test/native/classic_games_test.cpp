@@ -611,6 +611,76 @@ static void TestBoardGames() {
     std::cout<<"Checkers, Go 19x19 and Chess deterministic rules/CPU passed\\n";
 }
 
+static void TestReversi() {
+    using Boards=reverie::boardgames::State;
+    using Kind=reverie::boardgames::Kind;
+    Boards game;game.Reset(Kind::Reversi);
+    assert(game.Size()==8&&game.side==1&&!game.finished);
+    assert(game.ReversiCount(1)==2&&game.ReversiCount(-1)==2);
+    assert(game.cells[3*8+3]==-1&&game.cells[4*8+4]==-1);
+    assert(game.cells[3*8+4]==1&&game.cells[4*8+3]==1);
+    int moves=0;
+    for(int at=0;at<64;at++)
+        if(Boards::ReversiFlips(game.cells,at,1)>0)++moves;
+    assert(moves==4);
+    assert(Boards::ReversiFlips(game.cells,3*8+3,1)==0);
+    assert(!game.Select(0)&&game.ply==0);
+    assert(game.Select(3*8+2));
+    assert(game.cells[3*8+2]==1&&game.cells[3*8+3]==1);
+    assert(game.ReversiCount(1)==4&&game.ReversiCount(-1)==1);
+    assert(game.side==-1&&game.ply==1);
+    assert(!game.Select(2*8+3)); // not the human turn
+    // Genuine CPU response, not a placeholder or random illegal tile.
+    for(int tick=0;tick<3;tick++)game.Step(.1f);
+    assert(game.ply==2&&game.side==1);
+    assert(game.ReversiCount(1)+game.ReversiCount(-1)==6);
+    assert(game.reversiSearchNodes>0&&game.reversiSearchNodes<=4000);
+    Boards workerBoard;workerBoard.Reset(Kind::Reversi);
+    assert(workerBoard.Select(3*8+2));
+    reverie::boardgames::CpuWorker worker;
+    const int before=workerBoard.ply;
+    assert(worker.Start(workerBoard));
+    assert(workerBoard.ply==before&&!worker.Start(workerBoard));
+    const auto deadline=std::chrono::steady_clock::now()+
+                        std::chrono::seconds(10);
+    while(!worker.Poll(workerBoard)){
+        assert(std::chrono::steady_clock::now()<deadline);
+        std::this_thread::yield();
+    }
+    assert(workerBoard.ply==2&&!worker.Busy());
+    assert(!worker.Poll(workerBoard));
+    // If White has no move, its turn must pass automatically to Black.
+    Boards pass;pass.Reset(Kind::Reversi);
+    pass.cells.fill(1);pass.cells[3*8+3]=-1;
+    pass.cells[3*8+2]=0;pass.side=-1;
+    assert(!Boards::HasReversiMove(pass.cells,-1));
+    assert(Boards::HasReversiMove(pass.cells,1));
+    assert(pass.PlayReversiCpuTurn()&&pass.side==1&&pass.passes==1);
+    assert(!pass.finished&&pass.Select(3*8+2));
+    assert(pass.finished&&pass.winner==1);
+    assert(pass.ReversiCount(1)==64&&pass.ReversiCount(-1)==0);
+    assert(pass.Select(0)); // a completed game restarts on Select
+    assert(!pass.finished&&pass.ReversiCount(1)==2);
+    assert(pass.ReversiCount(-1)==2);
+    // Terminal scoring must recognize White victories and ties too.
+    Boards white;white.Reset(Kind::Reversi);
+    white.cells.fill(-1);white.FinishReversi();
+    assert(white.finished&&white.winner==-1);
+    Boards tie;tie.Reset(Kind::Reversi);
+    tie.cells.fill(0);
+    for(int i=0;i<64;i++)tie.cells[i]=i<32?1:-1;
+    tie.FinishReversi();
+    assert(tie.finished&&tie.winner==0);
+    // A corner is more valuable than scattered early disc gains.
+    Boards corner;corner.Reset(Kind::Reversi);
+    corner.cells.fill(0);corner.side=-1;
+    corner.cells[2*8+0]=-1;corner.cells[1*8+0]=1;
+    assert(Boards::ReversiFlips(corner.cells,0,-1)==1);
+    assert(corner.PlayReversiCpuTurn());
+    assert(corner.cells[0]==-1&&corner.cells[8]==-1);
+    std::cout<<"Reversi 8x8 flip, pass, scores and CPU passed\\n";
+}
+
 static void TestBreakout() {
     using reverie::classics::Breakout;
     Breakout game;
@@ -848,6 +918,7 @@ int main() {
     ladder.Press();
     assert(!ladder.finished&&ladder.position==0&&ladder.rival==0);
     TestBoardGames();
+    TestReversi();
     std::cout<<"Classic games deterministic simulation passed\n";
 }
 

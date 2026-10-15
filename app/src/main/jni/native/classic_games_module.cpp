@@ -41,6 +41,9 @@ constexpr char kTitle[]="CHESS";
 #elif CLASSIC_GAME_KIND == 6
 constexpr char kId[]="classic-breakout";
 constexpr char kTitle[]="BREAKOUT";
+#elif CLASSIC_GAME_KIND == 7
+constexpr char kId[]="classic-reversi";
+constexpr char kTitle[]="REVERSI 8X8";
 #else
 #error "Unknown classic game"
 #endif
@@ -178,6 +181,13 @@ void RebuildBoard(Module *m,bool fixed){
                     Disc(m,px,py,gap*.42f,-2.947f,.91f,.90f,.79f);
                     Disc(m,px,py,gap*.08f,-2.935f,.18f,.17f,.14f);
                 }
+            }else if(s.kind==reverie::boardgames::Kind::Reversi){
+                Disc(m,px,py,gap*.38f,-2.947f,
+                     piece>0?.045f:.91f,piece>0?.07f:.91f,
+                     piece>0?.075f:.86f);
+                Disc(m,px,py,gap*.29f,-2.939f,
+                     piece>0?.09f:.98f,piece>0?.12f:.98f,
+                     piece>0?.13f:.93f);
             }else{
                 Disc(m,px,py,.125f,-2.947f,
                      piece>0?.92f:.20f,piece>0?.92f:.23f,
@@ -202,6 +212,10 @@ void RebuildBoard(Module *m,bool fixed){
                 }
             }
         }
+        if(s.kind==reverie::boardgames::Kind::Reversi &&
+           !s.finished&&s.side==1&&piece==0 &&
+           reverie::boardgames::State::ReversiFlips(s.cells,cell,1)>0)
+            Disc(m,px,py,gap*.065f,-2.949f,.94f,.88f,.25f);
         if(s.lastTo==cell){
             const float a=gap*.48f;
             Rect(m,px-a,py-a,.045f,.045f,-2.917f,.95f,.86f,.27f);
@@ -221,8 +235,9 @@ void RebuildBoard(Module *m,bool fixed){
         Text(m,"TWO PASSES: REVIEW DEAD GROUPS",0,-1.58f,.040f,
              .80f,.90f,.87f);
     }else if(fixed){
-        Text(m,"SELECT PIECE THEN DESTINATION",0,-1.58f,.040f,
-             .84f,.90f,.87f);
+        Text(m,s.kind==reverie::boardgames::Kind::Reversi
+             ?"SELECT A MARKED SQUARE":"SELECT PIECE THEN DESTINATION",
+             0,-1.58f,.040f,.84f,.90f,.87f);
     }
     if(!fixed && s.kind==reverie::boardgames::Kind::Go &&
        !s.finished){
@@ -243,6 +258,11 @@ void RebuildBoard(Module *m,bool fixed){
             std::snprintf(scored,sizeof(scored),"BLACK %.1f  WHITE %.1f",
                           s.goBlackScore,s.goWhiteScore);
             Text(m,scored,0,1.15f,.044f,.95f,.96f,.85f);
+        }else if(s.kind==reverie::boardgames::Kind::Reversi){
+            char scored[64];
+            std::snprintf(scored,sizeof(scored),"BLACK %d  WHITE %d",
+                          s.ReversiCount(1),s.ReversiCount(-1));
+            Text(m,scored,0,1.15f,.044f,.95f,.96f,.85f);
         }
         Text(m,"PRESS TO RESTART",1.91f,.66f,.043f,1.f,.95f,.78f);
     }else if(!fixed){
@@ -250,6 +270,15 @@ void RebuildBoard(Module *m,bool fixed){
              ?"MARK DEAD GROUPS":m->cpuFailed?"CPU ERROR RESTART":
              s.side==1?"YOUR TURN":"CPU THINKING",
              0,1.34f,.064f,.95f,.95f,.78f);
+        if(s.kind==reverie::boardgames::Kind::Reversi){
+            char scored[64];
+            std::snprintf(scored,sizeof(scored),"BLACK %d  WHITE %d",
+                          s.ReversiCount(1),s.ReversiCount(-1));
+            Text(m,scored,0,1.15f,.044f,.95f,.96f,.85f);
+            if(s.passes==1)
+                Text(m,"OPPONENT PASSED",0,-1.39f,.042f,
+                     .97f,.91f,.48f);
+        }
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
             Text(m,"CONTINUE JUMP",1.88f,.63f,.044f,1.f,.90f,.56f);
         if(s.kind==reverie::boardgames::Kind::Checkers &&
@@ -445,7 +474,7 @@ void *Create(const ReverieNativeHostV1 *host){
     Module *m=new(std::nothrow) Module();
     if(m){
         m->host=host;
-#if CLASSIC_GAME_KIND >= 3 && CLASSIC_GAME_KIND <= 5
+#if (CLASSIC_GAME_KIND >= 3 && CLASSIC_GAME_KIND <= 5) || CLASSIC_GAME_KIND == 7
         m->board.Reset(static_cast<reverie::boardgames::Kind>(CLASSIC_GAME_KIND));
 #elif CLASSIC_GAME_KIND == 6
         m->breakout.Reset();

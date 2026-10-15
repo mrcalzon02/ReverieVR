@@ -188,6 +188,13 @@ The first three games are **Classic Pong**, **Classic Snake**, and **Chutes and 
 - Snake: touch the upper/lower/left/right portion of the Daydream pad to turn, use a gamepad stick, or point-and-Select on the in-scene direction pads; consume food, grow, avoid walls and the tail, Select restarts after losing.
 - Chutes and Ladders: Select rolls the die on your turn, a deterministic CPU opponent takes the following turn automatically, and the generated 100-cell board includes original green ladders and red chutes. First to cell 100 wins, Select restarts.
   
+The eighth original native classic, **Classic Reversi**, is the full
+8×8 disc-flipping board game. A four-disc opening, all eight capturing
+directions, legal-move markers, automatic forced passes, score-based
+win/draw results and bounded four-ply White CPU are implemented in
+`classic-reversi`. It uses the same shared board cursor, VR ray
+and independent packaged native game host as Chess and Checkers.
+
 The seventh original game, **Classic Breakout**, runs two full 112-brick walls, three-life
 paddle-and-ball arcade match in its own packaged GLES2 module. Move the
 paddle with touchpad horizontal input, gamepad axis, or the tracked-controller

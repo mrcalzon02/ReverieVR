@@ -13,7 +13,7 @@
 
 namespace reverie { namespace boardgames {
 
-enum class Kind : uint8_t { Checkers=3, Go=4, Chess=5 };
+enum class Kind : uint8_t { Checkers=3, Go=4, Chess=5, Reversi=7 };
 struct State {
     // Human plays Black (+1); CPU plays White (-1).
     // Go is full 19x19, chess and checkers retain standard 8x8.
@@ -56,6 +56,7 @@ struct State {
     int halfMoves=0,promotionChoice=5;
     int chessDifficulty=1,chessSearchNodes=0;
     int checkerDifficulty=1,checkerSearchNodes=0;
+    int reversiSearchNodes=0;
     Kind kind=Kind::Checkers;
     Board cells{};
     std::unordered_set<Board,GoBoardHash> goHistory;
@@ -97,7 +98,156 @@ struct State {
             chessHistory.emplace(CurrentChessPosition(),1);
         } else if(type==Kind::Go) {
             goHistory.insert(cells);
+        } else if(type==Kind::Reversi) {
+            cells[Index(3,3)]=-1;cells[Index(4,4)]=-1;
+            cells[Index(4,3)]=1;cells[Index(3,4)]=1;
         }
+    }
+
+    // Full 8x8 Reversi, capturing every enclosed opposing line.
+    // Invalid placements leave both the board and output unchanged.
+    static int ReversiFlips(const Board &board,int at,int player,
+                            Board *after=nullptr) {
+        if(at<0||at>=64||board[at]!=0||(player!=1&&player!=-1))
+            return 0;
+        constexpr int dx[8]={-1,0,1,-1,1,-1,0,1};
+        constexpr int dy[8]={-1,-1,-1,0,0,1,1,1};
+        std::array<int,64> flipped{};
+        int count=0;
+        const int x=at%8,y=at/8;
+        for(int d=0;d<8;d++){
+            const int start=count;
+            int xx=x+dx[d],yy=y+dy[d];
+            while(xx>=0&&xx<8&&yy>=0&&yy<8 &&
+                  board[yy*8+xx]==-player){
+                flipped[count++]=yy*8+xx;
+                xx+=dx[d];yy+=dy[d];
+            }
+            if(xx<0||xx>=8||yy<0||yy>=8||
+               board[yy*8+xx]!=player)count=start;
+        }
+        if(count>0&&after){
+            *after=board;
+            (*after)[at]=static_cast<int8_t>(player);
+            for(int i=0;i<count;i++)
+                (*after)[flipped[i]]=static_cast<int8_t>(player);
+        }
+        return count;
+    }
+    static bool HasReversiMove(const Board &board,int player){
+        for(int i=0;i<64;i++)
+            if(ReversiFlips(board,i,player)>0)return true;
+        return false;
+    }
+    int ReversiCount(int player) const {
+        int count=0;
+        for(int i=0;i<64;i++)if(cells[i]==player)++count;
+        return count;
+    }
+    void FinishReversi(){
+        const int black=ReversiCount(1),white=ReversiCount(-1);
+        winner=black>white?1:white>black?-1:0;
+        finished=true;selected=-1;
+    }
+    bool ReversiMove(int at) {
+        if(kind!=Kind::Reversi||finished)return false;
+        Board next{};
+        if(ReversiFlips(cells,at,side,&next)==0)return false;
+        cells=next;lastFrom=-1;lastTo=at;selected=-1;++ply;
+        side=-side;
+        if(HasReversiMove(cells,side)){passes=0;return true;}
+        // A player with no legal move must pass. If neither side can
+        // move, finish by actual disc counts, even with empty squares.
+        passes=1;side=-side;
+        if(!HasReversiMove(cells,side)){
+            passes=2;FinishReversi();
+        }
+        return true;
+    }
+    // White-positive CPU evaluation. Corners and mobility outrank
+    // an early lead in raw disc count.
+    static int ReversiValue(const Board &board){
+        static constexpr int weights[64]={
+            120,-25, 20,  5,  5, 20,-25,120,
+            -25,-45, -5, -5, -5, -5,-45,-25,
+             20, -5, 12,  3,  3, 12, -5, 20,
+              5, -5,  3,  3,  3,  3, -5,  5,
+              5, -5,  3,  3,  3,  3, -5,  5,
+             20, -5, 12,  3,  3, 12, -5, 20,
+            -25,-45, -5, -5, -5, -5,-45,-25,
+            120,-25, 20,  5,  5, 20,-25,120
+        };
+        int value=0;
+        for(int i=0;i<64;i++)
+            if(board[i]!=0)value+=-board[i]*(weights[i]+2);
+        int whiteMoves=0,blackMoves=0;
+        for(int i=0;i<64;i++)if(board[i]==0){
+            whiteMoves+=ReversiFlips(board,i,-1)>0;
+            blackMoves+=ReversiFlips(board,i,1)>0;
+        }
+        return value+(whiteMoves-blackMoves)*5;
+    }
+    static int ReversiSearch(const Board &board,int player,int depth,
+                             int alpha,int beta,int &nodes,int budget,
+                             bool &exhausted){
+        if(nodes>=budget){exhausted=true;return ReversiValue(board);}
+        ++nodes;
+        const bool hasMove=HasReversiMove(board,player);
+        if(!hasMove&&!HasReversiMove(board,-player)){
+            int white=0,black=0;
+            for(int i=0;i<64;i++){
+                white+=board[i]==-1;black+=board[i]==1;
+            }
+            return (white-black)*10000;
+        }
+        if(depth<=0)return ReversiValue(board);
+        if(!hasMove)return ReversiSearch(board,-player,depth-1,
+                                        alpha,beta,nodes,budget,exhausted);
+        const bool maximize=player==-1;
+        int best=maximize?-3000000:3000000;
+        for(int at=0;at<64;at++){
+            Board next{};
+            if(!ReversiFlips(board,at,player,&next))continue;
+            const int score=ReversiSearch(next,-player,depth-1,alpha,beta,
+                                          nodes,budget,exhausted);
+            if(exhausted)break;
+            if(maximize){best=std::max(best,score);alpha=std::max(alpha,best);}
+            else {best=std::min(best,score);beta=std::min(beta,best);}
+            if(beta<=alpha)break;
+        }
+        return best;
+    }
+    bool PlayReversiCpuTurn(){
+        if(kind!=Kind::Reversi||side!=-1||finished)return false;
+        reversiSearchNodes=0;
+        if(!HasReversiMove(cells,-1)){
+            side=1;passes=1;
+            if(!HasReversiMove(cells,1)){
+                passes=2;FinishReversi();
+            }
+            return true;
+        }
+        int best=-1;
+        for(int i=0;i<64;i++)if(ReversiFlips(cells,i,-1)>0){
+            best=i;break;
+        }
+        const int budget=4000;
+        for(int depth=1;depth<=4;depth++){
+            int candidate=best,scoreBest=-3000000,alpha=-3000000;
+            bool exhausted=false;
+            for(int at=0;at<64;at++){
+                Board next{};
+                if(!ReversiFlips(cells,at,-1,&next))continue;
+                const int score=ReversiSearch(next,1,depth-1,alpha,3000000,
+                                             reversiSearchNodes,budget,exhausted);
+                if(exhausted)break;
+                if(score>scoreBest){scoreBest=score;candidate=at;}
+                alpha=std::max(alpha,scoreBest);
+            }
+            if(exhausted)break;
+            best=candidate;
+        }
+        return ReversiMove(best);
     }
 
     // WCDF / English draughts (8x8) requires correct move progress and
@@ -767,6 +917,7 @@ struct State {
         if(side!=1)return false;
         if(kind==Kind::Go)
             return goReview?ToggleGoDead(square):GoMove(square);
+        if(kind==Kind::Reversi)return ReversiMove(square);
         const int cap=Size()*Size();
         if(square<0||square>=cap)return false;
         if(kind==Kind::Checkers){
@@ -960,6 +1111,8 @@ struct State {
             PlayCheckerCpuTurn();
         }else if(kind==Kind::Chess){
             PlayChessCpuTurn();
+        }else if(kind==Kind::Reversi){
+            PlayReversiCpuTurn();
         }
     }
 };

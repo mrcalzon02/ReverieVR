@@ -91,6 +91,12 @@
 
 ## Native classics fidelity backlog
 
+- **Reversi 8×8:** Full standard board, eight-direction flips,
+  forced passes, terminal Black/White disc counting and bounded
+  iterative alpha-beta CPU implemented in `classic-reversi`.
+  Host CPU regression cases cover pass, terminal score, and tactics;
+  signed APK/device acceptance and controller readability still open.
+
 - **Go 19×19:** Full 361-intersection board and positional superko.
   Two passes now open a functional group-by-group dead-stone review,
   with SCORE to accept Chinese area count or RESUME to continue play.
