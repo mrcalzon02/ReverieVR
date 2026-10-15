@@ -72,10 +72,11 @@ separate acceptance gates.
 ## Sprite atlas and 2.5D mounted weapons — current source (2026-10-15)
 
 **Implementation:** `breakwater_sprite_atlas.h` produces an original, fixed
-128×128 RGBA atlas of twelve 32×32 cells: two positional infantry stride
+128×128 RGBA atlas of sixteen 32×32 cells: two positional infantry stride
 frames, one-man rowboat, broad-ramp landing craft, angular patrol gunboat,
-compact strafer, twin-engine bomber, and five distinct machine/heavy/flak/
-missile/cannon defense-emplacement silhouettes. Their muted olive, slate-steel, sand and
+compact strafer, twin-engine bomber, five distinct machine/heavy/flak/
+missile/cannon defense-emplacement silhouettes, and four support symbols
+for artillery, airstrike, SAM and repair. Their muted olive, slate-steel, sand and
 gunmetal shapes are generic late-1990s/early-2000s American/European-inspired
 military arcade styling, **not replicas, military insignia or imported art**.
 Art can later be replaced cell-for-cell without changing the gameplay ABI.
@@ -85,7 +86,11 @@ The native Breakwater GLES2 module now uploads this atlas once per GL context,
 renders one hard-alpha-masked world card per live enemy and infantry slot,
 and batches all cards into **one extra textured draw per eye**. The same batch
 now also carries the selected weapon's near-field, controller-reactive body
-card and a compact selection icon for each of the five weapon HUD slots.
+card, compact selection icons for all five weapon slots, and dedicated
+artillery, airstrike and SAM combat-HUD icons. The existing shop pages
+reuse those symbols plus a repair-tool icon next to the matching purchase
+amount. All support art is display-only: action rectangles, charges,
+credit checks, selection focus and combat logic are unchanged.
 The world, shore terrain, water, emplacement and 3D target volumes remain
 authoritative and unmodified. Textured cards use original enemy/infantry x/z positions,
 world-stable XY planes facing the defended battery, with aircraft roll taken
@@ -102,7 +107,9 @@ bindings or ballistics are introduced.
 
 Native regression assertions check atlas coverage, transparency, tile UVs,
 finite six-vertex card geometry, aircraft bank, fail-closed dimensions,
-all five weapon enum-to-art mappings, unique pixel identities and cell bounds.
+all five weapon enum-to-art mappings, all four support icons, both shop-page
+icon mappings, unmapped/invalid shop cells, unique pixel identities and
+cell bounds. The 16-cell atlas still occupies exactly 64 KiB of RGBA data.
 Static verification is not a substitute for an Android ARM NDK compile,
 actual GLES2 shader/texture creation, near-plane stereo readability, distant
 pixel aliasing, realistic FPS measurements or a Galaxy S9 wave trial.
@@ -117,8 +124,9 @@ Production sheet order: (1) directional rowboat/landing craft/gunboat sets
 including ramp and wake states; (2) eight-direction infantry idle/march/fire
 frames with readable helmet, vest and rifle; (3) bomber/strafer underside,
 oblique and bank variants; (4) additional depth/aim variants of the five mounted weapon cards;
-(5) support-action HUD icons and panels (equipment selection uses atlas
-sprites already); (6) horizon, cloud, distant smoke and night sky cards. Author all
+(5) optional bespoke HUD panel styling after headset readability tests
+(the functional support icons and equipment selection already use the
+atlas); (6) horizon, cloud, distant smoke and night sky cards. Author all
 replacement art with transparent backgrounds, fixed local foot/waterline/
 center-mass anchors and no copied real military unit markings. Keep the
 small 64-KiB RGBA atlas and one additional masked draw per eye until

@@ -14,7 +14,8 @@ namespace reverie { namespace breakwater {
 enum class SpriteId : uint8_t {
     InfantryStrideA, InfantryStrideB, Rowboat, LandingCraft,
     Gunboat, Strafer, Bomber, MachineGun, HeavyGun, FlakGun,
-    MissilePod, DirectCannon, Count
+    MissilePod, DirectCannon, ArtillerySupport, AirstrikeSupport,
+    SamSupport, RepairSupport, Count
 };
 constexpr int kSpriteTile = 32;
 constexpr int kSpriteAtlasWidth = 128;
@@ -176,6 +177,44 @@ inline SpritePixels BuildSpriteAtlas() {
     Rect(pixels,cannon,3,6,8,13,dark);
     Rect(pixels,cannon,25,6,30,13,dark);
     Rect(pixels,cannon,13,4,20,7,steel);
+
+    // Compact, original support/HUD identities. Kept in the four unused
+    // cells of the existing 128x128 RGBA sheet: no extra texture or draw.
+    const SpriteColor amber{210,166,79}, pale{195,208,192};
+    const SpriteId artillery=SpriteId::ArtillerySupport;
+    // Artillery sight over a blunt shell, rather than copied insignia.
+    Rect(pixels,artillery,14,8,18,26,metal);
+    Triangle(pixels,artillery,14,26,18,26,16,30,amber);
+    Rect(pixels,artillery,11,8,21,12,olive);
+    Rect(pixels,artillery,5,17,12,19,pale);
+    Rect(pixels,artillery,20,17,27,19,pale);
+    Rect(pixels,artillery,15,3,17,7,pale);
+    const SpriteId air=SpriteId::AirstrikeSupport;
+    // Generic attack-aircraft planform with a highlighted bomb marker.
+    Rect(pixels,air,14,14,19,28,steel);
+    Triangle(pixels,air,14,21,3,16,14,17,olive);
+    Triangle(pixels,air,19,21,30,16,19,17,olive);
+    Triangle(pixels,air,14,15,9,11,14,12,metal);
+    Triangle(pixels,air,19,15,24,11,19,12,metal);
+    Rect(pixels,air,15,8,18,12,amber);
+    Triangle(pixels,air,15,8,18,8,16,4,amber);
+    const SpriteId sam=SpriteId::SamSupport;
+    // Compact launcher with two raised missiles and a radar cue.
+    Rect(pixels,sam,8,8,25,20,hull);
+    Rect(pixels,sam,10,10,23,17,steel);
+    Rect(pixels,sam,11,18,15,27,pale);
+    Rect(pixels,sam,19,18,23,27,pale);
+    Triangle(pixels,sam,11,27,15,27,13,30,amber);
+    Triangle(pixels,sam,19,27,23,27,21,30,amber);
+    Rect(pixels,sam,5,5,28,7,olive);
+    const SpriteId repair=SpriteId::RepairSupport;
+    // Tool handle and open wrench head, not a medic/red-cross icon.
+    Rect(pixels,repair,10,6,15,19,metal);
+    Rect(pixels,repair,13,15,20,21,metal);
+    Rect(pixels,repair,18,19,23,28,steel);
+    Rect(pixels,repair,16,24,19,29,steel);
+    Rect(pixels,repair,23,24,26,29,steel);
+    Rect(pixels,repair,8,5,17,8,olive);
     return pixels;
 }
 
@@ -191,6 +230,19 @@ inline SpriteId WeaponSprite(WeaponKind weapon) {
 
 // Source art IDs are independent of the save schema and the campaign's
 // persisted weapon indices. No runtime table allocations or conversions.
+// The two shop pages reuse the same eight existing cells. An absent icon
+// returns Count rather than inventing an interactive shop control.
+inline SpriteId ShopSupportSprite(bool armory_page, uint8_t item) {
+    if (armory_page)
+        return item==5 ? SpriteId::SamSupport : SpriteId::Count;
+    switch(item) {
+        case 4: return SpriteId::ArtillerySupport;
+        case 5: return SpriteId::AirstrikeSupport;
+        case 7: return SpriteId::RepairSupport;
+        default: return SpriteId::Count;
+    }
+}
+
 inline bool AppendSprite(std::vector<float> &mesh, SpriteId id,
                          float x,float y,float z,float width,float height,
                          float bank=0.0f) {

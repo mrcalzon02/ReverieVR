@@ -6,6 +6,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Breakwater compact support-action HUD sprites
+
+- Filled the four remaining 32x32 cells of Breakwater's existing 128x128
+  RGBA atlas with original artillery, airstrike, SAM and repair icons.
+  Added combat-HUD support symbols and matching shop/armory purchase
+  symbols without new textures, shader passes, draw calls or hit targets.
+- Kept the existing labels, ammunition/charge amounts, fixed input
+  rectangles, menu ownership, save schema and weapon simulation unchanged.
+  Expanded C++ tests for sixteen transparent atlas cells, distinct support
+  art, bounded UVs and exact shop-page mapping. NDK/phone proof pending.
+
+
 ### Breakwater five distinct 2.5D gun housings and selection art
 
 - Extended the existing compact RGBA enemy atlas from 128x64 to 128x128

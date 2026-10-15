@@ -1,3 +1,19 @@
+## 2026-10-15 — Breakwater compact combat and shop support icons (source)
+
+Extended the existing 128x128 sprite atlas to all sixteen cells without
+changing its 64 KiB texture footprint or GL path: artillery targeting,
+airstrike silhouette, SAM twin missile mount, and repair wrench. Added
+the first three to the existing combat-action HUD positions, and
+reused each applicable icon on the matching shop or armory purchase
+control, with repair in the normal upgrade shop. Text labels and
+values remain legible and action rectangles unchanged. Mapping remains
+game-private, with Count returned for all other shop cells instead
+of creating inert new controls. Added deterministic C++ regression
+assertions for nonempty alpha masks, distinct artwork, bounded
+per-cell UVs, shop mapping and invalid slot cases. Full integrated
+native test, Android NDK compile, and physical S9 stereo readability
+and performance gates are still unverified.
+
 ## 2026-10-15 — Breakwater 2.5D mounted weapon artwork (source)
 
 Expanded the previous 7-sprite 128x64 enemy atlas to 12-sprite 128x128

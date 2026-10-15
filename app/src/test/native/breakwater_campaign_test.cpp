@@ -86,6 +86,57 @@ int main() {
         for(size_t a=0;a<signatures.size();++a)
             for(size_t b=a+1;b<signatures.size();++b)
                 assert(signatures[a]!=signatures[b]);
+        // The remaining atlas cells provide four different operational
+        // support identities with no second texture or new gameplay control.
+        const std::array<SpriteId,4> supportIds={{
+            SpriteId::ArtillerySupport,SpriteId::AirstrikeSupport,
+            SpriteId::SamSupport,SpriteId::RepairSupport}};
+        assert(static_cast<int>(SpriteId::Count)==16);
+        assert(sizeof(SpritePixels)==64u*1024u);
+        std::array<uint64_t,4> supportHashes{};
+        for(size_t id=0;id<supportIds.size();++id) {
+            const int slot=static_cast<int>(supportIds[id]);
+            const int ox=(slot%4)*kSpriteTile,oy=(slot/4)*kSpriteTile;
+            uint64_t signature=14695981039346656037ull;
+            int ink=0,clear=0;
+            for(int y=0;y<kSpriteTile;++y)
+                for(int x=0;x<kSpriteTile;++x) {
+                    const size_t offset=static_cast<size_t>(
+                        ((oy+y)*kSpriteAtlasWidth+ox+x)*4);
+                    for(int ch=0;ch<4;++ch) {
+                        signature^=pixels[offset+ch];
+                        signature*=1099511628211ull;
+                    }
+                    if(pixels[offset+3]==255)++ink;
+                    else { assert(pixels[offset+3]==0);++clear; }
+                }
+            assert(ink>20 && clear>50);
+            supportHashes[id]=signature;
+            std::vector<float> card;
+            assert(AppendSprite(card,supportIds[id],-2.0f,.97f,-1.76f,
+                                .26f,.26f));
+            assert(card.size()==30);
+            for(size_t i=0;i<card.size();i+=5) {
+                assert(card[i+3]>=static_cast<float>(ox)/kSpriteAtlasWidth);
+                assert(card[i+3]<=static_cast<float>(ox+32)/kSpriteAtlasWidth);
+                assert(card[i+4]>=static_cast<float>(oy)/kSpriteAtlasHeight);
+                assert(card[i+4]<=static_cast<float>(oy+32)/kSpriteAtlasHeight);
+            }
+        }
+        for(size_t i=0;i<supportHashes.size();++i)
+            for(size_t j=i+1;j<supportHashes.size();++j)
+                assert(supportHashes[i]!=supportHashes[j]);
+        assert(ShopSupportSprite(false,4)==SpriteId::ArtillerySupport);
+        assert(ShopSupportSprite(false,5)==SpriteId::AirstrikeSupport);
+        assert(ShopSupportSprite(false,7)==SpriteId::RepairSupport);
+        assert(ShopSupportSprite(true,5)==SpriteId::SamSupport);
+        for(uint8_t item=0;item<8;++item) {
+            if(item!=5)assert(ShopSupportSprite(true,item)==SpriteId::Count);
+            if(item!=4 && item!=5 && item!=7)
+                assert(ShopSupportSprite(false,item)==SpriteId::Count);
+        }
+        assert(ShopSupportSprite(true,255)==SpriteId::Count);
+        assert(ShopSupportSprite(false,255)==SpriteId::Count);
         // Unknown weapon enum values never index beyond the atlas.
         assert(WeaponSprite(static_cast<WeaponKind>(255))==
             SpriteId::MachineGun);

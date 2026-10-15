@@ -673,7 +673,13 @@ void BuildScene(State *s) {
                         game.selected_weapon()==weapon?"ACTIVE":"SELECT");
             else if(price<0)std::snprintf(amount,sizeof(amount),"MAX");
             else std::snprintf(amount,sizeof(amount),"%d",price);
-            Text(s,amount,x,y-.10f,-2.98f,.048f,.89f,.89f,.84f);
+            const SpriteId shopIcon=ShopSupportSprite(s->armory_page,
+                static_cast<uint8_t>(n));
+            if(shopIcon!=SpriteId::Count)
+                AppendSprite(s->sprite_mesh,shopIcon,
+                             x-.44f,y-.095f,-2.95f,.19f,.19f);
+            Text(s,amount,x+(shopIcon!=SpriteId::Count?.11f:0.0f),
+                 y-.10f,-2.98f,.048f,.89f,.89f,.84f);
         }
         Panel(s,.95f,-1.11f,-3.0f,1.72f,.48f,.27f,.45f,.33f);
         Text(s,"START",.95f,-1.10f,-2.97f,.070f,1,.97f,.78f);
@@ -709,15 +715,21 @@ void BuildScene(State *s) {
         char support[24];
         std::snprintf(support,sizeof(support),"ARTY %u",
             static_cast<unsigned>(game.artillery_charges()));
-        Text(s,support,-2.07f,.97f,-1.79f,.064f,.89f,.81f,.42f);
+        AppendSprite(s->sprite_mesh,SpriteId::ArtillerySupport,
+                     -2.99f,.97f,-1.76f,.26f,.26f);
+        Text(s,support,-2.02f,.97f,-1.79f,.064f,.89f,.81f,.42f);
         std::snprintf(support,sizeof(support),"AIR %u",
             static_cast<unsigned>(game.airstrike_charges()));
-        Text(s,support,2.10f,.97f,-1.79f,.064f,.89f,.81f,.42f);
+        AppendSprite(s->sprite_mesh,SpriteId::AirstrikeSupport,
+                     1.14f,.97f,-1.76f,.26f,.26f);
+        Text(s,support,2.13f,.97f,-1.79f,.064f,.89f,.81f,.42f);
         std::snprintf(support,sizeof(support),"SAM %u",
             static_cast<unsigned>(game.sam_charges()));
         Panel(s,0,.97f,-1.82f,1.22f,.32f,
               s->sam_armed?.42f:.18f,s->sam_armed?.38f:.28f,.14f);
-        Text(s,support,0,.97f,-1.79f,.046f,1.0f,.90f,.63f);
+        AppendSprite(s->sprite_mesh,SpriteId::SamSupport,
+                     -.45f,.97f,-1.76f,.19f,.19f);
+        Text(s,support,.16f,.97f,-1.79f,.046f,1.0f,.90f,.63f);
         for(uint8_t id=0;id<kWeaponCount;id++) {
             const WeaponKind weapon=static_cast<WeaponKind>(id);
             const float x=-2.40f+1.20f*id;
