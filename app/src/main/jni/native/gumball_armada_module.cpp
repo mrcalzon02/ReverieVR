@@ -702,7 +702,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
         if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
             m->loadoutSelected=LoadoutNavigate(m->loadoutSelected,
                 std::fabs(x)>std::fabs(y)?(x>0.f?1:-1):0,
-                std::fabs(y)>=std::fabs(x)?(y>0.f?1:-1):0);
+                std::fabs(y)>=std::fabs(x)?(y>0.f?-1:1):0);
             m->navTime=.18f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
@@ -728,7 +728,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
         m->navTime-=dt;
         if(m->navTime<=0.f&&std::fabs(in->move_y)>.55f){
             m->supportSelected=std::max(0,std::min(8,
-                 m->supportSelected+(in->move_y>0.f?1:-1)));
+                 m->supportSelected+(in->move_y>0.f?-1:1)));
             m->navTime=.17f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
@@ -755,33 +755,56 @@ void Update(void* p,const ReverieNativeInputV1* in){
     }else if(phase==Phase::Chart&&m->inYard){
         m->navTime-=dt;
         const float x=in->move_x,y=in->move_y;
+        // App/Minus instantly moves focus between the part shelf and the ship.
+        // The D-pad alone can still reach every cell and every shelf button.
+        if(in->secondary_down!=0&&!m->secondary){
+            m->yardCursor.switchFocus();
+            std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
+                          m->yardCursor.palette()?"CHOOSE A PART, THEN CLICK":
+                          "CLICK A CELL TO CHANGE IT");
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+            Rebuild(m);
+        }
         if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
-            if(std::fabs(x)>std::fabs(y))
-                m->garageX=std::max(0,std::min(8,m->garageX+(x>0?1:-1)));
-            else
-                m->garageY=std::max(0,std::min(m->garageX>=7?4:6,
-                                              m->garageY+(y>0?1:-1)));
-            if(m->garageX>=7)m->garageY=std::min(4,m->garageY);
-            m->navTime=.19f;
+            const int dx=std::fabs(x)>std::fabs(y)?(x>0.f?1:-1):0;
+            // Screen-up must move the cursor UP, not down the grid/list.
+            const int dy=std::fabs(y)>=std::fabs(x)?(y>0.f?-1:1):0;
+            m->yardCursor.move(dx,dy);
+            m->navTime=.15f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
         }
         if(pressed&&!m->primary){
             bool good=false;
-            if(m->garageX<=6){
-                const Part existing=m->yard.at(m->garageX,m->garageY);
-                good=existing==Part::Empty?
-                    m->yard.place(m->garageX,m->garageY,m->brush):
-                    m->yard.remove(m->garageX,m->garageY);
+            if(!m->yardCursor.palette()){
+                const auto result=m->yard.edit(
+                    m->yardCursor.x,m->yardCursor.y,m->brush);
+                good=result==reverie::gumball::ShipEdit::Placed
+                    ||result==reverie::gumball::ShipEdit::Replaced
+                    ||result==reverie::gumball::ShipEdit::Removed;
+                std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
+                              "%s",reverie::gumball::ShipEditMessage(result));
                 if(good){
                     m->sim.configure_ship(m->yard);
                     SaveShipyard(m);
                 }
             }else{
-                const int choice=m->garageY*2+(m->garageX-7);
-                if(choice<9){
-                    m->brush=static_cast<Part>(choice+2);good=true;
-                }else{
+                const int choice=m->yardCursor.toolIndex();
+                if(choice>=0&&choice<9){
+                    const Part candidate=static_cast<Part>(choice+2);
+                    if(m->yard.stock(candidate)>0u||candidate==m->brush){
+                        m->brush=candidate;
+                        m->yardCursor.toolChosen(); // immediately back to ship
+                        std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
+                                      "ARMED %s: CLICK CELL TO SWAP",
+                                      YardPartName(m->brush));
+                        good=true;
+                    }else{
+                        std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
+                                      "NO %s LEFT IN STOCK",
+                                      YardPartName(candidate));
+                    }
+                }else if(choice==9){
                     m->inYard=false;good=true;
                 }
             }
@@ -795,7 +818,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
         if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
             m->selected=ChartNavigate(m->selected,
                 std::fabs(x)>std::fabs(y)?(x>0.f?1:-1):0,
-                std::fabs(y)>=std::fabs(x)?(y>0.f?1:-1):0);
+                std::fabs(y)>=std::fabs(x)?(y>0.f?-1:1):0);
             m->navTime=.19f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
@@ -806,7 +829,10 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 good=m->sim.launch(static_cast<unsigned>(m->selected));
                 if(good)Save(m); // consume pending escort exactly once
             }else if(m->selected==10){
-                m->inYard=true;m->garageX=3;m->garageY=3;good=true;
+                m->inYard=true;m->yardCursor=YardCursor{};
+                std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
+                              "SELECT PART ON RIGHT / CLICK SHIP TO EDIT");
+                good=true;
             }else if(m->selected==11){
                 m->inSupport=true;m->supportSelected=0;good=true;
             }else if(m->selected==12){
@@ -821,6 +847,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
         ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
     m->primary=pressed;
+    m->secondary=in->secondary_down!=0;
 }
 int32_t Render(void* p,const ReverieNativeEyeV1* eye){
     auto* m=static_cast<Module*>(p);
