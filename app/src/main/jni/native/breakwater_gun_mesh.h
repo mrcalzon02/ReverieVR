@@ -11,6 +11,17 @@ namespace reverie { namespace breakwater { namespace gunmesh {
 // existing GLES2 flat-color buffer without textures or runtime dependencies.
 constexpr int kSides=12;
 constexpr float kPi=3.14159265358979323846f;
+inline float RecoilDistance(float shot_flash) {
+    // The existing confirmed-shot flash lasts 90 ms; do not create recoil
+    // on failed fire, weapon switching or idle mouse/controller movement.
+    return std::isfinite(shot_flash)&&shot_flash>0.f
+        ? std::min(.12f,shot_flash*1.30f) : 0.f;
+}
+inline float BarrelLength(WeaponKind kind) {
+    return kind==WeaponKind::DirectCannon?1.47f:
+           kind==WeaponKind::Flak?1.63f:
+           kind==WeaponKind::MissileBattery?1.25f:1.42f;
+}
 struct Vec {float x,y,z;};
 inline Vec Add(Vec a,Vec b){return {a.x+b.x,a.y+b.y,a.z+b.z};}
 inline Vec Scale(Vec a,float v){return {a.x*v,a.y*v,a.z*v};}
@@ -80,21 +91,21 @@ inline void Wheel(Emit &emit,float x,float y,float z,float radius,
     }
 }
 template<typename Emit>
-inline void Build(Emit emit,WeaponKind kind,const float *direction) {
+inline void Build(Emit emit,WeaponKind kind,const float *direction,
+                  float shot_flash=0.f) {
     if(!direction || !std::isfinite(direction[0]) ||
        !std::isfinite(direction[1]) || !std::isfinite(direction[2]))return;
     const Vec aim=Normalize({direction[0],direction[1],direction[2]});
     // Basis follows the player's physical gun direction, including elevation.
     const Vec right=Normalize({-aim.z,0.f,aim.x});
     const Vec up=Normalize(Cross(right,aim));
-    const Vec rear={0.f,-.76f,-.88f};
+    const Vec mount={0.f,-.76f,-.88f};
+    const Vec rear=Add(mount,Scale(aim,-RecoilDistance(shot_flash)));
     const float radius=kind==WeaponKind::DirectCannon?.175f:
         kind==WeaponKind::HeavyGun?.14f:
         kind==WeaponKind::Flak?.125f:
         kind==WeaponKind::MissileBattery?.12f:.09f;
-    const float length=kind==WeaponKind::DirectCannon?1.47f:
-        kind==WeaponKind::Flak?1.63f:
-        kind==WeaponKind::MissileBattery?1.25f:1.42f;
+    const float length=BarrelLength(kind);
     const float r=kind==WeaponKind::DirectCannon?.36f:.32f;
     const float g=kind==WeaponKind::Flak?.41f:.36f;
     const float b=kind==WeaponKind::MissileBattery?.36f:.31f;
@@ -128,6 +139,32 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction) {
         {.44f,-.42f,-1.24f},.52f,.54f,.47f);
     Tri(emit,{- .44f,-.38f,-1.17f},{.44f,-.42f,-1.24f},
         {-.44f,-.42f,-1.24f},.52f,.54f,.47f);
+}
+// A real muzzle-flash volume built from triangles around the tube's moving
+// mouth. Called only for a confirmed 90-ms shot, not when Select is rejected.
+template<typename Emit>
+inline void Flash(Emit emit,WeaponKind kind,const float *direction,
+                  float shot_flash) {
+    if(!direction || !std::isfinite(direction[0]) ||
+       !std::isfinite(direction[1]) || !std::isfinite(direction[2]) ||
+       !std::isfinite(shot_flash) || shot_flash<=0.f)return;
+    const float intensity=std::clamp(shot_flash/.09f,0.f,1.f);
+    const Vec aim=Normalize({direction[0],direction[1],direction[2]});
+    const Vec right=Normalize({-aim.z,0.f,aim.x});
+    const Vec up=Normalize(Cross(right,aim));
+    const Vec mount={0.f,-.76f,-.88f};
+    const Vec muzzle=Add(mount,Scale(aim,
+        BarrelLength(kind)-RecoilDistance(shot_flash)));
+    const float radius=.10f+.12f*intensity;
+    const Vec apex=Add(muzzle,Scale(aim,.11f+.29f*intensity));
+    for(int i=0;i<kSides;++i){
+        const Vec a=RingPoint(muzzle,right,up,radius,i);
+        const Vec b=RingPoint(muzzle,right,up,radius,(i+1)%kSides);
+        if(i%3==0)
+            Tri(emit,a,b,apex,1.0f,.78f,.29f);
+        else
+            Tri(emit,a,b,apex,.96f,.50f,.16f);
+    }
 }
 }}}
 #endif
