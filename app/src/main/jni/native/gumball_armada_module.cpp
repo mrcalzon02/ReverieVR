@@ -184,7 +184,25 @@ void LoadoutView(Module* m){
     }
     Frame(m,0,-1.10f,2.30f,.44f,m->loadoutSelected==7);
     Text(m,"RETURN TO ROUTES",0,-1.10f,.034f,.83f,.98f,.90f);
-    Text(m,"PAD MOVE   CLICK SELECT",0,-1.60f,.029f,.70f,.84f,.98f);
+    char hint[124]="PAD OR POINT TO SELECT  /  CLICK TO ACT";
+    if(m->loadoutSelected<4){
+        const Upgrade u=static_cast<Upgrade>(m->loadoutSelected);
+        if(m->sim.level(u)>=12)std::snprintf(hint,sizeof(hint),"UPGRADE AT MAXIMUM LEVEL");
+        else if(m->sim.cash()<static_cast<uint32_t>(m->sim.price(u)))
+            std::snprintf(hint,sizeof(hint),"NOT ENOUGH GUMBALLS: NEED %dG",
+                          m->sim.price(u));
+        else std::snprintf(hint,sizeof(hint),"CLICK TO BUY / PERMANENT SHIP UPGRADE");
+    }else if(m->loadoutSelected<7){
+        const Weapon w=static_cast<Weapon>(m->loadoutSelected-4);
+        if(m->sim.weapon()==w)std::snprintf(hint,sizeof(hint),"ALREADY EQUIPPED");
+        else if(m->sim.owns_weapon(w))
+            std::snprintf(hint,sizeof(hint),"CLICK TO EQUIP OWNED WEAPON");
+        else if(m->sim.cash()<static_cast<uint32_t>(m->sim.weapon_price(w)))
+            std::snprintf(hint,sizeof(hint),"NOT ENOUGH GUMBALLS: NEED %dG",
+                          m->sim.weapon_price(w));
+        else std::snprintf(hint,sizeof(hint),"CLICK TO BUY AND EQUIP WEAPON");
+    }else std::snprintf(hint,sizeof(hint),"RETURN TO MISSION ROUTES");
+    TextFit(m,hint,0,-1.60f,4.70f,.032f,.76f,.94f,.94f);
 }
 void SupportView(Module* m){
     Background(m);
@@ -220,7 +238,42 @@ void SupportView(Module* m){
     std::snprintf(text,sizeof(text),"BOOKED: %s    CASH %uG",
                   SupportName(contracts.booked()),m->sim.cash());
     Text(m,text,0,-1.52f,.031f,.86f,1.f,.79f);
-    Text(m,"CLICK TO BUY OR IMPROVE   PAD SCROLL",0,-1.68f,.028f,.78f,.85f,.96f);
+    char hint[140]="";
+    if(m->supportSelected<2){
+        const SupportKind kind=m->supportSelected==0?
+            SupportKind::CapitaineEclair:SupportKind::MademoiselleMacaron;
+        if(contracts.booked()!=SupportKind::None)
+            std::snprintf(hint,sizeof(hint),"AN ESCORT IS ALREADY BOOKED");
+        else if(m->sim.cash()<contracts.hire_price(kind))
+            std::snprintf(hint,sizeof(hint),"NEED %uG TO HIRE",
+                          contracts.hire_price(kind));
+        else std::snprintf(hint,sizeof(hint),m->supportSelected==0?
+            "TEMPORARY FIGHTER: REAL SUPPORT FIRE":
+            "TEMPORARY RESCUE: HULL / SHIELD / SALVAGE");
+    }else if(m->supportSelected<6){
+        const SupportSkill skill=static_cast<SupportSkill>(m->supportSelected-2);
+        const uint32_t cost=contracts.upgrade_cost(skill);
+        if(cost==0u)std::snprintf(hint,sizeof(hint),"ABILITY AT MAX LEVEL");
+        else if(m->sim.cash()<cost)
+            std::snprintf(hint,sizeof(hint),"NEED %uG FOR UPGRADE",cost);
+        else{
+            const char* abilities[]={"INCREASE ESCORT SHOT DAMAGE",
+                "INCREASE ESCORT SHOT COUNT","INCREASE HULL / SHIELD REPAIR",
+                "INCREASE SALVAGE TRACTOR REACH"};
+            std::snprintf(hint,sizeof(hint),"%s",abilities[m->supportSelected-2]);
+        }
+    }else if(m->supportSelected<8){
+        const SupportKit kit=static_cast<SupportKit>(m->supportSelected-6);
+        if(contracts.has_kit(kit))
+            std::snprintf(hint,sizeof(hint),"SUPPLY ALREADY HELD");
+        else if(m->sim.cash()<contracts.kit_price(kit))
+            std::snprintf(hint,sizeof(hint),"NEED %uG FOR SUPPLY",
+                          contracts.kit_price(kit));
+        else std::snprintf(hint,sizeof(hint),m->supportSelected==6?
+            "AUTO PATCH HULL AT HALF HEALTH":
+            "AUTO RESTORE SHIELDS AT HALF CAPACITY");
+    }else std::snprintf(hint,sizeof(hint),"RETURN TO MISSION ROUTES");
+    TextFit(m,hint,0,-1.67f,4.75f,.029f,.82f,.94f,.92f);
 }
 const char* YardPartName(Part part){
     const char* names[]={"EMPTY","CORE","FRAME","ARMOR","WING","THRUSTER",
