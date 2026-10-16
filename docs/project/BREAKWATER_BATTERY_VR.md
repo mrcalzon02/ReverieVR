@@ -83,29 +83,48 @@ military arcade styling, **not replicas, military insignia or imported art**.
 Art can later be replaced cell-for-cell without changing the gameplay ABI.
 Currently these are code-authored pixel sprites, not image-generator files.
 
-The native Breakwater GLES2 module now uploads this atlas once per GL context,
+The native Breakwater GLES2 module uploads this atlas once per GL context,
 renders one hard-alpha-masked world card per live enemy and infantry slot,
-and batches all cards into **one extra textured draw per eye**. The same batch
-now also carries the selected weapon's near-field, controller-reactive body
-card, compact selection icons for all five weapon slots, and dedicated
-artillery, airstrike and SAM combat-HUD icons. The existing shop pages
-reuse those symbols plus a repair-tool icon next to the matching purchase
-amount. All support art is display-only: action rectangles, charges,
-credit checks, selection focus and combat logic are unchanged.
-The world, shore terrain, water, emplacement and 3D target volumes remain
-authoritative and unmodified. Textured cards use original enemy/infantry x/z positions,
-world-stable XY planes facing the defended battery, with aircraft roll taken
-from existing simulated banking; their position is not independently
-recomputed for the left and right eyes. Depth testing and nearest texture
-sampling are retained, with fragment discard avoiding alpha-sort/blend
-dependencies. The formerly flat forward sky is now a fully wrapped
-world-space atmospheric panorama. The gun pedestal and hand-aimed barrel
-remain anchored in 3D, while its visible
-housing is now an equipment-specific 2.5D foreground card instead of
-identical generic boxes for every weapon. It is not finished production
-sprite artwork. The world-space housing follows the selected weapon in
-Campaign, while controller aim still drives the barrel; no new input
-bindings or ballistics are introduced.
+and batches all cards into **one extra textured draw per eye**. The batch
+also carries compact selection icons for all five weapons and dedicated
+artillery, airstrike and SAM combat-HUD icons. Shop pages reuse those
+symbols, plus the repair icon next to the matching purchase amount.
+The older near-field weapon-body billboard has been **removed** from combat:
+the actual mounted 3D weapon is now generated in the same flat-color mesh as
+the shoreline. Atlas weapon silhouettes remain available as catalog/HUD icons.
+Textured enemy cards retain authoritative simulated positions and aircraft
+banking. Shader creation, sampling, color and target collision rules are
+otherwise unchanged. The atmospheric panorama still encloses the world.
+
+**2026-10-16 menu and gun implementation:** The old gun was essentially
+two crossed, camera-thin barrel planes behind a billboard. The game-private
+`breakwater_gun_mesh.h` now emits deterministic 12-sided XYZRGB triangles
+for five weapon variants: tapered barrel, darker muzzle recess, breech and
+reinforcing collars, two thick faceted wheels and a sloping armor shield.
+Flak and missile mounts gain a second actual offset barrel. The gun tube
+rotates with the existing world-space pointer aim (including elevation);
+it introduces **no change** to weapon ownership, hit testing, the 80-byte
+shop save, simulation ballistics, or the shell's emergency controls. The
+emplacement and its large lower parapet render only during active combat,
+not behind the shop/briefing menus where they could obscure credits and
+action labels. Exact geometry tests for the game-private generator passed
+strict GCC/Clang C++17 builds; full GLES2/NDK/stereo proof remains pending.
+
+The shop previously painted its credit total below its own board, and
+incorrectly allowed text larger than the card width. Breakwater now lays
+out the entire shop and difficulty selector using
+`breakwater_menu_layout.h`, one authoritative set of bounds for drawing
+and ray hit testing. The compact panel uses fitted actual stroked letter
+geometry for purchase names/prices, a row of concise `START`/`ARMORY`
+actions, hover highlighting, and credits **inside** the bottom margin.
+The live headings show location, day/night, wave and available credits.
+Shop elements sit above the shoreline's -1.10 sea-height occlusion plane,
+and non-existent armory cells 6/7 no longer accept presses. Actual text
+still uses `reverie_native_vector_text.h`, not square placeholder boxes.
+The CPU geometry tests cover card bounds, label fitting, all actionable
+ray regions and menu/footer clipping; device stereoscopic readability
+remains unverified. The renderer draws all of this in the same existing
+scene batch and does not add a per-eye menu simulation pass.
 
 Native regression assertions check atlas coverage, transparency, tile UVs,
 finite six-vertex card geometry, aircraft bank, fail-closed dimensions,
