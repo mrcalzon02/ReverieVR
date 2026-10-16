@@ -588,6 +588,31 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 REVERIE_NATIVE_SOUND_WEAPON_HEAVY:REVERIE_NATIVE_SOUND_WEAPON_MACHINE);
         if(m->sim.phase()!=Phase::Flight)Save(m);
         Rebuild(m);
+    }else if(phase==Phase::Chart&&m->inSupport){
+        m->navTime-=dt;
+        if(m->navTime<=0.f&&std::fabs(in->move_y)>.55f){
+            m->supportSelected=std::max(0,std::min(6,
+                 m->supportSelected+(in->move_y>0.f?1:-1)));
+            m->navTime=.17f;
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+            Rebuild(m);
+        }
+        if(pressed&&!m->primary){
+            bool good=false;
+            if(m->supportSelected==6){m->inSupport=false;good=true;}
+            else if(m->supportSelected<2){
+                good=m->sim.hire_support(m->supportSelected==0?
+                    SupportKind::CapitaineEclair:SupportKind::MademoiselleMacaron);
+                if(good)Save(m);
+            }else{
+                good=m->sim.upgrade_support(
+                    static_cast<SupportSkill>(m->supportSelected-2));
+                if(good)Save(m);
+            }
+            ReverieNativeRequestFeedbackV1(m->host,good?
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            Rebuild(m);
+        }
     }else if(phase==Phase::Chart&&m->inYard){
         m->navTime-=dt;
         const float x=in->move_x,y=in->move_y;
@@ -633,19 +658,23 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 if(y>0&&m->selected<3)m->selected=3;
                 else if(y>0&&m->selected<7)m->selected=7;
                 else if(y>0&&m->selected<10)m->selected=10;
-                else if(y<0&&m->selected==10)m->selected=7;
+                else if(y<0&&(m->selected==10||m->selected==11))m->selected=7;
                 else if(y<0&&m->selected>=7)m->selected=3;
                 else if(y<0&&m->selected>=3)m->selected=0;
             }else if(m->selected<3)m->selected=(m->selected+(x>0?1:2))%3;
             else if(m->selected<7)m->selected=3+(m->selected-3+(x>0?1:3))%4;
             else if(m->selected<10)m->selected=7+(m->selected-7+(x>0?1:2))%3;
+            else m->selected=m->selected==10?11:10;
             m->navTime=.20f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
         }
         if(pressed&&!m->primary){
             bool good=false;
-            if(m->selected<3)good=m->sim.launch(static_cast<unsigned>(m->selected));
+            if(m->selected<3){
+                good=m->sim.launch(static_cast<unsigned>(m->selected));
+                if(good)Save(m); // atomically consume paid booking in campaign slot
+            }
             else if(m->selected<7){
                 good=m->sim.buy(static_cast<Upgrade>(m->selected-3));
                 if(good)Save(m);
@@ -654,8 +683,10 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 good=m->sim.owns_weapon(requested)?
                     m->sim.select_weapon(requested):m->sim.buy_weapon(requested);
                 if(good)Save(m);
-            }else{
+            }else if(m->selected==10){
                 m->inYard=true;m->garageX=3;m->garageY=3;good=true;
+            }else{
+                m->inSupport=true;m->supportSelected=0;good=true;
             }
             ReverieNativeRequestFeedbackV1(m->host,good?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
             Rebuild(m);
