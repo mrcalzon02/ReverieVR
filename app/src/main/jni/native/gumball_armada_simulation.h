@@ -7,7 +7,7 @@
 namespace reverie { namespace gumball {
 constexpr uint32_t kLaneCount=4096;
 constexpr unsigned kEnemySlots=24;
-enum class Phase : uint8_t { Chart,Flight,Won,Lost,KingdomSaved };
+enum class Phase : uint8_t { Chart,Flight,Won,Lost,ArmadaDefeated };
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
 enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress };
 struct Enemy { float x=0,y=0,age=0,firing=0; int hp=0; bool active=false,boss=false; EnemyKind kind=EnemyKind::Scout; };
@@ -192,7 +192,7 @@ public:
             cash_+=completion_bonus_;sortie_cash_+=completion_bonus_;
             node_=destination_.id;++visited_;
             if(destination_.fortress&&bossKilled_)bosses_|=1u<<(node_/1024u);
-            phase_=bosses_==15u?Phase::KingdomSaved:Phase::Won;
+            phase_=bosses_==15u?Phase::ArmadaDefeated:Phase::Won;
         }
     }
     bool recover(){
@@ -213,7 +213,7 @@ public:
         seed_=s.seed;node_=s.node;visited_=s.visited;cash_=s.cash;
         kills_=s.kills;bosses_=s.bosses;
         for(unsigned i=0;i<4;++i)levels_[i]=s.levels[i];
-        phase_=bosses_==15u?Phase::KingdomSaved:Phase::Chart;
+        phase_=bosses_==15u?Phase::ArmadaDefeated:Phase::Chart;
         return true;
     }
 private:
