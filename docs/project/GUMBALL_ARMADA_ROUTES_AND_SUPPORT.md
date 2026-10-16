@@ -79,10 +79,25 @@ The compact in-VR Chart has a **SUPPORT** entry next to SHIPYARD. The support sc
 
 **Balancing/acceptance obligations:** support purchases cannot create unlimited cash; real ally bullets, kills, salvage pickups and shields must be observed; no assistance should guarantee boss deletion; mission failure does not refund the cost; no support shot can overrun the fixed 48-projectile pool. Player should be able to recognize their hired escort using a compact silhouette and name/HUD without overlapping core mission information. Test the start-of-mission save and migration on a real phone before calling support purchases durable under process kill or Android updates.
 
+## 3.1. Purchasable automatic emergency supplies — 2026-10-16
+
+The Support screen now has two additional **genuinely consumable** purchases, independent of the hired Éclair/Macaron slot. Both operate automatically in a mission, requiring no extra Daydream button or intrusive separate gameplay tab.
+
+| Supply | Cost | Trigger | One actual effect |
+|---|---:|---|---|
+| **Hull Patch** | 65 Gumballs | Living hull at or below 50% of equipped maximum | Restore **up to 30** missing hull points; cannot revive a destroyed vessel |
+| **Shield Tonic** | 45 Gumballs | Current shield at or below 50% of equipped maximum | Restore **up to 24** missing shield points |
+
+Only **one charge of each type** can be held at a time; trying to buy the same type again is rejected without taking currency. A separate type can be purchased at the same time as a pending escort. A charge is not consumed at full health, and repeated updates cannot produce a second use from an expended item. Both are real simulation effects, not menu-only purchases. The flight HUD shows which automatic supplies remain available.
+
+To avoid a cash/ownership split transaction, the already versioned 56-byte V3 campaign snapshot stores the two charge flags in `support_state` bits **10 and 11**, after the four two-bit upgrade levels in bits 0–7 and pending paid escort in bits 8–9. Bits 12–31 remain rejected on restore. Existing V1, V2 and earlier V3 saves load with no supplies held. Purchase writes the existing `campaign.v1` host slot immediately; **when an automatic kit is actually spent, the module writes the updated same-slot campaign snapshot during that flight frame**. Failed host writes retain the existing player-visible campaign-save error, not an invented durability guarantee under full process corruption. No separate supply save slot is introduced.
+
+The exact committed `gumball_support_contracts.h` and `gumball_support_contracts_test.cpp` locally passed strict GCC, Clang and Clang ASan/UBSan, including single-use/duplicate/debit rules, corruption/restore rejection, threshold activation, capped repair, and zero-hull no-revival. Integrated combat/regression source now asserts stored charge flags and no healthy auto-consumption, but **the complete combined native build, Android APK and reference-headset interaction remain unverified**.
+
 ## 4. Verification and remaining gates
 
 **Verified locally:** exact source of `gumball_support_contracts.h` and `gumball_support_contracts_test.cpp` matched committed GitHub blob SHAs and passed strict C++17 `g++`, `clang++` plus Clang AddressSanitizer/UndefinedBehaviorSanitizer runs. Tests cover cost debits, duplicate hire refusal, insufficient funds, upgrade cap and isolation, skill effects and state reconstitution. Source integration tests have been extended for V2→V3 migrations, corrupted support-state rejection, paid mission consumption, real escort fire and all three new route threat identities. **Those integrated tests have not yet been executed against an exact checkout**; native shell ABI/NDK compilation, APK install, controller navigation, both-eye visuals and extended thermals remain pending.
 
-**Still planned:** region reputation and relationship unlocks, purchasable temporary fighter squadrons beyond Éclair/Macaron, special-use stackable hull/health booster *consumable items* (Macaron currently provides real capped hull and shield repair as an escort action instead), Extra Lime continues, portraits, original recorded French-tinged voices, authored audio/SFX, shop operators, full S10 revisitable graph and complete Candy King campaign. Avoid claiming these from the two base contracts.
+**Still planned:** region reputation and relationship unlocks, purchasable temporary fighter squadrons beyond Éclair/Macaron, stackable/multiple-use hull and shield boosters beyond the two implemented non-stackable emergency supplies, Extra Lime continues, portraits, original recorded French-tinged voices, authored audio/SFX, shop operators, full S10 revisitable graph and complete Candy King campaign. Avoid claiming these from the two base contracts.
 
 **Art provenance:** do not fabricate portrait paths or add image assets during this pass. Future illustrations can follow the cast bible without changing gameplay IDs.
