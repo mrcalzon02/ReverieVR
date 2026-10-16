@@ -68,6 +68,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onDosOverlayResumeRequested();
         // DOS hands off held/queued guest input when a shell UI takes focus.
         void onDosGuestInputFocusLost();
+        // Physical-looking desk keys send real DOS virtual-key edges.
+        void onDosDeskKeyRequested(VirtualKey key, boolean shift);
         void onVolumeAdjustRequested(int direction);
         void onBrightnessAdjustRequested(int direction);
         String getActiveBindingProfileName();
@@ -413,6 +415,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final List<NativeModuleRuntime.Descriptor> nativeApps;
     private final List<NativeModuleRuntime.Descriptor> nativeGames;
     private final VrKeyboardEditor keyboardEditor = new VrKeyboardEditor();
+    private final VrKeyboardEditor dosLibrarySearchEditor = new VrKeyboardEditor();
+    private final VrKeyboardEditor dosGuestKeyboardEditor = new VrKeyboardEditor();
+    private int keyboardLegendMode = -1;
     private final HomeKeyboardTwin keyboardTwin = new HomeKeyboardTwin();
     // Stabilizes shell hover only. Never smooths input rays or guest aiming.
     private final VrUiTargetStabilizer uiTargetStabilizer =
@@ -960,7 +965,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     /** External keyboard input is accepted only while the VR desk is active. */
     boolean acceptsPhysicalKeyboardInput() {
-        return (mode == MODE_HOME || mode == MODE_KEYBOARD)
+        return (mode == MODE_HOME || mode == MODE_KEYBOARD
+            || mode == MODE_DOS_LIBRARY)
             && !orientationMenuVisible && !rendererFailed;
     }
 
@@ -1012,11 +1018,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 if (edit.key == VirtualKey.SHIFT) {
                     keyboardEditor.setPhysicalShift(
                         keyboardTwin.held(VirtualKey.SHIFT));
+                    dosLibrarySearchEditor.setPhysicalShift(
+                        keyboardTwin.held(VirtualKey.SHIFT));
                 }
             }
             if (edit.down
                 && edit.action != VrKeyboardEditor.EXTERNAL_NO_TEXT) {
-                keyboardEditor.applyExternal(edit.action, edit.text);
+                if (mode == MODE_DOS_LIBRARY) {
+                    if (dosLibrarySearchEditor.applyExternal(edit.action, edit.text))
+                        jumpToDosLibrarySearchMatch();
+                } else {
+                    keyboardEditor.applyExternal(edit.action, edit.text);
+                }
             }
             keyboardTextureDirty = true;
             textureDirty = true;
@@ -1025,6 +1038,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             keyboardTwin.releaseAll();
         }
         keyboardEditor.setPhysicalShift(
+            keyboardTwin.held(VirtualKey.SHIFT));
+        dosLibrarySearchEditor.setPhysicalShift(
             keyboardTwin.held(VirtualKey.SHIFT));
         if (keyboardTwin.updateVisualState(frameNanos)) {
             keyboardTextureDirty = true;
@@ -2346,10 +2361,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             // options overlay. Do this once when entering UI focus; not on
             // each frame or when moving between shell buttons.
             if (mode == MODE_DOS && !orientationMenuVisible
-                && newHover >= 0 && hoveredButton < 0) {
+                && newHover >= 0 && newHover < HOME_KEYBOARD_HIT_OFFSET
+                && hoveredButton < 0) {
                 host.onDosGuestInputFocusLost();
             }
-            if (mode == MODE_HOME
+            if ((mode == MODE_HOME || mode == MODE_DOS_LIBRARY
+                || mode == MODE_DOS)
                 && (newHover >= HOME_KEYBOARD_HIT_OFFSET
                     || hoveredButton >= HOME_KEYBOARD_HIT_OFFSET)) {
                 homeKeyboardHoveredKey = newHover >= HOME_KEYBOARD_HIT_OFFSET
@@ -2379,7 +2396,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (progressTick != lastGazeProgressTick) {
             lastGazeProgressTick = progressTick;
             textureDirty = true;
-            if (mode==MODE_HOME && gazeDwell.target()>=HOME_KEYBOARD_HIT_OFFSET)
+            if ((mode == MODE_HOME || mode == MODE_DOS_LIBRARY
+                || mode == MODE_DOS)
+                && gazeDwell.target()>=HOME_KEYBOARD_HIT_OFFSET)
                 keyboardTextureDirty=true;
         }
         if (backRequested.getAndSet(false)) {
@@ -2924,6 +2943,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.GL_ONE_MINUS_SRC_ALPHA
         );
 
+        if (keyboardLegendMode != mode) {
+            keyboardLegendMode = mode;
+            keyboardTextureDirty = true;
+        }
         if (mode == MODE_HOME
             && !orientationMenuVisible) {
             if (!phonePanelVisible) {
@@ -2942,6 +2965,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.glEnable(GLES20.GL_DEPTH_TEST);
             GLES20.glDepthMask(true);
         } else {
+            boolean dosDeskVisible = !orientationMenuVisible
+                && (mode == MODE_DOS_LIBRARY
+                    || (mode == MODE_DOS && !dosRenderer.isFullScreen()));
             drawTexturedPanel(
                 mode == MODE_KEYBOARD && !orientationMenuVisible
                     ? keyboardSlabVertexBuffer
@@ -2953,6 +2979,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         ? dosMenuVertexBuffer : vertexBuffer,
                 uvBuffer
             );
+            if (dosDeskVisible) {
+                if (keyboardTextureDirty) rebuildHomeKeyboardTexture();
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, keyboardTexture);
+                GLES20.glDepthMask(false);
+                GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+                drawTexturedPanel(keyboardSlabVertexBuffer, uvBuffer);
+                GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+                GLES20.glDepthMask(true);
+            }
         }
 
         GLES20.glDisable(
@@ -4290,19 +4325,23 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return UiRayHit.miss();
         }
         if (mode == MODE_DOS_LIBRARY) {
-            return hitPanel(origin, direction,
+            return nearer(hitPanel(origin, direction,
                 -DOS_LIBRARY_HALF_WIDTH, DOS_LIBRARY_HALF_WIDTH,
                 -DOS_LIBRARY_HALF_HEIGHT, DOS_LIBRARY_HALF_HEIGHT,
-                DOS_LIBRARY_PANEL_Z, 0, TEXTURE_WIDTH, 0, TEXTURE_HEIGHT);
+                DOS_LIBRARY_PANEL_Z, 0, TEXTURE_WIDTH, 0, TEXTURE_HEIGHT),
+                hitHomeKeyboard(origin, direction));
         }
         if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS
             || mode == MODE_DOS_BINDING_TUNING) {
-            return hitTiltedPanel(origin, direction,
+            UiRayHit rail = hitTiltedPanel(origin, direction,
                 DOS_MENU_LEFT, DOS_MENU_RIGHT,
                 DOS_MENU_BOTTOM, DOS_MENU_TOP,
                 DOS_MENU_LEFT_Z, DOS_MENU_RIGHT_Z,
                 0, TEXTURE_WIDTH, 0, TEXTURE_HEIGHT);
+            return mode == MODE_DOS
+                ? nearer(rail, hitHomeKeyboard(origin, direction))
+                : rail;
         }
 
         if (mode == MODE_HOME && phonePanelVisible
@@ -4581,6 +4620,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 < ORIENTATION_MENU_BUTTONS.length;
         }
 
+        if ((mode == MODE_DOS_LIBRARY || mode == MODE_DOS)
+            && index >= HOME_KEYBOARD_HIT_OFFSET)
+            return index - HOME_KEYBOARD_HIT_OFFSET < KEYBOARD_BUTTONS.length;
         if (mode == MODE_HOME) {
             if (index >= HOME_KEYBOARD_HIT_OFFSET)
                 return index - HOME_KEYBOARD_HIT_OFFSET < KEYBOARD_BUTTONS.length;
@@ -4824,6 +4866,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
+        if ((mode == MODE_DOS_LIBRARY || mode == MODE_DOS)
+            && hoveredButton >= HOME_KEYBOARD_HIT_OFFSET) {
+            int key = hoveredButton - HOME_KEYBOARD_HIT_OFFSET;
+            if (mode == MODE_DOS_LIBRARY) pressDosLibrarySearchKey(key);
+            else pressDosGuestKey(key);
+            hoveredButton = -1;
+            homeKeyboardHoveredKey = -1;
+            keyboardTextureDirty = true;
+            return;
+        }
         if (mode == MODE_HOME) {
             if (phonePanelVisible && hoveredButton >= 25
                 && hoveredButton < 19 + PhonePanelControlGeometry.COUNT) {
@@ -7340,21 +7392,29 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void drawKeyboard(Canvas canvas, Paint paint, int highlightedKey) {
+        VrKeyboardEditor editor = mode == MODE_DOS_LIBRARY
+            ? dosLibrarySearchEditor
+            : mode == MODE_DOS ? dosGuestKeyboardEditor : keyboardEditor;
         paint.setColor(Color.WHITE);
         paint.setTextSize(30.0f * uiScale);
-        canvas.drawText(physicalKeyboardAttached
-            ? "KEYBOARD TWIN - PHYSICAL + VR"
+        canvas.drawText(mode == MODE_DOS_LIBRARY ? "DOS LIBRARY SEARCH"
+            : mode == MODE_DOS ? "DOS GAME KEYBOARD"
+            : physicalKeyboardAttached ? "KEYBOARD TWIN - PHYSICAL + VR"
             : "VIRTUAL KEYBOARD - COPY TEXT", 72, 110, paint);
         paint.setColor(Color.rgb(35, 45, 58));
         canvas.drawRoundRect(72, 133, 952, 211, 10, 10, paint);
-        String value = keyboardEditor.value().replace("\n", " ↵ ").replace("\t", " ⇥ ");
-        int caret = keyboardEditor.cursor();
+        String value = mode == MODE_DOS
+            ? "Select a key to send it to DOS. O/Home = Quick Menu"
+            : editor.value().replace("\n", " ↵ ").replace("\t", " ⇥ ");
+        int caret = editor.cursor();
         String visible = shorten(value, 85);
         paint.setColor(Color.WHITE);
         paint.setTextSize(23.0f * uiScale);
         canvas.drawText(visible, 90, 176, paint);
         paint.setTextSize(16.0f * uiScale);
-        canvas.drawText("Cursor " + caret + " / " + keyboardEditor.value().length(),
+        canvas.drawText(mode == MODE_DOS ? "Guest text / arrows / Escape"
+            : mode == MODE_DOS_LIBRARY ? "Type a title to jump in the library"
+            : "Cursor " + caret + " / " + editor.value().length(),
             75, 224, paint);
         for (int key = 0; key < 50; key++) {
             int[] rect = KEYBOARD_BUTTONS[key];
@@ -7366,14 +7426,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     : Color.rgb(42, 54, 66)));
             canvas.drawRoundRect(rect[0], rect[1], rect[2], rect[3], 9, 9, paint);
             paint.setColor(Color.WHITE);
-            String label = keyboardEditor.label(key / 10, key % 10);
+            String label = editor.label(key / 10, key % 10);
             paint.setTextSize((label.length() > 4 ? 13 : 21) * uiScale);
             float textX = rect[0] + (rect[2]-rect[0]-paint.measureText(label))*0.5f;
             float baseline = rect[1] + (rect[3]-rect[1]
                 - paint.ascent()-paint.descent())*0.5f;
             canvas.drawText(label, textX, baseline, paint);
-            int gazeIndex = mode == MODE_HOME
-                ? HOME_KEYBOARD_HIT_OFFSET+key : key;
+            int gazeIndex = (mode == MODE_HOME || mode == MODE_DOS_LIBRARY
+                || mode == MODE_DOS) ? HOME_KEYBOARD_HIT_OFFSET+key : key;
             if (gazeIndex==gazeDwell.target() && highlightedKey==key)
                 drawGazeDwellIndicator(canvas,paint,rect);
         }
@@ -7385,10 +7445,64 @@ final class VrShellRenderer implements CardboardView.Renderer {
         canvas.drawRoundRect(done[0],done[1],done[2],done[3],8,8,paint);
         paint.setColor(Color.WHITE);
         paint.setTextSize(24.0f * uiScale);
-        canvas.drawText("COPY + CLOSE", 429, 720, paint);
-        int doneIndex=mode == MODE_HOME ? HOME_KEYBOARD_HIT_OFFSET+50 : 50;
+        canvas.drawText(mode == MODE_DOS_LIBRARY ? "CLEAR SEARCH"
+            : mode == MODE_DOS ? "ESCAPE" : "COPY + CLOSE", 429, 720, paint);
+        int doneIndex=(mode == MODE_HOME || mode == MODE_DOS_LIBRARY
+            || mode == MODE_DOS) ? HOME_KEYBOARD_HIT_OFFSET+50 : 50;
         if(doneIndex==gazeDwell.target() && highlightedKey==50)
             drawGazeDwellIndicator(canvas,paint,done);
+    }
+
+    private void pressDosLibrarySearchKey(int key) {
+        if (key == 50) dosLibrarySearchEditor.press(4, 9);
+        else if (!dosLibrarySearchEditor.press(key / 10, key % 10)) {
+            host.onUiActionRejected();
+            return;
+        }
+        jumpToDosLibrarySearchMatch();
+        keyboardTwin.virtualPress(key, System.nanoTime());
+        keyboardTextureDirty = true;
+        textureDirty = true;
+    }
+
+    private void jumpToDosLibrarySearchMatch() {
+        String query = dosLibrarySearchEditor.value().trim().toLowerCase(Locale.ROOT);
+        if (query.isEmpty()) {
+            dosLibraryScrollFirst = 0;
+        } else {
+            for (int i = 0; i < dosModuleNames.length; i++) {
+                if (dosModuleNames[i].toLowerCase(Locale.ROOT).contains(query)) {
+                    dosLibraryScrollFirst = Math.min(i,
+                        DosLibraryScroll.maxFirst(dosModuleNames.length));
+                    break;
+                }
+            }
+        }
+        dosLibraryTouchRemainder = 0f;
+        textureDirty = true;
+    }
+
+    private void pressDosGuestKey(int key) {
+        if (key == 50) {
+            host.onDosDeskKeyRequested(VirtualKey.ESCAPE, false);
+        } else {
+            int row = key / 10, column = key % 10;
+            if ((row == 3 && column == 0)
+                || (row == 4 && (column == 0 || column == 1))) {
+                dosGuestKeyboardEditor.press(row, column);
+            } else {
+                DosDeskKeyMapper.Stroke stroke = DosDeskKeyMapper.map(
+                    dosGuestKeyboardEditor.label(row, column));
+                if (stroke == null) {
+                    host.onUiActionRejected();
+                    return;
+                }
+                host.onDosDeskKeyRequested(stroke.key, stroke.shift);
+                dosGuestKeyboardEditor.clearOneShotShift();
+            }
+        }
+        keyboardTwin.virtualPress(key, System.nanoTime());
+        keyboardTextureDirty = true;
     }
 
     private void drawEmulatorCatalog(Canvas canvas, Paint paint) {

@@ -179,3 +179,18 @@ without click; release/rearm prevents stale touch between modes. Vertical
 swipes still scroll the DOS list. DOS gameplay retains holdable guest arrow
 keys instead of shell locomotion. These are source changes pending physical
 Galaxy S9 acceptance, not hardware proof.
+
+## DOS floor keyboard activation (2026-10-15 source)
+
+The desk's 51 hit-tested keycaps remain visibly drawn in the DOS library
+and windowed DOS gameplay. Library keys search installed title names and
+jump the scrollable list to the first match; CLEAR SEARCH removes the query.
+Windowed DOS guest keys instead send real virtual-key edges, including
+Enter, Tab, Backspace, Delete, arrows, printable characters and Escape;
+SHIFT/CAPS/SYMS modify keyboard labels and emitted guest key modifiers.
+This uses the existing guest input bus and intercepts Select only over an
+actual desk-key or DOS rail target; ordinary touch-only held DOS arrows and
+head-look mouse movement continue without any pressed mouse requirement.
+Fullscreen DOS intentionally excludes room geometry and floor keys;
+Home/Quick Menu retains recovery and modal guest-input suspension.
+Handset stereo/input and actual guest typing remain acceptance gates.

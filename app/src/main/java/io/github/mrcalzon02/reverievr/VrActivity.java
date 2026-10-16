@@ -421,6 +421,16 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public void onDosDeskKeyRequested(VirtualKey key, boolean shift) {
+        if (key == null || renderer == null || !renderer.isDosGameControlFocused()
+            || isGuestInputSuppressed() || virtualInputBus == null) return;
+        if (shift) virtualInputBus.applyDigital(VirtualOutput.key(VirtualKey.SHIFT), true);
+        virtualInputBus.applyDigital(VirtualOutput.key(key), true);
+        virtualInputBus.applyDigital(VirtualOutput.key(key), false);
+        if (shift) virtualInputBus.applyDigital(VirtualOutput.key(VirtualKey.SHIFT), false);
+    }
+
+    @Override
     public void onVrFirstFrameRendered() {
         if (startupFailed) {
             return;

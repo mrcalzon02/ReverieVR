@@ -34,6 +34,8 @@ final class VrKeyboardEditor {
     }
 
     String value() { return buffer.toString(); }
+    // A guest key goes directly to the virtual bus, not the text clipboard.
+    void clearOneShotShift() { shift = false; }
     int cursor() { return caret; }
     boolean shifted() { return shift; }
     boolean capsLocked() { return caps; }
