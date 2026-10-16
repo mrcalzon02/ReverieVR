@@ -17,6 +17,8 @@ using reverie::gumball::Upgrade;
 using reverie::gumball::Enemy;
 using reverie::gumball::EnemyKind;
 using reverie::gumball::Snapshot;
+using reverie::gumball::SnapshotV1;
+using reverie::gumball::Weapon;
 const char kId[]="gumball-armada";
 const char kName[]="Gumball Armada: Candy King Search [DEV]";
 struct Module {
@@ -114,18 +116,31 @@ void Chart(Module* m){
     const char* upgrades[]={"BLASTER","HULL","THRUSTER","SHIELD"};
     for(int i=0;i<4;++i){
         float x=-1.82f+1.21f*i;
-        Frame(m,x,-.73f,1.12f,.70f,m->selected==i+3);
-        Text(m,upgrades[i],x,-.55f,.038f,.92f,.88f,1.f);
+        Frame(m,x,-.53f,1.12f,.66f,m->selected==i+3);
+        Text(m,upgrades[i],x,-.37f,.038f,.92f,.88f,1.f);
         std::snprintf(text,sizeof(text),"LV %d %dG",m->sim.level(static_cast<Upgrade>(i)),
                       m->sim.price(static_cast<Upgrade>(i)));
-        Text(m,text,x,-.87f,.036f,1.f,.81f,.56f);
+        Text(m,text,x,-.66f,.036f,1.f,.81f,.56f);
+    }
+    const char* weapons[]={"PEA REPEATER","ROCK CANNON","MINT SPREAD"};
+    for(int i=0;i<3;++i){
+        const float x=-1.54f+1.54f*i;
+        const Weapon kind=static_cast<Weapon>(i);
+        Frame(m,x,-1.16f,1.43f,.47f,m->selected==i+7);
+        Text(m,weapons[i],x,-1.07f,.035f,.95f,.88f,.96f);
+        if(m->sim.weapon()==kind)Text(m,"EQUIPPED",x,-1.25f,.030f,.45f,1.f,.65f);
+        else if(m->sim.owns_weapon(kind))Text(m,"CLICK EQUIP",x,-1.25f,.030f,.80f,.89f,.95f);
+        else{
+            std::snprintf(text,sizeof(text),"BUY %dG",m->sim.weapon_price(kind));
+            Text(m,text,x,-1.25f,.030f,1.f,.77f,.43f);
+        }
     }
     std::snprintf(text,sizeof(text),"GUMBALLS %u  RANK %d  GENERALS %u/4",
                   m->sim.cash(),m->sim.command_rank(),
                   static_cast<unsigned>((m->sim.bosses()&1u)+((m->sim.bosses()>>1)&1u)
                     +((m->sim.bosses()>>2)&1u)+((m->sim.bosses()>>3)&1u)));
-    Text(m,text,0,-1.31f,.038f,1.f,.86f,.60f);
-    Text(m,"PAD CHOOSE  CLICK LAUNCH OR BUY",0,-1.55f,.033f,.72f,.87f,.93f);
+    Text(m,text,0,-1.51f,.035f,1.f,.86f,.60f);
+    Text(m,"PAD MOVE  CLICK ACTIVATE",0,-1.66f,.030f,.72f,.87f,.93f);
 }
 void EnemyVisual(Module* m,const Enemy& e){
     const float x=e.x,y=e.y;
