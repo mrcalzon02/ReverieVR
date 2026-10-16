@@ -44,6 +44,7 @@ public:
     int volley_damage()const{return 2+static_cast<int>(levels_[0]);}
     int volley_count()const{return 3+static_cast<int>(levels_[1]);}
     int shield_repair()const{return 7+3*static_cast<int>(levels_[2]);}
+    int hull_repair()const{return 5+2*static_cast<int>(levels_[2]);}
     float tractor_reach()const{return 1.00f+.18f*static_cast<float>(levels_[3]);}
     bool restore(const uint8_t (&levels)[4],uint8_t hired){
         for(uint8_t l:levels)if(l>kMaxLevel)return false;
