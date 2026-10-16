@@ -40,6 +40,10 @@ A candy-painted flight-action RPG, with modular ships made from licorice trusses
 
 **Test:** scripts/verify-gumball-armada.sh runs standalone C++17 regression code. No new GitHub Actions are required. The source module is not accepted as a tested handset game until Android/NDK and physical-device evidence exists.
 
+## Recurring side characters and support cast
+
+The **14 named character concepts** (six shopkeepers/operators, two friendly mid-sortie support pilots, and six recurring Sour nuisance/rival pilots) have an authoritative *planned* cast bible: [GUMBALL_ARMADA_CAST_BIBLE.md](GUMBALL_ARMADA_CAST_BIBLE.md). It records original characterization, shop archetype assignments, sample dialogue, future encounter mechanics and visual briefs. **No portraits, support calls, named enemy attacks, voice lines or shops are implemented by this documentation commit.** Character images are deliberately deferred for later production.
+
 ## Full production roadmap and release-content targets
 
 The development roadmap is now decomposed into 19 gated production stages, S00 through S18, from source verification to one full arcade sortie, weapons/defenses, genuine player-built ships, salvage and shops, revisitable galaxy, four individual Sour general campaigns, finale, audio/art completion and signed APK acceptance. See [GUMBALL_ARMADA_STAGED_PLAN.md](GUMBALL_ARMADA_STAGED_PLAN.md). Quantified planned catalogs (functional blocks, enemies, authored missions, voices, music, effects, art provenance and integration gates) are in [GUMBALL_ARMADA_CONTENT_MATRIX.md](GUMBALL_ARMADA_CONTENT_MATRIX.md). All targets are **planned**, not claims that these assets or systems currently exist.
