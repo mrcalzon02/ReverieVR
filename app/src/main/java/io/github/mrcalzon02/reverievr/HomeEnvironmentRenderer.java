@@ -179,6 +179,32 @@ final class HomeEnvironmentRenderer {
     // 51 batched, physically raised keycaps remain visible without labels.
     private final Mesh keyboardKeycaps = mesh(buildKeyboardKeycaps());
 
+    // Pre-baked GLES2 atmosphere. Only two bird translations animate.
+    private final Mesh skyLow=mesh(HomeAtmosphereGeometry.skyBand(-1.35f,1.5f));
+    private final Mesh skyMid=mesh(HomeAtmosphereGeometry.skyBand(1.5f,6f));
+    private final Mesh skyHigh=mesh(HomeAtmosphereGeometry.skyBand(6f,14f));
+    private final Mesh clouds=mesh(HomeAtmosphereGeometry.highClouds());
+    private final Mesh sun=mesh(HomeAtmosphereGeometry.sun());
+    private final Mesh forestHills=mesh(HomeAtmosphereGeometry.distantHills(true));
+    private final Mesh beachHills=mesh(HomeAtmosphereGeometry.distantHills(false));
+    private final Mesh forestAnimals=mesh(HomeAtmosphereGeometry.woodlandWildlife());
+    private final Mesh beachAnimals=mesh(HomeAtmosphereGeometry.shoreWildlife());
+    private final Mesh bird=mesh(HomeAtmosphereGeometry.flyingBird());
+    private final Mesh windowSky=mesh(HomeAtmosphereGeometry.windowSky());
+    private final Mesh windowHorizon=mesh(HomeAtmosphereGeometry.windowHorizon());
+    private final Mesh windowFrames=mesh(HomeAtmosphereGeometry.windowFrames());
+    private final float[] ambientBaseMvp=new float[16];
+    private long firstAmbientFrameNanos;
+    private float ambientSeconds;
+
+    // The GL-thread frame clock advances once, before left/right eye drawing.
+    void setAmbientFrameTime(long nanos) {
+        if(nanos<=0L)return;
+        if(firstAmbientFrameNanos==0L || nanos<firstAmbientFrameNanos)
+            firstAmbientFrameNanos=nanos;
+        ambientSeconds=((nanos-firstAmbientFrameNanos)/1_000_000_000f)%10000f;
+    }
+
     private final Mesh outdoorGround =
         mesh(quadHorizontal(-24.0f, 24.0f, -24.0f, 24.0f, -1.35f));
     private final Mesh forestTrunks =
@@ -309,6 +335,7 @@ final class HomeEnvironmentRenderer {
 
         switch (safe) {
             case FOREST_GLADE:
+                drawOutdoorSky(true);
                 draw(
                     outdoorGround,
                     0.30f,
@@ -336,9 +363,12 @@ final class HomeEnvironmentRenderer {
                 draw(forestDetailFlowers, 0.90f, 0.79f, 0.44f, 1.0f);
                 draw(forestDetailFallenWood, FOREST_WOOD_COLOR[0],
                     FOREST_WOOD_COLOR[1], FOREST_WOOD_COLOR[2], 1.0f);
+                draw(forestAnimals,.47f,.32f,.20f,1f);
+                drawFlyingBirds(false);
                 break;
 
             case DUNE_BEACH:
+                drawOutdoorSky(false);
                 draw(
                     outdoorGround,
                     0.82f,
@@ -375,6 +405,8 @@ final class HomeEnvironmentRenderer {
                 draw(beachDetailWavelets, 0.43f, 0.70f, 0.73f, 1.0f);
                 draw(beachDetailRockClusters, BEACH_STONE_COLOR[0],
                     BEACH_STONE_COLOR[1], BEACH_STONE_COLOR[2], 1.0f);
+                draw(beachAnimals,.55f,.23f,.14f,1f);
+                drawFlyingBirds(true);
                 break;
 
             case WHITE_ROOM:
@@ -400,6 +432,11 @@ final class HomeEnvironmentRenderer {
                     0.92f,
                     1.0f
                 );
+                // Inset outdoor view just in front of the back wall; no
+                // transparency, stencil, extra shader or shell input changes.
+                draw(windowSky,.47f,.72f,.88f,1f);
+                draw(windowHorizon,.34f,.52f,.43f,1f);
+                draw(windowFrames,.58f,.47f,.34f,1f);
                 draw(
                     whiteFront,
                     0.90f,
@@ -446,6 +483,38 @@ final class HomeEnvironmentRenderer {
                 draw(keyboardKeycaps, 0.16f, 0.21f, 0.28f, 1.0f);
                 break;
         }
+    }
+
+    private void drawOutdoorSky(boolean forest) {
+        if(forest) {
+            draw(skyLow,.73f,.83f,.78f,1f);
+            draw(skyMid,.48f,.70f,.86f,1f);
+            draw(skyHigh,.31f,.54f,.77f,1f);
+            draw(forestHills,.31f,.45f,.34f,1f);
+        } else {
+            draw(skyLow,.91f,.81f,.66f,1f);
+            draw(skyMid,.56f,.76f,.90f,1f);
+            draw(skyHigh,.36f,.60f,.83f,1f);
+            draw(beachHills,.50f,.50f,.39f,1f);
+        }
+        draw(clouds,.89f,.93f,.90f,1f);
+        draw(sun,.96f,.88f,.65f,1f);
+    }
+
+    private void drawFlyingBirds(boolean beach) {
+        // The phase is shared by both eyes. Restore the world MVP exactly.
+        System.arraycopy(mvp,0,ambientBaseMvp,0,16);
+        for(int i=0;i<2;i++) {
+            float t=ambientSeconds, speed=beach?1.16f:.83f;
+            float x=-9f+((t*speed+i*9f)%19f);
+            float y=(beach?3.5f:4.1f)
+                +(float)Math.sin(t*1.8f+i*2.6f)*.24f;
+            float z=beach?-11f-i*3f:-10.5f-i*2.4f;
+            Matrix.translateM(mvp,0,ambientBaseMvp,0,x,y,z);
+            draw(bird,beach?.32f:.20f,beach?.37f:.24f,
+                beach?.40f:.25f,1f);
+        }
+        System.arraycopy(ambientBaseMvp,0,mvp,0,16);
     }
 
     /**
