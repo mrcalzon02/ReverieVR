@@ -180,7 +180,7 @@ public:
                     (rollType==1u?EnemyKind::Interceptor:EnemyKind::Bomber)));
                 const uint32_t roll=next();
                 e={-1.65f+static_cast<float>(roll%331u)*.01f,1.35f,0.f,1.45f,
-                   boss?(22+levels_[0]/2):(kind==EnemyKind::Ace?7:
+                   boss?(22+static_cast<int>(destination_.id/1024u)*4):(kind==EnemyKind::Ace?7:
                    (kind==EnemyKind::Bomber?4:(kind==EnemyKind::Interceptor?3:2))),true,boss,kind};
                 ++spawned_;break;
             }
@@ -189,24 +189,32 @@ public:
         for(auto& e:enemies_)if(e.active){
             e.age+=dt;
             const float speed=e.kind==EnemyKind::Interceptor?.53f:
-                (e.kind==EnemyKind::Bomber?.18f:(e.boss?.15f:.31f));
+                (e.kind==EnemyKind::Bomber?.18f:
+                (e.kind==EnemyKind::Ace?.43f:(e.boss?.15f:.31f)));
             e.y-=dt*(speed+.01f*destination_.hazard);
             if(e.kind==EnemyKind::Interceptor){
                 const float dx=std::max(-1.f,std::min(1.f,px_-e.x));
                 e.x+=dt*dx*.58f;
             }else if(e.kind==EnemyKind::Bomber){
                 e.x+=dt*std::sin(e.age*1.1f)*.09f;
+            }else if(e.kind==EnemyKind::Ace){
+                e.x+=dt*std::sin(e.age*3.6f)*.82f;
             }else e.x+=std::sin(e.age*2.4f+e.y)*dt*(e.boss?.22f:.37f);
             e.x=std::max(-1.85f,std::min(1.85f,e.x));
             e.firing-=dt;
             if(e.firing<=0.f){
-                for(auto& s:shots_)if(!s.active){
-                    const float drift=e.kind==EnemyKind::Interceptor?
-                        std::max(-.50f,std::min(.50f,(px_-e.x)*.32f)):0.f;
-                    s={e.x,e.y-.14f,e.kind==EnemyKind::Bomber?-1.05f:-1.3f,true,true,drift};
+                const int count=e.boss?3:(e.kind==EnemyKind::Ace?2:1);
+                const float aim=e.kind==EnemyKind::Interceptor?
+                    std::max(-.50f,std::min(.50f,(px_-e.x)*.32f)):0.f;
+                for(int n=0;n<count;++n)for(auto& shot:shots_)if(!shot.active){
+                    const float spread=e.boss?(n-1)*.43f:
+                        (e.kind==EnemyKind::Ace?(n*2-1)*.24f:0.f);
+                    shot={e.x,e.y-.14f,e.kind==EnemyKind::Bomber?-1.05f:-1.3f,
+                          true,true,aim+spread};
                     break;
                 }
-                e.firing=e.boss?.65f:(e.kind==EnemyKind::Bomber?1.85f:2.15f);
+                e.firing=e.boss?.70f:(e.kind==EnemyKind::Ace?1.18f:
+                    (e.kind==EnemyKind::Bomber?1.85f:2.15f));
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
