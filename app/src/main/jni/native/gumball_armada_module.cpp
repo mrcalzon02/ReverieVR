@@ -16,6 +16,7 @@ using reverie::gumball::Phase;
 using reverie::gumball::Upgrade;
 using reverie::gumball::Enemy;
 using reverie::gumball::EnemyKind;
+using reverie::gumball::CastGuest;
 using reverie::gumball::Snapshot;
 using reverie::gumball::SnapshotV1;
 using reverie::gumball::Weapon;
@@ -220,6 +221,13 @@ void EnemyVisual(Module* m,const Enemy& e){
         Tri(m,x,y-.18f,x,y+.25f,x+.24f,y+.09f,-2.90f,.68f,.91f,.27f);
         Rect(m,x,y+.02f,.11f,.14f,-2.86f,.96f,.98f,.60f);
         break;
+    case EnemyKind::Blort:
+        // Rotund grenadier silhouette and twin hazardous sour bomb racks.
+        Disc(m,x,y,.245f,-2.90f,.68f,.78f,.12f);
+        Rect(m,x-.23f,y-.09f,.11f,.19f,-2.88f,.97f,.31f,.11f);
+        Rect(m,x+.23f,y-.09f,.11f,.19f,-2.88f,.97f,.31f,.11f);
+        Disc(m,x,y+.06f,.09f,-2.86f,.98f,.34f,.21f);
+        break;
     case EnemyKind::Bomber:
         Rect(m,x,y,.25f,.29f,-2.90f,.72f,.64f,.18f);
         Disc(m,x-.18f,y-.04f,.105f,-2.87f,.96f,.80f,.23f);
@@ -258,10 +266,36 @@ void Flight(Module* m){
         Rect(m,drop.x,drop.y,.063f,.063f,-2.79f,.98f,.97f,.66f);
     }
     for(const auto& shot:s.shots())if(shot.active){
-        const float radius=shot.hostile?.039f:(shot.damage>=4?.085f:.037f);
-        Rect(m,shot.x,shot.y,radius,shot.hostile?.12f:(shot.damage>=4?.24f:.18f),-2.82f,
-             shot.hostile?1.f:(shot.damage>=4?1.f:.33f),
-             shot.hostile?.26f:(shot.damage>=4?.68f:.92f),shot.hostile?.20f:1.f);
+        if(shot.bomb){
+            // Larger, visibly distinct slow hazards, shootable in real combat.
+            Disc(m,shot.x,shot.y,.115f,-2.82f,.88f,.22f,.12f);
+            Disc(m,shot.x,shot.y,.054f,-2.80f,1.f,.91f,.23f);
+        }else if(shot.ally){
+            Rect(m,shot.x,shot.y,.048f,.18f,-2.81f,.45f,1.f,.56f);
+        }else{
+            const float radius=shot.hostile?.039f:(shot.damage>=4?.085f:.037f);
+            Rect(m,shot.x,shot.y,radius,shot.hostile?.12f:(shot.damage>=4?.24f:.18f),-2.82f,
+                 shot.hostile?1.f:(shot.damage>=4?1.f:.33f),
+                 shot.hostile?.26f:(shot.damage>=4?.68f:.92f),shot.hostile?.20f:1.f);
+        }
+    }
+    if(s.guest_active()){
+        const float ax=s.ally_x(),ay=-.79f;
+        if(s.guest()==CastGuest::PipParfait){
+            Tri(m,ax,ay+.145f,ax-.12f,ay-.12f,ax+.12f,ay-.12f,
+                -2.81f,.98f,.41f,.52f);
+            Disc(m,ax,ay,.056f,-2.79f,1.f,.94f,.76f);
+            Text(m,"PIP: COVER FIRE",0,-.75f,.035f,.75f,1.f,.78f);
+        }else if(s.guest()==CastGuest::LollyWren){
+            Rect(m,ax,ay,.24f,.18f,-2.81f,.89f,.68f,.43f);
+            Rect(m,ax,ay+.07f,.15f,.07f,-2.78f,1.f,.95f,.68f);
+            Text(m,"LOLLY: RESCUE TUG",0,-.75f,.035f,.77f,1.f,.81f);
+        }
+    }else if(s.guest()==CastGuest::BlortBlister){
+        bool grenadier=false;
+        for(const auto& e:s.enemies())if(e.active&&e.kind==EnemyKind::Blort)
+            grenadier=true;
+        if(grenadier)Text(m,"BLORT: INCOMING BOMBS",0,-.75f,.035f,1.f,.55f,.38f);
     }
     if(s.hurt_flash()>0.f){
         Rect(m,-2.25f,0,.13f,2.7f,-2.78f,1.f,.18f,.18f);
