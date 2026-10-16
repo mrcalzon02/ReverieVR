@@ -10,11 +10,13 @@ final class NativeModuleRuntime implements AutoCloseable {
         "between-deliveries-red-ledger";
     static final String ID_BREAKWATER_BATTERY =
         "breakwater-battery";
+    static final String ID_GUMBALL_ARMADA = "gumball-armada";
     static final String ID_LANTERN_DESK = "ministry-lantern-desk";
     static final String ID_FORWARD_DETACHMENT = "iron-sight-forward-detachment";
 
     static boolean isDevelopmentOnly(String id) {
-        return ID_RED_LEDGER.equals(id)
+        return ID_GUMBALL_ARMADA.equals(id)
+            || ID_RED_LEDGER.equals(id)
             || ID_BREAKWATER_BATTERY.equals(id)
             || ID_LANTERN_DESK.equals(id)
             || ID_FORWARD_DETACHMENT.equals(id);
