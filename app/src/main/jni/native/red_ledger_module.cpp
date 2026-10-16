@@ -1207,8 +1207,10 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
     );
     glUniformMatrix4fv(state->matrix_location, 1, GL_FALSE, vp);
     glUniform1f(state->flicker_location, flicker);
-    glDrawArrays(GL_TRIANGLES, 0,
-        static_cast<GLsizei>(geo::kStaticVertexCount));
+    const GLint room_start=static_cast<GLint>(state->market.room()) *
+        static_cast<GLint>(geo::kRoomVertexCount);
+    glDrawArrays(GL_TRIANGLES,room_start,
+        static_cast<GLsizei>(geo::kRoomVertexCount));
 
     // Stationary, legible lettering: one extra draw per eye, no per-frame
     // font rasterization, atlas upload, or individual character calls.
@@ -1254,6 +1256,67 @@ void DrawRoom(
     float flicker
 ) {
     DrawStaticRoom(state, view_projection, flicker);
+    if (state->market.room()!=trade::Room::Bar) {
+        const bool stock=state->market.room()==trade::Room::Stockroom;
+        // Navigation is a real room transition with room-specific models.
+        DrawCube(state,view_projection,flicker,
+            -2.47f,-0.20f,-2.94f,0.70f,1.52f,0.07f,
+            state->hovered_target==WorkTarget::ToBar?0.60f:0.32f,
+            0.28f,0.19f,Material::Wood);
+        if (stock) {
+            DrawCube(state,view_projection,flicker,
+                -0.70f,-0.54f,-1.02f,0.53f,0.19f,0.48f,
+                state->hovered_target==WorkTarget::StockNext?0.70f:0.25f,
+                0.37f,0.17f,Material::Wood);
+            DrawCube(state,view_projection,flicker,
+                0.40f,-0.54f,-1.02f,0.53f,0.19f,0.48f,
+                state->hovered_target==WorkTarget::StockBuy?0.64f:0.20f,
+                0.45f,0.24f,Material::Metal);
+            // Storage cases and distinguishable casks, not floating cards.
+            for(int i=0;i<3;++i) {
+                DrawCube(state,view_projection,flicker,
+                    -1.93f+static_cast<float>(i)*0.42f,
+                    -0.52f,-2.28f,0.32f,0.52f,0.34f,
+                    0.34f,0.25f,0.15f,Material::Wood);
+                DrawCube(state,view_projection,flicker,
+                    -1.93f+static_cast<float>(i)*0.42f,
+                    -0.25f,-2.28f,0.34f,0.08f,0.36f,
+                    0.50f,0.43f,0.27f,Material::Metal);
+            }
+        } else {
+            DrawCube(state,view_projection,flicker,
+                2.47f,-0.20f,-2.94f,0.70f,1.52f,0.07f,
+                state->hovered_target==WorkTarget::ToStock?0.62f:0.31f,
+                0.32f,0.21f,Material::Wood);
+            // Physical writing surface: selecting it opens a ledger view.
+            DrawCube(state,view_projection,flicker,
+                0.85f,-0.50f,-0.90f,0.52f,0.08f,0.37f,
+                state->hovered_target==WorkTarget::Ledger?0.85f:0.59f,
+                0.57f,0.42f,Material::Paper);
+            DrawCube(state,view_projection,flicker,
+                1.35f,-0.95f,-1.74f,1.53f,0.08f,1.16f,
+                state->hovered_target==WorkTarget::Bed?0.49f:0.28f,
+                0.36f,0.30f,Material::Paper);
+        }
+        return;
+    }
+    // Painted physical doors, matching their controller-ray selection boxes.
+    DrawCube(state,view_projection,flicker,
+        2.53f,-0.20f,-2.94f,0.68f,1.55f,0.07f,
+        state->hovered_target==WorkTarget::DoorStock?0.63f:0.32f,
+        0.27f,0.16f,Material::Wood);
+    DrawCube(state,view_projection,flicker,
+        0.60f,-0.20f,-2.94f,0.68f,1.55f,0.07f,
+        state->hovered_target==WorkTarget::DoorLiving?0.64f:0.28f,
+        0.34f,0.23f,Material::Wood);
+    DrawCube(state,view_projection,flicker,
+        1.25f,-0.53f,-1.10f,0.32f,0.11f,0.40f,
+        state->hovered_target==WorkTarget::DrinkChoice?0.81f:0.30f,
+        0.49f,0.26f,Material::Wood);
+    DrawCube(state,view_projection,flicker,
+        1.73f,-0.53f,-1.10f,0.29f,0.11f,0.40f,
+        state->hovered_target==WorkTarget::SnackChoice?0.76f:0.37f,
+        0.43f,0.16f,Material::Wood);
     const bool tap_hover =
         state->hovered_target
             == WorkTarget::Tap;
