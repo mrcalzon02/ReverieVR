@@ -1,7 +1,7 @@
 # Gumball Armada — The Search for the Candy King
 
 **Target:** ReverieVR, one phone-resident APK, Galaxy S9 / Daydream.  
-**Status (2026-10-15):** Development-only S01/S02 combat and partial S03 weapon source implementation; local equivalent GCC/Clang C++17 native tests pass, but Android/NDK packaging and physical headset playthrough are NOT verified. Full campaigns, authored sprite atlases and deep voice audio remain unimplemented.
+**Status (2026-10-16):** Development-only S01/S02 combat, partial S03 weapons, and first S08/S09 salvage and mission-objective source integration. The standalone bounded pickup/mission rules passed GCC, Clang and sanitizer tests locally. The exact integrated Android/NDK APK and physical S9 headset playthrough remain unverified. Full campaigns, modular ship parts, authored textures and deep voice audio remain unimplemented.
 
 ## Premise
 
@@ -17,6 +17,7 @@ A candy-painted flight-action RPG, with modular ships made from licorice trusses
 - Three-wave sorties with distinct Scout, Interceptor, Bomber, final Ace and fortress roles; different movement/firing/barrages, tracked player hits, unavoidable objective failure if mandatory elite escapes, and a three-escape limit.
 - One-controller pad steering without holding click; held click fires. Hurt telegraph, limited hit grace, delayed shield recharge, visible mission objectives and after-action cash/bonus/escapes/combo tally. Current GLES2 visuals are **procedural placeholder silhouettes** and a moving starfield, not finished sprite/texture assets.
 - **Three working purchased/equipable weapon modes:** starter Pea Repeater (rapid standard shots), Rock Cannon (slow high-damage slug) and Mint Spread (three diverging shots). Cash purchases, ownership and active selection save persistently, not just displayed labels. Weapons reuse provisional existing native shell gun SFX, not unique candy recordings.
+- Three route-specific missions now affect actual combat: **Sour Sweep** (three escapes fail), **Courier Intercept** (strict zero escapes plus a bounded timer) and **Salvage Recovery** (three collected gumdrop drops required). Enemies emit bounded physical salvage pickups that drift downscreen and award extra Gumball Cash only when the player steers into them. Missing the pickup quota after remaining drops expire fails recovery. UI reports live mission objective, time/collection status and accurate failure reason.
 - Four numerical upgrade tracks and commander rank; these are **not** a modular block shipyard or full commander skill tree.
 - Module save slot is still named `campaign.v1` for compatibility, but the **binary payload is now schema version 2** containing weapon ownership and active weapon. The module reads and validates older version-1 snapshots, migrates their existing cash/levels/position to v2 and atomically rewrites the slot. Runtime failures surface a save-error warning. The game does not yet resume mid-sortie.
 - The source remains Development-only and governed by unchanged native ABI v1. No Android APK, Galaxy S9 launch, dual-eye comfort or complete campaign acceptance is claimed.
