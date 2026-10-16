@@ -43,6 +43,10 @@ The player occupies the bar physically from a mostly fixed/seated working positi
 
 The game is not an action shooter disguised as a bar simulator. Its pressure comes from **margin, scarcity, reputation, protection, faction attention, and the fact that every improvement makes the establishment more valuable to somebody else**.
 
+### Current October 2026 source-only usability pass
+
+The existing Red Ledger GLES2 room now places the bar top approximately 0.31 m lower, with counter-area selection bounds, tap, cups, washer, ledger, purchasing papers and payment props moved with it. Fixed readable station names and a title are baked as actual world-space character geometry once per GL context (one signage draw per eye), not simulated text-colored boxes or per-frame glyph calls. The tap, mug/rim/handle/liquid, sink and patron have additional recognizable primitive-era details. The economic simulation, native ABI and v2 save schema are unchanged. All labels and reach/occlusion, stereo size, controller aim and performance remain **device-unverified**, not device accepted. Sign plaques designate workstation locations; they do not promise an currently available action or display live economic numbers.
+
 ### First playable slice
 
 Build only the ground-floor opening state:

@@ -5,6 +5,7 @@
 #include "red_ledger_simulation.h"
 #include "procedural_material_atlas.h"
 #include "red_ledger_static_geometry.h"
+#include "red_ledger_signage.h"
 
 #include <GLES2/gl2.h>
 
@@ -23,6 +24,7 @@ using reverie::redledger::Simulation;
 using reverie::redledger::SupplierItem;
 using reverie::procedural::Material;
 namespace geo = reverie::redledger::geometry;
+namespace signs = reverie::redledger::signage;
 
 constexpr float kMaximumWorkReach = 3.5f;
 constexpr float kHeldCupDistance = 0.90f;
@@ -51,12 +53,12 @@ struct TargetBounds {
 static const TargetBounds kWorkTargets[] = {
     {
         WorkTarget::CupStack,
-        {0.45f, -0.20f, -0.70f},
+        {0.45f, -0.50f, -0.70f},
         {0.48f, 0.25f, 0.26f}
     },
     {
         WorkTarget::Tap,
-        {-0.85f, -0.02f, -0.98f},
+        {-0.85f, -0.32f, -0.98f},
         {0.28f, 0.35f, 0.28f}
     },
     {
@@ -66,32 +68,32 @@ static const TargetBounds kWorkTargets[] = {
     },
     {
         WorkTarget::Payment,
-        {-0.98f, -0.18f, -0.72f},
+        {-0.98f, -0.48f, -0.72f},
         {0.28f, 0.15f, 0.20f}
     },
     {
         WorkTarget::WashStation,
-        {-0.28f, -0.18f, -1.18f},
+        {-0.28f, -0.48f, -1.18f},
         {0.55f, 0.22f, 0.30f}
     },
     {
         WorkTarget::Ledger,
-        {0.85f, -0.20f, -0.90f},
+        {0.85f, -0.50f, -0.90f},
         {0.30f, 0.12f, 0.24f}
     },
     {
         WorkTarget::BeerOrder,
-        {1.20f, -0.18f, -0.72f},
+        {1.20f, -0.48f, -0.72f},
         {0.24f, 0.14f, 0.15f}
     },
     {
         WorkTarget::CupOrder,
-        {1.68f, -0.18f, -0.72f},
+        {1.68f, -0.48f, -0.72f},
         {0.24f, 0.14f, 0.15f}
     },
     {
         WorkTarget::ProtectionEnvelope,
-        {-1.58f, -0.18f, -0.72f},
+        {-1.58f, -0.48f, -0.72f},
         {0.26f, 0.13f, 0.15f}
     },
     {
@@ -108,6 +110,8 @@ struct ModuleState {
     GLuint program = 0;
     GLuint cube_vbo = 0;
     GLuint static_vbo = 0;
+    GLuint signage_vbo = 0;
+    GLsizei signage_vertex_count = 0;
     GLuint atlas_texture = 0;
     GLint position_location = -1;
     GLint uv_location = -1;
@@ -706,6 +710,11 @@ void DestroyGl(
         glDeleteTextures(1, &state->atlas_texture);
         state->atlas_texture = 0;
     }
+    if (state->signage_vbo != 0) {
+        glDeleteBuffers(1, &state->signage_vbo);
+        state->signage_vbo = 0;
+    }
+    state->signage_vertex_count = 0;
     if (state->static_vbo != 0) {
         glDeleteBuffers(1, &state->static_vbo);
         state->static_vbo = 0;
@@ -738,6 +747,8 @@ void AbandonGl(
 ) {
     state->cube_vbo = 0;
     state->static_vbo = 0;
+    state->signage_vbo = 0;
+    state->signage_vertex_count = 0;
     state->atlas_texture = 0;
     state->program = 0;
     state->position_location = -1;
@@ -872,6 +883,37 @@ int32_t InitializeGl(
         room_vertices.get(), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     room_vertices.reset();
+
+    // Bake real, front-facing glyph geometry once per GL context. These
+    // share the paper material and static attribute layout (no extra shader).
+    const size_t sign_count = signs::VertexCount();
+    std::unique_ptr<float[]> sign_vertices(
+        new (std::nothrow) float[sign_count * signs::kVertexStride]
+    );
+    size_t generated = 0;
+    if (!sign_vertices || sign_count == 0u ||
+        !signs::Build(sign_vertices.get(),
+            sign_count * signs::kVertexStride, &generated) ||
+        generated != sign_count) {
+        Log(state, REVERIE_NATIVE_LOG_ERROR,
+            "Bar signage geometry generation failed.");
+        DestroyGl(state);
+        return finish(0);
+    }
+    glGenBuffers(1, &state->signage_vbo);
+    if (state->signage_vbo == 0) {
+        Log(state, REVERIE_NATIVE_LOG_ERROR,
+            "Bar signage VBO allocation failed.");
+        DestroyGl(state);
+        return finish(0);
+    }
+    state->signage_vertex_count = static_cast<GLsizei>(sign_count);
+    glBindBuffer(GL_ARRAY_BUFFER, state->signage_vbo);
+    glBufferData(GL_ARRAY_BUFFER,
+        sign_count * signs::kVertexStride * sizeof(float),
+        sign_vertices.get(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    sign_vertices.reset();
 
     // Generate only on GL-context creation/recreation. The temporary CPU
     // buffer is freed immediately after upload; no runtime bitmap asset.
@@ -1032,6 +1074,18 @@ void DrawCup(
         b,
         Material::Metal
     );
+    // Lip and handle make the mug readable rather than a featureless box.
+    DrawCube(state,view_projection,flicker,
+        x,y+0.105f,z,0.165f,0.032f,0.165f,
+        0.85f,0.82f,0.72f,Material::Metal);
+    DrawCube(state,view_projection,flicker,
+        x+0.103f,y,z,0.050f,0.115f,0.055f,
+        0.78f,0.76f,0.66f,Material::Metal);
+    if (filled) {
+        DrawCube(state,view_projection,flicker,
+            x,y+0.124f,z,0.125f,0.010f,0.125f,
+            0.68f,0.39f,0.10f,Material::Wood);
+    }
 }
 
 // Immutable world-space room: one GLES2 draw per eye, no per-frame upload.
@@ -1071,6 +1125,23 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
     glDrawArrays(GL_TRIANGLES, 0,
         static_cast<GLsizei>(geo::kStaticVertexCount));
 
+    // Stationary, legible lettering: one extra draw per eye, no per-frame
+    // font rasterization, atlas upload, or individual character calls.
+    glBindBuffer(GL_ARRAY_BUFFER, state->signage_vbo);
+    glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+        3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(0));
+    glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+        2, GL_FLOAT, GL_FALSE, stride,
+        reinterpret_cast<const void *>(3u * sizeof(float)));
+    glVertexAttribPointer(static_cast<GLuint>(state->color_attribute_location),
+        3, GL_FLOAT, GL_FALSE, stride,
+        reinterpret_cast<const void *>(5u * sizeof(float)));
+    glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
+        2, GL_FLOAT, GL_FALSE, stride,
+        reinterpret_cast<const void *>(8u * sizeof(float)));
+    glUniform1f(state->flicker_location, 1.0f);
+    glDrawArrays(GL_TRIANGLES, 0, state->signage_vertex_count);
+
     // Dynamic props still use the unit-cube VBO and constant attributes.
     glDisableVertexAttribArray(
         static_cast<GLuint>(state->color_attribute_location)
@@ -1106,7 +1177,7 @@ void DrawRoom(
         state,
         view_projection,
         flicker,
-        -0.85f,-0.15f,-0.98f,
+        -0.85f,-0.45f,-0.98f,
         0.18f,0.40f,0.18f,
         tap_hover ? 0.76f : 0.36f,
         tap_hover ? 0.62f : 0.34f,
@@ -1117,13 +1188,20 @@ void DrawRoom(
         state,
         view_projection,
         flicker,
-        -0.85f,0.10f,-0.98f,
+        -0.85f,-0.20f,-0.98f,
         0.34f,0.12f,0.22f,
         tap_hover ? 0.82f : 0.25f,
         tap_hover ? 0.70f : 0.24f,
         tap_hover ? 0.28f : 0.22f,
         Material::Metal
     );
+
+    DrawCube(state,view_projection,flicker,
+        -0.85f,-0.28f,-0.79f,0.075f,0.075f,0.32f,
+        0.72f,0.67f,0.50f,Material::Metal);
+    DrawCube(state,view_projection,flicker,
+        -0.85f,-0.10f,-0.98f,0.10f,0.14f,0.10f,
+        0.73f,0.28f,0.18f,Material::Wood);
 
     const bool wash_hover =
         state->hovered_target
@@ -1133,7 +1211,7 @@ void DrawRoom(
         state,
         view_projection,
         flicker,
-        -0.28f,-0.20f,-1.18f,
+        -0.28f,-0.50f,-1.18f,
         0.92f,0.12f,0.48f,
         wash_hover ? 0.30f : 0.18f,
         wash_hover ? 0.58f : 0.30f,
@@ -1141,6 +1219,9 @@ void DrawRoom(
         Material::Metal
     );
 
+    DrawCube(state,view_projection,flicker,
+        -0.28f,-0.425f,-1.18f,0.74f,0.012f,0.30f,
+        0.045f,0.11f,0.13f,Material::Metal);
     const bool ledger_hover =
         state->hovered_target
             == WorkTarget::Ledger;
@@ -1149,7 +1230,7 @@ void DrawRoom(
         state,
         view_projection,
         flicker,
-        0.85f,-0.22f,-0.90f,
+        0.85f,-0.52f,-0.90f,
         0.42f,0.06f,0.30f,
         ledger_hover ? 0.78f : 0.18f,
         ledger_hover ? 0.62f : 0.12f,
@@ -1164,7 +1245,7 @@ void DrawRoom(
         state,
         view_projection,
         flicker,
-        1.20f,-0.18f,-0.72f,
+        1.20f,-0.48f,-0.72f,
         0.42f,0.05f,0.24f,
         beer_hover ? 0.78f : 0.34f,
         beer_hover ? 0.66f : 0.28f,
@@ -1179,7 +1260,7 @@ void DrawRoom(
         state,
         view_projection,
         flicker,
-        1.68f,-0.18f,-0.72f,
+        1.68f,-0.48f,-0.72f,
         0.42f,0.05f,0.24f,
         order_cup_hover ? 0.76f : 0.30f,
         order_cup_hover ? 0.76f : 0.30f,
@@ -1199,7 +1280,7 @@ void DrawRoom(
             state,
             view_projection,
             flicker,
-            -1.58f,-0.18f,-0.72f,
+            -1.58f,-0.48f,-0.72f,
             0.44f,0.05f,0.24f,
             protection_hover ? 0.86f : 0.50f,
             protection_hover ? 0.30f : 0.14f,
@@ -1216,7 +1297,7 @@ void DrawRoom(
         state,
         view_projection,
         flicker,
-        0.45f,-0.31f,-0.70f,
+        0.45f,-0.61f,-0.70f,
         0.82f,0.06f,0.34f,
         cup_stack_hover ? 0.58f : 0.24f,
         cup_stack_hover ? 0.56f : 0.23f,
@@ -1241,7 +1322,7 @@ void DrawRoom(
                 + static_cast<float>(
                     index
                 ) * 0.22f,
-            -0.20f,
+            -0.50f,
             -0.70f,
             false,
             cup_stack_hover
@@ -1265,7 +1346,7 @@ void DrawRoom(
                 - static_cast<float>(
                     index
                 ) * 0.18f,
-            -0.20f,
+            -0.50f,
             -1.18f,
             false,
             wash_hover
@@ -1308,6 +1389,26 @@ void DrawRoom(
             patron_hover ? 0.58f : 0.43f,
             patron_hover ? 0.44f : 0.34f
         );
+        // Broad shoulders, arms, hair and face details establish a
+        // readable customer silhouette at seated VR distance.
+        DrawCube(state,view_projection,flicker,
+            -1.30f,-0.06f,-2.05f,0.66f,0.16f,0.40f,
+            body_r,body_g,body_b,Material::Wood);
+        DrawCube(state,view_projection,flicker,
+            -1.62f,-0.46f,-2.03f,0.16f,0.72f,0.23f,
+            body_r,body_g,body_b,Material::Wood);
+        DrawCube(state,view_projection,flicker,
+            -0.98f,-0.46f,-2.03f,0.16f,0.72f,0.23f,
+            body_r,body_g,body_b,Material::Wood);
+        DrawCube(state,view_projection,flicker,
+            -1.30f,0.355f,-2.05f,0.37f,0.10f,0.34f,
+            0.16f,0.13f,0.12f,Material::Wood);
+        DrawCube(state,view_projection,1.0f,
+            -1.40f,0.20f,-1.868f,0.044f,0.035f,0.015f,
+            0.09f,0.08f,0.07f,Material::Metal);
+        DrawCube(state,view_projection,1.0f,
+            -1.20f,0.20f,-1.868f,0.044f,0.035f,0.015f,
+            0.09f,0.08f,0.07f,Material::Metal);
     }
 
     if (state->simulation.pending_payment_cents()
@@ -1320,7 +1421,7 @@ void DrawRoom(
             state,
             view_projection,
             flicker,
-            -0.98f,-0.17f,-0.72f,
+            -0.98f,-0.47f,-0.72f,
             0.12f,0.04f,0.12f,
             payment_hover ? 0.95f : 0.72f,
             payment_hover ? 0.82f : 0.62f,
@@ -1331,7 +1432,7 @@ void DrawRoom(
             state,
             view_projection,
             flicker,
-            -0.82f,-0.17f,-0.72f,
+            -0.82f,-0.47f,-0.72f,
             0.10f,0.04f,0.10f,
             payment_hover ? 0.94f : 0.68f,
             payment_hover ? 0.80f : 0.58f,
@@ -1511,6 +1612,7 @@ void Destroy(
     if (state->program != 0
         || state->cube_vbo != 0
         || state->static_vbo != 0
+        || state->signage_vbo != 0
         || state->atlas_texture != 0) {
         Log(
             state,
@@ -1678,6 +1780,7 @@ int32_t RenderEye(
         || state->program == 0
         || state->cube_vbo == 0
         || state->static_vbo == 0
+        || state->signage_vbo == 0
         || state->atlas_texture == 0) {
         return 0;
     }

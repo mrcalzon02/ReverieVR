@@ -122,7 +122,7 @@ Recipes should remain simple enough to test and reason about. A 200-line procedu
 
 Geometry that never changes during gameplay should be generated or assembled once and uploaded as immutable GPU data.
 
-Red Ledger currently demonstrates the pattern through `BuildStaticRoomVertices`, baking 11 static room/furniture cubes into one world-space VBO: 396 vertices and a 15,840-byte buffer, rendered in one static-room draw per eye. Interactive/hoverable props remain separate.
+Red Ledger demonstrates the pattern through `BuildStaticRoomVertices`, baking 11 static room/furniture cubes into one world-space VBO: 396 vertices and a 15,840-byte buffer, rendered in one static-room draw per eye. The bar counter/work surface has been lowered together with its interaction targets. Its *game-private* `red_ledger_signage.h` builds real uppercase letter geometry into one additional immutable VBO/draw per eye; each row of glyph pixels is merged into horizontal rectangles, with backing plaques for contrast. Glyphs are generated at GL-context creation, not each eye or frame. Interactive/hoverable props remain separate. This signage baker is not a promoted native SDK API and its lettering needs Galaxy S9 stereoscopic legibility validation.
 
 The standard lesson is to separate:
 
