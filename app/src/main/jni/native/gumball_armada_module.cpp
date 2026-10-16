@@ -208,7 +208,7 @@ void LoadoutView(Module* m){
 }
 void SupportView(Module* m){
     Background(m);
-    Text(m,"ALLIED SUPPORT CONTRACTS",0,1.44f,.057f,.94f,.91f,.74f);
+    TextFit(m,"ALLIED SUPPORT CONTRACTS",0,1.44f,4.60f,.055f,.94f,.91f,.74f);
     Text(m,"ONE PAID ESCORT FOR YOUR NEXT SORTIE",0,1.16f,.032f,.83f,.97f,.86f);
     char text[116];
     const auto& contracts=m->sim.support();
@@ -239,7 +239,7 @@ void SupportView(Module* m){
     }
     std::snprintf(text,sizeof(text),"BOOKED: %s    CASH %uG",
                   SupportName(contracts.booked()),m->sim.cash());
-    Text(m,text,0,-1.52f,.031f,.86f,1.f,.79f);
+    TextFit(m,text,0,-1.52f,4.60f,.031f,.86f,1.f,.79f);
     char hint[140]="";
     if(m->supportSelected<2){
         const SupportKind kind=m->supportSelected==0?
@@ -287,8 +287,8 @@ void ShipyardView(Module* m){
     Background(m);
     char line[116];
     Text(m,"CANDY SHIPYARD",0,1.48f,.061f,.97f,.83f,.96f);
-    Text(m,"PAD MOVE  /  CLICK TO EDIT  /  MINUS SWITCHES GRID AND PARTS",
-         0,1.20f,.027f,.76f,.94f,.93f);
+    TextFit(m,"PAD MOVE / CLICK TO EDIT / MINUS SWITCHES GRID AND PARTS",
+            0,1.20f,4.64f,.028f,.76f,.94f,.93f);
     Text(m,"YOUR SHIP", -1.47f,1.00f,.032f,.83f,.96f,1.f);
     Text(m,"PARTS",.89f,1.00f,.032f,.83f,.96f,1.f);
     // The full 7x7 board now fits inside the 5-unit canvas. Previous x=-2.59
