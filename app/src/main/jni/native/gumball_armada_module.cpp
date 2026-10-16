@@ -170,6 +170,14 @@ void EnemyVisual(Module* m,const Enemy& e){
         Tri(m,x,y+.20f,x-.16f,y-.12f,x+.16f,y-.12f,-2.88f,.96f,.74f,.24f);
         Disc(m,x,y,.078f,-2.86f,.99f,.90f,.63f);
         break;
+    case EnemyKind::Courier:
+        // Long, fast gold cargo pod: a visible priority target to intercept.
+        Rect(m,x,y,.17f,.38f,-2.90f,.95f,.62f,.12f);
+        Tri(m,x,y+.28f,x-.13f,y+.09f,x+.13f,y+.09f,
+            -2.88f,1.f,.89f,.31f);
+        Disc(m,x-.13f,y-.12f,.085f,-2.87f,.38f,.94f,.84f);
+        Disc(m,x+.13f,y-.12f,.085f,-2.87f,.38f,.94f,.84f);
+        break;
     case EnemyKind::Fortress:
         Rect(m,x,y,.52f,.34f,-2.92f,.56f,.15f,.19f);
         Disc(m,x-.28f,y-.10f,.13f,-2.89f,.81f,.18f,.23f);
