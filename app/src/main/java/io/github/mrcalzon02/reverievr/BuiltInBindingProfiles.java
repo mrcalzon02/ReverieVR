@@ -28,7 +28,8 @@ final class BuiltInBindingProfiles {
         // Route its Daydream pad directly to guest X/Y just like the classics.
         return moduleId != null
             && (moduleId.startsWith("classic-")
-                || "gumball-armada".equals(moduleId))
+                || "gumball-armada".equals(moduleId)
+                || "omega-front".equals(moduleId))
             ? ID_NATIVE_CLASSICS : ID_NATIVE_STANDARD;
     }
 

@@ -98,6 +98,17 @@ LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
 LOCAL_LDLIBS += -lGLESv2 -lm
 include $(BUILD_SHARED_LIBRARY)
 
+# Omega Front Development-only native war table.
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+LOCAL_MODULE := reverie_module_omega_front
+LOCAL_SRC_FILES := native/omega_front_module.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm
+include $(BUILD_SHARED_LIBRARY)
+
 # Original low-allocation GLES2 classic game module
 LOCAL_PATH := $(REVERIE_JNI_PATH)
 include $(CLEAR_VARS)

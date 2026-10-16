@@ -1,6 +1,6 @@
 # Omega Front — Initial Headless Tactical Combat Kernel
 
-**Implementation state:** source-implemented and host C++ tests passed locally; **no hosted VR module, no GL renderer, no packaged APK, no device acceptance**.
+**Implementation state:** deterministic tactical kernel and real input controller have host regressions. A Development-only native GLES2 war-table module is now source-wired to Android.mk, native host and Java admission/bindings. **No NDK/APK build, physical S9 render or controller acceptance has been confirmed.**
 **Program:** RV-GAME-06; first bounded implementation toward P1 (Hearthwell waterworks defense).
 **Authority:** `app/src/main/jni/native/omega_front_tactics.h` is the game-specific C++17 rules source. This is NOT a shared ReverieVR SDK helper or an ABI change.
 
@@ -36,7 +36,7 @@ g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
 
 ## What this deliberately does NOT prove
 
-This header isn't listed as a native shared library in Android.mk, and no `reverie_native_module_entry_v1` exists for Omega Front. The game will **not appear in the launcher** and it is **not playable in VR** yet. No 70 campaign missions, progression, seventeen factions' strategic AI, world morphology, sector generator, saves, chibi atlases, civilian population, proper fog of war or accurate dynamic faction logistics are implemented by this kernel. This is only one real combat fixture and its underlying minimal combat rules.
+The Android.mk library `reverie_module_omega_front` and native host `omega-front` allowlist are implemented with `reverie_native_module_entry_v1`, a procedural GLES2 board and real battle-linked input. This remains **source-integrated only** until Android NDK/APK and device checks pass. No 70 campaign missions, progression, seventeen factions' strategic AI, world morphology, sector generator, saves, chibi atlases, civilian population, proper fog of war or accurate dynamic faction logistics are implemented by this kernel. This is only one real combat fixture and its underlying minimal combat rules.
 
 The queued attack-order visibility rule uses current unit coordinates at order time, with a nine-tile local visibility radius and occluding walls; full faction-wide fog memory, sensor intel and ranged weapons are separate follow-up tasks.
 
@@ -44,9 +44,9 @@ The initial fixed sides are `Hearthwell` and `Raiders`, and the default scenario
 
 ## Next technical gates
 
-1. Bring the **actual kernel into a hosted module** via an allowlisted `omega-front` ABI entrypoint, complete Android.mk library definition and real per-eye GLES2 sprite rendering. Ensure shell-global recovery/Home is never swallowed; support gaze and normalized select/secondary controls without requiring touch-and-click to move.
+1. Prove that the registered `omega-front` native shared library links and packages in both Android ABIs, then confirm Daydream touchpad navigation, shell Home/recovery, readable board and stereo GL state on a physical S9.
 2. Adapt command UI and tile cursor to seated 3DoF head tracking, with readable closest-range board placement and reliable pause/route inspection.
 3. Add robust persistent save schema, faction fog/visibility snapshots, civilian waterworks integrity and routed supply, then dynamic morphology and authored opening first campaign battle.
 4. Run actual APK/NDK integration and signed build verification separately. Test on Galaxy S9/Daydream in short and sustained sessions before claiming device admission.
 
-**Acceptance boundary:** source-level deterministic tactical kernel implemented, independently compiled and locally tested; P1 overall and mobile integration still incomplete.
+**Acceptance boundary:** deterministic tactical and controller unit regressions passed; game module/Android host are source-wired, but P2 device/build admission, robust saves, faction campaign persistence and 70 arcs remain unimplemented or unverified.

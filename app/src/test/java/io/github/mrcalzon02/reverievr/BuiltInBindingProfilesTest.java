@@ -87,6 +87,10 @@ public final class BuiltInBindingProfilesTest {
             BuiltInBindingProfiles.nativeProfileForModule("classic-pong")
         );
         assertEquals(
+            BuiltInBindingProfiles.ID_NATIVE_CLASSICS,
+            BuiltInBindingProfiles.nativeProfileForModule("omega-front")
+        );
+        assertEquals(
             BuiltInBindingProfiles.ID_NATIVE_STANDARD,
             BuiltInBindingProfiles.nativeProfileForModule("breakwater-battery")
         );

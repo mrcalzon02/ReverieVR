@@ -1,3 +1,7 @@
+## Omega Front native admission — 2026-10-15
+
+The Development-only `omega-front` native module is registered in the built-in host allowlist as `libreverie_module_omega_front.so`, has a corresponding Android.mk shared target and uses unchanged native ABI v1 with a real `reverie_native_module_entry_v1`. It owns one 24×24 battle controller and GLES2 war table, with a single update per simulation tick and read-only stereo eye passes. No C ABI fields were added. Java confines it to Development logging mode. NDK build, ABI exports inside an APK, installation and Galaxy S9 checks remain unverified.
+
 ## Gumball Armada hosted module and admission (2026-10-15)
 
 The packaged `gumball-armada` module is an original Development-only GLES2 native game: compile-time host allowlist, unchanged ABI-v1 entry/lifecycle, module-private `campaign.v1` save slot with bounded schema/seed/checksum validation, and no additional native ABI methods. `NativeModuleRuntime` rejects the title outside Development logging mode. Built-in module count increases by one; APK library/entry verification and Galaxy S9 Daydream acceptance must be re-run before release claims. The original project design is at `docs/project/GUMBALL_ARMADA.md`.

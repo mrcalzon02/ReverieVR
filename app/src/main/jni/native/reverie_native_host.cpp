@@ -46,6 +46,8 @@ static const BuiltInModuleSpec kBuiltIns[] = {
     },
     {"gumball-armada", "Gumball Armada: Candy King Search [DEV]",
      "libreverie_module_gumball_armada.so"},
+    {"omega-front", "Omega Front: Hearthwell Defense [DEV]",
+     "libreverie_module_omega_front.so"},
     {"ministry-lantern-desk", "Ministry of Intelligence: Lantern Desk [DEV]",
      "libreverie_module_lantern_desk.so"},
     {"iron-sight-forward-detachment", "Iron Sight: Forward Detachment [DEV]",

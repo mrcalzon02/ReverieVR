@@ -1,3 +1,7 @@
+## Omega Front Daydream war table input — 2026-10-15
+
+The source-wired Development-only `omega-front` game receives `native-classics` input so the Daydream touchpad axes move the highlighted 24×24 tile **without holding down Select**. A click selects the current friendly unit or executes the chosen real tactical order; secondary/App cycles move/attack/repair/resupply while selected, pauses without a selected soldier, and restarts an ended test encounter. Host-normalized pointer rays can select board cells when available. Home and shell recovery remain shell-owned. All game state advances only through update in 250-ms command pulses. Both stereo eyes render the same state, through a managed GLES2 VBO/context lifecycle and original procedural terrain/miniature silhouettes. NDK/APK, physical Daydream input, legibility and thermal verification remain pending.
+
 ## Native-game launch handoff on the first eye frame (2026-10-15 diagnostics)
 
 The Samsung Galaxy S9 phone-test bundle (versionCode `214291878`, exported 2026-10-15 21:44 Alaska time) records 22 failed launches across 13 distinct native modules. Each failure followed a successful `Stage B launched` milestone in 0–3 ms, with an empty native last-error string and **no** `Native module GL initialization failed` or `Native module render failed` incident. This is evidence of a shell-level launch/frame sequencing defect, not proof of module shader incompatibility.

@@ -6,6 +6,10 @@
 
 This catalog is intentionally broader than the public C ABI. It includes implemented shell services and proven reference techniques when they are useful examples, but it labels them separately so a reference implementation is never mistaken for a stable game-facing API.
 
+## Omega Front tactical module example — 2026-10-15
+
+`omega_front_tactics.h`, `omega_front_controls.h` and `omega_front_module.cpp` form a Development-only game-private source example. The native host and Android.mk allowlist/target plus Daydream `native-classics` touchpad routing are source-wired. These are not new shared SDK facilities, and real APK/device verification remains pending. See `docs/native/OMEGA_FRONT_TACTICS.md`.
+
 ## Maturity classes
 
 - **ABI v1** — binary contract implemented now; compatibility rules are explicit.
