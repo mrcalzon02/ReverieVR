@@ -220,22 +220,30 @@ void SupportView(Module* m){
     Text(m,text,0,-1.52f,.031f,.86f,1.f,.79f);
     Text(m,"CLICK TO BUY OR IMPROVE   PAD SCROLL",0,-1.68f,.028f,.78f,.85f,.96f);
 }
+const char* YardPartName(Part part){
+    const char* names[]={"EMPTY","CORE","FRAME","ARMOR","WING","THRUSTER",
+        "REACTOR","BATTERY","SHIELD","GUN MOUNT","CARGO"};
+    const unsigned i=static_cast<unsigned>(part);
+    return i<11u?names[i]:"UNKNOWN";
+}
 void ShipyardView(Module* m){
     Background(m);
-    Text(m,"CANDY SHIPYARD",0,1.48f,.075f,.94f,.78f,.97f);
-    const char* names[]={"FRAME","ARMOR","WING","THRUSTER","REACTOR",
-        "BATTERY","SHIELD","GUN MOUNT","CARGO","RETURN"};
+    char line[116];
+    Text(m,"CANDY SHIPYARD",0,1.48f,.061f,.97f,.83f,.96f);
+    Text(m,"PAD MOVE  /  CLICK TO EDIT  /  MINUS SWITCHES GRID AND PARTS",
+         0,1.20f,.027f,.76f,.94f,.93f);
+    Text(m,"YOUR SHIP", -1.47f,1.00f,.032f,.83f,.96f,1.f);
+    Text(m,"PARTS",.89f,1.00f,.032f,.83f,.96f,1.f);
+    // The full 7x7 board now fits inside the 5-unit canvas. Previous x=-2.59
+    // clipped the entire leftmost editing column outside the view.
+    Rect(m,-1.47f,.075f,2.06f,2.02f,-2.96f,.045f,.065f,.105f);
     const char* marks[]={" ","C","F","A","W","T","R","B","S","G","H"};
-    const Part selected=m->brush;
-    char line[100];
-    std::snprintf(line,sizeof(line),"PLACE %s   STOCK %u",
-                  names[static_cast<unsigned>(selected)-2u],m->yard.stock(selected));
-    Text(m,line,0,1.18f,.034f,.79f,.94f,.81f);
     for(int y=0;y<7;++y)for(int x=0;x<7;++x){
-        const float gx=-1.58f+(x-3)*.29f;
-        const float gy=(3-y)*.29f;
-        const bool focused=m->garageX==x&&m->garageY==y;
-        Frame(m,gx,gy,.278f,.278f,focused);
+        const float gx=-1.47f+(x-3)*.28f;
+        const float gy=.075f+(3-y)*.28f;
+        const bool focused=!m->yardCursor.palette()
+            &&m->yardCursor.x==x&&m->yardCursor.y==y;
+        Frame(m,gx,gy,.270f,.270f,focused);
         const Part part=m->yard.at(x,y);
         if(part!=Part::Empty){
             const unsigned id=static_cast<unsigned>(part);
@@ -244,32 +252,45 @@ void ShipyardView(Module* m){
                 {.75f,.55f,.24f},{.70f,.87f,.48f},{.35f,.95f,.87f},
                 {.96f,.66f,.25f},{.98f,.92f,.47f},{.27f,.77f,1.f},
                 {1.f,.32f,.38f},{.58f,.79f,.98f}};
-            Rect(m,gx,gy,.21f,.21f,-2.88f,colors[id][0],colors[id][1],colors[id][2]);
-            Text(m,marks[id],gx,gy,.039f,.08f,.08f,.13f);
+            Rect(m,gx,gy,.195f,.195f,-2.88f,
+                 colors[id][0],colors[id][1],colors[id][2]);
+            Text(m,marks[id],gx,gy,.038f,.08f,.08f,.13f);
         }
     }
     for(int i=0;i<10;++i){
         const int row=i/2,col=i%2;
-        const float x=.12f+col*1.30f;
-        const float y=.65f-row*.355f;
-        Frame(m,x,y,1.20f,.32f,m->garageX==7+col&&m->garageY==row);
-        if(i<9){
-            const Part p=static_cast<Part>(i+2);
-            std::snprintf(line,sizeof(line),"%s %u",names[i],m->yard.stock(p));
-        }else std::snprintf(line,sizeof(line),"RETURN");
-        Text(m,line,x,y,.026f,.96f,.91f,.79f);
+        const float x=.23f+col*1.34f;
+        const float y=.79f-row*.345f;
+        const Part p=static_cast<Part>(i+2);
+        const bool isActive=i<9&&m->brush==p;
+        const bool focused=m->yardCursor.palette()
+            &&m->yardCursor.x==7+col&&m->yardCursor.y==row;
+        Frame(m,x,y,1.20f,.32f,focused);
+        if(isActive){
+            Rect(m,x-.55f,y,.045f,.20f,-2.85f,.31f,1.f,.63f);
+        }
+        if(i<9)
+            std::snprintf(line,sizeof(line),"%s  %u",YardPartName(p),
+                          m->yard.stock(p));
+        else std::snprintf(line,sizeof(line),"RETURN");
+        TextFit(m,line,x+.020f,y,1.12f,.031f,
+                (i<9&&m->yard.stock(p)==0u&&!isActive)?.48f:.96f,
+                isActive?1.f:.91f,isActive?.70f:.85f);
     }
     const auto profile=m->yard.profile();
-    std::snprintf(line,sizeof(line),"MASS %d  POWER %d/%d  THRUST %d",
-                  profile.mass,profile.demand,profile.power,m->yard.count(Part::Thruster));
-    Text(m,line,0,-1.17f,.034f,.87f,.91f,.95f);
-    std::snprintf(line,sizeof(line),"ARMOR +%d  SHIELD +%d  SALVAGE +%d",
-                  profile.hull,profile.shield,
-                  static_cast<int>((profile.pickup_radius-.23f)*100.f+.5f));
-    Text(m,line,0,-1.36f,.032f,.76f,.93f,.84f);
-    Text(m,m->yard.ready()?"SHIP READY  CLICK CELLS TO EDIT":
-        "SHIP NOT READY  CHECK POWER / THRUST",0,-1.56f,
-        .032f,m->yard.ready()?.64f:1.f,m->yard.ready()?1.f:.37f,.69f);
+    std::snprintf(line,sizeof(line),"ARMED: %s  /  STOCK %u",
+                  YardPartName(m->brush),m->yard.stock(m->brush));
+    TextFit(m,line,0,-1.10f,4.65f,.036f,1.f,.92f,.72f);
+    TextFit(m,m->yardFeedback,0,-1.32f,4.65f,.032f,.84f,1.f,.87f);
+    std::snprintf(line,sizeof(line),"MASS %d  /  POWER %d:%d  /  THRUSTERS %d",
+                  profile.mass,profile.demand,profile.power,
+                  m->yard.count(Part::Thruster));
+    TextFit(m,line,0,-1.51f,4.72f,.029f,.77f,.92f,.99f);
+    if(!m->yard.ready())TextFit(m,
+        "NOT FLIGHT READY: CORE / REACTOR / MOUNT / THRUST / POWER",
+        0,-1.68f,4.75f,.027f,1.f,.56f,.48f);
+    else Text(m,"READY  /  CLICK SAME PART TO REMOVE",
+              0,-1.68f,.028f,.65f,1.f,.77f);
 }
 void EnemyVisual(Module* m,const Enemy& e){
     const float x=e.x,y=e.y;
