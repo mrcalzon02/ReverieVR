@@ -117,6 +117,8 @@ public final class MainActivity extends Activity
     private Button exportLogsButton;
     private Button exportLaptopLinkButton;
     private Button shareLaptopLinkButton;
+    private Button testSteamVrLinkButton;
+    private long steamVrProbeGeneration;
     private Button submitDiagnosticsButton;
     private Button clearLogsButton;
     private Button controllerActionButton;
@@ -278,6 +280,8 @@ public final class MainActivity extends Activity
         if (laptopLinkDownloadDialog != null)
             laptopLinkDownloadDialog.dismiss();
         stopLaptopLinkShare();
+        steamVrProbeGeneration++;
+        if (testSteamVrLinkButton != null) testSteamVrLinkButton.setEnabled(true);
         unregisterInputDeviceListener();
         super.onPause();
     }
@@ -364,6 +368,7 @@ public final class MainActivity extends Activity
         exportLogsButton = findViewById(R.id.export_logs_button);
         exportLaptopLinkButton = findViewById(R.id.export_laptop_link_button);
         shareLaptopLinkButton = findViewById(R.id.share_laptop_link_button);
+        testSteamVrLinkButton = findViewById(R.id.test_steamvr_link_button);
         submitDiagnosticsButton =
             findViewById(R.id.submit_diagnostics_button);
         clearLogsButton = findViewById(R.id.clear_logs_button);
@@ -449,6 +454,10 @@ public final class MainActivity extends Activity
         uiFeedback.bind(
             shareLaptopLinkButton,
             this::startLaptopLinkShare
+        );
+        uiFeedback.bind(
+            testSteamVrLinkButton,
+            this::chooseSteamVrProbeTransport
         );
 
         boolean diagnosticSubmissionConfigured =
@@ -1162,6 +1171,100 @@ public final class MainActivity extends Activity
      * This transfers NO phone screen pixels or PC commands and never runs
      * anything on Windows.
      */
+    /** Read-only link check. It does not start SteamVR, stream a desktop,
+     * accept remote commands, or change the existing phone VR runtime. */
+    private void chooseSteamVrProbeTransport() {
+        new AlertDialog.Builder(this)
+            .setTitle("SteamVR PC Link - secure connection test")
+            .setItems(new String[] {
+                "USB cable (ADB reverse)",
+                "Private Wi-Fi / USB tethering network"
+            }, (dialog, which) -> showSteamVrProbePairing(which == 0))
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
+    }
+
+    private void showSteamVrProbePairing(boolean usbReverse) {
+        int pad = Math.round(16f * getResources().getDisplayMetrics().density);
+        LinearLayout inputs = new LinearLayout(this);
+        inputs.setOrientation(LinearLayout.VERTICAL);
+        inputs.setPadding(pad, 0, pad, 0);
+        TextView info = new TextView(this);
+        info.setText(usbReverse
+            ? "On Windows run Laptop Link option 6 (USB), then "
+                + "adb reverse tcp:38726 tcp:38726. "
+                + "Enter the certificate SHA-256 and session token shown on the PC."
+            : "Run Laptop Link option 6 (private Wi-Fi). "
+                + "Enter the PC's private IPv4, certificate SHA-256 "
+                + "and one-time session token shown on the PC. "
+                + "USB tethering can also use the private PC IP.");
+        inputs.addView(info);
+        EditText address = new EditText(this);
+        if (!usbReverse) {
+            address.setSingleLine(true);
+            address.setHint("PC private IPv4 (e.g. 192.168.1.20)");
+            address.setInputType(InputType.TYPE_CLASS_PHONE);
+            inputs.addView(address);
+        }
+        EditText fingerprint = new EditText(this);
+        fingerprint.setSingleLine(true);
+        fingerprint.setHint("PC cert SHA-256 (64 hex)");
+        fingerprint.setInputType(InputType.TYPE_CLASS_TEXT
+            | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        inputs.addView(fingerprint);
+        EditText token = new EditText(this);
+        token.setSingleLine(true);
+        token.setHint("One-time pairing token (32 hex)");
+        token.setInputType(InputType.TYPE_CLASS_TEXT
+            | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        inputs.addView(token);
+        AlertDialog editor = new AlertDialog.Builder(this)
+            .setTitle(usbReverse ? "Wired SteamVR link test" : "LAN SteamVR link test")
+            .setView(inputs)
+            .setPositiveButton("Connect / Verify", null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        editor.show();
+        editor.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button -> {
+            final SteamVrLinkProbe.Parameters params;
+            try {
+                params = new SteamVrLinkProbe.Parameters(
+                    usbReverse ? "127.0.0.1" : address.getText().toString(),
+                    fingerprint.getText().toString(),
+                    token.getText().toString(),
+                    usbReverse);
+            } catch (IllegalArgumentException invalid) {
+                uiFeedback.failure(testSteamVrLinkButton);
+                Toast.makeText(this, invalid.getMessage(), Toast.LENGTH_LONG).show();
+                return;
+            }
+            // Pairing secrets are not stored in preferences or logged.
+            fingerprint.setText("");
+            token.setText("");
+            editor.dismiss();
+            testSteamVrLinkButton.setEnabled(false);
+            long generation = ++steamVrProbeGeneration;
+            laptopLinkExecutor.execute(() -> {
+                SteamVrLinkProbe.Result result = SteamVrLinkProbe.connect(params);
+                runOnUiThread(() -> {
+                    if (generation != steamVrProbeGeneration ||
+                        isFinishing() || isDestroyed()) return;
+                    testSteamVrLinkButton.setEnabled(true);
+                    if (!result.paired) uiFeedback.failure(testSteamVrLinkButton);
+                    new AlertDialog.Builder(this)
+                        .setTitle(result.paired
+                            ? "PC link verified" : "PC link test unsuccessful")
+                        .setMessage(result.message)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+                });
+            });
+            Toast.makeText(this,
+                "Testing encrypted PC connection (up to 12 seconds)...",
+                Toast.LENGTH_SHORT).show();
+        });
+    }
+
     private void startLaptopLinkShare() {
         stopLaptopLinkShare();
         final long generation = laptopLinkShareGeneration;

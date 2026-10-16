@@ -246,6 +246,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:text="@string/laptop_link_share" />
+
+            <Button
+                android:id="@+id/test_steamvr_link_button"
+                style="@style/ReverieSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Test SteamVR PC Link (USB / Wi-Fi)" />
         </LinearLayout>
 
         <LinearLayout
