@@ -167,6 +167,10 @@ void Flight(Module* m){
     for(const auto& shot:s.shots())if(shot.active)
         Rect(m,shot.x,shot.y,.039f,shot.hostile?.12f:.21f,-2.82f,
              shot.hostile?1.f:.38f,shot.hostile?.26f:.90f,shot.hostile?.20f:1.f);
+    if(s.hurt_flash()>0.f){
+        Rect(m,-2.25f,0,.13f,2.7f,-2.78f,1.f,.18f,.18f);
+        Rect(m, 2.25f,0,.13f,2.7f,-2.78f,1.f,.18f,.18f);
+    }
     float x=s.player_x(),y=s.player_y();
     Tri(m,x,y+.22f,x-.19f,y-.17f,x+.19f,y-.17f,-2.85f,.92f,.66f,.94f);
     Disc(m,x,y,.075f,-2.83f,.29f,.91f,.96f);
@@ -185,25 +189,38 @@ void Flight(Module* m){
         std::snprintf(text,sizeof(text),"COMBO X%d",s.combo());
         Text(m,text,0,.69f,.042f,1.f,.93f,.55f);
     }
-    Text(m,"PAD FLY  HOLD CLICK FIRE",0,-1.55f,.034f,.76f,.88f,.97f);
+    char status[96];
+    std::snprintf(status,sizeof(status),"WAVE %d/3  CLEARED %d/%d  ESCAPED %d/3",
+                  s.wave(),s.defeated(),s.target(),s.escaped());
+    Text(m,status,0,-1.24f,.035f,.88f,.90f,.95f);
+    std::snprintf(status,sizeof(status),"RUN CASH +%u  BEST COMBO X%d",
+                  s.sortie_cash(),s.max_combo());
+    Text(m,status,0,-1.43f,.031f,.86f,.80f,.58f);
 }
 void Result(Module* m){
     Background(m);auto phase=m->sim.phase();
     Text(m,phase==Phase::KingdomSaved?"CANDY KING RESCUED!":
          (phase==Phase::Won?"SWEET VICTORY!":"SHIP DISABLED"),0,.81f,.069f,1.f,.78f,.35f);
     char text[80];
-    std::snprintf(text,sizeof(text),"GUMBALLS %u  KILLS %u",m->sim.cash(),m->sim.kills());
-    Text(m,text,0,.25f,.05f,.89f,.94f,.85f);
-    std::snprintf(text,sizeof(text),"COMMANDER RANK %d",m->sim.command_rank());
-    Text(m,text,0,-.22f,.05f,.97f,.78f,.98f);
-    Text(m,phase==Phase::KingdomSaved?"ALL FOUR GENERALS DEFEATED":
-         "CLICK TO RETURN TO CHART",0,-1.f,.046f,.74f,.94f,.88f);
+    std::snprintf(text,sizeof(text),"SORTIE CASH +%u  CLEAR BONUS +%u",
+                  m->sim.sortie_cash(),m->sim.completion_bonus());
+    Text(m,text,0,.33f,.041f,.98f,.91f,.62f);
+    std::snprintf(text,sizeof(text),"DESTROYED %d/%d  ESCAPED %d  BEST X%d",
+                  m->sim.defeated()-m->sim.escaped(),m->sim.target(),
+                  m->sim.escaped(),m->sim.max_combo());
+    Text(m,text,0,-.04f,.039f,.93f,.91f,.94f);
+    std::snprintf(text,sizeof(text),"TOTAL %u G  RANK %d  TIME %dS",
+                  m->sim.cash(),m->sim.command_rank(),static_cast<int>(m->sim.elapsed()));
+    Text(m,text,0,-.43f,.041f,.93f,.73f,.92f);
+    Text(m,phase==Phase::KingdomSaved?"FOUR GENERALS DEFEATED":
+         "CLICK TO RETURN TO CHART",0,-1.f,.044f,.74f,.94f,.88f);
 }
 void Rebuild(Module* m){
     m->mesh.clear();
     if(m->sim.phase()==Phase::Chart)Chart(m);
     else if(m->sim.phase()==Phase::Flight)Flight(m);
     else Result(m);
+    if(m->saveError)Text(m,"WARNING: PROGRESS SAVE FAILED",0,-1.62f,.031f,1.f,.35f,.28f);
     m->upload=true;
 }
 void Save(Module* m){
@@ -269,14 +286,12 @@ void Update(void* p,const ReverieNativeInputV1* in){
     const Phase phase=m->sim.phase();
     if(phase==Phase::Flight){
         const uint32_t kills=m->sim.kills();const int hp=m->sim.hp();
+        const uint32_t fired=m->sim.shots_fired();
         m->sim.update(dt,in->move_x,in->move_y,pressed);
         if(kills!=m->sim.kills())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         if(hp>m->sim.hp())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
-        m->fireTime-=dt;
-        if(pressed&&m->fireTime<=0.f){
+        if(m->sim.shots_fired()>fired)
             ReverieNativeRequestSoundV1(m->host,REVERIE_NATIVE_SOUND_WEAPON_MACHINE);
-            m->fireTime=.18f;
-        }
         if(m->sim.phase()!=Phase::Flight)Save(m);
         Rebuild(m);
     }else if(phase==Phase::Chart){
