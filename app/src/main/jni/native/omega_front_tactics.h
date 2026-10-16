@@ -98,6 +98,11 @@ public:
     int unit_count() const { return count_; }
     uint32_t ticks() const { return ticks_; }
     int pump_hp() const { return pump_hp_; }
+    // Scenario loading only. Does not repair a live or terminal encounter.
+    bool ConfigurePump(int hp) {
+        if (ticks_ || result_ != Result::Active || hp<1 || hp>18) return false;
+        pump_hp_=hp;return true;
+    }
     int components() const { return components_; }
     int ammo_stock() const { return ammo_stock_; }
     Result result() const { return result_; }

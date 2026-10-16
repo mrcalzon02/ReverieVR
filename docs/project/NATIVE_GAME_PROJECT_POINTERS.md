@@ -225,7 +225,7 @@ All gameplay advances in native Update once per frame, with common cached vertex
 
 ## RV-GAME-06 — Omega Front
 
-**Status:** Headless combat, tactical control and Development-only native GLES2 war table are source-committed, including a **versioned full-skirmish checkpoint with native module resume/autosave**. Native host/Android.mk/Java admission remain integrated; **NDK/APK build and Galaxy S9/Daydream acceptance have not been verified, and the 70-arc campaign is not implemented.** This is a new original top-down, tile-based military tactics/RPG hybrid, not an adaptation of an existing commercial game.
+**Status:** Source-committed headless combat, tactical controller, Development-only GLES2 war table and versioned skirmish checkpoint; **a new in-memory 16-sector Hearthfall March strategy with three real linked combat scenarios and a forecast Eden emergence has been implemented and host-tested**. The strategic game is not yet wired to the VR UI or persisted. NDK/APK/physical S9/Daydream validation and the 70-arc campaign remain outstanding. This is a new original top-down, tile-based military tactics/RPG hybrid, not an adaptation of an existing commercial game.
 
 **Setting authority:** [OMEGA_FRONT_WORLD_BIBLE.md](OMEGA_FRONT_WORLD_BIBLE.md) — Ouroboros Corporation, planetary bisection, past/future rifts, baseline-human Eden Zones, wastelands, barren zones, anomaly fields, the canonical count of 17 factions and their unresolved individual identities.
 
@@ -241,9 +241,11 @@ All gameplay advances in native Update once per frame, with common cached vertex
 
 **Mechanics authority:** [WAR_WITHOUT_END.md](WAR_WITHOUT_END.md) (retained earlier filename) — combat anatomy, progression calibration, 600-sector/4,096-inspection-room address space, seven encounter scales, independent commander/troop/squad-room/weapon/armor/accessory/base/world/doctrine progression, deterministic simulation, tenfold prestige covenant, and staged P0–P11 roadmap.
 
+**Current P3 headless frontier:** `app/src/main/jni/native/omega_front_frontier.h` and `app/src/test/native/omega_front_frontier_test.cpp` implement real seeded 16-sector territory state, adjacency/viaduct gates, stored supplies, guards/casualties, one forecast ecology transition and three sequential tactical operations for F01's opening `The Water We Own` arc. These scenarios are host-simulation only: not yet navigable from the native VR board and not included in the battle checkpoint schema. See [implementation boundaries](../native/OMEGA_FRONT_TACTICS.md).
+
 **Current P2 source:** `app/src/main/jni/native/omega_front_controls.h`, `app/src/main/jni/native/omega_front_module.cpp`, `app/src/test/native/omega_front_controls_test.cpp` — real touchpad/pointer tile navigation, queued orders, 250-ms combat pulses and procedural board. Registered for Development-only Native Games. NDK/APK/physical S9 validation pending.
 
-**Current P1 source:** `app/src/main/jni/native/omega_front_tactics.h`, `app/src/test/native/omega_front_tactics_test.cpp` and [docs/native/OMEGA_FRONT_TACTICS.md](../native/OMEGA_FRONT_TACTICS.md) — actual 24×24 combat rules, three unit roles, finite ammunition and waterworks repair, LOS/cover, opponent objective AI and deterministic win/loss; GCC/Clang/ASan+UBSan host regression passed. **This source is not yet registered or packaged as an APK module.**
+**Current P1 source:** `app/src/main/jni/native/omega_front_tactics.h`, `app/src/test/native/omega_front_tactics_test.cpp` and [docs/native/OMEGA_FRONT_TACTICS.md](../native/OMEGA_FRONT_TACTICS.md) — actual 24×24 combat rules, three unit roles, finite ammunition and waterworks repair, LOS/cover, opponent objective AI and deterministic win/loss; GCC/Clang/ASan+UBSan host regression passed. **The Development-only module is source-registered, but no built APK or Galaxy S9 launch has been validated.**
 
 **Native identity:** Comfortable 3DoF VR tabletop with tiny crisp chibi pixel sprites on logical square tiles. Shell-normalized select/secondary/touchpad inputs; O/Home stays shell-owned. Bounded, reproducible order-pulse simulator independent of GLES; rendering only consumes the simulation. The strategic economy and room inspection are real tactical gameplay rather than passive timers. Retain S9 performance and offline-first single-APK operation.
 

@@ -56,6 +56,10 @@ This retains the existing 600-sector design scale. Each theater contains **50 ad
 
 Not every theater is continuously controlled by one faction. Claim, garrison, civilian allegiance, de facto occupation and supply reach are separate state variables. Factions may establish colonies, evacuate, lose capitals, become scattered refugee remnants and later return. Content generation must support contested routes and reachability instead of placing 600 decorative map dots.
 
+## Implemented first-frontier boundary (2026-10-15)
+
+`app/src/main/jni/native/omega_front_frontier.h` and its host tests now implement the first named 16 strategic sectors and an *in-memory* three-operation `The Water We Own` battle sequence. This is a working headless slice of the planned 600-sector world, not a claim of map rendering, sector save/load, complete operational books, full faction AI or 70 authored arcs. In this implementation S009 Rust Orchard's first emergence is telegraphed for day four and becomes newly breathable Eden without instantly producing stocks. Its seeded operation maps all protect the generic tactical field pump; later mission-specific objectives still need implementing. See [native tactical status](../native/OMEGA_FRONT_TACTICS.md).
+
 ## 4. Initial 16-sector Hearthfall March front
 
 The first campaign opens in **T01**, on a readable 4×4 geographic neighborhood with **16 identified sectors** and 34 additional T01 campaign sectors still awaiting names and detailed layout. **Crucial timeline:** these primary-class labels show the world **after** the Hearthwell Emergence; several currently green sectors were previously wasteland and must carry a historical class-transition event in their persisted state. This is a first-playable window, not a deliberate reduction of the 600-sector target.
