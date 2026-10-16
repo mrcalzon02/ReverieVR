@@ -149,8 +149,24 @@ public:
         cooldown_-=dt;combo_clock_-=dt;
         if(combo_clock_<=0.f)combo_=0;
         if(fire&&cooldown_<=0.f){
-            for(auto& s:shots_)if(!s.active){s={px_,py_+.12f,3.75f,true,false};++shots_fired_;break;}
-            cooldown_=std::max(.10f,.34f-.022f*levels_[0]);
+            const int pellets=weapon_==Weapon::MintSpread?3:1;
+            bool emitted=false;
+            for(int n=0;n<pellets;++n){
+                for(auto& shot:shots_)if(!shot.active){
+                    const float vx=pellets==3?(n-1)*.55f:0.f;
+                    const int damage=weapon_==Weapon::RockCannon?
+                        4+levels_[0]/2:(weapon_==Weapon::MintSpread?
+                        1+levels_[0]/4:1+levels_[0]/3);
+                    shot={px_+(n-1)*.028f,py_+.12f,
+                        weapon_==Weapon::RockCannon?2.55f:3.75f,
+                        true,false,vx,damage};
+                    ++shots_fired_;emitted=true;break;
+                }
+            }
+            if(emitted)cooldown_=weapon_==Weapon::RockCannon?
+                std::max(.41f,.79f-.016f*levels_[0]):
+                (weapon_==Weapon::MintSpread?std::max(.30f,.55f-.014f*levels_[0]):
+                std::max(.10f,.34f-.022f*levels_[0]));
         }
         spawn_clock_-=dt;
         if(spawned_<target_&&spawn_clock_<=0.f){
@@ -210,7 +226,7 @@ public:
                 for(auto& e:enemies_)if(e.active
                     &&std::fabs(s.x-e.x)<(e.boss?.32f:.19f)
                     &&std::fabs(s.y-e.y)<(e.boss?.25f:.16f)){
-                    s.active=false;++shots_hit_;e.hp-=1+levels_[0]/3;
+                    s.active=false;++shots_hit_;e.hp-=s.damage;
                     if(e.hp<=0){
                         if(e.boss)bossKilled_=true;
                         e.active=false;++defeated_;++kills_;++combo_;max_combo_=std::max(max_combo_,combo_);combo_clock_=2.65f;
@@ -238,18 +254,37 @@ public:
         Snapshot s;s.seed=seed_;s.node=node_;s.visited=visited_;s.cash=cash_;
         s.kills=kills_;s.bosses=bosses_;
         for(unsigned i=0;i<4;++i)s.levels[i]=levels_[i];
+        s.owned_weapons=owned_weapons_;s.active_weapon=static_cast<uint32_t>(weapon_);
         s.checksum=SnapshotChecksum(s);return s;
     }
     bool restore(const Snapshot& s){
-        if(s.magic!=0x474D4231u||s.version!=1u||s.seed==0u||s.node>=kLaneCount
+        if(s.magic!=0x474D4231u||s.version!=2u||s.seed==0u||s.node>=kLaneCount
             ||s.bosses>15u||s.cash>100000000u||s.visited>10000000u
             ||s.kills>100000000u||s.checksum!=SnapshotChecksum(s))return false;
         for(unsigned i=0;i<4;++i)if(s.levels[i]>12u)return false;
+        if((s.owned_weapons&~7u)!=0u||(s.owned_weapons&1u)==0u
+            ||s.active_weapon>2u||(s.owned_weapons&(1u<<s.active_weapon))==0u)
+            return false;
         seed_=s.seed;node_=s.node;visited_=s.visited;cash_=s.cash;
         kills_=s.kills;bosses_=s.bosses;
         for(unsigned i=0;i<4;++i)levels_[i]=s.levels[i];
+        owned_weapons_=s.owned_weapons;weapon_=static_cast<Weapon>(s.active_weapon);
         phase_=bosses_==15u?Phase::ArmadaDefeated:Phase::Chart;
         return true;
+    }
+    bool restore(const SnapshotV1& legacy){
+        if(legacy.magic!=0x474D4231u||legacy.version!=1u
+            ||legacy.seed==0u||legacy.node>=kLaneCount
+            ||legacy.bosses>15u||legacy.cash>100000000u
+            ||legacy.visited>10000000u||legacy.kills>100000000u
+            ||legacy.checksum!=SnapshotV1Checksum(legacy))return false;
+        Snapshot migrated{};
+        migrated.seed=legacy.seed;migrated.node=legacy.node;
+        migrated.visited=legacy.visited;migrated.cash=legacy.cash;
+        migrated.kills=legacy.kills;migrated.bosses=legacy.bosses;
+        for(unsigned i=0;i<4;++i)migrated.levels[i]=legacy.levels[i];
+        migrated.checksum=SnapshotChecksum(migrated);
+        return restore(migrated);
     }
 private:
     uint32_t next(){rng_=Mix(rng_+0x9E3779B9u);return rng_;}
@@ -266,6 +301,8 @@ private:
     uint32_t seed_=1,node_=0,visited_=0,cash_=100,kills_=0,bosses_=0,rng_=1;
     Lane destination_{};
     uint16_t levels_[4]={0,0,0,0};
+    uint32_t owned_weapons_=1u;
+    Weapon weapon_=Weapon::PeaRepeater;
     int hp_=90,shield_=20,combo_=0,spawned_=0,defeated_=0,target_=0;
     bool bossKilled_=false;
     int escaped_=0,max_combo_=0;
