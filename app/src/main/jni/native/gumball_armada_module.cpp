@@ -146,12 +146,15 @@ void Chart(Module* m){
             Text(m,text,x,-1.25f,.030f,1.f,.77f,.43f);
         }
     }
-    std::snprintf(text,sizeof(text),"GUMBALLS %u  RANK %d  GENERALS %u/4",
+    Frame(m,-1.78f,-1.49f,1.28f,.29f,m->selected==10);
+    Text(m,"SHIPYARD",-1.78f,-1.49f,.032f,.85f,1.f,.88f);
+    std::snprintf(text,sizeof(text),"G %u   RANK %d   GENERALS %u/4",
                   m->sim.cash(),m->sim.command_rank(),
                   static_cast<unsigned>((m->sim.bosses()&1u)+((m->sim.bosses()>>1)&1u)
                     +((m->sim.bosses()>>2)&1u)+((m->sim.bosses()>>3)&1u)));
-    Text(m,text,0,-1.51f,.035f,1.f,.86f,.60f);
-    Text(m,"PAD MOVE  CLICK ACTIVATE",0,-1.66f,.030f,.72f,.87f,.93f);
+    Text(m,text,.68f,-1.49f,.031f,1.f,.86f,.60f);
+    if(!m->yard.ready())Text(m,"SHIP NOT READY",0,-1.69f,.031f,1.f,.38f,.35f);
+    else Text(m,"PAD MOVE  CLICK ACTIVATE",0,-1.69f,.030f,.72f,.87f,.93f);
 }
 void ShipyardView(Module* m){
     Background(m);
@@ -336,7 +339,8 @@ void Result(Module* m){
 }
 void Rebuild(Module* m){
     m->mesh.clear();
-    if(m->sim.phase()==Phase::Chart)Chart(m);
+    if(m->inYard)ShipyardView(m);
+    else if(m->sim.phase()==Phase::Chart)Chart(m);
     else if(m->sim.phase()==Phase::Flight)Flight(m);
     else Result(m);
     if(m->saveError)Text(m,"WARNING: PROGRESS SAVE FAILED",0,-1.62f,.031f,1.f,.35f,.28f);
