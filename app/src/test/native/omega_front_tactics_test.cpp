@@ -76,6 +76,49 @@ int main() {
     assert(overrun.result()==Result::Overrun);
     assert(overrun.pump_hp()==0);
 
+    // Walls block attack orders even inside nominal gun range; an open
+    // fire lane permits real shots. Rubble reduces actual ballistic damage.
+    Battle blocked(11);
+    blocked.ClearUnits();
+    assert(blocked.SetGround(3,3,Ground::Wall));
+    blocked.AddUnit(Side::Hearthwell,Class::Heavy,2,3);
+    blocked.AddUnit(Side::Raiders,Class::Rifle,4,3);
+    assert(!blocked.QueueAttack(0,1));
+    assert(blocked.SetGround(3,3,Ground::Road));
+    assert(blocked.QueueAttack(0,1));
+    blocked.Step();
+    assert(blocked.unit(1)->hp<9);
+    assert(blocked.unit(0)->ammo==4);
+    Battle uncovered(77), covered(77);
+    uncovered.ClearUnits(); covered.ClearUnits();
+    assert(covered.SetGround(4,1,Ground::Rubble));
+    for(Battle *scene:{&uncovered,&covered}) {
+        scene->AddUnit(Side::Hearthwell,Class::Rifle,2,1);
+        scene->AddUnit(Side::Raiders,Class::Heavy,4,1);
+        assert(scene->QueueAttack(0,1));
+        scene->Step();
+    }
+    assert(covered.unit(1)->hp==uncovered.unit(1)->hp+2);
+
+    // A round genuinely fired can be replaced once by spending one crate
+    // round; this isn't a free reload or a hidden replenishment timer.
+    Battle supplies(17);
+    supplies.ClearUnits();
+    supplies.AddUnit(Side::Hearthwell,Class::Rifle,5,11);
+    supplies.AddUnit(Side::Raiders,Class::Heavy,6,11);
+    supplies.AddUnit(Side::Raiders,Class::Rifle,23,23);
+    supplies.AddUnit(Side::Hearthwell,Class::Engineer,0,0);
+    assert(supplies.QueueAttack(0,1));
+    supplies.Step();
+    assert(supplies.unit(0)->ammo==7);
+    assert(supplies.CancelOrders(0));
+    assert(supplies.QueueResupply(0));
+    const int depot_before=supplies.ammo_stock();
+    supplies.Step();
+    assert(supplies.unit(0)->ammo==8);
+    assert(supplies.ammo_stock()==depot_before-1);
+    assert(supplies.result()==Result::Active);
+
     Battle cap(123);
     cap.ClearUnits();
     cap.AddUnit(Side::Hearthwell,Class::Rifle,0,0);
