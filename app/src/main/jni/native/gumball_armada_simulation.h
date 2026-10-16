@@ -340,19 +340,21 @@ public:
             s.y+=s.vy*dt;s.x+=s.vx*dt;
             if(s.y>1.75f||s.y< -1.4f){s.active=false;continue;}
             if(s.hostile){
-                if(s.bomb){
-                    // Interceptable telegraphed bomb: player and allied shots
-                    // can disarm it without inventing a separate score payout.
+                if(s.bomb||s.mine){
+                    // Interceptable hostile hazards: only an actual friendly
+                    // projectile removes one. No fictional cash award.
                     for(auto& bullet:shots_)if(bullet.active&&!bullet.hostile
                         &&std::fabs(bullet.x-s.x)<.16f
                         &&std::fabs(bullet.y-s.y)<.18f){
-                        bullet.active=false;s.active=false;++bombs_defused_;break;
+                        bullet.active=false;s.active=false;
+                        if(s.mine)++mines_defused_;else ++bombs_defused_;
+                        break;
                     }
                     if(!s.active)continue;
                 }
-                if(std::fabs(s.x-px_)<(s.bomb?.20f:.17f)
-                   &&std::fabs(s.y-py_)<(s.bomb?.19f:.16f)){
-                    s.active=false;damage(s.bomb?
+                if(std::fabs(s.x-px_)<(s.mine?.21f:(s.bomb?.20f:.17f))
+                   &&std::fabs(s.y-py_)<(s.mine?.19f:(s.bomb?.19f:.16f))){
+                    s.active=false;damage((s.bomb||s.mine)?
                         s.damage+static_cast<int>(destination_.hazard):
                         7+static_cast<int>(destination_.hazard));
                 }
@@ -363,7 +365,12 @@ public:
                     s.active=false;if(!s.ally)++shots_hit_;e.hp-=s.damage;
                     if(e.hp<=0){
                         if(e.boss)bossKilled_=true;
+                        if(e.kind==EnemyKind::Biff)biff_killed_=true;
+                        if(e.kind==EnemyKind::Baff)baff_killed_=true;
                         e.active=false;++defeated_;++kills_;++combo_;max_combo_=std::max(max_combo_,combo_);combo_clock_=2.65f;
+                        if(biff_killed_&&baff_killed_&&twin_bonus_paid_==0u){
+                            twin_bonus_paid_=32u;cash_+=32u;sortie_cash_+=32u;
+                        }
                         const uint32_t reward=static_cast<uint32_t>((e.boss?125u:9u)+(combo_/3)*4+destination_.reward*2);
                         cash_+=reward;sortie_cash_+=reward;
                         salvage_.drop(e.x,e.y,static_cast<uint16_t>(
