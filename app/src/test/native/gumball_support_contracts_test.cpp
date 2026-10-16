@@ -34,6 +34,28 @@ int main(){
     assert(restored.booked()==SupportKind::MademoiselleMacaron);
     assert(restored.consume()==SupportKind::MademoiselleMacaron);
     assert(restored.booked()==SupportKind::None);
+    // Limited independent emergency supplies, with actual debit, no free
+    // duplicate purchase, and persistence separate from escort booking.
+    uint32_t kitCash=150;
+    SupportContracts kits;
+    assert(kits.buy_kit(SupportKit::HullPatch,kitCash)&&kitCash==85u);
+    assert(!kits.buy_kit(SupportKit::HullPatch,kitCash)&&kitCash==85u);
+    assert(kits.buy_kit(SupportKit::ShieldTonic,kitCash)&&kitCash==40u);
+    assert(kits.kit_mask()==3u);
+    uint8_t kitLevels[4];kits.export_levels(kitLevels);
+    SupportContracts kitRestored;
+    assert(kitRestored.restore(kitLevels,0,kits.kit_mask()));
+    assert(kitRestored.has_kit(SupportKit::HullPatch));
+    assert(kitRestored.has_kit(SupportKit::ShieldTonic));
+    assert(!kitRestored.restore(kitLevels,0,4u));
+    assert(kitRestored.kit_mask()==3u);
+    assert(kitRestored.use_kit(SupportKit::HullPatch));
+    assert(!kitRestored.use_kit(SupportKit::HullPatch));
+    assert(kitRestored.kit_mask()==2u);
+    assert(kitRestored.use_kit(SupportKit::ShieldTonic));
+    assert(!kitRestored.use_kit(SupportKit::ShieldTonic));
+    assert(!kitRestored.buy_kit(static_cast<SupportKit>(9),kitCash));
+    assert(std::strcmp(SupportKitName(SupportKit::HullPatch),"HULL PATCH")==0);
     assert(std::strcmp(SupportName(SupportKind::CapitaineEclair),"CAPITAINE ECLAIR")==0);
     std::cout<<"support contract purchase, skill caps and persistence passed\n";
 }
