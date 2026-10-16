@@ -191,15 +191,24 @@ public:
                     &&spawned_==target_-1;
                 const bool ace=!boss&&!courier&&spawned_==target_-1;
                 const unsigned rollType=rollKind(spawned_);
-                const EnemyKind kind=boss?EnemyKind::Fortress:
-                    (courier?EnemyKind::Courier:(ace?EnemyKind::Ace:
-                    (rollType==0u?EnemyKind::Scout:
-                    (rollType==1u?EnemyKind::Interceptor:EnemyKind::Bomber))));
+                EnemyKind kind=EnemyKind::Scout;
+                if(boss)kind=EnemyKind::Fortress;
+                else if(courier)kind=EnemyKind::Courier;
+                else if(ace)kind=EnemyKind::Ace;
+                else if(rollType==1u)kind=EnemyKind::Interceptor;
+                else if(rollType==2u)kind=EnemyKind::Bomber;
+                int hull=2;
+                switch(kind){
+                case EnemyKind::Scout: hull=2;break;
+                case EnemyKind::Interceptor: hull=3;break;
+                case EnemyKind::Bomber: hull=4;break;
+                case EnemyKind::Ace: hull=7;break;
+                case EnemyKind::Courier: hull=6;break;
+                case EnemyKind::Fortress: hull=22+static_cast<int>(destination_.id/1024u)*4;break;
+                }
                 const uint32_t roll=next();
                 e={-1.65f+static_cast<float>(roll%331u)*.01f,1.35f,0.f,1.45f,
-                   boss?(22+static_cast<int>(destination_.id/1024u)*4):
-                   (kind==EnemyKind::Courier?6:(kind==EnemyKind::Ace?7:
-                   (kind==EnemyKind::Bomber?4:(kind==EnemyKind::Interceptor?3:2)))),true,boss,kind};
+                   hull,true,boss,kind};
                 ++spawned_;break;
             }
             spawn_clock_=(spawned_%5==0?3.50f:.94f);
