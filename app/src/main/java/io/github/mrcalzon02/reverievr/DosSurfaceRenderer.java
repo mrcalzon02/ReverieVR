@@ -35,6 +35,7 @@ final class DosSurfaceRenderer {
     private int textureHeight;
     private float displayAspect = 4.0f / 3.0f;
     private boolean fullScreen;
+    private DosScreenPlacement windowedPlacement = DosScreenPlacement.DEFAULT;
     private boolean pointerVisible;
     private final float[] pointerUv = new float[2];
     private int pointerUvHandle;
@@ -47,6 +48,15 @@ final class DosSurfaceRenderer {
 
     boolean isFullScreen() {
         return fullScreen;
+    }
+
+    void setWindowedPlacement(DosScreenPlacement placement) {
+        if (placement == null) throw new IllegalArgumentException("Missing DOS placement");
+        windowedPlacement = placement;
+    }
+
+    DosScreenPlacement getWindowedPlacement() {
+        return windowedPlacement;
     }
 
     float getDisplayAspect() {
@@ -218,12 +228,15 @@ final class DosSurfaceRenderer {
             System.arraycopy(eye.getEyeView(), 0, eyeView, 0, 16);
             Matrix.translateM(correctedEyeView, 0, eyeView, 0,
                 eyeCorrectionMeters, 0.0f, 0.0f);
-            // Windowed DOS screen leaves room for the shell options console.
-            float halfHeight = 0.80f;
-            float halfWidth = Math.min(1.40f,
-                halfHeight * displayAspect);
+            // Scale both dimensions together: never stretch a retro aspect.
+            // Shift very wide/enlarged screens left to keep the right-side
+            // options rail unobstructed and its controller ray hits stable.
+            float halfHeight = 0.80f * windowedPlacement.scale;
+            float halfWidth = halfHeight * displayAspect;
+            float screenX = Math.min(-0.70f, 0.57f - halfWidth);
             Matrix.setIdentityM(model, 0);
-            Matrix.translateM(model, 0, -0.70f, 0.0f, -3.2f);
+            Matrix.translateM(model, 0, screenX,
+                windowedPlacement.height, -windowedPlacement.distance);
             Matrix.scaleM(model, 0, halfWidth, halfHeight, 1.0f);
             Matrix.multiplyMM(modelView, 0, correctedEyeView, 0, model, 0);
             Matrix.multiplyMM(mvp, 0,

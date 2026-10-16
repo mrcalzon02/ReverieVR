@@ -9,6 +9,7 @@ final class ReveriePreferences {
     private static final String FILE_NAME = "reverie_settings";
 
     private static final String KEY_BATTERY_HUD = "battery_hud";
+    private static final String KEY_DOS_SCREEN_PREFIX = "dos_window_";
     private static final String KEY_PERFORMANCE_OVERLAY = "performance_overlay";
     private static final String KEY_LAST_PERFORMANCE_REPORT = "last_vr_performance_report";
     private static final String KEY_LOOK_UP_REVEAL = "look_up_reveal";
@@ -116,6 +117,38 @@ final class ReveriePreferences {
         if (report == null || report.length() > 1600)
             throw new IllegalArgumentException("Invalid performance report");
         preferences.edit().putString(KEY_LAST_PERFORMANCE_REPORT, report).apply();
+    }
+
+    /** Module-specific geometry, independent of the 70% fullscreen optical fit. */
+    DosScreenPlacement getDosScreenPlacement(String moduleId) {
+        String key = screenKey(moduleId);
+        try {
+            return new DosScreenPlacement(
+                preferences.getFloat(key + ".scale", 1f),
+                preferences.getFloat(key + ".distance", 3.20f),
+                preferences.getFloat(key + ".height", 0f)
+            );
+        } catch (ClassCastException invalidPersistedValue) {
+            return DosScreenPlacement.DEFAULT;
+        }
+    }
+
+    void setDosScreenPlacement(String moduleId, DosScreenPlacement value) {
+        if (value == null) throw new IllegalArgumentException("DOS screen placement missing");
+        String key = screenKey(moduleId);
+        preferences.edit()
+            .putFloat(key + ".scale", value.scale)
+            .putFloat(key + ".distance", value.distance)
+            .putFloat(key + ".height", value.height)
+            .apply();
+    }
+
+    private static String screenKey(String moduleId) {
+        if (moduleId == null ||
+            !moduleId.matches("[A-Za-z0-9_.-]{1,96}")) {
+            throw new IllegalArgumentException("Invalid DOS module identifier");
+        }
+        return KEY_DOS_SCREEN_PREFIX + moduleId;
     }
 
     boolean isLookUpRevealEnabled() {
