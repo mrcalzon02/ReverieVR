@@ -463,6 +463,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         new FramePerformanceTracker();
     private final EyeRenderPerformanceTracker eyeRenderPerformanceTracker =
         new EyeRenderPerformanceTracker();
+    private final StereoFpsHud fpsHud = new StereoFpsHud();
     // Reused only by the serialized GL renderer callback thread.
     private final int[] eyeViewportScratch = new int[4];
     private final int[] eyeScissorScratch = new int[4];
@@ -1685,6 +1686,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     ) {
         long frameNanos = System.nanoTime();
         performanceTracker.recordFrame(frameNanos);
+        fpsHud.recordFrame(frameNanos);
         homeEnvironmentRenderer.setAmbientFrameTime(frameNanos);
         // Only report transitions: avoid Android audio calls on the GL thread
         // and avoid the cost of per-frame UI-thread dispatch.
@@ -1720,6 +1722,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     + phoneBattery.get()
                     + " "
                     + snapshot.toLogString()
+                    + " fpsHud=" + fpsHud.getFps()
             );
             if (ReverieLog.isDevelopment()) {
                 ReverieLog.dev(
@@ -2622,6 +2625,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 eyeViewport[3]
             );
             drawPowerHudOverlay();
+            fpsHud.draw(program, positionHandle, uvHandle,
+                matrixHandle, textureHandle);
             drawControlFeedOverlay();
         } catch (RuntimeException | LinkageError failure) {
             reportRendererFailure(
@@ -3196,6 +3201,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         uvHandle = GLES20.glGetAttribLocation(program, "a_TexCoord");
         matrixHandle = GLES20.glGetUniformLocation(program, "u_Mvp");
         textureHandle = GLES20.glGetUniformLocation(program, "u_Texture");
+        fpsHud.onSurfaceCreated();
 
         int[] textures = new int[4];
         GLES20.glGenTextures(4, textures, 0);
@@ -3280,6 +3286,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     @Override
     public void onRendererShutdown() {
+        fpsHud.shutdown();
         videoRenderer.shutdown();
         dosRenderer.shutdown();
         pointerRenderer.shutdown();

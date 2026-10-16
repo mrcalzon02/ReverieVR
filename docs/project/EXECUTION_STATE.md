@@ -1,3 +1,16 @@
+## 2026-10-15 — Binocular FPS indicator (source)
+
+Added a lightweight frame-pair FPS meter sampled once by Cardboard `onNewFrame`,
+plus a shared top-center per-eye HUD quad rendered after the eye viewport is
+restored. Color thresholds: red at 20 or lower, amber 21–29, green 30–59,
+bright blue 60 or higher. A half-second measurement window updates the texture
+only when the displayed integer changes. Screen output begins at a neutral
+unmeasured value and clears after a long suspend; the indicator remains visible
+independently of battery HUD preference and across native/DOS/video/home modes.
+Standalone `javac` cadence self-tests passed for 20/30/60 FPS and resume.
+Android/NDK build, Galaxy S9 optical stereo confirmation, compositor/GPU pacing,
+and sustained heat/battery impact remain pending; no signed APK is claimed.
+
 ## 2026-10-15 — Home menu/desk clearance adjustment (source)
 
 Raised the three-panel Home menu 0.16 m in source coordinates (0.1296 m after existing 0.81 view contraction), lowered the desk, keys and input legend plane together by 0.06 m, and brought the keyboard and supporting dais 0.10 m toward the viewer. Home menu ray-hit extents now share the rendered panels' contraction; DOS and other panel layouts are untouched. Added angular-clearance and dais/keycap coupling assertions alongside existing 51-key ray regressions. Geometry arithmetic and source transformations checked; full Android/NDK build and real Galaxy S9/Daydream stereo, gaze and controller verification are still pending. No APK released in this slice.

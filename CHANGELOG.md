@@ -12,6 +12,18 @@ All entries describe verified project/repository changes. Planned work belongs i
 
 ## Unreleased
 
+### Always-visible binocular FPS status indicator
+
+- Draw one compact head-locked colored-square FPS label at the top center of each
+  Cardboard eye independently of the battery HUD in Home, DOS, video, and native
+  modes. Display submitted stereo frame-pair cadence, not compositor/GPU FPS.
+- Sampling happens once in `onNewFrame`; the 0.5-second readout reuses the same
+  small texture in both eyes and uploads only on a changed value. Red <=20,
+  amber 21–29, green 30–59, bright blue >=60; unknown displays a gray square.
+  Source/JVM cadence checks exist; APK, optical legibility and S9 thermal
+  acceptance remain pending.
+
+
 ### Breakwater pinned infantry movement and accurate SHORE arrival
 
 - Suppressed riflemen now physically hold position for their real
