@@ -106,30 +106,32 @@ void Chart(Module* m){
         Frame(m,x,.20f,1.43f,.70f,m->selected==n);
         auto lane=m->sim.lane(static_cast<unsigned>(n));
         std::snprintf(text,sizeof(text),"LANE %c %04u",'A'+n,lane.id);
-        Text(m,text,x,.33f,.044f,.95f,.95f,1.f);
+        Text(m,text,x,.33f,.029f,.95f,.95f,1.f);
         if(lane.fortress)Text(m,"SOUR FORTRESS",x,.07f,.034f,1.f,.49f,.47f);
         else{
             std::snprintf(text,sizeof(text),"RISK %u LOOT %u",lane.hazard,lane.reward);
-            Text(m,text,x,.12f,.031f,.88f,.83f,.63f);
+            Text(m,text,x,.12f,.024f,.88f,.83f,.63f);
         }
         const auto rules=reverie::gumball::MissionFor(static_cast<unsigned>(n),lane.hazard);
-        Text(m,reverie::gumball::MissionName(rules.kind),x,-.065f,.029f,.71f,.97f,.90f);
+        Text(m,rules.kind==reverie::gumball::MissionKind::Sweep?"SWEEP":
+            (rules.kind==reverie::gumball::MissionKind::Intercept?"INTERCEPT":"RECOVERY"),
+            x,-.065f,.033f,.71f,.97f,.90f);
     }
     const char* upgrades[]={"BLASTER","HULL","THRUSTER","SHIELD"};
     for(int i=0;i<4;++i){
         float x=-1.82f+1.21f*i;
         Frame(m,x,-.53f,1.12f,.66f,m->selected==i+3);
-        Text(m,upgrades[i],x,-.37f,.038f,.92f,.88f,1.f);
+        Text(m,upgrades[i],x,-.37f,.032f,.92f,.88f,1.f);
         std::snprintf(text,sizeof(text),"LV %d %dG",m->sim.level(static_cast<Upgrade>(i)),
                       m->sim.price(static_cast<Upgrade>(i)));
-        Text(m,text,x,-.66f,.036f,1.f,.81f,.56f);
+        Text(m,text,x,-.66f,.026f,1.f,.81f,.56f);
     }
     const char* weapons[]={"PEA REPEATER","ROCK CANNON","MINT SPREAD"};
     for(int i=0;i<3;++i){
         const float x=-1.54f+1.54f*i;
         const Weapon kind=static_cast<Weapon>(i);
         Frame(m,x,-1.16f,1.43f,.47f,m->selected==i+7);
-        Text(m,weapons[i],x,-1.07f,.035f,.95f,.88f,.96f);
+        Text(m,weapons[i],x,-1.07f,.028f,.95f,.88f,.96f);
         if(m->sim.weapon()==kind)Text(m,"EQUIPPED",x,-1.25f,.030f,.45f,1.f,.65f);
         else if(m->sim.owns_weapon(kind))Text(m,"CLICK EQUIP",x,-1.25f,.030f,.80f,.89f,.95f);
         else{
