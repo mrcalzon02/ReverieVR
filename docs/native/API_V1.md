@@ -4,7 +4,7 @@ The Development-only `omega-front` native module is registered in the built-in h
 
 ## Gumball Armada hosted module and admission (2026-10-15)
 
-The packaged `gumball-armada` module is an original Development-only GLES2 native game: compile-time host allowlist, unchanged ABI-v1 entry/lifecycle, module-private `campaign.v1` save slot with bounded schema/seed/checksum validation, and no additional native ABI methods. `NativeModuleRuntime` rejects the title outside Development logging mode. Built-in module count increases by one; APK library/entry verification and Galaxy S9 Daydream acceptance must be re-run before release claims. The original project design is at `docs/project/GUMBALL_ARMADA.md`.
+The packaged `gumball-armada` module is an original Development-only GLES2 native game: compile-time host allowlist, unchanged ABI-v1 entry/lifecycle, module-private `campaign.v1` save slot (version-2 binary payload, with validated legacy version-1 migration preserving position/currency/upgrades) and bounded schema/seed/checksum validation, and no additional native ABI methods. `NativeModuleRuntime` rejects the title outside Development logging mode. Built-in module count increases by one; APK library/entry verification and Galaxy S9 Daydream acceptance must be re-run before release claims. The original project design is at `docs/project/GUMBALL_ARMADA.md`.
 
 ## Module-reported shader failures in native GL initialization (2026-10-13)
 
