@@ -8,7 +8,7 @@
 
 - Fixed 24×24 logical tactical grid, with road, rubble, wall, deep water, and ordinary ground; walls block fire and deep water blocks foot movement.
 - Eight combatants in the default Hearthwell seed fixture (four defenders, four attackers); per-side unit identity, HP, ammunition, armor and three distinct roles (rifle, engineer, heavy).
-- Input-facing bounded per-unit FIFO order queues: move, attack, repair the pump and resupply at the ammunition crate; order cancel; invalid/hostile orders rejected.
+- Input-facing bounded per-unit FIFO order queues: move, attack, repair the pump and resupply at the ammunition crate; order cancel; invalid/hostile orders rejected. Tactical pause halts the clock while still allowing the player to select soldiers, change command modes and queue orders; deselecting a unit exposes secondary/App resume.
 - Deterministic cardinal BFS occupancy-aware movement, seeded attack variance, target-range checks, shared Bresenham line of sight, rubble damage reduction, finite ammo, finite repair materials and depot rounds.
 - Enemies approach their known pump objective and attack visible defenders first; they cannot seek hidden defender coordinates.
 - A win requires all hostile troops disabled while defenders and the pump survive; losses include pump destruction, all defenders lost, or the bounded 160-pulse encounter timeout.

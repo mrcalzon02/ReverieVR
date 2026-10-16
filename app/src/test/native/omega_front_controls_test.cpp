@@ -33,10 +33,21 @@ int main(){
     c.Input({0,0,0,false,false,-1,-1});
     c.selected=-1;
     Tap(c,false,true); assert(c.paused);
+    // Tactical pause accepts real orders without moving soldiers or enemies.
+    c.cursor_x=c.battle.unit(0)->x;c.cursor_y=c.battle.unit(0)->y;
+    Tap(c,true);
+    assert(c.selected==0);
+    Tap(c,false,true);assert(c.mode==CommandMode::Attack);
+    Tap(c,false,true);assert(c.mode==CommandMode::Repair);
+    assert(c.Input({0,0,0,false,false,2,12}));
+    Tap(c,true);
+    assert(c.battle.queued(0)>=1);
     auto frozen=c.battle.Checksum();
     for(int i=0;i<30;++i)c.Input({.1f,0,0,false,false,-1,-1});
     assert(c.battle.Checksum()==frozen);
+    c.selected=-1;
     Tap(c,false,true);assert(!c.paused);
+    c.selected=-1;c.cursor_x=11;c.cursor_y=11;
     Tap(c,true); assert(c.rejected); // not a friendly soldier at cursor
     // Separate replay from exact equivalent command sequence.
     const ControlsInput steps[]={{0,0,0,false,false,4,11},{0,0,0,true,false,-1,-1},

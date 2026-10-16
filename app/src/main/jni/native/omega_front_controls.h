@@ -95,7 +95,7 @@ public:
         return -1;
     }
     bool Select() {
-        if(battle.result()!=Result::Active || paused) return false;
+        if(battle.result()!=Result::Active) return false;
         const int occupant=CursorUnit();
         if(selected<0) {
             const Unit* u=battle.unit(occupant);

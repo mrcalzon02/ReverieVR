@@ -154,7 +154,8 @@ void Draw(State *s){
     char action[90];
     if(battle.result()==game::Result::Defended)std::snprintf(action,sizeof(action),"DEFENDED  MENU RESET");
     else if(battle.result()==game::Result::Overrun)std::snprintf(action,sizeof(action),"OVERRUN  MENU RESET");
-    else if(s->control.paused)std::snprintf(action,sizeof(action),"PAUSED  MENU RESUME");
+    else if(s->control.paused)std::snprintf(action,sizeof(action),"%s",
+        s->control.selected<0?"PAUSED  MENU RESUME":"PAUSED  CLICK UNIT TO CLEAR");
     else if(s->control.selected<0)std::snprintf(action,sizeof(action),"PICK A GREEN UNIT  CLICK");
     else std::snprintf(action,sizeof(action),"UNIT %d  %s  CLICK ORDER",s->control.selected,
                        mode_names[static_cast<int>(s->control.mode)]);
