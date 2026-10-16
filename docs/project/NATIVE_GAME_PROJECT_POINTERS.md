@@ -1,5 +1,8 @@
 # Native Game Project Pointers
 
+**P3i border enforcement (2026-10-16):** `omega_front_border.h` now applies exactly one genuine ration confiscation and faction claim/trust/relationship consequence when the commander *physically enters* a sector after breaking its M04–M06 installment. It cannot softlock retreat or repeatedly levy the same old debt. `Frontier::Travel` and the VR war-table incident label are source-integrated. `frontier.v1` stays at 2,048 bytes with current internal schema v6 and transactional validation, with v1–v5 migration grandfathering breaches predating patrol enforcement. Standalone C++17 GCC/Clang and sanitizer tests pass; integrated save/UI regression is added but not executed against the full checkout. Android NDK/APK/S9 acceptance remains unverified.
+
+
 **P3h treaty obligations and faction pressure (2026-10-16):** `omega_front_obligations.h` now enforces three-day follow-up installments after first-contact accords, with finite physical transfers, fulfilled/default status, faction relation changes, trust loss and bounded territorial claim pressure. The source-wired `Frontier::AdvanceDay` settles them once; the native map shows the latest deadline or result. `frontier.v1` keeps its 2,048-byte slot but advances internal schema to v5, recognizing earlier v1–v4 files and treating old treaties as LEGACY. A 15-test host runner includes standalone and integrated treaty tests; **only the standalone new helper has been compiled and sanitizer-tested in this run**, and Android/Daydream verification remains pending.
 
 

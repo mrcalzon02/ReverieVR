@@ -6,6 +6,7 @@
 #include "omega_front_intelligence.h"
 #include "omega_front_accord.h"
 #include "omega_front_obligations.h"
+#include "omega_front_border.h"
 #include <array>
 #include <cstdint>
 
@@ -88,6 +89,8 @@ public:
     int obligation_due_day(int operation) const {
         return obligations_.due_day(operation);
     }
+    int last_border_inspection() const {return border_.last_operation();}
+    bool border_inspected(int operation) const {return border_.inspected(operation);}
     bool bridge_repaired() const {return bridge_;}
     bool deployed() const {return deployed_;}
     const Battle* current_battle() const {return deployed_?&battle_:nullptr;}
@@ -132,8 +135,18 @@ public:
     }
     bool Travel(int destination) {
         if(!can_travel(destination))return false;
+        const int from=location_;
         if(rations_>0)--rations_;
         else trust_=trust_>=2?trust_-2:0;
+        // A broken accord prompts one local border inspection on actual
+        // entry. Never permanently block a retreat or counterfeit supply.
+        for(int op=3;op<=5;++op) {
+            if(destination!=Accord::Sector(op))continue;
+            FrontierSector &checkpoint=sectors_[destination];
+            border_.Enforce(op,from,destination,obligations_.status(op),
+                            rations_,trust_,relations_[Accord::Faction(op)],
+                            checkpoint.food,checkpoint.claims);
+        }
         location_=destination;
         intel_.ObserveArrival(destination);
         AdvanceDay();return true;
@@ -369,6 +382,8 @@ public:
         add(accords_.mask());add(accords_.last_operation()+1);
         for(auto stage:obligations_.stages())add(stage);
         for(auto signed_day:obligations_.days())add(signed_day);
+        add(border_.charged_mask());add(border_.grandfathered_mask());
+        add(border_.last_operation()+1);
         add(last_.operation+1);add(static_cast<uint8_t>(last_.outcome));
         add(last_.defenders_lost);add(last_.enemies_lost);
         add(last_.pump_remaining);add(last_.battle_ticks);
@@ -399,6 +414,7 @@ private:
     Intelligence intel_{};
     Accord accords_{};
     Obligations obligations_{};
+    BorderPatrol border_{};
     Battle battle_{1};
     uint32_t seed_;
     int location_=6,day_=1,operation_=0,population_=31;

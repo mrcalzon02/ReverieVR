@@ -175,6 +175,12 @@ void DrawMap(State *s){
             f.operation_faction(),f.relation(f.operation_faction()));
         Text(s,line,-1.194f,.009f,.78f,.90f,.93f);
     }else Text(s,"HEARTHFALL SIX OPERATIONS COMPLETE",-1.194f,.009f,.78f,.94f,.76f);
+    if(f.last_border_inspection()>=3 &&
+       f.location()==game::Accord::Sector(f.last_border_inspection())){
+        std::snprintf(line,sizeof(line),"BORDER INSPECTION M%02d",
+                      f.last_border_inspection()+1);
+        Text(s,line,.84f,.009f,1.f,.55f,.39f);
+    }
     if(f.last_accord()>=3 && f.next_morphology_day()<0){
         const int op=f.last_accord();
         const game::Obligations::Status status=f.obligation_status(op);

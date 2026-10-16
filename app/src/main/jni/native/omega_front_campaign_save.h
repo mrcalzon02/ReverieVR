@@ -22,7 +22,7 @@ public:
         Bytes bytes{};
         Writer w{bytes};
         for(char c : "OFSTRAT1") {if(!c)break;w.U8(static_cast<uint8_t>(c));}
-        w.U16(5);w.U16(0);
+        w.U16(6);w.U16(0);
         const Frontier &f=s.frontier;
         w.U32(f.seed_);
         w.U8(static_cast<uint8_t>(s.focused));
@@ -65,6 +65,9 @@ public:
         w.U8(static_cast<uint8_t>(f.accords_.last_operation()+1));
         for(auto stage:f.obligations_.stages())w.U8(stage);
         for(auto day:f.obligations_.days())w.U16(day);
+        w.U8(f.border_.charged_mask());
+        w.U8(f.border_.grandfathered_mask());
+        w.U8(static_cast<uint8_t>(f.border_.last_operation()+1));
         if(!w.ok)return false;
         uint64_t hash=Hash(bytes.data(),kBytes-8);
         for(size_t i=kBytes-8;i<kBytes;++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
@@ -81,7 +84,7 @@ public:
         Reader r{data,kBytes-8};
         for(char c:"OFSTRAT1"){if(!c)break;if(r.U8()!=static_cast<uint8_t>(c))return false;}
         const uint16_t schema=r.U16();
-        if((schema!=1 && schema!=2 && schema!=3 && schema!=4 && schema!=5)||r.U16()!=0)return false;
+        if((schema!=1 && schema!=2 && schema!=3 && schema!=4 && schema!=5 && schema!=6)||r.U16()!=0)return false;
         uint32_t seed=r.U32();
         const int focus=r.U8();
         const unsigned view=r.U8(),action=r.U8();
@@ -172,6 +175,12 @@ public:
             if(!f.obligations_.Restore(stages,dates,f.accords_.mask(),f.day_))
                 return false;
         }else if(!f.obligations_.Migrate(f.accords_.mask()))return false;
+        if(schema>=6) {
+            const uint8_t charged=r.U8(),grandfathered=r.U8();
+            const int last=static_cast<int>(r.U8())-1;
+            if(!f.border_.Restore(charged,grandfathered,last,f.obligations_))
+                return false;
+        }else f.border_.Migrate(f.obligations_);
         while(r.position<r.capacity){if(r.U8()!=0)return false;}
         if(!r.ok)return false;
         if(f.deployed_){

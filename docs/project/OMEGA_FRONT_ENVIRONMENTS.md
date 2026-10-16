@@ -1,5 +1,10 @@
 # Omega Front — Fractured World and Environment Design
 
+## Physical border consequences after failed treaty installments (2026-10-16)
+
+In the initial sixteen-sector theater, breaking a newly issued Scrapline, Meridian or Lost Ninth installment no longer affects relations in isolation. The next *actual crossing* into the corresponding target territory now incurs a single checkpoint inspection: up to two real rations transfer from the commander's pack to the sector's finite food stock, trust and bilateral standing fall, and local claim pressure rises. The military-controlled neutral ford remains legally neutral. The patrol never seals an essential escape route or bills a player twice, and only saved BROKEN accords qualify. Existing defaults loaded from older campaigns are grandfathered. This limited deterministic border response is not a global faction police AI or a completed dynamic diplomacy system; physical VR/APK acceptance is still pending.
+
+
 ## Follow-through after negotiated first contact (2026-10-16)
 
 Within the first 16 sectors, each newly negotiated M04–M06 agreement now carries one real dated installment due three campaign days later: Scrapline/Meridian expect two more salvage units in their respective stores; the Lost Ninth expects two field rations delivered into neutral ford food. Payment improves bilateral standing and reduces local claims; inability to pay produces faction pressure and a civic-trust loss, not a fictitious resource transfer or automatic battle win. Save schema v5 persists the compact obligation statuses and date. Older treaties are imported as LEGACY and never charged for terms that were absent from their original save. This is an initial deterministic faction response, not a complete diplomatic AI or recurring-treaty economy.

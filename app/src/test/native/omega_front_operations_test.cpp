@@ -98,7 +98,7 @@ int main(){
     // a genuine v2 save round trip. No fake replay award occurs on reload.
     CampaignSave::Bytes snapshot{};
     assert(CampaignSave::Encode(scrap,&snapshot));
-    assert(snapshot[8]==5);
+    assert(snapshot[8]==6);
     Session restored(100);
     assert(CampaignSave::Decode(&restored,snapshot.data(),snapshot.size()));
     assert(restored.Checksum()==scrap.Checksum());
@@ -153,7 +153,7 @@ int main(){
     // v1 also contains no reconnaissance/treaty arrays.
     Session old(414);assert(CampaignSave::Encode(old,&snapshot));
     const size_t relations_offset=55+16*14+Checkpoint::kBytes;
-    for(size_t i=relations_offset;i<relations_offset+kMajorFactions+43;++i)snapshot[i]=0;
+    for(size_t i=relations_offset;i<relations_offset+kMajorFactions+46;++i)snapshot[i]=0;
     snapshot[8]=1;Reseal(snapshot);
     Session migrated(99);
     assert(CampaignSave::Decode(&migrated,snapshot.data(),snapshot.size()));
