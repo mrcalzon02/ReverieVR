@@ -9,5 +9,9 @@ public class NativeDevelopmentAdmissionTest {
         assertTrue(NativeModuleRuntime.isDevelopmentOnly(NativeModuleRuntime.ID_LANTERN_DESK));
         assertTrue(NativeModuleRuntime.isDevelopmentOnly(NativeModuleRuntime.ID_FORWARD_DETACHMENT));
         assertFalse(NativeModuleRuntime.isDevelopmentOnly("procedural-test-chamber"));
+        assertEquals(BuiltInBindingProfiles.ID_NATIVE_CLASSICS,
+            BuiltInBindingProfiles.nativeProfileForModule(NativeModuleRuntime.ID_GUMBALL_ARMADA));
+        assertEquals(BuiltInBindingProfiles.ID_NATIVE_STANDARD,
+            BuiltInBindingProfiles.nativeProfileForModule(NativeModuleRuntime.ID_BREAKWATER_BATTERY));
     }
 }
