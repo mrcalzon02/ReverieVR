@@ -5,8 +5,8 @@ namespace reverie { namespace gumball {
 // Game-private controller focus. Grid remains fully accessible via arrows,
 // and the App/Back button can jump to a remembered palette selection.
 struct YardCursor {
-    int x=3,y=3;
-    int lastX=3,lastY=3;
+    int x=4,y=2; // connected empty starter cell, not the fixed Core
+    int lastX=4,lastY=2;
     int toolX=7,toolY=0;
     bool palette()const{return x>=7;}
     int toolIndex()const{return (y*2)+(x-7);}
