@@ -9,6 +9,7 @@ SHIPYARD="$ROOT/app/src/test/native/gumball_shipyard_test.cpp"
 CAST="$ROOT/app/src/test/native/gumball_cast_encounters_test.cpp"
 SUPPORT="$ROOT/app/src/test/native/gumball_support_contracts_test.cpp"
 MENU="$ROOT/app/src/test/native/gumball_menu_layout_test.cpp"
+MENU_HIT="$ROOT/app/src/test/native/gumball_menu_hit_test.cpp"
 INCLUDE="$ROOT/app/src/main/jni/native"
 for compiler in g++ clang++; do
     if ! command -v "$compiler" >/dev/null 2>&1; then
@@ -34,6 +35,9 @@ for compiler in g++ clang++; do
     "$compiler" -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
         -I"$INCLUDE" "$MENU" -o "$WORK/menu-$compiler"
     "$WORK/menu-$compiler"
+    "$compiler" -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
+        -I"$INCLUDE" "$MENU_HIT" -o "$WORK/menuhit-$compiler"
+    "$WORK/menuhit-$compiler"
 done
 if command -v clang++ >/dev/null 2>&1; then
     clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic \
@@ -60,4 +64,8 @@ if command -v clang++ >/dev/null 2>&1; then
         -fsanitize=address,undefined -fno-omit-frame-pointer \
         -I"$INCLUDE" "$MENU" -o "$WORK/menu-sanitized"
     "$WORK/menu-sanitized"
+    clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic \
+        -fsanitize=address,undefined -fno-omit-frame-pointer \
+        -I"$INCLUDE" "$MENU_HIT" -o "$WORK/menuhit-sanitized"
+    "$WORK/menuhit-sanitized"
 fi
