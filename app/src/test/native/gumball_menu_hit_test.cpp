@@ -1,0 +1,63 @@
+#include "gumball_menu_hit.h"
+#include "gumball_shipyard_menu.h"
+#include <cassert>
+#include <cmath>
+#include <iostream>
+using namespace reverie::gumball;
+int main(){
+    for(int i=0;i<3;++i){
+        assert(ChartHit(kChartRouteX[i],.22f).id==i);
+        assert(ChartHit(kChartActionX[i],-.94f).id==
+               (i==0?12:(i==1?10:11)));
+    }
+    for(int i=0;i<4;++i)
+        assert(LoadoutHit(kLoadoutUpgradeX[i],.53f).id==i);
+    for(int i=0;i<3;++i)
+        assert(LoadoutHit(kLoadoutWeaponX[i],-.38f).id==i+4);
+    assert(LoadoutHit(0.f,-1.10f).id==7);
+    for(int i=0;i<9;++i)
+        assert(SupportHit(0.f,.88f-.28f*static_cast<float>(i)).id==i);
+    assert(ChartHit(0.f,-1.55f).id==-1);
+    assert(LoadoutHit(2.4f,1.4f).id==-1);
+    assert(YardHit(NAN,0.f).id==-1);
+
+    // Pointer targets line up with EVERY physical ship cell.
+    for(int y=0;y<7;++y)for(int x=0;x<7;++x){
+        const MenuHit hit=YardHit(-1.47f+(x-3)*.28f,
+                                  .075f+(3-y)*.28f);
+        assert(hit.id==0&&hit.x==x&&hit.y==y);
+    }
+    for(int i=0;i<10;++i){
+        const MenuHit hit=YardHit(.23f+(i%2)*1.34f,
+                                  .79f-(i/2)*.345f);
+        assert(hit.id==1&&hit.x==7+(i%2)&&hit.y==i/2);
+    }
+    assert(YardHit(-2.49f,-1.60f).id==-1);
+    YardCursor cursor;
+    assert(cursor.x==3&&cursor.y==3&&!cursor.palette());
+    cursor.switchFocus();
+    assert(cursor.palette()&&cursor.toolIndex()==0);
+    cursor.move(1,0);
+    cursor.move(0,1);
+    assert(cursor.toolIndex()==3);
+    cursor.toolChosen();
+    assert(!cursor.palette()&&cursor.x==3&&cursor.y==3);
+    cursor.pointAt(6,6);
+    cursor.move(1,0);
+    assert(cursor.palette());
+    assert(cursor.toolIndex()==2); // x=7, remembered palette row one
+    cursor.toolChosen();
+    assert(cursor.x==6&&cursor.y==6);
+    cursor.switchFocus();
+    cursor.pointAt(8,4);
+    assert(cursor.palette()&&cursor.toolIndex()==9);
+    cursor.switchFocus();
+    assert(cursor.x==6&&cursor.y==6);
+    // All grid cells and palette buttons stay reachable through pointer
+    // without requiring held primary or simulated touchpad direction.
+    cursor.pointAt(0,0);
+    assert(cursor.x==0&&cursor.y==0);
+    cursor.pointAt(-1,20);
+    assert(cursor.x==0&&cursor.y==0);
+    std::cout<<"Gumball direct-click menus and shipyard focus passed\n";
+}
