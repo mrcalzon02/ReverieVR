@@ -29,5 +29,25 @@ int main(){
  assert(invalid.remove(4,4)&&invalid.ready());
  auto damaged=restored.snapshot();damaged.checksum^=1u;
  assert(!restored.restore(damaged));
+ // Deterministic layout property stress: no disconnected or duplicating ship can survive.
+ Shipyard stress;
+ uint32_t rng=0xF00DBA11u;
+ for(int tick=0;tick<30000;++tick){
+     rng^=rng<<13;rng^=rng>>17;rng^=rng<<5;
+     const int x=static_cast<int>((rng>>3)%7u),y=static_cast<int>((rng>>9)%7u);
+     const Part part=static_cast<Part>(2u+((rng>>18)%9u));
+     if(rng&1u)stress.place(x,y,part);else stress.remove(x,y);
+     assert(stress.connected());
+     const auto snapshot=stress.snapshot();
+     Shipyard copy;
+     assert(copy.restore(snapshot));
+     for(int gy=0;gy<7;++gy)for(int gx=0;gx<7;++gx)assert(stress.at(gx,gy)==copy.at(gx,gy));
+     if(stress.ready()){
+         const auto profile=stress.profile();
+         assert(profile.power>=profile.demand);
+         assert(profile.mass<=18*stress.count(Part::Thruster));
+         assert(profile.mounts>=1&&profile.mounts<=2);
+     }
+ }
  std::cout<<"shipyard structural and save tests passed\n";
 }
