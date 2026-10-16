@@ -16,6 +16,7 @@
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
+#include "reverie_native_vector_text.h"
 
 #include <GLES2/gl2.h>
 #include <algorithm>
@@ -91,49 +92,9 @@ void Box(State *s,float x,float y,float z,float w,float h,float d,
     Triangle(s,c,l,n,c,t,f,c,l,f,r*.70f,g*.70f,b*.70f);
     Triangle(s,c,l,n,c,t,n,c,t,f,r*.70f,g*.70f,b*.70f);
 }
-const char *Glyph(char c) {
-    // Five rows of three pixels, a deliberately tiny generated DOS-era font.
-    switch(c) {
-        case 'A':return "010101111101101"; case 'B':return "110101110101110";
-        case 'C':return "011100100100011"; case 'D':return "110101101101110";
-        case 'E':return "111100110100111"; case 'F':return "111100110100100";
-        case 'G':return "011100101101011"; case 'H':return "101101111101101";
-        case 'I':return "111010010010111"; case 'J':return "001001001101010";
-        case 'K':return "101101110101101"; case 'L':return "100100100100111";
-        case 'M':return "101111111101101"; case 'N':return "101111111111101";
-        case 'O':return "111101101101111"; case 'P':return "110101110100100";
-        case 'Q':return "111101101111011"; case 'R':return "110101110101101";
-        case 'S':return "011100010001110"; case 'T':return "111010010010010";
-        case 'U':return "101101101101111"; case 'V':return "101101101101010";
-        case 'W':return "101101111111101"; case 'X':return "101101010101101";
-        case 'Y':return "101101010010010"; case 'Z':return "111001010100111";
-        case '0':return "111101101101111"; case '1':return "010110010010111";
-        case '2':return "110001111100111"; case '3':return "110001110001110";
-        case '4':return "101101111001001"; case '5':return "111100110001110";
-        case '6':return "011100111101111"; case '7':return "111001010010010";
-        case '8':return "111101111101111"; case '9':return "111101111001110";
-        case '-':return "000000111000000"; case '/':return "001001010100100";
-        case ':':return "000010000010000"; default:return "000000000000000";
-    }
-}
 void Text(State *s,const char *text,float x,float y,float z,float scale,
           float r,float g,float b) {
-    if (!text) return;
-    const size_t len=std::strlen(text);
-    float px=x-static_cast<float>(len)*scale*2.0f;
-    for(size_t i=0;i<len;i++) {
-        const char ascii=text[i];
-        const char upper=(ascii>='a' && ascii<='z') ?
-            static_cast<char>(ascii-'a'+'A') : ascii;
-        const char *pixels=Glyph(upper);
-        for(int bit=0;bit<15;bit++) {
-            if(pixels[bit]!='1')continue;
-            const int cx=bit%3, cy=bit/3;
-            Panel(s,px+(cx+.5f)*scale,y+(2.5f-cy)*scale,z,
-                  scale*.93f,scale*.93f,r,g,b);
-        }
-        px+=4*scale;
-    }
+    reverie::nativeart::StrokeText(s->mesh,text,x,y,scale,r,g,b,z);
 }
 float AimAtPlane(const ReverieNativeInputV1 &input,float z,float *x,float *y) {
     if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE ||

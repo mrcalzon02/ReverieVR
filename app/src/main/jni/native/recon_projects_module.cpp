@@ -3,6 +3,7 @@
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
 #include "reverie_native_flat_mesh.h"
+#include "reverie_native_vector_text.h"
 #if !defined(RECON_PROJECT_KIND) || (RECON_PROJECT_KIND != 0 && RECON_PROJECT_KIND != 1)
 #error "Select a recon project"
 #endif
@@ -46,40 +47,9 @@ struct State {
 void Rect(State *s,float x,float y,float w,float h,float z,float r,float g,float b){
     reverie::flatmesh::Rect(s->mesh,x,y,w,h,z,r,g,b);
 }
-const char *G(char c){
-    switch(c){
-    case 'A':return "010101111101101";case 'B':return "110101110101110";
-    case 'C':return "011100100100011";case 'D':return "110101101101110";
-    case 'E':return "111100110100111";case 'F':return "111100110100100";
-    case 'G':return "011100101101011";case 'H':return "101101111101101";
-    case 'I':return "111010010010111";case 'J':return "001001001101010";
-    case 'K':return "101101110101101";case 'L':return "100100100100111";
-    case 'M':return "101111111101101";case 'N':return "101111111111101";
-    case 'O':return "111101101101111";case 'P':return "110101110100100";
-    case 'Q':return "111101101111011";case 'R':return "110101110101101";
-    case 'S':return "011100010001110";case 'T':return "111010010010111";
-    case 'U':return "101101101101111";case 'V':return "101101010101010";
-    case 'W':return "101101111111101";case 'X':return "101101010101101";
-    case 'Y':return "101101010010010";case 'Z':return "111001010100111";
-    case '0':return "111101101101111";case '1':return "010110010010111";
-    case '2':return "110001111100111";case '3':return "110001110001110";
-    case '4':return "101101111001001";case '5':return "111100110001110";
-    case '6':return "011100111101111";case '7':return "111001010010010";
-    case '8':return "111101111101111";case '9':return "111101111001110";
-    case '-':return "000000111000000";case '+':return "000010111010000";
-    case ':':return "000010000010000";default:return "000000000000000";
-    }
-}
-void Text(State *s,const char *str,float y,float size,float r,float g,float b){
-    size_t n=std::strlen(str);
-    float start=-2.f*static_cast<float>(n)*size;
-    for(size_t k=0;k<n;k++){
-        char ch=str[k];if(ch>='a'&&ch<='z')ch=static_cast<char>(ch-'a'+'A');
-        const char *bits=G(ch);
-        for(int i=0;i<15;i++)if(bits[i]=='1')
-            Rect(s,start+(k*4.f+i%3+.5f)*size,
-                 y+(2-i/3)*size,size*.9f,size*.9f,-2.87f,r,g,b);
-    }
+void Text(State *s,const char *str,float y,float size,
+          float r,float g,float b){
+    reverie::nativeart::StrokeText(s->mesh,str,0.f,y,size,r,g,b,-2.87f);
 }
 int Choices(const State *s){
 #if RECON_PROJECT_KIND == 0
