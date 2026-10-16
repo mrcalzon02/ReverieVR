@@ -1,3 +1,7 @@
+## 2026-10-15 — Gumball Armada initial source-integrated native game
+
+Original concept recorded in docs/project/GUMBALL_ARMADA.md. Added deterministic 4096-address transit kernel, combat waves, projectile/ship controls, shield and hull loss, damage on enemy escapes, combo cash, shop upgrades, fortress boss flags and checksum campaign save. Added low-cost GLES2 chart/flight/result module, native host allowlist/Android.mk, per-title Development-only admission and specific Daydream touchpad routing through the touchpad-capable profile. Host C++17 kernel equivalent passed local Clang ASan/UBSan checks. The exact remote-tree test suite, native-doc sync, Android/NDK build, APK verification and physical Galaxy S9/Daydream stereo/input test have NOT run. The voiced announcer remains visual text only. Do not promote to device accepted or call released.
+
 ## 2026-10-15 — Breakwater pinned-movement and SHORE timing repair (source)
 
 The previous pinned-infantry mechanic blocked firing but still advanced
