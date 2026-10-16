@@ -8,7 +8,7 @@ int main(){
     CastEncounter unused;unused.begin(1,37,0,2);
     for(int i=0;i<200;++i)unused.update(.05f);
     assert(!unused.active()&&!unused.claim_pulse());
-    bool seen[4]={};
+    bool seen[6]={};
     for(uint32_t seed=1;seed<=512;++seed){
         const CastGuest role=ChooseCastGuest(seed,141,2,3);
         seen[static_cast<unsigned>(role)]=true;
@@ -26,6 +26,8 @@ int main(){
         } else assert(a.pulses()==0);
     }
     for(bool got:seen)assert(got);
+    assert(std::strcmp(CastGuestName(CastGuest::NibNoxious),"NIB NOXIOUS")==0);
+    assert(std::strcmp(CastGuestName(CastGuest::CrumbclankTwins),"BIFF & BAFF")==0);
     assert(std::strcmp(CastGuestName(CastGuest::PipParfait),"PIP PARFAIT")==0);
     CastEncounter sanity;sanity.begin(1,141,3,4);
     sanity.update(NAN);sanity.update(-1.f);
