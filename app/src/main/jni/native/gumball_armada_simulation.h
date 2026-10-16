@@ -368,7 +368,7 @@ public:
                 e.firing=e.boss?.70f:(e.kind==EnemyKind::Ace?1.18f:
                     (mining?1.95f:(raining?2.35f:(heavy?2.35f:
                      (bombing?1.78f:
-                     (e.kind==EnemyKind::Bomber?1.85f:2.15f)))));
+                     (e.kind==EnemyKind::Bomber?1.85f:2.15f))))));
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
@@ -430,7 +430,7 @@ public:
                 if(std::fabs(s.x-px_)<(s.zone?.23f:
                    (s.mine?.21f:(s.bomb?.20f:.17f)))
                    &&std::fabs(s.y-py_)<(s.mine?.19f:(s.bomb?.19f:.16f))){
-                    s.active=false;damage((s.bomb||s.mine)?
+                    s.active=false;damage((s.bomb||s.mine||s.zone)?
                         s.damage+static_cast<int>(destination_.hazard):
                         7+static_cast<int>(destination_.hazard));
                 }
