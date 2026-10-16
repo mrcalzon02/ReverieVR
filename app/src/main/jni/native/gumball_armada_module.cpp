@@ -116,19 +116,22 @@ void Chart(Module* m){
     Text(m,text,0,.78f,.039f,1.f,.62f,.58f);
     for(int n=0;n<3;++n){
         float x=-1.54f+1.54f*n;
-        Frame(m,x,.20f,1.43f,.70f,m->selected==n);
+        Frame(m,x,.20f,1.43f,.83f,m->selected==n);
         auto lane=m->sim.lane(static_cast<unsigned>(n));
         std::snprintf(text,sizeof(text),"LANE %c %04u",'A'+n,lane.id);
-        Text(m,text,x,.33f,.029f,.95f,.95f,1.f);
-        if(lane.fortress)Text(m,"SOUR FORTRESS",x,.07f,.034f,1.f,.49f,.47f);
+        Text(m,text,x,.47f,.029f,.95f,.95f,1.f);
+        if(lane.fortress)Text(m,"SOUR FORTRESS",x,.26f,.029f,1.f,.49f,.47f);
         else{
             std::snprintf(text,sizeof(text),"RISK %u LOOT %u",lane.hazard,lane.reward);
-            Text(m,text,x,.12f,.024f,.88f,.83f,.63f);
+            Text(m,text,x,.26f,.024f,.88f,.83f,.63f);
         }
+        const CastGuest expected=m->sim.route_guest(static_cast<unsigned>(n));
+        Text(m,expected==CastGuest::None?"NO KNOWN RIVAL":
+            reverie::gumball::CastGuestName(expected),x,.07f,.021f,1.f,.76f,.55f);
         const auto rules=reverie::gumball::MissionFor(static_cast<unsigned>(n),lane.hazard);
         Text(m,rules.kind==reverie::gumball::MissionKind::Sweep?"SWEEP":
             (rules.kind==reverie::gumball::MissionKind::Intercept?"INTERCEPT":"RECOVERY"),
-            x,-.065f,.033f,.71f,.97f,.90f);
+            x,-.13f,.030f,.71f,.97f,.90f);
     }
     const char* upgrades[]={"BLASTER","HULL","THRUSTER","SHIELD"};
     for(int i=0;i<4;++i){
@@ -154,11 +157,13 @@ void Chart(Module* m){
     }
     Frame(m,-1.78f,-1.49f,1.28f,.29f,m->selected==10);
     Text(m,"SHIPYARD",-1.78f,-1.49f,.032f,.85f,1.f,.88f);
+    Frame(m,-.34f,-1.49f,1.30f,.29f,m->selected==11);
+    Text(m,"SUPPORT",- .34f,-1.49f,.032f,.98f,.92f,.72f);
     std::snprintf(text,sizeof(text),"G %u   RANK %d   GENERALS %u/4",
                   m->sim.cash(),m->sim.command_rank(),
                   static_cast<unsigned>((m->sim.bosses()&1u)+((m->sim.bosses()>>1)&1u)
                     +((m->sim.bosses()>>2)&1u)+((m->sim.bosses()>>3)&1u)));
-    Text(m,text,.68f,-1.49f,.031f,1.f,.86f,.60f);
+    Text(m,text,1.27f,-1.49f,.022f,1.f,.86f,.60f);
     if(!m->yard.ready())Text(m,"SHIP NOT READY",0,-1.69f,.031f,1.f,.38f,.35f);
     else Text(m,"PAD MOVE  CLICK ACTIVATE",0,-1.69f,.030f,.72f,.87f,.93f);
 }
