@@ -18,6 +18,28 @@ int main(){
     assert(replay.cash()==30 && replay.level(Upgrade::Blaster)==1);
     auto tampered=save;tampered.cash=9999;
     assert(!replay.restore(tampered));
+
+    // Steering must not depend on the fire button.
+    Simulation pad(9001);assert(pad.launch(0));
+    const float startX=pad.player_x();
+    pad.update(.05f,1.0f,0.0f,false);
+    assert(pad.player_x()>startX && pad.kills()==0);
+    // Fortress routes cannot be completed by slipping past the boss.
+    Simulation fortress(7);
+    auto edge=fortress.snapshot();
+    edge.node=1022;edge.checksum=SnapshotChecksum(edge);
+    assert(fortress.restore(edge));
+    for(unsigned i=0;i<3;++i)
+        assert(fortress.lane(i).id==1023 && fortress.lane(i).fortress);
+    assert(fortress.launch(0));
+    for(int i=0;i<24000&&fortress.phase()==Phase::Flight;++i)
+        fortress.update(.05f,0,0,false);
+    assert(fortress.phase()==Phase::Lost);
+    assert(fortress.bosses()==0u && fortress.node()==1022u);
+    edge=fortress.snapshot();
+    edge.node=1023;edge.bosses=1u;edge.checksum=SnapshotChecksum(edge);
+    assert(fortress.restore(edge));
+    assert(fortress.lane(1).id==1024u);
     assert(!game.launch(3));
     assert(game.launch(0) && replay.launch(0));
     assert(!game.buy(Upgrade::Shield));
