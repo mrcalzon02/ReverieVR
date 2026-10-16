@@ -226,7 +226,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             {524, 480, 804, 528},
             {220, 538, 408, 590}, // External HID
             {416, 538, 604, 590}, // Monochrome high contrast
-            {612, 538, 804, 590}  // Performance telemetry
+            {612, 538, 804, 590}, // Performance telemetry
+            {220, 600, 804, 652}  // Device warnings
         };
 
     private static final int[][] HOME_BUTTONS = new int[][] {
@@ -475,6 +476,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final StereoFpsHud fpsHud = new StereoFpsHud();
     private final PerformanceTelemetryHud performanceHud =
         new PerformanceTelemetryHud();
+    private final DeviceWarningHud deviceWarningHud = new DeviceWarningHud();
+    private long lastDeviceWarningSampleNanos;
     private long lastPerformanceOverlayNanos;
     private long lastPerformanceCaptureNanos;
     private int performanceSampleMode = -1;
@@ -1711,6 +1714,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
         performanceTracker.recordFrame(frameNanos);
         fpsHud.recordFrame(frameNanos);
+        if (lastDeviceWarningSampleNanos == 0L ||
+            frameNanos - lastDeviceWarningSampleNanos >= 1_000_000_000L) {
+            PerformanceEnvironmentSnapshot sensors =
+                host.getPerformanceEnvironmentSnapshot();
+            int warning = sensors == null ? DeviceWarningPolicy.NONE :
+                DeviceWarningPolicy.level(phoneBattery.get(),
+                    sensors.batteryTemperatureTenthsC, sensors.thermalStatus);
+            deviceWarningHud.setLevel(preferences.isDeviceWarningsEnabled()
+                ? warning : DeviceWarningPolicy.NONE);
+            lastDeviceWarningSampleNanos = frameNanos;
+        }
         if (preferences.isPerformanceOverlayEnabled() &&
             (lastPerformanceOverlayNanos == 0L ||
              frameNanos - lastPerformanceOverlayNanos >= 1_000_000_000L)) {
@@ -2684,6 +2698,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 performanceHud.draw(program, positionHandle, uvHandle,
                     matrixHandle, textureHandle);
             }
+            if (preferences.isDeviceWarningsEnabled()
+                && !orientationMenuVisible) {
+                deviceWarningHud.draw(program, positionHandle, uvHandle,
+                    matrixHandle, textureHandle);
+            }
             drawControlFeedOverlay();
         } catch (RuntimeException | LinkageError failure) {
             reportRendererFailure(
@@ -3262,6 +3281,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         textureHandle = GLES20.glGetUniformLocation(program, "u_Texture");
         fpsHud.onSurfaceCreated();
         performanceHud.onSurfaceCreated();
+        deviceWarningHud.onSurfaceCreated();
 
         int[] textures = new int[4];
         GLES20.glGenTextures(4, textures, 0);
@@ -3348,6 +3368,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     public void onRendererShutdown() {
         fpsHud.shutdown();
         performanceHud.shutdown();
+        deviceWarningHud.shutdown();
         videoRenderer.shutdown();
         dosRenderer.shutdown();
         pointerRenderer.shutdown();
@@ -5445,6 +5466,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 lastPerformanceOverlayNanos = 0L;
                 break;
 
+            case 13:
+                preferences.setDeviceWarningsEnabled(
+                    !preferences.isDeviceWarningsEnabled());
+                lastDeviceWarningSampleNanos = 0L;
+                if (!preferences.isDeviceWarningsEnabled())
+                    deviceWarningHud.setLevel(DeviceWarningPolicy.NONE);
+                break;
+
             default:
                 host.onUiActionRejected();
                 return;
@@ -6730,7 +6759,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 preferences.isShellHighContrastEnabled()
                     ? "CONTRAST: ON" : "CONTRAST: OFF",
                 preferences.isPerformanceOverlayEnabled()
-                    ? "PERF: ON" : "PERF: OFF"
+                    ? "PERF: ON" : "PERF: OFF",
+                preferences.isDeviceWarningsEnabled()
+                    ? "BAT / HEAT WARNINGS: ON" : "BAT / HEAT WARNINGS: OFF"
             },
             QUICK_SETTINGS_BUTTONS
         );
@@ -6756,13 +6787,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 )
                 + "% • Menu/Start keeps recovery available.",
             220,
-            629,
+            685,
             paint
         );
         canvas.drawText(
             "External HID input routing is independent of device pairing.",
             220,
-            654,
+            708,
             paint
         );
     }
