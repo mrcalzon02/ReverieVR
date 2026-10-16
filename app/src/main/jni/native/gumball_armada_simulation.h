@@ -354,7 +354,8 @@ public:
                         (e.kind==EnemyKind::Ace?(n*2-1)*.24f:
                          (e.kind==EnemyKind::Biff?(-.38f+n*.22f):
                           (e.kind==EnemyKind::Baff?(.38f-n*.22f):
-                           (bombing?(n*2-1)*.32f:0.f))));
+                           (heavy?(n*2-1)*.24f:
+                            (bombing?(n*2-1)*.32f:0.f)))));
                     const float zoneX=raining?(-1.20f+1.20f*
                         static_cast<float>((next()+static_cast<uint32_t>(n))%3u)):e.x;
                     shot={zoneX,e.y-.14f,mining?-.22f:(raining?-1.70f:
