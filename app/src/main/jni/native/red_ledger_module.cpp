@@ -7,6 +7,7 @@
 #include "red_ledger_static_geometry.h"
 #include "red_ledger_signage.h"
 #include "red_ledger_mug_mesh.h"
+#include "red_ledger_trade.h"
 
 #include <GLES2/gl2.h>
 
@@ -27,6 +28,7 @@ using reverie::procedural::Material;
 namespace geo = reverie::redledger::geometry;
 namespace signs = reverie::redledger::signage;
 namespace mugs = reverie::redledger::mug;
+namespace trade = reverie::redledger::trade;
 
 // Include the far rear doorway in seated work-ray reach.
 constexpr float kMaximumWorkReach = 4.25f;
@@ -109,6 +111,8 @@ static const TargetBounds kWorkTargets[] = {
 struct ModuleState {
     const ReverieNativeHostV1 *host = nullptr;
     Simulation simulation;
+    trade::Trade market;
+    bool ledger_visible = false;
 
     GLuint program = 0;
     GLuint cube_vbo = 0;
@@ -408,106 +412,54 @@ WorkTarget FindWorkTarget(
 }
 
 bool SaveState(ModuleState *state) {
-    if (state == nullptr
-        || !ReverieNativeHostSupportsSaveV1(
-            state->host
-        )) {
+    if (state==nullptr || !ReverieNativeHostSupportsSaveV1(state->host))
+        return false;
+    uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize]={};
+    size_t first=0u;
+    if (!state->simulation.Serialize(bytes,Simulation::kSerializedSize,&first)
+        || first!=Simulation::kSerializedSize
+        || !state->market.Serialize(bytes+first,trade::Trade::kSerializedSize)) {
+        Log(state,REVERIE_NATIVE_LOG_ERROR,"Red Ledger composite save encoding failed.");
         return false;
     }
-
-    uint8_t bytes[
-        Simulation::kSerializedSize
-    ] = {};
-    size_t size = 0u;
-
-    if (!state->simulation.Serialize(
-            bytes,
-            sizeof(bytes),
-            &size
-        )) {
-        Log(
-            state,
-            REVERIE_NATIVE_LOG_ERROR,
-            "Could not serialize Red Ledger state."
-        );
+    const int32_t result=state->host->write_save(
+        kSaveSlot,bytes,static_cast<uint32_t>(sizeof(bytes)));
+    if (result!=REVERIE_NATIVE_SAVE_OK) {
+        Log(state,REVERIE_NATIVE_LOG_WARN,"Host rejected Red Ledger save write.");
         return false;
     }
-
-    const int32_t result =
-        state->host->write_save(
-            kSaveSlot,
-            bytes,
-            static_cast<uint32_t>(
-                size
-            )
-        );
-
-    if (result
-        != REVERIE_NATIVE_SAVE_OK) {
-        Log(
-            state,
-            REVERIE_NATIVE_LOG_WARN,
-            "Host rejected Red Ledger save write."
-        );
-        return false;
-    }
-
     return true;
 }
 
 void LoadState(ModuleState *state) {
-    if (state == nullptr
-        || !ReverieNativeHostSupportsSaveV1(
-            state->host
-        )) {
+    if (state==nullptr || !ReverieNativeHostSupportsSaveV1(state->host))
+        return;
+    uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize]={};
+    uint32_t size=0u;
+    const int32_t result=state->host->read_save(
+        kSaveSlot,bytes,static_cast<uint32_t>(sizeof(bytes)),&size);
+    if (result==REVERIE_NATIVE_SAVE_NOT_FOUND) return;
+    const bool extended=(size==sizeof(bytes));
+    const bool legacy=(size==Simulation::kSerializedSize);
+    if (result!=REVERIE_NATIVE_SAVE_OK || (!legacy&&!extended)) {
+        Log(state,REVERIE_NATIVE_LOG_WARN,"Red Ledger save invalid or unsupported.");
         return;
     }
-
-    uint8_t bytes[
-        Simulation::kSerializedSize
-    ] = {};
-    uint32_t size = 0u;
-
-    const int32_t result =
-        state->host->read_save(
-            kSaveSlot,
-            bytes,
-            static_cast<uint32_t>(
-                sizeof(bytes)
-            ),
-            &size
-        );
-
-    if (result
-        == REVERIE_NATIVE_SAVE_NOT_FOUND) {
-        Log(
-            state,
-            REVERIE_NATIVE_LOG_INFO,
-            "No Red Ledger v2 save exists; using the opening state."
-        );
+    // Decode both parts into scratch copies so corrupt custom stock never
+    // overwrites the existing valid game state.
+    Simulation base=state->simulation;
+    trade::Trade market=state->market;
+    if (!base.Deserialize(bytes,Simulation::kSerializedSize,extended)
+        || (extended && !market.Deserialize(
+            bytes+Simulation::kSerializedSize,trade::Trade::kSerializedSize))) {
+        Log(state,REVERIE_NATIVE_LOG_WARN,
+            "Red Ledger rejected corrupt economy or stock; reset preserved.");
         return;
     }
-
-    if (result
-            != REVERIE_NATIVE_SAVE_OK
-        || size != sizeof(bytes)
-        || !state->simulation.Deserialize(
-            bytes,
-            size
-        )) {
-        Log(
-            state,
-            REVERIE_NATIVE_LOG_WARN,
-            "Red Ledger v2 save is invalid; preserving a fresh opening state."
-        );
-        return;
-    }
-
-    Log(
-        state,
-        REVERIE_NATIVE_LOG_INFO,
-        "Red Ledger v2 save restored."
-    );
+    state->simulation=base;
+    state->market=market;
+    Log(state,REVERIE_NATIVE_LOG_INFO,
+        extended?"Red Ledger faction stock restored.":"Legacy Red Ledger save migrated.");
 }
 
 bool ActivateWorkTarget(
@@ -539,14 +491,30 @@ bool ActivateWorkTarget(
             break;
 
         case WorkTarget::Tap:
-            changed =
-                simulation.FillHeldCup();
+            if (state->market.DrinkAvailable(simulation.beer_units())) {
+                changed = state->market.drink()==0
+                    ? simulation.FillHeldCup()
+                    : simulation.FillSpecialDrink();
+                if (changed && state->market.drink()!=0)
+                    changed=state->market.ConsumeDrink();
+            }
             break;
 
-        case WorkTarget::Patron:
-            changed =
-                simulation.ServeHeldCup();
+        case WorkTarget::Patron: {
+            const auto *patron=simulation.current_patron();
+            if (patron && state->market.SnackAvailable()) {
+                const auto bonus=trade::RateService(patron->kind,
+                    state->market.drink(),state->market.snack());
+                changed=simulation.ServeHeldCup();
+                if (changed) {
+                    // Guaranteed in-range by the bounded faction catalog.
+                    simulation.ApplyServicePremium(bonus.cents,bonus.reputation);
+                    state->market.ConsumeSnack();
+                    state->market.RecordService(patron->kind);
+                }
+            }
             break;
+        }
 
         case WorkTarget::Payment:
             changed =
