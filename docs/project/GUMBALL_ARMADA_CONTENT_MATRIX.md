@@ -2,6 +2,8 @@
 
 **Status:** proposed *release content targets* and integration definitions. These numbers are **NOT** implemented content counts. Every entry must be tagged PLANNED / AUTHORING / CODED / INTEGRATED / DEVICE-VERIFIED with artifact IDs and proof.
 
+**Planned cast/reference:** [GUMBALL_ARMADA_CAST_BIBLE.md](GUMBALL_ARMADA_CAST_BIBLE.md) records six original shop personalities, two support pilots and six named Sour troublemakers. Character portraits/craft sprites/voice work and gameplay triggers remain future content and are not counted as implemented assets.
+
 **Parent roadmap:** GUMBALL_ARMADA_STAGED_PLAN.md. **Target:** original Galaxy S9/Daydream game, single ReverieVR APK, offline after install. Original candy-warfare work, not a Kingdom Hearts or Candy Crush asset port.
 
 ## 1. Minimum content evolution
