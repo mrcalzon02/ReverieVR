@@ -5,12 +5,14 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Allowlisted, license-reviewed upstream Libretro source projects.
- * Browsing never installs, imports a ROM, or executes downloaded code.
+ * Allowlisted, license-reviewed emulator cores and independent game-engine sources.
+ * Source browsing never installs or executes the downloaded engine/core.
  */
 final class EmulatorModuleCatalog {
+    enum HostType { LIBRETRO, OPENRA_ANDROID }
     static final class Entry {
         final String id, system, name, repository, license, coreFile;
+        final HostType hostType;
         final String trustedLicenseBlob;
         final boolean biosMayBeRequired;
         Entry(String id,String system,String name,String repository,
@@ -20,10 +22,19 @@ final class EmulatorModuleCatalog {
         Entry(String id,String system,String name,String repository,
               String license,String coreFile,boolean biosMayBeRequired,
               String trustedLicenseBlob) {
+            this(id,system,name,repository,license,coreFile,biosMayBeRequired,
+                trustedLicenseBlob,HostType.LIBRETRO);
+        }
+        Entry(String id,String system,String name,String repository,
+              String license,String coreFile,boolean biosMayBeRequired,
+              String trustedLicenseBlob,HostType hostType) {
             this.id=id;this.system=system;this.name=name;
             this.repository=repository;this.license=license;
             this.coreFile=coreFile;this.biosMayBeRequired=biosMayBeRequired;
             this.trustedLicenseBlob=trustedLicenseBlob;
+            this.hostType=hostType;
+            if((hostType==HostType.LIBRETRO)!=(coreFile!=null))
+                throw new IllegalArgumentException("Host type and core file disagree");
         }
         String sourceUrl(){return "https://github.com/"+repository;}
         String githubApi(){return "https://api.github.com/repos/"+repository;}
@@ -49,7 +60,13 @@ final class EmulatorModuleCatalog {
             // license file in the resolved immutable commit before download.
             new Entry("play-ps2","PlayStation 2","Play!","jpd002/Play-",
                 "BSD-style (verified)","play_libretro_android.so",false,
-                "59e926c6b41eb76c874550d2896ef0d540a785e4")
+                "59e926c6b41eb76c874550d2896ef0d540a785e4"),
+            // This is a full Android game engine, not a Libretro core. The
+            // current catalog action downloads a pinned source snapshot only.
+            // No APK, proprietary game assets, or playable game is bundled.
+            new Entry("openra-android","Classic RTS","OpenRA - Red Alert",
+                "franktfye/OpenRA-android","GPL-3.0",null,false,null,
+                HostType.OPENRA_ANDROID)
         )
     );
     static List<Entry> entries(){return ENTRIES;}

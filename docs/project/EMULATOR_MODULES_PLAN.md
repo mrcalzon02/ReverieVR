@@ -1,6 +1,6 @@
 # ReverieVR — Optional Emulation Modules
 
-**Status:** Phase 1 source discovery, informed consent and source-snapshot retrieval implemented. **Not yet a playable Libretro runtime**. Updated 2026-10-11.
+**Status:** Phase 1 source discovery, informed consent and source-snapshot retrieval implemented. **Neither Libretro nor OpenRA is currently playable through this catalogue**. Updated 2026-10-15.
 **Authority:** `docs/project/INSTRUCTIONS.md`, `docs/project/EXECUTION_CONTRACT.md`, `docs/native/README.md`.
 **Execution target:** Samsung Galaxy S9 / Daydream, GLES2, ARM64, controller-first 3DoF seated mode.
 
@@ -50,6 +50,8 @@ Downloaded source is pinned to an immutable 40-character Git commit resolved fro
 | Nintendo DS | melonDS | https://github.com/libretro/melonDS | GPL-3.0 | Some modes and games require user-provided firmware |
 | Original PlayStation (PS1) | PCSX ReARMed | https://github.com/libretro/pcsx_rearmed | GPL-2.0 | BIOS may be required; user must provide lawful copy |
 | PlayStation 2 (PS2) | Play! | https://github.com/jpd002/Play- | BSD-style two-condition license, `License.txt` blob pinned for verification (GitHub: `NOASSERTION`) | Built-in HLE BIOS; no separate PS2 BIOS needed |
+
+**Classic RTS engine source:** The default catalog also includes `openra-android` (`franktfye/OpenRA-android`, GPL-3.0). This is a C#/.NET Android **game engine**, not a Libretro `.so` core. The pinned source download is an actual catalog action, but it does not install or launch OpenRA. It must not appear in **Native Games** as playable until one-APK engine embedding, stereo presentation, input, legal game-data import, offline operation and Galaxy S9 tests pass. See [OpenRA integration contract](OPENRA_ANDROID_INTEGRATION.md). The older `damiencarol/openredalert` is a separate incomplete SDL/C++ project, not the chosen execution baseline.
 
 The pinned source snapshot is **not** equivalent to a compatible `arm64-v8a` Android native module. The application never represents source-package retrieval as a functional installed emulator.
 
