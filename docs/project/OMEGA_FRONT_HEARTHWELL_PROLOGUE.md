@@ -105,7 +105,7 @@ Personality conflicts should be resolved by player decisions and persistent reco
 
 > CAPTAIN RO: "This isn't our valley."
 >
-> EDDa MOOR: "It is now. Listen to the water."
+> EDDA MOOR: "It is now. Listen to the water."
 >
 > [A distant detonation. The second vehicle's transmission fails.]
 >
@@ -131,7 +131,7 @@ Personality conflicts should be resolved by player decisions and persistent reco
 
 ## 8. Shifting morphology as a simulated conflict
 
-**State per sector:** \`morphology_epoch, prior_ecology, current_ecology, stability, transition_forecast, emergence_cells, road_displacement, water_table, habitable_air, anomaly_pressure, surveyed_confidence, displaced_structures, civilian_exposure\`.
+**State per sector:** `morphology_epoch, prior_ecology, current_ecology, stability, transition_forecast, emergence_cells, road_displacement, water_table, habitable_air, anomaly_pressure, surveyed_confidence, displaced_structures, civilian_exposure`.
 
 **Transition event:** when morphology updates, terrain may change elevation/cover/roads/water, infrastructure may require repairs, and habitability is reassessed with actual measurable data. Eden classification emerges **only** when baseline-human atmosphere and environmental requirements are genuinely satisfied. A clean spring with lethal ambient air is not Eden.
 
