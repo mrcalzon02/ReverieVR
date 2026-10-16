@@ -6681,8 +6681,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             600,
             paint
         );
+        // Draw only when the existing menu texture refreshes (about 1 Hz).
+        // Follow the handset locale/timezone; do not request network time.
+        String localTime = java.text.DateFormat.getTimeInstance(
+            java.text.DateFormat.SHORT, Locale.getDefault()
+        ).format(new java.util.Date());
         canvas.drawText(
-            "Menu/Start toggles this panel anywhere.",
+            "LOCAL " + localTime + "  •  MENU/START: CLOSE",
             220,
             626,
             paint
