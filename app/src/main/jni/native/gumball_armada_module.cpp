@@ -14,6 +14,8 @@ namespace {
 using reverie::gumball::Simulation;
 using reverie::gumball::Phase;
 using reverie::gumball::Upgrade;
+using reverie::gumball::Enemy;
+using reverie::gumball::EnemyKind;
 using reverie::gumball::Snapshot;
 const char kId[]="gumball-armada";
 const char kName[]="Gumball Armada: Candy King Search [DEV]";
@@ -80,7 +82,13 @@ void Background(Module* m){
     for(uint32_t i=0;i<110;++i){
         uint32_t t=reverie::gumball::Mix(i*19u+0x123BCu);
         float x=(t%1000u)*.00486f-2.43f,y=((t>>10)%1000u)*.0033f-1.65f;
-        Rect(m,x,y,.008f,.010f,-3.01f,.30f,.24f,.44f);
+        if(m->sim.phase()==Phase::Flight){
+            const float depth=.08f+.025f*static_cast<float>((t>>20u)&3u);
+            y=std::fmod(y+1.65f+m->sim.elapsed()*depth,3.30f)-1.65f;
+            x-=m->sim.player_x()*(.015f+.01f*static_cast<float>((t>>24u)&3u));
+        }
+        const float size=(t&3u)==0u?.015f:.008f;
+        Rect(m,x,y,size,size,-3.01f,.30f,.24f,.44f);
     }
 }
 void Chart(Module* m){
@@ -119,18 +127,43 @@ void Chart(Module* m){
     Text(m,text,0,-1.31f,.038f,1.f,.86f,.60f);
     Text(m,"PAD CHOOSE  CLICK LAUNCH OR BUY",0,-1.55f,.033f,.72f,.87f,.93f);
 }
+void EnemyVisual(Module* m,const Enemy& e){
+    const float x=e.x,y=e.y;
+    switch(e.kind){
+    case EnemyKind::Scout:
+        Disc(m,x,y,.16f,-2.90f,.81f,.29f,.37f);
+        Disc(m,x,y,.085f,-2.88f,1.f,.72f,.80f);
+        Tri(m,x,y+.24f,x-.07f,y+.10f,x+.07f,y+.10f,-2.86f,.97f,.86f,.50f);
+        break;
+    case EnemyKind::Interceptor:
+        Tri(m,x,y-.18f,x-.24f,y+.09f,x,y+.25f,-2.90f,.34f,.87f,.26f);
+        Tri(m,x,y-.18f,x,y+.25f,x+.24f,y+.09f,-2.90f,.68f,.91f,.27f);
+        Rect(m,x,y+.02f,.11f,.14f,-2.86f,.96f,.98f,.60f);
+        break;
+    case EnemyKind::Bomber:
+        Rect(m,x,y,.25f,.29f,-2.90f,.72f,.64f,.18f);
+        Disc(m,x-.18f,y-.04f,.105f,-2.87f,.96f,.80f,.23f);
+        Disc(m,x+.18f,y-.04f,.105f,-2.87f,.96f,.80f,.23f);
+        Rect(m,x,y+.12f,.12f,.09f,-2.86f,.96f,.94f,.59f);
+        break;
+    case EnemyKind::Ace:
+        Tri(m,x,y+.24f,x-.29f,y-.19f,x+.29f,y-.19f,-2.91f,.83f,.26f,.69f);
+        Tri(m,x,y+.20f,x-.16f,y-.12f,x+.16f,y-.12f,-2.88f,.96f,.74f,.24f);
+        Disc(m,x,y,.078f,-2.86f,.99f,.90f,.63f);
+        break;
+    case EnemyKind::Fortress:
+        Rect(m,x,y,.52f,.34f,-2.92f,.56f,.15f,.19f);
+        Disc(m,x-.28f,y-.10f,.13f,-2.89f,.81f,.18f,.23f);
+        Disc(m,x+.28f,y-.10f,.13f,-2.89f,.81f,.18f,.23f);
+        Rect(m,x,y+.12f,.27f,.18f,-2.87f,.92f,.58f,.27f);
+        Disc(m,x,y+.10f,.09f,-2.85f,.98f,.92f,.55f);
+        break;
+    }
+}
 void Flight(Module* m){
     Background(m);
     const auto& s=m->sim;
-    for(const auto& e:s.enemies())if(e.active){
-        float r=e.boss?.28f:.17f;
-        Disc(m,e.x,e.y,r,-2.90f,.81f,e.boss?.23f:.62f,.19f);
-        Disc(m,e.x,e.y,r*.66f,-2.88f,.98f,.83f,.33f);
-        if(e.boss){
-            Disc(m,e.x-.18f,e.y-.10f,.06f,-2.85f,.79f,.20f,.25f);
-            Disc(m,e.x+.18f,e.y-.10f,.06f,-2.85f,.79f,.20f,.25f);
-        }
-    }
+    for(const auto& e:s.enemies())if(e.active)EnemyVisual(m,e);
     for(const auto& shot:s.shots())if(shot.active)
         Rect(m,shot.x,shot.y,.039f,shot.hostile?.12f:.21f,-2.82f,
              shot.hostile?1.f:.38f,shot.hostile?.26f:.90f,shot.hostile?.20f:1.f);
