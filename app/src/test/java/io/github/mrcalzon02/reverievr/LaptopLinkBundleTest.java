@@ -33,7 +33,8 @@ public final class LaptopLinkBundleTest {
             "ReverieLink/README.txt",
             "ReverieLink/Start-ReverieLink.cmd",
             "ReverieLink/ReverieLink.ps1",
-            "ReverieLink/SteamVrPreflight.ps1"),files);
+            "ReverieLink/SteamVrPreflight.ps1",
+            "ReverieLink/SteamVrLinkProbeHost.ps1"),files);
     }
 
     @Test public void brokenAssetOrExcessivePayloadFailsClosed() throws Exception {

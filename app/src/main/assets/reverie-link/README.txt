@@ -44,3 +44,23 @@ change drivers, search processes or begin streaming.
 The SteamVR headset driver, secure phone pairing and stereo streaming client
 are separate development milestones and are NOT present in this package yet.
 ReverieVR's Android games and standalone VR continue to run locally.
+
+
+SteamVR PC LINK diagnostic pairing (no SteamVR driver yet)
+==========================================================
+Start the portable Windows menu and choose 6. Choose U for USB with an
+AUTHORIZED ADB reverse port-forward, or W for a private trusted LAN
+connection (Wi-Fi/hotspot OR USB tethering network/IP). The Windows host
+creates a temporary self-signed TLS server certificate in the current
+user store, displays SHA-256 CERT FINGERPRINT and 128-bit one-time PAIR
+TOKEN, and removes the certificate after the session. Nothing installs
+a Windows service, driver or firewall rule. If Windows refuses a network
+connection, allow ONLY the trusted private interface manually.
+
+On the phone, Stage A -> Laptop Link -> Test SteamVR PC Link. Enter the
+PC IPv4 address (127.0.0.1 for U), SHA-256 certificate fingerprint and
+the pairing token exactly. No discovery, broadcast, untrusted TLS fallback,
+or credentials saved to phone storage. A successful READY only confirms
+the one-shot encrypted authenticated connection, NOT SteamVR HMD/video
+or orientation streaming. Disconnect and retry with freshly displayed
+session values if either side closes.

@@ -2,6 +2,7 @@
 # Copyright ReverieVR contributors. No installation, service, administrator
 # privilege, PC activity monitoring, screen scraping, or background startup.
 . (Join-Path $PSScriptRoot 'SteamVrPreflight.ps1')
+. (Join-Path $PSScriptRoot 'SteamVrLinkProbeHost.ps1')
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -69,6 +70,7 @@ while ($true) {
     Write-Host '3. Set up scrcpy Wi-Fi (USB authorization first)'
     Write-Host '4. Inspect local optical drives / file sharing'
     Write-Host '5. Check SteamVR installation and driver readiness (read only)'
+    Write-Host '6. Test encrypted PC link with phone (USB or private Wi-Fi)'
     Write-Host 'Q. Quit'
     Write-Host 'No system settings or firewall rules are changed.'
     $choice = (Read-Host 'Choose').Trim().ToUpperInvariant()
@@ -79,6 +81,7 @@ while ($true) {
             '3' { Start-ScrcpyMode -Arguments @('--tcpip','--no-audio','--gamepad=uhid') }
             '4' { Show-OpticalDrives }
             '5' { Show-SteamVrPreflight }
+            '6' { Start-SteamVrLinkProbeHost }
             'Q' { return }
             default { Write-Host 'Unknown choice.' }
         }
