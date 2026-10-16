@@ -218,4 +218,4 @@ Asset production and test harnesses start at M0/M1 and grow at *every* milestone
 
 **Per-slice evidence:** baseline and ending main SHA; changed paths; exact deterministic tests/outputs; actual APK verification; device/screenshots/audio evidence if applicable; asset-usage manifest; observed versus deferred requirements; next smallest blocked or ready task. No GitHub Actions by default.
 
-**Related:** GUMBALL_ARMADA.md (brief/current status); GUMBALL_ARMADA_CONTENT_MATRIX.md (quantified production catalog); INCREMENTAL_DEVELOPMENT_PLAN.md (platform ordering); ACCEPTANCE_LEDGER.md (verified states).
+**Related:** GUMBALL_ARMADA.md (brief/current status); GUMBALL_ARMADA_CONTENT_MATRIX.md (quantified production catalog); GUMBALL_ARMADA_CAST_BIBLE.md (planned merchants, two support pilots, Sour nuisance/rival characters; portraits deferred); INCREMENTAL_DEVELOPMENT_PLAN.md (platform ordering); ACCEPTANCE_LEDGER.md (verified states).
