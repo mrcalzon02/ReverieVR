@@ -223,11 +223,24 @@ The Checkers, full-size 19×19 Go and Chess boards additionally allow Daydream t
 
 All gameplay advances in native Update once per frame, with common cached vertex-color geometry rendered for each stereo eye. No gameplay runs in per-eye rendering. **2026-10-12 source-only launcher update:** the in-headset **Native Apps / Projects** catalogue now includes actual native classic-game modules alongside packaged non-classic projects and working shell applications. **Native Games** is a convenient second entry point to the same seven classic modules and any admitted native project games. This intentional duplicated discovery does not bundle a second game or APK. Red Ledger and Breakwater Battery remain Development-logging-gated and appear only in a Development session; the runtime independently preserves that gate. Ministry of Intelligence and Forward Detachment now have Development-only native decision boards registered in the build and launch catalogues; these are limited kernel demonstrations, not full games or device-accepted builds. Controller hardware/comfort/interaction and thermal acceptance on the Galaxy S9 remain pending; signed APK build status must be checked independently.
 
+## RV-GAME-06 — War Without End (working title)
+
+**Status:** Design charter committed; **no native module, launch tile, game art or APK integration exists yet**. This is a new original top-down, tile-based military tactics/RPG hybrid, not an adaptation of an existing commercial game.
+
+**Design authority:** [WAR_WITHOUT_END.md](WAR_WITHOUT_END.md) — detailed combat anatomy, progression calibration, 600-sector/4,096-inspection-room address space per ascension, seven encounter scales, independent commander/troop/squad-room/weapon/armor/accessory/base/world/doctrine progression, deterministic simulation architecture, full tenfold prestige true-ending covenant, and gated P0–P11 implementation roadmap.
+
+**Native identity:** Comfortable 3DoF VR tabletop with tiny crisp chibi pixel sprites on logical square tiles. Shell-normalized select/secondary/touchpad inputs; O/Home stays shell-owned. Bounded, reproducible order-pulse simulator independent of GLES; rendering only consumes the simulation. The strategic economy and room inspection are real tactical gameplay rather than passive timers. Retain S9 performance and offline-first single-APK operation.
+
+**First admissible development slice:** Headless deterministic 24×24 skirmish, terrain/LOS, two factions, three distinct unit archetypes, order queue, movement, damage, victory and defeat, followed by an actual hosted war-table interaction test. A sketch, static board, reduced-rules mini-game, or menu with nonfunctional choices is **not** completion.
+
+**Scale rule:** 100 levels and 10 full world prestiges are release targets, not excuses to load/render all rooms simultaneously. The 24×24 starter is a test fixture; full tactics, campaign and room structure must not be quietly cut to accommodate UI or hardware.
+
 ## Recommended implementation order
 
 1. **Between Deliveries** — smallest space, richest direct hand interaction, strongest test of the native-module interaction layer.
 2. **Ministry of Intelligence** — naturally seated and interface-heavy; ideal for proving persistent simulation, document interaction, and high-resolution VR UI.
 3. **Iron Sight** — consumes the proven interaction, persistence, AI, rendering, and reporting foundations while adding outdoor traversal, vehicles, squad state, and combat.
 4. **Breakwater Battery** — prioritize its compact stationary-shooter loop for immediate Development device playtesting, without waiving the usual device and thermal gates.
+5. **War Without End** — build the headless tactics kernel first, then a VR tabletop, while preserving the much larger campaign/progression/ascension release requirement.
 
 These are roadmap pointers only. Implementation should begin only after RV-0400/RV-0402 are sufficiently stable and the first tiny native gameplay prototype (RV-0600/RV-0601) has established a safe thermal/performance envelope.
