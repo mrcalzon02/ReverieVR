@@ -10,13 +10,20 @@ constexpr unsigned kEnemySlots=24;
 enum class Phase : uint8_t { Chart,Flight,Won,Lost,ArmadaDefeated };
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
 enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress };
+enum class Weapon : uint8_t { PeaRepeater, RockCannon, MintSpread };
 struct Enemy { float x=0,y=0,age=0,firing=0; int hp=0; bool active=false,boss=false; EnemyKind kind=EnemyKind::Scout; };
-struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; };
+struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; };
 struct Lane { uint32_t id=0; uint8_t hazard=0,reward=0; bool fortress=false; };
-struct Snapshot {
+struct SnapshotV1 {
     uint32_t magic=0x474D4231u, version=1, seed=0, node=0;
     uint32_t visited=0,cash=0,kills=0,bosses=0;
     uint16_t levels[4]={0,0,0,0};uint32_t checksum=0;
+};
+struct Snapshot {
+    uint32_t magic=0x474D4231u, version=2, seed=0, node=0;
+    uint32_t visited=0,cash=0,kills=0,bosses=0;
+    uint16_t levels[4]={0,0,0,0};
+    uint32_t owned_weapons=1u,active_weapon=0u,checksum=0u;
 };
 inline uint32_t Mix(uint32_t x){
     x^=x>>16;x*=0x7feb352du;x^=x>>15;x*=0x846ca68bu;return x^(x>>16);
@@ -28,6 +35,13 @@ inline uint32_t SnapshotChecksum(const Snapshot& s){
     for(unsigned i=0;i<sizeof(copy);++i)h=(h^b[i])*16777619u;
     return h;
 }
+inline uint32_t SnapshotV1Checksum(const SnapshotV1& s){
+    uint32_t h=2166136261u;SnapshotV1 copy=s;copy.checksum=0;
+    const auto* b=reinterpret_cast<const uint8_t*>(&copy);
+    for(unsigned i=0;i<sizeof(copy);++i)h=(h^b[i])*16777619u;
+    return h;
+}
+static_assert(sizeof(SnapshotV1)==44,"Legacy save binary shape must remain frozen");
 class Simulation {
 public:
     explicit Simulation(uint32_t seed=0xC4A0D1u):seed_(seed?seed:1u){}
@@ -53,6 +67,27 @@ public:
     float elapsed()const{return elapsed_;}
     float hurt_flash()const{return hurt_flash_;}
     int level(Upgrade u)const{return levels_[static_cast<unsigned>(u)];}
+    Weapon weapon()const{return weapon_;}
+    bool owns_weapon(Weapon w)const{
+        const unsigned id=static_cast<unsigned>(w);
+        return id<3u&&(owned_weapons_&(1u<<id))!=0u;
+    }
+    int weapon_price(Weapon w)const{
+        const unsigned id=static_cast<unsigned>(w);
+        if(id>=3u||owns_weapon(w))return 0;
+        return id==1u?120:160;
+    }
+    bool select_weapon(Weapon w){
+        if(phase_!=Phase::Chart||!owns_weapon(w))return false;
+        weapon_=w;return true;
+    }
+    bool buy_weapon(Weapon w){
+        const unsigned id=static_cast<unsigned>(w);
+        if(id>=3u||phase_!=Phase::Chart||owns_weapon(w))return false;
+        const int cost=weapon_price(w);
+        if(cash_<static_cast<uint32_t>(cost))return false;
+        cash_-=static_cast<uint32_t>(cost);owned_weapons_|=1u<<id;weapon_=w;return true;
+    }
     int command_rank()const{return 1+static_cast<int>(kills_/25)+static_cast<int>(bosses_)*4;}
     float player_x()const{return px_;}
     float player_y()const{return py_;}
