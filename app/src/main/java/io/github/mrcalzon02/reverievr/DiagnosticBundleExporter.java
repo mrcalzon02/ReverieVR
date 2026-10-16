@@ -133,10 +133,21 @@ final class DiagnosticBundleExporter {
                 diagnosticId,
                 includeLogs
             );
+            addPerformanceSummary(zip);
             if (includeLogs) {
                 addLogFiles(zip);
             }
         }
+    }
+
+    private void addPerformanceSummary(ZipOutputStream zip)
+        throws IOException {
+        // Last dated GL-thread sample, also present in logs-disabled bundles.
+        String report = new ReveriePreferences(context)
+            .getLastPerformanceReport();
+        zip.putNextEntry(new ZipEntry("performance.txt"));
+        zip.write(report.getBytes(StandardCharsets.UTF_8));
+        zip.closeEntry();
     }
 
     private void addManifest(

@@ -9,6 +9,8 @@ final class ReveriePreferences {
     private static final String FILE_NAME = "reverie_settings";
 
     private static final String KEY_BATTERY_HUD = "battery_hud";
+    private static final String KEY_PERFORMANCE_OVERLAY = "performance_overlay";
+    private static final String KEY_LAST_PERFORMANCE_REPORT = "last_vr_performance_report";
     private static final String KEY_LOOK_UP_REVEAL = "look_up_reveal";
     private static final String KEY_SHOW_PERCENTAGES = "show_percentages";
     private static final String KEY_MUSIC_VOLUME_PERCENT = "music_volume_percent";
@@ -95,6 +97,25 @@ final class ReveriePreferences {
 
     void setBatteryHudEnabled(boolean enabled) {
         preferences.edit().putBoolean(KEY_BATTERY_HUD, enabled).apply();
+    }
+
+    boolean isPerformanceOverlayEnabled() {
+        return preferences.getBoolean(KEY_PERFORMANCE_OVERLAY, false);
+    }
+
+    void setPerformanceOverlayEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_PERFORMANCE_OVERLAY, enabled).apply();
+    }
+
+    String getLastPerformanceReport() {
+        return preferences.getString(KEY_LAST_PERFORMANCE_REPORT,
+            "No VR performance sample captured yet.");
+    }
+
+    void setLastPerformanceReport(String report) {
+        if (report == null || report.length() > 1600)
+            throw new IllegalArgumentException("Invalid performance report");
+        preferences.edit().putString(KEY_LAST_PERFORMANCE_REPORT, report).apply();
     }
 
     boolean isLookUpRevealEnabled() {
