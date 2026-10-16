@@ -46,7 +46,16 @@ enum class WorkTarget : uint8_t {
     BeerOrder,
     CupOrder,
     ProtectionEnvelope,
-    ExitDoor
+    ExitDoor,
+    DoorStock,
+    DoorLiving,
+    ToBar,
+    ToStock,
+    StockNext,
+    StockBuy,
+    DrinkChoice,
+    SnackChoice,
+    Bed
 };
 
 struct TargetBounds {
@@ -105,7 +114,16 @@ static const TargetBounds kWorkTargets[] = {
         WorkTarget::ExitDoor,
         {-2.55f, -0.30f, -2.97f},
         {0.35f, 0.85f, 0.12f}
-    }
+    },
+    {WorkTarget::DoorStock,{2.53f,-0.20f,-2.93f},{0.38f,0.85f,0.12f}},
+    {WorkTarget::DoorLiving,{0.60f,-0.20f,-2.93f},{0.38f,0.85f,0.12f}},
+    {WorkTarget::ToBar,{-2.47f,-0.20f,-2.93f},{0.42f,0.85f,0.13f}},
+    {WorkTarget::ToStock,{2.47f,-0.20f,-2.93f},{0.42f,0.85f,0.13f}},
+    {WorkTarget::StockNext,{-0.70f,-0.48f,-1.02f},{0.35f,0.30f,0.30f}},
+    {WorkTarget::StockBuy,{0.40f,-0.48f,-1.02f},{0.35f,0.30f,0.30f}},
+    {WorkTarget::DrinkChoice,{1.25f,-0.50f,-1.10f},{0.32f,0.29f,0.25f}},
+    {WorkTarget::SnackChoice,{1.73f,-0.50f,-1.10f},{0.27f,0.29f,0.25f}},
+    {WorkTarget::Bed,{1.35f,-0.75f,-1.74f},{0.86f,0.32f,0.75f}}
 };
 
 struct ModuleState {
@@ -186,8 +204,16 @@ const char *WorkTargetName(
             return "cup order card";
         case WorkTarget::ProtectionEnvelope:
             return "protection envelope";
-        case WorkTarget::ExitDoor:
-            return "exit door";
+        case WorkTarget::ExitDoor: return "turn away patron";
+        case WorkTarget::DoorStock: return "enter stockroom";
+        case WorkTarget::DoorLiving: return "enter living quarters";
+        case WorkTarget::ToBar: return "return to bar";
+        case WorkTarget::ToStock: return "stockroom route";
+        case WorkTarget::StockNext: return "next wholesale catalog item";
+        case WorkTarget::StockBuy: return "purchase selected wholesale stock";
+        case WorkTarget::DrinkChoice: return "choose next available drink";
+        case WorkTarget::SnackChoice: return "choose next available snack";
+        case WorkTarget::Bed: return "rest and close the day";
         case WorkTarget::None:
         default:
             return "nothing";
@@ -213,9 +239,35 @@ bool IsTargetAvailable(
         simulation.current_patron()
             != nullptr;
 
+    const trade::Room room=state->market.room();
+    const bool hands_free=no_payment && drink_state==DrinkState::None;
     switch (target) {
+        case WorkTarget::DoorStock:
+        case WorkTarget::DoorLiving:
+            return room==trade::Room::Bar && hands_free;
+        case WorkTarget::ToBar:
+            return room!=trade::Room::Bar && hands_free;
+        case WorkTarget::ToStock:
+            return room==trade::Room::Living && hands_free;
+        case WorkTarget::StockNext:
+            return room==trade::Room::Stockroom && hands_free;
+        case WorkTarget::StockBuy:
+            return room==trade::Room::Stockroom && hands_free &&
+                simulation.current_event()!=EventType::SupplyInterruption &&
+                (state->market.offer()==0 ||
+                    (state->market.offer()<trade::kDrinks
+                        ? state->market.stock_drink(state->market.offer())<99990
+                        : state->market.stock_snack(state->market.offer()-trade::kDrinks)<99990));
+        case WorkTarget::DrinkChoice:
+            return room==trade::Room::Bar && no_payment && patron_waiting &&
+                drink_state!=DrinkState::FilledCup;
+        case WorkTarget::SnackChoice:
+            return room==trade::Room::Bar && no_payment && patron_waiting;
+        case WorkTarget::Bed:
+            return room==trade::Room::Living && hands_free &&
+                simulation.patrons_remaining()==0;
         case WorkTarget::CupStack:
-            return (
+            return room==trade::Room::Bar && (
                 drink_state
                     == DrinkState::None
                 && no_payment
@@ -229,44 +281,43 @@ bool IsTargetAvailable(
                 );
 
         case WorkTarget::Tap:
-            return drink_state
+            return room==trade::Room::Bar &&
+                state->market.DrinkAvailable(simulation.beer_units()) &&
+                drink_state
                     == DrinkState::EmptyCup
                 && no_payment
                 && simulation.beer_units() > 0;
 
         case WorkTarget::Patron:
-            return patron_waiting
+            return room==trade::Room::Bar &&
+                state->market.SnackAvailable() && patron_waiting
                 && no_payment
                 && drink_state
                     == DrinkState::FilledCup;
 
         case WorkTarget::Payment:
-            return simulation.pending_payment_cents()
+            return room==trade::Room::Bar && simulation.pending_payment_cents()
                 > 0;
 
         case WorkTarget::WashStation:
-            return no_payment
+            return room==trade::Room::Bar && no_payment
                 && drink_state
                     == DrinkState::None
                 && simulation.dirty_cups() > 0;
 
         case WorkTarget::Ledger:
-            return no_payment
-                && drink_state
-                    == DrinkState::None
-                && simulation.patrons_remaining()
-                    == 0;
+            return room==trade::Room::Living && hands_free;
 
         case WorkTarget::BeerOrder:
         case WorkTarget::CupOrder:
-            return no_payment
+            return room==trade::Room::Stockroom && no_payment
                 && drink_state
                     == DrinkState::None
                 && simulation.current_event()
                     != EventType::SupplyInterruption;
 
         case WorkTarget::ProtectionEnvelope:
-            return no_payment
+            return room==trade::Room::Bar && no_payment
                 && drink_state
                     == DrinkState::None
                 && simulation.current_event()
@@ -274,7 +325,7 @@ bool IsTargetAvailable(
                 && !simulation.protection_paid();
 
         case WorkTarget::ExitDoor:
-            return patron_waiting
+            return room==trade::Room::Bar && patron_waiting
                 && no_payment
                 && drink_state
                     == DrinkState::None;
@@ -526,15 +577,45 @@ bool ActivateWorkTarget(
                 simulation.WashOneCup();
             break;
 
-        case WorkTarget::Ledger: {
-            const int32_t closing_day =
-                simulation.day();
+        case WorkTarget::Ledger:
+            state->ledger_visible=!state->ledger_visible;
+            changed=true;
+            break;
+        case WorkTarget::Bed: {
+            const int32_t today=simulation.day();
             simulation.CloseDay();
-            changed =
-                simulation.day()
-                    != closing_day;
+            changed=simulation.day()!=today;
+            if (changed) state->ledger_visible=true;
             break;
         }
+        case WorkTarget::DoorStock:
+        case WorkTarget::ToStock:
+            changed=state->market.Enter(trade::Room::Stockroom);
+            break;
+        case WorkTarget::DoorLiving:
+            changed=state->market.Enter(trade::Room::Living);
+            break;
+        case WorkTarget::ToBar:
+            changed=state->market.Enter(trade::Room::Bar);
+            break;
+        case WorkTarget::StockNext:
+            changed=state->market.CycleOffer();
+            break;
+        case WorkTarget::StockBuy:
+            if (state->market.offer()==0) {
+                changed=simulation.BuySupply(SupplierItem::BeerCrate);
+            } else {
+                const int cost=state->market.offer_cost();
+                changed=simulation.SpendSpecialStock(cost);
+                if (changed) changed=state->market.AcceptStock();
+            }
+            break;
+        case WorkTarget::DrinkChoice:
+            changed=state->market.SelectDrink(simulation.beer_units());
+            break;
+        case WorkTarget::SnackChoice:
+            changed=state->market.SelectSnack();
+            break;
 
         case WorkTarget::BeerOrder:
             changed =
