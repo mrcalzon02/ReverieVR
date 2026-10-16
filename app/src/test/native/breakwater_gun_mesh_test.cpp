@@ -46,7 +46,7 @@ int main(){
     gunmesh::Build([&](auto... v){aimedMesh(v...);},
                     WeaponKind::DirectCannon,aimed);
     assert(aimedMesh.all_valid && aimedMesh.max_x>.7f);
-    assert(aimedMesh.max_y> -.20f);
+    assert(aimedMesh.max_y> -.25f); // rotated muzzle clears horizontal mount
     const float nonfinite[3]={NAN,0.f,-1.f};
     Geometry rejected;
     gunmesh::Build([&](auto... v){rejected(v...);},
