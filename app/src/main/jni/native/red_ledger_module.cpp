@@ -1619,18 +1619,22 @@ void DrawRoom(
         const bool patron_hover =
             state->hovered_target
                 == WorkTarget::Patron;
-        const float body_r =
-            patron_hover
-                ? 0.42f
-                : 0.24f;
-        const float body_g =
-            patron_hover
-                ? 0.52f
-                : 0.31f;
-        const float body_b =
-            patron_hover
-                ? 0.55f
-                : 0.34f;
+        // Uniform silhouette vocabulary, distinct faction clothing colors.
+        // The four archetypes differ without external skins or extra shaders.
+        static constexpr float kFactionCloth[4][3] = {
+            {0.43f,0.27f,0.16f}, // rail union: worn leather and rust
+            {0.23f,0.33f,0.46f}, // district office: slate uniform
+            {0.30f,0.36f,0.19f}, // border militia: olive field jacket
+            {0.46f,0.34f,0.17f}  // workshop guild: ochre workwear
+        };
+        const int faction=trade::FactionFor(
+            state->simulation.current_patron()->kind);
+        const float body_r=std::min(1.0f,kFactionCloth[faction][0]+
+            (patron_hover?0.16f:0.0f));
+        const float body_g=std::min(1.0f,kFactionCloth[faction][1]+
+            (patron_hover?0.16f:0.0f));
+        const float body_b=std::min(1.0f,kFactionCloth[faction][2]+
+            (patron_hover?0.16f:0.0f));
 
         DrawCube(
             state,
@@ -1664,6 +1668,14 @@ void DrawRoom(
         DrawCube(state,view_projection,flicker,
             -1.30f,0.355f,-2.05f,0.37f,0.10f,0.34f,
             0.16f,0.13f,0.12f,Material::Wood);
+        // A faction-colored chest badge and short hat brim make the
+        // customer identifiable without relying on color alone.
+        DrawCube(state,view_projection,flicker,
+            -1.48f,-0.23f,-1.86f,0.10f,0.16f,0.025f,
+            0.83f,0.75f,0.45f,Material::Metal);
+        DrawCube(state,view_projection,flicker,
+            -1.30f,0.40f,-1.90f,0.50f,0.055f,0.16f,
+            body_r,body_g,body_b,Material::Wood);
         DrawCube(state,view_projection,1.0f,
             -1.40f,0.20f,-1.868f,0.044f,0.035f,0.015f,
             0.09f,0.08f,0.07f,Material::Metal);
