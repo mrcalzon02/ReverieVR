@@ -24,7 +24,11 @@ final class BuiltInBindingProfiles {
     static String nativeProfileForModule(String moduleId) {
         // Board cursor, Snake direction and Pong paddle need the Daydream
         // touchpad axes; immersive worlds must retain shell-owned locomotion.
-        return moduleId != null && moduleId.startsWith("classic-")
+        // Gumball Armada is a seated arcade flight game, not shell travel.
+        // Route its Daydream pad directly to guest X/Y just like the classics.
+        return moduleId != null
+            && (moduleId.startsWith("classic-")
+                || "gumball-armada".equals(moduleId))
             ? ID_NATIVE_CLASSICS : ID_NATIVE_STANDARD;
     }
 
