@@ -1,4 +1,6 @@
 #include "gumball_armada_simulation.h"
+#include "gumball_shipyard_menu.h"
+#include "reverie_native_vector_text.h"
 #include "gumball_menu_layout.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
@@ -13,6 +15,7 @@
 #include <vector>
 namespace {
 using reverie::gumball::Simulation;
+using reverie::gumball::YardCursor;
 using reverie::gumball::ChartNavigate;
 using reverie::gumball::LoadoutNavigate;
 using reverie::gumball::Phase;
@@ -41,7 +44,9 @@ struct Module {
     bool inSupport=false;
     bool inLoadout=false;
     int supportSelected=0,loadoutSelected=0;
-    int garageX=3,garageY=3;
+    YardCursor yardCursor{};
+    bool secondary=false;
+    char yardFeedback[84]="SELECT PART ON RIGHT / CLICK SHIP TO EDIT";
     Part brush=Part::Frame;
     bool primary=false,campaignSaveError=false,shipSaveError=false,shipLoadWarning=false,upload=true;
     float navTime=0;
@@ -57,50 +62,20 @@ void Disc(Module* m,float x,float y,float d,float z,float r,float g,float b){
 void Tri(Module* m,float x,float y,float a,float b,float c,float d,float z,float r,float g,float bl){
     reverie::flatmesh::Triangle(m->mesh,x,y,a,b,c,d,z,r,g,bl);
 }
-const char* Glyph(char c){
-    switch(c){
-    case 'A':return "010101111101101";case 'B':return "110101110101110";
-    case 'C':return "011100100100011";case 'D':return "110101101101110";
-    case 'E':return "111100110100111";case 'F':return "111100110100100";
-    case 'G':return "011100101101011";case 'H':return "101101111101111";
-    case 'I':return "111010010010111";case 'J':return "001001001101010";
-    case 'K':return "101101110101101";case 'L':return "100100100100111";
-    case 'M':return "101111111101101";case 'N':return "101111111111101";
-    case 'O':return "111101101101111";case 'P':return "110101110100100";
-    case 'Q':return "111101101111011";case 'R':return "110101110101101";
-    case 'S':return "011100010001110";case 'T':return "111010010010010";
-    case 'U':return "101101101101111";case 'V':return "101101010101010";
-    case 'W':return "101101111111101";case 'X':return "101101010101101";
-    case 'Y':return "101101010010010";case 'Z':return "111001010010010";
-    case '0':return "111101101101111";case '1':return "010110010010111";
-    case '2':return "110001111100111";case '3':return "110001110001110";
-    case '4':return "101101111001001";case '5':return "111100110001110";
-    case '6':return "011100111101111";case '7':return "111001010010010";
-    case '8':return "111101111101111";case '9':return "111101111001110";
-    case '-':return "000000111000000";case '+':return "000010111010000";
-    case ':':return "000010000010000";case '/':return "001001010100100";
-    case '!':return "010010010000010";default:return "000000000000000";
-    }
+// Reuse the platform native vector font, not unreadable 3x5 pixel squares.
+void Text(Module* m,const char* message,float x,float y,float sz,
+          float r,float g,float b){
+    if(message&&sz>0.f)
+        reverie::nativeart::StrokeText(m->mesh,message,x,y,sz,r,g,b,-2.85f);
 }
-void Text(Module* m,const char* message,float x,float y,float sz,float r,float g,float b){
-    if(!message)return;
-    size_t n=std::strlen(message);float left=x-static_cast<float>(n)*sz*2.f;
-    for(size_t k=0;k<n;++k){
-        char c=message[k];if(c>='a'&&c<='z')c=static_cast<char>(c-'a'+'A');
-        const char* bits=Glyph(c);
-        for(int i=0;i<15;++i)if(bits[i]=='1')
-            Rect(m,left+(k*4.f+i%3+.5f)*sz,y+(2.5f-i/3)*sz,
-                 .9f*sz,.9f*sz,-2.86f,r,g,b);
-    }
-}
-// The small procedural font has a fixed 4-unit character advance. Fit labels
-// to their actual boxes instead of letting long enemies/options overlap.
-void TextFit(Module* m,const char* label,float x,float y,float width,
+// Width remains four stroke-font units per character; prevent label overflow.
+void TextFit(Module* m,const char* message,float x,float y,float maxWidth,
              float size,float r,float g,float b){
-    if(!label||width<=0.f)return;
-    const size_t n=std::strlen(label);
-    if(n==0)return;
-    Text(m,label,x,y,std::min(size,width/(4.f*static_cast<float>(n))),r,g,b);
+    if(!message||maxWidth<=0.f)return;
+    const size_t count=std::strlen(message);
+    if(!count)return;
+    Text(m,message,x,y,
+         std::min(size,maxWidth/(4.f*static_cast<float>(count))),r,g,b);
 }
 void Frame(Module* m,float x,float y,float w,float h,bool focus){
     Rect(m,x,y,w,h,-2.96f,focus?.35f:.13f,focus?.21f:.11f,focus?.48f:.18f);
