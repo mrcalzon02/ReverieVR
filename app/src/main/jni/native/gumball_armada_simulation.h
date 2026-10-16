@@ -1,6 +1,7 @@
 #ifndef REVERIE_GUMBALL_ARMADA_SIMULATION_H
 #define REVERIE_GUMBALL_ARMADA_SIMULATION_H
 #include "gumball_arcade_objectives.h"
+#include "gumball_cast_encounters.h"
 #include "gumball_shipyard.h"
 #include <algorithm>
 #include <array>
@@ -12,10 +13,10 @@ constexpr unsigned kEnemySlots=24;
 enum class Phase : uint8_t { Chart,Flight,Won,Lost,ArmadaDefeated };
 enum class FailureReason : uint8_t { None, HullDestroyed, Escapes, EliteEscaped, Deadline, SalvageLost };
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
-enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress, Courier };
+enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress, Courier, Blort };
 enum class Weapon : uint8_t { PeaRepeater, RockCannon, MintSpread };
 struct Enemy { float x=0,y=0,age=0,firing=0; int hp=0; bool active=false,boss=false; EnemyKind kind=EnemyKind::Scout; };
-struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; };
+struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; bool ally=false,bomb=false; };
 struct Lane { uint32_t id=0; uint8_t hazard=0,reward=0; bool fortress=false; };
 struct SnapshotV1 {
     uint32_t magic=0x474D4231u, version=1, seed=0, node=0;
@@ -58,6 +59,11 @@ public:
     bool ship_ready()const{return ship_ready_;}
     ShipProfile ship_profile()const{return ship_profile_;}
     FailureReason failure()const{return failure_;}
+    CastGuest guest()const{return cast_.kind();}
+    bool guest_active()const{return cast_.active();}
+    int guest_pulses()const{return cast_.pulses();}
+    uint32_t ally_shots()const{return ally_shots_;}
+    uint32_t bombs_defused()const{return bombs_defused_;}
     uint32_t node()const{return node_;}
     uint32_t cash()const{return cash_;}
     uint32_t kills()const{return kills_;}
@@ -137,6 +143,8 @@ public:
         if(phase_!=Phase::Chart||choice>=3||!ship_ready_)return false;
         destination_=lane(choice);phase_=Phase::Flight;failure_=FailureReason::None;
         mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
+        cast_.begin(seed_,destination_.id,visited_,destination_.hazard);
+        ally_shots_=0;bombs_defused_=0;
         hp_=90+levels_[1]*20+ship_profile_.hull;
         shield_=20+levels_[3]*18+ship_profile_.shield;
         px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
@@ -161,7 +169,7 @@ public:
             regen_credit_+=dt*2.f;
             const int restored=static_cast<int>(regen_credit_);
             if(restored>0){
-                shield_=std::min(20+levels_[3]*18,shield_+restored);
+                shield_=std::min(20+levels_[3]*18+ship_profile_.shield,shield_+restored);
                 regen_credit_-=static_cast<float>(restored);
             }
         }
@@ -202,11 +210,14 @@ public:
                 const bool courier=!boss&&mission_.kind==MissionKind::Intercept
                     &&spawned_==target_-1;
                 const bool ace=!boss&&!courier&&spawned_==target_-1;
+                const bool blort=!boss&&!courier&&!ace&&cast_.kind()==CastGuest::BlortBlister
+                    &&spawned_==target_/2;
                 const unsigned rollType=rollKind(spawned_);
                 EnemyKind kind=EnemyKind::Scout;
                 if(boss)kind=EnemyKind::Fortress;
                 else if(courier)kind=EnemyKind::Courier;
                 else if(ace)kind=EnemyKind::Ace;
+                else if(blort)kind=EnemyKind::Blort;
                 else if(rollType==1u)kind=EnemyKind::Interceptor;
                 else if(rollType==2u)kind=EnemyKind::Bomber;
                 int hull=2;
@@ -214,6 +225,7 @@ public:
                 case EnemyKind::Scout: hull=2;break;
                 case EnemyKind::Interceptor: hull=3;break;
                 case EnemyKind::Bomber: hull=4;break;
+                case EnemyKind::Blort: hull=5;break;
                 case EnemyKind::Ace: hull=7;break;
                 case EnemyKind::Courier: hull=6;break;
                 case EnemyKind::Fortress: hull=22+static_cast<int>(destination_.id/1024u)*4;break;
@@ -229,13 +241,13 @@ public:
             e.age+=dt;
             const float speed=e.kind==EnemyKind::Courier?.66f:
                 (e.kind==EnemyKind::Interceptor?.53f:
-                (e.kind==EnemyKind::Bomber?.18f:
+                (e.kind==EnemyKind::Bomber||e.kind==EnemyKind::Blort?.18f:
                 (e.kind==EnemyKind::Ace?.43f:(e.boss?.15f:.31f))));
             e.y-=dt*(speed+.01f*destination_.hazard);
             if(e.kind==EnemyKind::Interceptor){
                 const float dx=std::max(-1.f,std::min(1.f,px_-e.x));
                 e.x+=dt*dx*.58f;
-            }else if(e.kind==EnemyKind::Bomber){
+            }else if(e.kind==EnemyKind::Bomber||e.kind==EnemyKind::Blort){
                 e.x+=dt*std::sin(e.age*1.1f)*.09f;
             }else if(e.kind==EnemyKind::Courier){
                 e.x+=dt*std::sin(e.age*4.1f+e.y)*.90f;
@@ -245,18 +257,21 @@ public:
             e.x=std::max(-1.85f,std::min(1.85f,e.x));
             e.firing-=dt;
             if(e.firing<=0.f&&e.kind!=EnemyKind::Courier){
-                const int count=e.boss?3:(e.kind==EnemyKind::Ace?2:1);
+                const bool bombing=e.kind==EnemyKind::Blort;
+                const int count=e.boss?3:((e.kind==EnemyKind::Ace||bombing)?2:1);
                 const float aim=e.kind==EnemyKind::Interceptor?
                     std::max(-.50f,std::min(.50f,(px_-e.x)*.32f)):0.f;
                 for(int n=0;n<count;++n)for(auto& shot:shots_)if(!shot.active){
                     const float spread=e.boss?(n-1)*.43f:
-                        (e.kind==EnemyKind::Ace?(n*2-1)*.24f:0.f);
-                    shot={e.x,e.y-.14f,e.kind==EnemyKind::Bomber?-1.05f:-1.3f,
-                          true,true,aim+spread};
+                        (e.kind==EnemyKind::Ace?(n*2-1)*.24f:
+                         (bombing?(n*2-1)*.32f:0.f));
+                    shot={e.x,e.y-.14f,bombing?-.82f:
+                          (e.kind==EnemyKind::Bomber?-1.05f:-1.3f),
+                          true,true,aim+spread,bombing?12:1,false,bombing};
                     break;
                 }
                 e.firing=e.boss?.70f:(e.kind==EnemyKind::Ace?1.18f:
-                    (e.kind==EnemyKind::Bomber?1.85f:2.15f));
+                    (bombing?1.65f:(e.kind==EnemyKind::Bomber?1.85f:2.15f)));
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
@@ -370,6 +385,8 @@ private:
     Lane destination_{};
     MissionRules mission_{};
     SalvageField salvage_{};
+    CastEncounter cast_{};
+    uint32_t ally_shots_=0,bombs_defused_=0;
     ShipProfile ship_profile_{};
     bool ship_ready_=true;
     uint16_t levels_[4]={0,0,0,0};
