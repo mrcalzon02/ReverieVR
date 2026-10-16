@@ -13,7 +13,7 @@ for compiler in g++ clang++; do
     continue
   fi
   ran=$((ran + 1))
-  for name in red_ledger_signage red_ledger_static_geometry red_ledger_simulation; do
+  for name in red_ledger_signage red_ledger_mug_mesh red_ledger_static_geometry red_ledger_simulation; do
     extra=()
     if [[ "$name" == red_ledger_static_geometry ]]; then
       extra=("$INC/red_ledger_static_geometry.cpp")
