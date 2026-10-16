@@ -14,6 +14,10 @@ This catalog is intentionally broader than the public C ABI. It includes impleme
 
 The game-private `gumball_shipyard.h` and native shipyard view demonstrate a 7×7 connected component lattice with finite starter inventory, structural disconnection prevention, per-part mass/power and launch readiness, independently checksummed `shipyard.v1` persistence, and actual weapon mount origins and hull/shield/thrust/cargo effects on arcade simulation. `gumball_shipyard_test.cpp` runs strict portable GCC/Clang and Clang sanitizers in `scripts/verify-gumball-armada.sh`. **Source integrated / local helper verified only; APK/Galaxy S9 acceptance pending.** It is not a shared platform SDK, nor a fully implemented purchased ship parts economy. See `docs/project/GUMBALL_ARMADA.md`.
 
+## Gumball Armada first cast encounter scheduler — 2026-10-16
+
+Source-only game-private `gumball_cast_encounters.h` + `gumball_cast_encounters_test.cpp` provides deterministic capped guest selection and a five-pulse companion budget. Gumball's simulation and GLES2 module source now consume it for Pip's actual projectiles, Lolly's real shield/consumed salvage assistance and Blort's counterable bomb volleys, without ABI change or new heap pools. **Local isolated C++17/sanitizer kernel tests passed; full integrated module and Galaxy S9 acceptance pending.** See `docs/project/GUMBALL_ARMADA_CAST_BIBLE.md` for the remaining planned roster/portraits.
+
 ## Maturity classes
 
 - **ABI v1** — binary contract implemented now; compatibility rules are explicit.
