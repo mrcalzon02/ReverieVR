@@ -219,12 +219,9 @@ public:
         // threshold. No effect or charge consumption if hull/shield is full.
         const int hullCap=90+levels_[1]*20+ship_profile_.hull;
         const int shieldCap=20+levels_[3]*18+ship_profile_.shield;
-        if(hp_>0&&hp_*2<=hullCap&&support_.use_kit(SupportKit::HullPatch)){
-            hp_=std::min(hullCap,hp_+30);++kit_activations_;
-        }
-        if(shield_*2<=shieldCap&&support_.use_kit(SupportKit::ShieldTonic)){
-            shield_=std::min(shieldCap,shield_+24);++kit_activations_;
-        }
+        const uint8_t used=support_.apply_emergency(hp_,hullCap,shield_,shieldCap);
+        kit_activations_+=static_cast<uint32_t>((used&1u)!=0u)
+                         +static_cast<uint32_t>((used&2u)!=0u);
         hurt_flash_=std::max(0.f,hurt_flash_-dt);
         invulnerable_=std::max(0.f,invulnerable_-dt);
         regen_delay_=std::max(0.f,regen_delay_-dt);
