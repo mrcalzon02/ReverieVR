@@ -30,8 +30,7 @@ final class HomeEnvironmentRenderer {
         mesh(closeWhiteRoomRearBackdrop(quadHorizontal(-6.0f, 6.0f,
             -6.0f, 6.0f, 4.0f)));
     private final Mesh whiteBack =
-        mesh(closeWhiteRoomRearBackdrop(quadVerticalZ(-6.0f, 6.0f,
-            -1.35f, 4.0f, -6.0f)));
+        mesh(HomeAtmosphereGeometry.windowedRearWall());
     private final Mesh whiteFront =
         mesh(quadVerticalZ(6.0f, -6.0f, -1.35f, 4.0f, 6.0f));
     private final Mesh whiteLeft =
