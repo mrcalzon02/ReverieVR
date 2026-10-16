@@ -169,5 +169,23 @@ int main(){
     }
     assert(skippedAce.phase()==Phase::Lost&&skippedAce.escaped()==1);
     assert(skippedAce.node()==0&&skippedAce.completion_bonus()==0);
+    // Default unpaid starter ship must be able to complete the first
+    // reasonable-risk lane under deterministic steering/held-fire input.
+    Simulation starter;
+    assert(starter.cash()==100&&starter.weapon()==Weapon::PeaRepeater);
+    assert(starter.lane(0).hazard<=3&&starter.launch(0));
+    for(int frame=0;frame<15000&&starter.phase()==Phase::Flight;++frame){
+        float target=starter.player_x(),near=100.f;
+        for(const auto& e:starter.enemies())if(e.active){
+            const float distance=std::fabs(e.y-starter.player_y());
+            if(distance<near){near=distance;target=e.x;}
+        }
+        const float axis=target>starter.player_x()+.025f?1.f:
+            (target<starter.player_x()-.025f?-1.f:0.f);
+        starter.update(.025f,axis,0.f,true);
+    }
+    assert(starter.phase()==Phase::Won);
+    assert(starter.hp()>0&&starter.escaped()<3);
+    assert(starter.completion_bonus()>0&&starter.visited()==1);
     std::cout<<"Gumball Armada deterministic combat and save tests passed\n";
 }
