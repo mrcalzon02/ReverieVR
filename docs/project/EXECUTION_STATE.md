@@ -1,3 +1,33 @@
+## 2026-10-16 — Stabilize thermal notices and controller reconnect inputs
+
+Reconciled live main after the DOS screen placement, BAT / HEAT WARNINGS,
+and disconnected-input source slices. Added `DeviceWarningLatch`, a
+monotonic timer requiring ten seconds of consistently lower warning
+severity before the compact per-eye warning changes. Escalation remains
+immediate; toggling warnings off clears both the latch and display.
+This prevents noisy battery temperature/status readings from repeatedly
+showing/hiding a warning while maintaining prompt critical notices.
+The latch neither changes the Cardboard render cadence nor performs
+automatic thermal throttling.
+
+Hardened `ControllerManager` with `ControllerResumeGate`: on provider
+deactivation, disconnect, or non-READY→READY transition, all held input
+state is still cleared, and *new controller snapshots* are held until the
+provider reports one fully neutral packet (no touch, click, Menu, Home,
+or volume held). This prevents an old held touch/press on reconnect from
+being treated as a fresh guest action while keeping headset-only manual
+Quick Menu and five-second gaze recovery available. It intentionally
+does not introduce automatic pause/popups in DOS/native games.
+
+Both pure-Java helpers have new JUnit test source. A standalone javac
+compile and Java smoke test of equivalent helper source plus a minimal
+`ControllerSnapshot` fixture passed 17 runtime assertions, covering
+severity escalation, delayed recovery, reset and touch/menu reconnect
+release gating. It is **not** a Gradle/JUnit or Android end-to-end run;
+full project APK compilation, live Daydream BLE/HID event ordering, both
+eyes and S9 sustained battery/thermal behavior remain unverified.
+RV-0243 / RV-0244 therefore remain draft, not device-accepted.
+
 ## 2026-10-16 — Gumball Armada first functional modular candy shipyard (partial S06 source)
 
 Implemented a bounded 7×7 Candy Shipyard as a game-private C++17 system in `gumball_shipyard.h`, a corresponding real native in-eye Chart→Shipyard UI, and a separate `shipyard.v1` save in the existing native host namespace. Ten physical part types (Core, Frame, Armor, Wing, Thruster, Reactor, Battery, Shield, Gun Mount and Cargo) have finite starter stocks and connectivity, mass/thrust and power/demand rules. A legal ship must have its immovable single Core, a thruster, reactor and gun mount and enough mass and power capacity; illegal/disconnected placements/removals reject. The editor shows actual 7×7 cell state, a stock selector and status, and allows click place/remove while preserving Daydream shell Home/Menu. An incomplete ship cannot launch. The profile drives real hull/shield values, engine steering/weight, cargo salvage pickup radius, and muzzle origins; installing a second powered mount fires an actual second projectile per volley, rather than displaying a decorative gun. Flight renders every constructed part as bounded procedural low-cost GLES2 geometry. No user asset textures or original voice were falsely claimed.

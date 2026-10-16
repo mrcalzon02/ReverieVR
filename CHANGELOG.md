@@ -1,5 +1,15 @@
 # Changelog
 
+- Sustained comfort: battery/thermal warnings now use a ten-second
+  monotonic de-escalation hold to prevent alerts flashing around sensor
+  thresholds; severity increases are immediate and turning warnings OFF
+  clears the display immediately. Pure Java policy smoke passed.
+- Controller recovery: after loss of a Daydream/phone controller, the
+  next READY stream must send one fully neutral packet before allowing
+  touches or presses. This prevents held inputs resurfacing as fresh
+  actions. Source regression tests and local equivalent smoke passed;
+  S9/Android acceptance remains open.
+
 - QoL power notifications: optional compact nonmodal stereo warning for
   low phone charge or Android thermal status and labeled battery-sensor
   temperature. Quick Settings BAT / HEAT WARNINGS persists, defaults on,
