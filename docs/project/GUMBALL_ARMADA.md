@@ -1,7 +1,7 @@
 # Gumball Armada — The Search for the Candy King
 
 **Target:** ReverieVR, one phone-resident APK, Galaxy S9 / Daydream.  
-**Status (2026-10-15):** Development-only native source integration; Android/NDK packaging and physical headset playthrough NOT verified.
+**Status (2026-10-15):** Development-only S01/S02 combat and partial S03 weapon source implementation; local equivalent GCC/Clang C++17 native tests pass, but Android/NDK packaging and physical headset playthrough are NOT verified. Full campaigns, authored sprite atlases and deep voice audio remain unimplemented.
 
 ## Premise
 
@@ -11,15 +11,16 @@ The Candy King has vanished. With the royal confectionary fleet fractured, the G
 
 A candy-painted flight-action RPG, with modular ships made from licorice trusses, gumdrop power couplings, nougat armor, hard-candy barrels, fizzy reactors and wafer sails. Deep voice combo callouts such as "SUGAR RUSH!", "SPECTACULAR!", "ABSOLUTELY CONFECTIONARY!" and "SOUR ANNIHILATION!" should feel ludicrously monumental. Those recordings, voice delivery and original score are future production work; CURRENT callouts are visual text only. Do not copy Kingdom Hearts or Candy Crush code, screens, audio recordings, brand assets, visual designs or copyrighted characters.
 
-## Implemented first slice (source)
+## Implemented native combat and weapons (source-only)
 
-- A seeded, deterministic chart with 4096 addressable transit nodes in four 1024-node enemy regions. Each chart position offers three forward routes and hazard/reward hints. It is NOT yet a genuine bidirectional open world with backtracking or political territory simulation.
-- Real-time waves, finite enemy/projectile arrays, Daydream pad flight steering, click-held shooting, fixed shot cooldown, hostiles that return fire, shield/hull damage and heavy damage when enemies escape. Fortress bosses must actually be destroyed.
-- Gumball cash payouts, kill streak/combo multiplier, commander rank, four purchasable tracks (blaster/hull/thruster/shield), four bosses and a campaign-end state.
-- Module-private campaign.v1 save slot on upgrade purchase and sortie resolution; schema-version/checksum and bounds verification at load. In-progress flight is not persisted as a resumable sortie.
-- Original low-cost GLES2 stereoscopic guest scene: selectable three-route chart, four-component shop, colored ship silhouette and enemies, projectile meshes, status HUD and combo text. It uses unchanged native module ABI v1 and is admitted only in Development logging mode.
-- Daydream pad X/Y uses the already-implemented touchpad-aware native-classics profile for this seated arcade (NO shell locomotion); pressing click is NOT required for steering. Click buys/launches and is held to fire; Menu and Home remain shell-owned. This is source routing, NOT a physical-input acceptance claim.
-- The host's existing weapon machine cue supplies provisional shot feedback, not distinctive candy audio. The requested recorded deep-voice announcer does not exist yet.
+- 4096 deterministic forward-only transit addresses in four enemy regions, with three charted route choices per station. Still **not** a traversable bidirectional galaxy or authored campaign.
+- Three-wave sorties with distinct Scout, Interceptor, Bomber, final Ace and fortress roles; different movement/firing/barrages, tracked player hits, unavoidable objective failure if mandatory elite escapes, and a three-escape limit.
+- One-controller pad steering without holding click; held click fires. Hurt telegraph, limited hit grace, delayed shield recharge, visible mission objectives and after-action cash/bonus/escapes/combo tally. Current GLES2 visuals are **procedural placeholder silhouettes** and a moving starfield, not finished sprite/texture assets.
+- **Three working purchased/equipable weapon modes:** starter Pea Repeater (rapid standard shots), Rock Cannon (slow high-damage slug) and Mint Spread (three diverging shots). Cash purchases, ownership and active selection save persistently, not just displayed labels. Weapons reuse provisional existing native shell gun SFX, not unique candy recordings.
+- Four numerical upgrade tracks and commander rank; these are **not** a modular block shipyard or full commander skill tree.
+- Module save slot is still named `campaign.v1` for compatibility, but the **binary payload is now schema version 2** containing weapon ownership and active weapon. The module reads and validates older version-1 snapshots, migrates their existing cash/levels/position to v2 and atomically rewrites the slot. Runtime failures surface a save-error warning. The game does not yet resume mid-sortie.
+- The source remains Development-only and governed by unchanged native ABI v1. No Android APK, Galaxy S9 launch, dual-eye comfort or complete campaign acceptance is claimed.
+- Do **not** claim the Candy King has been rescued when defeating four prototype generals. Until a real finale is authored the UI says that the Sour Armada is defeated but the King remains missing.
 
 ## Delivery gates
 
