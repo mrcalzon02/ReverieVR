@@ -2034,6 +2034,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     || !nativeModuleRuntime.isRunning()) {
                     nativeSurfaceReady = false;
                     closeOrientationMenu();
+                    // Even an externally ended guest must restore shell
+                    // music and release its hosted input profile.
+                    host.onNativeModuleStopRequested();
                     mode = MODE_HOME;
                 } else {
                     if (!nativeSurfaceReady) {
@@ -2126,6 +2129,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (nativeModuleRuntime == null
                 || !nativeModuleRuntime.isRunning()) {
                 nativeSurfaceReady = false;
+                // A missing guest still owns a pending music/input
+                // handoff; make the normal exit perform shell teardown.
+                host.onNativeModuleStopRequested();
                 mode = MODE_HOME;
                 hoveredButton = -1;
                 textureDirty = true;

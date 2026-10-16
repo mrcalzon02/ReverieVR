@@ -9,6 +9,7 @@ onNewFrame has had a chance to initialize its GL surface. That pending state
 must never be mistaken for a guest render failure.
 """
 from pathlib import Path
+import re
 import sys
 
 source = (Path(__file__).resolve().parents[1]
@@ -32,6 +33,21 @@ require("noteNativeModuleFailure(" in frame_code
         and "host.onNativeModuleStopRequested()" in frame_code,
         "True GL initialization failures must remain fatal and logged")
 
+# In either regular play or with the universal Quick Menu open, an
+# already-stopped guest must still release its hosted input/music lease.
+# Without this callback the shell returns to Home with music disabled.
+inactive_guest_exit = re.compile(
+    r"if \(nativeModuleRuntime == null\s*"
+    r"\|\| !nativeModuleRuntime\.isRunning\(\)\) \{\s*"
+    r"nativeSurfaceReady = false;\s*"
+    r"(?:closeOrientationMenu\(\);\s*)?"
+    r"(?:\/\/[^\n]*\n\s*)*"
+    r"host\.onNativeModuleStopRequested\(\);\s*"
+    r"mode = MODE_HOME;"
+)
+require(len(inactive_guest_exit.findall(frame_code)) == 2,
+        "Both inactive native guest paths must restore Home music/profile")
+
 native_draw = source.index("if (mode == MODE_NATIVE) {", native_draw_method)
 first_native_eye = source.index("System.arraycopy(", native_draw)
 render_eye = source.index("nativeModuleRuntime.renderEye(", native_draw)
@@ -51,4 +67,4 @@ require("if (!rendered)" in render_branch
         and "host.onNativeModuleStopRequested()" in render_branch,
         "A genuine render failure must continue to stop the guest")
 
-print("PASS native-launch handoff: pending first eye defers; actual GL/render failures stay fatal")
+print("PASS native-launch handoff: pending first eye defers; fatal failures stop; both inactive exits restore Home audio")
