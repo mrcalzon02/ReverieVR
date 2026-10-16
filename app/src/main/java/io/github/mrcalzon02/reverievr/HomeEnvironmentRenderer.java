@@ -440,6 +440,7 @@ final class HomeEnvironmentRenderer {
                 // transparency, stencil, extra shader or shell input changes.
                 draw(windowSky,.47f,.72f,.88f,1f);
                 draw(windowHorizon,.34f,.52f,.43f,1f);
+                drawWindowBirds();
                 draw(windowFrames,.58f,.47f,.34f,1f);
                 draw(
                     whiteFront,
@@ -503,6 +504,21 @@ final class HomeEnvironmentRenderer {
         }
         draw(clouds,.89f,.93f,.90f,1f);
         draw(sun,.96f,.88f,.65f,1f);
+    }
+
+    private void drawWindowBirds() {
+        // Recessed birds stay inside the two real wall apertures without
+        // requiring stencil buffers or transparent window rendering.
+        System.arraycopy(mvp,0,ambientBaseMvp,0,16);
+        for(int i=0;i<2;i++) {
+            float progress=(ambientSeconds*.10f+i*.37f)%1f;
+            float x=(i==0?-5.20f:3.45f)+progress*1.50f;
+            float y=1.60f+(float)Math.sin(ambientSeconds*1.6f+i)*.10f;
+            Matrix.translateM(mvp,0,ambientBaseMvp,0,x,y,-4.16f);
+            Matrix.scaleM(mvp,0,.15f,.15f,.15f);
+            draw(bird,.28f,.32f,.34f,1f);
+        }
+        System.arraycopy(ambientBaseMvp,0,mvp,0,16);
     }
 
     private void drawFlyingBirds(boolean beach) {
