@@ -114,6 +114,7 @@ public:
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;combo_=0;
+                if(!e.boss)damage(10+3*static_cast<int>(destination_.hazard));
                 if(e.boss){phase_=Phase::Lost;return;}
             }
         }
