@@ -1,3 +1,7 @@
+## Gumball Armada paid allied contract and lane-rival showcase — 2026-10-16
+
+Game-private `gumball_support_contracts.h` and `gumball_support_contracts_test.cpp` illustrate independent capped ally progression (two trees per hired pilot), a limited per-sortie booking and cost debit recorded in a V3 campaign snapshot with V1/V2 restoration. The Gumball module source uses it for actual paid Éclair allied fire and Macaron hull/shield/salvage rescue, alongside Cinnamon zoned warning fire, Sydney alternating control-rate halves and Jawbreaker Jules heavy counterable volleys. Chart destination warnings derive from the same seeded selector used in combat. Exact standalone support header/test GCC/Clang/ASan/UBSan verified; complete native game and Daydream acceptance remain pending. This is **game-private draft code**, not a new shared ABI or finished portrait/voice pack. See `docs/project/GUMBALL_ARMADA_ROUTES_AND_SUPPORT.md`.
+
 ## Gumball Armada named encounter extension — 2026-10-16
 
 The game-private cast scheduler now selects Nib's mine-layer or Biff and Baff's paired bomb ships after progression, in addition to earlier encounters. Their effects use the existing fixed enemy and projectile pools. The dual-destruction reward contract has passed exact-source local C++17 compiler and sanitizer checks. Integrated APK, headset controls, artwork and voice remain unverified. See `docs/project/GUMBALL_ARMADA_CAST_BIBLE.md`.
