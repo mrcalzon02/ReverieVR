@@ -1,5 +1,9 @@
 # Changelog
 
+- VR Quick Menu now shows local handset wall-clock time using locale-aware
+  short time format, alongside the existing session timer and status; no
+  extra menu controls or frame-level time polling.
+
 - Sustained comfort: battery/thermal warnings now use a ten-second
   monotonic de-escalation hold to prevent alerts flashing around sensor
   thresholds; severity increases are immediate and turning warnings OFF

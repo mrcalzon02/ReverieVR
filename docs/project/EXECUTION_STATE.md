@@ -1,3 +1,13 @@
+## 2026-10-16 — VR Quick Menu local clock (source)
+
+The existing universal Quick Menu now displays the phone's real local
+clock time alongside its existing session-duration, battery/thermal and
+frame-time readouts. It uses the Java SHORT locale-aware time format
+with the handset's current timezone and the menu's existing roughly
+one-second texture refresh. No extra menu page, setting, network time,
+on-frame allocation, or game/runtime input action. JVM/Android compilation
+and Galaxy S9 binocular text readability remain unverified.
+
 ## 2026-10-16 — Stabilize thermal notices and controller reconnect inputs
 
 Reconciled live main after the DOS screen placement, BAT / HEAT WARNINGS,
