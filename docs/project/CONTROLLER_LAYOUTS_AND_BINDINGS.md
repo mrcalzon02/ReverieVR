@@ -140,3 +140,19 @@ survive protan/deutan/tritan/grayscale conditions. See
   recover missing input, remap without timing or precise aim.
 - No physical multi-controller/S9 and no accessibility-human-factors
   acceptance may be marked complete on source/JVM alone.
+
+
+## DOS viewpoint and menu focus correction (2026-10-15)
+
+The standard DOS and headset-view mouse profiles keep head yaw/pitch deltas
+as **continuous guest mouse movement**, independent of touchpad click.
+The Daydream touchpad's four holdable directions remain DOS guest arrow
+keys (including Up/Down in game menus), also independent of click.
+Passing the gaze cursor over the in-room DOS shell controls may intercept
+Select, but must not suppress movement axes or arrow-key holds.
+Opening the actual Quick Menu or DOS binding overlay still releases and
+blocks guest input to prevent accidental gameplay. Home is still the
+universal Quick Menu, the touchpad click is left mouse and the physical
+App/minus button is right mouse where the active DOS profile allows it.
+The keyboard/menu behavior of a particular DOS game still depends on
+that game's own input support; Galaxy S9 verification remains required.

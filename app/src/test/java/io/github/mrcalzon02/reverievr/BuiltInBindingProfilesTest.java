@@ -152,6 +152,33 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
+    public void dosMenuDirectionsAndHeadLookWorkWithoutHoldingSelect() {
+        for (String id : new String[] {
+                BuiltInBindingProfiles.ID_DOS_STANDARD,
+                BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE
+        }) {
+            VirtualInputBus bus = new VirtualInputBus();
+            InputBindingEngine engine = new InputBindingEngine(bus,
+                BuiltInBindingProfiles.byId(id));
+
+            engine.submitAxis(BindingInput.TOUCHPAD_Y, -0.8f);
+            engine.submitRelative(BindingInput.HEAD_PITCH_DELTA, 0.01f);
+            engine.submitRelative(BindingInput.HEAD_YAW_DELTA, 0.01f);
+            assertFalse(id, bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
+            org.junit.Assert.assertTrue(id, bus.isKeyDown(VirtualKey.UP));
+            assertEquals(id, -6.5f, bus.consumeMouseRelativeY(), 0.001f);
+            assertEquals(id, 6.5f, bus.consumeMouseRelativeX(), 0.001f);
+
+            engine.submitAxis(BindingInput.TOUCHPAD_Y, 0.8f);
+            assertFalse(id, bus.isKeyDown(VirtualKey.UP));
+            org.junit.Assert.assertTrue(id, bus.isKeyDown(VirtualKey.DOWN));
+            engine.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
+            assertFalse(id, bus.isKeyDown(VirtualKey.DOWN));
+            assertFalse(id, bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
+        }
+    }
+
+    @Test
     public void independentDosAimProfilesRetainTouchpadDirections() {
         String[] ids = {
             BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE,

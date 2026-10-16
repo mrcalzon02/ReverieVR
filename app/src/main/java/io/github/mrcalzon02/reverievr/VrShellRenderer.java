@@ -247,7 +247,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {0, 0, 0, 0},
         {0, 0, 0, 0},
         {0, 0, 0, 0},
-        {42, 498, 230, 544}, // Native Games
+        {42, 498, 230, 544}, // Classic Games
         {42, 604, 230, 650}, // Emulator Modules
         {780, 570, 982, 618} // Native Music
     };
@@ -725,15 +725,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Development modules are filtered before this by the host catalogue.
         List<NativeModuleRuntime.Descriptor> apps = new ArrayList<>();
         List<NativeModuleRuntime.Descriptor> games = new ArrayList<>();
-        List<NativeModuleRuntime.Descriptor> classics = new ArrayList<>();
         for (NativeModuleRuntime.Descriptor entry : nativeModules) {
             if (entry.id.startsWith("classic-")) {
-                classics.add(entry);
+                games.add(entry);
             } else {
                 apps.add(entry);
-            }
-            if (NativeModuleRuntime.isDevelopmentOnly(entry.id)) {
-                games.add(entry);
             }
         }
         apps.add(new NativeModuleRuntime.Descriptor(
@@ -746,8 +742,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             INTERNAL_TEXT_EDITOR_ID, "VR Text Pad / Keyboard"));
         apps.add(new NativeModuleRuntime.Descriptor(
             INTERNAL_CONTROLLER_LAB_ID, "Controller Lab / Bindings"));
-        apps.addAll(classics);
-        games.addAll(classics);
+        // Keep each module in exactly one shelf: native apps/projects
+        // never re-list packaged classics.
         nativeApps = Collections.unmodifiableList(apps);
         nativeGames = Collections.unmodifiableList(games);
 
@@ -1457,11 +1453,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     boolean isHostedInputSuppressed() {
+        // Only an OPEN shell menu owns all guest controls. A DOS overlay
+        // button under the gaze reticle may consume Select, but must
+        // never disable headset mouse look or held touchpad arrow keys.
         return orientationMenuVisible
             || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING
-            || (mode == MODE_DOS && hoveredButton >= 0);
+            || mode == MODE_DOS_BINDING_TUNING;
+    }
+
+    boolean isDosShellControlFocused() {
+        return mode == MODE_DOS
+            && !orientationMenuVisible && hoveredButton >= 0;
     }
 
     void setDosModules(
@@ -6547,7 +6550,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         drawHomeButtons(canvas, paint,
             new String[] {leftLabels[6]}, 18, 1);
         drawHomeButtons(canvas, paint,
-            new String[] {"Native Games"}, 24, 1);
+            new String[] {"Classic Games"}, 24, 1);
         drawHomeButtons(canvas, paint,
             new String[] {"Emulator Modules"}, 25, 1);
         drawHomeButtons(canvas, paint,
@@ -7451,7 +7454,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(31.0f * uiScale);
         canvas.drawText(
-            mode == MODE_NATIVE_GAMES ? "NATIVE GAMES" : "NATIVE APPS / PROJECTS",
+            mode == MODE_NATIVE_GAMES ? "CLASSIC GAMES" : "NATIVE APPS / PROJECTS",
             90,
             175,
             paint

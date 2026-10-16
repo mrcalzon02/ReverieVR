@@ -1139,7 +1139,12 @@ public final class VrActivity extends Activity
                 input.name().replace('_', ' ')
                 + (down ? "" : " RELEASE"));
         }
-        if (isGuestInputSuppressed()) {
+        // Looking at an in-room DOS shell button blocks only gameplay
+        // Select. Continuous head-view mouse axes, pad directions and
+        // other held guest controls stay live without a mouse click.
+        if (isGuestInputSuppressed()
+            || (input == BindingInput.SELECT && renderer != null
+                && renderer.isDosShellControlFocused())) {
             return;
         }
         if (inputBindingEngine != null) {

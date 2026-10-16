@@ -1,5 +1,7 @@
 # Changelog
 
+- DOS input and Home shelves: nonmodal DOS shell hover no longer cuts headset mouse look or touchpad arrow navigation; Select remains protected on shell controls. Classic Games and Native Apps now open nonoverlapping lists.
+
 - Native Classics: add full 8×8 Reversi with legal eight-way flips, automatic forced passes, terminal disc-count scoring, a bounded CPU, and existing Daydream board controls; device acceptance pending.
 
 - Adopted ADR-0015 for a focused native procedural game-module path: a versioned ReverieVR C ABI, packaged trusted modules, OpenKTG-first procedural content, a built-in Procedural Test Chamber, and an explicit rejection of wholesale Win32/.kkrieger runtime porting before the proof module passes device gates.
