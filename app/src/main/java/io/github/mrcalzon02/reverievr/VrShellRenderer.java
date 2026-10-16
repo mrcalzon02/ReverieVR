@@ -7188,7 +7188,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 13:
                 return "Resume the last valid media, DOS, or native activity.";
             case 14:
-                return "Open controller status, pairing, pointer, and input tools.";
+                return "Controller pairing, source and pointer calibration.";
+            case 15:
+                return "Type on the desk keyboard or open the full keyboard.";
+            case 16:
+                return modelViewer.hasModel()
+                    ? "View the imported 3D model." : "Import a model to enable viewing.";
+            case 17:
+                return "Choose an OBJ model from phone storage.";
             case 24:
                 return "Play original native Pong, Snake, and chutes-and-ladders.";
             case 25:
