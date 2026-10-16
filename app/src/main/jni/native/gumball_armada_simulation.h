@@ -9,8 +9,9 @@ constexpr uint32_t kLaneCount=4096;
 constexpr unsigned kEnemySlots=24;
 enum class Phase : uint8_t { Chart,Flight,Won,Lost,KingdomSaved };
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
-struct Enemy { float x=0,y=0,age=0,firing=0; int hp=0; bool active=false,boss=false; };
-struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; };
+enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress };
+struct Enemy { float x=0,y=0,age=0,firing=0; int hp=0; bool active=false,boss=false; EnemyKind kind=EnemyKind::Scout; };
+struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; };
 struct Lane { uint32_t id=0; uint8_t hazard=0,reward=0; bool fortress=false; };
 struct Snapshot {
     uint32_t magic=0x474D4231u, version=1, seed=0, node=0;
@@ -39,6 +40,18 @@ public:
     int hp()const{return hp_;}
     int shield()const{return shield_;}
     int combo()const{return combo_;}
+    int max_combo()const{return max_combo_;}
+    int escaped()const{return escaped_;}
+    int defeated()const{return defeated_;}
+    int target()const{return target_;}
+    int spawned()const{return spawned_;}
+    int wave()const{return target_>0?std::min(3,1+(spawned_*3)/target_):0;}
+    uint32_t sortie_cash()const{return sortie_cash_;}
+    uint32_t completion_bonus()const{return completion_bonus_;}
+    uint32_t shots_fired()const{return shots_fired_;}
+    uint32_t shots_hit()const{return shots_hit_;}
+    float elapsed()const{return elapsed_;}
+    float hurt_flash()const{return hurt_flash_;}
     int level(Upgrade u)const{return levels_[static_cast<unsigned>(u)];}
     int command_rank()const{return 1+static_cast<int>(kills_/25)+static_cast<int>(bosses_)*4;}
     float player_x()const{return px_;}
@@ -71,7 +84,8 @@ public:
         if(phase_!=Phase::Chart||choice>=3)return false;
         destination_=lane(choice);phase_=Phase::Flight;
         hp_=90+levels_[1]*20;shield_=20+levels_[3]*18;
-        px_=0;py_=-.85f;combo_=0;combo_clock_=0;cooldown_=0;
+        px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
+        escaped_=0;sortie_cash_=0;completion_bonus_=0;shots_fired_=0;shots_hit_=0;elapsed_=0;hurt_flash_=0;
         spawned_=0;defeated_=0;bossKilled_=false;spawn_clock_=0;rng_=Mix(seed_^destination_.id^visited_);
         const uint32_t sector=destination_.id/1024u;
         target_=6+destination_.hazard*2+static_cast<int>(sector)*2;
@@ -81,6 +95,7 @@ public:
     void update(float dt,float sx,float sy,bool fire){
         if(phase_!=Phase::Flight||!std::isfinite(dt)||dt<=0.f)return;
         dt=std::min(dt,.05f);
+        elapsed_+=dt;hurt_flash_=std::max(0.f,hurt_flash_-dt);
         sx=std::isfinite(sx)?std::max(-1.f,std::min(1.f,sx)):0.f;
         sy=std::isfinite(sy)?std::max(-1.f,std::min(1.f,sy)):0.f;
         const float speed=1.55f+.16f*levels_[2];
@@ -89,7 +104,7 @@ public:
         cooldown_-=dt;combo_clock_-=dt;
         if(combo_clock_<=0.f)combo_=0;
         if(fire&&cooldown_<=0.f){
-            for(auto& s:shots_)if(!s.active){s={px_,py_+.12f,3.75f,true,false};break;}
+            for(auto& s:shots_)if(!s.active){s={px_,py_+.12f,3.75f,true,false};++shots_fired_;break;}
             cooldown_=std::max(.10f,.34f-.022f*levels_[0]);
         }
         spawn_clock_-=dt;
@@ -97,29 +112,50 @@ public:
             for(auto& e:enemies_)if(!e.active){
                 const bool boss=destination_.fortress&&spawned_==target_-1
                     &&((bosses_>>(destination_.id/1024u))&1u)==0u;
+                const bool ace=!boss&&spawned_==target_-1;
+                const unsigned rollType=rollKind(spawned_);
+                const EnemyKind kind=boss?EnemyKind::Fortress:(ace?EnemyKind::Ace:
+                    (rollType==0u?EnemyKind::Scout:
+                    (rollType==1u?EnemyKind::Interceptor:EnemyKind::Bomber)));
                 const uint32_t roll=next();
                 e={-1.65f+static_cast<float>(roll%331u)*.01f,1.35f,0.f,.75f,
-                   boss?(22+levels_[0]/2):(1+static_cast<int>(destination_.hazard/3)),true,boss};
+                   boss?(22+levels_[0]/2):(kind==EnemyKind::Ace?7:
+                   (kind==EnemyKind::Bomber?4:(kind==EnemyKind::Interceptor?3:2))),true,boss,kind};
                 ++spawned_;break;
             }
-            spawn_clock_=.56f;
+            spawn_clock_=(spawned_%5==0?2.00f:.56f);
         }
         for(auto& e:enemies_)if(e.active){
-            e.age+=dt;e.y-=dt*(e.boss?.22f:(.23f+.018f*destination_.hazard));
-            e.x+=std::sin(e.age*2.4f+e.y)*dt*(e.boss?.22f:.37f);
+            e.age+=dt;
+            const float speed=e.kind==EnemyKind::Interceptor?.53f:
+                (e.kind==EnemyKind::Bomber?.18f:(e.boss?.15f:.31f));
+            e.y-=dt*(speed+.01f*destination_.hazard);
+            if(e.kind==EnemyKind::Interceptor){
+                const float dx=std::max(-1.f,std::min(1.f,px_-e.x));
+                e.x+=dt*dx*.58f;
+            }else if(e.kind==EnemyKind::Bomber){
+                e.x+=dt*std::sin(e.age*1.1f)*.09f;
+            }else e.x+=std::sin(e.age*2.4f+e.y)*dt*(e.boss?.22f:.37f);
+            e.x=std::max(-1.85f,std::min(1.85f,e.x));
             e.firing-=dt;
             if(e.firing<=0.f){
-                for(auto& s:shots_)if(!s.active){s={e.x,e.y-.14f,-1.3f,true,true};break;}
-                e.firing=e.boss?.48f:1.6f;
+                for(auto& s:shots_)if(!s.active){
+                    const float drift=e.kind==EnemyKind::Interceptor?
+                        std::max(-.50f,std::min(.50f,(px_-e.x)*.32f)):0.f;
+                    s={e.x,e.y-.14f,e.kind==EnemyKind::Bomber?-1.05f:-1.3f,true,true,drift};
+                    break;
+                }
+                e.firing=e.boss?.48f:(e.kind==EnemyKind::Bomber?.95f:1.6f);
             }
             if(e.y< -1.65f){
-                e.active=false;++defeated_;combo_=0;
+                e.active=false;++defeated_;++escaped_;combo_=0;
+                if(escaped_>=3){phase_=Phase::Lost;return;}
                 if(!e.boss)damage(10+3*static_cast<int>(destination_.hazard));
                 if(e.boss){phase_=Phase::Lost;return;}
             }
         }
         for(auto& s:shots_)if(s.active){
-            s.y+=s.vy*dt;
+            s.y+=s.vy*dt;s.x+=s.vx*dt;
             if(s.y>1.75f||s.y< -1.4f){s.active=false;continue;}
             if(s.hostile){
                 if(std::fabs(s.x-px_)<.17f&&std::fabs(s.y-py_)<.16f){
@@ -129,11 +165,12 @@ public:
                 for(auto& e:enemies_)if(e.active
                     &&std::fabs(s.x-e.x)<(e.boss?.32f:.19f)
                     &&std::fabs(s.y-e.y)<(e.boss?.25f:.16f)){
-                    s.active=false;e.hp-=1+levels_[0]/3;
+                    s.active=false;++shots_hit_;e.hp-=1+levels_[0]/3;
                     if(e.hp<=0){
                         if(e.boss)bossKilled_=true;
-                        e.active=false;++defeated_;++kills_;++combo_;combo_clock_=2.65f;
-                        cash_+=static_cast<uint32_t>((e.boss?125u:9u)+(combo_/3)*4+destination_.reward*2);
+                        e.active=false;++defeated_;++kills_;++combo_;max_combo_=std::max(max_combo_,combo_);combo_clock_=2.65f;
+                        const uint32_t reward=static_cast<uint32_t>((e.boss?125u:9u)+(combo_/3)*4+destination_.reward*2);
+                        cash_+=reward;sortie_cash_+=reward;
                     }
                     break;
                 }
@@ -141,6 +178,8 @@ public:
         }
         if(hp_<=0){phase_=Phase::Lost;return;}
         if(spawned_==target_&&defeated_==target_){
+            completion_bonus_=static_cast<uint32_t>(20+destination_.reward*12+max_combo_*2);
+            cash_+=completion_bonus_;sortie_cash_+=completion_bonus_;
             node_=destination_.id;++visited_;
             if(destination_.fortress&&bossKilled_)bosses_|=1u<<(node_/1024u);
             phase_=bosses_==15u?Phase::KingdomSaved:Phase::Won;
@@ -169,9 +208,12 @@ public:
     }
 private:
     uint32_t next(){rng_=Mix(rng_+0x9E3779B9u);return rng_;}
+    unsigned rollKind(int spawn)const{
+        return Mix(seed_^destination_.id^(static_cast<uint32_t>(spawn)*0xA511E9B3u))%3u;
+    }
     void damage(int amount){
         const int absorbed=std::min(shield_,amount);
-        shield_-=absorbed;hp_-=amount-absorbed;combo_=0;combo_clock_=0;
+        shield_-=absorbed;hp_-=amount-absorbed;combo_=0;combo_clock_=0;hurt_flash_=.28f;
     }
     Phase phase_=Phase::Chart;
     uint32_t seed_=1,node_=0,visited_=0,cash_=100,kills_=0,bosses_=0,rng_=1;
@@ -179,6 +221,9 @@ private:
     uint16_t levels_[4]={0,0,0,0};
     int hp_=90,shield_=20,combo_=0,spawned_=0,defeated_=0,target_=0;
     bool bossKilled_=false;
+    int escaped_=0,max_combo_=0;
+    uint32_t sortie_cash_=0,completion_bonus_=0,shots_fired_=0,shots_hit_=0;
+    float elapsed_=0,hurt_flash_=0;
     float px_=0,py_=-.85f,spawn_clock_=0,cooldown_=0,combo_clock_=0;
     std::array<Enemy,kEnemySlots> enemies_{};
     std::array<Shot,48> shots_{};
