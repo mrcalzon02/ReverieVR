@@ -12,6 +12,8 @@
 #include "breakwater_pointer_focus.h"
 #include "breakwater_impacts.h"
 #include "breakwater_wrecks.h"
+#include "breakwater_gun_mesh.h"
+#include "breakwater_menu_layout.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -56,6 +58,7 @@ struct State {
     CombatInputLatch combat_input;
     PointerFocusGate pointer_focus;
     bool armory_page=false, sam_armed=false, ghost_on=false;
+    int menu_focus=-1;
     float ghost_position[3]={}, shot_origin[3]={}, shot_gravity=0;
     std::vector<float> mesh;
     std::vector<float> sprite_mesh;
@@ -106,26 +109,16 @@ float AimAtPlane(const ReverieNativeInputV1 &input,float z,float *x,float *y) {
     return distance;
 }
 int DifficultyTarget(const ReverieNativeInputV1 &input) {
-    float x=0,y=0;
-    if(AimAtPlane(input,kShopZ,&x,&y)<0)return -1;
-    for(int n=0;n<4;n++)
-        if(std::abs(x-(-2.1f+n*1.4f))<.62f && std::abs(y+.3f)<.27f)
-            return n;
-    return -1;
+    float x=0.f,y=0.f;
+    if(AimAtPlane(input,kShopZ,&x,&y)<0.f)return -1;
+    return menu::HitDifficulty(x,y);
 }
-int ShopTarget(const ReverieNativeInputV1 &input) {
-    float x=0,y=0;
-    if(AimAtPlane(input,kShopZ,&x,&y)<0)return -1;
-    for(int n=0;n<8;n++) {
-        const int col=n%4,row=n/4;
-        if(std::abs(x-(-2.1f+col*1.4f))<.62f &&
-           std::abs(y-(.05f-row*.65f))<.27f)return n;
-    }
-    if(y<-.82f && y>-1.40f) {
-        if(x>.08f && x<1.88f)return 8;
-        if(x<-.08f && x>-1.88f)return 9;
-    }
-    return -1;
+int ShopTarget(const ReverieNativeInputV1 &input,bool armory) {
+    float x=0.f,y=0.f;
+    if(AimAtPlane(input,kShopZ,&x,&y)<0.f)return -1;
+    const int target=menu::HitShop(x,y);
+    // Armory only has five guns plus SAM: empty 6/7 cells are not buttons.
+    return armory && target>=6 && target<8 ? -1 : target;
 }
 bool AimAtEnemy(const ReverieNativeInputV1 &input,const Enemy &enemy,
                 float gravity,bool ghost,float *distance) {
@@ -238,7 +231,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         } else Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(game.phase()==Phase::Shop) {
         if(!edge)return;
-        const int target=ShopTarget(input);
+        const int target=ShopTarget(input,s->armory_page);
         bool done=false;
         if(target==9) {
             s->armory_page=!s->armory_page;
@@ -462,39 +455,16 @@ void BuildScene(State *s) {
         EmitShoreCover(game.location(),barrier,night,
             [s](auto... arguments) { Box(s,arguments...); });
 
-    // The terrain and heavy parapet remain 3D; only the switchable gun
-    // housing becomes art. Keep a small fixed pedestal beneath the card.
+    // Stable world-anchored carriage with actual 12-faceted three-dimensional
+    // barrel, recessed bore, metal collars, rotating aim and real wheels.
+    // All equipped models use the same deterministic procedure, no billboard
+    // housing; combat/ballistics remain solely in Campaign.
     Box(s,0,-1.24f,-.95f,7.8f,.55f,.7f,.37f,.38f,.36f);
-    Box(s,0,-1.01f,-.88f,.55f,.19f,.34f,.27f,.29f,.31f);
+    Box(s,0,-1.06f,-.88f,.62f,.22f,.47f,.29f,.30f,.30f);
     const float *aim=s->gun_direction;
-    // Game-owned selection, not an independent visual equip state. A
-    // forward sprite sits in front of the pedestal and behind the reticle.
-    // The existing world-space barrel below still follows hand aim.
     const WeaponKind equipped=game.selected_weapon();
-    const float housingWidth=equipped==WeaponKind::Flak?1.10f:
-        equipped==WeaponKind::MissileBattery?1.05f:
-        equipped==WeaponKind::HeavyGun?1.02f:
-        equipped==WeaponKind::DirectCannon?1.10f:.82f;
-    AppendSprite(s->sprite_mesh,WeaponSprite(equipped),
-                 aim[0]*.07f,-.77f+aim[1]*.06f,-.53f,
-                 housingWidth,.70f);
-    const float horizontal=std::sqrt(aim[0]*aim[0]+aim[2]*aim[2]);
-    const float rightX=horizontal>.01f?-aim[2]/horizontal:1.0f;
-    const float rightZ=horizontal>.01f?aim[0]/horizontal:0.0f;
-    const float sx=0.0f,sy=-.78f,sz=-.88f;
-    const float ex=sx+aim[0]*1.45f;
-    const float ey=sy+aim[1]*1.45f;
-    const float ez=sz+aim[2]*1.45f;
-    Triangle(s,sx+rightX*.07f,sy,sz+rightZ*.07f,
-             sx-rightX*.07f,sy,sz-rightZ*.07f,
-             ex+rightX*.055f,ey,ez+rightZ*.055f,.31f,.34f,.33f);
-    Triangle(s,ex+rightX*.055f,ey,ez+rightZ*.055f,
-             sx-rightX*.07f,sy,sz-rightZ*.07f,
-             ex-rightX*.055f,ey,ez-rightZ*.055f,.31f,.34f,.33f);
-    Triangle(s,sx,sy+.065f,sz,sx,sy-.065f,sz,
-             ex,ey+.050f,ez,.48f,.48f,.43f);
-    Triangle(s,ex,ey+.050f,ez,sx,sy-.065f,sz,
-             ex,ey-.050f,ez,.48f,.48f,.43f);
+    gunmesh::Build([s](auto... vertices){Triangle(s,vertices...);},
+                   equipped,aim);
     if(s->flash>0.0f) {
         const float *shot=s->shot_direction;
         const float shotHorizontal=std::sqrt(shot[0]*shot[0]+shot[2]*shot[2]);
@@ -675,67 +645,103 @@ void BuildScene(State *s) {
     // Infantry muzzle flashes live in the firing sprite tiles above;
     // do not draw a duplicate generic 3D flash at one arbitrary shooter.
     if(game.phase()==Phase::Briefing) {
-        Panel(s,0,.40f,-3.06f,6.35f,3.6f,.08f,.12f,.16f);
-        Text(s,"BREAKWATER",0,1.45f,-3.0f,.082f,.98f,.86f,.58f);
-        Text(s,"CHOOSE DIFFICULTY",0,.78f,-3.0f,.060f,.85f,.87f,.79f);
+        const menu::Rect frame=menu::kDifficultyPanel;
+        Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
+              .075f,.105f,.13f);
+        Text(s,"BREAKWATER",0,1.34f,-2.97f,.078f,.97f,.87f,.60f);
+        Text(s,"SELECT DIFFICULTY",0,.74f,-2.97f,.059f,.83f,.88f,.83f);
         const char *choices[]={"CADET","REGULAR","VETERAN","SIEGE"};
         for(int n=0;n<4;n++) {
-            const float x=-2.1f+n*1.4f;
-            Panel(s,x,-.30f,-3.0f,1.23f,.49f,.22f,.33f,.30f);
-            Text(s,choices[n],x,-.30f,-2.97f,.049f,.97f,.93f,.74f);
+            const menu::Rect tile=menu::DifficultyCard(n);
+            const bool hover=s->menu_focus==n;
+            Panel(s,tile.x,tile.y,-3.0f,tile.width,tile.height,
+                  hover?.29f:.14f,hover?.40f:.21f,hover?.38f:.27f);
+            Panel(s,tile.x,tile.y+tile.height*.45f,-2.99f,
+                  tile.width-.08f,.014f,.77f,.77f,.61f);
+            Text(s,choices[n],tile.x,tile.y,-2.96f,
+                 menu::FittedScale(choices[n],tile.width,.048f),
+                 hover?1.f:.90f,hover?.99f:.92f,.76f);
         }
-        Text(s,"SELECT A LEVEL",0,-1.12f,-2.97f,.067f,.90f,.83f,.66f);
+        Text(s,"POINT AND SELECT",0,-.91f,-2.96f,.049f,.86f,.88f,.79f);
     } else if(game.phase()==Phase::Shop) {
-        Panel(s,0,.4f,-3.06f,6.35f,3.75f,.08f,.12f,.16f);
-        Text(s,"BREAKWATER",0,1.67f,-3.0f,.073f,.92f,.86f,.58f);
-        Text(s,Campaign::Locations()[game.location()].name,0,1.28f,-3.0f,
-             .055f,.69f,.78f,.76f);
-        Text(s,night?"NIGHT":"DAY",-1.55f,.88f,-3.0f,.065f,.93f,.81f,.62f);
-        char digits[32];std::snprintf(digits,sizeof(digits),"D%u W%u/%u",
-               static_cast<unsigned>(game.day()),
-               static_cast<unsigned>(game.wave_index()),
-               static_cast<unsigned>(game.waves_this_period()));
-        Text(s,digits,1.05f,.88f,-3.0f,.053f,.90f,.89f,.82f);
+        const menu::Rect frame=menu::kPanel;
+        Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
+              .065f,.095f,.12f);
+        Text(s,"BREAKWATER",0,1.46f,-2.97f,.069f,.95f,.84f,.59f);
+        Text(s,Campaign::Locations()[game.location()].name,0,1.16f,-2.97f,
+             .050f,.73f,.84f,.79f);
+        char header[50];
+        std::snprintf(header,sizeof(header),"%s  D%u  W%u/%u  %d CR",
+            night?"NIGHT":"DAY",static_cast<unsigned>(game.day()),
+            static_cast<unsigned>(game.wave_index()),
+            static_cast<unsigned>(game.waves_this_period()),
+            game.credits());
+        Text(s,header,0,.86f,-2.97f,
+             menu::FittedScale(header,5.75f,.048f),.91f,.90f,.77f);
+        // Everything interactive fits within the dark board and uses
+        // exactly the same menu::Rect as the pointer hit-test.
         const char *labels[]={"FIRE","POWER","CLIP","ANTI","ARTY","AIR","TURRET","REPAIR"};
         for(int n=0;n<8;n++) {
             if(s->armory_page && n>=6)continue;
-            const float x=-2.1f+(n%4)*1.4f,y=.05f-(n/4)*.65f;
+            const menu::Rect tile=menu::ShopCard(n);
+            const float x=tile.x,y=tile.y;
             const WeaponKind weapon=static_cast<WeaponKind>(n);
             const bool equipment=s->armory_page && n<kWeaponCount;
             const bool owned=equipment && game.owns_weapon(weapon);
+            const bool hover=s->menu_focus==n;
             const int price=s->armory_page?
                 (n==5?(game.sam_charges()<3?540:-1):
                  equipment?(owned?-1:WeaponFor(weapon).purchase_cost):-1):
                 game.price(static_cast<Upgrade>(n));
-            Panel(s,x,y,-3.0f,1.23f,.49f,owned?.18f:price<0?.20f:.21f,
-                  owned?.40f:price<0?.21f:.32f,price<0?.23f:.26f);
+            const float r=owned?.15f:price<0?.15f:.13f;
+            const float g=owned?.30f:price<0?.19f:.22f;
+            const float b=price<0?.20f:.24f;
+            Panel(s,x,y,-3.0f,tile.width,tile.height,
+                  r+(hover?.13f:0.f),g+(hover?.13f:0.f),
+                  b+(hover?.12f:0.f));
+            Panel(s,x,y+tile.height*.47f,-2.99f,
+                  tile.width-.08f,.012f,
+                  hover?.99f:.46f,hover?.92f:.55f,hover?.64f:.52f);
             char tier_label[16];
             if(!s->armory_page && n==3)
                 std::snprintf(tier_label,sizeof(tier_label),"AA %u/3",
                     static_cast<unsigned>(game.level(Upgrade::AntiAir)));
-            Text(s,s->armory_page?(n==5?"SAM":WeaponFor(weapon).name):
-                 n==3?tier_label:labels[n],
-                 x,y+.10f,-2.98f,.045f,.94f,.92f,.72f);
+            const char *title=s->armory_page?
+                 (n==5?"SAM":WeaponFor(weapon).name):
+                 (n==3?tier_label:labels[n]);
+            Text(s,title,x,y+.085f,-2.973f,
+                 menu::FittedScale(title,tile.width,.043f),
+                 .97f,.94f,.76f);
             char amount[20];
             if(owned)std::snprintf(amount,sizeof(amount),
                         game.selected_weapon()==weapon?"ACTIVE":"SELECT");
             else if(price<0)std::snprintf(amount,sizeof(amount),"MAX");
             else std::snprintf(amount,sizeof(amount),"%d",price);
-            const SpriteId shopIcon=ShopSupportSprite(s->armory_page,
+            const SpriteId icon=ShopSupportSprite(s->armory_page,
                 static_cast<uint8_t>(n));
-            if(shopIcon!=SpriteId::Count)
-                AppendSprite(s->sprite_mesh,shopIcon,
-                             x-.44f,y-.095f,-2.95f,.19f,.19f);
-            Text(s,amount,x+(shopIcon!=SpriteId::Count?.11f:0.0f),
-                 y-.10f,-2.98f,.048f,.89f,.89f,.84f);
+            if(icon!=SpriteId::Count)
+                AppendSprite(s->sprite_mesh,icon,
+                             x-.45f,y-.11f,-2.952f,.155f,.155f);
+            const float amount_x=x+(icon!=SpriteId::Count?.095f:0.0f);
+            Text(s,amount,amount_x,y-.109f,-2.973f,
+                 menu::FittedScale(amount,tile.width-(icon!=SpriteId::Count?.22f:0.f),.041f),
+                 .89f,.93f,.87f);
         }
-        Panel(s,.95f,-1.11f,-3.0f,1.72f,.48f,.27f,.45f,.33f);
-        Text(s,"START",.95f,-1.10f,-2.97f,.070f,1,.97f,.78f);
-        Panel(s,-.95f,-1.11f,-3.0f,1.72f,.48f,.24f,.29f,.42f);
-        Text(s,s->armory_page?"UPGRADES":"ARMORY",
-             -.95f,-1.10f,-2.97f,.055f,.84f,.90f,1.0f);
-        char credits[32];std::snprintf(credits,sizeof(credits),"CREDITS %d",game.credits());
-        Text(s,credits,0,-1.7f,-2.96f,.062f,.90f,.84f,.62f);
+        for(int action=8;action<=9;++action) {
+            const menu::Rect tile=menu::ShopAction(action);
+            const bool hover=s->menu_focus==action;
+            Panel(s,tile.x,tile.y,-3.0f,tile.width,tile.height,
+                  hover?.28f:.16f,hover?.44f:.29f,hover?.39f:.32f);
+            const char *title=action==8?"START":
+                (s->armory_page?"UPGRADES":"ARMORY");
+            Text(s,title,tile.x,tile.y,-2.974f,
+                 menu::FittedScale(title,tile.width,.052f),
+                 .96f,.96f,.81f);
+        }
+        char summary[40];
+        std::snprintf(summary,sizeof(summary),"CREDITS %d",game.credits());
+        Text(s,summary,0,-1.18f,-2.967f,
+             menu::FittedScale(summary,3.50f,.046f),.92f,.86f,.64f);
     } else if(game.phase()==Phase::Combat) {
         char digits[32];std::snprintf(digits,sizeof(digits),"HULL %d",game.integrity());
         Text(s,digits,0,1.20f,-2.0f,.075f,.92f,.92f,.74f);
@@ -1024,6 +1030,17 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     // Only fresh post-focus button presses can enter any game action.
     copy.primary_down=down?1u:0u;
     copy.secondary_down=secondary?1u:0u;
+    // Hover feedback corresponds precisely to the raycast menus, including
+    // disabled armory slots. Only mark the scene dirty when focus changes.
+    int next_focus=-1;
+    if(s->campaign.phase()==Phase::Briefing)
+        next_focus=DifficultyTarget(copy);
+    else if(s->campaign.phase()==Phase::Shop)
+        next_focus=ShopTarget(copy,s->armory_page);
+    if(next_focus!=s->menu_focus) {
+        s->menu_focus=next_focus;
+        s->scene_dirty=true;
+    }
     if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
        !WeaponFor(s->campaign.selected_weapon()).uses_ghost &&
        GunWithinTraverse(copy.pointer_direction,
