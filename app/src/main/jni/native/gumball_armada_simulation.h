@@ -184,7 +184,7 @@ public:
                    (kind==EnemyKind::Bomber?4:(kind==EnemyKind::Interceptor?3:2))),true,boss,kind};
                 ++spawned_;break;
             }
-            spawn_clock_=(spawned_%5==0?2.00f:.56f);
+            spawn_clock_=(spawned_%5==0?3.50f:.94f);
         }
         for(auto& e:enemies_)if(e.active){
             e.age+=dt;
