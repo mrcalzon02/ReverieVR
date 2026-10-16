@@ -193,7 +193,7 @@ void ShipyardView(Module* m){
             const Part p=static_cast<Part>(i+2);
             std::snprintf(line,sizeof(line),"%s %u",names[i],m->yard.stock(p));
         }else std::snprintf(line,sizeof(line),"RETURN");
-        Text(m,line,x,y,.028f,.96f,.91f,.79f);
+        Text(m,line,x,y,.026f,.96f,.91f,.79f);
     }
     const auto profile=m->yard.profile();
     std::snprintf(line,sizeof(line),"MASS %d  POWER %d/%d  THRUST %d",
@@ -204,7 +204,7 @@ void ShipyardView(Module* m){
                   static_cast<int>((profile.pickup_radius-.23f)*100.f+.5f));
     Text(m,line,0,-1.36f,.032f,.76f,.93f,.84f);
     Text(m,m->yard.ready()?"SHIP READY  CLICK CELLS TO EDIT":
-        "SHIP NOT READY  FIX POWER OR CONNECTIONS",0,-1.56f,
+        "SHIP NOT READY  CHECK POWER / THRUST",0,-1.56f,
         .032f,m->yard.ready()?.64f:1.f,m->yard.ready()?1.f:.37f,.69f);
 }
 void EnemyVisual(Module* m,const Enemy& e){
