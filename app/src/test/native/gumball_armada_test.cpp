@@ -34,6 +34,10 @@ int main(){
     assert(game.phase()==Phase::Lost || game.phase()==Phase::Won);
     assert(game.recover() && game.phase()==Phase::Chart);
     assert(!game.recover());
+    Simulation idle(321);assert(idle.launch(0));
+    for(int i=0;i<12000 && idle.phase()==Phase::Flight;++i)
+        idle.update(.05f,0,0,false);
+    assert(idle.phase()==Phase::Lost);
     const auto finalSave=game.snapshot();
     assert(replay.restore(finalSave));
     assert(replay.node()==game.node() && replay.bosses()==game.bosses());
