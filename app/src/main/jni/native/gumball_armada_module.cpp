@@ -110,8 +110,10 @@ void Chart(Module* m){
         if(lane.fortress)Text(m,"SOUR FORTRESS",x,.07f,.034f,1.f,.49f,.47f);
         else{
             std::snprintf(text,sizeof(text),"RISK %u LOOT %u",lane.hazard,lane.reward);
-            Text(m,text,x,.07f,.035f,.88f,.83f,.63f);
+            Text(m,text,x,.12f,.031f,.88f,.83f,.63f);
         }
+        const auto rules=reverie::gumball::MissionFor(static_cast<unsigned>(n),lane.hazard);
+        Text(m,reverie::gumball::MissionName(rules.kind),x,-.065f,.029f,.71f,.97f,.90f);
     }
     const char* upgrades[]={"BLASTER","HULL","THRUSTER","SHIELD"};
     for(int i=0;i<4;++i){
@@ -179,6 +181,11 @@ void Flight(Module* m){
     Background(m);
     const auto& s=m->sim;
     for(const auto& e:s.enemies())if(e.active)EnemyVisual(m,e);
+    for(const auto& drop:s.salvage().items())if(drop.active){
+        // Recovered gumdrop cash requires steering into the flying pickup.
+        Disc(m,drop.x,drop.y,.092f,-2.81f,.92f,.81f,.21f);
+        Rect(m,drop.x,drop.y,.063f,.063f,-2.79f,.98f,.97f,.66f);
+    }
     for(const auto& shot:s.shots())if(shot.active){
         const float radius=shot.hostile?.039f:(shot.damage>=4?.085f:.037f);
         Rect(m,shot.x,shot.y,radius,shot.hostile?.12f:(shot.damage>=4?.24f:.18f),-2.82f,
@@ -210,6 +217,15 @@ void Flight(Module* m){
         Text(m,text,0,.69f,.042f,1.f,.93f,.55f);
     }
     char status[96];
+    const auto rules=s.mission();
+    if(rules.kind==reverie::gumball::MissionKind::Recovery)
+        std::snprintf(status,sizeof(status),"SALVAGE RECOVERY %d/%d",
+                      s.salvage_collected(),rules.required_salvage);
+    else if(rules.kind==reverie::gumball::MissionKind::Intercept)
+        std::snprintf(status,sizeof(status),"COURIER INTERCEPT  %d SEC",
+                      static_cast<int>(s.remaining_time()));
+    else std::snprintf(status,sizeof(status),"SOUR SWEEP");
+    Text(m,status,0,-1.055f,.032f,.84f,.96f,.74f);
     std::snprintf(status,sizeof(status),"WAVE %d/3  CLEARED %d/%d  ESCAPED %d/3",
                   s.wave(),s.defeated(),s.target(),s.escaped());
     Text(m,status,0,-1.24f,.035f,.88f,.90f,.95f);
@@ -232,6 +248,9 @@ void Result(Module* m){
     std::snprintf(text,sizeof(text),"TOTAL %u G  RANK %d  TIME %dS",
                   m->sim.cash(),m->sim.command_rank(),static_cast<int>(m->sim.elapsed()));
     Text(m,text,0,-.43f,.041f,.93f,.73f,.92f);
+    std::snprintf(text,sizeof(text),"SALVAGE %d  LOST %d",
+                  m->sim.salvage().collected(),m->sim.salvage().expired());
+    Text(m,text,0,-.70f,.035f,.76f,.93f,.77f);
     Text(m,phase==Phase::ArmadaDefeated?"THE KING IS STILL MISSING":
          "CLICK TO RETURN TO CHART",0,-1.f,.044f,.74f,.94f,.88f);
 }
