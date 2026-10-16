@@ -160,9 +160,18 @@ void DrawMap(State *s){
         Text(s,s->save_failed?"SAVE FAILED":"SAVE CORRUPT",-.73f,.011f,1.f,.38f,.40f);
     s->upload=true;
 }
-void UnitSprite(State *s,const game::Unit &u,float x,float y){
+void UnitSprite(State *s,const game::Unit &u,float x,float y,game::Doctrine doctrine){
     const bool ally=u.side==game::Side::Hearthwell;
-    const float rr=ally?.29f:.83f, gg=ally?.80f:.31f, bb=ally?.56f:.29f;
+    float rr=ally?.29f:.83f, gg=ally?.80f:.31f, bb=ally?.56f:.29f;
+    if(!ally){
+        switch(doctrine){
+        case game::Doctrine::Hearthward:rr=.65f;gg=.59f;bb=.34f;break;
+        case game::Doctrine::Meridian:rr=.25f;gg=.48f;bb=.73f;break;
+        case game::Doctrine::Scrapline:rr=.80f;gg=.47f;bb=.20f;break;
+        case game::Doctrine::LostNinth:rr=.72f;gg=.26f;bb=.25f;break;
+        default:break;
+        }
+    }
     Rect(s,x,y-kCell*.12f,kCell*.51f,kCell*.37f,-1.853f,rr*.70f,gg*.74f,bb*.78f);
     Rect(s,x,y+kCell*.18f,kCell*.29f,kCell*.30f,-1.850f,.95f,.77f,.59f);
     Rect(s,x,y+kCell*.35f,kCell*.47f,kCell*.13f,-1.848f,rr,gg,bb);
@@ -176,9 +185,26 @@ void UnitSprite(State *s,const game::Unit &u,float x,float y){
         Rect(s,x-kCell*.33f,y-kCell*.08f,kCell*.15f,kCell*.26f,-1.847f,.98f,.76f,.17f);
         Line(s,x+kCell*.31f,y-kCell*.21f,x+kCell*.39f,y+kCell*.22f,
              kCell*.09f,-1.846f,.98f,.76f,.21f);
+    }else if(u.role==game::Class::Salvager){
+        // Orange pack / blue recovery tong distinguishes Scrapline crews.
+        Rect(s,x-kCell*.29f,y+kCell*.02f,kCell*.20f,kCell*.41f,-1.847f,.92f,.56f,.19f);
+        Line(s,x+kCell*.31f,y-kCell*.30f,x+kCell*.39f,y+kCell*.26f,
+             kCell*.075f,-1.846f,.34f,.72f,.79f);
+    }else if(u.role==game::Class::Sentinel){
+        // Meridian ballistic helmet/shoulders and cyan visor.
+        Rect(s,x,y+kCell*.37f,kCell*.62f,kCell*.17f,-1.846f,.23f,.27f,.36f);
+        Rect(s,x,y+kCell*.24f,kCell*.41f,kCell*.085f,-1.845f,.31f,.86f,.96f);
+        Rect(s,x,y-kCell*.02f,kCell*.74f,kCell*.13f,-1.846f,.27f,.37f,.53f);
+    }else if(u.role==game::Class::Legionary){
+        // Large metal shield and short bronze sword; no imaginary rifle.
+        Rect(s,x-kCell*.28f,y-kCell*.09f,kCell*.31f,kCell*.49f,-1.847f,.70f,.22f,.20f);
+        Rect(s,x-kCell*.28f,y-kCell*.09f,kCell*.13f,kCell*.25f,-1.846f,.95f,.75f,.34f);
+        Line(s,x+kCell*.34f,y-kCell*.26f,x+kCell*.34f,y+kCell*.24f,
+             kCell*.08f,-1.846f,.83f,.79f,.69f);
+        Rect(s,x,y+kCell*.50f,kCell*.46f,kCell*.09f,-1.846f,.91f,.76f,.32f);
     }
     Rect(s,x,y-kCell*.43f,kCell*.68f,kCell*.065f,-1.844f,.14f,.16f,.19f);
-    const float hp_ratio=static_cast<float>(u.hp)/static_cast<float>(u.role==game::Class::Heavy?13:9);
+    const float hp_ratio=static_cast<float>(u.hp)/static_cast<float>(game::Battle::MaxHp(u.role));
     Rect(s,x-kCell*.34f+hp_ratio*kCell*.34f,y-kCell*.43f,
          kCell*.68f*hp_ratio,kCell*.055f,-1.843f,.22f,.92f,.32f);
 }
@@ -247,7 +273,7 @@ void Draw(State *s){
         center(u->x,u->y,px,py);
         if(i==s->session.tactical.selected)
             Rect(s,px,py,kCell*.96f,kCell*.96f,-1.858f,.99f,.91f,.27f);
-        UnitSprite(s,*u,px,py);
+        UnitSprite(s,*u,px,py,battle.doctrine());
     }
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
@@ -262,6 +288,21 @@ void Draw(State *s){
         std::snprintf(status,sizeof(status),"DEFEND PUMP %d  AMMO %d  TICK %u",
                       battle.pump_hp(),battle.ammo_stock(),battle.ticks());
     Text(s,status,-.946f,.010f,.88f,.92f,.85f);
+    // The military doctrine is real simulation state and is saved, not just
+    // a label inferred from the operation title.
+    const char *doctrine_name="UNALIGNED";
+    switch(battle.doctrine()){
+    case game::Doctrine::Hearthward:doctrine_name="HEARTHWARD WATCH";break;
+    case game::Doctrine::Meridian:doctrine_name="MERIDIAN SECURITY";break;
+    case game::Doctrine::Scrapline:doctrine_name="SCRAPLINE CREW";break;
+    case game::Doctrine::LostNinth:doctrine_name="LOST NINTH COHORT";break;
+    default:break;
+    }
+    if(battle.doctrine()==game::Doctrine::Scrapline){
+        std::snprintf(status,sizeof(status),"%s  AMMO %d  STOLEN %d",
+            doctrine_name,battle.ammo_stock(),battle.stolen_rounds());
+    }else std::snprintf(status,sizeof(status),"%s",doctrine_name);
+    Text(s,status,-.866f,.010f,.82f,.76f,.52f);
     const char *mode_names[]={"MOVE","ATTACK","REPAIR","RESUPPLY"};
     char action[90];
     if(battle.result()==game::Result::Defended)std::snprintf(action,sizeof(action),"DEFENDED  CLICK REPORT");

@@ -23,7 +23,7 @@ public:
         Codec w(bytes.data(), kBytes - 8);
         for (uint8_t byte : {uint8_t('O'),uint8_t('F'),uint8_t('H'),uint8_t('B'),
                              uint8_t('E'),uint8_t('L'),uint8_t('0'),uint8_t('1')}) w.U8(byte);
-        w.U16(2); w.U16(0); // v2 adds mission and objective progress
+        w.U16(3); w.U16(0); // v3 adds doctrine and finite stolen-ammo counter
         w.U32(control.seed_);
         w.U8(static_cast<uint8_t>(control.cursor_x));
         w.U8(static_cast<uint8_t>(control.cursor_y));
@@ -62,6 +62,8 @@ public:
         w.U8(battle.last_.pump ? 1 : 0);
         w.U8(static_cast<uint8_t>(battle.mission_));
         w.U8(battle.objective_progress_);
+        w.U8(static_cast<uint8_t>(battle.doctrine_));
+        w.U8(battle.stolen_rounds_);
         if (!w.valid || w.cursor > kBytes - 8) return false;
         uint64_t hash = Hash(bytes.data(), kBytes - 8);
         for (size_t i = kBytes - 8; i < kBytes; ++i) {
@@ -83,7 +85,7 @@ public:
         const char magic[]="OFHBEL01";
         for (int i = 0; i < 8; ++i) if (r.U8() != static_cast<uint8_t>(magic[i])) return false;
         const uint16_t schema=r.U16();
-        if ((schema!=1 && schema!=2) || r.U16()!=0) return false;
+        if ((schema!=1 && schema!=2 && schema!=3) || r.U16()!=0) return false;
         uint32_t seed=r.U32();
         const int cursor_x=r.U8(),cursor_y=r.U8(),selected=r.U8()-1;
         const uint8_t mode=r.U8(),pause=r.U8();
@@ -123,9 +125,11 @@ public:
                 if(id||side||role||x||y||hp||ammo) return false;
                 continue;
             }
-            if (id!=i || side>1 || role>2 || !Battle::Inside(x,y) ||
-                hp>(role==static_cast<uint8_t>(Class::Heavy)?13:9) ||
-                ammo>(role==static_cast<uint8_t>(Class::Heavy)?5:8)) return false;
+            if(id!=i || side>1 || role>static_cast<uint8_t>(Class::Legionary) ||
+               (schema<3 && role>static_cast<uint8_t>(Class::Heavy)) ||
+               !Battle::Inside(x,y) ||
+               hp>Battle::MaxHp(static_cast<Class>(role)) ||
+               ammo>Battle::MaxAmmo(static_cast<Class>(role))) return false;
             auto &u=battle.units_[i];
             u=Unit{id,static_cast<Side>(side),static_cast<Class>(role),
                    static_cast<int16_t>(x),static_cast<int16_t>(y),hp,ammo};
@@ -163,7 +167,7 @@ public:
         battle.last_.target=r.U8();
         battle.last_.damage=static_cast<int16_t>(r.U16());
         uint8_t pump=r.U8();battle.last_.pump=pump!=0;
-        if(schema==2){
+        if(schema>=2){
             const uint8_t mission=r.U8(), progress=r.U8();
             if(mission>static_cast<uint8_t>(Mission::DisableRelay) ||
                progress>(mission==static_cast<uint8_t>(Mission::CaptureOrchard)?3:
@@ -173,6 +177,16 @@ public:
         } else {
             battle.mission_=Mission::HoldPump;
             battle.objective_progress_=0;
+        }
+        if(schema==3) {
+            uint8_t doctrine=r.U8();uint8_t stolen=r.U8();
+            if(!ValidDoctrine(doctrine) || stolen>18-battle.ammo_stock_ ||
+               (stolen && doctrine!=static_cast<uint8_t>(Doctrine::Scrapline)))return false;
+            battle.doctrine_=static_cast<Doctrine>(doctrine);
+            battle.stolen_rounds_=stolen;
+        } else {
+            battle.doctrine_=Doctrine::Unaligned;
+            battle.stolen_rounds_=0;
         }
         if(pump>1 || battle.last_.tick>battle.ticks_ ||
            (battle.last_.tick && battle.last_.actor>=battle.count_) ||

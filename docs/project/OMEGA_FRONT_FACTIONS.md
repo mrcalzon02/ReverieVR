@@ -1,12 +1,18 @@
 # Omega Front — Seventeen Faction Design and Opening Theater Forces
 **Project:** RV-GAME-06 / Omega Front  
-**Maturity:** Original **PROPOSED DESIGN**, not approved in-world faction canon and not implemented gameplay  
+**Maturity:** Original **PROPOSED DESIGN** for seventeen factions, four partly implemented as bounded tactical doctrines; faction names and histories are not creator-approved final world canon.  
 **Canon source:** [OMEGA_FRONT_WORLD_BIBLE.md](OMEGA_FRONT_WORLD_BIBLE.md)  
 **Environment source:** [OMEGA_FRONT_ENVIRONMENTS.md](OMEGA_FRONT_ENVIRONMENTS.md)  
 **Proposed historical chronicles:** [OMEGA_FRONT_FACTION_CHRONICLES.md](OMEGA_FRONT_FACTION_CHRONICLES.md)  
 **Campaign:** [OMEGA_FRONT_GRAND_CAMPAIGN.md](OMEGA_FRONT_GRAND_CAMPAIGN.md)  
 **Mechanical charter:** [WAR_WITHOUT_END.md](WAR_WITHOUT_END.md)  
 **Creator-established count:** exactly **17 competing factions**. The labels F01–F17 here are stable *candidate design IDs*, not a declaration of their final canonical identities.
+
+## Implemented combat identity subset (2026-10-16)
+
+The game's **actual C++17 combat source** now implements deterministic tactical AI for proposed F01 Hearthward, F02 Meridian, F04 Scrapline and F06 Lost Ninth. `omega_front_tactics.h` contains the role/range/damage/armor and finite logistics rules, while `omega_front_faction_encounters.h` generates seed-replayable F01/F02/F04/F06 combat fixtures. F01 is **used by the existing first player-facing three-operation arc**; F02/F04/F06 are **not yet selectable from the player campaign's map**, even though their opponents now behave and fight in host-tested encounters. No faction's full economic simulation, diplomacy, military branching, historical arc or 70-arc deployment is claimed.
+
+F01 continues to defend its orchard capture site. F02 adds armored `Sentinel` units and sightline-limited engineer-priority fire. F04 adds `Salvager` units that physically approach and steal finite crate ammunition. F06 adds no-bullet short-range legionaries whose adjacency produces removable shield-wall mitigation. New procedural silhouettes/palette distinctions render through the existing module. `Checkpoint` schema v3 stores doctrine and stolen-round ledger, while accepting v1 and v2 records without inventing old faction choices. Tests cover each physical mechanic and identical-seed outcomes.
 
 ## 1. Principles that prevent seventeen palette swaps
 

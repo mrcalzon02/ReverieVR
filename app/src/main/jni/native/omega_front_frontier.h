@@ -156,7 +156,8 @@ public:
         const uint32_t encounter_seed=Mix(seed_,static_cast<uint32_t>(operation_+1));
         Battle battle(encounter_seed);
         battle.ClearUnits();
-        if(!battle.ConfigurePump(pump_health_) ||
+        if(!battle.ConfigureDoctrine(operation_==0?Doctrine::Unaligned:Doctrine::Hearthward) ||
+           !battle.ConfigurePump(pump_health_) ||
            !battle.ConfigureMission(static_cast<Mission>(operation_)))return false;
         if(operation_==1) {
             battle.SetGround(7,10,Ground::Rubble);

@@ -41,7 +41,7 @@ Deploy requires the real target sector, four guards, rations and serviceable wat
 
 The module's current host-owned game save is **`frontier.v1`**, a versioned, 2,048-byte record from `omega_front_campaign_save.h`. It combines all 16 sectors and campaign flags with the existing nested deterministic tactical checkpoint, including battle orders, units and a partial turn. Endian-safe encoding, a hash trailer, semantic field checks and transactional restoration reject corrupt and incompatible records without modifying the live session. Field actions/commands and pause/end changes save; combat additionally autosaves every 16 logical 250-ms pulses, and native Pause writes a checkpoint. The former standalone `hearthwell.v1` combat-fixture slot is **not** silently treated as a fully fledged strategic campaign. Neither eye writes saves or runs the simulation.
 
-The host runner now executes seven strict C++17 suites: tactics, controls, original combat checkpoint, frontier, strategic session, strategic campaign checkpoint, and mission objectives/migration. GCC and Clang passed locally; Clang ASan/UBSan passed the two new suites. A local mock GLES2/ABI lifecycle also verified map travel, battle deployment, update/render separation, module save/destroy/recreate and graphics-context restart. **No Android NDK compiler, APK, Galaxy S9 headset or physical Daydream validation was available for these checks.** The projected 600 sectors and 70 major campaign arcs remain future work.
+The host runner now executes eight strict C++17 suites: tactics, controls, original combat checkpoint, frontier, strategic session, strategic campaign checkpoint, authored mission objectives, and faction doctrine/specialist/migration regressions. GCC and Clang passed locally; Clang ASan/UBSan passed the two new suites. A local mock GLES2/ABI lifecycle also verified map travel, battle deployment, update/render separation, module save/destroy/recreate and graphics-context restart. **No Android NDK compiler, APK, Galaxy S9 headset or physical Daydream validation was available for these checks.** The projected 600 sectors and 70 major campaign arcs remain future work.
 
 ## Three distinct tactical win conditions — implemented and regression-tested
 
@@ -55,6 +55,19 @@ The gameplay owns a typed `Mission` and serialized objective progress; all three
 
 New `omega_front_objectives_test.cpp` confirms genuinely distinct wins, contested suppression, correct component consumption, defeating enemies without automatic objective victory, seeded save/resume, v1 compatibility, and corrupt/resealed cross-mission rejection. The same one-command runner now executes **seven** host regression suites; the module's original mock GLES2 lifecycle still passes. These remain **host-static acceptance**, not Android APK or Galaxy S9 hardware verification.
 
+## Limited faction doctrines and specialist units (source-implemented)
+
+Four proposed faction identities now have **actual, deterministic combat behaviors**, rather than mere color swaps:
+
+- **F01 Hearthward Watch:** existing first-arc orchard garrisons hold the contested orchard rather than rushing the distant pump. The three first-arc tactical missions are source-connected to this behavior; newly created M02/M03 encounters are now marked `Hearthward` in simulation state.
+- **F02 Meridian Security:** `Sentinel` specialist (12 HP, 6 finite rounds, seven-tile range and two armor). Security fire prioritizes *visible, in-range* engineers over closer riflemen, but line-of-sight walls still prevent cheating. This doctrine can be built and stepped in a deterministic combat fixture; **no Meridian campaign arc is yet accessible in the VR strategic map**.
+- **F04 Scrapline Crew:** `Salvager` specialist (8 HP, starts with two of six possible rounds) moves to the actual ammunition crate and can steal one existing round per logical pulse while in reach. `ammo_stock` decreases, carried rounds increase, and a bounded stolen-round ledger is persisted. Scrapline cannot summon equipment from a timer or steal without reaching the depot. **Its campaign encounters remain headless previews**.
+- **F06 Lost Ninth Cohort:** `Legionary` specialist (14 HP, armor, one-tile melee and zero firearm rounds) closes on *visible* defenders and receives two additional defense against incoming damage while adjacent to another living legionary. Shield-wall benefits disappear as formations break. Legionaries can attack without fake bullet expenditure; friendly legionary melee orders are valid but their ammunition resupply is not. **The Lost Ninth remains a preview fixture rather than an available campaign arc**.
+
+`omega_front_faction_encounters.h` builds four distinct, reproducible tactical encounter fixtures from the same combat kernel. The active Development-only GLES2 module renders separate original procedural silhouettes for salvagers (recovery pack), Sentinels (helmet/visor) and legionaries (shield/sword), faction palette and real saved doctrine label. **Only the Hearthward doctrine is currently used in the three player-facing Hearthfall missions.** Rendering an unfamiliar faction in the generic battle table does not unlock its campaign.
+
+The original 1,152-byte tactical checkpoint writes **schema v3**, adding doctrine and the finite stolen-round count without storing C++ struct padding or increasing the slot. Version 1 pump-only and version 2 three-mission saves still decode with their original unaligned AI, and a version-3 battle validates role HP/ammo, legal doctrine IDs, stolen-stock conservation and original win-state constraints transactionally. The enclosing `frontier.v1` strategic snapshot retains its size and independently checks its nested tactical record. Unit HP bars now scale to each role's actual maximum HP. This slice passes eight GCC/Clang strict C++17 regression suites plus the faction ASan/UBSan run and the mock GLES2 module render/save/restart test; **Android NDK linking and Galaxy S9/Daydream device tests remain pending**.
+
 ## Reproduce host checks
 
 From the repository root:
@@ -63,7 +76,7 @@ From the repository root:
 bash scripts/verify-omega-front-tactics.sh
 ```
 
-The runner builds and runs all seven independent gameplay/strategy/save suites under GCC or Clang (set `CXX=clang++`) with strict C++17 warnings. It does **not** access GitHub Actions. Additional optional sanitizers were run locally during implementation:
+The runner builds and runs all eight independent gameplay/strategy/save suites under GCC or Clang (set `CXX=clang++`) with strict C++17 warnings. It does **not** access GitHub Actions. Additional optional sanitizers were run locally during implementation:
 
 ```sh
 g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
@@ -86,7 +99,7 @@ The initial fixed sides are `Hearthwell` and `Raiders`, and the default scenario
 
 1. Prove that the registered `omega-front` native shared library links and packages in both Android ABIs, then confirm Daydream touchpad navigation, shell Home/recovery, readable board and stereo GL state on a physical S9.
 2. Adapt command UI and tile cursor to seated 3DoF head tracking, with readable closest-range board placement and reliable pause/route inspection.
-3. Extend the existing three authentic mission objectives into faction-wide tactics and full multi-operation books while scaling the sixteen-sector campaign toward 600 sectors, with intelligence/fog, civilians, depots, diplomacy, and several evolving morphology events.
+3. Connect the implemented Meridian, Scrapline and Lost Ninth doctrine previews to authored consequential operations, then expand the first-arc 16-sector campaign toward 600 sectors with reconnaissance/fog, civilian systems, connected depots, diplomacy and additional morphology events.
 4. Run actual APK/NDK integration and signed build verification separately. Test on Galaxy S9/Daydream in short and sustained sessions before claiming device admission.
 
 **Acceptance boundary:** the 16-sector campaign, linked first three tactical operations and full-frontier save are source/host-tested; Android NDK/APK, physical headset/controls, the remaining 584 sectors and 69 campaign arcs are incomplete or unverified.

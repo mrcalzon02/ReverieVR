@@ -16,7 +16,13 @@ constexpr int kOrdersPerUnit = 4;
 
 enum class Ground : uint8_t { Plain, Road, Rubble, Wall, DeepWater };
 enum class Side : uint8_t { Hearthwell, Raiders };
-enum class Class : uint8_t { Rifle, Engineer, Heavy };
+// Roles grow without reinterpreting the three original unit IDs.
+enum class Class : uint8_t { Rifle, Engineer, Heavy, Salvager, Sentinel, Legionary };
+// 0 remains the original unaligned raider behaviour. Numeric IDs follow the
+// sixteen-sector campaign faction table; these are not extra factions.
+enum class Doctrine : uint8_t { Unaligned=0, Hearthward=1, Meridian=2, Scrapline=4, LostNinth=6 };
+inline bool ValidDoctrine(uint8_t v) { return v==0 || v==1 || v==2 || v==4 || v==6; }
+
 enum class OrderType : uint8_t { None, Move, Attack, RepairPump, Resupply };
 enum class Result : uint8_t { Active, Defended, Overrun };
 // All three first-arc operations have distinct, real win conditions.
@@ -85,23 +91,43 @@ public:
         ammo_stock_ = 18;
         mission_ = Mission::HoldPump;
         objective_progress_ = 0;
+        doctrine_ = Doctrine::Unaligned;
+        stolen_rounds_ = 0;
     }
     int AddUnit(Side s, Class role, int x, int y) {
         if (result_ != Result::Active || ticks_ != 0 || count_ >= kUnitLimit || !Walkable(x,y) ||
             Occupant(x,y) >= 0 || (x == pump_x_ && y == pump_y_) ||
-            static_cast<unsigned>(role) > static_cast<unsigned>(Class::Heavy) ||
+            static_cast<unsigned>(role) > static_cast<unsigned>(Class::Legionary) ||
             static_cast<unsigned>(s) > static_cast<unsigned>(Side::Raiders)) return -1;
         int id = count_++;
         units_[id] = Unit{static_cast<uint8_t>(id), s, role,
                           static_cast<int16_t>(x), static_cast<int16_t>(y),
-                          static_cast<int16_t>(role == Class::Heavy ? 13 : 9),
-                          static_cast<int16_t>(role == Class::Heavy ? 5 : 8)};
+                          static_cast<int16_t>(MaxHp(role)),
+                          static_cast<int16_t>(InitialAmmo(role))};
         return id;
     }
     const Unit *unit(int id) const { return Valid(id) ? &units_[id] : nullptr; }
     int unit_count() const { return count_; }
     uint32_t ticks() const { return ticks_; }
     int pump_hp() const { return pump_hp_; }
+    static int MaxHp(Class role) {
+        switch(role){case Class::Heavy:return 13;case Class::Salvager:return 8;
+          case Class::Sentinel:return 12;case Class::Legionary:return 14;
+          default:return 9;}
+    }
+    static int MaxAmmo(Class role) {
+        switch(role){case Class::Heavy:return 5;case Class::Salvager:return 6;
+          case Class::Sentinel:return 6;case Class::Legionary:return 0;
+          default:return 8;}
+    }
+    static int InitialAmmo(Class role) {return role==Class::Salvager?2:MaxAmmo(role);}
+    Doctrine doctrine() const {return doctrine_;}
+    int stolen_rounds() const {return stolen_rounds_;}
+    bool ConfigureDoctrine(Doctrine doctrine){
+        if(ticks_!=0 || result_!=Result::Active ||
+           !ValidDoctrine(static_cast<uint8_t>(doctrine)))return false;
+        doctrine_=doctrine;stolen_rounds_=0;return true;
+    }
     Mission mission() const { return mission_; }
     int objective_progress() const { return objective_progress_; }
     int objective_goal() const { return mission_==Mission::CaptureOrchard?3:
@@ -147,7 +173,8 @@ public:
             Enqueue(id, Order{OrderType::RepairPump, 0, 0});
     }
     bool QueueResupply(int id) {
-        return PlayerCanOrder(id) && Enqueue(id, Order{OrderType::Resupply, 0, 0});
+        return PlayerCanOrder(id) && units_[id].role!=Class::Legionary &&
+            Enqueue(id, Order{OrderType::Resupply, 0, 0});
     }
     bool CancelOrders(int id) {
         if (!PlayerCanOrder(id)) return false;
@@ -222,6 +249,7 @@ public:
         add(rng_); add(ticks_); add(static_cast<unsigned>(result_));
         add(pump_hp_); add(components_); add(ammo_stock_); add(count_);
         add(static_cast<unsigned>(mission_)); add(objective_progress_);
+        add(static_cast<unsigned>(doctrine_)); add(stolen_rounds_);
         for (Ground g : cells_) add(static_cast<unsigned>(g));
         for (int id = 0; id < count_; ++id) {
             const Unit &u = units_[id];
@@ -257,6 +285,8 @@ private:
     int ammo_stock_ = 18;
     Mission mission_ = Mission::HoldPump;
     uint8_t objective_progress_ = 0;
+    Doctrine doctrine_ = Doctrine::Unaligned;
+    uint8_t stolen_rounds_ = 0;
     static constexpr int pump_x_ = 2, pump_y_ = 12;
     static constexpr int crate_x_ = 5, crate_y_ = 12;
 
@@ -289,10 +319,35 @@ private:
     }
     uint32_t Random() { rng_ = rng_ * 1664525u + 1013904223u; return rng_; }
     static int Distance(int x, int y, int tx, int ty) { return abs(x-tx) + abs(y-ty); }
-    static int Range(Class role) { return role == Class::Heavy ? 5 : role == Class::Rifle ? 6 : 3; }
-    static int BaseDamage(Class role) { return role == Class::Heavy ? 6 : role == Class::Rifle ? 4 : 2; }
-    static int Armor(Class role) { return role == Class::Heavy ? 2 : 0; }
-    static int AmmoCap(Class role) { return role == Class::Heavy ? 5 : 8; }
+    static int Range(Class role) {
+        if(role==Class::Sentinel)return 7;
+        if(role==Class::Legionary)return 1;
+        if(role==Class::Heavy)return 5;
+        if(role==Class::Rifle)return 6;
+        return 3;
+    }
+    static int BaseDamage(Class role) {
+        if(role==Class::Heavy)return 6;
+        if(role==Class::Legionary)return 5;
+        if(role==Class::Sentinel || role==Class::Rifle)return 4;
+        if(role==Class::Salvager)return 3;
+        return 2;
+    }
+    static int Armor(Class role) {
+        return role==Class::Legionary || role==Class::Sentinel || role==Class::Heavy?2:0;
+    }
+    static int AmmoCap(Class role){return MaxAmmo(role);}
+    int FormationArmor(int target) const {
+        const Unit &u=units_[target];
+        if(u.role!=Class::Legionary)return 0;
+        for(int j=0;j<count_;++j){
+            if(j==target)continue;
+            const Unit &other=units_[j];
+            if(other.alive() && other.side==u.side && other.role==Class::Legionary &&
+               Distance(u.x,u.y,other.x,other.y)==1)return 2;
+        }
+        return 0;
+    }
 
     // Bresenham test: terrain blocks both player and AI fire identically.
     bool Visible(int x0, int y0, int x1, int y1) const {
@@ -310,16 +365,17 @@ private:
     }
     bool CanShoot(int shooter, int target) const {
         const Unit &a = units_[shooter], &b = units_[target];
-        return a.alive() && b.alive() && a.ammo > 0 &&
+        return a.alive() && b.alive() && (a.role==Class::Legionary || a.ammo>0) &&
                Distance(a.x,a.y,b.x,b.y) <= Range(a.role) &&
                Visible(a.x,a.y,b.x,b.y);
     }
     bool Shoot(int shooter, int target) {
         if (!CanShoot(shooter,target)) return false;
         Unit &a = units_[shooter], &b = units_[target];
-        --a.ammo;
+        if(a.role!=Class::Legionary)--a.ammo; // Melee does not invent bullets.
         int cover = ground(b.x,b.y) == Ground::Rubble ? 2 : 0;
-        int damage = BaseDamage(a.role) + static_cast<int>(Random()%3u) - Armor(b.role) - cover;
+        int damage = BaseDamage(a.role) + static_cast<int>(Random()%3u) -
+                     Armor(b.role) - cover - FormationArmor(target);
         if (damage < 0) damage = 0;
         b.hp = static_cast<int16_t>(b.hp > damage ? b.hp - damage : 0);
         last_ = Event{ticks_,a.id,b.id,static_cast<int16_t>(damage),false};
@@ -327,10 +383,10 @@ private:
     }
     bool ShootPump(int id) {
         Unit &u = units_[id];
-        if (!u.alive() || u.ammo == 0 ||
+        if (!u.alive() || (u.role!=Class::Legionary && u.ammo==0) ||
             Distance(u.x,u.y,pump_x_,pump_y_) > Range(u.role) ||
             !Visible(u.x,u.y,pump_x_,pump_y_)) return false;
-        --u.ammo;
+        if(u.role!=Class::Legionary)--u.ammo;
         int damage = BaseDamage(u.role) + static_cast<int>(Random()%3u);
         pump_hp_ = pump_hp_ > damage ? pump_hp_ - damage : 0;
         last_ = Event{ticks_,u.id,255,static_cast<int16_t>(damage),true};
@@ -403,7 +459,7 @@ private:
             if ((u.x == o.a && u.y == o.b) || !StepToward(id,o.a,o.b,true)) Pop(id);
             else if (u.x == o.a && u.y == o.b) Pop(id);
         } else if (o.type == OrderType::Attack) {
-            if (!Valid(o.a) || !units_[o.a].alive() || !u.ammo) Pop(id);
+            if (!Valid(o.a) || !units_[o.a].alive() || (!u.ammo && u.role!=Class::Legionary)) Pop(id);
             else if (!CanShoot(id,o.a)) {
                 // Attack orders pursue only *currently observed* enemy locations.
                 // No invisible automatic tracking through hard cover.
@@ -412,7 +468,7 @@ private:
                 else if (!StepToward(id,units_[o.a].x,units_[o.a].y,false)) Pop(id);
             } else {
                 Shoot(id,o.a);
-                if (!units_[o.a].alive() || !u.ammo) Pop(id);
+                if (!units_[o.a].alive() || (!u.ammo && u.role!=Class::Legionary)) Pop(id);
             }
         } else if (o.type == OrderType::RepairPump) {
             if (!components_ || pump_hp_ == 18) Pop(id);
@@ -432,14 +488,45 @@ private:
     }
     void ExecuteEnemy(int id) {
         Unit &u = units_[id];
-        if (!u.ammo) return; // No supernatural resupply.
+        // A Scrapline salvager physically steals one existing depot round at
+        // a time. The ledger shrinks and the unit's carried ammo increases;
+        // no remote or infinite replenishment is permitted.
+        if(doctrine_==Doctrine::Scrapline && u.role==Class::Salvager &&
+           ammo_stock_>0 && u.ammo<AmmoCap(u.role) &&
+           Distance(u.x,u.y,crate_x_,crate_y_)<=1) {
+            --ammo_stock_;++u.ammo;++stolen_rounds_;return;
+        }
         int choice = -1, priority = 999;
         for (int j=0; j<count_; ++j) {
             if (units_[j].side != Side::Hearthwell || !CanShoot(id,j)) continue;
             int distance = Distance(u.x,u.y,units_[j].x,units_[j].y);
-            if (distance < priority) { priority = distance; choice = j; }
+            // Meridian security prioritizes exposed engineers, but cannot
+            // target anybody outside personal line of sight and range.
+            int score=distance;
+            if(doctrine_==Doctrine::Meridian && units_[j].role==Class::Engineer)score-=20;
+            if(score<priority){priority=score;choice=j;}
         }
         if (choice >= 0) { Shoot(id,choice); return; }
+        if(doctrine_==Doctrine::Scrapline && u.role==Class::Salvager &&
+           ammo_stock_>0 && u.ammo<AmmoCap(u.role)) {
+            StepToward(id,crate_x_,crate_y_,false);return;
+        }
+        // Roman infantry is strictly melee, can strike without fabricated
+        // ammunition, and pursues only defenders actually seen nearby.
+        if(doctrine_==Doctrine::LostNinth && u.role==Class::Legionary) {
+            int seen=-1,nearest=999;
+            for(int j=0;j<count_;++j){
+                const Unit &v=units_[j];
+                const int distance=Distance(u.x,u.y,v.x,v.y);
+                if(v.side==Side::Hearthwell && v.alive() && distance<=8 &&
+                   distance<nearest && Visible(u.x,u.y,v.x,v.y)){
+                    nearest=distance;seen=j;
+                }
+            }
+            if(seen>=0){StepToward(id,units_[seen].x,units_[seen].y,false);return;}
+        }
+        if(!u.ammo && u.role!=Class::Legionary)return;
+
         if(mission_==Mission::CaptureOrchard){
             // Hearthward watch defends its orchard; it does not arbitrarily
             // charge the remote waterworks from a different map.

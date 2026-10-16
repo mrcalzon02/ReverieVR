@@ -76,7 +76,7 @@ int main(){
     saving.battle.Step();
     Checkpoint::Bytes slot{};
     assert(Checkpoint::Encode(saving,&slot));
-    assert(slot[8]==2 && slot[9]==0); // v2 schema
+    assert(slot[8]==3 && slot[9]==0); // v3 schema includes doctrine
     Controller loaded(23);
     assert(Checkpoint::Decode(&loaded,slot.data(),slot.size()));
     assert(loaded.battle.mission()==Mission::DisableRelay);
@@ -101,7 +101,7 @@ int main(){
     assert(f.Travel(10));assert(f.StartOperation());
     assert(f.current_battle()->mission()==Mission::HoldPump);
     assert(f.current_battle()->objective_goal()==0);
-    // All existing campaign saves remain 2048 bytes with a nested v2 combat
+    // All existing campaign saves remain 2048 bytes with a nested v3 combat
     // payload; no silent strategic-progress edits or duplicate reward.
     Session session(414);
     CampaignSave::Bytes save{};
@@ -109,7 +109,7 @@ int main(){
     Session restored(1);
     assert(CampaignSave::Decode(&restored,save.data(),save.size()));
     assert(restored.Checksum()==session.Checksum());
-    // A separately resealed v2 nested objective must not impersonate a
+    // A separately resealed v3 nested objective must not impersonate a
     // different strategic operation, even under a valid outer checksum.
     Session stage(414);
     assert(stage.frontier.Travel(10));
@@ -125,7 +125,7 @@ int main(){
     assert(nested>0 && nested+Checkpoint::kBytes<=save.size());
     Checkpoint::Bytes battleBytes{};
     std::memcpy(battleBytes.data(),save.data()+nested,battleBytes.size());
-    assert(battleBytes[8]==2 && battleBytes[1075]==0);
+    assert(battleBytes[8]==3 && battleBytes[1075]==0);
     battleBytes[1075]=1;Reseal(battleBytes);
     std::memcpy(save.data()+nested,battleBytes.data(),battleBytes.size());
     uint64_t outer=UINT64_C(14695981039346656037);
