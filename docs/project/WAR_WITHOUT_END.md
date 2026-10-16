@@ -36,6 +36,8 @@ The late-twentieth-century **Ouroboros Corporation** technomantic breakthrough c
 
 World-map sector data must retain environmental class, habitability, population, control, supply, faction origin-era tags and optional anomaly effects. Region classes and 17-faction motives alter actual battlefield economy and AI objectives, not merely the appearance of units. The precise geography of the physically divided planet and the nature of the original disaster remain intentionally unresolved.
 
+**Detailed game-design candidates:** [OMEGA_FRONT_FACTIONS.md](OMEGA_FRONT_FACTIONS.md) defines seventeen provisional asymmetric faction dossiers and the opening five-party frontier; [OMEGA_FRONT_ENVIRONMENTS.md](OMEGA_FRONT_ENVIRONMENTS.md) defines twelve proposed theaters, a named sixteen-sector introductory region, environmental hazards and logistical preservation. These are actionable design targets, **not approved new canon or implemented content**.
+
 Design targets, **not claims of produced content**:
 - **100 character levels** per commander, troop and several independent mastery tracks.
 - **12 war theaters × 50 strategic sectors = 600 unique sector nodes** with territory ownership, adjacency, fixed seed and persistent scars.
@@ -167,7 +169,7 @@ Four AI layers, each deterministic and budgeted:
 
 Difficulty emerges through combined arms, reserves, commander replacement, supporting fire, position, resources, doctrine and reinforcements. Increasing numerical stats without more varied decisions does not qualify as a new difficulty tier. The AI cannot run an unbounded search on the render thread.
 
-**Campaign faction contract:** exactly **17 competing factions** in the canonical Omega Front setting, spanning resource-consuming autonomous swarms, desperate temporally displaced refugees, recognizable historic armies, far-future powers and post-Rupture organizations. Their actual names, alliances and canon biographies remain unspecified. The [world bible](OMEGA_FRONT_WORLD_BIBLE.md) contains a **provisional 17-slot coverage worksheet**; its archetypes must never be misrepresented as approved lore. Strategic AI must support diplomacy/refugees as well as hostile swarms and faction-specific resource needs, without collapsing the final 17 into six recolored armies.
+**Campaign faction contract:** exactly **17 competing factions** in the canonical Omega Front setting, spanning resource-consuming autonomous swarms, desperate temporally displaced refugees, recognizable historic armies, far-future powers and post-Rupture organizations. Their actual creator-approved names, alliances and canon biographies remain unspecified. [OMEGA_FRONT_FACTIONS.md](OMEGA_FRONT_FACTIONS.md) now contains a complete **provisional seventeen-faction candidate roster**; its identities and biographies are proposals, never established lore. The [world bible](OMEGA_FRONT_WORLD_BIBLE.md) preserves only the seventeen-count canon and points to these dossiers. Strategic AI must support diplomacy/refugees as well as hostile swarms and faction-specific resource needs, without collapsing the final 17 into six recolored armies.
 
 ## 8. Art, audio, VR interaction, accessibility
 
