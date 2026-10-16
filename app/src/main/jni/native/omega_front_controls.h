@@ -118,6 +118,7 @@ public:
         return false;
     }
 private:
+    friend class Checkpoint;
     uint32_t seed_;
     float clock_=0,repeat_=0;
     int axis_x_=0,axis_y_=0,last_pointer_x_=-1,last_pointer_y_=-1;

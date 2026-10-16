@@ -1,4 +1,4 @@
-#include "omega_front_controls.h"
+#include "omega_front_checkpoint.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -24,7 +24,10 @@ struct State {
     game::Controller control{104u};
     GLuint program=0,vbo=0;
     GLint pos=-1,color=-1,mvp=-1;
-    bool upload=true;
+    bool upload=true,save_failed=false,load_failed=false;
+    uint32_t saved_tick=0,saved_orders=0;
+    bool saved_pause=false;
+    game::Result saved_result=game::Result::Active;
     std::vector<float> mesh;
 };
 void Rect(State *s,float x,float y,float w,float h,float z,float r,float g,float b){
@@ -161,13 +164,54 @@ void Draw(State *s){
                        mode_names[static_cast<int>(s->control.mode)]);
     Text(s,action,-1.061f,.012f,s->control.rejected?1.f:.91f,
          s->control.rejected?.37f:.86f,.55f);
+    if(s->save_failed || s->load_failed)
+        Text(s,s->save_failed?"SAVE FAILED":"SAVE CORRUPT", -1.16f,.011f,1.f,.43f,.40f);
     s->upload=true;
+}
+constexpr char kSaveSlot[]="hearthwell.v1";
+bool SaveState(State *s){
+    if(!s || !ReverieNativeHostSupportsSaveV1(s->host))return false;
+    game::Checkpoint::Bytes bytes{};
+    if(!game::Checkpoint::Encode(s->control,&bytes))return false;
+    const bool ok=s->host->write_save(kSaveSlot,bytes.data(),
+        static_cast<uint32_t>(bytes.size()))==REVERIE_NATIVE_SAVE_OK;
+    if(!ok && !s->save_failed)
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_ERROR,kId,
+                           "Hearthwell checkpoint write failed; playing in memory");
+    s->save_failed=!ok;
+    if(ok){
+        s->load_failed=false;
+        s->saved_tick=s->control.battle.ticks();
+        s->saved_orders=s->control.issued;
+        s->saved_pause=s->control.paused;
+        s->saved_result=s->control.battle.result();
+    }
+    return ok;
+}
+void LoadState(State *s){
+    if(!s || !ReverieNativeHostSupportsSaveV1(s->host))return;
+    game::Checkpoint::Bytes bytes{};
+    uint32_t size=0;
+    const int32_t code=s->host->read_save(kSaveSlot,bytes.data(),
+        static_cast<uint32_t>(bytes.size()),&size);
+    if(code==REVERIE_NATIVE_SAVE_NOT_FOUND)return;
+    if(code!=REVERIE_NATIVE_SAVE_OK || size!=bytes.size() ||
+       !game::Checkpoint::Decode(&s->control,bytes.data(),size)){
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,kId,
+                           "Invalid or unreadable Hearthwell checkpoint; fresh skirmish kept");
+        s->load_failed=true;
+    }else{
+        s->saved_tick=s->control.battle.ticks();
+        s->saved_orders=s->control.issued;
+        s->saved_pause=s->control.paused;
+        s->saved_result=s->control.battle.result();
+    }
 }
 void *Create(const ReverieNativeHostV1 *host){
     if(!ReverieNativeHostSupportsLogV1(host))return nullptr;
     State *s=new(std::nothrow) State();
     if(!s)return nullptr;
-    s->host=host;Draw(s);
+    s->host=host;LoadState(s);Draw(s);
     ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_INFO,kId,"Hearthwell tactical development mission");
     return s;
 }
@@ -199,7 +243,15 @@ void GlEnd(void *p){
     if(s->program)glDeleteProgram(s->program);
     s->vbo=0;s->program=0;s->upload=true;
 }
-void Resume(void *){} void Pause(void *){}
+void Resume(void *){}
+void Pause(void *p){
+    State *s=static_cast<State *>(p);
+    if(s && ReverieNativeHostSupportsSaveV1(s->host)){
+        const bool previous=s->save_failed;
+        SaveState(s);
+        if(previous!=s->save_failed)Draw(s);
+    }
+}
 // UI and 250-ms simulation advance only here, never once per rendered eye.
 void Update(void *p,const ReverieNativeInputV1 *in){
     State *s=static_cast<State *>(p);
@@ -225,6 +277,15 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     const uint32_t old_issued=s->control.issued;
     const uint32_t old_tick=s->control.battle.ticks();
     if(s->control.Input(action)){
+        // Save materially changed commands immediately; throttle ordinary
+        // combat autosaves to 16 pulses (4s). Neither eye writes a slot.
+        const uint32_t tick=s->control.battle.ticks();
+        if(ReverieNativeHostSupportsSaveV1(s->host) &&
+           (s->control.issued!=s->saved_orders ||
+            s->control.paused!=s->saved_pause ||
+            s->control.battle.result()!=s->saved_result ||
+            (tick>=s->saved_tick && tick-s->saved_tick>=16u)))
+            SaveState(s);
         Draw(s);
         if(s->control.issued!=old_issued)
             ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);

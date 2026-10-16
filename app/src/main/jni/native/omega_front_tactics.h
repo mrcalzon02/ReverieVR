@@ -183,6 +183,7 @@ public:
     }
 
 private:
+    friend class Checkpoint;
     struct Queue { std::array<Order,kOrdersPerUnit> entries{}; int size = 0; };
     std::array<Ground,kCells> cells_{};
     std::array<Unit,kUnitLimit> units_{};
