@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdint>
 namespace reverie { namespace gumball {
-enum class CastGuest : uint8_t { None, PipParfait, LollyWren, BlortBlister, NibNoxious, CrumbclankTwins };
+enum class CastGuest : uint8_t { None, PipParfait, LollyWren, BlortBlister, NibNoxious, CrumbclankTwins, LadyLimewire, MarshalMuck };
 inline uint32_t CastHash(uint32_t value){
     value^=value>>16;value*=0x7feb352du;
     value^=value>>15;value*=0x846ca68bu;
@@ -13,7 +13,7 @@ inline uint32_t CastHash(uint32_t value){
 inline CastGuest ChooseCastGuest(uint32_t seed,uint32_t destination,
                                  uint32_t completed,uint32_t risk){
     if(completed==0u)return CastGuest::None;
-    const uint32_t choice=CastHash(seed^destination^(completed*0x9e3779b9u)^(risk<<16))%6u;
+    const uint32_t choice=CastHash(seed^destination^(completed*0x9e3779b9u)^(risk<<16))%8u;
     return static_cast<CastGuest>(choice);
 }
 inline const char* CastGuestName(CastGuest id){
@@ -23,6 +23,8 @@ inline const char* CastGuestName(CastGuest id){
     case CastGuest::BlortBlister:return "BLORT BLISTER";
     case CastGuest::NibNoxious:return "NIB NOXIOUS";
     case CastGuest::CrumbclankTwins:return "BIFF & BAFF";
+    case CastGuest::LadyLimewire:return "LADY LIMEWIRE";
+    case CastGuest::MarshalMuck:return "MARSHAL MUCK";
     default:return "";
     }
 }
