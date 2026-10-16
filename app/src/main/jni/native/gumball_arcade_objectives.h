@@ -60,6 +60,24 @@ public:
         }
         return award;
     }
+    // Select exactly one real existing pickup, so ally tractor calls cannot
+    // mint cash or duplicate a pickup already collected by the player.
+    uint32_t tractor(float x,float y,float reach){
+        if(!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(reach)||reach<=0.f)
+            return 0u;
+        const float maxDistance=std::min(reach,1.6f);
+        float best=maxDistance*maxDistance;
+        unsigned chosen=kCapacity;
+        for(unsigned i=0;i<kCapacity;++i)if(items_[i].active){
+            const float dx=items_[i].x-x,dy=items_[i].y-y;
+            const float d=dx*dx+dy*dy;
+            if(d<=best){best=d;chosen=i;}
+        }
+        if(chosen==kCapacity)return 0u;
+        const uint32_t reward=items_[chosen].cash;
+        items_[chosen].active=false;++collected_;
+        return reward;
+    }
     bool empty()const {
         for(const auto& p:items_)if(p.active)return false;
         return true;
