@@ -24,6 +24,34 @@ The geometry test directory used a tiny local weapon-enumeration shim reflecting
 
 **Not verified:** full `breakwater_module.cpp` compilation against GLES2/NDK and real shader state, `scripts/verify-native-doc-sync.py` from a complete worktree, full campaign tests, packaged Android APK, live Daydream stereo/menu legibility, hand-controller ray alignment, performance/thermal headroom, GL context recovery, or physical installation/launch. Consequently this remains **source-implemented, isolated tests passed; device-unaccepted**. No GitHub Actions introduced or monitored, no APK fabricated, no save format/ABI changed.
 
+## Follow-on source implementation, same date
+
+The shop card formatter `breakwater_shop_feedback.h` and `ShopDisplayPrice`
+show actual contextual purchase descriptions and status (BUY, NEED, MAXED,
+EQUIP, ACTIVE), plus ARMORY/UPGRADES/START messages. The hovered card remains
+the same authoritative controller-ray target; `FittedScale` constrains the
+line in the narrow gap above the existing two-row catalog. Dim red treatment
+makes insufficient credits obvious without disabling the inspectable tile.
+No extra overlays/cards/tabs were introduced.
+
+`breakwater_gun_mesh.h` now supports optional confirmed-shot recoil and a
+faceted volumetric muzzle flash at the moving barrel mouth. Firing duration
+is the previously existing 90 ms `State::flash` updated once in the
+native Update. This has no effect on Campaign damage, aiming bounds,
+reloading, collision, save schema, shell focus, or other classic/native apps.
+The slide's max displacement is 0.12 world units and the fixed wheels/shield
+remain at their pre-shot positions.
+
+The exact remote files were locally validated in
+`/mnt/data/breakwater-native-check`, with `git hash-object` parity for
+the committed generated-art/header fixtures. Strict C++17 GCC and Clang
+builds passed the menu, gun and shop standalone regressions. Clang ASan
+and UBSan builds passed the gun and shop tests as well. A corrected
+muzzle-flash z-bound assertion uses the observed exact procedural geometry
+rather than a fabricated muzzle reach; it does not weaken the production
+model. This is isolated geometry and text validation, **not** integrated
+GLES2/NDK or headset evidence.
+
 ## Next acceptance run
 
 From a real checked-out full repository, run `bash scripts/verify-breakwater-visuals.sh`, the existing native Breakwater campaign regressions and `python3 scripts/verify-native-doc-sync.py --base HEAD^` with a relevant co-change range. Build the Android NDK module and APK locally; visually inspect the four difficulty choices, two purchase pages, credits, and all five weapon shapes inside both eyes on Galaxy S9. Validate highlight and tap alignment, missing-card rejection, first-wave START, Quick Menu focus release, gun traverse, artillery/projectiles and sustained frame pacing. Do not promote hardware acceptance until these are observed.
