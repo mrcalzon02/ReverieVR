@@ -6,6 +6,7 @@
 #include "procedural_material_atlas.h"
 #include "red_ledger_static_geometry.h"
 #include "red_ledger_signage.h"
+#include "red_ledger_mug_mesh.h"
 
 #include <GLES2/gl2.h>
 
@@ -25,6 +26,7 @@ using reverie::redledger::SupplierItem;
 using reverie::procedural::Material;
 namespace geo = reverie::redledger::geometry;
 namespace signs = reverie::redledger::signage;
+namespace mugs = reverie::redledger::mug;
 
 // Include the far rear doorway in seated work-ray reach.
 constexpr float kMaximumWorkReach = 4.25f;
@@ -110,6 +112,7 @@ struct ModuleState {
 
     GLuint program = 0;
     GLuint cube_vbo = 0;
+    GLuint mug_vbo = 0;
     GLuint static_vbo = 0;
     GLuint signage_vbo = 0;
     GLsizei signage_vertex_count = 0;
@@ -711,6 +714,10 @@ void DestroyGl(
         glDeleteTextures(1, &state->atlas_texture);
         state->atlas_texture = 0;
     }
+    if (state->mug_vbo != 0) {
+        glDeleteBuffers(1, &state->mug_vbo);
+        state->mug_vbo = 0;
+    }
     if (state->signage_vbo != 0) {
         glDeleteBuffers(1, &state->signage_vbo);
         state->signage_vbo = 0;
@@ -747,6 +754,7 @@ void AbandonGl(
     ModuleState *state
 ) {
     state->cube_vbo = 0;
+    state->mug_vbo = 0;
     state->static_vbo = 0;
     state->signage_vbo = 0;
     state->signage_vertex_count = 0;
@@ -860,6 +868,26 @@ int32_t InitializeGl(
         GL_STATIC_DRAW
     );
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // One reusable, hollow, twelve-sided mug rather than a cuboid vessel.
+    std::unique_ptr<float[]> mug_vertices(
+        new (std::nothrow) float[mugs::kFloatCount]);
+    if (!mug_vertices || !mugs::Build(mug_vertices.get(),mugs::kFloatCount)) {
+        Log(state, REVERIE_NATIVE_LOG_ERROR,"Mug mesh generation failed.");
+        DestroyGl(state);
+        return finish(0);
+    }
+    glGenBuffers(1, &state->mug_vbo);
+    if (state->mug_vbo == 0) {
+        Log(state, REVERIE_NATIVE_LOG_ERROR,"Mug VBO creation failed.");
+        DestroyGl(state);
+        return finish(0);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER,state->mug_vbo);
+    glBufferData(GL_ARRAY_BUFFER,mugs::kFloatCount*sizeof(float),
+        mug_vertices.get(),GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    mug_vertices.reset();
 
     // One context-lifetime world-space batch replaces 11 static draw calls.
     std::unique_ptr<float[]> room_vertices(
@@ -1031,6 +1059,39 @@ void DrawCube(
     );
 }
 
+// Switch to the immutable faceted mesh for the mug body, then restore the
+// ordinary cube VBO used for handles, taps, NPCs and all other props.
+void DrawMugBody(ModuleState *state,const float *vp,float flicker,
+                 float x,float y,float z,float sx,float sy,float sz,
+                 float r,float g,float b,Material material) {
+    float model[16],mvp[16];
+    MakeTransform(model,x,y,z,sx,sy,sz);
+    ReverieNativeMat4Multiply(mvp,vp,model);
+    glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,mvp);
+    glVertexAttrib3f(static_cast<GLuint>(state->color_attribute_location),
+                     r,g,b);
+    glUniform1f(state->flicker_location,flicker);
+    const int id=static_cast<int>(material);
+    state->active_material=id;
+    glVertexAttrib2f(static_cast<GLuint>(state->tile_origin_location),
+        0.00390625f+(id&1)*0.5f,
+        0.00390625f+(id>>1)*0.5f);
+    glBindBuffer(GL_ARRAY_BUFFER,state->mug_vbo);
+    glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+        3,GL_FLOAT,GL_FALSE,5*sizeof(float),
+        reinterpret_cast<const void *>(0));
+    glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+        2,GL_FLOAT,GL_FALSE,5*sizeof(float),
+        reinterpret_cast<const void *>(3u*sizeof(float)));
+    glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(mugs::kVertexCount));
+    glBindBuffer(GL_ARRAY_BUFFER,state->cube_vbo);
+    glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+        3,GL_FLOAT,GL_FALSE,5*sizeof(float),
+        reinterpret_cast<const void *>(0));
+    glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+        2,GL_FLOAT,GL_FALSE,5*sizeof(float),
+        reinterpret_cast<const void *>(3u*sizeof(float)));
+}
 void DrawCup(
     ModuleState *state,
     const float *view_projection,
@@ -1044,47 +1105,21 @@ void DrawCup(
     float r = filled ? 0.72f : 0.52f;
     float g = filled ? 0.43f : 0.54f;
     float b = filled ? 0.16f : 0.50f;
-
     if (highlighted) {
-        r = std::min(
-            1.0f,
-            r + 0.24f
-        );
-        g = std::min(
-            1.0f,
-            g + 0.24f
-        );
-        b = std::min(
-            1.0f,
-            b + 0.18f
-        );
+        r=std::min(1.0f,r+0.24f);
+        g=std::min(1.0f,g+0.24f);
+        b=std::min(1.0f,b+0.18f);
     }
-
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        x,
-        y,
-        z,
-        0.13f,
-        0.20f,
-        0.13f,
-        r,
-        g,
-        b,
-        Material::Metal
-    );
-    // Lip and handle make the mug readable rather than a featureless box.
+    DrawMugBody(state,view_projection,flicker,
+        x,y,z,0.15f,0.20f,0.15f,r,g,b,Material::Metal);
+    // Side grip is attached outside the round vessel and stays visible.
     DrawCube(state,view_projection,flicker,
-        x,y+0.105f,z,0.165f,0.032f,0.165f,
-        0.85f,0.82f,0.72f,Material::Metal);
-    DrawCube(state,view_projection,flicker,
-        x+0.103f,y,z,0.050f,0.115f,0.055f,
+        x+0.096f,y,z,0.042f,0.115f,0.052f,
         0.78f,0.76f,0.66f,Material::Metal);
     if (filled) {
-        DrawCube(state,view_projection,flicker,
-            x,y+0.124f,z,0.125f,0.010f,0.125f,
+        // A small dark/gold insert reads as liquid through the open rim.
+        DrawMugBody(state,view_projection,flicker,
+            x,y+0.100f,z,0.118f,0.010f,0.118f,
             0.68f,0.39f,0.10f,Material::Wood);
     }
 }
@@ -1612,6 +1647,7 @@ void Destroy(
 
     if (state->program != 0
         || state->cube_vbo != 0
+        || state->mug_vbo != 0
         || state->static_vbo != 0
         || state->signage_vbo != 0
         || state->atlas_texture != 0) {
@@ -1780,6 +1816,7 @@ int32_t RenderEye(
         )
         || state->program == 0
         || state->cube_vbo == 0
+        || state->mug_vbo == 0
         || state->static_vbo == 0
         || state->signage_vbo == 0
         || state->atlas_texture == 0) {
