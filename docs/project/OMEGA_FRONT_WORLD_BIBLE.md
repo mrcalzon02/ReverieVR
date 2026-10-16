@@ -13,13 +13,15 @@ From these spatial and temporal rifts came innumerable beings and societies, som
 
 Some parts of the surviving world remain livable, even idyllic, for humans who are **unprotected, unshielded and unaugmented**. These territories are called **Eden Zones**. They are the stakes of the principal human wars: places where people can breathe, live and raise communities, and therefore prizes that corporations and organizations will kill to control. Outside them are the **wastelands**, the **barren zones** and the **anomaly fields**.
 
+**Newly established setting premise (2026-10-15):** the commander begins in a **remote, isolated newly emerged Eden Zone**, where **shifting landscape morphology has transformed former wasteland into naturally habitable territory**. This recent change is why factions begin converging on what was previously an unimportant frontier. The cause and reliability of the morphological transformation are not yet known. See the [Hearthwell Emergence and acting-commander prologue](OMEGA_FRONT_HEARTHWELL_PROLOGUE.md).
+
 **Seventeen factions** compete over what remains. Their motives, capabilities and origins vary widely. Some autonomous swarms consume resources in their path. Some groups are only trying to secure refuge; others embody ancient worlds, futuristic war-making or unfamiliar forms of life. Rivalry for sovereignty and breathable ground drives the setting; there is no requirement that all seventeen factions be irredeemably hostile.
 
-The player's role: **establish a base, hold territory, defend the right to exist, expand into wastelands, fight in anomalies and contend with every power that covets the player's land.** Start as a vulnerable foothold. Build an army, industry, knowledge and the means to shape what remains of the broken planet.
+The player's role: **establish a base, hold territory, defend the right to exist, expand into wastelands, fight in anomalies and contend with every power that covets the player's land.** Start as the commander of a **small contingent** at the newly emergent frontier Eden, not as the sovereign of an established nation. Build an army, industry, knowledge and the means to shape what remains of the broken planet.
 
 ### Canon locks and unresolved truths
 
-**Locked:** Ouroboros Corporation; late-20th-century technomantic breakthrough; simultaneous planetary bisection and reality breaches; portals carrying past, future and monstrosities; Eden Zones specifically habitable by unprotected baseline humans; the three additional geographic terms; exactly seventeen competing factions; autonomous consuming swarms and dislocated refugees among them; and base-building territorial survival warfare.
+**Locked:** Ouroboros Corporation; late-20th-century technomantic breakthrough; simultaneous planetary bisection and reality breaches; portals carrying past, future and monstrosities; Eden Zones specifically habitable by unprotected baseline humans; the three additional geographic terms; exactly seventeen competing factions; autonomous consuming swarms and dislocated refugees among them; base-building territorial survival warfare; the remote starting contingent; and a **new Eden Zone formed by shifting morphology out of formerly hostile wasteland**, which draws faction interest.
 
 **Not yet specified:** what Ouroboros intended or actually did; physical cause of the split; how the bisected planet remains habitable; whether its halves can be seen from one another; what happened to Ouroboros; Earth versus another world-name; geographic/topological layout; present campaign date; exact faction names/affiliations; details of portal mechanics; whether portals link one or many timelines; player faction identity; and whether the ten prestige cycles result from the same mechanism as the Rupture.
 
@@ -83,6 +85,8 @@ This cross-reference intentionally removes conflicting *earlier* placeholder ass
 
 ## 6. Campaign beginning and world pressure (PROPOSED)
 
+The proposed early frontier narrative and command succession are specified in [OMEGA_FRONT_HEARTHWELL_PROLOGUE.md](OMEGA_FRONT_HEARTHWELL_PROLOGUE.md). The proposed 17 faction political histories are in [OMEGA_FRONT_FACTION_CHRONICLES.md](OMEGA_FRONT_FACTION_CHRONICLES.md). The **70 substantial faction campaign arcs** from level 1 to 100 are in [OMEGA_FRONT_GRAND_CAMPAIGN.md](OMEGA_FRONT_GRAND_CAMPAIGN.md); this is a main-campaign first-cycle structure, not a replacement for the ten complete world-prestige true-ending covenant.
+
 The player's faction starts at the edge of a small Eden foothold with a few defenders, water and power infrastructure, limited ammunition and salvage, and no convincing claim to immunity. Nearby factions are competing for the same local resources.
 
 **Suggested initial operations:**
@@ -92,7 +96,7 @@ The player's faction starts at the edge of a small Eden foothold with a few defe
 4. Survive a deliberate assault from a territorial organization that covets the Eden foothold. Build and defend field works.
 5. Perform the first dangerous expedition into an anomaly pocket. Discover something that eventually connects to equipment inspection and world progression.
 
-The player faction, its ethics, organizational form and commanders are *undecided*, not assumed to be Ouroboros or a heroic remnant nation.
+The creator has established the player as commander of a small contingent, but their name, upbringing and definitive origin are still open. The independent Boundary Survey Cooperative, missing Captain Ilyan Ro, 31-person team and Emergency Continuity Clause Seven are **proposed backstory**, not approved canon. The settlement is not presumed Ouroboros or a heroic remnant nation.
 
 ## 7. Progression, inspections and world prestiges in this setting (PROPOSED)
 
