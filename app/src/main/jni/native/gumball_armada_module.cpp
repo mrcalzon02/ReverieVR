@@ -390,8 +390,9 @@ void Result(Module* m){
     std::snprintf(text,sizeof(text),"SALVAGE %d  LOST %d",
                   m->sim.salvage().collected(),m->sim.salvage().expired());
     Text(m,text,0,-.70f,.035f,.76f,.93f,.77f);
-    Text(m,phase==Phase::ArmadaDefeated?"THE KING IS STILL MISSING":
-         "CLICK TO RETURN TO CHART",0,-1.f,.044f,.74f,.94f,.88f);
+    if(phase==Phase::ArmadaDefeated)
+        Text(m,"THE KING IS STILL MISSING",0,-.95f,.044f,.91f,.80f,.48f);
+    Text(m,"CLICK TO RETURN TO CHART",0,-1.17f,.038f,.74f,.94f,.88f);
 }
 void Rebuild(Module* m){
     m->mesh.clear();
