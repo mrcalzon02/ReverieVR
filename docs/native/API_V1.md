@@ -1,3 +1,7 @@
+## Gumball Armada hosted module and admission (2026-10-15)
+
+The packaged `gumball-armada` module is an original Development-only GLES2 native game: compile-time host allowlist, unchanged ABI-v1 entry/lifecycle, module-private `campaign.v1` save slot with bounded schema/seed/checksum validation, and no additional native ABI methods. `NativeModuleRuntime` rejects the title outside Development logging mode. Built-in module count increases by one; APK library/entry verification and Galaxy S9 Daydream acceptance must be re-run before release claims. The original project design is at `docs/project/GUMBALL_ARMADA.md`.
+
 ## Module-reported shader failures in native GL initialization (2026-10-13)
 
 While invoking a guest's `on_gl_context_created` callback, the ABI-v1 host now retains only the latest bounded `REVERIE_NATIVE_LOG_ERROR` message associated with that active module session. If the callback fails, it appends this *guest-provided* detail to the existing module-id and GLES error-code failure. This preserves genuine shader compiler/linker messages for the headset's native launch-failure text and full diagnostics, rather than replacing them with an uninformative `guest_GL=0x0` when the driver reports a shader compile failure without setting a GL error flag. The captured detail is cleared at the next GL creation attempt, never affects callback success, and does not add any ABI field or change successful launch behavior.
