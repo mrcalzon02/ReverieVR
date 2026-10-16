@@ -233,6 +233,12 @@ All gameplay advances in native Update once per frame, with common cached vertex
 
 **Environment design:** [OMEGA_FRONT_ENVIRONMENTS.md](OMEGA_FRONT_ENVIRONMENTS.md) — 12 theaters × 50 campaign sectors, four environmental classes, first 16-sector Hearthfall March, five proposed opening operations, tiles, hazards, logistics and acceptance gates.
 
+**Faction history:** [OMEGA_FRONT_FACTION_CHRONICLES.md](OMEGA_FRONT_FACTION_CHRONICLES.md) — seventeen distinct proposed histories, internal divisions and territorial claims.
+
+**Origin:** [OMEGA_FRONT_HEARTHWELL_PROLOGUE.md](OMEGA_FRONT_HEARTHWELL_PROLOGUE.md) — an isolated contingent's acting commander, new Eden morphology and emergent civil compact.
+
+**Campaign:** [OMEGA_FRONT_GRAND_CAMPAIGN.md](OMEGA_FRONT_GRAND_CAMPAIGN.md) — seventy multi-operation faction campaigns across level 1–100 and ten-world-prestige longer-term covenant.
+
 **Mechanics authority:** [WAR_WITHOUT_END.md](WAR_WITHOUT_END.md) (retained earlier filename) — combat anatomy, progression calibration, 600-sector/4,096-inspection-room address space, seven encounter scales, independent commander/troop/squad-room/weapon/armor/accessory/base/world/doctrine progression, deterministic simulation, tenfold prestige covenant, and staged P0–P11 roadmap.
 
 **Native identity:** Comfortable 3DoF VR tabletop with tiny crisp chibi pixel sprites on logical square tiles. Shell-normalized select/secondary/touchpad inputs; O/Home stays shell-owned. Bounded, reproducible order-pulse simulator independent of GLES; rendering only consumes the simulation. The strategic economy and room inspection are real tactical gameplay rather than passive timers. Retain S9 performance and offline-first single-APK operation.
@@ -247,6 +253,6 @@ All gameplay advances in native Update once per frame, with common cached vertex
 2. **Ministry of Intelligence** — naturally seated and interface-heavy; ideal for proving persistent simulation, document interaction, and high-resolution VR UI.
 3. **Iron Sight** — consumes the proven interaction, persistence, AI, rendering, and reporting foundations while adding outdoor traversal, vehicles, squad state, and combat.
 4. **Breakwater Battery** — prioritize its compact stationary-shooter loop for immediate Development device playtesting, without waiving the usual device and thermal gates.
-5. **Omega Front** — build the headless tactical kernel first, then the chibi VR tabletop. Its seventeen distinct factions, territory ecology, layered progression and tenfold prestige requirements remain full release scope.
+5. **Omega Front** — build the headless tactical kernel first, then the chibi VR tabletop. Its seventeen distinct factions, newly emerged Eden frontier, **70 multi-operation main campaigns**, territory ecology, layered progression and tenfold prestige requirements remain full release scope.
 
 These are roadmap pointers only. Implementation should begin only after RV-0400/RV-0402 are sufficiently stable and the first tiny native gameplay prototype (RV-0600/RV-0601) has established a safe thermal/performance envelope.
