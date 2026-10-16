@@ -1,5 +1,6 @@
 #ifndef REVERIE_CLASSIC_GAMES_H
 #define REVERIE_CLASSIC_GAMES_H
+#include "classic_pong_dynamics.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -23,7 +24,8 @@ struct State {
     int score=0, opponent=0;
     bool finished=false, moving=false, player_turn=true;
     float clock=0, paddle=0, ai=0, ball_x=0, ball_y=0;
-    float velocity_x=.55f, velocity_y=.25f;
+    float velocity_x=pong::kServeHorizontalSpeed, velocity_y=pong::kServeVerticalSpeed;
+    float previous_paddle=0.f; // last simulated frame: includes headset pointer motion
     int length=3, heading=1, desired=1, food=0;
     std::array<int,kCells> snake{};
     int position=0, rival=0, die=0;
@@ -51,7 +53,9 @@ struct State {
     void Reset(Game target) {
         game=target;score=opponent=0;finished=moving=false;
         player_turn=true;clock=0;paddle=ai=ball_x=ball_y=0;
-        velocity_x=.55f;velocity_y=.25f;
+        velocity_x=pong::kServeHorizontalSpeed;
+        velocity_y=pong::kServeVerticalSpeed;
+        previous_paddle=0.f;
         length=3;heading=desired=1;
         snake.fill(-1);
         snake[0]=6*kGrid+5;snake[1]=6*kGrid+4;snake[2]=6*kGrid+3;
@@ -87,36 +91,52 @@ struct State {
         if(!std::isfinite(seconds)||seconds<=0)return;
         const float dt=std::min(seconds,.1f);
         if(game==Game::Pong) {
-            // Original left/right table-tennis court: one point for a miss,
-            // vertical paddles, ceiling/floor ricochet, first to 11.
+            // The renderer may reposition the paddle from the head-tracked
+            // ray *before* Step. Sampling against the previous simulation
+            // position captures that movement as well as touchpad motion.
             if(std::isfinite(axis)&&std::abs(axis)>.12f)
                 paddle=std::clamp(paddle+axis*dt*1.8f,-.78f,.78f);
-            ai=std::clamp(ai+std::clamp(ball_y-ai,-dt*.87f,dt*.87f),
-                          -.78f,.78f);
+            const float player_speed=pong::PaddleVelocity(
+                paddle-previous_paddle,dt);
+            previous_paddle=paddle;
+            const float previous_ai=ai;
+            const float goal=pong::CpuTarget(ball_y,velocity_y,velocity_x,
+                                            moving,score,opponent);
+            const float limit=dt*pong::kCpuPaddleSpeed;
+            ai=std::clamp(ai+std::clamp(goal-ai,-limit,limit),-.78f,.78f);
+            const float cpu_speed=pong::PaddleVelocity(ai-previous_ai,dt);
             if(!moving||finished)return;
             ball_x+=velocity_x*dt;
             ball_y+=velocity_y*dt;
             if(ball_y>.93f){ball_y=.93f;velocity_y=-std::abs(velocity_y);}
             if(ball_y<-.93f){ball_y=-.93f;velocity_y=std::abs(velocity_y);}
             if(ball_x<-.87f&&velocity_x<0.f
-               &&std::abs(ball_y-paddle)<.27f) {
-                ball_x=-.87f;velocity_x=std::min(1.2f,
-                    std::abs(velocity_x)*1.025f);
-                velocity_y=std::clamp(velocity_y
-                    +(ball_y-paddle)*.35f,-.90f,.90f);
+               &&std::abs(ball_y-paddle)<pong::kPaddleHalfHeight) {
+                ball_x=-.87f;
+                const auto rebound=pong::Bounce(velocity_x,velocity_y,
+                    ball_y-paddle,player_speed,true);
+                velocity_x=rebound.vx;velocity_y=rebound.vy;
             }
             if(ball_x>.87f&&velocity_x>0.f
                &&std::abs(ball_y-ai)<.26f) {
-                ball_x=.87f;velocity_x=-std::min(1.2f,
-                    std::abs(velocity_x)*1.025f);
-                velocity_y=std::clamp(velocity_y
-                    +(ball_y-ai)*.35f,-.90f,.90f);
+                ball_x=.87f;
+                const auto rebound=pong::Bounce(velocity_x,velocity_y,
+                    ball_y-ai,cpu_speed,false);
+                velocity_x=rebound.vx;velocity_y=rebound.vy;
             }
             if(ball_x>1.05f) {
                 ++score;moving=false;ball_x=ball_y=0;
+                velocity_x=(score+opponent)%2 ? -pong::kServeHorizontalSpeed
+                    : pong::kServeHorizontalSpeed;
+                velocity_y=(score+opponent)%2 ? -pong::kServeVerticalSpeed
+                    : pong::kServeVerticalSpeed;
             }
             if(ball_x< -1.05f) {
                 ++opponent;moving=false;ball_x=ball_y=0;
+                velocity_x=(score+opponent)%2 ? -pong::kServeHorizontalSpeed
+                    : pong::kServeHorizontalSpeed;
+                velocity_y=(score+opponent)%2 ? -pong::kServeVerticalSpeed
+                    : pong::kServeVerticalSpeed;
             }
             finished=(score>=11||opponent>=11);
         } else if(game==Game::Snake) {

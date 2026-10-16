@@ -857,6 +857,58 @@ int main() {
     pong.velocity_y=0.f;
     pong.Step(.02f,0.f);
     assert(pong.velocity_x>0.f); // human paddle returned the ball
+    // Paddle motion inherited from trackpad or head-tracked pointer changes
+    // rebound energy and angle; anti-direction strokes slow the ball.
+    auto moving_with=pong;
+    auto still=pong;
+    auto moving_against=pong;
+    auto setup_contact=[](State &state,float start) {
+        state.Reset(Game::Pong);state.Press();
+        state.ball_x=-.87f;state.ball_y=.17f;
+        state.velocity_x=-.92f;state.velocity_y=.10f;
+        state.previous_paddle=start;
+        state.paddle=.0f;
+    };
+    setup_contact(moving_with,-.05f);
+    setup_contact(still,0.f);
+    setup_contact(moving_against,.05f);
+    moving_with.Step(.025f,0.f);
+    still.Step(.025f,0.f);
+    moving_against.Step(.025f,0.f);
+    const auto speed=[](const State &v) {
+        return std::hypot(v.velocity_x,v.velocity_y);
+    };
+    assert(moving_with.velocity_y>still.velocity_y);
+    assert(still.velocity_y>moving_against.velocity_y);
+    assert(speed(moving_with)>speed(still));
+    assert(speed(still)>speed(moving_against));
+    // Head-tracked position changes count as paddle movement as well.
+    State pointer_contact;
+    setup_contact(pointer_contact,-.05f);
+    pointer_contact.Step(.025f,0.f);
+    assert(pointer_contact.velocity_x>0.f);
+    // Even a still centered paddle creates a non-flat rebound.
+    State center_hit;
+    center_hit.Reset(Game::Pong);center_hit.Press();
+    center_hit.ball_x=-.87f;center_hit.ball_y=0.f;
+    center_hit.velocity_x=-.9f;center_hit.velocity_y=0.f;
+    center_hit.Step(.025f,0.f);
+    assert(center_hit.velocity_x>0.f&&std::abs(center_hit.velocity_y)>.05f);
+    // Serve begins substantially faster, and resetting preserves dynamics.
+    State fresh;
+    fresh.Reset(Game::Pong);
+    assert(std::hypot(fresh.velocity_x,fresh.velocity_y)>.9f);
+    fresh.Press();fresh.ball_x=1.045f;fresh.velocity_x=.9f;
+    fresh.Step(.02f,0.f);
+    assert(fresh.score==1&&!fresh.moving);
+    assert(std::hypot(fresh.velocity_x,fresh.velocity_y)>.9f);
+    // The CPU's movement is strictly limited even on a large miss.
+    State cpu_step;
+    cpu_step.Reset(Game::Pong);cpu_step.Press();
+    cpu_step.ai=-.70f;cpu_step.ball_y=.70f;cpu_step.velocity_x=.9f;
+    cpu_step.Step(.02f,0.f);
+    assert(cpu_step.ai > -.70f && cpu_step.ai < -.68f);
+
     pong.Reset(Game::Pong);pong.Press();
     pong.score=10;pong.ball_x=1.045f;pong.ball_y=.60f;
     pong.velocity_x=.55f;pong.velocity_y=0.f;

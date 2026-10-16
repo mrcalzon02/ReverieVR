@@ -163,6 +163,7 @@
   prospective claim, CPU draw, capture quiescence and node limits.
   Negotiated draws, tournament procedures, configurable difficulty
   and actual Galaxy S9 performance/latency remain acceptance work.
+- **Pong velocity and CPU difficulty (2026-10-16):** Game-private rebound now uses signed measured paddle movement from both Daydream-axis and head-pointer input, position of impact, bounded spin and energy transfer; opening serve speed increases, rally acceleration is capped, and opposite swing can reduce speed. CPU movement is capped at 0.72 court units/s with deterministic target error and neutral recovery. GCC/Clang isolated helper tests passed; integrated native tests and S9 headset acceptance remain pending.
 - **Pong / Breakout:** Source corrected: Pong has left/right vertical
   paddles, wall bounce, first to 11 and bounded CPU play; Breakout has two
   112-brick walls, original 7/5/3/1 row scores, speed milestones and paddle
