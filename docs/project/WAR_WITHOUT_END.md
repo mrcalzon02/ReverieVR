@@ -36,7 +36,7 @@ The late-twentieth-century **Ouroboros Corporation** technomantic breakthrough c
 
 World-map sector data must retain environmental class, habitability, population, control, supply, faction origin-era tags and optional anomaly effects. Region classes and 17-faction motives alter actual battlefield economy and AI objectives, not merely the appearance of units. The precise geography of the physically divided planet and the nature of the original disaster remain intentionally unresolved.
 
-**Detailed game-design candidates:** [OMEGA_FRONT_FACTIONS.md](OMEGA_FRONT_FACTIONS.md) defines seventeen provisional asymmetric faction dossiers and the opening five-party frontier; [OMEGA_FRONT_ENVIRONMENTS.md](OMEGA_FRONT_ENVIRONMENTS.md) defines twelve proposed theaters, a named sixteen-sector introductory region, environmental hazards and logistical preservation. These are actionable design targets, **not approved new canon or implemented content**.
+**Detailed game-design candidates:** [OMEGA_FRONT_FACTIONS.md](OMEGA_FRONT_FACTIONS.md) defines seventeen provisional asymmetric faction dossiers and the opening five-party frontier; [OMEGA_FRONT_FACTION_CHRONICLES.md](OMEGA_FRONT_FACTION_CHRONICLES.md) details their proposed cultural histories and rival political wings; [OMEGA_FRONT_ENVIRONMENTS.md](OMEGA_FRONT_ENVIRONMENTS.md) defines twelve proposed theaters, a named sixteen-sector introductory region, environmental hazards and logistical preservation; [OMEGA_FRONT_HEARTHWELL_PROLOGUE.md](OMEGA_FRONT_HEARTHWELL_PROLOGUE.md) defines the newly born Eden frontier and acting commander's origin; and [OMEGA_FRONT_GRAND_CAMPAIGN.md](OMEGA_FRONT_GRAND_CAMPAIGN.md) specifies **70 full faction-led multi-operation campaign arcs from Level 1 to 100**, against all seventeen powers. These are actionable design targets, **not approved new canon or implemented content**.
 
 Design targets, **not claims of produced content**:
 - **100 character levels** per commander, troop and several independent mastery tracks.
@@ -215,13 +215,13 @@ Every stage creates playable, testable behavior. A menu option stays absent unti
 
 **P6 — broad tactical systems:** suppress/morale/fatigue, cover angles, flanks, ammo/heat, destructible terrain, terrain chains, overwatch, communication jamming, AI counters. Gate: comprehensive reproducible interaction-matrix tests.
 
-**P7 — content multiplication:** reusable tilesets, 6 original factions, generators for 600 sectors and 4,096 inspection address nodes, different objectives and physically supported siege sequences. Gate: seeded structural reachability, unique-key and softlock audits across large sample sets.
+**P7 — content multiplication:** reusable tilesets, **all 17 original faction archetypes and distinct AI doctrines**, generators for 600 sectors and 4,096 inspection address nodes, different objectives and physically supported siege sequences. Gate: seeded structural reachability, unique-key and softlock audits across large sample sets.
 
-**P8 — full campaign & enemy warfare:** persistent faction strategic AI, theater invasions, roads, depots, siege AI, storytelling choices, standard ending. Gate: reachable campaign win and recoverable defeat.
+**P8 — full campaign & enemy warfare:** persistent faction strategic AI, theater invasions, roads, depots, siege AI, **70 faction-led multi-operation arcs with at least three genuine battles apiece**, flexible arc ordering within the semi-open theaters, combat with every one of the 17 factions, persistent diplomacy/refugee choices and a standard ending. Gate: all 70 arcs are real runnable missions, reachable campaign win and recoverable defeat.
 
 **P9 — endgame economy & item depth:** full 1–100 progression across all required domains, threshold unlocks, deep equip/reforge rooms, extensive balance simulation; late battles remain dangerous, not just inflated HP. Gate: modeled 1→5 and 95→100 times, honest target-vs-measured evidence.
 
-**P10 — ascensions 1–10:** deterministic world-law remixes, Law Seals, legacy inheritance, covenant verification, no softlocks, world rewrite checkpoint. Gate: scripted simulated ten-cycle progression reaches a unique final route, while nine cycles cannot unlock it.
+**P10 — ascensions 1–10:** deterministic world-law remixes, Law Seals, legacy inheritance, covenant verification, no softlocks, world rewrite checkpoint, and **meaningfully remixed complete 70-arc campaigns in successive world cycles**. Gate: scripted simulated ten-cycle progression reaches a unique final route, while nine cycles cannot unlock it. The first 70-arc standard ending does not substitute for ten complete Level-100 covenants.
 
 **P11 — finish and release:** full content/art/audio accessibility pass, dense UI cleanup, regression, S9 thermal/VR testing, save migrations, stable signed APK integration, player-facing build and full true-ending verification.
 
