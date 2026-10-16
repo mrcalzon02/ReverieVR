@@ -53,7 +53,7 @@ mesh; Steam HID hardware remains usable with the independent primitive 3D
 fallback. Earlier public commits and releases are not automatically erased by
 this forward change.
 
-## Status
+## VR Home atmospheric environments\n\nThe default offline APK source includes three low-poly environments: a Birch Living Room with recessed, mesh-cut outdoor window views and passing birds; a forest with layered panoramic sky, hills, rabbits/deer and flying birds; and a beach with coastal sky, headland, crabs and gull silhouettes. Home uses original procedurally synthesized environment-specific PCM ambience through the existing Android audio lifecycle, without downloading any sounds on the phone. See [atmosphere integration, CC0 recording candidates and acceptance requirements](docs/project/HOME_ENVIRONMENT_ATMOSPHERE.md). The five linked external CC0 recordings are **not bundled**; Android APK/device validation of the new implementation remains pending.\n\n## Status
 
 **Pre-alpha / foundation bootstrap.**
 
