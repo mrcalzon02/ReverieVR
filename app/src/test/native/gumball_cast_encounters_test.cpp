@@ -32,5 +32,18 @@ int main(){
     CastEncounter sanity;sanity.begin(1,141,3,4);
     sanity.update(NAN);sanity.update(-1.f);
     assert(!sanity.triggered());
+    CrumbclankContract pair;
+    assert(!pair.awarded()&&!pair.both_destroyed());
+    assert(pair.destroyed(true,false)==0u);
+    assert(pair.destroyed(true,false)==0u);
+    assert(!pair.awarded());
+    assert(pair.destroyed(false,true)==32u);
+    assert(pair.awarded()&&pair.both_destroyed());
+    assert(pair.destroyed(false,true)==0u);
+    assert(pair.destroyed(true,true)==0u);
+    pair.reset();assert(!pair.awarded());
+    assert(pair.destroyed(false,true)==0u);
+    assert(pair.destroyed(true,false)==32u); // either destruction order
+    assert(pair.destroyed(false,false)==0u);
     std::cout<<"cast encounter deterministic schedule passes\n";
 }
