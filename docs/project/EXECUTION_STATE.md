@@ -1,3 +1,37 @@
+## 2026-10-16 — Opt-in power/thermal notices and controller edge recovery (source)
+
+Added DeviceWarningPolicy with explicit source/priority semantics:
+Android PowerManager thermal moderate/severe/critical codes, fallback
+battery-sensor temperature thresholds of 42.0 and 45.0°C, and a known
+phone battery percentage at or below 15%. Neither battery temperature
+nor app callback timing is misrepresented as CPU/GPU junction temperature.
+A single small low-eye-position, binocular 512×72 GL warning texture
+updates only on level changes, polling existing device signals at most once
+per second. The warning is nonblocking, can be disabled via the new
+persistent Quick Menu → Settings BAT / HEAT WARNINGS on/off button, and
+does not obscure an opened Quick Menu; no automatic FPS cap, pause,
+head-tracking change or new audio interruption.
+
+ControllerManager now rejects null/late controller snapshots after
+a provider is no longer READY; VrActivity on connection loss releases
+held virtual inputs, clears previous Daydream button/touch edges and
+resets accumulated DOS controller mouse pose. Android HID removal also
+resets the previous edge state and DOS mouse pose. Existing deliberate
+five-second upward gaze recovery stays in place: do not surprise users
+with automatic menus on brief BLE outages. Source change is independent
+of unrelated Gumball Armada updates on the same main branch.
+
+DeviceWarningPolicy pure Java source compiled locally against a minimal
+equivalent PerformanceEnvironmentSnapshot constant fixture and passed
+standalone runtime cases for unknown sensors, low-battery cutoff,
+warm/hot battery readings and Android thermal severity. Existing on-remote
+JUnit source tests cover warning severity, precedence and labeling.
+GitHub source readback checks confirmed all expected HUD/permission/
+controller source anchors. No Android Gradle/JUnit execution, APK install,
+physical S9 battery thermal study, binocular visibility or controller
+disconnect/reconnect device test was run. Status: **draft; hardware gate
+open**. Passive notifications do not constitute active thermal protection.
+
 ## 2026-10-16 — Per-game DOS world-screen placement controls (source implementation)
 
 Added pure bounded DosScreenPlacement geometry (0.75–1.20 scale; 2.20–4.20m

@@ -1,5 +1,14 @@
 # Changelog
 
+- QoL power notifications: optional compact nonmodal stereo warning for
+  low phone charge or Android thermal status and labeled battery-sensor
+  temperature. Quick Settings BAT / HEAT WARNINGS persists, defaults on,
+  and leaves head tracking and frame scheduling unchanged. Added source
+  tests and a local pure-Java smoke check; Android/Galaxy S9 pending.
+- Input reliability: drop late disconnected-provider button/pose snapshots
+  and release/reset held controller input edges and DOS mouse motion when
+  BLE/HID controllers disconnect, retaining manual recovery behavior.
+
 - DOS comfort: per-game persistent world-screen position settings (size,
   distance, height and reset) from existing DOS Quick Menu. Right-side
   options stay independently ray-hittable and fullscreen 70% optical
