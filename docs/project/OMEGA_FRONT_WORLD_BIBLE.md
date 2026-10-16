@@ -45,6 +45,8 @@ The narrative tone is severe, bleak, occasionally dry, but the text above is **p
 
 ## 3. Regions become distinct strategic systems (PROPOSED)
 
+The detailed twelve-theater topology, sector generation, region economics and opening sixteen-sector environmental proposal now live in [OMEGA_FRONT_ENVIRONMENTS.md](OMEGA_FRONT_ENVIRONMENTS.md). These expand the geographic design without resolving the physics of the shattered planet.
+
 | Region | Established interpretation | Proposed campaign function | Proposed battlefield consequences |
 |---|---|---|---|
 | **Eden Zone** | Naturally habitable for baseline unshielded, unaugmented humans | Settlements, food, water, hospitals, legitimacy, civilians, highest territorial stakes | Sieges, infrastructure protection, evacuation, high strategic density, faction politics |
@@ -75,31 +77,9 @@ Battle units need faction + era identity + class + equipment + doctrine + comman
 
 ## 5. Seventeen-faction production roster (PROPOSED ONLY)
 
-The **count of 17 is canon**. The names/identities below are *functional placeholders* for breadth of strategic design, **not** 17 creator-approved factions. The Ouroboros Corporation may be responsible for the Rupture without surviving as one of the seventeen active factions.
+**Exactly seventeen competing factions is established canon; their individual names, affiliations and histories have not yet been approved.** The first unnamed, type-only F01–F17 coverage worksheet was superseded by the original candidate roster and seventeen distinct dossiers in [OMEGA_FRONT_FACTIONS.md](OMEGA_FRONT_FACTIONS.md). That document now owns all **provisional F01–F17 role assignments**, including F01 Hearthward League, F02 Meridian Combine, F04 Scrapline Freeholds, F06 The Lost Ninth and F12 Carrion Circuit.
 
-| ID | Unapproved prototype role | Gameplay distinction to explore |
-|---|---|---|
-| F01 | Corporate territorial directorate | Industrial production, private armies, resource monopoly |
-| F02 | Eden civic confederacy | Defense, civil infrastructure, local legitimacy |
-| F03 | Professional military remnant | Combined arms and formal logistical command |
-| F04 | Wasteland scavenger compact | Salvage, repair, raids, improvisation |
-| F05 | Technomantic research splinter | Containment tradeoffs and unusual battlefield laws |
-| F06 | Ancient imperial expedition | Shield formations, discipline, field fortifications |
-| F07 | Medieval displaced polity | Cavalry, levies, fealty and commander dependence |
-| F08 | Early-era refugee coalition | Improvisation, diplomacy, scarcity and recruitment |
-| F09 | Industrial-age army | Entrenchment, artillery, rail/siege logistics |
-| F10 | Future human diaspora | Powerful precision hardware, rare replacement parts |
-| F11 | Posthuman survivors | Augmentation, elite specialization, baseline-human friction |
-| F12 | Mechanized predatory swarm | Alloy harvesting and self-replication |
-| F13 | Biological assimilation swarm | Biomass, infestation, disease, territory conversion |
-| F14 | Autonomous resource harvester | Terrain stripping, factories without people |
-| F15 | Anomaly-native intelligences | Reality manipulation with incomprehensible objectives |
-| F16 | Mixed-era refugee alliance | Unstable coalition with broad technological choices |
-| F17 | Temporal claimant/unknown polity | Local chronal warfare and unusual movement constraints |
-
-The prototype archetypes above can all be replaced. Do not ship placeholder names or tell stories relying on a specific one until the creator locks the actual seventeen. Each final faction requires origin, political aim, economic engine, recruitment, terrain needs, capital, equipment era, signature units, battlefield AI, strategic AI, relationships, Eden policy, anomaly policy, counters and a visual/audio silhouette.
-
-Avoid six recolored armies masquerading as seventeen. Not every faction needs diplomacy; not every faction should be extermination-only.
+This cross-reference intentionally removes conflicting *earlier* placeholder assignments from this world bible. It does not promote the proposed faction names to permanent canon and does not establish the Ouroboros Corporation as one of the seventeen active factions.
 
 ## 6. Campaign beginning and world pressure (PROPOSED)
 
