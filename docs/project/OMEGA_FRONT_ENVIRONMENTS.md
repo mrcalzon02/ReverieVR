@@ -58,15 +58,15 @@ Not every theater is continuously controlled by one faction. Claim, garrison, ci
 
 The first campaign opens in **T01**, on a readable 4×4 geographic neighborhood with **16 identified sectors** and forty-plus potential adjacent front nodes not yet displayed. This is a first-playable window, not a deliberate reduction of the 600-sector target.
 
-\`\`\`text
+```text
                 A                    B                    C                    D
      1    S001 Chalkwatch      S002 Ninth Camp      S003 Splinter Ridge  S004 Old Relay
      2    S005 Caravan Ford    S006 White Orchard   S007 Hearthwell      S008 Charter Gate
      3    S009 Rust Orchard    S010 Ashrail Yard    S011 Lantern Pump    S012 Toll Foundry
      4    S013 Spoor Nest      S014 Glass Cut       S015 Broken Viaduct  S016 Dry Basin
-\`\`\`
+```
 
-Full sector IDs use \`T01-S001\` ... \`T01-S016\`. Adjacent orthogonal coordinates are potential edges; not all potential edges are operational roads. Rivers, bridges, checkpoints and anomaly access have explicit separate travel requirements.
+Full sector IDs use `T01-S001` ... `T01-S016`. Adjacent orthogonal coordinates are potential edges; not all potential edges are operational roads. Rivers, bridges, checkpoints and anomaly access have explicit separate travel requirements.
 
 | Sector | Class / anomaly | Starting actor | Material and mission role |
 |---|---|---|---|
@@ -156,7 +156,7 @@ Environmental effects aren't arbitrary encounter RNG and must never run twice be
 
 ## 7. Ecosystem, civilian and infrastructure rules
 
-At minimum, persistent sector state tracks: \`region_id, owner, resident_allegiance, population, habitat_safety, water, food, power, manpower, raw_materials, salvage_mass, rift_pressure, contamination, roads, bridges, warehouses, hospitals, depots, defensive_works, recent_siege_scar, civilian_exodus\`.
+At minimum, persistent sector state tracks: `region_id, owner, resident_allegiance, population, habitat_safety, water, food, power, manpower, raw_materials, salvage_mass, rift_pressure, contamination, roads, bridges, warehouses, hospitals, depots, defensive_works, recent_siege_scar, civilian_exodus`.
 
 Water treatment facilities, pumping pipes and reservoirs are individually damaged/repairable. Farmers and civil labor are part of the production economy; losing a harvest damages months of simulated campaign production, but **not literal real-world waiting**. Evacuations require real transport capacity and safe route reservations, not a diplomacy button that teleports civilians.
 
@@ -180,7 +180,7 @@ The tabletop's charm comes from tiny soldiers on lethal terrain, not from huge a
 
 ## 9. Generator, persistence and test gates
 
-A sector is seeded from \`campaign_seed + sector_id + ascension + world_generator_version\`; a tactical battle derives its own reproducible instance and saved deltas. The 600 campaign sectors are distinct from the **4,096 proposed inspection-room nodes per ascension** in the existing mechanics charter. The latter live inside formations, items, bases and world layers, not as simultaneously active overworld maps.
+A sector is seeded from `campaign_seed + sector_id + ascension + world_generator_version`; a tactical battle derives its own reproducible instance and saved deltas. The 600 campaign sectors are distinct from the **4,096 proposed inspection-room nodes per ascension** in the existing mechanics charter. The latter live inside formations, items, bases and world layers, not as simultaneously active overworld maps.
 
 **Deterministic generation pipeline:** theater graph → population/Eden placement → faction claims and conflict → resource network → roads and infrastructure → height/ground → ruins and cover → optional rift overlays → route/objective reachability audit → enemy placement → persistent sector descriptors.
 
