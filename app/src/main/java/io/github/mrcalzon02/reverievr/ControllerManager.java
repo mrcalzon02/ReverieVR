@@ -138,7 +138,8 @@ final class ControllerManager implements AutoCloseable {
     }
 
     ControllerSnapshot getLastSnapshot() {
-        return lastSnapshot;
+        return connectionState == ControllerProvider.ConnectionState.READY
+            ? lastSnapshot : null;
     }
 
     private void activateProvider(ControllerProvider provider) {
@@ -206,7 +207,15 @@ final class ControllerManager implements AutoCloseable {
 
             connectionState = state;
             connectionMessage = message == null ? "" : message;
+            if (state != ControllerProvider.ConnectionState.READY) {
+                lastSnapshot = null;
+                batteryPercentage = -1;
+                batteryMillivolts = -1;
+            }
             notifyConnection();
+            if (state != ControllerProvider.ConnectionState.READY) {
+                notifyBattery();
+            }
         }
 
         @Override
