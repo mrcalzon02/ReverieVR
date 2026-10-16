@@ -1,3 +1,7 @@
+## Gumball game-private pointer focus handoff — 2026-10-16
+
+The Candy game's `MenuPointerFocus` now keeps the pointer's last active position fixed while D-pad focus has priority. Sub-threshold pointer movements accumulate until total movement exceeds 0.075 world units; a stationary ray still cannot steal focus from the D-pad. The native `gumball_armada_module.cpp` consumes this helper while retaining the existing host pointer ABI and Chart/Loadout/Allies/Shipyard hit rectangles. Exact menu-hit helper regression passed host GCC/Clang and Clang ASan+UBSan. Integrated GLES2/Android/Galaxy S9 validation remains pending.
+
 ## Candy Armada shipyard edit and native pointer menu usability — 2026-10-16
 
 Gumball Armada's game-private native module now consumes the existing `ReverieNativeInputV1` **world-space controller pointer-ray extension** (only when `ReverieNativeInputHasPointerV1` confirms the full input prefix), intersecting the actual -2.94 flat-menu plane and using exact frame geometry for Chart routes, Loadout, Allies and every 7×7 Shipyard cell/palette button. A D-pad input temporarily takes priority over a stationary ray and keeps an independent click-focused selection until ray movement resumes. No new action, Android permission, external app, shell menu change, native ABI version or controller mapping is introduced. Screen-up moves selection visually upward. The App/Minus secondary input is an optional grid/palette toggle while in the Shipyard; ordinary pad navigation still reaches all buttons.
