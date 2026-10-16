@@ -241,27 +241,36 @@ int main(){
     assert(blocked.launch(0));
     // Seeded guest encounters are real, bounded events after a completed run.
     assert(starter.guest()==CastGuest::None);
-    bool foundPip=false,foundLolly=false,foundBlort=false;
-    for(uint32_t seed=1;seed<400&&!(foundPip&&foundLolly&&foundBlort);++seed){
+    bool foundPip=false,foundLolly=false,foundBlort=false,foundNib=false,foundTwins=false;
+    for(uint32_t seed=1;seed<512&&!(foundPip&&foundLolly&&foundBlort&&foundNib&&foundTwins);++seed){
         Simulation trial(seed);
         const auto lane=trial.lane(0);
         const CastGuest expected=ChooseCastGuest(seed,lane.id,2u,lane.hazard);
         if(expected==CastGuest::None
             ||(expected==CastGuest::PipParfait&&foundPip)
             ||(expected==CastGuest::LollyWren&&foundLolly)
-            ||(expected==CastGuest::BlortBlister&&foundBlort))continue;
+            ||(expected==CastGuest::BlortBlister&&foundBlort)
+            ||(expected==CastGuest::NibNoxious&&foundNib)
+            ||(expected==CastGuest::CrumbclankTwins&&foundTwins))continue;
         auto progressed=trial.snapshot();progressed.visited=2;
+        progressed.levels[1]=12;progressed.levels[3]=12; // survive long enough to inspect encounter
         progressed.checksum=SnapshotChecksum(progressed);
         assert(trial.restore(progressed)&&trial.launch(0));
         assert(trial.guest()==expected);
         bool sawAssist=false,sawGrenadier=false,sawBomb=false;
+        bool sawNib=false,sawMine=false,sawBiff=false,sawBaff=false;
         for(int tick=0;tick<750&&trial.phase()==Phase::Flight;++tick){
             trial.update(.025f,0.f,0.f,false);
             sawAssist|=trial.guest_active();
-            for(const auto& enemy:trial.enemies())if(enemy.active&&enemy.kind==EnemyKind::Blort)
-                sawGrenadier=true;
-            for(const auto& shot:trial.shots())if(shot.active&&shot.bomb)
-                sawBomb=true;
+            for(const auto& enemy:trial.enemies())if(enemy.active){
+                sawGrenadier|=enemy.kind==EnemyKind::Blort;
+                sawNib|=enemy.kind==EnemyKind::Nib;
+                sawBiff|=enemy.kind==EnemyKind::Biff;
+                sawBaff|=enemy.kind==EnemyKind::Baff;
+            }
+            for(const auto& shot:trial.shots())if(shot.active){
+                sawBomb|=shot.bomb;sawMine|=shot.mine;
+            }
         }
         assert(trial.guest_pulses()<=5);
         if(expected==CastGuest::PipParfait){
@@ -272,13 +281,19 @@ int main(){
             assert(sawAssist);
             assert(trial.ally_shots()==0u);
             foundLolly=true;
-        }else{
-            assert(sawGrenadier&&sawBomb);
-            assert(!sawAssist);
+        }else if(expected==CastGuest::BlortBlister){
+            assert(sawGrenadier&&sawBomb&&!sawAssist);
             foundBlort=true;
+        }else if(expected==CastGuest::NibNoxious){
+            assert(sawNib&&sawMine&&!sawAssist);
+            foundNib=true;
+        }else if(expected==CastGuest::CrumbclankTwins){
+            assert(sawBiff&&sawBaff&&sawBomb&&!sawAssist);
+            assert(trial.twin_bonus_paid()==0u); // cannot claim kill bonus while no weapons fired
+            foundTwins=true;
         }
     }
-    assert(foundPip&&foundLolly&&foundBlort);
+    assert(foundPip&&foundLolly&&foundBlort&&foundNib&&foundTwins);
     // All four provisional general flags must remain recoverable on load:
     // the missing King storyline is unfinished, not a permanent results trap.
     Simulation postgame(88);
