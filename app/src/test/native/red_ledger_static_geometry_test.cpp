@@ -7,9 +7,9 @@
 #include <vector>
 using namespace reverie::redledger::geometry;
 int main() {
-    static_assert(kStaticCubeCount==11u,"cube budget");
-    static_assert(kStaticVertexCount==396u,"vertex count");
-    static_assert(kStaticVertexBytes==15840u,"GPU bytes");
+    static_assert(kStaticCubeCount==33u,"cube budget");
+    static_assert(kStaticVertexCount==1188u,"vertex count");
+    static_assert(kStaticVertexBytes==47520u,"GPU bytes");
     std::vector<float> a(kStaticVertexFloats+8u,-777.0f);
     std::vector<float> b(kStaticVertexFloats,0.0f);
     assert(!BuildStaticRoomVertices(nullptr,kStaticVertexFloats));
@@ -35,6 +35,6 @@ int main() {
         if(v[8]<0.5f&&v[9]>0.5f)metal=true;
     }
     assert(stone&&wood&&metal&&min_y< -1.5f&&max_y>1.5f);
-    std::cout<<"static room: 11 cubes -> 1 draw/eye; "
+    std::cout<<"three rooms: 11 cubes/room -> 1 room draw/eye; "
         <<kStaticVertexBytes<<" bytes; deterministic\n";
 }
