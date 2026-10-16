@@ -226,6 +226,21 @@ void Draw(State *s){
     center(5,12,px,py);
     Rect(s,px,py,kCell*.78f,kCell*.72f,-1.85f,.65f,.44f,.15f);
     Line(s,px-kCell*.25f,py,px+kCell*.25f,py,kCell*.09f,-1.84f,.95f,.77f,.34f);
+    // Mission marker is at the actual game-logic target; never an inert UI
+    // ornament. Capture needs occupation, relay needs a living engineer and
+    // two finite demolition charges from the team's field components.
+    if(battle.mission()!=game::Mission::HoldPump){
+        center(battle.objective_x(),battle.objective_y(),px,py);
+        const bool orchard=battle.mission()==game::Mission::CaptureOrchard;
+        Rect(s,px,py,kCell*.94f,kCell*.94f,-1.857f,
+             orchard?.91f:.65f,orchard?.81f:.48f,orchard?.25f:.95f);
+        Rect(s,px,py,kCell*.58f,kCell*.58f,-1.854f,
+             orchard?.24f:.37f,orchard?.56f:.24f,orchard?.20f:.64f);
+        for(int i=0;i<battle.objective_progress();++i){
+            Rect(s,px-kCell*.27f+kCell*.16f*i,py-kCell*.27f,
+                 kCell*.12f,kCell*.10f,-1.842f,.93f,.99f,.41f);
+        }
+    }
     for(int i=0;i<battle.unit_count();++i){
         const game::Unit *u=battle.unit(i);
         if(!u||!u->alive())continue;
@@ -237,8 +252,15 @@ void Draw(State *s){
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
     char status[96];
-    std::snprintf(status,sizeof(status),"PUMP %d  PARTS %d  AMMO %d  TICK %u",
-                  battle.pump_hp(),battle.components(),battle.ammo_stock(),battle.ticks());
+    if(battle.mission()==game::Mission::CaptureOrchard)
+        std::snprintf(status,sizeof(status),"HOLD ORCHARD %d/3  NO ENEMY NEARBY  TICK %u",
+                      battle.objective_progress(),battle.ticks());
+    else if(battle.mission()==game::Mission::DisableRelay)
+        std::snprintf(status,sizeof(status),"ENGINEER TO RELAY %d/2  PARTS %d  PUMP %d",
+                      battle.objective_progress(),battle.components(),battle.pump_hp());
+    else
+        std::snprintf(status,sizeof(status),"DEFEND PUMP %d  AMMO %d  TICK %u",
+                      battle.pump_hp(),battle.ammo_stock(),battle.ticks());
     Text(s,status,-.946f,.010f,.88f,.92f,.85f);
     const char *mode_names[]={"MOVE","ATTACK","REPAIR","RESUPPLY"};
     char action[90];

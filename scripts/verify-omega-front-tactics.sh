@@ -26,3 +26,5 @@ trap 'rm -f "$binary"' EXIT
   -I"$root/app/src/main/jni/native" \
   "$root/app/src/test/native/omega_front_campaign_save_test.cpp" -o "$binary"
 "$binary"
+"$cxx" -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I"$root/app/src/main/jni/native" "$root/app/src/test/native/omega_front_objectives_test.cpp" -o "$binary"
+"$binary"

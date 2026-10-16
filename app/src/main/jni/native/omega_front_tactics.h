@@ -19,6 +19,8 @@ enum class Side : uint8_t { Hearthwell, Raiders };
 enum class Class : uint8_t { Rifle, Engineer, Heavy };
 enum class OrderType : uint8_t { None, Move, Attack, RepairPump, Resupply };
 enum class Result : uint8_t { Active, Defended, Overrun };
+// All three first-arc operations have distinct, real win conditions.
+enum class Mission : uint8_t { HoldPump, CaptureOrchard, DisableRelay };
 
 struct Unit {
     uint8_t id = 0;
@@ -81,6 +83,8 @@ public:
         pump_hp_ = 18;
         components_ = 4;
         ammo_stock_ = 18;
+        mission_ = Mission::HoldPump;
+        objective_progress_ = 0;
     }
     int AddUnit(Side s, Class role, int x, int y) {
         if (result_ != Result::Active || ticks_ != 0 || count_ >= kUnitLimit || !Walkable(x,y) ||
@@ -98,6 +102,22 @@ public:
     int unit_count() const { return count_; }
     uint32_t ticks() const { return ticks_; }
     int pump_hp() const { return pump_hp_; }
+    Mission mission() const { return mission_; }
+    int objective_progress() const { return objective_progress_; }
+    int objective_goal() const { return mission_==Mission::CaptureOrchard?3:
+        mission_==Mission::DisableRelay?2:0; }
+    int objective_x() const { return mission_==Mission::CaptureOrchard?17:
+        mission_==Mission::DisableRelay?18:2; }
+    int objective_y() const { return 12; }
+    // Set by the strategic mission builder only before any action. This
+    // cannot transform a battle after its outcome is known.
+    bool ConfigureMission(Mission mission) {
+        if (ticks_ || result_!=Result::Active ||
+            static_cast<unsigned>(mission)>static_cast<unsigned>(Mission::DisableRelay)) return false;
+        mission_=mission;
+        objective_progress_=0;
+        return true;
+    }
     // Scenario loading only. Does not repair a live or terminal encounter.
     bool ConfigurePump(int hp) {
         if (ticks_ || result_ != Result::Active || hp<1 || hp>18) return false;
@@ -153,8 +173,41 @@ public:
             if (units_[id].side == Side::Hearthwell) ++friends;
             else ++foes;
         }
-        if (!friends || pump_hp_ == 0 || ticks_ >= 160) result_ = Result::Overrun;
-        else if (!foes) result_ = Result::Defended;
+        // Mission objectives are simulated after both sides move/fire.
+        // A defeated army does not automatically capture an orchard or
+        // disable a relay: surviving troops must complete that actual task.
+        if (mission_==Mission::CaptureOrchard) {
+            bool holding=false,contested=false;
+            for(int id=0;id<count_;++id) {
+                const Unit &u=units_[id];
+                if(!u.alive())continue;
+                const int d=Distance(u.x,u.y,objective_x(),objective_y());
+                if(u.side==Side::Hearthwell && d==0)holding=true;
+                if(u.side==Side::Raiders && d<=1)contested=true;
+            }
+            if (holding && !contested) {
+                if(objective_progress_<3)++objective_progress_;
+            } else objective_progress_=0;
+        } else if (mission_==Mission::DisableRelay) {
+            bool engineer=false,contested=false;
+            for(int id=0;id<count_;++id) {
+                const Unit &u=units_[id];
+                if(!u.alive())continue;
+                const int d=Distance(u.x,u.y,objective_x(),objective_y());
+                if(u.side==Side::Hearthwell && u.role==Class::Engineer && d<=1)engineer=true;
+                if(u.side==Side::Raiders && d<=1)contested=true;
+            }
+            // Engineers physically spend one charge per successful pulse.
+            if(engineer && !contested && components_>0 && objective_progress_<2){
+                --components_;
+                ++objective_progress_;
+            }
+        }
+        if (!friends || ticks_>=160 ||
+            (mission_!=Mission::CaptureOrchard && pump_hp_==0)) result_=Result::Overrun;
+        else if ((mission_==Mission::HoldPump && !foes) ||
+            (mission_==Mission::CaptureOrchard && objective_progress_==3) ||
+            (mission_==Mission::DisableRelay && objective_progress_==2)) result_=Result::Defended;
     }
 
     // FNV-1a over *explicit logical fields*, never struct padding/pointers.
@@ -168,6 +221,7 @@ public:
         };
         add(rng_); add(ticks_); add(static_cast<unsigned>(result_));
         add(pump_hp_); add(components_); add(ammo_stock_); add(count_);
+        add(static_cast<unsigned>(mission_)); add(objective_progress_);
         for (Ground g : cells_) add(static_cast<unsigned>(g));
         for (int id = 0; id < count_; ++id) {
             const Unit &u = units_[id];
@@ -201,6 +255,8 @@ private:
     int pump_hp_ = 18;
     int components_ = 4;
     int ammo_stock_ = 18;
+    Mission mission_ = Mission::HoldPump;
+    uint8_t objective_progress_ = 0;
     static constexpr int pump_x_ = 2, pump_y_ = 12;
     static constexpr int crate_x_ = 5, crate_y_ = 12;
 
@@ -384,9 +440,21 @@ private:
             if (distance < priority) { priority = distance; choice = j; }
         }
         if (choice >= 0) { Shoot(id,choice); return; }
+        if(mission_==Mission::CaptureOrchard){
+            // Hearthward watch defends its orchard; it does not arbitrarily
+            // charge the remote waterworks from a different map.
+            if(Distance(u.x,u.y,objective_x(),objective_y())>2)
+                StepToward(id,objective_x(),objective_y(),false);
+            return;
+        }
+        if(mission_==Mission::DisableRelay && u.role==Class::Engineer){
+            // The receivership radio engineer guards the physical field
+            // relay instead of becoming another pump-seeking raider.
+            if(Distance(u.x,u.y,objective_x(),objective_y())>1)
+                StepToward(id,objective_x(),objective_y(),false);
+            return;
+        }
         if (ShootPump(id)) return;
-        // All hostile squads know their briefing objective (the pumping
-        // station), but never receive hidden defender positions.
         StepToward(id,pump_x_,pump_y_,false);
     }
 };

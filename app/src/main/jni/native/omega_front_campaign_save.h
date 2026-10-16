@@ -103,7 +103,7 @@ public:
            f.pump_health_<0||f.pump_health_>18||bridge>1||deployed>1||
            f.morphology_epoch_>1||outcome>2||
            f.last_.operation<-1||f.last_.operation>2||
-           f.last_.defenders_lost>4||f.last_.enemies_lost>5||
+           f.last_.defenders_lost>4||f.last_.enemies_lost>6||
            f.last_.pump_remaining>18||f.last_.battle_ticks>160||
            (f.last_.operation==-1 && (outcome || f.last_.battle_ticks))||
            (f.operation_==3 && f.deployed_)||
@@ -129,8 +129,13 @@ public:
         while(r.position<r.capacity){if(r.U8()!=0)return false;}
         if(!r.ok)return false;
         if(f.deployed_){
+            // v1 nested checkpoints from earlier releases remain playable as
+            // their originally authored pump-defense missions. New v2
+            // checkpoints may not spoof a different operation's rules.
+            const uint8_t nested_schema=static_cast<uint8_t>(combat[8]);
+            if(f.operation_>=3 || (nested_schema>=2 &&
+               next.tactical.battle.mission()!=static_cast<Mission>(f.operation_)))return false;
             f.battle_=next.tactical.battle;
-            if(f.operation_>=3)return false;
         }
         next.ResetEdges();next.rejected=false;
         *output=next;

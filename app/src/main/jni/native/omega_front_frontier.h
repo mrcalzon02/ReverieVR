@@ -156,7 +156,8 @@ public:
         const uint32_t encounter_seed=Mix(seed_,static_cast<uint32_t>(operation_+1));
         Battle battle(encounter_seed);
         battle.ClearUnits();
-        if(!battle.ConfigurePump(pump_health_))return false;
+        if(!battle.ConfigurePump(pump_health_) ||
+           !battle.ConfigureMission(static_cast<Mission>(operation_)))return false;
         if(operation_==1) {
             battle.SetGround(7,10,Ground::Rubble);
             battle.SetGround(7,11,Ground::Rubble);
@@ -170,11 +171,21 @@ public:
            battle.AddUnit(Side::Hearthwell,Class::Rifle,3,13)<0 ||
            battle.AddUnit(Side::Hearthwell,Class::Engineer,2,13)<0 ||
            battle.AddUnit(Side::Hearthwell,Class::Heavy,5,12)<0)return false;
-        if(battle.AddUnit(Side::Raiders,Class::Rifle,8,11)<0 ||
-           battle.AddUnit(Side::Raiders,Class::Rifle,8,13)<0 ||
-           battle.AddUnit(Side::Raiders,Class::Heavy,10,12)<0)return false;
-        if(operation_>=1 && battle.AddUnit(Side::Raiders,Class::Rifle,19,9)<0)return false;
-        if(operation_==2 && battle.AddUnit(Side::Raiders,Class::Rifle,20,12)<0)return false;
+        if(operation_==1){
+            // Hearthward watches physically defend the orchard rather than
+            // using the pump-assault spawn and pretending it is another war.
+            if(battle.AddUnit(Side::Raiders,Class::Rifle,15,10)<0 ||
+               battle.AddUnit(Side::Raiders,Class::Rifle,15,14)<0 ||
+               battle.AddUnit(Side::Raiders,Class::Heavy,19,12)<0 ||
+               battle.AddUnit(Side::Raiders,Class::Rifle,19,9)<0)return false;
+        }else{
+            if(battle.AddUnit(Side::Raiders,Class::Rifle,8,11)<0 ||
+               battle.AddUnit(Side::Raiders,Class::Rifle,8,13)<0 ||
+               battle.AddUnit(Side::Raiders,Class::Heavy,10,12)<0)return false;
+            if(operation_==2 && (battle.AddUnit(Side::Raiders,Class::Rifle,19,9)<0 ||
+                battle.AddUnit(Side::Raiders,Class::Rifle,20,12)<0 ||
+                battle.AddUnit(Side::Raiders,Class::Engineer,19,12)<0))return false;
+        }
         battle_=battle;deployed_=true;rations_-=2;
         return true;
     }
