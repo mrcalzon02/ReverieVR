@@ -20,6 +20,20 @@ int main(){
     assert(!replay.restore(tampered));
 
     // Steering must not depend on the fire button.
+    // Route choice changes mission rules rather than selecting renamed waves.
+    Simulation interception(42), recovery(42);
+    assert(interception.launch(1));
+    assert(interception.mission().kind==MissionKind::Intercept);
+    assert(interception.mission().permitted_escapes==0);
+    const float initialCountdown=interception.remaining_time();
+    interception.update(.05f,0.f,0.f,false);
+    assert(interception.remaining_time()<initialCountdown);
+    assert(recovery.launch(2));
+    assert(recovery.mission().kind==MissionKind::Recovery);
+    assert(recovery.mission().required_salvage==3);
+    assert(recovery.salvage_collected()==0);
+    assert(recovery.salvage().empty());
+    assert(game.mission().kind==MissionKind::Sweep);
     Simulation pad(9001);assert(pad.launch(0));
     const float startX=pad.player_x();
     pad.update(.05f,1.0f,0.0f,false);
