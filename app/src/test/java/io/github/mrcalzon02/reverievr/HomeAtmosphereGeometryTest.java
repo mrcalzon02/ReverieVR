@@ -33,10 +33,11 @@ public final class HomeAtmosphereGeometryTest {
         float[] sky=HomeAtmosphereGeometry.windowSky();
         float[] landscape=HomeAtmosphereGeometry.windowHorizon();
         mesh(sky,12);mesh(landscape,32);
+        mesh(HomeAtmosphereGeometry.windowedRearWall(),20);
         mesh(HomeAtmosphereGeometry.windowFrames(),68);
-        for(int i=2;i<sky.length;i+=3)assertEquals(-4.0625f,sky[i],.02f);
+        for(int i=2;i<sky.length;i+=3)assertEquals(-4.19f,sky[i],.02f);
         for(int i=2;i<landscape.length;i+=3)
-            assertTrue("mountain behind glass or wall",landscape[i]>-4.065f);
+            assertTrue("scenery must sit in front of sky",landscape[i]>-4.19f);
     }
 
     @Test public void crittersAndBirdsAreBoundedAndDeterministic() {
