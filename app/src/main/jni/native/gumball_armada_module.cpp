@@ -199,7 +199,7 @@ void Flight(Module* m){
 }
 void Result(Module* m){
     Background(m);auto phase=m->sim.phase();
-    Text(m,phase==Phase::KingdomSaved?"CANDY KING RESCUED!":
+    Text(m,phase==Phase::ArmadaDefeated?"SOUR ARMADA DEFEATED":
          (phase==Phase::Won?"SWEET VICTORY!":"SHIP DISABLED"),0,.81f,.069f,1.f,.78f,.35f);
     char text[80];
     std::snprintf(text,sizeof(text),"SORTIE CASH +%u  CLEAR BONUS +%u",
@@ -212,7 +212,7 @@ void Result(Module* m){
     std::snprintf(text,sizeof(text),"TOTAL %u G  RANK %d  TIME %dS",
                   m->sim.cash(),m->sim.command_rank(),static_cast<int>(m->sim.elapsed()));
     Text(m,text,0,-.43f,.041f,.93f,.73f,.92f);
-    Text(m,phase==Phase::KingdomSaved?"FOUR GENERALS DEFEATED":
+    Text(m,phase==Phase::ArmadaDefeated?"THE KING IS STILL MISSING":
          "CLICK TO RETURN TO CHART",0,-1.f,.044f,.74f,.94f,.88f);
 }
 void Rebuild(Module* m){
