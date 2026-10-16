@@ -117,6 +117,7 @@ int main(){
     for(int i=0;i<12000&&leaked.phase()==Phase::Flight;++i)
         leaked.update(.025f,0.f,0.f,false);
     assert(leaked.phase()==Phase::Lost&&leaked.escaped()==3);
+    assert(leaked.failure()==FailureReason::Escapes);
     assert(leaked.completion_bonus()==0&&leaked.node()==0);
     // Three functional weapons, paid ownership, equipment and v1 save migration.
     Simulation arsenal(7);
@@ -182,6 +183,7 @@ int main(){
         skippedAce.update(.025f,steer,0.f,shoot);
     }
     assert(skippedAce.phase()==Phase::Lost&&skippedAce.escaped()==1);
+    assert(skippedAce.failure()==FailureReason::EliteEscaped);
     assert(skippedAce.node()==0&&skippedAce.completion_bonus()==0);
     // Default unpaid starter ship must be able to complete the first
     // reasonable-risk lane under deterministic steering/held-fire input.
@@ -199,6 +201,7 @@ int main(){
         starter.update(.025f,axis,0.f,true);
     }
     assert(starter.phase()==Phase::Won);
+    assert(starter.failure()==FailureReason::None);
     assert(starter.hp()>0&&starter.escaped()<3);
     assert(starter.completion_bonus()>0&&starter.visited()==1);
     std::cout<<"Gumball Armada deterministic combat and save tests passed\n";
