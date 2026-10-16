@@ -39,6 +39,15 @@ int main(){
     assert(!Inside({0.f,-1.70f,1.0f,.10f},kPanel)); // old clipped footer
     // New textual footer extends at most 3 glyph rows above/below center.
     assert(-.95f-.039f*2.5f > kPanel.y-kPanel.height*.5f);
+    // Actual vector-font glyphs extend up to 2.59*scale each direction.
+    const float maxHintExtent=2.60f*kShopHintScale;
+    const float maxStatusExtent=2.60f*.048f;
+    assert(kShopHintY-maxHintExtent >
+           kShopRowY[0]+kCardHeight*.5f);
+    assert(kShopHintY+maxHintExtent <
+           kShopStatusY-maxStatusExtent);
+    assert(kShopCreditsY-2.60f*kShopCreditsScale >
+           kPanel.y-kPanel.height*.5f);
     // No card or lettering descends below the -1.10 world sea plane.
     assert(kPanel.y-kPanel.height*.5f>=-1.1001f);
     assert(-.95f-.039f*2.5f> -1.10f);

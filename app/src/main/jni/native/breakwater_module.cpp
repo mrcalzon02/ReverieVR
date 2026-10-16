@@ -695,7 +695,7 @@ void BuildScene(State *s) {
             static_cast<unsigned>(game.wave_index()),
             static_cast<unsigned>(game.waves_this_period()),
             game.credits());
-        Text(s,header,0,.86f,-2.97f,
+        Text(s,header,0,menu::kShopStatusY,-2.97f,
              menu::FittedScale(header,5.75f,.048f),.91f,.90f,.77f);
         // Focus-dependent inspection and purchase eligibility are
         // shown as real vector text; no extra tabs or inert details panel.
@@ -712,8 +712,8 @@ void BuildScene(State *s) {
         shopfeedback::Describe(hint,sizeof(hint),s->armory_page,focused,
             ShopDisplayPrice(s,focused),game.credits(),
             focus_owned,focus_active);
-        Text(s,hint,0,.61f,-2.972f,
-             menu::FittedScale(hint,5.65f,.043f),
+        Text(s,hint,0,menu::kShopHintY,-2.972f,
+             menu::FittedScale(hint,5.65f,menu::kShopHintScale),
              .87f,.96f,.85f);
         // Everything interactive fits within the dark board and uses
         // exactly the same menu::Rect as the pointer hit-test.
@@ -777,8 +777,8 @@ void BuildScene(State *s) {
         }
         char summary[40];
         std::snprintf(summary,sizeof(summary),"CREDITS %d",game.credits());
-        Text(s,summary,0,-.95f,-2.967f,
-             menu::FittedScale(summary,3.50f,.039f),.92f,.86f,.64f);
+        Text(s,summary,0,menu::kShopCreditsY,-2.967f,
+             menu::FittedScale(summary,3.50f,menu::kShopCreditsScale),.92f,.86f,.64f);
     } else if(game.phase()==Phase::Combat) {
         char digits[32];std::snprintf(digits,sizeof(digits),"HULL %d",game.integrity());
         Text(s,digits,0,1.20f,-2.0f,.075f,.92f,.92f,.74f);

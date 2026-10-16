@@ -23,6 +23,13 @@ constexpr float kShopRowY[2]={0.27f,-0.22f};
 constexpr float kCardWidth=1.23f,kCardHeight=0.40f;
 constexpr float kActionY=-0.66f;
 constexpr float kActionWidth=1.60f,kActionHeight=0.30f;
+// Text baselines are part of the same shop layout contract: a tooltip that
+// fits horizontally must not overlap the top cards or status heading.
+constexpr float kShopStatusY=0.86f;
+constexpr float kShopHintY=0.61f;
+constexpr float kShopHintScale=0.043f;
+constexpr float kShopCreditsY=-0.95f;
+constexpr float kShopCreditsScale=0.039f;
 inline Rect ShopCard(int index) {
     return index>=0 && index<8 ?
         Rect{kColumnX[index%4],kShopRowY[index/4],kCardWidth,kCardHeight} :
