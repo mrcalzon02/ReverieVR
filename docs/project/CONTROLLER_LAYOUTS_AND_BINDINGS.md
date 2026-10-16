@@ -204,3 +204,18 @@ continue driving mouse deltas without mouse-button activation. This is a
 source regression contract; the user's physical report still requires a
 new signed APK on the Galaxy S9 plus live INPUT_NORMALIZED/BINDING_OUTPUT
 trace if the handset differs from the tested source path.
+
+### DOS library pad focus without mouse click (2026-10-15)
+
+Stationary 180-ms holds in the upper/lower Daydream pad zones move
+DOS-library selection focus directly, repeating at 350/170 ms. A swipe
+moving 18 or more raw pad units becomes scrolling and never fires the
+held-zone navigation for the remainder of that touch. Selecting a focused
+game uses an ordinary touchpad click; no click is needed merely to
+move between rows. Focus automatically scrolls when moving past the
+first/last visible game, and normal gaze selection returns after a swipe
+or menu selection. This routing is limited to the DOS library: running
+DOS games still receive independent held guest arrow/WASD keys and
+head-driven mouse axes, while opened DOS settings retain their own
+existing directional navigation. The phone/headset usability acceptance
+remains open until tested on the Galaxy S9.

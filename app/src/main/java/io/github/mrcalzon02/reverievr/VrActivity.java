@@ -1127,6 +1127,7 @@ public final class VrActivity extends Activity
 
             case NAV_UP:
                 if (!renderer.requestDosMenuNavigation(VrInputAction.NAV_UP)
+                    && !renderer.requestDosLibraryNavigation(VrInputAction.NAV_UP)
                     && !renderer.requestDosLibraryScroll(VrInputAction.NAV_UP)) {
                     renderer.requestPointerNavigation(VrInputAction.NAV_UP);
                 }
@@ -1134,6 +1135,7 @@ public final class VrActivity extends Activity
 
             case NAV_DOWN:
                 if (!renderer.requestDosMenuNavigation(VrInputAction.NAV_DOWN)
+                    && !renderer.requestDosLibraryNavigation(VrInputAction.NAV_DOWN)
                     && !renderer.requestDosLibraryScroll(VrInputAction.NAV_DOWN)) {
                     renderer.requestPointerNavigation(VrInputAction.NAV_DOWN);
                 }

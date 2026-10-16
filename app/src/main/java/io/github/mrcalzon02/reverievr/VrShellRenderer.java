@@ -1329,6 +1329,44 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return true;
     }
 
+    boolean requestDosLibraryNavigation(VrInputAction action) {
+        if (!isDosLibraryScrollable()
+            || (action != VrInputAction.NAV_UP
+                && action != VrInputAction.NAV_DOWN)) return false;
+        final int count = DOS_LIBRARY_BUTTONS.length;
+        final int direction = action == VrInputAction.NAV_UP ? -1 : 1;
+        int current = hoveredButton;
+        int next;
+        if (current < 0 || current >= count || !isButtonEnabled(current)) {
+            next = firstEnabledButton(count);
+        } else if (current == 0 && direction < 0
+                && dosLibraryScrollFirst > 0) {
+            moveDosLibraryScroll(-1);
+            next = 0;
+        } else if (current == DosLibraryScroll.VISIBLE_ROWS - 1
+                && direction > 0
+                && dosLibraryScrollFirst < DosLibraryScroll.maxFirst(
+                    dosModuleIds.length)) {
+            moveDosLibraryScroll(1);
+            next = current;
+        } else {
+            next = findEnabledVerticalButton(current, direction, count);
+            if (next < 0) next = current;
+        }
+        if (next < 0) return false;
+        keyboardQuickMenuFocusActive = true;
+        if (next != hoveredButton) {
+            hoveredButton = next;
+            textureDirty = true;
+            host.onUiFocusChanged();
+        } else {
+            // A scrolling row can change its title without changing index.
+            textureDirty = true;
+            host.onUiFocusChanged();
+        }
+        return true;
+    }
+
     boolean requestDosMenuNavigation(VrInputAction action) {
         if (!isDosOverlayNavigationActive()
             || (action != VrInputAction.NAV_UP
@@ -1610,6 +1648,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (next == dosLibraryScrollFirst) return false;
         dosLibraryScrollFirst = next;
         hoveredButton = -1;
+        keyboardQuickMenuFocusActive = false;
         textureDirty = true;
         return true;
     }
@@ -2311,7 +2350,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // visual grace period activate a key no longer under the live ray.
         boolean selecting = selectRequested.getAndSet(false);
         int newHover =
-            (orientationMenuVisible || isDosOverlayNavigationActive())
+            (orientationMenuVisible || isDosOverlayNavigationActive()
+                || mode == MODE_DOS_LIBRARY)
                 && keyboardQuickMenuFocusActive
                 ? hoveredButton
                 : uiTargetStabilizer.update(rawHover, frameNanos, selecting);
@@ -5679,6 +5719,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void handleDosLibrarySelection(int button) {
+        keyboardQuickMenuFocusActive = false;
         String[] ids = dosModuleIds;
         if (button >= 0 && button < DosLibraryScroll.VISIBLE_ROWS) {
             int moduleIndex = DosLibraryScroll.indexAt(

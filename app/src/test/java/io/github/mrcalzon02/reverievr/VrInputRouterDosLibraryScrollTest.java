@@ -78,6 +78,36 @@ public final class VrInputRouterDosLibraryScrollTest {
         assertEquals(2, listener.down); // neutral re-arms without click
     }
 
+    @Test public void stationaryLibraryEdgeHoldNavigatesWithoutClickAndRepeats() {
+        Listener listener = new Listener();
+        VrInputRouter router = new VrInputRouter(listener);
+        router.onControllerSnapshot(touch(true, 15, 1000000000L), "Daydream");
+        router.onControllerSnapshot(touch(true, 15, 1160000000L), "Daydream");
+        assertEquals(0, listener.navigationActions); // 180 ms hold guard
+        router.onControllerSnapshot(touch(true, 15, 1190000000L), "Daydream");
+        assertEquals(1, listener.up);
+        router.onControllerSnapshot(touch(true, 15, 1300000000L), "Daydream");
+        assertEquals(1, listener.up);
+        router.onControllerSnapshot(touch(true, 15, 1550000000L), "Daydream");
+        assertEquals(2, listener.up);
+        router.onControllerSnapshot(touch(false, 0, 1570000000L), "Daydream");
+        assertEquals(2, listener.navigationActions);
+        router.onControllerSnapshot(touch(true, 245, 1700000000L), "Daydream");
+        router.onControllerSnapshot(touch(true, 245, 1890000000L), "Daydream");
+        assertEquals(1, listener.down);
+    }
+
+    @Test public void librarySwipeNeverBecomesDirectionalNavigation() {
+        Listener listener = new Listener();
+        VrInputRouter router = new VrInputRouter(listener);
+        router.onControllerSnapshot(touch(true, 245, 1000000000L), "Daydream");
+        router.onControllerSnapshot(touch(true, 200, 1100000000L), "Daydream");
+        router.onControllerSnapshot(touch(true, 15, 1400000000L), "Daydream");
+        router.onControllerSnapshot(touch(true, 15, 1900000000L), "Daydream");
+        assertEquals(0, listener.navigationActions);
+        assertEquals(-230f, listener.swipeDistance, 0.001f);
+    }
+
     @Test public void otherScreensKeepNormalTouchpadSwipeNavigation() {
         Listener listener = new Listener();
         listener.libraryVisible = false;

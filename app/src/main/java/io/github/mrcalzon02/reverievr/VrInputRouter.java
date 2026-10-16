@@ -61,6 +61,10 @@ final class VrInputRouter {
     }
 
     private static final int TOUCH_SWIPE_THRESHOLD = 48;
+    // A settled edge hold navigates the DOS shelf. A travelling finger
+    // remains a scroll gesture instead of firing an unintended selection.
+    private static final int DOS_LIBRARY_STILLNESS_PIXELS = 18;
+    private static final long DOS_LIBRARY_NAV_ARM_NANOS = 180000000L;
     private static final float AXIS_THRESHOLD = 0.65f;
 
     private final Listener listener;
@@ -74,6 +78,10 @@ final class VrInputRouter {
 
     private boolean previousTouching;
     private boolean libraryScrollTouch;
+    private boolean dosLibrarySwiped;
+    private int dosLibraryDirection;
+    private long dosLibraryTouchStartedNanos;
+    private long nextDosLibraryRepeatNanos;
     private int dosMenuDirection;
     private long nextDosMenuRepeatNanos;
     private int touchStartX;
@@ -104,6 +112,10 @@ final class VrInputRouter {
         previousVolumeDown = false;
         previousTouching = false;
         libraryScrollTouch = false;
+        dosLibrarySwiped = false;
+        dosLibraryDirection = 0;
+        dosLibraryTouchStartedNanos = 0L;
+        nextDosLibraryRepeatNanos = 0L;
         dosMenuDirection = 0;
         nextDosMenuRepeatNanos = 0L;
         touchStartX = touchStartY = touchLastX = touchLastY = 0;
@@ -206,6 +218,16 @@ final class VrInputRouter {
                 touchStartY = snapshot.touchY;
                 libraryScrollTouch = !dosGame && listener != null
                     && listener.usesDosLibraryTouchScroll();
+                dosLibrarySwiped = false;
+                dosLibraryTouchStartedNanos = snapshot.receivedAtNanos > 0L
+                    ? snapshot.receivedAtNanos : System.nanoTime();
+            }
+            if (libraryScrollTouch
+                && (Math.abs(snapshot.touchX - touchStartX)
+                    >= DOS_LIBRARY_STILLNESS_PIXELS
+                    || Math.abs(snapshot.touchY - touchStartY)
+                    >= DOS_LIBRARY_STILLNESS_PIXELS)) {
+                dosLibrarySwiped = true;
             }
 
             // Relative finger motion drives DOSBox Pure's real mouse device.
@@ -278,6 +300,8 @@ final class VrInputRouter {
         }
 
         routeDosShellMenuTouch(snapshot, dosShellMenu, source);
+        routeDosLibraryTouchNavigation(snapshot,
+            libraryScrollTouch, source);
 
         previousClick = snapshot.touchpadPressed;
         previousMenu = snapshot.menuPressed;
@@ -285,7 +309,45 @@ final class VrInputRouter {
         previousVolumeUp = snapshot.volumeUpPressed;
         previousVolumeDown = snapshot.volumeDownPressed;
         previousTouching = snapshot.touching;
-        if (!snapshot.touching) libraryScrollTouch = false;
+        if (!snapshot.touching) {
+            libraryScrollTouch = false;
+            dosLibrarySwiped = false;
+            dosLibraryDirection = 0;
+            dosLibraryTouchStartedNanos = 0L;
+            nextDosLibraryRepeatNanos = 0L;
+        }
+    }
+
+    private void routeDosLibraryTouchNavigation(
+        ControllerSnapshot snapshot, boolean libraryActive, String source) {
+        if (!libraryActive || !snapshot.touching
+            || snapshot.touchpadPressed || dosLibrarySwiped) {
+            dosLibraryDirection = 0;
+            nextDosLibraryRepeatNanos = 0L;
+            return;
+        }
+        final long now = snapshot.receivedAtNanos > 0L
+            ? snapshot.receivedAtNanos : System.nanoTime();
+        if (now < dosLibraryTouchStartedNanos
+            || now - dosLibraryTouchStartedNanos < DOS_LIBRARY_NAV_ARM_NANOS) {
+            return;
+        }
+        final float y = centerTouch(snapshot.touchY);
+        final int direction = y <= -0.55f ? -1 : y >= 0.55f ? 1 : 0;
+        if (direction == 0) {
+            dosLibraryDirection = 0;
+            nextDosLibraryRepeatNanos = 0L;
+            return;
+        }
+        if (direction != dosLibraryDirection
+            || now >= nextDosLibraryRepeatNanos) {
+            emit(direction < 0 ? VrInputAction.NAV_UP
+                : VrInputAction.NAV_DOWN, source);
+            nextDosLibraryRepeatNanos = now
+                + (direction != dosLibraryDirection
+                    ? 350000000L : 170000000L);
+        }
+        dosLibraryDirection = direction;
     }
 
     private void routeDosShellMenuTouch(
