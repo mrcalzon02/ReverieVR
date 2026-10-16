@@ -1,0 +1,313 @@
+#include "gumball_armada_simulation.h"
+#include "reverie_native_sdk.h"
+#include "reverie_native_gl_state.h"
+#include "reverie_native_gl_utils.h"
+#include "reverie_native_math.h"
+#include "reverie_native_flat_mesh.h"
+#include <GLES2/gl2.h>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <new>
+#include <vector>
+namespace {
+using reverie::gumball::Simulation;
+using reverie::gumball::Phase;
+using reverie::gumball::Upgrade;
+using reverie::gumball::Snapshot;
+const char kId[]="gumball-armada";
+const char kName[]="Gumball Armada: Candy King Search [DEV]";
+struct Module {
+    const ReverieNativeHostV1* host=nullptr;
+    Simulation sim;
+    int selected=0; // three exits, four upgrades
+    bool primary=false,saveError=false,upload=true;
+    float navTime=0,fireTime=0;
+    GLuint program=0,vbo=0;GLint pos=-1,col=-1,mvp=-1;
+    std::vector<float> mesh;
+};
+void Rect(Module* m,float x,float y,float w,float h,float z,float r,float g,float b){
+    reverie::flatmesh::Rect(m->mesh,x,y,w,h,z,r,g,b);
+}
+void Disc(Module* m,float x,float y,float d,float z,float r,float g,float b){
+    reverie::flatmesh::Disc(m->mesh,x,y,d,z,r,g,b);
+}
+void Tri(Module* m,float x,float y,float a,float b,float c,float d,float z,float r,float g,float bl){
+    reverie::flatmesh::Triangle(m->mesh,x,y,a,b,c,d,z,r,g,bl);
+}
+const char* Glyph(char c){
+    switch(c){
+    case 'A':return "010101111101101";case 'B':return "110101110101110";
+    case 'C':return "011100100100011";case 'D':return "110101101101110";
+    case 'E':return "111100110100111";case 'F':return "111100110100100";
+    case 'G':return "011100101101011";case 'H':return "101101111101111";
+    case 'I':return "111010010010111";case 'J':return "001001001101010";
+    case 'K':return "101101110101101";case 'L':return "100100100100111";
+    case 'M':return "101111111101101";case 'N':return "101111111111101";
+    case 'O':return "111101101101111";case 'P':return "110101110100100";
+    case 'Q':return "111101101111011";case 'R':return "110101110101101";
+    case 'S':return "011100010001110";case 'T':return "111010010010010";
+    case 'U':return "101101101101111";case 'V':return "101101010101010";
+    case 'W':return "101101111111101";case 'X':return "101101010101101";
+    case 'Y':return "101101010010010";case 'Z':return "111001010010010";
+    case '0':return "111101101101111";case '1':return "010110010010111";
+    case '2':return "110001111100111";case '3':return "110001110001110";
+    case '4':return "101101111001001";case '5':return "111100110001110";
+    case '6':return "011100111101111";case '7':return "111001010010010";
+    case '8':return "111101111101111";case '9':return "111101111001110";
+    case '-':return "000000111000000";case '+':return "000010111010000";
+    case ':':return "000010000010000";case '/':return "001001010100100";
+    case '!':return "010010010000010";default:return "000000000000000";
+    }
+}
+void Text(Module* m,const char* message,float x,float y,float sz,float r,float g,float b){
+    if(!message)return;
+    size_t n=std::strlen(message);float left=x-static_cast<float>(n)*sz*2.f;
+    for(size_t k=0;k<n;++k){
+        char c=message[k];if(c>='a'&&c<='z')c=static_cast<char>(c-'a'+'A');
+        const char* bits=Glyph(c);
+        for(int i=0;i<15;++i)if(bits[i]=='1')
+            Rect(m,left+(k*4.f+i%3+.5f)*sz,y+(2.5f-i/3)*sz,
+                 .9f*sz,.9f*sz,-2.86f,r,g,b);
+    }
+}
+void Frame(Module* m,float x,float y,float w,float h,bool focus){
+    Rect(m,x,y,w,h,-2.96f,focus?.35f:.13f,focus?.21f:.11f,focus?.48f:.18f);
+    Rect(m,x,y,w-.035f,h-.035f,-2.94f,.052f,.060f,.115f);
+}
+void Background(Module* m){
+    Rect(m,0,0,5.0f,3.48f,-3.10f,.018f,.021f,.055f);
+    for(uint32_t i=0;i<110;++i){
+        uint32_t t=reverie::gumball::Mix(i*19u+0x123BCu);
+        float x=(t%1000u)*.00486f-2.43f,y=((t>>10)%1000u)*.0033f-1.65f;
+        Rect(m,x,y,.008f,.010f,-3.01f,.30f,.24f,.44f);
+    }
+}
+void Chart(Module* m){
+    char text[96];Background(m);
+    Text(m,"GUMBALL ARMADA",0,1.38f,.079f,1.f,.81f,.94f);
+    Text(m,"THE CANDY KING IS MISSING",0,1.07f,.044f,.89f,.89f,.98f);
+    const char* generals[]={"SALLY SCRUNCH","CAPTAIN CRINGE","PETE PUCKER","SENATOR SAUER"};
+    const unsigned sector=m->sim.node()/1024u;
+    std::snprintf(text,sizeof(text),"SOUR GENERAL: %s",generals[sector<4u?sector:3u]);
+    Text(m,text,0,.78f,.039f,1.f,.62f,.58f);
+    for(int n=0;n<3;++n){
+        float x=-1.54f+1.54f*n;
+        Frame(m,x,.20f,1.43f,.70f,m->selected==n);
+        auto lane=m->sim.lane(static_cast<unsigned>(n));
+        std::snprintf(text,sizeof(text),"LANE %c %04u",'A'+n,lane.id);
+        Text(m,text,x,.33f,.044f,.95f,.95f,1.f);
+        if(lane.fortress)Text(m,"SOUR FORTRESS",x,.07f,.034f,1.f,.49f,.47f);
+        else{
+            std::snprintf(text,sizeof(text),"RISK %u LOOT %u",lane.hazard,lane.reward);
+            Text(m,text,x,.07f,.035f,.88f,.83f,.63f);
+        }
+    }
+    const char* upgrades[]={"BLASTER","HULL","THRUSTER","SHIELD"};
+    for(int i=0;i<4;++i){
+        float x=-1.82f+1.21f*i;
+        Frame(m,x,-.73f,1.12f,.70f,m->selected==i+3);
+        Text(m,upgrades[i],x,-.55f,.038f,.92f,.88f,1.f);
+        std::snprintf(text,sizeof(text),"LV %d %dG",m->sim.level(static_cast<Upgrade>(i)),
+                      m->sim.price(static_cast<Upgrade>(i)));
+        Text(m,text,x,-.87f,.036f,1.f,.81f,.56f);
+    }
+    std::snprintf(text,sizeof(text),"GUMBALLS %u  RANK %d  GENERALS %u/4",
+                  m->sim.cash(),m->sim.command_rank(),
+                  static_cast<unsigned>((m->sim.bosses()&1u)+((m->sim.bosses()>>1)&1u)
+                    +((m->sim.bosses()>>2)&1u)+((m->sim.bosses()>>3)&1u)));
+    Text(m,text,0,-1.31f,.038f,1.f,.86f,.60f);
+    Text(m,"PAD CHOOSE  CLICK LAUNCH OR BUY",0,-1.55f,.033f,.72f,.87f,.93f);
+}
+void Flight(Module* m){
+    Background(m);
+    const auto& s=m->sim;
+    for(const auto& e:s.enemies())if(e.active){
+        float r=e.boss?.28f:.17f;
+        Disc(m,e.x,e.y,r,-2.90f,.81f,e.boss?.23f:.62f,.19f);
+        Disc(m,e.x,e.y,r*.66f,-2.88f,.98f,.83f,.33f);
+        if(e.boss){
+            Disc(m,e.x-.18f,e.y-.10f,.06f,-2.85f,.79f,.20f,.25f);
+            Disc(m,e.x+.18f,e.y-.10f,.06f,-2.85f,.79f,.20f,.25f);
+        }
+    }
+    for(const auto& shot:s.shots())if(shot.active)
+        Rect(m,shot.x,shot.y,.039f,shot.hostile?.12f:.21f,-2.82f,
+             shot.hostile?1.f:.38f,shot.hostile?.26f:.90f,shot.hostile?.20f:1.f);
+    float x=s.player_x(),y=s.player_y();
+    Tri(m,x,y+.22f,x-.19f,y-.17f,x+.19f,y-.17f,-2.85f,.92f,.66f,.94f);
+    Disc(m,x,y,.075f,-2.83f,.29f,.91f,.96f);
+    float wing=.21f+.016f*s.level(Upgrade::Hull);
+    Tri(m,x-.08f,y,x-wing,y-.22f,x-.10f,y-.12f,-2.84f,.21f,.81f,.71f);
+    Tri(m,x+.08f,y,x+wing,y-.22f,x+.10f,y-.12f,-2.84f,.21f,.81f,.71f);
+    for(int i=0;i<1+s.level(Upgrade::Blaster)/4;++i)
+        Rect(m,x+(i-1)*.09f,y+.17f,.03f,.16f,-2.82f,1.f,.87f,.33f);
+    char text[96];
+    Rect(m,0,1.48f,5.f,.35f,-2.92f,.056f,.060f,.12f);
+    std::snprintf(text,sizeof(text),"HULL %d  SHIELD %d  GUMBALLS %u",s.hp(),s.shield(),s.cash());
+    Text(m,text,0,1.42f,.044f,.91f,.97f,.87f);
+    if(s.combo()>=3){
+        Text(m,s.combo()>=10?"SOUR ANNIHILATION!":(s.combo()>=6?"SPECTACULAR!":"SUGAR RUSH!"),
+             0,.93f,.073f,1.f,.84f,.28f);
+        std::snprintf(text,sizeof(text),"COMBO X%d",s.combo());
+        Text(m,text,0,.69f,.042f,1.f,.93f,.55f);
+    }
+    Text(m,"PAD FLY  HOLD CLICK FIRE",0,-1.55f,.034f,.76f,.88f,.97f);
+}
+void Result(Module* m){
+    Background(m);auto phase=m->sim.phase();
+    Text(m,phase==Phase::KingdomSaved?"CANDY KING RESCUED!":
+         (phase==Phase::Won?"SWEET VICTORY!":"SHIP DISABLED"),0,.81f,.069f,1.f,.78f,.35f);
+    char text[80];
+    std::snprintf(text,sizeof(text),"GUMBALLS %u  KILLS %u",m->sim.cash(),m->sim.kills());
+    Text(m,text,0,.25f,.05f,.89f,.94f,.85f);
+    std::snprintf(text,sizeof(text),"COMMANDER RANK %d",m->sim.command_rank());
+    Text(m,text,0,-.22f,.05f,.97f,.78f,.98f);
+    Text(m,phase==Phase::KingdomSaved?"ALL FOUR GENERALS DEFEATED":
+         "CLICK TO RETURN TO CHART",0,-1.f,.046f,.74f,.94f,.88f);
+}
+void Rebuild(Module* m){
+    m->mesh.clear();
+    if(m->sim.phase()==Phase::Chart)Chart(m);
+    else if(m->sim.phase()==Phase::Flight)Flight(m);
+    else Result(m);
+    m->upload=true;
+}
+void Save(Module* m){
+    if(!ReverieNativeHostSupportsSaveV1(m->host))return;
+    const Snapshot s=m->sim.snapshot();
+    const int code=m->host->write_save("campaign.v1",&s,static_cast<uint32_t>(sizeof(s)));
+    if(code!=REVERIE_NATIVE_SAVE_OK){
+        if(!m->saveError)ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,kId,"Campaign save failed");
+        m->saveError=true;
+    }else m->saveError=false;
+}
+void* Create(const ReverieNativeHostV1* host){
+    if(!ReverieNativeHostSupportsLogV1(host))return nullptr;
+    Module* m=new(std::nothrow)Module();if(!m)return nullptr;
+    m->host=host;m->mesh.reserve(20000);
+    if(ReverieNativeHostSupportsSaveV1(host)){
+        Snapshot s{};uint32_t count=0;
+        int result=host->read_save("campaign.v1",&s,sizeof(s),&count);
+        if(result==REVERIE_NATIVE_SAVE_OK&&(count!=sizeof(s)||!m->sim.restore(s)))
+            ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_WARN,kId,"Invalid campaign save ignored");
+        else if(result!=REVERIE_NATIVE_SAVE_OK&&result!=REVERIE_NATIVE_SAVE_NOT_FOUND)
+            ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,"Campaign save read failed");
+    }
+    Rebuild(m);return m;
+}
+void Destroy(void* p){delete static_cast<Module*>(p);}
+int32_t GlStart(void* p){
+    auto* m=static_cast<Module*>(p);if(!m)return 0;
+    ReverieNativeGlStateV1 state{};ReverieNativeGlStateCaptureV1(&state);
+    const char* vs="uniform mat4 u_Mvp;\nattribute vec3 a_Pos;\nattribute vec3 a_Color;\nvarying vec3 v_Color;\nvoid main(){v_Color=a_Color;gl_Position=u_Mvp*vec4(a_Pos,1.0);}\n";
+    const char* fs="precision mediump float;\nvarying vec3 v_Color;\nvoid main(){gl_FragColor=vec4(v_Color,1.0);}\n";
+    const ReverieNativeGlAttributeBindingV1 attrs[]={{0u,"a_Pos"},{1u,"a_Color"}};
+    char diag[256]={};
+    m->program=ReverieNativeBuildProgramDiagnosticV1(vs,fs,attrs,2,diag,sizeof(diag));
+    if(!m->program){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,kId,diag);
+        ReverieNativeGlStateRestoreV1(&state);return 0;
+    }
+    m->pos=glGetAttribLocation(m->program,"a_Pos");
+    m->col=glGetAttribLocation(m->program,"a_Color");
+    m->mvp=glGetUniformLocation(m->program,"u_Mvp");
+    glGenBuffers(1,&m->vbo);
+    bool good=m->vbo!=0&&m->pos>=0&&m->col>=0&&m->mvp>=0;
+    if(!good){
+        if(m->vbo)glDeleteBuffers(1,&m->vbo);
+        glDeleteProgram(m->program);m->vbo=0;m->program=0;
+    }
+    ReverieNativeGlStateRestoreV1(&state);m->upload=true;
+    return good?1:0;
+}
+void GlEnd(void* p){
+    auto* m=static_cast<Module*>(p);if(!m)return;
+    if(m->vbo)glDeleteBuffers(1,&m->vbo);
+    if(m->program)glDeleteProgram(m->program);
+    m->vbo=0;m->program=0;m->upload=true;
+}
+void Resume(void*){}void Pause(void*){}
+void Update(void* p,const ReverieNativeInputV1* in){
+    auto* m=static_cast<Module*>(p);
+    if(!m||!ReverieNativeInputHasBaseV1(in))return;
+    const float dt=std::max(0.f,std::min(.05f,std::isfinite(in->delta_seconds)?in->delta_seconds:0.f));
+    const bool pressed=in->primary_down!=0;
+    const Phase phase=m->sim.phase();
+    if(phase==Phase::Flight){
+        const uint32_t kills=m->sim.kills();const int hp=m->sim.hp();
+        m->sim.update(dt,in->move_x,in->move_y,pressed);
+        if(kills!=m->sim.kills())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        if(hp>m->sim.hp())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+        m->fireTime-=dt;
+        if(pressed&&m->fireTime<=0.f){
+            ReverieNativeRequestSoundV1(m->host,REVERIE_NATIVE_SOUND_WEAPON_MACHINE);
+            m->fireTime=.18f;
+        }
+        if(m->sim.phase()!=Phase::Flight)Save(m);
+        Rebuild(m);
+    }else if(phase==Phase::Chart){
+        m->navTime-=dt;
+        const float x=in->move_x,y=in->move_y;
+        if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
+            if(std::fabs(y)>.6f){
+                if(y>0&&m->selected<3)m->selected=3;
+                else if(y<0&&m->selected>=3)m->selected=0;
+            }else if(m->selected<3)m->selected=(m->selected+(x>0?1:2))%3;
+            else m->selected=3+(m->selected-3+(x>0?1:3))%4;
+            m->navTime=.20f;
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+            Rebuild(m);
+        }
+        if(pressed&&!m->primary){
+            bool good=false;
+            if(m->selected<3)good=m->sim.launch(static_cast<unsigned>(m->selected));
+            else{
+                good=m->sim.buy(static_cast<Upgrade>(m->selected-3));
+                if(good)Save(m);
+            }
+            ReverieNativeRequestFeedbackV1(m->host,good?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            Rebuild(m);
+        }
+    }else if(pressed&&!m->primary&&m->sim.recover()){
+        Save(m);Rebuild(m);
+        ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+    }
+    m->primary=pressed;
+}
+int32_t Render(void* p,const ReverieNativeEyeV1* eye){
+    auto* m=static_cast<Module*>(p);
+    if(!m||!ReverieNativeEyeRenderableV1(eye)||!m->program||!m->vbo)return 0;
+    ReverieNativeGlStateV1 state{};
+    ReverieNativeGlAttribStateV1 a{},b{};
+    ReverieNativeGlStateCaptureV1(&state);
+    ReverieNativeGlAttribCaptureV1(&a,static_cast<GLuint>(m->pos));
+    ReverieNativeGlAttribCaptureV1(&b,static_cast<GLuint>(m->col));
+    float mvp[16];ReverieNativeMat4Multiply(mvp,eye->projection,eye->view);
+    glDisable(GL_CULL_FACE);glDisable(GL_DEPTH_TEST);glDisable(GL_BLEND);
+    glUseProgram(m->program);glBindBuffer(GL_ARRAY_BUFFER,m->vbo);
+    if(m->upload){
+        glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(m->mesh.size()*sizeof(float)),
+                     m->mesh.data(),GL_DYNAMIC_DRAW);
+        m->upload=false;
+    }
+    glEnableVertexAttribArray(static_cast<GLuint>(m->pos));
+    glVertexAttribPointer(static_cast<GLuint>(m->pos),3,GL_FLOAT,GL_FALSE,6*sizeof(float),reinterpret_cast<const void*>(0));
+    glEnableVertexAttribArray(static_cast<GLuint>(m->col));
+    glVertexAttribPointer(static_cast<GLuint>(m->col),3,GL_FLOAT,GL_FALSE,6*sizeof(float),reinterpret_cast<const void*>(3*sizeof(float)));
+    glUniformMatrix4fv(m->mvp,1,GL_FALSE,mvp);
+    glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(m->mesh.size()/6));
+    const GLenum error=glGetError();
+    ReverieNativeGlAttribRestoreV1(&b);
+    ReverieNativeGlAttribRestoreV1(&a);
+    ReverieNativeGlStateRestoreV1(&state);
+    return error==GL_NO_ERROR?1:0;
+}
+const ReverieNativeModuleApiV1 api={
+    sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
+    {sizeof(ReverieNativeModuleDescriptorV1),REVERIE_NATIVE_MODULE_ABI_VERSION,kId,kName,2u,0u},
+    Create,Destroy,GlStart,GlEnd,Resume,Pause,Update,Render,nullptr
+};
+}
+extern "C" __attribute__((visibility("default")))
+const ReverieNativeModuleApiV1* reverie_native_module_entry_v1(void){return &api;}
