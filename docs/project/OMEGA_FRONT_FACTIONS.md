@@ -3,6 +3,8 @@
 **Maturity:** Original **PROPOSED DESIGN**, not approved in-world faction canon and not implemented gameplay  
 **Canon source:** [OMEGA_FRONT_WORLD_BIBLE.md](OMEGA_FRONT_WORLD_BIBLE.md)  
 **Environment source:** [OMEGA_FRONT_ENVIRONMENTS.md](OMEGA_FRONT_ENVIRONMENTS.md)  
+**Proposed historical chronicles:** [OMEGA_FRONT_FACTION_CHRONICLES.md](OMEGA_FRONT_FACTION_CHRONICLES.md)  
+**Campaign:** [OMEGA_FRONT_GRAND_CAMPAIGN.md](OMEGA_FRONT_GRAND_CAMPAIGN.md)  
 **Mechanical charter:** [WAR_WITHOUT_END.md](WAR_WITHOUT_END.md)  
 **Creator-established count:** exactly **17 competing factions**. The labels F01–F17 here are stable *candidate design IDs*, not a declaration of their final canonical identities.
 
@@ -95,7 +97,7 @@ These are **seventeen unique proposed roles**. Changing one later must retain th
 
 ## 4. Initial production priority — four fully interactive opponents, then fifth
 
-The introductory campaign should not unleash all seventeen factions simultaneously. Its **five early discoverable powers** are F01 Hearthward League, F02 Meridian Combine, F04 Scrapline Freeholds, F06 The Lost Ninth and F12 Carrion Circuit. The player starts with a separate **independent settlement**, with no forced initial identity or faction allegiance. Unknown distant powers still simulate strategic activity at reduced resolution.
+The introductory campaign should not unleash all seventeen factions simultaneously. Its **five early discoverable powers** are F01 Hearthward League, F02 Meridian Combine, F04 Scrapline Freeholds, F06 The Lost Ninth and F12 Carrion Circuit. Their recent convergence is caused by the **emergence of naturally habitable Eden territory from formerly dead wasteland through shifting morphology**. The opening player commander leads a **small isolated contingent**, not a continental army. See the [proposed prologue](OMEGA_FRONT_HEARTHWELL_PROLOGUE.md). The player starts with a separate **independent settlement**, with no forced initial identity or faction allegiance. Unknown distant powers still simulate strategic activity at reduced resolution.
 
 ### F01: Hearthward League — tutorial ally, sometimes a future rival
 - **Opening objective:** repair a waterworks and keep enough citizens alive to maintain an Eden settlement.
@@ -182,6 +184,6 @@ Each unit needs movement class, era class, material penetration, range, suppress
 
 **F-D05:** Expand all 17 with dedicated unique production chains, sprite identities and AI state plans. Perform faction-versus-faction balance tests, including mixed technological eras, without falsely equalizing weapon physics.
 
-**F-D06:** Later validate faction survival and relationship changes through 100 levels and 10 complete world prestiges. No faction identity should be reduced to a stat multiplier.
+**F-D06:** Later validate faction survival and relationship changes through the **70-part multi-operation grand campaign** covering levels 1–100, followed by ten full world prestiges. Each of the seventeen factions must be fought in earnest at least once, and each has four or five dedicated campaign arcs, while alliances/refugee outcomes remain possible. See [the 70-campaign register](OMEGA_FRONT_GRAND_CAMPAIGN.md). No faction identity should be reduced to a stat multiplier.
 
 **Current acceptance:** design source only; no AI implementation, models, sprites, simulation, native APK or hardware evidence exists from this work.
