@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdint>
 namespace reverie { namespace gumball {
-enum class CastGuest : uint8_t { None, PipParfait, LollyWren, BlortBlister };
+enum class CastGuest : uint8_t { None, PipParfait, LollyWren, BlortBlister, NibNoxious, CrumbclankTwins };
 inline uint32_t CastHash(uint32_t value){
     value^=value>>16;value*=0x7feb352du;
     value^=value>>15;value*=0x846ca68bu;
@@ -13,7 +13,7 @@ inline uint32_t CastHash(uint32_t value){
 inline CastGuest ChooseCastGuest(uint32_t seed,uint32_t destination,
                                  uint32_t completed,uint32_t risk){
     if(completed==0u)return CastGuest::None;
-    const uint32_t choice=CastHash(seed^destination^(completed*0x9e3779b9u)^(risk<<16))%4u;
+    const uint32_t choice=CastHash(seed^destination^(completed*0x9e3779b9u)^(risk<<16))%6u;
     return static_cast<CastGuest>(choice);
 }
 inline const char* CastGuestName(CastGuest id){
@@ -21,6 +21,8 @@ inline const char* CastGuestName(CastGuest id){
     case CastGuest::PipParfait:return "PIP PARFAIT";
     case CastGuest::LollyWren:return "LOLLY WREN";
     case CastGuest::BlortBlister:return "BLORT BLISTER";
+    case CastGuest::NibNoxious:return "NIB NOXIOUS";
+    case CastGuest::CrumbclankTwins:return "BIFF & BAFF";
     default:return "";
     }
 }
@@ -37,7 +39,7 @@ public:
     void update(float dt){
         if(!std::isfinite(dt)||dt<=0.f)return;
         dt=std::min(dt,.05f);elapsed_+=dt;
-        if(kind_==CastGuest::None||kind_==CastGuest::BlortBlister)return;
+        if(kind_!=CastGuest::PipParfait&&kind_!=CastGuest::LollyWren)return;
         if(!started_&&elapsed_>=start_time_){
             started_=true;active_left_=5.5f;cooldown_=0.f;
         }
