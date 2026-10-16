@@ -49,7 +49,7 @@ playback offline. Re-encode small low-gain mono OGG assets when appropriate and
 limit layering to the Galaxy S9 thermal/audio budget. No new license gate is
 added to runtime: this is straightforward provenance documentation.
 
-## Regression and acceptance
+## Packaging and provenance truth\n\nAll current visual scenery and audible effects are **first-party Java implementation**, included through Android's default `app/src/main/java` source directory. The sound loop is generated as PCM16 at runtime; there is **no additional environmental audio file** or download needed for these three distinct built-in soundscapes. The five CC0 Freesound recordings above have publicly verified item-page license declarations but originals are behind Freesound's login-to-download path; their **bytes and hashes were not obtained**. Never claim those recordings are in Git, `assets/`, or an APK until the intake gate above is satisfied. They do not grant the separately licensed owner-original music a CC0 license.\n\nUse `python3 scripts/verify-home-atmosphere-assembly.py` to check source inclusion, lifecycles, test hooks, audio and documentation. Add `--apk path/to/unminified-phoneTest.apk` to inspect actual DEX class inclusion when a phoneTest/debug APK is produced. That step verifies package integration only: it does not substitute for the interactive headset, output/mix, stereo, or thermal gates. No GitHub Actions are required.\n\n## Regression and acceptance
 
 The checked-in `HomeAtmosphereGeometryTest` covers finite triangle data,
 40 m sky bounds, scenic window depth ordering, creature/bird mesh budgets,
