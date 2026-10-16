@@ -73,6 +73,7 @@ public final class VrActivity extends Activity
     private ReveriePreferences preferences;
     private UiFeedback uiFeedback;
     private ShellMenuMusic menuMusic;
+    private HomeAmbientAudio homeAmbientAudio;
     private LocalVideoPlayer videoPlayer;
     private final java.util.concurrent.ExecutorService calibratedMediaExecutor =
         java.util.concurrent.Executors.newSingleThreadExecutor();
@@ -158,6 +159,7 @@ public final class VrActivity extends Activity
         preferences = new ReveriePreferences(this);
         uiFeedback = new UiFeedback(this);
         menuMusic = new ShellMenuMusic(this);
+        homeAmbientAudio = new HomeAmbientAudio();
         videoPlayer = new LocalVideoPlayer(this, this);
         dosModuleRepository =
             new DosModuleRepository(this);
@@ -284,6 +286,7 @@ public final class VrActivity extends Activity
         if (menuMusic != null) {
             menuMusic.resumeForLifecycle();
         }
+        if (homeAmbientAudio != null) homeAmbientAudio.resumeForLifecycle();
         if (renderer != null) {
             renderer.setPhoneBattery(readPhoneBattery());
         }
@@ -319,6 +322,7 @@ public final class VrActivity extends Activity
         if (menuMusic != null) {
             menuMusic.pauseForLifecycle();
         }
+        if (homeAmbientAudio != null) homeAmbientAudio.pauseForLifecycle();
         if (videoPlayer != null) {
             videoPlayer.pauseForLifecycle();
         }
@@ -367,6 +371,7 @@ public final class VrActivity extends Activity
         if (menuMusic != null) {
             menuMusic.close();
         }
+        if (homeAmbientAudio != null) homeAmbientAudio.close();
         if (uiFeedback != null) {
             uiFeedback.close();
         }
@@ -1903,6 +1908,16 @@ public final class VrActivity extends Activity
         runOnUiThread(() -> {
             if (menuMusic != null) menuMusic.toggleMusicMute();
             if (renderer != null) renderer.requestMusicUiRefresh();
+        });
+    }
+
+    @Override
+    public void onHomeAtmosphereChanged(HomeEnvironment environment,
+                                        boolean homeActive) {
+        // Never create/pause/release Android AudioTrack on Cardboard's GL thread.
+        runOnUiThread(() -> {
+            if(homeAmbientAudio != null)
+                homeAmbientAudio.setEnvironment(environment, homeActive);
         });
     }
 
