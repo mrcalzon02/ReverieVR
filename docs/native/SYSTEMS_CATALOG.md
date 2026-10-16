@@ -1,3 +1,7 @@
+## Gumball native clickable vector UI and atomic shipyard repairs — 2026-10-16
+
+Game-private `gumball_shipyard_menu.h` and `gumball_menu_hit.h` model controller/palette focus, exact rendered hit rectangles and click-target IDs without Android dependencies; `gumball_shipyard.h` implements connected and stock-preserving atomic part replacements. Candy game's native module now uses the preexisting `reverie_native_vector_text.h` stroke font and actual pointer-ray hit targets, with all UI targets reachable via pad fallback. The strict isolated C++17/sanitizer regression and source-parity checks passed; complete GLES2 module, S9 binocular reading, controls and sustained frame budget remain unaccepted.
+
 ## Gumball automatic emergency consumable reference — 2026-10-16
 
 Game-private `SupportContracts` demonstrates two cheap, one-use, non-stackable repair/tonic purchases with real cash cost, condition-triggered effects and limited V3 campaign-state serialization. The native Gumball Support UI controls real purchases; flight automatically deploys at a measurable damage threshold and attempts an immediate existing-slot save on consumption. Helper/test source byte-matches a locally GCC/Clang/ASan/UBSan-passing test. Complete game/Android/Daydream integration remains **Development-only, not device verified**. This does not extend the shared native module SDK. See `docs/project/GUMBALL_ARMADA_ROUTES_AND_SUPPORT.md`.
