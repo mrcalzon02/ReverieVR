@@ -1,3 +1,7 @@
+## Gumball Armada named encounter extension — 2026-10-16
+
+The game-private cast scheduler now selects Nib's mine-layer or Biff and Baff's paired bomb ships after progression, in addition to earlier encounters. Their effects use the existing fixed enemy and projectile pools. The dual-destruction reward contract has passed exact-source local C++17 compiler and sanitizer checks. Integrated APK, headset controls, artwork and voice remain unverified. See `docs/project/GUMBALL_ARMADA_CAST_BIBLE.md`.
+
 # ReverieVR Native Systems Catalog
 
 **Status:** living discoverability index.
