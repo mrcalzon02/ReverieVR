@@ -118,9 +118,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final float HUD_LOOK_UP_THRESHOLD = 0.72f;
     static final float SHELL_VIEW_CONTRACTION = 0.81f;
     private static final float EYE_CONTENT_VIEWPORT_SCALE = 0.738f;
-    // Fullscreen DOS remains binocular and excludes the VR room, but a
-    // little black edge is essential on Daydream optics: 10% each side.
-    private static final float DOS_FULLSCREEN_VIEWPORT_SCALE = 0.80f;
+    // Keep all fullscreen DOS edges in the comfortable optical area.
+    // RetroDisplayMode owns the independent aspect-preserving fit.
 
     private static final float PANEL_HALF_WIDTH =
         1.70f * SHELL_VIEW_CONTRACTION;
@@ -2532,7 +2531,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // use their own stereo views without shrinking either Cardboard eye.
         final float contentScale =
             mode == MODE_DOS && dosRenderer.isFullScreen()
-                ? DOS_FULLSCREEN_VIEWPORT_SCALE
+                ? RetroDisplayMode.FULLSCREEN_OPTICAL_SCALE
                 : (mode == MODE_NATIVE
                     || mode == MODE_MODEL_VIEWER
                     || mode == MODE_VIDEO)
@@ -2554,7 +2553,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (mode == MODE_DOS && dosRenderer.isFullScreen()) {
             // Historic VGA 320x200 is 4:3 on a monitor, not the raw
             // per-eye framebuffer shape. Preserve that intended aspect
-            // inside the existing 80% optical safety inset, with no crop,
+            // inside the 70% optical safety inset, with no crop,
             // no VR-room plane, and no modifications to eye projections.
             final int insetWidth = contentWidth;
             final int insetHeight = contentHeight;

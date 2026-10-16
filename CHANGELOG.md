@@ -1,5 +1,11 @@
 # Changelog
 
+- Fullscreen DOS viewing: reduce each eye's aspect-fitted optical safe area
+  from 80% to 70% of the eye dimensions so complete retro game edges remain
+  within the headset's clear central view, leaving black letterbox margins.
+  Preserve the original source pixels, display aspect, controls, and VR HUD;
+  Galaxy S9 headset validation is still pending.
+
 - DOS Quick Menu / binding overlays: Daydream touchpad Up/Down now navigates focused shell controls without click, with bounded hold-repeat and lift suppression; Select activates the focused menu item.
 
 - DOS input and Home shelves: nonmodal DOS shell hover no longer cuts headset mouse look or touchpad arrow navigation; Select remains protected on shell controls. Classic Games and Native Apps now open nonoverlapping lists.

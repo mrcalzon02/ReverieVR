@@ -1,6 +1,10 @@
 package io.github.mrcalzon02.reverievr;
 
 final class RetroDisplayMode {
+    // Intentional black safety margin around a complete DOS screen. Only
+    // fullscreen DOS uses this: native games/media retain their own scale.
+    static final float FULLSCREEN_OPTICAL_SCALE = 0.70f;
+
     final int width;
     final int height;
     final int displayAspectNumerator;

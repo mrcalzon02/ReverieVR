@@ -1,3 +1,18 @@
+## 2026-10-15 — Fullscreen DOS edge-visibility optical fit (source)
+
+User's Galaxy S9 headset testing reports that even the existing 80% fullscreen
+DOS viewport leaves the outer game edges difficult to see. Reduced the
+independent per-eye fullscreen DOS optical inset to 70% width/height,
+maintaining both-eye identity-matrix rendering and the existing
+aspect-preserving fit, black background, pointer coordinates, DOS
+simulation, Cardboard optics, and global HUD. A nominal 1480x1440 physical
+eye renders a 4:3 DOS picture at 1036x777 centered pixels (222px side
+margin, >=331px top/bottom margin). Added pure-Java aspect/corner
+regressions across several guest ratios and eye shapes. A local Java
+smoke test passed for these sizes. Full Android build and actual Galaxy
+S9 optical visibility, pointer alignment, 2-eye legibility, controller
+interaction and sustained performance remain unverified; no APK claimed.
+
 ## 2026-10-15 — VR Home environments: source integration and evidence review\n\nThe home-atmosphere series of `main` commits introduced `HomeAtmosphereGeometry` (sky bands, distant landforms, clouds, sun, wall openings, scenic window layers, woodland/shoreside wildlife and bird triangle meshes), linked rendering/animation in `HomeEnvironmentRenderer` and `VrShellRenderer`, and `HomeAmbientAudio` (original deterministic PCM16 ambient tracks, AudioTrack static loop, Android lifecycle wiring). `HomeAtmosphereGeometryTest` and `scripts/verify-home-atmosphere-assembly.py` provide geometry/audio source tests plus an optional **unminified** phoneTest/debug APK DEX inclusion audit. This pass also corrected an obsolete note about windows being sealed. Remote `main` file SHA/contents were read back; no installed/signed APK, Android runtime, JUnit test execution, audio listening or Galaxy S9 stereo/thermal evidence was obtained. The five documented CC0 field recordings are verified *source candidates*, not Git or APK payloads.\n\nThe first-party procedural sounds and all 3D meshes live in default Android `app/src/main/java`, so normal source builds compile them without third-party asset downloads. Device acceptance and actual external recordings remain separate gates. See `docs/project/HOME_ENVIRONMENT_ATMOSPHERE.md` and acceptance ledger `RV-0112-A`.\n\n## 2026-10-15 — Binocular FPS indicator (source)
 
 Added a lightweight frame-pair FPS meter sampled once by Cardboard `onNewFrame`,
