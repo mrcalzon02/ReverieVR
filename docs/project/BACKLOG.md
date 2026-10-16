@@ -14,7 +14,7 @@
 ## New native game — Gumball Armada
 
 - GUM-01 — **Development-only source integrated, not yet accepted.** Native combat/chart/economy kernel, GLES2 module, host allowlist, Daydream pad routing and tests present. Exact remote-tree source validation, Android/NDK, APK export verification and Galaxy S9 acceptance are outstanding; see docs/project/GUMBALL_ARMADA.md.
-- GUM-S00..S18 — **19 dependency-gated production stages planned**, from a real handset-verified arcade sortie through ship construction, weapon/defense libraries, economy, revisitable galaxy, four mechanically distinct Sour boss chapters, Candy King finale, full original voice/art/music and signed Android release. See [staged plan](GUMBALL_ARMADA_STAGED_PLAN.md) and [content matrix](GUMBALL_ARMADA_CONTENT_MATRIX.md). All post-prototype features are unimplemented until proven. GUM-02..07 in the initial brief are superseded as planning buckets by these detailed stages, not silently marked complete.
+- GUM-S00..S18 — **19 dependency-gated production stages tracked**, from a handset-verified arcade sortie through modular ship construction, fleet combat, economy, a revisitable galaxy, Sour campaigns, Candy King finale, original voice/art/music and signed Android release. Partial source exists for S01–S03, S06 (7×7 functional starter shipyard and separate validated save), and S08–S09 (mission variants and collectible cash); these do not satisfy their complete stage/device gates. Remaining systems are planned. See [staged plan](GUMBALL_ARMADA_STAGED_PLAN.md), [content matrix](GUMBALL_ARMADA_CONTENT_MATRIX.md) and [current status](GUMBALL_ARMADA.md). Initial GUM-02..07 were only conceptual buckets, not acceptance claims.
 
 ## P0 — Foundation
 
