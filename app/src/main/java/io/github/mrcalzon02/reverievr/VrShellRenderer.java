@@ -158,6 +158,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_DOS_OVERLAY = 6;
     private static final int MODE_DOS_BINDINGS = 7;
     private static final int MODE_DOS_BINDING_TUNING = 19;
+    private static final int MODE_DOS_SCREEN_ADJUST = 20;
     private static final int MODE_MEDIA_LIBRARY = 8;
     private static final int MODE_ENVIRONMENT = 9;
     private static final int MODE_CONTROLLER = 10;
@@ -375,7 +376,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {544, 345, 924, 410},
         {100, 430, 480, 495},
         {544, 430, 924, 495},
-        {220, 520, 804, 590}
+        {220, 520, 804, 590},
+        {220, 610, 804, 679}
+    };
+
+    private static final int[][] DOS_SCREEN_BUTTONS = new int[][] {
+        {100, 280, 480, 345}, {544, 280, 924, 345},
+        {100, 365, 480, 430}, {544, 365, 924, 430},
+        {100, 450, 480, 515}, {544, 450, 924, 515},
+        {100, 535, 480, 600}, {544, 535, 924, 600}
     };
 
     private static final int[][] DOS_BINDING_BUTTONS = new int[][] {
@@ -606,6 +615,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private volatile String[] dosModuleIds = new String[0];
     private volatile String[] dosModuleNames = new String[0];
     private volatile String activeDosModuleName = "";
+    private String activeDosModuleId = "";
     private volatile int dosLibraryScrollFirst;
     private float dosLibraryTouchRemainder;
     private int uiFocusDosListOffset = -1;
@@ -949,7 +959,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return !orientationMenuVisible
             && (mode == MODE_DOS_OVERLAY
                 || mode == MODE_DOS_BINDINGS
-                || mode == MODE_DOS_BINDING_TUNING);
+                || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST);
     }
 
     boolean handlesSelectAsShellAction() {
@@ -1566,7 +1577,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return orientationMenuVisible
             || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING;
+            || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST;
     }
 
     boolean isDosShellControlFocused() {
@@ -1994,6 +2006,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     || mode == MODE_DOS_OVERLAY
                     || mode == MODE_DOS_BINDINGS
             || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST
             ) {
                 dosRenderer.updateFrame();
             } else if (mode == MODE_NATIVE) {
@@ -2148,7 +2161,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING) {
+            || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST) {
             dosRenderer.updateFrame();
 
             if (dosExitRequested.getAndSet(false)) {
@@ -2801,7 +2815,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING) {
+            || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST) {
             dosRenderer.drawEye(eye, eyeCorrection);
             drawUiPanel(eye, eyeCorrection, true);
             drawPointerOverlay(
@@ -3089,7 +3104,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         ? dosLibraryVertexBuffer
                     : (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
                         || mode == MODE_DOS_BINDINGS
-                        || mode == MODE_DOS_BINDING_TUNING) && !orientationMenuVisible
+                        || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST) && !orientationMenuVisible
                         ? dosMenuVertexBuffer : vertexBuffer,
                 uvBuffer
             );
@@ -4451,7 +4467,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
         if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING) {
+            || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST) {
             UiRayHit rail = hitTiltedPanel(origin, direction,
                 DOS_MENU_LEFT, DOS_MENU_RIGHT,
                 DOS_MENU_BOTTOM, DOS_MENU_TOP,
@@ -5251,6 +5268,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         } else if (mode == MODE_DOS_BINDING_TUNING) {
             keyboardQuickMenuFocusActive = false;
             handleDosBindingTuningSelection(hoveredButton);
+        } else if (mode == MODE_DOS_SCREEN_ADJUST) {
+            keyboardQuickMenuFocusActive = false;
+            handleDosScreenPlacementSelection(hoveredButton);
         } else {
             handleSetupSelection(hoveredButton);
         }
@@ -5299,7 +5319,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 4:
                 if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
                     || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING) {
+            || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST) {
                     closeOrientationMenu();
                     // Quick Menu -> Bindings is also an exit from immersive
                     // DOS: no DOS options may overlay full-eye gameplay.
@@ -5442,6 +5463,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 || mode == MODE_DOS_OVERLAY
                 || mode == MODE_DOS_BINDINGS
             || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST
         ) {
             activeDosModuleName = "";
             host.onDosStopRequested();
@@ -5814,6 +5836,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     ? dosModuleNames[moduleIndex] : "DOS session";
                 preferences.markLastActivityDos(
                     ids[moduleIndex], activeDosModuleName);
+                activeDosModuleId = ids[moduleIndex];
+                dosRenderer.setWindowedPlacement(
+                    preferences.getDosScreenPlacement(activeDosModuleId));
                 dosExitRequested.set(false);
                 mode = MODE_DOS;
                 hoveredButton = -1;
@@ -5863,14 +5888,41 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
             case 6:
                 activeDosModuleName = "";
+                activeDosModuleId = "";
                 host.onDosStopRequested();
                 mode = MODE_HOME;
                 host.onExitToPhoneRequested();
+                break;
+            case 7:
+                if (mode == MODE_DOS) host.onDosOverlayPauseRequested();
+                if (dosRenderer.isFullScreen()) dosRenderer.setFullScreen(false);
+                mode = MODE_DOS_SCREEN_ADJUST;
                 break;
             default:
                 return;
         }
 
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
+    private void handleDosScreenPlacementSelection(int button) {
+        if (button == 7) {
+            mode = MODE_DOS_OVERLAY;
+        } else if (button >= 0 && button <= 6
+                   && !activeDosModuleId.isEmpty()) {
+            DosScreenPlacement previous = dosRenderer.getWindowedPlacement();
+            DosScreenPlacement changed = previous.adjust(button);
+            if (changed.sameAs(previous)) {
+                host.onUiActionRejected();
+            } else {
+                dosRenderer.setWindowedPlacement(changed);
+                preferences.setDosScreenPlacement(activeDosModuleId, changed);
+            }
+        } else {
+            host.onUiActionRejected();
+            return;
+        }
         hoveredButton = -1;
         textureDirty = true;
     }
@@ -6097,6 +6149,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             textureDirty = true;
             return;
         }
+        if (mode == MODE_DOS_SCREEN_ADJUST) {
+            mode = MODE_DOS_OVERLAY;
+            hoveredButton = -1;
+            textureDirty = true;
+            return;
+        }
         if (mode == MODE_DOS_BINDING_TUNING) {
             mode = MODE_DOS_BINDINGS;
             hoveredButton = -1;
@@ -6183,9 +6241,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (mode == MODE_DOS_OVERLAY) {
             return DOS_OVERLAY_BUTTONS;
         }
+        if (mode == MODE_DOS_SCREEN_ADJUST) {
+            return DOS_SCREEN_BUTTONS;
+        }
 
         if (mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING) {
+            || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST) {
             return DOS_BINDING_BUTTONS;
         }
 
@@ -6258,7 +6320,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         } else if (mode == MODE_DOS
             || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING) {
+            || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST) {
             canvas.drawColor(
                 Color.TRANSPARENT,
                 PorterDuff.Mode.CLEAR
@@ -6334,6 +6397,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawDosBindingEditor(canvas, paint);
         } else if (mode == MODE_DOS_BINDING_TUNING) {
             drawDosBindingTuning(canvas, paint);
+        } else if (mode == MODE_DOS_SCREEN_ADJUST) {
+            drawDosScreenPlacement(canvas, paint);
         } else {
             drawSetup(canvas, paint);
         }
@@ -6465,7 +6530,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 "BRIGHT +",
                 (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
                     || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING) ? "DOS OPTIONS" : "BACK",
+            || mode == MODE_DOS_BINDING_TUNING
+            || mode == MODE_DOS_SCREEN_ADJUST) ? "DOS OPTIONS" : "BACK",
                 "HOME",
                 "EXIT PHONE",
                 "SETTINGS",
@@ -7347,6 +7413,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     index < dosModuleNames.length
                         ? dosModuleNames[index]
                         : "DOS session";
+                activeDosModuleId = dosModuleIds[index];
+                dosRenderer.setWindowedPlacement(
+                    preferences.getDosScreenPlacement(activeDosModuleId));
                 dosExitRequested.set(false);
                 mode = MODE_DOS;
                 return true;
@@ -8228,7 +8297,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "VOLUME -",
             "VOLUME +",
             "DOS LIBRARY",
-            "EXIT VR"
+            "EXIT VR",
+            "SCREEN POSITION"
         };
         drawButtons(
             canvas,
@@ -8236,6 +8306,26 @@ final class VrShellRenderer implements CardboardView.Renderer {
             labels,
             DOS_OVERLAY_BUTTONS
         );
+    }
+
+    private void drawDosScreenPlacement(Canvas canvas, Paint paint) {
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(31f * uiScale);
+        canvas.drawText("DOS SCREEN POSITION", 90, 172, paint);
+        DosScreenPlacement p = dosRenderer.getWindowedPlacement();
+        paint.setColor(Color.rgb(184, 194, 207));
+        paint.setTextSize(19f * uiScale);
+        canvas.drawText(String.format(Locale.US,
+            "SIZE %.0f%%   DISTANCE %.2fm   HEIGHT %+.2fm",
+            p.scale * 100f, p.distance, p.height), 92, 213, paint);
+        canvas.drawText("Windowed screen only; saved for this DOS game.",
+            92, 248, paint);
+        drawButtons(canvas, paint, new String[] {
+            "SIZE -", "SIZE +",
+            "NEARER", "FARTHER",
+            "RAISE", "LOWER",
+            "RESET POSITION", "BACK"
+        }, DOS_SCREEN_BUTTONS);
     }
 
     private void drawDosBindingEditor(Canvas canvas, Paint paint) {
