@@ -352,7 +352,8 @@ int main(){
         assert(probe.launch(0)&&probe.guest()==next);
         bool zoned=false,shifting=false,heavy=false;
         for(int i=0;i<820&&probe.phase()==Phase::Flight;++i){
-            probe.update(.025f,0.f,0.f,false);
+            // Fly out of Sydney's neutral corridor to exercise the zone effect.
+            probe.update(.025f,next==CastGuest::SydneySlipstream?.8f:0.f,0.f,false);
             shifting|=probe.slipstream_active()&&
                 (probe.movement_multiplier()>=1.40f||probe.movement_multiplier()<=.60f);
             for(const auto& e:probe.enemies())if(e.active&&e.kind==EnemyKind::Jules)
