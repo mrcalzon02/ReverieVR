@@ -327,7 +327,8 @@ bool Simulation::Serialize(
 
 bool Simulation::Deserialize(
     const uint8_t *buffer,
-    size_t size
+    size_t size,
+    bool allow_trade_prices
 ) {
     if (buffer == nullptr
         || size != kSerializedSize) {
@@ -697,9 +698,13 @@ bool Simulation::Deserialize(
             (day - 1) % static_cast<int32_t>(kPatrons.size());
         const int32_t queue_index =
             (rotation + next_patron) % static_cast<int32_t>(kPatrons.size());
+        const int32_t base_price =
+            kPatrons[static_cast<size_t>(queue_index)].drink_price_cents;
         if (next_patron >= kPatronsPerDay
-            || kPatrons[static_cast<size_t>(queue_index)].drink_price_cents
-                != pending_payment) {
+            || (allow_trade_prices
+                ? (pending_payment < base_price
+                   || pending_payment > base_price + 700)
+                : pending_payment != base_price)) {
             return false;
         }
     }
@@ -785,6 +790,39 @@ bool Simulation::FillHeldCup() {
     --beer_units_;
     work_drink_state_ =
         DrinkState::FilledCup;
+    return true;
+}
+
+bool Simulation::FillSpecialDrink() {
+    if (!day_open_ || current_patron() == nullptr
+        || pending_payment_cents_ != 0
+        || work_drink_state_ != DrinkState::EmptyCup) return false;
+    // Other beers and spirits use separate faction stock, not house lager.
+    work_drink_state_ = DrinkState::FilledCup;
+    return true;
+}
+
+bool Simulation::SpendSpecialStock(int32_t cents) {
+    if (!day_open_ || event_ == EventType::SupplyInterruption
+        || cents <= 0 || cents > 100000
+        || cash_cents_ < cents || supply_spend_cents_ > 999900000)
+        return false;
+    cash_cents_ -= cents;
+    supply_spend_cents_ += cents;
+    return true;
+}
+
+bool Simulation::ApplyServicePremium(int32_t cents,
+                                     int32_t reputation_points) {
+    if (!day_open_ || current_patron() == nullptr
+        || work_drink_state_ != DrinkState::None
+        || pending_payment_cents_ <= 0 || cents < 0 || cents > 700
+        || reputation_points < 0 || reputation_points > 4
+        || pending_payment_cents_ > 1000-cents)
+        return false;
+    pending_payment_cents_ += cents;
+    reputation_ += reputation_points;
+    day_reputation_delta_ += reputation_points;
     return true;
 }
 
