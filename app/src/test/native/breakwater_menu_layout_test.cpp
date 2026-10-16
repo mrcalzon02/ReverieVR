@@ -38,6 +38,9 @@ int main(){
     assert(FittedScale("UPGRADES",ShopAction(9).width,.052f)>0.f);
     assert(!Inside({0.f,-1.70f,1.0f,.10f},kPanel)); // old clipped footer
     // New textual footer extends at most 3 glyph rows above/below center.
-    assert(-1.18f-.046f*2.5f > kPanel.y-kPanel.height*.5f);
+    assert(-.95f-.039f*2.5f > kPanel.y-kPanel.height*.5f);
+    // No card or lettering descends below the -1.10 world sea plane.
+    assert(kPanel.y-kPanel.height*.5f>=-1.1001f);
+    assert(-.95f-.039f*2.5f> -1.10f);
     std::cout<<"Breakwater compact menu bounds, text fitting and target parity passed\n";
 }

@@ -743,8 +743,8 @@ void BuildScene(State *s) {
         }
         char summary[40];
         std::snprintf(summary,sizeof(summary),"CREDITS %d",game.credits());
-        Text(s,summary,0,-1.18f,-2.967f,
-             menu::FittedScale(summary,3.50f,.046f),.92f,.86f,.64f);
+        Text(s,summary,0,-.95f,-2.967f,
+             menu::FittedScale(summary,3.50f,.039f),.92f,.86f,.64f);
     } else if(game.phase()==Phase::Combat) {
         char digits[32];std::snprintf(digits,sizeof(digits),"HULL %d",game.integrity());
         Text(s,digits,0,1.20f,-2.0f,.075f,.92f,.92f,.74f);
