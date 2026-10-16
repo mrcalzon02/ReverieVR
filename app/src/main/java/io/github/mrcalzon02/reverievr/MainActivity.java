@@ -1203,7 +1203,8 @@ public final class MainActivity extends Activity
         if (!usbReverse) {
             address.setSingleLine(true);
             address.setHint("PC private IPv4 (e.g. 192.168.1.20)");
-            address.setInputType(InputType.TYPE_CLASS_PHONE);
+            address.setInputType(InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_VARIATION_URI);
             inputs.addView(address);
         }
         EditText fingerprint = new EditText(this);

@@ -92,6 +92,7 @@ final class SteamVrLinkProbe {
                     secured.startHandshake();
                     if (Thread.currentThread().isInterrupted())
                         return new Result(false, "Connection cancelled.");
+                    long sentAtNanos = System.nanoTime();
                     OutputStream out = secured.getOutputStream();
                     out.write((PROBE_PREFIX + parameters.token + "\n")
                         .getBytes(StandardCharsets.US_ASCII));
@@ -99,8 +100,13 @@ final class SteamVrLinkProbe {
                     String response = readBoundedLine(secured.getInputStream(), 60);
                     if (!ACCEPT.equals(response))
                         return new Result(false, "PC rejected pairing token/protocol.");
-                    return new Result(true,
-                        "Authenticated PC link confirmed. No SteamVR video/tracking yet.");
+                    double rttMillis = Math.max(0.0,
+                        (System.nanoTime() - sentAtNanos) / 1_000_000.0);
+                    return new Result(true, String.format(Locale.US,
+                        "Authenticated TLS READY (request/response %.1f ms). "
+                            + "This is NOT headset frame latency. "
+                            + "SteamVR video/tracking are not connected yet.",
+                        rttMillis));
                 }
             }
         } catch (java.net.SocketTimeoutException timeout) {
