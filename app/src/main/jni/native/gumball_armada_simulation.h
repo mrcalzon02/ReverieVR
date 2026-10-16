@@ -175,13 +175,15 @@ public:
         if(fire&&cooldown_<=0.f){
             const int pellets=weapon_==Weapon::MintSpread?3:1;
             bool emitted=false;
-            for(int n=0;n<pellets;++n){
+            const int mounts=std::max(1,std::min(2,ship_profile_.mounts));
+            for(int mount=0;mount<mounts;++mount)for(int n=0;n<pellets;++n){
                 for(auto& shot:shots_)if(!shot.active){
                     const float vx=pellets==3?(n-1)*.55f:0.f;
                     const int damage=weapon_==Weapon::RockCannon?
                         4+levels_[0]/2:(weapon_==Weapon::MintSpread?
                         1+levels_[0]/4:1+levels_[0]/3);
-                    shot={px_+(n-1)*.028f,py_+.12f,
+                    shot={px_+ship_profile_.muzzle_x[mount]+(n-1)*.028f,
+                        py_+.12f+ship_profile_.muzzle_y[mount],
                         weapon_==Weapon::RockCannon?2.55f:3.75f,
                         true,false,vx,damage};
                     ++shots_fired_;emitted=true;break;
