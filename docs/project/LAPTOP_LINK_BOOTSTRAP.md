@@ -100,6 +100,23 @@ The pure-JVM `LaptopLinkDownloadServerTest` exercises one-time HTTP ZIP
 delivery, token rejection and explicit cancellation; headset/Windows
 proof remains separate.
 
+## SteamVR PC-headset endpoint (new, SteamVR only)
+
+Windows Laptop Link now exports a fourth allowlisted plain-text file,
+`SteamVrPreflight.ps1`. Its existing manual launcher offers menu option
+5: it **reads** OpenVR per-user paths, verifies the SteamVR runtime and
+Valve `vrpathreg.exe`, and lists registered external drivers. This is a
+real prerequisite check, not a fake SteamVR headset or working video
+stream. The previous 3-file historical milestone is superseded for
+new builds; bundle tests now expect four members.
+
+User has explicitly chosen *SteamVR games on the PC* instead of moving
+ReverieVR's Home/DOS/native-game runtime to Windows. The future Windows
+SteamVR HMD driver and video host will be optional components delivered
+from a single APK export, installed with explicit consent, and reversible.
+The independent S1–S5 implementation/install/protocol spec is at
+`docs/project/STEAMVR-LINK-IMPLEMENTATION.md`.
+
 ## Next functional slices
 
 **A. Real optical-disc data:** inspect Windows' read-only optical device

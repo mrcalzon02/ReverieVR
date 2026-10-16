@@ -1,5 +1,13 @@
 # Changelog
 
+- SteamVR-only direction: preserve ReverieVR's entire Android game
+  runtime on the Galaxy S9. Existing Laptop Link Windows utility now
+  contains real read-only SteamVR installation/driver preflight as
+  menu option 5, bundled from the same APK ZIP with updated file
+  whitelist and source tests. Defined S1–S5 for authenticated 3DoF
+  tracking, actual hardware-decoded stereo, OpenVR driver installation,
+  controllers/audio and headset evidence. No PCVR streaming yet.
+
 - VR Quick Menu now shows local handset wall-clock time using locale-aware
   short time format, alongside the existing session timer and status; no
   extra menu controls or frame-level time polling.

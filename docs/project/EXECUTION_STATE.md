@@ -1,3 +1,26 @@
+## 2026-10-16 — SteamVR-only headset integration scoping and host readiness
+
+User explicitly rejected migrating the whole ReverieVR runtime or games to
+Windows. PC executes *only SteamVR titles*, Galaxy S9 retains the existing
+phone-only shell/games and acts as a 3DoF stereo headset endpoint when
+an explicit future SteamVR connection is requested. Created the scoped
+execution contract `docs/project/STEAMVR-LINK-IMPLEMENTATION.md`
+covering Valve OpenVR HMD driver, staged SteamVR compositor handoff,
+authenticated pairing/transport, MediaCodec lens-correct stereo
+presentation, USB/IP and Wi-Fi, accurate 3DoF controller mapping,
+latency/thermal diagnostics, install/removal, failure safety and test
+gates. No native application code has been migrated.
+
+S0 source: existing APK-bundled Windows Laptop Link gains
+`SteamVrPreflight.ps1` and actual menu item 5 to read SteamVR
+OpenVR path registry and registered driver prerequisites. Adds the
+fourth asset to the bounded allowlist and updates the JVM ZIP test
+fixture. The command is intentionally read-only; neither a driver
+DLL nor a SteamVR video/pose link is presently installed. Remote
+GitHub commit evidence is the only execution proof for this slice;
+PowerShell Windows execution, Android/JUnit build, packed ZIP and
+physical Galaxy S9 acceptance still pending.
+
 ## 2026-10-16 — VR Quick Menu local clock (source)
 
 The existing universal Quick Menu now displays the phone's real local

@@ -51,3 +51,19 @@ A future PC integration is not complete until it passes phone-only/offline start
 Verify the phone-only runtime without the laptop first; then perform independent heavy-PC-load tests for input-only scrcpy and optional mirroring, and source-to-phone Windows SMB browse/import with signed APK on S9. No video encoder should run for the control-only command. Check missed/reordered button releases, bounded transfer memory, 5-second gaze recovery and no privileged or auto-started PC software.
 
 Keep tests and claims separated: scrcpy provides *external* mirroring/HID, Android SMB browsing and DOS import exist in source pending device verification, and the APK-bundled Windows helper's ZIP export is implemented in source pending signed-build and Windows-device validation. A raw optical-device transport and any PC-to-phone desktop viewer remain **planned, not working features**. No second Android APK or separately distributed desktop application is required by the design.
+
+
+## 2026-10-16 scope addendum — optional SteamVR game streaming
+
+The owner now separately authorizes an *optional SteamVR HMD endpoint*
+as a PC VR game compatibility path, **not** a migration of ReverieVR
+modules/home/emulators to PC. This deliberately scoped new mode uses a
+Windows SteamVR driver/streamer and phone client, never a general-purpose
+remote desktop/runtime. Existing core Android standalone requirements
+and constraints on privacy, paired peers, no background services and
+user-started desktop utilities remain in force. Driver registration,
+video consent and mode entry require explicit action; phone-side
+recovery remains local. The executable contract is
+`docs/project/STEAMVR-LINK-IMPLEMENTATION.md`. This supersedes earlier
+statements that *any* PC-hosted VR frame path is outside project scope,
+but only as applied to user-requested SteamVR games.
