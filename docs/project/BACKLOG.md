@@ -23,6 +23,9 @@
 
 ## New native game — Gumball Armada
 
+- GUM-MENU-02/S06 — **Source implemented, device admission pending:** repaired one-click atomic shipyard part replacement (and return stock), preserving bridge/core and inventory constraints. First focus moves to connected empty (4,2), selected palette tool returns to prior grid focus; Minus/App toggles grid/palette, pad vertical is screen-consistent, actual controller pointer rays can select rendered route/loadout/ally/shipyard controls, and a stationary ray does not steal active D-pad focus. Shipyard fits fully in scene; existing shared vector font replaces 3×5 block text; contextual affordance, denial and selected action explanations added. Exact C++ shipyard and pointer geometry suites locally pass GCC/Clang/ASan/UBSan with git-hash source parity; full game module compile/Android APK/actual Daydream usability and stereo verification **open**.
+
+
 - GUM-MENU-01 — **Source implemented; device/render acceptance pending:** uncluttered the Gumball Armada chart into three annotated routes plus LOADOUT / SHIPYARD / ALLIES navigation; four permanent upgrades and three weapon purchase/equip actions moved to a dedicated compact Loadout screen with Return. Shared `gumball_menu_layout.h` controls existing real action IDs. Exact helper/test Git blobs passed GCC/Clang strict C++17 and Clang ASan/UBSan; whole native game compile, APK and reference-headset readability remain unverified. Original ReverieVR shell Home was reverted to its prior byte-exact state. No new image/font packs yet.
 
 
