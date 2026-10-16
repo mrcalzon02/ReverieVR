@@ -71,8 +71,8 @@ final class HomeAtmosphereGeometry {
 
     static float[] windowSky() {
         Builder b = new Builder();
-        // Inset picture-like openings on the rear birch wall (z=-4.1).
-        // The wall remains sealed; the opaque scenic panes are at -4.065.
+        // Actual wall apertures at z=-4.1 with opaque scene backing
+        // recessed to z=-4.19. This does not sample the real world.
         for (float left : new float[]{-5.34f, 3.34f}) {
             b.verticalZ(left, left+2.05f, .03f, 2.45f, -4.19f);
         }
