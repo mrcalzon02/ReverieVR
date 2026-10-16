@@ -1,3 +1,11 @@
+## Candy Armada shipyard edit and native pointer menu usability — 2026-10-16
+
+Gumball Armada's game-private native module now consumes the existing `ReverieNativeInputV1` **world-space controller pointer-ray extension** (only when `ReverieNativeInputHasPointerV1` confirms the full input prefix), intersecting the actual -2.94 flat-menu plane and using exact frame geometry for Chart routes, Loadout, Allies and every 7×7 Shipyard cell/palette button. A D-pad input temporarily takes priority over a stationary ray and keeps an independent click-focused selection until ray movement resumes. No new action, Android permission, external app, shell menu change, native ABI version or controller mapping is introduced. Screen-up moves selection visually upward. The App/Minus secondary input is an optional grid/palette toggle while in the Shipyard; ordinary pad navigation still reaches all buttons.
+
+`gumball_shipyard.h` has an atomic, stock-conserving one-click edit path; an occupied slot is replaced by the armed different part instead of forcing a dangerous preliminary removal. The fixed core, out-of-stock parts and disconnected bridge removals reject with visible typed reasons. The focus returns to the previous ship cell after choosing a palette tool, and starts on an editable starter attachment cell (4,2). The shipboard's left edge now remains in the native 5-unit screen envelope. Native text in the game uses the already-present shared connected-stroke vector font `reverie_native_vector_text.h` instead of the prior square 3×5 bitmap glyph helper. Selected loadout/ally rows show cost, owned/max/blocked state and real effect explanations.
+
+Exact committed isolated source for shipyard structural+save tests and all menu pointer/focus geometry has passed local GCC, Clang and Clang ASan/UBSan with independently matching Git blob SHA. The game GLES2 renderer has **not** been compiled as a whole, nor tested on Galaxy S9 in two-eye Daydream mode; pointer hit reliability, font scale and thermal cost remain explicit open device gates. This is a game-private usability repair, not a shared SDK modification.
+
 ## Gumball Armada chart and Loadout UI correction (2026-10-16)
 
 ## Omega Front actual treaty travel benefit (P3j, 2026-10-16)
