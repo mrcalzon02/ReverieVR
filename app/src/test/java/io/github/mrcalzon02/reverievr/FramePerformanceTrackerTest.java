@@ -23,6 +23,36 @@ public final class FramePerformanceTrackerTest {
     }
 
     @Test
+    public void p99JitterAndObservedLongGaps() {
+        FramePerformanceTracker t = new FramePerformanceTracker();
+        long n = 1_000_000_000L;
+        t.recordFrame(n);
+        for (long gap : new long[]{
+            16_000_000L, 17_000_000L, 33_333_333L, 42_000_000L, 55_000_000L
+        }) t.recordFrame(n += gap);
+        FramePerformanceTracker.Snapshot s = t.snapshot();
+        assertEquals(5, s.sampleCount);
+        assertEquals(55.0, s.p99Millis, 0.0001);
+        assertEquals(2, s.gapsOver33Millis);
+        assertEquals(1, s.gapsOver50Millis);
+        assertTrue(s.jitterMillis > 14.0);
+        t.reset();
+        assertEquals(0, t.snapshot().sampleCount);
+    }
+
+    @Test
+    public void perfectThirtyHzCadenceHasZeroJitter() {
+        FramePerformanceTracker t = new FramePerformanceTracker();
+        long n = 1_000_000_000L;
+        t.recordFrame(n);
+        for (int i = 0; i < 90; i++) t.recordFrame(n += 33_333_333L);
+        FramePerformanceTracker.Snapshot s = t.snapshot();
+        assertEquals(0.0, s.jitterMillis, 0.00001);
+        assertEquals(0, s.gapsOver33Millis);
+        assertEquals(0, s.gapsOver50Millis);
+    }
+
+    @Test
     public void lifecycleSizedGapIsNotCountedAsAFrame() {
         FramePerformanceTracker tracker = new FramePerformanceTracker();
         tracker.recordFrame(1000000000L);
