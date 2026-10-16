@@ -126,6 +126,36 @@ ray regions and menu/footer clipping; device stereoscopic readability
 remains unverified. The renderer draws all of this in the same existing
 scene batch and does not add a per-eye menu simulation pass.
 
+### Shop inspection and gunshot model motion — 2026-10-16 continuation
+
+The new compact shop also explains the highlighted item on a single
+unobtrusive, real-vector-text line between the wave heading and the product
+cards. This line uses the **current** Campaign prices, owned/equipped state
+and available credits (including the original update cap / max state):
+for example, **FASTER FIRE - BUY 180 CR**, **AIR DEFENSE - NEED 750 CR**,
+**NAVAL CANNON - EQUIP**, **NAVAL CANNON - ACTIVE**, **START THE NEXT WAVE**.
+Unaffordable items have a muted red background, but remain reachable so the
+status can explain the cost. The status is never a new unimplemented button.
+An extracted game-private `breakwater_shop_feedback.h` implements bounded
+fixed-buffer text emission, with the actual price resolved by a single
+`ShopDisplayPrice` path used by both purchase cards and descriptions.
+The renderer uses existing `StrokeText` and width fitting, not a font asset,
+extra overlay, or another menu. Unknown/empty armory slots have no buy target.
+
+The existing confirmed-shot 0.09 s flag now also animates the new gun mesh:
+the barrel/breech move backwards along the current mount direction by at
+most 0.12 world units, while the wheels and protective carriage stay fixed.
+A faceted gold/amber muzzle flash is generated around the recessed barrel
+mouth only when a shot really occurred. This is a visual consequence of
+`Campaign::FireAt`/`FireMiss` success, not a trigger-based fake hit.
+The recoil and flash return to zero without adding simulation state, save
+fields, audio events, shader/texture resources, or extra draws. Their geometry
+is generated into the existing scene buffer once per state-changing Update
+and shared between stereo eyes. Host GCC/Clang/Clang ASan+UBSan checks cover
+exact committed headers, bounded status labels, stationary wheels/shield,
+recoil displacement, finite flash triangle mesh and rejected/nonfinite
+state. Integrated Android NDK/GLES2/physical headset proof remains open.
+
 Native regression assertions check atlas coverage, transparency, tile UVs,
 finite six-vertex card geometry, aircraft bank, fail-closed dimensions,
 all five weapon enum-to-art mappings, all four support icons, both shop-page
