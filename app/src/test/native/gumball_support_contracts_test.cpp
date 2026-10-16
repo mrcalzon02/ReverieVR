@@ -13,6 +13,7 @@ int main(){
     assert(s.improve(SupportSkill::EclairVolley,cash)&&s.volley_damage()==3&&cash==365);
     assert(s.improve(SupportSkill::EclairDuration,cash)&&s.volley_count()==4);
     assert(s.improve(SupportSkill::MacaronRelief,cash)&&s.shield_repair()==10);
+    assert(s.hull_repair()==7);
     assert(s.improve(SupportSkill::MacaronTractor,cash)&&s.tractor_reach()>1.f);
     uint8_t levels[4];s.export_levels(levels);
     SupportContracts saved;assert(saved.restore(levels,0));
