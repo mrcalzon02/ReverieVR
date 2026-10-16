@@ -173,9 +173,14 @@ final class HomeEnvironmentRenderer {
         return keys;
     }
     private final Mesh daisTop =
-        mesh(quadHorizontal(-1.75f, 1.75f, -4.1f, -1.35f, -1.08f));
+        mesh(quadHorizontal(-1.75f, 1.75f,
+            HomeKeyboardGeometry.BACK_Z - 0.35f,
+            HomeKeyboardGeometry.FRONT_Z + 0.17f,
+            HomeKeyboardGeometry.DESK_TOP_Y));
     private final Mesh daisFront =
-        mesh(quadVerticalZ(-1.75f, 1.75f, -1.35f, -1.08f, -1.35f));
+        mesh(quadVerticalZ(-1.75f, 1.75f, -1.35f,
+            HomeKeyboardGeometry.DESK_TOP_Y,
+            HomeKeyboardGeometry.FRONT_Z + 0.17f));
     // 51 batched, physically raised keycaps remain visible without labels.
     private final Mesh keyboardKeycaps = mesh(buildKeyboardKeycaps());
 
