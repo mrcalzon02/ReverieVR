@@ -1,3 +1,5 @@
+- RV-0238 — **Source integrated, Android/phone gate pending.** Persisted PERF button in Quick Settings toggles stereo frame-pacing overlay (callback FPS, avg/P95/P99/max/jitter and >33/>50ms gaps, per-eye CPU GL submission P95/P99, temperature and OS thermal status). Dated ten-second samples in `performance.txt` included in all diagnostic bundles without requiring detailed log uploads. Future: S9 overlay readability, build/JUnit checks and sustained thermal/performance acceptance; investigate GPU queries/Android display-present APIs before showing physical frame misses. The measurements are not actual GPU/compositor timings.
+
 # ReverieVR Backlog
 
 **Role:** intent and prioritization. This file does not prove execution.

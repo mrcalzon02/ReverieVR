@@ -1,3 +1,33 @@
+## 2026-10-15 — Optional stereo performance pacing HUD and diagnostics (source)
+
+Quick Menu → Settings now contains an actual persisted PERF: ON/OFF control
+next to EXT HID and CONTRAST in the last row; off by default. When enabled,
+a shared head-locked 512x256 RGBA textured panel displays application callback
+FPS, rolling 600-frame avg/P95/P99/max/standard-deviation frame interval,
+observed gaps >33/>50 ms, per-eye CPU GL submission P95/P99, battery
+temperature and Android OS thermal status. Each eye uses the same texture;
+new text is generated at most once per second, not each frame. The ordinary
+FPS badge remains present independently; detailed overlay hides while the
+Quick Menu is open to keep its hit targets legible. No frame cap, sleep, GPU
+query or new renderer has been introduced.
+
+CPU eye submission times now collect in all logging modes. Mode transitions
+reset frame/eye sample rings. At most once every 10 seconds the renderer
+stores a dated, bounded numeric summary in app-private preferences. Every
+diagnostic ZIP embeds this last result as performance.txt even if optional
+logs are excluded; the existing minute VR_PERFORMANCE log now contains P99,
+jitter and long-gap stats. Unsupported GPU-completion and real display-present
+times are prominently NOT MEASURED, never inferred from CPU durations.
+Targeted JUnit source regressions were added for frame percentiles, jitter,
+gaps, reset, unknown metrics and both-eye formatting.
+
+Source commits present on remote main. Android compilation/JUnit execution,
+full APK verification, physical S9 binocular typography, Quick Menu
+selection, mode switch, extended session, battery and thermal validation
+remain **unverified**. Hardware-level GPU queries, display present timestamps
+and asynchronous reprojection counters are deferred, contingent on supported
+Android APIs/extensions rather than invented estimates.
+
 ## 2026-10-15 — Fullscreen DOS edge-visibility optical fit (source)
 
 User's Galaxy S9 headset testing reports that even the existing 80% fullscreen

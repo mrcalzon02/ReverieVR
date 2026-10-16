@@ -1,5 +1,12 @@
 # Changelog
 
+- Source-integrated optional Quick Settings PERF stereo overlay for frame
+  timing avg/P95/P99/max/jitter, >33ms/>50ms gaps, per-eye CPU submit P95/P99,
+  battery temperature and thermal status. GPU and real display-present times
+  explicitly report NOT MEASURED. Ten-second dated summaries enter every
+  diagnostic ZIP, including when verbose logs are excluded. Physical S9,
+  Android build, overlay readability and thermal validation remain pending.
+
 - Fullscreen DOS viewing: reduce each eye's aspect-fitted optical safe area
   from 80% to 70% of the eye dimensions so complete retro game edges remain
   within the headset's clear central view, leaving black letterbox margins.
