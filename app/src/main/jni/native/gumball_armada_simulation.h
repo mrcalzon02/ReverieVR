@@ -441,22 +441,45 @@ public:
         s.kills=kills_;s.bosses=bosses_;
         for(unsigned i=0;i<4;++i)s.levels[i]=levels_[i];
         s.owned_weapons=owned_weapons_;s.active_weapon=static_cast<uint32_t>(weapon_);
+        uint8_t supportLevels[4]={};support_.export_levels(supportLevels);
+        for(unsigned i=0;i<4;++i)s.support_state|=static_cast<uint32_t>(supportLevels[i])<<(i*2u);
+        s.support_state|=static_cast<uint32_t>(support_.booked())<<8u;
         s.checksum=SnapshotChecksum(s);return s;
     }
     bool restore(const Snapshot& s){
-        if(s.magic!=0x474D4231u||s.version!=2u||s.seed==0u||s.node>=kLaneCount
+        if(s.magic!=0x474D4231u||s.version!=3u||s.seed==0u||s.node>=kLaneCount
             ||s.bosses>15u||s.cash>100000000u||s.visited>10000000u
             ||s.kills>100000000u||s.checksum!=SnapshotChecksum(s))return false;
         for(unsigned i=0;i<4;++i)if(s.levels[i]>12u)return false;
         if((s.owned_weapons&~7u)!=0u||(s.owned_weapons&1u)==0u
             ||s.active_weapon>2u||(s.owned_weapons&(1u<<s.active_weapon))==0u)
             return false;
+        if((s.support_state&~0x3ffu)!=0u)return false;
+        uint8_t supportLevels[4]={};
+        for(unsigned i=0;i<4;++i)supportLevels[i]=static_cast<uint8_t>((s.support_state>>(i*2u))&3u);
+        SupportContracts restored;
+        if(!restored.restore(supportLevels,static_cast<uint8_t>((s.support_state>>8u)&3u)))return false;
         seed_=s.seed;node_=s.node;visited_=s.visited;cash_=s.cash;
         kills_=s.kills;bosses_=s.bosses;
         for(unsigned i=0;i<4;++i)levels_[i]=s.levels[i];
         owned_weapons_=s.owned_weapons;weapon_=static_cast<Weapon>(s.active_weapon);
+        support_=restored;deployed_support_=SupportKind::None;support_pulses_=0;
         phase_=Phase::Chart; // Post-general progress remains revisitable, not a sticky result.
         return true;
+    }
+    bool restore(const SnapshotV2& legacy){
+        if(legacy.magic!=0x474D4231u||legacy.version!=2u||
+            legacy.seed==0u||legacy.node>=kLaneCount
+            ||legacy.checksum!=SnapshotV2Checksum(legacy))return false;
+        Snapshot migrated{};
+        migrated.seed=legacy.seed;migrated.node=legacy.node;
+        migrated.visited=legacy.visited;migrated.cash=legacy.cash;
+        migrated.kills=legacy.kills;migrated.bosses=legacy.bosses;
+        for(unsigned i=0;i<4;++i)migrated.levels[i]=legacy.levels[i];
+        migrated.owned_weapons=legacy.owned_weapons;
+        migrated.active_weapon=legacy.active_weapon;
+        migrated.checksum=SnapshotChecksum(migrated);
+        return restore(migrated);
     }
     bool restore(const SnapshotV1& legacy){
         if(legacy.magic!=0x474D4231u||legacy.version!=1u
