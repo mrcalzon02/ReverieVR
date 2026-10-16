@@ -28,6 +28,24 @@ inline const char* CastGuestName(CastGuest id){
 }
 // First content slice: one seeded guest per sortie, at most five real ally
 // pulses, and no heap allocation, network, runtime scripting or save slot.
+// Shared pair-reward policy. Only real destruction callbacks should feed it;
+// escapes, merely meeting the twins and repeated callbacks yield no bonus.
+class CrumbclankContract {
+public:
+    void reset(){biff_=false;baff_=false;paid_=false;}
+    uint32_t destroyed(bool isBiff,bool isBaff){
+        if(isBiff)biff_=true;
+        if(isBaff)baff_=true;
+        if(!paid_&&biff_&&baff_){
+            paid_=true;return 32u;
+        }
+        return 0u;
+    }
+    bool awarded()const{return paid_;}
+    bool both_destroyed()const{return biff_&&baff_;}
+private:
+    bool biff_=false,baff_=false,paid_=false;
+};
 class CastEncounter {
 public:
     void begin(uint32_t seed,uint32_t destination,uint32_t completed,uint32_t risk){
