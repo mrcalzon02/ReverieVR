@@ -48,6 +48,8 @@ struct Module {
     int supportSelected=0,loadoutSelected=0;
     YardCursor yardCursor{};
     bool secondary=false;
+    bool menuPadFocus=false,pointerSeen=false;
+    float lastPointerX=0.f,lastPointerY=0.f;
     char yardFeedback[84]="SELECT PART ON RIGHT / CLICK SHIP TO EDIT";
     Part brush=Part::Frame;
     bool primary=false,campaignSaveError=false,shipSaveError=false,shipLoadWarning=false,upload=true;
@@ -739,7 +741,8 @@ void Update(void* p,const ReverieNativeInputV1* in){
     // click acts on it. Pad navigation is preferred while the pad is moving.
     const bool padMoving=std::fabs(in->move_x)>.55f
         ||std::fabs(in->move_y)>.55f;
-    if(phase==Phase::Chart&&!padMoving
+    if(phase==Phase::Chart&&padMoving)m->menuPadFocus=true;
+    if(phase==Phase::Chart
        &&ReverieNativeInputHasPointerV1(in)
        &&in->pointer_kind!=REVERIE_NATIVE_POINTER_NONE
        &&std::isfinite(in->pointer_origin[2])
@@ -753,6 +756,12 @@ void Update(void* p,const ReverieNativeInputV1* in){
             const float py=in->pointer_origin[1]
                           +travel*in->pointer_direction[1];
             if(std::isfinite(px)&&std::isfinite(py)){
+                if(!m->pointerSeen
+                   ||std::fabs(px-m->lastPointerX)>.075f
+                   ||std::fabs(py-m->lastPointerY)>.075f)
+                    m->menuPadFocus=false;
+                m->pointerSeen=true;m->lastPointerX=px;m->lastPointerY=py;
+                if(!padMoving&&!m->menuPadFocus){
                 MenuHit hit;
                 bool changed=false;
                 if(m->inYard){
@@ -782,6 +791,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                     ReverieNativeRequestFeedbackV1(
                         m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
                     Rebuild(m);
+                }
                 }
             }
         }
@@ -901,6 +911,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                     if(m->yard.stock(candidate)>0u||candidate==m->brush){
                         m->brush=candidate;
                         m->yardCursor.toolChosen(); // immediately back to ship
+                        m->menuPadFocus=true; // do not re-hover palette until ray moves
                         std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
                                       "ARMED %s: CLICK CELL TO SWAP",
                                       YardPartName(m->brush));
