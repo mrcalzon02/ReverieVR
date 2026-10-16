@@ -338,6 +338,33 @@ int main(){
     assert(migratedV2.cash()==88u);
     assert(migratedV2.snapshot().version==3u);
     assert(migratedV2.support().booked()==SupportKind::None);
+    // Purchased emergency consumables live in the same checked V3 record
+    // as the wallet, independent of the one booked paid companion.
+    Simulation emergencyGame(449u);
+    auto kitBank=emergencyGame.snapshot();
+    kitBank.cash=300u;kitBank.checksum=SnapshotChecksum(kitBank);
+    assert(emergencyGame.restore(kitBank));
+    assert(emergencyGame.buy_support_kit(SupportKit::HullPatch));
+    assert(emergencyGame.buy_support_kit(SupportKit::ShieldTonic));
+    assert(emergencyGame.cash()==190u);
+    assert(!emergencyGame.buy_support_kit(SupportKit::HullPatch));
+    assert(emergencyGame.support().kit_mask()==3u);
+    const auto emergencySave=emergencyGame.snapshot();
+    assert((emergencySave.support_state>>10u&3u)==3u);
+    Simulation emergencyReload(449u);
+    assert(emergencyReload.restore(emergencySave));
+    assert(emergencyReload.support().kit_mask()==3u);
+    assert(emergencyReload.launch(0));
+    assert(!emergencyReload.buy_support_kit(SupportKit::ShieldTonic));
+    emergencyReload.update(.02f,0.f,0.f,false);
+    assert(emergencyReload.kit_activations()==0u); // don't consume while healthy
+    assert(emergencyReload.support().kit_mask()==3u);
+    auto corruptKits=emergencySave;
+    corruptKits.support_state|=1u<<12u;
+    corruptKits.checksum=SnapshotChecksum(corruptKits);
+    Simulation emergencyTamper(449u);
+    assert(!emergencyTamper.restore(corruptKits));
+    assert(migratedV2.support().kit_mask()==0u);
     // Route chart must report the same later-run guest as the combat director.
     bool cinnamon=false,sydney=false,jules=false;
     for(uint32_t seed=1;seed<=512&&!(cinnamon&&sydney&&jules);++seed){
