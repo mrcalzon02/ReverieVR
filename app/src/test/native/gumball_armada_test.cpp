@@ -239,5 +239,51 @@ int main(){
     assert(brokenShip.place(3,1,Part::Thruster));
     assert(blocked.configure_ship(brokenShip));
     assert(blocked.launch(0));
+    // Seeded guest encounters are real, bounded events after a completed run.
+    assert(starter.guest()==CastGuest::None);
+    bool foundPip=false,foundLolly=false,foundBlort=false;
+    for(uint32_t seed=1;seed<400&&!(foundPip&&foundLolly&&foundBlort);++seed){
+        Simulation trial(seed);
+        const auto lane=trial.lane(0);
+        const CastGuest expected=ChooseCastGuest(seed,lane.id,2u,lane.hazard);
+        if(expected==CastGuest::None
+            ||(expected==CastGuest::PipParfait&&foundPip)
+            ||(expected==CastGuest::LollyWren&&foundLolly)
+            ||(expected==CastGuest::BlortBlister&&foundBlort))continue;
+        auto progressed=trial.snapshot();progressed.visited=2;
+        progressed.checksum=SnapshotChecksum(progressed);
+        assert(trial.restore(progressed)&&trial.launch(0));
+        assert(trial.guest()==expected);
+        bool sawAssist=false,sawGrenadier=false,sawBomb=false;
+        for(int tick=0;tick<750&&trial.phase()==Phase::Flight;++tick){
+            trial.update(.025f,0.f,0.f,false);
+            sawAssist|=trial.guest_active();
+            for(const auto& enemy:trial.enemies())if(enemy.active&&enemy.kind==EnemyKind::Blort)
+                sawGrenadier=true;
+            for(const auto& shot:trial.shots())if(shot.active&&shot.bomb)
+                sawBomb=true;
+        }
+        assert(trial.guest_pulses()<=5);
+        if(expected==CastGuest::PipParfait){
+            assert(sawAssist&&trial.ally_shots()>0u);
+            assert(trial.shots_hit()<=trial.shots_fired());
+            foundPip=true;
+        }else if(expected==CastGuest::LollyWren){
+            assert(sawAssist);
+            assert(trial.ally_shots()==0u);
+            foundLolly=true;
+        }else{
+            assert(sawGrenadier&&sawBomb);
+            assert(!sawAssist);
+            foundBlort=true;
+        }
+    }
+    assert(foundPip&&foundLolly&&foundBlort);
+    // All four provisional general flags must remain recoverable on load:
+    // the missing King storyline is unfinished, not a permanent results trap.
+    Simulation postgame(88);
+    auto allGenerals=postgame.snapshot();allGenerals.bosses=15u;
+    allGenerals.checksum=SnapshotChecksum(allGenerals);
+    assert(postgame.restore(allGenerals)&&postgame.phase()==Phase::Chart);
     std::cout<<"Gumball Armada deterministic combat and save tests passed\n";
 }
