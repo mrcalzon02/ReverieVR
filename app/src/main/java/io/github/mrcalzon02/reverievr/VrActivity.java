@@ -923,9 +923,12 @@ public final class VrActivity extends Activity
         controllerConnectionMessage =
             message == null ? "" : message;
 
-        if (state != ControllerProvider.ConnectionState.READY
-            && inputBindingEngine != null) {
-            inputBindingEngine.releaseAll();
+        if (state != ControllerProvider.ConnectionState.READY) {
+            if (inputBindingEngine != null) inputBindingEngine.releaseAll();
+            if (inputRouter != null) inputRouter.resetControllerEdges();
+            // Do not carry the previous controller-mouse motion forward
+            // when a connection is restored and a new pose arrives.
+            dosControllerMouseLastPoseNanos = 0L;
         }
         if(state==ControllerProvider.ConnectionState.READY &&
            ReveriePreferences.CONTROLLER_DAYDREAM.equals(pendingControllerSource) &&
@@ -1424,6 +1427,8 @@ public final class VrActivity extends Activity
             renderer.releasePhysicalKeyboardDevice(deviceId);
         if (inputBindingEngine != null) inputBindingEngine.releaseAll();
         if (standardHidInputRouter != null) standardHidInputRouter.reset();
+        if (inputRouter != null) inputRouter.resetControllerEdges();
+        dosControllerMouseLastPoseNanos = 0L;
         if (preferences != null) {
             String selected=preferences.getActiveController();
             boolean lost=

@@ -222,7 +222,12 @@ final class ControllerManager implements AutoCloseable {
 
         @Override
         public void onControllerStateChanged(ControllerSnapshot snapshot) {
-            if (provider != activeProvider) {
+            // A disconnect can race the last BLE/companion input callback.
+            // Discard late down edges instead of reasserting guest buttons
+            // after the host already released every held control.
+            if (provider != activeProvider
+                || connectionState != ControllerProvider.ConnectionState.READY
+                || snapshot == null) {
                 return;
             }
 
