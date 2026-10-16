@@ -486,6 +486,13 @@ void Flight(Module* m){
     std::snprintf(status,sizeof(status),"RUN CASH +%u  BEST COMBO X%d",
                   s.sortie_cash(),s.max_combo());
     Text(m,status,0,-1.43f,.031f,.86f,.80f,.58f);
+    if(s.support().kit_mask()!=0u){
+        std::snprintf(status,sizeof(status),"EMERGENCY: %s%s%s",
+                      s.support().has_kit(SupportKit::HullPatch)?"HULL PATCH":"",
+                      s.support().kit_mask()==3u?" + ":"",
+                      s.support().has_kit(SupportKit::ShieldTonic)?"SHIELD TONIC":"");
+        Text(m,status,0,-1.62f,.029f,.91f,1.f,.77f);
+    }
 }
 void Result(Module* m){
     Background(m);auto phase=m->sim.phase();
