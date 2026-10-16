@@ -225,7 +225,7 @@ All gameplay advances in native Update once per frame, with common cached vertex
 
 ## RV-GAME-06 — Omega Front
 
-**Status:** Design and world lore committed; **no native module, launch tile, game art or APK integration exists yet**. This is a new original top-down, tile-based military tactics/RPG hybrid, not an adaptation of an existing commercial game.
+**Status:** First deterministic **headless combat kernel and regression test source committed**; **no hosted native module, launch tile, game art or APK integration exists yet**. This is a new original top-down, tile-based military tactics/RPG hybrid, not an adaptation of an existing commercial game.
 
 **Setting authority:** [OMEGA_FRONT_WORLD_BIBLE.md](OMEGA_FRONT_WORLD_BIBLE.md) — Ouroboros Corporation, planetary bisection, past/future rifts, baseline-human Eden Zones, wastelands, barren zones, anomaly fields, the canonical count of 17 factions and their unresolved individual identities.
 
@@ -240,6 +240,8 @@ All gameplay advances in native Update once per frame, with common cached vertex
 **Campaign:** [OMEGA_FRONT_GRAND_CAMPAIGN.md](OMEGA_FRONT_GRAND_CAMPAIGN.md) — seventy multi-operation faction campaigns across level 1–100 and ten-world-prestige longer-term covenant.
 
 **Mechanics authority:** [WAR_WITHOUT_END.md](WAR_WITHOUT_END.md) (retained earlier filename) — combat anatomy, progression calibration, 600-sector/4,096-inspection-room address space, seven encounter scales, independent commander/troop/squad-room/weapon/armor/accessory/base/world/doctrine progression, deterministic simulation, tenfold prestige covenant, and staged P0–P11 roadmap.
+
+**Current P1 source:** `app/src/main/jni/native/omega_front_tactics.h`, `app/src/test/native/omega_front_tactics_test.cpp` and [docs/native/OMEGA_FRONT_TACTICS.md](../native/OMEGA_FRONT_TACTICS.md) — actual 24×24 combat rules, three unit roles, finite ammunition and waterworks repair, LOS/cover, opponent objective AI and deterministic win/loss; GCC/Clang/ASan+UBSan host regression passed. **This source is not yet registered or packaged as an APK module.**
 
 **Native identity:** Comfortable 3DoF VR tabletop with tiny crisp chibi pixel sprites on logical square tiles. Shell-normalized select/secondary/touchpad inputs; O/Home stays shell-owned. Bounded, reproducible order-pulse simulator independent of GLES; rendering only consumes the simulation. The strategic economy and room inspection are real tactical gameplay rather than passive timers. Retain S9 performance and offline-first single-APK operation.
 
