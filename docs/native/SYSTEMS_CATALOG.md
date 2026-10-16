@@ -10,6 +10,10 @@ This catalog is intentionally broader than the public C ABI. It includes impleme
 
 `omega_front_tactics.h`, `omega_front_controls.h` and `omega_front_module.cpp` form a Development-only game-private source example. The native host and Android.mk allowlist/target plus Daydream `native-classics` touchpad routing are source-wired. These are not new shared SDK facilities, and real APK/device verification remains pending. See `docs/native/OMEGA_FRONT_TACTICS.md`.
 
+## Gumball Armada bounded candy ship construction — 2026-10-16
+
+The game-private `gumball_shipyard.h` and native shipyard view demonstrate a 7×7 connected component lattice with finite starter inventory, structural disconnection prevention, per-part mass/power and launch readiness, independently checksummed `shipyard.v1` persistence, and actual weapon mount origins and hull/shield/thrust/cargo effects on arcade simulation. `gumball_shipyard_test.cpp` runs strict portable GCC/Clang and Clang sanitizers in `scripts/verify-gumball-armada.sh`. **Source integrated / local helper verified only; APK/Galaxy S9 acceptance pending.** It is not a shared platform SDK, nor a fully implemented purchased ship parts economy. See `docs/project/GUMBALL_ARMADA.md`.
+
 ## Maturity classes
 
 - **ABI v1** — binary contract implemented now; compatibility rules are explicit.
