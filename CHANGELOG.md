@@ -1,5 +1,10 @@
 # Changelog
 
+- DOS comfort: per-game persistent world-screen position settings (size,
+  distance, height and reset) from existing DOS Quick Menu. Right-side
+  options stay independently ray-hittable and fullscreen 70% optical
+  fit remains untouched; source/JVM smoke passed, Android/S9 pending.
+
 - Source-integrated optional Quick Settings PERF stereo overlay for frame
   timing avg/P95/P99/max/jitter, >33ms/>50ms gaps, per-eye CPU submit P95/P99,
   battery temperature and thermal status. GPU and real display-present times

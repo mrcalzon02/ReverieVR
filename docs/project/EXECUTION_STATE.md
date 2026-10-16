@@ -1,3 +1,28 @@
+## 2026-10-16 — Per-game DOS world-screen placement controls (source implementation)
+
+Added pure bounded DosScreenPlacement geometry (0.75–1.20 scale; 2.20–4.20m
+distance; +/-0.48m elevation), per-module SharedPreferences, screen placement
+rehydration on ordinary DOS launch and Resume, and matched positional/
+dimension changes inside the authoritative DosSurfaceRenderer world-screen
+matrix. The source remains aspect preserving; enlarged/wide screens move
+left when needed to avoid obscuring the right-side DOS options rail.
+Fullscreen DOS's existing 70% centered stereo optical fit stays unchanged.
+The in-headset DOS quick options rail now has SCREEN POSITION. Entering it
+pauses an active DOS session and exits fullscreen if applicable; the
+existing DOS content remains visible with 8 live adjustments:
+SIZE -/+, NEARER/FARTHER, RAISE/LOWER, RESET POSITION, BACK. The
+screen editor is routed through the existing UI ray, selection, Back,
+universal Quick Menu, stereo draw and hosted-input suppression paths.
+No video/other native content is changed in this slice.
+
+Exact DosScreenPlacement Java source was compiled using local javac and
+exercised with a standalone runtime smoke check: independent actions,
+safe defaults after invalid floats, bounds after repeated inputs, reset
+and invalid index unchanged — passed. JUnit regression source was
+committed; JUnit itself and the Android/Gradle build, signature validation,
+Galaxy S9 optical placement, pointer interaction and controller-loss
+regressions have not run. State is **source integrated, hardware gate open**.
+
 ## 2026-10-16 — Gumball Armada objective and cash salvage source slice
 
 Reconciled latest remote `main` and committed `gumball_arcade_objectives.h` with independently verified GCC/Clang/ASan/UBSan bounded mission and salvage tests. Connected three chart choices to Sour Sweep, timed and no-escape Courier Intercept (including its dedicated unarmed, fast, evasive priority courier), and three-pickup-required Salvage Recovery. Actual enemy destruction drops drifting collectible Gumball Cash objects; player must steer into them, and the live GLES2 scene displays the pickups, route types, objective/timer/collection progress and distinct failure results. Extended native test runner and deterministic game test source. Adjusted chart label lengths to prevent button overlap. No new ABI, assets, engine, GitHub Actions or device-side controls. Verified helper C++17 tests locally, but exact integrated native build, Android NDK/APK, dual-eye GameRenderer, pad touch and physical Galaxy S9 evidence are **NOT** verified. This is partial S08 and S09 source work, not finished salvage-inventory or campaign implementation.
