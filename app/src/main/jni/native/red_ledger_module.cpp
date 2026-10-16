@@ -8,6 +8,7 @@
 #include "red_ledger_signage.h"
 #include "red_ledger_mug_mesh.h"
 #include "red_ledger_trade.h"
+#include "red_ledger_stock_layout.h"
 
 #include <GLES2/gl2.h>
 
@@ -31,6 +32,7 @@ namespace geo = reverie::redledger::geometry;
 namespace signs = reverie::redledger::signage;
 namespace mugs = reverie::redledger::mug;
 namespace trade = reverie::redledger::trade;
+namespace stock = reverie::redledger::stock;
 
 // Include the far rear doorway in seated work-ray reach.
 constexpr float kMaximumWorkReach = 4.25f;
@@ -55,6 +57,7 @@ enum class WorkTarget : uint8_t {
     ToStock,
     StockNext,
     StockBuy,
+    StockSku,
     DrinkChoice,
     SnackChoice,
     Bed
@@ -132,6 +135,7 @@ struct ModuleState {
     const ReverieNativeHostV1 *host = nullptr;
     Simulation simulation;
     trade::Trade market;
+    int hovered_offer = -1;
     bool ledger_visible = false;
 
     GLuint program = 0;
@@ -216,6 +220,7 @@ const char *WorkTargetName(
         case WorkTarget::ToBar: return "return to bar";
         case WorkTarget::ToStock: return "stockroom route";
         case WorkTarget::StockNext: return "next wholesale catalog item";
+        case WorkTarget::StockSku: return "select displayed faction product";
         case WorkTarget::StockBuy: return "purchase selected wholesale stock";
         case WorkTarget::DrinkChoice: return "choose next available drink";
         case WorkTarget::SnackChoice: return "choose next available snack";
@@ -256,6 +261,7 @@ bool IsTargetAvailable(
         case WorkTarget::ToStock:
             return room==trade::Room::Living && hands_free;
         case WorkTarget::StockNext:
+        case WorkTarget::StockSku:
             return room==trade::Room::Stockroom && hands_free;
         case WorkTarget::StockBuy:
             return room==trade::Room::Stockroom && hands_free &&
@@ -417,11 +423,13 @@ float RayAabbDistance(
 WorkTarget FindWorkTarget(
     const ModuleState *state,
     const ReverieNativeInputV1 *input,
-    float *out_distance
+    float *out_distance,
+    int *out_offer
 ) {
     if (out_distance != nullptr) {
         *out_distance = 0.0f;
     }
+    if (out_offer != nullptr) *out_offer = -1;
 
     if (state == nullptr
         || input == nullptr
@@ -458,6 +466,25 @@ WorkTarget FindWorkTarget(
         }
     }
 
+    // Physical product cards share their selection ray boxes with the
+    // signs rendered in the single baked stockroom signage draw.
+    if (IsTargetAvailable(state,WorkTarget::StockSku)) {
+        for (int slot=0;slot<stock::kCells;++slot) {
+            const stock::Cell cell=stock::At(slot);
+            const TargetBounds card={
+                WorkTarget::StockSku,
+                {cell.x,cell.y,cell.z},
+                {stock::kHalfWidth,stock::kHalfHeight,0.065f}
+            };
+            const float distance=RayAabbDistance(
+                input->pointer_origin,input->pointer_direction,card);
+            if(distance>=0.0f && distance<best_distance) {
+                best=WorkTarget::StockSku;
+                best_distance=distance;
+                if(out_offer!=nullptr)*out_offer=cell.offer;
+            }
+        }
+    }
     if (best != WorkTarget::None
         && out_distance != nullptr) {
         *out_distance =
@@ -605,6 +632,9 @@ bool ActivateWorkTarget(
             break;
         case WorkTarget::StockNext:
             changed=state->market.CycleOffer();
+            break;
+        case WorkTarget::StockSku:
+            changed=state->market.SelectOffer(state->hovered_offer);
             break;
         case WorkTarget::StockBuy:
             if (state->market.offer()==0) {
@@ -1245,7 +1275,7 @@ void RefreshStatusBoard(ModuleState *state) {
         const int stock=sku<trade::kDrinks?
             (sku==0?sim.beer_units():market.stock_drink(sku)):
             market.stock_snack(sku-trade::kDrinks);
-        std::snprintf(rows[0],sizeof(rows[0]),"SUPPLIER: %s",
+        std::snprintf(rows[0],sizeof(rows[0]),"PRODUCT: %s",
             market.offer_name());
         std::snprintf(rows[1],sizeof(rows[1]),"COST: %d  UNITS: %d",
             sku==0?900:market.offer_cost(),
@@ -1254,7 +1284,7 @@ void RefreshStatusBoard(ModuleState *state) {
                 trade::kSnackCatalog[sku-trade::kDrinks].units));
         std::snprintf(rows[2],sizeof(rows[2]),"ON HAND: %d",stock);
         std::snprintf(rows[3],sizeof(rows[3]),"CASH: %d",sim.cash_cents());
-        std::snprintf(rows[4],sizeof(rows[4]),"NEXT THEN BUY");
+        std::snprintf(rows[4],sizeof(rows[4]),"SELECT CARD THEN BUY");
         if(sim.current_event()==EventType::SupplyInterruption)
             std::snprintf(rows[5],sizeof(rows[5]),"SUPPLIER BLOCKED TODAY");
         else
@@ -1409,6 +1439,24 @@ void DrawRoom(
             state->hovered_target==WorkTarget::ToBar?0.60f:0.32f,
             0.28f,0.19f,Material::Wood);
         if (stock) {
+            // Baked card backgrounds and lettering cost one draw/eye.
+            // Only the hovered selection border is dynamic.
+            if(state->hovered_target==WorkTarget::StockSku &&
+               state->hovered_offer>=1) {
+                for(int slot=0;slot<stock::kCells;++slot) {
+                    const stock::Cell cell=stock::At(slot);
+                    if(cell.offer!=state->hovered_offer)continue;
+                    DrawCube(state,view_projection,1.0f,
+                        cell.x,cell.y+stock::kHalfHeight,cell.z+0.045f,
+                        stock::kHalfWidth*2.1f,0.022f,0.018f,
+                        0.90f,0.72f,0.26f,Material::Metal);
+                    DrawCube(state,view_projection,1.0f,
+                        cell.x,cell.y-stock::kHalfHeight,cell.z+0.045f,
+                        stock::kHalfWidth*2.1f,0.022f,0.018f,
+                        0.90f,0.72f,0.26f,Material::Metal);
+                    break;
+                }
+            }
             DrawCube(state,view_projection,flicker,
                 -0.70f,-0.54f,-1.02f,0.53f,0.19f,0.48f,
                 state->hovered_target==WorkTarget::StockNext?0.70f:0.25f,
@@ -2009,7 +2057,8 @@ void Update(
         FindWorkTarget(
             state,
             &effective_input,
-            &state->hovered_distance
+            &state->hovered_distance,
+            &state->hovered_offer
         );
 
     const bool primary =

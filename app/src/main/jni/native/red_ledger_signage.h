@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <cstdio>
+#include "red_ledger_stock_layout.h"
 
 // Game-private, context-lifetime baked, real letter geometry. Each glyph is
 // rasterized to horizontal runs (two triangles/run), not one draw per letter.
@@ -85,6 +87,8 @@ inline void Quad(float *buffer, size_t &vertices,
     }
     vertices+=6u;
 }
+inline size_t EmitLine(float *out,size_t at,const char *label,
+                       float cx,float cy,float z,float px);
 inline size_t Emit(float *buffer,int room=0) {
     size_t vertices=0;
     for (const Sign &sign : kSigns) {
@@ -118,6 +122,31 @@ inline size_t Emit(float *buffer,int room=0) {
                          sign.z+0.003f,0.97f,0.92f,0.75f);
                 }
             }
+        }
+    }
+    if(room==1) {
+        // Baked, one-draw stockroom catalog: six faction columns, four real
+        // product groups. An offer is selected by looking at its physical card.
+        static const float kFactionInk[stock::kSuppliers][3]={
+            {0.17f,0.27f,0.35f},{0.31f,0.27f,0.14f},
+            {0.36f,0.17f,0.15f},{0.25f,0.19f,0.15f},
+            {0.34f,0.23f,0.13f},{0.16f,0.29f,0.18f}
+        };
+        for(int slot=0;slot<stock::kCells;++slot){
+            const stock::Cell cell=stock::At(slot);
+            const float *ink=kFactionInk[cell.faction];
+            Quad(buffer,vertices,
+                 cell.x-stock::kHalfWidth,
+                 cell.y-stock::kHalfHeight,
+                 cell.x+stock::kHalfWidth,
+                 cell.y+stock::kHalfHeight,
+                 cell.z,ink[0],ink[1],ink[2]);
+            char label[24]={};
+            std::snprintf(label,sizeof(label),"%d %s",
+                stock::SupplierCode(cell.faction),
+                stock::GroupLabel(cell.group));
+            vertices=EmitLine(buffer,vertices,label,
+                cell.x,cell.y,cell.z+0.014f,0.0086f);
         }
     }
     return vertices;

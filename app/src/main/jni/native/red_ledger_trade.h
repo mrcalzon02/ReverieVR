@@ -147,6 +147,10 @@ public:
             kSnackCatalog[offer_-kDrinks].name;
     }
     bool CycleOffer() {offer_=(offer_+1)%kOffers;return true;}
+    bool SelectOffer(int offer) {
+        if(offer<1||offer>=kOffers||offer==offer_)return false;
+        offer_=offer;return true;
+    }
     bool SelectDrink(int house_units) {
         for(int step=1;step<=kDrinks;++step) {
             const int next=(chosen_drink_+step)%kDrinks;

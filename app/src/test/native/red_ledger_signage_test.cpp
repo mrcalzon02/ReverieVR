@@ -28,6 +28,9 @@ int main() {
         assert(v[8]==0.50390625f && v[9]==0.50390625f);
     }
     assert(background>0 && letters>background);
+    // All 24 product cards are baked with the stockroom's fixed lettering.
+    // Living quarters contain no product-picker signage at all.
+    assert(VertexCount(1)>VertexCount(2)+9000u);
     for(int room=1;room<3;++room) {
         const size_t n=VertexCount(room);
         assert(n>100u && n<24000u && n%6u==0u);
