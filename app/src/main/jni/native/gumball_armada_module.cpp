@@ -1,5 +1,6 @@
 #include "gumball_armada_simulation.h"
 #include "gumball_shipyard_menu.h"
+#include "gumball_menu_hit.h"
 #include "reverie_native_vector_text.h"
 #include "gumball_menu_layout.h"
 #include "reverie_native_sdk.h"
@@ -16,6 +17,7 @@
 namespace {
 using reverie::gumball::Simulation;
 using reverie::gumball::YardCursor;
+using reverie::gumball::MenuHit;
 using reverie::gumball::ChartNavigate;
 using reverie::gumball::LoadoutNavigate;
 using reverie::gumball::Phase;
@@ -680,6 +682,57 @@ void Update(void* p,const ReverieNativeInputV1* in){
     const float dt=std::max(0.f,std::min(.05f,std::isfinite(in->delta_seconds)?in->delta_seconds:0.f));
     const bool pressed=in->primary_down!=0;
     const Phase phase=m->sim.phase();
+    // Aiming at a drawn control must focus that exact control, and primary
+    // click acts on it. Pad navigation is preferred while the pad is moving.
+    const bool padMoving=std::fabs(in->move_x)>.55f
+        ||std::fabs(in->move_y)>.55f;
+    if(phase==Phase::Chart&&!padMoving
+       &&ReverieNativeInputHasPointerV1(in)
+       &&in->pointer_kind!=REVERIE_NATIVE_POINTER_NONE
+       &&std::isfinite(in->pointer_origin[2])
+       &&std::isfinite(in->pointer_direction[2])
+       &&std::fabs(in->pointer_direction[2])>.0001f){
+        const float travel=(-2.94f-in->pointer_origin[2])
+                          /in->pointer_direction[2];
+        if(travel>0.f&&travel<30.f){
+            const float px=in->pointer_origin[0]
+                          +travel*in->pointer_direction[0];
+            const float py=in->pointer_origin[1]
+                          +travel*in->pointer_direction[1];
+            if(std::isfinite(px)&&std::isfinite(py)){
+                MenuHit hit;
+                bool changed=false;
+                if(m->inYard){
+                    hit=reverie::gumball::YardHit(px,py);
+                    if(hit.id>=0&&(m->yardCursor.x!=hit.x
+                                    ||m->yardCursor.y!=hit.y)){
+                        m->yardCursor.pointAt(hit.x,hit.y);
+                        changed=true;
+                    }
+                }else if(m->inSupport){
+                    hit=reverie::gumball::SupportHit(px,py);
+                    if(hit.id>=0&&m->supportSelected!=hit.id){
+                        m->supportSelected=hit.id;changed=true;
+                    }
+                }else if(m->inLoadout){
+                    hit=reverie::gumball::LoadoutHit(px,py);
+                    if(hit.id>=0&&m->loadoutSelected!=hit.id){
+                        m->loadoutSelected=hit.id;changed=true;
+                    }
+                }else{
+                    hit=reverie::gumball::ChartHit(px,py);
+                    if(hit.id>=0&&m->selected!=hit.id){
+                        m->selected=hit.id;changed=true;
+                    }
+                }
+                if(changed){
+                    ReverieNativeRequestFeedbackV1(
+                        m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+                    Rebuild(m);
+                }
+            }
+        }
+    }
     if(phase==Phase::Flight){
         const uint32_t kills=m->sim.kills();const int hp=m->sim.hp();
         const int shieldBefore=m->sim.shield();
