@@ -48,15 +48,15 @@ This retains the existing 600-sector design scale. Each theater contains **50 ad
 | T07 | **Bloodroot Expanse** | Wasteland/Anomaly | Biological colonization and contaminated waterways |
 | T08 | **White Salt Basin** | Barren | Dry inland sea, hot salt fields, stripmining campaigns |
 | T09 | **Farwake Shelf** | Barren/Anomaly | Incomprehensible future ruins, energy dependence |
-| T10 | **Mirrorstep Labyrinth** | Anomaly | Repeating reflections and altered navigation geometry |
+| T10 | **Mirrorstep Labyrinth** | Wasteland + anomaly | Repeating reflections and altered navigation geometry |
 | T11 | **Last Escarpment** | Barren/world-edge | Visible planetary fracture scars and siege corridors |
-| T12 | **Zero-Hour Front** | Anomaly | Late-game temporal warfare, rift closure and world-law conflicts |
+| T12 | **Zero-Hour Front** | Barren + anomaly | Late-game temporal warfare, rift closure and world-law conflicts |
 
 Not every theater is continuously controlled by one faction. Claim, garrison, civilian allegiance, de facto occupation and supply reach are separate state variables. Factions may establish colonies, evacuate, lose capitals, become scattered refugee remnants and later return. Content generation must support contested routes and reachability instead of placing 600 decorative map dots.
 
 ## 4. Initial 16-sector Hearthfall March front
 
-The first campaign opens in **T01**, on a readable 4×4 geographic neighborhood with **16 identified sectors** and forty-plus potential adjacent front nodes not yet displayed. This is a first-playable window, not a deliberate reduction of the 600-sector target.
+The first campaign opens in **T01**, on a readable 4×4 geographic neighborhood with **16 identified sectors** and 34 additional T01 campaign sectors still awaiting names and detailed layout. This is a first-playable window, not a deliberate reduction of the 600-sector target.
 
 ```text
                 A                    B                    C                    D
