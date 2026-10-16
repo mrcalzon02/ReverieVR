@@ -183,3 +183,15 @@ If Stage A mirrors but desktop input does not work, verify Android's USB-debuggi
 If the scrcpy window has no sound on Android 10 or earlier, that is expected.
 
 If Stage B is black only in scrcpy while the headset display is correct, capture that as an RV-0006 mirror-path defect; do not disable Cardboard rendering or add a fake non-VR fallback merely to satisfy the mirror.
+
+
+## Separate SteamVR S1a host pairing (2026-10-16)
+
+The Windows Laptop Link utility now includes an **optional** encrypted
+one-shot PC link test independently of scrcpy. USB/ADB reverse option:
+`adb reverse tcp:38726 tcp:38726` with Windows host bound to loopback.
+Private Wi-Fi / Windows tether IPv4 uses explicit PC and phone pairing
+with SHA-256 certificate pinning and a random one-use token over TLS 1.2.
+Neither mode mirrors an Android screen, runs a SteamVR driver, replaces
+scrcpy for diagnostics, or modifies headset controls. SteamVR PC-hosted
+game visuals and real pose transport remain future milestones.

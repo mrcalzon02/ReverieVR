@@ -1,3 +1,33 @@
+## 2026-10-16 — SteamVR S1a one-shot secure wired/Wi-Fi host and phone probe
+
+Implemented actual one-session transport test: the existing APK-bundled
+Laptop Link Windows menu now has item 6, which explicitly chooses USB
+ADB-reverse loopback or private Wi-Fi/USB-tether IP, obtains consent
+before making a temporary current-user Windows TLS certificate, prints
+the SHA-256 certificate fingerprint and random 128-bit pairing token,
+listens for a bounded protocol request, responds READY only on a
+correct token, then shuts down and removes its own test certificate.
+The helper does not change Windows firewall rules, install any service,
+start a driver or inspect PC activity.
+
+Added Android `SteamVrLinkProbe` (TLSv1.2, SHA-256 DER pinning, no
+trust-all fallback, strict RFC1918 IPv4/USB loopback selection,
+socket timeouts, line-size limits and one-time token). Existing Stage A
+Laptop Link panel now offers **Test SteamVR PC Link (USB / Wi-Fi)**:
+the user chooses transport, enters PC fingerprint and one-time token,
+and receives actual success/failure. Pairing material is not saved in
+preferences or printed to diagnostics. The Stage A foreground lifetime
+invalidates stale callbacks on pause. Laptop Link asset whitelist
+and ZIP regression now cover five scripts/readme files, including
+the actual host implementation. The rest of the Android renderer
+and SteamVR games remain untouched.
+
+At this stage transport **source implementation** is committed to
+GitHub; local Windows PowerShell, Android APK compilation, full JUnit,
+real Samsung S9 Wi-Fi/USB pairing, SteamVR HMD driver registration,
+tracking, stereo streaming and heat/latency verification have **not**
+run. S1b real pose transfer and the S2-S5 video/driver gates are open.
+
 ## 2026-10-16 — Gumball Armada planned supporting character bible (documentation only)
 
 Created `docs/project/GUMBALL_ARMADA_CAST_BIBLE.md` as a **design-only** durable source for 14 original supporting characters: shopkeepers Tilda Taffy, Professor Fizzlebloom, Bristle Mint, Sister Nougabelle, Gumbo Gearloose and Madame Citrina Peel; potential friendly support pilots Pip Parfait and Lolly Wren; and Sour troublemakers Blort Blister, Nib Noxious, Lady Limewire, Biff Crumbclank, Baff Crumbclank and Marshal Muck. The bible preserves each venue, five-vendor-archetype mapping, silhouette/voice description, character relationships, proposed combat/support/shop behavior, original sample dialogue, unlock/encounter guardrails, stage dependencies and explicit future art/voice integration gates. "Extra Lime" is documented as an optional **future** continue/life-token concept, not existing code. Linked the design into `GUMBALL_ARMADA.md`, the staged plan, content matrix, backlog and acceptance ledger with state **planned — design documented**. Per user request, character pictures have **not** been generated, downloaded, committed or assigned fake asset paths. No gameplay source, APK/asset bundles, tests, Android Gradle/NDK builds, in-headset runtime, stores, allies, enemy attack implementations or release claims changed in this documentation slice. No GitHub Actions were created. Validate by exact `main` readback of the cast bible, all character IDs and all new cross-references.

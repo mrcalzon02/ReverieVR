@@ -1,5 +1,14 @@
 # Changelog
 
+- SteamVR Link S1a: original optional Windows Laptop Link now contains
+  a consented, temporary TLS host with USB/ADB reverse or private
+  Wi-Fi/USB tether listener, 128-bit one-shot token, printed SHA-256
+  certificate fingerprint and explicit cleanup. Android Stage A
+  offers an actual pinned-TLS connection test with strict address
+  validation, bounded replies and no stored secrets. Five-file
+  ZIP whitelist/tests updated. No SteamVR video, driver or tracked
+  headset is claimed; PC/S9 runtime acceptance pending.
+
 - SteamVR-only direction: preserve ReverieVR's entire Android game
   runtime on the Galaxy S9. Existing Laptop Link Windows utility now
   contains real read-only SteamVR installation/driver preflight as

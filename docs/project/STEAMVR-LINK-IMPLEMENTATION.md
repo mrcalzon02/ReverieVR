@@ -243,3 +243,75 @@ SteamVR/OpenVR as user-installed host software; record pinned SDK and
 permissive license prior to source integration, along with all DLL,
 encoder and codec licenses. All deployment and test claims follow
 INTENT -> EXECUTE -> OBSERVE -> VERIFY -> CLAIM.
+
+
+## 2026-10-16 S1a transport implementation — REAL TLS handshake, not pose/VR
+
+A functional **one-shot** PC↔phone authenticated transport test is
+now source-wired for either USB or private Wi-Fi, with a fifth APK-bundled
+PowerShell asset, `SteamVrLinkProbeHost.ps1`, a real Windows Laptop Link
+menu option 6, Android's `SteamVrLinkProbe` and the existing Stage A
+Laptop Link section's **Test SteamVR PC Link (USB / Wi-Fi)** button.
+It is a testable end-to-end data flow, **not** an attached SteamVR device.
+
+**USB/ADB reverse:** Windows option 6 → U binds `127.0.0.1:38726`
+on the PC only; connect and authorize USB debugging; run on the PC:
+`adb reverse tcp:38726 tcp:38726`. Then select USB on phone (always
+`127.0.0.1`). ADB reverse points the phone's loopback TCP connection
+to the host; it is not HDMI or a mandatory PCVR runtime. Remove the
+temporary mapping with `adb reverse --remove tcp:38726` if desired.
+
+**Wi-Fi/private IP:** Windows option 6 → W binds `0.0.0.0:38726`
+*only with the user's explicit consent and for at most 180 seconds*.
+The Galaxy S9 and PC must share a trusted LAN (PC Ethernet + Wi-Fi
+is fine); the phone enters a private IPv4 address from PC `ipconfig`.
+No public or hostname endpoints, no broadcast/auto discovery.
+Windows firewall may need a deliberately constrained private-network
+exception; the tool does **not** change firewall configuration.
+**USB tethering without ADB** uses this same W/IP option: enable Android
+USB tethering, identify the PC's tether interface IPv4, and enter it
+on the phone (not the 127.0.0.1 ADB-reverse option). A cable alone is
+not an automatically routed socket.
+
+**Pairing and security:** The Windows helper generates a temporary
+nonexportable server TLS certificate under the *current Windows user's*
+cert store, prints its DER SHA-256 fingerprint and random 128-bit
+single-use token, and removes only that generated certificate on exit.
+Phone user enters the two values exactly. Android connects with TLS 1.2,
+**checks the full SHA-256 certificate fingerprint against the entered
+fingerprint** using a constant-time digest comparison, then transmits
+the token **only inside validated TLS**. The PC returns exactly
+`RVLINK/1 READY\n` when the version/token match; no other data or
+controller/video/head-pose packets are sent. Maximum 5 attempts,
+180 seconds of server availability, 5-second TCP connect and 7-second
+read/write bounds. No pairing token, fingerprint or password is
+persisted in Android preferences or written to normal logs. This is
+explicit one-session pairing; there is no automatic trust-on-first-use,
+silent fallback to plaintext, default PIN or insecure certificate bypass.
+Manually entering 64+32 hex is acceptable for the first test only;
+offline QR setup and appropriately verified per-device trust persistence
+are future convenience work.
+
+**What S1a actually proves after successful hardware testing:** a PC
+TCP listener was reachable from the phone on the requested link,
+Windows server TLS terminated, Android matched the out-of-band fingerprint,
+the one-time token was accepted and a bounded READY response arrived.
+It does *not* prove head pose, graphics/video decoding, SteamVR driver
+loading, time synchronization, or latency suitability.
+
+**Remaining S1b functional implementation:** keep the authenticated
+session alive after handshake; use separate ordered reliable control
+and latest-pose channels; connect real Cardboard orientation and bound
+Daydream controller actions to the pose/sequence serialization; provide
+Windows live-pose readback; handle reconnect, all-buttons-up,
+session generation, timeout and automatic return to local shell;
+never send unbounded pose queues. S2–S5 are unchanged.
+
+**Build/device gate:** Windows PowerShell 5.1 on actual PC must validate
+the self-signed certificate provision/cleanup and TLS accept under U/W;
+Android build and JUnit tests for validation/packaging; USB/ADB reverse,
+Wi-Fi and USB tether IP tests on S9; expired/wrong fingerprint/token,
+bad IP, blocked port, Windows firewall prompts, cancelled dialog,
+backgrounding and no-token logging; ensure SteamVR and games are
+unaffected. No Windows/Android/device handshake success has been
+claimed from source-only GitHub edits.

@@ -102,13 +102,12 @@ proof remains separate.
 
 ## SteamVR PC-headset endpoint (new, SteamVR only)
 
-Windows Laptop Link now exports a fourth allowlisted plain-text file,
+Windows Laptop Link first added a fourth allowlisted plain-text file,
 `SteamVrPreflight.ps1`. Its existing manual launcher offers menu option
 5: it **reads** OpenVR per-user paths, verifies the SteamVR runtime and
 Valve `vrpathreg.exe`, and lists registered external drivers. This is a
 real prerequisite check, not a fake SteamVR headset or working video
-stream. The previous 3-file historical milestone is superseded for
-new builds; bundle tests now expect four members.
+stream. The previous 3-file historical milestone was superseded by four members at S0. At S1a, the export now contains five members including SteamVrLinkProbeHost.ps1; the JVM bundle test expects all five.
 
 User has explicitly chosen *SteamVR games on the PC* instead of moving
 ReverieVR's Home/DOS/native-game runtime to Windows. The future Windows
@@ -116,6 +115,21 @@ SteamVR HMD driver and video host will be optional components delivered
 from a single APK export, installed with explicit consent, and reversible.
 The independent S1–S5 implementation/install/protocol spec is at
 `docs/project/STEAMVR-LINK-IMPLEMENTATION.md`.
+
+### USB / Wi-Fi SteamVR host connection test (S1a)
+
+The **Test SteamVR PC Link (USB / Wi-Fi)** button in Stage A performs a
+real connection attempt. Windows Laptop Link option 6 runs a one-session
+TLS 1.2 listener. USB choice binds loopback and requires the explicit
+`adb reverse tcp:38726 tcp:38726` command from the authorized PC;
+Wi-Fi/USB tether choice binds port 38726 to a user-consented private
+LAN interface (Windows firewall may need a limited manual exception).
+Windows prints a new SHA-256 certificate fingerprint and 32-character
+hex token; enter both on the Galaxy S9. Android pins certificate bytes,
+sends the token through TLS, and only reports success on bounded READY.
+The temporary Windows certificate is removed when the listener stops;
+no Windows driver/SteamVR registration or streaming is performed here.
+No runtime handshake has yet been verified on Windows or S9.
 
 ## Next functional slices
 
