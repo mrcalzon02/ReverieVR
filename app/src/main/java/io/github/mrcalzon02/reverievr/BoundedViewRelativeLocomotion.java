@@ -15,11 +15,20 @@ final class BoundedViewRelativeLocomotion {
     void update(float touchX, float touchY,
                 float viewForwardX, float viewForwardZ,
                 float deltaSeconds, float limitX, float limitZ) {
+        update(touchX,touchY,viewForwardX,viewForwardZ,
+               deltaSeconds,limitX,limitZ,1.0f);
+    }
+
+    void update(float touchX, float touchY,
+                float viewForwardX, float viewForwardZ,
+                float deltaSeconds, float limitX, float limitZ,
+                float speedMultiplier) {
         if (!Float.isFinite(touchX) || !Float.isFinite(touchY)
             || !Float.isFinite(viewForwardX)
             || !Float.isFinite(viewForwardZ)
             || !Float.isFinite(deltaSeconds)
             || !Float.isFinite(limitX) || !Float.isFinite(limitZ)
+            || !Float.isFinite(speedMultiplier) || speedMultiplier <= 0.0f
             || deltaSeconds <= 0.0f || limitX <= 0.0f || limitZ <= 0.0f) {
             return;
         }
@@ -39,7 +48,7 @@ final class BoundedViewRelativeLocomotion {
         float forward = -padY / magnitude;
         float headingX = viewForwardX / headingLength;
         float headingZ = viewForwardZ / headingLength;
-        float distance = SPEED_METERS_PER_SECOND
+        float distance = SPEED_METERS_PER_SECOND * speedMultiplier
             * Math.min(deltaSeconds, 0.05f) * strength;
         x = clamp(
             x + distance * (-headingZ * strafe + headingX * forward),

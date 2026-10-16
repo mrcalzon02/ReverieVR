@@ -429,6 +429,10 @@ Shell stereo, controller identity, pause, Quick Menu, Home, and recovery
 remain host-owned; no raw Bluetooth/HID or new ABI services are added.
 Simulation and local CPU moves run in Update and not in eye rendering.
 
+## Classic Chess side panels and Home-only locomotion speed (2026-10-16)
+
+Home and DOS-library bounded touch travel now use a 2× multiplier in the existing `BoundedViewRelativeLocomotion` integration (1.40 m/s at full touch); hosted native modules retain the proven 0.70 m/s default and original gating. No new shell setting, controller button, JNI ABI, or artificial rotation. The Chess module's game-private `classic_vector_art.h` uses existing colored GLES2 flat-mesh render geometry and a connected-stroke font; the six actual piece silhouettes are currently procedural, not yet sourced SVG textures. Its right-hand book panel toggles by the native pointer + Select action. The opponent-history panel is compiled alongside 3,865 CC0 Lichess ECO opening lines and is advisory, not part of game rules. SAN history records accepted human and CPU moves; suggested book continuations pass current legal-move checks. Exact Android binary, 3D legibility, S9 frame pacing and headset controls remain unverified.
+
 ## Native Music Library (implemented source; Android acceptance pending)
 
 VR Home opens a phone-resident, offline Music Library. The shell's

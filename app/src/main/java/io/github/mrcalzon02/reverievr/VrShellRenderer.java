@@ -2312,7 +2312,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             adjustedHeadForward[2],
             dt,
             limitX,
-            limitZ
+            limitZ,
+            homeTravel ? 2.0f : 1.0f
         );
     }
 

@@ -395,6 +395,21 @@
       "commit": "5969239e7c87f4cd64c8ec170ce1e7f4eb559e37",
       "license": "Apache-2.0",
       "source_url": "https://github.com/googlevr/cardboard"
+    },
+    "livius-chess-art": {
+      "source_url": "https://github.com/kmar/chess_svg_piece_sets",
+      "commit": "af40ea51e87eddee1ae7ee35ae312893a1271233",
+      "license": "CC0-1.0",
+      "source_path": "art/source/chess/livius",
+      "usage": "Source-only SVG reference; current native-game renderer still uses independently authored flat-mesh glyphs. No SVG binaries from this directory packaged in APK."
+    },
+    "lichess-chess-openings": {
+      "source_url": "https://github.com/lichess-org/chess-openings",
+      "commit": "a6189a30dc273ccb21fc2536a9a2fefd5592a67a",
+      "license": "CC0-1.0",
+      "compiled_index": "app/src/main/jni/native/classic_chess_book.h",
+      "entries": 3865,
+      "usage": "Offline textual ECO opening names and SAN histories; do not imply a classical game score or chess-engine evaluation."
     }
   },
   "release_policy": {

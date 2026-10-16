@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
+#include <string>
 #include <limits>
 #include <utility>
 
@@ -50,6 +51,9 @@ struct State {
         }
     };
     std::unordered_map<ChessPosition,int,ChessHash> chessHistory;
+    // True standard algebraic notation for human AND CPU half-moves.
+    // Pure position searches create independent States and never append here.
+    std::vector<std::string> chessSanHistory;
     // WCDF positions are distinguished by pieces/kings and side to move.
     std::unordered_map<ChessPosition,int,ChessHash> checkerHistory;
     int checkerQuietPlies=0;
@@ -80,7 +84,7 @@ struct State {
     void Reset(Kind type) {
         kind=type;cells.fill(0);goHistory.clear();goDead.fill(0);
         goReview=false;goResumeSide=1;goReviewRevision=0;
-        goBlackScore=goWhiteScore=0.f;chessHistory.clear();
+        goBlackScore=goWhiteScore=0.f;chessHistory.clear();chessSanHistory.clear();
         checkerHistory.clear();checkerQuietPlies=0;
         halfMoves=0;promotionChoice=5;side=1;winner=0;
         selected=forced=-1;ply=passes=0;enPassant=-1;castles=15;
@@ -894,9 +898,52 @@ struct State {
             for(int to=0;to<64;to++)if(ChessLegal(from,to))return true;
         return false;
     }
+    // Standard algebraic notation (SAN), computed from a legal pre-move
+    // position. Distinguishes file/rank when same-type pieces can reach a
+    // square, including castles, en-passant and all promotions.
+    std::string ChessMoveNotation(int from,int to,int promotion=5) const {
+        if(!ChessLegal(from,to))return "";
+        const int piece=std::abs(cells[from]);
+        const int fx=from%8,fy=from/8,tx=to%8,ty=to/8;
+        if(piece==6&&std::abs(tx-fx)==2)return tx>fx?"O-O":"O-O-O";
+        const bool capture=cells[to]!=0||(piece==1&&to==enPassant&&fx!=tx);
+        std::string result;
+        constexpr char labels[]={'?',' ','N','B','R','Q','K'};
+        if(piece!=1){
+            result+=labels[piece];
+            bool ambiguous=false,sameFile=false,sameRank=false;
+            for(int other=0;other<64;other++){
+                if(other==from||cells[other]!=cells[from])continue;
+                if(ChessLegal(other,to)){
+                    ambiguous=true;
+                    sameFile|=other%8==fx;
+                    sameRank|=other/8==fy;
+                }
+            }
+            if(ambiguous){
+                if(!sameFile)result+=static_cast<char>('a'+fx);
+                else if(!sameRank)result+=static_cast<char>('8'-fy);
+                else {result+=static_cast<char>('a'+fx);
+                      result+=static_cast<char>('8'-fy);}
+            }
+        }else if(capture){
+            result+=static_cast<char>('a'+fx);
+        }
+        if(capture)result+='x';
+        result+=static_cast<char>('a'+tx);
+        result+=static_cast<char>('8'-ty);
+        if(piece==1&&(ty==0||ty==7)){
+            constexpr char promo[]={'?','?','N','B','R','Q'};
+            result+='=';
+            result+=promo[promotion>=2&&promotion<=5?promotion:5];
+        }
+        return result;
+    }
     bool ChessMove(int from,int to,int cpuPromotion=5) {
         if(kind!=Kind::Chess||finished||!ChessLegal(from,to))return false;
         const int piece=cells[from],taken=cells[to];
+        std::string notation=ChessMoveNotation(from,to,
+            side==1?promotionChoice:cpuPromotion);
         const bool enPassantCapture=std::abs(piece)==1&&
             to==enPassant&&taken==0&&from%8!=to%8;
         halfMoves=(std::abs(piece)==1||taken!=0||enPassantCapture)
@@ -912,6 +959,9 @@ struct State {
         }else if(ChessDeadPosition()||halfMoves>=150||repeats>=5){
             finished=true;winner=0;
         }
+        if(KingInCheck(cells,side))
+            notation+=finished&&winner==-side?'#':'+';
+        chessSanHistory.push_back(std::move(notation));
         return true;
     }
 

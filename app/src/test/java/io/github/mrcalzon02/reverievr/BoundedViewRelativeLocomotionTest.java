@@ -39,6 +39,24 @@ public final class BoundedViewRelativeLocomotionTest {
         assertEquals(0.7f, m.x(), 0.0001f);
         assertEquals(-0.3f, m.z(), 0.0001f);
     }
+    @Test public void homeMenuTravelIsTwiceAsFastButNativeUnchanged() {
+        BoundedViewRelativeLocomotion home = new BoundedViewRelativeLocomotion();
+        BoundedViewRelativeLocomotion nativeGame =
+            new BoundedViewRelativeLocomotion();
+        home.update(0f,-1f,0f,-1f,.05f,3f,3f,2f);
+        nativeGame.update(0f,-1f,0f,-1f,.05f,3f,3f);
+        assertEquals(-.070f,home.z(),.0001f);
+        assertEquals(-.035f,nativeGame.z(),.0001f);
+        home.update(0f,-1f,0f,-1f,.05f,3f,3f,2f);
+        assertEquals(-.140f,home.z(),.0001f);
+    }
+    @Test public void invalidSpeedMultiplierDoesNotMove() {
+        BoundedViewRelativeLocomotion m=new BoundedViewRelativeLocomotion();
+        m.update(0f,-1f,0f,-1f,.05f,3f,3f,Float.NaN);
+        m.update(0f,-1f,0f,-1f,.05f,3f,3f,-1f);
+        assertEquals(0f,m.z(),0f);
+    }
+
     @Test public void diagonalsAreNotFaster() {
         BoundedViewRelativeLocomotion a = new BoundedViewRelativeLocomotion();
         BoundedViewRelativeLocomotion b = new BoundedViewRelativeLocomotion();

@@ -1,5 +1,6 @@
 #include "classic_games.h"
 #include "classic_breakout.h"
+#include "classic_vector_art.h"
 #include "classic_board_games.h"
 #include "classic_board_cpu.h"
 #include "reverie_native_sdk.h"
@@ -17,6 +18,9 @@
 
 #ifndef CLASSIC_GAME_KIND
 #error "Build must choose a classic game"
+#endif
+#if CLASSIC_GAME_KIND == 5
+#include "classic_chess_book.h"
 #endif
 namespace {
 using namespace reverie::classics;
@@ -61,6 +65,12 @@ struct Module {
     bool boardCursorActive=false;
     float cursorRepeat=0.f;
     bool previousSecondary=false;
+#if CLASSIC_GAME_KIND == 5
+    reverie::chessbook::Analysis chessAnalysis;
+    int chessAnalyzedPly=-1;
+    int chessPanelTab=0; // 0 = legal next move; 1 = indexed classical line
+    bool chessPanelHover=false;
+#endif
     GLuint program=0,vbo=0,staticVbo=0;
     GLint pos=-1,col=-1,mvp=-1;
     bool down=false,dirty=true,upload=true,staticPass=false;
@@ -77,43 +87,11 @@ void Triangle(Module *m,float ax,float ay,float bx,float by,float cx,float cy,
 void Rect(Module *m,float x,float y,float w,float h,float z,float r,float g,float b){
     reverie::flatmesh::Rect(Emit(m),x,y,w,h,z,r,g,b);
 }
-const char *Glyph(char c){
-    switch(c){
-        case 'A':return "010101111101101";case 'B':return "110101110101110";
-        case 'C':return "011100100100011";case 'D':return "110101101101110";
-        case 'E':return "111100110100111";case 'F':return "111100110100100";
-        case 'G':return "011100101101011";case 'H':return "101101111101101";
-        case 'I':return "111010010010111";case 'J':return "001001001101010";
-        case 'K':return "101101110101101";case 'L':return "100100100100111";
-        case 'M':return "101111111101101";case 'N':return "101111111111101";
-        case 'O':return "111101101101111";case 'P':return "110101110100100";
-        case 'Q':return "111101101111011";case 'R':return "110101110101101";
-        case 'S':return "011100010001110";case 'T':return "111010010010010";
-        case 'U':return "101101101101111";case 'V':return "101101010101010";
-        case 'W':return "101101111111101";case 'X':return "101101010101101";
-        case 'Y':return "101101010010010";case 'Z':return "111001010100111";
-        case '0':return "111101101101111";case '1':return "010110010010111";
-        case '2':return "110001111100111";case '3':return "110001110001110";
-        case '4':return "101101111001001";case '5':return "111100110001110";
-        case '6':return "011100111101111";case '7':return "111001010010010";
-        case '8':return "111101111101111";case '9':return "111101111001110";
-        case '+':return "000010111010000";case '-':return "000000111000000";
-        case ':':return "000010000010000";default:return "000000000000000";
-    }
-}
+// Every classic uses the same connected-stroke vector font: no more
+// 3x5 pixel-block letters, including decimal scores and menu/status text.
 void Text(Module *m,const char *s,float x,float y,float scale,
           float r,float g,float b){
-    if(!s)return;
-    float px=x-2.f*scale*std::strlen(s);
-    for(size_t k=0;k<std::strlen(s);k++){
-        char c=s[k];
-        if(c>='a'&&c<='z')c=static_cast<char>(c-'a'+'A');
-        const char *bitmap=Glyph(c);
-        for(int i=0;i<15;i++)if(bitmap[i]=='1')
-            Rect(m,px+(i%3+.5f)*scale,y+(2.5f-i/3)*scale,
-                 scale*.93f,scale*.93f,-2.89f,r,g,b);
-        px+=4*scale;
-    }
+    reverie::classicart::StrokeText(Emit(m),s,x,y,scale,r,g,b);
 }
 void Segment(Module *m,float x,float y,float xx,float yy,float width,
              float r,float g,float b){
@@ -143,6 +121,18 @@ void BoardOutline(Module *m,float x,float y,float length,
     Rect(m,x-half,y,.020f,length,-2.94f,r,g,b);
     Rect(m,x+half,y,.020f,length,-2.94f,r,g,b);
 }
+#if CLASSIC_GAME_KIND == 5
+void ChessPanelLine(Module *m,const std::string &message,
+                    float x,float y,size_t maxChars=14){
+    const std::string line=message.substr(0,maxChars);
+    Text(m,line.c_str(),x,y,.0195f,.94f,.96f,.85f);
+}
+void ChessPanelExample(Module *m,const std::string &name,float x,float y){
+    ChessPanelLine(m,name,x,y,14);
+    if(name.size()>14)
+        ChessPanelLine(m,name.substr(14),x,y-.19f,14);
+}
+#endif
 void RebuildBoard(Module *m,bool fixed){
     m->staticPass=fixed;
     if(fixed)m->staticVertices.clear();
@@ -154,6 +144,12 @@ void RebuildBoard(Module *m,bool fixed){
         Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
         Rect(m,0,0,3.08f,3.08f,-3.045f,.34f,.24f,.15f);
         Text(m,kTitle,0,1.58f,.082f,.91f,.94f,.94f);
+#if CLASSIC_GAME_KIND == 5
+        Rect(m,-2.01f,.13f,1.18f,2.54f,-3.032f,.085f,.122f,.158f);
+        Rect(m, 2.01f,.13f,1.18f,2.54f,-3.032f,.085f,.122f,.158f);
+        Text(m,"CPU LAST",-2.01f,1.16f,.026f,.73f,.91f,.98f);
+        Text(m,"MOVE BOOK",2.01f,1.16f,.026f,.73f,.91f,.98f);
+#endif
     }
     for(int y=0;y<size;y++)for(int x=0;x<size;x++){
         float px=BoardX(s,x),py=BoardY(s,y);
@@ -188,20 +184,25 @@ void RebuildBoard(Module *m,bool fixed){
                 Disc(m,px,py,gap*.29f,-2.939f,
                      piece>0?.09f:.98f,piece>0?.12f:.98f,
                      piece>0?.13f:.93f);
+            }else if(s.kind==reverie::boardgames::Kind::Chess){
+                // Ivory/ebony tokens with six genuinely distinct chess
+                // silhouettes. Never substitute P/N/B/R/Q/K text.
+                Disc(m,px,py,.129f,-2.949f,.06f,.09f,.11f);
+                Disc(m,px,py,.121f,-2.940f,
+                     piece>0?.94f:.10f,piece>0?.90f:.14f,
+                     piece>0?.78f:.19f);
+                reverie::classicart::ChessPiece(Emit(m),piece,px,py,.101f,
+                     piece>0?.08f:.96f,piece>0?.13f:.92f,
+                     piece>0?.17f:.78f);
             }else{
+                // Checkers retain physical tokens and true crowned kings.
                 Disc(m,px,py,.125f,-2.947f,
                      piece>0?.92f:.20f,piece>0?.92f:.23f,
                      piece>0?.80f:.36f);
                 Disc(m,px,py,.096f,-2.934f,
                      piece>0?.73f:.42f,piece>0?.79f:.55f,
                      piece>0?.69f:.65f);
-                if(s.kind==reverie::boardgames::Kind::Chess){
-                    const char letters[]="?PNBRQK";
-                    char label[]={letters[std::abs(piece)],'\0'};
-                    Text(m,label,px,py-.005f,.040f,
-                         piece>0?.05f:.97f,piece>0?.10f:.97f,
-                         piece>0?.16f:.93f);
-                }else if(std::abs(piece)==2){
+                if(std::abs(piece)==2){
                     Text(m,"K",px,py-.005f,.039f,
                          piece>0?.04f:.97f,piece>0?.09f:.97f,
                          piece>0?.12f:.93f);
@@ -316,6 +317,33 @@ void RebuildBoard(Module *m,bool fixed){
             }
         }
     }
+#if CLASSIC_GAME_KIND == 5
+    if(!fixed){
+        const auto &book=m->chessAnalysis;
+        ChessPanelLine(m,"LAST: "+book.previousCpuMove,-2.01f,.84f);
+        ChessPanelLine(m,book.cpuComparison,-2.01f,.55f);
+        ChessPanelLine(m,"OPENING "+book.eco,-2.01f,.18f);
+        ChessPanelExample(m,book.opening,-2.01f,-.12f);
+        ChessPanelLine(m,"CC0 ECO INDEX",-2.01f,-.84f);
+        Rect(m,2.01f,.88f,1.05f,.36f,-2.966f,
+             m->chessPanelHover?.32f:.21f,
+             m->chessPanelHover?.45f:.34f,.48f);
+        ChessPanelLine(m,m->chessPanelTab==0?"NEXT > EXAMPLE":
+                        "EXAMPLE > NEXT",2.01f,.87f);
+        if(m->chessPanelTab==0){
+            ChessPanelLine(m,"PLAY "+book.recommended,2.01f,.47f);
+            ChessPanelLine(m,book.recommendationOrigin.substr(0,14),
+                           2.01f,.13f);
+            ChessPanelLine(m,"REFERENCE:",2.01f,-.24f);
+            ChessPanelExample(m,book.example,2.01f,-.48f);
+        }else{
+            ChessPanelLine(m,"CLASSICAL LINE",2.01f,.49f);
+            ChessPanelExample(m,book.example,2.01f,.19f);
+            ChessPanelLine(m,book.eco,2.01f,-.44f);
+            ChessPanelLine(m,"NOT ENGINE EVAL",2.01f,-.83f);
+        }
+    }
+#endif
     if(fixed)m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
     else {m->dirty=false;m->upload=true;}
 }
@@ -591,6 +619,16 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         (m->board.kind==reverie::boardgames::Kind::Chess||
          m->board.kind==reverie::boardgames::Kind::Checkers)&&
         hx>1.49f&&hx<2.42f&&hy<-.45f&&hy>-.85f?1:0;
+#if CLASSIC_GAME_KIND == 5
+    const bool chessPanelHover=aim &&
+        hx>1.46f&&hx<2.58f&&hy>.68f&&hy<1.10f;
+    if(chessPanelHover!=m->chessPanelHover){
+        m->chessPanelHover=chessPanelHover;
+        m->dirty=true;
+        if(chessPanelHover)ReverieNativeRequestFeedbackV1(m->host,
+                                    REVERIE_NATIVE_FEEDBACK_FOCUS);
+    }
+#endif
     if(controlHover!=m->boardControlHover){
         m->boardControlHover=controlHover;m->dirty=true;
         if(controlHover)ReverieNativeRequestFeedbackV1(m->host,
@@ -632,6 +670,14 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         }
     }
     if(edge){
+#if CLASSIC_GAME_KIND == 5
+        if(m->chessPanelHover){
+            m->chessPanelTab=1-m->chessPanelTab;
+            m->dirty=true;
+            ReverieNativeRequestFeedbackV1(m->host,
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }else
+#endif
         if(m->board.finished||m->cpuFailed) {
             m->cpuFailed=false;
             m->board.Reset(m->board.kind);
@@ -688,6 +734,15 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
                             "ClassicCpu",error.what());
     }
+#if CLASSIC_GAME_KIND == 5
+    // Advisory ECO lookup runs on the game's single Update, never during
+    // either eye draw. Re-scan only when a legally played move increments ply.
+    if(m->chessAnalyzedPly!=m->board.ply){
+        m->chessAnalysis=reverie::chessbook::Analyze(m->board);
+        m->chessAnalyzedPly=m->board.ply;
+        m->dirty=true;
+    }
+#endif
     if(m->board.ply!=prevPly||m->board.selected!=prevSelected||
        m->board.side!=prevSide||m->board.finished!=prevFinished||
        m->board.winner!=prevWinner||

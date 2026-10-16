@@ -4,6 +4,8 @@
 #include "classic_board_cpu.h"
 #include <thread>
 #include "reverie_native_flat_mesh.h"
+#include "classic_vector_art.h"
+#include "classic_chess_book.h"
 #include <cassert>
 #include <cmath>
 #include <iostream>
@@ -25,6 +27,55 @@ static void TestFlatGeometry(){
     assert(a.size()==288u);
     for(float f:a)assert(std::isfinite(f));
 }
+static void TestClassicArtworkAndOpeningIndex(){
+    using reverie::classicart::StrokeText;
+    using reverie::classicart::ChessPiece;
+    using reverie::boardgames::Kind;
+    using reverie::boardgames::State;
+    // The shared font is line-based, never a 3x5 grid of isolated cubes.
+    std::vector<float> textGeometry;
+    StrokeText(textGeometry,"CHESS 2026: Nf3",0.f,0.f,.03f,1.f,1.f,1.f);
+    assert(!textGeometry.empty()&&textGeometry.size()%18u==0u);
+    for(float value:textGeometry)assert(std::isfinite(value));
+    for(int piece=1;piece<=6;piece++){
+        std::vector<float> light,dark;
+        ChessPiece(light,piece,0.f,0.f,.1f,.1f,.1f,.1f);
+        ChessPiece(dark,-piece,0.f,0.f,.1f,.9f,.9f,.9f);
+        assert(light.size()>=108u&&dark.size()==light.size());
+        for(float value:light)assert(std::isfinite(value));
+        for(float value:dark)assert(std::isfinite(value));
+    }
+    // All ECO books A-E are compiled offline, not downloaded in a headset.
+    constexpr size_t openings=sizeof(reverie::chessbook::kOpeningLines)/
+                              sizeof(reverie::chessbook::kOpeningLines[0]);
+    assert(openings==3865u);
+    State chess;
+    chess.Reset(Kind::Chess);
+    auto start=reverie::chessbook::Analyze(chess);
+    assert(start.matching&&start.from>=0&&start.to>=0);
+    assert(chess.ChessLegal(start.from,start.to));
+    assert(chess.ChessMoveNotation(52,36)=="e4");
+    assert(chess.ChessMove(52,36)); // 1. e4
+    assert(chess.chessSanHistory.size()==1u);
+    assert(chess.chessSanHistory[0]=="e4");
+    assert(chess.ChessMoveNotation(12,28)=="e5");
+    assert(chess.ChessMove(12,28)); // ...e5
+    assert(chess.chessSanHistory[1]=="e5");
+    auto book=reverie::chessbook::Analyze(chess);
+    assert(book.previousCpuMove=="e5");
+    assert(book.cpuComparison=="IN BOOK");
+    assert(book.matching&&book.candidates>0);
+    assert(book.recommendationOrigin=="BOOK CONTINUATION");
+    assert(book.from>=0&&chess.ChessLegal(book.from,book.to));
+    // Proper knight disambiguation and both players' notation histories are
+    // maintained by real legal moves, not by guessing from a board picture.
+    assert(chess.ChessMoveNotation(62,45)=="Nf3");
+    assert(chess.ChessMove(62,45));
+    assert(chess.chessSanHistory.back()=="Nf3");
+    chess.Reset(Kind::Chess);
+    assert(chess.chessSanHistory.empty());
+}
+
 static int ChessPerft(const reverie::boardgames::State &board,int depth){
     if(depth==0)return 1;
     int count=0;
@@ -783,6 +834,7 @@ static void TestBreakout() {
 }
 
 int main() {
+    TestClassicArtworkAndOpeningIndex();
     TestFlatGeometry();
     TestBreakout();
     State a,b;
