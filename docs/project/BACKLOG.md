@@ -23,6 +23,7 @@
 
 ## New native game — Gumball Armada
 
+- GUM-MENU-03 — **Source repaired; host helper verified; GLES2/APK/device pending:** slowly moving controller rays now accumulate motion while D-pad owns selection and reclaim focus once the 0.075-unit threshold is crossed. Exact hit-test regression passed strict GCC, Clang, Clang ASan+UBSan. Full game module compile, APK and Daydream acceptance remain open.
 - GUM-MENU-02/S06 — **Source implemented, device admission pending:** repaired one-click atomic shipyard part replacement (and return stock), preserving bridge/core and inventory constraints. First focus moves to connected empty (4,2), selected palette tool returns to prior grid focus; Minus/App toggles grid/palette, pad vertical is screen-consistent, actual controller pointer rays can select rendered route/loadout/ally/shipyard controls, and a stationary ray does not steal active D-pad focus. Shipyard fits fully in scene; existing shared vector font replaces 3×5 block text; contextual affordance, denial and selected action explanations added. Exact C++ shipyard and pointer geometry suites locally pass GCC/Clang/ASan/UBSan with git-hash source parity; full game module compile/Android APK/actual Daydream usability and stereo verification **open**.
 
 
