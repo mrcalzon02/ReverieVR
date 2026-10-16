@@ -223,8 +223,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             {524, 422, 804, 470},
             {220, 480, 500, 528},
             {524, 480, 804, 528},
-            {220, 538, 500, 590}, // External HID
-            {524, 538, 804, 590}  // Monochrome high contrast
+            {220, 538, 408, 590}, // External HID
+            {416, 538, 604, 590}, // Monochrome high contrast
+            {612, 538, 804, 590}  // Performance telemetry
         };
 
     private static final int[][] HOME_BUTTONS = new int[][] {
@@ -463,6 +464,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final EyeRenderPerformanceTracker eyeRenderPerformanceTracker =
         new EyeRenderPerformanceTracker();
     private final StereoFpsHud fpsHud = new StereoFpsHud();
+    private final PerformanceTelemetryHud performanceHud =
+        new PerformanceTelemetryHud();
+    private long lastPerformanceOverlayNanos;
+    private long lastPerformanceCaptureNanos;
+    private int performanceSampleMode = -1;
     // Reused only by the serialized GL renderer callback thread.
     private final int[] eyeViewportScratch = new int[4];
     private final int[] eyeScissorScratch = new int[4];
@@ -1684,8 +1690,41 @@ final class VrShellRenderer implements CardboardView.Renderer {
         HeadTransform headTransform
     ) {
         long frameNanos = System.nanoTime();
+        // Do not combine unlike scene workloads in frame/eye percentiles.
+        if (performanceSampleMode != mode) {
+            performanceTracker.reset();
+            eyeRenderPerformanceTracker.reset();
+            performanceSampleMode = mode;
+            lastPerformanceOverlayNanos = 0L;
+        }
         performanceTracker.recordFrame(frameNanos);
         fpsHud.recordFrame(frameNanos);
+        if (preferences.isPerformanceOverlayEnabled() &&
+            (lastPerformanceOverlayNanos == 0L ||
+             frameNanos - lastPerformanceOverlayNanos >= 1_000_000_000L)) {
+            performanceHud.setLines(PerformanceTelemetryFormat.lines(
+                mode, fpsHud.getFps(), performanceTracker.snapshot(),
+                eyeRenderPerformanceTracker.snapshot(),
+                host.getPerformanceEnvironmentSnapshot()));
+            lastPerformanceOverlayNanos = frameNanos;
+        }
+        // Persist once per ten seconds, even when the optional HUD is off.
+        // These are observed callback/CPU times, never GPU/present times.
+        if (lastPerformanceCaptureNanos == 0L ||
+            frameNanos - lastPerformanceCaptureNanos >= 10_000_000_000L) {
+            FramePerformanceTracker.Snapshot pacing =
+                performanceTracker.snapshot();
+            if (pacing.sampleCount > 0) {
+                String[] lines = PerformanceTelemetryFormat.lines(
+                    mode, fpsHud.getFps(), pacing,
+                    eyeRenderPerformanceTracker.snapshot(),
+                    host.getPerformanceEnvironmentSnapshot());
+                preferences.setLastPerformanceReport(
+                    PerformanceTelemetryFormat.datedReport(
+                        System.currentTimeMillis(), lines));
+            }
+            lastPerformanceCaptureNanos = frameNanos;
+        }
         homeEnvironmentRenderer.setAmbientFrameTime(frameNanos);
         // Only report transitions: avoid Android audio calls on the GL thread
         // and avoid the cost of per-frame UI-thread dispatch.
@@ -2477,9 +2516,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        final boolean profileEye = ReverieLog.isDevelopment();
-        final long eyeStartedNanos =
-            profileEye ? System.nanoTime() : 0L;
+        // CPU GL submission intervals, never GPU execution time.
+        final long eyeStartedNanos = System.nanoTime();
 
         /*
          * Cardboard owns the physical per-eye viewport. Keep that raw rectangle
@@ -2626,6 +2664,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawPowerHudOverlay();
             fpsHud.draw(program, positionHandle, uvHandle,
                 matrixHandle, textureHandle);
+            if (preferences.isPerformanceOverlayEnabled()) {
+                performanceHud.draw(program, positionHandle, uvHandle,
+                    matrixHandle, textureHandle);
+            }
             drawControlFeedOverlay();
         } catch (RuntimeException | LinkageError failure) {
             reportRendererFailure(
@@ -2650,7 +2692,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     GLES20.GL_SCISSOR_TEST
                 );
             }
-            if (profileEye && !rendererFailed) {
+            if (!rendererFailed) {
                 eyeRenderPerformanceTracker.recordEye(
                     mode,
                     eye.getEyeType() == CardboardView.Eye.LEFT ? 0 : 1,
@@ -3201,6 +3243,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         matrixHandle = GLES20.glGetUniformLocation(program, "u_Mvp");
         textureHandle = GLES20.glGetUniformLocation(program, "u_Texture");
         fpsHud.onSurfaceCreated();
+        performanceHud.onSurfaceCreated();
 
         int[] textures = new int[4];
         GLES20.glGenTextures(4, textures, 0);
@@ -3286,6 +3329,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     @Override
     public void onRendererShutdown() {
         fpsHud.shutdown();
+        performanceHud.shutdown();
         videoRenderer.shutdown();
         dosRenderer.shutdown();
         pointerRenderer.shutdown();
@@ -5372,6 +5416,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 hudTextureDirty = true;
                 break;
 
+            case 12:
+                preferences.setPerformanceOverlayEnabled(
+                    !preferences.isPerformanceOverlayEnabled());
+                lastPerformanceOverlayNanos = 0L;
+                break;
+
             default:
                 host.onUiActionRejected();
                 return;
@@ -6610,7 +6660,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 preferences.isExternalHidEnabled()
                     ? "EXT HID: ON" : "EXT HID: OFF",
                 preferences.isShellHighContrastEnabled()
-                    ? "CONTRAST: ON" : "CONTRAST: OFF"
+                    ? "CONTRAST: ON" : "CONTRAST: OFF",
+                preferences.isPerformanceOverlayEnabled()
+                    ? "PERF: ON" : "PERF: OFF"
             },
             QUICK_SETTINGS_BUTTONS
         );
