@@ -63,6 +63,8 @@ struct State {
     // Review and mark dead stones before accepting Chinese area scoring.
     std::array<uint8_t,kCapacity> goDead{};
     bool goReview=false;
+    // Preserve turn order while Black owns the scoring-review controls.
+    int goResumeSide=1;
     int goReviewRevision=0;
     float goBlackScore=0.f,goWhiteScore=0.f;
     int side=1, winner=0, selected=-1, forced=-1, ply=0, passes=0;
@@ -77,7 +79,7 @@ struct State {
     static int Sign(int n){return n>0?1:(n<0?-1:0);}
     void Reset(Kind type) {
         kind=type;cells.fill(0);goHistory.clear();goDead.fill(0);
-        goReview=false;goReviewRevision=0;
+        goReview=false;goResumeSide=1;goReviewRevision=0;
         goBlackScore=goWhiteScore=0.f;chessHistory.clear();
         checkerHistory.clear();checkerQuietPlies=0;
         halfMoves=0;promotionChoice=5;side=1;winner=0;
@@ -673,7 +675,7 @@ struct State {
     bool ResumeGoPlay() {
         if(kind!=Kind::Go||!goReview||finished)return false;
         goReview=false;goDead.fill(0);passes=0;
-        side=1;selected=-1;lastFrom=lastTo=-1;
+        side=goResumeSide;selected=-1;lastFrom=lastTo=-1;
         ++goReviewRevision;
         return true;
     }
@@ -682,8 +684,9 @@ struct State {
         selected=-1;lastFrom=-1;lastTo=-1;
         ++passes;++ply;side=-side;
         if(passes>=2){
+            goResumeSide=side; // next player after the second pass
             goReview=true;goDead.fill(0);++goReviewRevision;
-            side=1; // review, or resume play for unsettled groups
+            side=1; // temporary Black-owned scoring/review controls
         }
         return true;
     }

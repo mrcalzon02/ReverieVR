@@ -274,6 +274,24 @@ static void TestBoardGames() {
     assert(reviewGo.passes==0&&reviewGo.side==1);
     assert(reviewGo.GoMove(at(10,10))); // real play resumed
 
+    // White passes first, then Black: the review temporarily uses
+    // Black's controls but must not gift Black a third consecutive turn.
+    Boards whiteFirstReview;
+    whiteFirstReview.Reset(BoardKind::Go);
+    assert(whiteFirstReview.GoMove(at(9,9))); // Black, then White to act
+    assert(whiteFirstReview.side==-1);
+    assert(whiteFirstReview.Pass()&&whiteFirstReview.side==1); // White passes
+    assert(whiteFirstReview.Pass()&&whiteFirstReview.goReview); // Black passes
+    assert(whiteFirstReview.side==1&&whiteFirstReview.goResumeSide==-1);
+    assert(!whiteFirstReview.GoMove(at(8,8))); // no play during review
+    assert(whiteFirstReview.ResumeGoPlay());
+    assert(whiteFirstReview.side==-1&&whiteFirstReview.passes==0);
+    for(int tick=0;tick<3;tick++)whiteFirstReview.Step(.1f);
+    assert(whiteFirstReview.side==1&&whiteFirstReview.ply==4);
+    whiteFirstReview.Reset(BoardKind::Go);
+    assert(!whiteFirstReview.goReview&&whiteFirstReview.goResumeSide==1);
+    assert(whiteFirstReview.side==1);
+
     // Removed dead white stones count as surrounded black territory;
     // preserve original board until scoring is accepted.
     Boards settled;

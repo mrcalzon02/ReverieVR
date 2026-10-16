@@ -133,7 +133,9 @@ were expanded, with tests for distant-corner placement and edge captures.
   all its stones as dead; the right SCORE control confirms Chinese area
   scoring (7.5-point white komi) and displays the actual black/white
   scores. RESUME on the left restores play with every original stone,
-  clears marked groups and restarts the pass sequence. Native Secondary
+  clears marked groups and restarts the pass sequence, preserving the
+  actual next player after the second pass. White-first/Black-second
+  passing correctly returns play to White, not Black. Native Secondary
   operates PASS during normal play and SCORE during review. These controls
   share the existing VR pointer/select surface and do not change Home.
   This does not yet provide an independently adjudicating Go opponent:

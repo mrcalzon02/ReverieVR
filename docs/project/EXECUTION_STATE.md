@@ -1,3 +1,7 @@
+## 2026-10-16 — Native Go scoring-review turn order
+
+Corrected the full 19×19 Go rule-state bug where White's pass followed by Black's pass entered a Black-owned score-review UI and RESUME then incorrectly gifted Black the next move. The board now stores the true post-pass next player, restores it after unsettled review, and resets that state on a new match. Added deterministic regression for White-first/Black-second review, prohibited placement during review, resumed CPU response and Reset; the existing Black-first review and scoring tests remain. Reconciled the stale ledger's 9×9 claim to the existing 19×19 implementation. No ABI, device input, GLES, menu or Android package changes. **Source and regression authored; full C++ suite, Gradle/NDK compilation, signed APK, Galaxy S9 headset controls and thermal validation not run in this session.**
+
 ## 2026-10-16 — Gumball lane rivals and paid French support contracts
 
 Started from verified remote `main` at `8e09223854b528c3d03390157d7f30cc06e0f4fc`. User expanded Gumball scope while execution was in progress: three more named troublesome enemy lanes (Cinnamon Charles, Sydney Slipstream and a third new name, Jawbreaker Jules), plus purchasable temporary French-inspired companion help with two personal upgrade lines each, hire-for-next-mission semantics and actual health/defense/salvage effects. Reconciled an interrupted, unfinished Lady Limewire/Marshal Muck-only enum patch by substituting the newly requested route identities; those older two characters remain concept-only.
