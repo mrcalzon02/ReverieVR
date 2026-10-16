@@ -316,9 +316,12 @@ void Update(void* p,const ReverieNativeInputV1* in){
         if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
             if(std::fabs(y)>.6f){
                 if(y>0&&m->selected<3)m->selected=3;
+                else if(y>0&&m->selected<7)m->selected=7;
+                else if(y<0&&m->selected>=7)m->selected=3;
                 else if(y<0&&m->selected>=3)m->selected=0;
             }else if(m->selected<3)m->selected=(m->selected+(x>0?1:2))%3;
-            else m->selected=3+(m->selected-3+(x>0?1:3))%4;
+            else if(m->selected<7)m->selected=3+(m->selected-3+(x>0?1:3))%4;
+            else m->selected=7+(m->selected-7+(x>0?1:2))%3;
             m->navTime=.20f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
@@ -326,8 +329,13 @@ void Update(void* p,const ReverieNativeInputV1* in){
         if(pressed&&!m->primary){
             bool good=false;
             if(m->selected<3)good=m->sim.launch(static_cast<unsigned>(m->selected));
-            else{
+            else if(m->selected<7){
                 good=m->sim.buy(static_cast<Upgrade>(m->selected-3));
+                if(good)Save(m);
+            }else{
+                const Weapon requested=static_cast<Weapon>(m->selected-7);
+                good=m->sim.owns_weapon(requested)?
+                    m->sim.select_weapon(requested):m->sim.buy_weapon(requested);
                 if(good)Save(m);
             }
             ReverieNativeRequestFeedbackV1(m->host,good?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
