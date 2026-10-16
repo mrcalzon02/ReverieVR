@@ -220,7 +220,7 @@ public:
                 e.active=false;++defeated_;++escaped_;combo_=0;
                 if(escaped_>=3){phase_=Phase::Lost;return;}
                 if(!e.boss)damage(10+3*static_cast<int>(destination_.hazard));
-                if(e.boss){phase_=Phase::Lost;return;}
+                if(e.boss||e.kind==EnemyKind::Ace){phase_=Phase::Lost;return;}
             }
         }
         for(auto& s:shots_)if(s.active){
