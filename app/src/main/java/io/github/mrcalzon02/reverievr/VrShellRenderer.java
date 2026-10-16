@@ -477,6 +477,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final PerformanceTelemetryHud performanceHud =
         new PerformanceTelemetryHud();
     private final DeviceWarningHud deviceWarningHud = new DeviceWarningHud();
+    private final DeviceWarningLatch deviceWarningLatch = new DeviceWarningLatch();
     private long lastDeviceWarningSampleNanos;
     private long lastPerformanceOverlayNanos;
     private long lastPerformanceCaptureNanos;
@@ -1721,8 +1722,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             int warning = sensors == null ? DeviceWarningPolicy.NONE :
                 DeviceWarningPolicy.level(phoneBattery.get(),
                     sensors.batteryTemperatureTenthsC, sensors.thermalStatus);
-            deviceWarningHud.setLevel(preferences.isDeviceWarningsEnabled()
-                ? warning : DeviceWarningPolicy.NONE);
+            if (preferences.isDeviceWarningsEnabled()) {
+                deviceWarningHud.setLevel(
+                    deviceWarningLatch.update(warning, frameNanos));
+            } else {
+                deviceWarningLatch.reset();
+                deviceWarningHud.setLevel(DeviceWarningPolicy.NONE);
+            }
             lastDeviceWarningSampleNanos = frameNanos;
         }
         if (preferences.isPerformanceOverlayEnabled() &&
@@ -5470,8 +5476,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 preferences.setDeviceWarningsEnabled(
                     !preferences.isDeviceWarningsEnabled());
                 lastDeviceWarningSampleNanos = 0L;
-                if (!preferences.isDeviceWarningsEnabled())
+                if (!preferences.isDeviceWarningsEnabled()) {
+                    deviceWarningLatch.reset();
                     deviceWarningHud.setLevel(DeviceWarningPolicy.NONE);
+                }
                 break;
 
             default:
