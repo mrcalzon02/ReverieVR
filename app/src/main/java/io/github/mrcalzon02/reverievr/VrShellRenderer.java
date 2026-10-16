@@ -236,7 +236,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {42, 286, 230, 332},
         {42, 339, 230, 385},
         {42, 392, 230, 438},
-        {42, 445, 230, 491},
+        {42, 445, 230, 491}, // Music Library launcher
         {780, 176, 982, 224},
         {780, 232, 982, 280},
         {780, 288, 982, 336},
@@ -258,7 +258,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {0, 0, 0, 0},
         {42, 498, 230, 544}, // Classic Games
         {42, 604, 230, 650}, // Emulator Modules
-        {780, 570, 982, 618} // Native Music
+        {780, 570, 982, 618} // Exit to Phone (right Quick Options)
     };
 
     // Virtual targets are intercepted in world-space by
@@ -5104,15 +5104,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     preferences.setVrSetupStep(0);
                     break;
                 case 5:
-                    host.onExitToPhoneRequested();
-                    return;
-                case 26:
                     musicCatalogTitles = host.getNativeMusicTrackNames();
                     if (musicCatalogTitles == null)
                         musicCatalogTitles = new String[0];
                     musicCatalogPage = 0;
                     mode = MODE_MUSIC_LIBRARY;
                     break;
+                case 26:
+                    host.onExitToPhoneRequested();
+                    return;
                 case 25:
                     emulatorCatalogPage=0;
                     selectedEmulator=null;
@@ -6883,7 +6883,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 nativeLabel,
                 "Environment",
                 "Setup / Comfort",
-                "Exit to Phone",
+                "Music Library",
                 phonePanelVisible ? "Hide Phone Screen" : "Phone Screen"
             };
         drawHomeButtons(
@@ -6902,7 +6902,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         drawHomeButtons(canvas, paint,
             new String[] {"Emulator Modules"}, 25, 1);
         drawHomeButtons(canvas, paint,
-            new String[] {"Music Library"}, 26, 1);
+            new String[] {"Exit to Phone"}, 26, 1);
 
         paint.setFakeBoldText(true);
         paint.setColor(Color.WHITE);
@@ -7284,7 +7284,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 4:
                 return "Comfort, calibration, and first-run setup controls.";
             case 5:
-                return "Leave the headset shell and return to the phone interface.";
+                return "Play locally packaged music from the licensed native music library.";
             case 6:
                 return "Show or hide phone/controller battery bars in VR.";
             case 7:
@@ -7310,7 +7310,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 25:
                 return "Browse public emulator source modules, license and download status.";
             case 26:
-                return "Play locally packaged music from the licensed native music library.";
+                return "Leave the headset shell and return to the phone interface.";
             default:
                 return "Choose a destination or quick option.";
         }
