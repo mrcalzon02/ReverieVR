@@ -451,6 +451,43 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 REVERIE_NATIVE_SOUND_WEAPON_HEAVY:REVERIE_NATIVE_SOUND_WEAPON_MACHINE);
         if(m->sim.phase()!=Phase::Flight)Save(m);
         Rebuild(m);
+    }else if(phase==Phase::Chart&&m->inYard){
+        m->navTime-=dt;
+        const float x=in->move_x,y=in->move_y;
+        if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
+            if(std::fabs(x)>std::fabs(y))
+                m->garageX=std::max(0,std::min(8,m->garageX+(x>0?1:-1)));
+            else
+                m->garageY=std::max(0,std::min(m->garageX>=7?4:6,
+                                              m->garageY+(y>0?1:-1)));
+            if(m->garageX>=7)m->garageY=std::min(4,m->garageY);
+            m->navTime=.19f;
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+            Rebuild(m);
+        }
+        if(pressed&&!m->primary){
+            bool good=false;
+            if(m->garageX<=6){
+                const Part existing=m->yard.at(m->garageX,m->garageY);
+                good=existing==Part::Empty?
+                    m->yard.place(m->garageX,m->garageY,m->brush):
+                    m->yard.remove(m->garageX,m->garageY);
+                if(good){
+                    m->sim.configure_ship(m->yard);
+                    SaveShipyard(m);
+                }
+            }else{
+                const int choice=m->garageY*2+(m->garageX-7);
+                if(choice<9){
+                    m->brush=static_cast<Part>(choice+2);good=true;
+                }else{
+                    m->inYard=false;good=true;
+                }
+            }
+            ReverieNativeRequestFeedbackV1(m->host,good?
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            Rebuild(m);
+        }
     }else if(phase==Phase::Chart){
         m->navTime-=dt;
         const float x=in->move_x,y=in->move_y;
@@ -458,11 +495,13 @@ void Update(void* p,const ReverieNativeInputV1* in){
             if(std::fabs(y)>.6f){
                 if(y>0&&m->selected<3)m->selected=3;
                 else if(y>0&&m->selected<7)m->selected=7;
+                else if(y>0&&m->selected<10)m->selected=10;
+                else if(y<0&&m->selected==10)m->selected=7;
                 else if(y<0&&m->selected>=7)m->selected=3;
                 else if(y<0&&m->selected>=3)m->selected=0;
             }else if(m->selected<3)m->selected=(m->selected+(x>0?1:2))%3;
             else if(m->selected<7)m->selected=3+(m->selected-3+(x>0?1:3))%4;
-            else m->selected=7+(m->selected-7+(x>0?1:2))%3;
+            else if(m->selected<10)m->selected=7+(m->selected-7+(x>0?1:2))%3;
             m->navTime=.20f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
@@ -473,11 +512,13 @@ void Update(void* p,const ReverieNativeInputV1* in){
             else if(m->selected<7){
                 good=m->sim.buy(static_cast<Upgrade>(m->selected-3));
                 if(good)Save(m);
-            }else{
+            }else if(m->selected<10){
                 const Weapon requested=static_cast<Weapon>(m->selected-7);
                 good=m->sim.owns_weapon(requested)?
                     m->sim.select_weapon(requested):m->sim.buy_weapon(requested);
                 if(good)Save(m);
+            }else{
+                m->inYard=true;m->garageX=3;m->garageY=3;good=true;
             }
             ReverieNativeRequestFeedbackV1(m->host,good?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
             Rebuild(m);
