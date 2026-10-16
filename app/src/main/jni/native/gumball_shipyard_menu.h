@@ -29,6 +29,13 @@ struct YardCursor {
         }
         if(palette()){toolX=x;toolY=y;}
     }
+    void pointAt(int gx,int gy){
+        if(gx>=0&&gx<=6&&gy>=0&&gy<=6){
+            x=gx;y=gy;lastX=gx;lastY=gy;
+        }else if(gx>=7&&gx<=8&&gy>=0&&gy<=4){
+            x=gx;y=gy;toolX=gx;toolY=gy;
+        }
+    }
     void switchFocus(){
         if(palette()){x=lastX;y=lastY;}
         else{lastX=x;lastY=y;x=toolX;y=toolY;}
