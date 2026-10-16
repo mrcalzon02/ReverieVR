@@ -3,11 +3,13 @@
 **Maturity:** PROPOSED design; neither map content nor game mechanics are implemented  
 **World canon:** [OMEGA_FRONT_WORLD_BIBLE.md](OMEGA_FRONT_WORLD_BIBLE.md)  
 **Faction design:** [OMEGA_FRONT_FACTIONS.md](OMEGA_FRONT_FACTIONS.md)  
+**Hearthwell Emergence / commander:** [OMEGA_FRONT_HEARTHWELL_PROLOGUE.md](OMEGA_FRONT_HEARTHWELL_PROLOGUE.md)  
+**70-campaign war:** [OMEGA_FRONT_GRAND_CAMPAIGN.md](OMEGA_FRONT_GRAND_CAMPAIGN.md)  
 **Mechanics:** [WAR_WITHOUT_END.md](WAR_WITHOUT_END.md)
 
 ## 1. A physically broken planet, not a purple force wall
 
-The planet was **literally torn in half** in the technomantic Rupture associated with the Ouroboros Corporation. The exact mechanics holding the remnants together, whether the halves are mutually visible, how gravity works and how oceans are retained **remain unresolved world canon**. Artists should explore exposed continental strata, unnatural horizons, enormous rift-scar cliffs and strange sky phenomena, without declaring speculative astrophysics to be established history.
+The planet was **literally torn in half** in the technomantic Rupture associated with the Ouroboros Corporation. The starting **Hearthwell Emergence** is explicitly a recent morphological transformation of remote **wasteland into Eden**, not an Eden Zone that somehow survived from before the Rupture. The exact mechanics holding the remnants together, whether the halves are mutually visible, how gravity works and how oceans are retained **remain unresolved world canon**. Artists should explore exposed continental strata, unnatural horizons, enormous rift-scar cliffs and strange sky phenomena, without declaring speculative astrophysics to be established history.
 
 Three alternate concept directions, NOT simultaneous facts:
 - **Worldscar:** a broken edge with massive exposed geology descending into a disorienting gap. Most visually direct; useful as remote terrain art and late campaign battlefield edge.
@@ -56,7 +58,7 @@ Not every theater is continuously controlled by one faction. Claim, garrison, ci
 
 ## 4. Initial 16-sector Hearthfall March front
 
-The first campaign opens in **T01**, on a readable 4×4 geographic neighborhood with **16 identified sectors** and 34 additional T01 campaign sectors still awaiting names and detailed layout. This is a first-playable window, not a deliberate reduction of the 600-sector target.
+The first campaign opens in **T01**, on a readable 4×4 geographic neighborhood with **16 identified sectors** and 34 additional T01 campaign sectors still awaiting names and detailed layout. **Crucial timeline:** these primary-class labels show the world **after** the Hearthwell Emergence; several currently green sectors were previously wasteland and must carry a historical class-transition event in their persisted state. This is a first-playable window, not a deliberate reduction of the 600-sector target.
 
 ```text
                 A                    B                    C                    D
@@ -87,7 +89,7 @@ Full sector IDs use `T01-S001` ... `T01-S016`. Adjacent orthogonal coordinates a
 | S015 Broken Viaduct | Wasteland | None | Bridge reclamation and supply artery |
 | S016 Dry Basin | Barren | F14 prospectors (not occupation) | Salt and mineral extraction |
 
-The table gives **designer-known initial actors**, not automatic player intel. A traveling refugee party is not a full faction-held military town. Discovery depends on real reconnaissance and reports.
+The table gives **designer-known initial actors**, not automatic player intel. Some initial faction contacts are only patrols or distant claims and must be staggered over narrative/strategic time; seventeen armies must not materialize at once. A traveling refugee party is not a full faction-held military town. Discovery depends on real reconnaissance and reports.
 
 **Critical links and constraints:**
 - S006↔S007 orchard supply road and S007↔S011 pump line provide the initial home's essentials.
