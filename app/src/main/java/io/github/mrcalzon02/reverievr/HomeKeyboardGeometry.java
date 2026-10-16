@@ -4,14 +4,15 @@ package io.github.mrcalzon02.reverievr;
 final class HomeKeyboardGeometry {
     static final float LEFT = -1.45f;
     static final float RIGHT = 1.45f;
-    static final float FRONT_Z = -1.52f;
-    static final float BACK_Z = -3.75f;
-    static final float TOP_Y = -1.039f;
-    // Dais is at -1.08. A real keycap must rise above it, while the
-    // transparent glyph/legend texture floats just above the keycap tops.
-    static final float KEYCAP_BASE_Y = -1.069f;
-    static final float KEYCAP_TOP_Y = -1.043f;
-    static final float LEGEND_Y = -1.025f;
+    static final float FRONT_Z = -1.42f;
+    static final float BACK_Z = -3.65f;
+    static final float TOP_Y = -1.099f;
+    // Lower the desk and every keyboard surface together, so the keycaps
+    // stay above the dais and the input ray shares the rendered key plane.
+    static final float DESK_TOP_Y = -1.14f;
+    static final float KEYCAP_BASE_Y = -1.129f;
+    static final float KEYCAP_TOP_Y = -1.103f;
+    static final float LEGEND_Y = -1.085f;
     static final float REAR_RISE_METERS = 0.10f;
     static final int WIDTH_PIXELS = 1024;
     static final int HEIGHT_PIXELS = 768;
