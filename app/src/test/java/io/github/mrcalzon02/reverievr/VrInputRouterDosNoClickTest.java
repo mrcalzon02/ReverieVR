@@ -20,7 +20,7 @@ public final class VrInputRouterDosNoClickTest {
         VirtualInputBus bus = new VirtualInputBus();
         InputBindingEngine engine = new InputBindingEngine(bus,
             BuiltInBindingProfiles.byId(
-                BuiltInBindingProfiles.ID_DOS_FPS_HEAD_MOUSE));
+                BuiltInBindingProfiles.ID_DOS_HEAD_MOUSE));
         VrInputRouter.Listener listener = new VrInputRouter.Listener() {
             @Override public void onInputAction(VrInputAction action, String source) {}
             @Override public boolean usesDaydreamDosGameControls() { return true; }
