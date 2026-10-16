@@ -898,7 +898,7 @@ int main() {
     State fresh;
     fresh.Reset(Game::Pong);
     assert(std::hypot(fresh.velocity_x,fresh.velocity_y)>.9f);
-    fresh.Press();fresh.ball_x=1.045f;fresh.velocity_x=.9f;
+    fresh.Press();fresh.ball_x=1.045f;fresh.ball_y=.60f;fresh.velocity_x=.9f;
     fresh.Step(.02f,0.f);
     assert(fresh.score==1&&!fresh.moving);
     assert(std::hypot(fresh.velocity_x,fresh.velocity_y)>.9f);
@@ -908,6 +908,15 @@ int main() {
     cpu_step.ai=-.70f;cpu_step.ball_y=.70f;cpu_step.velocity_x=.9f;
     cpu_step.Step(.02f,0.f);
     assert(cpu_step.ai > -.70f && cpu_step.ai < -.68f);
+
+    // Once the ball has crossed the paddle plane, a late CPU/player
+    // position update cannot retroactively rescue the missed volley.
+    State too_late;
+    too_late.Reset(Game::Pong);too_late.Press();
+    too_late.ball_x=1.045f;too_late.ball_y=0.f;
+    too_late.velocity_x=.9f;too_late.velocity_y=0.f;
+    too_late.Step(.02f,0.f);
+    assert(too_late.score==1&&!too_late.moving);
 
     pong.Reset(Game::Pong);pong.Press();
     pong.score=10;pong.ball_x=1.045f;pong.ball_y=.60f;

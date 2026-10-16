@@ -106,18 +106,19 @@ struct State {
             ai=std::clamp(ai+std::clamp(goal-ai,-limit,limit),-.78f,.78f);
             const float cpu_speed=pong::PaddleVelocity(ai-previous_ai,dt);
             if(!moving||finished)return;
+            const float previous_x=ball_x;
             ball_x+=velocity_x*dt;
             ball_y+=velocity_y*dt;
             if(ball_y>.93f){ball_y=.93f;velocity_y=-std::abs(velocity_y);}
             if(ball_y<-.93f){ball_y=-.93f;velocity_y=std::abs(velocity_y);}
-            if(ball_x<-.87f&&velocity_x<0.f
+            if(ball_x<-.87f&&previous_x>=-.87f&&velocity_x<0.f
                &&std::abs(ball_y-paddle)<pong::kPaddleHalfHeight) {
                 ball_x=-.87f;
                 const auto rebound=pong::Bounce(velocity_x,velocity_y,
                     ball_y-paddle,player_speed,true);
                 velocity_x=rebound.vx;velocity_y=rebound.vy;
             }
-            if(ball_x>.87f&&velocity_x>0.f
+            if(ball_x>.87f&&previous_x<=.87f&&velocity_x>0.f
                &&std::abs(ball_y-ai)<.26f) {
                 ball_x=.87f;
                 const auto rebound=pong::Bounce(velocity_x,velocity_y,
