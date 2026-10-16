@@ -14,6 +14,7 @@ struct ShipyardSave {
     uint8_t stock[kPartKinds]={};
     uint32_t checksum=0;
 };
+static_assert(sizeof(ShipyardSave)==72,"Shipyard save must preserve portable 72-byte layout");
 inline uint32_t ShipyardChecksum(const ShipyardSave& s){
     uint32_t h=2166136261u;
     auto mix=[&h](uint8_t b){h=(h^b)*16777619u;};
