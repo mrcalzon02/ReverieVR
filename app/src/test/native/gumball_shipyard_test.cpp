@@ -46,7 +46,7 @@ int main(){
  // Exhausted stock rejects without touching part ownership or layout.
  Shipyard full;
  assert(full.edit(4,3,Part::Armor)==ShipEdit::Replaced);
- assert(full.edit(4,2,Part::Armor)==ShipEdit::Replaced);
+ assert(full.edit(4,2,Part::Armor)==ShipEdit::Placed);
  assert(full.edit(2,2,Part::Armor)==ShipEdit::Placed);
  assert(full.stock(Part::Armor)==0u);
  const auto fullySaved=full.snapshot();
