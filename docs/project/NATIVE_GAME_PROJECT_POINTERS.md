@@ -225,7 +225,7 @@ All gameplay advances in native Update once per frame, with common cached vertex
 
 ## RV-GAME-06 — Omega Front
 
-**Status:** Source-committed headless combat, tactical controller, Development-only GLES2 war table and versioned skirmish checkpoint; **a new in-memory 16-sector Hearthfall March strategy with three real linked combat scenarios and a forecast Eden emergence has been implemented and host-tested**. The strategic game is not yet wired to the VR UI or persisted. NDK/APK/physical S9/Daydream validation and the 70-arc campaign remain outstanding. This is a new original top-down, tile-based military tactics/RPG hybrid, not an adaptation of an existing commercial game.
+**Status:** Source-wired Development-only native 4×4 Hearthfall campaign map, real sector travel/field orders, deployments into owned 24×24 tactical battles and one-time after-action return; a versioned full-frontier `frontier.v1` save now includes the persistent strategic ledger and active battle. Six host suites and local mock-GL lifecycle checks passed; **Android NDK/APK, physical S9/Daydream validation, 600-sector world and 70 complete arcs remain unverified or unfinished.** This is an original tactics RPG, not an adaptation of a commercial game.
 
 **Setting authority:** [OMEGA_FRONT_WORLD_BIBLE.md](OMEGA_FRONT_WORLD_BIBLE.md) — Ouroboros Corporation, planetary bisection, past/future rifts, baseline-human Eden Zones, wastelands, barren zones, anomaly fields, the canonical count of 17 factions and their unresolved individual identities.
 
@@ -241,7 +241,9 @@ All gameplay advances in native Update once per frame, with common cached vertex
 
 **Mechanics authority:** [WAR_WITHOUT_END.md](WAR_WITHOUT_END.md) (retained earlier filename) — combat anatomy, progression calibration, 600-sector/4,096-inspection-room address space, seven encounter scales, independent commander/troop/squad-room/weapon/armor/accessory/base/world/doctrine progression, deterministic simulation, tenfold prestige covenant, and staged P0–P11 roadmap.
 
-**Current P3 headless frontier:** `app/src/main/jni/native/omega_front_frontier.h` and `app/src/test/native/omega_front_frontier_test.cpp` implement real seeded 16-sector territory state, adjacency/viaduct gates, stored supplies, guards/casualties, one forecast ecology transition and three sequential tactical operations for F01's opening `The Water We Own` arc. These scenarios are host-simulation only: not yet navigable from the native VR board and not included in the battle checkpoint schema. See [implementation boundaries](../native/OMEGA_FRONT_TACTICS.md).
+**Current P3 headless frontier:** `app/src/main/jni/native/omega_front_frontier.h` and `app/src/test/native/omega_front_frontier_test.cpp` implement real seeded 16-sector territory state, adjacency/viaduct gates, stored supplies, guards/casualties, one forecast ecology transition and three sequential tactical operations for F01's opening `The Water We Own` arc. These scenarios are now navigable through a source-wired Development-only GLES2 4×4 VR map and saved within the new `frontier.v1` full-campaign snapshot, including live tactical checkpoint state. See [implementation boundaries](../native/OMEGA_FRONT_TACTICS.md).
+
+**Current P3 strategic bridge:** `omega_front_session.h` and `omega_front_campaign_save.h`, tested by `omega_front_session_test.cpp` and `omega_front_campaign_save_test.cpp`, add the real 16-sector map input/deployment/after-action cycle and atomic first-frontier save. Six host suites and mock GL exercised state transitions, but signed APK and S9 testing remain pending.
 
 **Current P2 source:** `app/src/main/jni/native/omega_front_controls.h`, `app/src/main/jni/native/omega_front_module.cpp`, `app/src/test/native/omega_front_controls_test.cpp` — real touchpad/pointer tile navigation, queued orders, 250-ms combat pulses and procedural board. Registered for Development-only Native Games. NDK/APK/physical S9 validation pending.
 

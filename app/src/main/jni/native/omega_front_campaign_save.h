@@ -1,0 +1,160 @@
+#ifndef REVERIE_OMEGA_FRONT_CAMPAIGN_SAVE_H
+#define REVERIE_OMEGA_FRONT_CAMPAIGN_SAVE_H
+
+#include "omega_front_checkpoint.h"
+#include "omega_front_session.h"
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+
+namespace reverie { namespace omega {
+
+// One versioned, padding-free snapshot for the *whole first strategic slice*.
+// An earlier standalone battle slot is deliberately never treated as a
+// campaign save; it has no owner, supplies, deployment, or consequence history.
+class CampaignSave {
+public:
+    static constexpr size_t kBytes=2048;
+    using Bytes=std::array<uint8_t,kBytes>;
+    static bool Encode(const Session &s,Bytes *out){
+        if(!out)return false;
+        Bytes bytes{};
+        Writer w{bytes};
+        for(char c : "OFSTRAT1") {if(!c)break;w.U8(static_cast<uint8_t>(c));}
+        w.U16(1);w.U16(0);
+        const Frontier &f=s.frontier;
+        w.U32(f.seed_);
+        w.U8(static_cast<uint8_t>(s.focused));
+        w.U8(static_cast<uint8_t>(s.view));
+        w.U8(static_cast<uint8_t>(s.action));
+        w.U32(s.orders);
+        w.U8(static_cast<uint8_t>(f.location_));
+        w.U32(static_cast<uint32_t>(f.day_));
+        w.U8(static_cast<uint8_t>(f.operation_));
+        w.U16(static_cast<uint16_t>(f.population_));
+        w.U8(static_cast<uint8_t>(f.guards_));
+        w.U16(static_cast<uint16_t>(f.rations_));
+        w.U32(static_cast<uint32_t>(f.salvage_));
+        w.U8(static_cast<uint8_t>(f.trust_));
+        w.U8(static_cast<uint8_t>(f.pump_health_));
+        w.U8(f.bridge_?1:0);
+        w.U8(f.deployed_?1:0);
+        w.U32(f.morphology_epoch_);
+        w.U8(static_cast<uint8_t>(f.last_.operation+1));
+        w.U8(static_cast<uint8_t>(f.last_.outcome));
+        w.U8(f.last_.defenders_lost);
+        w.U8(f.last_.enemies_lost);
+        w.U8(f.last_.pump_remaining);
+        w.U32(f.last_.battle_ticks);
+        for(const auto &sector:f.sectors_){
+            w.U8(static_cast<uint8_t>(sector.ecology));
+            w.U8(static_cast<uint8_t>(sector.previous));
+            w.U8(sector.owner);w.U8(sector.anomaly);w.U8(sector.stability);
+            w.U16(sector.residents);w.U16(sector.food);w.U16(sector.water);
+            w.U16(sector.wreck_mass);w.U8(sector.claims);
+        }
+        Checkpoint::Bytes combat{};
+        if(!Checkpoint::Encode(s.tactical,&combat))return false;
+        for(uint8_t c:combat)w.U8(c);
+        if(!w.ok)return false;
+        uint64_t hash=Hash(bytes.data(),kBytes-8);
+        for(size_t i=kBytes-8;i<kBytes;++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
+        *out=bytes;
+        return true;
+    }
+    static bool Decode(Session *output,const uint8_t *data,size_t length){
+        if(!output||!data||length!=kBytes)return false;
+        uint64_t hash=Hash(data,kBytes-8);
+        for(size_t i=kBytes-8;i<kBytes;++i){
+            if(data[i]!=static_cast<uint8_t>(hash))return false;
+            hash>>=8;
+        }
+        Reader r{data,kBytes-8};
+        for(char c:"OFSTRAT1"){if(!c)break;if(r.U8()!=static_cast<uint8_t>(c))return false;}
+        if(r.U16()!=1||r.U16()!=0)return false;
+        uint32_t seed=r.U32();
+        const int focus=r.U8();
+        const unsigned view=r.U8(),action=r.U8();
+        const uint32_t orders=r.U32();
+        if(!seed||focus>=16||view>1||action>4)return false;
+        Session next(seed);
+        next.focused=focus;
+        next.view=static_cast<FrontMode>(view);
+        next.action=static_cast<FieldAction>(action);
+        next.orders=orders;
+        Frontier &f=next.frontier;
+        f.location_=r.U8();f.day_=static_cast<int>(r.U32());
+        f.operation_=r.U8();f.population_=r.U16();f.guards_=r.U8();
+        f.rations_=r.U16();f.salvage_=static_cast<int>(r.U32());
+        f.trust_=r.U8();f.pump_health_=r.U8();
+        const uint8_t bridge=r.U8(),deployed=r.U8();
+        f.bridge_=bridge!=0;f.deployed_=deployed!=0;
+        f.morphology_epoch_=r.U32();
+        f.last_.operation=static_cast<int>(r.U8())-1;
+        const unsigned outcome=r.U8();
+        f.last_.outcome=static_cast<Result>(outcome);
+        f.last_.defenders_lost=r.U8();f.last_.enemies_lost=r.U8();
+        f.last_.pump_remaining=r.U8();f.last_.battle_ticks=r.U32();
+        if(!Frontier::Valid(f.location_)||f.day_<1||f.day_>1000000||
+           f.operation_<0||f.operation_>3||f.population_<1||f.population_>1000||
+           f.guards_<0||f.guards_>12||f.rations_<0||f.rations_>65535||
+           f.salvage_<0||f.salvage_>1000000||f.trust_<0||f.trust_>100||
+           f.pump_health_<0||f.pump_health_>18||bridge>1||deployed>1||
+           f.morphology_epoch_>1||outcome>2||
+           f.last_.operation<-1||f.last_.operation>2||
+           f.last_.defenders_lost>4||f.last_.enemies_lost>5||
+           f.last_.pump_remaining>18||f.last_.battle_ticks>160||
+           (f.last_.operation==-1 && (outcome || f.last_.battle_ticks))||
+           (f.operation_==3 && f.deployed_)||
+           (f.deployed_ != (next.view==FrontMode::Tactical)))return false;
+        for(auto &sector:f.sectors_){
+            const unsigned ecology=r.U8(),prev=r.U8(),owner=r.U8(),anomaly=r.U8(),stability=r.U8();
+            sector.residents=r.U16();sector.food=r.U16();sector.water=r.U16();
+            sector.wreck_mass=r.U16();sector.claims=r.U8();
+            if(ecology>2||prev>2||owner>kIndependentOwner||anomaly>1||
+               stability>100||sector.residents>20000||sector.claims>100)return false;
+            sector.ecology=static_cast<Ecology>(ecology);
+            sector.previous=static_cast<Ecology>(prev);
+            sector.owner=static_cast<uint8_t>(owner);
+            sector.anomaly=static_cast<uint8_t>(anomaly);
+            sector.stability=static_cast<uint8_t>(stability);
+        }
+        // First scripted emergence has exactly one known transition.
+        if((f.morphology_epoch_==0 && (f.day_>=4||f.sectors_[8].ecology!=Ecology::Wasteland)) ||
+           (f.morphology_epoch_==1 && (f.day_<4||f.sectors_[8].ecology!=Ecology::Eden)))return false;
+        Checkpoint::Bytes combat{};
+        for(auto &c:combat)c=r.U8();
+        if(!Checkpoint::Decode(&next.tactical,combat.data(),combat.size()))return false;
+        while(r.position<r.capacity){if(r.U8()!=0)return false;}
+        if(!r.ok)return false;
+        if(f.deployed_){
+            f.battle_=next.tactical.battle;
+            if(f.operation_>=3)return false;
+        }
+        next.ResetEdges();next.rejected=false;
+        *output=next;
+        return true;
+    }
+private:
+    static uint64_t Hash(const uint8_t *data,size_t length){
+        uint64_t h=UINT64_C(14695981039346656037);
+        for(size_t i=0;i<length;++i){h^=data[i];h*=UINT64_C(1099511628211);}
+        return h;
+    }
+    struct Writer{
+        Bytes &bytes;size_t position=0;bool ok=true;
+        void U8(uint8_t v){if(position>=kBytes-8){ok=false;return;}bytes[position++]=v;}
+        void U16(uint16_t v){U8(static_cast<uint8_t>(v));U8(static_cast<uint8_t>(v>>8));}
+        void U32(uint32_t v){U16(static_cast<uint16_t>(v));U16(static_cast<uint16_t>(v>>16));}
+    };
+    struct Reader{
+        const uint8_t *data;size_t capacity,position=0;bool ok=true;
+        uint8_t U8(){if(position>=capacity){ok=false;return 0;}return data[position++];}
+        uint16_t U16(){uint16_t lo=U8(),hi=U8();return static_cast<uint16_t>(lo|(hi<<8));}
+        uint32_t U32(){uint32_t lo=U16(),hi=U16();return lo|(hi<<16);}
+    };
+};
+
+}} // namespace reverie::omega
+#endif

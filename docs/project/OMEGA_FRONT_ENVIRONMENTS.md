@@ -58,7 +58,7 @@ Not every theater is continuously controlled by one faction. Claim, garrison, ci
 
 ## Implemented first-frontier boundary (2026-10-15)
 
-`app/src/main/jni/native/omega_front_frontier.h` and its host tests now implement the first named 16 strategic sectors and an *in-memory* three-operation `The Water We Own` battle sequence. This is a working headless slice of the planned 600-sector world, not a claim of map rendering, sector save/load, complete operational books, full faction AI or 70 authored arcs. In this implementation S009 Rust Orchard's first emergence is telegraphed for day four and becomes newly breathable Eden without instantly producing stocks. Its seeded operation maps all protect the generic tactical field pump; later mission-specific objectives still need implementing. See [native tactical status](../native/OMEGA_FRONT_TACTICS.md).
+`app/src/main/jni/native/omega_front_frontier.h` and its host tests now implement the first named 16 strategic sectors and an *in-memory* three-operation `The Water We Own` battle sequence. This first 16-sector slice is now source-connected to a compact GLES2 strategic map and a validated full-frontier save. It remains **not** a complete 600-sector world, finished operation book, strategic AI, or 70 authored arcs; actual Galaxy S9 acceptance is still pending. In this implementation S009 Rust Orchard's first emergence is telegraphed for day four and becomes newly breathable Eden without instantly producing stocks. Its seeded operation maps all protect the generic tactical field pump; later mission-specific objectives still need implementing. See [native tactical status](../native/OMEGA_FRONT_TACTICS.md).
 
 ## 4. Initial 16-sector Hearthfall March front
 

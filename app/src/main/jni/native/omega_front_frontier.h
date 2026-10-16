@@ -243,6 +243,7 @@ public:
         return h;
     }
 private:
+    friend class CampaignSave;
     static uint32_t Mix(uint32_t seed,uint32_t index){
         uint32_t x=seed^(index*0x9e3779b9u);
         x^=x>>16;x*=0x7feb352du;x^=x>>15;x*=0x846ca68bu;x^=x>>16;

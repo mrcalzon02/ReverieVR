@@ -1,4 +1,4 @@
-#include "omega_front_checkpoint.h"
+#include "omega_front_campaign_save.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -21,13 +21,14 @@ constexpr float kCenterY = .02f;
 constexpr float kNear = -1.86f;
 struct State {
     const ReverieNativeHostV1 *host=nullptr;
-    game::Controller control{104u};
+    game::Session session{414u};
     GLuint program=0,vbo=0;
     GLint pos=-1,color=-1,mvp=-1;
     bool upload=true,save_failed=false,load_failed=false;
     uint32_t saved_tick=0,saved_orders=0;
     bool saved_pause=false;
     game::Result saved_result=game::Result::Active;
+    game::FrontMode saved_view=game::FrontMode::SectorMap;
     std::vector<float> mesh;
 };
 void Rect(State *s,float x,float y,float w,float h,float z,float r,float g,float b){
@@ -74,6 +75,91 @@ void Text(State *s,const char *msg,float center_y,float px,float r,float g,float
         }
     }
 }
+void TextAt(State *s,const char *msg,float cx,float center_y,float px,float r,float g,float b){
+    const size_t count=std::strlen(msg);
+    const float start=cx-static_cast<float>(count)*px*2.f;
+    for(size_t i=0;i<count;i++){
+        char c=msg[i];if(c>='a'&&c<='z')c=static_cast<char>(c-'a'+'A');
+        const char *glyph=Glyph(c);
+        for(int p=0;p<15;p++)if(glyph[p]=='1')
+            Rect(s,start+(i*4.f+static_cast<float>(p%3))*px,
+                 center_y+(2.f-static_cast<float>(p/3))*px,
+                 px*.92f,px*.92f,kNear,r,g,b);
+    }
+}
+void DrawMap(State *s){
+    const game::Session &session=s->session;
+    const game::Frontier &f=session.frontier;
+    s->mesh.clear();s->mesh.reserve(14000);
+    Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
+    Text(s,"OMEGA FRONT  HEARTHFALL",1.070f,.014f,.92f,.94f,.81f);
+    char line[110];
+    std::snprintf(line,sizeof(line),"DAY %d  GUARDS %d  RATIONS %d  SALVAGE %d",f.day(),f.guards(),f.rations(),f.salvage());
+    Text(s,line,.916f,.009f,.77f,.85f,.88f);
+    constexpr float span=.395f;
+    for(int i=0;i<game::kFrontierSectors;++i){
+        const auto *sector=f.sector(i);
+        if(!sector)continue;
+        const float x=(i%4-1.5f)*span;
+        const float y=kCenterY+(1.5f-i/4)*span;
+        float r=.32f,g=.38f,b=.31f;
+        if(sector->ecology==game::Ecology::Eden){r=.21f;g=.49f;b=.29f;}
+        else if(sector->ecology==game::Ecology::Wasteland){r=.44f;g=.33f;b=.29f;}
+        else {r=.44f;g=.43f;b=.33f;}
+        if(sector->anomaly){r=.48f;g=.33f;b=.61f;}
+        Rect(s,x,y,span*.96f,span*.96f,kBoardZ,r,g,b);
+        if(i==f.location()){
+            // White roadpost = real troop location, not selected hover.
+            Rect(s,x,y+span*.12f,span*.66f,span*.07f,-1.86f,.96f,.96f,.89f);
+        }
+        if(i==session.focused){
+            const float h=span*.475f;
+            Line(s,x-h,y+h,x+h,y+h,.024f,-1.84f,1.f,.83f,.20f);
+            Line(s,x+h,y-h,x+h,y+h,.024f,-1.84f,1.f,.83f,.20f);
+            Line(s,x-h,y-h,x+h,y-h,.024f,-1.84f,1.f,.83f,.20f);
+            Line(s,x-h,y-h,x-h,y+h,.024f,-1.84f,1.f,.83f,.20f);
+        }
+        char label[12];std::snprintf(label,sizeof(label),"S%03d",i+1);
+        TextAt(s,label,x,y,.015f,.98f,.98f,.86f);
+        const bool independent=sector->owner==game::kIndependentOwner;
+        Rect(s,x+span*.31f,y-span*.31f,span*.14f,span*.14f,-1.85f,
+             independent?.25f:sector->owner?.91f:.60f,
+             independent?.90f:sector->owner?.32f:.64f,
+             independent?.94f:sector->owner?.28f:.67f);
+    }
+    const auto *target=f.sector(session.focused);
+    if(target){
+        std::snprintf(line,sizeof(line),"S%03d %s",session.focused+1,target->name);
+        Text(s,line,-.868f,.013f,.94f,.95f,.81f);
+        std::snprintf(line,sizeof(line),"FOOD %u WATER %u WRECK %u  CLAIM %u",
+            target->food,target->water,target->wreck_mass,target->claims);
+        Text(s,line,-.982f,.010f,.77f,.86f,.86f);
+    }
+    const char *actions[]={"DEPLOY","FORAGE","RECRUIT","REPAIR","WAIT"};
+    if(session.focused!=f.location()){
+        Text(s,f.can_travel(session.focused)?"CLICK TO MARCH":"ROUTE BLOCKED",-1.098f,.013f,
+             f.can_travel(session.focused)?.71f:.96f,
+             f.can_travel(session.focused)?.98f:.43f,.49f);
+    }else {
+        std::snprintf(line,sizeof(line),"%s  CLICK EXECUTE  MENU CHANGE",
+                      actions[static_cast<int>(session.action)]);
+        Text(s,line,-1.098f,.010f,.93f,.92f,.60f);
+    }
+    if(f.operation()<3){
+        std::snprintf(line,sizeof(line),"OP %d OF 3  TARGET S%03d  TRUST %d",
+                      f.operation()+1,f.target_sector()+1,f.trust());
+        Text(s,line,-1.194f,.009f,.78f,.90f,.93f);
+    }else Text(s,"HEARTHWELL FIRST FRONT COMPLETE",-1.194f,.010f,.78f,.94f,.76f);
+    if(f.next_morphology_day()>0){
+        std::snprintf(line,sizeof(line),"EDEN FORECAST S%03d DAY %d",
+                     f.forecast_sector()+1,f.next_morphology_day());
+        Text(s,line,.82f,.010f,.92f,.77f,.48f);
+    }
+    if(session.rejected)Text(s,"ORDER DENIED",-.79f,.011f,1.f,.38f,.40f);
+    if(s->save_failed||s->load_failed)
+        Text(s,s->save_failed?"SAVE FAILED":"SAVE CORRUPT",-.73f,.011f,1.f,.38f,.40f);
+    s->upload=true;
+}
 void UnitSprite(State *s,const game::Unit &u,float x,float y){
     const bool ally=u.side==game::Side::Hearthwell;
     const float rr=ally?.29f:.83f, gg=ally?.80f:.31f, bb=ally?.56f:.29f;
@@ -97,10 +183,11 @@ void UnitSprite(State *s,const game::Unit &u,float x,float y){
          kCell*.68f*hp_ratio,kCell*.055f,-1.843f,.22f,.92f,.32f);
 }
 void Draw(State *s){
+    if(s->session.view==game::FrontMode::SectorMap){DrawMap(s);return;}
     s->mesh.clear();s->mesh.reserve(75000);
     Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
     Rect(s,0,kCenterY,2*kHalf+.035f,2*kHalf+.035f,kBoardZ-.04f,.21f,.28f,.20f);
-    const game::Battle &battle=s->control.battle;
+    const game::Battle &battle=s->session.tactical.battle;
     for(int y=0;y<game::kWidth;++y)for(int x=0;x<game::kWidth;++x){
         float wx=(x+.5f)*kCell-kHalf;
         float wy=kCenterY+kHalf-(y+.5f)*kCell;
@@ -118,7 +205,7 @@ void Draw(State *s){
         }
         if(ground==game::Ground::Wall)
             Rect(s,wx,wy,kCell*.77f,kCell*.74f,kBoardZ+.015f,.36f,.39f,.39f);
-        if(x==s->control.cursor_x && y==s->control.cursor_y){
+        if(x==s->session.tactical.cursor_x && y==s->session.tactical.cursor_y){
             Line(s,wx-kCell*.43f,wy+kCell*.42f,wx+kCell*.43f,wy+kCell*.42f,
                  kCell*.070f,-1.84f,1.f,.90f,.38f);
             Line(s,wx+kCell*.43f,wy-kCell*.42f,wx+kCell*.43f,wy+kCell*.42f,
@@ -143,7 +230,7 @@ void Draw(State *s){
         const game::Unit *u=battle.unit(i);
         if(!u||!u->alive())continue;
         center(u->x,u->y,px,py);
-        if(i==s->control.selected)
+        if(i==s->session.tactical.selected)
             Rect(s,px,py,kCell*.96f,kCell*.96f,-1.858f,.99f,.91f,.27f);
         UnitSprite(s,*u,px,py);
     }
@@ -155,24 +242,24 @@ void Draw(State *s){
     Text(s,status,-.946f,.010f,.88f,.92f,.85f);
     const char *mode_names[]={"MOVE","ATTACK","REPAIR","RESUPPLY"};
     char action[90];
-    if(battle.result()==game::Result::Defended)std::snprintf(action,sizeof(action),"DEFENDED  MENU RESET");
-    else if(battle.result()==game::Result::Overrun)std::snprintf(action,sizeof(action),"OVERRUN  MENU RESET");
-    else if(s->control.paused)std::snprintf(action,sizeof(action),"%s",
-        s->control.selected<0?"PAUSED  MENU RESUME":"PAUSED  CLICK UNIT TO CLEAR");
-    else if(s->control.selected<0)std::snprintf(action,sizeof(action),"PICK A GREEN UNIT  CLICK");
-    else std::snprintf(action,sizeof(action),"UNIT %d  %s  CLICK ORDER",s->control.selected,
-                       mode_names[static_cast<int>(s->control.mode)]);
-    Text(s,action,-1.061f,.012f,s->control.rejected?1.f:.91f,
-         s->control.rejected?.37f:.86f,.55f);
+    if(battle.result()==game::Result::Defended)std::snprintf(action,sizeof(action),"DEFENDED  CLICK REPORT");
+    else if(battle.result()==game::Result::Overrun)std::snprintf(action,sizeof(action),"OVERRUN  CLICK REPORT");
+    else if(s->session.tactical.paused)std::snprintf(action,sizeof(action),"%s",
+        s->session.tactical.selected<0?"PAUSED  MENU RESUME":"PAUSED  CLICK UNIT TO CLEAR");
+    else if(s->session.tactical.selected<0)std::snprintf(action,sizeof(action),"PICK A GREEN UNIT  CLICK");
+    else std::snprintf(action,sizeof(action),"UNIT %d  %s  CLICK ORDER",s->session.tactical.selected,
+                       mode_names[static_cast<int>(s->session.tactical.mode)]);
+    Text(s,action,-1.061f,.012f,s->session.tactical.rejected?1.f:.91f,
+         s->session.tactical.rejected?.37f:.86f,.55f);
     if(s->save_failed || s->load_failed)
         Text(s,s->save_failed?"SAVE FAILED":"SAVE CORRUPT", -1.16f,.011f,1.f,.43f,.40f);
     s->upload=true;
 }
-constexpr char kSaveSlot[]="hearthwell.v1";
+constexpr char kSaveSlot[]="frontier.v1";
 bool SaveState(State *s){
     if(!s || !ReverieNativeHostSupportsSaveV1(s->host))return false;
-    game::Checkpoint::Bytes bytes{};
-    if(!game::Checkpoint::Encode(s->control,&bytes))return false;
+    game::CampaignSave::Bytes bytes{};
+    if(!game::CampaignSave::Encode(s->session,&bytes))return false;
     const bool ok=s->host->write_save(kSaveSlot,bytes.data(),
         static_cast<uint32_t>(bytes.size()))==REVERIE_NATIVE_SAVE_OK;
     if(!ok && !s->save_failed)
@@ -181,30 +268,32 @@ bool SaveState(State *s){
     s->save_failed=!ok;
     if(ok){
         s->load_failed=false;
-        s->saved_tick=s->control.battle.ticks();
-        s->saved_orders=s->control.issued;
-        s->saved_pause=s->control.paused;
-        s->saved_result=s->control.battle.result();
+        s->saved_tick=s->session.tactical.battle.ticks();
+        s->saved_orders=s->session.orders+s->session.tactical.issued;
+        s->saved_view=s->session.view;
+        s->saved_pause=s->session.tactical.paused;
+        s->saved_result=s->session.tactical.battle.result();
     }
     return ok;
 }
 void LoadState(State *s){
     if(!s || !ReverieNativeHostSupportsSaveV1(s->host))return;
-    game::Checkpoint::Bytes bytes{};
+    game::CampaignSave::Bytes bytes{};
     uint32_t size=0;
     const int32_t code=s->host->read_save(kSaveSlot,bytes.data(),
         static_cast<uint32_t>(bytes.size()),&size);
     if(code==REVERIE_NATIVE_SAVE_NOT_FOUND)return;
     if(code!=REVERIE_NATIVE_SAVE_OK || size!=bytes.size() ||
-       !game::Checkpoint::Decode(&s->control,bytes.data(),size)){
+       !game::CampaignSave::Decode(&s->session,bytes.data(),size)){
         ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,kId,
                            "Invalid or unreadable Hearthwell checkpoint; fresh skirmish kept");
         s->load_failed=true;
     }else{
-        s->saved_tick=s->control.battle.ticks();
-        s->saved_orders=s->control.issued;
-        s->saved_pause=s->control.paused;
-        s->saved_result=s->control.battle.result();
+        s->saved_tick=s->session.tactical.battle.ticks();
+        s->saved_orders=s->session.orders+s->session.tactical.issued;
+        s->saved_view=s->session.view;
+        s->saved_pause=s->session.tactical.paused;
+        s->saved_result=s->session.tactical.battle.result();
     }
 }
 void *Create(const ReverieNativeHostV1 *host){
@@ -261,37 +350,49 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     action.x=in->move_x;action.y=in->move_y;
     action.primary=in->primary_down!=0;action.secondary=in->secondary_down!=0;
     if(ReverieNativeInputHasPointerV1(in) &&
-        in->pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
-        std::fabs(in->pointer_direction[2])>.0001f) {
+       in->pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
+       std::fabs(in->pointer_direction[2])>.0001f){
         const float t=(kBoardZ-in->pointer_origin[2])/in->pointer_direction[2];
         if(t>0.f && t<100.f){
             const float x=in->pointer_origin[0]+t*in->pointer_direction[0];
             const float y=in->pointer_origin[1]+t*in->pointer_direction[1];
-            const int grid_x=static_cast<int>(std::floor((x+kHalf)/kCell));
-            const int grid_y=static_cast<int>(std::floor((kCenterY+kHalf-y)/kCell));
-            if(game::Battle::Inside(grid_x,grid_y)){
-                action.pointer_x=grid_x;action.pointer_y=grid_y;
+            if(s->session.view==game::FrontMode::SectorMap){
+                constexpr float span=.395f;
+                const int gx=static_cast<int>(std::floor((x+2.f*span)/span));
+                const int gy=static_cast<int>(std::floor((kCenterY+2.f*span-y)/span));
+                if(gx>=0 && gx<4 && gy>=0 && gy<4){
+                    action.pointer_x=gx;action.pointer_y=gy;
+                }
+            }else{
+                const int gx=static_cast<int>(std::floor((x+kHalf)/kCell));
+                const int gy=static_cast<int>(std::floor((kCenterY+kHalf-y)/kCell));
+                if(game::Battle::Inside(gx,gy)){
+                    action.pointer_x=gx;action.pointer_y=gy;
+                }
             }
         }
     }
-    const uint32_t old_issued=s->control.issued;
-    const uint32_t old_tick=s->control.battle.ticks();
-    if(s->control.Input(action)){
-        // Save materially changed commands immediately; throttle ordinary
-        // combat autosaves to 16 pulses (4s). Neither eye writes a slot.
-        const uint32_t tick=s->control.battle.ticks();
+    const uint32_t old_orders=s->session.orders+s->session.tactical.issued;
+    const uint32_t old_tick=s->session.tactical.battle.ticks();
+    const auto old_view=s->session.view;
+    if(s->session.Input(action)){
+        const uint32_t tick=s->session.tactical.battle.ticks();
+        const uint32_t new_orders=s->session.orders+s->session.tactical.issued;
+        // Strategy actions and tactical commands are saved immediately. The
+        // eye passes never advance the world or write persistent storage.
         if(ReverieNativeHostSupportsSaveV1(s->host) &&
-           (s->control.issued!=s->saved_orders ||
-            s->control.paused!=s->saved_pause ||
-            s->control.battle.result()!=s->saved_result ||
-            (tick>=s->saved_tick && tick-s->saved_tick>=16u)))
-            SaveState(s);
+           (new_orders!=s->saved_orders || s->session.view!=s->saved_view ||
+            s->session.tactical.paused!=s->saved_pause ||
+            s->session.tactical.battle.result()!=s->saved_result ||
+            (s->session.view==game::FrontMode::Tactical && tick>=s->saved_tick &&
+             tick-s->saved_tick>=16u))) SaveState(s);
         Draw(s);
-        if(s->control.issued!=old_issued)
+        if(new_orders!=old_orders || old_view!=s->session.view)
             ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
-        else if(s->control.rejected && action.primary)
+        else if((s->session.view==game::FrontMode::SectorMap?s->session.rejected:
+                 s->session.tactical.rejected) && action.primary)
             ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
-        else if(s->control.battle.ticks()==old_tick)
+        else if(tick==old_tick)
             ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
     }
 }

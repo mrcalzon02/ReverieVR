@@ -1,6 +1,6 @@
-# Omega Front — Initial Headless Tactical Combat Kernel
+# Omega Front — Hearthfall Strategy and Tactical Implementation
 
-**Implementation state:** deterministic tactical kernel and real input controller have host regressions. A Development-only native GLES2 war-table module is now source-wired to Android.mk, native host and Java admission/bindings. **No NDK/APK build, physical S9 render or controller acceptance has been confirmed.**
+**Implementation state:** host-tested combat, six-suite C++17 regression runner, 16-sector GLES2 campaign map, actual battle deployment, after-action consequences and a versioned full-frontier save are source-integrated in the Development-only native module. **No Android NDK/APK build or physical Galaxy S9/Daydream input, stereo or thermal acceptance has been run for this change.**
 **Program:** RV-GAME-06; first bounded implementation toward P1 (Hearthwell waterworks defense).
 **Authority:** `app/src/main/jni/native/omega_front_tactics.h` is the game-specific C++17 rules source. This is NOT a shared ReverieVR SDK helper or an ABI change.
 
@@ -31,7 +31,17 @@ A **forecast** on day one identifies Rust Orchard S009 as the day-four morpholog
 
 The opening arc **The Water We Own** now has three different constructed and executable `Battle` fixtures owned by the strategic instance, all using the actual 24×24 combat rules and bounded finite supplies: M01 defend S011 Lantern Pump against unaffiliated raiders; M02 contest S006 White Orchard against a hostile F01 Hearthward watch; M03 return to S011 to repel a further F01 receivership assault. Each operation requires physically reaching the target sector and spending field rations. Only a **genuinely terminal** tactical Battle may resolve, and repeated resolution pays nothing. Real casualties reduce available guard manpower; wreck salvage is derived from actually destroyed attackers; captured/relieved food is **transferred out of** the supplying sector rather than duplicated; pump integrity and consequences persist within the in-memory strategy session. Victories and defeats adjust civic trust, territorial claims, and mission progress. The tactical kernel's single pump objective is currently reused as a field-station protection objective; unique escort/seizure objectives and faction-specific combat silhouettes/AI remain pending.
 
-`app/src/test/native/omega_front_frontier_test.cpp` compiles against the **actual** tactical header and verifies travel/bridge/initial environment, resource conservation, seeded battle resolution, lack of duplicate mission rewards, casualties, two linked successful operations and a genuinely difficult third operation, and ecology-class transitions. The updated `scripts/verify-omega-front-tactics.sh` runs this alongside the three preexisting host suites. Strict GCC/Clang checks and GCC ASan/UBSan passed locally. **This strategic simulation is not yet connected to the VR module, has no persistent campaign slot, no 70 completed arcs and has not been Android/Daydream validated.** Its source is a production-facing headless foundation, not a claim of a playable campaign menu.
+`app/src/test/native/omega_front_frontier_test.cpp` compiles against the **actual** tactical header and verifies travel/bridge/initial environment, resource conservation, seeded battle resolution, lack of duplicate mission rewards, casualties, two linked successful operations and a genuinely difficult third operation, and ecology-class transitions. The updated `scripts/verify-omega-front-tactics.sh` runs this alongside the three preexisting host suites. Strict GCC/Clang checks and GCC ASan/UBSan passed locally. **This strategic simulation is now source-connected to the native VR module and a separate versioned campaign save, but has no completed 70-arc campaign or Android/Daydream device validation.** Its source is a production-facing headless foundation, not a claim of a playable campaign menu.
+
+## Native strategic-to-tactical gameplay integration (source implemented)
+
+Omega Front now starts in the real **16-sector Hearthfall March** rather than an isolated pump skirmish. A compact 4×4 GLES2 map shows sector ecology, territorial ownership, troop location, highlighted cell, resource stocks and claim pressure; above/below it, the player sees day, field guards, rations, salvage, trust, next operation target and forecast day-four Eden emergence. Touchpad or normalized gaze highlights a sector without clicking. Select marches to a reachable neighboring sector or performs a site action. Secondary/App cycles five real site actions: **Deploy, Forage, Recruit, Repair, Wait**. Each action changes the actual `Frontier` ledger or fails visibly; the shell retains Home/recovery.
+
+Deploy requires the real target sector, four guards, rations and serviceable waterworks. It opens the `Frontier::StartOperation` battle in the 24×24 tactical view. When the real combat outcome becomes terminal, Select applies `ResolveOperation` once: real troop casualties, finite recovered wreck material, transferred orchard supplies, pump damage, civic trust and regional claims persist, and the player returns to the map. The three operations remain within first arc **The Water We Own**, still sharing the generic field-station tactical objective; their future distinct win conditions and the other 69 faction arcs are not claimed.
+
+The module's current host-owned game save is **`frontier.v1`**, a versioned, 2,048-byte record from `omega_front_campaign_save.h`. It combines all 16 sectors and campaign flags with the existing nested deterministic tactical checkpoint, including battle orders, units and a partial turn. Endian-safe encoding, a hash trailer, semantic field checks and transactional restoration reject corrupt and incompatible records without modifying the live session. Field actions/commands and pause/end changes save; combat additionally autosaves every 16 logical 250-ms pulses, and native Pause writes a checkpoint. The former standalone `hearthwell.v1` combat-fixture slot is **not** silently treated as a fully fledged strategic campaign. Neither eye writes saves or runs the simulation.
+
+The host runner now executes six strict C++17 suites: tactics, controls, original combat checkpoint, frontier, strategic session and strategic campaign checkpoint. GCC and Clang passed locally; Clang ASan/UBSan passed the two new suites. A local mock GLES2/ABI lifecycle also verified map travel, battle deployment, update/render separation, module save/destroy/recreate and graphics-context restart. **No Android NDK compiler, APK, Galaxy S9 headset or physical Daydream validation was available for these checks.** The projected 600 sectors and 70 major campaign arcs remain future work.
 
 ## Reproduce host checks
 
@@ -41,7 +51,7 @@ From the repository root:
 bash scripts/verify-omega-front-tactics.sh
 ```
 
-The runner builds `app/src/test/native/omega_front_tactics_test.cpp` under either GCC or Clang (set `CXX=clang++`) using C++17 strict warnings and runs it. It does **not** access GitHub Actions. Additional optional sanitizers were run locally during implementation:
+The runner builds and runs all six independent gameplay/strategy/save suites under GCC or Clang (set `CXX=clang++`) with strict C++17 warnings. It does **not** access GitHub Actions. Additional optional sanitizers were run locally during implementation:
 
 ```sh
 g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
@@ -64,7 +74,7 @@ The initial fixed sides are `Hearthwell` and `Raiders`, and the default scenario
 
 1. Prove that the registered `omega-front` native shared library links and packages in both Android ABIs, then confirm Daydream touchpad navigation, shell Home/recovery, readable board and stereo GL state on a physical S9.
 2. Adapt command UI and tile cursor to seated 3DoF head tracking, with readable closest-range board placement and reliable pause/route inspection.
-3. Add robust persistent save schema, faction fog/visibility snapshots, civilian waterworks integrity and routed supply, then dynamic morphology and authored opening first campaign battle.
+3. Extend the now-implemented `frontier.v1` sixteen-sector save and VR map toward 600 sectors and the complete 70-arc war: faction fog/visibility, civilians, connected depots/routes, competing strategic AI, multiple morphology transitions, and distinct tactical objectives.
 4. Run actual APK/NDK integration and signed build verification separately. Test on Galaxy S9/Daydream in short and sustained sessions before claiming device admission.
 
-**Acceptance boundary:** deterministic tactical and controller unit regressions passed; game module/Android host are source-wired, but P2 device/build admission, robust saves, faction campaign persistence and 70 arcs remain unimplemented or unverified.
+**Acceptance boundary:** the 16-sector campaign, linked first three tactical operations and full-frontier save are source/host-tested; Android NDK/APK, physical headset/controls, the remaining 584 sectors and 69 campaign arcs are incomplete or unverified.
