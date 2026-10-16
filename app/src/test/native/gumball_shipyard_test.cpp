@@ -36,8 +36,11 @@ int main(){
  assert(editor.edit(3,3,Part::Armor)==ShipEdit::CoreLocked);
  assert(editor.edit(0,0,Part::Armor)==ShipEdit::NotConnected);
  assert(editor.edit(-1,0,Part::Armor)==ShipEdit::Invalid);
- assert(editor.edit(3,2,Part::Frame)==ShipEdit::Removed);
- assert(editor.edit(3,2,Part::Frame)==ShipEdit::Placed);
+ // An occupied bridge cannot be deleted: the thruster above depends on it.
+ assert(editor.edit(3,2,Part::Frame)==ShipEdit::NotConnected);
+ // A non-bridge newly attached cell can be toggled off with the same brush.
+ assert(editor.edit(4,2,Part::Armor)==ShipEdit::Placed);
+ assert(editor.edit(4,2,Part::Armor)==ShipEdit::Removed);
  assert(editor.snapshot().checksum==original.checksum);
  assert(editor.ready());
  // Exhausted stock rejects without touching part ownership or layout.
