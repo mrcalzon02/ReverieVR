@@ -24,7 +24,7 @@ int main(){
     assert(field.empty());
     field.clear();
     assert(field.drop(.40f,-.30f,25)&&field.drop(.60f,-.10f,15));
-    assert(field.tractor(0.f,0.f,.45f)==25);
+    assert(field.tractor(0.f,0.f,.55f)==25);
     assert(field.collected()==1);
     assert(field.tractor(0.f,0.f,.45f)==0);
     assert(field.tractor(.60f,-.10f,.30f)==15);
