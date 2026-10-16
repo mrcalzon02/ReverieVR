@@ -13,7 +13,7 @@ for compiler in g++ clang++; do
     continue
   fi
   ran=$((ran+1))
-  for name in breakwater_menu_layout breakwater_gun_mesh; do
+  for name in breakwater_menu_layout breakwater_gun_mesh breakwater_shop_feedback; do
     "$compiler" -std=c++17 -O1 -Wall -Wextra -Wpedantic -Werror \
       -I"$INC" "$TEST/${name}_test.cpp" -o "$WORK/${name}"
     "$WORK/${name}"
