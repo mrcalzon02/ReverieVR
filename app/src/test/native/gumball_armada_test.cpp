@@ -204,5 +204,27 @@ int main(){
     assert(starter.failure()==FailureReason::None);
     assert(starter.hp()>0&&starter.escaped()<3);
     assert(starter.completion_bonus()>0&&starter.visited()==1);
+    // Game integration: legal installed blocks materially change combat state.
+    Shipyard starterShip,customShip;
+    assert(starterShip.ready()&&customShip.ready());
+    assert(customShip.place(4,2,Part::Armor));
+    assert(customShip.place(2,2,Part::Cargo));
+    assert(customShip.ready());
+    Simulation basic(55),built(55);
+    assert(basic.configure_ship(starterShip));
+    assert(built.configure_ship(customShip));
+    assert(basic.launch(0)&&built.launch(0));
+    assert(built.hp()==basic.hp()+14);
+    assert(built.ship_profile().pickup_radius>basic.ship_profile().pickup_radius);
+    assert(built.ship_profile().speed<basic.ship_profile().speed);
+    Shipyard brokenShip;
+    assert(brokenShip.remove(3,1));
+    assert(!brokenShip.ready());
+    Simulation blocked(55);
+    assert(!blocked.configure_ship(brokenShip));
+    assert(!blocked.launch(0));
+    assert(brokenShip.place(3,1,Part::Thruster));
+    assert(blocked.configure_ship(brokenShip));
+    assert(blocked.launch(0));
     std::cout<<"Gumball Armada deterministic combat and save tests passed\n";
 }
