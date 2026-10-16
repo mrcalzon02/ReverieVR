@@ -30,6 +30,7 @@ final class ControllerManager implements AutoCloseable {
     private volatile int batteryPercentage = -1;
     private volatile int batteryMillivolts = -1;
     private volatile ControllerSnapshot lastSnapshot;
+    private final ControllerResumeGate resumeGate = new ControllerResumeGate();
 
     ControllerManager(Context context) {
         daydreamProvider = new DaydreamControllerProvider(context);
@@ -53,7 +54,7 @@ final class ControllerManager implements AutoCloseable {
         listener.onConnectionStateChanged(connectionState, connectionMessage);
         listener.onBatteryChanged(batteryPercentage, batteryMillivolts);
 
-        ControllerSnapshot snapshot = lastSnapshot;
+        ControllerSnapshot snapshot = getLastSnapshot();
         if (snapshot != null) {
             listener.onControllerStateChanged(snapshot);
         }
@@ -96,6 +97,7 @@ final class ControllerManager implements AutoCloseable {
         batteryPercentage = -1;
         batteryMillivolts = -1;
         lastSnapshot = null;
+        resumeGate.requireNeutral();
         notifyConnection();
         notifyBattery();
     }
@@ -158,6 +160,7 @@ final class ControllerManager implements AutoCloseable {
         batteryPercentage = -1;
         batteryMillivolts = -1;
         lastSnapshot = null;
+        resumeGate.requireNeutral();
 
         notifyConnection();
         notifyBattery();
@@ -205,8 +208,13 @@ final class ControllerManager implements AutoCloseable {
                 return;
             }
 
+            ControllerProvider.ConnectionState previous = connectionState;
             connectionState = state;
             connectionMessage = message == null ? "" : message;
+            if (state != ControllerProvider.ConnectionState.READY
+                || previous != ControllerProvider.ConnectionState.READY) {
+                resumeGate.requireNeutral();
+            }
             if (state != ControllerProvider.ConnectionState.READY) {
                 lastSnapshot = null;
                 batteryPercentage = -1;
@@ -236,7 +244,7 @@ final class ControllerManager implements AutoCloseable {
             // after the host already released every held control.
             if (provider != activeProvider
                 || connectionState != ControllerProvider.ConnectionState.READY
-                || snapshot == null) {
+                || !resumeGate.accept(snapshot)) {
                 return;
             }
 
