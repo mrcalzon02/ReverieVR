@@ -385,6 +385,7 @@ public:
                 }
             }
         }
+        if(hp_<=0){failure_=FailureReason::HullDestroyed;phase_=Phase::Lost;return;}
         cast_.update(dt);
         support_timer_-=dt;
         if(deployed_support_!=SupportKind::None&&elapsed_<16.f
