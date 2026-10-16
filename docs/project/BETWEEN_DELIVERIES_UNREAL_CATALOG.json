@@ -25,7 +25,10 @@
       "probable_unreal_object": "/Game/Models/Props/Booze/101draft/StaticMeshes/101draft",
       "model_binding_verified": false,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "unreal_texture_package_reported_dimensions": "1024x1024",
+      "unreal_texture_package_version": "++UE5+Release-5.7",
+      "unreal_texture_package_metadata_inspected": true
     },
     {
       "slot": 2,
@@ -349,5 +352,6 @@
       "original_texture_resolution_verified": false,
       "license_verified": false
     }
-  ]
+  ],
+  "product_texture_package_metadata_note": "101draft_texture_0.uasset directly reports 1024x1024 and UE5.7 in package metadata. This is not proof of standalone bitmap recovery or exported mobile texture."
 }
