@@ -150,5 +150,24 @@ int main(){
     for(const auto& shot:cannon.shots())if(shot.active&&!shot.hostile)cannonPower=shot.damage;
     for(const auto& shot:spread.shots())if(shot.active&&!shot.hostile)spreadPower+=shot.damage;
     assert(cannonPower==4&&spreadPower==3);
+    // Even an otherwise flawless run fails if its mandatory ace escapes.
+    Simulation skippedAce(4);
+    auto strong=skippedAce.snapshot();
+    for(auto& lv:strong.levels)lv=12;
+    strong.checksum=SnapshotChecksum(strong);
+    assert(skippedAce.restore(strong)&&skippedAce.launch(0));
+    for(int tick=0;tick<18000&&skippedAce.phase()==Phase::Flight;++tick){
+        float near=99.f,x=skippedAce.player_x();
+        bool shoot=false;
+        for(const auto& enemy:skippedAce.enemies())if(enemy.active&&enemy.kind!=EnemyKind::Ace){
+            const float distance=std::fabs(enemy.y-skippedAce.player_y());
+            if(distance<near){near=distance;x=enemy.x;shoot=true;}
+        }
+        const float steer=x>skippedAce.player_x()+.025f?1.f:
+            (x<skippedAce.player_x()-.025f?-1.f:0.f);
+        skippedAce.update(.025f,steer,0.f,shoot);
+    }
+    assert(skippedAce.phase()==Phase::Lost&&skippedAce.escaped()==1);
+    assert(skippedAce.node()==0&&skippedAce.completion_bonus()==0);
     std::cout<<"Gumball Armada deterministic combat and save tests passed\n";
 }
