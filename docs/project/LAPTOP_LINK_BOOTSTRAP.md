@@ -55,8 +55,9 @@ It does **not** yet expose raw optical-disc sectors or PC desktop pixels.
    binaries silently. An input-only session is separate from screen
    mirroring; neither is required for running the headset.
 
-The ZIP contains only three allowlisted script/readme assets:
-`README.txt`, `Start-ReverieLink.cmd`, `ReverieLink.ps1`. The APK
+The ZIP now contains exactly five allowlisted text assets:
+`README.txt`, `Start-ReverieLink.cmd`, `ReverieLink.ps1`,
+`SteamVrPreflight.ps1` and `SteamVrLinkProbeHost.ps1`. The APK
 produces a bounded ZIP on demand from its own bundled assets, without a
 second APK. It writes via the Android system document URI, off the UI
 thread, and attempts to remove partial output on failure. Export is
@@ -65,7 +66,7 @@ explicit and does not upload desktop or phone data.
 ## Direct laptop pull from the installed phone APK
 
 An additional Stage A button now starts a tiny temporary download endpoint.
-It serves **only** the existing bounded, three-file ZIP from packaged APK
+It serves **only** the existing bounded, five-file ZIP from packaged APK
 assets; it does not browse the phone, expose user media, forward inputs,
 execute code, or automatically install anything on Windows.
 
