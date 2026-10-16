@@ -14,10 +14,10 @@ constexpr unsigned kEnemySlots=24;
 enum class Phase : uint8_t { Chart,Flight,Won,Lost,ArmadaDefeated };
 enum class FailureReason : uint8_t { None, HullDestroyed, Escapes, EliteEscaped, Deadline, SalvageLost };
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
-enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress, Courier, Blort, Nib, Biff, Baff };
+enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress, Courier, Blort, Nib, Biff, Baff, Cinnamon, Sydney, Jules };
 enum class Weapon : uint8_t { PeaRepeater, RockCannon, MintSpread };
 struct Enemy { float x=0,y=0,age=0,firing=0; int hp=0; bool active=false,boss=false; EnemyKind kind=EnemyKind::Scout; };
-struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; bool ally=false,bomb=false,mine=false; };
+struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; bool ally=false,bomb=false,mine=false,zone=false; float warning=0.f; };
 struct Lane { uint32_t id=0; uint8_t hazard=0,reward=0; bool fortress=false; };
 struct SnapshotV1 {
     uint32_t magic=0x474D4231u, version=1, seed=0, node=0;
@@ -83,6 +83,13 @@ public:
     }
     SupportKind deployed_support()const{return deployed_support_;}
     uint32_t support_deployments()const{return support_deployments_;}
+    int support_pulses()const{return support_pulses_;}
+    bool slipstream_active()const{return slipstream_active_;}
+    bool left_fast()const{return static_cast<int>(elapsed_/3.f)%2==0;}
+    float movement_multiplier()const{
+        if(!slipstream_active_||std::fabs(px_)<.15f)return 1.f;
+        return ((px_<0.f)==left_fast())?1.48f:.52f;
+    }
     CastGuest route_guest(unsigned choice)const{
         if(choice>=3)return CastGuest::None;
         const Lane target=lane(choice);
@@ -179,7 +186,8 @@ public:
         mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
         cast_.begin(seed_,destination_.id,visited_,destination_.hazard);
         deployed_support_=support_.consume();
-        support_timer_=0.f;support_pulses_=0;
+        support_timer_=3.2f+static_cast<float>(Mix(seed_^destination_.id)%5u)*.4f;
+        support_pulses_=0;slipstream_active_=false;
         if(deployed_support_!=SupportKind::None)++support_deployments_;
         ally_shots_=0;bombs_defused_=0;mines_defused_=0;ally_x_=-1.3f;
         twins_.reset();
@@ -213,7 +221,11 @@ public:
         }
         sx=std::isfinite(sx)?std::max(-1.f,std::min(1.f,sx)):0.f;
         sy=std::isfinite(sy)?std::max(-1.f,std::min(1.f,sy)):0.f;
-        const float speed=std::max(.7f,1.55f+.16f*levels_[2]+ship_profile_.speed);
+        slipstream_active_=false;
+        for(const auto& enemy:enemies_)if(enemy.active&&enemy.kind==EnemyKind::Sydney)
+            slipstream_active_=true;
+        const float speed=std::max(.7f,1.55f+.16f*levels_[2]+ship_profile_.speed)
+                          *movement_multiplier();
         px_=std::max(-1.9f,std::min(1.9f,px_+sx*dt*speed));
         py_=std::max(-1.15f,std::min(.65f,py_-sy*dt*speed));
         cooldown_-=dt;combo_clock_-=dt;
@@ -256,6 +268,12 @@ public:
                     &&cast_.kind()==CastGuest::CrumbclankTwins&&spawned_==target_/2;
                 const bool baff=!boss&&!courier&&!ace
                     &&cast_.kind()==CastGuest::CrumbclankTwins&&spawned_==target_/2+1;
+                const bool cinnamon=!boss&&!courier&&!ace
+                    &&cast_.kind()==CastGuest::CinnamonCharles&&spawned_==target_/2;
+                const bool sydney=!boss&&!courier&&!ace
+                    &&cast_.kind()==CastGuest::SydneySlipstream&&spawned_==target_/2;
+                const bool jules=!boss&&!courier&&!ace
+                    &&cast_.kind()==CastGuest::JawbreakerJules&&spawned_==target_/2;
                 const unsigned rollType=rollKind(spawned_);
                 EnemyKind kind=EnemyKind::Scout;
                 if(boss)kind=EnemyKind::Fortress;
@@ -265,6 +283,9 @@ public:
                 else if(nib)kind=EnemyKind::Nib;
                 else if(biff)kind=EnemyKind::Biff;
                 else if(baff)kind=EnemyKind::Baff;
+                else if(cinnamon)kind=EnemyKind::Cinnamon;
+                else if(sydney)kind=EnemyKind::Sydney;
+                else if(jules)kind=EnemyKind::Jules;
                 else if(rollType==1u)kind=EnemyKind::Interceptor;
                 else if(rollType==2u)kind=EnemyKind::Bomber;
                 int hull=2;
@@ -276,6 +297,9 @@ public:
                 case EnemyKind::Nib: hull=4;break;
                 case EnemyKind::Biff: hull=5;break;
                 case EnemyKind::Baff: hull=5;break;
+                case EnemyKind::Cinnamon: hull=6;break;
+                case EnemyKind::Sydney: hull=6;break;
+                case EnemyKind::Jules: hull=11;break;
                 case EnemyKind::Ace: hull=7;break;
                 case EnemyKind::Courier: hull=6;break;
                 case EnemyKind::Fortress: hull=22+static_cast<int>(destination_.id/1024u)*4;break;
@@ -293,15 +317,19 @@ public:
                 (e.kind==EnemyKind::Interceptor?.53f:
                 (e.kind==EnemyKind::Bomber||e.kind==EnemyKind::Blort
                    ||e.kind==EnemyKind::Nib||e.kind==EnemyKind::Biff
-                   ||e.kind==EnemyKind::Baff?.18f:
+                   ||e.kind==EnemyKind::Baff||e.kind==EnemyKind::Cinnamon
+                   ||e.kind==EnemyKind::Jules?.18f:
                 (e.kind==EnemyKind::Ace?.43f:(e.boss?.15f:.31f))));
             e.y-=dt*(speed+.01f*destination_.hazard);
             if(e.kind==EnemyKind::Interceptor){
                 const float dx=std::max(-1.f,std::min(1.f,px_-e.x));
                 e.x+=dt*dx*.58f;
+            }else if(e.kind==EnemyKind::Sydney){
+                e.x+=dt*std::sin(e.age*2.8f)*.67f;
             }else if(e.kind==EnemyKind::Bomber||e.kind==EnemyKind::Blort
                       ||e.kind==EnemyKind::Nib||e.kind==EnemyKind::Biff
-                      ||e.kind==EnemyKind::Baff){
+                      ||e.kind==EnemyKind::Baff||e.kind==EnemyKind::Cinnamon
+                      ||e.kind==EnemyKind::Jules){
                 e.x+=dt*std::sin(e.age*1.1f)*.09f;
             }else if(e.kind==EnemyKind::Courier){
                 e.x+=dt*std::sin(e.age*4.1f+e.y)*.90f;
@@ -314,7 +342,10 @@ public:
                 const bool bombing=e.kind==EnemyKind::Blort
                     ||e.kind==EnemyKind::Biff||e.kind==EnemyKind::Baff;
                 const bool mining=e.kind==EnemyKind::Nib;
-                const int count=e.boss?3:((e.kind==EnemyKind::Ace||bombing)?2:1);
+                const bool raining=e.kind==EnemyKind::Cinnamon;
+                const bool heavy=e.kind==EnemyKind::Jules;
+                const int count=raining?3:(e.boss?3:
+                    ((e.kind==EnemyKind::Ace||bombing||heavy)?2:1));
                 const float aim=e.kind==EnemyKind::Interceptor?
                     std::max(-.50f,std::min(.50f,(px_-e.x)*.32f)):0.f;
                 for(int n=0;n<count;++n)for(auto& shot:shots_)if(!shot.active){
@@ -323,15 +354,21 @@ public:
                          (e.kind==EnemyKind::Biff?(-.38f+n*.22f):
                           (e.kind==EnemyKind::Baff?(.38f-n*.22f):
                            (bombing?(n*2-1)*.32f:0.f))));
-                    shot={e.x,e.y-.14f,mining?-.22f:(bombing?-.82f:
-                          (e.kind==EnemyKind::Bomber?-1.05f:-1.3f)),
-                          true,true,aim+spread,mining?10:(bombing?12:1),
-                          false,bombing,mining};
+                    const float zoneX=raining?(-1.20f+1.20f*
+                        static_cast<float>((next()+static_cast<uint32_t>(n))%3u)):e.x;
+                    shot={zoneX,e.y-.14f,mining?-.22f:(raining?-1.70f:
+                          (bombing||heavy?-.82f:
+                           (e.kind==EnemyKind::Bomber?-1.05f:-1.3f))),
+                          true,true,raining?0.f:aim+spread,
+                          mining?10:(raining?9:(bombing||heavy?15:1)),
+                          false,bombing||heavy,mining,raining,
+                          raining?.68f:0.f};
                     break;
                 }
                 e.firing=e.boss?.70f:(e.kind==EnemyKind::Ace?1.18f:
-                    (mining?1.95f:(bombing?1.78f:
-                     (e.kind==EnemyKind::Bomber?1.85f:2.15f))));
+                    (mining?1.95f:(raining?2.35f:(heavy?2.35f:
+                     (bombing?1.78f:
+                     (e.kind==EnemyKind::Bomber?1.85f:2.15f)))));
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
@@ -371,6 +408,10 @@ public:
             }
         }
         for(auto& s:shots_)if(s.active){
+            if(s.warning>0.f){
+                s.warning=std::max(0.f,s.warning-dt);
+                continue; // warning period is non-damaging and stationary
+            }
             s.y+=s.vy*dt;s.x+=s.vx*dt;
             if(s.y>1.75f||s.y< -1.4f){s.active=false;continue;}
             if(s.hostile){
@@ -386,7 +427,8 @@ public:
                     }
                     if(!s.active)continue;
                 }
-                if(std::fabs(s.x-px_)<(s.mine?.21f:(s.bomb?.20f:.17f))
+                if(std::fabs(s.x-px_)<(s.zone?.23f:
+                   (s.mine?.21f:(s.bomb?.20f:.17f)))
                    &&std::fabs(s.y-py_)<(s.mine?.19f:(s.bomb?.19f:.16f))){
                     s.active=false;damage((s.bomb||s.mine)?
                         s.damage+static_cast<int>(destination_.hazard):
@@ -516,6 +558,7 @@ private:
     SupportKind deployed_support_=SupportKind::None;
     float support_timer_=0.f;
     int support_pulses_=0;
+    bool slipstream_active_=false;
     uint32_t support_deployments_=0;
     CastEncounter cast_{};
     uint32_t ally_shots_=0,bombs_defused_=0,mines_defused_=0;
