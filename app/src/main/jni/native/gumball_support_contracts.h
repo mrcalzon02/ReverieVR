@@ -1,6 +1,7 @@
 #ifndef REVERIE_GUMBALL_SUPPORT_CONTRACTS_H
 #define REVERIE_GUMBALL_SUPPORT_CONTRACTS_H
 #include <cstdint>
+#include <algorithm>
 namespace reverie { namespace gumball {
 enum class SupportKind : uint8_t { None, CapitaineEclair, MademoiselleMacaron };
 enum class SupportSkill : uint8_t { EclairVolley, EclairDuration, MacaronRelief, MacaronTractor };
@@ -61,6 +62,20 @@ public:
         if(!has_kit(kind))return false;
         kit_mask_&=static_cast<uint8_t>(~(1u<<static_cast<unsigned>(kind)));
         return true;
+    }
+    // Emergency effects are real, finite and deterministic. Return the bit
+    // mask of charges physically used so the host can persist each debit.
+    uint8_t apply_emergency(int& hull,int hull_max,int& shield,int shield_max){
+        uint8_t used=0;
+        if(hull_max>0&&hull>0&&hull<=hull_max/2
+            &&use_kit(SupportKit::HullPatch)){
+            hull=std::min(hull_max,hull+30);used|=1u;
+        }
+        if(shield_max>0&&shield>=0&&shield<=shield_max/2
+            &&use_kit(SupportKit::ShieldTonic)){
+            shield=std::min(shield_max,shield+24);used|=2u;
+        }
+        return used;
     }
     SupportKind booked()const{return booked_;}
     SupportKind consume(){
