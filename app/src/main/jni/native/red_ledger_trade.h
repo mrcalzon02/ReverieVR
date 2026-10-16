@@ -97,8 +97,22 @@ public:
         return (faction>=0&&faction<kFactions)?favor_[faction]:0;
     }
     int offer_cost() const {
-        return offer_<kDrinks?kDrinkCatalog[offer_].wholesale_cents:
-            kSnackCatalog[offer_-kDrinks].wholesale_cents;
+        const Product &product=offer_<kDrinks?kDrinkCatalog[offer_]:
+            kSnackCatalog[offer_-kDrinks];
+        const int base=product.wholesale_cents;
+        if(product.faction<0)return base;
+        const int standing=favor_[product.faction];
+        // Favor is an actual economic leverage point, not only a HUD score.
+        // Favorable suppliers offer a capped wholesale discount; hostility
+        // causes a modest surcharge. All figures remain non-negative/capped.
+        const int percent=standing>=20?85:standing>=10?90:
+            standing>=5?95:standing<=-5?110:100;
+        return (base*percent+99)/100;
+    }
+    const char *offer_faction() const {
+        const int owner=offer_<kDrinks?kDrinkCatalog[offer_].faction:
+            kSnackCatalog[offer_-kDrinks].faction;
+        return owner>=0?kFactionNames[owner]:"INDEPENDENT";
     }
     const char *offer_name() const {
         return offer_<kDrinks?kDrinkCatalog[offer_].name:
