@@ -81,6 +81,7 @@ Development is governed by:
 - [Execution State](docs/project/EXECUTION_STATE.md)
 - [Acceptance Ledger](docs/project/ACCEPTANCE_LEDGER.md)
 - [Architecture/Decision Records](docs/records/README.md)
+- [Android Forward Compatibility and Open-Source Maintainability Decision](docs/records/ADR-0024-ANDROID-FORWARD-COMPATIBILITY-AND-MAINTAINABILITY.md)
 - [Native Game Developer Handbook](docs/native/README.md)
 - [Classic Native Games implementation notes](docs/project/CLASSIC_NATIVE_GAMES.md)
 - [Breakwater sound-source README/register](docs/project/BREAKWATER_SOUND_SOURCES.md) — linked royalty-free candidates, licensing and SFX intake status

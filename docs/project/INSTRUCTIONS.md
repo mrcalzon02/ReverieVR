@@ -262,6 +262,16 @@ All controller layouts and user remapping follow
 physical controller remains a user choice, and a native game must never
 take exclusive control of shell emergency recovery.
 
+## 4.2 Android forward compatibility and open-source maintenance contract
+
+ReverieVR is intended to remain a **performance-friendly, operationally forward-compatible, independently maintainable open-source Android application**, not merely an Android 10 / Galaxy S9 restoration artifact. The canonical deliverable remains one offline-capable phone-resident APK with capability-driven defaults; do not create per-device code/product forks or introduce required discontinued Google services, proprietary online activation or cloud dependencies.
+
+Protect the legacy Galaxy S9/Android 10 VR reference while validating newer Android versions. The available Samsung Galaxy A14 5G (SM-S146VL), owner-confirmed Android 15, is the secondary *compatibility* reference, not proof of flagship-class VR performance; its gyroscope, viewer fit, APK install, native-game loading and stereo operation require physical validation. Do not mistake `minSdk`/`targetSdk` declarations for real-device acceptance or claim universal future-device support.
+
+Treat OS/SDK upgrades, native ABI/page-size compatibility, sensors, graphics/display modes, controller/permission APIs, update/data persistence, lifecycle behavior and sustained frame pacing as maintainability obligations. Detect actual capabilities and provide honest, recoverable fallbacks. Frame-time consistency, thermal stability, legibility and long-term battery practicality outrank peak FPS and visual spectacle. Dependency provenance, build reproducibility, coherent modules and test evidence must make the open-source project maintainable by future contributors.
+
+The detailed governing decision, test matrix and acceptance gates are in `docs/records/ADR-0024-ANDROID-FORWARD-COMPATIBILITY-AND-MAINTAINABILITY.md`. It extends rather than supersedes the existing performance-first doctrine in ADR-0001.
+
 ## 5. Non-goals unless explicitly promoted
 
 The project does not initially promise:
