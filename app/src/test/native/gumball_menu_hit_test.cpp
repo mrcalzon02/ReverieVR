@@ -34,14 +34,14 @@ int main(){
     }
     assert(YardHit(-2.49f,-1.60f).id==-1);
     YardCursor cursor;
-    assert(cursor.x==3&&cursor.y==3&&!cursor.palette());
+    assert(cursor.x==4&&cursor.y==2&&!cursor.palette());
     cursor.switchFocus();
     assert(cursor.palette()&&cursor.toolIndex()==0);
     cursor.move(1,0);
     cursor.move(0,1);
     assert(cursor.toolIndex()==3);
     cursor.toolChosen();
-    assert(!cursor.palette()&&cursor.x==3&&cursor.y==3);
+    assert(!cursor.palette()&&cursor.x==4&&cursor.y==2);
     cursor.pointAt(6,6);
     cursor.move(1,0);
     assert(cursor.palette());
