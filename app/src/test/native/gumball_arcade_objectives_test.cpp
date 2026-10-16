@@ -22,5 +22,14 @@ int main(){
     assert(!field.drop(1.0f,1.0f,1));
     assert(field.update(.01f,1.0f,1.0f)==24&&field.collected()==24);
     assert(field.empty());
+    field.clear();
+    assert(field.drop(.40f,-.30f,25)&&field.drop(.60f,-.10f,15));
+    assert(field.tractor(0.f,0.f,.45f)==25);
+    assert(field.collected()==1);
+    assert(field.tractor(0.f,0.f,.45f)==0);
+    assert(field.tractor(.60f,-.10f,.30f)==15);
+    assert(field.tractor(.60f,-.10f,.30f)==0);
+    assert(field.collected()==2&&field.empty());
+    assert(field.tractor(NAN,0.f,1.f)==0);
     std::cout<<"arcade objectives + salvage deterministic tests passed\n";
 }
