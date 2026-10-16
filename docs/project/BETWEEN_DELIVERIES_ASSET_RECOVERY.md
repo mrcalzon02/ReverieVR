@@ -1,0 +1,55 @@
+# Between Deliveries — Unreal Asset Recovery / Import Gate
+
+**Status (2026-10-16):** Drive asset discovery and **actual sample binary inspection** completed; conversion to portable 3D/audio/textures, source licensing, and Android runtime integration **NOT completed**. This is a follow-on to `docs/project/BETWEEN_DELIVERIES_FULL_SCOPE.md`, not a replacement design. The source is the user's private Google Drive folder named `Between deliveries/Content` (retain the private folder's sharing status; do not mirror private Drive object IDs into public Git history).
+
+## What is genuinely present in Drive
+
+The root contains a `Content` folder, structured as an Unreal project content directory. At time of inspection `Content` exposed **15 category folders** (Models, texture, Sounds, Data_tables, Characters, ThirdPerson, LevelPrototyping, Fab, OldWall, Input, Functions, Developers, Collections, __ExternalActors__, __ExternalObjects__) plus three root `.uasset` files. Its parent did **not** visibly contain a `.uproject`, `Config`, original exported FBX/GLTF/PNG/WAV, or associated Unreal plugin descriptors. Absence from the *observed directory* does not prove they do not exist outside the upload or that upload has completed.
+
+| Confirmed grouping | Observable contents and relevance |
+|---|---|
+| `Models/Props` | 31 named subfolders including `Booze`, Barfront, Barback, Stool, slimqtrKeg, SimpleCrate, chandelier/light sets, books, plants, bus stop, Soviet-style urban blocks and rocks; plus two direct `.uasset` files |
+| `Models/ENV/Barbeta` | Nine separate environment packages: room and hall floors/ceilings, windows, foundation, exterior, interior and cube; potential basis for the real pub, stockroom and district architecture |
+| `Models/Props/Booze` | Explicit six-supplier product folders **101/202/303/404/505/606**, each with draft/bottled/spirit/snack model families, plus associated hard-cup/shot variants, materials/textures/static-mesh packaging. At least the sampled 101draft and 101beer subdirectories each expose separate Textures, StaticMeshes and Materials children |
+| `Models/CHAR`; `Characters/Player` | Gopnick assets; articulated player mesh/physics/skeletons; `Mannequins` folders. Provenance of Mixamo/character source remains to be established |
+| `texture/UI`, `texture/ICONS`, `texture/Emotes` | **51** UI entries (including one Combadges subfolder), **48** icon packages, **30** emote packages; `texture/UI/Combadges` contains **79** badge assets. Includes bar-scene illustrations and branded product graphics |
+| `texture/FONTS` | Two `Cinzel-VariableFont_wght` Unreal packages, **not** a verified installable TTF/OTF export |
+| `Sounds/Music`, `Sounds/Ui` | **14** music `.uasset` packages, **26** UI/ambient-effect `.uasset` packages (click, door, paper, coin, typing, metal etc). Large audio packages are ~13–32 MB each; no verified WAV/OGG source export yet |
+| `Data_tables` | **7** Unreal `.uasset` records: `DT_ShopItems`, daily variance, random events, incoming deliveries, delivery schedule, bar info and holding; these show evidence of a previously planned economic simulation |
+| `OldWall/Textures` | Base-color, normal, height, roughness, AO, metallic Unreal packages; base-color package **27,656,830 bytes**, normal **48,799,051 bytes**, roughness **8,852,379 bytes**. These are Unreal package byte sizes, **NOT decoded bitmap sizes** |
+| `Fab/Megascans/Surfaces` | `Brick_Wall_Worn_sexkaitb/Medium/...`: **potentially licensed third-party scan material**; treat as blocked until acquisition/right-to-use is documented |
+| `ThirdPerson`, `LevelPrototyping` | `Lvl_ThirdPerson.umap`, `Menuworld.umap`, prototype geometry and materials, input configurations, Blueprints; UE-specific, not Android resources |
+
+**Sample integrity check:** Six files were downloaded read-only through authenticated Drive retrieval and checked as local binaries. They start with the Unreal package magic bytes `c1 83 2a 9e` (little-endian 0x9e2a83c1), identify the engine as `++UE5+Release-5.7`, and match the visible Drive byte sizes. The following SHA-256 values are useful to detect replacement or incomplete re-uploads; they do not authenticate ownership or verify all other packages:
+
+| File (source `Content/` path) | Exact bytes | SHA-256 |
+|---|---:|---|
+| `Data_tables/DT_ShopItems.uasset` | 17,513 | `06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c` |
+| `Data_tables/Delivery_schedule.uasset` | 1,976 | `a25f12616089e2189e60bea4bf1fc8fdb311e434584243ab800f7a37a17572d7` |
+| `Models/Props/Booze/101draft/Textures/101draft_texture_0.uasset` | 1,497,742 | `bec94cbf4583d2ef9e5cbeee4b7d484d764a5114f75a9e8f38b6b9385aa9db61` |
+| `OldWall/Textures/T_OldWall_basecolor.uasset` | 27,656,830 | `e5f88ba58441dd9d1f36de60db61feeceeffb2ef16341f28b77288a0e821d1a7` |
+| `texture/UI/bar_scene_01.uasset` | 479,105 | `6385cc6ea882ac735d56fe7daebe2cbf75e5cfb7e7c672e3d65adbc25249f787` |
+| `texture/ICONS/icon_24_300_final.uasset` | 203,342 | `e930c14e20726cc4eeb9b333dc614ab7f43ce0996182e1ccbd76082287973820` |
+
+**Critical resolution distinction:** Pillow decoded a `256x256` embedded JPEG preview from the 101draft, OldWall base-color and icon packages, and `256x170` preview from the bar-scene package. These are Unreal package **thumbnails**, NOT the full source image. No source `Texture2D` dimensions, mesh polygon counts, animation rig counts, bit depths or runtime texture memory budgets have yet been verified. It would be a damaging regression to deploy these previews as the game's final texture maps.
+
+### Authentic shop catalog recovered
+
+`DT_ShopItems.uasset` includes `RowStruct` `/Game/ThirdPerson/Blueprints/S_ShopItem` with original field names corresponding to supplier ID, item name, category, mesh, picture, purchase price, and sale price. Its readable strings include all **24 named products**, 24 `/Game/Models/Props/Booze/.../StaticMeshes/` entries and 24 `/Game/texture/ICONS/icon_XX_300_v2_rt_final` references. There is also a `test` row, which should not enter the main catalog. Its import-history metadata references an original `UEPRICE2CSVexport.csv` source: request/recover that CSV if available, or export the current DataTable from the editor.
+
+The extracted name reconciliation is stored separately in `docs/project/BETWEEN_DELIVERIES_UNREAL_CATALOG.json`. Original in-Unreal spellings differ from the GDD (e.g., `Mazar Blue Vodka` vs `Mazr Blue Vodka`, `Salty pretzels` vs `Salt Pretzel Bag`). **The per-row mesh/icon links were not decoded**, so the catalog's semantic mesh-folder mapping is *tentative* until CSV export; do not silently treat model mappings as facts. Preserve the GDD's original category/pricing slots even when a drink name does not semantically match that slot.
+
+### Licensing: no automatic public source redistribution
+
+The user states these assets were intended for their original Unreal project, but ownership/licensing of **each** asset family is not yet verified. Unreal `.uasset` containers do not confer an open-source license. The Fab Standard EULA generally permits incorporation in a game made with a different engine but does **not** authorize redistribution of the source asset as an independent public pack; older Unreal-only Quixel/Megascans acquisitions may remain engine-restricted until separately licensed under Fab. See `https://www.fab.com/eula`, `https://dev.epicgames.com/documentation/en-us/fab/purchasing-and-downloading-assets-in-fab`, and `https://forums.unrealengine.com/t/megascans-update-march-2025/2419561`. Verify purchase/acquisition entitlement, original author and usage rights independently for Fab, character imports, fonts, illustration packs and music/SFX. Do not label imported content MIT or CC0 merely because this repository is open source.
+
+### Next **real** asset path
+
+1. **Export in UE 5.7 (or a compatible version confirmed by the editor)** after finding the correct `.uproject`, `Config`, required plugins and project dependencies. If only `Content` exists, create a separate disposable same-version Unreal project, copy `Content` into it, open and observe broken links/references rather than overwriting the Drive source. The `DT_ShopItems` row struct must be available to export to CSV; export the table and compare all rows and mesh/icon links.
+2. **Preserve pristine masters privately and by hash.** For textures, export the highest available original resolution to lossless PNG/TGA/EXR (as appropriate), retaining separate base-color/normal/roughness/AO maps, transparency, color spaces and UVs. For models, export FBX/glTF or Blender-readable source retaining pivots, scale, smoothing/UV and any skeleton; for sounds, source PCM/WAV or lossless master, then encode Android-appropriate audio. Extract GUI art as correctly transparent image assets, not JPEG package previews.
+3. **License-gate both source files and derived assets.** User-authored work with confirmed rights can be imported to an `art/source/between_deliveries/` master hierarchy. Third-party restricted master files must **not** enter public Git history; retain references and proofs of acquired rights separately, and include a runtime-derived asset only when redistribution as part of this game is licensed.
+4. **Import controlled batches** (pub architecture, 24 faction SKUs, UI, characters, audio, later district sets). Use 1:1 checksums/source-to-output provenance and the design manifest to map object IDs to products; ensure every imported file is genuinely used. Respect GitHub asset limits and avoid pushing 20–50 MB `.uasset` packages or dozens of unused gigabyte-scale source binaries directly into Git. Git LFS or permitted external asset hosting requires explicit configuration and a tested fetch/install path before relying on it.
+5. **Optimize from masters, never in place.** Keep high-quality masters independent from mobile texture atlases, mipmapped small/medium asset tiers, compressed/fallback GPU formats, visible-mesh LODs and baked/streamed audio. The Galaxy S9 reference path uses GLES2; validate actual device extensions, memory pressure, dual-eye legibility, shader support and 15-minute performance before choosing target image size. In particular, never present 256-pixel thumbnails as the recovered original quality.
+6. **Replace simplified visuals in the actual game module**, beginning with bar-front/back, shelves, lighting, taps/kegs/cups, six supplier SKUs and product label models. Hook faction inventory, patron demands and purchase feedback to the source assets, verify source-to-runtime material/UV mapping, package the APK and test S9 Stereo/Daydream controllers. Then extend to actual upper floor and Mininska district.
+
+**Current verification boundary:** Drive folder read and six binary sample checks complete; folder upload finality, entire collection checksum/rights, original texture resolution, UE editor export, usable portable assets in GitHub, Android/NDK build and headset render remain **unverified**. No asset models, textures or audio from this upload have been committed to the public repository in this recovery pass.

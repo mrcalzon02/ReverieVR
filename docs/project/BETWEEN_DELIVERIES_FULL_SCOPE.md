@@ -102,6 +102,11 @@ Kazoff (player operator); **Grigory Ivanovich Sokolov** (casino/protection and e
 
 **BD-FULL-07 — Acceptance:** Host C++ state-machine tests, save migration/rollback, native module and Android/NDK compilation, source distribution/rights audit, actual S9 two-eye input/audio/readability and sustained performance, and end-to-end narrative milestones before release claims. Prefer practical content over decorative empty menus.
 
+## Original Unreal artwork and economic data recovery (2026-10-16)
+
+The author's original Unreal Engine 5.7 `Between deliveries/Content` assets are now accessible in private Google Drive. For an inspected asset inventory, checked source binary signatures/sizes, rights gates, and real full-resolution export path see [BETWEEN_DELIVERIES_ASSET_RECOVERY.md](BETWEEN_DELIVERIES_ASSET_RECOVERY.md). The verified 24-product source-name reconciliation and **unverified tentative mesh-folder mappings** are in [BETWEEN_DELIVERIES_UNREAL_CATALOG.json](BETWEEN_DELIVERIES_UNREAL_CATALOG.json). Unreal `.uasset` packages are **not** compatible runtime Android GLES textures/meshes/sounds: preserve masters, export through a compatible editor, retain appropriate licenses and only then integrate usable derived assets. No uploaded binaries or APK render have been accepted in this pass.
+
+
 ## Evidence / current status
 
 At reconciliation on 2026-10-16 the native module is `app/src/main/jni/native/red_ledger_module.cpp`; its authoritative bar state is `red_ledger_simulation.{h,cpp}`, and the small secondary market/catalog is `red_ledger_trade.h`. The latter has `kFactions=4`, `kDrinks=8`, `kSnacks=6`, and a checked 100-byte trading save. The `Simulation` maintains four patrons and a recurring three-day pressure cycle. A separately published phone-test build is documented in the project's acceptance ledger, **not** proof that any complete five-month game, second floor, district or six-faction economy has been built. Live source can change independently; every future slice must read back before editing.
