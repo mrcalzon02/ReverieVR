@@ -1213,6 +1213,95 @@ void DrawCup(
     }
 }
 
+// Build a room's current economic information as REAL glyph geometry.
+// Called on an actual state change, never for every frame or both eyes.
+void RefreshStatusBoard(ModuleState *state) {
+    if(!state->status_dirty || state->status_vbo==0) return;
+    char rows[6][96]={};
+    const Simulation &sim=state->simulation;
+    const trade::Trade &market=state->market;
+    const auto room=market.room();
+    if(room==trade::Room::Bar) {
+        const auto *patron=sim.current_patron();
+        if(patron) {
+            const int kind=trade::FactionFor(patron->kind);
+            std::snprintf(rows[0],sizeof(rows[0]),"FACTION: %s",
+                trade::kFactionNames[kind]);
+            std::snprintf(rows[1],sizeof(rows[1]),"WANTS: %s",
+                trade::kDrinkCatalog[trade::FavoriteDrink(patron->kind)].name);
+            std::snprintf(rows[2],sizeof(rows[2]),"SNACK: %s",
+                trade::kSnackCatalog[trade::FavoriteSnack(patron->kind)].name);
+        } else {
+            std::snprintf(rows[0],sizeof(rows[0]),"NO CUSTOMERS");
+            std::snprintf(rows[1],sizeof(rows[1]),"REST IN LIVING QUARTERS");
+        }
+        std::snprintf(rows[3],sizeof(rows[3]),"POUR: %s",
+            trade::kDrinkCatalog[market.drink()].name);
+        std::snprintf(rows[4],sizeof(rows[4]),"WITH: %s",
+            market.snack()<0?"NONE":trade::kSnackCatalog[market.snack()].name);
+        std::snprintf(rows[5],sizeof(rows[5]),"CASH: %d  BEER: %d  CUPS: %d",
+            sim.cash_cents(),sim.beer_units(),sim.clean_cups());
+    } else if(room==trade::Room::Stockroom) {
+        const int sku=market.offer();
+        const int stock=sku<trade::kDrinks?
+            (sku==0?sim.beer_units():market.stock_drink(sku)):
+            market.stock_snack(sku-trade::kDrinks);
+        std::snprintf(rows[0],sizeof(rows[0]),"SUPPLIER: %s",
+            market.offer_name());
+        std::snprintf(rows[1],sizeof(rows[1]),"COST: %d  UNITS: %d",
+            sku==0?900:market.offer_cost(),
+            sku==0?8:(sku<trade::kDrinks?
+                trade::kDrinkCatalog[sku].units:
+                trade::kSnackCatalog[sku-trade::kDrinks].units));
+        std::snprintf(rows[2],sizeof(rows[2]),"ON HAND: %d",stock);
+        std::snprintf(rows[3],sizeof(rows[3]),"CASH: %d",sim.cash_cents());
+        std::snprintf(rows[4],sizeof(rows[4]),"NEXT THEN BUY");
+        if(sim.current_event()==EventType::SupplyInterruption)
+            std::snprintf(rows[5],sizeof(rows[5]),"SUPPLIER BLOCKED TODAY");
+        else
+            std::snprintf(rows[5],sizeof(rows[5]),"BEER AND CUPS ALSO ON SHELF");
+    } else {
+        std::snprintf(rows[0],sizeof(rows[0]),"DAY: %d  CASH: %d",
+            sim.day(),sim.cash_cents());
+        std::snprintf(rows[1],sizeof(rows[1]),"DEBT: %d  REP: %d",
+            sim.debt_cents(),sim.reputation());
+        std::snprintf(rows[2],sizeof(rows[2]),"RAIL: %d  OFFICE: %d",
+            market.favor(0),market.favor(1));
+        std::snprintf(rows[3],sizeof(rows[3]),"MILITIA: %d  GUILD: %d",
+            market.favor(2),market.favor(3));
+        const auto &ledger=sim.last_ledger();
+        if(state->ledger_visible) {
+            std::snprintf(rows[4],sizeof(rows[4]),"LAST DAY: %d  SALES: %d",
+                ledger.day,ledger.sales_cents);
+            std::snprintf(rows[5],sizeof(rows[5]),"PAID DEBT: %d  LOST: %d",
+                ledger.debt_service_cents,ledger.patrons_lost);
+        } else {
+            std::snprintf(rows[4],sizeof(rows[4]),"LEDGER: VIEW LAST DAY");
+            std::snprintf(rows[5],sizeof(rows[5]),"BED: END DAY AFTER SERVICE");
+        }
+    }
+    size_t count=0u;
+    for(size_t i=0;i<6u;++i)
+        if(rows[i][0]!=0)
+            count=signs::EmitLine(nullptr,count,rows[i],0.0f,
+                1.09f-static_cast<float>(i)*0.22f,-2.80f,0.014f);
+    if(count==0u || count>20000u)return;
+    std::unique_ptr<float[]> vertices(
+        new (std::nothrow) float[count*signs::kVertexStride]);
+    if(!vertices)return;
+    size_t made=0u;
+    for(size_t i=0;i<6u;++i)
+        if(rows[i][0]!=0)
+            made=signs::EmitLine(vertices.get(),made,rows[i],0.0f,
+                1.09f-static_cast<float>(i)*0.22f,-2.80f,0.014f);
+    if(made!=count)return;
+    glBindBuffer(GL_ARRAY_BUFFER,state->status_vbo);
+    glBufferData(GL_ARRAY_BUFFER,count*signs::kVertexStride*sizeof(float),
+        vertices.get(),GL_DYNAMIC_DRAW);
+    state->status_count=static_cast<GLsizei>(count);
+    state->status_dirty=false;
+}
+
 // Immutable world-space room: one GLES2 draw per eye, no per-frame upload.
 void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
     const GLsizei stride = static_cast<GLsizei>(
@@ -2077,6 +2166,7 @@ int32_t RenderEye(
         reinterpret_cast<const void *>(3 * sizeof(float))
     );
 
+    RefreshStatusBoard(state);
     const float flicker = state->flicker;
 
     DrawRoom(
