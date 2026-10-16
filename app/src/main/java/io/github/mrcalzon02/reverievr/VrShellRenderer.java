@@ -244,11 +244,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {780, 400, 982, 448},
         {780, 456, 982, 504},
         {780, 512, 982, 560},
-        HomeMainMenuLayout.centerRect(HomeMainMenuLayout.RESUME),
-        HomeMainMenuLayout.centerRect(HomeMainMenuLayout.CONTROLLER),
-        HomeMainMenuLayout.centerRect(HomeMainMenuLayout.KEYBOARD),
-        HomeMainMenuLayout.centerRect(HomeMainMenuLayout.MODEL),
-        HomeMainMenuLayout.centerRect(HomeMainMenuLayout.IMPORT),
+        {314, 592, 696, 644},
+        {292, 220, 718, 326},
+        {292, 348, 718, 454},
+        {292, 476, 718, 526},
+        {292, 535, 718, 582},
         {42, 551, 230, 597},
         // 19-23 remain reserved for the world-space phone controls.
         {0, 0, 0, 0},
@@ -6860,7 +6860,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(24.0f * uiScale);
         canvas.drawText(
-            "LIBRARY",
+            "HOME",
             42,
             158,
             paint
@@ -6914,7 +6914,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(30.0f * uiScale);
         canvas.drawText(
-            "HOME",
+            "Welcome to ReverieVR",
             292,
             150,
             paint
@@ -6932,18 +6932,200 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint
         );
 
-        // Shared compact center actions: visual targets equal gaze/click targets.
-        drawHomeCenterAction(canvas, paint, HomeMainMenuLayout.CONTROLLER,
-            "CONTROLLER", controllerConnected ? "CONNECTED" : "PAIR / CHECK");
-        drawHomeCenterAction(canvas, paint, HomeMainMenuLayout.KEYBOARD,
-            "KEYBOARD", "TYPE / COPY");
-        drawHomeCenterAction(canvas, paint, HomeMainMenuLayout.MODEL,
-            "3D MODEL", modelViewer.hasModel() ? "OPEN" : "NONE IMPORTED");
-        drawHomeCenterAction(canvas, paint, HomeMainMenuLayout.IMPORT,
-            "IMPORT MODEL", "OBJ FILE");
-        drawHomeCenterAction(canvas, paint, HomeMainMenuLayout.RESUME,
-            hasResumeTarget() ? resumeLabel() : "RESUME",
-            hasResumeTarget() ? "CONTINUE" : "NO SESSION");
+        boolean controllerCardFocused =
+            hoveredButton == 14;
+        paint.setColor(
+            controllerCardFocused
+                ? Color.rgb(
+                    25,
+                    88,
+                    116
+                )
+                : Color.rgb(
+                    34,
+                    45,
+                    58
+                )
+        );
+        canvas.drawRoundRect(
+            292,
+            220,
+            718,
+            326,
+            18,
+            18,
+            paint
+        );
+        if (controllerCardFocused) {
+            paint.setStyle(
+                Paint.Style.STROKE
+            );
+            paint.setStrokeWidth(3.0f);
+            paint.setColor(
+                Color.rgb(
+                    68,
+                    220,
+                    245
+                )
+            );
+            canvas.drawRoundRect(
+                293,
+                221,
+                717,
+                325,
+                17,
+                17,
+                paint
+            );
+            paint.setStyle(
+                Paint.Style.FILL
+            );
+        }
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            "Controller",
+            314,
+            255,
+            paint
+        );
+        paint.setColor(
+            controllerConnected
+                ? Color.rgb(93, 224, 177)
+                : Color.rgb(231, 174, 87)
+        );
+        paint.setTextSize(17.0f * uiScale);
+        canvas.drawText(
+            controllerConnected
+                ? "Connected • pointer ready"
+                : shorten(
+                    controllerMessage,
+                    34
+                ),
+            314,
+            286,
+            paint
+        );
+
+        paint.setColor(hoveredButton == 15
+            ? Color.rgb(25, 88, 116) : Color.rgb(34, 45, 58));
+        canvas.drawRoundRect(
+            292,
+            348,
+            718,
+            454,
+            18,
+            18,
+            paint
+        );
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(20.0f * uiScale);
+        canvas.drawText(
+            "Virtual Keyboard",
+            314,
+            383,
+            paint
+        );
+        paint.setColor(Color.rgb(160, 176, 194));
+        paint.setTextSize(17.0f * uiScale);
+        canvas.drawText(
+            "Type text, then copy it to Android clipboard",
+            314,
+            414,
+            paint
+        );
+
+        paint.setColor(hoveredButton == 16
+            ? Color.rgb(25, 88, 116)
+            : Color.rgb(34, 45, 58));
+        canvas.drawRoundRect(292, 476, 718, 526, 14, 14, paint);
+        paint.setColor(modelViewer.hasModel() ? Color.WHITE
+            : Color.rgb(110, 123, 134));
+        paint.setTextSize(19.0f * uiScale);
+        canvas.drawText(modelViewer.hasModel()
+            ? "OPEN 3D MODEL  -  IMMERSIVE VR"
+            : "OPEN 3D MODEL  -  NONE IMPORTED",
+            313, 508, paint);
+
+        paint.setColor(hoveredButton == 17
+            ? Color.rgb(25, 88, 116)
+            : Color.rgb(34, 45, 58));
+        canvas.drawRoundRect(292, 535, 718, 582, 14, 14, paint);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(19.0f * uiScale);
+        canvas.drawText("IMPORT / REPLACE OBJ MODEL", 313, 565, paint);
+
+        if (hasResumeTarget()) {
+            int[] resumeRect =
+                HOME_BUTTONS[13];
+            boolean resumeFocused =
+                hoveredButton == 13;
+
+            paint.setColor(
+                resumeFocused
+                    ? Color.rgb(
+                        18,
+                        126,
+                        160
+                    )
+                    : Color.rgb(
+                        21,
+                        83,
+                        112
+                    )
+            );
+            canvas.drawRoundRect(
+                resumeRect[0],
+                resumeRect[1],
+                resumeRect[2],
+                resumeRect[3],
+                16,
+                16,
+                paint
+            );
+
+            if (resumeFocused) {
+                paint.setStyle(
+                    Paint.Style.STROKE
+                );
+                paint.setStrokeWidth(3.0f);
+                paint.setColor(
+                    Color.rgb(
+                        87,
+                        229,
+                        248
+                    )
+                );
+                canvas.drawRoundRect(
+                    resumeRect[0] + 1,
+                    resumeRect[1] + 1,
+                    resumeRect[2] - 1,
+                    resumeRect[3] - 1,
+                    15,
+                    15,
+                    paint
+                );
+                paint.setStyle(
+                    Paint.Style.FILL
+                );
+            }
+
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(
+                16.0f * uiScale
+            );
+            paint.setFakeBoldText(true);
+            canvas.drawText(
+                shorten(
+                    resumeLabel(),
+                    38
+                ),
+                resumeRect[0] + 18,
+                resumeRect[1] + 33,
+                paint
+            );
+            paint.setFakeBoldText(false);
+        }
 
         paint.setTextSize(13.0f * uiScale);
         if (!lastNativeFailureReason.isEmpty()) {
@@ -6956,8 +7138,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 292, 700, paint);
         } else {
             paint.setColor(Color.rgb(126, 205, 221));
-            canvas.drawText(fitHomeLabel(paint, homeHelpText(hoveredButton), 422f),
-                292, 649, paint);
+            canvas.drawText(homeHelpText(hoveredButton), 292, 676, paint);
+            paint.setColor(Color.rgb(143, 160, 179));
+            canvas.drawText("Look or point • click to select",
+                292, 700, paint);
         }
 
         paint.setColor(Color.WHITE);
@@ -7043,68 +7227,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
     }
 
-    // Fit labels to the actual interaction rectangles at every UI scale.
-    private static String fitHomeLabel(Paint paint, String label, float width) {
-        if (label == null || width <= 0f) return "";
-        if (paint.measureText(label) <= width) return label;
-        final String ellipsis = "…";
-        if (paint.measureText(ellipsis) > width) return "";
-        int end = label.length();
-        while (end > 0
-            && paint.measureText(label, 0, end) + paint.measureText(ellipsis) > width)
-            --end;
-        return label.substring(0, end) + ellipsis;
-    }
-
-    private void drawHomeCenterAction(
-        Canvas canvas, Paint paint, int index, String title, String detail
-    ) {
-        final int[] rect = HOME_BUTTONS[index];
-        final boolean enabled = isButtonEnabled(index);
-        final boolean focused = enabled && hoveredButton == index;
-        final boolean contrast = preferences.isShellHighContrastEnabled();
-        paint.setColor(contrast
-            ? ShellContrastPalette.background(enabled, focused)
-            : !enabled ? Color.rgb(28, 32, 38)
-            : focused ? Color.rgb(24, 112, 151)
-            : index == HomeMainMenuLayout.RESUME
-                ? Color.rgb(22, 78, 98) : Color.rgb(25, 37, 50));
-        canvas.drawRoundRect(rect[0], rect[1], rect[2], rect[3], 12, 12, paint);
-        if (focused || contrast) {
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(contrast ? 2.8f : 3f);
-            paint.setColor(contrast
-                ? ShellContrastPalette.border(enabled) : Color.rgb(68, 220, 245));
-            canvas.drawRoundRect(rect[0] + 1, rect[1] + 1,
-                rect[2] - 1, rect[3] - 1, 11, 11, paint);
-            paint.setStyle(Paint.Style.FILL);
-        }
-        final float middle = (rect[1] + rect[3]) * .5f;
-        final float left = rect[0] + 17f;
-        final float width = rect[2] - rect[0];
-        paint.setColor(contrast
-            ? ShellContrastPalette.foreground(enabled, focused)
-            : enabled ? Color.WHITE : Color.rgb(103, 112, 123));
-        paint.setTextSize(20f * uiScale);
-        paint.setFakeBoldText(focused);
-        final String main = fitHomeLabel(paint, title, width * .58f);
-        canvas.drawText(main, left,
-            middle - (paint.ascent() + paint.descent()) * .5f, paint);
-        paint.setFakeBoldText(false);
-        // Show status inline; no redundant card and no accidental overlap.
-        paint.setTextSize(13f * uiScale);
-        paint.setColor(contrast
-            ? ShellContrastPalette.foreground(enabled, focused)
-            : enabled ? Color.rgb(163, 215, 222) : Color.rgb(103, 112, 123));
-        final float statusLeft = Math.max(left + width * .59f,
-            left + paint.measureText(main) + 10f);
-        final float available = Math.max(0f, rect[2] - 12f - statusLeft);
-        final String fitted = fitHomeLabel(paint, detail, available);
-        canvas.drawText(fitted, statusLeft,
-            middle - (paint.ascent() + paint.descent()) * .5f, paint);
-        if (focused) drawGazeDwellIndicator(canvas, paint, rect);
-    }
-
     private void drawHomePanelBackground(
         Canvas canvas,
         Paint paint,
@@ -7188,14 +7310,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 13:
                 return "Resume the last valid media, DOS, or native activity.";
             case 14:
-                return "Controller pairing, source and pointer calibration.";
-            case 15:
-                return "Type on the desk keyboard or open the full keyboard.";
-            case 16:
-                return modelViewer.hasModel()
-                    ? "View the imported 3D model." : "Import a model to enable viewing.";
-            case 17:
-                return "Choose an OBJ model from phone storage.";
+                return "Open controller status, pairing, pointer, and input tools.";
             case 24:
                 return "Play original native Pong, Snake, and chutes-and-ladders.";
             case 25:
@@ -7500,9 +7615,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
             paint.setFakeBoldText(focused);
             canvas.drawText(
-                fitHomeLabel(paint, label, rect[2] - rect[0] - 24f),
+                shorten(label, 20),
                 rect[0] + 12,
-                (rect[1] + rect[3] - paint.ascent() - paint.descent()) * .5f,
+                rect[1] + 35,
                 paint
             );
             paint.setFakeBoldText(false);
