@@ -13,7 +13,8 @@ final class LaptopLinkBundle {
     private static final String ZIP_DIRECTORY = "ReverieLink/";
     private static final long MAX_FILE_BYTES = 128 * 1024L;
     private static final String[] INCLUDED = {
-        "README.txt", "Start-ReverieLink.cmd", "ReverieLink.ps1"
+        "README.txt", "Start-ReverieLink.cmd", "ReverieLink.ps1",
+        "SteamVrPreflight.ps1"
     };
 
     interface Assets {

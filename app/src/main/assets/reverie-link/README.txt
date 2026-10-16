@@ -33,3 +33,14 @@ utility, without a router, and without internet access.
 
 This is the host-bootstrap milestone, not yet a raw optical-disc
 transport or a PC-desktop-to-headset video streamer.
+
+
+SteamVR PC headset link: initial prerequisite step
+================================================
+Choose item 5 in ReverieLink.ps1 to inspect your current Windows SteamVR
+installation, OpenVR path registration and driver tool. This is a genuine,
+read-only compatibility check: it does not install a driver, start SteamVR,
+change drivers, search processes or begin streaming.
+The SteamVR headset driver, secure phone pairing and stereo streaming client
+are separate development milestones and are NOT present in this package yet.
+ReverieVR's Android games and standalone VR continue to run locally.

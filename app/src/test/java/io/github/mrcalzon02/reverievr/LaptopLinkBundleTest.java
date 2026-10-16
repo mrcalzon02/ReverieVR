@@ -32,7 +32,8 @@ public final class LaptopLinkBundleTest {
         assertEquals(java.util.Arrays.asList(
             "ReverieLink/README.txt",
             "ReverieLink/Start-ReverieLink.cmd",
-            "ReverieLink/ReverieLink.ps1"),files);
+            "ReverieLink/ReverieLink.ps1",
+            "ReverieLink/SteamVrPreflight.ps1"),files);
     }
 
     @Test public void brokenAssetOrExcessivePayloadFailsClosed() throws Exception {

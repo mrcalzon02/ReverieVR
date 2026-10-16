@@ -1,6 +1,7 @@
 # ReverieVR optional Windows companion, packaged as plain-text in the APK.
 # Copyright ReverieVR contributors. No installation, service, administrator
 # privilege, PC activity monitoring, screen scraping, or background startup.
+. (Join-Path $PSScriptRoot 'SteamVrPreflight.ps1')
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -67,6 +68,7 @@ while ($true) {
     Write-Host '2. Mirror phone screen + forward laptop controller'
     Write-Host '3. Set up scrcpy Wi-Fi (USB authorization first)'
     Write-Host '4. Inspect local optical drives / file sharing'
+    Write-Host '5. Check SteamVR installation and driver readiness (read only)'
     Write-Host 'Q. Quit'
     Write-Host 'No system settings or firewall rules are changed.'
     $choice = (Read-Host 'Choose').Trim().ToUpperInvariant()
@@ -76,6 +78,7 @@ while ($true) {
             '2' { Start-ScrcpyMode -Arguments @('--stay-awake','--no-audio','--gamepad=uhid') }
             '3' { Start-ScrcpyMode -Arguments @('--tcpip','--no-audio','--gamepad=uhid') }
             '4' { Show-OpticalDrives }
+            '5' { Show-SteamVrPreflight }
             'Q' { return }
             default { Write-Host 'Unknown choice.' }
         }
