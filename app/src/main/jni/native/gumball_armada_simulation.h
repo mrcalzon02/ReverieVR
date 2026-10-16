@@ -84,6 +84,7 @@ public:
     SupportKind deployed_support()const{return deployed_support_;}
     uint32_t support_deployments()const{return support_deployments_;}
     int support_pulses()const{return support_pulses_;}
+    float support_x()const{return support_x_;}
     bool slipstream_active()const{return slipstream_active_;}
     bool left_fast()const{return static_cast<int>(elapsed_/3.f)%2==0;}
     float movement_multiplier()const{
@@ -187,7 +188,7 @@ public:
         cast_.begin(seed_,destination_.id,visited_,destination_.hazard);
         deployed_support_=support_.consume();
         support_timer_=3.2f+static_cast<float>(Mix(seed_^destination_.id)%5u)*.4f;
-        support_pulses_=0;slipstream_active_=false;
+        support_pulses_=0;support_x_=-1.5f;slipstream_active_=false;
         if(deployed_support_!=SupportKind::None)++support_deployments_;
         ally_shots_=0;bombs_defused_=0;mines_defused_=0;ally_x_=-1.3f;
         twins_.reset();
@@ -384,6 +385,35 @@ public:
             }
         }
         cast_.update(dt);
+        support_timer_-=dt;
+        if(deployed_support_!=SupportKind::None&&elapsed_<16.f
+           &&support_pulses_<(deployed_support_==SupportKind::CapitaineEclair?
+                               support_.volley_count():4)
+           &&support_timer_<=0.f){
+            bool helped=false;
+            if(deployed_support_==SupportKind::CapitaineEclair){
+                const Enemy* target=nullptr;
+                for(const auto& enemy:enemies_)if(enemy.active&&enemy.y>-.65f)
+                    if(!target||enemy.y<target->y)target=&enemy;
+                if(target){
+                    for(auto& bullet:shots_)if(!bullet.active){
+                        support_x_=target->x;
+                        bullet={support_x_,-.80f,3.65f,true,false,0.f,
+                                support_.volley_damage(),true,false,false,false,0.f};
+                        helped=true;break;
+                    }
+                }
+            }else{
+                const int cap=20+levels_[3]*18+ship_profile_.shield;
+                const int restored=std::min(support_.shield_repair(),cap-shield_);
+                const uint32_t pulled=salvage_.tractor(px_,py_,support_.tractor_reach());
+                if(restored>0||pulled>0u){
+                    shield_+=restored;cash_+=pulled;sortie_cash_+=pulled;
+                    support_x_=px_+.26f;helped=true;
+                }
+            }
+            if(helped){++support_pulses_;support_timer_=1.8f;}
+        }
         if(cast_.pulse_ready()){
             if(cast_.kind()==CastGuest::PipParfait){
                 const Enemy* target=nullptr;
@@ -558,6 +588,7 @@ private:
     SupportKind deployed_support_=SupportKind::None;
     float support_timer_=0.f;
     int support_pulses_=0;
+    float support_x_=-1.5f;
     bool slipstream_active_=false;
     uint32_t support_deployments_=0;
     CastEncounter cast_{};
