@@ -9,15 +9,16 @@ The home scene remains native GLES2 with one APK and no network runtime.
 
 | Scene | Visual layers | Environmental playback |
 |---|---|---|
-| Birch Panel Living Room | Two inset double-paned rear-wall scenic windows, hills, mullions, sills; room furniture and original mirror untouched | Low-level steady original HVAC/room-hum PCM |
+| Birch Panel Living Room | Two actual rear-wall window apertures with recessed scenic sky/hills, mullions and sills; room furniture and original mirror untouched | Low-level steady original HVAC/room-hum PCM |
 | Pastoral Forest Glade | Three-band four-sided sky panorama, cloud groups, warm sun, distant hills, rabbits, one deer, two independently moving bird silhouettes | Original synthesized leaves/wind and intermittent chirps |
 | Windswept Dune Beach | Three-band coastal sky, cloud groups, sun, low headland on one side of horizon, crabs, two moving birds | Original synthesized surf/wind and gull-like calls |
 
 Meshes are built once and reuse existing uniform-color GLES2 rendering. The sky curtain
 fits the 40 m far plane, and the bird clock advances once per Cardboard frame, not once
 per eye. World MVP is restored after the bird pass. Wildlife does **not** use heavy
-skinning or AI. Interior windows are scenic opaque insets, **not actual wall openings
-or real-world passthrough**. There is no external video feed, weather API, AI scene
+skinning or AI. Interior windows have **genuine mesh apertures** with opaque low-poly
+landscape backing behind them; they are not portals into another simulated
+world or real-world passthrough. There is no external video feed, weather API, AI scene
 analysis, or runtime texture generation.
 
 The 22,050 Hz mono, 4-second PCM16 AudioTrack loop occupies 176,400 bytes for the
