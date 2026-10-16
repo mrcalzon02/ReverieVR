@@ -135,7 +135,7 @@ public:
             }
         }
         if (selected >= battle.count_ || (selected>=0 &&
-            (!battle.units_[selected].alive() || battle.units_[selected].side!=Side::Hearthwell)))
+            battle.units_[selected].side!=Side::Hearthwell))
             return false;
         for (int i=0;i<kUnitLimit;++i) {
             uint8_t n=r.U8();

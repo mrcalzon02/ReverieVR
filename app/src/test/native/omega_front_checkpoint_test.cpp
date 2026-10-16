@@ -53,6 +53,28 @@ int main(){
     assert(Checkpoint::Decode(&resumed,snapshot.data(),snapshot.size()));
     assert(resumed.battle.result()==original.battle.result());
     assert(resumed.battle.Checksum()==original.battle.Checksum());
+    // Selected defenders can die before the next input. Their pending
+    // selected ID must not invalidate the entire otherwise valid checkpoint.
+    Controller casualty(99);
+    casualty.battle.ClearUnits();
+    assert(casualty.battle.AddUnit(Side::Hearthwell,Class::Rifle,2,13)==0);
+    assert(casualty.battle.AddUnit(Side::Raiders,Class::Heavy,3,13)==1);
+    assert(casualty.battle.AddUnit(Side::Raiders,Class::Heavy,4,13)==2);
+    casualty.Input({0,0,0,false,false,2,13});
+    casualty.Input({0,0,0,true,false,-1,-1});
+    assert(casualty.selected==0);
+    for(int i=0;i<10 && casualty.battle.unit(0)->alive();++i) casualty.battle.Step();
+    assert(!casualty.battle.unit(0)->alive());
+    assert(casualty.selected==0);
+    assert(Checkpoint::Encode(casualty,&snapshot));
+    Controller casualty_restore(14);
+    assert(Checkpoint::Decode(&casualty_restore,snapshot.data(),snapshot.size()));
+    assert(casualty_restore.battle.Checksum()==casualty.battle.Checksum());
+    assert(casualty_restore.selected==0);
+    // Subsequent input safely deselects the dead soldier.
+    casualty_restore.Input({0,0,0,false,false,-1,-1});
+    casualty_restore.Input({0,0,0,true,false,-1,-1});
+    assert(casualty_restore.selected==-1 || casualty_restore.battle.result()!=Result::Active);
     // Rejection never mutates an existing healthy in-memory battle.
     const uint64_t prior=resumed.battle.Checksum();
     auto invalid=snapshot;invalid[35]^=1;
