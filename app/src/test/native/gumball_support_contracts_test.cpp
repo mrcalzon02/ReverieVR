@@ -55,6 +55,27 @@ int main(){
     assert(kitRestored.use_kit(SupportKit::ShieldTonic));
     assert(!kitRestored.use_kit(SupportKit::ShieldTonic));
     assert(!kitRestored.buy_kit(static_cast<SupportKit>(9),kitCash));
+    // Exact threshold and capacity behavior: no phantom use at full health,
+    // and no revival after the hull has already been destroyed.
+    SupportContracts autoKit;
+    uint32_t autoCash=300;
+    assert(autoKit.buy_kit(SupportKit::HullPatch,autoCash));
+    assert(autoKit.buy_kit(SupportKit::ShieldTonic,autoCash));
+    int hull=100,shield=40;
+    assert(autoKit.apply_emergency(hull,100,shield,40)==0u);
+    assert(autoKit.kit_mask()==3u);
+    hull=50;shield=20;
+    assert(autoKit.apply_emergency(hull,100,shield,40)==3u);
+    assert(hull==80&&shield==40);
+    assert(autoKit.kit_mask()==0u);
+    assert(autoKit.apply_emergency(hull,100,shield,40)==0u);
+    SupportContracts emergency;
+    assert(emergency.buy_kit(SupportKit::HullPatch,autoCash));
+    hull=0;shield=40;
+    assert(emergency.apply_emergency(hull,100,shield,40)==0u);
+    assert(hull==0&&emergency.has_kit(SupportKit::HullPatch));
+    hull=10;assert(emergency.apply_emergency(hull,35,shield,40)==1u);
+    assert(hull==35&&!emergency.has_kit(SupportKit::HullPatch));
     assert(std::strcmp(SupportKitName(SupportKit::HullPatch),"HULL PATCH")==0);
     assert(std::strcmp(SupportName(SupportKind::CapitaineEclair),"CAPITAINE ECLAIR")==0);
     std::cout<<"support contract purchase, skill caps and persistence passed\n";
