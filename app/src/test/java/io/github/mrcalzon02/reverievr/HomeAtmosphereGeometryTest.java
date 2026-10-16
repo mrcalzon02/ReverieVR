@@ -33,7 +33,18 @@ public final class HomeAtmosphereGeometryTest {
         float[] sky=HomeAtmosphereGeometry.windowSky();
         float[] landscape=HomeAtmosphereGeometry.windowHorizon();
         mesh(sky,12);mesh(landscape,32);
-        mesh(HomeAtmosphereGeometry.windowedRearWall(),20);
+        float[] rearWall=HomeAtmosphereGeometry.windowedRearWall();
+        mesh(rearWall,20);
+        // A centroid from an actual wall triangle may never occupy either
+        // window's interior; this prevents returning to painted-on windows.
+        for(int i=0;i<rearWall.length;i+=9) {
+            float x=(rearWall[i]+rearWall[i+3]+rearWall[i+6])/3f;
+            float y=(rearWall[i+1]+rearWall[i+4]+rearWall[i+7])/3f;
+            boolean left=x>-5.34f && x<-3.29f;
+            boolean right=x>3.34f && x<5.39f;
+            assertFalse("window aperture filled with wall",
+                (left||right) && y>.03f && y<2.45f);
+        }
         mesh(HomeAtmosphereGeometry.windowFrames(),68);
         for(int i=2;i<sky.length;i+=3)assertEquals(-4.19f,sky[i],.02f);
         for(int i=2;i<landscape.length;i+=3)
