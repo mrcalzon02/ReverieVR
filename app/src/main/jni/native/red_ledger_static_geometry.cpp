@@ -35,7 +35,31 @@ constexpr StaticCube kRoom[] = {
     { 1.35f,-0.95f,-1.80f, 0.72f,0.16f,0.72f, 0.22f,0.16f,0.12f, Material::Wood },
     { 1.35f,-1.30f,-1.80f, 0.12f,0.70f,0.12f, 0.17f,0.13f,0.10f, Material::Wood },
     { 1.90f,-1.38f,-2.38f, 1.35f,0.18f,0.70f, 0.31f,0.28f,0.23f, Material::Wood },
-    { 0.0f, 1.28f,-0.70f, 0.55f,0.10f,0.34f, 0.54f,0.45f,0.28f, Material::Metal }
+    { 0.0f, 1.28f,-0.70f, 0.55f,0.10f,0.34f, 0.54f,0.45f,0.28f, Material::Metal },
+    // Stockroom: separate room shell, shelving, crates and stacked kegs.
+    { 0.0f,-1.55f,-0.60f, 6.0f,0.10f,5.0f, 0.17f,0.18f,0.18f, Material::Stone },
+    { 0.0f, 0.00f,-3.05f, 6.0f,3.10f,0.10f, 0.25f,0.24f,0.20f, Material::Stone },
+    {-3.05f, 0.00f,-0.60f, 0.10f,3.10f,5.0f, 0.23f,0.23f,0.20f, Material::Stone },
+    { 3.05f, 0.00f,-0.60f, 0.10f,3.10f,5.0f, 0.23f,0.23f,0.20f, Material::Stone },
+    { 0.0f, 1.55f,-0.60f, 6.0f,0.10f,5.0f, 0.13f,0.14f,0.14f, Material::Stone },
+    {-1.55f,-0.95f,-2.25f, 1.75f,0.14f,0.50f, 0.30f,0.20f,0.12f, Material::Wood },
+    {-1.55f,-0.08f,-2.25f, 1.75f,0.14f,0.50f, 0.30f,0.20f,0.12f, Material::Wood },
+    {-2.25f,-0.70f,-2.25f, 0.13f,1.60f,0.38f, 0.23f,0.16f,0.11f, Material::Wood },
+    {-0.85f,-0.70f,-2.25f, 0.13f,1.60f,0.38f, 0.23f,0.16f,0.11f, Material::Wood },
+    { 1.65f,-1.25f,-2.18f, 0.62f,0.60f,0.62f, 0.34f,0.23f,0.12f, Material::Wood },
+    { 2.22f,-1.05f,-2.18f, 0.54f,0.84f,0.55f, 0.27f,0.19f,0.13f, Material::Wood },
+    // Living quarters: small bed, pillow, desk, hanging lamp.
+    { 0.0f,-1.55f,-0.60f, 6.0f,0.10f,5.0f, 0.23f,0.21f,0.20f, Material::Wood },
+    { 0.0f, 0.00f,-3.05f, 6.0f,3.10f,0.10f, 0.25f,0.25f,0.24f, Material::Stone },
+    {-3.05f, 0.00f,-0.60f, 0.10f,3.10f,5.0f, 0.23f,0.23f,0.22f, Material::Stone },
+    { 3.05f, 0.00f,-0.60f, 0.10f,3.10f,5.0f, 0.23f,0.23f,0.22f, Material::Stone },
+    { 0.0f, 1.55f,-0.60f, 6.0f,0.10f,5.0f, 0.13f,0.14f,0.15f, Material::Stone },
+    { 1.35f,-1.27f,-1.74f, 1.65f,0.20f,1.42f, 0.28f,0.18f,0.13f, Material::Wood },
+    { 1.35f,-1.11f,-1.74f, 1.52f,0.13f,1.25f, 0.31f,0.32f,0.29f, Material::Paper },
+    { 1.35f,-0.98f,-2.10f, 0.50f,0.10f,0.30f, 0.55f,0.51f,0.44f, Material::Paper },
+    {-0.75f,-0.93f,-1.68f, 1.15f,0.14f,0.70f, 0.31f,0.24f,0.17f, Material::Wood },
+    {-0.75f,-1.22f,-1.68f, 0.11f,0.65f,0.12f, 0.27f,0.19f,0.12f, Material::Wood },
+    {-0.75f, 1.25f,-1.68f, 0.32f,0.09f,0.32f, 0.58f,0.47f,0.22f, Material::Metal }
 };
 static_assert(sizeof(kRoom)/sizeof(kRoom[0])==kStaticCubeCount,"cube count");
 }
