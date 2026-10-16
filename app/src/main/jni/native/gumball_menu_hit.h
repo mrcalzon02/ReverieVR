@@ -8,6 +8,28 @@ inline bool MenuInside(float x,float y,float cx,float cy,float w,float h){
     return std::isfinite(x)&&std::isfinite(y)&&
         std::fabs(x-cx)<=w*.5f&&std::fabs(y-cy)<=h*.5f;
 }
+// The pad owns focus until the ray actually moves far enough from its
+// last pointer-owned position. Do not advance the reference on ignored
+// sub-threshold frames: incremental movement must eventually accumulate.
+struct MenuPointerFocus {
+    bool seen=false,padFocus=false;
+    float referenceX=0.f,referenceY=0.f;
+    bool take(float x,float y,bool padMoving){
+        if(!std::isfinite(x)||!std::isfinite(y))return false;
+        if(!seen){
+            seen=true;referenceX=x;referenceY=y;
+            return !padMoving&&!padFocus;
+        }
+        if(padMoving)return false;
+        if(padFocus){
+            if(std::fabs(x-referenceX)<=.075f&&
+               std::fabs(y-referenceY)<=.075f)return false;
+            padFocus=false;
+        }
+        referenceX=x;referenceY=y;
+        return true;
+    }
+};
 inline MenuHit ChartHit(float x,float y){
     for(int i=0;i<3;++i){
         if(MenuInside(x,y,kChartRouteX[i],.22f,1.44f,1.09f))
