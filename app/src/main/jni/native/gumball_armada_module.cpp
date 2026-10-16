@@ -252,11 +252,20 @@ void* Create(const ReverieNativeHostV1* host){
     Module* m=new(std::nothrow)Module();if(!m)return nullptr;
     m->host=host;m->mesh.reserve(20000);
     if(ReverieNativeHostSupportsSaveV1(host)){
-        Snapshot s{};uint32_t count=0;
-        int result=host->read_save("campaign.v1",&s,sizeof(s),&count);
-        if(result==REVERIE_NATIVE_SAVE_OK&&(count!=sizeof(s)||!m->sim.restore(s)))
-            ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_WARN,kId,"Invalid campaign save ignored");
-        else if(result!=REVERIE_NATIVE_SAVE_OK&&result!=REVERIE_NATIVE_SAVE_NOT_FOUND)
+        Snapshot current{};uint32_t count=0;
+        const int result=host->read_save("campaign.v1",&current,sizeof(current),&count);
+        if(result==REVERIE_NATIVE_SAVE_OK){
+            bool valid=false;
+            if(count==sizeof(current))valid=m->sim.restore(current);
+            else if(count==sizeof(SnapshotV1)){
+                SnapshotV1 legacy{};
+                std::memcpy(&legacy,&current,sizeof(legacy));
+                valid=m->sim.restore(legacy);
+                if(valid)Save(m); // one checked, atomically replaced save
+            }
+            if(!valid)ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_WARN,kId,
+                                        "Invalid campaign save ignored");
+        }else if(result!=REVERIE_NATIVE_SAVE_NOT_FOUND)
             ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,"Campaign save read failed");
     }
     Rebuild(m);return m;
