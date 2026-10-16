@@ -102,13 +102,17 @@ public:
     ) const;
     bool Deserialize(
         const uint8_t *buffer,
-        size_t size
+        size_t size,
+        bool allow_trade_prices = false
     );
 
     bool TakeCleanCup();
     bool ReturnHeldCup();
     bool FillHeldCup();
+    bool FillSpecialDrink();
     bool ServeHeldCup();
+    bool ApplyServicePremium(int32_t cents, int32_t reputation_points);
+    bool SpendSpecialStock(int32_t cents);
     bool CollectPayment();
     bool TurnAwayCurrentPatron();
     bool WashOneCup();
