@@ -1,5 +1,6 @@
 #ifndef REVERIE_GUMBALL_ARMADA_SIMULATION_H
 #define REVERIE_GUMBALL_ARMADA_SIMULATION_H
+#include "gumball_arcade_objectives.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -54,6 +55,12 @@ public:
     int hp()const{return hp_;}
     int shield()const{return shield_;}
     int combo()const{return combo_;}
+    MissionRules mission()const{return mission_;}
+    const SalvageField& salvage()const{return salvage_;}
+    int salvage_collected()const{return salvage_.collected();}
+    float remaining_time()const{
+        return mission_.time_limit>0.f?std::max(0.f,mission_.time_limit-elapsed_):0.f;
+    }
     int max_combo()const{return max_combo_;}
     int escaped()const{return escaped_;}
     int defeated()const{return defeated_;}
@@ -118,6 +125,7 @@ public:
     bool launch(unsigned choice){
         if(phase_!=Phase::Chart||choice>=3)return false;
         destination_=lane(choice);phase_=Phase::Flight;
+        mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
         hp_=90+levels_[1]*20;shield_=20+levels_[3]*18;
         px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
         escaped_=0;sortie_cash_=0;completion_bonus_=0;shots_fired_=0;shots_hit_=0;elapsed_=0;hurt_flash_=0;invulnerable_=0;regen_delay_=0;regen_credit_=0;
@@ -130,7 +138,11 @@ public:
     void update(float dt,float sx,float sy,bool fire){
         if(phase_!=Phase::Flight||!std::isfinite(dt)||dt<=0.f)return;
         dt=std::min(dt,.05f);
-        elapsed_+=dt;hurt_flash_=std::max(0.f,hurt_flash_-dt);
+        elapsed_+=dt;
+        if(mission_.time_limit>0.f&&elapsed_>mission_.time_limit){
+            phase_=Phase::Lost;return;
+        }
+        hurt_flash_=std::max(0.f,hurt_flash_-dt);
         invulnerable_=std::max(0.f,invulnerable_-dt);
         regen_delay_=std::max(0.f,regen_delay_-dt);
         if(regen_delay_<=0.f){
@@ -218,7 +230,7 @@ public:
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
-                if(escaped_>=3){phase_=Phase::Lost;return;}
+                if(escaped_>mission_.permitted_escapes){phase_=Phase::Lost;return;}
                 if(!e.boss)damage(10+3*static_cast<int>(destination_.hazard));
                 if(e.boss||e.kind==EnemyKind::Ace){phase_=Phase::Lost;return;}
             }
@@ -240,14 +252,23 @@ public:
                         e.active=false;++defeated_;++kills_;++combo_;max_combo_=std::max(max_combo_,combo_);combo_clock_=2.65f;
                         const uint32_t reward=static_cast<uint32_t>((e.boss?125u:9u)+(combo_/3)*4+destination_.reward*2);
                         cash_+=reward;sortie_cash_+=reward;
+                        salvage_.drop(e.x,e.y,static_cast<uint16_t>(
+                            e.boss?42:(e.kind==EnemyKind::Ace?30:12)));
                     }
                     break;
                 }
             }
         }
+        const uint32_t scavenged=salvage_.update(dt,px_,py_);
+        cash_+=scavenged;sortie_cash_+=scavenged;
         if(hp_<=0){phase_=Phase::Lost;return;}
         if(spawned_==target_&&defeated_==target_){
-            completion_bonus_=static_cast<uint32_t>(20+destination_.reward*12+max_combo_*2);
+            if(salvage_.collected()<mission_.required_salvage){
+                if(salvage_.empty())phase_=Phase::Lost;
+                return;
+            }
+            completion_bonus_=mission_.bonus+
+                static_cast<uint32_t>(destination_.reward*12+max_combo_*2);
             cash_+=completion_bonus_;sortie_cash_+=completion_bonus_;
             node_=destination_.id;++visited_;
             if(destination_.fortress&&bossKilled_)bosses_|=1u<<(node_/1024u);
@@ -308,6 +329,8 @@ private:
     Phase phase_=Phase::Chart;
     uint32_t seed_=1,node_=0,visited_=0,cash_=100,kills_=0,bosses_=0,rng_=1;
     Lane destination_{};
+    MissionRules mission_{};
+    SalvageField salvage_{};
     uint16_t levels_[4]={0,0,0,0};
     uint32_t owned_weapons_=1u;
     Weapon weapon_=Weapon::PeaRepeater;
