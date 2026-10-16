@@ -85,7 +85,7 @@ public:
         destination_=lane(choice);phase_=Phase::Flight;
         hp_=90+levels_[1]*20;shield_=20+levels_[3]*18;
         px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
-        escaped_=0;sortie_cash_=0;completion_bonus_=0;shots_fired_=0;shots_hit_=0;elapsed_=0;hurt_flash_=0;
+        escaped_=0;sortie_cash_=0;completion_bonus_=0;shots_fired_=0;shots_hit_=0;elapsed_=0;hurt_flash_=0;invulnerable_=0;regen_delay_=0;regen_credit_=0;
         spawned_=0;defeated_=0;bossKilled_=false;spawn_clock_=0;rng_=Mix(seed_^destination_.id^visited_);
         const uint32_t sector=destination_.id/1024u;
         target_=6+destination_.hazard*2+static_cast<int>(sector)*2;
@@ -96,6 +96,16 @@ public:
         if(phase_!=Phase::Flight||!std::isfinite(dt)||dt<=0.f)return;
         dt=std::min(dt,.05f);
         elapsed_+=dt;hurt_flash_=std::max(0.f,hurt_flash_-dt);
+        invulnerable_=std::max(0.f,invulnerable_-dt);
+        regen_delay_=std::max(0.f,regen_delay_-dt);
+        if(regen_delay_<=0.f){
+            regen_credit_+=dt*2.f;
+            const int restored=static_cast<int>(regen_credit_);
+            if(restored>0){
+                shield_=std::min(20+levels_[3]*18,shield_+restored);
+                regen_credit_-=static_cast<float>(restored);
+            }
+        }
         sx=std::isfinite(sx)?std::max(-1.f,std::min(1.f,sx)):0.f;
         sy=std::isfinite(sy)?std::max(-1.f,std::min(1.f,sy)):0.f;
         const float speed=1.55f+.16f*levels_[2];
@@ -118,7 +128,7 @@ public:
                     (rollType==0u?EnemyKind::Scout:
                     (rollType==1u?EnemyKind::Interceptor:EnemyKind::Bomber)));
                 const uint32_t roll=next();
-                e={-1.65f+static_cast<float>(roll%331u)*.01f,1.35f,0.f,.75f,
+                e={-1.65f+static_cast<float>(roll%331u)*.01f,1.35f,0.f,1.45f,
                    boss?(22+levels_[0]/2):(kind==EnemyKind::Ace?7:
                    (kind==EnemyKind::Bomber?4:(kind==EnemyKind::Interceptor?3:2))),true,boss,kind};
                 ++spawned_;break;
@@ -145,7 +155,7 @@ public:
                     s={e.x,e.y-.14f,e.kind==EnemyKind::Bomber?-1.05f:-1.3f,true,true,drift};
                     break;
                 }
-                e.firing=e.boss?.48f:(e.kind==EnemyKind::Bomber?.95f:1.6f);
+                e.firing=e.boss?.65f:(e.kind==EnemyKind::Bomber?1.85f:2.15f);
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
@@ -159,7 +169,7 @@ public:
             if(s.y>1.75f||s.y< -1.4f){s.active=false;continue;}
             if(s.hostile){
                 if(std::fabs(s.x-px_)<.17f&&std::fabs(s.y-py_)<.16f){
-                    s.active=false;damage(11+static_cast<int>(destination_.hazard));
+                    s.active=false;damage(7+static_cast<int>(destination_.hazard));
                 }
             }else{
                 for(auto& e:enemies_)if(e.active
@@ -212,6 +222,8 @@ private:
         return Mix(seed_^destination_.id^(static_cast<uint32_t>(spawn)*0xA511E9B3u))%3u;
     }
     void damage(int amount){
+        if(invulnerable_>0.f)return;
+        invulnerable_=.36f;regen_delay_=2.4f;regen_credit_=0.f;
         const int absorbed=std::min(shield_,amount);
         shield_-=absorbed;hp_-=amount-absorbed;combo_=0;combo_clock_=0;hurt_flash_=.28f;
     }
@@ -223,7 +235,7 @@ private:
     bool bossKilled_=false;
     int escaped_=0,max_combo_=0;
     uint32_t sortie_cash_=0,completion_bonus_=0,shots_fired_=0,shots_hit_=0;
-    float elapsed_=0,hurt_flash_=0;
+    float elapsed_=0,hurt_flash_=0,invulnerable_=0,regen_delay_=0,regen_credit_=0;
     float px_=0,py_=-.85f,spawn_clock_=0,cooldown_=0,combo_clock_=0;
     std::array<Enemy,kEnemySlots> enemies_{};
     std::array<Shot,48> shots_{};
