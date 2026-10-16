@@ -9,6 +9,7 @@ final class ReveriePreferences {
     private static final String FILE_NAME = "reverie_settings";
 
     private static final String KEY_BATTERY_HUD = "battery_hud";
+    private static final String KEY_DEVICE_WARNINGS = "device_warnings";
     private static final String KEY_DOS_SCREEN_PREFIX = "dos_window_";
     private static final String KEY_PERFORMANCE_OVERLAY = "performance_overlay";
     private static final String KEY_LAST_PERFORMANCE_REPORT = "last_vr_performance_report";
@@ -149,6 +150,15 @@ final class ReveriePreferences {
             throw new IllegalArgumentException("Invalid DOS module identifier");
         }
         return KEY_DOS_SCREEN_PREFIX + moduleId;
+    }
+
+    /** Quiet nonblocking thermal/low-battery warnings, independently toggleable. */
+    boolean isDeviceWarningsEnabled() {
+        return preferences.getBoolean(KEY_DEVICE_WARNINGS, true);
+    }
+
+    void setDeviceWarningsEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_DEVICE_WARNINGS, enabled).apply();
     }
 
     boolean isLookUpRevealEnabled() {
