@@ -1,4 +1,5 @@
 #include "gumball_armada_simulation.h"
+#include "gumball_menu_layout.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -12,6 +13,8 @@
 #include <vector>
 namespace {
 using reverie::gumball::Simulation;
+using reverie::gumball::ChartNavigate;
+using reverie::gumball::LoadoutNavigate;
 using reverie::gumball::Phase;
 using reverie::gumball::Upgrade;
 using reverie::gumball::Enemy;
@@ -36,7 +39,8 @@ struct Module {
     int selected=0; // routes, upgrades, weapons, shipyard
     bool inYard=false;
     bool inSupport=false;
-    int supportSelected=0;
+    bool inLoadout=false;
+    int supportSelected=0,loadoutSelected=0;
     int garageX=3,garageY=3;
     Part brush=Part::Frame;
     bool primary=false,campaignSaveError=false,shipSaveError=false,shipLoadWarning=false,upload=true;
@@ -89,6 +93,15 @@ void Text(Module* m,const char* message,float x,float y,float sz,float r,float g
                  .9f*sz,.9f*sz,-2.86f,r,g,b);
     }
 }
+// The small procedural font has a fixed 4-unit character advance. Fit labels
+// to their actual boxes instead of letting long enemies/options overlap.
+void TextFit(Module* m,const char* label,float x,float y,float width,
+             float size,float r,float g,float b){
+    if(!label||width<=0.f)return;
+    const size_t n=std::strlen(label);
+    if(n==0)return;
+    Text(m,label,x,y,std::min(size,width/(4.f*static_cast<float>(n))),r,g,b);
+}
 void Frame(Module* m,float x,float y,float w,float h,bool focus){
     Rect(m,x,y,w,h,-2.96f,focus?.35f:.13f,focus?.21f:.11f,focus?.48f:.18f);
     Rect(m,x,y,w-.035f,h-.035f,-2.94f,.052f,.060f,.115f);
@@ -108,65 +121,93 @@ void Background(Module* m){
     }
 }
 void Chart(Module* m){
-    char text[96];Background(m);
-    Text(m,"GUMBALL ARMADA",0,1.38f,.079f,1.f,.81f,.94f);
-    Text(m,"THE CANDY KING IS MISSING",0,1.07f,.044f,.89f,.89f,.98f);
+    Background(m);
+    char text[112];
+    Text(m,"GUMBALL ARMADA",0,1.42f,.066f,1.f,.82f,.93f);
+    Text(m,"THE SEARCH FOR THE CANDY KING",0,1.15f,.032f,.84f,.89f,1.f);
     const char* generals[]={"SALLY SCRUNCH","CAPTAIN CRINGE","PETE PUCKER","SENATOR SAUER"};
     const unsigned sector=m->sim.node()/1024u;
-    std::snprintf(text,sizeof(text),"SOUR GENERAL: %s",generals[sector<4u?sector:3u]);
-    Text(m,text,0,.78f,.039f,1.f,.62f,.58f);
+    std::snprintf(text,sizeof(text),"SECTOR %u  /  %s",sector+1u,
+                  generals[sector<4u?sector:3u]);
+    TextFit(m,text,0,.94f,3.70f,.034f,1.f,.63f,.55f);
+
+    const char* names[]={"SOUR SWEEP","INTERCEPT","RECOVERY"};
     for(int n=0;n<3;++n){
-        float x=-1.54f+1.54f*n;
-        Frame(m,x,.20f,1.43f,.83f,m->selected==n);
-        auto lane=m->sim.lane(static_cast<unsigned>(n));
-        std::snprintf(text,sizeof(text),"LANE %c %04u",'A'+n,lane.id);
-        Text(m,text,x,.47f,.029f,.95f,.95f,1.f);
-        if(lane.fortress)Text(m,"SOUR FORTRESS",x,.26f,.029f,1.f,.49f,.47f);
+        const float x=reverie::gumball::kChartRouteX[n];
+        Frame(m,x,.22f,1.44f,1.09f,m->selected==n);
+        const auto lane=m->sim.lane(static_cast<unsigned>(n));
+        std::snprintf(text,sizeof(text),"LANE %c  %04u",'A'+n,lane.id);
+        TextFit(m,text,x,.57f,1.32f,.034f,1.f,.88f,.95f);
+        Text(m,names[n],x,.35f,.031f,.69f,1.f,.84f);
+        const CastGuest rival=m->sim.route_guest(static_cast<unsigned>(n));
+        TextFit(m,rival==CastGuest::None?"CLEAR OF KNOWN RIVALS":
+            reverie::gumball::CastGuestName(rival),
+            x,.13f,1.31f,.029f,1.f,.70f,.51f);
+        if(lane.fortress)Text(m,"FORTRESS ROUTE",x,-.08f,.027f,1.f,.45f,.47f);
         else{
-            std::snprintf(text,sizeof(text),"RISK %u LOOT %u",lane.hazard,lane.reward);
-            Text(m,text,x,.26f,.024f,.88f,.83f,.63f);
+            std::snprintf(text,sizeof(text),"RISK %u   REWARD %uG",
+                          lane.hazard,lane.reward);
+            TextFit(m,text,x,-.08f,1.30f,.027f,.90f,.88f,.72f);
         }
-        const CastGuest expected=m->sim.route_guest(static_cast<unsigned>(n));
-        Text(m,expected==CastGuest::None?"NO KNOWN RIVAL":
-            reverie::gumball::CastGuestName(expected),x,.07f,.021f,1.f,.76f,.55f);
-        const auto rules=reverie::gumball::MissionFor(static_cast<unsigned>(n),lane.hazard);
-        Text(m,rules.kind==reverie::gumball::MissionKind::Sweep?"SWEEP":
-            (rules.kind==reverie::gumball::MissionKind::Intercept?"INTERCEPT":"RECOVERY"),
-            x,-.13f,.030f,.71f,.97f,.90f);
+        Text(m,m->selected==n?"CLICK TO LAUNCH":"SELECT LANE",
+             x,-.23f,.026f,.61f,.94f,1.f);
     }
+
+    const int selection[]={12,10,11};
+    const char* labels[]={"LOADOUT","SHIPYARD","ALLIES"};
+    for(int i=0;i<3;++i){
+        const float x=reverie::gumball::kChartActionX[i];
+        Frame(m,x,-.94f,1.43f,.55f,m->selected==selection[i]);
+        Text(m,labels[i],x,-.94f,.043f,.92f,.96f,.82f);
+    }
+    std::snprintf(text,sizeof(text),"G %u  /  RANK %d  /  GENERALS %u OF 4",
+                  m->sim.cash(),m->sim.command_rank(),
+                  static_cast<unsigned>((m->sim.bosses()&1u)
+                    +((m->sim.bosses()>>1u)&1u)
+                    +((m->sim.bosses()>>2u)&1u)
+                    +((m->sim.bosses()>>3u)&1u)));
+    TextFit(m,text,0,-1.39f,4.2f,.034f,1.f,.88f,.64f);
+    Text(m,m->yard.ready()?"PAD SELECT   CLICK TO OPEN / FLY":
+         "SHIP NOT READY  /  OPEN SHIPYARD",
+         0,-1.64f,.027f,m->yard.ready()?.73f:1.f,
+         m->yard.ready()?.86f:.43f,.89f);
+}
+void LoadoutView(Module* m){
+    Background(m);
+    char text[96];
+    Text(m,"SHIP LOADOUT",0,1.43f,.067f,1.f,.83f,.94f);
+    std::snprintf(text,sizeof(text),"BALANCE %uG  /  CHOOSE EQUIPMENT",m->sim.cash());
+    TextFit(m,text,0,1.12f,4.20f,.038f,.80f,.98f,.89f);
+    Text(m,"SHIP SYSTEMS",0,.93f,.033f,1.f,.76f,.56f);
     const char* upgrades[]={"BLASTER","HULL","THRUSTER","SHIELD"};
     for(int i=0;i<4;++i){
-        float x=-1.82f+1.21f*i;
-        Frame(m,x,-.53f,1.12f,.66f,m->selected==i+3);
-        Text(m,upgrades[i],x,-.37f,.032f,.92f,.88f,1.f);
-        std::snprintf(text,sizeof(text),"LV %d %dG",m->sim.level(static_cast<Upgrade>(i)),
+        const float x=reverie::gumball::kLoadoutUpgradeX[i];
+        Frame(m,x,.53f,1.12f,.65f,m->loadoutSelected==i);
+        TextFit(m,upgrades[i],x,.64f,1.02f,.030f,.94f,.88f,1.f);
+        std::snprintf(text,sizeof(text),"LV %d / %dG",
+                      m->sim.level(static_cast<Upgrade>(i)),
                       m->sim.price(static_cast<Upgrade>(i)));
-        Text(m,text,x,-.66f,.026f,1.f,.81f,.56f);
+        TextFit(m,text,x,.39f,1.02f,.030f,1.f,.80f,.57f);
     }
+    Text(m,"WEAPONS",0,.07f,.033f,1.f,.76f,.56f);
     const char* weapons[]={"PEA REPEATER","ROCK CANNON","MINT SPREAD"};
     for(int i=0;i<3;++i){
-        const float x=-1.54f+1.54f*i;
+        const float x=reverie::gumball::kLoadoutWeaponX[i];
         const Weapon kind=static_cast<Weapon>(i);
-        Frame(m,x,-1.16f,1.43f,.47f,m->selected==i+7);
-        Text(m,weapons[i],x,-1.07f,.028f,.95f,.88f,.96f);
-        if(m->sim.weapon()==kind)Text(m,"EQUIPPED",x,-1.25f,.030f,.45f,1.f,.65f);
-        else if(m->sim.owns_weapon(kind))Text(m,"CLICK EQUIP",x,-1.25f,.030f,.80f,.89f,.95f);
+        Frame(m,x,-.38f,1.43f,.67f,m->loadoutSelected==4+i);
+        TextFit(m,weapons[i],x,-.24f,1.31f,.034f,.96f,.90f,1.f);
+        if(m->sim.weapon()==kind)
+            Text(m,"EQUIPPED",x,-.51f,.030f,.53f,1.f,.68f);
+        else if(m->sim.owns_weapon(kind))
+            Text(m,"CLICK TO EQUIP",x,-.51f,.029f,.75f,.95f,1.f);
         else{
             std::snprintf(text,sizeof(text),"BUY %dG",m->sim.weapon_price(kind));
-            Text(m,text,x,-1.25f,.030f,1.f,.77f,.43f);
+            Text(m,text,x,-.51f,.029f,1.f,.77f,.48f);
         }
     }
-    Frame(m,-1.78f,-1.49f,1.28f,.29f,m->selected==10);
-    Text(m,"SHIPYARD",-1.78f,-1.49f,.032f,.85f,1.f,.88f);
-    Frame(m,-.34f,-1.49f,1.30f,.29f,m->selected==11);
-    Text(m,"SUPPORT",- .34f,-1.49f,.032f,.98f,.92f,.72f);
-    std::snprintf(text,sizeof(text),"G %u   RANK %d   GENERALS %u/4",
-                  m->sim.cash(),m->sim.command_rank(),
-                  static_cast<unsigned>((m->sim.bosses()&1u)+((m->sim.bosses()>>1)&1u)
-                    +((m->sim.bosses()>>2)&1u)+((m->sim.bosses()>>3)&1u)));
-    Text(m,text,1.27f,-1.49f,.022f,1.f,.86f,.60f);
-    if(!m->yard.ready())Text(m,"SHIP NOT READY",0,-1.69f,.031f,1.f,.38f,.35f);
-    else Text(m,"PAD MOVE  CLICK ACTIVATE",0,-1.69f,.030f,.72f,.87f,.93f);
+    Frame(m,0,-1.10f,2.30f,.44f,m->loadoutSelected==7);
+    Text(m,"RETURN TO ROUTES",0,-1.10f,.034f,.83f,.98f,.90f);
+    Text(m,"PAD MOVE   CLICK SELECT",0,-1.60f,.029f,.70f,.84f,.98f);
 }
 void SupportView(Module* m){
     Background(m);
@@ -532,6 +573,7 @@ void Rebuild(Module* m){
     m->mesh.clear();
     if(m->inYard)ShipyardView(m);
     else if(m->inSupport)SupportView(m);
+    else if(m->inLoadout)LoadoutView(m);
     else if(m->sim.phase()==Phase::Chart)Chart(m);
     else if(m->sim.phase()==Phase::Flight)Flight(m);
     else Result(m);
