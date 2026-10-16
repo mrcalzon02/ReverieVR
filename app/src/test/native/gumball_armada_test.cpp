@@ -64,5 +64,45 @@ int main(){
     assert(replay.restore(finalSave));
     assert(replay.node()==game.node() && replay.bosses()==game.bosses());
     assert(!replay.restore(tampered));
+    // Verify that an actual pilot can win by steering and hitting enemies.
+    Simulation ace(4);
+    auto equipped=ace.snapshot();
+    for(auto &lv:equipped.levels)lv=12;
+    equipped.checksum=SnapshotChecksum(equipped);
+    assert(ace.restore(equipped)&&ace.launch(0));
+    assert(ace.wave()>=1&&ace.max_combo()==0&&ace.sortie_cash()==0);
+    int scouts=0,interceptors=0,bombers=0;
+    for(int tick=0;tick<12000&&ace.phase()==Phase::Flight;++tick){
+        float nearest=100.f,targetX=ace.player_x();
+        for(const auto& e:ace.enemies())if(e.active){
+            if(e.kind==EnemyKind::Scout)++scouts;
+            if(e.kind==EnemyKind::Interceptor)++interceptors;
+            if(e.kind==EnemyKind::Bomber)++bombers;
+            const float distance=std::fabs(e.y-ace.player_y());
+            if(distance<nearest){nearest=distance;targetX=e.x;}
+        }
+        const float steering=targetX>ace.player_x()+.025f?1.f:
+            (targetX<ace.player_x()-.025f?-1.f:0.f);
+        ace.update(.025f,steering,0.f,true);
+    }
+    assert(ace.phase()==Phase::Won);
+    assert(scouts>0&&interceptors>0&&bombers>0);
+    assert(ace.escaped()==0&&ace.defeated()==ace.target());
+    assert(ace.shots_fired()>ace.shots_hit()&&ace.shots_hit()>0);
+    assert(ace.completion_bonus()>0&&ace.sortie_cash()>ace.completion_bonus());
+    assert(ace.max_combo()>0&&ace.wave()==3&&ace.visited()==1);
+    const uint32_t wonCash=ace.cash();
+    assert(ace.recover()&&ace.cash()==wonCash);
+    assert(ace.launch(1)&&ace.sortie_cash()==0&&ace.completion_bonus()==0);
+
+    // Three escapes fail the mission even with fully enhanced protection.
+    Simulation leaked(17);auto shielded=leaked.snapshot();
+    shielded.levels[3]=12;shielded.levels[1]=12;
+    shielded.checksum=SnapshotChecksum(shielded);
+    assert(leaked.restore(shielded)&&leaked.launch(0));
+    for(int i=0;i<12000&&leaked.phase()==Phase::Flight;++i)
+        leaked.update(.025f,0.f,0.f,false);
+    assert(leaked.phase()==Phase::Lost&&leaked.escaped()==3);
+    assert(leaked.completion_bonus()==0&&leaked.node()==0);
     std::cout<<"Gumball Armada deterministic combat and save tests passed\n";
 }
