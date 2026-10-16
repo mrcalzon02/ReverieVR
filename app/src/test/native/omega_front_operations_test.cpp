@@ -98,7 +98,7 @@ int main(){
     // a genuine v2 save round trip. No fake replay award occurs on reload.
     CampaignSave::Bytes snapshot{};
     assert(CampaignSave::Encode(scrap,&snapshot));
-    assert(snapshot[8]==2);
+    assert(snapshot[8]==3);
     Session restored(100);
     assert(CampaignSave::Decode(&restored,snapshot.data(),snapshot.size()));
     assert(restored.Checksum()==scrap.Checksum());
@@ -147,12 +147,13 @@ int main(){
     assert(roman.frontier.sector(4)->owner==0); // defeat is not conquest
     assert(roman.frontier.relation(6)==roman_relation-4);
 
-    // A valid prior v1 campaign file (no relations field) must load with the
+    // A valid prior v1 campaign file (no relations/intelligence fields) must load with the
     // newly established initial faction stances. Schema-2 records include
-    // 17 signed relation fields after the nested tactical checkpoint.
+    // 17 signed relation fields after the nested tactical checkpoint. Legacy
+    // v1 also contains no reconnaissance/treaty arrays.
     Session old(414);assert(CampaignSave::Encode(old,&snapshot));
     const size_t relations_offset=55+16*14+Checkpoint::kBytes;
-    for(size_t i=relations_offset;i<relations_offset+kMajorFactions;++i)snapshot[i]=0;
+    for(size_t i=relations_offset;i<relations_offset+kMajorFactions+32;++i)snapshot[i]=0;
     snapshot[8]=1;Reseal(snapshot);
     Session migrated(99);
     assert(CampaignSave::Decode(&migrated,snapshot.data(),snapshot.size()));

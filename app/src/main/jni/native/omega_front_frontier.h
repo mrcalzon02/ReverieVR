@@ -3,6 +3,7 @@
 
 #include "omega_front_tactics.h"
 #include "omega_front_faction_encounters.h"
+#include "omega_front_intelligence.h"
 #include <array>
 #include <cstdint>
 
@@ -75,6 +76,8 @@ public:
     int trust() const {return trust_;}
     int pump_health() const {return pump_health_;}
     int relation(int faction) const {return faction>=1 && faction<=kMajorFactions?relations_[faction]:0;}
+    uint8_t intelligence(int sector) const {return intel_.level(sector);}
+    bool parleyed(int sector) const {return intel_.parleyed(sector);}
     bool bridge_repaired() const {return bridge_;}
     bool deployed() const {return deployed_;}
     const Battle* current_battle() const {return deployed_?&battle_:nullptr;}
@@ -121,7 +124,24 @@ public:
         if(!can_travel(destination))return false;
         if(rations_>0)--rations_;
         else trust_=trust_>=2?trust_-2:0;
-        location_=destination;AdvanceDay();return true;
+        location_=destination;
+        intel_.ObserveArrival(destination);
+        AdvanceDay();return true;
+    }
+    // Scouts cost two real rations plus a day; no free repeat surveys.
+    bool Scout(int target){
+        if(deployed_||!intel_.Survey(location_,target,rations_))return false;
+        AdvanceDay();return true;
+    }
+    // One negotiated concession per surveyed neighboring faction sector.
+    // Salvage transfers to its physical store; no fake mission victories.
+    bool Negotiate(int target){
+        if(deployed_||!Valid(target))return false;
+        FrontierSector &s=sectors_[target];
+        if(s.owner<1||s.owner>kMajorFactions)return false;
+        if(!intel_.Parley(location_,target,s.owner,rations_,salvage_,trust_,
+                         relations_[s.owner],s.wreck_mass,s.claims))return false;
+        AdvanceDay();return true;
     }
     // Survey forecast is visible before the next ecology transition.
     int next_morphology_day() const {return morphology_epoch_==0?4:-1;}
@@ -304,6 +324,9 @@ public:
         add(pump_health_);add(bridge_);add(morphology_epoch_);add(deployed_);
         for(int faction=1;faction<=kMajorFactions;++faction)
             add(static_cast<uint8_t>(relations_[faction]));
+        for(int i=0;i<kFrontierSectors;++i){
+            add(intel_.levels()[i]);add(intel_.talks()[i]);
+        }
         add(last_.operation+1);add(static_cast<uint8_t>(last_.outcome));
         add(last_.defenders_lost);add(last_.enemies_lost);
         add(last_.pump_remaining);add(last_.battle_ticks);
@@ -331,6 +354,7 @@ private:
     }
     std::array<FrontierSector,kFrontierSectors> sectors_{};
     std::array<int8_t,kMajorFactions+1> relations_{};
+    Intelligence intel_{};
     Battle battle_{1};
     uint32_t seed_;
     int location_=6,day_=1,operation_=0,population_=31;

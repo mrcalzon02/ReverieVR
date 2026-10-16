@@ -31,9 +31,10 @@ int main(){
     assert(restored.frontier.sector(8)->food==0);
     // Move into a real operation, issue a tactical move while paused,
     // persist fractional logical turns, and continue deterministically.
-    for(int i=0;i<5;++i)Tap(campaign,false,true);
+    for(int i=0;i<7;++i)Tap(campaign,false,true);
     assert(campaign.action==FieldAction::Wait); // full cycle
-    Tap(campaign,false,true);assert(campaign.action==FieldAction::Deploy);
+    for(int i=0;i<3;++i)Tap(campaign,false,true);
+    assert(campaign.action==FieldAction::Deploy);
     Tap(campaign,true);
     assert(campaign.view==FrontMode::Tactical);
     campaign.Input({0,0,0,false,false,3,11});Tap(campaign,true);

@@ -107,6 +107,9 @@ void DrawMap(State *s){
         else if(sector->ecology==game::Ecology::Wasteland){r=.44f;g=.33f;b=.29f;}
         else {r=.44f;g=.43f;b=.33f;}
         if(sector->anomaly){r=.48f;g=.33f;b=.61f;}
+        if(f.intelligence(i)==game::Intelligence::Unknown){
+            r=.12f;g=.16f;b=.20f;
+        }
         Rect(s,x,y,span*.96f,span*.96f,kBoardZ,r,g,b);
         if(i==f.location()){
             // White roadpost = real troop location, not selected hover.
@@ -121,6 +124,8 @@ void DrawMap(State *s){
         }
         char label[12];std::snprintf(label,sizeof(label),"S%03d",i+1);
         TextAt(s,label,x,y,.015f,.98f,.98f,.86f);
+        // Unknown owners cannot be read from a distant, unseen sector.
+        if(f.intelligence(i)!=game::Intelligence::Surveyed)continue;
         const bool independent=sector->owner==game::kIndependentOwner;
         Rect(s,x+span*.31f,y-span*.31f,span*.14f,span*.14f,-1.85f,
              independent?.25f:sector->owner?.91f:.60f,
@@ -129,20 +134,36 @@ void DrawMap(State *s){
     }
     const auto *target=f.sector(session.focused);
     if(target){
-        std::snprintf(line,sizeof(line),"S%03d %s",session.focused+1,target->name);
+        const bool surveyed=f.intelligence(session.focused)==game::Intelligence::Surveyed;
+        std::snprintf(line,sizeof(line),"S%03d %s",session.focused+1,
+                      surveyed?target->name:"UNSURVEYED");
         Text(s,line,-.868f,.013f,.94f,.95f,.81f);
-        std::snprintf(line,sizeof(line),"FOOD %u WATER %u WRECK %u  CLAIM %u",
-            target->food,target->water,target->wreck_mass,target->claims);
+        if(surveyed)
+            std::snprintf(line,sizeof(line),"FOOD %u WATER %u WRECK %u CLAIM %u",
+                target->food,target->water,target->wreck_mass,target->claims);
+        else std::snprintf(line,sizeof(line),"INTEL %s  SCOUT ADJACENT",
+            f.intelligence(session.focused)==game::Intelligence::Unknown?"UNKNOWN":"TERRAIN ONLY");
         Text(s,line,-.982f,.010f,.77f,.86f,.86f);
     }
-    const char *actions[]={"DEPLOY","FORAGE","RECRUIT","REPAIR","WAIT"};
+    const char *actions[]={"DEPLOY","FORAGE","RECRUIT","REPAIR","WAIT","SCOUT","PARLEY"};
     if(session.focused!=f.location()){
-        Text(s,f.can_travel(session.focused)?"CLICK TO MARCH":"ROUTE BLOCKED",-1.098f,.013f,
-             f.can_travel(session.focused)?.71f:.96f,
-             f.can_travel(session.focused)?.98f:.43f,.49f);
+        const bool recon=session.action==game::FieldAction::Scout;
+        const bool parley=session.action==game::FieldAction::Parley;
+        if(recon||parley){
+            std::snprintf(line,sizeof(line),"%s  CLICK  MENU CHANGE",
+                          recon?"SCOUT":"PARLEY");
+            Text(s,line,-1.098f,.011f,.91f,.90f,.64f);
+        }else{
+            const bool possible=f.can_travel(session.focused);
+            Text(s,possible?"CLICK TO MARCH":"ROUTE BLOCKED",-1.098f,.013f,
+                 possible?.71f:.96f,possible?.98f:.43f,.49f);
+        }
     }else {
-        std::snprintf(line,sizeof(line),"%s  CLICK EXECUTE  MENU CHANGE",
-                      actions[static_cast<int>(session.action)]);
+        const bool remote=session.action==game::FieldAction::Scout||
+                          session.action==game::FieldAction::Parley;
+        std::snprintf(line,sizeof(line),"%s  %s  MENU CHANGE",
+                      actions[static_cast<int>(session.action)],
+                      remote?"SELECT NEIGHBOR":"CLICK EXECUTE");
         Text(s,line,-1.098f,.010f,.93f,.92f,.60f);
     }
     if(f.operation()<game::kHearthfallOperations){
