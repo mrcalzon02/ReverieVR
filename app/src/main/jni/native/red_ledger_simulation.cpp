@@ -7,11 +7,13 @@ namespace redledger {
 
 namespace {
 
-const std::array<PatronDefinition, 4> kPatrons = {{
-    {PatronKind::RailWorker, "Rail worker", 280, 1},
-    {PatronKind::NightClerk, "Night clerk", 240, 1},
-    {PatronKind::MilitiaVeteran, "Militia veteran", 330, 2},
-    {PatronKind::Mechanic, "Mechanic", 300, 1}
+const std::array<PatronDefinition, 6> kPatrons = {{
+    {PatronKind::RailWorker, "Union rail worker", 280, 1},
+    {PatronKind::NightClerk, "Concordant clerk", 240, 1},
+    {PatronKind::MilitiaVeteran, "Mazr veteran", 330, 2},
+    {PatronKind::Mechanic, "Mozoli mechanic", 300, 1},
+    {PatronKind::DirectorateCourier, "UED courier", 290, 1},
+    {PatronKind::SalihorskHauler, "Salihorsk hauler", 310, 1}
 }};
 
 const std::array<SupplierOffer, 2> kSupplies = {{
@@ -34,7 +36,7 @@ EventType EventForDay(int32_t day) {
 }
 
 constexpr uint32_t kSaveMagic = 0x31534c52u;
-constexpr uint32_t kSaveVersion = 2u;
+constexpr uint32_t kSaveVersion = 3u;
 
 void WriteU32(
     uint8_t *buffer,
@@ -1026,7 +1028,7 @@ DayLedger Simulation::CloseDay() {
     return last_ledger_;
 }
 
-const std::array<PatronDefinition, 4> &
+const std::array<PatronDefinition, 6> &
 Simulation::PatronCatalog() {
     return kPatrons;
 }

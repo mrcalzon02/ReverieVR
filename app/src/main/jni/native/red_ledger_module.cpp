@@ -35,7 +35,7 @@ namespace trade = reverie::redledger::trade;
 // Include the far rear doorway in seated work-ray reach.
 constexpr float kMaximumWorkReach = 4.25f;
 constexpr float kHeldCupDistance = 0.90f;
-constexpr char kSaveSlot[] = "state-v2.bin";
+constexpr char kSaveSlot[] = "state-v3.bin";
 
 enum class WorkTarget : uint8_t {
     None = 0,
@@ -495,27 +495,24 @@ void LoadState(ModuleState *state) {
     const int32_t result=state->host->read_save(
         kSaveSlot,bytes,static_cast<uint32_t>(sizeof(bytes)),&size);
     if (result==REVERIE_NATIVE_SAVE_NOT_FOUND) return;
-    const bool extended=(size==sizeof(bytes));
-    const bool legacy=(size==Simulation::kSerializedSize);
-    if (result!=REVERIE_NATIVE_SAVE_OK || (!legacy&&!extended)) {
-        Log(state,REVERIE_NATIVE_LOG_WARN,"Red Ledger save invalid or unsupported.");
+    if (result!=REVERIE_NATIVE_SAVE_OK || size!=sizeof(bytes)) {
+        Log(state,REVERIE_NATIVE_LOG_WARN,"Red Ledger pre-1.0 save rejected (v3 required).");
         return;
     }
-    // Decode both parts into scratch copies so corrupt custom stock never
-    // overwrites the existing valid game state.
+    // Keep active state atomic: corrupted or incompatible development saves
+    // are rejected, not migrated, and do not alter a running game.
     Simulation base=state->simulation;
     trade::Trade market=state->market;
-    if (!base.Deserialize(bytes,Simulation::kSerializedSize,extended)
-        || (extended && !market.Deserialize(
-            bytes+Simulation::kSerializedSize,trade::Trade::kSerializedSize))) {
+    if (!base.Deserialize(bytes,Simulation::kSerializedSize,true)
+        || !market.Deserialize(bytes+Simulation::kSerializedSize,
+            trade::Trade::kSerializedSize)) {
         Log(state,REVERIE_NATIVE_LOG_WARN,
-            "Red Ledger rejected corrupt economy or stock; reset preserved.");
+            "Red Ledger rejected corrupt v3 game state; fresh state preserved.");
         return;
     }
     state->simulation=base;
     state->market=market;
-    Log(state,REVERIE_NATIVE_LOG_INFO,
-        extended?"Red Ledger faction stock restored.":"Legacy Red Ledger save migrated.");
+    Log(state,REVERIE_NATIVE_LOG_INFO,"Red Ledger six-supplier stock restored.");
 }
 
 bool ActivateWorkTarget(
@@ -1268,20 +1265,18 @@ void RefreshStatusBoard(ModuleState *state) {
             sim.day(),sim.cash_cents());
         std::snprintf(rows[1],sizeof(rows[1]),"DEBT: %d  REP: %d",
             sim.debt_cents(),sim.reputation());
-        std::snprintf(rows[2],sizeof(rows[2]),"RAIL: %d  OFFICE: %d",
+        std::snprintf(rows[2],sizeof(rows[2]),"101:%d 202:%d",
             market.favor(0),market.favor(1));
-        std::snprintf(rows[3],sizeof(rows[3]),"MILITIA: %d  GUILD: %d",
+        std::snprintf(rows[3],sizeof(rows[3]),"303:%d 404:%d",
             market.favor(2),market.favor(3));
+        std::snprintf(rows[4],sizeof(rows[4]),"505:%d 606:%d",
+            market.favor(4),market.favor(5));
         const auto &ledger=sim.last_ledger();
-        if(state->ledger_visible) {
-            std::snprintf(rows[4],sizeof(rows[4]),"LAST DAY: %d  SALES: %d",
-                ledger.day,ledger.sales_cents);
-            std::snprintf(rows[5],sizeof(rows[5]),"PAID DEBT: %d  LOST: %d",
-                ledger.debt_service_cents,ledger.patrons_lost);
-        } else {
-            std::snprintf(rows[4],sizeof(rows[4]),"LEDGER: VIEW LAST DAY");
-            std::snprintf(rows[5],sizeof(rows[5]),"BED: END DAY AFTER SERVICE");
-        }
+        if(state->ledger_visible)
+            std::snprintf(rows[5],sizeof(rows[5]),"DAY %d SALES %d LOST %d",
+                ledger.day,ledger.sales_cents,ledger.patrons_lost);
+        else
+            std::snprintf(rows[5],sizeof(rows[5]),"LEDGER VIEW / BED END DAY");
     }
     size_t count=0u;
     for(size_t i=0;i<6u;++i)
@@ -1621,11 +1616,13 @@ void DrawRoom(
                 == WorkTarget::Patron;
         // Uniform silhouette vocabulary, distinct faction clothing colors.
         // The four archetypes differ without external skins or extra shaders.
-        static constexpr float kFactionCloth[4][3] = {
-            {0.43f,0.27f,0.16f}, // rail union: worn leather and rust
-            {0.23f,0.33f,0.46f}, // district office: slate uniform
-            {0.30f,0.36f,0.19f}, // border militia: olive field jacket
-            {0.46f,0.34f,0.17f}  // workshop guild: ochre workwear
+        static constexpr float kFactionCloth[trade::kFactions][3] = {
+            {0.27f,0.43f,0.60f}, // 101 Concordant blue
+            {0.64f,0.56f,0.22f}, // 202 UED yellow
+            {0.55f,0.29f,0.25f}, // 303 Brewers Union red
+            {0.39f,0.29f,0.19f}, // 404 Salihorsk brown
+            {0.64f,0.39f,0.18f}, // 505 Mozoli orange
+            {0.26f,0.43f,0.28f}  // 606 Mazr green
         };
         const int faction=trade::FactionFor(
             state->simulation.current_patron()->kind);

@@ -19,7 +19,9 @@ enum class PatronKind : uint8_t {
     RailWorker = 0,
     NightClerk,
     MilitiaVeteran,
-    Mechanic
+    Mechanic,
+    DirectorateCourier,
+    SalihorskHauler
 };
 
 enum class SupplierItem : uint8_t {
@@ -120,7 +122,7 @@ public:
     bool PayProtection();
     DayLedger CloseDay();
 
-    static const std::array<PatronDefinition, 4> &PatronCatalog();
+    static const std::array<PatronDefinition, 6> &PatronCatalog();
     static const std::array<SupplierOffer, 2> &SupplierCatalog();
 
 private:

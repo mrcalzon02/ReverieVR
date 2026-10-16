@@ -5,9 +5,9 @@
 #include <cstddef>
 #include <cstdint>
 namespace reverie { namespace redledger { namespace trade {
-constexpr int kDrinks=8;
+constexpr int kDrinks=19; // house lager and 18 original Unreal catalog drinks
 constexpr int kSnacks=6;
-constexpr int kFactions=4;
+constexpr int kFactions=6; // six supplier factions 101..606
 constexpr int kOffers=kDrinks+kSnacks;
 enum class Room : int32_t { Bar=0, Stockroom=1, Living=2 };
 struct Product {
@@ -18,44 +18,73 @@ struct Product {
     int32_t faction;
 };
 static constexpr Product kDrinkCatalog[kDrinks] = {
-    {"HOUSE LAGER",0,0,0,-1},
-    {"RAIL STOUT",460,3,70,0},
-    {"CLERK PILS",420,3,60,1},
-    {"MILITIA RYE",720,3,140,2},
-    {"WORKSHOP ALE",480,3,80,3},
-    {"FRONTIER RUM",700,3,125,2},
-    {"NIGHT VODKA",680,3,115,1},
-    {"ORCHARD CIDER",400,3,55,0}
+    {"HOUSE LAGER",0,0,0,-1}, // legacy house tap, outside the 24 branded SKUs
+    {"BLUE HARBOR DRAFT",800,3,80,0},
+    {"GREEN HARBOR LAGER",1000,3,100,0},
+    {"HARBOR RESERVE WHISKEY",3200,3,220,0},
+    {"AMBER UNION ALE",700,3,80,1},
+    {"UNION STAR LAGER",900,3,100,1},
+    {"UNION HOUSE WHISKEY",3000,3,220,1},
+    {"REDLINE DARK ALE",900,3,80,2},
+    {"REDLINE SPICED RUM",1100,3,100,2},
+    {"REDLINE BARREL WHISKEY",3300,3,220,2},
+    {"IRON MUG STOUT",800,3,80,3},
+    {"CROSSMARK BITTER",1000,3,100,3},
+    {"DOCKSIDE BROWN WHISKEY",3400,3,220,3},
+    {"MARKET AMBER ALE",1000,3,80,4},
+    {"GREENMARK BITTER",1200,3,100,4},
+    {"GREENMARK CLEAR WHISKEY",3500,3,220,4},
+    {"GREEN DRAFT LAGER",900,3,80,5},
+    {"MAZR BLUE VODKA",1100,3,100,5},
+    {"MAZR CRYSTAL VODKA",3600,3,220,5}
 };
 static constexpr Product kSnackCatalog[kSnacks] = {
-    {"PICKLED EGG",240,3,45,0},
-    {"SAUSAGE ROLL",300,3,75,0},
-    {"RYE BREAD",210,3,40,1},
-    {"SALT NUTS",220,3,45,2},
-    {"SMOKED FISH",360,3,100,2},
-    {"POTATO PIE",260,3,65,3}
+    {"CANDIED PLUMS",600,3,65,0},
+    {"GOLDEN FRY CHIPS",500,3,65,1},
+    {"HOT RATION CRISPS",700,3,65,2},
+    {"SALT PRETZEL BAG",600,3,65,3},
+    {"STREET SAUSAGE TIN",800,3,65,4},
+    {"BEANS CHICKEN AND POTATO",700,3,65,5}
 };
 static constexpr const char *kFactionNames[kFactions] = {
-    "RAIL UNION","DISTRICT OFFICE","BORDER MILITIA","WORKSHOP GUILD"
+    "WESTERN CONCORDANT",
+    "UED PROVISIONERS",
+    "BARFORSOGRAD UNION",
+    "SALIHORSK DRY STILLS",
+    "MOZOLI BREW'S",
+    "MAZR VODKA"
 };
-// Existing four patron kinds map one-to-one to four distinct factions.
+// Patron identities are independent of supplier-array ordering.
 constexpr int FactionFor(PatronKind p) {
-    return static_cast<int>(p);
+    switch(p) {
+        case PatronKind::RailWorker: return 2;
+        case PatronKind::NightClerk: return 0;
+        case PatronKind::MilitiaVeteran: return 5;
+        case PatronKind::Mechanic: return 4;
+        case PatronKind::DirectorateCourier: return 1;
+        case PatronKind::SalihorskHauler: return 3;
+    }
+    return -1;
 }
 constexpr int FavoriteDrink(PatronKind p) {
-    return (static_cast<int>(p)==0) ? 1 :
-           (static_cast<int>(p)==1) ? 2 :
-           (static_cast<int>(p)==2) ? 3 : 4;
+    switch(p) {
+        case PatronKind::RailWorker: return 7;
+        case PatronKind::NightClerk: return 1;
+        case PatronKind::MilitiaVeteran: return 16;
+        case PatronKind::Mechanic: return 13;
+        case PatronKind::DirectorateCourier: return 4;
+        case PatronKind::SalihorskHauler: return 10;
+    }
+    return 0;
 }
 constexpr int FavoriteSnack(PatronKind p) {
-    return (static_cast<int>(p)==0) ? 1 :
-           (static_cast<int>(p)==1) ? 2 :
-           (static_cast<int>(p)==2) ? 4 : 5;
+    const int faction=FactionFor(p);
+    return faction>=0&&faction<kFactions?faction:-1;
 }
 struct ServiceBonus { int32_t cents; int32_t reputation; int32_t favor; };
 inline ServiceBonus RateService(PatronKind patron,int drink,int snack) {
     const int faction=FactionFor(patron);
-    if (drink<0||drink>=kDrinks||snack < -1||snack>=kSnacks)
+    if (faction<0||faction>=kFactions||drink<0||drink>=kDrinks||snack < -1||snack>=kSnacks)
         return {0,0,0};
     const bool favorite_drink=(drink==FavoriteDrink(patron));
     const bool aligned_drink=(kDrinkCatalog[drink].faction==faction);
@@ -73,13 +102,12 @@ inline ServiceBonus RateService(PatronKind patron,int drink,int snack) {
 }
 class Trade {
 public:
-    static constexpr size_t kSerializedSize=100u; // 25 checked little-endian words
+    static constexpr size_t kSerializedSize=4u*(2u+kDrinks+kSnacks+kFactions+4u+1u); // checked v2
     Trade(){ Reset(); }
     void Reset(){
         drink_stock_.fill(0); snack_stock_.fill(0); favor_.fill(0);
-        drink_stock_[1]=1; drink_stock_[2]=1; drink_stock_[3]=1;
-        drink_stock_[4]=1; snack_stock_[1]=1; snack_stock_[2]=1;
-        snack_stock_[4]=1; snack_stock_[5]=1;
+        for(int i=1;i<kDrinks;i+=3)drink_stock_[i]=1;
+        snack_stock_[0]=1; snack_stock_[2]=1; snack_stock_[4]=1;
         chosen_drink_=0; chosen_snack_=-1; offer_=0; room_=Room::Bar;
     }
     Room room() const {return room_;}
@@ -176,7 +204,8 @@ public:
     }
     bool Serialize(uint8_t *out,size_t capacity) const {
         if(!out||capacity<kSerializedSize)return false;
-        uint32_t words[25]={0x31545252u,1u};
+        std::array<uint32_t,kSerializedSize/4u> words{};
+        words[0]=0x31545252u;words[1]=2u;
         size_t at=2u;
         for(int v:drink_stock_)words[at++]=static_cast<uint32_t>(v);
         for(int v:snack_stock_)words[at++]=static_cast<uint32_t>(v);
@@ -185,9 +214,9 @@ public:
         words[at++]=static_cast<uint32_t>(chosen_snack_);
         words[at++]=static_cast<uint32_t>(offer_);
         words[at++]=static_cast<uint32_t>(room_);
-        if(at!=24u)return false;
+        if(at!=words.size()-1u)return false;
         uint32_t digest=2166136261u;
-        for(size_t i=0;i<24u;++i){
+        for(size_t i=0;i+1u<words.size();++i){
             const uint32_t v=words[i];
             for(int b=0;b<4;++b) {
                 const uint8_t byte=static_cast<uint8_t>(v>>(8*b));
@@ -196,21 +225,21 @@ public:
             }
         }
         for(int b=0;b<4;++b)
-            out[96u+static_cast<size_t>(b)]=static_cast<uint8_t>(digest>>(8*b));
+            out[(words.size()-1u)*4u+static_cast<size_t>(b)]=static_cast<uint8_t>(digest>>(8*b));
         return true;
     }
     bool Deserialize(const uint8_t *in,size_t size){
         if(!in||size!=kSerializedSize)return false;
-        uint32_t words[25]={};
+        std::array<uint32_t,kSerializedSize/4u> words{};
         uint32_t digest=2166136261u;
-        for(size_t i=0;i<25u;++i){
+        for(size_t i=0;i<words.size();++i){
             for(int b=0;b<4;++b){
                 const uint8_t v=in[i*4u+static_cast<size_t>(b)];
                 words[i]|=static_cast<uint32_t>(v)<<(8*b);
-                if(i<24u)digest=(digest^v)*16777619u;
+                if(i+1u<words.size())digest=(digest^v)*16777619u;
             }
         }
-        if(words[0]!=0x31545252u||words[1]!=1u||words[24]!=digest)
+        if(words[0]!=0x31545252u||words[1]!=2u||words.back()!=digest)
             return false;
         Trade copy;
         size_t at=2u;
@@ -221,7 +250,7 @@ public:
         copy.chosen_snack_=static_cast<int32_t>(words[at++]);
         copy.offer_=static_cast<int32_t>(words[at++]);
         const int32_t room=static_cast<int32_t>(words[at++]);
-        if(at!=24u||copy.drink_stock_[0]!=0||
+        if(at!=words.size()-1u||copy.drink_stock_[0]!=0||
             copy.chosen_drink_<0||copy.chosen_drink_>=kDrinks||
             copy.chosen_snack_<-1||copy.chosen_snack_>=kSnacks||
             copy.offer_<0||copy.offer_>=kOffers||room<0||room>2)return false;

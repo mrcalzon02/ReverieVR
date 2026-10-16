@@ -11,10 +11,13 @@ int main() {
     const PatronDefinition *patron=sim.current_patron();
     assert(patron&&patron->kind==PatronKind::RailWorker);
     assert(market.SelectDrink(sim.beer_units())&&market.drink()==1);
-    assert(market.SelectSnack()&&market.snack()==1);
+    assert(market.SelectDrink(sim.beer_units())&&market.drink()==4);
+    assert(market.SelectDrink(sim.beer_units())&&market.drink()==7);
+    assert(market.SelectSnack()&&market.snack()==0);
+    assert(market.SelectSnack()&&market.snack()==2);
     const int beer_before=sim.beer_units();
     const int cash_before=sim.cash_cents();
-    const int favor_before=market.favor(0);
+    const int favor_before=market.favor(2);
     assert(sim.TakeCleanCup());
     assert(sim.FillSpecialDrink());
     assert(market.ConsumeDrink());
@@ -32,7 +35,7 @@ int main() {
     Simulation checked;
     assert(!checked.Deserialize(premium_pending,pending_size,false));
     assert(checked.Deserialize(premium_pending,pending_size,true));
-    assert(market.favor(0)==favor_before+quote.favor);
+    assert(market.favor(2)==favor_before+quote.favor);
     assert(sim.CollectPayment());
     assert(sim.cash_cents()==cash_before+base+quote.cents);
     assert(sim.patrons_remaining()==3);
@@ -54,17 +57,16 @@ int main() {
     assert(loaded.cash_cents()==sim.cash_cents());
     assert(stored.stock_drink(1)==market.stock_drink(1));
     assert(stored.room()==trade::Room::Living);
-    // Once the premium is collected, the old V2 decoder still recognizes
-    // the unchanged base simulation segment.
+    // The current standalone simulation can still validate its own segment.
     assert(loaded.Deserialize(packed,Simulation::kSerializedSize,false));
-    // An untouched original V2 state is still independently restorable.
-    Simulation legacy;
-    uint8_t legacy_bytes[Simulation::kSerializedSize]={};
-    size_t legacy_size=0u;
-    assert(legacy.Serialize(legacy_bytes,sizeof(legacy_bytes),&legacy_size));
-    Simulation migrated;
-    assert(migrated.Deserialize(legacy_bytes,legacy_size));
+    // Pre-1.0 migrations are intentionally dropped; new v3 state stays atomic.
+    Simulation fresh;
+    uint8_t current_bytes[Simulation::kSerializedSize]={};
+    size_t current_size=0u;
+    assert(fresh.Serialize(current_bytes,sizeof(current_bytes),&current_size));
+    Simulation loaded_current;
+    assert(loaded_current.Deserialize(current_bytes,current_size));
     // No wholesale purchasing may silently exceed the available wallet.
-    assert(!migrated.SpendSpecialStock(migrated.cash_cents()+1));
-    std::cout<<"Red Ledger integrated trade: sales, favor, wholesale, legacy and composite save OK\n";
+    assert(!loaded_current.SpendSpecialStock(loaded_current.cash_cents()+1));
+    std::cout<<"Red Ledger integrated trade: six-faction sales, wholesale and v3 save OK\n";
 }
