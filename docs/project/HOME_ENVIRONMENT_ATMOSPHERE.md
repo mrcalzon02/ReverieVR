@@ -9,7 +9,7 @@ The home scene remains native GLES2 with one APK and no network runtime.
 
 | Scene | Visual layers | Environmental playback |
 |---|---|---|
-| Birch Panel Living Room | Two actual rear-wall window apertures with recessed scenic sky/hills, mullions and sills; room furniture and original mirror untouched | Low-level steady original HVAC/room-hum PCM |
+| Birch Panel Living Room | Two actual rear-wall window apertures with recessed scenic sky/hills, moving distant birds, mullions and sills; room furniture and original mirror untouched | Low-level steady original HVAC/room-hum PCM |
 | Pastoral Forest Glade | Three-band four-sided sky panorama, cloud groups, warm sun, distant hills, rabbits, one deer, two independently moving bird silhouettes | Original synthesized leaves/wind and intermittent chirps |
 | Windswept Dune Beach | Three-band coastal sky, cloud groups, sun, low headland on one side of horizon, crabs, two moving birds | Original synthesized surf/wind and gull-like calls |
 
