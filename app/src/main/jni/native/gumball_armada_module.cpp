@@ -237,8 +237,20 @@ void Flight(Module* m){
 }
 void Result(Module* m){
     Background(m);auto phase=m->sim.phase();
-    Text(m,phase==Phase::ArmadaDefeated?"SOUR ARMADA DEFEATED":
-         (phase==Phase::Won?"SWEET VICTORY!":"SHIP DISABLED"),0,.81f,.069f,1.f,.78f,.35f);
+    const char* headline="SHIP DISABLED";
+    if(phase==Phase::ArmadaDefeated)headline="SOUR ARMADA DEFEATED";
+    else if(phase==Phase::Won)headline="SWEET VICTORY!";
+    else {
+        switch(m->sim.failure()){
+        case reverie::gumball::FailureReason::Deadline:headline="COURIER GOT AWAY";break;
+        case reverie::gumball::FailureReason::SalvageLost:headline="SALVAGE LOST";break;
+        case reverie::gumball::FailureReason::EliteEscaped:headline="SOUR ACE ESCAPED";break;
+        case reverie::gumball::FailureReason::Escapes:headline="CONVOY OVERRUN";break;
+        case reverie::gumball::FailureReason::HullDestroyed:headline="SHIP DISABLED";break;
+        default:break;
+        }
+    }
+    Text(m,headline,0,.81f,.061f,1.f,.78f,.35f);
     char text[80];
     std::snprintf(text,sizeof(text),"SORTIE CASH +%u  CLEAR BONUS +%u",
                   m->sim.sortie_cash(),m->sim.completion_bonus());
