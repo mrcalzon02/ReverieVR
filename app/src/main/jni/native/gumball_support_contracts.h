@@ -4,6 +4,11 @@
 namespace reverie { namespace gumball {
 enum class SupportKind : uint8_t { None, CapitaineEclair, MademoiselleMacaron };
 enum class SupportSkill : uint8_t { EclairVolley, EclairDuration, MacaronRelief, MacaronTractor };
+enum class SupportKit : uint8_t { HullPatch, ShieldTonic };
+inline const char* SupportKitName(SupportKit kind){
+    return kind==SupportKit::HullPatch?"HULL PATCH":
+           (kind==SupportKit::ShieldTonic?"SHIELD TONIC":"UNKNOWN KIT");
+}
 inline const char* SupportName(SupportKind kind){
     switch(kind){
     case SupportKind::CapitaineEclair:return "CAPITAINE ECLAIR";
@@ -37,6 +42,26 @@ public:
         if(booked_!=SupportKind::None||price==0u||cash<price)return false;
         cash-=price;booked_=kind;return true;
     }
+    uint8_t kit_mask()const{return kit_mask_;}
+    bool has_kit(SupportKit kind)const{
+        const unsigned i=static_cast<unsigned>(kind);
+        return i<2u&&(kit_mask_&(1u<<i))!=0u;
+    }
+    uint32_t kit_price(SupportKit kind)const{
+        return kind==SupportKit::HullPatch?65u:
+               (kind==SupportKit::ShieldTonic?45u:0u);
+    }
+    bool buy_kit(SupportKit kind,uint32_t& cash){
+        const unsigned i=static_cast<unsigned>(kind);
+        const uint32_t price=kit_price(kind);
+        if(i>=2u||price==0u||has_kit(kind)||cash<price)return false;
+        cash-=price;kit_mask_|=static_cast<uint8_t>(1u<<i);return true;
+    }
+    bool use_kit(SupportKit kind){
+        if(!has_kit(kind))return false;
+        kit_mask_&=static_cast<uint8_t>(~(1u<<static_cast<unsigned>(kind)));
+        return true;
+    }
     SupportKind booked()const{return booked_;}
     SupportKind consume(){
         const SupportKind kind=booked_;booked_=SupportKind::None;return kind;
@@ -46,11 +71,11 @@ public:
     int shield_repair()const{return 7+3*static_cast<int>(levels_[2]);}
     int hull_repair()const{return 5+2*static_cast<int>(levels_[2]);}
     float tractor_reach()const{return 1.00f+.18f*static_cast<float>(levels_[3]);}
-    bool restore(const uint8_t (&levels)[4],uint8_t hired){
+    bool restore(const uint8_t (&levels)[4],uint8_t hired,uint8_t kits=0){
         for(uint8_t l:levels)if(l>kMaxLevel)return false;
-        if(hired>static_cast<uint8_t>(SupportKind::MademoiselleMacaron))return false;
+        if(hired>static_cast<uint8_t>(SupportKind::MademoiselleMacaron)||kits>3u)return false;
         for(unsigned i=0;i<4;++i)levels_[i]=levels[i];
-        booked_=static_cast<SupportKind>(hired);return true;
+        booked_=static_cast<SupportKind>(hired);kit_mask_=kits;return true;
     }
     void export_levels(uint8_t (&levels)[4])const{
         for(unsigned i=0;i<4;++i)levels[i]=levels_[i];
@@ -58,6 +83,7 @@ public:
 private:
     uint8_t levels_[4]={0,0,0,0};
     SupportKind booked_=SupportKind::None;
+    uint8_t kit_mask_=0;
 };
 }}
 #endif
