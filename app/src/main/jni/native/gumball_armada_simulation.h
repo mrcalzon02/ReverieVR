@@ -63,6 +63,7 @@ public:
     bool guest_active()const{return cast_.active();}
     int guest_pulses()const{return cast_.pulses();}
     uint32_t ally_shots()const{return ally_shots_;}
+    float ally_x()const{return ally_x_;}
     uint32_t bombs_defused()const{return bombs_defused_;}
     uint32_t node()const{return node_;}
     uint32_t cash()const{return cash_;}
@@ -144,7 +145,7 @@ public:
         destination_=lane(choice);phase_=Phase::Flight;failure_=FailureReason::None;
         mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
         cast_.begin(seed_,destination_.id,visited_,destination_.hazard);
-        ally_shots_=0;bombs_defused_=0;
+        ally_shots_=0;bombs_defused_=0;ally_x_=-1.3f;
         hp_=90+levels_[1]*20+ship_profile_.hull;
         shield_=20+levels_[3]*18+ship_profile_.shield;
         px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
@@ -286,18 +287,55 @@ public:
                 }
             }
         }
+        cast_.update(dt);
+        if(cast_.pulse_ready()){
+            if(cast_.kind()==CastGuest::PipParfait){
+                const Enemy* target=nullptr;
+                for(const auto& enemy:enemies_)if(enemy.active&&enemy.y>-.55f)
+                    if(!target||enemy.y<target->y)target=&enemy;
+                if(target){
+                    for(auto& bullet:shots_)if(!bullet.active){
+                        ally_x_=target->x;
+                        bullet={ally_x_,-.79f,3.6f,true,false,0.f,2,true,false};
+                        ++ally_shots_;cast_.claim_pulse();break;
+                    }
+                }
+            }else if(cast_.kind()==CastGuest::LollyWren){
+                const int cap=20+levels_[3]*18+ship_profile_.shield;
+                const int restored=std::min(8,cap-shield_);
+                const uint32_t pulled=salvage_.tractor(px_,py_,1.25f);
+                if(restored>0||pulled>0u){
+                    shield_+=restored;cash_+=pulled;sortie_cash_+=pulled;
+                    ally_x_=px_-.25f;
+                    cast_.claim_pulse();
+                }
+            }
+        }
         for(auto& s:shots_)if(s.active){
             s.y+=s.vy*dt;s.x+=s.vx*dt;
             if(s.y>1.75f||s.y< -1.4f){s.active=false;continue;}
             if(s.hostile){
-                if(std::fabs(s.x-px_)<.17f&&std::fabs(s.y-py_)<.16f){
-                    s.active=false;damage(7+static_cast<int>(destination_.hazard));
+                if(s.bomb){
+                    // Interceptable telegraphed bomb: player and allied shots
+                    // can disarm it without inventing a separate score payout.
+                    for(auto& bullet:shots_)if(bullet.active&&!bullet.hostile
+                        &&std::fabs(bullet.x-s.x)<.16f
+                        &&std::fabs(bullet.y-s.y)<.18f){
+                        bullet.active=false;s.active=false;++bombs_defused_;break;
+                    }
+                    if(!s.active)continue;
+                }
+                if(std::fabs(s.x-px_)<(s.bomb?.20f:.17f)
+                   &&std::fabs(s.y-py_)<(s.bomb?.19f:.16f)){
+                    s.active=false;damage(s.bomb?
+                        s.damage+static_cast<int>(destination_.hazard):
+                        7+static_cast<int>(destination_.hazard));
                 }
             }else{
                 for(auto& e:enemies_)if(e.active
                     &&std::fabs(s.x-e.x)<(e.boss?.32f:.19f)
                     &&std::fabs(s.y-e.y)<(e.boss?.25f:.16f)){
-                    s.active=false;++shots_hit_;e.hp-=s.damage;
+                    s.active=false;if(!s.ally)++shots_hit_;e.hp-=s.damage;
                     if(e.hp<=0){
                         if(e.boss)bossKilled_=true;
                         e.active=false;++defeated_;++kills_;++combo_;max_combo_=std::max(max_combo_,combo_);combo_clock_=2.65f;
@@ -329,7 +367,9 @@ public:
         }
     }
     bool recover(){
-        if(phase_==Phase::Won||phase_==Phase::Lost){phase_=Phase::Chart;return true;}
+        if(phase_==Phase::Won||phase_==Phase::Lost||phase_==Phase::ArmadaDefeated){
+            phase_=Phase::Chart;return true;
+        }
         return false;
     }
     Snapshot snapshot()const{
@@ -351,7 +391,7 @@ public:
         kills_=s.kills;bosses_=s.bosses;
         for(unsigned i=0;i<4;++i)levels_[i]=s.levels[i];
         owned_weapons_=s.owned_weapons;weapon_=static_cast<Weapon>(s.active_weapon);
-        phase_=bosses_==15u?Phase::ArmadaDefeated:Phase::Chart;
+        phase_=Phase::Chart; // Post-general progress remains revisitable, not a sticky result.
         return true;
     }
     bool restore(const SnapshotV1& legacy){
@@ -387,6 +427,7 @@ private:
     SalvageField salvage_{};
     CastEncounter cast_{};
     uint32_t ally_shots_=0,bombs_defused_=0;
+    float ally_x_=-1.3f;
     ShipProfile ship_profile_{};
     bool ship_ready_=true;
     uint16_t levels_[4]={0,0,0,0};
