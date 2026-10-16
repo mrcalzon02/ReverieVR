@@ -756,9 +756,9 @@ void Update(void* p,const ReverieNativeInputV1* in){
             const float py=in->pointer_origin[1]
                           +travel*in->pointer_direction[1];
             if(std::isfinite(px)&&std::isfinite(py)){
-                if(!m->pointerSeen
+                if(!padMoving&&(!m->pointerSeen
                    ||std::fabs(px-m->lastPointerX)>.075f
-                   ||std::fabs(py-m->lastPointerY)>.075f)
+                   ||std::fabs(py-m->lastPointerY)>.075f))
                     m->menuPadFocus=false;
                 m->pointerSeen=true;m->lastPointerX=px;m->lastPointerY=py;
                 if(!padMoving&&!m->menuPadFocus){
