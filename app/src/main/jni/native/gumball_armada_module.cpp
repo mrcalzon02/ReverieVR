@@ -700,6 +700,34 @@ void Update(void* p,const ReverieNativeInputV1* in){
         if(m->sim.kit_activations()!=usedKits)
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         Rebuild(m);
+    }else if(phase==Phase::Chart&&m->inLoadout){
+        m->navTime-=dt;
+        const float x=in->move_x,y=in->move_y;
+        if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
+            m->loadoutSelected=LoadoutNavigate(m->loadoutSelected,
+                std::fabs(x)>std::fabs(y)?(x>0.f?1:-1):0,
+                std::fabs(y)>=std::fabs(x)?(y>0.f?1:-1):0);
+            m->navTime=.18f;
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+            Rebuild(m);
+        }
+        if(pressed&&!m->primary){
+            bool good=false;
+            if(m->loadoutSelected<4){
+                good=m->sim.buy(static_cast<Upgrade>(m->loadoutSelected));
+                if(good)Save(m);
+            }else if(m->loadoutSelected<7){
+                const Weapon weapon=static_cast<Weapon>(m->loadoutSelected-4);
+                good=m->sim.owns_weapon(weapon)?
+                    m->sim.select_weapon(weapon):m->sim.buy_weapon(weapon);
+                if(good)Save(m);
+            }else{
+                m->inLoadout=false;good=true;
+            }
+            ReverieNativeRequestFeedbackV1(m->host,good?
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            Rebuild(m);
+        }
     }else if(phase==Phase::Chart&&m->inSupport){
         m->navTime-=dt;
         if(m->navTime<=0.f&&std::fabs(in->move_y)>.55f){
@@ -769,41 +797,27 @@ void Update(void* p,const ReverieNativeInputV1* in){
         m->navTime-=dt;
         const float x=in->move_x,y=in->move_y;
         if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
-            if(std::fabs(y)>.6f){
-                if(y>0&&m->selected<3)m->selected=3;
-                else if(y>0&&m->selected<7)m->selected=7;
-                else if(y>0&&m->selected<10)m->selected=10;
-                else if(y<0&&(m->selected==10||m->selected==11))m->selected=7;
-                else if(y<0&&m->selected>=7)m->selected=3;
-                else if(y<0&&m->selected>=3)m->selected=0;
-            }else if(m->selected<3)m->selected=(m->selected+(x>0?1:2))%3;
-            else if(m->selected<7)m->selected=3+(m->selected-3+(x>0?1:3))%4;
-            else if(m->selected<10)m->selected=7+(m->selected-7+(x>0?1:2))%3;
-            else m->selected=m->selected==10?11:10;
-            m->navTime=.20f;
+            m->selected=ChartNavigate(m->selected,
+                std::fabs(x)>std::fabs(y)?(x>0.f?1:-1):0,
+                std::fabs(y)>=std::fabs(x)?(y>0.f?1:-1):0);
+            m->navTime=.19f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
         }
         if(pressed&&!m->primary){
             bool good=false;
-            if(m->selected<3){
+            if(m->selected>=0&&m->selected<3){
                 good=m->sim.launch(static_cast<unsigned>(m->selected));
-                if(good)Save(m); // atomically consume paid booking in campaign slot
-            }
-            else if(m->selected<7){
-                good=m->sim.buy(static_cast<Upgrade>(m->selected-3));
-                if(good)Save(m);
-            }else if(m->selected<10){
-                const Weapon requested=static_cast<Weapon>(m->selected-7);
-                good=m->sim.owns_weapon(requested)?
-                    m->sim.select_weapon(requested):m->sim.buy_weapon(requested);
-                if(good)Save(m);
+                if(good)Save(m); // consume pending escort exactly once
             }else if(m->selected==10){
                 m->inYard=true;m->garageX=3;m->garageY=3;good=true;
-            }else{
+            }else if(m->selected==11){
                 m->inSupport=true;m->supportSelected=0;good=true;
+            }else if(m->selected==12){
+                m->inLoadout=true;m->loadoutSelected=0;good=true;
             }
-            ReverieNativeRequestFeedbackV1(m->host,good?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            ReverieNativeRequestFeedbackV1(m->host,good?
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
             Rebuild(m);
         }
     }else if(pressed&&!m->primary&&m->sim.recover()){
