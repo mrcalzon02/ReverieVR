@@ -34,6 +34,8 @@ struct Module {
     Shipyard yard;
     int selected=0; // routes, upgrades, weapons, shipyard
     bool inYard=false;
+    bool inSupport=false;
+    int supportSelected=0;
     int garageX=3,garageY=3;
     Part brush=Part::Frame;
     bool primary=false,campaignSaveError=false,shipSaveError=false,shipLoadWarning=false,upload=true;
@@ -159,6 +161,35 @@ void Chart(Module* m){
     Text(m,text,.68f,-1.49f,.031f,1.f,.86f,.60f);
     if(!m->yard.ready())Text(m,"SHIP NOT READY",0,-1.69f,.031f,1.f,.38f,.35f);
     else Text(m,"PAD MOVE  CLICK ACTIVATE",0,-1.69f,.030f,.72f,.87f,.93f);
+}
+void SupportView(Module* m){
+    Background(m);
+    Text(m,"ALLIED SUPPORT CONTRACTS",0,1.44f,.057f,.94f,.91f,.74f);
+    Text(m,"ONE PAID ESCORT FOR YOUR NEXT SORTIE",0,1.16f,.032f,.83f,.97f,.86f);
+    char text[116];
+    const auto& contracts=m->sim.support();
+    const char* items[]={"HIRE CAPITAINE ECLAIR","HIRE MLLE MACARON",
+        "ECLAIR VOLLEY","ECLAIR DURATION","MACARON RELIEF","MACARON TRACTOR","RETURN"};
+    for(int i=0;i<7;++i){
+        const float y=.80f-.342f*static_cast<float>(i);
+        Frame(m,0,y,4.35f,.30f,i==m->supportSelected);
+        if(i<2){
+            const SupportKind kind=i==0?SupportKind::CapitaineEclair:
+                                          SupportKind::MademoiselleMacaron;
+            std::snprintf(text,sizeof(text),"%s  %uG",items[i],contracts.hire_price(kind));
+        }else if(i<6){
+            const SupportSkill kind=static_cast<SupportSkill>(i-2);
+            const uint32_t cost=contracts.upgrade_cost(kind);
+            if(cost>0)std::snprintf(text,sizeof(text),"%s  LV %u/3  %uG",
+                                    items[i],contracts.level(kind),cost);
+            else std::snprintf(text,sizeof(text),"%s  LV 3/3  MAX",items[i]);
+        }else std::snprintf(text,sizeof(text),"RETURN TO CHART");
+        Text(m,text,0,y,.030f,.95f,.94f,.86f);
+    }
+    std::snprintf(text,sizeof(text),"BOOKED: %s    CASH %uG",
+                  SupportName(contracts.booked()),m->sim.cash());
+    Text(m,text,0,-1.52f,.031f,.86f,1.f,.79f);
+    Text(m,"CLICK HIRE OR UPGRADE   PAD SCROLL",0,-1.68f,.028f,.78f,.85f,.96f);
 }
 void ShipyardView(Module* m){
     Background(m);
@@ -429,6 +460,7 @@ void Result(Module* m){
 void Rebuild(Module* m){
     m->mesh.clear();
     if(m->inYard)ShipyardView(m);
+    else if(m->inSupport)SupportView(m);
     else if(m->sim.phase()==Phase::Chart)Chart(m);
     else if(m->sim.phase()==Phase::Flight)Flight(m);
     else Result(m);
