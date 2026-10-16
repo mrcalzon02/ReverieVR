@@ -66,7 +66,7 @@ public:
     float ally_x()const{return ally_x_;}
     uint32_t bombs_defused()const{return bombs_defused_;}
     uint32_t mines_defused()const{return mines_defused_;}
-    uint32_t twin_bonus_paid()const{return twin_bonus_paid_;}
+    uint32_t twin_bonus_paid()const{return twins_.awarded()?32u:0u;}
     uint32_t node()const{return node_;}
     uint32_t cash()const{return cash_;}
     uint32_t kills()const{return kills_;}
@@ -148,7 +148,7 @@ public:
         mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
         cast_.begin(seed_,destination_.id,visited_,destination_.hazard);
         ally_shots_=0;bombs_defused_=0;mines_defused_=0;ally_x_=-1.3f;
-        biff_killed_=false;baff_killed_=false;twin_bonus_paid_=0;
+        twins_.reset();
         hp_=90+levels_[1]*20+ship_profile_.hull;
         shield_=20+levels_[3]*18+ship_profile_.shield;
         px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
@@ -365,12 +365,10 @@ public:
                     s.active=false;if(!s.ally)++shots_hit_;e.hp-=s.damage;
                     if(e.hp<=0){
                         if(e.boss)bossKilled_=true;
-                        if(e.kind==EnemyKind::Biff)biff_killed_=true;
-                        if(e.kind==EnemyKind::Baff)baff_killed_=true;
                         e.active=false;++defeated_;++kills_;++combo_;max_combo_=std::max(max_combo_,combo_);combo_clock_=2.65f;
-                        if(biff_killed_&&baff_killed_&&twin_bonus_paid_==0u){
-                            twin_bonus_paid_=32u;cash_+=32u;sortie_cash_+=32u;
-                        }
+                        const uint32_t duoBonus=twins_.destroyed(e.kind==EnemyKind::Biff,
+                                                                 e.kind==EnemyKind::Baff);
+                        cash_+=duoBonus;sortie_cash_+=duoBonus;
                         const uint32_t reward=static_cast<uint32_t>((e.boss?125u:9u)+(combo_/3)*4+destination_.reward*2);
                         cash_+=reward;sortie_cash_+=reward;
                         salvage_.drop(e.x,e.y,static_cast<uint16_t>(
@@ -458,8 +456,8 @@ private:
     MissionRules mission_{};
     SalvageField salvage_{};
     CastEncounter cast_{};
-    uint32_t ally_shots_=0,bombs_defused_=0,mines_defused_=0,twin_bonus_paid_=0;
-    bool biff_killed_=false,baff_killed_=false;
+    uint32_t ally_shots_=0,bombs_defused_=0,mines_defused_=0;
+    CrumbclankContract twins_{};
     float ally_x_=-1.3f;
     ShipProfile ship_profile_{};
     bool ship_ready_=true;
