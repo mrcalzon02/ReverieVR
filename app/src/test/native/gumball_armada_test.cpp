@@ -217,6 +217,19 @@ int main(){
     assert(built.hp()==basic.hp()+14);
     assert(built.ship_profile().pickup_radius>basic.ship_profile().pickup_radius);
     assert(built.ship_profile().speed<basic.ship_profile().speed);
+    Shipyard turretShip;
+    assert(turretShip.place(2,2,Part::Mount));
+    assert(turretShip.ready()&&turretShip.profile().mounts==2);
+    Simulation doubleBarrel(88);
+    assert(doubleBarrel.configure_ship(turretShip)&&doubleBarrel.launch(0));
+    doubleBarrel.update(.01f,0.f,0.f,true);
+    assert(doubleBarrel.shots_fired()==2);
+    float firstY=0.f,secondY=0.f;
+    int gunshots=0;
+    for(const auto& shot:doubleBarrel.shots())if(shot.active&&!shot.hostile){
+        if(gunshots++==0)firstY=shot.y;else secondY=shot.y;
+    }
+    assert(gunshots==2&&std::fabs(firstY-secondY)>.05f);
     Shipyard brokenShip;
     assert(brokenShip.remove(3,1));
     assert(!brokenShip.ready());
