@@ -221,6 +221,25 @@ void EnemyVisual(Module* m,const Enemy& e){
         Tri(m,x,y-.18f,x,y+.25f,x+.24f,y+.09f,-2.90f,.68f,.91f,.27f);
         Rect(m,x,y+.02f,.11f,.14f,-2.86f,.96f,.98f,.60f);
         break;
+    case EnemyKind::Nib:
+        // Thin jagged minelayer with a row of explicitly visible mines.
+        Tri(m,x,y+.24f,x-.19f,y-.17f,x+.19f,y-.17f,
+            -2.92f,.26f,.77f,.42f);
+        Rect(m,x,y,.105f,.33f,-2.88f,.96f,.78f,.18f);
+        Disc(m,x-.12f,y-.12f,.055f,-2.86f,.28f,.98f,.78f);
+        Disc(m,x+.12f,y-.12f,.055f,-2.86f,.28f,.98f,.78f);
+        break;
+    case EnemyKind::Biff:
+        Disc(m,x,y,.22f,-2.92f,.72f,.40f,.17f);
+        Rect(m,x-.15f,y-.04f,.17f,.22f,-2.88f,.96f,.77f,.38f);
+        Disc(m,x+.17f,y+.09f,.08f,-2.86f,1.f,.91f,.50f);
+        break;
+    case EnemyKind::Baff:
+        Disc(m,x,y,.22f,-2.92f,.58f,.36f,.16f);
+        Rect(m,x+.15f,y-.04f,.17f,.22f,-2.88f,.96f,.77f,.38f);
+        Tri(m,x,y+.21f,x-.14f,y+.09f,x+.14f,y+.09f,
+            -2.86f,.98f,.91f,.52f);
+        break;
     case EnemyKind::Blort:
         // Rotund grenadier silhouette and twin hazardous sour bomb racks.
         Disc(m,x,y,.245f,-2.90f,.68f,.78f,.12f);
@@ -266,7 +285,12 @@ void Flight(Module* m){
         Rect(m,drop.x,drop.y,.063f,.063f,-2.79f,.98f,.97f,.66f);
     }
     for(const auto& shot:s.shots())if(shot.active){
-        if(shot.bomb){
+        if(shot.mine){
+            // Distinct fixed-travel warning symbol, no relying on green hue.
+            Disc(m,shot.x,shot.y,.13f,-2.82f,.24f,.89f,.48f);
+            Rect(m,shot.x,shot.y,.16f,.038f,-2.79f,.98f,.98f,.75f);
+            Rect(m,shot.x,shot.y,.038f,.16f,-2.79f,.98f,.98f,.75f);
+        }else if(shot.bomb){
             // Larger, visibly distinct slow hazards, shootable in real combat.
             Disc(m,shot.x,shot.y,.115f,-2.82f,.88f,.22f,.12f);
             Disc(m,shot.x,shot.y,.054f,-2.80f,1.f,.91f,.23f);
@@ -291,11 +315,16 @@ void Flight(Module* m){
             Rect(m,ax,ay+.07f,.15f,.07f,-2.78f,1.f,.95f,.68f);
             Text(m,"LOLLY: RESCUE TUG",0,-.75f,.035f,.77f,1.f,.81f);
         }
-    }else if(s.guest()==CastGuest::BlortBlister){
-        bool grenadier=false;
-        for(const auto& e:s.enemies())if(e.active&&e.kind==EnemyKind::Blort)
-            grenadier=true;
-        if(grenadier)Text(m,"BLORT: INCOMING BOMBS",0,-.75f,.035f,1.f,.55f,.38f);
+    }else{
+        bool blort=false,nib=false,twins=false;
+        for(const auto& e:s.enemies())if(e.active){
+            if(e.kind==EnemyKind::Blort)blort=true;
+            if(e.kind==EnemyKind::Nib)nib=true;
+            if(e.kind==EnemyKind::Biff||e.kind==EnemyKind::Baff)twins=true;
+        }
+        if(blort)Text(m,"BLORT: INCOMING BOMBS",0,-.75f,.035f,1.f,.55f,.38f);
+        else if(nib)Text(m,"NIB: MINEFIELD",0,-.75f,.035f,1.f,.79f,.47f);
+        else if(twins)Text(m,"BIFF + BAFF: DOUBLE BARRAGE",0,-.75f,.030f,1.f,.79f,.47f);
     }
     if(s.hurt_flash()>0.f){
         Rect(m,-2.25f,0,.13f,2.7f,-2.78f,1.f,.18f,.18f);
