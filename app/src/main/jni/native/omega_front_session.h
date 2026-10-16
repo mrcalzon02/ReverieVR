@@ -9,7 +9,7 @@
 namespace reverie { namespace omega {
 
 enum class FrontMode : uint8_t { SectorMap, Tactical };
-enum class FieldAction : uint8_t { Deploy, Forage, Recruit, Repair, Wait, Scout, Parley };
+enum class FieldAction : uint8_t { Deploy, Forage, Recruit, Repair, Wait, Scout, Parley, Accord };
 
 // Shell-independent, seated table interaction. The current sector is distinct
 // from the focused cell: selecting a distant region does not teleport troops.
@@ -68,7 +68,7 @@ public:
             }
         }
         if(in.secondary && !secondary_) {
-            action=static_cast<FieldAction>((static_cast<int>(action)+1)%7);
+            action=static_cast<FieldAction>((static_cast<int>(action)+1)%8);
             changed=true;
         }
         if(in.primary && !primary_){
@@ -76,6 +76,7 @@ public:
             if(focused!=frontier.location()){
                 if(action==FieldAction::Scout)performed=frontier.Scout(focused);
                 else if(action==FieldAction::Parley)performed=frontier.Negotiate(focused);
+                else if(action==FieldAction::Accord)performed=frontier.ConcludeAccord(focused);
                 else performed=frontier.Travel(focused);
             }
             else {
@@ -99,7 +100,8 @@ public:
                     break;
                 case FieldAction::Wait:performed=frontier.AdvanceDay();break;
                 case FieldAction::Scout:
-                case FieldAction::Parley:performed=false;break;
+                case FieldAction::Parley:
+                case FieldAction::Accord:performed=false;break;
                 }
             }
             rejected=!performed;

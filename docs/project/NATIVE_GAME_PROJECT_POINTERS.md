@@ -1,5 +1,8 @@
 # Native Game Project Pointers
 
+**P3g source integration (2026-10-16):** First noncombat alternatives to M04/M05/M06 are wired through omega_front_accord.h, Frontier, Session, and the native map. Negotiated salvage licence/charter access/ford passage require reconnaissance, one prior parley, sufficient relations/trust and real resource payments; they advance a mission without fabricating a battle result or ownership transfer. The existing 2,048-byte frontier.v1 record advances to internal schema v4 with separate treaty history and v1-v3 loading. GCC/Clang and ASan/UBSan pass for the standalone accord helper; full integrated host, Android APK and Daydream verification remain pending.
+
+
 **Status:** foundation implementation started; user-visible launch remains deferred until the native interaction/runtime gates below are satisfied.
 
 **Purpose:** preserve the intended direction for small, deliberately pre-PSX-scale native games derived from existing project concepts without turning ReverieVR into a general-purpose modern game engine.

@@ -1,4 +1,9 @@
 # Omega Front — Fractured World and Environment Design
+
+## Limited first-contact settlement alternatives (2026-10-16)
+
+The initial theater now has source-integrated alternative diplomatic completion for Scrapline's salvage dispute, Meridian's Charter Gate and the Lost Ninth ford. A prior resource-backed parley and additional field resources are mandatory. Scrapline surrenders exactly six existing wreck units as salvage rights but retains its yard; Meridian sells charter transit and retains checkpoint ownership; the Ninth grants passage while the ford remains neutral and the Ninth Camp stays faction-owned. Treaty history is distinct from combat result accounting and persists in first-frontier internal save schema v4. No full dynamic faction diplomacy, 70 campaign arcs, Android build or physical Daydream acceptance is claimed.
+
 **Project:** RV-GAME-06 / Omega Front  
 **Maturity:** PROPOSED design; neither map content nor game mechanics are implemented  
 **World canon:** [OMEGA_FRONT_WORLD_BIBLE.md](OMEGA_FRONT_WORLD_BIBLE.md)  

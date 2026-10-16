@@ -145,13 +145,14 @@ void DrawMap(State *s){
             f.intelligence(session.focused)==game::Intelligence::Unknown?"UNKNOWN":"TERRAIN ONLY");
         Text(s,line,-.982f,.010f,.77f,.86f,.86f);
     }
-    const char *actions[]={"DEPLOY","FORAGE","RECRUIT","REPAIR","WAIT","SCOUT","PARLEY"};
+    const char *actions[]={"DEPLOY","FORAGE","RECRUIT","REPAIR","WAIT","SCOUT","PARLEY","ACCORD"};
     if(session.focused!=f.location()){
         const bool recon=session.action==game::FieldAction::Scout;
         const bool parley=session.action==game::FieldAction::Parley;
-        if(recon||parley){
+        const bool accord=session.action==game::FieldAction::Accord;
+        if(recon||parley||accord){
             std::snprintf(line,sizeof(line),"%s  CLICK  MENU CHANGE",
-                          recon?"SCOUT":"PARLEY");
+                          recon?"SCOUT":parley?"PARLEY":"ACCORD");
             Text(s,line,-1.098f,.011f,.91f,.90f,.64f);
         }else{
             const bool possible=f.can_travel(session.focused);
@@ -160,7 +161,8 @@ void DrawMap(State *s){
         }
     }else {
         const bool remote=session.action==game::FieldAction::Scout||
-                          session.action==game::FieldAction::Parley;
+                          session.action==game::FieldAction::Parley||
+                          session.action==game::FieldAction::Accord;
         std::snprintf(line,sizeof(line),"%s  %s  MENU CHANGE",
                       actions[static_cast<int>(session.action)],
                       remote?"SELECT NEIGHBOR":"CLICK EXECUTE");
@@ -173,6 +175,11 @@ void DrawMap(State *s){
             f.operation_faction(),f.relation(f.operation_faction()));
         Text(s,line,-1.194f,.009f,.78f,.90f,.93f);
     }else Text(s,"HEARTHFALL SIX OPERATIONS COMPLETE",-1.194f,.009f,.78f,.94f,.76f);
+    if(f.last_accord()>=3 && f.next_morphology_day()<0){
+        std::snprintf(line,sizeof(line),"ACCESS ACCORD M%02d  NO BATTLE",
+                      f.last_accord()+1);
+        Text(s,line,.80f,.010f,.60f,.92f,.78f);
+    }
     if(f.next_morphology_day()>0){
         std::snprintf(line,sizeof(line),"EDEN FORECAST S%03d DAY %d",
                      f.forecast_sector()+1,f.next_morphology_day());

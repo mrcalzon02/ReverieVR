@@ -22,7 +22,7 @@ public:
         Bytes bytes{};
         Writer w{bytes};
         for(char c : "OFSTRAT1") {if(!c)break;w.U8(static_cast<uint8_t>(c));}
-        w.U16(3);w.U16(0);
+        w.U16(4);w.U16(0);
         const Frontier &f=s.frontier;
         w.U32(f.seed_);
         w.U8(static_cast<uint8_t>(s.focused));
@@ -61,6 +61,8 @@ public:
             w.U8(static_cast<uint8_t>(f.relations_[faction]));
         for(auto level:f.intel_.levels())w.U8(level);
         for(auto talk:f.intel_.talks())w.U8(talk);
+        w.U8(f.accords_.mask());
+        w.U8(static_cast<uint8_t>(f.accords_.last_operation()+1));
         if(!w.ok)return false;
         uint64_t hash=Hash(bytes.data(),kBytes-8);
         for(size_t i=kBytes-8;i<kBytes;++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
@@ -77,12 +79,12 @@ public:
         Reader r{data,kBytes-8};
         for(char c:"OFSTRAT1"){if(!c)break;if(r.U8()!=static_cast<uint8_t>(c))return false;}
         const uint16_t schema=r.U16();
-        if((schema!=1 && schema!=2 && schema!=3)||r.U16()!=0)return false;
+        if((schema!=1 && schema!=2 && schema!=3 && schema!=4)||r.U16()!=0)return false;
         uint32_t seed=r.U32();
         const int focus=r.U8();
         const unsigned view=r.U8(),action=r.U8();
         const uint32_t orders=r.U32();
-        if(!seed||focus>=16||view>1||action>(schema>=3?6u:4u))return false;
+        if(!seed||focus>=16||view>1||action>(schema>=4?7u:schema>=3?6u:4u))return false;
         Session next(seed);
         next.focused=focus;
         next.view=static_cast<FrontMode>(view);
@@ -149,6 +151,16 @@ public:
             // Legacy saves lack recon history. Only observe the player's
             // actual position, not an invented explored frontier.
             f.intel_.ObserveArrival(f.location_);
+        }
+        if(schema>=4){
+            const uint8_t mask=r.U8();
+            const int lastAccord=static_cast<int>(r.U8())-1;
+            if(!f.accords_.Restore(mask,lastAccord,f.operation_))return false;
+            for(int op=3;op<=5;++op){
+                if(!f.accords_.completed(op))continue;
+                const int sector=Frontier::TargetForOperation(op);
+                if(!f.intel_.parleyed(sector))return false;
+            }
         }
         while(r.position<r.capacity){if(r.U8()!=0)return false;}
         if(!r.ok)return false;
