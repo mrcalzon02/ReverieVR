@@ -2759,6 +2759,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_NATIVE) {
+            // Shelf selection can enter MODE_NATIVE after this frame's
+            // onNewFrame initialization slot. A pending first GL surface is
+            // not a failed eye render: onNewFrame will initialize it on the
+            // next frame, or report a genuine GL initialization failure.
+            if (!nativeSurfaceReady) {
+                if (orientationMenuVisible) {
+                    drawUiPanel(eye, eyeCorrection, true);
+                }
+                drawPointerOverlay(eye, eyeCorrection);
+                return;
+            }
+
             System.arraycopy(
                 eye.getEyeView(),
                 0,
