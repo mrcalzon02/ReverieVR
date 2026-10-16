@@ -294,6 +294,77 @@ int main(){
         }
     }
     assert(foundPip&&foundLolly&&foundBlort&&foundNib&&foundTwins);
+    // Two paid French-inspired allies keep upgrades and mission charge in one
+    // checksummed V3 campaign balance rather than in a non-atomic second slot.
+    Simulation contracts(109);
+    assert(contracts.hire_support(SupportKind::CapitaineEclair));
+    assert(contracts.cash()==55u);
+    assert(!contracts.hire_support(SupportKind::MademoiselleMacaron));
+    const auto booked=contracts.snapshot();
+    assert(booked.version==3u&&sizeof(booked)==56u);
+    Simulation reread(109);
+    assert(reread.restore(booked));
+    assert(reread.support().booked()==SupportKind::CapitaineEclair);
+    assert(reread.cash()==55u);
+    assert(reread.launch(0));
+    assert(reread.support().booked()==SupportKind::None);
+    assert(reread.deployed_support()==SupportKind::CapitaineEclair);
+    assert(reread.snapshot().support_state>>8u==0u);
+    for(int i=0;i<520&&reread.phase()==Phase::Flight;++i)
+        reread.update(.025f,0.f,0.f,false);
+    assert(reread.support_pulses()>0);
+    auto funds=contracts.snapshot();
+    funds.cash=900u;funds.checksum=SnapshotChecksum(funds);
+    Simulation boosted(109);assert(boosted.restore(funds));
+    assert(boosted.upgrade_support(SupportSkill::EclairVolley));
+    assert(boosted.upgrade_support(SupportSkill::MacaronRelief));
+    const auto enhanced=boosted.snapshot();
+    Simulation updated(109);
+    assert(updated.restore(enhanced));
+    assert(updated.support().volley_damage()==3);
+    assert(updated.support().shield_repair()==10);
+    auto invalidPaid=enhanced;invalidPaid.support_state|=0x80000000u;
+    invalidPaid.checksum=SnapshotChecksum(invalidPaid);
+    assert(!updated.restore(invalidPaid));
+    invalidPaid=enhanced;invalidPaid.support_state=(invalidPaid.support_state&~(3u<<8u))|(3u<<8u);
+    invalidPaid.checksum=SnapshotChecksum(invalidPaid);
+    assert(!updated.restore(invalidPaid));
+    SnapshotV2 oldV2{};
+    oldV2.seed=443u;oldV2.cash=88u;oldV2.visited=2u;
+    oldV2.owned_weapons=1u;oldV2.active_weapon=0u;
+    oldV2.checksum=SnapshotV2Checksum(oldV2);
+    Simulation migratedV2;
+    assert(migratedV2.restore(oldV2));
+    assert(migratedV2.cash()==88u);
+    assert(migratedV2.snapshot().version==3u);
+    assert(migratedV2.support().booked()==SupportKind::None);
+    // Route chart must report the same later-run guest as the combat director.
+    bool cinnamon=false,sydney=false,jules=false;
+    for(uint32_t seed=1;seed<=512&&!(cinnamon&&sydney&&jules);++seed){
+        Simulation probe(seed);
+        auto saveProbe=probe.snapshot();saveProbe.visited=2u;
+        saveProbe.levels[1]=12u;saveProbe.levels[3]=12u;
+        saveProbe.checksum=SnapshotChecksum(saveProbe);
+        assert(probe.restore(saveProbe));
+        const CastGuest next=probe.route_guest(0);
+        if(next!=CastGuest::CinnamonCharles&&next!=CastGuest::SydneySlipstream
+           &&next!=CastGuest::JawbreakerJules)continue;
+        assert(probe.launch(0)&&probe.guest()==next);
+        bool zoned=false,shifting=false,heavy=false;
+        for(int i=0;i<820&&probe.phase()==Phase::Flight;++i){
+            probe.update(.025f,0.f,0.f,false);
+            shifting|=probe.slipstream_active()&&
+                (probe.movement_multiplier()>=1.40f||probe.movement_multiplier()<=.60f);
+            for(const auto& e:probe.enemies())if(e.active&&e.kind==EnemyKind::Jules)
+                heavy=true;
+            for(const auto& shot:probe.shots())if(shot.active&&shot.zone)
+                zoned=true;
+        }
+        if(next==CastGuest::CinnamonCharles){assert(zoned);cinnamon=true;}
+        if(next==CastGuest::SydneySlipstream){assert(shifting);sydney=true;}
+        if(next==CastGuest::JawbreakerJules){assert(heavy);jules=true;}
+    }
+    assert(cinnamon&&sydney&&jules);
     // All four provisional general flags must remain recoverable on load:
     // the missing King storyline is unfinished, not a permanent results trap.
     Simulation postgame(88);
