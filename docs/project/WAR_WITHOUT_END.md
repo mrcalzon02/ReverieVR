@@ -1,9 +1,9 @@
-# WAR WITHOUT END — Native Tactical Strategy RPG Design Charter
+# OMEGA FRONT — Native Tactical Strategy RPG Design Charter
 **Project ID:** RV-GAME-06 (proposed)  
 **Status:** CONCEPT / DESIGN ONLY; no playable module or APK inclusion claimed  
 **Date:** 2026-10-15  
 **Platform:** ReverieVR native module, one offline-capable Android APK; Samsung Galaxy S9 + Daydream View/controller as the reference target  
-**Working title:** War Without End (original identity; final title/art direction subject to revision)
+**Title / setting:** Omega Front. **War Without End** is the earlier provisional mechanical-design title, retained in this file's name to preserve preexisting links. Canonical world reference: [OMEGA_FRONT_WORLD_BIBLE.md](OMEGA_FRONT_WORLD_BIBLE.md).
 
 ## 1. Vision, references, and non-negotiables
 
@@ -29,6 +29,12 @@ A **command pulse** is the atomic combat step (proposed: 250 ms logical time). U
 An operation usually lasts 15–45 minutes early, and escalating campaigns include consecutive deployments with attrition, restricted resupply, and multi-stage sieges. Inspectable rooms may be short engagements (2–10 minutes) but their composition becomes harder, not merely more numerous.
 
 ## 3. Content depth and world structure
+
+### Setting authority: Omega Front
+
+The late-twentieth-century **Ouroboros Corporation** technomantic breakthrough coincided with the planet being **torn in half** and fractures in space-time admitting fighters, civilizations, refugees and monstrosities from past and future. Exactly **17 rival factions** compete for survival, control and territory. The rare **Eden Zones** are explicitly breathable and livable by baseline humans with no shielding or augmentation; these are contested homelands, not generic resource tiles. **Wastelands** hold ruins and salvage, **barren zones** impose extreme environmental/logistical pressures, and **anomaly fields** warp normal battlefield rules. The player establishes a base and defends a foothold before pushing into those territories. This canon is detailed in the linked [world bible](OMEGA_FRONT_WORLD_BIBLE.md).
+
+World-map sector data must retain environmental class, habitability, population, control, supply, faction origin-era tags and optional anomaly effects. Region classes and 17-faction motives alter actual battlefield economy and AI objectives, not merely the appearance of units. The precise geography of the physically divided planet and the nature of the original disaster remain intentionally unresolved.
 
 Design targets, **not claims of produced content**:
 - **100 character levels** per commander, troop and several independent mastery tracks.
@@ -161,7 +167,7 @@ Four AI layers, each deterministic and budgeted:
 
 Difficulty emerges through combined arms, reserves, commander replacement, supporting fire, position, resources, doctrine and reinforcements. Increasing numerical stats without more varied decisions does not qualify as a new difficulty tier. The AI cannot run an unbounded search on the render thread.
 
-Campaign factions: doctrinally different rather than just recolored. Proposed archetypes: industrial attrition state, mobile raider coalition, salvage technocracy, mystic siege court, subterranean infestation, rogue logistics machine. Original proper nouns to be coined during narrative/art pass.
+**Campaign faction contract:** exactly **17 competing factions** in the canonical Omega Front setting, spanning resource-consuming autonomous swarms, desperate temporally displaced refugees, recognizable historic armies, far-future powers and post-Rupture organizations. Their actual names, alliances and canon biographies remain unspecified. The [world bible](OMEGA_FRONT_WORLD_BIBLE.md) contains a **provisional 17-slot coverage worksheet**; its archetypes must never be misrepresented as approved lore. Strategic AI must support diplomacy/refugees as well as hostile swarms and faction-specific resource needs, without collapsing the final 17 into six recolored armies.
 
 ## 8. Art, audio, VR interaction, accessibility
 
