@@ -1,7 +1,7 @@
 # Gumball Armada — The Search for the Candy King
 
 **Target:** ReverieVR, one phone-resident APK, Galaxy S9 / Daydream.  
-**Status (2026-10-16):** Development-only S01/S02 combat, S03 starter weapons, S08/S09 objectives and collectible salvage, and **partial S06 connected modular shipyard integrated in source**. The standalone shipyard component and tests were byte-verified against the commit and passed strict GCC/Clang and Clang ASan/UBSan. The integrated Android/NDK APK and physical S9 headset playthrough remain unverified; authored textures, deep voiced announcer and full campaigns remain unimplemented.
+**Status (2026-10-16):** Development-only S01/S02 combat, S03 starter weapons, S08/S09 objectives and collectible salvage, **partial S06 connected shipyard**, and a **partial source-only CAST-02/03 support-and-grenadier encounter slice**. The standalone shipyard component and tests were byte-verified against the commit and passed strict GCC/Clang and Clang ASan/UBSan. The integrated Android/NDK APK and physical S9 headset playthrough remain unverified; authored textures, deep voiced announcer and full campaigns remain unimplemented.
 
 ## Premise
 
@@ -41,6 +41,8 @@ A candy-painted flight-action RPG, with modular ships made from licorice trusses
 **Test:** scripts/verify-gumball-armada.sh runs standalone C++17 regression code. No new GitHub Actions are required. The source module is not accepted as a tested handset game until Android/NDK and physical-device evidence exists.
 
 ## Recurring side characters and support cast
+
+**Current partial code slice:** once a sortie has been completed, a deterministic guest selection can produce Pip's bounded escort shots, Lolly's bounded shield/salvage aid, or Blort's slow interceptable double-bomb attacks (or no guest). Those are actual simulation/render source paths with procedural silhouettes and a new unit-test runner; the full integrated native build and S9 VR pass remain pending. The other 11 characters, complete shops/quests, bespoke sprites, portraits, voice and future Extra Lime continues remain planned. The final four-general results screen is no longer a permanent trap: it returns to the chart, while the Candy King remains missing.
 
 The **14 named character concepts** (six shopkeepers/operators, two friendly mid-sortie support pilots, and six recurring Sour nuisance/rival pilots) have an authoritative *planned* cast bible: [GUMBALL_ARMADA_CAST_BIBLE.md](GUMBALL_ARMADA_CAST_BIBLE.md). It records original characterization, shop archetype assignments, sample dialogue, future encounter mechanics and visual briefs. **No portraits, support calls, named enemy attacks, voice lines or shops are implemented by this documentation commit.** Character images are deliberately deferred for later production.
 
