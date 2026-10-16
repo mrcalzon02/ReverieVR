@@ -919,6 +919,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return mode == MODE_DOS && !orientationMenuVisible;
     }
 
+    boolean isDosOverlayNavigationActive() {
+        return !orientationMenuVisible
+            && (mode == MODE_DOS_OVERLAY
+                || mode == MODE_DOS_BINDINGS
+                || mode == MODE_DOS_BINDING_TUNING);
+    }
+
     boolean handlesSelectAsShellAction() {
         if (orientationMenuVisible) {
             return true;
@@ -1292,6 +1299,32 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         clampVirtualPointerAngles();
+        return true;
+    }
+
+    boolean requestDosMenuNavigation(VrInputAction action) {
+        if (!isDosOverlayNavigationActive()
+            || (action != VrInputAction.NAV_UP
+                && action != VrInputAction.NAV_DOWN))
+            return false;
+        final int[][] buttons = activeButtons();
+        int current = hoveredButton;
+        final int next;
+        if (current < 0 || current >= buttons.length
+            || !isButtonEnabled(current)) {
+            next = firstEnabledButton(buttons.length);
+        } else {
+            next = findEnabledVerticalButton(current,
+                action == VrInputAction.NAV_UP ? -1 : 1,
+                buttons.length);
+        }
+        if (next < 0)return false;
+        keyboardQuickMenuFocusActive = true;
+        if (next != hoveredButton) {
+            hoveredButton = next;
+            textureDirty = true;
+            host.onUiFocusChanged();
+        }
         return true;
     }
 
@@ -2249,7 +2282,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // visual grace period activate a key no longer under the live ray.
         boolean selecting = selectRequested.getAndSet(false);
         int newHover =
-            orientationMenuVisible && keyboardQuickMenuFocusActive
+            (orientationMenuVisible || isDosOverlayNavigationActive())
+                && keyboardQuickMenuFocusActive
                 ? hoveredButton
                 : uiTargetStabilizer.update(rawHover, frameNanos, selecting);
         // Gaze selection already has shell hover and a five-second dwell cue.
@@ -5017,10 +5051,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         } else if (mode == MODE_DOS_LIBRARY) {
             handleDosLibrarySelection(hoveredButton);
         } else if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY) {
+            keyboardQuickMenuFocusActive = false;
             handleDosOverlaySelection(hoveredButton);
         } else if (mode == MODE_DOS_BINDINGS) {
+            keyboardQuickMenuFocusActive = false;
             handleDosBindingSelection(hoveredButton);
         } else if (mode == MODE_DOS_BINDING_TUNING) {
+            keyboardQuickMenuFocusActive = false;
             handleDosBindingTuningSelection(hoveredButton);
         } else {
             handleSetupSelection(hoveredButton);

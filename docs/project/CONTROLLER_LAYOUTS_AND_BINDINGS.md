@@ -156,3 +156,14 @@ universal Quick Menu, the touchpad click is left mouse and the physical
 App/minus button is right mouse where the active DOS profile allows it.
 The keyboard/menu behavior of a particular DOS game still depends on
 that game's own input support; Galaxy S9 verification remains required.
+
+
+### DOS overlay menu pad navigation (2026-10-15)
+
+When the DOS Quick Menu or DOS binding panels are actually open, the
+Daydream touchpad's upper and lower directional zones navigate their
+buttons without requiring click-and-drag or a virtual mouse. A held
+direction repeats after 350 ms and then every 170 ms; center release
+re-arms navigation. Touchpad click still activates the selected menu
+command. Leaving the overlay restores the unchanged DOS game bindings,
+including held guest arrow keys. Home remains shell-owned.

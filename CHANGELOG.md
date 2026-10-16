@@ -1,5 +1,7 @@
 # Changelog
 
+- DOS Quick Menu / binding overlays: Daydream touchpad Up/Down now navigates focused shell controls without click, with bounded hold-repeat and lift suppression; Select activates the focused menu item.
+
 - DOS input and Home shelves: nonmodal DOS shell hover no longer cuts headset mouse look or touchpad arrow navigation; Select remains protected on shell controls. Classic Games and Native Apps now open nonoverlapping lists.
 
 - Native Classics: add full 8×8 Reversi with legal eight-way flips, automatic forced passes, terminal disc-count scoring, a bounded CPU, and existing Daydream board controls; device acceptance pending.

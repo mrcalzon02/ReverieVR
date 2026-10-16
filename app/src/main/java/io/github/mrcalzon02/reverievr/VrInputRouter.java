@@ -24,6 +24,11 @@ final class VrInputRouter {
             return false;
         }
 
+        /** An opened DOS shell menu owns pad Up/Down rather than the guest. */
+        default boolean usesDosShellMenuNavigation() {
+            return false;
+        }
+
         default void onDosLibraryTouchScroll(float deltaY, boolean ended) {
             // Existing clients without this shelf need no scroll callback.
         }
@@ -69,6 +74,8 @@ final class VrInputRouter {
 
     private boolean previousTouching;
     private boolean libraryScrollTouch;
+    private int dosMenuDirection;
+    private long nextDosMenuRepeatNanos;
     private int touchStartX;
     private int touchStartY;
     private int touchLastX;
@@ -97,6 +104,8 @@ final class VrInputRouter {
         previousVolumeDown = false;
         previousTouching = false;
         libraryScrollTouch = false;
+        dosMenuDirection = 0;
+        nextDosMenuRepeatNanos = 0L;
         touchStartX = touchStartY = touchLastX = touchLastY = 0;
         horizontalAxisState = verticalAxisState = 0;
         gestures.reset((input, down) ->
@@ -144,6 +153,8 @@ final class VrInputRouter {
         // hosted content as Back before the modal shell menu can intercept it.
         final boolean dosGame = listener != null
             && listener.usesDaydreamDosGameControls();
+        final boolean dosShellMenu = listener != null
+            && listener.usesDosShellMenuNavigation();
         emitBindingDigitalEdge(
             BindingInput.DAYDREAM_APP_BUTTON,
             snapshot.menuPressed,
@@ -246,7 +257,8 @@ final class VrInputRouter {
                 if (listener != null) {
                     listener.onDosLibraryTouchScroll(0f, true);
                 }
-            } else if (!dosGame && Math.abs(deltaX) >= TOUCH_SWIPE_THRESHOLD
+            } else if (!dosShellMenu && !dosGame
+                && Math.abs(deltaX) >= TOUCH_SWIPE_THRESHOLD
                 && Math.abs(deltaX) > Math.abs(deltaY)) {
                 emit(
                     deltaX > 0
@@ -254,7 +266,7 @@ final class VrInputRouter {
                         : VrInputAction.NAV_LEFT,
                     source
                 );
-            } else if (!dosGame
+            } else if (!dosShellMenu && !dosGame
                 && Math.abs(deltaY) >= TOUCH_SWIPE_THRESHOLD) {
                 emit(
                     deltaY > 0
@@ -265,6 +277,8 @@ final class VrInputRouter {
             }
         }
 
+        routeDosShellMenuTouch(snapshot, dosShellMenu, source);
+
         previousClick = snapshot.touchpadPressed;
         previousMenu = snapshot.menuPressed;
         previousHome = snapshot.homePressed;
@@ -272,6 +286,32 @@ final class VrInputRouter {
         previousVolumeDown = snapshot.volumeDownPressed;
         previousTouching = snapshot.touching;
         if (!snapshot.touching) libraryScrollTouch = false;
+    }
+
+    private void routeDosShellMenuTouch(
+        ControllerSnapshot snapshot, boolean menuActive, String source) {
+        if (!menuActive || !snapshot.touching || snapshot.touchpadPressed) {
+            dosMenuDirection = 0;
+            nextDosMenuRepeatNanos = 0L;
+            return;
+        }
+        final float y = centerTouch(snapshot.touchY);
+        final int direction = y <= -0.55f ? -1 : y >= 0.55f ? 1 : 0;
+        if (direction == 0) {
+            dosMenuDirection = 0;
+            return;
+        }
+        final long now = snapshot.receivedAtNanos > 0L
+            ? snapshot.receivedAtNanos : System.nanoTime();
+        if (direction != dosMenuDirection
+            || now >= nextDosMenuRepeatNanos) {
+            emit(direction < 0 ? VrInputAction.NAV_UP
+                : VrInputAction.NAV_DOWN, source);
+            nextDosMenuRepeatNanos = now
+                + (direction != dosMenuDirection
+                    ? 350000000L : 170000000L);
+        }
+        dosMenuDirection = direction;
     }
 
     static VrInputAction daydreamHomeAction(boolean dosGame) {

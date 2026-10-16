@@ -1013,6 +1013,11 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public boolean usesDosShellMenuNavigation() {
+        return renderer != null && renderer.isDosOverlayNavigationActive();
+    }
+
+    @Override
     public boolean usesDosLibraryTouchScroll() {
         return renderer != null && renderer.isDosLibraryScrollable();
     }
@@ -1111,13 +1116,15 @@ public final class VrActivity extends Activity
                 break;
 
             case NAV_UP:
-                if (!renderer.requestDosLibraryScroll(VrInputAction.NAV_UP)) {
+                if (!renderer.requestDosMenuNavigation(VrInputAction.NAV_UP)
+                    && !renderer.requestDosLibraryScroll(VrInputAction.NAV_UP)) {
                     renderer.requestPointerNavigation(VrInputAction.NAV_UP);
                 }
                 break;
 
             case NAV_DOWN:
-                if (!renderer.requestDosLibraryScroll(VrInputAction.NAV_DOWN)) {
+                if (!renderer.requestDosMenuNavigation(VrInputAction.NAV_DOWN)
+                    && !renderer.requestDosLibraryScroll(VrInputAction.NAV_DOWN)) {
                     renderer.requestPointerNavigation(VrInputAction.NAV_DOWN);
                 }
                 break;

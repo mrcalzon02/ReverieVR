@@ -10,10 +10,19 @@ public final class VrInputRouterDosLibraryScrollTest {
         float swipeDistance;
         int endedCount;
         boolean libraryVisible = true;
+        boolean dosMenuVisible;
+        int up;
+        int down;
 
         @Override public void onInputAction(VrInputAction action, String source) {
             if (action == VrInputAction.NAV_UP
                 || action == VrInputAction.NAV_DOWN) navigationActions++;
+            if (action == VrInputAction.NAV_UP) up++;
+            if (action == VrInputAction.NAV_DOWN) down++;
+        }
+
+        @Override public boolean usesDosShellMenuNavigation() {
+            return dosMenuVisible;
         }
 
         @Override public boolean usesDosLibraryTouchScroll() {
@@ -47,6 +56,26 @@ public final class VrInputRouterDosLibraryScrollTest {
         assertEquals(-85f, listener.swipeDistance, 0.001f);
         assertEquals(1, listener.endedCount);
         assertEquals(0, listener.navigationActions);
+    }
+
+    @Test public void dosOverlayPadDirectionsMoveWithoutClickAndRepeatAtHeldCadence() {
+        Listener listener = new Listener();
+        listener.libraryVisible = false;
+        listener.dosMenuVisible = true;
+        VrInputRouter router = new VrInputRouter(listener);
+        router.onControllerSnapshot(touch(true, 15, 1000000000L), "BLE");
+        assertEquals(1, listener.up);
+        router.onControllerSnapshot(touch(true, 15, 1100000000L), "BLE");
+        assertEquals(1, listener.up);
+        router.onControllerSnapshot(touch(true, 15, 1370000000L), "BLE");
+        assertEquals(2, listener.up);
+        router.onControllerSnapshot(touch(false, 15, 1390000000L), "BLE");
+        assertEquals(2, listener.navigationActions); // no extra lift swipe
+        router.onControllerSnapshot(touch(true, 245, 1500000000L), "BLE");
+        assertEquals(1, listener.down);
+        router.onControllerSnapshot(touch(true, 128, 1510000000L), "BLE");
+        router.onControllerSnapshot(touch(true, 245, 1520000000L), "BLE");
+        assertEquals(2, listener.down); // neutral re-arms without click
     }
 
     @Test public void otherScreensKeepNormalTouchpadSwipeNavigation() {
