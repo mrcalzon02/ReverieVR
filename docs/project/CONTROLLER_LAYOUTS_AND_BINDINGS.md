@@ -194,3 +194,13 @@ head-look mouse movement continue without any pressed mouse requirement.
 Fullscreen DOS intentionally excludes room geometry and floor keys;
 Home/Quick Menu retains recovery and modal guest-input suspension.
 Handset stereo/input and actual guest typing remain acceptance gates.
+
+## DOS no-click regression (2026-10-15 source)
+
+The `VrInputRouterDosNoClickTest` exercises the actual Daydream packet
+routing through a real DOS FPS binding engine and virtual input bus:
+nonclicked touch holds guest Up/Down and releases on lift; head yaw/pitch
+continue driving mouse deltas without mouse-button activation. This is a
+source regression contract; the user's physical report still requires a
+new signed APK on the Galaxy S9 plus live INPUT_NORMALIZED/BINDING_OUTPUT
+trace if the handset differs from the tested source path.
