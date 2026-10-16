@@ -4,6 +4,10 @@
 using namespace reverie::gumball;
 int main(){
  Shipyard s;assert(s.ready());assert(s.count(Part::Core)==1);assert(s.stock(Part::Armor)==3);
+ assert(s.profile().mounts==1);
+ assert(s.place(2,2,Part::Mount));assert(s.profile().mounts==2);
+ assert(s.profile().muzzle_y[0]!=s.profile().muzzle_y[1]);
+ assert(s.remove(2,2));
  assert(!s.place(0,0,Part::Armor));assert(!s.remove(3,3));
  assert(s.place(4,2,Part::Armor));assert(s.count(Part::Armor)==1);assert(s.profile().hull>=14);
  assert(s.remove(4,2));assert(s.stock(Part::Armor)==3);assert(!s.remove(4,2));
