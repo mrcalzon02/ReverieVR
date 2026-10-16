@@ -124,6 +124,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final float PANEL_HALF_HEIGHT =
         1.20f * SHELL_VIEW_CONTRACTION;
     private static final float PANEL_Z = -3.0f;
+    // DOS library text is closer, with independent geometry for ray and eye.
+    private static final float DOS_LIBRARY_PANEL_Z = -2.05f;
+    private static final float DOS_LIBRARY_HALF_WIDTH = 1.12f;
+    private static final float DOS_LIBRARY_HALF_HEIGHT = 0.92f;
 
     private static final float Z_NEAR = 0.10f;
     private static final float Z_FAR = 30.0f;
@@ -353,12 +357,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
     };
 
     // Persistent world-space DOS control console, to the right of the game.
-    private static final float DOS_MENU_LEFT = 1.05f;
-    private static final float DOS_MENU_RIGHT = 2.85f;
-    private static final float DOS_MENU_BOTTOM = -1.04f;
-    private static final float DOS_MENU_TOP = 1.04f;
-    private static final float DOS_MENU_LEFT_Z = -3.45f;
-    private static final float DOS_MENU_RIGHT_Z = -3.05f;
+    // Nearer DOS options rail; hit testing shares these exact bounds.
+    private static final float DOS_MENU_LEFT = 0.69f;
+    private static final float DOS_MENU_RIGHT = 2.07f;
+    private static final float DOS_MENU_BOTTOM = -0.82f;
+    private static final float DOS_MENU_TOP = 0.82f;
+    private static final float DOS_MENU_LEFT_Z = -2.45f;
+    private static final float DOS_MENU_RIGHT_Z = -2.12f;
 
     private static final int[][] DOS_OVERLAY_BUTTONS = new int[][] {
         {100, 260, 480, 325},
@@ -460,6 +465,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final FloatBuffer vertexBuffer;
     private final FloatBuffer keyboardSlabVertexBuffer;
     private final FloatBuffer dosMenuVertexBuffer;
+    private final FloatBuffer dosLibraryVertexBuffer;
     private Bitmap keyboardBitmap;
     private Canvas keyboardCanvas;
     private Paint keyboardPaint;
@@ -795,6 +801,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         vertexBuffer = allocate(vertices);
         // Raw coordinates match hitTiltedPanel exactly (no contraction).
+        dosLibraryVertexBuffer = allocate(new float[] {
+            -DOS_LIBRARY_HALF_WIDTH, -DOS_LIBRARY_HALF_HEIGHT, DOS_LIBRARY_PANEL_Z,
+            DOS_LIBRARY_HALF_WIDTH, -DOS_LIBRARY_HALF_HEIGHT, DOS_LIBRARY_PANEL_Z,
+            -DOS_LIBRARY_HALF_WIDTH, DOS_LIBRARY_HALF_HEIGHT, DOS_LIBRARY_PANEL_Z,
+            DOS_LIBRARY_HALF_WIDTH, DOS_LIBRARY_HALF_HEIGHT, DOS_LIBRARY_PANEL_Z
+        });
         dosMenuVertexBuffer = allocate(new float[] {
             DOS_MENU_LEFT, DOS_MENU_BOTTOM, DOS_MENU_LEFT_Z,
             DOS_MENU_RIGHT, DOS_MENU_BOTTOM, DOS_MENU_RIGHT_Z,
@@ -1804,7 +1816,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             -headInertialTranslation.y(),
             -headInertialTranslation.z()
         );
-        if (mode == MODE_NATIVE || mode == MODE_HOME) {
+        if (mode == MODE_NATIVE || mode == MODE_HOME
+            || mode == MODE_DOS_LIBRARY) {
             // One world-space translation shared by both Cardboard eyes.
             Matrix.translateM(
                 adjustedHeadView,
@@ -2067,7 +2080,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void updateNativeLocomotion(long frameNanos) {
-        final boolean homeTravel = mode == MODE_HOME;
+        final boolean homeTravel = mode == MODE_HOME || mode == MODE_DOS_LIBRARY;
         final boolean activeNative = mode == MODE_NATIVE
             && nativeModuleRuntime != null
             && nativeModuleRuntime.isRunning();
@@ -2083,9 +2096,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         // The shell home is a real, bounded room-scale space, not a
         // decorative backdrop. Native experiences retain their own bounds.
-        String moduleId = homeTravel
-            ? "shell-home"
-            : nativeModuleRuntime.getActiveModuleId();
+        String moduleId = mode == MODE_DOS_LIBRARY ? "dos-library"
+            : homeTravel ? "shell-home" : nativeModuleRuntime.getActiveModuleId();
         if (!moduleId.equals(nativeLocomotionModuleId)) {
             nativeLocomotion.reset();
             nativeLocomotionGate.reset();
@@ -2107,8 +2119,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
 
-        final float limitX = homeTravel ? 1.4f : nativeLocomotionBounds[0];
-        final float limitZ = homeTravel ? 1.4f : nativeLocomotionBounds[1];
+        final float limitX = mode == MODE_DOS_LIBRARY ? 0.65f
+            : homeTravel ? 1.4f : nativeLocomotionBounds[0];
+        final float limitZ = mode == MODE_DOS_LIBRARY ? 0.45f
+            : homeTravel ? 1.4f : nativeLocomotionBounds[1];
 
         float dt = nativeLocomotionLastFrameNanos == 0L
             ? 0.0f
@@ -2931,9 +2945,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawTexturedPanel(
                 mode == MODE_KEYBOARD && !orientationMenuVisible
                     ? keyboardSlabVertexBuffer
+                    : mode == MODE_DOS_LIBRARY && !orientationMenuVisible
+                        ? dosLibraryVertexBuffer
                     : (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
                         || mode == MODE_DOS_BINDINGS
-            || mode == MODE_DOS_BINDING_TUNING) && !orientationMenuVisible
+                        || mode == MODE_DOS_BINDING_TUNING) && !orientationMenuVisible
                         ? dosMenuVertexBuffer : vertexBuffer,
                 uvBuffer
             );
@@ -3491,12 +3507,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         setActivePointerSource("Gaze");
         activePointerOrigin[0] =
             headInertialTranslation.x()
-                + (mode == MODE_NATIVE ? nativeLocomotion.x() : 0.0f);
+                + ((mode == MODE_NATIVE || mode == MODE_HOME || mode == MODE_DOS_LIBRARY) ? nativeLocomotion.x() : 0.0f);
         activePointerOrigin[1] =
             headInertialTranslation.y();
         activePointerOrigin[2] =
             headInertialTranslation.z()
-                + (mode == MODE_NATIVE ? nativeLocomotion.z() : 0.0f);
+                + ((mode == MODE_NATIVE || mode == MODE_HOME || mode == MODE_DOS_LIBRARY) ? nativeLocomotion.z() : 0.0f);
         System.arraycopy(
             adjustedHeadForward,
             0,
@@ -3566,21 +3582,21 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerAnchorLastFrameNanos = 0L;
             controllerAnchorWorld[0] =
                 offsetX + headInertialTranslation.x()
-                    + (mode == MODE_NATIVE ? nativeLocomotion.x() : 0.0f);
+                    + ((mode == MODE_NATIVE || mode == MODE_HOME || mode == MODE_DOS_LIBRARY) ? nativeLocomotion.x() : 0.0f);
             controllerAnchorWorld[1] =
                 offsetY + headInertialTranslation.y();
             controllerAnchorWorld[2] =
                 offsetZ + headInertialTranslation.z()
-                    + (mode == MODE_NATIVE ? nativeLocomotion.z() : 0.0f);
+                    + ((mode == MODE_NATIVE || mode == MODE_HOME || mode == MODE_DOS_LIBRARY) ? nativeLocomotion.z() : 0.0f);
             controllerAnchorWorld[3] = 1.0f;
             controllerGhostWorld[0] =
                 handX + headInertialTranslation.x()
-                    + (mode == MODE_NATIVE ? nativeLocomotion.x() : 0.0f);
+                    + ((mode == MODE_NATIVE || mode == MODE_HOME || mode == MODE_DOS_LIBRARY) ? nativeLocomotion.x() : 0.0f);
             controllerGhostWorld[1] =
                 CONTROLLER_ANCHOR_Y + headInertialTranslation.y();
             controllerGhostWorld[2] =
                 CONTROLLER_ANCHOR_Z + headInertialTranslation.z()
-                    + (mode == MODE_NATIVE ? nativeLocomotion.z() : 0.0f);
+                    + ((mode == MODE_NATIVE || mode == MODE_HOME || mode == MODE_DOS_LIBRARY) ? nativeLocomotion.z() : 0.0f);
             controllerGhostWorld[3] = 1.0f;
             return;
         }
@@ -4270,8 +4286,14 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_DOS && dosRenderer.isFullScreen()) {
-            // The windowed options rail is invisible in full-eye DOS mode.
+            // Neither room controls nor options render over fullscreen DOS.
             return UiRayHit.miss();
+        }
+        if (mode == MODE_DOS_LIBRARY) {
+            return hitPanel(origin, direction,
+                -DOS_LIBRARY_HALF_WIDTH, DOS_LIBRARY_HALF_WIDTH,
+                -DOS_LIBRARY_HALF_HEIGHT, DOS_LIBRARY_HALF_HEIGHT,
+                DOS_LIBRARY_PANEL_Z, 0, TEXTURE_WIDTH, 0, TEXTURE_HEIGHT);
         }
         if (mode == MODE_DOS || mode == MODE_DOS_OVERLAY
             || mode == MODE_DOS_BINDINGS

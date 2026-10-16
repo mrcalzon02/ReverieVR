@@ -167,3 +167,15 @@ direction repeats after 350 ms and then every 170 ms; center release
 re-arms navigation. Touchpad click still activates the selected menu
 command. Leaving the overlay restores the unchanged DOS game bindings,
 including held guest arrow keys. Home remains shell-owned.
+
+## DOS library reach and touch locomotion (2026-10-15)
+
+The DOS library is a seated VR destination, not a fixed 3-meter menu:
+its main panel sits 2.05 m ahead with matching ray collision and stereo
+geometry. Windowed DOS options use a closer right-side rail with the same
+actual hit and rendered planes. The library supports bounded headset-view
+relative motion (0.65 m lateral / 0.45 m forward-back) from touch-and-hold
+without click; release/rearm prevents stale touch between modes. Vertical
+swipes still scroll the DOS list. DOS gameplay retains holdable guest arrow
+keys instead of shell locomotion. These are source changes pending physical
+Galaxy S9 acceptance, not hardware proof.
