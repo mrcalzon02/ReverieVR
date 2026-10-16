@@ -1,5 +1,10 @@
 ## Gumball Armada Nib / Crumbclank bounded nuisance encounters (2026-10-16)
 
+## Omega Front dated diplomatic settlements — 2026-10-16
+
+Omega Front's source-integrated strategic day advancement now settles three one-time treaty obligations after its M04–M06 first-contact accords: a real two-salvage transfer for Scrapline or Meridian, or a real two-ration transfer into Lost Ninth ford food. Respecting the payment improves bilateral standing and lowers claims; default inflicts faction pressure and civic-trust loss without conjuring materials. Every outcome is once-only and persists independently of military battle results. A compact on-map due/honored/broken/legacy indication reuses the existing table, inputs and native save service. The fixed-size `frontier.v1` record advances to internal schema v5; schema 1–4 files load, and old treaties are grandfathered as LEGACY rather than retroactively charged. ABI and Android permissions are unchanged. Strict standalone GCC/Clang/sanitizer tests pass; end-to-end hosted APK and physical controller validation remain pending.
+
+
 ## Omega Front alternative operation access (2026-10-16)
 
 The Development-only Omega Front map adds the ACCORD action as an eighth existing touchpad/Select mode. It resolves only an eligible first-contact operation at a physically adjacent sector where reconnaissance and parley already occurred, with visible progress distinct from a tactical victory. Scrapline keeps its yard, Meridian keeps its charter checkpoint, and the Lost Ninth retains its camp; real materials/rations are exchanged. The unchanged frontier.v1 host save slot now writes internal schema v4 with an independently validated compact treaty history and reads older v1-v3. No shell ABI, input permission, new save location or GitHub Action is introduced. Isolated C++17 agreement tests pass; full integrated/device verification is pending.

@@ -50,3 +50,12 @@ trap 'rm -f "$binary"' EXIT
   -I"$root/app/src/main/jni/native" \
   "$root/app/src/test/native/omega_front_accord_campaign_test.cpp" -o "$binary"
 "$binary"
+
+"$cxx" -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+  -I"$root/app/src/main/jni/native" \
+  "$root/app/src/test/native/omega_front_obligations_test.cpp" -o "$binary"
+"$binary"
+"$cxx" -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+  -I"$root/app/src/main/jni/native" \
+  "$root/app/src/test/native/omega_front_obligations_campaign_test.cpp" -o "$binary"
+"$binary"

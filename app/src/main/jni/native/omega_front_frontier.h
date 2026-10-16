@@ -5,6 +5,7 @@
 #include "omega_front_faction_encounters.h"
 #include "omega_front_intelligence.h"
 #include "omega_front_accord.h"
+#include "omega_front_obligations.h"
 #include <array>
 #include <cstdint>
 
@@ -81,6 +82,12 @@ public:
     bool parleyed(int sector) const {return intel_.parleyed(sector);}
     uint8_t accords() const {return accords_.mask();}
     int last_accord() const {return accords_.last_operation();}
+    Obligations::Status obligation_status(int operation) const {
+        return obligations_.status(operation);
+    }
+    int obligation_due_day(int operation) const {
+        return obligations_.due_day(operation);
+    }
     bool bridge_repaired() const {return bridge_;}
     bool deployed() const {return deployed_;}
     const Battle* current_battle() const {return deployed_?&battle_:nullptr;}
@@ -155,11 +162,14 @@ public:
     // territory or fabricated Battle::Defended result is ever awarded.
     bool ConcludeAccord(int target){
         if(deployed_ || operation_<3 || operation_>=kHearthfallOperations ||
-           target!=target_sector() || !Valid(target))return false;
+           target!=target_sector() || !Valid(target) ||
+           day_>65000 || obligations_.status(operation_)!=Obligations::None)return false;
         FrontierSector &s=sectors_[target];
         if(!accords_.Conclude(operation_,location_,target,intel_.parleyed(target),
                              s.owner,relations_[FactionForOperation(operation_)],
                              rations_,salvage_,trust_,s.wreck_mass,s.claims))return false;
+        // All day/status preconditions checked above before resource payment.
+        obligations_.Start(operation_,day_);
         ++operation_;
         AdvanceDay();
         return true;
@@ -191,6 +201,14 @@ public:
         if(pump_health_>0 && home.water<20 && sectors_[10].water>0){
             const uint16_t transfer=sectors_[10].water>=5?5:sectors_[10].water;
             sectors_[10].water-=transfer;home.water+=transfer;
+        }
+        // Dated treaty debts settle once, even if the commander has marched
+        // elsewhere. Local stores receive exactly the paid material.
+        for(int op=3;op<=5;++op){
+            FrontierSector &claim=sectors_[Accord::Sector(op)];
+            obligations_.Settle(op,day_,rations_,salvage_,trust_,
+                relations_[Accord::Faction(op)],claim.wreck_mass,claim.food,
+                claim.claims);
         }
         return true;
     }
@@ -349,6 +367,8 @@ public:
             add(intel_.levels()[i]);add(intel_.talks()[i]);
         }
         add(accords_.mask());add(accords_.last_operation()+1);
+        for(auto stage:obligations_.stages())add(stage);
+        for(auto signed_day:obligations_.days())add(signed_day);
         add(last_.operation+1);add(static_cast<uint8_t>(last_.outcome));
         add(last_.defenders_lost);add(last_.enemies_lost);
         add(last_.pump_remaining);add(last_.battle_ticks);
@@ -378,6 +398,7 @@ private:
     std::array<int8_t,kMajorFactions+1> relations_{};
     Intelligence intel_{};
     Accord accords_{};
+    Obligations obligations_{};
     Battle battle_{1};
     uint32_t seed_;
     int location_=6,day_=1,operation_=0,population_=31;

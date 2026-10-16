@@ -43,7 +43,7 @@ int main(){
     assert(scrap.frontier.last_report().outcome==before.outcome);
     assert(!scrap.frontier.ConcludeAccord(9));
     CampaignSave::Bytes bytes{};
-    assert(CampaignSave::Encode(scrap,&bytes) && bytes[8]==4);
+    assert(CampaignSave::Encode(scrap,&bytes) && bytes[8]==5);
     Session loaded(8);
     assert(CampaignSave::Decode(&loaded,bytes.data(),bytes.size()));
     assert(loaded.Checksum()==scrap.Checksum());
@@ -104,5 +104,5 @@ int main(){
     bytes[8]=3;Reseal(bytes);
     assert(CampaignSave::Decode(&loaded,bytes.data(),bytes.size()));
     assert(loaded.Checksum()==legacy.Checksum());
-    std::cout<<"Omega Front real alternate mission resolution and v4 save tests passed\n";
+    std::cout<<"Omega Front real alternate mission resolution and v5 save tests passed\n";
 }

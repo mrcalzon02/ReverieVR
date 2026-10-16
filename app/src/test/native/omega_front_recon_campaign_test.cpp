@@ -51,7 +51,7 @@ int main(){
     assert(campaign.rejected && campaign.frontier.Checksum()==after_parley);
     CampaignSave::Bytes bytes{};
     assert(CampaignSave::Encode(campaign,&bytes));
-    assert(bytes[8]==4); // v4 strategic save with treaty history
+    assert(bytes[8]==5); // v5 adds dated treaty obligations
     Session restored(999);
     assert(CampaignSave::Decode(&restored,bytes.data(),bytes.size()));
     assert(restored.Checksum()==campaign.Checksum());

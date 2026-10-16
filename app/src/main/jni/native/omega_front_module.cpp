@@ -176,9 +176,18 @@ void DrawMap(State *s){
         Text(s,line,-1.194f,.009f,.78f,.90f,.93f);
     }else Text(s,"HEARTHFALL SIX OPERATIONS COMPLETE",-1.194f,.009f,.78f,.94f,.76f);
     if(f.last_accord()>=3 && f.next_morphology_day()<0){
-        std::snprintf(line,sizeof(line),"ACCESS ACCORD M%02d  NO BATTLE",
-                      f.last_accord()+1);
-        Text(s,line,.80f,.010f,.60f,.92f,.78f);
+        const int op=f.last_accord();
+        const game::Obligations::Status status=f.obligation_status(op);
+        if(status==game::Obligations::Due)
+            std::snprintf(line,sizeof(line),"PACT M%02d DUE DAY %d",
+                          op+1,f.obligation_due_day(op));
+        else
+            std::snprintf(line,sizeof(line),"PACT M%02d %s",op+1,
+                          status==game::Obligations::Honored?"HONORED":
+                          status==game::Obligations::Broken?"BROKEN":"LEGACY");
+        Text(s,line,.80f,.010f,
+             status==game::Obligations::Broken?1.f:.60f,
+             status==game::Obligations::Broken?.37f:.92f,.78f);
     }
     if(f.next_morphology_day()>0){
         std::snprintf(line,sizeof(line),"EDEN FORECAST S%03d DAY %d",

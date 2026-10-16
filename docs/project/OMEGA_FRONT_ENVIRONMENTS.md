@@ -1,5 +1,10 @@
 # Omega Front — Fractured World and Environment Design
 
+## Follow-through after negotiated first contact (2026-10-16)
+
+Within the first 16 sectors, each newly negotiated M04–M06 agreement now carries one real dated installment due three campaign days later: Scrapline/Meridian expect two more salvage units in their respective stores; the Lost Ninth expects two field rations delivered into neutral ford food. Payment improves bilateral standing and reduces local claims; inability to pay produces faction pressure and a civic-trust loss, not a fictitious resource transfer or automatic battle win. Save schema v5 persists the compact obligation statuses and date. Older treaties are imported as LEGACY and never charged for terms that were absent from their original save. This is an initial deterministic faction response, not a complete diplomatic AI or recurring-treaty economy.
+
+
 ## Limited first-contact settlement alternatives (2026-10-16)
 
 The initial theater now has source-integrated alternative diplomatic completion for Scrapline's salvage dispute, Meridian's Charter Gate and the Lost Ninth ford. A prior resource-backed parley and additional field resources are mandatory. Scrapline surrenders exactly six existing wreck units as salvage rights but retains its yard; Meridian sells charter transit and retains checkpoint ownership; the Ninth grants passage while the ford remains neutral and the Ninth Camp stays faction-owned. Treaty history is distinct from combat result accounting and persists in first-frontier internal save schema v4. No full dynamic faction diplomacy, 70 campaign arcs, Android build or physical Daydream acceptance is claimed.

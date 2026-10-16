@@ -1,5 +1,8 @@
 # Native Game Project Pointers
 
+**P3h treaty obligations and faction pressure (2026-10-16):** `omega_front_obligations.h` now enforces three-day follow-up installments after first-contact accords, with finite physical transfers, fulfilled/default status, faction relation changes, trust loss and bounded territorial claim pressure. The source-wired `Frontier::AdvanceDay` settles them once; the native map shows the latest deadline or result. `frontier.v1` keeps its 2,048-byte slot but advances internal schema to v5, recognizing earlier v1–v4 files and treating old treaties as LEGACY. A 15-test host runner includes standalone and integrated treaty tests; **only the standalone new helper has been compiled and sanitizer-tested in this run**, and Android/Daydream verification remains pending.
+
+
 **P3g source integration (2026-10-16):** First noncombat alternatives to M04/M05/M06 are wired through omega_front_accord.h, Frontier, Session, and the native map. Negotiated salvage licence/charter access/ford passage require reconnaissance, one prior parley, sufficient relations/trust and real resource payments; they advance a mission without fabricating a battle result or ownership transfer. The existing 2,048-byte frontier.v1 record advances to internal schema v4 with separate treaty history and v1-v3 loading. GCC/Clang and ASan/UBSan pass for the standalone accord helper; full integrated host, Android APK and Daydream verification remain pending.
 
 
