@@ -14,6 +14,7 @@
 #include "breakwater_wrecks.h"
 #include "breakwater_gun_mesh.h"
 #include "breakwater_menu_layout.h"
+#include "breakwater_shop_feedback.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -119,6 +120,18 @@ int ShopTarget(const ReverieNativeInputV1 &input,bool armory) {
     const int target=menu::HitShop(x,y);
     // Armory only has five guns plus SAM: empty 6/7 cells are not buttons.
     return armory && target>=6 && target<8 ? -1 : target;
+}
+int ShopDisplayPrice(const State *s,int index) {
+    if(!s || index<0 || index>=8) return -1;
+    const Campaign &game=s->campaign;
+    if(!s->armory_page)
+        return game.price(static_cast<Upgrade>(index));
+    if(index==5) return game.sam_charges()<3?540:-1;
+    if(index<kWeaponCount) {
+        const WeaponKind weapon=static_cast<WeaponKind>(index);
+        return game.owns_weapon(weapon)?-1:WeaponFor(weapon).purchase_cost;
+    }
+    return -1;
 }
 bool AimAtEnemy(const ReverieNativeInputV1 &input,const Enemy &enemy,
                 float gravity,bool ghost,float *distance) {
@@ -466,7 +479,10 @@ void BuildScene(State *s) {
         const float *aim=s->gun_direction;
         const WeaponKind equipped=game.selected_weapon();
         gunmesh::Build([s](auto... vertices){Triangle(s,vertices...);},
-                       equipped,aim);
+                       equipped,aim,s->flash);
+        if(s->flash>0.0f)
+            gunmesh::Flash([s](auto... vertices){Triangle(s,vertices...);},
+                           equipped,aim,s->flash);
     }
     if(s->flash>0.0f) {
         const float *shot=s->shot_direction;
@@ -681,6 +697,24 @@ void BuildScene(State *s) {
             game.credits());
         Text(s,header,0,.86f,-2.97f,
              menu::FittedScale(header,5.75f,.048f),.91f,.90f,.77f);
+        // Focus-dependent inspection and purchase eligibility are
+        // shown as real vector text; no extra tabs or inert details panel.
+        const int focused=s->menu_focus;
+        const bool focus_weapon=s->armory_page &&
+            focused>=0 && focused<kWeaponCount;
+        const WeaponKind focused_kind=focus_weapon?
+            static_cast<WeaponKind>(focused):WeaponKind::MachineGun;
+        const bool focus_owned=focus_weapon &&
+            game.owns_weapon(focused_kind);
+        const bool focus_active=focus_owned &&
+            game.selected_weapon()==focused_kind;
+        char hint[80]={};
+        shopfeedback::Describe(hint,sizeof(hint),s->armory_page,focused,
+            ShopDisplayPrice(s,focused),game.credits(),
+            focus_owned,focus_active);
+        Text(s,hint,0,.61f,-2.972f,
+             menu::FittedScale(hint,5.65f,.043f),
+             .87f,.96f,.85f);
         // Everything interactive fits within the dark board and uses
         // exactly the same menu::Rect as the pointer hit-test.
         const char *labels[]={"FIRE","POWER","CLIP","ANTI","ARTY","AIR","TURRET","REPAIR"};
@@ -692,13 +726,13 @@ void BuildScene(State *s) {
             const bool equipment=s->armory_page && n<kWeaponCount;
             const bool owned=equipment && game.owns_weapon(weapon);
             const bool hover=s->menu_focus==n;
-            const int price=s->armory_page?
-                (n==5?(game.sam_charges()<3?540:-1):
-                 equipment?(owned?-1:WeaponFor(weapon).purchase_cost):-1):
-                game.price(static_cast<Upgrade>(n));
-            const float r=owned?.15f:price<0?.15f:.13f;
-            const float g=owned?.30f:price<0?.19f:.22f;
-            const float b=price<0?.20f:.24f;
+            const int price=ShopDisplayPrice(s,n);
+            const bool unaffordable=price>game.credits();
+            const float r=owned?.15f:price<0?.15f:
+                          unaffordable?.23f:.13f;
+            const float g=owned?.30f:price<0?.19f:
+                          unaffordable?.16f:.22f;
+            const float b=price<0?.20f:unaffordable?.18f:.24f;
             Panel(s,x,y,-3.0f,tile.width,tile.height,
                   r+(hover?.13f:0.f),g+(hover?.13f:0.f),
                   b+(hover?.12f:0.f));
