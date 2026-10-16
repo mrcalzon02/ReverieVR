@@ -22,6 +22,7 @@ using reverie::gumball::SnapshotV1;
 using reverie::gumball::SnapshotV2;
 using reverie::gumball::SupportKind;
 using reverie::gumball::SupportSkill;
+using reverie::gumball::SupportKit;
 using reverie::gumball::Weapon;
 using reverie::gumball::Shipyard;
 using reverie::gumball::ShipyardSave;
@@ -174,10 +175,11 @@ void SupportView(Module* m){
     char text[116];
     const auto& contracts=m->sim.support();
     const char* items[]={"HIRE CAPITAINE ECLAIR","HIRE MLLE MACARON",
-        "ECLAIR VOLLEY","ECLAIR DURATION","MACARON RELIEF","MACARON TRACTOR","RETURN"};
-    for(int i=0;i<7;++i){
-        const float y=.80f-.342f*static_cast<float>(i);
-        Frame(m,0,y,4.35f,.30f,i==m->supportSelected);
+        "ECLAIR VOLLEY","ECLAIR DURATION","MACARON RELIEF","MACARON TRACTOR",
+        "HULL PATCH","SHIELD TONIC","RETURN"};
+    for(int i=0;i<9;++i){
+        const float y=.88f-.28f*static_cast<float>(i);
+        Frame(m,0,y,4.35f,.26f,i==m->supportSelected);
         if(i<2){
             const SupportKind kind=i==0?SupportKind::CapitaineEclair:
                                           SupportKind::MademoiselleMacaron;
@@ -188,13 +190,19 @@ void SupportView(Module* m){
             if(cost>0)std::snprintf(text,sizeof(text),"%s  LV %u/3  %uG",
                                     items[i],contracts.level(kind),cost);
             else std::snprintf(text,sizeof(text),"%s  LV 3/3  MAX",items[i]);
+        }else if(i<8){
+            const SupportKit kind=static_cast<SupportKit>(i-6);
+            if(contracts.has_kit(kind))
+                std::snprintf(text,sizeof(text),"%s  READY",items[i]);
+            else std::snprintf(text,sizeof(text),"%s  %uG",
+                               items[i],contracts.kit_price(kind));
         }else std::snprintf(text,sizeof(text),"RETURN TO CHART");
-        Text(m,text,0,y,.030f,.95f,.94f,.86f);
+        Text(m,text,0,y,.028f,.95f,.94f,.86f);
     }
     std::snprintf(text,sizeof(text),"BOOKED: %s    CASH %uG",
                   SupportName(contracts.booked()),m->sim.cash());
     Text(m,text,0,-1.52f,.031f,.86f,1.f,.79f);
-    Text(m,"CLICK HIRE OR UPGRADE   PAD SCROLL",0,-1.68f,.028f,.78f,.85f,.96f);
+    Text(m,"CLICK TO BUY OR IMPROVE   PAD SCROLL",0,-1.68f,.028f,.78f,.85f,.96f);
 }
 void ShipyardView(Module* m){
     Background(m);
@@ -631,18 +639,22 @@ void Update(void* p,const ReverieNativeInputV1* in){
         const uint32_t kills=m->sim.kills();const int hp=m->sim.hp();
         const int shieldBefore=m->sim.shield();
         const uint32_t fired=m->sim.shots_fired();
+        const uint32_t usedKits=m->sim.kit_activations();
         m->sim.update(dt,in->move_x,in->move_y,pressed);
         if(kills!=m->sim.kills())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         if(hp>m->sim.hp()||shieldBefore>m->sim.shield())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
         if(m->sim.shots_fired()>fired)
             ReverieNativeRequestSoundV1(m->host,m->sim.weapon()==Weapon::RockCannon?
                 REVERIE_NATIVE_SOUND_WEAPON_HEAVY:REVERIE_NATIVE_SOUND_WEAPON_MACHINE);
-        if(m->sim.phase()!=Phase::Flight)Save(m);
+        if(m->sim.phase()!=Phase::Flight||m->sim.kit_activations()!=usedKits)
+            Save(m); // consuming a paid kit is durable before a process crash
+        if(m->sim.kit_activations()!=usedKits)
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         Rebuild(m);
     }else if(phase==Phase::Chart&&m->inSupport){
         m->navTime-=dt;
         if(m->navTime<=0.f&&std::fabs(in->move_y)>.55f){
-            m->supportSelected=std::max(0,std::min(6,
+            m->supportSelected=std::max(0,std::min(8,
                  m->supportSelected+(in->move_y>0.f?1:-1)));
             m->navTime=.17f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
@@ -650,14 +662,17 @@ void Update(void* p,const ReverieNativeInputV1* in){
         }
         if(pressed&&!m->primary){
             bool good=false;
-            if(m->supportSelected==6){m->inSupport=false;good=true;}
+            if(m->supportSelected==8){m->inSupport=false;good=true;}
             else if(m->supportSelected<2){
                 good=m->sim.hire_support(m->supportSelected==0?
                     SupportKind::CapitaineEclair:SupportKind::MademoiselleMacaron);
                 if(good)Save(m);
-            }else{
+            }else if(m->supportSelected<6){
                 good=m->sim.upgrade_support(
                     static_cast<SupportSkill>(m->supportSelected-2));
+                if(good)Save(m);
+            }else{
+                good=m->sim.buy_support_kit(static_cast<SupportKit>(m->supportSelected-6));
                 if(good)Save(m);
             }
             ReverieNativeRequestFeedbackV1(m->host,good?
