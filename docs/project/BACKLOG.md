@@ -4,6 +4,11 @@
 
 **Execution decomposition:** `docs/project/INCREMENTAL_DEVELOPMENT_PLAN.md` converts these stable backlog intents into ordered, handset-testable slices, dependencies, release cadence, and evidence gates. Keep detailed work-package decomposition there rather than inflating each RV item here.
 
+## New native game — Gumball Armada
+
+- GUM-01 — **Development-only source integrated, not yet accepted.** Native combat/chart/economy kernel, GLES2 module, host allowlist, Daydream pad routing and tests present. Exact remote-tree source validation, Android/NDK, APK export verification and Galaxy S9 acceptance are outstanding; see docs/project/GUMBALL_ARMADA.md.
+- GUM-02..07 — Ship-slot modularity, salvage/stealing, bidirectional semi-open galaxy, original Sour boss doctrines, real voiced announcer and complete campaign are unfinished.
+
 ## P0 — Foundation
 
 - RV-0001 — Adopt AI Project Manager-compatible project governance and repository execution rules.
