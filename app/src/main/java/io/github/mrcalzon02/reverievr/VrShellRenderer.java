@@ -2664,7 +2664,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawPowerHudOverlay();
             fpsHud.draw(program, positionHandle, uvHandle,
                 matrixHandle, textureHandle);
-            if (preferences.isPerformanceOverlayEnabled()) {
+            // Keep the Quick Menu and its hit targets unobscured.
+            if (preferences.isPerformanceOverlayEnabled()
+                && !orientationMenuVisible) {
                 performanceHud.draw(program, positionHandle, uvHandle,
                     matrixHandle, textureHandle);
             }
