@@ -19,6 +19,9 @@ using reverie::gumball::EnemyKind;
 using reverie::gumball::CastGuest;
 using reverie::gumball::Snapshot;
 using reverie::gumball::SnapshotV1;
+using reverie::gumball::SnapshotV2;
+using reverie::gumball::SupportKind;
+using reverie::gumball::SupportSkill;
 using reverie::gumball::Weapon;
 using reverie::gumball::Shipyard;
 using reverie::gumball::ShipyardSave;
@@ -467,7 +470,12 @@ void* Create(const ReverieNativeHostV1* host){
         if(result==REVERIE_NATIVE_SAVE_OK){
             bool valid=false;
             if(count==sizeof(current))valid=m->sim.restore(current);
-            else if(count==sizeof(SnapshotV1)){
+            else if(count==sizeof(SnapshotV2)){
+                SnapshotV2 legacy{};
+                std::memcpy(&legacy,&current,sizeof(legacy));
+                valid=m->sim.restore(legacy);
+                if(valid)Save(m);
+            }else if(count==sizeof(SnapshotV1)){
                 SnapshotV1 legacy{};
                 std::memcpy(&legacy,&current,sizeof(legacy));
                 valid=m->sim.restore(legacy);
