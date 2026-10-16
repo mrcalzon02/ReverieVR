@@ -9,6 +9,7 @@ namespace reverie { namespace gumball {
 constexpr uint32_t kLaneCount=4096;
 constexpr unsigned kEnemySlots=24;
 enum class Phase : uint8_t { Chart,Flight,Won,Lost,ArmadaDefeated };
+enum class FailureReason : uint8_t { None, HullDestroyed, Escapes, EliteEscaped, Deadline, SalvageLost };
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
 enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress };
 enum class Weapon : uint8_t { PeaRepeater, RockCannon, MintSpread };
@@ -47,6 +48,7 @@ class Simulation {
 public:
     explicit Simulation(uint32_t seed=0xC4A0D1u):seed_(seed?seed:1u){}
     Phase phase()const{return phase_;}
+    FailureReason failure()const{return failure_;}
     uint32_t node()const{return node_;}
     uint32_t cash()const{return cash_;}
     uint32_t kills()const{return kills_;}
@@ -124,7 +126,7 @@ public:
     }
     bool launch(unsigned choice){
         if(phase_!=Phase::Chart||choice>=3)return false;
-        destination_=lane(choice);phase_=Phase::Flight;
+        destination_=lane(choice);phase_=Phase::Flight;failure_=FailureReason::None;
         mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
         hp_=90+levels_[1]*20;shield_=20+levels_[3]*18;
         px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
@@ -140,7 +142,7 @@ public:
         dt=std::min(dt,.05f);
         elapsed_+=dt;
         if(mission_.time_limit>0.f&&elapsed_>mission_.time_limit){
-            phase_=Phase::Lost;return;
+            failure_=FailureReason::Deadline;phase_=Phase::Lost;return;
         }
         hurt_flash_=std::max(0.f,hurt_flash_-dt);
         invulnerable_=std::max(0.f,invulnerable_-dt);
@@ -230,9 +232,15 @@ public:
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
-                if(escaped_>mission_.permitted_escapes){phase_=Phase::Lost;return;}
+                if(escaped_>mission_.permitted_escapes){
+                    failure_=(e.boss||e.kind==EnemyKind::Ace)?
+                        FailureReason::EliteEscaped:FailureReason::Escapes;
+                    phase_=Phase::Lost;return;
+                }
                 if(!e.boss)damage(10+3*static_cast<int>(destination_.hazard));
-                if(e.boss||e.kind==EnemyKind::Ace){phase_=Phase::Lost;return;}
+                if(e.boss||e.kind==EnemyKind::Ace){
+                    failure_=FailureReason::EliteEscaped;phase_=Phase::Lost;return;
+                }
             }
         }
         for(auto& s:shots_)if(s.active){
@@ -261,10 +269,12 @@ public:
         }
         const uint32_t scavenged=salvage_.update(dt,px_,py_);
         cash_+=scavenged;sortie_cash_+=scavenged;
-        if(hp_<=0){phase_=Phase::Lost;return;}
+        if(hp_<=0){failure_=FailureReason::HullDestroyed;phase_=Phase::Lost;return;}
         if(spawned_==target_&&defeated_==target_){
             if(salvage_.collected()<mission_.required_salvage){
-                if(salvage_.empty())phase_=Phase::Lost;
+                if(salvage_.empty()){
+                    failure_=FailureReason::SalvageLost;phase_=Phase::Lost;
+                }
                 return;
             }
             completion_bonus_=mission_.bonus+
@@ -327,6 +337,7 @@ private:
         shield_-=absorbed;hp_-=amount-absorbed;combo_=0;combo_clock_=0;hurt_flash_=.28f;
     }
     Phase phase_=Phase::Chart;
+    FailureReason failure_=FailureReason::None;
     uint32_t seed_=1,node_=0,visited_=0,cash_=100,kills_=0,bosses_=0,rng_=1;
     Lane destination_{};
     MissionRules mission_{};
