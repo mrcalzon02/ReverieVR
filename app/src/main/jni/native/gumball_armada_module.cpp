@@ -305,6 +305,22 @@ void EnemyVisual(Module* m,const Enemy& e){
         Disc(m,x-.13f,y-.12f,.085f,-2.87f,.38f,.94f,.84f);
         Disc(m,x+.13f,y-.12f,.085f,-2.87f,.38f,.94f,.84f);
         break;
+    case EnemyKind::Cinnamon:
+        Rect(m,x,y,.24f,.28f,-2.90f,.64f,.32f,.18f);
+        Tri(m,x,y+.21f,x-.13f,y+.07f,x+.13f,y+.07f,
+            -2.87f,.99f,.68f,.31f);
+        Disc(m,x-.16f,y-.11f,.08f,-2.86f,1.f,.52f,.17f);
+        break;
+    case EnemyKind::Sydney:
+        Tri(m,x,y+.24f,x-.29f,y-.18f,x+.29f,y-.18f,
+            -2.90f,.20f,.77f,.94f);
+        Rect(m,x,y,.11f,.19f,-2.86f,.97f,.98f,.98f);
+        break;
+    case EnemyKind::Jules:
+        Disc(m,x,y,.25f,-2.91f,.76f,.40f,.88f);
+        Disc(m,x,y,.14f,-2.88f,.98f,.93f,.62f);
+        Rect(m,x,y-.16f,.29f,.07f,-2.86f,.30f,.17f,.35f);
+        break;
     case EnemyKind::Fortress:
         Rect(m,x,y,.52f,.34f,-2.92f,.56f,.15f,.19f);
         Disc(m,x-.28f,y-.10f,.13f,-2.89f,.81f,.18f,.23f);
@@ -324,7 +340,13 @@ void Flight(Module* m){
         Rect(m,drop.x,drop.y,.063f,.063f,-2.79f,.98f,.97f,.66f);
     }
     for(const auto& shot:s.shots())if(shot.active){
-        if(shot.mine){
+        if(shot.zone&&shot.warning>0.f){
+            // Three fixed horizontal warning cells, safe until countdown ends.
+            Rect(m,shot.x,shot.y,.44f,.09f,-2.81f,.99f,.34f,.20f);
+            Rect(m,shot.x,shot.y,.07f,.26f,-2.79f,1.f,.93f,.46f);
+        }else if(shot.zone){
+            Rect(m,shot.x,shot.y,.26f,.24f,-2.80f,1.f,.57f,.25f);
+        }else if(shot.mine){
             // Distinct fixed-travel warning symbol, no relying on green hue.
             Disc(m,shot.x,shot.y,.13f,-2.82f,.24f,.89f,.48f);
             Rect(m,shot.x,shot.y,.16f,.038f,-2.79f,.98f,.98f,.75f);
@@ -364,6 +386,35 @@ void Flight(Module* m){
         if(blort)Text(m,"BLORT: INCOMING BOMBS",0,-.75f,.035f,1.f,.55f,.38f);
         else if(nib)Text(m,"NIB: MINEFIELD",0,-.75f,.035f,1.f,.79f,.47f);
         else if(twins)Text(m,"BIFF + BAFF: DOUBLE BARRAGE",0,-.75f,.030f,1.f,.79f,.47f);
+        else if(s.guest()==CastGuest::CinnamonCharles)
+            Text(m,"CHARLES: ZONED BULLET RAIN",0,-.75f,.030f,1.f,.65f,.45f);
+        else if(s.guest()==CastGuest::SydneySlipstream)
+            Text(m,"SYDNEY: SHIFTING CURRENTS",0,-.75f,.030f,.55f,.95f,1.f);
+        else if(s.guest()==CastGuest::JawbreakerJules)
+            Text(m,"JULES: HEAVY JAWBREAKER",0,-.75f,.030f,1.f,.65f,.85f);
+    }
+    if(s.slipstream_active()){
+        const bool left=s.left_fast();
+        Rect(m,-1.11f,-.09f,1.75f,.032f,-2.93f,
+             left?.24f:.94f,left?.94f:.45f,.61f);
+        Rect(m,1.11f,-.09f,1.75f,.032f,-2.93f,
+             left?.94f:.24f,left?.45f:.94f,.61f);
+        Text(m,left?"LEFT FAST / RIGHT SLOW":"LEFT SLOW / RIGHT FAST",
+             0,-.30f,.030f,1.f,.97f,.69f);
+    }
+    if(s.deployed_support()!=SupportKind::None){
+        char hired[90];
+        std::snprintf(hired,sizeof(hired),"%s  AID %d",
+                      SupportName(s.deployed_support()),s.support_pulses());
+        Text(m,hired,0,.95f,.027f,.66f,1.f,.83f);
+        if(s.support_pulses()>0){
+            if(s.deployed_support()==SupportKind::CapitaineEclair){
+                Tri(m,s.support_x(),-.73f,s.support_x()-.11f,-.88f,
+                    s.support_x()+.11f,-.88f,-2.79f,.62f,.81f,1.f);
+            }else{
+                Disc(m,s.support_x(),-.79f,.105f,-2.79f,1.f,.83f,.93f);
+            }
+        }
     }
     if(s.hurt_flash()>0.f){
         Rect(m,-2.25f,0,.13f,2.7f,-2.78f,1.f,.18f,.18f);
