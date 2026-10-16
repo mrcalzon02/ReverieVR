@@ -59,5 +59,22 @@ int main(){
     assert(cursor.x==0&&cursor.y==0);
     cursor.pointAt(-1,20);
     assert(cursor.x==0&&cursor.y==0);
+    // A slowly moving pointer must eventually retake focus from the pad.
+    // Previously each sub-threshold frame reset the movement origin,
+    // making a continuously moving ray permanently lose pointer authority.
+    MenuPointerFocus focus;
+    assert(focus.take(0.f,0.f,false));
+    focus.padFocus=true;
+    for(int i=1;i<=7;++i)
+        assert(!focus.take(static_cast<float>(i)*.01f,0.f,false));
+    assert(focus.padFocus);
+    assert(focus.take(.09f,0.f,false)&&!focus.padFocus);
+    focus.padFocus=true;
+    assert(!focus.take(.3f,0.f,true)); // moving pad keeps its authority
+    assert(!focus.take(.14f,0.f,false)); // below movement threshold
+    assert(focus.take(.18f,0.f,false)); // accumulated, ray regains focus
+    focus.padFocus=true;
+    assert(!focus.take(NAN,0.f,false)); // invalid ray cannot activate
+    assert(focus.padFocus);
     std::cout<<"Gumball direct-click menus and shipyard focus passed\n";
 }
