@@ -1,6 +1,7 @@
 #include "gumball_shipyard.h"
 #include <cassert>
 #include <iostream>
+#include <string>
 using namespace reverie::gumball;
 int main(){
  Shipyard s;assert(s.ready());assert(s.count(Part::Core)==1);assert(s.stock(Part::Armor)==3);
@@ -18,6 +19,39 @@ int main(){
  auto bad=saved;bad.stock[2]=99;bad.checksum=ShipyardChecksum(bad);assert(!restored.restore(bad));
  bad=saved;bad.cells[3*7+3]=0;bad.checksum=ShipyardChecksum(bad);assert(!restored.restore(bad));
  bad=saved;bad.cells[0]=static_cast<uint8_t>(Part::Armor);bad.checksum=ShipyardChecksum(bad);assert(!restored.restore(bad));
+ // Real editor click semantics: selecting a new stocked part must replace
+ // an occupied module in ONE click, with returned old stock, not erase it.
+ Shipyard editor;
+ assert(editor.at(3,2)==Part::Frame);
+ const auto original=editor.snapshot();
+ assert(editor.edit(3,2,Part::Armor)==ShipEdit::Replaced);
+ assert(editor.at(3,2)==Part::Armor);
+ assert(editor.stock(Part::Frame)==original.stock[static_cast<unsigned>(Part::Frame)]+1u);
+ assert(editor.stock(Part::Armor)==original.stock[static_cast<unsigned>(Part::Armor)]-1u);
+ assert(editor.connected());
+ assert(editor.edit(3,2,Part::Frame)==ShipEdit::Replaced);
+ assert(editor.at(3,2)==Part::Frame);
+ assert(editor.stock(Part::Frame)==original.stock[static_cast<unsigned>(Part::Frame)]);
+ assert(editor.stock(Part::Armor)==original.stock[static_cast<unsigned>(Part::Armor)]);
+ assert(editor.edit(3,3,Part::Armor)==ShipEdit::CoreLocked);
+ assert(editor.edit(0,0,Part::Armor)==ShipEdit::NotConnected);
+ assert(editor.edit(-1,0,Part::Armor)==ShipEdit::Invalid);
+ assert(editor.edit(3,2,Part::Frame)==ShipEdit::Removed);
+ assert(editor.edit(3,2,Part::Frame)==ShipEdit::Placed);
+ assert(editor.snapshot().checksum==original.checksum);
+ assert(editor.ready());
+ // Exhausted stock rejects without touching part ownership or layout.
+ Shipyard full;
+ assert(full.edit(4,3,Part::Armor)==ShipEdit::Replaced);
+ assert(full.edit(4,2,Part::Armor)==ShipEdit::Replaced);
+ assert(full.edit(2,2,Part::Armor)==ShipEdit::Placed);
+ assert(full.stock(Part::Armor)==0u);
+ const auto fullySaved=full.snapshot();
+ assert(full.edit(3,2,Part::Armor)==ShipEdit::NoStock);
+ assert(full.snapshot().checksum==fullySaved.checksum);
+ assert(full.restore(fullySaved));
+ assert(full.connected());
+ assert(std::string(ShipEditMessage(ShipEdit::CoreLocked))=="CORE IS FIXED");
  assert(restored.remove(4,1));assert(restored.remove(3,0));
  Shipyard invalid;assert(invalid.remove(2,3));assert(!invalid.ready());
  assert(invalid.place(2,3,Part::Mount)&&invalid.ready());
