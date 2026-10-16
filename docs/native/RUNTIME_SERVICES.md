@@ -1,3 +1,9 @@
+## Gumball automatic emergency support supplies — 2026-10-16
+
+Gumball's game-private `SupportContracts` now owns two one-use paid supplies: Hull Patch (65G, up to +30 hull health) and Shield Tonic (45G, up to +24 shield). The native Support menu adds two compact entries; actual flight checks at/below-half health/shield triggers, consumes valid charges and clamps to the constructed ship's respective maximum. Already destroyed hulls cannot be revived; undamaged ships cannot consume charges. Charges are stored in bits 10–11 of the existing checked 56-byte V3 campaign Snapshot alongside the currency and escort booking (rather than a second uncoordinated save slot). Unknown high bits 12–31 continue to be rejected; V1/V2 and earlier V3 saves are backward compatible. Module Flight Update attempts an immediate `campaign.v1` write on any consumed charge and retains campaign-write error feedback; a successful purchase also saves. This does not change the shared native ABI or reserved Daydream controls.
+
+The exact committed support header and tests passed GCC/Clang C++17 and Clang ASan/UBSan, including purchase, double-spend, max-health, threshold, capped recovery and dead-ship safety. The full combined Gumball native C++ suite, Android build/package, Galaxy S9 user interaction and process-kill durability behavior remain unverified. See `docs/project/GUMBALL_ARMADA_ROUTES_AND_SUPPORT.md`.
+
 ## Gumball Armada named lanes and paid support (2026-10-16)
 
 ## Omega Front post-default border inspections (2026-10-16)
