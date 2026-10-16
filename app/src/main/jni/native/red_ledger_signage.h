@@ -10,7 +10,7 @@
 namespace reverie { namespace redledger { namespace signage {
 constexpr size_t kVertexStride = 10u;
 struct Glyph { char letter; uint8_t rows[7]; };
-struct Sign { const char *text; float x,y,z,pixel; };
+struct Sign { const char *text; float x,y,z,pixel; int room=0; };
 static const Glyph kGlyphs[] = {
  {'A',{14,17,17,31,17,17,17}}, {'B',{30,17,17,30,17,17,30}},
  {'C',{14,17,16,16,16,17,14}}, {'D',{30,17,17,17,17,17,30}},
@@ -41,12 +41,24 @@ static const Sign kSigns[] = {
  {"CASH",-1.00f,-1.02f,-0.55f,0.019f},
  {"WASH",-0.28f,-0.82f,-0.55f,0.019f},
  {"RACK",0.42f,-1.02f,-0.55f,0.019f},
- {"LEDGER",0.86f,-0.82f,-0.55f,0.018f},
- {"BEER",1.19f,-1.02f,-0.55f,0.019f},
- {"CUPS",1.69f,-1.02f,-0.55f,0.019f},
+ {"DRINK",1.25f,-0.82f,-0.72f,0.018f},
+ {"SNACK",1.73f,-0.82f,-0.72f,0.018f},
  {"PATRON",-1.30f,0.64f,-1.78f,0.022f},
  {"EXIT",-2.55f,0.78f,-2.83f,0.021f},
- {"BETWEEN DELIVERIES",0.0f,1.24f,-2.95f,0.024f}
+ {"BETWEEN DELIVERIES",0.0f,1.35f,-2.88f,0.024f},
+ {"STOCK",2.53f,0.76f,-2.83f,0.021f},
+ {"ROOM",0.60f,0.76f,-2.83f,0.021f},
+ {"TO BAR",-2.47f,0.71f,-2.81f,0.023f,1},
+ {"STOCKROOM",0.0f,1.30f,-2.88f,0.028f,1},
+ {"NEXT",-0.70f,-0.20f,-0.78f,0.022f,1},
+ {"BUY",0.40f,-0.20f,-0.78f,0.022f,1},
+ {"BEER",1.20f,-0.77f,-0.55f,0.019f,1},
+ {"CUPS",1.68f,-0.77f,-0.55f,0.019f,1},
+ {"TO BAR",-2.47f,0.72f,-2.81f,0.023f,2},
+ {"TO STOCK",2.47f,0.72f,-2.81f,0.021f,2},
+ {"LIVING QUARTERS",0.0f,1.30f,-2.88f,0.026f,2},
+ {"LEDGER",0.85f,-0.20f,-0.64f,0.021f,2},
+ {"SLEEP",1.35f,-0.62f,-1.07f,0.026f,2}
 };
 inline const uint8_t *Rows(char c) {
     for (const Glyph &glyph : kGlyphs)
@@ -73,9 +85,10 @@ inline void Quad(float *buffer, size_t &vertices,
     }
     vertices+=6u;
 }
-inline size_t Emit(float *buffer) {
+inline size_t Emit(float *buffer,int room=0) {
     size_t vertices=0;
     for (const Sign &sign : kSigns) {
+        if (sign.room!=room) continue;
         const size_t len=std::strlen(sign.text);
         const float px=sign.pixel;
         const float width=static_cast<float>(len*6u-1u)*px;
@@ -109,14 +122,47 @@ inline size_t Emit(float *buffer) {
     }
     return vertices;
 }
-inline size_t VertexCount() { return Emit(nullptr); }
+inline size_t VertexCount(int room=0) { return Emit(nullptr,room); }
 // Capacity and null checks run before writing a single vertex. No GL dependency.
-inline bool Build(float *out,size_t capacity_floats,size_t *out_vertices) {
+inline bool Build(float *out,size_t capacity_floats,size_t *out_vertices,int room=0) {
     if (out_vertices==nullptr) return false;
-    const size_t count=VertexCount();
+    const size_t count=VertexCount(room);
     *out_vertices=count;
     if (out==nullptr || capacity_floats<count*kVertexStride) return false;
-    return Emit(out)==count;
+    return Emit(out,room)==count;
+}
+// Editable data text from real letter geometry: callers count first using
+// out=null, then allocate exactly count*kVertexStride floats and emit once.
+// Refresh only on a world-state change, never per-eye or every frame.
+inline size_t EmitLine(float *out,size_t at,const char *label,
+                       float cx,float cy,float z,float px) {
+    if(label==nullptr) return at;
+    size_t len=std::strlen(label);
+    if(len>64u)len=64u;
+    const float width=len?static_cast<float>(len*6u-1u)*px:0.0f;
+    const float left=cx-width*0.5f, bottom=cy-4.0f*px;
+    Quad(out,at,left-2.0f*px,bottom-2.0f*px,
+         left+width+2.0f*px,bottom+9.0f*px,z-0.004f,
+         0.055f,0.075f,0.085f);
+    for(size_t index=0;index<len;++index) {
+        if(label[index]==' ')continue;
+        const uint8_t *rows=Rows(label[index]);
+        if(!rows)continue;
+        const float gx=left+static_cast<float>(index*6u)*px;
+        for(size_t row=0;row<7u;++row){
+            unsigned col=0;
+            while(col<5u){
+                if((rows[row]&(1u<<(4u-col)))==0u){++col;continue;}
+                const unsigned start=col;
+                while(col<5u&&(rows[row]&(1u<<(4u-col)))!=0u)++col;
+                const float y=bottom+static_cast<float>(6u-row)*px;
+                Quad(out,at,gx+static_cast<float>(start)*px,y,
+                    gx+static_cast<float>(col)*px,y+px,z+0.003f,
+                    0.97f,0.92f,0.75f);
+            }
+        }
+    }
+    return at;
 }
 }}}
 #endif
