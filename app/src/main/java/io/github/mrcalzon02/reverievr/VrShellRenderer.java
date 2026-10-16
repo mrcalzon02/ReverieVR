@@ -116,7 +116,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int HUD_TEXTURE_WIDTH = 512;
     private static final int HUD_TEXTURE_HEIGHT = 512;
     private static final float HUD_LOOK_UP_THRESHOLD = 0.72f;
-    private static final float SHELL_VIEW_CONTRACTION = 0.81f;
+    static final float SHELL_VIEW_CONTRACTION = 0.81f;
     private static final float EYE_CONTENT_VIEWPORT_SCALE = 0.738f;
     // Fullscreen DOS remains binocular and excludes the VR room, but a
     // little black edge is essential on Daydream optics: 10% each side.
@@ -191,11 +191,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final float HOME_CENTER_WORLD_RIGHT = 1.035f;
     private static final float HOME_RIGHT_WORLD_LEFT = 1.17f;
     private static final float HOME_RIGHT_WORLD_RIGHT = 2.43f;
-    private static final float HOME_WORLD_BOTTOM = -1.08f;
-    private static final float HOME_WORLD_TOP = 1.08f;
+    static final float HOME_WORLD_BOTTOM = -0.92f;
+    private static final float HOME_WORLD_TOP = 1.24f;
     private static final float HOME_LEFT_WORLD_Z_OUTER = -2.92f;
     private static final float HOME_LEFT_WORLD_Z_INNER = -3.18f;
-    private static final float HOME_CENTER_WORLD_Z = -3.0f;
+    static final float HOME_CENTER_WORLD_Z = -3.0f;
     private static final float HOME_RIGHT_WORLD_Z_INNER = -3.18f;
     private static final float HOME_RIGHT_WORLD_Z_OUTER = -2.92f;
 
@@ -4432,10 +4432,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 hitTiltedPanel(
                     origin,
                     direction,
-                    HOME_LEFT_WORLD_LEFT,
-                    HOME_LEFT_WORLD_RIGHT,
-                    HOME_WORLD_BOTTOM,
-                    HOME_WORLD_TOP,
+                    HOME_LEFT_WORLD_LEFT * SHELL_VIEW_CONTRACTION,
+                    HOME_LEFT_WORLD_RIGHT * SHELL_VIEW_CONTRACTION,
+                    HOME_WORLD_BOTTOM * SHELL_VIEW_CONTRACTION,
+                    HOME_WORLD_TOP * SHELL_VIEW_CONTRACTION,
                     HOME_LEFT_WORLD_Z_OUTER,
                     HOME_LEFT_WORLD_Z_INNER,
                     HOME_LEFT_PIXEL_LEFT,
@@ -4448,10 +4448,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 hitPanel(
                     origin,
                     direction,
-                    HOME_CENTER_WORLD_LEFT,
-                    HOME_CENTER_WORLD_RIGHT,
-                    HOME_WORLD_BOTTOM,
-                    HOME_WORLD_TOP,
+                    HOME_CENTER_WORLD_LEFT * SHELL_VIEW_CONTRACTION,
+                    HOME_CENTER_WORLD_RIGHT * SHELL_VIEW_CONTRACTION,
+                    HOME_WORLD_BOTTOM * SHELL_VIEW_CONTRACTION,
+                    HOME_WORLD_TOP * SHELL_VIEW_CONTRACTION,
                     HOME_CENTER_WORLD_Z,
                     HOME_CENTER_PIXEL_LEFT,
                     HOME_CENTER_PIXEL_RIGHT,
@@ -4464,10 +4464,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 hitTiltedPanel(
                     origin,
                     direction,
-                    HOME_RIGHT_WORLD_LEFT,
-                    HOME_RIGHT_WORLD_RIGHT,
-                    HOME_WORLD_BOTTOM,
-                    HOME_WORLD_TOP,
+                    HOME_RIGHT_WORLD_LEFT * SHELL_VIEW_CONTRACTION,
+                    HOME_RIGHT_WORLD_RIGHT * SHELL_VIEW_CONTRACTION,
+                    HOME_WORLD_BOTTOM * SHELL_VIEW_CONTRACTION,
+                    HOME_WORLD_TOP * SHELL_VIEW_CONTRACTION,
                     HOME_RIGHT_WORLD_Z_INNER,
                     HOME_RIGHT_WORLD_Z_OUTER,
                     HOME_RIGHT_PIXEL_LEFT,
