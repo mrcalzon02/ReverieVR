@@ -1261,7 +1261,8 @@ void RefreshStatusBoard(ModuleState *state) {
         if(sim.current_event()==EventType::SupplyInterruption)
             std::snprintf(rows[5],sizeof(rows[5]),"SUPPLIER BLOCKED TODAY");
         else
-            std::snprintf(rows[5],sizeof(rows[5]),"BEER AND CUPS ALSO ON SHELF");
+            std::snprintf(rows[5],sizeof(rows[5]),"SUPPLY FACTION: %s",
+                market.offer_faction());
     } else {
         std::snprintf(rows[0],sizeof(rows[0]),"DAY: %d  CASH: %d",
             sim.day(),sim.cash_cents());
