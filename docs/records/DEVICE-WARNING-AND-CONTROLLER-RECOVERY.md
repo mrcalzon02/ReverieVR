@@ -25,7 +25,7 @@ ControllerManager gates post-disconnection provider snapshots to prevent
 a late 'down' after VirtualInputBus releaseAll. VrActivity resets prior
 gesture/menu/touch/button edges and DOS mouse-pose accumulators on
 provider connection loss and generic Android input-device removal.
-The existing 'look upward deliberately for five seconds' controllerless
+Additionally, cached pose and controller battery values are invalidated on READY loss; callers cannot obtain stale lastSnapshot while disconnected. The existing 'look upward deliberately for five seconds' controllerless
 recovery path remains, avoiding an unsolicited menu over DOS play.
 
 ## Acceptance

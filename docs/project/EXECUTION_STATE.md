@@ -32,6 +32,14 @@ physical S9 battery thermal study, binocular visibility or controller
 disconnect/reconnect device test was run. Status: **draft; hardware gate
 open**. Passive notifications do not constitute active thermal protection.
 
+
+
+Follow-up source hardening: ControllerManager also clears cached
+lastSnapshot and now-invalid controller battery on any transition away
+from READY, and getLastSnapshot refuses to expose a pose unless the
+current provider is READY. Remote main readback verified. This cannot
+substitute for a real disconnect/reconnect phone test.
+
 ## 2026-10-16 — Per-game DOS world-screen placement controls (source implementation)
 
 Added pure bounded DosScreenPlacement geometry (0.75–1.20 scale; 2.20–4.20m
