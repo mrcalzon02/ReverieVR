@@ -7,7 +7,7 @@ namespace reverie { namespace gumball {
 enum class Part : uint8_t { Empty, Core, Frame, Armor, Wing, Thruster, Reactor, Battery, Shield, Mount, Cargo };
 constexpr int kShipSize=7;
 constexpr int kPartKinds=11;
-struct ShipProfile { int hull=0,shield=0; float speed=0.f,pickup_radius=.23f; int mass=0,power=0,demand=0; };
+struct ShipProfile { int hull=0,shield=0; float speed=0.f,pickup_radius=.23f; int mass=0,power=0,demand=0,mounts=1; std::array<float,2> muzzle_x{},muzzle_y{}; };
 struct ShipyardSave {
     uint32_t magic=0x53485931u,version=1u;
     uint8_t cells[49]={};
@@ -81,8 +81,9 @@ public:
         return true;
     }
     ShipProfile profile()const{
-        ShipProfile p{};
-        for(uint8_t b:cells_){
+        ShipProfile p{};p.mounts=0;
+        for(int i=0;i<49;++i){
+            const uint8_t b=cells_[i];
             switch(static_cast<Part>(b)){
             case Part::Core:p.mass+=3;break;
             case Part::Frame:p.mass+=1;p.hull+=3;break;
@@ -92,7 +93,14 @@ public:
             case Part::Reactor:p.mass+=3;p.power+=8;break;
             case Part::Battery:p.mass+=2;p.power+=3;break;
             case Part::Shield:p.mass+=2;p.shield+=12;p.demand+=2;break;
-            case Part::Mount:p.mass+=2;p.demand+=2;break;
+            case Part::Mount:
+                p.mass+=2;p.demand+=2;
+                if(p.mounts<2){
+                    p.muzzle_x[p.mounts]=(i%7-3)*.062f;
+                    p.muzzle_y[p.mounts]=(3-i/7)*.061f;
+                    ++p.mounts;
+                }
+                break;
             case Part::Cargo:p.mass+=2;p.pickup_radius+=.045f;p.demand+=1;break;
             default:break;
             }
