@@ -26,7 +26,8 @@ using reverie::procedural::Material;
 namespace geo = reverie::redledger::geometry;
 namespace signs = reverie::redledger::signage;
 
-constexpr float kMaximumWorkReach = 3.5f;
+// Include the far rear doorway in seated work-ray reach.
+constexpr float kMaximumWorkReach = 4.25f;
 constexpr float kHeldCupDistance = 0.90f;
 constexpr char kSaveSlot[] = "state-v2.bin";
 
