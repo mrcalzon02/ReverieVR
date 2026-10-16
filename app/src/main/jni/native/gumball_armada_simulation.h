@@ -1,6 +1,7 @@
 #ifndef REVERIE_GUMBALL_ARMADA_SIMULATION_H
 #define REVERIE_GUMBALL_ARMADA_SIMULATION_H
 #include "gumball_arcade_objectives.h"
+#include "gumball_shipyard.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -48,6 +49,14 @@ class Simulation {
 public:
     explicit Simulation(uint32_t seed=0xC4A0D1u):seed_(seed?seed:1u){}
     Phase phase()const{return phase_;}
+    bool configure_ship(const Shipyard& ship) {
+        if(phase_!=Phase::Chart)return false;
+        ship_ready_=ship.ready();
+        if(ship_ready_)ship_profile_=ship.profile();
+        return ship_ready_;
+    }
+    bool ship_ready()const{return ship_ready_;}
+    ShipProfile ship_profile()const{return ship_profile_;}
     FailureReason failure()const{return failure_;}
     uint32_t node()const{return node_;}
     uint32_t cash()const{return cash_;}
@@ -125,10 +134,11 @@ public:
         cash_-=static_cast<uint32_t>(price(u));++levels_[t];return true;
     }
     bool launch(unsigned choice){
-        if(phase_!=Phase::Chart||choice>=3)return false;
+        if(phase_!=Phase::Chart||choice>=3||!ship_ready_)return false;
         destination_=lane(choice);phase_=Phase::Flight;failure_=FailureReason::None;
         mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
-        hp_=90+levels_[1]*20;shield_=20+levels_[3]*18;
+        hp_=90+levels_[1]*20+ship_profile_.hull;
+        shield_=20+levels_[3]*18+ship_profile_.shield;
         px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
         escaped_=0;sortie_cash_=0;completion_bonus_=0;shots_fired_=0;shots_hit_=0;elapsed_=0;hurt_flash_=0;invulnerable_=0;regen_delay_=0;regen_credit_=0;
         spawned_=0;defeated_=0;bossKilled_=false;spawn_clock_=0;rng_=Mix(seed_^destination_.id^visited_);
@@ -157,7 +167,7 @@ public:
         }
         sx=std::isfinite(sx)?std::max(-1.f,std::min(1.f,sx)):0.f;
         sy=std::isfinite(sy)?std::max(-1.f,std::min(1.f,sy)):0.f;
-        const float speed=1.55f+.16f*levels_[2];
+        const float speed=std::max(.7f,1.55f+.16f*levels_[2]+ship_profile_.speed);
         px_=std::max(-1.9f,std::min(1.9f,px_+sx*dt*speed));
         py_=std::max(-1.15f,std::min(.65f,py_-sy*dt*speed));
         cooldown_-=dt;combo_clock_-=dt;
@@ -283,7 +293,7 @@ public:
                 }
             }
         }
-        const uint32_t scavenged=salvage_.update(dt,px_,py_);
+        const uint32_t scavenged=salvage_.update(dt,px_,py_,ship_profile_.pickup_radius);
         cash_+=scavenged;sortie_cash_+=scavenged;
         if(hp_<=0){failure_=FailureReason::HullDestroyed;phase_=Phase::Lost;return;}
         if(spawned_==target_&&defeated_==target_){
@@ -358,6 +368,8 @@ private:
     Lane destination_{};
     MissionRules mission_{};
     SalvageField salvage_{};
+    ShipProfile ship_profile_{};
+    bool ship_ready_=true;
     uint16_t levels_[4]={0,0,0,0};
     uint32_t owned_weapons_=1u;
     Weapon weapon_=Weapon::PeaRepeater;
