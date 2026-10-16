@@ -109,6 +109,7 @@ Red Ledger's current static baker emits 11 immutable cubes into one 396-vertex, 
 The planned shared primitive model language should eventually express primitive type, transform, material/tile id, tint, interaction/collision tag, and static/dynamic classification. Until an actual shared structure/helper exists, keep it labeled planned.
 
 | Breakwater wave/landing economy | **Game-private native prototype** | `app/src/main/jni/native/breakwater_campaign.{h,cpp}`, `app/src/test/native/breakwater_campaign_test.cpp` | `docs/project/BREAKWATER_BATTERY_VR.md` | Seeded rowboats and landing craft, infantry interception, late aircraft, wave clock, shop and autonomous turret; not a shared engine utility. |
+| Gumball Armada deterministic flight campaign | **Game-private Development module** | `app/src/main/jni/native/gumball_armada_simulation.h`, `app/src/main/jni/native/gumball_armada_module.cpp`, `app/src/test/native/gumball_armada_test.cpp` | `docs/project/GUMBALL_ARMADA.md` | Seeded 4,096-node candy-transit chart, finite enemy/projectile arrays, bounded flight/combos, currency, 4 upgrades, fortress bosses and checksum-validated saves; GLES2 source stage, device acceptance pending. |
 | Breakwater procedural GLES2 gun scene | **Game-private Development module** | `app/src/main/jni/native/breakwater_module.cpp` | `docs/project/BREAKWATER_BATTERY_VR.md` | Generated sea and low-poly boats, glyph shop, aim/fire interactions; physical acceptance pending. |
 
 ## 8. Procedural motion and generated audio references
