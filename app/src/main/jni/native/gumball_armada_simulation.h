@@ -13,10 +13,10 @@ constexpr unsigned kEnemySlots=24;
 enum class Phase : uint8_t { Chart,Flight,Won,Lost,ArmadaDefeated };
 enum class FailureReason : uint8_t { None, HullDestroyed, Escapes, EliteEscaped, Deadline, SalvageLost };
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
-enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress, Courier, Blort };
+enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress, Courier, Blort, Nib, Biff, Baff };
 enum class Weapon : uint8_t { PeaRepeater, RockCannon, MintSpread };
 struct Enemy { float x=0,y=0,age=0,firing=0; int hp=0; bool active=false,boss=false; EnemyKind kind=EnemyKind::Scout; };
-struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; bool ally=false,bomb=false; };
+struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; bool ally=false,bomb=false,mine=false; };
 struct Lane { uint32_t id=0; uint8_t hazard=0,reward=0; bool fortress=false; };
 struct SnapshotV1 {
     uint32_t magic=0x474D4231u, version=1, seed=0, node=0;
@@ -65,6 +65,8 @@ public:
     uint32_t ally_shots()const{return ally_shots_;}
     float ally_x()const{return ally_x_;}
     uint32_t bombs_defused()const{return bombs_defused_;}
+    uint32_t mines_defused()const{return mines_defused_;}
+    uint32_t twin_bonus_paid()const{return twin_bonus_paid_;}
     uint32_t node()const{return node_;}
     uint32_t cash()const{return cash_;}
     uint32_t kills()const{return kills_;}
@@ -145,7 +147,8 @@ public:
         destination_=lane(choice);phase_=Phase::Flight;failure_=FailureReason::None;
         mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
         cast_.begin(seed_,destination_.id,visited_,destination_.hazard);
-        ally_shots_=0;bombs_defused_=0;ally_x_=-1.3f;
+        ally_shots_=0;bombs_defused_=0;mines_defused_=0;ally_x_=-1.3f;
+        biff_killed_=false;baff_killed_=false;twin_bonus_paid_=0;
         hp_=90+levels_[1]*20+ship_profile_.hull;
         shield_=20+levels_[3]*18+ship_profile_.shield;
         px_=0;py_=-.85f;combo_=0;max_combo_=0;combo_clock_=0;cooldown_=0;
@@ -213,12 +216,21 @@ public:
                 const bool ace=!boss&&!courier&&spawned_==target_-1;
                 const bool blort=!boss&&!courier&&!ace&&cast_.kind()==CastGuest::BlortBlister
                     &&spawned_==target_/2;
+                const bool nib=!boss&&!courier&&!ace
+                    &&cast_.kind()==CastGuest::NibNoxious&&spawned_==target_/2;
+                const bool biff=!boss&&!courier&&!ace
+                    &&cast_.kind()==CastGuest::CrumbclankTwins&&spawned_==target_/2;
+                const bool baff=!boss&&!courier&&!ace
+                    &&cast_.kind()==CastGuest::CrumbclankTwins&&spawned_==target_/2+1;
                 const unsigned rollType=rollKind(spawned_);
                 EnemyKind kind=EnemyKind::Scout;
                 if(boss)kind=EnemyKind::Fortress;
                 else if(courier)kind=EnemyKind::Courier;
                 else if(ace)kind=EnemyKind::Ace;
                 else if(blort)kind=EnemyKind::Blort;
+                else if(nib)kind=EnemyKind::Nib;
+                else if(biff)kind=EnemyKind::Biff;
+                else if(baff)kind=EnemyKind::Baff;
                 else if(rollType==1u)kind=EnemyKind::Interceptor;
                 else if(rollType==2u)kind=EnemyKind::Bomber;
                 int hull=2;
@@ -227,13 +239,16 @@ public:
                 case EnemyKind::Interceptor: hull=3;break;
                 case EnemyKind::Bomber: hull=4;break;
                 case EnemyKind::Blort: hull=5;break;
+                case EnemyKind::Nib: hull=4;break;
+                case EnemyKind::Biff: hull=5;break;
+                case EnemyKind::Baff: hull=5;break;
                 case EnemyKind::Ace: hull=7;break;
                 case EnemyKind::Courier: hull=6;break;
                 case EnemyKind::Fortress: hull=22+static_cast<int>(destination_.id/1024u)*4;break;
                 }
                 const uint32_t roll=next();
-                e={-1.65f+static_cast<float>(roll%331u)*.01f,1.35f,0.f,1.45f,
-                   hull,true,boss,kind};
+                e={-1.65f+static_cast<float>(roll%331u)*.01f,1.35f,0.f,
+                   kind==EnemyKind::Baff?2.12f:1.45f,hull,true,boss,kind};
                 ++spawned_;break;
             }
             spawn_clock_=(spawned_%5==0?3.50f:.94f);
@@ -242,13 +257,17 @@ public:
             e.age+=dt;
             const float speed=e.kind==EnemyKind::Courier?.66f:
                 (e.kind==EnemyKind::Interceptor?.53f:
-                (e.kind==EnemyKind::Bomber||e.kind==EnemyKind::Blort?.18f:
+                (e.kind==EnemyKind::Bomber||e.kind==EnemyKind::Blort
+                   ||e.kind==EnemyKind::Nib||e.kind==EnemyKind::Biff
+                   ||e.kind==EnemyKind::Baff?.18f:
                 (e.kind==EnemyKind::Ace?.43f:(e.boss?.15f:.31f))));
             e.y-=dt*(speed+.01f*destination_.hazard);
             if(e.kind==EnemyKind::Interceptor){
                 const float dx=std::max(-1.f,std::min(1.f,px_-e.x));
                 e.x+=dt*dx*.58f;
-            }else if(e.kind==EnemyKind::Bomber||e.kind==EnemyKind::Blort){
+            }else if(e.kind==EnemyKind::Bomber||e.kind==EnemyKind::Blort
+                      ||e.kind==EnemyKind::Nib||e.kind==EnemyKind::Biff
+                      ||e.kind==EnemyKind::Baff){
                 e.x+=dt*std::sin(e.age*1.1f)*.09f;
             }else if(e.kind==EnemyKind::Courier){
                 e.x+=dt*std::sin(e.age*4.1f+e.y)*.90f;
@@ -258,21 +277,27 @@ public:
             e.x=std::max(-1.85f,std::min(1.85f,e.x));
             e.firing-=dt;
             if(e.firing<=0.f&&e.kind!=EnemyKind::Courier){
-                const bool bombing=e.kind==EnemyKind::Blort;
+                const bool bombing=e.kind==EnemyKind::Blort
+                    ||e.kind==EnemyKind::Biff||e.kind==EnemyKind::Baff;
+                const bool mining=e.kind==EnemyKind::Nib;
                 const int count=e.boss?3:((e.kind==EnemyKind::Ace||bombing)?2:1);
                 const float aim=e.kind==EnemyKind::Interceptor?
                     std::max(-.50f,std::min(.50f,(px_-e.x)*.32f)):0.f;
                 for(int n=0;n<count;++n)for(auto& shot:shots_)if(!shot.active){
                     const float spread=e.boss?(n-1)*.43f:
                         (e.kind==EnemyKind::Ace?(n*2-1)*.24f:
-                         (bombing?(n*2-1)*.32f:0.f));
-                    shot={e.x,e.y-.14f,bombing?-.82f:
-                          (e.kind==EnemyKind::Bomber?-1.05f:-1.3f),
-                          true,true,aim+spread,bombing?12:1,false,bombing};
+                         (e.kind==EnemyKind::Biff?(-.38f+n*.22f):
+                          (e.kind==EnemyKind::Baff?(.38f-n*.22f):
+                           (bombing?(n*2-1)*.32f:0.f))));
+                    shot={e.x,e.y-.14f,mining?-.22f:(bombing?-.82f:
+                          (e.kind==EnemyKind::Bomber?-1.05f:-1.3f)),
+                          true,true,aim+spread,mining?10:(bombing?12:1),
+                          false,bombing,mining};
                     break;
                 }
                 e.firing=e.boss?.70f:(e.kind==EnemyKind::Ace?1.18f:
-                    (bombing?1.65f:(e.kind==EnemyKind::Bomber?1.85f:2.15f)));
+                    (mining?1.95f:(bombing?1.78f:
+                     (e.kind==EnemyKind::Bomber?1.85f:2.15f))));
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
@@ -426,7 +451,8 @@ private:
     MissionRules mission_{};
     SalvageField salvage_{};
     CastEncounter cast_{};
-    uint32_t ally_shots_=0,bombs_defused_=0;
+    uint32_t ally_shots_=0,bombs_defused_=0,mines_defused_=0,twin_bonus_paid_=0;
+    bool biff_killed_=false,baff_killed_=false;
     float ally_x_=-1.3f;
     ShipProfile ship_profile_{};
     bool ship_ready_=true;
