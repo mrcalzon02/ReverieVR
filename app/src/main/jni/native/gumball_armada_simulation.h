@@ -81,6 +81,11 @@ public:
         if(phase_!=Phase::Chart)return false;
         return support_.improve(skill,cash_);
     }
+    bool buy_support_kit(SupportKit kind){
+        if(phase_!=Phase::Chart)return false;
+        return support_.buy_kit(kind,cash_);
+    }
+    uint32_t kit_activations()const{return kit_activations_;}
     SupportKind deployed_support()const{return deployed_support_;}
     uint32_t support_deployments()const{return support_deployments_;}
     int support_pulses()const{return support_pulses_;}
@@ -189,6 +194,7 @@ public:
         deployed_support_=support_.consume();
         support_timer_=3.2f+static_cast<float>(Mix(seed_^destination_.id)%5u)*.4f;
         support_pulses_=0;support_x_=-1.5f;slipstream_active_=false;
+        kit_activations_=0;
         if(deployed_support_!=SupportKind::None)++support_deployments_;
         ally_shots_=0;bombs_defused_=0;mines_defused_=0;ally_x_=-1.3f;
         twins_.reset();
@@ -208,6 +214,16 @@ public:
         elapsed_+=dt;
         if(mission_.time_limit>0.f&&elapsed_>mission_.time_limit){
             failure_=FailureReason::Deadline;phase_=Phase::Lost;return;
+        }
+        // Use genuine pre-purchased supplies only on a meaningful damage
+        // threshold. No effect or charge consumption if hull/shield is full.
+        const int hullCap=90+levels_[1]*20+ship_profile_.hull;
+        const int shieldCap=20+levels_[3]*18+ship_profile_.shield;
+        if(hp_>0&&hp_*2<=hullCap&&support_.use_kit(SupportKit::HullPatch)){
+            hp_=std::min(hullCap,hp_+30);++kit_activations_;
+        }
+        if(shield_*2<=shieldCap&&support_.use_kit(SupportKit::ShieldTonic)){
+            shield_=std::min(shieldCap,shield_+24);++kit_activations_;
         }
         hurt_flash_=std::max(0.f,hurt_flash_-dt);
         invulnerable_=std::max(0.f,invulnerable_-dt);
@@ -520,6 +536,7 @@ public:
         uint8_t supportLevels[4]={};support_.export_levels(supportLevels);
         for(unsigned i=0;i<4;++i)s.support_state|=static_cast<uint32_t>(supportLevels[i])<<(i*2u);
         s.support_state|=static_cast<uint32_t>(support_.booked())<<8u;
+        s.support_state|=static_cast<uint32_t>(support_.kit_mask())<<10u;
         s.checksum=SnapshotChecksum(s);return s;
     }
     bool restore(const Snapshot& s){
@@ -530,11 +547,13 @@ public:
         if((s.owned_weapons&~7u)!=0u||(s.owned_weapons&1u)==0u
             ||s.active_weapon>2u||(s.owned_weapons&(1u<<s.active_weapon))==0u)
             return false;
-        if((s.support_state&~0x3ffu)!=0u)return false;
+        if((s.support_state&~0xfffu)!=0u)return false;
         uint8_t supportLevels[4]={};
         for(unsigned i=0;i<4;++i)supportLevels[i]=static_cast<uint8_t>((s.support_state>>(i*2u))&3u);
         SupportContracts restored;
-        if(!restored.restore(supportLevels,static_cast<uint8_t>((s.support_state>>8u)&3u)))return false;
+        if(!restored.restore(supportLevels,
+            static_cast<uint8_t>((s.support_state>>8u)&3u),
+            static_cast<uint8_t>((s.support_state>>10u)&3u)))return false;
         seed_=s.seed;node_=s.node;visited_=s.visited;cash_=s.cash;
         kills_=s.kills;bosses_=s.bosses;
         for(unsigned i=0;i<4;++i)levels_[i]=s.levels[i];
@@ -594,7 +613,7 @@ private:
     int support_pulses_=0;
     float support_x_=-1.5f;
     bool slipstream_active_=false;
-    uint32_t support_deployments_=0;
+    uint32_t support_deployments_=0,kit_activations_=0;
     CastEncounter cast_{};
     uint32_t ally_shots_=0,bombs_defused_=0,mines_defused_=0;
     CrumbclankContract twins_{};
