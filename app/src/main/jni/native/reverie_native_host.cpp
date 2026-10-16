@@ -44,6 +44,8 @@ static const BuiltInModuleSpec kBuiltIns[] = {
         "Breakwater Battery VR [DEV]",
         "libreverie_module_breakwater.so"
     },
+    {"gumball-armada", "Gumball Armada: Candy King Search [DEV]",
+     "libreverie_module_gumball_armada.so"},
     {"ministry-lantern-desk", "Ministry of Intelligence: Lantern Desk [DEV]",
      "libreverie_module_lantern_desk.so"},
     {"iron-sight-forward-detachment", "Iron Sight: Forward Detachment [DEV]",
