@@ -286,10 +286,11 @@ void Update(void* p,const ReverieNativeInputV1* in){
     const Phase phase=m->sim.phase();
     if(phase==Phase::Flight){
         const uint32_t kills=m->sim.kills();const int hp=m->sim.hp();
+        const int shieldBefore=m->sim.shield();
         const uint32_t fired=m->sim.shots_fired();
         m->sim.update(dt,in->move_x,in->move_y,pressed);
         if(kills!=m->sim.kills())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
-        if(hp>m->sim.hp())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+        if(hp>m->sim.hp()||shieldBefore>m->sim.shield())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
         if(m->sim.shots_fired()>fired)
             ReverieNativeRequestSoundV1(m->host,REVERIE_NATIVE_SOUND_WEAPON_MACHINE);
         if(m->sim.phase()!=Phase::Flight)Save(m);
