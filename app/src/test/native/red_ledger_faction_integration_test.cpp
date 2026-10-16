@@ -26,6 +26,12 @@ int main() {
     market.ConsumeSnack();
     market.RecordService(patron->kind);
     assert(sim.pending_payment_cents()==base+quote.cents);
+    uint8_t premium_pending[Simulation::kSerializedSize]={};
+    size_t pending_size=0u;
+    assert(sim.Serialize(premium_pending,sizeof(premium_pending),&pending_size));
+    Simulation checked;
+    assert(!checked.Deserialize(premium_pending,pending_size,false));
+    assert(checked.Deserialize(premium_pending,pending_size,true));
     assert(market.favor(0)==favor_before+quote.favor);
     assert(sim.CollectPayment());
     assert(sim.cash_cents()==cash_before+base+quote.cents);
@@ -48,9 +54,9 @@ int main() {
     assert(loaded.cash_cents()==sim.cash_cents());
     assert(stored.stock_drink(1)==market.stock_drink(1));
     assert(stored.room()==trade::Room::Living);
-    // The legacy simulation parser must not accept the new premium unless
-    // explicitly paired with the checked trade extension.
-    assert(!loaded.Deserialize(packed,Simulation::kSerializedSize,false));
+    // Once the premium is collected, the old V2 decoder still recognizes
+    // the unchanged base simulation segment.
+    assert(loaded.Deserialize(packed,Simulation::kSerializedSize,false));
     // An untouched original V2 state is still independently restorable.
     Simulation legacy;
     uint8_t legacy_bytes[Simulation::kSerializedSize]={};
