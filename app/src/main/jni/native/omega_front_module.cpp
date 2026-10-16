@@ -145,11 +145,13 @@ void DrawMap(State *s){
                       actions[static_cast<int>(session.action)]);
         Text(s,line,-1.098f,.010f,.93f,.92f,.60f);
     }
-    if(f.operation()<3){
-        std::snprintf(line,sizeof(line),"OP %d OF 3  TARGET S%03d  TRUST %d",
-                      f.operation()+1,f.target_sector()+1,f.trust());
+    if(f.operation()<game::kHearthfallOperations){
+        std::snprintf(line,sizeof(line),"%d/%d %s  S%03d F%02u REL %d",
+            f.operation()+1,game::kHearthfallOperations,
+            game::Frontier::OperationName(f.operation()),f.target_sector()+1,
+            f.operation_faction(),f.relation(f.operation_faction()));
         Text(s,line,-1.194f,.009f,.78f,.90f,.93f);
-    }else Text(s,"HEARTHWELL FIRST FRONT COMPLETE",-1.194f,.010f,.78f,.94f,.76f);
+    }else Text(s,"HEARTHFALL SIX OPERATIONS COMPLETE",-1.194f,.009f,.78f,.94f,.76f);
     if(f.next_morphology_day()>0){
         std::snprintf(line,sizeof(line),"EDEN FORECAST S%03d DAY %d",
                      f.forecast_sector()+1,f.next_morphology_day());
@@ -278,9 +280,12 @@ void Draw(State *s){
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
     char status[96];
-    if(battle.mission()==game::Mission::CaptureOrchard)
-        std::snprintf(status,sizeof(status),"HOLD ORCHARD %d/3  NO ENEMY NEARBY  TICK %u",
-                      battle.objective_progress(),battle.ticks());
+    if(battle.mission()==game::Mission::CaptureOrchard) {
+        const int op=s->session.frontier.operation();
+        const char *site=op==4?"CHARTER GATE":op==5?"CARAVAN FORD":"ORCHARD";
+        std::snprintf(status,sizeof(status),"HOLD %s %d/3  TICK %u",
+                      site,battle.objective_progress(),battle.ticks());
+    }
     else if(battle.mission()==game::Mission::DisableRelay)
         std::snprintf(status,sizeof(status),"ENGINEER TO RELAY %d/2  PARTS %d  PUMP %d",
                       battle.objective_progress(),battle.components(),battle.pump_hp());

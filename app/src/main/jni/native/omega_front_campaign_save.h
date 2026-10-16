@@ -22,7 +22,7 @@ public:
         Bytes bytes{};
         Writer w{bytes};
         for(char c : "OFSTRAT1") {if(!c)break;w.U8(static_cast<uint8_t>(c));}
-        w.U16(1);w.U16(0);
+        w.U16(2);w.U16(0);
         const Frontier &f=s.frontier;
         w.U32(f.seed_);
         w.U8(static_cast<uint8_t>(s.focused));
@@ -57,6 +57,8 @@ public:
         Checkpoint::Bytes combat{};
         if(!Checkpoint::Encode(s.tactical,&combat))return false;
         for(uint8_t c:combat)w.U8(c);
+        for(int faction=1;faction<=kMajorFactions;++faction)
+            w.U8(static_cast<uint8_t>(f.relations_[faction]));
         if(!w.ok)return false;
         uint64_t hash=Hash(bytes.data(),kBytes-8);
         for(size_t i=kBytes-8;i<kBytes;++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
@@ -72,7 +74,8 @@ public:
         }
         Reader r{data,kBytes-8};
         for(char c:"OFSTRAT1"){if(!c)break;if(r.U8()!=static_cast<uint8_t>(c))return false;}
-        if(r.U16()!=1||r.U16()!=0)return false;
+        const uint16_t schema=r.U16();
+        if((schema!=1 && schema!=2)||r.U16()!=0)return false;
         uint32_t seed=r.U32();
         const int focus=r.U8();
         const unsigned view=r.U8(),action=r.U8();
@@ -97,16 +100,18 @@ public:
         f.last_.defenders_lost=r.U8();f.last_.enemies_lost=r.U8();
         f.last_.pump_remaining=r.U8();f.last_.battle_ticks=r.U32();
         if(!Frontier::Valid(f.location_)||f.day_<1||f.day_>1000000||
-           f.operation_<0||f.operation_>3||f.population_<1||f.population_>1000||
+           f.operation_<0||f.operation_>kHearthfallOperations||
+           (schema==1 && f.operation_>3)||f.population_<1||f.population_>1000||
            f.guards_<0||f.guards_>12||f.rations_<0||f.rations_>65535||
            f.salvage_<0||f.salvage_>1000000||f.trust_<0||f.trust_>100||
            f.pump_health_<0||f.pump_health_>18||bridge>1||deployed>1||
            f.morphology_epoch_>1||outcome>2||
-           f.last_.operation<-1||f.last_.operation>2||
+           f.last_.operation<-1||f.last_.operation>=kHearthfallOperations||
+           f.last_.operation>f.operation_||
            f.last_.defenders_lost>4||f.last_.enemies_lost>6||
            f.last_.pump_remaining>18||f.last_.battle_ticks>160||
            (f.last_.operation==-1 && (outcome || f.last_.battle_ticks))||
-           (f.operation_==3 && f.deployed_)||
+           (f.operation_==kHearthfallOperations && f.deployed_)||
            (f.deployed_ != (next.view==FrontMode::Tactical)))return false;
         for(auto &sector:f.sectors_){
             const unsigned ecology=r.U8(),prev=r.U8(),owner=r.U8(),anomaly=r.U8(),stability=r.U8();
@@ -126,6 +131,13 @@ public:
         Checkpoint::Bytes combat{};
         for(auto &c:combat)c=r.U8();
         if(!Checkpoint::Decode(&next.tactical,combat.data(),combat.size()))return false;
+        if(schema>=2){
+            for(int faction=1;faction<=kMajorFactions;++faction){
+                const int value=static_cast<int8_t>(r.U8());
+                if(value<-100||value>100)return false;
+                f.relations_[faction]=static_cast<int8_t>(value);
+            }
+        }
         while(r.position<r.capacity){if(r.U8()!=0)return false;}
         if(!r.ok)return false;
         if(f.deployed_){
@@ -133,8 +145,11 @@ public:
             // their originally authored pump-defense missions. New v2
             // checkpoints may not spoof a different operation's rules.
             const uint8_t nested_schema=static_cast<uint8_t>(combat[8]);
-            if(f.operation_>=3 || (nested_schema>=2 &&
-               next.tactical.battle.mission()!=static_cast<Mission>(f.operation_)))return false;
+            if(f.operation_>=kHearthfallOperations || (nested_schema>=2 &&
+               next.tactical.battle.mission()!=Frontier::MissionForOperation(f.operation_)))return false;
+            if(f.operation_>=3 && (nested_schema<3 ||
+               static_cast<uint8_t>(next.tactical.battle.doctrine())!=
+               Frontier::FactionForOperation(f.operation_)))return false;
             f.battle_=next.tactical.battle;
         }
         next.ResetEdges();next.rejected=false;

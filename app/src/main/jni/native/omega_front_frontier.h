@@ -2,6 +2,7 @@
 #define REVERIE_OMEGA_FRONT_FRONTIER_H
 
 #include "omega_front_tactics.h"
+#include "omega_front_faction_encounters.h"
 #include <array>
 #include <cstdint>
 
@@ -11,6 +12,7 @@ namespace reverie { namespace omega {
 // T01 sectors, NOT a replacement for the full 600-sector campaign design.
 constexpr int kFrontierSectors = 16;
 constexpr int kMajorFactions = 17;
+constexpr int kHearthfallOperations = 6; // Three original operations + three first-contact battles.
 constexpr uint8_t kIndependentOwner = 18; // Settlement; NOT faction #18.
 enum class Ecology : uint8_t { Eden, Wasteland, Barren };
 struct FrontierSector {
@@ -56,6 +58,10 @@ public:
             {"Broken Viaduct",Ecology::Wasteland,Ecology::Wasteland,0,0,45,0,0,0,25,0},
             {"Dry Basin",Ecology::Barren,Ecology::Barren,0,0,88,0,0,0,45,0}
         }};
+        // Diplomacy values are opinions of the independent Hearthwell command.
+        // These are established 17 faction IDs, not extra entities.
+        relations_[1]=-20; relations_[2]=-30;
+        relations_[4]=-10; relations_[6]=-5;
     }
     static bool Valid(int i) { return i>=0 && i<kFrontierSectors; }
     const FrontierSector* sector(int i) const { return Valid(i)?&sectors_[i]:nullptr; }
@@ -68,6 +74,7 @@ public:
     int salvage() const {return salvage_;}
     int trust() const {return trust_;}
     int pump_health() const {return pump_health_;}
+    int relation(int faction) const {return faction>=1 && faction<=kMajorFactions?relations_[faction]:0;}
     bool bridge_repaired() const {return bridge_;}
     bool deployed() const {return deployed_;}
     const Battle* current_battle() const {return deployed_?&battle_:nullptr;}
@@ -75,14 +82,30 @@ public:
     FrontierReport last_report() const {return last_;}
     uint32_t seed() const {return seed_;}
     uint32_t morphology_epoch() const {return morphology_epoch_;}
-    uint8_t operation_faction() const {
-        // M01 unaligned looters; M02/M03 F01 hostile local watch militia.
-        return operation_==0?0:operation_<3?1:0;
+    static uint8_t FactionForOperation(int op){
+        constexpr uint8_t factions[kHearthfallOperations]={0,1,1,4,2,6};
+        return op>=0 && op<kHearthfallOperations?factions[op]:0;
     }
-    int target_sector() const {
-        constexpr int targets[3]={10,5,10};
-        return operation_<3?targets[operation_]:-1;
+    static int TargetForOperation(int op){
+        // S011 waterworks, S006 orchards, S011 receivership, then
+        // S010 salvage yard, S008 charter checkpoint, S005 ford.
+        constexpr int targets[kHearthfallOperations]={10,5,10,9,7,4};
+        return op>=0 && op<kHearthfallOperations?targets[op]:-1;
     }
+    static Mission MissionForOperation(int op){
+        // A contested control point works for Charter Gate and Caravan Ford;
+        // the objective isn't a fake win screen: troops must hold the tile.
+        return op==1 || op==4 || op==5?Mission::CaptureOrchard:
+               op==2?Mission::DisableRelay:Mission::HoldPump;
+    }
+    static const char *OperationName(int op){
+        constexpr const char *names[kHearthfallOperations]={
+            "PUMP DEFENSE","WHITE ORCHARD","RECEIVERSHIP",
+            "PRICE OF METAL","CHARTER GATE","EAGLES AT FORD"};
+        return op>=0 && op<kHearthfallOperations?names[op]:"FRONT SECURED";
+    }
+    uint8_t operation_faction() const {return FactionForOperation(operation_);}
+    int target_sector() const {return TargetForOperation(operation_);}
     bool can_travel(int destination) const {
         if(deployed_||!Valid(destination)||destination==location_)return false;
         const int dx=destination%4-location_%4;
@@ -150,20 +173,29 @@ public:
         sectors_[6].food-=4;trust_-=3;++guards_;
         return true;
     }
-    bool StartOperation() {
-        if(deployed_||operation_>=3||location_!=target_sector()||
-           guards_<4||rations_<2||pump_health_==0)return false;
-        const uint32_t encounter_seed=Mix(seed_,static_cast<uint32_t>(operation_+1));
-        Battle battle(encounter_seed);
+    // Authoritative operation encounter builder shared by live campaign and
+    // deterministic fixture tests. Does not spend or mutate strategic stocks.
+    static bool BuildBattle(int op,uint32_t seed,int pumpHp,Battle *output){
+        if(!output || op<0 || op>=kHearthfallOperations || pumpHp<1 || pumpHp>18)return false;
+        if(op>=3){
+            Doctrine doctrine=op==3?Doctrine::Scrapline:
+                op==4?Doctrine::Meridian:Doctrine::LostNinth;
+            Battle built(seed);
+            if(!FactionEncounters::Build(doctrine,seed,&built) ||
+               !built.ConfigurePump(pumpHp) ||
+               !built.ConfigureMission(MissionForOperation(op)))return false;
+            *output=built;return true;
+        }
+        Battle battle(seed);
         battle.ClearUnits();
-        if(!battle.ConfigureDoctrine(operation_==0?Doctrine::Unaligned:Doctrine::Hearthward) ||
-           !battle.ConfigurePump(pump_health_) ||
-           !battle.ConfigureMission(static_cast<Mission>(operation_)))return false;
-        if(operation_==1) {
+        if(!battle.ConfigureDoctrine(op==0?Doctrine::Unaligned:Doctrine::Hearthward) ||
+           !battle.ConfigurePump(pumpHp) ||
+           !battle.ConfigureMission(MissionForOperation(op)))return false;
+        if(op==1) {
             battle.SetGround(7,10,Ground::Rubble);
             battle.SetGround(7,11,Ground::Rubble);
             battle.SetGround(7,13,Ground::Rubble);
-        } else if(operation_==2) {
+        } else if(op==2) {
             battle.SetGround(7,10,Ground::Wall);
             battle.SetGround(7,14,Ground::Wall);
         }
@@ -172,7 +204,7 @@ public:
            battle.AddUnit(Side::Hearthwell,Class::Rifle,3,13)<0 ||
            battle.AddUnit(Side::Hearthwell,Class::Engineer,2,13)<0 ||
            battle.AddUnit(Side::Hearthwell,Class::Heavy,5,12)<0)return false;
-        if(operation_==1){
+        if(op==1){
             // Hearthward watches physically defend the orchard rather than
             // using the pump-assault spawn and pretending it is another war.
             if(battle.AddUnit(Side::Raiders,Class::Rifle,15,10)<0 ||
@@ -183,10 +215,18 @@ public:
             if(battle.AddUnit(Side::Raiders,Class::Rifle,8,11)<0 ||
                battle.AddUnit(Side::Raiders,Class::Rifle,8,13)<0 ||
                battle.AddUnit(Side::Raiders,Class::Heavy,10,12)<0)return false;
-            if(operation_==2 && (battle.AddUnit(Side::Raiders,Class::Rifle,19,9)<0 ||
+            if(op==2 && (battle.AddUnit(Side::Raiders,Class::Rifle,19,9)<0 ||
                 battle.AddUnit(Side::Raiders,Class::Rifle,20,12)<0 ||
                 battle.AddUnit(Side::Raiders,Class::Engineer,19,12)<0))return false;
         }
+        *output=battle;return true;
+    }
+    bool StartOperation() {
+        if(deployed_||operation_>=kHearthfallOperations||location_!=target_sector()||
+           guards_<4||rations_<2||pump_health_==0)return false;
+        const uint32_t encounter_seed=Mix(seed_,static_cast<uint32_t>(operation_+1));
+        Battle battle(encounter_seed);
+        if(!BuildBattle(operation_,encounter_seed,pump_health_,&battle))return false;
         battle_=battle;deployed_=true;rations_-=2;
         return true;
     }
@@ -221,14 +261,33 @@ public:
                 const uint16_t transfer=sectors_[5].food>=12?12:sectors_[5].food;
                 sectors_[5].food-=transfer;sectors_[6].food+=transfer;
                 trust_=trust_+3>100?100:trust_+3;
-            } else {
-                // Hearthward hardliners withdraw the receivership demand,
-                // while the civil compact remains an independent settlement.
+            } else if(operation_==2) {
+                // Hearthward hardliners withdraw their receivership claim.
                 sectors_[10].claims=sectors_[10].claims>=8?sectors_[10].claims-8:0;
+            } else if(operation_==3) {
+                // Scrapline controls the yard; an armed recovery wins only a
+                // finite engine-stock salvage allotment. We do not mint scrap.
+                FrontierSector &yard=sectors_[9];
+                const uint16_t recovered_stock=yard.wreck_mass>=18?18:yard.wreck_mass;
+                yard.wreck_mass-=recovered_stock;
+                salvage_+=recovered_stock;
+                yard.claims=yard.claims>80?100:static_cast<uint8_t>(yard.claims+20);
+                AdjustRelation(4,-12);
+            } else if(operation_==4) {
+                // An actual checkpoint seizure, not a diplomatic concession.
+                sectors_[7].owner=kIndependentOwner;
+                sectors_[7].claims=sectors_[7].claims>=10?sectors_[7].claims-10:0;
+                AdjustRelation(2,-15);
+            } else if(operation_==5) {
+                // A secured crossing, but the Roman camp remains F06 land.
+                sectors_[4].owner=kIndependentOwner;
+                sectors_[4].claims=sectors_[4].claims>=7?sectors_[4].claims-7:0;
+                AdjustRelation(6,-10);
             }
             ++operation_;
         }else{
             trust_=trust_>=5?trust_-5:0;
+            if(operation_>=3)AdjustRelation(operation_faction(),-4);
             const int contested=target_sector();
             if(Valid(contested)) {
                 FrontierSector &s=sectors_[contested];
@@ -243,6 +302,8 @@ public:
         add(seed_);add(location_);add(day_);add(operation_);add(guards_);
         add(population_);add(rations_);add(salvage_);add(trust_);
         add(pump_health_);add(bridge_);add(morphology_epoch_);add(deployed_);
+        for(int faction=1;faction<=kMajorFactions;++faction)
+            add(static_cast<uint8_t>(relations_[faction]));
         add(last_.operation+1);add(static_cast<uint8_t>(last_.outcome));
         add(last_.defenders_lost);add(last_.enemies_lost);
         add(last_.pump_remaining);add(last_.battle_ticks);
@@ -256,12 +317,20 @@ public:
     }
 private:
     friend class CampaignSave;
+    void AdjustRelation(int faction,int delta){
+        if(faction<1||faction>kMajorFactions)return;
+        int next=static_cast<int>(relations_[faction])+delta;
+        if(next<-100)next=-100;
+        if(next>100)next=100;
+        relations_[faction]=static_cast<int8_t>(next);
+    }
     static uint32_t Mix(uint32_t seed,uint32_t index){
         uint32_t x=seed^(index*0x9e3779b9u);
         x^=x>>16;x*=0x7feb352du;x^=x>>15;x*=0x846ca68bu;x^=x>>16;
         return x?x:1;
     }
     std::array<FrontierSector,kFrontierSectors> sectors_{};
+    std::array<int8_t,kMajorFactions+1> relations_{};
     Battle battle_{1};
     uint32_t seed_;
     int location_=6,day_=1,operation_=0,population_=31;
