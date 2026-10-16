@@ -10,7 +10,7 @@
 
 All entries describe verified project/repository changes. Planned work belongs in the backlog, not here.
 
-## Unreleased
+## Unreleased\n\n### VR Home atmosphere: indoor outlooks, panoramic outdoor scenes and sound\n\n- Source-integrated low-poly multiband forest/coast sky, distant ridges/clouds/sun, two cut-through birch-wall window views with distant birds, rabbits/deer, beach crabs and two synchronized animated birds in each outdoor scene. Both eyes use one frame-time update and share existing GLES2 shader/input geometry.\n- Add original generated offline Home ambience (room ventilation, foliage/birds, surf/gulls): 22,050 Hz mono, four-second `AudioTrack.MODE_STATIC` loop selected with the existing environment preference, stopped outside Home/environment chooser and paused/released with Android lifecycle.\n- Add `HomeAtmosphereGeometryTest`, `scripts/verify-home-atmosphere-assembly.py`, sourced CC0 field-recording candidate links and acceptance gates. **Do not claim these third-party recordings are packaged**: Freesound originals require logged-in download, hashing, trim/conversion, registration, and device/APK verification. Source and documentation on remote `main`; build and handset acceptance remain outstanding.\n
 
 ### Always-visible binocular FPS status indicator
 
