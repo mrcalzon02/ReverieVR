@@ -62,7 +62,8 @@ public final class HomeKeyboardGeometryTest {
     }
 
     @Test public void raisedCapsAndLegendsSitAboveGrayDais() {
-        assertTrue(HomeKeyboardGeometry.KEYCAP_BASE_Y > -1.08f);
+        assertTrue(HomeKeyboardGeometry.KEYCAP_BASE_Y
+            > HomeKeyboardGeometry.DESK_TOP_Y);
         assertTrue(HomeKeyboardGeometry.KEYCAP_TOP_Y
             > HomeKeyboardGeometry.KEYCAP_BASE_Y);
         assertTrue(HomeKeyboardGeometry.LEGEND_Y
@@ -73,10 +74,26 @@ public final class HomeKeyboardGeometryTest {
         assertEquals(1.45f,
             HomeKeyboardGeometry.worldX(
                 HomeKeyboardGeometry.WIDTH_PIXELS), 0.0001f);
-        assertEquals(-3.75f, HomeKeyboardGeometry.worldZ(0f), 0.0001f);
-        assertEquals(-1.52f,
+        assertEquals(-3.65f, HomeKeyboardGeometry.worldZ(0f), 0.0001f);
+        assertEquals(-1.42f,
             HomeKeyboardGeometry.worldZ(
                 HomeKeyboardGeometry.HEIGHT_PIXELS), 0.0001f);
+    }
+
+    @Test public void menuAndKeyboardDoNotOverlapFromSeatedHeadset() {
+        // Check angular separation; planes can avoid intersection and yet
+        // still overlap in the player's view at their different depths.
+        float menuBottomY = VrShellRenderer.HOME_WORLD_BOTTOM
+            * VrShellRenderer.SHELL_VIEW_CONTRACTION;
+        float menuLowerAngle = -menuBottomY
+            / -VrShellRenderer.HOME_CENTER_WORLD_Z;
+        float rearLegendAngle = -HomeKeyboardGeometry.legendAt(
+            HomeKeyboardGeometry.BACK_Z) / -HomeKeyboardGeometry.BACK_Z;
+        assertTrue("Desk rear must project below menu lower edge",
+            rearLegendAngle - menuLowerAngle > 0.015f);
+        assertEquals("Dais and keycap rise must stay coupled", 0.011f,
+            HomeKeyboardGeometry.KEYCAP_BASE_Y
+                - HomeKeyboardGeometry.DESK_TOP_Y, 0.0001f);
     }
 
     @Test public void gazeAboveDeskCannotTriggerKeys() {
