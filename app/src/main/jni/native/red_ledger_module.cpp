@@ -1419,6 +1419,15 @@ void DrawRoom(
                 0.40f,-0.54f,-1.02f,0.53f,0.19f,0.48f,
                 state->hovered_target==WorkTarget::StockBuy?0.64f:0.20f,
                 0.45f,0.24f,Material::Metal);
+            // Real purchasable legacy cartons: eight-lager case, four-cup kit.
+            DrawCube(state,view_projection,flicker,
+                1.20f,-0.48f,-0.72f,0.40f,0.20f,0.24f,
+                state->hovered_target==WorkTarget::BeerOrder?0.67f:0.36f,
+                0.30f,0.17f,Material::Wood);
+            DrawCube(state,view_projection,flicker,
+                1.68f,-0.48f,-0.72f,0.40f,0.20f,0.24f,
+                state->hovered_target==WorkTarget::CupOrder?0.76f:0.38f,
+                0.56f,0.26f,Material::Paper);
             // Storage cases and distinguishable casks, not floating cards.
             for(int i=0;i<3;++i) {
                 DrawCube(state,view_projection,flicker,
@@ -1517,52 +1526,6 @@ void DrawRoom(
     DrawCube(state,view_projection,flicker,
         -0.28f,-0.425f,-1.18f,0.74f,0.012f,0.30f,
         0.045f,0.11f,0.13f,Material::Metal);
-    const bool ledger_hover =
-        state->hovered_target
-            == WorkTarget::Ledger;
-
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        0.85f,-0.52f,-0.90f,
-        0.42f,0.06f,0.30f,
-        ledger_hover ? 0.78f : 0.18f,
-        ledger_hover ? 0.62f : 0.12f,
-        ledger_hover ? 0.24f : 0.08f,
-        Material::Paper
-    );
-
-    const bool beer_hover =
-        state->hovered_target
-            == WorkTarget::BeerOrder;
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        1.20f,-0.48f,-0.72f,
-        0.42f,0.05f,0.24f,
-        beer_hover ? 0.78f : 0.34f,
-        beer_hover ? 0.66f : 0.28f,
-        beer_hover ? 0.25f : 0.12f,
-        Material::Paper
-    );
-
-    const bool order_cup_hover =
-        state->hovered_target
-            == WorkTarget::CupOrder;
-    DrawCube(
-        state,
-        view_projection,
-        flicker,
-        1.68f,-0.48f,-0.72f,
-        0.42f,0.05f,0.24f,
-        order_cup_hover ? 0.76f : 0.30f,
-        order_cup_hover ? 0.76f : 0.30f,
-        order_cup_hover ? 0.70f : 0.26f,
-        Material::Paper
-    );
-
     if (state->simulation.current_event()
             == EventType::ProtectionDemand
         && !state->simulation
