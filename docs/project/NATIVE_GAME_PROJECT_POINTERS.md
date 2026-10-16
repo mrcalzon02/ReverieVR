@@ -225,7 +225,7 @@ All gameplay advances in native Update once per frame, with common cached vertex
 
 ## RV-GAME-06 — Omega Front
 
-**Status:** Deterministic combat kernel, tactical controller and Development-only native GLES2 war-table module are source-committed and registered in Android.mk, host and Java input/admission. **An Android APK/device build has not been verified; the full campaign remains unimplemented.** This is a new original top-down, tile-based military tactics/RPG hybrid, not an adaptation of an existing commercial game.
+**Status:** Headless combat, tactical control and Development-only native GLES2 war table are source-committed, including a **versioned full-skirmish checkpoint with native module resume/autosave**. Native host/Android.mk/Java admission remain integrated; **NDK/APK build and Galaxy S9/Daydream acceptance have not been verified, and the 70-arc campaign is not implemented.** This is a new original top-down, tile-based military tactics/RPG hybrid, not an adaptation of an existing commercial game.
 
 **Setting authority:** [OMEGA_FRONT_WORLD_BIBLE.md](OMEGA_FRONT_WORLD_BIBLE.md) — Ouroboros Corporation, planetary bisection, past/future rifts, baseline-human Eden Zones, wastelands, barren zones, anomaly fields, the canonical count of 17 factions and their unresolved individual identities.
 

@@ -15,6 +15,14 @@
 - Simulation advances **only through `Battle::Step()`** (one fixed 250-ms logical pulse); reading ground, unit status or deterministic checksum does not mutate state. Ended battles are frozen.
 - Seed/state/terrain/units/queues/stock/result fields contribute to a stable explicit-field FNV-1a checksum for replay comparisons.
 
+## Persistent Hearthwell tactical checkpoint — implemented 2026-10-15
+
+`omega_front_checkpoint.h` is a versioned, deterministic **1,152-byte** save codec for one live 24×24 battle. It writes explicit little-endian integer/float fields and an FNV-1a-64 integrity trailer; it stores seeded RNG, fractional pulse clock, all 576 ground tiles, troops and HP/ammo, pending order queues, waterworks health, depot stock, result/event state, cursor, selection, pause and restart seed. Decoder checks length, magic/version, checksum, enums, coordinates, unit occupancy, terrain, inventories, queue validity and battle outcome **before** assigning into live state. Missing/corrupted/incompatible checkpoint data never partially replaces the in-memory battle.
+
+The Development-only native module reads the private `hearthwell.v1` slot on creation; it writes immediately after accepted orders, pause changes and finished battles, every 16 logical battle pulses (four seconds), and on the shell-owned pause callback. Rendering the two eyes does not save or advance gameplay. Failed writes and malformed reads generate diagnostic logs and visible feedback. Successful future writes clear an old corruption warning. No new ABI or permission is involved. This is **one persistent skirmish**, not a full 70-arc world campaign.
+
+The host-only runner now builds three regressions: `omega_front_tactics_test.cpp`, `omega_front_controls_test.cpp` and `omega_front_checkpoint_test.cpp`. The third checks roundtrip state identity, deterministic continuation, paused planning, end-state preservation, truncated data, tampering and resealed invalid fields. Locally GCC/Clang and GCC ASan+UBSan passed, as did a mock native module's save/destroy/recreate/load test. **Android NDK, APK assembly, Galaxy S9 actual saves and Daydream input are not yet verified.**
+
 ## Reproduce host checks
 
 From the repository root:
