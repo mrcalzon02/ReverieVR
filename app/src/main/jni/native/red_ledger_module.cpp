@@ -15,6 +15,8 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <cstdio>
+#include <cctype>
 #include <new>
 #include <memory>
 
@@ -137,7 +139,11 @@ struct ModuleState {
     GLuint mug_vbo = 0;
     GLuint static_vbo = 0;
     GLuint signage_vbo = 0;
-    GLsizei signage_vertex_count = 0;
+    GLint signage_start[3] = {};
+    GLsizei signage_count[3] = {};
+    GLuint status_vbo = 0;
+    GLsizei status_count = 0;
+    bool status_dirty = true;
     GLuint atlas_texture = 0;
     GLint position_location = -1;
     GLint uv_location = -1;
@@ -668,6 +674,7 @@ bool ActivateWorkTarget(
         state->host,
         REVERIE_NATIVE_FEEDBACK_ACTIVATION
     );
+    state->status_dirty=true;
     SaveState(state);
     return true;
 }
@@ -771,7 +778,16 @@ void DestroyGl(
         glDeleteBuffers(1, &state->signage_vbo);
         state->signage_vbo = 0;
     }
-    state->signage_vertex_count = 0;
+    if (state->status_vbo != 0) {
+        glDeleteBuffers(1, &state->status_vbo);
+        state->status_vbo = 0;
+    }
+    for (int i=0;i<3;++i) {
+        state->signage_start[i]=0;
+        state->signage_count[i]=0;
+    }
+    state->status_count=0;
+    state->status_dirty=true;
     if (state->static_vbo != 0) {
         glDeleteBuffers(1, &state->static_vbo);
         state->static_vbo = 0;
@@ -806,7 +822,13 @@ void AbandonGl(
     state->mug_vbo = 0;
     state->static_vbo = 0;
     state->signage_vbo = 0;
-    state->signage_vertex_count = 0;
+    state->status_vbo = 0;
+    state->status_count = 0;
+    state->status_dirty = true;
+    for (int i=0;i<3;++i){
+        state->signage_start[i]=0;
+        state->signage_count[i]=0;
+    }
     state->atlas_texture = 0;
     state->program = 0;
     state->position_location = -1;
@@ -964,34 +986,52 @@ int32_t InitializeGl(
 
     // Bake real, front-facing glyph geometry once per GL context. These
     // share the paper material and static attribute layout (no extra shader).
-    const size_t sign_count = signs::VertexCount();
+    size_t counts[3]={};
+    size_t sign_count=0u;
+    for (int room=0;room<3;++room){
+        counts[room]=signs::VertexCount(room);
+        sign_count+=counts[room];
+    }
     std::unique_ptr<float[]> sign_vertices(
         new (std::nothrow) float[sign_count * signs::kVertexStride]
     );
-    size_t generated = 0;
-    if (!sign_vertices || sign_count == 0u ||
-        !signs::Build(sign_vertices.get(),
-            sign_count * signs::kVertexStride, &generated) ||
-        generated != sign_count) {
+    if(!sign_vertices || sign_count==0u){
         Log(state, REVERIE_NATIVE_LOG_ERROR,
-            "Bar signage geometry generation failed.");
+            "Room lettering allocation failed.");
         DestroyGl(state);
         return finish(0);
     }
-    glGenBuffers(1, &state->signage_vbo);
-    if (state->signage_vbo == 0) {
-        Log(state, REVERIE_NATIVE_LOG_ERROR,
-            "Bar signage VBO allocation failed.");
+    size_t start_at=0u;
+    for(int room=0;room<3;++room){
+        size_t generated=0u;
+        if(!signs::Build(sign_vertices.get()+
+                start_at*signs::kVertexStride,
+                counts[room]*signs::kVertexStride,&generated,room)
+            ||generated!=counts[room]){
+            Log(state,REVERIE_NATIVE_LOG_ERROR,
+                "Room lettering generation failed.");
+            DestroyGl(state);
+            return finish(0);
+        }
+        state->signage_start[room]=static_cast<GLint>(start_at);
+        state->signage_count[room]=static_cast<GLsizei>(counts[room]);
+        start_at+=counts[room];
+    }
+    glGenBuffers(1,&state->signage_vbo);
+    glGenBuffers(1,&state->status_vbo);
+    if(state->signage_vbo==0||state->status_vbo==0){
+        Log(state,REVERIE_NATIVE_LOG_ERROR,
+            "Room text buffers unavailable.");
         DestroyGl(state);
         return finish(0);
     }
-    state->signage_vertex_count = static_cast<GLsizei>(sign_count);
-    glBindBuffer(GL_ARRAY_BUFFER, state->signage_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-        sign_count * signs::kVertexStride * sizeof(float),
-        sign_vertices.get(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER,state->signage_vbo);
+    glBufferData(GL_ARRAY_BUFFER,sign_count*signs::kVertexStride*sizeof(float),
+        sign_vertices.get(),GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
     sign_vertices.reset();
+    state->status_count=0;
+    state->status_dirty=true;
 
     // Generate only on GL-context creation/recreation. The temporary CPU
     // buffer is freed immediately after upload; no runtime bitmap asset.
@@ -1227,7 +1267,25 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
         2, GL_FLOAT, GL_FALSE, stride,
         reinterpret_cast<const void *>(8u * sizeof(float)));
     glUniform1f(state->flicker_location, 1.0f);
-    glDrawArrays(GL_TRIANGLES, 0, state->signage_vertex_count);
+    const int room_index=static_cast<int>(state->market.room());
+    glDrawArrays(GL_TRIANGLES,state->signage_start[room_index],
+        state->signage_count[room_index]);
+    // State-dependent text is refreshed only after simulation transitions.
+    if(state->status_count>0){
+        glBindBuffer(GL_ARRAY_BUFFER,state->status_vbo);
+        glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+            3,GL_FLOAT,GL_FALSE,stride,reinterpret_cast<const void *>(0));
+        glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+            2,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(3u*sizeof(float)));
+        glVertexAttribPointer(static_cast<GLuint>(state->color_attribute_location),
+            3,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(5u*sizeof(float)));
+        glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
+            2,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(8u*sizeof(float)));
+        glDrawArrays(GL_TRIANGLES,0,state->status_count);
+    }
 
     // Dynamic props still use the unit-cube VBO and constant attributes.
     glDisableVertexAttribArray(
@@ -1762,6 +1820,7 @@ void Destroy(
         || state->mug_vbo != 0
         || state->static_vbo != 0
         || state->signage_vbo != 0
+        || state->status_vbo != 0
         || state->atlas_texture != 0) {
         Log(
             state,
@@ -1931,6 +1990,7 @@ int32_t RenderEye(
         || state->mug_vbo == 0
         || state->static_vbo == 0
         || state->signage_vbo == 0
+        || state->status_vbo == 0
         || state->atlas_texture == 0) {
         return 0;
     }
