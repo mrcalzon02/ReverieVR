@@ -355,6 +355,18 @@ void Save(Module* m){
         m->saveError=true;
     }else m->saveError=false;
 }
+void SaveShipyard(Module* m){
+    if(!ReverieNativeHostSupportsSaveV1(m->host)){
+        m->saveError=true;return;
+    }
+    const ShipyardSave state=m->yard.snapshot();
+    const int result=m->host->write_save("shipyard.v1",&state,
+                                       static_cast<uint32_t>(sizeof(state)));
+    if(result!=REVERIE_NATIVE_SAVE_OK){
+        m->saveError=true;
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,kId,"Shipyard save failed");
+    }else m->saveError=false;
+}
 void* Create(const ReverieNativeHostV1* host){
     if(!ReverieNativeHostSupportsLogV1(host))return nullptr;
     Module* m=new(std::nothrow)Module();if(!m)return nullptr;
@@ -375,7 +387,18 @@ void* Create(const ReverieNativeHostV1* host){
                                         "Invalid campaign save ignored");
         }else if(result!=REVERIE_NATIVE_SAVE_NOT_FOUND)
             ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,"Campaign save read failed");
+        ShipyardSave ship{};
+        uint32_t shipBytes=0;
+        const int shipCode=host->read_save("shipyard.v1",&ship,sizeof(ship),&shipBytes);
+        if(shipCode==REVERIE_NATIVE_SAVE_OK){
+            if(shipBytes!=sizeof(ship)||!m->yard.restore(ship))
+                ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_WARN,kId,
+                                   "Invalid shipyard save; restored default ship");
+        }else if(shipCode!=REVERIE_NATIVE_SAVE_NOT_FOUND)
+            ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,
+                               "Shipyard save read failed");
     }
+    m->sim.configure_ship(m->yard);
     Rebuild(m);return m;
 }
 void Destroy(void* p){delete static_cast<Module*>(p);}
