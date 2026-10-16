@@ -3,7 +3,10 @@
 #include <cstddef>
 namespace reverie { namespace redledger { namespace geometry {
 constexpr size_t kCubeVertexCount = 36u;
-constexpr size_t kStaticCubeCount = 11u;
+constexpr size_t kCubesPerRoom = 11u;
+constexpr size_t kRoomCount = 3u;
+constexpr size_t kStaticCubeCount = kCubesPerRoom * kRoomCount;
+constexpr size_t kRoomVertexCount = kCubesPerRoom * kCubeVertexCount;
 constexpr size_t kStaticVertexStride = 10u; // xyz, uv, rgb, tile origin
 constexpr size_t kStaticVertexCount = kStaticCubeCount * kCubeVertexCount;
 constexpr size_t kStaticVertexFloats = kStaticVertexCount * kStaticVertexStride;
