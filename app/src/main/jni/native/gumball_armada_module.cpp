@@ -179,9 +179,12 @@ void Flight(Module* m){
     Background(m);
     const auto& s=m->sim;
     for(const auto& e:s.enemies())if(e.active)EnemyVisual(m,e);
-    for(const auto& shot:s.shots())if(shot.active)
-        Rect(m,shot.x,shot.y,.039f,shot.hostile?.12f:.21f,-2.82f,
-             shot.hostile?1.f:.38f,shot.hostile?.26f:.90f,shot.hostile?.20f:1.f);
+    for(const auto& shot:s.shots())if(shot.active){
+        const float radius=shot.hostile?.039f:(shot.damage>=4?.085f:.037f);
+        Rect(m,shot.x,shot.y,radius,shot.hostile?.12f:(shot.damage>=4?.24f:.18f),-2.82f,
+             shot.hostile?1.f:(shot.damage>=4?1.f:.33f),
+             shot.hostile?.26f:(shot.damage>=4?.68f:.92f),shot.hostile?.20f:1.f);
+    }
     if(s.hurt_flash()>0.f){
         Rect(m,-2.25f,0,.13f,2.7f,-2.78f,1.f,.18f,.18f);
         Rect(m, 2.25f,0,.13f,2.7f,-2.78f,1.f,.18f,.18f);
@@ -198,6 +201,8 @@ void Flight(Module* m){
     Rect(m,0,1.48f,5.f,.35f,-2.92f,.056f,.060f,.12f);
     std::snprintf(text,sizeof(text),"HULL %d  SHIELD %d  GUMBALLS %u",s.hp(),s.shield(),s.cash());
     Text(m,text,0,1.42f,.044f,.91f,.97f,.87f);
+    const char* guns[]={"PEA REPEATER","ROCK CANNON","MINT SPREAD"};
+    Text(m,guns[static_cast<unsigned>(s.weapon())],0,1.18f,.034f,.87f,.88f,.57f);
     if(s.combo()>=3){
         Text(m,s.combo()>=10?"SOUR ANNIHILATION!":(s.combo()>=6?"SPECTACULAR!":"SUGAR RUSH!"),
              0,.93f,.073f,1.f,.84f,.28f);
@@ -316,7 +321,8 @@ void Update(void* p,const ReverieNativeInputV1* in){
         if(kills!=m->sim.kills())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         if(hp>m->sim.hp()||shieldBefore>m->sim.shield())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
         if(m->sim.shots_fired()>fired)
-            ReverieNativeRequestSoundV1(m->host,REVERIE_NATIVE_SOUND_WEAPON_MACHINE);
+            ReverieNativeRequestSoundV1(m->host,m->sim.weapon()==Weapon::RockCannon?
+                REVERIE_NATIVE_SOUND_WEAPON_HEAVY:REVERIE_NATIVE_SOUND_WEAPON_MACHINE);
         if(m->sim.phase()!=Phase::Flight)Save(m);
         Rebuild(m);
     }else if(phase==Phase::Chart){
