@@ -153,6 +153,57 @@ void Chart(Module* m){
     Text(m,text,0,-1.51f,.035f,1.f,.86f,.60f);
     Text(m,"PAD MOVE  CLICK ACTIVATE",0,-1.66f,.030f,.72f,.87f,.93f);
 }
+void ShipyardView(Module* m){
+    Background(m);
+    Text(m,"CANDY SHIPYARD",0,1.48f,.075f,.94f,.78f,.97f);
+    const char* names[]={"FRAME","ARMOR","WING","THRUSTER","REACTOR",
+        "BATTERY","SHIELD","GUN MOUNT","CARGO","RETURN"};
+    const char* marks[]={" ","C","F","A","W","T","R","B","S","G","H"};
+    const Part selected=m->brush;
+    char line[100];
+    std::snprintf(line,sizeof(line),"PLACE %s   STOCK %u",
+                  names[static_cast<unsigned>(selected)-2u],m->yard.stock(selected));
+    Text(m,line,0,1.18f,.034f,.79f,.94f,.81f);
+    for(int y=0;y<7;++y)for(int x=0;x<7;++x){
+        const float gx=-1.58f+(x-3)*.29f;
+        const float gy=(3-y)*.29f;
+        const bool focused=m->garageX==x&&m->garageY==y;
+        Frame(m,gx,gy,.278f,.278f,focused);
+        const Part part=m->yard.at(x,y);
+        if(part!=Part::Empty){
+            const unsigned id=static_cast<unsigned>(part);
+            static const float colors[11][3]={
+                {0,0,0},{.96f,.72f,.94f},{.40f,.24f,.26f},
+                {.75f,.55f,.24f},{.70f,.87f,.48f},{.35f,.95f,.87f},
+                {.96f,.66f,.25f},{.98f,.92f,.47f},{.27f,.77f,1.f},
+                {1.f,.32f,.38f},{.58f,.79f,.98f}};
+            Rect(m,gx,gy,.21f,.21f,-2.88f,colors[id][0],colors[id][1],colors[id][2]);
+            Text(m,marks[id],gx,gy,.039f,.08f,.08f,.13f);
+        }
+    }
+    for(int i=0;i<10;++i){
+        const int row=i/2,col=i%2;
+        const float x=.12f+col*1.30f;
+        const float y=.65f-row*.355f;
+        Frame(m,x,y,1.20f,.32f,m->garageX==7+col&&m->garageY==row);
+        if(i<9){
+            const Part p=static_cast<Part>(i+2);
+            std::snprintf(line,sizeof(line),"%s %u",names[i],m->yard.stock(p));
+        }else std::snprintf(line,sizeof(line),"RETURN");
+        Text(m,line,x,y,.028f,.96f,.91f,.79f);
+    }
+    const auto profile=m->yard.profile();
+    std::snprintf(line,sizeof(line),"MASS %d  POWER %d/%d  THRUST %d",
+                  profile.mass,profile.demand,profile.power,m->yard.count(Part::Thruster));
+    Text(m,line,0,-1.17f,.034f,.87f,.91f,.95f);
+    std::snprintf(line,sizeof(line),"ARMOR +%d  SHIELD +%d  SALVAGE +%d",
+                  profile.hull,profile.shield,
+                  static_cast<int>((profile.pickup_radius-.23f)*100.f+.5f));
+    Text(m,line,0,-1.36f,.032f,.76f,.93f,.84f);
+    Text(m,m->yard.ready()?"SHIP READY  CLICK CELLS TO EDIT":
+        "SHIP NOT READY  FIX POWER OR CONNECTIONS",0,-1.56f,
+        .032f,m->yard.ready()?.64f:1.f,m->yard.ready()?1.f:.37f,.69f);
+}
 void EnemyVisual(Module* m,const Enemy& e){
     const float x=e.x,y=e.y;
     switch(e.kind){
