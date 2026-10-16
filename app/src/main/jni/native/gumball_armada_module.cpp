@@ -19,14 +19,21 @@ using reverie::gumball::EnemyKind;
 using reverie::gumball::Snapshot;
 using reverie::gumball::SnapshotV1;
 using reverie::gumball::Weapon;
+using reverie::gumball::Shipyard;
+using reverie::gumball::ShipyardSave;
+using reverie::gumball::Part;
 const char kId[]="gumball-armada";
 const char kName[]="Gumball Armada: Candy King Search [DEV]";
 struct Module {
     const ReverieNativeHostV1* host=nullptr;
     Simulation sim;
-    int selected=0; // three exits, four upgrades
+    Shipyard yard;
+    int selected=0; // routes, upgrades, weapons, shipyard
+    bool inYard=false;
+    int garageX=3,garageY=3;
+    Part brush=Part::Frame;
     bool primary=false,saveError=false,upload=true;
-    float navTime=0,fireTime=0;
+    float navTime=0;
     GLuint program=0,vbo=0;GLint pos=-1,col=-1,mvp=-1;
     std::vector<float> mesh;
 };
