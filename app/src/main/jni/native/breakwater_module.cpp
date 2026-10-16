@@ -455,16 +455,19 @@ void BuildScene(State *s) {
         EmitShoreCover(game.location(),barrier,night,
             [s](auto... arguments) { Box(s,arguments...); });
 
-    // Stable world-anchored carriage with actual 12-faceted three-dimensional
-    // barrel, recessed bore, metal collars, rotating aim and real wheels.
-    // All equipped models use the same deterministic procedure, no billboard
-    // housing; combat/ballistics remain solely in Campaign.
-    Box(s,0,-1.24f,-.95f,7.8f,.55f,.7f,.37f,.38f,.36f);
-    Box(s,0,-1.06f,-.88f,.62f,.22f,.47f,.29f,.30f,.30f);
-    const float *aim=s->gun_direction;
-    const WeaponKind equipped=game.selected_weapon();
-    gunmesh::Build([s](auto... vertices){Triangle(s,vertices...);},
-                   equipped,aim);
+    // Near-field gun geometry must NOT block world-space menus at z=-3.
+    // The old parapet covered the credits line despite correct text/layout.
+    // Show the actual 3D carriage while fighting; menu phases stay legible.
+    if(game.phase()==Phase::Combat) {
+        // The shore platform, breech, collars, recessed muzzle and wheel
+        // meshes are one deterministic XYZRGB triangle batch per scene.
+        Box(s,0,-1.24f,-.95f,7.8f,.55f,.7f,.37f,.38f,.36f);
+        Box(s,0,-1.06f,-.88f,.62f,.22f,.47f,.29f,.30f,.30f);
+        const float *aim=s->gun_direction;
+        const WeaponKind equipped=game.selected_weapon();
+        gunmesh::Build([s](auto... vertices){Triangle(s,vertices...);},
+                       equipped,aim);
+    }
     if(s->flash>0.0f) {
         const float *shot=s->shot_direction;
         const float shotHorizontal=std::sqrt(shot[0]*shot[0]+shot[2]*shot[2]);
