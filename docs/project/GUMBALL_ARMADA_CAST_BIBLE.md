@@ -1,10 +1,22 @@
 # Gumball Armada — Supporting Cast and Encounter Design Bible
 
-**Status:** AUTHORING / PLANNED. This document records approved character concepts and proposed future encounter mechanics; it is **not implementation evidence**. No associated portraits, character models, sprites, dialogue recordings, authored encounter assets, shop UIs or companion systems are shipped by virtue of this document.
+**Status:** CAST DESIGN AUTHORING; **partial first encounter source integration, not device accepted**. The original 14-character roster remains the design authority. A bounded initial source slice now includes automatic seeded appearances for Pip Parfait, Lolly Wren and Blort Blister **only** in `gumball_cast_encounters.h`, `gumball_armada_simulation.h` and `gumball_armada_module.cpp`. The first guest slot is gated by at least one completed sortie and chosen deterministically from the current save seed/node/progression; it does **not** yet implement authored friendship quests, reputation or vendor dialogue. No associated portraits, finished craft sprites, character models, dialogue recordings, themed stores or the remaining named nuisance enemies have shipped. Full APK/Daydream integration remains unverified.
 
 **Game:** *Gumball Armada: The Search for the Candy King* in ReverieVR. **Scope:** six shop personalities and operators, two potential friendly mid-sortie arrivals, and six recurring enemy characters (including the Biff and Baff pair). All are original candy-space characters. They coexist with the missing Candy King, Gubernatorial Gumball, Sally Scrunch, Captain Cringe, Pete Pucker and Senator Sauer.
 
 **Production mapping:** S05/S17 (art, effects, recordings, dialogue), S08 (shops, acquisition and inventory), S09 (unlocks/quests), S10–S11 (places and event composition), S12–S16 (regional story arcs). Refer to [the staged plan](GUMBALL_ARMADA_STAGED_PLAN.md), [content matrix](GUMBALL_ARMADA_CONTENT_MATRIX.md) and [current status](GUMBALL_ARMADA.md).
+
+## Current first implementation slice — 2026-10-16
+
+| Character | Implemented in C++ source (not yet Android/device accepted) | Still planned |
+|---|---|---|
+| **CAST-PIP** | A bounded 5.5-second visit after a deterministic, post-first-run seed selection; up to five actual ally-tagged two-damage shots spawn from her visible Cherry Whiz-inspired escort craft into the existing enemy-health and kill/reward system. Allied shots are separated from the player's own firing/accuracy statistics. | Authored sprite/portrait, original radio performance and subtitles, player relationship unlock quest, advanced aggression/escort behavior |
+| **CAST-LOLLY** | A similarly bounded Soft Landing rescue craft, able to provide up to five real shield-restoration and/or tractor-salvage actions. The tractor moves **one pre-existing pickup's real credit** and consumes that pickup; duplicate collection is prevented. Help waits for genuine damage or nearby salvage rather than inventing a free shield/cash grant. | Repair pickups, Extra Lime continues, rescue unlock quest, authored art/voice, improved approach/exit motion |
+| **CAST-BLORT** | A recognizable new low-speed grenadier enemy role can replace one ordinary mid-wave ship in selected later sorties. It fires two larger, slower, diverging **shootable** sour bombs at a fixed cadence. Bomb hits apply real damage, bullet interception removes bombs without duplicating score, and the render path depicts both the ship and a projectile warning. | Original animations, authored bomb arc and lasting blast-area effects, boss/miniboss dialogue and regional encounter scripting |
+
+**Limits:** one of none/Pip/Lolly/Blort per sortie after the first clear; five ally attempts maximum, one Blort spawn per selected wave, finite pre-existing enemy/projectile pools. No runtime network requests, additional game save schema, texture downloads, unbounded entity allocations or second Android application. The effects are wired into existing fixed-pool simulation and primitive GLES2 rendering; they do not imply a signed APK, 3DoF/headset usability, measured frame pacing, finished character art, audio playback, or fully accepted support mechanics. The local exact-source standalone cast schedule and salvage helper regressions pass GCC/Clang and Clang ASan/UBSan; full game/module tests and Galaxy S9 checks remain pending.
+
+**Next acceptance work:** compile entire exact native game, validate seed-replayed actions and Blort projectile defusal, test Lolly assistance with existing damage/pickups, record on-device duel/stereo and sustained budgets, then implement story-gated companion contracts instead of the provisional first-clear appearance eligibility. Nothing else in this bible is automatically upgraded from *planned* status.
 
 ## 1. Cast-wide direction and contracts
 
@@ -16,7 +28,7 @@ Keep character appearances compact: a short portrait/radio panel or a recognizab
 
 **Reference controls:** Galaxy S9/Daydream is seated 3DoF with a clickable directional touchpad; Home/Menu are shell-reserved. Companion calls, extra lives, bombs and countermeasures must use contextual game actions, automatic bounded events, or future accessible remappable controls—never fictitious buttons. Optional allies should never require online services, purchases of real-world currency, or an intrusive overlay. Store and encounter appearance must be stable under reload/seed where appropriate.
 
-**Availability:** all entries below are currently *planned*, including their supposed bonuses and equipment. The existing three-gun combat and starter modular shipyard are not evidence that vendors sell those parts or that named companions/enemies are implemented.
+**Availability:** the *character portraits, full audio dialogue, vendor inventories, contract unlocks and remaining NPCs* below are planned. The narrow implemented-but-not-device-accepted Pip/Lolly/Blort C++ slice above is the only present runtime character work; the existing three-gun combat and starter modular shipyard do not prove that any named shopkeeper sells those parts.
 
 ## 2. Shopkeepers and station operators
 
@@ -219,4 +231,4 @@ The Regent and King's fate remain unresolved until S16. Characters may share rum
 
 **Future voice production:** distinct performance briefs above and a concise line bank for greeting, repeat visit, rejection, unlock, warning, in-flight arrival/attack/retreat and story reactions. Every essential sound cue needs a caption and a visually legible alternative. The generic native sound-cue API does not yet provide full character dialogue playback; investigate content pipeline and lifecycle before declaring recordings usable.
 
-**Asset and story discipline:** character writing, future portrait-generation prompts, art, VO, quest data and encounter implementation must link back to these stable IDs. If a concept or gameplay hook changes, update this bible rather than quietly creating an incompatible double. This document commits ideas only, and **does not** add NPCs, random spawns, picture files, voices, store transactions or extra lives to the APK.
+**Asset and story discipline:** character writing, future portrait-generation prompts, art, VO, quest data and encounter implementation must link back to these stable IDs. If a concept or gameplay hook changes, update this bible rather than quietly creating an incompatible double. This bible originally committed designs only; a later source change has now added the strictly bounded Pip/Lolly/Blort prototype described above. The bible itself **does not** ship pictures, voice recordings, shops, extra lives or a validated APK.
