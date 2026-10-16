@@ -49,6 +49,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
         void onNativeModuleSoundCueRequested(int cueId);
         void onControllerSpringRecenterRequested();
+        void onHomeAtmosphereChanged(HomeEnvironment environment, boolean active);
         PerformanceEnvironmentSnapshot
             getPerformanceEnvironmentSnapshot();
         void onVideoSurfaceTextureReady(SurfaceTexture surfaceTexture);
@@ -606,6 +607,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int uiFocusDosListRevision = -1;
     private int nativeLibraryPage;
     private int emulatorCatalogPage;
+    private HomeEnvironment lastAmbientEnvironment;
+    private boolean lastAmbientHomeActive;
     private int musicCatalogPage;
     private String[] musicCatalogTitles = new String[0];
     private long lastMusicStatusRefreshNanos;
@@ -1682,6 +1685,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
     ) {
         long frameNanos = System.nanoTime();
         performanceTracker.recordFrame(frameNanos);
+        homeEnvironmentRenderer.setAmbientFrameTime(frameNanos);
+        // Only report transitions: avoid Android audio calls on the GL thread
+        // and avoid the cost of per-frame UI-thread dispatch.
+        HomeEnvironment ambientEnvironment=preferences.getHomeEnvironment();
+        boolean ambientActive=mode==MODE_HOME || mode==MODE_ENVIRONMENT;
+        if (lastAmbientEnvironment != ambientEnvironment
+            || lastAmbientHomeActive != ambientActive) {
+            lastAmbientEnvironment=ambientEnvironment;
+            lastAmbientHomeActive=ambientActive;
+            host.onHomeAtmosphereChanged(ambientEnvironment, ambientActive);
+        }
         // External HID events enqueue commands; only Cardboard's GL thread
         // mutates the editor and its rendered keyboard texture.
         consumePhysicalKeyboardEdits(frameNanos);
