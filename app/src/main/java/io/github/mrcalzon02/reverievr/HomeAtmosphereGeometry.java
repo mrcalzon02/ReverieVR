@@ -52,12 +52,29 @@ final class HomeAtmosphereGeometry {
         return b.finish();
     }
 
+    /**
+     * Actual rear-wall window apertures (not overpainted wall panels).
+     * Rear wall already stands at -4.1 m after the original room closure.
+     */
+    static float[] windowedRearWall() {
+        Builder b=new Builder();
+        float z=-4.1f;
+        b.verticalZ(-6f,-5.34f,-1.35f,4f,z);
+        b.verticalZ(-5.34f,-3.29f,-1.35f,.03f,z);
+        b.verticalZ(-5.34f,-3.29f,2.45f,4f,z);
+        b.verticalZ(-3.29f,3.34f,-1.35f,4f,z);
+        b.verticalZ(3.34f,5.39f,-1.35f,.03f,z);
+        b.verticalZ(3.34f,5.39f,2.45f,4f,z);
+        b.verticalZ(5.39f,6f,-1.35f,4f,z);
+        return b.finish();
+    }
+
     static float[] windowSky() {
         Builder b = new Builder();
         // Inset picture-like openings on the rear birch wall (z=-4.1).
         // The wall remains sealed; the opaque scenic panes are at -4.065.
         for (float left : new float[]{-5.34f, 3.34f}) {
-            b.verticalZ(left, left+2.05f, .03f, 2.45f, -4.065f);
+            b.verticalZ(left, left+2.05f, .03f, 2.45f, -4.19f);
         }
         return b.finish();
     }
@@ -65,11 +82,11 @@ final class HomeAtmosphereGeometry {
     static float[] windowHorizon() {
         Builder b = new Builder();
         for (float left : new float[]{-5.34f, 3.34f}) {
-            b.verticalZ(left, left+2.05f, .03f, .56f, -4.054f);
-            b.triangle(left, .56f,-4.052f, left+.54f, 1.12f,-4.052f,
-                       left+1.0f,.56f,-4.052f);
-            b.triangle(left+.80f,.56f,-4.052f, left+1.52f, 1.04f,-4.052f,
-                       left+2.05f,.56f,-4.052f);
+            b.verticalZ(left, left+2.05f, .03f, .56f, -4.177f);
+            b.triangle(left, .56f,-4.175f, left+.54f, 1.12f,-4.175f,
+                       left+1.0f,.56f,-4.175f);
+            b.triangle(left+.80f,.56f,-4.175f, left+1.52f, 1.04f,-4.175f,
+                       left+2.05f,.56f,-4.175f);
         }
         return b.finish();
     }
@@ -85,7 +102,7 @@ final class HomeAtmosphereGeometry {
             b.verticalZ(left+1.005f,left+1.045f,.03f,2.45f,z);
             b.verticalZ(left,right,1.17f,1.21f,z);
             // Low-poly sill protrudes into the room, no transparent sorting.
-            b.horizontal(left-.14f,right+.14f,-4.06f,-3.89f,-.04f);
+            b.horizontal(left-.14f,right+.14f,-4.11f,-3.89f,-.04f);
         }
         return b.finish();
     }
