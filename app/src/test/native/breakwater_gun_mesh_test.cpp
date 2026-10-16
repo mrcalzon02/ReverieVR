@@ -47,6 +47,33 @@ int main(){
                     WeaponKind::DirectCannon,aimed);
     assert(aimedMesh.all_valid && aimedMesh.max_x>.7f);
     assert(aimedMesh.max_y> -.25f); // rotated muzzle clears horizontal mount
+    // Confirmed-shot visual pose must retract the moving tube but not
+    // teleport the static carriage; particle geometry only exists on fire.
+    Geometry firing;
+    gunmesh::Build([&](auto... v){firing(v...);},
+                    WeaponKind::DirectCannon,forwards,.09f);
+    Geometry idle;
+    gunmesh::Build([&](auto... v){idle(v...);},
+                    WeaponKind::DirectCannon,forwards,0.f);
+    assert(firing.all_valid && firing.numbers.size()==idle.numbers.size());
+    assert(std::abs(firing.numbers[2]-idle.numbers[2]-.117f)<.0001f);
+    // Last triangles are fixed protective shield faces and stay stationary.
+    for(size_t i=idle.numbers.size()-48u;i<idle.numbers.size();++i)
+        assert(firing.numbers[i]==idle.numbers[i]);
+    Geometry spark;
+    gunmesh::Flash([&](auto... v){spark(v...);},
+                   WeaponKind::DirectCannon,forwards,.09f);
+    assert(spark.all_valid && spark.numbers.size()==12u*12u);
+    assert(spark.min_z< -2.60f);
+    Geometry rejectedSpark;
+    gunmesh::Flash([&](auto... v){rejectedSpark(v...);},
+                   WeaponKind::DirectCannon,forwards,0.f);
+    gunmesh::Flash([&](auto... v){rejectedSpark(v...);},
+                   WeaponKind::DirectCannon,forwards,NAN);
+    assert(rejectedSpark.numbers.empty());
+    assert(gunmesh::RecoilDistance(NAN)==0.f);
+    assert(gunmesh::RecoilDistance(-1.f)==0.f);
+    assert(gunmesh::RecoilDistance(100.f)<=.12f);
     const float nonfinite[3]={NAN,0.f,-1.f};
     Geometry rejected;
     gunmesh::Build([&](auto... v){rejected(v...);},
