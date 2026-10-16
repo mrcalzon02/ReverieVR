@@ -281,9 +281,9 @@ bool IsTargetAvailable(
                 && simulation.clean_cups() > 0
             )
                 || (
-                    drink_state
-                        == DrinkState::EmptyCup
-                    && no_payment
+                    room==trade::Room::Bar &&
+                    drink_state==DrinkState::EmptyCup &&
+                    no_payment
                 );
 
         case WorkTarget::Tap:
@@ -291,8 +291,7 @@ bool IsTargetAvailable(
                 state->market.DrinkAvailable(simulation.beer_units()) &&
                 drink_state
                     == DrinkState::EmptyCup
-                && no_payment
-                && simulation.beer_units() > 0;
+                && no_payment;
 
         case WorkTarget::Patron:
             return room==trade::Room::Bar &&
