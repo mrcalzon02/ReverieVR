@@ -3,6 +3,7 @@
 #include "gumball_arcade_objectives.h"
 #include "gumball_cast_encounters.h"
 #include "gumball_shipyard.h"
+#include "gumball_support_contracts.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -23,11 +24,17 @@ struct SnapshotV1 {
     uint32_t visited=0,cash=0,kills=0,bosses=0;
     uint16_t levels[4]={0,0,0,0};uint32_t checksum=0;
 };
-struct Snapshot {
+struct SnapshotV2 {
     uint32_t magic=0x474D4231u, version=2, seed=0, node=0;
     uint32_t visited=0,cash=0,kills=0,bosses=0;
     uint16_t levels[4]={0,0,0,0};
     uint32_t owned_weapons=1u,active_weapon=0u,checksum=0u;
+};
+struct Snapshot {
+    uint32_t magic=0x474D4231u, version=3, seed=0, node=0;
+    uint32_t visited=0,cash=0,kills=0,bosses=0;
+    uint16_t levels[4]={0,0,0,0};
+    uint32_t owned_weapons=1u,active_weapon=0u,support_state=0u,checksum=0u;
 };
 inline uint32_t Mix(uint32_t x){
     x^=x>>16;x*=0x7feb352du;x^=x>>15;x*=0x846ca68bu;return x^(x>>16);
@@ -39,6 +46,12 @@ inline uint32_t SnapshotChecksum(const Snapshot& s){
     for(unsigned i=0;i<sizeof(copy);++i)h=(h^b[i])*16777619u;
     return h;
 }
+inline uint32_t SnapshotV2Checksum(const SnapshotV2& s){
+    uint32_t h=2166136261u;SnapshotV2 copy=s;copy.checksum=0;
+    const auto* b=reinterpret_cast<const uint8_t*>(&copy);
+    for(unsigned i=0;i<sizeof(copy);++i)h=(h^b[i])*16777619u;
+    return h;
+}
 inline uint32_t SnapshotV1Checksum(const SnapshotV1& s){
     uint32_t h=2166136261u;SnapshotV1 copy=s;copy.checksum=0;
     const auto* b=reinterpret_cast<const uint8_t*>(&copy);
@@ -46,6 +59,8 @@ inline uint32_t SnapshotV1Checksum(const SnapshotV1& s){
     return h;
 }
 static_assert(sizeof(SnapshotV1)==44,"Legacy save binary shape must remain frozen");
+static_assert(sizeof(SnapshotV2)==52,"V2 save binary shape must remain frozen");
+static_assert(sizeof(Snapshot)==56,"V3 campaign save must preserve 56-byte layout");
 class Simulation {
 public:
     explicit Simulation(uint32_t seed=0xC4A0D1u):seed_(seed?seed:1u){}
@@ -57,6 +72,22 @@ public:
         return ship_ready_;
     }
     bool ship_ready()const{return ship_ready_;}
+    const SupportContracts& support()const{return support_;}
+    bool hire_support(SupportKind kind){
+        if(phase_!=Phase::Chart)return false;
+        return support_.hire(kind,cash_);
+    }
+    bool upgrade_support(SupportSkill skill){
+        if(phase_!=Phase::Chart)return false;
+        return support_.improve(skill,cash_);
+    }
+    SupportKind deployed_support()const{return deployed_support_;}
+    uint32_t support_deployments()const{return support_deployments_;}
+    CastGuest route_guest(unsigned choice)const{
+        if(choice>=3)return CastGuest::None;
+        const Lane target=lane(choice);
+        return ChooseCastGuest(seed_,target.id,visited_,target.hazard);
+    }
     ShipProfile ship_profile()const{return ship_profile_;}
     FailureReason failure()const{return failure_;}
     CastGuest guest()const{return cast_.kind();}
@@ -147,6 +178,9 @@ public:
         destination_=lane(choice);phase_=Phase::Flight;failure_=FailureReason::None;
         mission_=MissionFor(choice,destination_.hazard);salvage_.clear();
         cast_.begin(seed_,destination_.id,visited_,destination_.hazard);
+        deployed_support_=support_.consume();
+        support_timer_=0.f;support_pulses_=0;
+        if(deployed_support_!=SupportKind::None)++support_deployments_;
         ally_shots_=0;bombs_defused_=0;mines_defused_=0;ally_x_=-1.3f;
         twins_.reset();
         hp_=90+levels_[1]*20+ship_profile_.hull;
@@ -455,6 +489,11 @@ private:
     Lane destination_{};
     MissionRules mission_{};
     SalvageField salvage_{};
+    SupportContracts support_{};
+    SupportKind deployed_support_=SupportKind::None;
+    float support_timer_=0.f;
+    int support_pulses_=0;
+    uint32_t support_deployments_=0;
     CastEncounter cast_{};
     uint32_t ally_shots_=0,bombs_defused_=0,mines_defused_=0;
     CrumbclankContract twins_{};
