@@ -406,10 +406,12 @@ public:
                 }
             }else{
                 const int cap=20+levels_[3]*18+ship_profile_.shield;
+                const int hullCap=90+levels_[1]*20+ship_profile_.hull;
                 const int restored=std::min(support_.shield_repair(),cap-shield_);
+                const int patched=std::min(support_.hull_repair(),hullCap-hp_);
                 const uint32_t pulled=salvage_.tractor(px_,py_,support_.tractor_reach());
-                if(restored>0||pulled>0u){
-                    shield_+=restored;cash_+=pulled;sortie_cash_+=pulled;
+                if(restored>0||patched>0||pulled>0u){
+                    shield_+=restored;hp_+=patched;cash_+=pulled;sortie_cash_+=pulled;
                     support_x_=px_+.26f;helped=true;
                 }
             }
