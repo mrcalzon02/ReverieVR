@@ -60,10 +60,10 @@ The escort finds a live opponent below the top lane and fires actual projectile 
 **Base hire price:** **55 Gumballs for one mission**, debited immediately. She occupies the same single pending paid-support slot as Éclair, so they cannot both be pre-booked for the same run; naturally occurring Pip or Lolly encounters can still coexist.
 
 **Own upgrade tree (levels 0–3 each):**
-- **Macaron Relief**: restores up to 7, 10, 13, 16 **missing shield points** per successful rescue pulse, never exceeding the equipped ship's shield capacity.
+- **Macaron Relief**: restores up to 7, 10, 13, 16 **missing shield points** plus 5, 7, 9, 11 **missing hull-health points** per successful rescue pulse, never exceeding the equipped ship's shield or hull capacity.
 - **Macaron Tractor**: salvage reach 1.00, 1.18, 1.36, 1.54 world units per pulse (Euclidean radius), consuming exactly one *existing* field pickup. Its Gumball value is transferred to campaign and sortie totals once; no fake currency is minted.
 
-Rescue pulses occur only when missing shield capacity and/or a real salvage object within range make the action useful. Up to four successful pulses during the deployment window. If the ship is undamaged and no salvage appears nearby, there may be no actual relief action; this is a meaningful strategic purchase rather than a guaranteed free-money grant.
+Rescue pulses occur only when missing shield capacity, missing hull-health points and/or a real salvage object within range make the action useful. Up to four successful pulses during the deployment window. If the ship is undamaged and no salvage appears nearby, there may be no actual relief action; this is a meaningful strategic purchase rather than a guaranteed free-money grant.
 
 **Suggested radio:** "Bonjour, monsieur! You brought the holes; I brought the crème."
 
@@ -83,6 +83,6 @@ The compact in-VR Chart has a **SUPPORT** entry next to SHIPYARD. The support sc
 
 **Verified locally:** exact source of `gumball_support_contracts.h` and `gumball_support_contracts_test.cpp` matched committed GitHub blob SHAs and passed strict C++17 `g++`, `clang++` plus Clang AddressSanitizer/UndefinedBehaviorSanitizer runs. Tests cover cost debits, duplicate hire refusal, insufficient funds, upgrade cap and isolation, skill effects and state reconstitution. Source integration tests have been extended for V2→V3 migrations, corrupted support-state rejection, paid mission consumption, real escort fire and all three new route threat identities. **Those integrated tests have not yet been executed against an exact checkout**; native shell ABI/NDK compilation, APK install, controller navigation, both-eye visuals and extended thermals remain pending.
 
-**Still planned:** region reputation and relationship unlocks, purchasable temporary fighter squadrons beyond Éclair/Macaron, special-use hull/health booster *consumable items* (Macaron currently restores existing shield instead), Extra Lime continues, portraits, original recorded French-tinged voices, authored audio/SFX, shop operators, full S10 revisitable graph and complete Candy King campaign. Avoid claiming these from the two base contracts.
+**Still planned:** region reputation and relationship unlocks, purchasable temporary fighter squadrons beyond Éclair/Macaron, special-use stackable hull/health booster *consumable items* (Macaron currently provides real capped hull and shield repair as an escort action instead), Extra Lime continues, portraits, original recorded French-tinged voices, authored audio/SFX, shop operators, full S10 revisitable graph and complete Candy King campaign. Avoid claiming these from the two base contracts.
 
 **Art provenance:** do not fabricate portrait paths or add image assets during this pass. Future illustrations can follow the cast bible without changing gameplay IDs.
