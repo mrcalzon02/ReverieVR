@@ -7,6 +7,7 @@
 #include "omega_front_accord.h"
 #include "omega_front_obligations.h"
 #include "omega_front_border.h"
+#include "omega_front_access.h"
 #include <array>
 #include <cstdint>
 
@@ -91,6 +92,9 @@ public:
     }
     int last_border_inspection() const {return border_.last_operation();}
     bool border_inspected(int operation) const {return border_.inspected(operation);}
+    bool has_transit_right(int destination) const {
+        return TransitRights::WaivesTravelRation(destination,accords_,obligations_);
+    }
     bool bridge_repaired() const {return bridge_;}
     bool deployed() const {return deployed_;}
     const Battle* current_battle() const {return deployed_?&battle_:nullptr;}
@@ -136,8 +140,14 @@ public:
     bool Travel(int destination) {
         if(!can_travel(destination))return false;
         const int from=location_;
-        if(rations_>0)--rations_;
-        else trust_=trust_>=2?trust_-2:0;
+        // Diplomatic access is an actual logistical benefit, not just text:
+        // valid Meridian/Ninth passes waive the movement ration on entry.
+        // A default instantly revokes that waiver. All existing terrain and
+        // border-inspection rules continue to apply.
+        if(!has_transit_right(destination)){
+            if(rations_>0)--rations_;
+            else trust_=trust_>=2?trust_-2:0;
+        }
         // A broken accord prompts one local border inspection on actual
         // entry. Never permanently block a retreat or counterfeit supply.
         for(int op=3;op<=5;++op) {

@@ -1,5 +1,8 @@
 # Native Game Project Pointers
 
+**P3j paid passage rights (2026-10-16):** `omega_front_access.h` makes M05 Meridian transit and M06 Lost Ninth passage confer actual ration-free movement **into their own target sectors only**, conditional on a valid outstanding, honored or legacy accord. Broken installments revoke the benefit and restore normal movement costs; Scrapline salvage licences are not transit permits. `Frontier::Travel` and the native map label now use this derived permission, requiring no save schema change (existing `frontier.v1` v6). `omega_front_access_test.cpp` passed strict GCC/Clang/ASan/UBSan; `omega_front_access_campaign_test.cpp` is registered but **has not been compiled against the full checkout in this run**. Android APK and S9/Daydream testing remain open.
+
+
 **P3i border enforcement (2026-10-16):** `omega_front_border.h` now applies exactly one genuine ration confiscation and faction claim/trust/relationship consequence when the commander *physically enters* a sector after breaking its M04–M06 installment. It cannot softlock retreat or repeatedly levy the same old debt. `Frontier::Travel` and the VR war-table incident label are source-integrated. `frontier.v1` stays at 2,048 bytes with current internal schema v6 and transactional validation, with v1–v5 migration grandfathering breaches predating patrol enforcement. Standalone C++17 GCC/Clang and sanitizer tests pass; integrated save/UI regression is added but not executed against the full checkout. Android NDK/APK/S9 acceptance remains unverified.
 
 

@@ -116,8 +116,11 @@ void DrawMap(State *s){
             Text(s,line,-1.098f,.011f,.91f,.90f,.64f);
         }else{
             const bool possible=f.can_travel(session.focused);
-            Text(s,possible?"CLICK TO MARCH":"ROUTE BLOCKED",-1.098f,.013f,
-                 possible?.71f:.96f,possible?.98f:.43f,.49f);
+            const bool licensed=possible && f.has_transit_right(session.focused);
+            Text(s,!possible?"ROUTE BLOCKED":
+                   licensed?"PAID PASS  FREE ENTRY":"CLICK TO MARCH",
+                 -1.098f,.013f,possible?.71f:.96f,
+                 possible?.98f:.43f,.49f);
         }
     }else {
         const bool remote=session.action==game::FieldAction::Scout||
