@@ -561,10 +561,13 @@ bool ActivateWorkTarget(
             if (patron && state->market.SnackAvailable()) {
                 const auto bonus=trade::RateService(patron->kind,
                     state->market.drink(),state->market.snack());
-                changed=simulation.ServeHeldCup();
+                // Stage both service and premium calculations before touching
+                // live state; never collect a snack on a failed sale.
+                Simulation staged=simulation;
+                changed=staged.ServeHeldCup() &&
+                    staged.ApplyServicePremium(bonus.cents,bonus.reputation);
                 if (changed) {
-                    // Guaranteed in-range by the bounded faction catalog.
-                    simulation.ApplyServicePremium(bonus.cents,bonus.reputation);
+                    simulation=staged;
                     state->market.ConsumeSnack();
                     state->market.RecordService(patron->kind);
                 }
