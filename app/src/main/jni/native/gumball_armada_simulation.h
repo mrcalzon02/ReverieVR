@@ -11,7 +11,7 @@ constexpr unsigned kEnemySlots=24;
 enum class Phase : uint8_t { Chart,Flight,Won,Lost,ArmadaDefeated };
 enum class FailureReason : uint8_t { None, HullDestroyed, Escapes, EliteEscaped, Deadline, SalvageLost };
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
-enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress };
+enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress, Courier };
 enum class Weapon : uint8_t { PeaRepeater, RockCannon, MintSpread };
 struct Enemy { float x=0,y=0,age=0,firing=0; int hp=0; bool active=false,boss=false; EnemyKind kind=EnemyKind::Scout; };
 struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; };
@@ -187,36 +187,43 @@ public:
             for(auto& e:enemies_)if(!e.active){
                 const bool boss=destination_.fortress&&spawned_==target_-1
                     &&((bosses_>>(destination_.id/1024u))&1u)==0u;
-                const bool ace=!boss&&spawned_==target_-1;
+                const bool courier=!boss&&mission_.kind==MissionKind::Intercept
+                    &&spawned_==target_-1;
+                const bool ace=!boss&&!courier&&spawned_==target_-1;
                 const unsigned rollType=rollKind(spawned_);
-                const EnemyKind kind=boss?EnemyKind::Fortress:(ace?EnemyKind::Ace:
+                const EnemyKind kind=boss?EnemyKind::Fortress:
+                    (courier?EnemyKind::Courier:(ace?EnemyKind::Ace:
                     (rollType==0u?EnemyKind::Scout:
-                    (rollType==1u?EnemyKind::Interceptor:EnemyKind::Bomber)));
+                    (rollType==1u?EnemyKind::Interceptor:EnemyKind::Bomber))));
                 const uint32_t roll=next();
                 e={-1.65f+static_cast<float>(roll%331u)*.01f,1.35f,0.f,1.45f,
-                   boss?(22+static_cast<int>(destination_.id/1024u)*4):(kind==EnemyKind::Ace?7:
-                   (kind==EnemyKind::Bomber?4:(kind==EnemyKind::Interceptor?3:2))),true,boss,kind};
+                   boss?(22+static_cast<int>(destination_.id/1024u)*4):
+                   (kind==EnemyKind::Courier?6:(kind==EnemyKind::Ace?7:
+                   (kind==EnemyKind::Bomber?4:(kind==EnemyKind::Interceptor?3:2)))),true,boss,kind};
                 ++spawned_;break;
             }
             spawn_clock_=(spawned_%5==0?3.50f:.94f);
         }
         for(auto& e:enemies_)if(e.active){
             e.age+=dt;
-            const float speed=e.kind==EnemyKind::Interceptor?.53f:
+            const float speed=e.kind==EnemyKind::Courier?.66f:
+                (e.kind==EnemyKind::Interceptor?.53f:
                 (e.kind==EnemyKind::Bomber?.18f:
-                (e.kind==EnemyKind::Ace?.43f:(e.boss?.15f:.31f)));
+                (e.kind==EnemyKind::Ace?.43f:(e.boss?.15f:.31f))));
             e.y-=dt*(speed+.01f*destination_.hazard);
             if(e.kind==EnemyKind::Interceptor){
                 const float dx=std::max(-1.f,std::min(1.f,px_-e.x));
                 e.x+=dt*dx*.58f;
             }else if(e.kind==EnemyKind::Bomber){
                 e.x+=dt*std::sin(e.age*1.1f)*.09f;
+            }else if(e.kind==EnemyKind::Courier){
+                e.x+=dt*std::sin(e.age*4.1f+e.y)*.90f;
             }else if(e.kind==EnemyKind::Ace){
                 e.x+=dt*std::sin(e.age*3.6f)*.82f;
             }else e.x+=std::sin(e.age*2.4f+e.y)*dt*(e.boss?.22f:.37f);
             e.x=std::max(-1.85f,std::min(1.85f,e.x));
             e.firing-=dt;
-            if(e.firing<=0.f){
+            if(e.firing<=0.f&&e.kind!=EnemyKind::Courier){
                 const int count=e.boss?3:(e.kind==EnemyKind::Ace?2:1);
                 const float aim=e.kind==EnemyKind::Interceptor?
                     std::max(-.50f,std::min(.50f,(px_-e.x)*.32f)):0.f;
@@ -233,12 +240,12 @@ public:
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
                 if(escaped_>mission_.permitted_escapes){
-                    failure_=(e.boss||e.kind==EnemyKind::Ace)?
+                    failure_=(e.boss||e.kind==EnemyKind::Ace||e.kind==EnemyKind::Courier)?
                         FailureReason::EliteEscaped:FailureReason::Escapes;
                     phase_=Phase::Lost;return;
                 }
                 if(!e.boss)damage(10+3*static_cast<int>(destination_.hazard));
-                if(e.boss||e.kind==EnemyKind::Ace){
+                if(e.boss||e.kind==EnemyKind::Ace||e.kind==EnemyKind::Courier){
                     failure_=FailureReason::EliteEscaped;phase_=Phase::Lost;return;
                 }
             }
