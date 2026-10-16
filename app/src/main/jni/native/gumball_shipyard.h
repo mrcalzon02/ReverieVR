@@ -5,6 +5,20 @@
 #include <algorithm>
 namespace reverie { namespace gumball {
 enum class Part : uint8_t { Empty, Core, Frame, Armor, Wing, Thruster, Reactor, Battery, Shield, Mount, Cargo };
+enum class ShipEdit : uint8_t {
+    Placed, Replaced, Removed, CoreLocked, NoStock, NotConnected, Invalid
+};
+inline const char* ShipEditMessage(ShipEdit result){
+    switch(result){
+    case ShipEdit::Placed:return "PART PLACED";
+    case ShipEdit::Replaced:return "PART REPLACED";
+    case ShipEdit::Removed:return "PART REMOVED";
+    case ShipEdit::CoreLocked:return "CORE IS FIXED";
+    case ShipEdit::NoStock:return "PART OUT OF STOCK";
+    case ShipEdit::NotConnected:return "MUST CONNECT TO SHIP";
+    default:return "INVALID CELL";
+    }
+}
 constexpr int kShipSize=7;
 constexpr int kPartKinds=11;
 struct ShipProfile { int hull=0,shield=0; float speed=0.f,pickup_radius=.23f; int mass=0,power=0,demand=0,mounts=1; std::array<float,2> muzzle_x{},muzzle_y{}; };
@@ -58,6 +72,29 @@ public:
         cells_[index(x,y)]=0;
         if(!connected()){cells_[index(x,y)]=static_cast<uint8_t>(p);return false;}
         ++stock_[static_cast<unsigned>(p)];return true;
+    }
+    // One click changes an existing fitted part to the selected brush.
+    // Previously the first click only removed it, which made the editor
+    // appear unable to change parts. Replacement is atomic: no intermediate
+    // disconnected ship or duplicated stock can be saved.
+    ShipEdit edit(int x,int y,Part selected){
+        if(!inside(x,y)||static_cast<unsigned>(selected)<=1u
+            ||static_cast<unsigned>(selected)>=kPartKinds)return ShipEdit::Invalid;
+        const Part before=at(x,y);
+        if(before==Part::Core)return ShipEdit::CoreLocked;
+        if(before==selected){
+            return remove(x,y)?ShipEdit::Removed:ShipEdit::NotConnected;
+        }
+        if(stock(selected)==0u)return ShipEdit::NoStock;
+        if(before==Part::Empty){
+            return place(x,y,selected)?ShipEdit::Placed:ShipEdit::NotConnected;
+        }
+        const unsigned oldId=static_cast<unsigned>(before);
+        const unsigned newId=static_cast<unsigned>(selected);
+        cells_[index(x,y)]=static_cast<uint8_t>(selected);
+        --stock_[newId];
+        ++stock_[oldId];
+        return ShipEdit::Replaced;
     }
     bool connected()const{
         std::array<uint8_t,49> seen{};
