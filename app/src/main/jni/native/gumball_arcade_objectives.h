@@ -46,14 +46,15 @@ public:
         return false;
     }
     // Updates every logical tick; no allocation, rendering, or save I/O.
-    uint32_t update(float dt,float player_x,float player_y) {
+    uint32_t update(float dt,float player_x,float player_y,float pickup_radius=.23f) {
         if(!std::isfinite(dt)||dt<=0.f||!std::isfinite(player_x)
-            ||!std::isfinite(player_y))return 0u;
+            ||!std::isfinite(player_y)||!std::isfinite(pickup_radius))return 0u;
+        pickup_radius=std::max(.12f,std::min(.45f,pickup_radius));
         dt=std::min(dt,.05f);
         uint32_t award=0u;
         for(auto& p:items_)if(p.active) {
             p.y-=dt*.24f;
-            if(std::fabs(p.x-player_x)<.23f&&std::fabs(p.y-player_y)<.22f) {
+            if(std::fabs(p.x-player_x)<pickup_radius&&std::fabs(p.y-player_y)<.22f) {
                 award+=p.cash;p.active=false;++collected_;
             } else if(p.y< -1.35f) {p.active=false;++expired_;}
         }
