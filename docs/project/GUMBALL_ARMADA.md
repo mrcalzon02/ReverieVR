@@ -42,6 +42,8 @@ A candy-painted flight-action RPG, with modular ships made from licorice trusses
 
 ## Recurring side characters and support cast
 
+**Additional source-integrated consumables:** Hull Patch (65G; once, at or below half hull, up to +30 actual hull) and Shield Tonic (45G; once, at or below half shield, up to +24 actual shield) are available in the same compact Support menu. Both are non-stackable, persist as two spare V3 bits, display remaining charges in flight, and trigger an immediate campaign save attempt when spent. Exact standalone tests for thresholds, no duplication and crash-side consumption rules pass GCC/Clang/ASan/UBSan; the full Android/headset loop is **not** tested. See [the route/support contract](GUMBALL_ARMADA_ROUTES_AND_SUPPORT.md).
+
 **Expanded current source work:** destination cards forecast deterministic named foes including Cinnamon Charles's warned bullet zones, Sydney Slipstream's alternating speed fields and Jawbreaker Jules's heavy double salvo. A compact support shop offers one charged Capitaine Éclair or Mademoiselle Macaron escort for the player's next chosen sortie; each has two distinct upgrade tracks, with hull/shield repair and actual salvage recovery for Macaron. Cash debits, persistent skill levels and pending mission charge are in one checksummed V3 campaign snapshot with preserved V1/V2 migrations. See [named routes and paid support](GUMBALL_ARMADA_ROUTES_AND_SUPPORT.md). Exact standalone support tests pass GCC, Clang and Clang ASan/UBSan; full integrated module/Android/headset tests have **not been executed or accepted**. Portraits, voiced dialogue and authored sprites deliberately remain future work.
 
 
