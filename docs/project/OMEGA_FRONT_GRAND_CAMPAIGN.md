@@ -13,7 +13,7 @@ The first cycle's 70 completed arcs earns the campaign's **standard major ending
 
 ## 2. The leveling contract: miserable by design
 
-The earlier mechanics charter specifies a benchmark for one mastery track: \`hours(n→n+1)=5.70084455×exp(0.0336257141×(n−1))\`, n=1..99. This measures *equal-threat effective active combat*, never calendar-gated timers or offline idle rewards. **Level 1→5 takes roughly 24 effective battle-hours and Level 95→100 roughly 720 hours** for the specified single track. Around 4,486 hours are implied for that isolated 1→100 track at baseline. Commander, unit, weapon, equipment, base, doctrine and world tracks can advance **concurrently from different earned actions**, so these are not additive player-time promises.
+The earlier mechanics charter specifies a benchmark for one mastery track: `hours(n→n+1)=5.70084455×exp(0.0336257141×(n−1))`, n=1..99. This measures *equal-threat effective active combat*, never calendar-gated timers or offline idle rewards. **Level 1→5 takes roughly 24 effective battle-hours and Level 95→100 roughly 720 hours** for the specified single track. Around 4,486 hours are implied for that isolated 1→100 track at baseline. Commander, unit, weapon, equipment, base, doctrine and world tracks can advance **concurrently from different earned actions**, so these are not additive player-time promises.
 
 **A chapter's level window is a recommended threat/equipment bracket and narrative access stage, not free levels awarded on completion.** A player can unlock several candidate arcs while spending a very long period preparing. Missions award risk-and-deed-weighted XP and rare inputs, not enough XP by fiat to skip the grind. **The world must remain persistently dangerous even while the player farms.** Higher-level opponents react, forward bases change hands, convoys need actual escort and casualty extraction matters. Repeatable active operations vary tactical conditions so mastering a frontline is combat, not a single weak enemy clicked ten thousand times.
 
@@ -207,7 +207,7 @@ For each arc, production must deliver:
 7. **After-action outcomes:** casualties, resources, sector control, civilian state, diplomacy, faction survival, named story facts, XP sources and equipment histories.
 8. **Replayability:** deep repeatable frontline events driven by evolving faction economy, ecology, combat choices and intelligent responses, not an identical weak enemy loop.
 
-Arc ID \`OF-C01\` through \`OF-C70\`; operation IDs \`OF-C01-M01\` etc. No mission-ID reuse after prestige. Recorded campaign completion uses \`cycle, arc_id, outcome_id, faction_id, world_seed, state_hash, completion_time_in_sim_ticks\`. A higher prestige's arc variants retain recognizable central identity and meaningful tactical changes.
+Arc ID `OF-C01` through `OF-C70`; operation IDs `OF-C01-M01` etc. No mission-ID reuse after prestige. Recorded campaign completion uses `cycle, arc_id, outcome_id, faction_id, world_seed, state_hash, completion_time_in_sim_ticks`. A higher prestige's arc variants retain recognizable central identity and meaningful tactical changes.
 
 ## 6. Faction distribution and interaction gates
 
