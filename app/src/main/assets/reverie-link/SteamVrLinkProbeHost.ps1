@@ -28,7 +28,7 @@ function Start-SteamVrLinkProbeHost {
         $rng.GetBytes($bytes)
         $secret = [BitConverter]::ToString($bytes).Replace('-','')
         $address = if ($transport -eq 'U') { [System.Net.IPAddress]::Loopback } else { [System.Net.IPAddress]::Any }
-        $listener = New-Object System.Net.Sockets.TcpListener($address, $port)
+        $listener = [System.Net.Sockets.TcpListener]::new($address, $port)
         $listener.Start(2)
         Write-Host ('Listening on port ' + $port + ' for at most 180 seconds.')
         if ($transport -eq 'U') {
@@ -55,10 +55,10 @@ function Start-SteamVrLinkProbeHost {
                 $client = $listener.AcceptTcpClient()
                 $client.ReceiveTimeout = 7000
                 $client.SendTimeout = 7000
-                $tls = New-Object System.Net.Security.SslStream($client.GetStream(), $false)
+                $tls = [System.Net.Security.SslStream]::new($client.GetStream(), $false)
                 $tls.AuthenticateAsServer($certificate, $false, [System.Security.Authentication.SslProtocols]::Tls12, $false)
                 $buffer = New-Object byte[] 1
-                $inputBytes = New-Object System.Collections.Generic.List[byte]
+                $inputBytes = [System.Collections.Generic.List[byte]]::new()
                 while ($inputBytes.Count -lt 120) {
                     $n = $tls.Read($buffer, 0, 1)
                     if ($n -eq 0 -or $buffer[0] -eq 10) { break }
