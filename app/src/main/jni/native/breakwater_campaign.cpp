@@ -344,6 +344,12 @@ void Campaign::Land(Enemy &e) {
 IncomingThreats Campaign::incoming_threats() const {
     IncomingThreats warning;
     if (phase_ != Phase::Combat) return warning;
+    for(const ArmoredVehicle &vehicle:armor_) {
+        const float seconds=armor::SecondsToFire(vehicle);
+        if(seconds>=0.0f && (warning.armor_seconds<0.0f ||
+                             seconds<warning.armor_seconds))
+            warning.armor_seconds=seconds;
+    }
     for (const Enemy &enemy : enemies_) {
         if (!enemy.active) continue;
         float speed = 0.0f, start = 0.0f, end = 0.0f;
