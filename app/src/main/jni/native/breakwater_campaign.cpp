@@ -4,6 +4,7 @@
 #include "breakwater_infantry_tactics.h"
 #include "breakwater_cover.h"
 #include "breakwater_armor.h"
+#include "breakwater_invasion_units.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -314,10 +315,12 @@ bool Campaign::BeginWave() {
 void Campaign::Land(Enemy &e) {
     // Armor is created ONLY on a successful, live landing; sinking the
     // landing craft beforehand destroys both its infantry and vehicle.
-    if(e.type==UnitType::LandingCraft && e.carries_armor &&
-       armor_spawn_cursor_<armor_.size()) {
+    const uint8_t vehicles=invasion::VehicleCargo(e.type,e.carries_armor);
+    for(uint8_t n=0;n<vehicles && armor_spawn_cursor_<armor_.size();++n) {
         ArmoredVehicle &vehicle=armor_[armor_spawn_cursor_++];
-        vehicle={e.x,-2.23f,armor::kVehicleHp,true,1.8f};
+        const float offset=vehicles==2u?(n==0u?-.43f:.43f):0.0f;
+        vehicle={std::max(-3.1f,std::min(3.1f,e.x+offset)),
+                 -2.23f,armor::kVehicleHp,true,1.8f+.45f*n};
         ++wave_status_.armor_landed;
     }
     // NextCount caps a wave at ten craft, each carrying no more than six.
@@ -332,7 +335,8 @@ void Campaign::Land(Enemy &e) {
         trooper.tactic = AssignInfantryTactic(e.type,passenger);
         trooper.lane_x = InfantryLaneX(trooper.x,trooper.tactic);
         trooper.open_lane_x=trooper.lane_x;
-        if(e.type==UnitType::LandingCraft)
+        if(e.type==UnitType::LandingCraft ||
+           e.type==UnitType::ArmoredTransport)
             AssignInfantryCover(trooper,shore_cover_,passenger);
     }
     e.active = false;
@@ -444,10 +448,12 @@ bool Campaign::FireAt(uint8_t index) {
         return true;
     const int damage = weapon.gun_damage +
         (e.type == UnitType::Aircraft ? weapon.anti_air_damage_bonus : 0);
-    e.hp = static_cast<int16_t>(e.hp - damage);
+    e.hp = static_cast<int16_t>(e.hp-
+        invasion::HullDamage(e.type,selected_weapon(),damage));
     if (e.hp <= 0) {
         e.active = false;
-        credits_ += e.type == UnitType::Aircraft ? 115 : 55;
+        credits_ += e.type == UnitType::Aircraft ? 115 :
+            e.type == UnitType::ArmoredTransport ? 210 : 55;
         if (e.type == UnitType::Aircraft) ++wave_status_.aircraft_destroyed;
         else ++wave_status_.boats_sunk;
         // Critically: a sunk boat does not create disembarked infantry.
@@ -511,8 +517,10 @@ bool Campaign::CallArtillery() {
     --artillery_charges_;
     for (Enemy &e : enemies_) {
         if (e.active && e.type != UnitType::Aircraft) {
-            e.hp = static_cast<int16_t>(e.hp - 120);
-            if (e.hp <= 0) { e.active = false; ++wave_status_.boats_sunk; credits_ += 55; }
+            e.hp = static_cast<int16_t>(e.hp -
+                invasion::SupportDamage(e.type,120));
+            if (e.hp <= 0) { e.active = false; ++wave_status_.boats_sunk;
+                credits_ += e.type==UnitType::ArmoredTransport?210:55; }
         }
     }
     for(ArmoredVehicle &v:armor_)if(v.active) {
@@ -536,9 +544,11 @@ bool Campaign::CallAirstrike() {
     --airstrike_charges_;
     for (Enemy &e : enemies_) {
         if (e.active) {
-            e.hp = static_cast<int16_t>(e.hp - 150);
+            e.hp = static_cast<int16_t>(e.hp -
+                invasion::SupportDamage(e.type,150));
             if (e.hp <= 0) {
-                e.active = false; credits_ += 75;
+                e.active = false; credits_ +=
+                    e.type==UnitType::ArmoredTransport?210:75;
                 if (e.type == UnitType::Aircraft) ++wave_status_.aircraft_destroyed;
                 else ++wave_status_.boats_sunk;
             }
@@ -585,16 +595,15 @@ void Campaign::TickStep(float dt) {
                 (period_ == Period::Night ? 1u : 0u) +
                 (Tier(difficulty_) > 0u ? 1u : 0u);
             // Opening day: rowboats with exactly one passenger only.
-            const UnitType kind = waves::SelectInvasionUnit(
-                progression,wave_index_,waves_this_period(),choice);
+            const UnitType kind = invasion::SelectUnit(
+                progression,wave_index_,waves_this_period(),choice,spawned_);
             const int hp = EnemyStartingHp(kind);
             e = {kind, (static_cast<int>(choice % 9u) - 4) * 0.65f,
                  -11.0f, static_cast<int16_t>(hp),
-                 static_cast<uint8_t>(kind == UnitType::Rowboat ? 1 :
-                 kind == UnitType::LandingCraft ? 3 + (choice >> 8u) % 4u : 0),
+                 invasion::InfantryCargo(kind,choice),
                  true, false};
-            e.carries_armor=armor::CarriesArmor(kind,progression,choice,
-                                               spawned_);
+            e.carries_armor=kind==UnitType::ArmoredTransport ||
+                armor::CarriesArmor(kind,progression,choice,spawned_);
             if(e.carries_armor)
                 e.passengers=armor::TroopPassengers(e.passengers,true);
             if (kind == UnitType::Aircraft) {
@@ -609,9 +618,10 @@ void Campaign::TickStep(float dt) {
                     e.aircraft_pattern,e.flight_center_x,e.flight_sign,e.z);
                 e.x = start.x;
                 e.bank = start.bank;
-            } else if (kind == UnitType::Gunboat) {
-                // Surface gunboats need a warm-up before their first salvo.
-                e.attack_timer = 2.6f;
+            } else if (kind == UnitType::Gunboat ||
+                       kind == UnitType::ArmoredTransport) {
+                // Heavy transports have their own slower deck-gun cycle.
+                e.attack_timer = kind==UnitType::ArmoredTransport?3.4f:2.6f;
             }
             --remaining_to_spawn_;
             ++spawned_;
@@ -657,12 +667,15 @@ void Campaign::TickStep(float dt) {
                         credits_+=armor::kArmorKillCredits;
                     }
                 } else {
-                    target->hp = static_cast<int16_t>(target->hp - 15);
+                    target->hp = static_cast<int16_t>(target->hp -
+                        invasion::HullDamage(target->type,
+                                              WeaponKind::HeavyGun,15));
                     destroyed=target->hp<=0;
                     if(destroyed) {
                         target->active=false;
                         ++wave_status_.boats_sunk;
-                        credits_+=55;
+                        credits_+=target->type==UnitType::ArmoredTransport?
+                            210:55;
                     }
                 }
                 ++turret_shot_.sequence;
@@ -712,16 +725,19 @@ void Campaign::TickStep(float dt) {
             continue;
         }
         const float speed = e.type == UnitType::Rowboat ? 0.9f :
+            e.type == UnitType::ArmoredTransport ? .44f :
             e.type == UnitType::LandingCraft ? 0.62f : kGunboatSpeed;
         e.z += speed * dt;
-        if (e.type == UnitType::Gunboat) {
+        if (e.type == UnitType::Gunboat ||
+            e.type == UnitType::ArmoredTransport) {
             e.attack_timer = std::max(0.0f, e.attack_timer - dt);
             // Unlike troop transports, gunboats threaten the battery from
             // offshore. Sinking one before the firing line prevents its salvos.
             if (e.z >= kGunboatAttackStart && e.z < kGunboatAttackEnd &&
                 e.attack_timer <= 0.0f) {
                 const int32_t before = integrity_;
-                integrity_ = std::max(0, integrity_ - 3);
+                integrity_ = std::max(0, integrity_ -
+                    (e.type==UnitType::ArmoredTransport?5:3));
                 ++wave_status_.gunboat_attacks;
                 const int32_t damage = before - integrity_;
                 if (damage > 0) {
@@ -730,7 +746,8 @@ void Campaign::TickStep(float dt) {
                     gunboat_salvo_.z = e.z;
                     gunboat_salvo_.damage = static_cast<uint8_t>(damage);
                 }
-                e.attack_timer = 2.8f;
+                e.attack_timer = e.type==UnitType::ArmoredTransport?
+                    3.8f:2.8f;
                 if (integrity_ == 0) { phase_ = Phase::Defeat; return; }
             }
         }
