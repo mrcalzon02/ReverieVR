@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_armor.h"
 #include "breakwater_silhouettes.h"
 #include "breakwater_infantry_tactics.h"
 #include "breakwater_sprite_atlas.h"
@@ -2511,6 +2512,80 @@ int main() {
     assert(loaded_arsenal.SelectWeapon(WeaponKind::MissileBattery));
     assert(!loaded_arsenal.FireMiss()); // missiles require genuine lock
     assert(loaded_arsenal.SelectWeapon(WeaponKind::MachineGun));
+
+    // An actual later-location landing craft carries an independently
+    // simulated armored car. Only a *surviving* transport can unload it,
+    // and the wave cannot complete while any armor survives ashore.
+    uint32_t armored_seed=0u;
+    for(uint32_t seed=1;seed<256;seed++) {
+        Campaign probe(Difficulty::Regular,seed);
+        assert(probe.Start());
+        uint8_t shop[Campaign::kSerializedSize]={};
+        assert(probe.SerializeShop(shop,sizeof(shop)));
+        shop[16]=1u; // Iron Quay day 1: armored transports enter the roster
+        assert(probe.DeserializeShop(shop,sizeof(shop)));
+        assert(probe.BeginWave());
+        probe.Tick(.05f);
+        if(probe.enemies()[0].active &&
+           probe.enemies()[0].type==UnitType::LandingCraft &&
+           probe.enemies()[0].carries_armor) {
+            armored_seed=seed;
+            break;
+        }
+    }
+    assert(armored_seed!=0u);
+    auto armorGame=[&](uint32_t seed) {
+        Campaign game(Difficulty::Regular,seed);
+        assert(game.Start());
+        uint8_t save[Campaign::kSerializedSize]={};
+        assert(game.SerializeShop(save,sizeof(save)));
+        save[16]=1u;
+        assert(game.DeserializeShop(save,sizeof(save)));
+        assert(game.PurchaseWeapon(WeaponKind::HeavyGun));
+        assert(game.BeginWave());
+        game.Tick(.05f);
+        assert(game.enemies()[0].carries_armor);
+        return game;
+    };
+    Campaign arrived=armorGame(armored_seed);
+    Campaign intercepted=armorGame(armored_seed);
+    assert(!arrived.FireAtArmor(0)); // no imaginary shore vehicles
+    // Destroy cargo transport before its ramp opens. Three heavy rounds
+    // are sufficient; the original wave still spawns other real craft.
+    for(int shot=0;shot<3;++shot) {
+        assert(intercepted.FireAt(0));
+        if(shot<2)for(int t=0;t<9;++t)intercepted.Tick(.05f);
+    }
+    assert(!intercepted.enemies()[0].active);
+    assert(!intercepted.enemies()[0].landed);
+    for(int frame=0;frame<380;++frame) {
+        arrived.Tick(.05f);
+        intercepted.Tick(.05f);
+    }
+    assert(arrived.wave_status().armor_landed>0);
+    assert(arrived.wave_status().armor_landed==
+           intercepted.wave_status().armor_landed+1u);
+    uint8_t car_index=static_cast<uint8_t>(Campaign::kMaxArmor);
+    for(uint8_t i=0;i<Campaign::kMaxArmor;++i)
+        if(arrived.armored_vehicles()[i].active) {car_index=i;break;}
+    assert(car_index<Campaign::kMaxArmor);
+    assert(arrived.armored_vehicles()[car_index].hp==armor::kVehicleHp);
+    assert(arrived.armored_vehicles()[car_index].z<=armor::kArmorLineZ);
+    assert(!intercepted.FireAtArmor(static_cast<uint8_t>(Campaign::kMaxArmor)));
+    const int original_armor_hp=arrived.armored_vehicles()[car_index].hp;
+    assert(arrived.FireAtArmor(car_index));
+    assert(arrived.armored_vehicles()[car_index].hp==
+           original_armor_hp-armor::ArmorDamage(WeaponKind::HeavyGun,
+                                                arrived.stats().gun_damage));
+    // A real surviving armored car still blocks wave completion; a
+    // destroyed one stops firing and pays its kill reward once.
+    for(int shot=0;shot<5;++shot) {
+        for(int t=0;t<9;++t)arrived.Tick(.05f);
+        assert(arrived.FireAtArmor(car_index));
+    }
+    assert(!arrived.armored_vehicles()[car_index].active);
+    assert(arrived.wave_status().armor_destroyed>=1);
+    assert(!arrived.FireAtArmor(car_index));
 
     // Day and night each contain their own shop-separated waves.
     Campaign clock(Difficulty::Casual,41);
