@@ -1,0 +1,6 @@
+Top-down Tanks Redux — Kenney Vleugels (Kenney.nl)
+Kenney source: https://kenney-assets.itch.io/top-down-tanks-redux
+Kenney SVG mirror: https://github.com/ETdoFresh/kenney.nl/blob/master/kenney_topdowntanksredux/Vector/topdownTanks_vector.svg
+Original Kenney license: https://creativecommons.org/publicdomain/zero/1.0/
+License: Creative Commons Zero (CC0 1.0 Universal). Attribution optional; commercial use and derivatives permitted.
+Omega Front derivation: isolated the exact seven vector paths of one original hull component, rendered 64x64 RGBA, performed palette replacements and exact 90° raster rotations; no AI generation, extra imagery, or atlas cropping.

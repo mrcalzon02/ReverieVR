@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "name": "Kenney CC0 faction armored hull components",
+  "actual_png_count": 10,
+  "one_file_per_sprite": true,
+  "source_asset": "art/source/omega-front/kenney/kenney_tank_hull.svg",
+  "source_vector_sha": "e3a11f22ae67392150915767f4328b9f1a9e545f",
+  "vector_source_repo": "ETdoFresh/kenney.nl",
+  "source_license": "CC0-1.0",
+  "license_file": "art/source/omega-front/kenney/LICENSE_CC0.txt",
+  "notes": "Hull only. No turret, weapon barrel, full tank, or native GLES2 renderer integration is claimed. Palette/rotation variants are derived only from the seven original Kenney vector paths.",
+  "sprites": [
+    {
+      "id": "hearthwell_hull_north",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "hearthwell",
+      "facing": "north",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/hearthwell_hull_north.png",
+      "git_blob_sha": "c70c76f18d0d860326a174a3772ac16a0fe3ff71"
+    },
+    {
+      "id": "hearthwell_hull_east",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "hearthwell",
+      "facing": "east",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor + lossless 90-degree rotation",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/hearthwell_hull_east.png",
+      "git_blob_sha": "0316f450eabed95b7656609eefea010a3adfb95c"
+    },
+    {
+      "id": "meridian_hull_north",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "meridian",
+      "facing": "north",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/meridian_hull_north.png",
+      "git_blob_sha": "07c38f44be2dd3348d73c6a046422d9a234c1119"
+    },
+    {
+      "id": "meridian_hull_east",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "meridian",
+      "facing": "east",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor + lossless 90-degree rotation",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/meridian_hull_east.png",
+      "git_blob_sha": "c64894e4b82d7e287b2d8bd68c19654f430873a7"
+    },
+    {
+      "id": "scrapline_hull_north",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "scrapline",
+      "facing": "north",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/scrapline_hull_north.png",
+      "git_blob_sha": "63cfa10bb281f5c6939b917d49f8472bf3df3078"
+    },
+    {
+      "id": "scrapline_hull_east",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "scrapline",
+      "facing": "east",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor + lossless 90-degree rotation",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/scrapline_hull_east.png",
+      "git_blob_sha": "9496e69288bbafbcafaad0c2341918ff3f5a0e1e"
+    },
+    {
+      "id": "lost_ninth_hull_north",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "lost_ninth",
+      "facing": "north",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/lost_ninth_hull_north.png",
+      "git_blob_sha": "f23445ed7f65d197057d85ff40b4c7b81d18e9f2"
+    },
+    {
+      "id": "lost_ninth_hull_east",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "lost_ninth",
+      "facing": "east",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor + lossless 90-degree rotation",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/lost_ninth_hull_east.png",
+      "git_blob_sha": "14bda9a18851ddcabd971a596fe1b9e2aa0fc34a"
+    },
+    {
+      "id": "independent_hull_north",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "independent",
+      "facing": "north",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/independent_hull_north.png",
+      "git_blob_sha": "8d29172c0f2ec0ee39d6531aacbacf567a8f6c6d"
+    },
+    {
+      "id": "independent_hull_east",
+      "source": "Kenney Top-down Tanks Redux / one extracted original vector hull",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint_cells": [
+        1,
+        1
+      ],
+      "sprite_type": "unarmed_hull_component",
+      "faction": "independent",
+      "facing": "east",
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "transform": "Kenney source recolor + lossless 90-degree rotation",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/independent_hull_east.png",
+      "git_blob_sha": "1cfb049028ee82b6d0328b53ab9a1600b7dbb722"
+    }
+  ]
+}
