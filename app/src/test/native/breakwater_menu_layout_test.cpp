@@ -1,5 +1,6 @@
 #include "breakwater_menu_layout.h"
 #include <cassert>
+#include <cstdio>
 #include <cmath>
 #include <iostream>
 using namespace reverie::breakwater::menu;
