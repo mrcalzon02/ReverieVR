@@ -72,6 +72,10 @@ struct State {
 void Feedback(State *s, uint32_t code) {
     ReverieNativeRequestFeedbackV1(s->host, code);
 }
+void BattleSound(State *s,uint32_t cue) {
+    // No allocations or audio callbacks during either stereo eye render.
+    ReverieNativeRequestSoundV1(s->host,cue);
+}
 void Vertex(State *s, float x,float y,float z, float r,float g,float b) {
     auto &v=s->mesh;
     v.push_back(x);v.push_back(y);v.push_back(z);
@@ -222,6 +226,7 @@ void BallisticWaterImpact(State *s,const ReverieNativeInputV1 &input,
         if(prev[1]>-1.10f && at[1]<=-1.10f) {
             const float down[]={0.0f,-1.0f,0.0f};
             s->impacts.RecordHit(at,down,.001f,ImpactKind::Water);
+            BattleSound(s,REVERIE_NATIVE_SOUND_WATER_SPLASH);
             return;
         }
         for(int i=0;i<3;i++)prev[i]=at[i];
@@ -257,6 +262,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         } else if(target==8) {
             done=game.BeginWave();
             if(done) {
+                BattleSound(s,REVERIE_NATIVE_SOUND_WAVE_START);
                 s->combat_input.CaptureUiPress();
                 s->wrecks.Clear();
                 s->battery_damage=BatteryDamageFeedback{};
@@ -339,6 +345,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->impacts.RecordHit(origin,down,.001f,ImpactKind::AirstrikeBlast);
                 s->aircraft_hit.Record(source,game.enemies()[lock],true);
                 s->wrecks.RecordDestroyed(source,game.enemies()[lock]);
+                BattleSound(s,REVERIE_NATIVE_SOUND_SAM_LAUNCH);
                 s->sam_armed=false;
             }
             Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
@@ -405,10 +412,14 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                                   impactDepth,missile?0.0f:gravity,hit)) {
                 const float down[]={0.0f,-1.0f,0.0f};
                 if(enemyTarget) {
-                    if(game.enemies()[target].hp<targetHp)
+                    if(game.enemies()[target].hp<targetHp) {
+                        const bool destroyed=!game.enemies()[target].active;
                         s->impacts.RecordHit(hit,down,.001f,
-                            game.enemies()[target].active?
-                                ImpactKind::Metal:ImpactKind::Explosion);
+                            destroyed?ImpactKind::Explosion:ImpactKind::Metal);
+                        BattleSound(s,destroyed?
+                            REVERIE_NATIVE_SOUND_BOAT_DESTROYED:
+                            REVERIE_NATIVE_SOUND_HULL_IMPACT);
+                    }
                 } else if(infantryTarget || coverTarget)
                     s->impacts.RecordHit(hit,down,.001f,
                         coverTarget && game.location()==1u ?
@@ -1173,6 +1184,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         if(turret.sequence!=turret_before) {
             s->impacts.RecordTurretImpact(turret.x,turret.z,turret.destroyed);
             s->turret_flash=.10f;
+            BattleSound(s,turret.destroyed?
+                REVERIE_NATIVE_SOUND_BOAT_DESTROYED:
+                REVERIE_NATIVE_SOUND_HULL_IMPACT);
         }
         const GunboatSalvoEvent salvo=s->campaign.gunboat_salvo();
         if(salvo.sequence!=gunboat_before && salvo.damage>0) {
@@ -1182,11 +1196,14 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             const float parapet[]={0.0f,-.70f,-.94f};
             const float down[]={0.0f,-1.0f,0.0f};
             s->impacts.RecordHit(parapet,down,.12f,ImpactKind::Metal);
+            BattleSound(s,REVERIE_NATIVE_SOUND_GUNBOAT_SALVO);
         }
         const GunboatCollisionEvent collision=s->campaign.gunboat_collision();
-        if(collision.sequence!=collision_before && collision.damage>0)
+        if(collision.sequence!=collision_before && collision.damage>0) {
             s->impacts.RecordGunboatCollision(collision.x,collision.z,
                                               collision.damage);
+            BattleSound(s,REVERIE_NATIVE_SOUND_SHORE_COLLISION);
+        }
         const AircraftAttackEvent air=s->campaign.aircraft_attack();
         if(air.sequence!=air_before && air.damage>0) {
             // A real bomber hit blasts the parapet; strafers spark against it.
@@ -1196,6 +1213,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             s->impacts.RecordHit(origin,down,.10f,
                 air.pattern==AircraftPattern::Bomber?
                     ImpactKind::Explosion:ImpactKind::Metal);
+            BattleSound(s,air.pattern==AircraftPattern::Bomber?
+                REVERIE_NATIVE_SOUND_AIRCRAFT_BOMB:
+                REVERIE_NATIVE_SOUND_AIRCRAFT_STRAFE);
         }
         const InfantryVolleyEvent volley=s->campaign.infantry_volley();
         if(volley.sequence!=volley_before && volley.damage>0) {
@@ -1208,6 +1228,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                                    -.76f,-.92f};
             const float down[]={0.0f,-1.0f,0.0f};
             s->impacts.RecordHit(parapet,down,.10f,ImpactKind::Metal);
+            BattleSound(s,REVERIE_NATIVE_SOUND_INFANTRY_VOLLEY);
         }
         if(was_reloading && !s->campaign.reloading() &&
            s->campaign.phase()==Phase::Combat)
@@ -1231,6 +1252,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     if(down && !started_reload)Interact(s,copy,!s->held);
     if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop) {
         if(s->campaign.BeginWave()) {
+            BattleSound(s,REVERIE_NATIVE_SOUND_WAVE_START);
             s->wrecks.Clear();
             s->battery_damage=BatteryDamageFeedback{};
             s->infantry_flash=0.0f;
