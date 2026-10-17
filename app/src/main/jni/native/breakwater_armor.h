@@ -45,6 +45,14 @@ inline bool Ready(const ArmoredVehicle &v) {
     return v.active && v.hp>0 && v.z>=kArmorLineZ &&
            v.attack_timer<=0.0f;
 }
+// Same travel and cooldown rules as Advance()/Ready(): the first shell
+// cannot fire until BOTH the shore gun line and the cooldown are reached.
+inline float SecondsToFire(const ArmoredVehicle &v) {
+    if(!v.active || v.hp<=0 || !std::isfinite(v.z) ||
+       !std::isfinite(v.attack_timer))return -1.0f;
+    return std::max(std::max(0.0f,
+        (kArmorLineZ-v.z)/kArmorSpeed),std::max(0.0f,v.attack_timer));
+}
 inline bool Hits(const ArmoredVehicle &v,const float* origin,
                  const float* direction,float gravity,float* depth) {
     if(!v.active || v.hp<=0)return false;
