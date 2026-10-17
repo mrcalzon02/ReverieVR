@@ -152,7 +152,8 @@ inline bool Extract(const uint8_t *data,size_t len,size_t start,
 inline bool BuildWorldTriangles(const uint8_t *data,size_t size,
                                 std::vector<float> *vertices,
                                 const char *model_name="101draft") {
-    if(!data || !vertices || !model_name || size<40u ||
+    if(!data || !vertices || !model_name ||
+       std::strncmp(model_name,"UCX_",4)==0 || size<40u ||
        std::memcmp(data,"Kaydara FBX Binary  ",20)!=0 ||
        U32(data+23)!=7300u)return false;
     Geometry g;
