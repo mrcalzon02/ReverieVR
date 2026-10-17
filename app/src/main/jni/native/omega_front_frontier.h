@@ -8,6 +8,7 @@
 #include "omega_front_obligations.h"
 #include "omega_front_border.h"
 #include "omega_front_access.h"
+#include "omega_front_infrastructure.h"
 #include <array>
 #include <cstdint>
 
@@ -308,7 +309,8 @@ public:
            guards_<4||rations_<2||pump_health_==0)return false;
         const uint32_t encounter_seed=Mix(seed_,static_cast<uint32_t>(operation_+1));
         Battle battle(encounter_seed);
-        if(!BuildBattle(operation_,encounter_seed,pump_health_,&battle))return false;
+        const int site_health=InfrastructureScope::BattleSiteHealth(operation_,pump_health_);
+        if(!BuildBattle(operation_,encounter_seed,site_health,&battle))return false;
         battle_=battle;deployed_=true;rations_-=2;
         return true;
     }
@@ -328,7 +330,11 @@ public:
             else ++last_.enemies_lost;
         }
         guards_=guards_>=last_.defenders_lost?guards_-last_.defenders_lost:0;
-        pump_health_=battle_.pump_hp();
+        // Only the two operations physically at Lantern Pump update the
+        // civilian waterworks; a defeated remote garrison is not a burst
+        // water main back in Hearthwell.
+        if(InfrastructureScope::UsesHearthwellPump(operation_))
+            pump_health_=battle_.pump_hp();
         // Wreck recovery comes from destroyed actual attackers, not a
         // victory-screen reward duplicated by replaying the same result.
         const int recovered=2*last_.enemies_lost;

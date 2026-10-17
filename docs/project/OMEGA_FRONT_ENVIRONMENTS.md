@@ -1,5 +1,10 @@
 # Omega Front — Fractured World and Environment Design
 
+## Local infrastructure and independent field objectives (2026-10-16)
+
+Waterworks integrity is a Hearthwell civilian resource, not a global alias for every distant tactical structure. Only missions M01 and M03 physically located at Lantern Pump S011 may inherit or damage Hearthwell's real pump. Missions at White Orchard, Ashrail Yard, Charter Gate and Caravan Ford have their own full-health field objectives; resulting tactical losses, faction pressure and local mission consequences still apply without magically harming the home pump. The unchanged versioned campaign snapshot retains Hearthwell pump health and the last actual battle-site report separately. Source integration and an isolated C++17 boundary test pass; the six-operation integrated regression, APK and Galaxy S9 stereo/runtime checks remain pending.
+
+
 ## Physical border consequences after failed treaty installments (2026-10-16)
 
 In the initial sixteen-sector theater, breaking a newly issued Scrapline, Meridian or Lost Ninth installment no longer affects relations in isolation. The next *actual crossing* into the corresponding target territory now incurs a single checkpoint inspection: up to two real rations transfer from the commander's pack to the sector's finite food stock, trust and bilateral standing fall, and local claim pressure rises. The military-controlled neutral ford remains legally neutral. The patrol never seals an essential escape route or bills a player twice, and only saved BROKEN accords qualify. Existing defaults loaded from older campaigns are grandfathered. This limited deterministic border response is not a global faction police AI or a completed dynamic diplomacy system; physical VR/APK acceptance is still pending.

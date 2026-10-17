@@ -1,5 +1,8 @@
 # Native Game Project Pointers
 
+**P3k Waterworks locality repair (2026-10-16):** Corrected shared tactical pump-HP aliasing: the actual S011 Lantern Pump persists damage only from M01 and M03. Other first-theater operations use healthy independent local objective installations (18 HP) and preserve Hearthwell pump condition even on tactical defeat. `omega_front_infrastructure.h` defines the production decision shared by battle creation and after-action settlement; strict standalone GCC/Clang/ASan/UBSan passes, while a new six-operation save-roundtrip regression is registered in the 21-program host runner pending full checkout. The fixed 2,048-byte `frontier.v1` schema v6, host ABI and Daydream controls are untouched. Full runner, Android APK, and physical S9 acceptance pending.
+
+
 **P3j paid passage rights (2026-10-16):** `omega_front_access.h` makes M05 Meridian transit and M06 Lost Ninth passage confer actual ration-free movement **into their own target sectors only**, conditional on a valid outstanding, honored or legacy accord. Broken installments revoke the benefit and restore normal movement costs; Scrapline salvage licences are not transit permits. `Frontier::Travel` and the native map label now use this derived permission, requiring no save schema change (existing `frontier.v1` v6). `omega_front_access_test.cpp` passed strict GCC/Clang/ASan/UBSan; `omega_front_access_campaign_test.cpp` is registered but **has not been compiled against the full checkout in this run**. Android APK and S9/Daydream testing remain open.
 
 
