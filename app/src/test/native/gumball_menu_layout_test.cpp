@@ -23,6 +23,15 @@ int main(){
         const int vertical=ChartNavigate(id,0,ChartBottom(id)?-1:1);
         assert(ChartNavigate(vertical,0,ChartBottom(id)?1:-1)==id);
     }
+    // The App/Minus edge can exit Loadout or Allies but never hijacks
+    // the Shipyard's separate grid/palette switch.
+    assert(PrepSecondaryBack(true,false,false,true,false));
+    assert(PrepSecondaryBack(false,true,false,true,false));
+    assert(!PrepSecondaryBack(false,false,true,true,false));
+    assert(!PrepSecondaryBack(true,false,true,true,false));
+    assert(!PrepSecondaryBack(true,false,false,true,true));
+    assert(!PrepSecondaryBack(true,false,false,false,false));
+    assert(!PrepSecondaryBack(false,false,false,true,false));
     // Four upgrades, three weapons and a Return action must all be reachable.
     const int selectUpgrades[]={0,1,2,3};
     for(const int x:selectUpgrades){
