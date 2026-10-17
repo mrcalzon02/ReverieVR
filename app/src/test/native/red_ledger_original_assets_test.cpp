@@ -22,14 +22,21 @@ int main(int argc,char **argv) {
     trade::Trade inventory;
     assert(products::UnitsOnHand(inventory,0)==1);
     assert(products::UnitsOnHand(inventory,3)==1);
+    assert(products::UnitsOnHand(inventory,4)==1);
+    assert(products::UnitsOnHand(inventory,7)==0);
     assert(products::UnitsOnHand(inventory,-1)==0);
     assert(products::UnitsOnHand(inventory,products::kCount)==0);
     for(int i=0;i<products::kCount;++i) {
         const auto shelf=products::StockShelf(i);
         assert(shelf.scale>0.f && shelf.scale<1.f);
-        assert(shelf.z < -1.0f && shelf.x > -2.f && shelf.x < 1.0f);
+        assert(shelf.z < -1.0f && shelf.x > -2.f && shelf.x < 1.5f);
+        assert(shelf.y > -.8f && shelf.y < .5f);
         assert(products::kCatalog[i].offer>0);
-        if(i>0)assert(products::StockShelf(i-1).x<shelf.x);
+        if(i>0 && i%4==0)assert(products::StockShelf(i-1).x<shelf.x);
+        if(i>0 && i%4!=0) {
+            assert(products::StockShelf(i-1).x==shelf.x);
+            assert(products::StockShelf(i-1).y<shelf.y);
+        }
         const products::Entry &product=products::kCatalog[i];
         assert(products::IndexForOffer(product.offer)==i);
         for(int j=0;j<i;++j)assert(product.offer!=products::kCatalog[j].offer);
@@ -48,6 +55,11 @@ int main(int argc,char **argv) {
         assert(original_png::DecodeRgba(png_data.data(),png_data.size(),
                                         1024u,&pixels));
         assert(pixels.size()==1024u*1024u*4u);
+        std::vector<uint8_t> gpu;
+        assert(original_png::Reduce1024RgbaTo512(pixels,&gpu));
+        assert(gpu.size()==512u*512u*4u);
+        assert(!original_png::Reduce1024RgbaTo512({},&gpu));
+        assert(gpu.size()==512u*512u*4u);
         auto damaged=png_data;
         damaged[29]^=0x40u;
         assert(!original_png::DecodeRgba(damaged.data(),damaged.size(),
@@ -59,7 +71,9 @@ int main(int argc,char **argv) {
     assert(products::UnitsOnHand(inventory,1)==trade::kDrinkCatalog[2].units);
     assert(products::StockPodium().scale==1.f);
     assert(products::BarCounter().scale<1.f);
-    assert(products::IndexForOffer(5)==-1);
+    assert(products::IndexForOffer(5)==5);
+    assert(products::IndexForOffer(20)==7);
+    assert(products::IndexForOffer(7)==-1);
     assert(products::IndexForOffer(trade::kOffers)==-1);
-    std::cout<<"Four original merchant meshes and textures validated\n";
+    std::cout<<"Eight original merchant meshes and textures validated\n";
 }

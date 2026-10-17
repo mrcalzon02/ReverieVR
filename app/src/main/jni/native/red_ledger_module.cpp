@@ -1315,6 +1315,11 @@ int32_t InitializeGl(
                geometry.size()%geo::kStaticVertexStride!=0u ||
                geometry.size()/geo::kStaticVertexStride>90000u)
                 continue;
+            std::vector<uint8_t> gpu_pixels;
+            if(!original_png::Reduce1024RgbaTo512(rgba,&gpu_pixels))
+                continue;
+            rgba.clear();
+            rgba.shrink_to_fit();
             ProductGlResource &resource=state->product_resources[i];
             glGenBuffers(1,&resource.vbo);
             glGenTextures(1,&resource.texture);
@@ -1330,8 +1335,8 @@ int32_t InitializeGl(
                                 GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,
                                 GL_CLAMP_TO_EDGE);
-                glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,1024,1024,0,
-                             GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
+                glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,512,512,0,
+                             GL_RGBA,GL_UNSIGNED_BYTE,gpu_pixels.data());
                 if(glGetError()==GL_NO_ERROR) {
                     resource.vertex_count=static_cast<GLsizei>(
                         geometry.size()/geo::kStaticVertexStride);
@@ -1877,9 +1882,11 @@ void DrawRoom(
                 0.56f,0.26f,Material::Paper);
             // Stored original branded items sit on this actual work shelf;
             // their draw calls disappear when that SKU sells out.
-            DrawCube(state,view_projection,flicker,
-                -0.75f,-0.66f,-1.55f,2.20f,.08f,.50f,
-                .37f,.30f,.23f,Material::Wood);
+            for(int shelf=0;shelf<4;++shelf)
+                DrawCube(state,view_projection,flicker,
+                    -.20f,-.70f+static_cast<float>(shelf)*.30f,
+                    -1.55f,3.15f,.07f,.50f,
+                    .37f,.30f,.23f,Material::Wood);
             // Storage cases and distinguishable casks, not floating cards.
             for(int i=0;i<3;++i) {
                 DrawCube(state,view_projection,flicker,

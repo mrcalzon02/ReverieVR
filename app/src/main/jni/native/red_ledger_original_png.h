@@ -90,6 +90,28 @@ inline bool DecodeRgba(const uint8_t *data,size_t length,
     }
     return true;
 }
+// Low-memory GPU upload: retain the intact 1024px master in APK storage,
+// but use a deterministic 2x2 box filter for the Galaxy S9's GLES2 VR
+// texture. The original decoded pixels are unmodified.
+inline bool Reduce1024RgbaTo512(const std::vector<uint8_t> &source,
+                                std::vector<uint8_t> *reduced) {
+    constexpr size_t side=1024u,half=512u;
+    if(!reduced || source.size()!=side*side*4u)return false;
+    std::vector<uint8_t> result(half*half*4u);
+    for(size_t y=0;y<half;++y)for(size_t x=0;x<half;++x) {
+        const size_t input=(2u*y*side+2u*x)*4u;
+        const size_t output=(y*half+x)*4u;
+        for(size_t c=0;c<4u;++c) {
+            const unsigned int sum=unsigned(source[input+c])+
+                unsigned(source[input+4u+c])+
+                unsigned(source[input+side*4u+c])+
+                unsigned(source[input+side*4u+4u+c]);
+            result[output+c]=static_cast<uint8_t>((sum+2u)/4u);
+        }
+    }
+    reduced->swap(result);
+    return true;
+}
 inline bool Decode300Rgba(const uint8_t *data,size_t length,
                           std::vector<uint8_t> *out) {
     return DecodeRgba(data,length,300u,out);
