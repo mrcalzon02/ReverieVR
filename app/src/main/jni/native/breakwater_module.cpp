@@ -265,7 +265,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             s->reload_ready_flash=0.0f;
             s->turret_flash=0.0f;
             s->gunboat_salvo_flash=0.0f;
-            s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;
+            s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
             s->aircraft_hit=AircraftHitFeedback{};
             s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
             game.Start();
@@ -289,7 +289,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->infantry_flash=0.0f;
                 s->infantry_firing_mask=0u;
                 s->gunboat_salvo_flash=0.0f;
-                s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;
+                s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
                 s->aircraft_hit=AircraftHitFeedback{};
                 s->sam_armed=false;
             }
@@ -503,7 +503,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->infantry_flash=0.0f;
         s->infantry_firing_mask=0u;
         s->gunboat_salvo_flash=0.0f;
-        s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;
+        s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
         s->aircraft_hit=AircraftHitFeedback{};
         s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
         Feedback(s,checkpoint_cleared?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
@@ -1182,7 +1182,7 @@ void Pause(void *instance) {
     s->combat_input.Release();
     s->infantry_flash=0.0f;
     s->infantry_firing_mask=0u;
-    s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;
+    s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
     s->scene_dirty=true;
 }
 void Update(void *instance,const ReverieNativeInputV1 *input) {
@@ -1205,7 +1205,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->combat_input.Release();
         s->infantry_flash=0.0f;
         s->infantry_firing_mask=0u;
-        s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;
+        s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
         s->pointer_visible=false;
         s->menu_focus=-1;
         s->ghost_on=false;
