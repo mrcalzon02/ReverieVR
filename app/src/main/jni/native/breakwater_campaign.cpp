@@ -605,7 +605,7 @@ void Campaign::TickStep(float dt) {
                  true, false};
             e.carries_armor=kind==UnitType::ArmoredTransport ||
                 armor::CarriesArmor(kind,progression,choice,spawned_);
-            if(e.carries_armor)
+            if(e.carries_armor && kind==UnitType::LandingCraft)
                 e.passengers=armor::TroopPassengers(e.passengers,true);
             if (kind == UnitType::Aircraft) {
                 e.aircraft_pattern = (choice & 0x100u) ?
