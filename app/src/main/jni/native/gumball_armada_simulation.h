@@ -17,7 +17,13 @@ enum class FailureReason : uint8_t { None, HullDestroyed, Escapes, EliteEscaped,
 enum class Upgrade : uint8_t { Blaster,Hull,Thruster,Shield };
 enum class EnemyKind : uint8_t { Scout, Interceptor, Bomber, Ace, Fortress, Courier, Blort, Nib, Biff, Baff, Cinnamon, Sydney, Jules };
 enum class Weapon : uint8_t { PeaRepeater, RockCannon, MintSpread };
-struct Enemy { float x=0,y=0,age=0,firing=0; int hp=0; bool active=false,boss=false; EnemyKind kind=EnemyKind::Scout; };
+struct Enemy {
+    float x=0,y=0,age=0,firing=0;
+    int hp=0; bool active=false,boss=false;
+    EnemyKind kind=EnemyKind::Scout;
+    WaveFormation formation=WaveFormation::Column;
+    uint8_t formation_slot=0;
+};
 struct Shot { float x=0,y=0,vy=0; bool active=false,hostile=false; float vx=0.f; int damage=1; bool ally=false,bomb=false,mine=false,zone=false; float warning=0.f; };
 struct Lane { uint32_t id=0; uint8_t hazard=0,reward=0; bool fortress=false; };
 struct SnapshotV1 {
@@ -328,7 +334,8 @@ public:
                 const WaveEntry waveEntry=PlanWaveEntry(
                     seed_,destination_.id,spawned_,target_,roll);
                 e={waveEntry.x,waveEntry.y,0.f,
-                   kind==EnemyKind::Baff?2.12f:1.45f,hull,true,boss,kind};
+                   kind==EnemyKind::Baff?2.12f:1.45f,hull,true,boss,kind,
+                   waveEntry.formation,static_cast<uint8_t>(spawned_%5)};
                 ++spawned_;
                 spawn_clock_=waveEntry.next_delay;
                 break;
@@ -336,6 +343,12 @@ public:
         }
         for(auto& e:enemies_)if(e.active){
             e.age+=dt;
+            // Named enemies and bosses keep their custom steering/attacks.
+            const bool ordinary=e.kind==EnemyKind::Scout
+                ||e.kind==EnemyKind::Interceptor||e.kind==EnemyKind::Bomber;
+            const WaveTactics tactics=ordinary?
+                TacticsFor(e.formation,e.formation_slot,e.age,e.x,px_):
+                WaveTactics{};
             const float speed=e.kind==EnemyKind::Courier?.66f:
                 (e.kind==EnemyKind::Interceptor?.53f:
                 (e.kind==EnemyKind::Bomber||e.kind==EnemyKind::Blort
@@ -359,6 +372,7 @@ public:
             }else if(e.kind==EnemyKind::Ace){
                 e.x+=dt*std::sin(e.age*3.6f)*.82f;
             }else e.x+=std::sin(e.age*2.4f+e.y)*dt*(e.boss?.22f:.37f);
+            if(ordinary)e.x+=dt*tactics.lateral_speed;
             e.x=std::max(-1.85f,std::min(1.85f,e.x));
             e.firing-=dt;
             if(e.firing<=0.f&&e.kind!=EnemyKind::Courier){
@@ -369,8 +383,9 @@ public:
                 const bool heavy=e.kind==EnemyKind::Jules;
                 const int count=raining?3:(e.boss?3:
                     ((e.kind==EnemyKind::Ace||bombing||heavy)?2:1));
-                const float aim=e.kind==EnemyKind::Interceptor?
-                    std::max(-.50f,std::min(.50f,(px_-e.x)*.32f)):0.f;
+                const float aim=(e.kind==EnemyKind::Interceptor?
+                    std::max(-.50f,std::min(.50f,(px_-e.x)*.32f)):0.f)
+                    +tactics.shot_aim;
                 for(int n=0;n<count;++n)for(auto& shot:shots_)if(!shot.active){
                     const float spread=e.boss?(n-1)*.43f:
                         (e.kind==EnemyKind::Ace?(n*2-1)*.24f:
@@ -393,6 +408,7 @@ public:
                     (mining?1.95f:(raining?2.35f:(heavy?2.35f:
                      (bombing?1.78f:
                      (e.kind==EnemyKind::Bomber?1.85f:2.15f))))));
+                e.firing*=tactics.fire_interval_scale;
             }
             if(e.y< -1.65f){
                 e.active=false;++defeated_;++escaped_;combo_=0;
