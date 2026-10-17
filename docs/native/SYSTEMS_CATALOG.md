@@ -1,3 +1,7 @@
+## Gumball controller-aim combat steering — 2026-10-16
+
+The Gumball game-private tracked-controller world ray now supplies a 2D flight target on the existing candy combat plane; a small crosshair shows the destination. `FlightAxesToTarget` converts that target to bounded steering, and the authoritative `Simulation::update` caps movement using genuine purchased Thruster levels, installed engine profile and existing flight modifiers. Touchpad primary remains weapon fire; pad directions are a fallback when tracked aiming is unavailable. No shell-global binding, native ABI field, save schema or shared Home behavior changes. Exact helper and regression passed host GCC/Clang/Clang ASan+UBSan; full native/APK/Daydream flight control remains pending.
+
 ## Gumball deterministic assault director — 2026-10-16
 
 **Live tactic extension:** The same game-private formation descriptor now also drives ordinary Sour ship lateral steering, shot aim, and bounded fire-interval adjustments. Formation ID/slot are ephemeral `Enemy` data, initialized from actual spawn group; named cast ships, courier, ace, and fortress are deliberately exempt. Expanded exact-header/test host GCC/Clang/ASan+UBSan passed; integrated source committed/readback, but GLES2/NDK/APK/Daydream acceptance remains open. No public SDK ABI/save modification.
