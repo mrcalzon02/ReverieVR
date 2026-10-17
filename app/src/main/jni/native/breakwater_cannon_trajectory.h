@@ -17,8 +17,10 @@ inline bool CannonShot(WeaponKind weapon,const float* controller_direction,
                        ShotRay* out) {
     if(!out || !WeaponWithinTraverse(controller_direction,weapon))return false;
     gunmesh::Vec muzzle{};
-    // Match the tip's 90-ms confirmed-shot recoil pose at the fire instant.
-    if(!gunmesh::Muzzle(weapon,controller_direction,.09f,&muzzle))return false;
+    // A round departs the barrel at the *resting* muzzle; recoil begins
+    // immediately afterward. Preview and initial shot origin therefore match
+    // the visible pre-shot metal tube exactly, rather than the controller.
+    if(!gunmesh::Muzzle(weapon,controller_direction,0.f,&muzzle))return false;
     const float x=controller_direction[0],y=controller_direction[1],
                 z=controller_direction[2];
     const float length=std::sqrt(x*x+y*y+z*z);
