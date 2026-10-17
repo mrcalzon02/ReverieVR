@@ -2,6 +2,7 @@
 #include "breakwater_wave_schedule.h"
 #include "breakwater_infantry_tactics.h"
 #include "breakwater_cover.h"
+#include "breakwater_armor.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -273,8 +274,10 @@ bool Campaign::BeginWave() {
     if (phase_ != Phase::Shop) return false;
     enemies_.fill({});
     infantry_units_.fill({});
+    armor_.fill({});
     shore_cover_ = MakeShoreCover(location_);
     infantry_spawn_cursor_ = 0;
+    armor_spawn_cursor_ = 0;
     wave_status_ = {};
     infantry_ = 0;
     spawned_ = 0;
@@ -289,6 +292,7 @@ bool Campaign::BeginWave() {
     aircraft_attack_ = {};
     gunboat_salvo_ = {};
     gunboat_collision_ = {};
+    armor_shot_ = {};
     // Every installed mount starts a wave with a full magazine. Switching
     // during combat preserves spent rounds per mount and never grants ammo.
     for(uint8_t id=0;id<kWeaponCount;id++) {
@@ -302,6 +306,14 @@ bool Campaign::BeginWave() {
     return true;
 }
 void Campaign::Land(Enemy &e) {
+    // Armor is created ONLY on a successful, live landing; sinking the
+    // landing craft beforehand destroys both its infantry and vehicle.
+    if(e.type==UnitType::LandingCraft && e.carries_armor &&
+       armor_spawn_cursor_<armor_.size()) {
+        ArmoredVehicle &vehicle=armor_[armor_spawn_cursor_++];
+        vehicle={e.x,-2.23f,armor::kVehicleHp,true,1.8f};
+        ++wave_status_.armor_landed;
+    }
     // NextCount caps a wave at ten craft, each carrying no more than six.
     // Append-only slots preserve identity when other soldiers are killed.
     for (uint8_t passenger = 0; passenger < e.passengers; ++passenger) {
@@ -441,6 +453,19 @@ bool Campaign::FireAtInfantry(uint8_t index) {
     credits_ += 20;
     return true;
 }
+bool Campaign::FireAtArmor(uint8_t index) {
+    if(phase_!=Phase::Combat || index>=armor_.size() ||
+       !armor_[index].active || !BeginGunShot())return false;
+    ArmoredVehicle &vehicle=armor_[index];
+    vehicle.hp=static_cast<int16_t>(vehicle.hp-
+        armor::ArmorDamage(selected_weapon(),stats().gun_damage));
+    if(vehicle.hp<=0) {
+        vehicle.active=false;
+        ++wave_status_.armor_destroyed;
+        credits_+=armor::kArmorKillCredits;
+    }
+    return true;
+}
 bool Campaign::FireAtCover(uint8_t index) {
     if(phase_!=Phase::Combat || index>=shore_cover_.size() ||
        shore_cover_[index].hp<=0 || !BeginGunShot())return false;
@@ -539,6 +564,10 @@ void Campaign::TickStep(float dt) {
                  static_cast<uint8_t>(kind == UnitType::Rowboat ? 1 :
                  kind == UnitType::LandingCraft ? 3 + (choice >> 8u) % 4u : 0),
                  true, false};
+            e.carries_armor=armor::CarriesArmor(kind,progression,choice,
+                                               spawned_);
+            if(e.carries_armor)
+                e.passengers=armor::TroopPassengers(e.passengers,true);
             if (kind == UnitType::Aircraft) {
                 e.aircraft_pattern = (choice & 0x100u) ?
                     AircraftPattern::Bomber : AircraftPattern::Strafer;
@@ -669,6 +698,27 @@ void Campaign::TickStep(float dt) {
             } else Land(e);
         }
     }
+    // Surviving armored cars roll down the landed ramp and become active
+    // beachhead gun platforms. The attack and its damage are authoritative,
+    // and destroying the vehicle suppresses all future salvos.
+    for(ArmoredVehicle &vehicle:armor_) {
+        if(!vehicle.active)continue;
+        armor::Advance(vehicle,dt);
+        if(armor::Ready(vehicle)) {
+            const int32_t before=integrity_;
+            integrity_=std::max(0,integrity_-armor::kArmorShellDamage);
+            const int32_t damage=before-integrity_;
+            if(damage>0) {
+                ++armor_shot_.sequence;
+                armor_shot_.x=vehicle.x;
+                armor_shot_.z=vehicle.z;
+                armor_shot_.damage=static_cast<uint8_t>(damage);
+                ++wave_status_.armor_attacks;
+            }
+            vehicle.attack_timer=armor::kArmorFireInterval;
+            if(integrity_==0) {phase_=Phase::Defeat;return;}
+        }
+    }
     // Riflemen hold the old frontal line. Landing-craft flankers travel
     // toward side lanes while advancing, and support gunners stop short
     // at a rear firing line. All remain individually targetable soldiers.
@@ -714,6 +764,8 @@ void Campaign::TickStep(float dt) {
 }
 bool Campaign::FinishedWave() const {
     if (remaining_to_spawn_ || infantry_) return false;
+    for(const ArmoredVehicle &vehicle:armor_)
+        if(vehicle.active)return false;
     for (const Enemy &e : enemies_) if (e.active) return false;
     return true;
 }
