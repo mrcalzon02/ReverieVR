@@ -1,6 +1,7 @@
-## Gumball game-private off-target click protection — 2026-10-16
+## Gumball off-target ray click and screen-focus correction — 2026-10-16
 
-The Candy game's `MenuClickAllowed` game-private guard now enforces a current target hit for active world-ray clicks before Chart, Loadout, Allies or Shipyard can execute an action. Empty-canvas ray clicks produce host failure feedback; a moving or focused D-pad and missing ray continue to use keyboard-style focus activation. It reuses the existing world-space native input prefix, menu hit geometry and activation callbacks; no shell Home bindings or native ABI changed. The exact header passed local GCC/Clang/Clang ASan+UBSan host tests over all 82 targets, plus background misses. Four production action routes and module registration were statically inspected. Full GLES2/NDK/APK/Daydream admission remains unverified.
+The game-private `MenuClickAllowed` now requires current hit geometry for a controller-ray-owned click, rather than executing the last focused Chart, Loadout, Allies or Yard control when the ray points at blank canvas. D-pad and controller-free focus activation remain intact; misses request a native failure cue. `MenuPointerFocus::screenChanged` resets its ray observation and gives the keyboard focus priority on each of nine view transitions, preventing a stationary pointer over a former Chart button from auto-selecting a different screen's overlapping Return button. These changes use the existing world-space native pointer ABI and existing input bindings; no public SDK or Home changes. Exact menu-hit test and helper passed GCC/Clang/ASan+UBSan using a minimal Part enum shim; supplemental 82-target harness passed. Full GLES2/NDK/APK/Daydream still pending.
+
 
 ## Gumball game-private secondary Back for equipment/support — 2026-10-16
 
