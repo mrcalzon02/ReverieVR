@@ -4,6 +4,7 @@
 #include "gumball_cast_encounters.h"
 #include "gumball_shipyard.h"
 #include "gumball_wave_formations.h"
+#include "gumball_flight_control.h"
 #include "gumball_support_contracts.h"
 #include <algorithm>
 #include <array>
@@ -102,6 +103,13 @@ public:
     float movement_multiplier()const{
         if(!slipstream_active_||std::fabs(px_)<.15f)return 1.f;
         return ((px_<0.f)==left_fast())?1.48f:.52f;
+    }
+    float move_speed()const{
+        return std::max(.7f,1.55f+.16f*levels_[2]+ship_profile_.speed)
+               *movement_multiplier();
+    }
+    float pointer_move_speed()const{
+        return move_speed()*kFlightPointerSpeedFactor;
     }
     CastGuest route_guest(unsigned choice)const{
         if(choice>=3)return CastGuest::None;
@@ -220,7 +228,7 @@ public:
         if(destination_.fortress&&((bosses_>>sector)&1u)==0u)++target_;
         enemies_={};shots_={};return true;
     }
-    void update(float dt,float sx,float sy,bool fire){
+    void update(float dt,float sx,float sy,bool fire,bool pointerGuided=false){
         if(phase_!=Phase::Flight||!std::isfinite(dt)||dt<=0.f)return;
         dt=std::min(dt,.05f);
         elapsed_+=dt;
@@ -250,8 +258,8 @@ public:
         slipstream_active_=false;
         for(const auto& enemy:enemies_)if(enemy.active&&enemy.kind==EnemyKind::Sydney)
             slipstream_active_=true;
-        const float speed=std::max(.7f,1.55f+.16f*levels_[2]+ship_profile_.speed)
-                          *movement_multiplier();
+        const float speed=move_speed()*
+            (pointerGuided?kFlightPointerSpeedFactor:1.f);
         px_=std::max(-1.9f,std::min(1.9f,px_+sx*dt*speed));
         py_=std::max(-1.15f,std::min(.65f,py_-sy*dt*speed));
         cooldown_-=dt;combo_clock_-=dt;
