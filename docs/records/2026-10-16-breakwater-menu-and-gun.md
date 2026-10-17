@@ -52,6 +52,35 @@ rather than a fabricated muzzle reach; it does not weaken the production
 model. This is isolated geometry and text validation, **not** integrated
 GLES2/NDK or headset evidence.
 
+## Menu redraw policy and difficulty-preview follow-up
+
+The host's main `BuildScene` machinery previously ran on every `Update`
+even while the shop/difficulty selection and defeat/victory cards were
+unchanged. The new `breakwater_scene_refresh.h` offers a pure boolean
+policy that the authoritative module now uses: old/new Combat phases
+always refresh, while noncombat scenes rebuild only for a button action,
+hover/focus transition, pointer restoration or phase change. The
+pointer-none suspension is handled specially: its first transition
+invalidates stale aim/hover, while repeated lost-focus frames remain
+cached. No menu invents a new data source, setter or independent clock.
+Coastal water shimmer freezes during menu idling and continues normally
+in battle. Save/game engine logic remains unchanged.
+
+The same menu header now returns fixed first-day difficulty labels
+CADET 2/2, REGULAR 3/3, VETERAN 4/4, SIEGE 5/5 opening threats/day waves,
+mirroring the existing `Campaign::NextCount` and
+`Campaign::waves_this_period` formulas. The hint is drawn with the native
+stroke font in the tested clear band above the buttons, no extra panel.
+
+Tests: exact four changed layout/refresh files reconstructed in
+`/mnt/data/breakwater-native-check`, `git hash-object` compared against
+remote readback; strict GCC and Clang C++17 runs passed four out of four
+visual/regression tests each, plus four out of four Clang
+ASan/UBSan runs. The host harness uses the verified Campaign Phase
+enum declaration without needing the rest of the Android rendering stack.
+The full module/NDK build, device and docs-sync whole-worktree check were
+not run. No GitHub Actions invoked.
+
 ## Next acceptance run
 
 From a real checked-out full repository, run `bash scripts/verify-breakwater-visuals.sh`, the existing native Breakwater campaign regressions and `python3 scripts/verify-native-doc-sync.py --base HEAD^` with a relevant co-change range. Build the Android NDK module and APK locally; visually inspect the four difficulty choices, two purchase pages, credits, and all five weapon shapes inside both eyes on Galaxy S9. Validate highlight and tap alignment, missing-card rejection, first-wave START, Quick Menu focus release, gun traverse, artillery/projectiles and sustained frame pacing. Do not promote hardware acceptance until these are observed.
