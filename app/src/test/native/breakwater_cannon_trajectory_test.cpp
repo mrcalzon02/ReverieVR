@@ -14,7 +14,9 @@ int main(){
     assert(trajectory::CannonShot(WeaponKind::MachineGun,straight,&ray));
     assert(std::abs(ray.origin[0])<1.e-5f);
     assert(std::abs(ray.origin[1]+.76f)<1.e-5f);
-    assert(ray.origin[2]< -2.0f); // origin is in front of stationary gun mount
+    assert(ray.origin[2]> -1.34f && ray.origin[2]< -.4f);
+    // The gun must not overhang the shore-firing line: infantry and
+    // unloaded armor are shootable *in front of* the physical muzzle.
     gunmesh::Vec exact{};
     assert(gunmesh::Muzzle(WeaponKind::MachineGun,straight,0.f,&exact));
     assert(ray.origin[2]==exact.z);
@@ -28,6 +30,23 @@ int main(){
         assert(std::abs(ray.origin[0]-muzzle.x)<1.e-6f &&
                std::abs(ray.origin[1]-muzzle.y)<1.e-6f &&
                std::abs(ray.origin[2]-muzzle.z)<1.e-6f);
+    }
+    for(int weapon=0;weapon<kWeaponCount;++weapon) {
+        const auto kind=static_cast<WeaponKind>(weapon);
+        assert(trajectory::CannonShot(kind,straight,&ray));
+        // Historic muzzle at z=-2.3 placed both of these shore enemies
+        // behind the shot; all current muzzle origins must reach them.
+        const float landedInfantry[]={0.f,-.66f,-1.34f};
+        const float landedArmor[]={0.f,-.72f,-1.56f};
+        float nearHit=0.f;
+        assert(ProjectileHitsSphere(ray.origin,ray.direction,
+                                    WeaponFor(kind).gravity,
+                                    landedInfantry,.30f,&nearHit));
+        assert(nearHit>0.0f);
+        assert(ProjectileHitsSphere(ray.origin,ray.direction,
+                                    WeaponFor(kind).gravity,
+                                    landedArmor,.43f,&nearHit));
+        assert(nearHit>0.0f);
     }
     trajectory::ShotRay untouched=ray;
     assert(!trajectory::CannonShot(WeaponKind::DirectCannon,above,&ray));
