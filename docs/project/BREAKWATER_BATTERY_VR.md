@@ -31,8 +31,9 @@ Late Blackcap campaign waves now add a true `UnitType::ArmoredTransport`,
 The existing progression and escalating wave-pressure mix are preserved:
 eligible heavy ships first enter at threat grade 10+, only in the later
 half of a day/night's actual waves; the final campaign wave guarantees
-one heavy flagship as its first spawn. Their 0.44-unit/s approach is
-slower than normal landers and their deck gun can deliver real 5-point
+one heavy flagship as its first spawn and a real gunboat escort second.
+The escort approaches from an offset lane and fires ahead of the slower
+0.44-unit/s heavy ship, whose deck gun can deliver real 5-point
 battery hits every 3.8 seconds offshore.
 
 The hull applies weapon-specific damage: standard 20-point machine gun
@@ -51,7 +52,12 @@ raised control compartment and deck gun, two visible vehicle cradles
 and a landing ramp that lowers on approach. The active renderer
 shows this 3D ship (not the ordinary atlas landing boat), with a
 1.48-radius target volume, real 320-HP HUD, appropriately scaled
-wreck fragments and a true armored gun sound after damage.
+wreck fragments plus a three-second plated-hull sinking sequence,
+a compact RAMP countdown during the exposed 1.25-second unloading phase,
+and a true armored gun sound after damage. The heavy hull's center
+beaches at z=-3.40, where its forward bow reaches the actual z=-2.23
+armor and infantry cargo exit; smaller boats retain their old z=-2.20
+center landing line.
 The owner-attributed `Mars des Souvenirs` soundtrack stays unchanged.
 Source evidence: [heavy transport implementation record](../../docs/records/2026-10-16-breakwater-heavy-armored-transport.md).
 The complete native campaign, Android/NDK build, Galaxy S9
