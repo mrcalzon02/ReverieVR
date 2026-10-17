@@ -245,6 +245,44 @@ public:
                 relations_[Accord::Faction(op)],claim.wreck_mass,claim.food,
                 claim.claims);
         }
+        // Active hostile outposts pressure adjacent independent/neutral land.
+        // This uses the existing saved claim and depot values; no hidden
+        // calendar state or off-screen instant territorial conquest.
+        for(int target=0;target<kFrontierSectors;++target){
+            FrontierSector &border=sectors_[target];
+            if((border.owner!=0 && border.owner!=kIndependentOwner) ||
+               border.ecology==Ecology::Barren)continue;
+            unsigned pressure=0;
+            int attackingDepot=-1;
+            for(int source=0;source<kFrontierSectors;++source){
+                if(!Intelligence::Adjacent(target,source))continue;
+                const unsigned faction=sectors_[source].owner;
+                if(faction<1 || faction>kMajorFactions || relations_[faction]>=0)
+                    continue;
+                pressure+=relations_[faction]<=-25?2u:1u;
+                if(attackingDepot<0)attackingDepot=source;
+            }
+            if(pressure==0)continue;
+            const unsigned claim=static_cast<unsigned>(border.claims)+pressure;
+            border.claims=static_cast<uint8_t>(claim>100u?100u:claim);
+            // Once an independent town is badly exposed, hostile patrols
+            // seize physical goods. The faction depot receives exactly what
+            // the town loses; no invented supply or invisible pump damage.
+            if(border.owner==kIndependentOwner && border.claims>=70 &&
+               attackingDepot>=0){
+                FrontierSector &enemy=sectors_[attackingDepot];
+                const unsigned foodSpace=65535u-enemy.food;
+                const unsigned waterSpace=65535u-enemy.water;
+                const unsigned foodStolen=border.food<2u?border.food:2u;
+                const unsigned waterStolen=border.water<2u?border.water:2u;
+                const unsigned food=foodStolen<foodSpace?foodStolen:foodSpace;
+                const unsigned water=waterStolen<waterSpace?waterStolen:waterSpace;
+                border.food=static_cast<uint16_t>(border.food-food);
+                border.water=static_cast<uint16_t>(border.water-water);
+                enemy.food=static_cast<uint16_t>(enemy.food+food);
+                enemy.water=static_cast<uint16_t>(enemy.water+water);
+            }
+        }
         return true;
     }
     bool RepairBridge() {
@@ -287,6 +325,28 @@ public:
         here.water=static_cast<uint16_t>(here.water+waterMoved);
         --rations_; // escort consumes a real field ration
         AdvanceDay(); // ordinary consumption, farms, pump and debts all advance
+        return true;
+    }
+    // Existing REPAIR order doubles as local/adjacent route security when
+    // no actual bridge or pump work is due. Guarded patrols consume supplies
+    // to roll back accumulated hostile claim pressure without fake victories.
+    bool can_secure(int target) const {
+        if(deployed_ || !Valid(target) || guards_<3 ||
+           rations_<2 || salvage_<1 || sectors_[target].claims<10 ||
+           sectors_[target].ecology==Ecology::Barren ||
+           intel_.level(target)!=Intelligence::Surveyed)return false;
+        if(target!=location_ && !can_travel(target))return false;
+        const unsigned owner=sectors_[target].owner;
+        return owner==0 || owner==kIndependentOwner ||
+               (target==5 && operation_>=2);
+    }
+    bool SecureRoute(int target) {
+        if(!can_secure(target))return false;
+        rations_-=2;
+        --salvage_;
+        FrontierSector &route=sectors_[target];
+        route.claims=static_cast<uint8_t>(route.claims>=24?route.claims-24:0);
+        AdvanceDay();
         return true;
     }
     bool ForageRations() {

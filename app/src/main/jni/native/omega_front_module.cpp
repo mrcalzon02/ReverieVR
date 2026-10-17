@@ -103,7 +103,9 @@ void DrawMap(State *s){
                 target->food,target->water,target->wreck_mass,target->claims);
         else std::snprintf(line,sizeof(line),"INTEL %s  SCOUT ADJACENT",
             f.intelligence(session.focused)==game::Intelligence::Unknown?"UNKNOWN":"TERRAIN ONLY");
-        Text(s,line,-.982f,.010f,.77f,.86f,.86f);
+        const bool endangered=surveyed && target->claims>=60;
+        Text(s,line,-.982f,.010f,endangered?1.f:.77f,
+             endangered?.56f:.86f,endangered?.37f:.86f);
     }
     const char *actions[]={"DEPLOY","FORAGE","RECRUIT","REPAIR","WAIT","SCOUT","PARLEY","ACCORD"};
     if(session.focused!=f.location()){
@@ -111,7 +113,14 @@ void DrawMap(State *s){
         const bool parley=session.action==game::FieldAction::Parley;
         const bool accord=session.action==game::FieldAction::Accord;
         const bool convoy=session.action==game::FieldAction::Forage;
-        if(convoy){
+        const bool security=session.action==game::FieldAction::Repair;
+        if(security){
+            const bool ready=f.can_secure(session.focused);
+            Text(s,ready?"SECURE ROUTE  2 RATIONS 1 SALVAGE":
+                "SECURE BLOCKED  CHECK CLAIMS AND ESCORT",
+                -1.098f,.009f,ready?.70f:1.f,
+                ready?.95f:.43f,.63f);
+        }else if(convoy){
             const bool available=f.can_convoy(session.focused);
             Text(s,available?"CONVOY IN  UP TO 8 FOOD 6 WATER  CLICK":
                 "CONVOY UNAVAILABLE  NEED ROUTE RATION ESCORT",
@@ -133,8 +142,12 @@ void DrawMap(State *s){
         const bool remote=session.action==game::FieldAction::Scout||
                           session.action==game::FieldAction::Parley||
                           session.action==game::FieldAction::Accord;
+        const bool infrastructure=(f.location()==10 && f.pump_health()<18) ||
+                                  (f.location()==14 && !f.bridge_repaired());
+        const bool securing=session.action==game::FieldAction::Repair &&
+                            !infrastructure;
         std::snprintf(line,sizeof(line),"%s  %s  MENU CHANGE",
-                      actions[static_cast<int>(session.action)],
+                      securing?"SECURE":actions[static_cast<int>(session.action)],
                       remote?"SELECT NEIGHBOR":"CLICK EXECUTE");
         Text(s,line,-1.098f,.010f,.93f,.92f,.60f);
     }

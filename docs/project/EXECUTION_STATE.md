@@ -1,3 +1,13 @@
+## 2026-10-16 — Omega Front hostile claims and route security
+
+**INTENT:** continue hands-on game development on `main`, follow user's explicit direction to avoid microtests and repeated integration-check scaffolding. Prior accepted gameplay `431945a1d7575e5bc7ecaefd1d89d1575cd7f7c6` supports one-day physical convoys.
+
+**EXECUTE:** actual `Frontier::AdvanceDay` now derives faction-incursion pressure from cardinally adjacent owned hostile outposts and existing diplomatic relations; non-Barren neutral/independent sectors accumulate saved claims, not fabricated control transfer. When independent claim pressure reaches 70, raiding factions receive finite food/water physically debited from civilian depot stores. Existing `FieldAction::Repair` from `Session::Input` performs a paid one-day `SecureRoute` security order on eligible local/adjacent threatened territory where pump/bridge infrastructure work isn't pending. The native GLES2 war table displays the patrol affordance and increased territorial danger without another input action, menu, saved value, API or dependency.
+
+**OBSERVED STATE:** Prepared exact source blobs and documentation with bounded single-file replacements, refreshed the remote main tree before update, and intended Github commit/readback. No new tests, test runner, GitHub Actions or branching. No full local native build, Android APK or Galaxy S9/Daydream play performed, so do not claim runtime acceptance.
+
+**NEXT GAMEPLAY:** tactical response to convoy interception, faction military detachments, meaningful sustained operations beyond the six early missions.
+
 ## 2026-10-16 — Omega Front supply convoy gameplay / microtest retirement
 
 **INTENT:** implement gameplay on `main` instead of building more incremental testing scaffolds, as explicitly directed. Original Omega Front source-only baseline included the eight-action war table and schema-6 fixed campaign saves.

@@ -15,6 +15,8 @@
 
 # ReverieVR Backlog
 
+- RV-GAME-06/P3n — **Game source implemented, APK/headset not yet verified:** hostile adjacent factions now build saved claim pressure and can physically raid independent depot food/water, limited to actual attacker storage. Existing REPAIR action secures a surveyed threatened route for finite supplies and one day; the war table indicates danger and patrol eligibility. Next gameplay: faction patrol formations, actual tactical interception of threatened caravans and operation-linked territorial campaigns, not test proliferation.
+
 - RV-GAME-06/P3m — **Game source committed, handset behavior not yet observed:** existing FORAGE action now fetches neighboring surveyed-sector food/water by real ration-costed one-day convoy, with M02 orchard supply access and hostile/contested cargo restrictions. Stop adding microtest suites; next gameplay priorities are contested roads, defending supply movements and deeper operations.
 
 - RV-GAME-06/P3l — **Source-integrated, isolated GCC/Clang/sanitizer accepted; integrated/device pending:** inhabited stable Eden sites now produce bounded daily stocks in their own sector depots; real Lantern Pump HP controls reservoir output. No teleportation or synthetic command rations; faction control remains consequential. Extend to routed convoys, farm labor allocation, pump damage/repair balancing and contested supply-line interdiction after the complete 23-program host runner executes. Preserve 2,048-byte schema-6 save compatibility and local-versus-global infrastructure boundaries.

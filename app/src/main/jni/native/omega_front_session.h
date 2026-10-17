@@ -78,6 +78,7 @@ public:
                 else if(action==FieldAction::Scout)performed=frontier.Scout(focused);
                 else if(action==FieldAction::Parley)performed=frontier.Negotiate(focused);
                 else if(action==FieldAction::Accord)performed=frontier.ConcludeAccord(focused);
+                else if(action==FieldAction::Repair)performed=frontier.SecureRoute(focused);
                 else performed=frontier.Travel(focused);
             }
             else {
@@ -97,7 +98,11 @@ public:
                 case FieldAction::Forage:performed=frontier.ForageRations();break;
                 case FieldAction::Recruit:performed=frontier.Recruit();break;
                 case FieldAction::Repair:
-                    performed=frontier.location()==10?frontier.RepairPump():frontier.RepairBridge();
+                    if(frontier.location()==10 && frontier.pump_health()<18)
+                        performed=frontier.RepairPump();
+                    else if(frontier.location()==14 && !frontier.bridge_repaired())
+                        performed=frontier.RepairBridge();
+                    else performed=frontier.SecureRoute(frontier.location());
                     break;
                 case FieldAction::Wait:performed=frontier.AdvanceDay();break;
                 case FieldAction::Scout:
