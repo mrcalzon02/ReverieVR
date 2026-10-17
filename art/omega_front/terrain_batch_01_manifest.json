@@ -1,140 +1,149 @@
 {
-  "project": "Omega Front",
-  "status": "art pending binary import",
+  "batch": 1,
+  "asset_root": "app/src/main/assets/native/omega-front/terrain/",
   "cell_px": 64,
-  "grid": "1x1",
-  "source_pack": "Omega_Front_Individual_Terrain_10_v2.zip (local conversation artifact, not GitHub-uploaded)",
-  "assets": [
+  "imported_binary_png_count": 10,
+  "files": [
     {
       "id": "cracked_earth",
-      "game_path": "game_64/cracked_earth.png",
-      "source_path": "source/cracked_earth.png",
-      "source_dimensions": [
-        1254,
-        1254
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/cracked_earth.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
       ],
-      "game_dimensions": [
-        64,
-        64
-      ]
-    },
-    {
-      "id": "rocky_wasteland",
-      "game_path": "game_64/rocky_wasteland.png",
-      "source_path": "source/rocky_wasteland.png",
-      "source_dimensions": [
-        1254,
-        1254
-      ],
-      "game_dimensions": [
-        64,
-        64
-      ]
-    },
-    {
-      "id": "dry_steppe",
-      "game_path": "game_64/dry_steppe.png",
-      "source_path": "source/dry_steppe.png",
-      "source_dimensions": [
-        1254,
-        1254
-      ],
-      "game_dimensions": [
-        64,
-        64
-      ]
-    },
-    {
-      "id": "muddy_ruts",
-      "game_path": "game_64/muddy_ruts.png",
-      "source_path": "source/muddy_ruts.png",
-      "source_dimensions": [
-        1254,
-        1254
-      ],
-      "game_dimensions": [
-        64,
-        64
-      ]
-    },
-    {
-      "id": "scorched_embers",
-      "game_path": "game_64/scorched_embers.png",
-      "source_path": "source/scorched_embers.png",
-      "source_dimensions": [
-        1254,
-        1254
-      ],
-      "game_dimensions": [
-        64,
-        64
-      ]
-    },
-    {
-      "id": "dirt_and_gravel",
-      "game_path": "game_64/dirt_and_gravel.png",
-      "source_path": "source/dirt_and_gravel.png",
-      "source_dimensions": [
-        1254,
-        1254
-      ],
-      "game_dimensions": [
-        64,
-        64
-      ]
-    },
-    {
-      "id": "rusted_wasteland",
-      "game_path": "game_64/rusted_wasteland.png",
-      "source_path": "source/rusted_wasteland.png",
-      "source_dimensions": [
-        1254,
-        1254
-      ],
-      "game_dimensions": [
-        64,
-        64
-      ]
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "9a316b9457569b0988baeda3bb06f01e27f8a0cf"
     },
     {
       "id": "cracked_salt_flat",
-      "game_path": "game_64/cracked_salt_flat.png",
-      "source_path": "source/cracked_salt_flat.png",
-      "source_dimensions": [
-        1254,
-        1254
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/cracked_salt_flat.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
       ],
-      "game_dimensions": [
-        64,
-        64
-      ]
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "ce714fba4b312658d13ddbacb6b3f042b2d91048"
+    },
+    {
+      "id": "dirt_and_gravel",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/dirt_and_gravel.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "9c7e8be3ec4c7236c13b052c81de324be9206ead"
+    },
+    {
+      "id": "dry_steppe",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/dry_steppe.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "0f83b8c172dc0f0215c4c66c7410e5e82328f061"
     },
     {
       "id": "marsh_pool",
-      "game_path": "game_64/marsh_pool.png",
-      "source_path": "source/marsh_pool.png",
-      "source_dimensions": [
-        1254,
-        1254
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/marsh_pool.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
       ],
-      "game_dimensions": [
-        64,
-        64
-      ]
+      "ground_category": "deep_water",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "e5ca7b58d03058d9a43b98ad2511ece284b117ed"
+    },
+    {
+      "id": "muddy_ruts",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/muddy_ruts.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "9a70dd21acbea102d0f7ef32502f0a5bc13304b5"
+    },
+    {
+      "id": "rocky_wasteland",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/rocky_wasteland.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "rubble",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "70fcb08b8c1b3965390087c055fe8f0bddbe5702"
     },
     {
       "id": "ruined_concrete",
-      "game_path": "game_64/ruined_concrete.png",
-      "source_path": "source/ruined_concrete.png",
-      "source_dimensions": [
-        1254,
-        1254
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/ruined_concrete.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
       ],
-      "game_dimensions": [
-        64,
-        64
-      ]
+      "ground_category": "road",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "4b7e1f6bf53d1ba4734b712dd0804984f8c22ac2"
+    },
+    {
+      "id": "rusted_wasteland",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/rusted_wasteland.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "rubble",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "6888ff69ed53bf31b8f4235b05235c31d2a01dd4"
+    },
+    {
+      "id": "scorched_embers",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/scorched_embers.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "f259bbf403776ebbef90b3414406de644f3df929"
     }
   ],
-  "notes": "Names and dimensions only; actual PNG binary files must be uploaded separately. Does NOT certify game asset deployment."
+  "note": "All ten actual individual PNGs now committed to the Android assets tree; game renderer texture integration remains separate."
 }

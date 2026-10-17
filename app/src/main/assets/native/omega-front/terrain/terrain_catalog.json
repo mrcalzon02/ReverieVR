@@ -1,0 +1,296 @@
+{
+  "schema_version": 1,
+  "name": "Omega Front top-down terrain assets",
+  "tile_width_px": 64,
+  "tile_height_px": 64,
+  "one_image_per_cell": true,
+  "files": [
+    {
+      "id": "cracked_earth",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/cracked_earth.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "9a316b9457569b0988baeda3bb06f01e27f8a0cf"
+    },
+    {
+      "id": "cracked_salt_flat",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/cracked_salt_flat.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "ce714fba4b312658d13ddbacb6b3f042b2d91048"
+    },
+    {
+      "id": "dirt_and_gravel",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/dirt_and_gravel.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "9c7e8be3ec4c7236c13b052c81de324be9206ead"
+    },
+    {
+      "id": "dry_steppe",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/dry_steppe.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "0f83b8c172dc0f0215c4c66c7410e5e82328f061"
+    },
+    {
+      "id": "marsh_pool",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/marsh_pool.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "deep_water",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "e5ca7b58d03058d9a43b98ad2511ece284b117ed"
+    },
+    {
+      "id": "muddy_ruts",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/muddy_ruts.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "9a70dd21acbea102d0f7ef32502f0a5bc13304b5"
+    },
+    {
+      "id": "rocky_wasteland",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/rocky_wasteland.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "rubble",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "70fcb08b8c1b3965390087c055fe8f0bddbe5702"
+    },
+    {
+      "id": "ruined_concrete",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/ruined_concrete.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "road",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "4b7e1f6bf53d1ba4734b712dd0804984f8c22ac2"
+    },
+    {
+      "id": "rusted_wasteland",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/rusted_wasteland.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "rubble",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "6888ff69ed53bf31b8f4235b05235c31d2a01dd4"
+    },
+    {
+      "id": "scorched_embers",
+      "batch": 1,
+      "path": "app/src/main/assets/native/omega-front/terrain/scorched_embers.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "f259bbf403776ebbef90b3414406de644f3df929"
+    },
+    {
+      "id": "frost_tundra",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/frost_tundra.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "63eaf08e40b7a40dbf592b20060658a3a74f4f16"
+    },
+    {
+      "id": "wet_meadow",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/wet_meadow.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "778b6fdd651ba2d5f6bb2c6cf601e31c350bd384"
+    },
+    {
+      "id": "pine_forest_floor",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/pine_forest_floor.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "5cc6f9f0750cc394f05641f3f0d5b7872eaa409b"
+    },
+    {
+      "id": "ash_waste",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/ash_waste.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "c12d00f39e0838c6d8dc0b992266d78c88433722"
+    },
+    {
+      "id": "shallow_ford",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/shallow_ford.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "road",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "8130c964d7aa2a67e904be8f80041a8ef3aa77ea"
+    },
+    {
+      "id": "riverbank_diagonal",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/riverbank_diagonal.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "deep_water",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "1ae9bd14c7c432dedae14481134ff7657c2d12c7"
+    },
+    {
+      "id": "gravel_road_ns",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/gravel_road_ns.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "road",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "658903044f10c799ef7639c11219cea9d4cd5566"
+    },
+    {
+      "id": "rubble_lot",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/rubble_lot.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "rubble",
+      "visual_cover_hint": 2,
+      "git_blob_sha": "1c10fe24429a5b6a34cb527b6853721cba0015aa"
+    },
+    {
+      "id": "orchard_rows",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/orchard_rows.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "da5c8d3762418443a7a2c3e4332a44c1fa29fbe6"
+    },
+    {
+      "id": "rocky_scree",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/rocky_scree.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "rubble",
+      "visual_cover_hint": 2,
+      "git_blob_sha": "24a6c7a05444355b06284867ca730ec9e9935ce1"
+    }
+  ],
+  "acceptance": {
+    "binary_assets_committed": true,
+    "android_assets_packaged_by_gradle": "expected; no APK build executed",
+    "renderer_integration": "not yet wired to GL texture loading",
+    "headset_runtime": "not verified"
+  },
+  "notes": "Raw PNGs in app/src/main/assets/native/omega-front/terrain. Current Omega Front native tactical renderer draws geometry; these pixel textures are not yet sampled in GLES2."
+}

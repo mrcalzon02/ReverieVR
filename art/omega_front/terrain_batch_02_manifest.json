@@ -1,0 +1,149 @@
+{
+  "batch": 2,
+  "asset_root": "app/src/main/assets/native/omega-front/terrain/",
+  "cell_px": 64,
+  "imported_binary_png_count": 10,
+  "files": [
+    {
+      "id": "frost_tundra",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/frost_tundra.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "63eaf08e40b7a40dbf592b20060658a3a74f4f16"
+    },
+    {
+      "id": "wet_meadow",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/wet_meadow.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "778b6fdd651ba2d5f6bb2c6cf601e31c350bd384"
+    },
+    {
+      "id": "pine_forest_floor",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/pine_forest_floor.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "5cc6f9f0750cc394f05641f3f0d5b7872eaa409b"
+    },
+    {
+      "id": "ash_waste",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/ash_waste.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "c12d00f39e0838c6d8dc0b992266d78c88433722"
+    },
+    {
+      "id": "shallow_ford",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/shallow_ford.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "road",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "8130c964d7aa2a67e904be8f80041a8ef3aa77ea"
+    },
+    {
+      "id": "riverbank_diagonal",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/riverbank_diagonal.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "deep_water",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "1ae9bd14c7c432dedae14481134ff7657c2d12c7"
+    },
+    {
+      "id": "gravel_road_ns",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/gravel_road_ns.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "road",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "658903044f10c799ef7639c11219cea9d4cd5566"
+    },
+    {
+      "id": "rubble_lot",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/rubble_lot.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "rubble",
+      "visual_cover_hint": 2,
+      "git_blob_sha": "1c10fe24429a5b6a34cb527b6853721cba0015aa"
+    },
+    {
+      "id": "orchard_rows",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/orchard_rows.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "da5c8d3762418443a7a2c3e4332a44c1fa29fbe6"
+    },
+    {
+      "id": "rocky_scree",
+      "batch": 2,
+      "path": "app/src/main/assets/native/omega-front/terrain/rocky_scree.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "rubble",
+      "visual_cover_hint": 2,
+      "git_blob_sha": "24a6c7a05444355b06284867ca730ec9e9935ce1"
+    }
+  ],
+  "note": "Ten standalone PNGs; no stitched atlas. 64x64 physical pixel dimensions for a 1x1 tactical cell."
+}
