@@ -334,20 +334,42 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         }
         if(route==CombatInputRoute::Artillery){
             const auto before=game.enemies();
+            const auto before_armor=game.armored_vehicles();
             const bool ok=game.CallArtillery();
             if(ok) {
                 s->impacts.RecordSupportDamage(before,game.enemies(),false);
                 s->wrecks.RecordTransitions(before,game.enemies());
+                for(size_t i=0;i<before_armor.size();++i)
+                    if(before_armor[i].active &&
+                       !game.armored_vehicles()[i].active) {
+                        const float center[]={before_armor[i].x,-.71f,
+                                              before_armor[i].z};
+                        const float down[]={0.0f,-1.0f,0.0f};
+                        s->impacts.RecordHit(center,down,.001f,
+                                             ImpactKind::Explosion);
+                        BattleSound(s,REVERIE_NATIVE_SOUND_ARMOR_DESTROYED);
+                    }
             }
             Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ARTILLERY:REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
         if(route==CombatInputRoute::Airstrike){
             const auto before=game.enemies();
+            const auto before_armor=game.armored_vehicles();
             const bool ok=game.CallAirstrike();
             if(ok) {
                 s->impacts.RecordSupportDamage(before,game.enemies(),true);
                 s->wrecks.RecordTransitions(before,game.enemies());
+                for(size_t i=0;i<before_armor.size();++i)
+                    if(before_armor[i].active &&
+                       !game.armored_vehicles()[i].active) {
+                        const float center[]={before_armor[i].x,-.71f,
+                                              before_armor[i].z};
+                        const float down[]={0.0f,-1.0f,0.0f};
+                        s->impacts.RecordHit(center,down,.001f,
+                                             ImpactKind::AirstrikeBlast);
+                        BattleSound(s,REVERIE_NATIVE_SOUND_ARMOR_DESTROYED);
+                    }
             }
             Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_AIRSTRIKE:REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
