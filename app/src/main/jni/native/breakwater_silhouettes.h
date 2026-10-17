@@ -105,6 +105,52 @@ void EmitVesselSilhouette(const Enemy &e, BoxFn box, TriFn triangle) {
     }
 }
 
+// The genuine later-campaign heavy transport. This is a wide, armored
+// assault ship with a reinforced ramp, raised gun turret and two covered
+// vehicle cradles; simulation owns its larger hull hit volume and landing.
+template <typename BoxFn, typename TriFn>
+void EmitHeavyTransportSilhouette(const Enemy &ship,BoxFn box,TriFn tri) {
+    if(!ship.active || ship.type!=UnitType::ArmoredTransport ||
+       !std::isfinite(ship.x) || !std::isfinite(ship.z))return;
+    const float x=ship.x,z=ship.z;
+    // Lower sea hull, armored beam and reinforced belt.
+    box(x,-.85f,z,1.82f,.31f,2.40f,.23f,.31f,.28f);
+    box(x,-.62f,z-.04f,1.91f,.22f,2.17f,.34f,.40f,.34f);
+    for(int side=-1;side<=1;side+=2) {
+        const float sx=static_cast<float>(side);
+        box(x+sx*.87f,-.49f,z-.11f,.16f,.40f,1.92f,
+            .35f,.40f,.33f);
+        box(x+sx*.95f,-.47f,z+.61f,.075f,.22f,.52f,
+            .22f,.28f,.24f);
+        // Faceted forward armor cheeks.
+        tri(x+sx*.91f,-.60f,z+.79f,x+sx*.58f,-.44f,z+1.10f,
+            x+sx*.94f,-.78f,z+1.10f,.45f,.48f,.38f);
+    }
+    // Elevated command shield, unmistakable relative to troop landing
+    // craft. Turret barrel faces the player's battery along positive z.
+    box(x,-.32f,z-.57f,.74f,.35f,.54f,.29f,.37f,.34f);
+    box(x,-.14f,z-.59f,.60f,.07f,.42f,.18f,.22f,.21f);
+    box(x,-.30f,z-.08f,.47f,.19f,.43f,.39f,.42f,.36f);
+    box(x,-.28f,z+.32f,.13f,.11f,.73f,.22f,.26f,.22f);
+    // Two independently simulated light cars remain cargo until landing.
+    for(int side=-1;side<=1;side+=2) {
+        const float sx=static_cast<float>(side);
+        box(x+sx*.46f,-.37f,z+.34f,.60f,.20f,.58f,
+            .28f,.38f,.27f);
+        box(x+sx*.46f,-.22f,z+.32f,.25f,.12f,.31f,
+            .20f,.28f,.22f);
+        box(x+sx*.46f,-.22f,z+.56f,.07f,.065f,.31f,
+            .19f,.22f,.18f);
+    }
+    // Only the final physical approach lowers the armored loading ramp.
+    const float ramp=LandingRampProgress(z);
+    const float tipY=-.51f-.53f*ramp;
+    const float tipZ=z+1.28f+.18f*ramp;
+    tri(x-.73f,-.53f,z+.96f,x+.73f,-.53f,z+.96f,
+        x+.70f,tipY,tipZ,.55f,.56f,.46f);
+    tri(x-.73f,-.53f,z+.96f,x+.70f,tipY,tipZ,
+        x-.70f,tipY,tipZ,.55f,.56f,.46f);
+}
 // A light armored shore car, not a sprite representing an invulnerable
 // decoration. All geometry follows Campaign::armored_vehicles() positions;
 // its 0.43-unit centered hit sphere encompasses hull/turret.
