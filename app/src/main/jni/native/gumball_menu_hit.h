@@ -14,6 +14,9 @@ inline bool MenuInside(float x,float y,float cx,float cy,float w,float h){
 struct MenuPointerFocus {
     bool seen=false,padFocus=false;
     float referenceX=0.f,referenceY=0.f;
+    // A new menu must not inherit hover from the previous screen's button,
+    // even when their button rectangles overlap at a stationary ray.
+    void screenChanged(){seen=false;padFocus=true;}
     bool take(float x,float y,bool padMoving){
         if(!std::isfinite(x)||!std::isfinite(y))return false;
         if(!seen){
