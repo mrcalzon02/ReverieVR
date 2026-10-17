@@ -23,6 +23,11 @@ inline float BarrelLength(WeaponKind kind) {
            kind==WeaponKind::MissileBattery?1.25f:1.42f;
 }
 struct Vec {float x,y,z;};
+    // Seat/breech mount is below and just behind the viewer; the resting
+    // barrel tips stay landward of the advancing infantry/armor firing line.
+    // Previously z=-.88 pushed every 1.25-1.63-unit muzzle beyond the beach,
+    // making landed enemies physically behind the cannon's shot origin.
+    constexpr Vec kMount={0.f,-.76f,.65f};
 inline Vec Add(Vec a,Vec b){return {a.x+b.x,a.y+b.y,a.z+b.z};}
 inline Vec Scale(Vec a,float v){return {a.x*v,a.y*v,a.z*v};}
 inline float Dot(Vec a,Vec b){return a.x*b.x+a.y*b.y+a.z*b.z;}
@@ -44,7 +49,7 @@ inline bool Muzzle(WeaponKind kind,const float* direction,float flash,Vec* out) 
                             {direction[0],direction[1],direction[2]});
     if(!std::isfinite(length2) || length2<.000001f)return false;
     const Vec aim=Normalize({direction[0],direction[1],direction[2]});
-    const Vec mount={0.f,-.76f,-.88f};
+    const Vec mount=kMount;
     *out=Add(mount,Scale(aim,BarrelLength(kind)-RecoilDistance(flash)));
     return true;
 }
@@ -114,7 +119,7 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
     // Basis follows the player's physical gun direction, including elevation.
     const Vec right=Normalize({-aim.z,0.f,aim.x});
     const Vec up=Normalize(Cross(right,aim));
-    const Vec mount={0.f,-.76f,-.88f};
+    const Vec mount=kMount;
     const Vec rear=Add(mount,Scale(aim,-RecoilDistance(shot_flash)));
     const float radius=kind==WeaponKind::DirectCannon?.175f:
         kind==WeaponKind::HeavyGun?.14f:
@@ -167,7 +172,7 @@ inline void Flash(Emit emit,WeaponKind kind,const float *direction,
     const Vec aim=Normalize({direction[0],direction[1],direction[2]});
     const Vec right=Normalize({-aim.z,0.f,aim.x});
     const Vec up=Normalize(Cross(right,aim));
-    const Vec mount={0.f,-.76f,-.88f};
+    const Vec mount=kMount;
     const Vec muzzle=Add(mount,Scale(aim,
         BarrelLength(kind)-RecoilDistance(shot_flash)));
     const float radius=.10f+.12f*intensity;
