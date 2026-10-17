@@ -23,6 +23,42 @@ int main(){
     const Enemy& first=liveDoctrine.enemies()[0];
     assert(first.active&&!first.boss&&first.formation_slot==0u);
     assert(first.formation==FormationFor(23u,liveDoctrine.lane(0).id,0));
+    // The tracked controller steers without a held touchpad. Higher
+    // thruster level and genuine built ship thrust shorten target lag.
+    const float rayOrigin[3]={0.f,0.f,0.f};
+    const float rayDirection[3]={.60f,-.15f,-1.f};
+    const FlightAim desired=FlightAimFromRay(rayOrigin,rayDirection);
+    assert(desired.valid&&desired.x>1.5f);
+    Simulation pointerStarter(99),pointerUpgrade(99),pointerBuilt(99);
+    auto fasterSave=pointerUpgrade.snapshot();
+    fasterSave.levels[2]=10;
+    fasterSave.checksum=SnapshotChecksum(fasterSave);
+    assert(pointerUpgrade.restore(fasterSave));
+    Shipyard fasterHull;
+    assert(fasterHull.place(4,2,Part::Thruster));
+    assert(fasterHull.ready());
+    assert(pointerBuilt.configure_ship(fasterHull));
+    assert(pointerStarter.launch(0)&&pointerUpgrade.launch(0)
+           &&pointerBuilt.launch(0));
+    assert(pointerUpgrade.pointer_move_speed()>pointerStarter.pointer_move_speed());
+    assert(pointerBuilt.pointer_move_speed()>pointerStarter.pointer_move_speed());
+    Simulation* controlledShips[]={&pointerStarter,&pointerUpgrade,&pointerBuilt};
+    for(int frame=0;frame<8;++frame){
+        for(Simulation* ship:controlledShips){
+            const auto axes=FlightAxesToTarget(ship->player_x(),ship->player_y(),
+                                               desired,.025f,ship->pointer_move_speed());
+            ship->update(.025f,axes.x,axes.y,false,true);
+        }
+    }
+    assert(pointerStarter.player_x()>0.f);
+    assert(pointerUpgrade.player_x()>pointerBuilt.player_x());
+    assert(pointerBuilt.player_x()>pointerStarter.player_x());
+    assert(pointerStarter.shots_fired()==0u);
+    // A touchpad press still fires while pointing the ship elsewhere.
+    const auto activeAxes=FlightAxesToTarget(pointerStarter.player_x(),
+        pointerStarter.player_y(),desired,.025f,pointerStarter.pointer_move_speed());
+    pointerStarter.update(.025f,activeAxes.x,activeAxes.y,true,true);
+    assert(pointerStarter.shots_fired()>0u);
     Simulation game(42), replay(42);
     assert(game.node()==0 && game.cash()==100 && kLaneCount==4096);
     for(unsigned i=0;i<3;++i){
