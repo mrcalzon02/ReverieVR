@@ -1,4 +1,5 @@
 #include "gumball_shipyard.h"
+#include "gumball_shipyard_menu.h"
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -53,6 +54,18 @@ int main(){
  assert(full.edit(3,2,Part::Armor)==ShipEdit::NoStock);
  assert(full.snapshot().checksum==fullySaved.checksum);
  assert(full.restore(fullySaved));
+ // At zero stock the selected palette brush must still be usable to
+ // remove a fitted matching component and recover inventory.
+ YardCursor palette;
+ palette.pointAt(8,0); // Armor at palette row 0, right column.
+ assert(palette.chosenPart()==Part::Armor);
+ assert(full.edit(4,3,palette.chosenPart())==ShipEdit::Removed);
+ assert(full.stock(Part::Armor)==1u);
+ const auto refunded=full.snapshot();
+ Shipyard reloaded;
+ assert(reloaded.restore(refunded));
+ assert(reloaded.stock(Part::Armor)==1u);
+ assert(reloaded.at(4,3)==Part::Empty);
  assert(full.connected());
  assert(std::string(ShipEditMessage(ShipEdit::CoreLocked))=="CORE IS FIXED");
  assert(restored.remove(4,1));assert(restored.remove(3,0));
