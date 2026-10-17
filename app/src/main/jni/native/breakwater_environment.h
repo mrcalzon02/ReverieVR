@@ -52,6 +52,31 @@ inline EnvironmentColor IlluminateWorld(EnvironmentColor c,bool night) {
             std::min(1.0f,c.b*1.05f)};
 }
 
+// Physically oriented flat facet shading for the existing XYZ/RGB triangle
+// mesh. Sun and moon strike the actual world-space surfaces from different
+// directions, without runtime shader uniforms or per-eye light simulation.
+// The emitter's triangle winding does not matter: GLES2 renders both sides.
+inline EnvironmentColor IlluminateFacet(EnvironmentColor c,bool night,
+                                        bool paletteAlreadyLit,
+                                        float ux,float uy,float uz,
+                                        float vx,float vy,float vz) {
+    if(!paletteAlreadyLit)c=IlluminateWorld(c,night);
+    const float nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+    const float size=std::sqrt(nx*nx+ny*ny+nz*nz);
+    float diffuse=0.0f;
+    if(size>1.0e-6f && std::isfinite(size)) {
+        // Fixed normalized-ish directions for afternoon sun / rear moon.
+        const float lx=night?-.48f:.36f;
+        const float ly=night?.75f:.87f;
+        const float lz=night?.46f:-.33f;
+        diffuse=std::min(1.0f,std::abs(
+            (nx*lx+ny*ly+nz*lz)/size));
+    }
+    const float shade=night?.69f+.29f*diffuse:.75f+.27f*diffuse;
+    return {std::min(1.0f,c.r*shade),std::min(1.0f,c.g*shade),
+            std::min(1.0f,c.b*shade)};
+}
+
 constexpr int kLandscapeSectors=48;
 constexpr float kHillRadius=17.0f;
 constexpr float kMountainRadius=22.0f;

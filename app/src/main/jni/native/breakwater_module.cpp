@@ -50,6 +50,7 @@ struct State {
     GLint sprite_sampler = -1, sprite_tint = -1;
     bool sprite_gpu_dirty = true;
     bool world_lighting=false,world_night=false;
+    bool world_palette_already_lit=false;
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
     float flash = 0.0f, elapsed = 0.0f, reload_ready_flash = 0.0f;
     float turret_flash = 0.0f, infantry_flash = 0.0f;
@@ -88,10 +89,6 @@ void BattleSound(State *s,uint32_t cue) {
     ReverieNativeRequestSoundV1(s->host,cue);
 }
 void Vertex(State *s, float x,float y,float z, float r,float g,float b) {
-    if(s->world_lighting) {
-        const EnvironmentColor lit=IlluminateWorld({r,g,b},s->world_night);
-        r=lit.r;g=lit.g;b=lit.b;
-    }
     auto &v=s->mesh;
     v.push_back(x);v.push_back(y);v.push_back(z);
     v.push_back(r);v.push_back(g);v.push_back(b);
@@ -99,6 +96,12 @@ void Vertex(State *s, float x,float y,float z, float r,float g,float b) {
 void Triangle(State *s, float x0,float y0,float z0,
               float x1,float y1,float z1,float x2,float y2,float z2,
               float r,float g,float b) {
+    if(s->world_lighting) {
+        const EnvironmentColor lit=IlluminateFacet(
+            {r,g,b},s->world_night,s->world_palette_already_lit,
+            x1-x0,y1-y0,z1-z0,x2-x0,y2-y0,z2-z0);
+        r=lit.r;g=lit.g;b=lit.b;
+    }
     Vertex(s,x0,y0,z0,r,g,b);Vertex(s,x1,y1,z1,r,g,b);Vertex(s,x2,y2,z2,r,g,b);
 }
 void Panel(State *s,float x,float y,float z,float w,float h,
@@ -564,6 +567,10 @@ void BuildScene(State *s) {
                  landscape.sea.r,landscape.sea.g,
                  landscape.sea.b+shimmer);
     }
+    // Sun/moon directional shading is precomputed per world-space facet.
+    // Landscape and beach profiles already own day/night base albedos.
+    s->world_lighting=true;s->world_night=night;
+    s->world_palette_already_lit=true;
     // 360-degree physical rear uplands and campaign-specific mountains.
     // World-space geometry lives inside the existing sky, no extra draw pass.
     EmitSurroundingLandscape(game.location(),night,
@@ -582,9 +589,9 @@ void BuildScene(State *s) {
     // Near-field gun geometry must NOT block world-space menus at z=-3.
     // The old parapet covered the credits line despite correct text/layout.
     // Show the actual 3D carriage while fighting; menu phases stay legible.
-    // Illuminate the physical battery/units (not sky or HUD) with distinct
-    // bright day and moon-blue night albedo while building shared vertices.
-    s->world_lighting=true;s->world_night=night;
+    // Battery metal and active enemies use the same sun/moon direction,
+    // with their own unlit authored base albedo.
+    s->world_palette_already_lit=false;
     if(game.phase()==Phase::Combat) {
         // The shore platform, breech, collars, recessed muzzle and wheel
         // meshes are one deterministic XYZRGB triangle batch per scene.

@@ -33,12 +33,9 @@ int main() {
             const float z=z0+v*1.45f,x=u*9.4f;
             const float lower=(1-u)*center0+(u-v)*flank0+v*flank1;
             assert(std::abs(RearGroundHeight(day,x,z)-lower)<.0001f);
-            const float upper=(1-v)*center0+v*center1+
-                u*(flank1-center1);
-            assert(std::abs(RearGroundHeight(day,v*9.4f,z0+u*1.45f)-
+             assert(std::abs(RearGroundHeight(day,v*9.4f,z0+u*1.45f)-
                             ((1-u)*center0+v*flank1+(u-v)*center1))<.0001f);
-            (void)upper;
-        }
+         }
         assert(std::abs(RearGroundHeight(day,3.8f,8.1f)-
                         RearGroundHeight(night,3.8f,8.1f))<.00001f);
         // Entire 360-degree circle closes without a silhouette seam.
@@ -79,6 +76,25 @@ int main() {
     assert(EnvironmentFor(4,false).sea.r==0);
     assert(EnvironmentFor(0,false).earth.g!=EnvironmentFor(1,false).earth.g);
     assert(EnvironmentFor(1,false).peaks!=EnvironmentFor(2,false).peaks);
+    // True sun/moon facet lighting must respond to wall orientation, not
+    // merely multiply all world vertices by a uniform daytime tint.
+    const auto sunFace=IlluminateFacet({.6f,.6f,.6f},false,false,
+                                      1,0,0,0,0,1);
+    const auto sunSide=IlluminateFacet({.6f,.6f,.6f},false,false,
+                                      0,1,0,0,0,1);
+    const auto moonFace=IlluminateFacet({.6f,.6f,.6f},true,false,
+                                       1,0,0,0,0,1);
+    const auto moonSide=IlluminateFacet({.6f,.6f,.6f},true,false,
+                                       0,1,0,0,0,1);
+    assert(sunFace.r!=sunSide.r);
+    assert(moonFace.b!=moonSide.b);
+    assert(moonFace.b>moonFace.r);
+    const auto palette=EnvironmentFor(0,true).hill;
+    const auto once=IlluminateFacet(palette,true,true,
+                                   1,0,0,0,0,1);
+    const auto twice=IlluminateFacet(palette,true,false,
+                                    1,0,0,0,0,1);
+    assert(once.b>twice.b);
     const auto day=IlluminateWorld({.6f,.6f,.6f},false);
     const auto night=IlluminateWorld({.6f,.6f,.6f},true);
     assert(day.r>night.r && day.g>night.g && day.b>night.b);
