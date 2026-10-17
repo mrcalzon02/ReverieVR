@@ -569,7 +569,11 @@ void BuildScene(State *s) {
         // The shore platform, breech, collars, recessed muzzle and wheel
         // meshes are one deterministic XYZRGB triangle batch per scene.
         Box(s,0,-1.24f,-.95f,7.8f,.55f,.7f,.37f,.38f,.36f);
-        Box(s,0,-1.06f,-.88f,.62f,.22f,.47f,.29f,.30f,.30f);
+        // The gun cradle is below/behind the seated player. The long barrel
+        // now projects seawards from this mount without overshooting the
+        // soldiers/armored vehicles' landward target positions.
+        Box(s,0,-1.23f,.14f,1.26f,.22f,1.56f,.35f,.37f,.34f);
+        Box(s,0,-1.06f,.65f,.62f,.22f,.47f,.29f,.30f,.30f);
         const float *aim=s->gun_direction;
         const WeaponKind equipped=game.selected_weapon();
         gunmesh::Build([s](auto... vertices){Triangle(s,vertices...);},
