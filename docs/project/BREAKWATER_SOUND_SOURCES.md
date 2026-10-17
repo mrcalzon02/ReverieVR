@@ -3,7 +3,7 @@
 **Role:** PROJECT MANAGEMENT / SOURCE README  
 **Parent:** [Breakwater implementation plan](BREAKWATER_BATTERY_VR.md) · [RV-0640 backlog](BACKLOG.md) · [Licensing policy](PUBLIC_DISTRIBUTION_AND_LICENSES.md)  
 **Checked:** 2026-10-15 (official source/artist listing and published license pages)  
-**Status:** **Linked candidates only. No external recordings have been selected, downloaded, hashed, imported, packaged, played, or released.**  
+**Status:** **Linked CC0/third-party candidates only. No external sample recordings from this register have been selected, downloaded, hashed, imported or released.** The game instead gains ten additional deterministic **original synthesized** one-shot effects. Breakwater's already packaged original-owner song `Mars des Souvenirs` is licensed separately and is not a third-party SFX candidate.  
 **Art direction:** Generic late-1990s/early-2000s Western military arcade sounds; punchy, legible, low-latency, inexpensive on Galaxy S9. Prefer authentic mechanical impact and modest environmental reverb over cinematic sci-fi or excessive bass.
 
 ## Linked source candidates
