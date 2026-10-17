@@ -13,6 +13,7 @@
 #include "breakwater_impacts.h"
 #include "breakwater_wrecks.h"
 #include "breakwater_gun_mesh.h"
+#include "breakwater_cannon_trajectory.h"
 #include "breakwater_menu_layout.h"
 #include "breakwater_shop_feedback.h"
 #include "breakwater_scene_refresh.h"
@@ -50,6 +51,8 @@ struct State {
     uint64_t infantry_firing_mask=0u;
     float gun_direction[3] = {0.0f,0.0f,-1.0f};
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
+    trajectory::ShotRay aim_ray{};
+    bool aim_ray_valid=false;
     ImpactEffects impacts;
     WreckEffects wrecks;
     BatteryDamageFeedback battery_damage;
@@ -342,8 +345,20 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                           REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
+        // All standard mounted weapons (including the unguided launch
+        // phase of the missile pod) fire from the *visible cannon muzzle*.
+        // Above the gun's traverse the separate hand-aligned ghost sight
+        // appears, but ordinary gunfire cannot teleport to that controller ray.
+        trajectory::ShotRay fired{};
+        const bool in_arc=trajectory::CannonShot(game.selected_weapon(),
+                                                input.pointer_direction,&fired);
+        ReverieNativeInputV1 cannon_input=input;
+        if(in_arc)for(int k=0;k<3;k++) {
+            cannon_input.pointer_origin[k]=fired.origin[k];
+            cannon_input.pointer_direction[k]=fired.direction[k];
+        }
         const bool missile=WeaponFor(game.selected_weapon()).uses_ghost;
-        const int target=CombatTarget(input,game,missile);
+        const int target=in_arc?CombatTarget(cannon_input,game,false):-1;
         // Resolve the impact before a lethal hit deactivates the target.
         float impactDepth=0.0f;
         const bool enemyTarget=target>=0 &&
@@ -356,16 +371,16 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         const Enemy enemyBefore=enemyTarget?game.enemies()[target]:Enemy{};
         const float gravity=game.stats().projectile_gravity;
         if(enemyTarget)
-            AimAtEnemy(input,game.enemies()[target],gravity,missile,&impactDepth);
+            AimAtEnemy(cannon_input,game.enemies()[target],gravity,false,&impactDepth);
         else if(infantryTarget) {
             const Infantry &trooper=game.infantry_units()[
                 target-Campaign::kMaxEnemies];
             const float center[]={trooper.x,-.66f,trooper.z};
-            ProjectileHitsSphere(input.pointer_origin,input.pointer_direction,
+            ProjectileHitsSphere(cannon_input.pointer_origin,cannon_input.pointer_direction,
                                  gravity,center,.30f,&impactDepth);
         } else if(coverTarget) {
-            ProjectileHitsCover(input.pointer_origin,
-                input.pointer_direction,gravity,
+            ProjectileHitsCover(cannon_input.pointer_origin,
+                cannon_input.pointer_direction,gravity,
                 game.shore_cover()[target-kCoverTargetBase],&impactDepth);
         }
         bool shot=false;
@@ -377,8 +392,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         else if(coverTarget)
             shot=game.FireAtCover(static_cast<uint8_t>(
                 target-kCoverTargetBase));
-        else if(GunWithinTraverse(input.pointer_direction,
-                                  game.selected_weapon()))
+        else if(in_arc)
             shot=game.FireMiss();
         if(shot){
             if(enemyTarget) {
@@ -387,7 +401,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             }
             float hit[3]={};
             if(impactDepth>0.0f &&
-               ProjectilePosition(input.pointer_origin,input.pointer_direction,
+               ProjectilePosition(cannon_input.pointer_origin,cannon_input.pointer_direction,
                                   impactDepth,missile?0.0f:gravity,hit)) {
                 const float down[]={0.0f,-1.0f,0.0f};
                 if(enemyTarget) {
@@ -400,10 +414,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                         coverTarget && game.location()==1u ?
                             ImpactKind::Metal:ImpactKind::Sand);
             } else if(target<0 && !missile)
-                BallisticWaterImpact(s,input,gravity);
+                BallisticWaterImpact(s,cannon_input,gravity);
             for(int k=0;k<3;k++) {
-                s->shot_direction[k]=input.pointer_direction[k];
-                s->shot_origin[k]=input.pointer_origin[k];
+                s->shot_direction[k]=fired.direction[k];
+                s->shot_origin[k]=fired.origin[k];
             }
             s->shot_gravity=missile?0.0f:gravity;
             s->flash=.09f;
@@ -506,6 +520,30 @@ void BuildScene(State *s) {
                      a[0]-shotRightX*w,a[1],a[2]-shotRightZ*w,
                      b[0]-shotRightX*w*.7f,b[1],b[2]-shotRightZ*w*.7f,
                      .98f,.72f,.25f);
+        }
+    }
+    // Subtle ballistic trajectory from the true muzzle. It is the same
+    // shared ray, gravity, and controller-chosen orientation used by fire,
+    // enemy targeting, cover occlusion, tracer and sea-impact prediction.
+    // Once the gun reaches its arc limit this guide disappears and ONLY
+    // the controller ghost appears; no fabricated outside-arc cannon hit.
+    if(s->aim_ray_valid && game.phase()==Phase::Combat) {
+        const auto &ray=s->aim_ray;
+        const float gravity=game.stats().projectile_gravity;
+        for(int segment=0;segment<9;++segment) {
+            const float t=.28f+segment*.82f;
+            float first[3]={},next[3]={};
+            if(!trajectory::Prediction(ray,gravity,t,first) ||
+               !trajectory::Prediction(ray,gravity,t+.33f,next))break;
+            const float w=.009f;
+            Triangle(s,first[0]-w,first[1],first[2],
+                     first[0]+w,first[1],first[2],
+                     next[0]-w,next[1],next[2],
+                     .59f,.82f,.65f);
+            Triangle(s,first[0]+w,first[1],first[2],
+                     next[0]+w,next[1],next[2],
+                     next[0]-w,next[1],next[2],
+                     .59f,.82f,.65f);
         }
     }
     if(s->ghost_on) {
@@ -1044,6 +1082,7 @@ void Pause(void *instance) {
     s->pointer_visible=false;
     s->menu_focus=-1;
     s->ghost_on=false;
+    s->aim_ray_valid=false;
     s->held=false;
     s->secondary_held=false;
     s->combat_input.Release();
@@ -1076,6 +1115,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->pointer_visible=false;
         s->menu_focus=-1;
         s->ghost_on=false;
+        s->aim_ray_valid=false;
         // Pointer-none frames are paused, not active combat frames.
         // Redraw once to clear targeting/hover; repeated menu-held frames
         // must not rebake the entire scene.
@@ -1204,22 +1244,33 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     if(s->campaign.phase()==Phase::Combat &&
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
         s->ghost_on=(s->sam_armed ||
-            WeaponFor(s->campaign.selected_weapon()).uses_ghost ||
             !GunWithinTraverse(copy.pointer_direction,
                                s->campaign.selected_weapon())) &&
             GhostAimPoint(copy.pointer_origin,copy.pointer_direction,
                           s->ghost_position);
     }
+    s->aim_ray_valid=false;
     s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;
     if(s->campaign.phase()==Phase::Combat &&
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
-        const int target=CombatTarget(copy,s->campaign,s->sam_armed ||
-            WeaponFor(s->campaign.selected_weapon()).uses_ghost);
+        const bool cannon_valid=trajectory::CannonShot(
+            s->campaign.selected_weapon(),copy.pointer_direction,
+            &s->aim_ray);
+        s->aim_ray_valid=cannon_valid && !s->sam_armed;
+        ReverieNativeInputV1 target_input=copy;
+        if(s->aim_ray_valid)for(int k=0;k<3;k++) {
+            target_input.pointer_origin[k]=s->aim_ray.origin[k];
+            target_input.pointer_direction[k]=s->aim_ray.direction[k];
+        }
+        const int target=s->sam_armed?
+            CombatTarget(copy,s->campaign,true):
+            (s->aim_ray_valid?
+                CombatTarget(target_input,s->campaign,false):-1);
         s->cover_aim_index=target>=kCoverTargetBase &&
             target<kCoverTargetEnd?target-kCoverTargetBase:-1;
         s->aircraft_aim=InspectAircraftAim(s->campaign,target);
-        // SAM targeting accepts aircraft only; never advertise a
-        // valid surface lock while the special missile mode is armed.
+        // Special SAM support retains the independent handheld lock; every
+        // other mount targets with its own real cannon-origin trajectory.
         if(!s->sam_armed)
             s->surface_aim=InspectSurfaceAim(s->campaign,target);
     }
