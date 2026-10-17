@@ -7,7 +7,7 @@ using namespace reverie::breakwater;
 int main(){
     const float straight[]={0.f,0.f,-1.f};
     const float above[]={0.f,1.5f,-1.f};
-    const float elevated[]={0.f,.36f,-1.f};
+    const float elevated[]={0.f,.56f,-1.f};
     const float nav[]={0.f,.20f,-1.f};
     const float bad[]={NAN,0.f,-1.f};
     trajectory::ShotRay ray{};
