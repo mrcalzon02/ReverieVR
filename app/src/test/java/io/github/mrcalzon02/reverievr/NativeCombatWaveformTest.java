@@ -83,8 +83,24 @@ public final class NativeCombatWaveformTest {
         }
         assertEquals(10,hashes.size());
         assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(0));
-        assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(16));
+        assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(20));
         assertEquals(-1,NativeCombatWaveform.weaponCueForNativeEvent(6));
+    }
+
+    @Test
+    public void fourProgressionEffectsHaveBoundedDistinctSoundAndNativeRouting() {
+        java.util.HashSet<Integer> hashes = new java.util.HashSet<>();
+        for (int nativeId=16;nativeId<=19;nativeId++) {
+            int cue=NativeCombatWaveform.cueForNativeEvent(nativeId);
+            assertEquals(NativeCombatWaveform.PURCHASE+nativeId-16,cue);
+            byte[] pcm=NativeCombatWaveform.generatePcm16(cue);
+            assertTrue(pcm.length>=6000 && pcm.length<40000);
+            assertTrue(hashes.add(java.util.Arrays.hashCode(pcm)));
+            assertEquals(1,NativeCombatWaveform.voiceCount(cue));
+        }
+        assertEquals(4,hashes.size());
+        assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(20));
+        assertEquals(-1,NativeCombatWaveform.weaponCueForNativeEvent(16));
     }
 
     @Test(expected = IllegalArgumentException.class)
