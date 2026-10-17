@@ -37,6 +37,9 @@ struct Enemy {
     uint8_t passengers = 0;
     bool active = false;
     bool landed = false;
+    // A landing craft can carry one independently targetable armored car.
+    // The cargo never becomes active unless its transport actually beaches.
+    bool carries_armor = false;
     AircraftPattern aircraft_pattern = AircraftPattern::None;
     uint8_t attacks_remaining = 0;
     float attack_timer = 0;
@@ -65,6 +68,18 @@ struct Infantry {
     float cover_line_z = 0;
     // Transient battle-only firing suppression; never part of shop saves.
     float pinned_seconds = 0.0f;
+};
+struct ArmoredVehicle {
+    float x = 0.0f;
+    float z = 0.0f;
+    int16_t hp = 0;
+    bool active = false;
+    float attack_timer = 0.0f;
+};
+struct ArmorShotEvent {
+    uint32_t sequence = 0;
+    float x = 0.0f, z = 0.0f;
+    uint8_t damage = 0;
 };
 struct ShoreCover {
     float x = 0.0f;
@@ -145,6 +160,9 @@ struct Status {
     uint8_t troops_landed = 0;
     uint8_t troops_stopped = 0;
     uint8_t aircraft_destroyed = 0;
+    uint8_t armor_landed = 0;
+    uint8_t armor_destroyed = 0;
+    uint8_t armor_attacks = 0;
     uint8_t aircraft_attacks = 0;
     uint8_t gunboat_attacks = 0;
 };
@@ -153,7 +171,8 @@ public:
     static constexpr size_t kSerializedSize = 80;
     static constexpr size_t kMaxEnemies = 12;
     static constexpr size_t kMaxInfantry = 60; // ten transports x six passengers
-    static constexpr size_t kMaxCover = 4; // tiny location-specific barricades
+    static constexpr size_t kMaxCover = 4;
+    static constexpr size_t kMaxArmor = 10; // at most ten transports per wave // tiny location-specific barricades
     static constexpr uint8_t kLocations = 3;
     static const std::array<Location, kLocations> &Locations();
     explicit Campaign(Difficulty difficulty = Difficulty::Regular,
@@ -177,6 +196,7 @@ public:
     bool FireAt(uint8_t index);
     bool FireAtInfantry(uint8_t index);
     bool FireAtCover(uint8_t index);
+    bool FireAtArmor(uint8_t index);
     bool FireMiss();
     bool RequestReload();
     bool CallArtillery();
@@ -204,10 +224,12 @@ public:
     AircraftAttackEvent aircraft_attack() const { return aircraft_attack_; }
     GunboatSalvoEvent gunboat_salvo() const { return gunboat_salvo_; }
     GunboatCollisionEvent gunboat_collision() const { return gunboat_collision_; }
+    ArmorShotEvent armor_shot() const { return armor_shot_; }
     IncomingThreats incoming_threats() const;
     const std::array<Enemy,kMaxEnemies> &enemies() const { return enemies_; }
     const std::array<Infantry,kMaxInfantry> &infantry_units() const { return infantry_units_; }
     const std::array<ShoreCover,kMaxCover> &shore_cover() const { return shore_cover_; }
+    const std::array<ArmoredVehicle,kMaxArmor> &armored_vehicles() const { return armor_; }
     int32_t price(Upgrade upgrade) const;
     uint8_t level(Upgrade upgrade) const;
 private:
@@ -241,6 +263,8 @@ private:
     std::array<Enemy,kMaxEnemies> enemies_{};
     std::array<Infantry,kMaxInfantry> infantry_units_{};
     std::array<ShoreCover,kMaxCover> shore_cover_{};
+    std::array<ArmoredVehicle,kMaxArmor> armor_{};
+    uint8_t armor_spawn_cursor_ = 0;
     uint8_t infantry_spawn_cursor_ = 0;
     Status wave_status_{};
     TurretShotEvent turret_shot_{};
@@ -248,6 +272,7 @@ private:
     AircraftAttackEvent aircraft_attack_{};
     GunboatSalvoEvent gunboat_salvo_{};
     GunboatCollisionEvent gunboat_collision_{};
+    ArmorShotEvent armor_shot_{};
     uint8_t remaining_to_spawn_ = 0;
     uint8_t spawned_ = 0;
     float spawn_timer_ = 0;
