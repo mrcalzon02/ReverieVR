@@ -462,7 +462,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                         s->impacts.RecordHit(hit,down,.001f,
                             destroyed?ImpactKind::Explosion:ImpactKind::Metal);
                         BattleSound(s,destroyed?
-                            REVERIE_NATIVE_SOUND_BOAT_DESTROYED:
+                            REVERIE_NATIVE_SOUND_ARMOR_DESTROYED:
                             REVERIE_NATIVE_SOUND_HULL_IMPACT);
                     }
                 } else if(infantryTarget || coverTarget)
@@ -1302,7 +1302,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                                    -.76f,-.94f};
             const float down[]={0.0f,-1.0f,0.0f};
             s->impacts.RecordHit(parapet,down,.11f,ImpactKind::Metal);
-            BattleSound(s,REVERIE_NATIVE_SOUND_GUNBOAT_SALVO);
+            BattleSound(s,REVERIE_NATIVE_SOUND_ARMORED_GUN);
         }
         const GunboatCollisionEvent collision=s->campaign.gunboat_collision();
         if(collision.sequence!=collision_before && collision.damage>0) {
