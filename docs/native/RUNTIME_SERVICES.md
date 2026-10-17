@@ -384,7 +384,7 @@ Test Chamber requests an activation cue when its tint toggle changes. Red Ledger
 
 The service remains event-level. It does not accept module PCM, sound files, positional audio buffers, arbitrary tones, or mixer controls. It provides only named one-shot cues. Haptics are also not implemented by this path.
 
-### Ordered first-party weapon cues (2026-10-15)
+### Ordered first-party gameplay sound cues (2026-10-15, expanded 2026-10-16)
 
 The new optional `request_sound(uint32_t cue_id)` host tail supports
 the five named weapon reports only. Breakwater chooses the ID from its
