@@ -1,3 +1,11 @@
+## 2026-10-16 — Breakwater muzzle/beach ballistic reach root-cause correction
+
+**OBSERVED:** During armored-car integration, the real cannon model's -0.88-z breech offset placed its barrel mouth around z=-2.3, already seaward of deployed armor z=-2.23→-1.56 and infantry z=-2.28→-1.34. After last pass correctly removed free controller-origin shooting, these nearby shore combatants became unreachable. This is a geometry/root-cause issue, not a collision-radius or automatic-hit problem.
+
+**EXECUTED:** `breakwater_gun_mesh.h` now has one exact `kMount={0,-.76,+.65}` shared by 3D solid barrel, recoil flash and real `Muzzle` shot origin. Updated lower-mounted carriage support geometry in `breakwater_module.cpp`. Extended `breakwater_cannon_trajectory_test.cpp` checks every mounted gun's real cannon-origin ballistic hit against both infantry at z=-1.34 and landed armor at z=-1.56. Gun mesh tests adjusted to the physical placement; no hitbox enlargement, controller-ray bypass or save/header ABI change.
+
+**VERIFY:** Exact new trajectory test blob `109b0d90fc96f6ed10a0c3f9c845293ccffb105b` was locally reconstructed and compiled with strict GCC/Clang C++17; the test and Clang ASan+UBSan passed using the earlier source-mirrored gun/weapon dependency harness. **Original complete 3D gun mesh test, full native Campaign/module, Android NDK, S9 stereo/elevation comfort remain unexecuted.** Repository record: `docs/records/2026-10-16-breakwater-armored-landings.md`.
+
 ## 2026-10-16 — Breakwater: deployable armored landing vehicles and combat sound completion
 
 **INTENT:** User asks to continue Breakwater and whether troop landing craft can now transport armored vehicles. Inspected current authoritative `main`, confirmed no such gameplay unit existed; only infantry-bearing landing craft were present. Kept one `main` branch, game-private edits, compact UI, existing 80-byte save ABI, owner-assigned music and no GitHub Actions.
