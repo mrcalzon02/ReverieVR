@@ -24,6 +24,41 @@ The original five weapon reports remain, and ten additional original determinist
 
 The module generates simple cuboid rowboats, military boats and individually positioned shore infantry silhouettes (body and head), plus distinct generated bomber/strafer silhouettes with dynamically banked, swept vertex-color wings. Rendered infantry positions and bounded combat-ray hitboxes share the campaign's authoritative soldier objects, and defeated soldiers are removed individually. Combat targeting now selects the nearest positive ray-surface intersection rather than hitbox-center depth for overlapping vessels, aircraft and infantry. The shared deterministic intersection helper rejects malformed rays; Galaxy S9 pointer alignment and headset hitbox proof remain outstanding.
 
+## Heavy armored assault transport — final-stage invasion
+
+Late Blackcap campaign waves now add a true `UnitType::ArmoredTransport`,
+**320 HP with armored hull plating**, not a merely tough infantry boat.
+The existing progression and escalating wave-pressure mix are preserved:
+eligible heavy ships first enter at threat grade 10+, only in the later
+half of a day/night's actual waves; the final campaign wave guarantees
+one heavy flagship as its first spawn. Their 0.44-unit/s approach is
+slower than normal landers and their deck gun can deliver real 5-point
+battery hits every 3.8 seconds offshore.
+
+The hull applies weapon-specific damage: standard 20-point machine gun
+hits deal **4 HP**, 35-point heavy gun hits **11 HP**, 42-point flak
+hits **10 HP**, while direct cannon 90 and missile 125 keep full
+penetration. Artillery/airstrike splash deals 75% of listed damage.
+Sinking pays 210 credits and cancels **two armored cars and four
+infantry** before any unloading. Surviving heavy ships instead deploy
+two real independent 95-HP cars and four infantry using existing
+rifle/flanker/support tactics. The battle-only armor array was raised
+to 20 total entries for maximum ten heavy ships; the original 80-byte
+shop save and other combat limits remain unchanged.
+
+A larger entirely original GLES2 3D hull has reinforced side/bow plates,
+raised control compartment and deck gun, two visible vehicle cradles
+and a landing ramp that lowers on approach. The active renderer
+shows this 3D ship (not the ordinary atlas landing boat), with a
+1.48-radius target volume, real 320-HP HUD, appropriately scaled
+wreck fragments and a true armored gun sound after damage.
+The owner-attributed `Mars des Souvenirs` soundtrack stays unchanged.
+Source evidence: [heavy transport implementation record](../../docs/records/2026-10-16-breakwater-heavy-armored-transport.md).
+The complete native campaign, Android/NDK build, Galaxy S9
+stereo/aim/audio and physical performance gates remain unexecuted;
+only the exact standalone invasion/armor-selection regression
+passed strict GCC, Clang and Clang sanitizers.
+
 ## Armored landing craft and shore vehicles — 2026-10-16
 
 Later-progression landing craft may now carry **one real light armored car**
