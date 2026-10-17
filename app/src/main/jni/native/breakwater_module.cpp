@@ -1344,7 +1344,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             const float parapet[]={0.0f,-.70f,-.94f};
             const float down[]={0.0f,-1.0f,0.0f};
             s->impacts.RecordHit(parapet,down,.12f,ImpactKind::Metal);
-            BattleSound(s,REVERIE_NATIVE_SOUND_GUNBOAT_SALVO);
+            BattleSound(s,salvo.armored_transport?
+                REVERIE_NATIVE_SOUND_ARMORED_GUN:
+                REVERIE_NATIVE_SOUND_GUNBOAT_SALVO);
         }
         const ArmorShotEvent armored=s->campaign.armor_shot();
         if(armored.sequence!=armor_before && armored.damage>0) {
