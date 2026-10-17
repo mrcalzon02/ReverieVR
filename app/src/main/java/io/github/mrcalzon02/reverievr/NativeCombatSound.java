@@ -38,8 +38,8 @@ final class NativeCombatSound implements AutoCloseable {
 
     // Native cues are numbered 1..5; this mapping stays in the shell's
     // playback layer, not in a game-specific Android renderer.
-    void playNativeWeapon(int cueId) {
-        final int cue=NativeCombatWaveform.weaponCueForNativeEvent(cueId);
+    void playNativeCue(int cueId) {
+        final int cue=NativeCombatWaveform.cueForNativeEvent(cueId);
         if(cue>=0)play(cue);
     }
 

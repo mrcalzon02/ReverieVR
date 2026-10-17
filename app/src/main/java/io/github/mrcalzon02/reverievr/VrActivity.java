@@ -1770,8 +1770,8 @@ public final class VrActivity extends Activity
 
     @Override
     public void onNativeModuleSoundCueRequested(int cueId) {
-        if(uiFeedback==null || cueId<1 || cueId>5)return;
-        runOnUiThread(() -> uiFeedback.nativeWeaponFire(cueId));
+        if(uiFeedback==null || cueId<1 || cueId>15)return;
+        runOnUiThread(() -> uiFeedback.nativeSoundCue(cueId));
     }
 
     @Override

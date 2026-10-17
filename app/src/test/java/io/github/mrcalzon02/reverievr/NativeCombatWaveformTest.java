@@ -70,6 +70,23 @@ public final class NativeCombatWaveformTest {
             NativeCombatWaveform.CANNON));
     }
 
+    @Test
+    public void tenGameEventEffectsHaveUniqueBoundedWaveforms() {
+        java.util.HashSet<Integer> hashes = new java.util.HashSet<>();
+        for(int id=6;id<=15;id++) {
+            int cue=NativeCombatWaveform.cueForNativeEvent(id);
+            assertEquals(NativeCombatWaveform.HULL+id-6,cue);
+            byte[] sample=NativeCombatWaveform.generatePcm16(cue);
+            assertTrue(sample.length>2000 && sample.length<30000);
+            assertTrue(hashes.add(java.util.Arrays.hashCode(sample)));
+            assertEquals(1,NativeCombatWaveform.voiceCount(cue));
+        }
+        assertEquals(10,hashes.size());
+        assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(0));
+        assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(16));
+        assertEquals(-1,NativeCombatWaveform.weaponCueForNativeEvent(6));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void invalidVoiceCueRejected() {
         NativeCombatWaveform.voiceCount(NativeCombatWaveform.COUNT);

@@ -8,14 +8,23 @@ final class NativeCombatWaveform {
     // Byte-sized native ordered sound ids 1–5 map to this private bank
     // without changing the generic shell feedback/voice cue indices.
     static final int MACHINE = 5, HEAVY = 6, FLAK = 7;
-    static final int MISSILE = 8, CANNON = 9, COUNT = 10;
+    static final int MISSILE = 8, CANNON = 9;
+    static final int HULL = 10, SPLASH = 11, BOAT_DOWN = 12;
+    static final int GUNBOAT = 13, VOLLEY = 14, BOMB = 15;
+    static final int STRAFE = 16, SAM = 17, WAVE = 18, COLLISION = 19;
+    static final int COUNT = 20;
 
     private NativeCombatWaveform() {}
 
     // The native ABI uses ordered cue IDs 1..5 (not the PCM bank's
     // integer constants 5..9). This mapping is pure JVM-testable.
+    static int cueForNativeEvent(int id) {
+        // The JNI queue transmits 1-byte ordered cue IDs. The first five are
+        // unchanged, followed by ten real battle-event effects.
+        return id>=1 && id<=15 ? MACHINE+id-1 : -1;
+    }
     static int weaponCueForNativeEvent(int id) {
-        return id>=1 && id<=5 ? MACHINE+id-1 : -1;
+        return id>=1 && id<=5 ? cueForNativeEvent(id) : -1;
     }
 
     // Two overlapping reports are enough for the upgraded 160ms gun cycle;
@@ -36,6 +45,16 @@ final class NativeCombatWaveform {
         if (cue == FLAK) return 270;
         if (cue == MISSILE) return 390;
         if (cue == CANNON) return 360;
+        if (cue == HULL) return 230;
+        if (cue == SPLASH) return 340;
+        if (cue == BOAT_DOWN) return 570;
+        if (cue == GUNBOAT) return 410;
+        if (cue == VOLLEY) return 295;
+        if (cue == BOMB) return 610;
+        if (cue == STRAFE) return 340;
+        if (cue == SAM) return 460;
+        if (cue == WAVE) return 390;
+        if (cue == COLLISION) return 490;
         throw new IllegalArgumentException("Unknown cue");
     }
 
@@ -90,6 +109,49 @@ final class NativeCombatWaveform {
                         125.0 * Math.exp(-11.0 * t)) / SAMPLE_RATE;
                     signal = envelope * (.40 * noise * Math.exp(-8.0 * t)
                         + .51 * Math.sin(phase) * Math.exp(-7.0 * t));
+                }
+            } else if (cue >= HULL && cue <= COLLISION) {
+                // Ten short original effects, synthesized only at audio-bank
+                // construction: no network assets, per-frame allocations,
+                // proprietary samples or second soundtrack player.
+                final double attack = Math.exp(-8.0*t);
+                if (cue == SPLASH) {
+                    phase += 2*Math.PI*(80.0 + 35.0*p)/SAMPLE_RATE;
+                    signal=envelope*(.52*noise*attack
+                        +.18*Math.sin(phase)*Math.exp(-9.0*t));
+                } else if (cue == HULL) {
+                    phase += 2*Math.PI*(240.0-130.0*p)/SAMPLE_RATE;
+                    signal=envelope*(.57*noise*Math.exp(-23.0*t)
+                        +.40*Math.sin(phase)*attack);
+                } else if (cue == BOAT_DOWN || cue == COLLISION ||
+                           cue == BOMB) {
+                    final double base=cue==BOMB?51.0:
+                        cue==COLLISION?66.0:73.0;
+                    phase+=2*Math.PI*(base+170.0*Math.exp(-17.0*t))/SAMPLE_RATE;
+                    double rumble=Math.exp(-(cue==BOMB?5.0:7.5)*t);
+                    double secondary=cue==BOMB && t>.17 ?
+                        Math.exp(-22.0*(t-.17)):0.0;
+                    signal=envelope*(.45*Math.sin(phase)*rumble+
+                        .54*noise*Math.exp(-11.0*t)+secondary*.28*noise);
+                } else if (cue == GUNBOAT) {
+                    phase+=2*Math.PI*(77.0+105.0*Math.exp(-16.0*t))/SAMPLE_RATE;
+                    signal=envelope*(.59*noise*Math.exp(-13.0*t)+
+                        .42*Math.sin(phase)*Math.exp(-10.0*t));
+                } else if (cue == VOLLEY || cue == STRAFE) {
+                    final double spacing=cue==STRAFE?.095:.073;
+                    double burst=Math.exp(-45.0*(t%spacing));
+                    phase+=2*Math.PI*(cue==STRAFE?205.0:152.0)/SAMPLE_RATE;
+                    signal=envelope*burst*(.59*noise+.29*Math.sin(phase));
+                } else if (cue == SAM) {
+                    phase+=2*Math.PI*(215.0+380.0*p)/SAMPLE_RATE;
+                    signal=envelope*(.36*Math.sin(phase)+.44*noise)
+                        *Math.exp(-4.0*t);
+                } else {
+                    // Wave-start signal is a restrained two-tone muster cue,
+                    // not an additional musical bed over Mars des Souvenirs.
+                    double freq=t<.17?523.25:659.25;
+                    phase+=2*Math.PI*freq/SAMPLE_RATE;
+                    signal=envelope*.44*Math.sin(phase);
                 }
             } else if (cue == RELOAD) {
                 double clack = Math.exp(-58.0 * t) + (t >= 0.115 ?

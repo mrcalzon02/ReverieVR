@@ -181,12 +181,12 @@ int main() {
         Check(ReverieNativeRequestSoundV1(&host,cue) != 0,
               "valid ordered cue should dispatch");
     }
-    Check(captured_sound_calls==5u &&
-          captured_sound_cue==REVERIE_NATIVE_SOUND_WEAPON_CANNON,
+    Check(captured_sound_calls==15u &&
+          captured_sound_cue==REVERIE_NATIVE_SOUND_SHORE_COLLISION,
           "one callback per distinct weapon report");
     Check(ReverieNativeRequestSoundV1(&host,0u)==0 &&
           ReverieNativeRequestSoundV1(&host,9999u)==0 &&
-          captured_sound_calls==5u,
+          captured_sound_calls==15u,
           "invalid cue ids rejected without reaching host");
     host.request_sound=nullptr;
     Check(ReverieNativeRequestSoundV1(&host,
@@ -199,12 +199,12 @@ int main() {
     Check(!ordered.Push(0u) && !ordered.Push(9999u) &&
           ordered.count==0u,"invalid sound IDs never enter queue");
     for(uint32_t index=0u;index<8u;++index)
-        Check(ordered.Push(1u+(index%5u)),"first eight ordered cues accepted");
+        Check(ordered.Push(1u+(index%15u)),"first eight ordered cues accepted");
     Check(!ordered.Push(1u),"ninth queued sound must fail boundedly");
     uint64_t packet=ordered.Drain();
     for(uint32_t index=0u;index<8u;++index) {
         const uint32_t cue=static_cast<uint32_t>(packet & 255u);
-        Check(cue==1u+(index%5u),"order and multiplicity preserved");
+        Check(cue==1u+(index%15u),"order and multiplicity preserved");
         packet>>=8u;
     }
     Check(packet==0u && ordered.count==0u && ordered.packed==0u,
