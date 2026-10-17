@@ -30,6 +30,13 @@ inline int ChartNavigate(int selection,int horizontal,int vertical){
         ChartColumn(selection),vertical>0);
     return selection;
 }
+// The hosted game's secondary action leaves equipment/support screens.
+// Shipyard deliberately owns secondary for palette/grid focus, not Back.
+inline bool PrepSecondaryBack(bool inLoadout,bool inSupport,bool inYard,
+                              bool secondaryDown,bool previousSecondary){
+    return (inLoadout||inSupport)&&!inYard
+        &&secondaryDown&&!previousSecondary;
+}
 inline int LoadoutNavigate(int selection,int horizontal,int vertical){
     if(selection<0||selection>7)selection=0;
     if(horizontal!=0){
