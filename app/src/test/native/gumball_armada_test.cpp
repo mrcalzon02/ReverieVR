@@ -4,6 +4,16 @@
 #include <iostream>
 using namespace reverie::gumball;
 int main(){
+    // Combat formations cover all eight deterministic doctrines.
+    bool doctrines[8]={};
+    for(unsigned lane=0;lane<64;++lane)for(int group=0;group<8;++group){
+        const int index=group*5;
+        const WaveEntry entry=PlanWaveEntry(42u,lane,index,40,13u);
+        assert(entry.formation==FormationFor(42u,lane,index));
+        assert(entry.x>=-1.7f&&entry.x<=1.7f);
+        doctrines[static_cast<unsigned>(entry.formation)]=true;
+    }
+    for(bool seen:doctrines)assert(seen);
     Simulation game(42), replay(42);
     assert(game.node()==0 && game.cash()==100 && kLaneCount==4096);
     for(unsigned i=0;i<3;++i){
