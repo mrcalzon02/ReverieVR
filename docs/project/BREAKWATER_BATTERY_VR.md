@@ -75,6 +75,37 @@ both-button holding, independent release, fresh press and lifecycle pause.
 Full native/NDK build and S9 Quick Menu/connection-interruption proof remain
 separate acceptance gates.
 
+### Assigned background music and progression SFX — 2026-10-16
+
+The project owner's previously assigned **Mars des Souvenirs.mp3** is the
+Breakwater soundtrack; it remains a separately authorized original music
+recording under `music/source/audio`, validated against the
+`music/source/manifest.json` by the existing Gradle `stageOwnerMusicAssets`
+task, placed into APK assets as
+`music/tracks/mars-des-souvenirs.mp3`, and selected through
+`NativeMusicPlaybackPolicy.cueForNativeModule("breakwater-battery")`.
+`ShellMenuMusic` loops it while this native module is hosted. No replacement
+song, new downloads, or alternate music-license assumptions were introduced.
+
+The existing ten synthesized ordered battle SFX are supplemented by four
+short, distinct, deterministic PCM16 cues: shop purchase/equipment selection
+(`REVERIE_NATIVE_SOUND_SHOP_PURCHASE=16`), actual completed wave
+(`WAVE_CLEAR=17`), terminal victory (`CAMPAIGN_VICTORY=18`), terminal
+battery destruction (`BATTERY_LOST=19`). Production emits the cues only
+on successful purchase or the actual `Campaign::Tick` phase transition,
+never from cosmetic draw/update frames. Select actions that fail do not
+produce a purchase noise, and repeated Shop/terminal frames cannot replay
+a phase-change cue. Cue IDs 1–15 retain their earlier meanings. Android's
+`NativeCombatWaveform` generates all audio during bank initialization and
+`NativeCombatSound` reuses fixed `AudioTrack` voices; the soundtrack
+remains a separate `MediaPlayer` with independent volume/mute.
+
+A JVM regression in `NativeCombatWaveformTest` covers IDs 16–19, four
+distinct deterministic waveforms, bounded PCM memory, non-silent fade
+and one reusable voice per new cue. The full APK, actual source-song MP3
+packaging in a produced APK, handset mixing, loop continuity and S9 audio
+latency are not physically verified in this pass.
+
 ## 2026-10-16 extended campaign and cannon-origin aiming correction
 
 **Authoritative schedule:** `breakwater_wave_schedule.h::ForPeriod` is used by `Campaign::waves_this_period` and tested across every location, day/night cycle and difficulty. Totals are Cadet 244, Regular 280, Veteran 316, Siege 352; 32 is a hard per-period ceiling and every save remains an original versioned 80 bytes. First-wave craft counts (2–5, scaling as before up to the existing ten-craft wave limit) are separate from these progression counts. Late period wave indices, invalid overflows, and end-of-day night transitions are covered by revised native campaign regression source.
