@@ -106,7 +106,7 @@ LOCAL_SRC_FILES := native/omega_front_module.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 # Original low-allocation GLES2 classic game module

@@ -1,4 +1,5 @@
 #include "omega_front_campaign_save.h"
+#include "omega_front_texture_renderer.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -14,6 +15,7 @@
 
 namespace {
 namespace game = reverie::omega;
+namespace omega_art = reverie::omega_art;
 constexpr char kId[] = "omega-front";
 constexpr float kBoardZ = -1.9f;
 constexpr float kCell = .073f;
@@ -31,6 +33,8 @@ struct State {
     game::Result saved_result=game::Result::Active;
     game::FrontMode saved_view=game::FrontMode::SectorMap;
     std::vector<float> mesh;
+    reverie::omega_art::SpriteRenderer sprites;
+    size_t base_vertices=0,unit_vertices=0;
 };
 void Rect(State *s,float x,float y,float w,float h,float z,float r,float g,float b){
     reverie::flatmesh::Rect(s->mesh,x,y,w,h,z,r,g,b);
@@ -51,6 +55,7 @@ void DrawMap(State *s){
     const game::Session &session=s->session;
     const game::Frontier &f=session.frontier;
     s->mesh.clear();s->mesh.reserve(14000);
+    s->sprites.Clear();
     Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
     Text(s,"OMEGA FRONT  HEARTHFALL",1.070f,.014f,.92f,.94f,.81f);
     char line[110];
@@ -285,8 +290,10 @@ void UnitSprite(State *s,const game::Unit &u,float x,float y,game::Doctrine doct
 void Draw(State *s){
     if(s->session.view==game::FrontMode::SectorMap){DrawMap(s);return;}
     s->mesh.clear();s->mesh.reserve(75000);
+    s->sprites.Clear();
     Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
     Rect(s,0,kCenterY,2*kHalf+.035f,2*kHalf+.035f,kBoardZ-.04f,.21f,.28f,.20f);
+    s->base_vertices=s->mesh.size()/6u;
     const game::Battle &battle=s->session.tactical.battle;
     const bool defendingConvoy=s->session.frontier.convoy_battle();
     const bool frontlineBattle=s->session.frontier.frontline_battle();
@@ -301,13 +308,19 @@ void Draw(State *s){
         else if(ground==game::Ground::Wall){r=.13f;g=.14f;b=.18f;}
         else if(ground==game::Ground::DeepWater){r=.10f;g=.33f;b=.53f;}
         if((x+y)%2){r*=.92f;g*=.92f;b*=.92f;}
-        Rect(s,wx,wy,kCell*.965f,kCell*.965f,kBoardZ,r,g,b);
-        if(ground==game::Ground::Rubble) {
-            Line(s,wx-kCell*.20f,wy-kCell*.13f,wx+kCell*.15f,wy+kCell*.13f,
-                 kCell*.15f,kBoardZ+.008f,.64f,.55f,.47f);
+        const int sprite=ground==game::Ground::Road?omega_art::Road:
+                         ground==game::Ground::Rubble?omega_art::Rubble:
+                         ground==game::Ground::Wall?omega_art::Wall:
+                         ground==game::Ground::DeepWater?omega_art::Water:
+                         omega_art::Soil;
+        if(!s->sprites.Place(sprite,wx,wy,kCell*.965f,kCell*.965f,kBoardZ)){
+            Rect(s,wx,wy,kCell*.965f,kCell*.965f,kBoardZ,r,g,b);
+            if(ground==game::Ground::Rubble)
+                Line(s,wx-kCell*.20f,wy-kCell*.13f,wx+kCell*.15f,wy+kCell*.13f,
+                     kCell*.15f,kBoardZ+.008f,.64f,.55f,.47f);
+            if(ground==game::Ground::Wall)
+                Rect(s,wx,wy,kCell*.77f,kCell*.74f,kBoardZ+.015f,.36f,.39f,.39f);
         }
-        if(ground==game::Ground::Wall)
-            Rect(s,wx,wy,kCell*.77f,kCell*.74f,kBoardZ+.015f,.36f,.39f,.39f);
         if(x==s->session.tactical.cursor_x && y==s->session.tactical.cursor_y){
             Line(s,wx-kCell*.43f,wy+kCell*.42f,wx+kCell*.43f,wy+kCell*.42f,
                  kCell*.070f,-1.84f,1.f,.90f,.38f);
@@ -358,13 +371,33 @@ void Draw(State *s){
                  kCell*.12f,kCell*.10f,-1.842f,.93f,.99f,.41f);
         }
     }
+    s->unit_vertices=s->mesh.size()/6u;
     for(int i=0;i<battle.unit_count();++i){
         const game::Unit *u=battle.unit(i);
         if(!u||!u->alive())continue;
         center(u->x,u->y,px,py);
-        if(i==s->session.tactical.selected)
-            Rect(s,px,py,kCell*.96f,kCell*.96f,-1.858f,.99f,.91f,.27f);
-        UnitSprite(s,*u,px,py,battle.doctrine());
+        if(i==s->session.tactical.selected){
+            const float h=kCell*.45f;
+            Line(s,px-h,py-h,px+h,py-h,kCell*.048f,-1.842f,1.f,.90f,.26f);
+            Line(s,px+h,py-h,px+h,py+h,kCell*.048f,-1.842f,1.f,.90f,.26f);
+            Line(s,px+h,py+h,px-h,py+h,kCell*.048f,-1.842f,1.f,.90f,.26f);
+            Line(s,px-h,py+h,px-h,py-h,kCell*.048f,-1.842f,1.f,.90f,.26f);
+        }
+        // Only the armored Heavy class receives Kenney tank hull artwork:
+        // never represent engineers, salvagers or infantry as tanks.
+        int hull=omega_art::IndependentHull;
+        if(u->side==game::Side::Hearthwell)hull=omega_art::HearthwellHull;
+        else if(battle.doctrine()==game::Doctrine::Meridian)hull=omega_art::MeridianHull;
+        else if(battle.doctrine()==game::Doctrine::Scrapline)hull=omega_art::ScraplineHull;
+        else if(battle.doctrine()==game::Doctrine::LostNinth)hull=omega_art::LostNinthHull;
+        if(u->role==game::Class::Heavy &&
+           s->sprites.Place(hull,px,py,kCell*.88f,kCell*.88f,-1.85f)){
+            Rect(s,px,py-kCell*.43f,kCell*.68f,kCell*.065f,-1.844f,.14f,.16f,.19f);
+            const float hp=static_cast<float>(u->hp)/
+                           static_cast<float>(game::Battle::MaxHp(u->role));
+            Rect(s,px-kCell*.34f+hp*kCell*.34f,py-kCell*.43f,
+                 kCell*.68f*hp,kCell*.055f,-1.843f,.22f,.92f,.32f);
+        }else UnitSprite(s,*u,px,py,battle.doctrine());
     }
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
@@ -500,12 +533,15 @@ int32_t GlStart(void *p){
         glDeleteProgram(s->program);
         s->program=s->vbo=0;return 0;
     }
-    s->upload=true;return 1;
+    s->sprites.Initialize(s->host);
+    Draw(s);s->upload=true;
+    return 1;
 }
 void GlEnd(void *p){
     State *s=static_cast<State *>(p);if(!s)return;
     if(s->vbo)glDeleteBuffers(1,&s->vbo);
     if(s->program)glDeleteProgram(s->program);
+    s->sprites.Shutdown();
     s->vbo=0;s->program=0;s->upload=true;
 }
 void Resume(void *){}
@@ -580,23 +616,48 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
     ReverieNativeGlStateCaptureV1(&old);
     ReverieNativeGlAttribCaptureV1(&a,static_cast<GLuint>(s->pos));
     ReverieNativeGlAttribCaptureV1(&b,static_cast<GLuint>(s->color));
+    GLint src_rgb=GL_ONE,dst_rgb=GL_ZERO,src_alpha=GL_ONE,dst_alpha=GL_ZERO;
+    glGetIntegerv(GL_BLEND_SRC_RGB,&src_rgb);
+    glGetIntegerv(GL_BLEND_DST_RGB,&dst_rgb);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA,&src_alpha);
+    glGetIntegerv(GL_BLEND_DST_ALPHA,&dst_alpha);
     float matrix[16];ReverieNativeMat4Multiply(matrix,eye->projection,eye->view);
     glDisable(GL_CULL_FACE);glDisable(GL_DEPTH_TEST);glDisable(GL_BLEND);
-    glUseProgram(s->program);glBindBuffer(GL_ARRAY_BUFFER,s->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER,s->vbo);
     if(s->upload){
         glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(s->mesh.size()*sizeof(float)),
                      s->mesh.data(),GL_DYNAMIC_DRAW);
         s->upload=false;
     }
-    glEnableVertexAttribArray(static_cast<GLuint>(s->pos));
-    glVertexAttribPointer(static_cast<GLuint>(s->pos),3,GL_FLOAT,GL_FALSE,
-                          6*sizeof(float),reinterpret_cast<const void *>(0));
-    glEnableVertexAttribArray(static_cast<GLuint>(s->color));
-    glVertexAttribPointer(static_cast<GLuint>(s->color),3,GL_FLOAT,GL_FALSE,
-                          6*sizeof(float),reinterpret_cast<const void *>(3*sizeof(float)));
-    glUniformMatrix4fv(s->mvp,1,GL_FALSE,matrix);
-    glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->mesh.size()/6));
-    GLenum error=glGetError();
+    auto colored=[&](size_t first,size_t last){
+        if(first>=last)return;
+        glDisable(GL_BLEND);
+        glUseProgram(s->program);glBindBuffer(GL_ARRAY_BUFFER,s->vbo);
+        glEnableVertexAttribArray(static_cast<GLuint>(s->pos));
+        glVertexAttribPointer(static_cast<GLuint>(s->pos),3,GL_FLOAT,GL_FALSE,
+                              6*sizeof(float),reinterpret_cast<const void *>(0));
+        glEnableVertexAttribArray(static_cast<GLuint>(s->color));
+        glVertexAttribPointer(static_cast<GLuint>(s->color),3,GL_FLOAT,GL_FALSE,
+                              6*sizeof(float),reinterpret_cast<const void *>(3*sizeof(float)));
+        glUniformMatrix4fv(s->mvp,1,GL_FALSE,matrix);
+        glDrawArrays(GL_TRIANGLES,static_cast<GLint>(first),
+                     static_cast<GLsizei>(last-first));
+    };
+    auto sprites=[&](int first,int last){
+        glEnable(GL_BLEND);glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        s->sprites.DrawRange(matrix,first,last);
+    };
+    const size_t total=s->mesh.size()/6u;
+    if(s->session.view==game::FrontMode::Tactical){
+        colored(0,s->base_vertices);
+        sprites(0,omega_art::kTerrainCount);
+        colored(s->base_vertices,s->unit_vertices);
+        sprites(omega_art::kTerrainCount,omega_art::Count);
+        colored(s->unit_vertices,total);
+    }else colored(0,total);
+    s->sprites.upload=false;
+    glBlendFuncSeparate(src_rgb,dst_rgb,src_alpha,dst_alpha);
+    const GLenum error=glGetError();
     ReverieNativeGlAttribRestoreV1(&b);
     ReverieNativeGlAttribRestoreV1(&a);
     ReverieNativeGlStateRestoreV1(&old);

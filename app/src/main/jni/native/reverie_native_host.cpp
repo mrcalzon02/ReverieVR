@@ -433,21 +433,28 @@ int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
     NativeSession *session=g_callback_session;
     if(out_size) *out_size=0u;
     if(!session || !session->asset_manager || !out_size || !path ||
-       !session->spec ||
-       std::strcmp(session->spec->id,"between-deliveries-red-ledger")!=0)
-        return REVERIE_NATIVE_SAVE_ERROR;
-    constexpr char root[]="native/red-ledger/";
-    constexpr size_t root_length=sizeof(root)-1;
+       !session->spec) return REVERIE_NATIVE_SAVE_ERROR;
+    const bool ledger=std::strcmp(session->spec->id,"between-deliveries-red-ledger")==0;
+    const bool omega=std::strcmp(session->spec->id,"omega-front")==0;
+    if(!ledger && !omega)return REVERIE_NATIVE_SAVE_ERROR;
+    const char *root=ledger?"native/red-ledger/":"native/omega-front/";
+    const size_t root_length=std::strlen(root);
     const size_t n=strnlen(path,128u);
     if(n<root_length+8u || n>=128u ||
        std::strncmp(path,root,root_length)!=0 ||
        std::strstr(path,"..")!=nullptr) return REVERIE_NATIVE_SAVE_ERROR;
     const char *leaf=path+root_length;
-    const bool icon=std::strncmp(leaf,"icons/",6)==0;
-    const bool model=std::strncmp(leaf,"models/",7)==0;
-    const bool texture=std::strncmp(leaf,"textures/",9)==0;
-    if(!icon && !model && !texture)return REVERIE_NATIVE_SAVE_ERROR;
-    const size_t prefix_length=root_length+(icon?6u:model?7u:9u);
+    const bool icon=ledger && std::strncmp(leaf,"icons/",6)==0;
+    const bool model=ledger && std::strncmp(leaf,"models/",7)==0;
+    const bool texture=ledger && std::strncmp(leaf,"textures/",9)==0;
+    const bool terrain=omega && std::strncmp(leaf,"terrain/",8)==0;
+    const bool unit=omega && std::strncmp(leaf,"units/kenney/",13)==0;
+    if(!icon && !model && !texture && !terrain && !unit)
+        return REVERIE_NATIVE_SAVE_ERROR;
+    const size_t prefix_length=root_length+
+        (icon?6u:model?7u:texture?9u:terrain?8u:13u);
+    if(omega && (n<4u || std::strcmp(path+n-4u,".png")!=0))
+        return REVERIE_NATIVE_SAVE_ERROR;
     for(size_t i=prefix_length;i<n;++i) {
         const char ch=path[i];
         if(!((ch>='a'&&ch<='z')||(ch>='A'&&ch<='Z')||
