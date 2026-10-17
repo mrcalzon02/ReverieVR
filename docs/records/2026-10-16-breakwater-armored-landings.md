@@ -24,6 +24,33 @@ The user requested continuing Breakwater and specifically asked whether the land
 - Existing Android sound-bank regression source now validates distinct bounded armored cannon/destruction PCM and ID routing. **JUnit, Gradle APK, Galaxy S9 headset texture depth, native input, surf/music mix and audio timing have not been run.** Do not claim launch/device acceptance from GitHub readback alone.
 - Per-file direct GitHub `main` updates returned commits, followed by source readback and checks; source modifications were targeted without stripping unrelated parallel changes.
 
+## Follow-up root-cause repair — cannon overhangs the beach
+
+The newly deployed cars exposed a previous false-positive acceptance
+assumption in the preceding muzzle-origin implementation. The physically
+modeled gun had its breech at z=-0.88 and projects the mouth another
+1.25–1.63 units seawards, landing at z≈-2.3 or deeper. Disembarked
+infantry move between z=-2.28 and their fire line z=-1.34, and armored
+cars from z=-2.23 to z=-1.56, all behind that forward-facing muzzle.
+The controller-origin ray used before the physical muzzle fix had
+hidden this problem by generating imaginary near-shore hits.
+
+`breakwater_gun_mesh.h` now defines one shared
+`kMount={0.f,-.76f,.65f}` for live model mesh, recoil/muzzle flash and
+`Muzzle` lookup, with a matching low, rear carriage base in
+`breakwater_module.cpp`. Every muzzle now sits landward of the
+beach's combatant hit spheres; no hand-ray origin fallback was added.
+Extended `breakwater_cannon_trajectory_test.cpp` explicitly shoots
+the real soldier fire-line sphere and armored-car sphere from all five
+weapon muzzle origins. Exact test file SHA after repair
+`109b0d90fc96f6ed10a0c3f9c845293ccffb105b`; strict GCC and Clang
+C++17 tests passed as did Clang ASan/UBSan using the same previously
+mirrored (not full original) supporting weapon mesh/ballistic code.
+The separate full solid-gun mesh geometry regression source was also
+updated for the new location but NOT run against exact live mesh
+implementation during this session. S9 headset depth and comfort still
+require full-device validation.
+
 ## Next device acceptance
 
 Run the complete native game C++ test and Visuals runner on a locally available full clone; perform Android NDK compile, debug APK install and breakwater entry in S9. Confirm eligible armor is visibly carried inside the approaching craft; sinking it prevents unloading; live landfall creates car model at the correct beach line; Cannon/Heavy/Machine shots hit actual armor with expected penetration; physical shore cover blocks armor hitbox correctly; SAM remains aircraft-only; valid armor cannon events alone play armored cannon audio. Check no duplicate armor on slot reuse, no ghosts between waves or Quick Menu focus, intact `Mars des Souvenirs` loop, and sustained frame pacing with up to ten vehicles. Only then mark device acceptance.
