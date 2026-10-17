@@ -52,6 +52,15 @@ inline EnvironmentColor IlluminateWorld(EnvironmentColor c,bool night) {
             std::min(1.0f,c.b*1.05f)};
 }
 
+// Pre-normalized sun and moon vectors point toward the *visible* celestial
+// discs (SkyCelestialAngle / SkyCelestialHeight at sky radius 25.12).
+// Do not use a moon vector pointing landward when the moon is seaward.
+struct EnvironmentLight { float x,y,z; };
+constexpr EnvironmentLight KeyLightFor(bool night) {
+    return night?EnvironmentLight{-.655f,.340f,-.676f}:
+                 EnvironmentLight{.719f,.360f,-.594f};
+}
+
 // Physically oriented flat facet shading for the existing XYZ/RGB triangle
 // mesh. Sun and moon strike the actual world-space surfaces from different
 // directions, without runtime shader uniforms or per-eye light simulation.
@@ -65,12 +74,10 @@ inline EnvironmentColor IlluminateFacet(EnvironmentColor c,bool night,
     const float size=std::sqrt(nx*nx+ny*ny+nz*nz);
     float diffuse=0.0f;
     if(size>1.0e-6f && std::isfinite(size)) {
-        // Fixed normalized-ish directions for afternoon sun / rear moon.
-        const float lx=night?-.48f:.36f;
-        const float ly=night?.75f:.87f;
-        const float lz=night?.46f:-.33f;
+        // One fixed direction per period; no trig or normal map in GLES2.
+        const EnvironmentLight sun=KeyLightFor(night);
         diffuse=std::min(1.0f,std::abs(
-            (nx*lx+ny*ly+nz*lz)/size));
+            (nx*sun.x+ny*sun.y+nz*sun.z)/size));
     }
     const float shade=night?.69f+.29f*diffuse:.75f+.27f*diffuse;
     return {std::min(1.0f,c.r*shade),std::min(1.0f,c.g*shade),

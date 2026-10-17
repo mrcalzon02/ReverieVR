@@ -15,6 +15,12 @@ constexpr int kSkySegments = 16;
 constexpr int kSkyBands = 7;
 constexpr float kSkyRadius = 25.6f;
 constexpr float kSkyPi = 3.14159265358979323846f;
+constexpr float SkyCelestialAngle(bool night) {
+    return night?-.77f:.88f;
+}
+constexpr float SkyCelestialHeight(bool night) {
+    return night?9.1f:9.7f;
+}
 struct SkyPoint { float x,y,z; };
 struct SkyColor { float r,g,b; };
 
@@ -107,8 +113,8 @@ void EmitSkyPanorama(uint8_t location,bool night,TriangleFn triangle) {
 
     // Flat celestial disc viewed against the upper sky, behind clouds.
     // No per-eye rotation and no extra billboard shader path.
-    const float bodyAngle=night?-.77f:.88f;
-    const float bodyHeight=night?9.1f:9.7f;
+    const float bodyAngle=SkyCelestialAngle(night);
+    const float bodyHeight=SkyCelestialHeight(night);
     const float bodySize=night?.57f:.82f;
     const SkyColor bodyColor=night?
         SkyColor{.68f,.75f,.81f}:SkyColor{.96f,.78f,.47f};

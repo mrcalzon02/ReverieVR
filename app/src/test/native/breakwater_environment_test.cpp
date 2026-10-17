@@ -105,6 +105,18 @@ int main() {
     assert(EnvironmentFor(4,false).sea.r==0);
     assert(EnvironmentFor(0,false).earth.g!=EnvironmentFor(1,false).earth.g);
     assert(EnvironmentFor(1,false).peaks!=EnvironmentFor(2,false).peaks);
+    // World lighting must point toward the same celestial discs that
+    // players can actually see above the seaward approach.
+    for(bool isNight : {false,true}) {
+        const EnvironmentLight light=KeyLightFor(isNight);
+        const float angle=SkyCelestialAngle(isNight);
+        const float height=SkyCelestialHeight(isNight);
+        const float radius=25.12f;
+        const float length=std::sqrt(radius*radius+height*height);
+        assert(std::abs(light.x-radius*std::sin(angle)/length)<.003f);
+        assert(std::abs(light.y-height/length)<.003f);
+        assert(std::abs(light.z+radius*std::cos(angle)/length)<.003f);
+    }
     // True sun/moon facet lighting must respond to wall orientation, not
     // merely multiply all world vertices by a uniform daytime tint.
     const auto sunFace=IlluminateFacet({.6f,.6f,.6f},false,false,
