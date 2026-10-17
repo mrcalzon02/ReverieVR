@@ -1138,8 +1138,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->menu_focus=next_focus;
         s->scene_dirty=true;
     }
+    // All mounted guns, including the missile pod, follow permitted
+    // aim. Ghost sights are independent only when outside the mount arc.
     if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
-       !WeaponFor(s->campaign.selected_weapon()).uses_ghost &&
        GunWithinTraverse(copy.pointer_direction,
                          s->campaign.selected_weapon())) {
         for(int k=0;k<3;k++)s->gun_direction[k]=copy.pointer_direction[k];
