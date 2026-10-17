@@ -42,3 +42,23 @@ python -m unittest scripts/unreal/test_export_between_deliveries.py -v
 ```
 
 The authoritative game scope remains `docs/project/BETWEEN_DELIVERIES_FULL_SCOPE.md` and the asset-recovery gate remains `docs/project/BETWEEN_DELIVERIES_ASSET_RECOVERY.md`.
+
+
+## Private Unreal SoundWave export (original music and sound effects)
+
+The original `Content/Sounds/Music` and `Content/Sounds/Ui` packages are not audio files that Android can directly play. After restoring the full UE 5.7 project and confirming that the assets load, use the dedicated **read-only, private** SoundWave exporter:
+
+```bat
+set BETW_DELIVERIES_EXPORT_DIR=D:\BetweenDeliveries_Original_Exports
+"C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\Win64\UnrealEditor.exe" "D:\Projects\BetweenDeliveries\BetweenDeliveries.uproject" -ExecutePythonScript="D:\Repos\ReverieVR\scripts\unreal\export_between_deliveries_audio.py"
+```
+
+The exporter enumerates actual `/Game/Sounds/Music` and `/Game/Sounds/Ui` objects, exporting only `SoundWave` instances with Unreal's built-in `SoundExporterWAV`. It never overwrites existing exports, never modifies source packages, rejects unsafe names and incomplete/unsupported PCM WAVs, and writes an atomic private `audio_manifest.json` recording the Unreal object, category, size, SHA-256, sample rate, channels, bit depth, duration, export status and failures. Audio bytes remain entirely outside Git. Missing folders, unloaded objects and failed/corrupt audio are explicit failures; a successful CPython unit test is **not** proof that Unreal Editor can load all the original files.
+
+Run the five isolated, Unreal-free regression tests with:
+
+```sh
+python -m unittest discover -s scripts/unreal -p 'test_export_between_deliveries_audio.py' -v
+```
+
+**Distribution gate:** the original Unreal music/effects remain **unapproved for publication or APK inclusion** until their individual provenance/rights and actual editor exports are verified. Successful private extraction is not a license grant. Review each WAV, then author controlled, size-optimized Android derivatives while retaining the private lossless exports and digests. The owner-approved `The Last Note Hangs Unresolved.mp3` already has its own packaged module cue and is unaffected by this exporter. The audio export utility does not install or start a second playback system, and neither Unreal execution nor headset playback has been claimed.
