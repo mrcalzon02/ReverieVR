@@ -40,6 +40,7 @@ inline SurfaceAimFeedback InspectSurfaceEnemy(
     result.max_hp=maxHp;
     result.x=enemy.x;result.y=-.63f;result.z=enemy.z;
     result.half_width=enemy.type==UnitType::Rowboat?.52f:
+                      enemy.type==UnitType::ArmoredTransport?1.07f:
                       enemy.type==UnitType::LandingCraft?.70f:.76f;
     (void)weapon; // Weapon changes ballistics, not surface vulnerability.
     return result;
