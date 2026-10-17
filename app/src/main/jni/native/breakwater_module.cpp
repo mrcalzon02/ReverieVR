@@ -15,6 +15,7 @@
 #include "breakwater_gun_mesh.h"
 #include "breakwater_menu_layout.h"
 #include "breakwater_shop_feedback.h"
+#include "breakwater_scene_refresh.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -60,6 +61,7 @@ struct State {
     PointerFocusGate pointer_focus;
     bool armory_page=false, sam_armed=false, ghost_on=false;
     int menu_focus=-1;
+    bool pointer_visible=false;
     float ghost_position[3]={}, shot_origin[3]={}, shot_gravity=0;
     std::vector<float> mesh;
     std::vector<float> sprite_mesh;
@@ -681,6 +683,10 @@ void BuildScene(State *s) {
                  menu::FittedScale(choices[n],tile.width,.048f),
                  hover?1.f:.90f,hover?.99f:.92f,.76f);
         }
+        const char *difficulty_hint=menu::DifficultyHint(s->menu_focus);
+        Text(s,difficulty_hint,0,.31f,-2.96f,
+             menu::FittedScale(difficulty_hint,5.65f,.045f),
+             .90f,.93f,.75f);
         Text(s,"POINT AND SELECT",0,-.91f,-2.96f,.049f,.86f,.88f,.79f);
     } else if(game.phase()==Phase::Shop) {
         const menu::Rect frame=menu::kPanel;
@@ -1035,6 +1041,9 @@ void Pause(void *instance) {
     State *s=static_cast<State *>(instance);
     if(!s)return;
     s->pointer_focus.RequireRelease();
+    s->pointer_visible=false;
+    s->menu_focus=-1;
+    s->ghost_on=false;
     s->held=false;
     s->secondary_held=false;
     s->combat_input.Release();
@@ -1051,6 +1060,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     ReverieNativeSanitizePointerV1(&copy);
     bool down=copy.primary_down!=0;
     bool secondary=copy.secondary_down!=0;
+    const Phase phase_before=s->campaign.phase();
+    const bool pointer_was_visible=s->pointer_visible;
+    const int previous_focus=s->menu_focus;
     // Quick Menu/temporary controller loss withdraws the gameplay ray.
     // Do not advance enemies, reloads, effects, or score while defenseless.
     if(!s->pointer_focus.Filter(
@@ -1061,12 +1073,18 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->infantry_flash=0.0f;
         s->infantry_firing_mask=0u;
         s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;
-        s->scene_dirty=true;
+        s->pointer_visible=false;
+        s->menu_focus=-1;
+        s->ghost_on=false;
+        if(scene::RefreshNeeded(phase_before,phase_before,
+                previous_focus!=-1,false,pointer_was_visible))
+            s->scene_dirty=true;
         return;
     }
     // Only fresh post-focus button presses can enter any game action.
     copy.primary_down=down?1u:0u;
     copy.secondary_down=secondary?1u:0u;
+    s->pointer_visible=true;
     // Hover feedback corresponds precisely to the raycast menus, including
     // disabled armory slots. Only mark the scene dirty when focus changes.
     int next_focus=-1;
@@ -1203,8 +1221,16 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         if(!s->sam_armed)
             s->surface_aim=InspectSurfaceAim(s->campaign,target);
     }
+    const bool ui_pressed=
+        (down && !s->held && !started_reload &&
+         (phase_before==Phase::Briefing || phase_before==Phase::Shop ||
+          phase_before==Phase::Victory || phase_before==Phase::Defeat)) ||
+        (secondary && !s->secondary_held && phase_before==Phase::Shop);
+    if(scene::RefreshNeeded(phase_before,s->campaign.phase(),
+                           s->menu_focus!=previous_focus,
+                           ui_pressed,!pointer_was_visible))
+        s->scene_dirty=true;
     s->held=down;s->secondary_held=secondary;
-    s->scene_dirty=true;
 }
 int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
     State *s=static_cast<State *>(instance);
