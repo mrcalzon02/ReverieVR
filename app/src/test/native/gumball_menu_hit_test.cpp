@@ -77,6 +77,16 @@ int main(){
     assert(cursor.x==0&&cursor.y==0);
     cursor.pointAt(-1,20);
     assert(cursor.x==0&&cursor.y==0);
+    // Route->Loadout/Allies and other screen transitions must not let a
+    // stationary ray instantly hover a button occupying the old location.
+    MenuPointerFocus transition;
+    assert(transition.take(0.f,-.94f,false));
+    transition.screenChanged();
+    assert(transition.padFocus&&!transition.seen);
+    assert(!transition.take(0.f,-.94f,false));
+    assert(!transition.take(0.f,-.90f,false));
+    assert(transition.take(0.f,-.80f,false));
+    assert(!transition.padFocus);
     // A slowly moving pointer must eventually retake focus from the pad.
     // Previously each sub-threshold frame reset the movement origin,
     // making a continuously moving ray permanently lose pointer authority.
