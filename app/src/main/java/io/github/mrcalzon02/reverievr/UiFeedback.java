@@ -21,11 +21,13 @@ final class UiFeedback implements AutoCloseable {
     private final ControllerSpringSound controllerSpringSound =
         new ControllerSpringSound();
     private final NativeCombatSound combatSound = new NativeCombatSound();
+    private final RedLedgerSound redLedgerSound;
     private boolean lifecycleActive = true;
     private ToneGenerator toneGenerator;
     private long lastFocusSoundMillis;
 
     UiFeedback(Context context) {
+        redLedgerSound = new RedLedgerSound(context);
         audioManager =
             context == null
                 ? null
@@ -105,9 +107,12 @@ final class UiFeedback implements AutoCloseable {
     }
 
     void nativeSoundCue(int cueId) {
-        if (cueId < 1 || cueId > 15) return;
+        if (cueId < 1 || cueId > RedLedgerSound.LAST_CUE) return;
         mainHandler.post(() -> {
-            if (lifecycleActive) combatSound.playNativeCue(cueId);
+            if (!lifecycleActive) return;
+            if (cueId >= RedLedgerSound.FIRST_CUE)
+                redLedgerSound.playCue(cueId);
+            else combatSound.playNativeCue(cueId);
         });
     }
 
@@ -263,6 +268,7 @@ final class UiFeedback implements AutoCloseable {
         mainHandler.removeCallbacksAndMessages(null);
         controllerSpringSound.close();
         combatSound.close();
+        redLedgerSound.close();
         if (toneGenerator != null) {
             toneGenerator.release();
             toneGenerator = null;

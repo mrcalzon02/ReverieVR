@@ -79,3 +79,10 @@ path = ["app/src/main/assets/music/catalog.tsv"]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 ReverieVR contributors"
 SPDX-License-Identifier = "CC-BY-4.0"
+
+# Genuine original SoundWave exports, owner-authorized for Red Ledger use.
+[[annotations]]
+path = ["app/src/main/res/raw/red_ledger_*.wav"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Between Deliveries asset owner"
+SPDX-License-Identifier = "LicenseRef-Owner-Original-Assets"

@@ -584,6 +584,72 @@
       "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
       "source_master": "art/source/between_deliveries/Content/Data_tables/DT_ShopItems.uasset",
       "distribution": "ReverieVR native Red Ledger APK"
+    },
+    "res/raw/red_ledger_click.wav": {
+      "component": "between-deliveries-original-effects",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "f1be494e01e5ecd988ba8ab94ba4e2ac7ecdf7a935ebedc45655fe4093ad758a",
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "source_master": "BetweenDeliveries_UnrealExports/audio/ui/Single_click.wav",
+      "project": "between-deliveries-red-ledger",
+      "distribution": "owner-authorized ReverieVR APK"
+    },
+    "res/raw/red_ledger_metal.wav": {
+      "component": "between-deliveries-original-effects",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "03aecc65ad8d06b443d98f90e5cdbe572744842546f7f8169fab49949863c829",
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "source_master": "BetweenDeliveries_UnrealExports/audio/ui/Hollow_metal.wav",
+      "project": "between-deliveries-red-ledger",
+      "distribution": "owner-authorized ReverieVR APK"
+    },
+    "res/raw/red_ledger_coins.wav": {
+      "component": "between-deliveries-original-effects",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "a08a547e86e7a83bfbc0908dd5676152b980c9a971b8436a6d9f5c0bf4ec11ce",
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "source_master": "BetweenDeliveries_UnrealExports/audio/ui/Coins.wav",
+      "project": "between-deliveries-red-ledger",
+      "distribution": "owner-authorized ReverieVR APK"
+    },
+    "res/raw/red_ledger_book.wav": {
+      "component": "between-deliveries-original-effects",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "b129d813ee2520dcb210e07cd17e5c2c13ee1999e37df9e2c46aaa924a157a58",
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "source_master": "BetweenDeliveries_UnrealExports/audio/ui/Book_flip.wav",
+      "project": "between-deliveries-red-ledger",
+      "distribution": "owner-authorized ReverieVR APK"
+    },
+    "res/raw/red_ledger_door.wav": {
+      "component": "between-deliveries-original-effects",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "2b8a06fc852e6b91d76de16185ac985dca1a75f0f064f7be8ff6463240d99333",
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "source_master": "BetweenDeliveries_UnrealExports/audio/ui/Door_close.wav",
+      "project": "between-deliveries-red-ledger",
+      "distribution": "owner-authorized ReverieVR APK"
+    },
+    "res/raw/red_ledger_drawer.wav": {
+      "component": "between-deliveries-original-effects",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "5d5d4094f114eefd0e2011f196734f7d0c6211d7d17ed118daffed2bad817ab5",
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "source_master": "BetweenDeliveries_UnrealExports/audio/ui/Drawer.wav",
+      "project": "between-deliveries-red-ledger",
+      "distribution": "owner-authorized ReverieVR APK"
     }
   },
   "native_libraries": {

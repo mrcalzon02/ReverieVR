@@ -39,3 +39,7 @@ Native source integration and Git readback can be verified remotely,
 but an actual Android APK build and two-eye Galaxy S9 headset run must
 be confirmed separately. Missing or malformed PNGs leave the text-only
 card usable rather than silently substituting editor thumbnails.
+
+## Real SoundWave integration (2026-10-16)
+
+Six selected **unchanged** Unreal Editor-exported PCM 16-bit stereo WAV files are now Android raw resources: Single_click, Hollow_metal, Coins, Book_flip, Door_close, Drawer. Source manifest digests and per-file REUSE/ASSET_REGISTRY licensing records trace each file to the owner's exports. Native Red Ledger emits six distinct ordered cues (IDs 22–27) only for completed interactions. The Android shell has a reusable SoundPool bank (maximum four concurrent streams) that preloads these effects once and routes cue IDs without per-frame audio synthesis, preserving existing Breakwater/other native cue mappings. Full music masters, long dialogue/music, and remaining 21 original short effects are not indiscriminately added to the APK. Android compilation and Galaxy S9 audio acceptance still require runtime verification.

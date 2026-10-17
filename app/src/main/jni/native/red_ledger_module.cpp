@@ -738,6 +738,32 @@ bool ActivateWorkTarget(
         state->host,
         REVERIE_NATIVE_FEEDBACK_ACTIVATION
     );
+    uint32_t sound=REVERIE_NATIVE_SOUND_RED_LEDGER_CLICK;
+    switch(target) {
+        case WorkTarget::Tap:
+        case WorkTarget::WashStation:
+            sound=REVERIE_NATIVE_SOUND_RED_LEDGER_METAL;break;
+        case WorkTarget::Payment:
+        case WorkTarget::StockBuy:
+        case WorkTarget::BeerOrder:
+        case WorkTarget::CupOrder:
+        case WorkTarget::UpgradeBuy:
+            sound=REVERIE_NATIVE_SOUND_RED_LEDGER_COINS;break;
+        case WorkTarget::Ledger:
+        case WorkTarget::Bed:
+            sound=REVERIE_NATIVE_SOUND_RED_LEDGER_BOOK;break;
+        case WorkTarget::DoorStock:
+        case WorkTarget::DoorLiving:
+        case WorkTarget::ToStock:
+        case WorkTarget::ToBar:
+        case WorkTarget::ExitDoor:
+            sound=REVERIE_NATIVE_SOUND_RED_LEDGER_DOOR;break;
+        case WorkTarget::StockSku:
+        case WorkTarget::StockNext:
+            sound=REVERIE_NATIVE_SOUND_RED_LEDGER_DRAWER;break;
+        default:break;
+    }
+    ReverieNativeRequestSoundV1(state->host,sound);
     state->status_dirty=true;
     SaveState(state);
     return true;
