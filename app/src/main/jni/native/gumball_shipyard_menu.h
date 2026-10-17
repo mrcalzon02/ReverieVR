@@ -1,6 +1,7 @@
 #ifndef REVERIE_GUMBALL_SHIPYARD_MENU_H
 #define REVERIE_GUMBALL_SHIPYARD_MENU_H
 #include <algorithm>
+#include "gumball_shipyard.h"
 namespace reverie { namespace gumball {
 // Game-private controller focus. Grid remains fully accessible via arrows,
 // and the App/Back button can jump to a remembered palette selection.
@@ -10,6 +11,12 @@ struct YardCursor {
     int toolX=7,toolY=0;
     bool palette()const{return x>=7;}
     int toolIndex()const{return (y*2)+(x-7);}
+    // Arming is independent of inventory: a zero-stock brush must still
+    // be selectable to remove/refund matching fitted components.
+    Part chosenPart()const{
+        const int i=toolIndex();
+        return palette()&&i>=0&&i<9?static_cast<Part>(i+2):Part::Empty;
+    }
     void move(int dx,int dy) {
         if(dx!=0){
             if(palette()){
