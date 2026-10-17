@@ -147,18 +147,24 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
         Tube(emit,Add(rear,offset),Add(tip,offset),right,up,
              radius*.69f,radius*.62f,.33f,.38f,.34f);
     }
-    Wheel(emit,-.44f,-1.04f,-.94f,.26f,.25f,.24f,.21f);
-    Wheel(emit,.44f,-1.04f,-.94f,.26f,.25f,.24f,.21f);
+    // Every fixed carriage piece follows the relocated gun breech as a
+    // solid assembly; only barrel/breech tube retracts on confirmed fire.
+    Wheel(emit,-.44f,-1.04f,mount.z-.06f,.26f,.25f,.24f,.21f);
+    Wheel(emit,.44f,-1.04f,mount.z-.06f,.26f,.25f,.24f,.21f);
     // Sloped armor plates provide a stable recognizable gun shield in 3D.
-    const Vec p0={-.52f,-.95f,-1.08f},p1={.52f,-.95f,-1.08f};
-    const Vec p2={-.44f,-.38f,-1.17f},p3={.44f,-.38f,-1.17f};
+    const Vec p0={-.52f,-.95f,mount.z-.20f};
+    const Vec p1={.52f,-.95f,mount.z-.20f};
+    const Vec p2={-.44f,-.38f,mount.z-.29f};
+    const Vec p3={.44f,-.38f,mount.z-.29f};
     Tri(emit,p0,p1,p2,.30f,.37f,.32f);
     Tri(emit,p1,p3,p2,.30f,.37f,.32f);
     // Faint upper rim edge, two forward braces and a solid rear breech face.
-    Tri(emit,{- .44f,-.38f,-1.17f},{.44f,-.38f,-1.17f},
-        {.44f,-.42f,-1.24f},.52f,.54f,.47f);
-    Tri(emit,{- .44f,-.38f,-1.17f},{.44f,-.42f,-1.24f},
-        {-.44f,-.42f,-1.24f},.52f,.54f,.47f);
+    Tri(emit,{- .44f,-.38f,mount.z-.29f},
+        {.44f,-.38f,mount.z-.29f},
+        {.44f,-.42f,mount.z-.36f},.52f,.54f,.47f);
+    Tri(emit,{- .44f,-.38f,mount.z-.29f},
+        {.44f,-.42f,mount.z-.36f},
+        {-.44f,-.42f,mount.z-.36f},.52f,.54f,.47f);
 }
 // A real muzzle-flash volume built from triangles around the tube's moving
 // mouth. Called only for a confirmed 90-ms shot, not when Select is rejected.
