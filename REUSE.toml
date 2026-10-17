@@ -86,3 +86,10 @@ path = ["app/src/main/res/raw/red_ledger_*.wav"]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Between Deliveries asset owner"
 SPDX-License-Identifier = "LicenseRef-Owner-Original-Assets"
+
+# Pilot native geometry and source texture, owner-authorized rather than CC.
+[[annotations]]
+path = ["app/src/main/assets/native/red-ledger/models/*.fbx", "app/src/main/assets/native/red-ledger/textures/*.png"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Between Deliveries asset owner"
+SPDX-License-Identifier = "LicenseRef-Owner-Original-Assets"

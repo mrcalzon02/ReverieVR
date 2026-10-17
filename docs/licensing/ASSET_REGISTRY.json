@@ -650,6 +650,28 @@
       "source_master": "BetweenDeliveries_UnrealExports/audio/ui/Drawer.wav",
       "project": "between-deliveries-red-ledger",
       "distribution": "owner-authorized ReverieVR APK"
+    },
+    "assets/native/red-ledger/models/101draft.fbx": {
+      "component": "between-deliveries-original-product-mesh-pilot",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "89309182a5242ce896cd0ebeff1289189f4a7294cf5065a66e823d553d27c81e",
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "source_master": "BetweenDeliveries_UnrealExports/products/101/101draft/mesh/101draft.fbx (owner Drive export)",
+      "notes": "Original Blue Harbor Draft FBX visible mesh; UCX collision hull ignored",
+      "distribution": "native Red Ledger Android APK"
+    },
+    "assets/native/red-ledger/textures/101draft_texture_0.png": {
+      "component": "between-deliveries-original-product-mesh-pilot",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "dd4cab80a44107174614bb668ee735fa89031f3eddbc9b0d8388da0d4af23201",
+      "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "source_master": "BetweenDeliveries_UnrealExports/products/101/101draft/texture/101draft_texture_0.png (owner Drive export)",
+      "notes": "Original 1024x1024 RGBA texture",
+      "distribution": "native Red Ledger Android APK"
     }
   },
   "native_libraries": {

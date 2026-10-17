@@ -12,6 +12,7 @@
 #include "red_ledger_renovations.h"
 #include "red_ledger_stock_layout.h"
 #include "red_ledger_original_png.h"
+#include "red_ledger_original_fbx.h"
 
 #include <GLES2/gl2.h>
 
@@ -161,6 +162,9 @@ struct ModuleState {
     GLuint atlas_texture = 0;
     GLuint original_icons[24] = {};
     GLuint original_icon_vbo = 0;
+    GLuint preview_vbo = 0;
+    GLuint preview_texture = 0;
+    GLsizei preview_vertex_count = 0;
     int original_icon_count = 0;
     GLint icon_mode_location = -1;
     GLint position_location = -1;
@@ -864,6 +868,15 @@ void DestroyGl(
         glDeleteBuffers(1,&state->original_icon_vbo);
         state->original_icon_vbo=0;
     }
+    if(state->preview_vbo!=0){
+        glDeleteBuffers(1,&state->preview_vbo);
+        state->preview_vbo=0;
+    }
+    if(state->preview_texture!=0){
+        glDeleteTextures(1,&state->preview_texture);
+        state->preview_texture=0;
+    }
+    state->preview_vertex_count=0;
     if (state->atlas_texture != 0) {
         glDeleteTextures(1, &state->atlas_texture);
         state->atlas_texture = 0;
@@ -920,6 +933,9 @@ void AbandonGl(
     for(GLuint &icon:state->original_icons)icon=0;
     state->original_icon_count=0;
     state->original_icon_vbo=0;
+    state->preview_vbo=0;
+    state->preview_texture=0;
+    state->preview_vertex_count=0;
     state->icon_mode_location=-1;
     state->cube_vbo = 0;
     state->mug_vbo = 0;
@@ -1205,6 +1221,18 @@ int32_t InitializeGl(
     }
     pixels.reset();
 
+    // Only required room/shader/atlas resources can prevent launch.
+    if (state->atlas_texture == 0 || glGetError()
+        != GL_NO_ERROR) {
+        Log(
+            state,
+            REVERIE_NATIVE_LOG_ERROR,
+            "OpenGL ES initialization reported an error."
+        );
+        DestroyGl(state);
+        return finish(0);
+    }
+
 
     // Load the owner's exported 300x300 transparent PNGs once per GL
     // context. No thumbnail substitution, per-frame decoding or JNI calls.
@@ -1237,7 +1265,12 @@ int32_t InitializeGl(
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
             glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,300,300,0,
                          GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
-            ++state->original_icon_count;
+            if(glGetError()==GL_NO_ERROR) {
+                ++state->original_icon_count;
+            } else {
+                glDeleteTextures(1,&state->original_icons[index]);
+                state->original_icons[index]=0;
+            }
         }
         glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
     }
@@ -1248,16 +1281,70 @@ int32_t InitializeGl(
     Log(state,state->original_icon_count==24 ?
         REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,report);
 
-    if (state->atlas_texture == 0 || glGetError()
-        != GL_NO_ERROR) {
-        Log(
-            state,
-            REVERIE_NATIVE_LOG_ERROR,
-            "OpenGL ES initialization reported an error."
-        );
-        DestroyGl(state);
-        return finish(0);
+
+    // Genuine first-party FBX pilot. This is the visible 101draft mesh,
+    // not its UCX_ collision hull or a procedural substitute. A separate
+    // texture is loaded at its exported 1024x1024 source resolution.
+    if(can_read_assets) {
+        auto load_asset=[state](const char *path,uint32_t limit,
+                                std::vector<uint8_t> *buffer)->bool {
+            uint32_t bytes=0;
+            if(state->host->read_asset(path,nullptr,0,&bytes)!=
+                    REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL ||
+                bytes==0 || bytes>limit)return false;
+            buffer->resize(bytes);
+            uint32_t received=0;
+            return state->host->read_asset(path,buffer->data(),bytes,
+                                           &received)==REVERIE_NATIVE_SAVE_OK &&
+                   received==bytes;
+        };
+        std::vector<uint8_t> fbx_file,texture_file;
+        if(load_asset("native/red-ledger/models/101draft.fbx",
+                      3u*1024u*1024u,&fbx_file) &&
+           load_asset("native/red-ledger/textures/101draft_texture_0.png",
+                      3u*1024u*1024u,&texture_file)) {
+            std::vector<float> geometry;
+            std::vector<uint8_t> rgba;
+            if(fbx::BuildWorldTriangles(fbx_file.data(),fbx_file.size(),
+                                        &geometry) &&
+               original_png::DecodeRgba(texture_file.data(),
+                                        texture_file.size(),1024u,&rgba) &&
+               geometry.size()%geo::kStaticVertexStride==0u &&
+               geometry.size()/geo::kStaticVertexStride<=90000u) {
+                glGenBuffers(1,&state->preview_vbo);
+                glGenTextures(1,&state->preview_texture);
+                if(state->preview_vbo!=0 && state->preview_texture!=0) {
+                    glBindBuffer(GL_ARRAY_BUFFER,state->preview_vbo);
+                    glBufferData(GL_ARRAY_BUFFER,
+                                 geometry.size()*sizeof(float),
+                                 geometry.data(),GL_STATIC_DRAW);
+                    glBindBuffer(GL_ARRAY_BUFFER,0);
+                    glBindTexture(GL_TEXTURE_2D,state->preview_texture);
+                    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+                    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+                    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+                    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+                    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,1024,1024,0,
+                                 GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
+                    if(glGetError()==GL_NO_ERROR) {
+                        state->preview_vertex_count=static_cast<GLsizei>(
+                            geometry.size()/geo::kStaticVertexStride);
+                    } else {
+                        glDeleteBuffers(1,&state->preview_vbo);
+                        glDeleteTextures(1,&state->preview_texture);
+                        state->preview_vbo=0;
+                        state->preview_texture=0;
+                    }
+                }
+            }
+        }
+        glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
     }
+    Log(state,state->preview_vertex_count>0?
+        REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,
+        state->preview_vertex_count>0?
+        "Original Blue Harbor Draft FBX preview loaded.":
+        "Original Blue Harbor Draft preview missing or incompatible.");
 
     Log(
         state,
@@ -1607,6 +1694,44 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
         glUniform1f(state->icon_mode_location,0.f);
         glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
         glBlendFuncSeparate(src_rgb,dst_rgb,src_alpha,dst_alpha);
+        if(blended==GL_FALSE)glDisable(GL_BLEND);
+    }
+
+
+    // A real textured source mesh on the stockroom inspection plinth when
+    // Blue Harbor Draft (first offer) is selected. This intentionally does
+    // not change physical card hit boxes or stock purchasing logic.
+    if(room_index==1 && state->market.offer()==1 &&
+       state->preview_vertex_count>0 && state->preview_vbo!=0 &&
+       state->preview_texture!=0) {
+        const GLboolean blended=glIsEnabled(GL_BLEND);
+        GLint rgb_src=GL_ONE,rgb_dst=GL_ZERO;
+        GLint alpha_src=GL_ONE,alpha_dst=GL_ZERO;
+        glGetIntegerv(GL_BLEND_SRC_RGB,&rgb_src);
+        glGetIntegerv(GL_BLEND_DST_RGB,&rgb_dst);
+        glGetIntegerv(GL_BLEND_SRC_ALPHA,&alpha_src);
+        glGetIntegerv(GL_BLEND_DST_ALPHA,&alpha_dst);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glBindTexture(GL_TEXTURE_2D,state->preview_texture);
+        glUniform1f(state->icon_mode_location,1.f);
+        glUniform1f(state->flicker_location,1.f);
+        glBindBuffer(GL_ARRAY_BUFFER,state->preview_vbo);
+        glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+            3,GL_FLOAT,GL_FALSE,stride,reinterpret_cast<const void *>(0));
+        glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+            2,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(3u*sizeof(float)));
+        glVertexAttribPointer(static_cast<GLuint>(state->color_attribute_location),
+            3,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(5u*sizeof(float)));
+        glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
+            2,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(8u*sizeof(float)));
+        glDrawArrays(GL_TRIANGLES,0,state->preview_vertex_count);
+        glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+        glUniform1f(state->icon_mode_location,0.f);
+        glBlendFuncSeparate(rgb_src,rgb_dst,alpha_src,alpha_dst);
         if(blended==GL_FALSE)glDisable(GL_BLEND);
     }
 

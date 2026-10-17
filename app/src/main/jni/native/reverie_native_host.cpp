@@ -436,12 +436,18 @@ int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
        !session->spec ||
        std::strcmp(session->spec->id,"between-deliveries-red-ledger")!=0)
         return REVERIE_NATIVE_SAVE_ERROR;
-    constexpr char prefix[]="native/red-ledger/icons/";
-    constexpr size_t prefix_length=sizeof(prefix)-1;
+    constexpr char root[]="native/red-ledger/";
+    constexpr size_t root_length=sizeof(root)-1;
     const size_t n=strnlen(path,128u);
-    if(n< prefix_length+11u || n>=128u ||
-       std::strncmp(path,prefix,prefix_length)!=0 ||
+    if(n<root_length+8u || n>=128u ||
+       std::strncmp(path,root,root_length)!=0 ||
        std::strstr(path,"..")!=nullptr) return REVERIE_NATIVE_SAVE_ERROR;
+    const char *leaf=path+root_length;
+    const bool icon=std::strncmp(leaf,"icons/",6)==0;
+    const bool model=std::strncmp(leaf,"models/",7)==0;
+    const bool texture=std::strncmp(leaf,"textures/",9)==0;
+    if(!icon && !model && !texture)return REVERIE_NATIVE_SAVE_ERROR;
+    const size_t prefix_length=root_length+(icon?6u:model?7u:9u);
     for(size_t i=prefix_length;i<n;++i) {
         const char ch=path[i];
         if(!((ch>='a'&&ch<='z')||(ch>='A'&&ch<='Z')||
@@ -452,7 +458,7 @@ int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
                                     AASSET_MODE_STREAMING);
     if(!asset)return REVERIE_NATIVE_SAVE_NOT_FOUND;
     const off64_t size=AAsset_getLength64(asset);
-    if(size<=0 || size>1024*1024) {
+    if(size<=0 || size>(icon?1024*1024:3*1024*1024)) {
         AAsset_close(asset);
         return REVERIE_NATIVE_SAVE_ERROR;
     }
