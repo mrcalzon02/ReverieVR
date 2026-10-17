@@ -122,7 +122,12 @@ void DrawMap(State *s){
                 ready?.95f:.43f,.63f);
         }else if(convoy){
             const bool available=f.can_convoy(session.focused);
-            Text(s,available?"CONVOY IN  UP TO 8 FOOD 6 WATER  CLICK":
+            const int ambusher=available?f.ConvoyAmbusher(session.focused):0;
+            if(ambusher>0){
+                std::snprintf(line,sizeof(line),"CONVOY AMBUSH RISK F%02d  CLICK ESCORT",
+                              ambusher);
+                Text(s,line,-1.098f,.010f,1.f,.65f,.31f);
+            }else Text(s,available?"CONVOY IN  UP TO 8 FOOD 6 WATER  CLICK":
                 "CONVOY UNAVAILABLE  NEED ROUTE RATION ESCORT",
                 -1.098f,.010f,available?.70f:1.f,
                 available?.95f:.43f,.63f);
@@ -158,6 +163,13 @@ void DrawMap(State *s){
             f.operation_faction(),f.relation(f.operation_faction()));
         Text(s,line,-1.194f,.009f,.78f,.90f,.93f);
     }else Text(s,"HEARTHFALL SIX OPERATIONS COMPLETE",-1.194f,.009f,.78f,.94f,.76f);
+    if(f.last_convoy()){
+        std::snprintf(line,sizeof(line),"LAST CONVOY S%03d %s  LOST %u",
+            f.last_convoy_source()+1,
+            f.last_report().outcome==game::Result::Defended?"SAVED":"RAIDED",
+            f.last_report().defenders_lost);
+        Text(s,line,.73f,.009f,.97f,.75f,.48f);
+    }
     if(f.last_border_inspection()>=3 &&
        f.location()==game::Accord::Sector(f.last_border_inspection())){
         std::snprintf(line,sizeof(line),"BORDER INSPECTION M%02d",
@@ -242,6 +254,7 @@ void Draw(State *s){
     Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
     Rect(s,0,kCenterY,2*kHalf+.035f,2*kHalf+.035f,kBoardZ-.04f,.21f,.28f,.20f);
     const game::Battle &battle=s->session.tactical.battle;
+    const bool defendingConvoy=s->session.frontier.convoy_battle();
     for(int y=0;y<game::kWidth;++y)for(int x=0;x<game::kWidth;++x){
         float wx=(x+.5f)*kCell-kHalf;
         float wy=kCenterY+kHalf-(y+.5f)*kCell;
@@ -270,13 +283,22 @@ void Draw(State *s){
                  kCell*.070f,-1.84f,1.f,.90f,.38f);
         }
     }
-    // Pump and ammunition depot are actual simulation objectives.
+    // The inherited structure health represents a real pump in the authored
+    // campaign missions, or the supply wagon in an intercepted field convoy.
     auto center=[](int x,int y,float &wx,float &wy){
         wx=(x+.5f)*kCell-kHalf;wy=kCenterY+kHalf-(y+.5f)*kCell;
     };
     float px=0,py=0;center(2,12,px,py);
-    Rect(s,px,py,kCell*.76f,kCell*.74f,-1.85f,.22f,.74f,.87f);
-    Rect(s,px,py+kCell*.18f,kCell*.36f,kCell*.15f,-1.84f,.75f,.90f,.95f);
+    Rect(s,px,py,kCell*.76f,kCell*.74f,-1.85f,
+         defendingConvoy?.69f:.22f,defendingConvoy?.44f:.74f,
+         defendingConvoy?.20f:.87f);
+    if(defendingConvoy){
+        Rect(s,px-kCell*.23f,py-kCell*.31f,kCell*.18f,kCell*.18f,
+             -1.84f,.15f,.13f,.12f);
+        Rect(s,px+kCell*.23f,py-kCell*.31f,kCell*.18f,kCell*.18f,
+             -1.84f,.15f,.13f,.12f);
+    }else Rect(s,px,py+kCell*.18f,kCell*.36f,kCell*.15f,
+               -1.84f,.75f,.90f,.95f);
     center(5,12,px,py);
     Rect(s,px,py,kCell*.78f,kCell*.72f,-1.85f,.65f,.44f,.15f);
     Line(s,px-kCell*.25f,py,px+kCell*.25f,py,kCell*.09f,-1.84f,.95f,.77f,.34f);
@@ -306,7 +328,10 @@ void Draw(State *s){
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
     char status[96];
-    if(battle.mission()==game::Mission::CaptureOrchard) {
+    if(defendingConvoy)
+        std::snprintf(status,sizeof(status),"ESCORT WAGON HP %d  AMMO %d  TICK %u",
+                      battle.pump_hp(),battle.ammo_stock(),battle.ticks());
+    else if(battle.mission()==game::Mission::CaptureOrchard) {
         const int op=s->session.frontier.operation();
         const char *site=op==4?"CHARTER GATE":op==5?"CARAVAN FORD":"ORCHARD";
         std::snprintf(status,sizeof(status),"HOLD %s %d/3  TICK %u",
@@ -336,8 +361,12 @@ void Draw(State *s){
     Text(s,status,-.866f,.010f,.82f,.76f,.52f);
     const char *mode_names[]={"MOVE","ATTACK","REPAIR","RESUPPLY"};
     char action[90];
-    if(battle.result()==game::Result::Defended)std::snprintf(action,sizeof(action),"DEFENDED  CLICK REPORT");
-    else if(battle.result()==game::Result::Overrun)std::snprintf(action,sizeof(action),"OVERRUN  CLICK REPORT");
+    if(battle.result()==game::Result::Defended)
+        std::snprintf(action,sizeof(action),defendingConvoy?
+                      "WAGON SAVED  CLICK REPORT":"DEFENDED  CLICK REPORT");
+    else if(battle.result()==game::Result::Overrun)
+        std::snprintf(action,sizeof(action),defendingConvoy?
+                      "CONVOY LOST  CLICK REPORT":"OVERRUN  CLICK REPORT");
     else if(s->session.tactical.paused)std::snprintf(action,sizeof(action),"%s",
         s->session.tactical.selected<0?"PAUSED  MENU RESUME":"PAUSED  CLICK UNIT TO CLEAR");
     else if(s->session.tactical.selected<0)std::snprintf(action,sizeof(action),"PICK A GREEN UNIT  CLICK");

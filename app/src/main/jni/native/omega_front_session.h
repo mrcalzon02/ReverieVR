@@ -74,7 +74,10 @@ public:
         if(in.primary && !primary_){
             bool performed=false;
             if(focused!=frontier.location()){
-                if(action==FieldAction::Forage)performed=frontier.Convoy(focused);
+                if(action==FieldAction::Forage) {
+                    performed=frontier.Convoy(focused);
+                    if(performed && frontier.deployed())EnterBattle();
+                }
                 else if(action==FieldAction::Scout)performed=frontier.Scout(focused);
                 else if(action==FieldAction::Parley)performed=frontier.Negotiate(focused);
                 else if(action==FieldAction::Accord)performed=frontier.ConcludeAccord(focused);
@@ -85,15 +88,7 @@ public:
                 switch(action){
                 case FieldAction::Deploy:
                     performed=frontier.StartOperation();
-                    if(performed){
-                        tactical=Controller(frontier.seed());
-                        tactical.battle=*frontier.current_battle();
-                        view=FrontMode::Tactical;
-                        // The click that enters combat must not instantly
-                        // select a unit or advance the simulation clock.
-                        tactical.Input({0,0,0,true,false,-1,-1});
-                        tactical.rejected=false;
-                    }
+                    if(performed)EnterBattle();
                     break;
                 case FieldAction::Forage:performed=frontier.ForageRations();break;
                 case FieldAction::Recruit:performed=frontier.Recruit();break;
@@ -130,6 +125,15 @@ public:
     }
 private:
     friend class CampaignSave;
+    void EnterBattle(){
+        tactical=Controller(frontier.seed());
+        tactical.battle=*frontier.current_battle();
+        view=FrontMode::Tactical;
+        // Opening a battle never consumes the same held click as a tactical
+        // order; both scripted battles and intercepted convoys share this.
+        tactical.Input({0,0,0,true,false,-1,-1});
+        tactical.rejected=false;
+    }
     bool primary_=false,secondary_=false;
     int axis_x_=0,axis_y_=0,last_px_=-1,last_py_=-1;
     float repeat_=0;

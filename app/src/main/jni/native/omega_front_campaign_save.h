@@ -22,7 +22,7 @@ public:
         Bytes bytes{};
         Writer w{bytes};
         for(char c : "OFSTRAT1") {if(!c)break;w.U8(static_cast<uint8_t>(c));}
-        w.U16(6);w.U16(0);
+        w.U16(7);w.U16(0); // v7 records active intercepted supply convoys
         const Frontier &f=s.frontier;
         w.U32(f.seed_);
         w.U8(static_cast<uint8_t>(s.focused));
@@ -68,6 +68,9 @@ public:
         w.U8(f.border_.charged_mask());
         w.U8(f.border_.grandfathered_mask());
         w.U8(static_cast<uint8_t>(f.border_.last_operation()+1));
+        w.U8(static_cast<uint8_t>(f.convoy_source_+1));
+        w.U8(f.last_convoy_?1:0);
+        w.U8(static_cast<uint8_t>(f.last_convoy_source_+1));
         if(!w.ok)return false;
         uint64_t hash=Hash(bytes.data(),kBytes-8);
         for(size_t i=kBytes-8;i<kBytes;++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
@@ -84,7 +87,7 @@ public:
         Reader r{data,kBytes-8};
         for(char c:"OFSTRAT1"){if(!c)break;if(r.U8()!=static_cast<uint8_t>(c))return false;}
         const uint16_t schema=r.U16();
-        if((schema!=1 && schema!=2 && schema!=3 && schema!=4 && schema!=5 && schema!=6)||r.U16()!=0)return false;
+        if((schema<1 || schema>7)||r.U16()!=0)return false;
         uint32_t seed=r.U32();
         const int focus=r.U8();
         const unsigned view=r.U8(),action=r.U8();
@@ -120,7 +123,7 @@ public:
            f.last_.defenders_lost>4||f.last_.enemies_lost>6||
            f.last_.pump_remaining>18||f.last_.battle_ticks>160||
            (f.last_.operation==-1 && (outcome || f.last_.battle_ticks))||
-           (f.operation_==kHearthfallOperations && f.deployed_)||
+           (f.operation_==kHearthfallOperations && f.deployed_ && schema<7)||
            (f.deployed_ != (next.view==FrontMode::Tactical)))return false;
         for(auto &sector:f.sectors_){
             const unsigned ecology=r.U8(),prev=r.U8(),owner=r.U8(),anomaly=r.U8(),stability=r.U8();
@@ -181,6 +184,23 @@ public:
             if(!f.border_.Restore(charged,grandfathered,last,f.obligations_))
                 return false;
         }else f.border_.Migrate(f.obligations_);
+        if(schema>=7){
+            const unsigned pending=r.U8(),wasConvoy=r.U8(),lastSource=r.U8();
+            if(pending>kFrontierSectors || lastSource>kFrontierSectors ||
+               wasConvoy>1 || (pending!=0 && !f.deployed_) ||
+               (pending==0 && f.deployed_ &&
+                    f.operation_==kHearthfallOperations) ||
+               (wasConvoy==0 && lastSource!=0) ||
+               (wasConvoy!=0 && (lastSource==0 ||
+                    f.last_.outcome==Result::Active)))return false;
+            f.convoy_source_=static_cast<int>(pending)-1;
+            f.last_convoy_=wasConvoy!=0;
+            f.last_convoy_source_=static_cast<int>(lastSource)-1;
+            if(f.convoy_source_>=0 &&
+               (!Intelligence::Adjacent(f.location_,f.convoy_source_) ||
+                f.intel_.level(f.convoy_source_)!=Intelligence::Surveyed))
+                return false;
+        }
         while(r.position<r.capacity){if(r.U8()!=0)return false;}
         if(!r.ok)return false;
         if(f.deployed_){
@@ -188,11 +208,17 @@ public:
             // their originally authored pump-defense missions. New v2
             // checkpoints may not spoof a different operation's rules.
             const uint8_t nested_schema=static_cast<uint8_t>(combat[8]);
-            if(f.operation_>=kHearthfallOperations || (nested_schema>=2 &&
-               next.tactical.battle.mission()!=Frontier::MissionForOperation(f.operation_)))return false;
-            if(f.operation_>=3 && (nested_schema<3 ||
-               static_cast<uint8_t>(next.tactical.battle.doctrine())!=
-               Frontier::FactionForOperation(f.operation_)))return false;
+            if(f.convoy_source_>=0){
+                if(nested_schema<3 ||
+                   next.tactical.battle.mission()!=Mission::HoldPump ||
+                   f.ConvoyAmbusher(f.convoy_source_)==0)return false;
+            }else{
+                if(f.operation_>=kHearthfallOperations || (nested_schema>=2 &&
+                   next.tactical.battle.mission()!=Frontier::MissionForOperation(f.operation_)))return false;
+                if(f.operation_>=3 && (nested_schema<3 ||
+                   static_cast<uint8_t>(next.tactical.battle.doctrine())!=
+                   Frontier::FactionForOperation(f.operation_)))return false;
+            }
             f.battle_=next.tactical.battle;
         }
         next.ResetEdges();next.rejected=false;

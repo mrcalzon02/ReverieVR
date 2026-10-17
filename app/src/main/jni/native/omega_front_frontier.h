@@ -99,6 +99,9 @@ public:
     }
     bool bridge_repaired() const {return bridge_;}
     bool deployed() const {return deployed_;}
+    bool convoy_battle() const {return deployed_ && convoy_source_>=0;}
+    bool last_convoy() const {return last_convoy_;}
+    int last_convoy_source() const {return last_convoy_source_;}
     const Battle* current_battle() const {return deployed_?&battle_:nullptr;}
     Battle* current_battle() {return deployed_?&battle_:nullptr;}
     FrontierReport last_report() const {return last_;}
@@ -294,6 +297,56 @@ public:
         salvage_-=3;pump_health_=pump_health_+6>18?18:pump_health_+6;
         return true;
     }
+    // Hostile patrols can force an actual tactical wagon-defense engagement.
+    // Enemy selection depends entirely on the existing theater and relations.
+    int ConvoyAmbusher(int source) const {
+        if(!Valid(source) ||
+           (sectors_[source].claims<25 && sectors_[location_].claims<40))
+            return 0;
+        int faction=0, hostility=0;
+        for(int sector=0;sector<kFrontierSectors;++sector) {
+            if(!Intelligence::Adjacent(sector,source) &&
+               !Intelligence::Adjacent(sector,location_))continue;
+            const unsigned owner=sectors_[sector].owner;
+            if(owner<1 || owner>kMajorFactions || relations_[owner]>=0)continue;
+            const int score=-relations_[owner];
+            if(score>hostility){hostility=score;faction=static_cast<int>(owner);}
+        }
+        return faction;
+    }
+    bool BuildConvoyBattle(int source,int faction,Battle *output) const {
+        if(!output || !Valid(source) || faction<1 || faction>kMajorFactions)
+            return false;
+        const uint32_t salt=static_cast<uint32_t>(day_)*37u+
+            static_cast<uint32_t>(source)*193u+
+            static_cast<uint32_t>(location_)*17u+
+            static_cast<uint32_t>(operation_)*991u+0xC0A70u;
+        Battle battle(Mix(seed_,salt));
+        battle.ClearUnits();
+        const Doctrine doctrine=faction==2?Doctrine::Meridian:
+            faction==4?Doctrine::Scrapline:
+            faction==6?Doctrine::LostNinth:
+            faction==1?Doctrine::Hearthward:Doctrine::Unaligned;
+        if(!battle.ConfigureDoctrine(doctrine) ||
+           !battle.ConfigureMission(Mission::HoldPump) ||
+           !battle.ConfigurePump(18))return false;
+        // The normal defended structure represents the *cargo wagon*, not
+        // Lantern Pump. The same player controls, AI, terrain and checkpoint
+        // apply. No remote engagement modifies the actual town waterworks.
+        if(battle.AddUnit(Side::Hearthwell,Class::Rifle,3,11)<0 ||
+           battle.AddUnit(Side::Hearthwell,Class::Rifle,3,13)<0 ||
+           battle.AddUnit(Side::Hearthwell,Class::Engineer,2,13)<0 ||
+           battle.AddUnit(Side::Hearthwell,Class::Heavy,5,12)<0)return false;
+        const Class escort=faction==2?Class::Sentinel:
+            faction==4?Class::Salvager:
+            faction==6?Class::Legionary:Class::Rifle;
+        if(battle.AddUnit(Side::Raiders,escort,18,10)<0 ||
+           battle.AddUnit(Side::Raiders,escort,19,14)<0 ||
+           battle.AddUnit(Side::Raiders,faction==6?Class::Legionary:Class::Heavy,21,12)<0)
+            return false;
+        *output=battle;
+        return true;
+    }
     // One escorted one-day cart convoy from an adjacent surveyed depot.
     // Supplies physically leave the source and enter the commander's sector.
     // Hearthward Orchard grants collection rights only after winning M02;
@@ -307,11 +360,22 @@ public:
            !(from.owner==kIndependentOwner ||
              (source==5 && operation_>=2) ||
              (from.owner==0 && from.claims<30)))return false;
+        if(ConvoyAmbusher(source)!=0 && guards_<4)return false;
         return (from.food>0 && here.food<65535u) ||
                (from.water>0 && here.water<65535u);
     }
     bool Convoy(int source) {
         if(!can_convoy(source))return false;
+        const int enemy=ConvoyAmbusher(source);
+        if(enemy!=0){
+            Battle ambush(Mix(seed_,static_cast<uint32_t>(day_+source+1)));
+            if(!BuildConvoyBattle(source,enemy,&ambush))return false;
+            battle_=ambush;
+            convoy_source_=source;
+            deployed_=true;
+            --rations_; // transport escort cost; cargo stays at its depot
+            return true;
+        }
         FrontierSector &from=sectors_[source];
         FrontierSector &here=sectors_[location_];
         const unsigned food=from.food<8u?from.food:8u;
@@ -422,6 +486,9 @@ public:
     // no duplicate salvage/food and casualties are permanent.
     bool ResolveOperation() {
         if(!deployed_||battle_.result()==Result::Active)return false;
+        if(convoy_source_>=0)return ResolveConvoyBattle();
+        last_convoy_=false;
+        last_convoy_source_=-1;
         last_=FrontierReport{};
         last_.operation=operation_;
         last_.outcome=battle_.result();
@@ -488,12 +555,79 @@ public:
         }
         return true;
     }
+    bool ResolveConvoyBattle() {
+        if(!deployed_ || convoy_source_<0 ||
+           battle_.result()==Result::Active)return false;
+        const int source=convoy_source_;
+        const int ambusher=ConvoyAmbusher(source);
+        FrontierSector &depot=sectors_[source];
+        FrontierSector &destination=sectors_[location_];
+        last_=FrontierReport{};
+        // This report belongs to a convoy, not a completed numbered mission.
+        // Clamp the historical report index to the existing save's range.
+        last_.operation=operation_>=kHearthfallOperations
+            ?kHearthfallOperations-1:operation_;
+        last_.outcome=battle_.result();
+        last_.pump_remaining=static_cast<uint8_t>(battle_.pump_hp());
+        last_.battle_ticks=battle_.ticks();
+        for(int i=0;i<battle_.unit_count();++i){
+            const Unit *u=battle_.unit(i);
+            if(!u || u->alive())continue;
+            if(u->side==Side::Hearthwell)++last_.defenders_lost;
+            else ++last_.enemies_lost;
+        }
+        guards_=guards_>=last_.defenders_lost
+            ?guards_-last_.defenders_lost:0;
+        const unsigned food=depot.food<8u?depot.food:8u;
+        const unsigned water=depot.water<6u?depot.water:6u;
+        if(last_.outcome==Result::Defended){
+            const unsigned movedFood=food<65535u-destination.food
+                ?food:65535u-destination.food;
+            const unsigned movedWater=water<65535u-destination.water
+                ?water:65535u-destination.water;
+            depot.food=static_cast<uint16_t>(depot.food-movedFood);
+            depot.water=static_cast<uint16_t>(depot.water-movedWater);
+            destination.food=static_cast<uint16_t>(destination.food+movedFood);
+            destination.water=static_cast<uint16_t>(destination.water+movedWater);
+            depot.claims=static_cast<uint8_t>(depot.claims>=12?depot.claims-12:0);
+            trust_=trust_<98?trust_+2:100;
+        }else{
+            // Interceptors seize only cargo still physically stored at the
+            // source, and only what their own depot can hold.
+            if(ambusher>0){
+                for(int i=0;i<kFrontierSectors;++i){
+                    if(sectors_[i].owner!=ambusher ||
+                       (!Intelligence::Adjacent(i,source) &&
+                        !Intelligence::Adjacent(i,location_)))continue;
+                    FrontierSector &enemy=sectors_[i];
+                    const unsigned takenFood=food<65535u-enemy.food
+                        ?food:65535u-enemy.food;
+                    const unsigned takenWater=water<65535u-enemy.water
+                        ?water:65535u-enemy.water;
+                    depot.food=static_cast<uint16_t>(depot.food-takenFood);
+                    depot.water=static_cast<uint16_t>(depot.water-takenWater);
+                    enemy.food=static_cast<uint16_t>(enemy.food+takenFood);
+                    enemy.water=static_cast<uint16_t>(enemy.water+takenWater);
+                    break;
+                }
+            }
+            depot.claims=static_cast<uint8_t>(depot.claims>85?100:depot.claims+15);
+            trust_=trust_>=3?trust_-3:0;
+        }
+        last_convoy_=true;
+        last_convoy_source_=source;
+        convoy_source_=-1;
+        deployed_=false;
+        AdvanceDay(); // battle returns to the full dated campaign simulation
+        return true;
+    }
     uint64_t Checksum() const {
         uint64_t h=UINT64_C(14695981039346656037);
         auto add=[&h](uint64_t v){for(int i=0;i<8;++i){h^=(v>>(i*8))&255u;h*=UINT64_C(1099511628211);}};
         add(seed_);add(location_);add(day_);add(operation_);add(guards_);
         add(population_);add(rations_);add(salvage_);add(trust_);
         add(pump_health_);add(bridge_);add(morphology_epoch_);add(deployed_);
+        add(convoy_source_+1);add(last_convoy_);add(last_convoy_source_+1);
         for(int faction=1;faction<=kMajorFactions;++faction)
             add(static_cast<uint8_t>(relations_[faction]));
         for(int i=0;i<kFrontierSectors;++i){
@@ -541,6 +675,8 @@ private:
     int guards_=12,rations_=24,salvage_=12,trust_=55,pump_health_=18;
     uint32_t morphology_epoch_=0;
     bool bridge_=false,deployed_=false;
+    int convoy_source_=-1,last_convoy_source_=-1;
+    bool last_convoy_=false;
     FrontierReport last_{};
 };
 

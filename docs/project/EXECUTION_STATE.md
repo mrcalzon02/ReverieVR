@@ -1,3 +1,11 @@
+## 2026-10-16 — Omega Front convoy ambush gameplay
+
+**Intent:** Continue hands-on native game development on main without proliferating incremental tests.
+
+**Execute:** Threatened one-edge supply convoys now open faction-specific tactical wagon defense using the real strategic Session, Frontier, battle kernel and native war table. Winning or losing transfers finite cargo, applies permanent escort casualties and route-pressure consequences, then advances a normal campaign day. Scripted operations and Hearthwell pump remain separate. Fixed 2,048-byte campaign save internal version 7 now stores active convoy and last-report metadata with compatibility for schemas 1–6.
+
+**Acceptance:** Authoritative source changes and GitHub remote readback only. No Android compilation, APK packaging or S9/Daydream runtime claim, and no GitHub Actions or additional test runners.
+
 ## 2026-10-16 — Breakwater late-wave checkpoint and armored defense repair
 
 **OBSERVE:** `Campaign::DeserializeShop` still rejected waves above 8 despite 12–25 legitimate waves per period. The purchased turret ignored landed armored cars and the HUD gave no warning of their incoming shell.
