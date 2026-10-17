@@ -13,6 +13,7 @@
 #include "red_ledger_stock_layout.h"
 #include "red_ledger_original_png.h"
 #include "red_ledger_original_fbx.h"
+#include "red_ledger_product_assets.h"
 
 #include <GLES2/gl2.h>
 
@@ -38,6 +39,7 @@ namespace signs = reverie::redledger::signage;
 namespace mugs = reverie::redledger::mug;
 namespace trade = reverie::redledger::trade;
 namespace stock = reverie::redledger::stock;
+namespace products = reverie::redledger::products;
 namespace property = reverie::redledger::property;
 
 // Include the far rear doorway in seated work-ray reach.
@@ -141,6 +143,12 @@ static const TargetBounds kWorkTargets[] = {
     {WorkTarget::UpgradeBuy,{-0.52f,-0.46f,-1.10f},{0.29f,0.18f,0.25f}}
 };
 
+struct ProductGlResource {
+    GLuint vbo = 0;
+    GLuint texture = 0;
+    GLsizei vertex_count = 0;
+};
+
 struct ModuleState {
     const ReverieNativeHostV1 *host = nullptr;
     Simulation simulation;
@@ -162,9 +170,7 @@ struct ModuleState {
     GLuint atlas_texture = 0;
     GLuint original_icons[24] = {};
     GLuint original_icon_vbo = 0;
-    GLuint preview_vbo = 0;
-    GLuint preview_texture = 0;
-    GLsizei preview_vertex_count = 0;
+    ProductGlResource product_resources[products::kCount] = {};
     int original_icon_count = 0;
     GLint icon_mode_location = -1;
     GLint position_location = -1;
@@ -868,15 +874,11 @@ void DestroyGl(
         glDeleteBuffers(1,&state->original_icon_vbo);
         state->original_icon_vbo=0;
     }
-    if(state->preview_vbo!=0){
-        glDeleteBuffers(1,&state->preview_vbo);
-        state->preview_vbo=0;
+    for(ProductGlResource &resource:state->product_resources) {
+        if(resource.vbo!=0)glDeleteBuffers(1,&resource.vbo);
+        if(resource.texture!=0)glDeleteTextures(1,&resource.texture);
+        resource=ProductGlResource{};
     }
-    if(state->preview_texture!=0){
-        glDeleteTextures(1,&state->preview_texture);
-        state->preview_texture=0;
-    }
-    state->preview_vertex_count=0;
     if (state->atlas_texture != 0) {
         glDeleteTextures(1, &state->atlas_texture);
         state->atlas_texture = 0;
@@ -933,9 +935,8 @@ void AbandonGl(
     for(GLuint &icon:state->original_icons)icon=0;
     state->original_icon_count=0;
     state->original_icon_vbo=0;
-    state->preview_vbo=0;
-    state->preview_texture=0;
-    state->preview_vertex_count=0;
+    for(ProductGlResource &resource:state->product_resources)
+        resource=ProductGlResource{};
     state->icon_mode_location=-1;
     state->cube_vbo = 0;
     state->mug_vbo = 0;
@@ -1282,69 +1283,74 @@ int32_t InitializeGl(
         REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,report);
 
 
-    // Genuine first-party FBX pilot. This is the visible 101draft mesh,
-    // not its UCX_ collision hull or a procedural substitute. A separate
-    // texture is loaded at its exported 1024x1024 source resolution.
+
+    // Original Unreal merchandise is decoded and uploaded once per GL context.
+    // Four representative product classes are currently packaged; missing
+    // products never substitute guessed geometry or the UCX collision meshes.
+    int original_product_count=0;
     if(can_read_assets) {
         auto load_asset=[state](const char *path,uint32_t limit,
                                 std::vector<uint8_t> *buffer)->bool {
             uint32_t bytes=0;
             if(state->host->read_asset(path,nullptr,0,&bytes)!=
-                    REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL ||
+                REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL ||
                 bytes==0 || bytes>limit)return false;
             buffer->resize(bytes);
             uint32_t received=0;
             return state->host->read_asset(path,buffer->data(),bytes,
-                                           &received)==REVERIE_NATIVE_SAVE_OK &&
+                        &received)==REVERIE_NATIVE_SAVE_OK &&
                    received==bytes;
         };
-        std::vector<uint8_t> fbx_file,texture_file;
-        if(load_asset("native/red-ledger/models/101draft.fbx",
-                      3u*1024u*1024u,&fbx_file) &&
-           load_asset("native/red-ledger/textures/101draft_texture_0.png",
-                      3u*1024u*1024u,&texture_file)) {
+        for(int i=0;i<products::kCount;++i) {
+            const products::Entry &entry=products::kCatalog[i];
+            std::vector<uint8_t> fbx_file,texture_file,rgba;
             std::vector<float> geometry;
-            std::vector<uint8_t> rgba;
-            if(fbx::BuildWorldTriangles(fbx_file.data(),fbx_file.size(),
-                                        &geometry) &&
-               original_png::DecodeRgba(texture_file.data(),
-                                        texture_file.size(),1024u,&rgba) &&
-               geometry.size()%geo::kStaticVertexStride==0u &&
-               geometry.size()/geo::kStaticVertexStride<=90000u) {
-                glGenBuffers(1,&state->preview_vbo);
-                glGenTextures(1,&state->preview_texture);
-                if(state->preview_vbo!=0 && state->preview_texture!=0) {
-                    glBindBuffer(GL_ARRAY_BUFFER,state->preview_vbo);
-                    glBufferData(GL_ARRAY_BUFFER,
-                                 geometry.size()*sizeof(float),
-                                 geometry.data(),GL_STATIC_DRAW);
-                    glBindBuffer(GL_ARRAY_BUFFER,0);
-                    glBindTexture(GL_TEXTURE_2D,state->preview_texture);
-                    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-                    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-                    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-                    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-                    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,1024,1024,0,
-                                 GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
-                    if(glGetError()==GL_NO_ERROR) {
-                        state->preview_vertex_count=static_cast<GLsizei>(
-                            geometry.size()/geo::kStaticVertexStride);
-                    } else {
-                        glDeleteBuffers(1,&state->preview_vbo);
-                        glDeleteTextures(1,&state->preview_texture);
-                        state->preview_vbo=0;
-                        state->preview_texture=0;
-                    }
+            if(!load_asset(entry.mesh_path,3u*1024u*1024u,&fbx_file) ||
+               !load_asset(entry.texture_path,3u*1024u*1024u,
+                           &texture_file) ||
+               !fbx::BuildWorldTriangles(fbx_file.data(),fbx_file.size(),
+                                         &geometry,entry.model_name) ||
+               !original_png::DecodeRgba(texture_file.data(),
+                                         texture_file.size(),1024u,&rgba) ||
+               geometry.size()%geo::kStaticVertexStride!=0u ||
+               geometry.size()/geo::kStaticVertexStride>90000u)
+                continue;
+            ProductGlResource &resource=state->product_resources[i];
+            glGenBuffers(1,&resource.vbo);
+            glGenTextures(1,&resource.texture);
+            if(resource.vbo!=0 && resource.texture!=0) {
+                glBindBuffer(GL_ARRAY_BUFFER,resource.vbo);
+                glBufferData(GL_ARRAY_BUFFER,geometry.size()*sizeof(float),
+                             geometry.data(),GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER,0);
+                glBindTexture(GL_TEXTURE_2D,resource.texture);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,
+                                GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,
+                                GL_CLAMP_TO_EDGE);
+                glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,1024,1024,0,
+                             GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
+                if(glGetError()==GL_NO_ERROR) {
+                    resource.vertex_count=static_cast<GLsizei>(
+                        geometry.size()/geo::kStaticVertexStride);
+                    ++original_product_count;
+                    continue;
                 }
             }
+            if(resource.vbo!=0)glDeleteBuffers(1,&resource.vbo);
+            if(resource.texture!=0)glDeleteTextures(1,&resource.texture);
+            resource=ProductGlResource{};
         }
         glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
     }
-    Log(state,state->preview_vertex_count>0?
-        REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,
-        state->preview_vertex_count>0?
-        "Original Blue Harbor Draft FBX preview loaded.":
-        "Original Blue Harbor Draft preview missing or incompatible.");
+    char model_report[96]={};
+    std::snprintf(model_report,sizeof(model_report),
+                  "Original Unreal product models loaded: %d/%d",
+                  original_product_count,products::kCount);
+    Log(state,original_product_count==products::kCount?
+        REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,model_report);
 
     Log(
         state,
@@ -1698,41 +1704,55 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
     }
 
 
-    // A real textured source mesh on the stockroom inspection plinth when
-    // Blue Harbor Draft (first offer) is selected. This intentionally does
-    // not change physical card hit boxes or stock purchasing logic.
-    if(room_index==1 && state->market.offer()==1 &&
-       state->preview_vertex_count>0 && state->preview_vbo!=0 &&
-       state->preview_texture!=0) {
-        const GLboolean blended=glIsEnabled(GL_BLEND);
-        GLint rgb_src=GL_ONE,rgb_dst=GL_ZERO;
-        GLint alpha_src=GL_ONE,alpha_dst=GL_ZERO;
-        glGetIntegerv(GL_BLEND_SRC_RGB,&rgb_src);
-        glGetIntegerv(GL_BLEND_DST_RGB,&rgb_dst);
-        glGetIntegerv(GL_BLEND_SRC_ALPHA,&alpha_src);
-        glGetIntegerv(GL_BLEND_DST_ALPHA,&alpha_dst);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-        glBindTexture(GL_TEXTURE_2D,state->preview_texture);
-        glUniform1f(state->icon_mode_location,1.f);
-        glUniform1f(state->flicker_location,1.f);
-        glBindBuffer(GL_ARRAY_BUFFER,state->preview_vbo);
-        glVertexAttribPointer(static_cast<GLuint>(state->position_location),
-            3,GL_FLOAT,GL_FALSE,stride,reinterpret_cast<const void *>(0));
-        glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
-            2,GL_FLOAT,GL_FALSE,stride,
-            reinterpret_cast<const void *>(3u*sizeof(float)));
-        glVertexAttribPointer(static_cast<GLuint>(state->color_attribute_location),
-            3,GL_FLOAT,GL_FALSE,stride,
-            reinterpret_cast<const void *>(5u*sizeof(float)));
-        glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
-            2,GL_FLOAT,GL_FALSE,stride,
-            reinterpret_cast<const void *>(8u*sizeof(float)));
-        glDrawArrays(GL_TRIANGLES,0,state->preview_vertex_count);
-        glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
-        glUniform1f(state->icon_mode_location,0.f);
-        glBlendFuncSeparate(rgb_src,rgb_dst,alpha_src,alpha_dst);
-        if(blended==GL_FALSE)glDisable(GL_BLEND);
+
+    // The physical stockroom display follows the selected purchase card.
+    // In the bar, selecting a branded drink or snack also displays its actual
+    // packaged model on the counter. House lager has no source-packaged mesh.
+    int displayed_offer=-1;
+    if(room_index==static_cast<int>(trade::Room::Stockroom))
+        displayed_offer=state->market.offer();
+    else if(room_index==static_cast<int>(trade::Room::Bar)) {
+        if(state->market.drink()>0)
+            displayed_offer=state->market.drink();
+        else if(state->market.snack()>=0)
+            displayed_offer=trade::kDrinks+state->market.snack();
+    }
+    const int product_index=products::IndexForOffer(displayed_offer);
+    if(product_index>=0) {
+        const ProductGlResource &resource=
+            state->product_resources[product_index];
+        if(resource.vbo!=0 && resource.texture!=0 &&
+           resource.vertex_count>0) {
+            const GLboolean blended=glIsEnabled(GL_BLEND);
+            GLint rgb_src=GL_ONE,rgb_dst=GL_ZERO;
+            GLint alpha_src=GL_ONE,alpha_dst=GL_ZERO;
+            glGetIntegerv(GL_BLEND_SRC_RGB,&rgb_src);
+            glGetIntegerv(GL_BLEND_DST_RGB,&rgb_dst);
+            glGetIntegerv(GL_BLEND_SRC_ALPHA,&alpha_src);
+            glGetIntegerv(GL_BLEND_DST_ALPHA,&alpha_dst);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+            glBindTexture(GL_TEXTURE_2D,resource.texture);
+            glUniform1f(state->icon_mode_location,1.f);
+            glUniform1f(state->flicker_location,1.f);
+            glBindBuffer(GL_ARRAY_BUFFER,resource.vbo);
+            glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+                3,GL_FLOAT,GL_FALSE,stride,reinterpret_cast<const void *>(0));
+            glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+                2,GL_FLOAT,GL_FALSE,stride,
+                reinterpret_cast<const void *>(3u*sizeof(float)));
+            glVertexAttribPointer(static_cast<GLuint>(state->color_attribute_location),
+                3,GL_FLOAT,GL_FALSE,stride,
+                reinterpret_cast<const void *>(5u*sizeof(float)));
+            glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
+                2,GL_FLOAT,GL_FALSE,stride,
+                reinterpret_cast<const void *>(8u*sizeof(float)));
+            glDrawArrays(GL_TRIANGLES,0,resource.vertex_count);
+            glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+            glUniform1f(state->icon_mode_location,0.f);
+            glBlendFuncSeparate(rgb_src,rgb_dst,alpha_src,alpha_dst);
+            if(blended==GL_FALSE)glDisable(GL_BLEND);
+        }
     }
 
     // Dynamic props still use the unit-cube VBO and constant attributes.

@@ -90,7 +90,7 @@ inline bool ReadArray(const uint8_t *data,size_t len,size_t at,
     return true;
 }
 inline bool Extract(const uint8_t *data,size_t len,size_t start,
-                    size_t limit,int depth,bool in_geo,bool in_uv,
+                    size_t limit,int depth,bool in_geo,bool in_uv,const char *model_name,
                     Geometry *out) {
     if(depth>8 || start>limit || limit>len)return false;
     for(size_t p=start;p+13u<=limit;) {
@@ -109,7 +109,11 @@ inline bool Extract(const uint8_t *data,size_t len,size_t start,
                 const size_t name_at=q+5u;
                 if(count>=9u && count<=len-name_at) {
                     std::string name(reinterpret_cast<const char *>(data+name_at),count);
-                    selected=name.compare(0,8,"101draft")==0;
+                    const size_t wanted=std::strlen(model_name);
+                    selected=wanted>=4u && wanted<=48u &&
+                        name.size()>wanted &&
+                        name.compare(0,wanted,model_name)==0 &&
+                        name[wanted]=='\0';
                 }
             }
         }
@@ -138,7 +142,7 @@ inline bool Extract(const uint8_t *data,size_t len,size_t start,
         }
         if(n.begin_children<n.end &&
            !Extract(data,len,n.begin_children,n.end,depth+1,
-                    selected,layer_uv,out))return false;
+                    selected,layer_uv,model_name,out))return false;
         p=n.end;
     }
     return true;
@@ -146,12 +150,13 @@ inline bool Extract(const uint8_t *data,size_t len,size_t start,
 // Output shares the Red Ledger baked room's XYZ/UV/RGB/tileOrigin
 // layout (10 floats/vertex). World transform is already applied.
 inline bool BuildWorldTriangles(const uint8_t *data,size_t size,
-                                std::vector<float> *vertices) {
-    if(!data || !vertices || size<40u ||
+                                std::vector<float> *vertices,
+                                const char *model_name="101draft") {
+    if(!data || !vertices || !model_name || size<40u ||
        std::memcmp(data,"Kaydara FBX Binary  ",20)!=0 ||
        U32(data+23)!=7300u)return false;
     Geometry g;
-    if(!Extract(data,size,27,size,0,false,false,&g) ||
+    if(!Extract(data,size,27,size,0,false,false,model_name,&g) ||
        g.xyz.size()<9u || g.uv.empty() || g.poly.empty() ||
        g.poly.size()!=g.uv_indices.size() ||
        g.poly.size()>90000u || g.poly.size()%3u!=0u)return false;
