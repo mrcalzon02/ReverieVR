@@ -1157,6 +1157,14 @@ int main() {
     assert(LandingRampProgress(-11.0f)==0.0f);
     assert(LandingRampProgress(-3.7f)<.0001f);
     assert(LandingRampProgress(-2.2f)>.9999f);
+    // The longer heavy hull's center remains offshore while its bow
+    // finishes lowering ahead of its two real car spawn positions.
+    const float heavy_beach=invasion::BeachingZ(UnitType::ArmoredTransport);
+    assert(heavy_beach==-3.40f);
+    assert(LandingRampProgress(invasion::HeavyRampReferenceZ(
+               heavy_beach))>.9999f);
+    const float heavy_bow=heavy_beach+1.28f+.18f;
+    assert(heavy_bow>-2.23f && heavy_bow<-1.80f);
     assert(LandingRampProgress(invalidPose)==0.0f);
     assert(VesselWakePhase(-11.0f)==0.0f);
     assert(VesselWakePhase(-10.75f)==.5f);
@@ -2703,7 +2711,9 @@ int main() {
         if(flagship.phase()==Phase::Combat && ship.active &&
            ship.type==UnitType::ArmoredTransport && ship.landed) {
             observed_ramp_hold=true;
-            assert(ship.z==-2.2f && ship.attack_timer>0.0f);
+            assert(ship.z==invasion::BeachingZ(ship.type));
+            assert(ship.attack_timer>0.0f);
+            assert(ship.z+1.28f+.18f>-2.23f);
             assert(ship.passengers==4u);
         }
         if(flagship.phase()==Phase::Defeat ||

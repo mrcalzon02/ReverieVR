@@ -30,6 +30,11 @@ int main() {
     assert(invasion::FlagshipEscortLane(2.60f)<1.01f);
     assert(invasion::FlagshipEscortLane(-2.60f)<-0.99f);
     assert(invasion::FlagshipEscortLane(-2.60f)>-1.01f);
+    assert(invasion::BeachingZ(UnitType::LandingCraft)==-2.20f);
+    assert(invasion::BeachingZ(UnitType::Gunboat)==-2.20f);
+    assert(invasion::BeachingZ(UnitType::ArmoredTransport)==-3.40f);
+    assert(invasion::HeavyRampReferenceZ(
+        invasion::BeachingZ(UnitType::ArmoredTransport))==-2.20f);
     assert(SelectUnit(13,25,25,(1u<<16u)|7u,1)!=UnitType::ArmoredTransport);
     assert(SelectUnit(13,13,25,6,1)==UnitType::ArmoredTransport);
     assert(SelectUnit(13,12,25,6,1)!=UnitType::ArmoredTransport);
