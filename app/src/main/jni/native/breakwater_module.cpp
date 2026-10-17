@@ -281,7 +281,11 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 else if(target==5)done=game.PurchaseSam();
             } else done=game.Purchase(static_cast<Upgrade>(target));
         }
-        if(done && game.phase()==Phase::Shop)SaveState(s);
+        if(done && game.phase()==Phase::Shop) {
+            SaveState(s);
+            if(target>=0 && target<8)
+                BattleSound(s,REVERIE_NATIVE_SOUND_SHOP_PURCHASE);
+        }
         Feedback(s,done?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(game.phase()==Phase::Combat) {
         float x=0,y=0;
@@ -1178,6 +1182,17 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         const int32_t hull_before=s->campaign.integrity();
         const auto enemies_before=s->campaign.enemies();
         s->campaign.Tick(copy.delta_seconds);
+        // Phase transitions are simulation-owned; exactly one cue per
+        // completed wave, real defeat, or final campaign victory. Nothing
+        // fires merely for an enemy disappearing or while paused.
+        if(s->campaign.phase()!=Phase::Combat) {
+            const Phase completed=s->campaign.phase();
+            BattleSound(s,completed==Phase::Shop?
+                REVERIE_NATIVE_SOUND_WAVE_CLEAR:
+                completed==Phase::Victory?
+                REVERIE_NATIVE_SOUND_CAMPAIGN_VICTORY:
+                REVERIE_NATIVE_SOUND_BATTERY_LOST);
+        }
         s->wrecks.RecordTransitions(enemies_before,s->campaign.enemies());
         s->battery_damage.Record(hull_before,s->campaign.integrity());
         const TurretShotEvent turret=s->campaign.turret_shot();
