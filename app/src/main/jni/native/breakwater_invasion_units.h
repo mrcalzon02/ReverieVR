@@ -17,11 +17,20 @@ inline UnitType SelectUnit(unsigned progression,uint8_t wave_index,
     if(progression<10u || wave_index<=waves_in_period/2u)return baseline;
     if(wave_index==waves_in_period && spawn_ordinal==0u)
         return UnitType::ArmoredTransport;
+    // The fast gunboat screens the flagship on its decisive beach approach.
+    if(wave_index==waves_in_period && spawn_ordinal==1u)
+        return UnitType::Gunboat;
     // Only upgrade ordinary landing vessels, not gunboats or aircraft.
     if((baseline==UnitType::Rowboat ||
         baseline==UnitType::LandingCraft) &&
        ((roll>>16u)&3u)==0u)return UnitType::ArmoredTransport;
     return baseline;
+}
+// A screening gunboat approaches from an offset lane, not on top of the
+// slow flagship. Deterministic; no new seeded or transient game state.
+inline float FlagshipEscortLane(float flagship_x) {
+    const float lane=flagship_x+(flagship_x>=0.0f?-1.60f:1.60f);
+    return lane<-2.60f?-2.60f:lane>2.60f?2.60f:lane;
 }
 // An intact armored hull holds its beachhead with the bow ramp open;
 // cargo enters combat only after this exposed unloading interval.

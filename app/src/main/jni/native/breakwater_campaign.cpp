@@ -609,6 +609,15 @@ void Campaign::TickStep(float dt) {
                  -11.0f, static_cast<int16_t>(hp),
                  invasion::InfantryCargo(kind,choice),
                  true, false};
+            // Guaranteed final-wave escort forms alongside the flagship.
+            // Its faster travel and real deck gun screen the payload.
+            if(kind==UnitType::Gunboat && progression>=10u &&
+               wave_index_==waves_this_period() && spawned_==1u) {
+                const uint32_t flagship_roll=Hash(0x1234u);
+                const float flagship_lane=
+                    (static_cast<int>(flagship_roll%9u)-4)*.65f;
+                e.x=invasion::FlagshipEscortLane(flagship_lane);
+            }
             e.carries_armor=kind==UnitType::ArmoredTransport ||
                 armor::CarriesArmor(kind,progression,choice,spawned_);
             if(e.carries_armor && kind==UnitType::LandingCraft)

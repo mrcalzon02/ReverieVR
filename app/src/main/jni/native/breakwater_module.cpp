@@ -63,6 +63,7 @@ struct State {
     BatteryDamageFeedback battery_damage;
     AircraftAimFeedback aircraft_aim;
     SurfaceAimFeedback surface_aim;
+    float heavy_ramp_seconds=-1.0f;
     int cover_aim_index=-1;
     int armor_aim_index=-1;
     float armor_flash=0.0f;
@@ -1096,10 +1097,16 @@ void BuildScene(State *s) {
             if(target.infantry)
                 std::snprintf(label,sizeof(label),
                     target.vulnerable?"INFANTRY":"INFANTRY NO SHOT");
+            else if(target.type==UnitType::ArmoredTransport &&
+                    s->heavy_ramp_seconds>=0.0f)
+                std::snprintf(label,sizeof(label),"RAMP %.1fS HP %d/%d",
+                    static_cast<double>(s->heavy_ramp_seconds),
+                    static_cast<int>(target.hp),
+                    static_cast<int>(target.max_hp));
             else
                 std::snprintf(label,sizeof(label),"%s HP %d/%d",
                     target.type==UnitType::Rowboat?"ROWBOAT":
-                    target.type==UnitType::ArmoredTransport?"HEAVY LANDER":
+                    target.type==UnitType::ArmoredTransport?"ARMORED SHIP":
                     target.type==UnitType::LandingCraft?"LANDER":"GUNBOAT",
                     static_cast<int>(target.hp),
                     static_cast<int>(target.max_hp));
@@ -1448,6 +1455,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     }
     s->aim_ray_valid=false;
     s->aircraft_aim={};s->surface_aim={};
+    s->heavy_ramp_seconds=-1.0f;
     s->cover_aim_index=-1;s->armor_aim_index=-1;
     if(s->campaign.phase()==Phase::Combat &&
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
@@ -1471,8 +1479,16 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->aircraft_aim=InspectAircraftAim(s->campaign,target);
         // Special SAM support retains the independent handheld lock; every
         // other mount targets with its own real cannon-origin trajectory.
-        if(!s->sam_armed)
+        if(!s->sam_armed) {
             s->surface_aim=InspectSurfaceAim(s->campaign,target);
+            if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies)) {
+                const Enemy &aimed=s->campaign.enemies()[
+                    static_cast<size_t>(target)];
+                if(aimed.active && aimed.type==UnitType::ArmoredTransport &&
+                   aimed.landed)
+                    s->heavy_ramp_seconds=aimed.attack_timer;
+            }
+        }
     }
     const bool ui_pressed=
         (down && !s->held && !started_reload &&

@@ -23,6 +23,10 @@ class WreckEffects {
 public:
     static constexpr size_t kCapacity=8;
     static constexpr float kDuration=1.8f;
+    static constexpr float kHeavyDuration=3.0f;
+    static constexpr float DurationFor(UnitType type) {
+        return type==UnitType::ArmoredTransport?kHeavyDuration:kDuration;
+    }
     const std::array<WreckPulse,kCapacity>& pulses() const {return pulses_;}
     bool RecordDestroyed(const Enemy& before,const Enemy& after) {
         if(!before.active || after.active || before.hp<=0 || after.hp>0 ||
@@ -41,7 +45,8 @@ public:
             const uint8_t variant=static_cast<uint8_t>(
                 static_cast<int>(std::abs(before.x)*17.0f+
                     std::abs(before.z)*11.0f)%4);
-            pulses_[index]={before.x,before.z,kDuration,before.type,variant};
+            pulses_[index]={before.x,before.z,DurationFor(before.type),
+                            before.type,variant};
             next_=(index+1)%kCapacity;
             return true;
         }
@@ -72,22 +77,24 @@ private:
 // separate from the campaign's target/collision model.
 template<typename TriangleFn>
 void EmitWreckFragments(const WreckPulse& wreck,TriangleFn triangle) {
-    if(wreck.remaining<=0.0f || wreck.remaining>WreckEffects::kDuration ||
+    if(!std::isfinite(wreck.remaining) || wreck.remaining<=0.0f ||
+       wreck.remaining>WreckEffects::DurationFor(wreck.type) ||
        !std::isfinite(wreck.x) || !std::isfinite(wreck.z) ||
-       !std::isfinite(wreck.remaining) || std::abs(wreck.x)>1000.0f ||
-       std::abs(wreck.z)>1000.0f)return;
+       std::abs(wreck.x)>1000.0f || std::abs(wreck.z)>1000.0f)return;
     const bool aircraft=wreck.type==UnitType::Aircraft;
     if(!aircraft && wreck.type!=UnitType::Rowboat &&
        wreck.type!=UnitType::LandingCraft &&
        wreck.type!=UnitType::ArmoredTransport &&
        wreck.type!=UnitType::Gunboat)return;
-    const float t=1.0f-wreck.remaining/WreckEffects::kDuration;
+    const float t=1.0f-wreck.remaining/
+        WreckEffects::DurationFor(wreck.type);
     const float scale=wreck.type==UnitType::ArmoredTransport?1.72f:
         wreck.type==UnitType::Gunboat?1.3f:
         wreck.type==UnitType::LandingCraft?1.13f:
         aircraft?1.10f:.75f;
     const float baseY=aircraft?1.6f:-.64f;
-    const float sink=aircraft?1.55f*t*t:.60f*t;
+    const float sink=aircraft?1.55f*t*t:
+        wreck.type==UnitType::ArmoredTransport?1.27f*t*t:.60f*t;
     const float y=baseY-sink;
     const float grey=aircraft?.45f:.31f;
     // Four asymmetric metal shards diverge and tumble from the real
@@ -111,6 +118,32 @@ void EmitWreckFragments(const WreckPulse& wreck,TriangleFn triangle) {
                  px+w*.65f,py+spin-.035f,pz+.07f,
                  px,py-w*.40f,pz+.10f,
                  .13f,.16f,.17f);
+    }
+    // Heavy wrecks retain recognizably armored deck plating as they
+    // founder. Six bounded extra triangles; no heap, shaders or textures.
+    if(wreck.type==UnitType::ArmoredTransport && t<.95f) {
+        const float plateY=-.63f-1.37f*t*t;
+        const float tilt=.24f*t;
+        const float x=wreck.x,z=wreck.z;
+        triangle(x-.90f,plateY,z-.93f,
+                 x+.90f,plateY-tilt,z-.93f,
+                 x+.90f,plateY-tilt,z+.72f,.27f,.34f,.30f);
+        triangle(x-.90f,plateY,z-.93f,
+                 x+.90f,plateY-tilt,z+.72f,
+                 x-.90f,plateY,z+.72f,.31f,.38f,.33f);
+        triangle(x-.81f,plateY+.13f,z-.55f,
+                 x-.18f,plateY+.52f-tilt,z-.58f,
+                 x+.61f,plateY+.11f-tilt,z-.57f,.41f,.43f,.36f);
+        triangle(x-.77f,plateY,z+.72f,
+                 x+.77f,plateY-tilt,z+.72f,
+                 x,plateY-.24f-tilt*.5f,z+1.14f,.48f,.49f,.39f);
+        if(t<.70f)for(int side=-1;side<=1;side+=2) {
+            const float sign=static_cast<float>(side);
+            triangle(x+sign*.70f,-1.05f,z+.48f,
+                     x+sign*(1.23f+.22f*t),-1.05f,z+.12f,
+                     x+sign*.91f,-1.05f,z-.69f,
+                     .55f,.72f,.73f);
+        }
     }
     // One brief, collapsing smoke ember above the original blast.
     if(t<.75f) {
