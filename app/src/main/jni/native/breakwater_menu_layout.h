@@ -52,13 +52,13 @@ inline int HitShop(float x,float y) {
     return -1;
 }
 inline const char* DifficultyHint(int choice) {
-    // Difficulty zero-based tiers add to first-day wave and unit counts in
-    // Campaign::waves_this_period / Campaign::NextCount.
+    // First wave craft count remains 2+tier; the long campaign now opens
+    // with 12+2*tier distinct daytime assaults, not the old 2+tier.
     switch(choice) {
-        case 0: return "CADET - 2 THREATS 2 DAY WAVES";
-        case 1: return "REGULAR - 3 THREATS 3 DAY WAVES";
-        case 2: return "VETERAN - 4 THREATS 4 DAY WAVES";
-        case 3: return "SIEGE - 5 THREATS 5 DAY WAVES";
+        case 0: return "CADET - 2 FOES 12 DAY WAVES";
+        case 1: return "REGULAR - 3 FOES 14 DAY WAVES";
+        case 2: return "VETERAN - 4 FOES 16 DAY WAVES";
+        case 3: return "SIEGE - 5 FOES 18 DAY WAVES";
         default: return "POINT AT A DIFFICULTY TO INSPECT";
     }
 }
