@@ -29,6 +29,7 @@ int main() {
     assert(!armor::Ready(vehicle));
     armor::Advance(vehicle,1.65f);
     assert(armor::Ready(vehicle));
+    assert(armor::SecondsToFire(vehicle)==0.0f);
     const float before=vehicle.z;
     armor::Advance(vehicle,-1.0f);
     assert(vehicle.z==before);
@@ -36,6 +37,25 @@ int main() {
     armor::Advance(vehicle,.20f);
     assert(vehicle.z==before);
     assert(!armor::Ready(vehicle));
+    assert(armor::SecondsToFire(vehicle)<0.0f);
+
+    // The HUD countdown comes from both the physical movement to the
+    // armored firing line AND the real cooldown, never a decorative timer.
+    ArmoredVehicle approaching{.4f,-2.23f,armor::kVehicleHp,true,1.8f};
+    const float travel=(-1.56f+2.23f)/armor::kArmorSpeed;
+    assert(std::abs(armor::SecondsToFire(approaching)-travel)<.001f);
+    armor::Advance(approaching,1.0f);
+    assert(std::abs(armor::SecondsToFire(approaching)-(travel-1.0f))<.001f);
+    armor::Advance(approaching,1.5f);
+    assert(armor::Ready(approaching));
+    assert(armor::SecondsToFire(approaching)==0.0f);
+    approaching.attack_timer=armor::kArmorFireInterval;
+    assert(std::abs(armor::SecondsToFire(approaching)-3.3f)<.001f);
+    approaching.hp=0;
+    assert(armor::SecondsToFire(approaching)<0.0f);
+    approaching.hp=armor::kVehicleHp;
+    approaching.z=NAN;
+    assert(armor::SecondsToFire(approaching)<0.0f);
 
     assert(armor::ArmorDamage(WeaponKind::MachineGun,20)==5);
     assert(armor::ArmorDamage(WeaponKind::HeavyGun,35)==17);
