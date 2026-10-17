@@ -610,34 +610,57 @@ void Campaign::TickStep(float dt) {
             break;
         }
     }
-    // An actually purchased support turret automatically engages the nearest
-    // surviving surface vessel; it never silently shoots down aircraft.
+    // Purchased support turrets defend against the closest surface threat,
+    // including armored vehicles already deployed ashore. Aircraft remain
+    // immune. Target selection is based on the real live z positions; no
+    // imaginary shot is emitted when there is nothing eligible to hit.
     if (stats().turret) {
         turret_timer_ -= dt;
         if (turret_timer_ <= 0.0f) {
             Enemy *target = nullptr;
             for (Enemy &candidate : enemies_) {
                 if (candidate.active && candidate.type != UnitType::Aircraft &&
-                    (target == nullptr || candidate.z > target->z)) {
+                    (target == nullptr || candidate.z > target->z))
                     target = &candidate;
-                }
             }
-            if (target != nullptr) {
-                // Capture the actual firing event before a lethal hit removes
-                // the craft; the renderer never guesses from enemy-slot diffs.
-                const float hit_x = target->x, hit_z = target->z;
-                target->hp = static_cast<int16_t>(target->hp - 15);
-                const bool destroyed = target->hp <= 0;
-                if (destroyed) {
-                    target->active = false;
-                    ++wave_status_.boats_sunk;
-                    credits_ += 55;
+            ArmoredVehicle *vehicle = nullptr;
+            for (ArmoredVehicle &candidate : armor_)
+                if(candidate.active &&
+                   (vehicle == nullptr || candidate.z > vehicle->z))
+                    vehicle=&candidate;
+            if(target && vehicle && target->z>=vehicle->z)
+                vehicle=nullptr;
+            else if(vehicle)
+                target=nullptr;
+            if (target || vehicle) {
+                const float hit_x = vehicle?vehicle->x:target->x;
+                const float hit_z = vehicle?vehicle->z:target->z;
+                bool destroyed = false;
+                if(vehicle) {
+                    // The autonomous gun fires heavy projectiles; armor is
+                    // not magically vulnerable to its full hull damage.
+                    vehicle->hp=static_cast<int16_t>(vehicle->hp-
+                        armor::ArmorDamage(WeaponKind::HeavyGun,15u));
+                    destroyed=vehicle->hp<=0;
+                    if(destroyed) {
+                        vehicle->active=false;
+                        ++wave_status_.armor_destroyed;
+                        credits_+=armor::kArmorKillCredits;
+                    }
+                } else {
+                    target->hp = static_cast<int16_t>(target->hp - 15);
+                    destroyed=target->hp<=0;
+                    if(destroyed) {
+                        target->active=false;
+                        ++wave_status_.boats_sunk;
+                        credits_+=55;
+                    }
                 }
                 ++turret_shot_.sequence;
-                turret_shot_.x = hit_x;
-                turret_shot_.z = hit_z;
-                turret_shot_.destroyed = destroyed;
-                turret_timer_ = 1.35f;
+                turret_shot_.x=hit_x;
+                turret_shot_.z=hit_z;
+                turret_shot_.destroyed=destroyed;
+                turret_timer_=1.35f;
             }
         }
     }
