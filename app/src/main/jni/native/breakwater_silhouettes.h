@@ -65,6 +65,13 @@ void EmitVesselSilhouette(const Enemy &e, BoxFn box, TriFn triangle) {
                  x+.40f,rampTipY,rampTipZ,.60f,.62f,.53f);
         triangle(x-.48f,-.76f,z+.48f,x+.40f,rampTipY,rampTipZ,
                  x-.40f,rampTipY,rampTipZ,.60f,.62f,.53f);
+        if(e.carries_armor) {
+            // The covered olive cargo shape is visible on the craft until
+            // landfall; then the independently simulated car appears ashore.
+            box(x,-.58f,z-.02f,.53f,.25f,.48f,.35f,.40f,.31f);
+            box(x,-.42f,z-.05f,.24f,.11f,.25f,.28f,.34f,.27f);
+            box(x,-.42f,z+.17f,.055f,.06f,.35f,.22f,.25f,.21f);
+        }
         const int passengers=std::min(6,static_cast<int>(e.passengers));
         for(int n=0;n<passengers;n++) {
             const float px=x+(static_cast<float>(n%3)-1.0f)*.27f;
@@ -98,6 +105,34 @@ void EmitVesselSilhouette(const Enemy &e, BoxFn box, TriFn triangle) {
     }
 }
 
+// A light armored shore car, not a sprite representing an invulnerable
+// decoration. All geometry follows Campaign::armored_vehicles() positions;
+// its 0.43-unit centered hit sphere encompasses hull/turret.
+template <typename BoxFn, typename TriFn>
+void EmitArmoredVehicleSilhouette(const ArmoredVehicle &vehicle,
+                                 BoxFn box,TriFn triangle) {
+    if(!vehicle.active || !std::isfinite(vehicle.x) ||
+       !std::isfinite(vehicle.z))return;
+    const float x=vehicle.x,z=vehicle.z;
+    // Recessed black wheels beneath the angular olive chassis.
+    for(int side=-1;side<=1;side+=2) {
+        const float sx=static_cast<float>(side);
+        box(x+sx*.35f,-.88f,z,.15f,.19f,.62f,.12f,.15f,.13f);
+        for(int end=-1;end<=1;end+=2)
+            box(x+sx*.39f,-.83f,z+static_cast<float>(end)*.22f,
+                .11f,.17f,.16f,.23f,.24f,.21f);
+    }
+    box(x,-.76f,z,.63f,.19f,.69f,.35f,.39f,.30f);
+    box(x,-.64f,z-.035f,.51f,.095f,.48f,.48f,.49f,.37f);
+    // Sloped glacis and faceted closed turret; no visible human sprite
+    // masquerades as cargo after unloading.
+    triangle(x-.31f,-.72f,z+.30f,x+.31f,-.72f,z+.30f,
+             x,-.56f,z+.20f,.49f,.48f,.33f);
+    box(x,-.53f,z-.07f,.36f,.17f,.29f,.34f,.39f,.32f);
+    box(x,-.455f,z-.07f,.26f,.025f,.22f,.21f,.24f,.21f);
+    box(x,-.53f,z+.30f,.075f,.074f,.55f,.24f,.29f,.23f);
+    box(x,-.53f,z+.57f,.12f,.10f,.075f,.16f,.18f,.16f);
+}
 template <typename BoxFn, typename TriFn>
 void EmitInfantrySilhouette(const Infantry &soldier, BoxFn box, TriFn triangle) {
     if (!soldier.active || !std::isfinite(soldier.x) ||
