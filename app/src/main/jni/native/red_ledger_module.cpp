@@ -9,6 +9,7 @@
 #include "red_ledger_mug_mesh.h"
 #include "red_ledger_trade.h"
 #include "red_ledger_wholesale.h"
+#include "red_ledger_renovations.h"
 #include "red_ledger_stock_layout.h"
 
 #include <GLES2/gl2.h>
@@ -34,11 +35,12 @@ namespace signs = reverie::redledger::signage;
 namespace mugs = reverie::redledger::mug;
 namespace trade = reverie::redledger::trade;
 namespace stock = reverie::redledger::stock;
+namespace property = reverie::redledger::property;
 
 // Include the far rear doorway in seated work-ray reach.
 constexpr float kMaximumWorkReach = 4.25f;
 constexpr float kHeldCupDistance = 0.90f;
-constexpr char kSaveSlot[] = "state-v3.bin";
+constexpr char kSaveSlot[] = "state-v4.bin";
 
 enum class WorkTarget : uint8_t {
     None = 0,
@@ -61,6 +63,8 @@ enum class WorkTarget : uint8_t {
     StockSku,
     DrinkChoice,
     SnackChoice,
+    UpgradeNext,
+    UpgradeBuy,
     Bed
 };
 
@@ -129,13 +133,16 @@ static const TargetBounds kWorkTargets[] = {
     {WorkTarget::StockBuy,{0.40f,-0.48f,-1.02f},{0.35f,0.30f,0.30f}},
     {WorkTarget::DrinkChoice,{1.25f,-0.50f,-1.10f},{0.32f,0.29f,0.25f}},
     {WorkTarget::SnackChoice,{1.73f,-0.50f,-1.10f},{0.27f,0.29f,0.25f}},
-    {WorkTarget::Bed,{1.35f,-0.75f,-1.74f},{0.86f,0.32f,0.75f}}
+    {WorkTarget::Bed,{1.35f,-0.75f,-1.74f},{0.86f,0.32f,0.75f}},
+    {WorkTarget::UpgradeNext,{-1.32f,-0.46f,-1.10f},{0.29f,0.18f,0.25f}},
+    {WorkTarget::UpgradeBuy,{-0.52f,-0.46f,-1.10f},{0.29f,0.18f,0.25f}}
 };
 
 struct ModuleState {
     const ReverieNativeHostV1 *host = nullptr;
     Simulation simulation;
     trade::Trade market;
+    property::Renovations renovations;
     int hovered_offer = -1;
     bool ledger_visible = false;
 
@@ -225,6 +232,8 @@ const char *WorkTargetName(
         case WorkTarget::StockBuy: return "purchase selected wholesale stock";
         case WorkTarget::DrinkChoice: return "choose next available drink";
         case WorkTarget::SnackChoice: return "choose next available snack";
+        case WorkTarget::UpgradeNext: return "next property renovation";
+        case WorkTarget::UpgradeBuy: return "purchase property renovation";
         case WorkTarget::Bed: return "rest and close the day";
         case WorkTarget::None:
         default:
@@ -316,6 +325,8 @@ bool IsTargetAvailable(
                 && simulation.dirty_cups() > 0;
 
         case WorkTarget::Ledger:
+        case WorkTarget::UpgradeNext:
+        case WorkTarget::UpgradeBuy:
             return room==trade::Room::Living && hands_free;
 
         case WorkTarget::BeerOrder:
@@ -496,11 +507,15 @@ WorkTarget FindWorkTarget(
 bool SaveState(ModuleState *state) {
     if (state==nullptr || !ReverieNativeHostSupportsSaveV1(state->host))
         return false;
-    uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize]={};
+    uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize+
+                  property::Renovations::kSerializedSize]={};
     size_t first=0u;
     if (!state->simulation.Serialize(bytes,Simulation::kSerializedSize,&first)
         || first!=Simulation::kSerializedSize
-        || !state->market.Serialize(bytes+first,trade::Trade::kSerializedSize)) {
+        || !state->market.Serialize(bytes+first,trade::Trade::kSerializedSize)
+        || !state->renovations.serialize(
+            bytes+first+trade::Trade::kSerializedSize,
+            property::Renovations::kSerializedSize)) {
         Log(state,REVERIE_NATIVE_LOG_ERROR,"Red Ledger composite save encoding failed.");
         return false;
     }
@@ -516,29 +531,36 @@ bool SaveState(ModuleState *state) {
 void LoadState(ModuleState *state) {
     if (state==nullptr || !ReverieNativeHostSupportsSaveV1(state->host))
         return;
-    uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize]={};
+    uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize+
+                  property::Renovations::kSerializedSize]={};
     uint32_t size=0u;
     const int32_t result=state->host->read_save(
         kSaveSlot,bytes,static_cast<uint32_t>(sizeof(bytes)),&size);
     if (result==REVERIE_NATIVE_SAVE_NOT_FOUND) return;
     if (result!=REVERIE_NATIVE_SAVE_OK || size!=sizeof(bytes)) {
-        Log(state,REVERIE_NATIVE_LOG_WARN,"Red Ledger pre-1.0 save rejected (v3 required).");
+        Log(state,REVERIE_NATIVE_LOG_WARN,"Red Ledger pre-1.0 save rejected (v4 required).");
         return;
     }
     // Keep active state atomic: corrupted or incompatible development saves
     // are rejected, not migrated, and do not alter a running game.
     Simulation base=state->simulation;
     trade::Trade market=state->market;
+    property::Renovations renovations=state->renovations;
     if (!base.Deserialize(bytes,Simulation::kSerializedSize,true)
         || !market.Deserialize(bytes+Simulation::kSerializedSize,
-            trade::Trade::kSerializedSize)) {
+            trade::Trade::kSerializedSize)
+        || !renovations.deserialize(
+            bytes+Simulation::kSerializedSize+trade::Trade::kSerializedSize,
+            property::Renovations::kSerializedSize)) {
         Log(state,REVERIE_NATIVE_LOG_WARN,
-            "Red Ledger rejected corrupt v3 game state; fresh state preserved.");
+            "Red Ledger rejected corrupt v4 game state; fresh state preserved.");
         return;
     }
     state->simulation=base;
     state->market=market;
-    Log(state,REVERIE_NATIVE_LOG_INFO,"Red Ledger six-supplier stock restored.");
+    state->renovations=renovations;
+    Log(state,REVERIE_NATIVE_LOG_INFO,
+        "Red Ledger six-supplier stock and eight renovations restored.");
 }
 
 bool ActivateWorkTarget(
@@ -588,7 +610,11 @@ bool ActivateWorkTarget(
                 // live state; never collect a snack on a failed sale.
                 Simulation staged=simulation;
                 changed=staged.ServeHeldCup() &&
-                    staged.ApplyServicePremium(bonus.cents,bonus.reputation);
+                    staged.ApplyServicePremium(
+                        bonus.cents+state->renovations.service_premium(
+                            state->market.drink(),state->market.snack()),
+                        std::min(4,bonus.reputation+
+                            state->renovations.reputation_bonus()));
                 if (changed) {
                     simulation=staged;
                     state->market.ConsumeSnack();
@@ -611,6 +637,14 @@ bool ActivateWorkTarget(
         case WorkTarget::Ledger:
             state->ledger_visible=!state->ledger_visible;
             changed=true;
+            break;
+        case WorkTarget::UpgradeNext:
+            changed=state->renovations.next();
+            state->ledger_visible=false;
+            break;
+        case WorkTarget::UpgradeBuy:
+            changed=state->renovations.buy(&simulation,state->market);
+            if(changed)state->ledger_visible=false;
             break;
         case WorkTarget::Bed: {
             const int32_t today=simulation.day();
@@ -1290,18 +1324,29 @@ void RefreshStatusBoard(ModuleState *state) {
             sim.day(),sim.cash_cents());
         std::snprintf(rows[1],sizeof(rows[1]),"DEBT: %d  REP: %d",
             sim.debt_cents(),sim.reputation());
-        std::snprintf(rows[2],sizeof(rows[2]),"101:%d 202:%d",
-            market.favor(0),market.favor(1));
-        std::snprintf(rows[3],sizeof(rows[3]),"303:%d 404:%d",
-            market.favor(2),market.favor(3));
-        std::snprintf(rows[4],sizeof(rows[4]),"505:%d 606:%d",
-            market.favor(4),market.favor(5));
-        const auto &ledger=sim.last_ledger();
-        if(state->ledger_visible)
+        if(state->ledger_visible) {
+            std::snprintf(rows[2],sizeof(rows[2]),"101:%d 202:%d",
+                market.favor(0),market.favor(1));
+            std::snprintf(rows[3],sizeof(rows[3]),"303:%d 404:%d",
+                market.favor(2),market.favor(3));
+            std::snprintf(rows[4],sizeof(rows[4]),"505:%d 606:%d",
+                market.favor(4),market.favor(5));
+            const auto &ledger=sim.last_ledger();
             std::snprintf(rows[5],sizeof(rows[5]),"DAY %d SALES %d LOST %d",
                 ledger.day,ledger.sales_cents,ledger.patrons_lost);
-        else
-            std::snprintf(rows[5],sizeof(rows[5]),"LEDGER VIEW / BED END DAY");
+        } else {
+            const int category=state->renovations.category();
+            const int tier=state->renovations.tier(category);
+            std::snprintf(rows[2],sizeof(rows[2]),"RENOVATE: %s %d/5",
+                property::kNames[category],tier);
+            std::snprintf(rows[3],sizeof(rows[3]),
+                tier==5?"FULLY IMPROVED":"NEXT TIER COST: %d",
+                state->renovations.cost(market));
+            std::snprintf(rows[4],sizeof(rows[4]),"VENDOR: %s",
+                market.offer_faction());
+            std::snprintf(rows[5],sizeof(rows[5]),
+                "LEFT: CATEGORY  RIGHT: BUY  LEDGER: ACCOUNTS");
+        }
     }
     size_t count=0u;
     for(size_t i=0;i<6u;++i)
@@ -1426,6 +1471,27 @@ void DrawRoom(
     float flicker
 ) {
     DrawStaticRoom(state, view_projection, flicker);
+    if (state->market.room()==trade::Room::Bar) {
+        // Actual purchased improvements alter the furnished 3D room.
+        // Nothing here is claimed to be exported Unreal artwork.
+        if(state->renovations.tier(property::Walls)>0)
+            DrawCube(state,view_projection,flicker,
+                0.f,0.17f,-2.91f,3.90f,0.12f,0.09f,
+                .53f,.35f,.22f,Material::Wood);
+        if(state->renovations.tier(property::Floor)>0)
+            DrawCube(state,view_projection,flicker,
+                0.f,-1.07f,-2.15f,3.55f,.07f,.12f,
+                .37f,.31f,.24f,Material::Wood);
+        if(state->renovations.tier(property::Ceiling)>0)
+            DrawCube(state,view_projection,flicker,
+                .38f,.90f,-1.85f,.54f,.09f,.42f,
+                .78f,.69f,.45f,Material::Metal);
+        for(int i=0;i<state->renovations.tier(property::Seating);++i)
+            DrawCube(state,view_projection,flicker,
+                1.0f+static_cast<float>(i%3)*.34f,
+                -.75f,-1.70f-static_cast<float>(i/3)*.42f,
+                .23f,.27f,.25f,.42f,.28f,.20f,Material::Wood);
+    }
     if (state->market.room()!=trade::Room::Bar) {
         const bool stock=state->market.room()==trade::Room::Stockroom;
         // Navigation is a real room transition with room-specific models.
@@ -1490,6 +1556,14 @@ void DrawRoom(
                 0.85f,-0.50f,-0.90f,0.52f,0.08f,0.37f,
                 state->hovered_target==WorkTarget::Ledger?0.85f:0.59f,
                 0.57f,0.42f,Material::Paper);
+            DrawCube(state,view_projection,flicker,
+                -1.32f,-0.49f,-1.10f,0.52f,0.18f,0.39f,
+                state->hovered_target==WorkTarget::UpgradeNext?.78f:.42f,
+                .45f,.25f,Material::Wood);
+            DrawCube(state,view_projection,flicker,
+                -0.52f,-0.49f,-1.10f,0.52f,0.18f,0.39f,
+                state->hovered_target==WorkTarget::UpgradeBuy?.80f:.35f,
+                .61f,.25f,Material::Metal);
             DrawCube(state,view_projection,flicker,
                 1.35f,-0.95f,-1.74f,1.53f,0.08f,1.16f,
                 state->hovered_target==WorkTarget::Bed?0.49f:0.28f,

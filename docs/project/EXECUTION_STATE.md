@@ -1,3 +1,11 @@
+## 2026-10-16 — Red Ledger five-tier property investment slice
+
+**INTENT:** Continue actual Between Deliveries play systems without misrepresenting proprietary Unreal .uasset data as imported, finished assets. Preflight verified current `main` and inspected the private Drive source tree, full-scope contract, stockroom, bar service, room actions and composite saving.
+
+**SOURCE EDIT:** Added a compact eight-category/five-tier property component with cash purchases and six-supplier standings discounts; connected real living-quarters choose/buy hit targets, dynamic renovation status, earned patron premiums/reputation and purchase-dependent in-world finishing/seating to the existing native module. Renovation state appends a checked 20-byte segment to atomic `state-v4.bin`; prior development v3 save is deliberately not migrated. Extended the existing faction-integration regression instead of adding a standalone test runner. Corrected the new benefit cap to respect existing validated patron-payment/reputation limits. Accounting temporarily groups investment in the existing supply-spend outflow.
+
+**ACCEPTANCE:** Source and tests have been prepared for remote commit; full native compilation, runtime interaction, Android APK asset readback, reference headset and original Unreal content conversion are NOT established by this record. Source-only changes and any verified remote acceptance must be reported precisely.
+
 ## 2026-10-16 — Omega Front convoy ambush gameplay
 
 **Intent:** Continue hands-on native game development on main without proliferating incremental tests.

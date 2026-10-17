@@ -1,5 +1,8 @@
 #include "red_ledger_simulation.h"
 #include "red_ledger_trade.h"
+#include "red_ledger_renovations.h"
+#include <array>
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -71,5 +74,56 @@ int main() {
     assert(loaded_current.Deserialize(current_bytes,current_size));
     // No wholesale purchasing may silently exceed the available wallet.
     assert(!loaded_current.SpendSpecialStock(loaded_current.cash_cents()+1));
-    std::cout<<"Red Ledger integrated trade: six-faction sales, wholesale and v3 save OK\n";
+    // Genuine living-quarters renovation loop: paid upgrades affect later
+    // patron receipts and survive the new composite save section.
+    property::Renovations upgrades;
+    Simulation investor;
+    trade::Trade vendor;
+    assert(upgrades.category()==property::Walls);
+    assert(upgrades.tier(property::Walls)==0);
+    assert(upgrades.cost(vendor)==1600);
+    const int32_t opening=investor.cash_cents();
+    assert(upgrades.buy(&investor,vendor));
+    assert(upgrades.tier(property::Walls)==1);
+    assert(investor.cash_cents()==opening-1600);
+    assert(upgrades.service_premium(7,2)>0);
+    assert(!upgrades.buy(&investor,vendor)); // second tier costs 3200
+    assert(upgrades.tier(property::Walls)==1);
+    for(int category=1;category<property::Count;++category){
+        assert(upgrades.next());
+        assert(upgrades.category()==category);
+    }
+    assert(upgrades.next()&&upgrades.category()==property::Walls);
+    std::array<uint8_t,property::Renovations::kSerializedSize> renoBytes{};
+    assert(!upgrades.serialize(nullptr,renoBytes.size()));
+    assert(upgrades.serialize(renoBytes.data(),renoBytes.size()));
+    property::Renovations reload;
+    assert(reload.deserialize(renoBytes.data(),renoBytes.size()));
+    assert(reload.tier(property::Walls)==1);
+    assert(reload.category()==property::Walls);
+    const int previous=reload.tier(property::Walls);
+    renoBytes[4]=6u; // valid hash will still reject tier 6
+    uint32_t digest=2166136261u;
+    for(size_t i=0;i<16u;++i)digest=(digest^renoBytes[i])*16777619u;
+    for(int i=0;i<4;++i)renoBytes[16+i]=static_cast<uint8_t>(digest>>(i*8));
+    assert(!reload.deserialize(renoBytes.data(),renoBytes.size()));
+    assert(reload.tier(property::Walls)==previous);
+    renoBytes[4]=1u;
+    assert(!reload.deserialize(renoBytes.data(),renoBytes.size())); // bad checksum
+    assert(!reload.deserialize(renoBytes.data(),renoBytes.size()-1u));
+    Simulation visitor;
+    assert(visitor.TakeCleanCup()&&visitor.FillSpecialDrink());
+    const auto *buyer=visitor.current_patron();
+    assert(buyer!=nullptr);
+    const auto quote=trade::RateService(buyer->kind,7,2);
+    assert(visitor.ServeHeldCup());
+    const int expected=buyer->drink_price_cents+quote.cents+
+                       upgrades.service_premium(7,2);
+    assert(visitor.ApplyServicePremium(
+        quote.cents+upgrades.service_premium(7,2),
+        std::min(4,quote.reputation+upgrades.reputation_bonus())));
+    assert(visitor.pending_payment_cents()==expected);
+    assert(visitor.CollectPayment());
+    assert(visitor.cash_cents()==2200+expected);
+    std::cout<<"Red Ledger trade and v4 renovations: paid upgrades, revenue and save OK\n";
 }
