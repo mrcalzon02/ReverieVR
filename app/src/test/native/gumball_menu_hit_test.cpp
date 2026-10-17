@@ -55,7 +55,14 @@ int main(){
     assert(cursor.x==6&&cursor.y==6);
     // All grid cells and palette buttons stay reachable through pointer
     // without requiring held primary or simulated touchpad direction.
+    cursor.pointAt(8,0);
+    assert(cursor.chosenPart()==Part::Armor);
+    cursor.pointAt(7,4);
+    assert(cursor.chosenPart()==Part::Cargo);
+    cursor.pointAt(8,4); // Return is not an equipment brush.
+    assert(cursor.chosenPart()==Part::Empty);
     cursor.pointAt(0,0);
+    assert(cursor.chosenPart()==Part::Empty);
     assert(cursor.x==0&&cursor.y==0);
     cursor.pointAt(-1,20);
     assert(cursor.x==0&&cursor.y==0);
