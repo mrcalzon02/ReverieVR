@@ -307,7 +307,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     },
     {
       "id": "ice_sheet",
@@ -331,7 +333,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     },
     {
       "id": "deep_water",
@@ -355,7 +359,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     },
     {
       "id": "black_glass",
@@ -379,7 +385,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     },
     {
       "id": "reed_marsh",
@@ -403,7 +411,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     },
     {
       "id": "fungal_growth",
@@ -427,7 +437,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     },
     {
       "id": "farmland_tilled",
@@ -451,7 +463,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     },
     {
       "id": "farmland_wheat",
@@ -475,7 +489,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     },
     {
       "id": "dead_forest_floor",
@@ -499,7 +515,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     },
     {
       "id": "leaf_litter",
@@ -523,7 +541,9 @@
           116
         ],
         "method": "crop isolated original concept tile; resample to 64px"
-      }
+      },
+      "render_status": "quarantined_pending_visual_review",
+      "quarantine_reason": "Source-sheet extraction may contain gray dividers or crop artifacts; not approved for in-game texture loading."
     }
   ],
   "acceptance": {
