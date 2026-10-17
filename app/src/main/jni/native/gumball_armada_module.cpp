@@ -49,6 +49,8 @@ struct Module {
     int supportSelected=0,loadoutSelected=0;
     YardCursor yardCursor{};
     bool secondary=false;
+    bool flightPointer=false;
+    float flightTargetX=0.f,flightTargetY=0.f;
     reverie::gumball::MenuPointerFocus pointerFocus{};
     char yardFeedback[84]="SELECT PART ON RIGHT / CLICK SHIP TO EDIT";
     Part brush=Part::Frame;
@@ -193,7 +195,9 @@ void LoadoutView(Module* m){
         else if(m->sim.cash()<static_cast<uint32_t>(m->sim.price(u)))
             std::snprintf(hint,sizeof(hint),"NOT ENOUGH GUMBALLS: NEED %dG",
                           m->sim.price(u));
-        else std::snprintf(hint,sizeof(hint),"CLICK TO BUY / PERMANENT SHIP UPGRADE");
+        else std::snprintf(hint,sizeof(hint),u==Upgrade::Thruster?
+            "CLICK TO BOOST CONTROLLER-STEER SHIP SPEED":
+            "CLICK TO BUY / PERMANENT SHIP UPGRADE");
     }else if(m->loadoutSelected<7){
         const Weapon w=static_cast<Weapon>(m->loadoutSelected-4);
         if(m->sim.weapon()==w)std::snprintf(hint,sizeof(hint),"ALREADY EQUIPPED");
@@ -522,6 +526,14 @@ void Flight(Module* m){
         Rect(m,-2.25f,0,.13f,2.7f,-2.78f,1.f,.18f,.18f);
         Rect(m, 2.25f,0,.13f,2.7f,-2.78f,1.f,.18f,.18f);
     }
+    // Visible motion-controller destination: the hull catches up at its
+    // true thruster/shipyard speed; it never teleports to this marker.
+    if(m->flightPointer){
+        Rect(m,m->flightTargetX,m->flightTargetY,.12f,.022f,
+             -2.76f,.38f,1.f,.84f);
+        Rect(m,m->flightTargetX,m->flightTargetY,.022f,.12f,
+             -2.76f,.38f,1.f,.84f);
+    }
     float x=s.player_x(),y=s.player_y();
     Tri(m,x,y+.22f,x-.19f,y-.17f,x+.19f,y-.17f,-2.85f,.92f,.66f,.94f);
     Disc(m,x,y,.075f,-2.83f,.29f,.91f,.96f);
@@ -809,7 +821,25 @@ void Update(void* p,const ReverieNativeInputV1* in){
         const int shieldBefore=m->sim.shield();
         const uint32_t fired=m->sim.shots_fired();
         const uint32_t usedKits=m->sim.kit_activations();
-        m->sim.update(dt,in->move_x,in->move_y,pressed);
+        // The actual Daydream motion controller owns flight positioning.
+        // Touchpad click fires independently; the directional pad is only
+        // a fallback when no valid tracked controller aim is available.
+        reverie::gumball::FlightAim aim{};
+        if(ReverieNativeInputHasPointerV1(in)
+           &&in->pointer_kind==REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER)
+            aim=reverie::gumball::FlightAimFromRay(
+                in->pointer_origin,in->pointer_direction);
+        m->flightPointer=aim.valid;
+        if(aim.valid){
+            m->flightTargetX=aim.x;
+            m->flightTargetY=aim.y;
+            const auto axes=reverie::gumball::FlightAxesToTarget(
+                m->sim.player_x(),m->sim.player_y(),aim,dt,
+                m->sim.pointer_move_speed());
+            m->sim.update(dt,axes.x,axes.y,pressed,true);
+        }else{
+            m->sim.update(dt,in->move_x,in->move_y,pressed);
+        }
         if(kills!=m->sim.kills())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         if(hp>m->sim.hp()||shieldBefore>m->sim.shield())ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
         if(m->sim.shots_fired()>fired)
