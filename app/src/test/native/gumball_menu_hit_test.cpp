@@ -21,6 +21,17 @@ int main(){
     assert(LoadoutHit(2.4f,1.4f).id==-1);
     assert(YardHit(NAN,0.f).id==-1);
 
+    // A controller pointing at blank menu space must NEVER activate the
+    // stale selected purchase/mission/ship cell. Pad-only mode is retained.
+    const MenuHit missed{};
+    assert(!MenuClickAllowed(true,false,false,missed));
+    assert(MenuClickAllowed(true,false,false,ChartHit(kChartRouteX[1],.22f)));
+    assert(MenuClickAllowed(true,false,false,LoadoutHit(kLoadoutWeaponX[2],-.38f)));
+    assert(MenuClickAllowed(true,false,false,SupportHit(0.f,.88f)));
+    assert(MenuClickAllowed(true,false,false,YardHit(-1.47f,.075f)));
+    assert(MenuClickAllowed(true,true,false,missed));  // pad owns focus
+    assert(MenuClickAllowed(true,false,true,missed));  // pad currently moving
+    assert(MenuClickAllowed(false,false,false,missed)); // no controller ray
     // Pointer targets line up with EVERY physical ship cell.
     for(int y=0;y<7;++y)for(int x=0;x<7;++x){
         const MenuHit hit=YardHit(-1.47f+(x-3)*.28f,
