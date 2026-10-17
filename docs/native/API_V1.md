@@ -128,10 +128,7 @@ Save slots are scoped by the host to the active packaged module. A module does n
 
 `request_sound(cue_id)` requests one shell-owned, validated sound per
 successful action. It is **not** a bitmask and cannot accept PCM, paths,
-loop sources or arbitrary cue IDs. The initial IDs
-`REVERIE_NATIVE_SOUND_WEAPON_MACHINE` through
-`REVERIE_NATIVE_SOUND_WEAPON_CANNON` (1–5) provide five distinct
-Breakwater reports. Host-side `ReverieNativeSoundQueueV1` bounds each
+loop sources or arbitrary cue IDs. IDs `REVERIE_NATIVE_SOUND_WEAPON_MACHINE` through `REVERIE_NATIVE_SOUND_WEAPON_CANNON` (1–5) retain the five Breakwater weapon reports. IDs 6–15 provide hull impact, water splash, boat destruction, gunboat salvo, infantry volley, bomber, strafer, SAM launch, wave start, and shoreline collision. All use the same eight-entry ordered byte queue and preloaded phone PCM16 bank; no additional ABI struct fields, arbitrary files, paths or per-eye sound callbacks. Breakwater's passive song remains the separate owner-original MP3 `Mars des Souvenirs`, looped by `ShellMenuMusic`. Device mix verification is pending. Host-side `ReverieNativeSoundQueueV1` bounds each
 packet to eight ordered one-byte IDs; the shell drains once per native
 update using `NativeModuleRuntime.nativeDrainSoundCues()`, forwarding
 each ID to the same reusable `NativeCombatSound` mixer. Pause clears
