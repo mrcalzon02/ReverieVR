@@ -574,9 +574,11 @@ void Flight(Module* m){
                       static_cast<int>(s.remaining_time()));
     else std::snprintf(status,sizeof(status),"SOUR SWEEP");
     Text(m,status,0,-1.055f,.032f,.84f,.96f,.74f);
-    std::snprintf(status,sizeof(status),"WAVE %d/3  CLEARED %d/%d  ESCAPED %d/3",
-                  s.wave(),s.defeated(),s.target(),s.escaped());
-    Text(m,status,0,-1.24f,.035f,.88f,.90f,.95f);
+    std::snprintf(status,sizeof(status),"ASSAULT %d/%d  %s  DOWN %d/%d  ESC %d",
+                  s.assault(),s.assault_count(),
+                  reverie::gumball::FormationName(s.current_formation()),
+                  s.defeated(),s.target(),s.escaped());
+    TextFit(m,status,0,-1.24f,4.70f,.035f,.88f,.90f,.95f);
     std::snprintf(status,sizeof(status),"RUN CASH +%u  BEST COMBO X%d",
                   s.sortie_cash(),s.max_combo());
     Text(m,status,0,-1.43f,.031f,.86f,.80f,.58f);
