@@ -11,5 +11,13 @@ constexpr uint8_t ForPeriod(uint8_t location,uint8_t day,bool night,
         (day>0?static_cast<unsigned>(day-1u):0u)+2u*location;
     return static_cast<uint8_t>(total>32u?32u:total);
 }
+// Validate the *full serialized 32-bit word* before narrowing to uint8_t.
+// This is shared by the campaign's checkpoint reader and an executable
+// independent regression, avoiding the old hardcoded eight-wave cap.
+constexpr bool CheckpointAllowed(uint32_t serialized_wave,uint8_t location,
+                                 uint8_t day,bool night,uint8_t tier) {
+    return serialized_wave>=1u &&
+           serialized_wave<=ForPeriod(location,day,night,tier);
+}
 }}}
 #endif
