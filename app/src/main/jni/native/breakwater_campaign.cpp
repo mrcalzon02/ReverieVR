@@ -242,8 +242,13 @@ bool Campaign::DeserializeShop(const uint8_t *source, size_t length) {
     candidate.location_ = static_cast<uint8_t>(data[4]);
     candidate.day_ = static_cast<uint8_t>(data[5]);
     candidate.period_ = static_cast<Period>(data[6]);
+    // Validate the untruncated 32-bit checkpoint word against this exact
+    // location/day/night/tier; reject overflow and late out-of-period waves
+    // before a cast could silently wrap a damaged save index.
+    if(!waves::CheckpointAllowed(data[7],candidate.location_,candidate.day_,
+                                 candidate.period_==Period::Night,
+                                 Tier(candidate.difficulty_)))return false;
     candidate.wave_index_ = static_cast<uint8_t>(data[7]);
-    if (candidate.wave_index_ > candidate.waves_this_period()) return false;
     candidate.credits_ = static_cast<int32_t>(data[8]);
     candidate.integrity_ = static_cast<int32_t>(data[9]);
     candidate.artillery_charges_ = static_cast<uint8_t>(data[10]);
