@@ -46,7 +46,8 @@ int main() {
         // Rear elevation is pronounced; frontal water stays visible.
         assert(RidgeHeight(location,0,true)>RidgeHeight(location,24,true));
         for(bool dark : {false,true}) {
-            int triangles=0,boxes=0;
+            int triangles=0,boxes=0,anchoredTrees=0;
+            int anchoredTrack=0,anchoredSheds=0,anchoredChimneys=0;
             float groundFarZ=0;
             auto tri=[&](float x,float y,float z,float a,float b,float c,
                          float d,float e,float f,float r,float g,float blue){
@@ -64,12 +65,40 @@ int main() {
                          float r,float g,float b){
                 for(float value:{x,y,z,w,h,depth,r,g,b})
                     assert(std::isfinite(value));
+                if(location==0 && w==.10f && h==.50f &&
+                   depth==.10f) {
+                    assert(std::abs(y-h*.50f-
+                        RearGroundHeight(day,x,z))<.0001f);
+                    ++anchoredTrees;
+                }
+                if(location==0 && w==.80f && h==.025f &&
+                   depth==1.55f) {
+                    assert(std::abs(y-.015f-
+                        RearGroundHeight(day,x,z))<.0001f);
+                    ++anchoredTrack;
+                }
+                if(location==1 && w==2.3f && h==1.45f &&
+                   depth==3.0f) {
+                    assert(std::abs(y-h*.50f-
+                        RearGroundHeight(day,x,z))<.0001f);
+                    ++anchoredSheds;
+                }
+                if(location==1 && w==.42f && h==1.2f &&
+                   depth==.42f) {
+                    assert(std::abs(y-h*.50f-
+                        RearGroundHeight(day,x,z))<.0001f);
+                    ++anchoredChimneys;
+                }
                 ++boxes;
             };
             EmitSurroundingLandscape(location,dark,box,tri);
             // Bounded geometry, no unbounded tessellation per stereo eye.
-            assert(triangles>=240 && triangles<420);
-            assert(boxes<50);
+            assert(triangles==(location==0?250:location==1?240:258));
+            assert(boxes==(location==0?16:location==1?8:0));
+            assert(anchoredTrees==(location==0?10:0));
+            assert(anchoredTrack==(location==0?6:0));
+            assert(anchoredSheds==(location==1?2:0));
+            assert(anchoredChimneys==(location==1?2:0));
             assert(groundFarZ>kHillRadius-.20f);
         }
     }
