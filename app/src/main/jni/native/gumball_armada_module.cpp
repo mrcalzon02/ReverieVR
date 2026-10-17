@@ -154,7 +154,7 @@ void LoadoutView(Module* m){
     Background(m);
     char text[96];
     Text(m,"SHIP LOADOUT",0,1.43f,.067f,1.f,.83f,.94f);
-    std::snprintf(text,sizeof(text),"BALANCE %uG  /  CHOOSE EQUIPMENT",m->sim.cash());
+    std::snprintf(text,sizeof(text),"BALANCE %uG  /  MINUS: BACK",m->sim.cash());
     TextFit(m,text,0,1.12f,4.20f,.038f,.80f,.98f,.89f);
     Text(m,"SHIP SYSTEMS",0,.93f,.033f,1.f,.76f,.56f);
     const char* upgrades[]={"BLASTER","HULL","THRUSTER","SHIELD"};
@@ -208,7 +208,8 @@ void LoadoutView(Module* m){
 void SupportView(Module* m){
     Background(m);
     TextFit(m,"ALLIED SUPPORT CONTRACTS",0,1.44f,4.60f,.055f,.94f,.91f,.74f);
-    Text(m,"ONE PAID ESCORT FOR YOUR NEXT SORTIE",0,1.16f,.032f,.83f,.97f,.86f);
+    TextFit(m,"ONE ESCORT FOR NEXT SORTIE  /  MINUS: BACK",
+            0,1.16f,4.55f,.032f,.83f,.97f,.86f);
     char text[116];
     const auto& contracts=m->sim.support();
     const char* items[]={"HIRE CAPITAINE ECLAIR","HIRE MLLE MACARON",
@@ -807,6 +808,13 @@ void Update(void* p,const ReverieNativeInputV1* in){
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         Rebuild(m);
     }else if(phase==Phase::Chart&&m->inLoadout){
+        if(reverie::gumball::PrepSecondaryBack(m->inLoadout,m->inSupport,
+                                               m->inYard,in->secondary_down!=0,
+                                               m->secondary)){
+            m->inLoadout=false;m->navTime=0.f;
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            Rebuild(m);
+        }else{
         m->navTime-=dt;
         const float x=in->move_x,y=in->move_y;
         if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
@@ -834,7 +842,15 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
             Rebuild(m);
         }
+        }
     }else if(phase==Phase::Chart&&m->inSupport){
+        if(reverie::gumball::PrepSecondaryBack(m->inLoadout,m->inSupport,
+                                               m->inYard,in->secondary_down!=0,
+                                               m->secondary)){
+            m->inSupport=false;m->navTime=0.f;
+            ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            Rebuild(m);
+        }else{
         m->navTime-=dt;
         if(m->navTime<=0.f&&std::fabs(in->move_y)>.55f){
             m->supportSelected=std::max(0,std::min(8,
@@ -861,6 +877,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
             ReverieNativeRequestFeedbackV1(m->host,good?
                 REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
             Rebuild(m);
+        }
         }
     }else if(phase==Phase::Chart&&m->inYard){
         m->navTime-=dt;
