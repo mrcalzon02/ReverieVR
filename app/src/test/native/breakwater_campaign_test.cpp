@@ -581,11 +581,13 @@ int main() {
     {
         assert(EnemyStartingHp(UnitType::Rowboat)==20);
         assert(EnemyStartingHp(UnitType::LandingCraft)==85);
+        assert(EnemyStartingHp(UnitType::ArmoredTransport)==320);
         assert(EnemyStartingHp(UnitType::Gunboat)==125);
         assert(EnemyStartingHp(UnitType::Aircraft)==100);
         assert(EnemyStartingHp(static_cast<UnitType>(255))==0);
         assert(SurfaceBaseHp(UnitType::Rowboat)==20);
         assert(SurfaceBaseHp(UnitType::LandingCraft)==85);
+        assert(SurfaceBaseHp(UnitType::ArmoredTransport)==320);
         assert(SurfaceBaseHp(UnitType::Gunboat)==125);
         assert(SurfaceBaseHp(UnitType::Aircraft)==0);
         assert(SurfaceBaseHp(static_cast<UnitType>(255))==0);
@@ -2621,6 +2623,55 @@ int main() {
     assert(!arrived.armored_vehicles()[car_index].active);
     assert(arrived.wave_status().armor_destroyed>=1);
     assert(!arrived.FireAtArmor(car_index));
+
+    // Actual final-day flagship, not a decorative mesh or early-game
+    // substitution. Two vehicles remain cargo until a true live landfall.
+    Campaign flagship(Difficulty::Casual,2026u);
+    assert(flagship.Start());
+    uint8_t late_save[Campaign::kSerializedSize]={};
+    assert(flagship.SerializeShop(late_save,sizeof(late_save)));
+    late_save[16]=2u; // Blackcap Island
+    late_save[20]=4u; // final day
+    late_save[28]=19u; // final daytime wave on Cadet
+    late_save[32]=0x10u;late_save[33]=0x27u; // 10,000 credits
+    assert(flagship.DeserializeShop(late_save,sizeof(late_save)));
+    assert(flagship.waves_this_period()==19u);
+    assert(flagship.PurchaseWeapon(WeaponKind::DirectCannon));
+    assert(flagship.BeginWave());
+    flagship.Tick(.05f);
+    assert(flagship.enemies()[0].active);
+    assert(flagship.enemies()[0].type==UnitType::ArmoredTransport);
+    assert(flagship.enemies()[0].hp==320);
+    assert(flagship.enemies()[0].passengers==4u);
+    assert(flagship.enemies()[0].carries_armor);
+    assert(flagship.wave_status().armor_landed==0);
+    assert(flagship.armored_vehicles()[0].active==false);
+    Campaign flagshipSunk=flagship;
+    // Four correctly timed direct cannon hits defeat the actual armored
+    // ship before landfall. Killing it prevents both cars and its troop
+    // complement from being spawned by Land().
+    for(int shot=0;shot<4;++shot) {
+        assert(flagshipSunk.FireAt(0));
+        if(shot<3)for(int ticks=0;ticks<10;++ticks)
+            flagshipSunk.Tick(.10f);
+    }
+    assert(!flagshipSunk.enemies()[0].active);
+    assert(flagshipSunk.wave_status().boats_sunk==1u);
+    // Compare deterministic copies through the same elapsed invasion;
+    // both other spawn streams are unchanged. The sunk heavy transport
+    // suppresses precisely its two vehicle cargo slots.
+    for(int n=0;n<210;++n) {
+        flagship.Tick(.10f);
+        flagshipSunk.Tick(.10f);
+        if(flagship.phase()==Phase::Defeat ||
+           flagshipSunk.phase()==Phase::Defeat)break;
+    }
+    if(flagship.phase()!=Phase::Defeat &&
+       flagshipSunk.phase()!=Phase::Defeat) {
+        assert(flagship.wave_status().armor_landed>=2u);
+        assert(flagship.wave_status().armor_landed==
+               flagshipSunk.wave_status().armor_landed+2u);
+    }
 
     // Day and night each contain their own shop-separated waves.
     Campaign clock(Difficulty::Casual,41);
