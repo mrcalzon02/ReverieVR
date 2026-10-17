@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "project": "Omega Front",
+  "grid": {
+    "cell_px": 64,
+    "orientation": "top-down",
+    "terrain_cells": [
+      1,
+      1
+    ]
+  },
+  "images": [
+    {
+      "id": "cracked_earth",
+      "source": "source/cracked_earth.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "60e7a519174efd32317bb23f354ead9b4585fd81",
+      "game": "game_64/cracked_earth.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "9a316b9457569b0988baeda3bb06f01e27f8a0cf"
+    },
+    {
+      "id": "rocky_wasteland",
+      "source": "source/rocky_wasteland.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "4c37228c323768983be510595109a90539c2664b",
+      "game": "game_64/rocky_wasteland.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "70fcb08b8c1b3965390087c055fe8f0bddbe5702"
+    },
+    {
+      "id": "dry_steppe",
+      "source": "source/dry_steppe.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "e11cfc1d9de319174fd822979f708ea03c4dddbc",
+      "game": "game_64/dry_steppe.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "0f83b8c172dc0f0215c4c66c7410e5e82328f061"
+    },
+    {
+      "id": "muddy_ruts",
+      "source": "source/muddy_ruts.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "5bab0d6761b2247283684fe1fcb6545180deca3f",
+      "game": "game_64/muddy_ruts.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "9a70dd21acbea102d0f7ef32502f0a5bc13304b5"
+    },
+    {
+      "id": "scorched_embers",
+      "source": "source/scorched_embers.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "9c33cc87b45d29269dcdc4ea2c73577828f7a0a4",
+      "game": "game_64/scorched_embers.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "f259bbf403776ebbef90b3414406de644f3df929"
+    },
+    {
+      "id": "dirt_and_gravel",
+      "source": "source/dirt_and_gravel.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "33b3174c1bc42aa40c022068e9aac9a158fcdb4b",
+      "game": "game_64/dirt_and_gravel.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "9c7e8be3ec4c7236c13b052c81de324be9206ead"
+    },
+    {
+      "id": "rusted_wasteland",
+      "source": "source/rusted_wasteland.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "64dc1a3825202e094e84296ccef633118925bad1",
+      "game": "game_64/rusted_wasteland.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "6888ff69ed53bf31b8f4235b05235c31d2a01dd4"
+    },
+    {
+      "id": "cracked_salt_flat",
+      "source": "source/cracked_salt_flat.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "d0da7f70b08bb81c06c412d58743a874dac04e8b",
+      "game": "game_64/cracked_salt_flat.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "ce714fba4b312658d13ddbacb6b3f042b2d91048"
+    },
+    {
+      "id": "marsh_pool",
+      "source": "source/marsh_pool.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "d81b09834fcf0fa1a31a7fff49ae045dbe0c8296",
+      "game": "game_64/marsh_pool.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "e5ca7b58d03058d9a43b98ad2511ece284b117ed"
+    },
+    {
+      "id": "ruined_concrete",
+      "source": "source/ruined_concrete.png",
+      "source_px": [
+        1254,
+        1254
+      ],
+      "source_git_blob": "ed6b0e801e532815d5b918392ffaba18e9659c28",
+      "game": "game_64/ruined_concrete.png",
+      "game_px": [
+        64,
+        64
+      ],
+      "game_git_blob": "4b7e1f6bf53d1ba4734b712dd0804984f8c22ac2"
+    }
+  ],
+  "status": "Standalone source/reference and game-sized PNGs; native renderer still needs texture binding."
+}
