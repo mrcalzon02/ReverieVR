@@ -9,7 +9,7 @@ namespace reverie { namespace breakwater {
 enum class Difficulty : uint8_t { Casual, Regular, Veteran, Siege };
 enum class Phase : uint8_t { Briefing, Shop, Combat, Victory, Defeat };
 enum class Period : uint8_t { Day, Night };
-enum class UnitType : uint8_t { Rowboat, LandingCraft, Gunboat, Aircraft };
+enum class UnitType : uint8_t { Rowboat, LandingCraft, Gunboat, Aircraft, ArmoredTransport };
 enum class AircraftPattern : uint8_t { None, Strafer, Bomber };
 // Shared spawn health also drives damage visualization. Do not duplicate
 // balance values in renderer-only code, HUDs, or saved-state adapters.
@@ -17,6 +17,7 @@ constexpr int16_t EnemyStartingHp(UnitType type) {
     switch(type) {
         case UnitType::Rowboat: return 20;
         case UnitType::LandingCraft: return 85;
+        case UnitType::ArmoredTransport: return 320;
         case UnitType::Gunboat: return 125;
         case UnitType::Aircraft: return 100;
         default: return 0;
@@ -173,7 +174,7 @@ public:
     static constexpr size_t kMaxEnemies = 12;
     static constexpr size_t kMaxInfantry = 60; // ten transports x six passengers
     static constexpr size_t kMaxCover = 4;
-    static constexpr size_t kMaxArmor = 10; // at most ten transports per wave // tiny location-specific barricades
+    static constexpr size_t kMaxArmor = 20; // ten transports x two armored cars each
     static constexpr uint8_t kLocations = 3;
     static const std::array<Location, kLocations> &Locations();
     explicit Campaign(Difficulty difficulty = Difficulty::Regular,
