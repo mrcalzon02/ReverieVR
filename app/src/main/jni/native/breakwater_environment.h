@@ -102,7 +102,7 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
     // A solid walk-back ground surface, behind the player's battery. Its
     // nearest edge stays BELOW the existing gun cradle and menu panels.
     for(int strip=0;strip<12;++strip) {
-        const float nearZ=-.50f+strip*1.15f,farZ=nearZ+1.15f;
+        const float nearZ=-.50f+strip*1.45f,farZ=nearZ+1.45f;
         const float t0=strip/12.0f,t1=(strip+1)/12.0f;
         const float y0=-1.12f+p.rise*t0*t0*.80f;
         const float y1=-1.12f+p.rise*t1*t1*.80f;

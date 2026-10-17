@@ -22,3 +22,5 @@ The original sky gradient was adjusted from muted day tones to bright blue/dayli
 ## Next device check
 
 On Galaxy S9, turn fully behind the battery in each location both day and night. Confirm no gap between sky/hills, no mountains occlude enemy approach, no doubled geometry or eyes disagreeing, bright day versus deep blue night in gun and world geometry, and no regression in stereo frame time.
+
+**Seam closure correction:** Rear ground strip length is 1.45 world units (12 strips from z=-0.50 to z=16.90), meeting the near hill ring at radius 17. The original 1.15-unit length stopped at z=13.30 and risked a visible band of empty scenery when looking behind. The geometry regression now verifies the rear ground reaches the hill ring within 0.20 units. Isolated GCC, Clang and Clang ASan/UBSan tests passed after the correction; headset proof remains outstanding.

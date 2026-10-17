@@ -23,10 +23,17 @@ int main() {
         assert(RidgeHeight(location,0,true)>RidgeHeight(location,24,true));
         for(bool dark : {false,true}) {
             int triangles=0,boxes=0;
+            float groundFarZ=0;
             auto tri=[&](float x,float y,float z,float a,float b,float c,
                          float d,float e,float f,float r,float g,float blue){
                 for(float value:{x,y,z,a,b,c,d,e,f,r,g,blue})
                     assert(std::isfinite(value));
+                // Ground strip triangles have a center x=0 and flank x=9.4.
+                if((x==0 || a==0 || d==0) &&
+                   (std::abs(x)>9.0f || std::abs(a)>9.0f ||
+                    std::abs(d)>9.0f))
+                    groundFarZ=std::max(groundFarZ,
+                        std::max(z,std::max(c,f)));
                 ++triangles;
             };
             auto box=[&](float x,float y,float z,float w,float h,float depth,
@@ -39,6 +46,7 @@ int main() {
             // Bounded geometry, no unbounded tessellation per stereo eye.
             assert(triangles>=240 && triangles<420);
             assert(boxes<50);
+            assert(groundFarZ>kHillRadius-.20f);
         }
     }
     assert(EnvironmentFor(4,false).sea.r==0);
