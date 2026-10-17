@@ -8,6 +8,7 @@
 #include <array>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 
 namespace reverie { namespace omega_art {
@@ -15,7 +16,9 @@ namespace reverie { namespace omega_art {
 // Fixed 64-pixel art grid, one quad per simulated cell. No atlas UV guesses.
 enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  HearthwellHull, MeridianHull, ScraplineHull,
-                 LostNinthHull, IndependentHull, Count };
+                 LostNinthHull, IndependentHull,
+                 RifleH, RifleR, EngineerH, EngineerR, SalvagerH, SalvagerR,
+                 SentinelH, SentinelR, LegionaryH, LegionaryR, Count };
 constexpr int kTerrainCount=5;
 static const char *const kPaths[Count]={
     "native/omega-front/terrain/cracked_earth.png",
@@ -27,7 +30,17 @@ static const char *const kPaths[Count]={
     "native/omega-front/units/kenney/meridian_hull_north.png",
     "native/omega-front/units/kenney/scrapline_hull_north.png",
     "native/omega-front/units/kenney/lost_ninth_hull_north.png",
-    "native/omega-front/units/kenney/independent_hull_north.png"
+    "native/omega-front/units/kenney/independent_hull_north.png",
+    "native/omega-front/units/kenney/rifle_hearthwell.png",
+    "native/omega-front/units/kenney/rifle_raider.png",
+    "native/omega-front/units/kenney/engineer_hearthwell.png",
+    "native/omega-front/units/kenney/engineer_raider.png",
+    "native/omega-front/units/kenney/salvager_hearthwell.png",
+    "native/omega-front/units/kenney/salvager_raider.png",
+    "native/omega-front/units/kenney/sentinel_hearthwell.png",
+    "native/omega-front/units/kenney/sentinel_raider.png",
+    "native/omega-front/units/kenney/legionary_hearthwell.png",
+    "native/omega-front/units/kenney/legionary_raider.png"
 };
 class SpriteRenderer {
 public:
@@ -135,7 +148,21 @@ private:
            !length||length>png.size())return false;
         Image image;
         if(!DecodePng(png.data(),length,image)||
-           image.width!=64u||image.height!=64u)return false;
+           image.width==0u||image.height==0u||
+           image.width>64u||image.height>64u)return false;
+        // Kenney Shooter originals are intentionally unmodified (35-52x43).
+        // Copy their exact RGBA pixels to transparent 64x64 cell canvases
+        // in memory at load time, never distort/stretch the original sprite.
+        std::array<uint8_t,64u*64u*4u> cell{};
+        const unsigned left=(slot>=RifleH && image.width>44u)?
+                            10u:(64u-image.width)/2u;
+        const unsigned top=(64u-image.height)/2u;
+        if(left+image.width>64u||top+image.height>64u)return false;
+        for(unsigned y=0;y<image.height;++y){
+            std::memcpy(cell.data()+((top+y)*64u+left)*4u,
+                image.rgba.data()+size_t(y)*image.width*4u,
+                size_t(image.width)*4u);
+        }
         glGenTextures(1,&textures_[slot]);
         if(!textures_[slot])return false;
         glBindTexture(GL_TEXTURE_2D,textures_[slot]);
@@ -144,7 +171,7 @@ private:
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,64,64,0,GL_RGBA,
-                     GL_UNSIGNED_BYTE,image.rgba.data());
+                     GL_UNSIGNED_BYTE,cell.data());
         if(glGetError()!=GL_NO_ERROR) {
             glDeleteTextures(1,&textures_[slot]);
             textures_[slot]=0;return false;

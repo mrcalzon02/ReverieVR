@@ -287,6 +287,67 @@ void UnitSprite(State *s,const game::Unit &u,float x,float y,game::Doctrine doct
     Rect(s,x-kCell*.34f+hp_ratio*kCell*.34f,y-kCell*.43f,
          kCell*.68f*hp_ratio,kCell*.055f,-1.843f,.22f,.92f,.32f);
 }
+// The Kenney pack provides genuine overhead bodies/equipment for the five
+// non-vehicle roles. Each class has a distinct Hearthwell/raider sprite.
+int SoldierTexture(const game::Unit &u) {
+    const bool ally=u.side==game::Side::Hearthwell;
+    switch(u.role){
+    case game::Class::Rifle:
+        return ally?omega_art::RifleH:omega_art::RifleR;
+    case game::Class::Engineer:
+        return ally?omega_art::EngineerH:omega_art::EngineerR;
+    case game::Class::Salvager:
+        return ally?omega_art::SalvagerH:omega_art::SalvagerR;
+    case game::Class::Sentinel:
+        return ally?omega_art::SentinelH:omega_art::SentinelR;
+    case game::Class::Legionary:
+        return ally?omega_art::LegionaryH:omega_art::LegionaryR;
+    case game::Class::Heavy: return -1;
+    }
+    return -1;
+}
+// GPU sprites carry the main silhouette. These unobtrusive marks retain class
+// equipment and faction recognition without replacing or obscuring the art.
+void SpriteEquipment(State *s,const game::Unit &u,float x,float y,
+                     game::Doctrine doctrine) {
+    float r=.29f,g=.86f,b=.58f;
+    if(u.side!=game::Side::Hearthwell) {
+        r=.91f;g=.36f;b=.29f;
+        if(doctrine==game::Doctrine::Meridian){r=.30f;g=.66f;b=.97f;}
+        else if(doctrine==game::Doctrine::Scrapline){r=.98f;g=.58f;b=.22f;}
+        else if(doctrine==game::Doctrine::Hearthward){r=.86f;g=.78f;b=.37f;}
+    }
+    Rect(s,x-kCell*.32f,y+kCell*.38f,kCell*.13f,kCell*.08f,
+         -1.843f,r,g,b);
+    if(u.role==game::Class::Engineer) {
+        Line(s,x-kCell*.28f,y-kCell*.22f,x-kCell*.28f,y+kCell*.05f,
+             kCell*.065f,-1.843f,.96f,.78f,.25f);
+        Rect(s,x-kCell*.28f,y-kCell*.24f,kCell*.16f,kCell*.11f,
+             -1.843f,.91f,.70f,.23f);
+    }else if(u.role==game::Class::Salvager) {
+        Rect(s,x-kCell*.28f,y-kCell*.03f,kCell*.16f,kCell*.23f,
+             -1.843f,.91f,.52f,.18f);
+        Line(s,x+kCell*.27f,y-kCell*.16f,x+kCell*.35f,y+kCell*.09f,
+             kCell*.052f,-1.843f,.34f,.77f,.86f);
+    }else if(u.role==game::Class::Sentinel) {
+        Rect(s,x,y+kCell*.25f,kCell*.25f,kCell*.055f,
+             -1.843f,.27f,.89f,.98f);
+    }else if(u.role==game::Class::Legionary) {
+        // Distinct melee-only shield and short sword. No invented firearm.
+        Rect(s,x-kCell*.28f,y-kCell*.04f,kCell*.22f,kCell*.39f,
+             -1.843f,.75f,.25f,.20f);
+        Rect(s,x-kCell*.28f,y-kCell*.04f,kCell*.08f,kCell*.25f,
+             -1.842f,.95f,.76f,.31f);
+        Line(s,x+kCell*.28f,y-kCell*.22f,x+kCell*.28f,y+kCell*.22f,
+             kCell*.070f,-1.843f,.83f,.81f,.66f);
+    }
+    const float hp=static_cast<float>(u.hp)/
+                   static_cast<float>(game::Battle::MaxHp(u.role));
+    Rect(s,x,y-kCell*.43f,kCell*.68f,kCell*.065f,
+         -1.842f,.14f,.16f,.19f);
+    Rect(s,x-kCell*.34f+hp*kCell*.34f,y-kCell*.43f,
+         kCell*.68f*hp,kCell*.055f,-1.841f,.22f,.92f,.32f);
+}
 void Draw(State *s){
     if(s->session.view==game::FrontMode::SectorMap){DrawMap(s);return;}
     s->mesh.clear();s->mesh.reserve(75000);
@@ -390,14 +451,11 @@ void Draw(State *s){
         else if(battle.doctrine()==game::Doctrine::Meridian)hull=omega_art::MeridianHull;
         else if(battle.doctrine()==game::Doctrine::Scrapline)hull=omega_art::ScraplineHull;
         else if(battle.doctrine()==game::Doctrine::LostNinth)hull=omega_art::LostNinthHull;
-        if(u->role==game::Class::Heavy &&
-           s->sprites.Place(hull,px,py,kCell*.88f,kCell*.88f,-1.85f)){
-            Rect(s,px,py-kCell*.43f,kCell*.68f,kCell*.065f,-1.844f,.14f,.16f,.19f);
-            const float hp=static_cast<float>(u->hp)/
-                           static_cast<float>(game::Battle::MaxHp(u->role));
-            Rect(s,px-kCell*.34f+hp*kCell*.34f,py-kCell*.43f,
-                 kCell*.68f*hp,kCell*.055f,-1.843f,.22f,.92f,.32f);
-        }else UnitSprite(s,*u,px,py,battle.doctrine());
+        const int sprite=u->role==game::Class::Heavy?
+                         hull:SoldierTexture(*u);
+        if(s->sprites.Place(sprite,px,py,kCell*.90f,kCell*.90f,-1.85f))
+            SpriteEquipment(s,*u,px,py,battle.doctrine());
+        else UnitSprite(s,*u,px,py,battle.doctrine());
     }
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);

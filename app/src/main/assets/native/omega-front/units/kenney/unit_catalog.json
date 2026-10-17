@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "title": "Omega Front Kenney Top-down Shooter overhead units",
+  "source_pack": "Kenney Top-down Shooter",
+  "original_creator": "Kenney",
+  "original_pack_url": "https://kenney.nl/assets/top-down-shooter",
+  "mirror_repository": "https://github.com/shorepine/kenney",
+  "mirror_branch": "main",
+  "license": "CC0-1.0",
+  "license_file": "art/source/omega-front/kenney/topdown_shooter/LICENSE_CC0.txt",
+  "gameplay_coverage": "Five non-Heavy tactical classes; Heavy continues using Kenney tank hulls.",
+  "original_binary_rule": "The source files and Android assets contain identical unmodified PNG bytes. PNGs remain separate individual sprites, not an atlas.",
+  "runtime_rule": "Original (35-52)x43 top-down images are copied in memory onto transparent 64x64 RGBA buffers with no interpolation. Center/pivot alignment is controlled by the GLES2 renderer; each occupies one 24x24 battlefield cell.",
+  "sprite_count": 10,
+  "sprites": [
+    {
+      "id": "rifle_hearthwell",
+      "role": "rifle",
+      "side": "hearthwell",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/rifle_hearthwell.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Soldier 1/soldier1_machine.png",
+      "source_width_px": 52,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "3c69605543c9d516a8fc71672e1ea6492045d080",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "rifle_raider",
+      "role": "rifle",
+      "side": "raider",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/rifle_raider.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Soldier 2/soldier2_machine.png",
+      "source_width_px": 52,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "401b09ebf1676400f3854ef7084d9c81c8cceb60",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "engineer_hearthwell",
+      "role": "engineer",
+      "side": "hearthwell",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/engineer_hearthwell.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Survivor 1/survivor1_hold.png",
+      "source_width_px": 37,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "cc56988507744b4b105110b802c7f6a0148c8066",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "engineer_raider",
+      "role": "engineer",
+      "side": "raider",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/engineer_raider.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Man Red/manRed_hold.png",
+      "source_width_px": 35,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "4e040d6314decbbd1b6214446734e4fced831f3e",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "salvager_hearthwell",
+      "role": "salvager",
+      "side": "hearthwell",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/salvager_hearthwell.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Survivor 2/survivor2_hold.png",
+      "source_width_px": 37,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "564702f22d7698e23d77fb3b81b5c800547af898",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "salvager_raider",
+      "role": "salvager",
+      "side": "raider",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/salvager_raider.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Man Brown/manBrown_hold.png",
+      "source_width_px": 35,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "d51601b2dddff907264f6e4e14e81b940e622f96",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "sentinel_hearthwell",
+      "role": "sentinel",
+      "side": "hearthwell",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/sentinel_hearthwell.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Robot 1/robot1_machine.png",
+      "source_width_px": 49,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "959f36b6bf287a62af5e7cfbe4eccfb151d84da1",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "sentinel_raider",
+      "role": "sentinel",
+      "side": "raider",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/sentinel_raider.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Robot 2/robot2_machine.png",
+      "source_width_px": 49,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "8b6a2fac0d2d242cf409f4cc4174d76a473630e2",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "legionary_hearthwell",
+      "role": "legionary",
+      "side": "hearthwell",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/legionary_hearthwell.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Hitman 1/hitman1_hold.png",
+      "source_width_px": 35,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "e7d7bf14c886bf950af27f3f11afcb684eb20db3",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "legionary_raider",
+      "role": "legionary",
+      "side": "raider",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/legionary_raider.png",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Hitman 2/hitman2_hold.png",
+      "source_width_px": 35,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "c1c8c9aa08c98bad9766ca93972b9b264b7d0b3c",
+      "source_is_unmodified": true
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+Kenney — Top-down Shooter (2016)
+Original creator: Kenney (www.kenney.nl)
+Original pack: https://kenney.nl/assets/top-down-shooter
+Upstream source mirror: https://github.com/shorepine/kenney/tree/main/2d/Topdown%20Shooter
+License: Creative Commons Zero v1.0 Universal (CC0-1.0)
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+
+Kenney publishes this pack as CC0. Personal, commercial and derivative use is
+permitted. Attribution is not required but is included for provenance.
+The ten imported character PNG files are exact unmodified copies of upstream
+individual PNGs; their Git blob SHA values are recorded in unit_catalog.json.
+On Android, original source dimensions are padded with transparency to a
+64x64 cell in RAM at load time; no AI artwork or atlas cropping is used.
