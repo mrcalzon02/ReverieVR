@@ -95,9 +95,15 @@ void DrawMap(State *s){
     const auto *target=f.sector(session.focused);
     if(target){
         const bool surveyed=f.intelligence(session.focused)==game::Intelligence::Surveyed;
-        std::snprintf(line,sizeof(line),"S%03d %s",session.focused+1,
-                      surveyed?target->name:"UNSURVEYED");
-        Text(s,line,-.868f,.013f,.94f,.95f,.81f);
+        const int counter=surveyed && target->claims>=45?
+            f.reprisal_faction(session.focused):0;
+        if(counter>0)
+            std::snprintf(line,sizeof(line),"S%03d %s  REPRISAL F%02d",
+                          session.focused+1,target->name,counter);
+        else std::snprintf(line,sizeof(line),"S%03d %s",session.focused+1,
+                           surveyed?target->name:"UNSURVEYED");
+        Text(s,line,-.868f,.012f,counter>0?1.f:.94f,
+             counter>0?.61f:.95f,counter>0?.38f:.81f);
         if(surveyed)
             std::snprintf(line,sizeof(line),"FOOD %u WATER %u WRECK %u CLAIM %u",
                 target->food,target->water,target->wreck_mass,target->claims);
@@ -151,9 +157,15 @@ void DrawMap(State *s){
                                   (f.location()==14 && !f.bridge_repaired());
         const bool securing=session.action==game::FieldAction::Repair &&
                             !infrastructure;
+        const bool defend=session.action==game::FieldAction::Deploy &&
+                          f.can_defend_outpost();
         const bool attack=session.action==game::FieldAction::Deploy &&
                           f.can_frontline_assault();
-        if(attack){
+        if(defend){
+            std::snprintf(line,sizeof(line),"DEFEND OUTPOST F%02d  2 RATIONS  CLICK",
+                f.reprisal_faction(f.location()));
+            Text(s,line,-1.098f,.010f,1.f,.72f,.40f);
+        }else if(attack){
             std::snprintf(line,sizeof(line),"ASSAULT OUTPOST F%02u  2 RATIONS  CLICK",
                 target?target->owner:0u);
             Text(s,line,-1.098f,.010f,1.f,.72f,.40f);
@@ -173,9 +185,15 @@ void DrawMap(State *s){
     }else Text(s,"HEARTHFALL COMPLETE  OUTPOST WAR CONTINUES",
                  -1.194f,.009f,.78f,.94f,.76f);
     if(f.last_frontline()){
-        std::snprintf(line,sizeof(line),"LAST ASSAULT S%03d  %s  LOST %u",
+        std::snprintf(line,sizeof(line),f.last_frontline_defense()?
+            "LAST DEFENSE S%03d %s  LOST %u":
+            "LAST ASSAULT S%03d %s  LOST %u",
             f.last_frontline_sector()+1,
-            f.last_report().outcome==game::Result::Defended?"SECURED":"REPULSED",
+            f.last_frontline_defense()?
+                (f.last_report().outcome==game::Result::Defended?
+                 "HELD":"LOST"):
+                (f.last_report().outcome==game::Result::Defended?
+                 "TAKEN":"REPULSED"),
             f.last_report().defenders_lost);
         Text(s,line,.73f,.009f,.97f,.75f,.48f);
     }
@@ -272,6 +290,7 @@ void Draw(State *s){
     const game::Battle &battle=s->session.tactical.battle;
     const bool defendingConvoy=s->session.frontier.convoy_battle();
     const bool frontlineBattle=s->session.frontier.frontline_battle();
+    const bool defendingOutpost=s->session.frontier.frontline_defense();
     for(int y=0;y<game::kWidth;++y)for(int x=0;x<game::kWidth;++x){
         float wx=(x+.5f)*kCell-kHalf;
         float wy=kCenterY+kHalf-(y+.5f)*kCell;
@@ -307,8 +326,13 @@ void Draw(State *s){
     };
     float px=0,py=0;center(2,12,px,py);
     Rect(s,px,py,kCell*.76f,kCell*.74f,-1.85f,
-         defendingConvoy?.69f:.22f,defendingConvoy?.44f:.74f,
-         defendingConvoy?.20f:.87f);
+         defendingConvoy?.69f:defendingOutpost?.50f:.22f,
+         defendingConvoy?.44f:defendingOutpost?.52f:.74f,
+         defendingConvoy?.20f:defendingOutpost?.55f:.87f);
+    if(defendingOutpost){
+        Rect(s,px,py+kCell*.22f,kCell*.90f,kCell*.13f,
+             -1.843f,.25f,.29f,.34f);
+    }
     if(defendingConvoy){
         Rect(s,px-kCell*.23f,py-kCell*.31f,kCell*.18f,kCell*.18f,
              -1.84f,.15f,.13f,.12f);
@@ -348,6 +372,10 @@ void Draw(State *s){
     if(defendingConvoy)
         std::snprintf(status,sizeof(status),"ESCORT WAGON HP %d  AMMO %d  TICK %u",
                       battle.pump_hp(),battle.ammo_stock(),battle.ticks());
+    else if(defendingOutpost)
+        std::snprintf(status,sizeof(status),"DEFEND OUTPOST S%03d  HP %d  TICK %u",
+            s->session.frontier.location()+1,
+            battle.pump_hp(),battle.ticks());
     else if(frontlineBattle)
         std::snprintf(status,sizeof(status),"TAKE OUTPOST S%03d  HOLD %d/3  TICK %u",
             s->session.frontier.location()+1,
@@ -384,11 +412,13 @@ void Draw(State *s){
     char action[90];
     if(battle.result()==game::Result::Defended)
         std::snprintf(action,sizeof(action),defendingConvoy?
-                      "WAGON SAVED  CLICK REPORT":frontlineBattle?
+                      "WAGON SAVED  CLICK REPORT":defendingOutpost?
+                      "OUTPOST HELD  CLICK REPORT":frontlineBattle?
                       "OUTPOST TAKEN  CLICK REPORT":"DEFENDED  CLICK REPORT");
     else if(battle.result()==game::Result::Overrun)
         std::snprintf(action,sizeof(action),defendingConvoy?
-                      "CONVOY LOST  CLICK REPORT":frontlineBattle?
+                      "CONVOY LOST  CLICK REPORT":defendingOutpost?
+                      "OUTPOST LOST  CLICK REPORT":frontlineBattle?
                       "ASSAULT LOST  CLICK REPORT":"OVERRUN  CLICK REPORT");
     else if(s->session.tactical.paused)std::snprintf(action,sizeof(action),"%s",
         s->session.tactical.selected<0?"PAUSED  MENU RESUME":"PAUSED  CLICK UNIT TO CLEAR");

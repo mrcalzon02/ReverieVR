@@ -101,6 +101,30 @@ public:
     bool deployed() const {return deployed_;}
     bool convoy_battle() const {return deployed_ && convoy_source_>=0;}
     bool frontline_battle() const {return deployed_ && frontline_sector_>=0;}
+    bool frontline_defense() const {return frontline_battle() && frontline_defense_;}
+    bool last_frontline_defense() const {return last_frontline_defense_;}
+    bool liberated(int sector) const {return Valid(sector) && 
+        (liberated_mask_ & (1u<<sector))!=0;}
+    int reprisal_faction(int sector) const {
+        if(!liberated(sector) || sectors_[sector].owner!=kIndependentOwner)
+            return 0;
+        int attacker=0,best=0;
+        for(int i=0;i<kFrontierSectors;++i){
+            if(!Intelligence::Adjacent(sector,i))continue;
+            const unsigned faction=sectors_[i].owner;
+            if(faction<1 || faction>kMajorFactions ||
+               relations_[faction]>=0)continue;
+            const int hostility=-relations_[faction];
+            if(hostility>best){best=hostility;attacker=static_cast<int>(faction);}
+        }
+        return attacker;
+    }
+    bool can_defend_outpost() const {
+        return !deployed_ && liberated(location_) &&
+            sectors_[location_].owner==kIndependentOwner &&
+            sectors_[location_].claims>=45 && reprisal_faction(location_)!=0 &&
+            guards_>=4 && rations_>=2;
+    }
     bool last_frontline() const {return last_frontline_sector_>=0;}
     int last_frontline_sector() const {return last_frontline_sector_;}
     bool last_convoy() const {return last_convoy_;}
@@ -252,8 +276,8 @@ public:
                 claim.claims);
         }
         // Active hostile outposts pressure adjacent independent/neutral land.
-        // This uses the existing saved claim and depot values; no hidden
-        // calendar state or off-screen instant territorial conquest.
+        // This uses existing saved claim and depot values; only sectors
+        // explicitly liberated by the player face later military reconquest.
         for(int target=0;target<kFrontierSectors;++target){
             FrontierSector &border=sectors_[target];
             if((border.owner!=0 && border.owner!=kIndependentOwner) ||
@@ -288,6 +312,33 @@ public:
                 enemy.food=static_cast<uint16_t>(enemy.food+food);
                 enemy.water=static_cast<uint16_t>(enemy.water+water);
             }
+        }
+        // Only sectors actually liberated by Hearthwell can be reconquered
+        // through this campaign's retaliation system. Existing independent
+        // settlements, including Hearthwell itself, are not auto-annexed.
+        for(int i=0;i<kFrontierSectors;++i){
+            if(!liberated(i))continue;
+            FrontierSector &outpost=sectors_[i];
+            if(outpost.owner!=kIndependentOwner){
+                liberated_mask_=static_cast<uint16_t>(liberated_mask_ & ~(1u<<i));
+                continue;
+            }
+            const int attacker=reprisal_faction(i);
+            if(attacker==0)continue;
+            const unsigned claim=static_cast<unsigned>(outpost.claims)+3u;
+            outpost.claims=static_cast<uint8_t>(claim>100u?100u:claim);
+            if(outpost.claims<80)continue;
+            if(i==location_ && can_defend_outpost()){
+                // A real defensive encounter interrupts strategic time.
+                if(StartCounteroffensive())continue;
+            }
+            // No defenders were present or available when the siege matured.
+            // The hostile neighbor regains actual ownership, inventory stays
+            // physically in this sector, and its friendly supply line closes.
+            outpost.owner=static_cast<uint8_t>(attacker);
+            outpost.claims=60;
+            liberated_mask_=static_cast<uint16_t>(liberated_mask_ & ~(1u<<i));
+            trust_=trust_>=4?trust_-4:0;
         }
         return true;
     }
@@ -485,6 +536,42 @@ public:
         battle_=battle;deployed_=true;rations_-=2;
         return true;
     }
+    // A threatened liberated garrison may fight back before it is overrun.
+    // This is an actual timed HoldPump mission where the defended structure
+    // represents the forward command post, not the remote Lantern Pump.
+    bool StartCounteroffensive() {
+        if(!can_defend_outpost())return false;
+        const int attacker=reprisal_faction(location_);
+        Battle defense(Mix(seed_,static_cast<uint32_t>(day_)*211u+
+            static_cast<uint32_t>(location_)*641u+0xD3F3D1u));
+        defense.ClearUnits();
+        const Doctrine doctrine=attacker==1?Doctrine::Hearthward:
+            attacker==2?Doctrine::Meridian:
+            attacker==4?Doctrine::Scrapline:
+            attacker==6?Doctrine::LostNinth:Doctrine::Unaligned;
+        if(!defense.ConfigureDoctrine(doctrine) ||
+           !defense.ConfigureMission(Mission::HoldPump) ||
+           !defense.ConfigurePump(18))return false;
+        if(defense.AddUnit(Side::Hearthwell,Class::Rifle,3,11)<0 ||
+           defense.AddUnit(Side::Hearthwell,Class::Rifle,3,13)<0 ||
+           defense.AddUnit(Side::Hearthwell,Class::Engineer,2,13)<0 ||
+           defense.AddUnit(Side::Hearthwell,Class::Heavy,5,12)<0)return false;
+        const Class infantry=attacker==2?Class::Sentinel:
+            attacker==4?Class::Salvager:
+            attacker==6?Class::Legionary:Class::Rifle;
+        const Class heavy=attacker==6?Class::Legionary:Class::Heavy;
+        if(defense.AddUnit(Side::Raiders,infantry,18,10)<0 ||
+           defense.AddUnit(Side::Raiders,infantry,18,14)<0 ||
+           defense.AddUnit(Side::Raiders,heavy,21,12)<0)return false;
+        if(sectors_[location_].claims>=70 &&
+           defense.AddUnit(Side::Raiders,infantry,20,9)<0)return false;
+        battle_=defense;
+        frontline_sector_=location_;
+        frontline_defense_=true;
+        deployed_=true;
+        rations_-=2;
+        return true;
+    }
     // Independent field assaults use the same tactical commander and fixed
     // 24x24 battle arena without consuming or skipping authored M01-M06.
     bool can_frontline_assault() const {
@@ -533,6 +620,7 @@ public:
            field.AddUnit(Side::Raiders,Class::Rifle,19,11)<0)return false;
         battle_=field;
         frontline_sector_=target;
+        frontline_defense_=false;
         deployed_=true;
         rations_-=2;
         return true;
@@ -546,6 +634,7 @@ public:
         last_convoy_=false;
         last_convoy_source_=-1;
         last_frontline_sector_=-1;
+        last_frontline_defense_=false;
         last_=FrontierReport{};
         last_.operation=operation_;
         last_.outcome=battle_.result();
@@ -592,11 +681,13 @@ public:
             } else if(operation_==4) {
                 // An actual checkpoint seizure, not a diplomatic concession.
                 sectors_[7].owner=kIndependentOwner;
+                liberated_mask_=static_cast<uint16_t>(liberated_mask_ | (1u<<7));
                 sectors_[7].claims=sectors_[7].claims>=10?sectors_[7].claims-10:0;
                 AdjustRelation(2,-15);
             } else if(operation_==5) {
                 // A secured crossing, but the Roman camp remains F06 land.
                 sectors_[4].owner=kIndependentOwner;
+                liberated_mask_=static_cast<uint16_t>(liberated_mask_ | (1u<<4));
                 sectors_[4].claims=sectors_[4].claims>=7?sectors_[4].claims-7:0;
                 AdjustRelation(6,-10);
             }
@@ -613,6 +704,7 @@ public:
         return true;
     }
     bool ResolveFrontlineAssault() {
+        if(frontline_defense_)return ResolveCounteroffensive();
         if(!deployed_ || frontline_sector_<0 ||
            frontline_sector_!=location_ ||
            battle_.result()==Result::Active)return false;
@@ -635,6 +727,8 @@ public:
             ?guards_-last_.defenders_lost:0;
         if(last_.outcome==Result::Defended){
             site.owner=kIndependentOwner;
+            liberated_mask_=static_cast<uint16_t>(
+                liberated_mask_ | (1u<<frontline_sector_));
             site.claims=static_cast<uint8_t>(site.claims>=30?site.claims-30:0);
             const int scrap=site.wreck_mass<12?site.wreck_mass:12;
             site.wreck_mass=static_cast<uint16_t>(site.wreck_mass-scrap);
@@ -649,7 +743,55 @@ public:
         last_convoy_=false;
         last_convoy_source_=-1;
         last_frontline_sector_=frontline_sector_;
+        last_frontline_defense_=false;
         frontline_sector_=-1;
+        deployed_=false;
+        AdvanceDay();
+        return true;
+    }
+    bool ResolveCounteroffensive(){
+        if(!deployed_ || !frontline_defense_ ||
+           frontline_sector_<0 || frontline_sector_!=location_ ||
+           battle_.result()==Result::Active ||
+           !liberated(frontline_sector_))return false;
+        FrontierSector &site=sectors_[frontline_sector_];
+        const int attacker=reprisal_faction(frontline_sector_);
+        if(site.owner!=kIndependentOwner || attacker==0)return false;
+        last_=FrontierReport{};
+        last_.operation=operation_<kHearthfallOperations?
+            operation_:kHearthfallOperations-1;
+        last_.outcome=battle_.result();
+        last_.pump_remaining=static_cast<uint8_t>(battle_.pump_hp());
+        last_.battle_ticks=battle_.ticks();
+        for(int i=0;i<battle_.unit_count();++i){
+            const Unit *u=battle_.unit(i);
+            if(!u || u->alive())continue;
+            if(u->side==Side::Hearthwell)++last_.defenders_lost;
+            else ++last_.enemies_lost;
+        }
+        guards_=guards_>=last_.defenders_lost?
+            guards_-last_.defenders_lost:0;
+        if(last_.outcome==Result::Defended){
+            site.claims=static_cast<uint8_t>(
+                site.claims>=55?site.claims-55:0);
+            const unsigned recovered=2u*last_.enemies_lost;
+            if(salvage_<=1000000-static_cast<int>(recovered))
+                salvage_+=static_cast<int>(recovered);
+            trust_=trust_<=97?trust_+3:100;
+            AdjustRelation(attacker,-5);
+        }else{
+            site.owner=static_cast<uint8_t>(attacker);
+            site.claims=60;
+            liberated_mask_=static_cast<uint16_t>(
+                liberated_mask_ & ~(1u<<frontline_sector_));
+            trust_=trust_>=6?trust_-6:0;
+        }
+        last_convoy_=false;
+        last_convoy_source_=-1;
+        last_frontline_sector_=frontline_sector_;
+        last_frontline_defense_=true;
+        frontline_sector_=-1;
+        frontline_defense_=false;
         deployed_=false;
         AdvanceDay();
         return true;
@@ -716,6 +858,7 @@ public:
         last_convoy_=true;
         last_convoy_source_=source;
         last_frontline_sector_=-1;
+        last_frontline_defense_=false;
         convoy_source_=-1;
         deployed_=false;
         AdvanceDay(); // battle returns to the full dated campaign simulation
@@ -729,6 +872,7 @@ public:
         add(pump_health_);add(bridge_);add(morphology_epoch_);add(deployed_);
         add(convoy_source_+1);add(last_convoy_);add(last_convoy_source_+1);
         add(frontline_sector_+1);add(last_frontline_sector_+1);
+        add(liberated_mask_);add(frontline_defense_);add(last_frontline_defense_);
         for(int faction=1;faction<=kMajorFactions;++faction)
             add(static_cast<uint8_t>(relations_[faction]));
         for(int i=0;i<kFrontierSectors;++i){
@@ -778,6 +922,8 @@ private:
     bool bridge_=false,deployed_=false;
     int convoy_source_=-1,last_convoy_source_=-1;
     int frontline_sector_=-1,last_frontline_sector_=-1;
+    uint16_t liberated_mask_=0;
+    bool frontline_defense_=false,last_frontline_defense_=false;
     bool last_convoy_=false;
     FrontierReport last_{};
 };

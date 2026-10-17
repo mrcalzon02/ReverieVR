@@ -35,7 +35,14 @@ public:
                 if(frontier.current_battle())*frontier.current_battle()=tactical.battle;
                 const bool applied=frontier.ResolveOperation();
                 rejected=!applied;
-                if(applied){view=FrontMode::SectorMap;focused=frontier.location();++orders;}
+                if(applied){
+                    view=FrontMode::SectorMap;
+                    focused=frontier.location();
+                    ++orders;
+                    // Finishing a battle can advance the campaign into a
+                    // prepared enemy counterattack; enter it immediately.
+                    if(frontier.deployed())EnterBattle();
+                }
                 return true;
             }
             primary_=in.primary;secondary_=in.secondary;
@@ -74,10 +81,8 @@ public:
         if(in.primary && !primary_){
             bool performed=false;
             if(focused!=frontier.location()){
-                if(action==FieldAction::Forage) {
+                if(action==FieldAction::Forage)
                     performed=frontier.Convoy(focused);
-                    if(performed && frontier.deployed())EnterBattle();
-                }
                 else if(action==FieldAction::Scout)performed=frontier.Scout(focused);
                 else if(action==FieldAction::Parley)performed=frontier.Negotiate(focused);
                 else if(action==FieldAction::Accord)performed=frontier.ConcludeAccord(focused);
@@ -88,8 +93,8 @@ public:
                 switch(action){
                 case FieldAction::Deploy:
                     performed=frontier.StartOperation();
+                    if(!performed)performed=frontier.StartCounteroffensive();
                     if(!performed)performed=frontier.StartFrontlineAssault();
-                    if(performed)EnterBattle();
                     break;
                 case FieldAction::Forage:performed=frontier.ForageRations();break;
                 case FieldAction::Recruit:performed=frontier.Recruit();break;
@@ -107,7 +112,13 @@ public:
                 }
             }
             rejected=!performed;
-            if(performed)++orders;
+            if(performed){
+                ++orders;
+                // Any strategic action can now reach the siege deadline,
+                // including waiting, marching, supply and diplomacy.
+                if(frontier.deployed() && view==FrontMode::SectorMap)
+                    EnterBattle();
+            }
             changed=true;
         }
         primary_=in.primary;secondary_=in.secondary;

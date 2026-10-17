@@ -22,7 +22,7 @@ public:
         Bytes bytes{};
         Writer w{bytes};
         for(char c : "OFSTRAT1") {if(!c)break;w.U8(static_cast<uint8_t>(c));}
-        w.U16(8);w.U16(0); // v8 adds persistent local frontline assaults
+        w.U16(9);w.U16(0); // v9 tracks liberated outposts and defensive battles
         const Frontier &f=s.frontier;
         w.U32(f.seed_);
         w.U8(static_cast<uint8_t>(s.focused));
@@ -73,6 +73,9 @@ public:
         w.U8(static_cast<uint8_t>(f.last_convoy_source_+1));
         w.U8(static_cast<uint8_t>(f.frontline_sector_+1));
         w.U8(static_cast<uint8_t>(f.last_frontline_sector_+1));
+        w.U16(f.liberated_mask_);
+        w.U8(f.frontline_defense_?1:0);
+        w.U8(f.last_frontline_defense_?1:0);
         if(!w.ok)return false;
         uint64_t hash=Hash(bytes.data(),kBytes-8);
         for(size_t i=kBytes-8;i<kBytes;++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
@@ -89,7 +92,7 @@ public:
         Reader r{data,kBytes-8};
         for(char c:"OFSTRAT1"){if(!c)break;if(r.U8()!=static_cast<uint8_t>(c))return false;}
         const uint16_t schema=r.U16();
-        if((schema<1 || schema>8)||r.U16()!=0)return false;
+        if((schema<1 || schema>9)||r.U16()!=0)return false;
         uint32_t seed=r.U32();
         const int focus=r.U8();
         const unsigned view=r.U8(),action=r.U8();
@@ -214,14 +217,52 @@ public:
                 frontline==0 && f.convoy_source_<0))return false;
             f.frontline_sector_=static_cast<int>(frontline)-1;
             f.last_frontline_sector_=static_cast<int>(lastFront)-1;
-            if(f.frontline_sector_>=0){
-                const unsigned owner=f.sectors_[f.frontline_sector_].owner;
-                if(owner<1 || owner>kMajorFactions ||
-                   f.intel_.level(f.frontline_sector_)!=Intelligence::Surveyed)
-                    return false;
+            if(f.frontline_sector_>=0 &&
+               f.intel_.level(f.frontline_sector_)!=Intelligence::Surveyed)
+                return false;
+        }
+        if(schema>=9){
+            const uint16_t liberated=r.U16();
+            const unsigned defense=r.U8(),lastDefense=r.U8();
+            if(defense>1 || lastDefense>1 ||
+               (defense!=0 && f.frontline_sector_<0) ||
+               (lastDefense!=0 && f.last_frontline_sector_<0))return false;
+            f.liberated_mask_=liberated;
+            f.frontline_defense_=defense!=0;
+            f.last_frontline_defense_=lastDefense!=0;
+            for(int i=0;i<kFrontierSectors;++i)
+                if(f.liberated(i) &&
+                   f.sectors_[i].owner!=kIndependentOwner)return false;
+        }else if(schema>=8){
+            // Before v9, successful field conquests used sector ownership
+            // but did not mark it as a liberated, defendable position.
+            // These four locations were enemy-held in the original theater.
+            constexpr int oldEnemySectors[]={1,5,9,11};
+            for(int i:oldEnemySectors)
+                if(f.sectors_[i].owner==kIndependentOwner)
+                    f.liberated_mask_=static_cast<uint16_t>(
+                        f.liberated_mask_ | (1u<<i));
+            if(f.operation_>=5 &&
+               f.sectors_[7].owner==kIndependentOwner)
+                f.liberated_mask_=static_cast<uint16_t>(
+                    f.liberated_mask_ | (1u<<7));
+            if(f.operation_>=6 &&
+               f.sectors_[4].owner==kIndependentOwner)
+                f.liberated_mask_=static_cast<uint16_t>(
+                    f.liberated_mask_ | (1u<<4));
+        }
+        if(f.frontline_sector_>=0){
+            const int target=f.frontline_sector_;
+            const unsigned owner=f.sectors_[target].owner;
+            if(f.frontline_defense_){
+                if(owner!=kIndependentOwner ||
+                   !f.liberated(target) ||
+                   f.sectors_[target].claims<45 ||
+                   f.reprisal_faction(target)==0)return false;
+            }else{
+                if(owner<1 || owner>kMajorFactions)return false;
                 for(int op=f.operation_;op<kHearthfallOperations;++op)
-                    if(Frontier::TargetForOperation(op)==f.frontline_sector_)
-                        return false;
+                    if(Frontier::TargetForOperation(op)==target)return false;
             }
         }
         while(r.position<r.capacity){if(r.U8()!=0)return false;}
@@ -236,13 +277,17 @@ public:
                    next.tactical.battle.mission()!=Mission::HoldPump ||
                    f.ConvoyAmbusher(f.convoy_source_)==0)return false;
             }else if(f.frontline_sector_>=0){
-                const unsigned owner=f.sectors_[f.frontline_sector_].owner;
+                const unsigned owner=f.frontline_defense_?
+                    static_cast<unsigned>(f.reprisal_faction(f.frontline_sector_)):
+                    static_cast<unsigned>(f.sectors_[f.frontline_sector_].owner);
                 const Doctrine expected=owner==1?Doctrine::Hearthward:
                     owner==2?Doctrine::Meridian:
                     owner==4?Doctrine::Scrapline:
                     owner==6?Doctrine::LostNinth:Doctrine::Unaligned;
+                const Mission mission=f.frontline_defense_?
+                    Mission::HoldPump:Mission::CaptureOrchard;
                 if(nested_schema<3 ||
-                   next.tactical.battle.mission()!=Mission::CaptureOrchard ||
+                   next.tactical.battle.mission()!=mission ||
                    next.tactical.battle.doctrine()!=expected)return false;
             }else{
                 if(f.operation_>=kHearthfallOperations || (nested_schema>=2 &&

@@ -1,3 +1,13 @@
+## 2026-10-16 — Omega Front faction counteroffensive gameplay
+
+**INTENT:** Continue concrete native Omega Front game development on `main` without creating test runners, repeated compiler workflows, menu bloat or unrelated changes. Based on previously committed field assaults and convoy interception.
+
+**EXECUTE:** Established persistent liberated-sector ownership tracking inside `Frontier`, faction-driven siege pressure on conquered positions, actual hostile retake of unattended outposts, and manual or day-triggered tactical counterattack defense with faction troops. Existing soldier, rations, claims, real depot stocks, trust, relation, and dated operation systems supply all effects. Winning defense reduces pressure; losing relinquishes the sector and shuts independent convoy access. Earlier Hearthwell civilians are excluded from automated hostile annexation. Session now hands all strategic transitions into their tactical battles, including surprise counterattacks during ordinary day advancement. Native war table shows reprisal warnings and deployment eligibility; tactical screen identifies an outpost command post. Save slot retains exactly 2,048 bytes; internal schema version 9 persists the 16-sector liberated mask and defense type with migration from old 1–8 snapshots.
+
+**EVIDENCE:** Source edits are tracked for a direct GitHub commit to main with remote file readback, not a local Android build or headset play report. No native compilation, APK install, additional tests, test frameworks or GitHub Actions were performed. Treat source implementation as pending real execution evidence.
+
+**NEXT:** Expand active adversary campaign objectives, allocate defensive garrisons, and improve meaningful long-term territory consequences; avoid ceremony in place of game features.
+
 ## 2026-10-16 — Gumball tracked controller steering and thruster performance
 
 **INTENT:** User explicitly requires ship flight to be controlled by waving/aiming the physical Daydream controller left/right, not touchpad direction buttons; higher installed/purchased ship speed must improve responsiveness. Starting remote `mrcalzon02/ReverieVR` `main` SHA `7b4f1ceced339796717ad2508c39ceacd665defb`. Inspected existing host-world ray construction, ABI, `NativeModuleRuntime`, actual Gumball flight update and Thruster/profile speed.
