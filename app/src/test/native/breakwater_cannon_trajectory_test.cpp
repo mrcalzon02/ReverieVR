@@ -16,7 +16,7 @@ int main(){
     assert(std::abs(ray.origin[1]+.76f)<1.e-5f);
     assert(ray.origin[2]< -2.0f); // origin is in front of stationary gun mount
     gunmesh::Vec exact{};
-    assert(gunmesh::Muzzle(WeaponKind::MachineGun,straight,.09f,&exact));
+    assert(gunmesh::Muzzle(WeaponKind::MachineGun,straight,0.f,&exact));
     assert(ray.origin[2]==exact.z);
     assert(std::abs(ray.direction[2]+1.f)<1.e-6f);
     for(int weapon=0;weapon<kWeaponCount;++weapon){
@@ -24,7 +24,7 @@ int main(){
                                       straight,&ray));
         gunmesh::Vec muzzle{};
         assert(gunmesh::Muzzle(static_cast<WeaponKind>(weapon),straight,
-                               .09f,&muzzle));
+                               0.f,&muzzle));
         assert(std::abs(ray.origin[0]-muzzle.x)<1.e-6f &&
                std::abs(ray.origin[1]-muzzle.y)<1.e-6f &&
                std::abs(ray.origin[2]-muzzle.z)<1.e-6f);
