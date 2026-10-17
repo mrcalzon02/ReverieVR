@@ -746,6 +746,8 @@ void Campaign::TickStep(float dt) {
                     gunboat_salvo_.x = e.x;
                     gunboat_salvo_.z = e.z;
                     gunboat_salvo_.damage = static_cast<uint8_t>(damage);
+                    gunboat_salvo_.armored_transport=
+                        e.type==UnitType::ArmoredTransport;
                 }
                 e.attack_timer = e.type==UnitType::ArmoredTransport?
                     3.8f:2.8f;
