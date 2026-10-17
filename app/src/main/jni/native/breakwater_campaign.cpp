@@ -374,7 +374,8 @@ IncomingThreats Campaign::incoming_threats() const {
                     !enemy.landed)) {
             speed = enemy.type==UnitType::ArmoredTransport?.44f:kGunboatSpeed;
             start = kGunboatAttackStart;
-            end = kGunboatAttackEnd;
+            end = enemy.type==UnitType::ArmoredTransport?
+                invasion::BeachingZ(enemy.type):kGunboatAttackEnd;
             earliest = &warning.gunboat_seconds;
         } else continue;
         // A cooldown that expires after the attacker exits the firing lane
@@ -756,7 +757,9 @@ void Campaign::TickStep(float dt) {
             e.attack_timer = std::max(0.0f, e.attack_timer - dt);
             // Unlike troop transports, gunboats threaten the battery from
             // offshore. Sinking one before the firing line prevents its salvos.
-            if (e.z >= kGunboatAttackStart && e.z < kGunboatAttackEnd &&
+            const float attack_end=e.type==UnitType::ArmoredTransport?
+                invasion::BeachingZ(e.type):kGunboatAttackEnd;
+            if (e.z >= kGunboatAttackStart && e.z < attack_end &&
                 e.attack_timer <= 0.0f) {
                 const int32_t before = integrity_;
                 integrity_ = std::max(0, integrity_ -
@@ -776,7 +779,7 @@ void Campaign::TickStep(float dt) {
                 if (integrity_ == 0) { phase_ = Phase::Defeat; return; }
             }
         }
-        if (e.z >= -2.2f) {
+        if (e.z >= invasion::BeachingZ(e.type)) {
             if (e.type == UnitType::Gunboat) {
                 const int32_t hull_before = integrity_;
                 integrity_ = std::max(0, integrity_ - 8);
@@ -790,7 +793,7 @@ void Campaign::TickStep(float dt) {
                 e.active = false;
                 if (integrity_ == 0) { phase_ = Phase::Defeat; return; }
             } else if(e.type==UnitType::ArmoredTransport) {
-                e.z=-2.2f;
+                e.z=invasion::BeachingZ(e.type);
                 e.landed=true;
                 e.attack_timer=invasion::UnloadingSeconds(e.type);
             } else Land(e);

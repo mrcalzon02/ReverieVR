@@ -32,6 +32,17 @@ inline float FlagshipEscortLane(float flagship_x) {
     const float lane=flagship_x+(flagship_x>=0.0f?-1.60f:1.60f);
     return lane<-2.60f?-2.60f:lane>2.60f?2.60f:lane;
 }
+// Big assault hulls reach the beach with their bows well ahead of
+// their world-space centers. Ordinary craft keep their original stop line.
+constexpr float BeachingZ(UnitType kind) {
+    return kind==UnitType::ArmoredTransport?-3.40f:-2.20f;
+}
+// Convert the heavy ship's center into the existing, unchanged ramp
+// curve's reference coordinate. Its lowered tip meets the shore/cargo.
+constexpr float HeavyRampReferenceZ(float center_z) {
+    return center_z+(BeachingZ(UnitType::LandingCraft)-
+                     BeachingZ(UnitType::ArmoredTransport));
+}
 // An intact armored hull holds its beachhead with the bow ramp open;
 // cargo enters combat only after this exposed unloading interval.
 constexpr float UnloadingSeconds(UnitType kind) {

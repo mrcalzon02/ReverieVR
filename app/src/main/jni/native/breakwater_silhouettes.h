@@ -1,6 +1,7 @@
 #ifndef REVERIE_BREAKWATER_SILHOUETTES_H
 #define REVERIE_BREAKWATER_SILHOUETTES_H
 #include "breakwater_infantry_tactics.h"
+#include "breakwater_invasion_units.h"
 #include <algorithm>
 #include <cmath>
 
@@ -143,7 +144,9 @@ void EmitHeavyTransportSilhouette(const Enemy &ship,BoxFn box,TriFn tri) {
             .19f,.22f,.18f);
     }
     // Only the final physical approach lowers the armored loading ramp.
-    const float ramp=LandingRampProgress(z);
+    // Long hull stops with its center offshore; the bow meets the same
+    // cargo-exit line as the real beach armor/infantry spawn coordinates.
+    const float ramp=LandingRampProgress(invasion::HeavyRampReferenceZ(z));
     const float tipY=-.51f-.53f*ramp;
     const float tipZ=z+1.28f+.18f*ramp;
     tri(x-.73f,-.53f,z+.96f,x+.73f,-.53f,z+.96f,
