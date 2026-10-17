@@ -30,9 +30,9 @@ int main(){
     for(int tier=0;tier<4;++tier) {
         const char *hint=DifficultyHint(tier);
         char count[20]={};
-        std::snprintf(count,sizeof(count),"%d THREATS",2+tier);
+        std::snprintf(count,sizeof(count),"%d FOES",2+tier);
         assert(std::strstr(hint,count)!=nullptr);
-        std::snprintf(count,sizeof(count),"%d DAY WAVES",2+tier);
+        std::snprintf(count,sizeof(count),"%d DAY WAVES",12+2*tier);
         assert(std::strstr(hint,count)!=nullptr);
         assert(4.f*FittedScale(hint,5.65f,.045f)*std::strlen(hint)<5.65f);
         const float baseline=.31f, height=.045f*2.60f;
