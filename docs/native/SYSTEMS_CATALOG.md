@@ -1,3 +1,7 @@
+## Gumball off-target click rejection — 2026-10-16
+
+Game-private `gumball_menu_hit.h::MenuClickAllowed` blocks ray-owned clicks unless a current drawn hit target is present; D-pad-owned/no-ray clicks still use existing focused actions. All four Gumball preparation menus consume it, and blank clicks issue failure feedback. Exact hit helper and 82-target supplemental host tests passed GCC/Clang/sanitizers; whole game GLES2, NDK/APK and S9 remain pending. No shared SDK or Home changes.
+
 ## Gumball equipment/support Back and NDK gate — 2026-10-16
 
 Game-private chart preparation screens now allow fresh-press App/Minus Back from Loadout and Allies; Shipyard retains the same input for palette/grid focus. `PrepSecondaryBack` has strict GCC/Clang/sanitizer host regression evidence and is called by the game module, without changing the shared shell input contract. `scripts/verify-gumball-native-module.sh` is a fail-closed actual NDK build/link/export gate for the two configured ABIs, **not executed with an NDK here**. This is not a new SDK or device-accepted service.
