@@ -11,6 +11,7 @@ SUPPORT="$ROOT/app/src/test/native/gumball_support_contracts_test.cpp"
 MENU="$ROOT/app/src/test/native/gumball_menu_layout_test.cpp"
 MENU_HIT="$ROOT/app/src/test/native/gumball_menu_hit_test.cpp"
 FORMATION="$ROOT/app/src/test/native/gumball_wave_formations_test.cpp"
+FLIGHT="$ROOT/app/src/test/native/gumball_flight_control_test.cpp"
 READINESS="$ROOT/app/src/test/native/gumball_shipyard_readiness_test.cpp"
 INCLUDE="$ROOT/app/src/main/jni/native"
 for compiler in g++ clang++; do
@@ -46,6 +47,9 @@ for compiler in g++ clang++; do
     "$compiler" -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
         -I"$INCLUDE" "$FORMATION" -o "$WORK/formations-$compiler"
     "$WORK/formations-$compiler"
+    "$compiler" -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
+        -I"$INCLUDE" "$FLIGHT" -o "$WORK/flight-$compiler"
+    "$WORK/flight-$compiler"
 done
 if command -v clang++ >/dev/null 2>&1; then
     clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic \
@@ -84,4 +88,8 @@ if command -v clang++ >/dev/null 2>&1; then
         -fsanitize=address,undefined -fno-omit-frame-pointer \
         -I"$INCLUDE" "$FORMATION" -o "$WORK/formations-sanitized"
     "$WORK/formations-sanitized"
+    clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic \
+        -fsanitize=address,undefined -fno-omit-frame-pointer \
+        -I"$INCLUDE" "$FLIGHT" -o "$WORK/flight-sanitized"
+    "$WORK/flight-sanitized"
 fi
