@@ -2602,6 +2602,10 @@ int main() {
     assert(car_index<Campaign::kMaxArmor);
     assert(arrived.armored_vehicles()[car_index].hp==armor::kVehicleHp);
     assert(arrived.armored_vehicles()[car_index].z<=armor::kArmorLineZ);
+    // Native HUD warning is computed from the actual deployed combat
+    // actor and is absent before any armored car reaches shore.
+    assert(arrived.incoming_threats().armor_seconds>=0.0f);
+    assert(arrived.incoming_threats().armor_seconds<=armor::kArmorFireInterval);
     assert(!intercepted.FireAtArmor(static_cast<uint8_t>(Campaign::kMaxArmor)));
     const int original_armor_hp=arrived.armored_vehicles()[car_index].hp;
     assert(arrived.FireAtArmor(car_index));
