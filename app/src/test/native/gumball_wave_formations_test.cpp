@@ -39,5 +39,33 @@ int main(){
             assert(p0.y==.98f);
     }
     for(bool found:shapeSeen)assert(found);
+    // Every doctrine has an actual bounded steering and firing identity.
+    for(unsigned f=0;f<8;++f)for(unsigned slot=0;slot<5;++slot)
+        for(int tick=0;tick<400;++tick){
+            const float age=tick*.025f;
+            const WaveTactics a=TacticsFor(static_cast<WaveFormation>(f),
+                                           slot,age,-1.1f,.9f);
+            const WaveTactics b=TacticsFor(static_cast<WaveFormation>(f),
+                                           slot,age,-1.1f,.9f);
+            assert(a.lateral_speed==b.lateral_speed&&a.shot_aim==b.shot_aim);
+            assert(std::isfinite(a.lateral_speed)
+                   &&std::fabs(a.lateral_speed)<=.52f);
+            assert(std::isfinite(a.shot_aim)&&std::fabs(a.shot_aim)<=.23f);
+            assert(a.fire_interval_scale>=.93f&&a.fire_interval_scale<=1.08f);
+        }
+    const auto line=TacticsFor(WaveFormation::Column,0,1.f,1.f,-1.f);
+    const auto pincer=TacticsFor(WaveFormation::Pincer,0,1.f,1.f,-1.f);
+    const auto rear=TacticsFor(WaveFormation::RearPressure,0,1.f,1.f,-1.f);
+    const auto crossLeft=TacticsFor(WaveFormation::Crossfire,0,1.f,-1.f,0.f);
+    const auto crossRight=TacticsFor(WaveFormation::Crossfire,1,1.f,1.f,0.f);
+    const auto escort=TacticsFor(WaveFormation::Escort,2,1.f,1.f,-1.f);
+    assert(line.lateral_speed==0.f&&line.shot_aim==0.f);
+    assert(pincer.lateral_speed<0.f&&pincer.shot_aim<0.f);
+    assert(rear.lateral_speed<pincer.lateral_speed
+           &&rear.fire_interval_scale<1.f);
+    assert(crossLeft.lateral_speed>0.f&&crossRight.lateral_speed<0.f);
+    assert(escort.lateral_speed==0.f&&escort.fire_interval_scale>1.f);
+    const auto bad=TacticsFor(WaveFormation::Spiral,0,NAN,1.f,0.f);
+    assert(bad.lateral_speed==0.f&&bad.shot_aim==0.f);
     std::cout<<"Gumball eight deterministic assault formations passed\n";
 }
