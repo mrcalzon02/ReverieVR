@@ -1,3 +1,7 @@
+## Gumball game-private secondary Back for equipment/support — 2026-10-16
+
+The hosted Gumball module now interprets a **fresh** App/Minus secondary press as Back from Loadout and Allies, without evaluating a purchase in that same update. The Shipyard continues to use the identical input for its own palette/grid focus switch; it is not an exit there. This adds no shell-global binding, ABI tail, permission or shared SDK change. The game-private `PrepSecondaryBack` helper/layout regression passed strict GCC, Clang and Clang ASan+UBSan and native source readback was verified. Real GLES2 module builds, Android APK and physical controller behavior are not yet proven. A dedicated NDK build/link gate is available as `scripts/verify-gumball-native-module.sh`, tested only for shell syntax and no-NDK failure here.
+
 ## Gumball zero-stock edit recovery — 2026-10-16
 
 Gumball's game-private `YardCursor::chosenPart` exposes the nine component brushes irrespective of current inventory; `gumball_armada_module.cpp` can therefore select an exhausted brush to remove already fitted matching components. `Shipyard::edit` continues enforcing stock for placement/swaps, connectivity and core protection. Focus returns to the grid and the player's feedback identifies removal-only selection; Return is not a brush. Checked save and public platform input ABI unchanged. Strict isolated GCC/Clang/sanitizer host regressions pass; full GLES2, APK and headset gates remain unverified.
