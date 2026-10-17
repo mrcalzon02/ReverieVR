@@ -1,3 +1,7 @@
+## Gumball equipment/support Back and NDK gate — 2026-10-16
+
+Game-private chart preparation screens now allow fresh-press App/Minus Back from Loadout and Allies; Shipyard retains the same input for palette/grid focus. `PrepSecondaryBack` has strict GCC/Clang/sanitizer host regression evidence and is called by the game module, without changing the shared shell input contract. `scripts/verify-gumball-native-module.sh` is a fail-closed actual NDK build/link/export gate for the two configured ABIs, **not executed with an NDK here**. This is not a new SDK or device-accepted service.
+
 ## Gumball stock-independent part selection — 2026-10-16
 
 The game-private Shipyard cursor can arm all nine part brushes even at zero stock so installed matching components are removable/refundable; placement/replacement remains inventory constrained. Production menu code uses this same cursor selection rather than a second selection map. Strict host GCC/Clang/sanitizer regressions passed for removal/refund/save and cursor Return, while GLES2/Android/Daydream gates remain unverified. No shared SDK or shell Home changes.
