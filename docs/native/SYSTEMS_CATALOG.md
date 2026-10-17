@@ -1,6 +1,7 @@
-## Gumball off-target click rejection — 2026-10-16
+## Gumball ray click safety and focus rearm — 2026-10-16
 
-Game-private `gumball_menu_hit.h::MenuClickAllowed` blocks ray-owned clicks unless a current drawn hit target is present; D-pad-owned/no-ray clicks still use existing focused actions. All four Gumball preparation menus consume it, and blank clicks issue failure feedback. Exact hit helper and 82-target supplemental host tests passed GCC/Clang/sanitizers; whole game GLES2, NDK/APK and S9 remain pending. No shared SDK or Home changes.
+Game-private `gumball_menu_hit.h` supplies `MenuClickAllowed`, which rejects ray-owned clicks without a live UI hit, and `MenuPointerFocus::screenChanged`, which prevents stale ray hover across Chart/Loadout/Allies/Yard/Results transitions. Same native action IDs, pointer ABI and shell bindings. Exact hit helper, cursor/layout headers and committed menu-hit test passed GCC/Clang/sanitizer host checks (Part enum shim), plus supplementary 82-target checks. Whole GLES2 renderer/NDK/APK and physical S9 still unverified.
+
 
 ## Gumball equipment/support Back and NDK gate — 2026-10-16
 
