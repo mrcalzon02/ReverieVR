@@ -30,6 +30,7 @@ public:
            std::abs(before.x)>1000.0f || std::abs(before.z)>1000.0f ||
            (before.type!=UnitType::Rowboat &&
             before.type!=UnitType::LandingCraft &&
+            before.type!=UnitType::ArmoredTransport &&
             before.type!=UnitType::Gunboat &&
             before.type!=UnitType::Aircraft)) return false;
         // Never evict a living wreck during a large simultaneous support
@@ -78,9 +79,11 @@ void EmitWreckFragments(const WreckPulse& wreck,TriangleFn triangle) {
     const bool aircraft=wreck.type==UnitType::Aircraft;
     if(!aircraft && wreck.type!=UnitType::Rowboat &&
        wreck.type!=UnitType::LandingCraft &&
+       wreck.type!=UnitType::ArmoredTransport &&
        wreck.type!=UnitType::Gunboat)return;
     const float t=1.0f-wreck.remaining/WreckEffects::kDuration;
-    const float scale=wreck.type==UnitType::Gunboat?1.3f:
+    const float scale=wreck.type==UnitType::ArmoredTransport?1.72f:
+        wreck.type==UnitType::Gunboat?1.3f:
         wreck.type==UnitType::LandingCraft?1.13f:
         aircraft?1.10f:.75f;
     const float baseY=aircraft?1.6f:-.64f;
