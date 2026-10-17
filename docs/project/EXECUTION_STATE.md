@@ -1,3 +1,13 @@
+## 2026-10-16 — Gumball live formation maneuver and firing
+
+**INTENT:** continue game functionality on `mrcalzon02/ReverieVR` `main`. Preflight head `b2970652948bd9ea42a8a05666ff020cbc576be5`. Current eight-formation code only controlled entry coordinates and assault pacing; ordinary enemy flight and shot behavior disregarded formation. No shared Home/controller/SDK modifications, no new library, no save-schema changes.
+
+**EXECUTE:** extended allocation-free `gumball_wave_formations.h` with bounded `WaveTactics` computed from doctrine, squad slot, enemy age, current X and player X. Column keeps its line; fan drifts outward; pincer and rear pressure track the player at different intensities; cross-fire laterally opposes its paired attackers; spiral weaves; siege angles toward center with slightly shorter volley interval; escort wings converge toward their center. `Simulation::update` stores ephemeral formation/slot in each spawned `Enemy`, applies lateral movement, projectile aim and firing interval to **ordinary Scouts, Interceptors and Bombers only**, and preserves independent scripted behavior of named rivals, courier, ace and boss. Extended the existing formation and integrated simulation tests; no new button or graphics tool.
+
+**OBSERVE/VERIFY:** exact new helper `git hash-object` `8b8e9bfca268d21a1799c436b063418033618f14` and expanded formation regression `24b6bb00714eda5ce977717ec1161f095477a8fd` match GitHub blobs. Ran the complete expanded original formation regression with GCC and Clang strict C++17 (`-O1 -Wall -Wextra -Werror -pedantic`) and Clang ASan+UBSan: **all passed**. Repeated deterministic pattern placement and 16,000 bounded steering/aim/cadence cases. Simulation and integrated spawn-state test source were committed/read back, but entire Gumball simulation test, GLES2/NDK shared module build, APK and physical S9/Daydream acceptance **were not run**. Previous game verification script picks up the updated formation test unchanged.
+
+**Remote source commits/readback:** formation helper `7bf39a4dc691ed1a9dd1e3873682e3b3e9bfe65e`, exact regression `a56cab60a9f957fad672eb9942b73758712979fc`, simulation `77fc602c5e8a787e8e1e94192ba8247d3ff237a1`, integrated regression `c563c5b82d5d7ebf01692be45e8391590c24a938`. Verify production module compilation and starter playthrough before increasing live difficulty again. No GitHub Actions used.
+
 ## 2026-10-16 — Omega Front: sector outpost warfare
 
 **INTENT:** Continue substantive native game code on the current authoritative GitHub main, without new automated tests or redundant build infrastructure. Based on previously source-integrated cargo convoy interceptions and 6 fixed story missions.
