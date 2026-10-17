@@ -1,14 +1,15 @@
 #ifndef REVERIE_BREAKWATER_INVASION_UNITS_H
 #define REVERIE_BREAKWATER_INVASION_UNITS_H
 #include "breakwater_campaign.h"
+#include "breakwater_wave_threat.h"
 #include <cstdint>
 namespace reverie { namespace breakwater { namespace invasion {
 // Deterministic enemy allocation: late-war heavy landing ships do not
 // replace the earliest rowboat, gunboat or aircraft introductions.
-constexpr UnitType SelectUnit(unsigned progression,uint8_t wave_index,
-                              uint8_t waves_in_period,uint32_t roll,
-                              uint8_t spawn_ordinal) {
-    if(progression<2u)return UnitType::Rowboat;
+inline UnitType SelectUnit(unsigned progression,uint8_t wave_index,
+                           uint8_t waves_in_period,uint32_t roll,
+                           uint8_t spawn_ordinal) {
+    if(progression<3u)return UnitType::Rowboat;
     // Heavy armored landing ships appear only from the hard late-war
     // progression onward and in the latter half of the actual period.
     // The last wave guarantees a flagship (first spawned slot), so players
@@ -17,10 +18,10 @@ constexpr UnitType SelectUnit(unsigned progression,uint8_t wave_index,
        ((roll%4u)==0u ||
         (wave_index==waves_in_period && spawn_ordinal==0u)))
         return UnitType::ArmoredTransport;
-    if(progression>=8u && roll%6u==0u)return UnitType::Aircraft;
-    if(progression>=5u && roll%4u==0u)return UnitType::Gunboat;
-    if(progression>=3u && roll%3u==0u)return UnitType::LandingCraft;
-    return UnitType::Rowboat;
+    // Preserve the authoritative pressure bands, increased aircraft and
+    // gunboat frequency, and all normal-wave unit composition unchanged.
+    return waves::SelectInvasionUnit(progression,wave_index,
+                                     waves_in_period,roll);
 }
 // Armored ships have separate plating, not a misleading extension of HP.
 // Heavy cannon and missiles retain their full rated penetration.
