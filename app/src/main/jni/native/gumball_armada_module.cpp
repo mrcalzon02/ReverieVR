@@ -823,6 +823,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                                                m->inYard,in->secondary_down!=0,
                                                m->secondary)){
             m->inLoadout=false;m->navTime=0.f;
+            m->pointerFocus.screenChanged();
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
             Rebuild(m);
         }else{
@@ -847,7 +848,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                     m->sim.select_weapon(weapon):m->sim.buy_weapon(weapon);
                 if(good)Save(m);
             }else{
-                m->inLoadout=false;good=true;
+                m->inLoadout=false;m->pointerFocus.screenChanged();good=true;
             }
             ReverieNativeRequestFeedbackV1(m->host,good?
                 REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
@@ -859,6 +860,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                                                m->inYard,in->secondary_down!=0,
                                                m->secondary)){
             m->inSupport=false;m->navTime=0.f;
+            m->pointerFocus.screenChanged();
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
             Rebuild(m);
         }else{
@@ -872,7 +874,9 @@ void Update(void* p,const ReverieNativeInputV1* in){
         }
         if(clickEdge&&mayClick){
             bool good=false;
-            if(m->supportSelected==8){m->inSupport=false;good=true;}
+            if(m->supportSelected==8){
+                m->inSupport=false;m->pointerFocus.screenChanged();good=true;
+            }
             else if(m->supportSelected<2){
                 good=m->sim.hire_support(m->supportSelected==0?
                     SupportKind::CapitaineEclair:SupportKind::MademoiselleMacaron);
@@ -940,7 +944,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                         YardPartName(candidate));
                     good=true;
                 }else if(choice==9){
-                    m->inYard=false;good=true;
+                    m->inYard=false;m->pointerFocus.screenChanged();good=true;
                 }
             }
             ReverieNativeRequestFeedbackV1(m->host,good?
@@ -965,19 +969,23 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 if(good)Save(m); // consume pending escort exactly once
             }else if(m->selected==10){
                 m->inYard=true;m->yardCursor=YardCursor{};
+                m->pointerFocus.screenChanged();
                 std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
                               "SELECT PART ON RIGHT / CLICK SHIP TO EDIT");
                 good=true;
             }else if(m->selected==11){
-                m->inSupport=true;m->supportSelected=0;good=true;
+                m->inSupport=true;m->supportSelected=0;
+                m->pointerFocus.screenChanged();good=true;
             }else if(m->selected==12){
-                m->inLoadout=true;m->loadoutSelected=0;good=true;
+                m->inLoadout=true;m->loadoutSelected=0;
+                m->pointerFocus.screenChanged();good=true;
             }
             ReverieNativeRequestFeedbackV1(m->host,good?
                 REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
             Rebuild(m);
         }
     }else if(pressed&&!m->primary&&m->sim.recover()){
+        m->pointerFocus.screenChanged();
         Save(m);Rebuild(m);
         ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     }
