@@ -18,7 +18,10 @@ enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  HearthwellHull, MeridianHull, ScraplineHull,
                  LostNinthHull, IndependentHull,
                  RifleH, RifleR, EngineerH, EngineerR, SalvagerH, SalvagerR,
-                 SentinelH, SentinelR, LegionaryH, LegionaryR, Count };
+                 SentinelH, SentinelR, LegionaryH, LegionaryR,
+                 RifleHAlt, RifleRAlt, EngineerHAlt, EngineerRAlt,
+                 SalvagerHAlt, SalvagerRAlt, SentinelHAlt, SentinelRAlt,
+                 LegionaryHAlt, LegionaryRAlt, Count };
 constexpr int kTerrainCount=5;
 static const char *const kPaths[Count]={
     "native/omega-front/terrain/cracked_earth.png",
@@ -40,7 +43,17 @@ static const char *const kPaths[Count]={
     "native/omega-front/units/kenney/sentinel_hearthwell.png",
     "native/omega-front/units/kenney/sentinel_raider.png",
     "native/omega-front/units/kenney/legionary_hearthwell.png",
-    "native/omega-front/units/kenney/legionary_raider.png"
+    "native/omega-front/units/kenney/legionary_raider.png",
+    "native/omega-front/units/kenney/rifle_hearthwell_veteran.png",
+    "native/omega-front/units/kenney/rifle_raider_veteran.png",
+    "native/omega-front/units/kenney/engineer_hearthwell_specialist.png",
+    "native/omega-front/units/kenney/engineer_raider_meridian.png",
+    "native/omega-front/units/kenney/salvager_hearthwell_scavenger.png",
+    "native/omega-front/units/kenney/salvager_raider_scrapline.png",
+    "native/omega-front/units/kenney/sentinel_hearthwell_guard.png",
+    "native/omega-front/units/kenney/sentinel_raider_meridian.png",
+    "native/omega-front/units/kenney/legionary_hearthwell_guard.png",
+    "native/omega-front/units/kenney/legionary_raider_lost_ninth.png"
 };
 class SpriteRenderer {
 public:
@@ -49,7 +62,8 @@ public:
         for(auto &mesh:mesh_)mesh.clear();
         upload=true;
     }
-    bool Place(int slot,float x,float y,float w,float h,float z) {
+    bool Place(int slot,float x,float y,float w,float h,float z,
+               bool facing_left=false) {
         if(slot<0||slot>=Count||!program_||!textures_[slot]||!buffers_[slot])
             return false;
         auto &v=mesh_[slot];
@@ -57,9 +71,12 @@ public:
         auto put=[&v](float xx,float yy,float zz,float u,float vv) {
             v.insert(v.end(),{xx,yy,zz,u,vv});
         };
-        // PNG's first scanline is visually the top; OpenGL upload row has v=0.
-        put(l,b,z,0.f,1.f);put(r,b,z,1.f,1.f);put(r,t,z,1.f,0.f);
-        put(l,b,z,0.f,1.f);put(r,t,z,1.f,0.f);put(l,t,z,0.f,0.f);
+        // PNG row zero is its visual top. Mirror facing in UVs without
+        // duplicating PNGs or shifting the one-cell anchor. Defenders look
+        // right, opposing troops look left across the battlefield.
+        const float ul=facing_left?1.f:0.f,ur=facing_left?0.f:1.f;
+        put(l,b,z,ul,1.f);put(r,b,z,ur,1.f);put(r,t,z,ur,0.f);
+        put(l,b,z,ul,1.f);put(r,t,z,ur,0.f);put(l,t,z,ul,0.f);
         return true;
     }
     void Initialize(const ReverieNativeHostV1 *host) {
@@ -150,7 +167,7 @@ private:
         if(!DecodePng(png.data(),length,image)||
            image.width==0u||image.height==0u||
            image.width>64u||image.height>64u)return false;
-        // Kenney Shooter originals are intentionally unmodified (35-52x43).
+        // Kenney Shooter originals remain unmodified (33-52x43).
         // Copy their exact RGBA pixels to transparent 64x64 cell canvases
         // in memory at load time, never distort/stretch the original sprite.
         std::array<uint8_t,64u*64u*4u> cell{};

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "title": "Omega Front Kenney Top-down Shooter overhead units",
+  "title": "Omega Front Kenney Top-down Shooter infantry role variants",
   "source_pack": "Kenney Top-down Shooter",
   "original_creator": "Kenney",
   "original_pack_url": "https://kenney.nl/assets/top-down-shooter",
@@ -9,9 +9,9 @@
   "license": "CC0-1.0",
   "license_file": "art/source/omega-front/kenney/topdown_shooter/LICENSE_CC0.txt",
   "gameplay_coverage": "Five non-Heavy tactical classes; Heavy continues using Kenney tank hulls.",
-  "original_binary_rule": "The source files and Android assets contain identical unmodified PNG bytes. PNGs remain separate individual sprites, not an atlas.",
-  "runtime_rule": "Original (35-52)x43 top-down images are copied in memory onto transparent 64x64 RGBA buffers with no interpolation. Center/pivot alignment is controlled by the GLES2 renderer; each occupies one 24x24 battlefield cell.",
-  "sprite_count": 10,
+  "original_binary_rule": "Twenty individual untouched Kenney PNGs. Matching preserved source copies and runtime asset files have identical Git blob SHA. Sprite mounting/padding and left-facing mirroring happen at runtime.",
+  "runtime_rule": "Unmodified Kenney originals (33–52 by 43 pixels) are copied to transparent 64x64 RGBA cell buffers in memory, never rescaled. A single fixed cell anchor and one-cell logical footprint applies. Raiders horizontally face left via UV mirroring.",
+  "sprite_count": 20,
   "sprites": [
     {
       "id": "rifle_hearthwell",
@@ -222,6 +222,237 @@
       ],
       "original_and_asset_blob_sha": "c1c8c9aa08c98bad9766ca93972b9b264b7d0b3c",
       "source_is_unmodified": true
+    },
+    {
+      "id": "rifle_hearthwell_veteran",
+      "role": "rifle",
+      "side": "hearthwell",
+      "variant": "alternate",
+      "uniform_context": "veteran",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Woman Green/womanGreen_machine.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/rifle_hearthwell_veteran.png",
+      "source_width_px": 52,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "86a28116f9c024cae9e00a298860871da3673f3a",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "rifle_raider_veteran",
+      "role": "rifle",
+      "side": "raider",
+      "variant": "alternate",
+      "uniform_context": "veteran",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Hitman 2/hitman2_machine.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/rifle_raider_veteran.png",
+      "source_width_px": 49,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "061b8699a145e0a460fda50692e9d8278ebb4e8a",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "engineer_hearthwell_specialist",
+      "role": "engineer",
+      "side": "hearthwell",
+      "variant": "alternate",
+      "uniform_context": "specialist",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Woman Old/womanOld_hold.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/engineer_hearthwell_specialist.png",
+      "source_width_px": 38,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "8ef604bc0ed8fe38e59ab206ae71d377183aca81",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "engineer_raider_meridian",
+      "role": "engineer",
+      "side": "raider",
+      "variant": "alternate",
+      "uniform_context": "meridian",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Man Blue/manBlue_hold.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/engineer_raider_meridian.png",
+      "source_width_px": 35,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "fec359672ae957e91487d63e77415095cc8d1b6a",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "salvager_hearthwell_scavenger",
+      "role": "salvager",
+      "side": "hearthwell",
+      "variant": "alternate",
+      "uniform_context": "scavenger",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Man Old/manOld_hold.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/salvager_hearthwell_scavenger.png",
+      "source_width_px": 35,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "2e391d73ff1d1d136b839291e061a2e2b51dd92a",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "salvager_raider_scrapline",
+      "role": "salvager",
+      "side": "raider",
+      "variant": "alternate",
+      "uniform_context": "scrapline",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Woman Green/womanGreen_hold.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/salvager_raider_scrapline.png",
+      "source_width_px": 38,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "da738d75132f3417f8db614717b2828ca764b361",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "sentinel_hearthwell_guard",
+      "role": "sentinel",
+      "side": "hearthwell",
+      "variant": "alternate",
+      "uniform_context": "guard",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Robot 1/robot1_gun.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/sentinel_hearthwell_guard.png",
+      "source_width_px": 49,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "ebeef83974fe3ea0fd149ca985e31696233d3b25",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "sentinel_raider_meridian",
+      "role": "sentinel",
+      "side": "raider",
+      "variant": "alternate",
+      "uniform_context": "meridian",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Robot 2/robot2_gun.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/sentinel_raider_meridian.png",
+      "source_width_px": 49,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "b5d536c2e3343ddc2654dbf9c8d1b6a2316655d3",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "legionary_hearthwell_guard",
+      "role": "legionary",
+      "side": "hearthwell",
+      "variant": "alternate",
+      "uniform_context": "guard",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Hitman 1/hitman1_stand.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/legionary_hearthwell_guard.png",
+      "source_width_px": 33,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "60e06c90ce68c989a4f8a63f17521b3213a12735",
+      "source_is_unmodified": true
+    },
+    {
+      "id": "legionary_raider_lost_ninth",
+      "role": "legionary",
+      "side": "raider",
+      "variant": "alternate",
+      "uniform_context": "lost_ninth",
+      "source_path": "art/source/omega-front/kenney/topdown_shooter/Hitman 2/hitman2_stand.png",
+      "path": "app/src/main/assets/native/omega-front/units/kenney/legionary_raider_lost_ninth.png",
+      "source_width_px": 33,
+      "source_height_px": 43,
+      "cell_width_px": 64,
+      "cell_height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "render_pivot_px": [
+        32,
+        32
+      ],
+      "original_and_asset_blob_sha": "2dfa496da679e9fced412887fcd1c1a9958b465c",
+      "source_is_unmodified": true
     }
-  ]
+  ],
+  "visual_selection": "For each of five infantry classes and two sides, use base sprite for even stable unit IDs and alternate for odd IDs. Enemy Meridian engineer/sentinel, Scrapline salvager and Lost Ninth legionary use their doctrine-associated alternates regardless of parity. No persistent gameplay schema changes."
 }

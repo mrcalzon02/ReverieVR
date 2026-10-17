@@ -287,22 +287,33 @@ void UnitSprite(State *s,const game::Unit &u,float x,float y,game::Doctrine doct
     Rect(s,x-kCell*.34f+hp_ratio*kCell*.34f,y-kCell*.43f,
          kCell*.68f*hp_ratio,kCell*.055f,-1.843f,.22f,.92f,.32f);
 }
-// The Kenney pack provides genuine overhead bodies/equipment for the five
-// non-vehicle roles. Each class has a distinct Hearthwell/raider sprite.
-int SoldierTexture(const game::Unit &u) {
+// These are visual-only skins, never new simulation classes. Unit ID is
+// stable across battle checkpoints, so visual variety survives save/load.
+// Enemy doctrines choose recognizable specialist uniforms irrespective of ID.
+int SoldierTexture(const game::Unit &u,game::Doctrine doctrine) {
     const bool ally=u.side==game::Side::Hearthwell;
+    const bool alternate=(u.id&1u)!=0u;
     switch(u.role){
     case game::Class::Rifle:
-        return ally?omega_art::RifleH:omega_art::RifleR;
+        return ally?(alternate?omega_art::RifleHAlt:omega_art::RifleH):
+                    (alternate?omega_art::RifleRAlt:omega_art::RifleR);
     case game::Class::Engineer:
-        return ally?omega_art::EngineerH:omega_art::EngineerR;
+        return ally?(alternate?omega_art::EngineerHAlt:omega_art::EngineerH):
+                    ((alternate||doctrine==game::Doctrine::Meridian)?
+                       omega_art::EngineerRAlt:omega_art::EngineerR);
     case game::Class::Salvager:
-        return ally?omega_art::SalvagerH:omega_art::SalvagerR;
+        return ally?(alternate?omega_art::SalvagerHAlt:omega_art::SalvagerH):
+                    ((alternate||doctrine==game::Doctrine::Scrapline)?
+                       omega_art::SalvagerRAlt:omega_art::SalvagerR);
     case game::Class::Sentinel:
-        return ally?omega_art::SentinelH:omega_art::SentinelR;
+        return ally?(alternate?omega_art::SentinelHAlt:omega_art::SentinelH):
+                    ((alternate||doctrine==game::Doctrine::Meridian)?
+                       omega_art::SentinelRAlt:omega_art::SentinelR);
     case game::Class::Legionary:
-        return ally?omega_art::LegionaryH:omega_art::LegionaryR;
-    case game::Class::Heavy: return -1;
+        return ally?(alternate?omega_art::LegionaryHAlt:omega_art::LegionaryH):
+                    ((alternate||doctrine==game::Doctrine::LostNinth)?
+                       omega_art::LegionaryRAlt:omega_art::LegionaryR);
+    case game::Class::Heavy:return -1;
     }
     return -1;
 }
@@ -452,8 +463,10 @@ void Draw(State *s){
         else if(battle.doctrine()==game::Doctrine::Scrapline)hull=omega_art::ScraplineHull;
         else if(battle.doctrine()==game::Doctrine::LostNinth)hull=omega_art::LostNinthHull;
         const int sprite=u->role==game::Class::Heavy?
-                         hull:SoldierTexture(*u);
-        if(s->sprites.Place(sprite,px,py,kCell*.90f,kCell*.90f,-1.85f))
+                         hull:SoldierTexture(*u,battle.doctrine());
+        const bool facing_left=u->side==game::Side::Raiders;
+        if(s->sprites.Place(sprite,px,py,kCell*.90f,kCell*.90f,-1.85f,
+                            facing_left))
             SpriteEquipment(s,*u,px,py,battle.doctrine());
         else UnitSprite(s,*u,px,py,battle.doctrine());
     }
