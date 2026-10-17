@@ -1473,7 +1473,7 @@ int main() {
 
     Campaign c(Difficulty::Casual, 41);
     assert(c.Start() && c.phase() == Phase::Shop);
-    assert(c.waves_this_period() == 2);
+    assert(c.waves_this_period() == 12);
     assert(c.Purchase(Upgrade::FireRate));
     assert(c.stats().fire_delay_ms == 265);
     assert(c.Purchase(Upgrade::Magazine));
@@ -1660,7 +1660,7 @@ int main() {
     }
     assert(landed.wave_status().troops_stopped>=1);
     assert(landed.incoming_threats().infantry_seconds<0.0f);
-    assert(landed.waves_this_period()==2);
+    assert(landed.waves_this_period()==12);
 
     // Infantry volleys must report the real damage against the final hull
     // point, rather than the nominal damage from every ready shooter.
@@ -1737,7 +1737,7 @@ int main() {
 
     Campaign veteran(Difficulty::Siege,7);
     assert(veteran.Start());
-    assert(veteran.waves_this_period()==5);
+    assert(veteran.waves_this_period()==18);
     assert(veteran.price(Upgrade::AntiAir)>0);
     assert(!veteran.FireAt(0));
     assert(veteran.Purchase(Upgrade::AntiAir));
@@ -1806,12 +1806,19 @@ int main() {
     assert(restored.credits()==writer.credits());
     assert(restored.level(Upgrade::Damage)==1);
     assert(restored.artillery_charges()==1);
-    assert(restored.waves_this_period()==4);
+    assert(restored.waves_this_period()==16);
     const int credit_before=restored.credits();
     encoded[0]^=0xffu;
     assert(!restored.DeserializeShop(encoded,sizeof(encoded)));
     assert(restored.credits()==credit_before);
     encoded[0]^=0xffu;
+    // High wave indices must survive the original 80-byte v2 save format.
+    encoded[28]=16u; // last legal opening Veteran daytime wave
+    assert(restored.DeserializeShop(encoded,sizeof(encoded)));
+    assert(restored.wave_index()==16u);
+    encoded[28]=17u; // valid uint8_t, invalid period progress
+    assert(!restored.DeserializeShop(encoded,sizeof(encoded)));
+    assert(restored.wave_index()==16u);
     encoded[28]=0xffu; // invalid wave index, at word 7
     assert(!restored.DeserializeShop(encoded,sizeof(encoded)));
     assert(restored.credits()==credit_before);
@@ -2508,7 +2515,16 @@ int main() {
     // Day and night each contain their own shop-separated waves.
     Campaign clock(Difficulty::Casual,41);
     assert(clock.Start());
-    for(int i=0;i<1800 && clock.period()!=Period::Night;i++) {
+    assert(clock.waves_this_period()==12);
+    uint8_t day_end_save[Campaign::kSerializedSize]={};
+    assert(clock.SerializeShop(day_end_save,sizeof(day_end_save)));
+    day_end_save[28]=clock.waves_this_period();
+    // Start at the last (12th) day wave to exercise the real end-of-period
+    // transition without spending minutes replaying eleven prior assaults.
+    assert(clock.DeserializeShop(day_end_save,sizeof(day_end_save)));
+    assert(clock.wave_index()==12);
+    for(int i=0;i<7200 && clock.period()!=Period::Night &&
+                    clock.phase()!=Phase::Defeat;i++) {
         if(clock.phase()==Phase::Shop) assert(clock.BeginWave());
         clock.Tick(0.05f);
         for(uint8_t n=0;n<clock.enemies().size();n++)
@@ -2519,8 +2535,10 @@ int main() {
     }
     assert(clock.period()==Period::Night && clock.day()==1);
     assert(clock.wave_index()==1);
-    assert(clock.waves_this_period()==1);
+    assert(clock.waves_this_period()==8);
 
+    // Every shipped difficulty gets a distinct long campaign without
+    // exceeding the uint8_t wave index or the original save envelope.
     assert(Campaign::Locations()[0].days==2);
     assert(Campaign::Locations()[1].days==3);
     assert(Campaign::Locations()[2].days==4);
