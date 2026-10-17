@@ -8,6 +8,7 @@
 #include "red_ledger_signage.h"
 #include "red_ledger_mug_mesh.h"
 #include "red_ledger_trade.h"
+#include "red_ledger_wholesale.h"
 #include "red_ledger_stock_layout.h"
 
 #include <GLES2/gl2.h>
@@ -267,9 +268,7 @@ bool IsTargetAvailable(
             return room==trade::Room::Stockroom && hands_free &&
                 simulation.current_event()!=EventType::SupplyInterruption &&
                 (state->market.offer()==0 ||
-                    (state->market.offer()<trade::kDrinks
-                        ? state->market.stock_drink(state->market.offer())<99990
-                        : state->market.stock_snack(state->market.offer()-trade::kDrinks)<99990));
+                    state->market.CanAcceptStock());
         case WorkTarget::DrinkChoice:
             return room==trade::Room::Bar && no_payment && patron_waiting &&
                 drink_state!=DrinkState::FilledCup;
@@ -637,13 +636,9 @@ bool ActivateWorkTarget(
             changed=state->market.SelectOffer(state->hovered_offer);
             break;
         case WorkTarget::StockBuy:
-            if (state->market.offer()==0) {
-                changed=simulation.BuySupply(SupplierItem::BeerCrate);
-            } else {
-                const int cost=state->market.offer_cost();
-                changed=simulation.SpendSpecialStock(cost);
-                if (changed) changed=state->market.AcceptStock();
-            }
+            changed=state->market.offer()==0
+                ? simulation.BuySupply(SupplierItem::BeerCrate)
+                : trade::BuyWholesale(&simulation,&state->market);
             break;
         case WorkTarget::DrinkChoice:
             changed=state->market.SelectDrink(simulation.beer_units());

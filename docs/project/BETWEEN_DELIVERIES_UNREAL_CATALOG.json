@@ -1,14 +1,14 @@
 {
-  "schema_version": 1,
-  "status": "recovered reference metadata; NOT a runtime import",
+  "schema_version": 2,
+  "status": "exact 24-row source DataTable product metadata recovered; portable binary asset export/render still pending",
   "source": "Private Google Drive 'Between deliveries/Content', downloaded original UE5.7 DT_ShopItems.uasset",
   "source_sample_sha256": "06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c",
   "source_document": "docs/project/BETWEEN_DELIVERIES_FULL_SCOPE.md",
   "unreal_engine_tag": "++UE5+Release-5.7",
   "rights_status": "unverified per asset; do not redistribute Unreal binaries, Megascans/Fab, fonts, or third-party audio pending proof",
-  "mapping_status": "Names confirmed in DT_ShopItems binary; probable folder associations from 24 visible model group names and source package object references. Per-row object/icon link is not verified until Unreal DataTable CSV export.",
+  "mapping_status": "VERIFIED: 25 original tagged DataTable records (rows 1–24 and test) parsed; FObjectImport offsets resolve every row's StaticMesh and Texture2D references, supplier, buy/sale prices and category. Do not infer license clearance or bitmap extraction.",
   "price_slot_warning": "The author document lists Redline Spiced Rum in second (bottled) slot and Mazr Blue Vodka in second (bottled) slot despite product names; price_slot_from_design deliberately preserves source column position, not claimed liquid type.",
-  "icon_links": "DT_ShopItems references 24 icon_XX_300_v2_rt_final assets; exact per-row bindings are not verified.",
+  "icon_links": "Verified one-to-one from imported UObject references, NOT guessed filename order; all 24 original icon paths recorded per SKU.",
   "exclude": [
     "DT_ShopItems contains extra 'test' row, intentionally not included in original 24 products"
   ],
@@ -23,12 +23,20 @@
       "folder_label": "101draft",
       "drive_content_folder": "Models/Props/Booze/101draft",
       "probable_unreal_object": "/Game/Models/Props/Booze/101draft/StaticMeshes/101draft",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
       "license_verified": false,
       "unreal_texture_package_reported_dimensions": "1024x1024",
       "unreal_texture_package_version": "++UE5+Release-5.7",
-      "unreal_texture_package_metadata_inspected": true
+      "unreal_texture_package_metadata_inspected": true,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/101draft/StaticMeshes/101draft.101draft",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_01_300_v2_rt_final.icon_01_300_v2_rt_final",
+      "unreal_buy_price": 8,
+      "unreal_sale_price": 12,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 2,
@@ -40,9 +48,17 @@
       "folder_label": "101beer",
       "drive_content_folder": "Models/Props/Booze/101beer",
       "probable_unreal_object": "/Game/Models/Props/Booze/101beer/StaticMeshes/101beer",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/101beer/StaticMeshes/101beer.101beer",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_02_300_v2_rt_final.icon_02_300_v2_rt_final",
+      "unreal_buy_price": 10,
+      "unreal_sale_price": 15,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 3,
@@ -54,9 +70,17 @@
       "folder_label": "101hard",
       "drive_content_folder": "Models/Props/Booze/101hard",
       "probable_unreal_object": "/Game/Models/Props/Booze/101hard/StaticMeshes/101hard",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/101hard/StaticMeshes/101hard.101hard",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_03_300_v2_rt_final.icon_03_300_v2_rt_final",
+      "unreal_buy_price": 32,
+      "unreal_sale_price": 50,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 4,
@@ -68,9 +92,17 @@
       "folder_label": "101snacks",
       "drive_content_folder": "Models/Props/Booze/101snacks",
       "probable_unreal_object": "/Game/Models/Props/Booze/101snacks/StaticMeshes/101snacks",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/101snacks/StaticMeshes/101snacks.101snacks",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_04_300_v2_rt_final.icon_04_300_v2_rt_final",
+      "unreal_buy_price": 6,
+      "unreal_sale_price": 10,
+      "unreal_item_category": "Food",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 5,
@@ -82,9 +114,17 @@
       "folder_label": "202draft",
       "drive_content_folder": "Models/Props/Booze/202draft",
       "probable_unreal_object": "/Game/Models/Props/Booze/202draft/StaticMeshes/202draft",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/202draft/StaticMeshes/202draft.202draft",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_05_300_v2_rt_final.icon_05_300_v2_rt_final",
+      "unreal_buy_price": 7,
+      "unreal_sale_price": 12,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 6,
@@ -96,9 +136,17 @@
       "folder_label": "202Beer",
       "drive_content_folder": "Models/Props/Booze/202Beer",
       "probable_unreal_object": "/Game/Models/Props/Booze/202Beer/StaticMeshes/202Beer",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/202Beer/StaticMeshes/202Beer.202Beer",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_06_300_v2_rt_final.icon_06_300_v2_rt_final",
+      "unreal_buy_price": 9,
+      "unreal_sale_price": 15,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 7,
@@ -110,9 +158,17 @@
       "folder_label": "202HARD",
       "drive_content_folder": "Models/Props/Booze/202HARD",
       "probable_unreal_object": "/Game/Models/Props/Booze/202HARD/StaticMeshes/202HARD",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/202HARD/StaticMeshes/202HARD.202HARD",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_07_300_v2_rt_final.icon_07_300_v2_rt_final",
+      "unreal_buy_price": 30,
+      "unreal_sale_price": 50,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 8,
@@ -124,9 +180,17 @@
       "folder_label": "202snacks",
       "drive_content_folder": "Models/Props/Booze/202snacks",
       "probable_unreal_object": "/Game/Models/Props/Booze/202snacks/StaticMeshes/202snacks",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/202snacks/StaticMeshes/202snacks.202snacks",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_08_300_v2_rt_final.icon_08_300_v2_rt_final",
+      "unreal_buy_price": 5,
+      "unreal_sale_price": 10,
+      "unreal_item_category": "Food",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 9,
@@ -138,9 +202,17 @@
       "folder_label": "303Draft",
       "drive_content_folder": "Models/Props/Booze/303Draft",
       "probable_unreal_object": "/Game/Models/Props/Booze/303Draft/StaticMeshes/303Draft",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/303Draft/StaticMeshes/303Draft.303Draft",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_09_300_v2_rt_final.icon_09_300_v2_rt_final",
+      "unreal_buy_price": 9,
+      "unreal_sale_price": 12,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 10,
@@ -152,9 +224,17 @@
       "folder_label": "303beer",
       "drive_content_folder": "Models/Props/Booze/303beer",
       "probable_unreal_object": "/Game/Models/Props/Booze/303beer/StaticMeshes/303beer",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/303beer/StaticMeshes/303beer.303beer",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_10_300_v2_rt_final.icon_10_300_v2_rt_final",
+      "unreal_buy_price": 11,
+      "unreal_sale_price": 15,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 11,
@@ -166,9 +246,17 @@
       "folder_label": "303hard",
       "drive_content_folder": "Models/Props/Booze/303hard",
       "probable_unreal_object": "/Game/Models/Props/Booze/303hard/StaticMeshes/303hard",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/303hard/StaticMeshes/303hard.303hard",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_11_300_v2_rt_final.icon_11_300_v2_rt_final",
+      "unreal_buy_price": 33,
+      "unreal_sale_price": 50,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 12,
@@ -180,9 +268,17 @@
       "folder_label": "303snacks",
       "drive_content_folder": "Models/Props/Booze/303snacks",
       "probable_unreal_object": "/Game/Models/Props/Booze/303snacks/StaticMeshes/303snacks",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/303snacks/StaticMeshes/303snacks.303snacks",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_12_300_v2_rt_final.icon_12_300_v2_rt_final",
+      "unreal_buy_price": 7,
+      "unreal_sale_price": 10,
+      "unreal_item_category": "Food",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 13,
@@ -194,9 +290,17 @@
       "folder_label": "404draft",
       "drive_content_folder": "Models/Props/Booze/404draft",
       "probable_unreal_object": "/Game/Models/Props/Booze/404draft/StaticMeshes/404draft",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/404draft/StaticMeshes/404draft.404draft",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_13_300_v2_rt_final.icon_13_300_v2_rt_final",
+      "unreal_buy_price": 8,
+      "unreal_sale_price": 12,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 14,
@@ -208,9 +312,17 @@
       "folder_label": "404beer",
       "drive_content_folder": "Models/Props/Booze/404beer",
       "probable_unreal_object": "/Game/Models/Props/Booze/404beer/StaticMeshes/404beer",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/404beer/StaticMeshes/404beer.404beer",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_14_300_v2_rt_final.icon_14_300_v2_rt_final",
+      "unreal_buy_price": 10,
+      "unreal_sale_price": 15,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 15,
@@ -222,9 +334,17 @@
       "folder_label": "404hard",
       "drive_content_folder": "Models/Props/Booze/404hard",
       "probable_unreal_object": "/Game/Models/Props/Booze/404hard/StaticMeshes/404hard",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/404hard/StaticMeshes/404hard.404hard",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_15_300_v2_rt_final.icon_15_300_v2_rt_final",
+      "unreal_buy_price": 34,
+      "unreal_sale_price": 50,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 16,
@@ -236,9 +356,17 @@
       "folder_label": "404snacks",
       "drive_content_folder": "Models/Props/Booze/404snacks",
       "probable_unreal_object": "/Game/Models/Props/Booze/404snacks/StaticMeshes/404snacks",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/404snacks/StaticMeshes/404snacks.404snacks",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_16_300_v2_rt_final.icon_16_300_v2_rt_final",
+      "unreal_buy_price": 6,
+      "unreal_sale_price": 10,
+      "unreal_item_category": "Food",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 17,
@@ -250,9 +378,17 @@
       "folder_label": "505draft",
       "drive_content_folder": "Models/Props/Booze/505draft",
       "probable_unreal_object": "/Game/Models/Props/Booze/505draft/StaticMeshes/505draft",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/505draft/StaticMeshes/505draft.505draft",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_17_300_v2_rt_final.icon_17_300_v2_rt_final",
+      "unreal_buy_price": 10,
+      "unreal_sale_price": 12,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 18,
@@ -264,9 +400,17 @@
       "folder_label": "505beer",
       "drive_content_folder": "Models/Props/Booze/505beer",
       "probable_unreal_object": "/Game/Models/Props/Booze/505beer/StaticMeshes/505beer",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/505beer/StaticMeshes/505beer.505beer",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_18_300_v2_rt_final.icon_18_300_v2_rt_final",
+      "unreal_buy_price": 12,
+      "unreal_sale_price": 15,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 19,
@@ -278,9 +422,17 @@
       "folder_label": "505Hard",
       "drive_content_folder": "Models/Props/Booze/505Hard",
       "probable_unreal_object": "/Game/Models/Props/Booze/505Hard/StaticMeshes/505Hard",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/505Hard/StaticMeshes/505Hard.505Hard",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_19_300_v2_rt_final.icon_19_300_v2_rt_final",
+      "unreal_buy_price": 35,
+      "unreal_sale_price": 50,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 20,
@@ -292,9 +444,17 @@
       "folder_label": "505Snacks",
       "drive_content_folder": "Models/Props/Booze/505Snacks",
       "probable_unreal_object": "/Game/Models/Props/Booze/505Snacks/StaticMeshes/505Snacks",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/505Snacks/StaticMeshes/505Snacks.505Snacks",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_20_300_v2_rt_final.icon_20_300_v2_rt_final",
+      "unreal_buy_price": 8,
+      "unreal_sale_price": 10,
+      "unreal_item_category": "Food",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 21,
@@ -306,9 +466,17 @@
       "folder_label": "606draft",
       "drive_content_folder": "Models/Props/Booze/606draft",
       "probable_unreal_object": "/Game/Models/Props/Booze/606draft/StaticMeshes/606draft",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/606draft/StaticMeshes/606draft.606draft",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_21_300_v2_rt_final.icon_21_300_v2_rt_final",
+      "unreal_buy_price": 9,
+      "unreal_sale_price": 12,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 22,
@@ -320,9 +488,17 @@
       "folder_label": "606beer",
       "drive_content_folder": "Models/Props/Booze/606beer",
       "probable_unreal_object": "/Game/Models/Props/Booze/606beer/StaticMeshes/606beer",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/606beer/StaticMeshes/606beer.606beer",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_22_300_v2_rt_final.icon_22_300_v2_rt_final",
+      "unreal_buy_price": 11,
+      "unreal_sale_price": 15,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 23,
@@ -334,24 +510,48 @@
       "folder_label": "606hard",
       "drive_content_folder": "Models/Props/Booze/606hard",
       "probable_unreal_object": "/Game/Models/Props/Booze/606hard/StaticMeshes/606hard",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/606hard/StaticMeshes/606hard.606hard",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_23_300_v2_rt_final.icon_23_300_v2_rt_final",
+      "unreal_buy_price": 36,
+      "unreal_sale_price": 50,
+      "unreal_item_category": "Beverages",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     },
     {
       "slot": 24,
       "supplier_id": "606",
       "supplier": "Mazr Vodka",
       "design_name": "Beans chicken and potato",
-      "unreal_table_name": "Beans, chicken & potato",
+      "unreal_table_name": " Beans, chicken & potato",
       "price_slot_from_design": "snacks",
       "folder_label": "606Snacks",
       "drive_content_folder": "Models/Props/Booze/606Snacks",
       "probable_unreal_object": "/Game/Models/Props/Booze/606Snacks/StaticMeshes/606Snacks",
-      "model_binding_verified": false,
+      "model_binding_verified": true,
       "original_texture_resolution_verified": false,
-      "license_verified": false
+      "license_verified": false,
+      "verified_unreal_mesh_object": "/Game/Models/Props/Booze/606Snacks/StaticMeshes/606Snacks.606Snacks",
+      "verified_unreal_icon_object": "/Game/texture/ICONS/icon_24_300_v2_rt_final.icon_24_300_v2_rt_final",
+      "unreal_buy_price": 7,
+      "unreal_sale_price": 10,
+      "unreal_item_category": "Food",
+      "icon_binding_verified": true,
+      "price_fields_verified": true,
+      "mapping_evidence": "FPropertyTag row and FPackageIndex import-map resolved from original 17513-byte UE5.7 DT_ShopItems.uasset, SHA-256 06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c"
     }
   ],
-  "product_texture_package_metadata_note": "101draft_texture_0.uasset directly reports 1024x1024 and UE5.7 in package metadata. This is not proof of standalone bitmap recovery or exported mobile texture."
+  "product_texture_package_metadata_note": "101draft_texture_0.uasset directly reports 1024x1024 and UE5.7 in package metadata. This is not proof of standalone bitmap recovery or exported mobile texture.",
+  "excluded_test_row": {
+    "name": "test",
+    "supplier_id": 101,
+    "unreal_buy_price": 10,
+    "unreal_sale_price": 18,
+    "reason": "source placeholder; excluded from 24-product game catalog"
+  },
+  "source_metadata_includes": "BuyPrice / SalePrice source prices recorded in original dollar-like units. The game's runtime treats wholesale/lot yields separately and does not automatically equate these to a single poured drink's price."
 }

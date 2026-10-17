@@ -4,6 +4,16 @@
 
 **It has not been executed in Unreal Editor**; the current environment has no Unreal installation or complete `.uproject`. Ordinary Python unit tests for safe filenames, 24-item catalog validation, PNG dimensions, bad FBX detection, and hashing have passed. The utility is *not* proof that any 4K textures or original GLB geometry were actually exported or loaded into ReverieVR.
 
+## Original DataTable recovery WITHOUT the Unreal Editor
+
+The user's original `DT_ShopItems.uasset` is a valid 17,513-byte UE5.7 DataTable. We recovered its **actual** tagged rows and imported UObject path references without opening Unreal. For independent reproduction on the original private file:
+
+```sh
+python scripts/unreal/recover_shop_table.py /private/DT_ShopItems.uasset /private/shop-metadata.json
+```
+
+The decoder requires SHA-256 `06440a1dafa96234140a585185ec3d5159d4e3fd59a8695a5121e8ba3824e62c` and fails closed on any different/truncated package. On the original download, it recovered **24 unique mesh+icon references**, buy/sale pricing and the discarded `test` row; it stores no source-image bytes or uploaded binary assets. **This does not export mesh geometry, 1K/4K textures, music, or prove rights.** Editor extraction still follows below.
+
 ## Requirements and use
 
 1. In a private Windows Unreal project, restore the original `Between deliveries/Content` directory under an actual UE 5.7 `.uproject`. Original source packages include both **UE 5.5 and 5.7**; use a 5.7-capable editor and confirm imports/material dependencies. The original shop row struct and plugins may require restoration; failing packages are logged. Enable the standard **Python Editor Script Plugin**. Never modify the Google Drive originals while they are being uploaded.
@@ -19,7 +29,7 @@ Paths shown are **examples**, not confirmed locations on the user's machine. The
 
 ## Constraints and next integration
 
-- The **24 recovered product-folder associations were inferred** from original package and item names; exporting all actual assets inside each group avoids pretending a particular `StaticMesh` object is already verified. The DataTable CSV is required to establish final row-to-object and icon bindings.
+- The **24 original product-to-mesh and product-to-icon associations are now verified** from the original binary DataTable, not inferred: `scripts/unreal/recover_shop_table.py` decodes the source FProperty tags and resolves each reference through the Unreal import table. All 24 original buy/sale prices, categories, supplier IDs and names are in `docs/project/BETWEEN_DELIVERIES_UNREAL_CATALOG.json`. The CSV export remains useful for editable authoring and price revision, but is **no longer required to identify the original asset links**. Exported PNG/FBX still requires UE and licensing.
 - This first utility intentionally **does not export `Fab/Megascans`, `OldWall`, characters, fonts, music, or arbitrary third-party packs**. Their source origin, explicit distribution rights and sometimes the mixed UE 5.5 format must be separately cleared. Exporting into a private folder is not permission to publish.
 - Source PNG and FBX are **masters for conversion**, not Android APK assets. Verify color space, alpha, UV/pivots, scale and actual texture resolution. Generate mobile-sized GPU variants and eventual .glb models *from* those masters. Do not downscale or replace originals, and do not use embedded 256px JPEG package thumbnails as original artwork.
 - A source may export from FBX without material links if dependent Unreal shader graph or third-party plugins are missing; those are errors to resolve before renderer integration, not to disguise with placeholder material.

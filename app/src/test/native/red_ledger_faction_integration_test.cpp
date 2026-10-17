@@ -41,8 +41,11 @@ int main() {
     assert(sim.patrons_remaining()==3);
     assert(market.CycleOffer()&&market.offer()==1);
     const int wholesale=market.offer_cost();
+    const int previous_stock=market.stock_drink(1);
+    assert(market.CanAcceptStock());
     assert(sim.SpendSpecialStock(wholesale));
     assert(market.AcceptStock());
+    assert(market.stock_drink(1)-previous_stock==trade::kDrinkCatalog[1].units);
     assert(sim.cash_cents()==cash_before+base+quote.cents-wholesale);
     assert(market.Enter(trade::Room::Living));
     uint8_t packed[Simulation::kSerializedSize+trade::Trade::kSerializedSize]={};

@@ -10,6 +10,10 @@ constexpr int kSnacks=6;
 constexpr int kFactions=6; // six supplier factions 101..606
 constexpr int kOffers=kDrinks+kSnacks;
 enum class Room : int32_t { Bar=0, Stockroom=1, Living=2 };
+// Each supplier purchase is one physical lot (cask/case/bottle/tin),
+// not the prototype's universal three-serving shipment. Exact wholesale
+// costs come from the original Unreal shop table; lot yield is an explicit
+// pre-1.0 economy balance rule (8 draft, 6 bottled, 12 spirit, 6 snacks).
 struct Product {
     const char *name;
     int32_t wholesale_cents;
@@ -19,32 +23,32 @@ struct Product {
 };
 static constexpr Product kDrinkCatalog[kDrinks] = {
     {"HOUSE LAGER",0,0,0,-1}, // legacy house tap, outside the 24 branded SKUs
-    {"BLUE HARBOR DRAFT",800,3,80,0},
-    {"GREEN HARBOR LAGER",1000,3,100,0},
-    {"HARBOR RESERVE WHISKEY",3200,3,220,0},
-    {"AMBER UNION ALE",700,3,80,1},
-    {"UNION STAR LAGER",900,3,100,1},
-    {"UNION HOUSE WHISKEY",3000,3,220,1},
-    {"REDLINE DARK ALE",900,3,80,2},
-    {"REDLINE SPICED RUM",1100,3,100,2},
-    {"REDLINE BARREL WHISKEY",3300,3,220,2},
-    {"IRON MUG STOUT",800,3,80,3},
-    {"CROSSMARK BITTER",1000,3,100,3},
-    {"DOCKSIDE BROWN WHISKEY",3400,3,220,3},
-    {"MARKET AMBER ALE",1000,3,80,4},
-    {"GREENMARK BITTER",1200,3,100,4},
-    {"GREENMARK CLEAR WHISKEY",3500,3,220,4},
-    {"GREEN DRAFT LAGER",900,3,80,5},
-    {"MAZR BLUE VODKA",1100,3,100,5},
-    {"MAZR CRYSTAL VODKA",3600,3,220,5}
+    {"BLUE HARBOR DRAFT",800,8,80,0},
+    {"GREEN HARBOR LAGER",1000,6,100,0},
+    {"HARBOR RESERVE WHISKEY",3200,12,220,0},
+    {"AMBER UNION ALE",700,8,80,1},
+    {"UNION STAR LAGER",900,6,100,1},
+    {"UNION HOUSE WHISKEY",3000,12,220,1},
+    {"REDLINE DARK ALE",900,8,80,2},
+    {"REDLINE SPICED RUM",1100,6,100,2},
+    {"REDLINE BARREL WHISKEY",3300,12,220,2},
+    {"IRON MUG STOUT",800,8,80,3},
+    {"CROSSMARK BITTER",1000,6,100,3},
+    {"DOCKSIDE BROWN WHISKEY",3400,12,220,3},
+    {"MARKET AMBER ALE",1000,8,80,4},
+    {"GREENMARK BITTER",1200,6,100,4},
+    {"GREENMARK CLEAR WHISKEY",3500,12,220,4},
+    {"GREEN DRAFT LAGER",900,8,80,5},
+    {"MAZR BLUE VODKA",1100,6,100,5},
+    {"MAZR CRYSTAL VODKA",3600,12,220,5}
 };
 static constexpr Product kSnackCatalog[kSnacks] = {
-    {"CANDIED PLUMS",600,3,65,0},
-    {"GOLDEN FRY CHIPS",500,3,65,1},
-    {"HOT RATION CRISPS",700,3,65,2},
-    {"SALT PRETZEL BAG",600,3,65,3},
-    {"STREET SAUSAGE TIN",800,3,65,4},
-    {"BEANS CHICKEN AND POTATO",700,3,65,5}
+    {"CANDIED PLUMS",600,6,65,0},
+    {"GOLDEN FRY CHIPS",500,6,65,1},
+    {"HOT RATION CRISPS",700,6,65,2},
+    {"SALT PRETZEL BAG",600,6,65,3},
+    {"STREET SAUSAGE TIN",800,6,65,4},
+    {"BEANS CHICKEN AND POTATO",700,6,65,5}
 };
 static constexpr const char *kFactionNames[kFactions] = {
     "WESTERN CONCORDANT",
@@ -186,16 +190,19 @@ public:
         if(chosen_snack_>=0&&snack_stock_[chosen_snack_]>0)
             --snack_stock_[chosen_snack_];
     }
+    bool CanAcceptStock() const {
+        if(offer_<=0||offer_>=kOffers)return false; // house lager uses crate
+        if(offer_<kDrinks)
+            return drink_stock_[offer_]<=100000-kDrinkCatalog[offer_].units;
+        const int id=offer_-kDrinks;
+        return snack_stock_[id]<=100000-kSnackCatalog[id].units;
+    }
     bool AcceptStock() {
-        if(offer_==0)return false; // house lager uses legacy beer crate
-        if(offer_<kDrinks) {
-            if(drink_stock_[offer_]>99990)return false;
+        if(!CanAcceptStock())return false;
+        if(offer_<kDrinks)
             drink_stock_[offer_]+=kDrinkCatalog[offer_].units;
-        } else {
-            const int id=offer_-kDrinks;
-            if(snack_stock_[id]>99990)return false;
-            snack_stock_[id]+=kSnackCatalog[id].units;
-        }
+        else
+            snack_stock_[offer_-kDrinks]+=kSnackCatalog[offer_-kDrinks].units;
         return true;
     }
     void RecordService(PatronKind patron) {

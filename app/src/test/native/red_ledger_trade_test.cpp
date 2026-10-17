@@ -55,6 +55,16 @@ int main() {
     assert(std::strcmp(trade::kDrinkCatalog[18].name,"MAZR CRYSTAL VODKA")==0);
     assert(std::strcmp(trade::kSnackCatalog[5].name,"BEANS CHICKEN AND POTATO")==0);
 
+    // Unreal buy/sell prices are item-level source metadata; these
+    // pre-1.0 order lot yields prevent a bottle of spirits being purchased
+    // at $32 and sold as just three $5 drinks.
+    for(int faction=0;faction<6;++faction){
+        const int first=1+faction*3;
+        assert(trade::kDrinkCatalog[first].units==8);
+        assert(trade::kDrinkCatalog[first+1].units==6);
+        assert(trade::kDrinkCatalog[first+2].units==12);
+        assert(trade::kSnackCatalog[faction].units==6);
+    }
     trade::Trade state;
     assert(state.stock_drink(1)==1 && state.stock_drink(7)==1);
     assert(state.stock_snack(2)==1);
@@ -71,7 +81,8 @@ int main() {
     assert(state.favor(2)==4 && state.drink()==0 && state.snack()==-1);
     assert(state.CycleOffer() && state.offer()==1);
     assert(state.offer_cost()==trade::kDrinkCatalog[1].wholesale_cents);
-    assert(state.AcceptStock() && state.stock_drink(1)==4);
+    assert(state.CanAcceptStock());
+    assert(state.AcceptStock() && state.stock_drink(1)==9);
     assert(state.Enter(trade::Room::Stockroom));
     assert(!state.Enter(trade::Room::Stockroom));
 
@@ -82,9 +93,38 @@ int main() {
     assert(bytes[trade::Trade::kSerializedSize]==0xC5u);
     trade::Trade restored;
     assert(restored.Deserialize(bytes.data(),trade::Trade::kSerializedSize));
-    assert(restored.favor(2)==4 && restored.stock_drink(1)==4);
+    assert(restored.favor(2)==4 && restored.stock_drink(1)==9);
     assert(restored.room()==trade::Room::Stockroom);
 
+    // Every SKU must stop at the serialized stock cap, never silently
+    // overflow it or mutate on an unfulfillable case order.
+    for(int sku=1;sku<trade::kOffers;++sku){
+        trade::Trade inventory;
+        assert(inventory.SelectOffer(sku));
+        const int stock_units=sku<trade::kDrinks?
+            trade::kDrinkCatalog[sku].units:
+            trade::kSnackCatalog[sku-trade::kDrinks].units;
+        int prev=sku<trade::kDrinks?inventory.stock_drink(sku):
+            inventory.stock_snack(sku-trade::kDrinks);
+        int orders=0;
+        while(inventory.CanAcceptStock()){
+            assert(inventory.AcceptStock());
+            const int now=sku<trade::kDrinks?inventory.stock_drink(sku):
+                inventory.stock_snack(sku-trade::kDrinks);
+            assert(now-prev==stock_units && now<=100000);
+            prev=now;
+            assert(++orders<=100000);
+        }
+        assert(prev>100000-stock_units);
+        assert(!inventory.AcceptStock());
+        const int after=sku<trade::kDrinks?inventory.stock_drink(sku):
+            inventory.stock_snack(sku-trade::kDrinks);
+        assert(after==prev);
+        std::array<uint8_t,trade::Trade::kSerializedSize> cap_save{};
+        assert(inventory.Serialize(cap_save.data(),cap_save.size()));
+        trade::Trade cap_loaded;
+        assert(cap_loaded.Deserialize(cap_save.data(),cap_save.size()));
+    }
     const int favor_before=restored.favor(2);
     bytes[19]^=0x7fu;
     assert(!restored.Deserialize(bytes.data(),trade::Trade::kSerializedSize));
