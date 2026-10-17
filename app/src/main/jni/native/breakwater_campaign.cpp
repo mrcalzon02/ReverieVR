@@ -492,7 +492,9 @@ bool Campaign::CallArtillery() {
     // A strike is only spent if at least one eligible vessel is present.
     // Troops already ashore and aircraft are not artillery targets.
     const bool target_available = std::any_of(enemies_.begin(), enemies_.end(),
-        [](const Enemy &e) { return e.active && e.type != UnitType::Aircraft; });
+        [](const Enemy &e) { return e.active && e.type != UnitType::Aircraft; }) ||
+        std::any_of(armor_.begin(),armor_.end(),
+            [](const ArmoredVehicle &v){return v.active;});
     if (!target_available) return false;
     --artillery_charges_;
     for (Enemy &e : enemies_) {
@@ -501,13 +503,23 @@ bool Campaign::CallArtillery() {
             if (e.hp <= 0) { e.active = false; ++wave_status_.boats_sunk; credits_ += 55; }
         }
     }
+    for(ArmoredVehicle &v:armor_)if(v.active) {
+        v.hp=static_cast<int16_t>(v.hp-120);
+        if(v.hp<=0) {
+            v.active=false;
+            ++wave_status_.armor_destroyed;
+            credits_+=armor::kArmorKillCredits;
+        }
+    }
     return true;
 }
 bool Campaign::CallAirstrike() {
     if (phase_ != Phase::Combat || airstrike_charges_ == 0) return false;
     // Empty-airspace calls must not silently consume purchased support.
     const bool target_available = std::any_of(enemies_.begin(), enemies_.end(),
-        [](const Enemy &e) { return e.active; });
+        [](const Enemy &e) { return e.active; }) ||
+        std::any_of(armor_.begin(),armor_.end(),
+            [](const ArmoredVehicle &v){return v.active;});
     if (!target_available) return false;
     --airstrike_charges_;
     for (Enemy &e : enemies_) {
@@ -518,6 +530,14 @@ bool Campaign::CallAirstrike() {
                 if (e.type == UnitType::Aircraft) ++wave_status_.aircraft_destroyed;
                 else ++wave_status_.boats_sunk;
             }
+        }
+    }
+    for(ArmoredVehicle &v:armor_)if(v.active) {
+        v.hp=static_cast<int16_t>(v.hp-150);
+        if(v.hp<=0) {
+            v.active=false;
+            ++wave_status_.armor_destroyed;
+            credits_+=armor::kArmorKillCredits;
         }
     }
     return true;
