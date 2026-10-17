@@ -24,6 +24,22 @@ int main(){
         assert(Inside(c,kDifficultyPanel,.10f));
         assert(HitDifficulty(c.x,c.y)==i);
     }
+    // The exact opening threat and daytime wave counts match the
+    // campaign's 2 + difficulty-tier default starting formulas.
+    for(int tier=0;tier<4;++tier) {
+        const char *hint=DifficultyHint(tier);
+        char count[20]={};
+        std::snprintf(count,sizeof(count),"%d THREATS",2+tier);
+        assert(std::strstr(hint,count)!=nullptr);
+        std::snprintf(count,sizeof(count),"%d DAY WAVES",2+tier);
+        assert(std::strstr(hint,count)!=nullptr);
+        assert(4.f*FittedScale(hint,5.65f,.045f)*std::strlen(hint)<5.65f);
+        const float baseline=.31f, height=.045f*2.60f;
+        const Rect difficulty=DifficultyCard(tier);
+        assert(baseline-height>difficulty.y+difficulty.height*.5f);
+        assert(baseline+height<.74f-.059f*2.60f);
+    }
+    assert(std::strstr(DifficultyHint(-1),"POINT AT")!=nullptr);
     assert(HitShop(0.f,-1.18f)==-1); // footer is a label, not a button
     assert(HitShop(NAN,0.f)==-1);
     assert(HitDifficulty(0.f,NAN)==-1);
