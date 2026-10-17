@@ -83,7 +83,8 @@ public final class NativeCombatWaveformTest {
         }
         assertEquals(10,hashes.size());
         assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(0));
-        assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(20));
+        assertEquals(NativeCombatWaveform.ARMORED_GUN,
+            NativeCombatWaveform.cueForNativeEvent(20));
         assertEquals(-1,NativeCombatWaveform.weaponCueForNativeEvent(6));
     }
 
@@ -99,8 +100,25 @@ public final class NativeCombatWaveformTest {
             assertEquals(1,NativeCombatWaveform.voiceCount(cue));
         }
         assertEquals(4,hashes.size());
-        assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(20));
+        assertEquals(NativeCombatWaveform.ARMORED_GUN,
+            NativeCombatWaveform.cueForNativeEvent(20));
         assertEquals(-1,NativeCombatWaveform.weaponCueForNativeEvent(16));
+    }
+
+    @Test
+    public void armorCombatSoundsAreDistinctBoundedAndEventRouted() {
+        assertEquals(NativeCombatWaveform.ARMORED_GUN,
+            NativeCombatWaveform.cueForNativeEvent(20));
+        assertEquals(NativeCombatWaveform.ARMOR_DESTROYED,
+            NativeCombatWaveform.cueForNativeEvent(21));
+        assertEquals(-1,NativeCombatWaveform.cueForNativeEvent(22));
+        byte[] fire=NativeCombatWaveform.generatePcm16(NativeCombatWaveform.ARMORED_GUN);
+        byte[] kill=NativeCombatWaveform.generatePcm16(NativeCombatWaveform.ARMOR_DESTROYED);
+        assertTrue(fire.length>10000 && fire.length<40000);
+        assertTrue(kill.length>10000 && kill.length<40000);
+        assertTrue(!java.util.Arrays.equals(fire,kill));
+        assertEquals(1,NativeCombatWaveform.voiceCount(NativeCombatWaveform.ARMORED_GUN));
+        assertEquals(1,NativeCombatWaveform.voiceCount(NativeCombatWaveform.ARMOR_DESTROYED));
     }
 
     @Test(expected = IllegalArgumentException.class)
