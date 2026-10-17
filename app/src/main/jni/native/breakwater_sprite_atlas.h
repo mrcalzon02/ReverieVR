@@ -376,6 +376,14 @@ inline SpriteId EnemySprite(const Enemy &enemy) {
                    ramp>=.30f?SpriteId::LandingRampHalf:
                                SpriteId::LandingCraft;
         }
+        case UnitType::ArmoredTransport: {
+            // Full 3D heavy hull is the live scene representation; retain
+            // an existing ramp tile as a safe fallback for sprite consumers.
+            const float ramp=LandingRampProgress(enemy.z);
+            return ramp>=.70f?SpriteId::LandingRampOpen:
+                   ramp>=.30f?SpriteId::LandingRampHalf:
+                               SpriteId::LandingCraft;
+        }
         case UnitType::Gunboat:
             return std::isfinite(enemy.attack_timer) &&
                 enemy.attack_timer>2.64f?
