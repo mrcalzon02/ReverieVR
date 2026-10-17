@@ -94,10 +94,15 @@ uint32_t Campaign::Hash(uint32_t tag) const {
     return x ^ (x >> 16);
 }
 uint8_t Campaign::waves_this_period() const {
-    const uint8_t difficulty = Tier(difficulty_);
+    // An actual long-form battery campaign: 244 to 352 distinct shop-separated
+    // assaults over the nine days / eighteen day-night periods. The cap stays
+    // well below the on-disk 32-bit index and the in-memory uint8_t index.
+    // Craft per individual wave remain pool-bounded by NextCount().
+    const unsigned difficulty = Tier(difficulty_);
+    const unsigned base = period_ == Period::Day ? 12u : 8u;
     return static_cast<uint8_t>(std::min<unsigned>(
-        8u, (period_ == Period::Day ? 2u : 1u) + difficulty +
-        static_cast<unsigned>((day_ - 1u)/2u) + (location_ > 0 ? 1u : 0u)));
+        32u, base + 2u*difficulty +
+        static_cast<unsigned>(day_ - 1u) + 2u*location_));
 }
 Stats Campaign::stats() const {
     Stats s;
