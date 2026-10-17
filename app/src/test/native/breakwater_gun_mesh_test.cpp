@@ -33,7 +33,9 @@ int main(){
         assert(mesh.all_valid && mesh.numbers.size()%12u==0u);
         assert(mesh.numbers.size()/12u>240u);
         assert(mesh.numbers.size()/12u<700u);
-        assert(mesh.min_z< -1.90f && mesh.max_z< -.54f);
+        // Forward muzzle is still seawards, while the gun carriage is
+        // now seated behind the near-shore targets (not offshore of them).
+        assert(mesh.min_z< -.50f && mesh.max_z>.80f);
         assert(mesh.min_x< -.50f && mesh.max_x>.50f); // 3D wheels and shield
         assert(mesh.min_y< -1.20f && mesh.max_y> -.40f);
         Geometry replay;
@@ -64,7 +66,7 @@ int main(){
     gunmesh::Flash([&](auto... v){spark(v...);},
                    WeaponKind::DirectCannon,forwards,.09f);
     assert(spark.all_valid && spark.numbers.size()==12u*12u);
-    assert(spark.min_z< -2.60f);
+    assert(spark.min_z< -.86f && spark.min_z> -1.20f);
     Geometry rejectedSpark;
     gunmesh::Flash([&](auto... v){rejectedSpark(v...);},
                    WeaponKind::DirectCannon,forwards,0.f);
