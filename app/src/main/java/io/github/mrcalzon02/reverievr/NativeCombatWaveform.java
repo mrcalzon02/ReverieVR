@@ -22,7 +22,7 @@ final class NativeCombatWaveform {
     // integer constants 5..9). This mapping is pure JVM-testable.
     static int cueForNativeEvent(int id) {
         // The JNI queue transmits 1-byte ordered cue IDs. The first five are
-        // unchanged, followed by ten real battle-event effects.
+        // unchanged, followed by ten battle, four progression and two armor cues.
         return id>=1 && id<=21 ? MACHINE+id-1 : -1;
     }
     static int weaponCueForNativeEvent(int id) {
