@@ -1076,8 +1076,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->pointer_visible=false;
         s->menu_focus=-1;
         s->ghost_on=false;
-        if(scene::RefreshNeeded(phase_before,phase_before,
-                previous_focus!=-1,false,pointer_was_visible))
+        // Pointer-none frames are paused, not active combat frames.
+        // Redraw once to clear targeting/hover; repeated menu-held frames
+        // must not rebake the entire scene.
+        if(previous_focus!=-1 || pointer_was_visible)
             s->scene_dirty=true;
         return;
     }
