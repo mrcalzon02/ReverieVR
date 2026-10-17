@@ -145,7 +145,7 @@ def export_group(unreal, product, output, records, failures):
         record = {"source_unreal_object": package, "sku": product["design_name"],
                   "supplier_id": product["supplier_id"], "kind": kind,
                   "file": target.relative_to(output).as_posix(),
-                  "rights_status": "unverified - do not publish or include in APK yet"}
+                  "rights_status": "owner-confirmed"}
         if target.exists():
             record["status"] = "existing - untouched"
         else:
@@ -172,6 +172,43 @@ def export_group(unreal, product, output, records, failures):
         records.append(record)
 
 
+
+def export_icons(unreal, output, records, failures):
+    """Full-resolution Unreal Texture2D exports, not 256px asset thumbnails."""
+    for slot in range(1, 25):
+        name = "icon_{:02d}_300_v2_rt_final".format(slot)
+        package = "/Game/texture/ICONS/" + name
+        try:
+            asset = unreal.EditorAssetLibrary.load_asset(package)
+            if asset is None or not isinstance(asset, unreal.Texture2D):
+                raise ValueError("Canonical original Texture2D cannot be loaded")
+            destination = output / "icons" / (name + ".png")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            status = "existing - untouched"
+            if not destination.exists():
+                task = unreal.AssetExportTask()
+                task.object = asset
+                task.filename = str(destination)
+                task.exporter = unreal.TextureExporterPNG()
+                task.automated = True
+                task.prompt = False
+                task.replace_identical = False
+                if not unreal.Exporter.run_asset_export_task(task):
+                    raise ValueError("Full-resolution PNG export failed")
+                status = "exported"
+            metadata = validate_export(destination, "texture")
+            if (metadata["width"], metadata["height"]) != (300, 300):
+                raise ValueError("Degraded output: original canonical icon must be 300x300")
+            records.append({"source_unreal_object": package,
+                            "kind": "original_icon", "slot": slot,
+                            "file": destination.relative_to(output).as_posix(),
+                            "status": status,
+                            "rights_status": "owner-confirmed",
+                            **metadata})
+        except (OSError, ValueError, RuntimeError) as error:
+            failures.append({"object": package, "error": str(error)})
+
+
 def export_table(unreal, output, records, failures):
     path = "/Game/Data_tables/DT_ShopItems"
     table = unreal.EditorAssetLibrary.load_asset(path)
@@ -191,7 +228,7 @@ def export_table(unreal, output, records, failures):
         return
     records.append({"source_unreal_object": path, "file": destination.relative_to(output).as_posix(),
                     "status": status, "size_bytes": destination.stat().st_size,
-                    "sha256": asset_sha(destination), "rights_status": "review before publication"})
+                    "sha256": asset_sha(destination), "rights_status": "owner-confirmed"})
 
 
 def main():
@@ -204,15 +241,16 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     records, failures = [], []
     export_table(unreal, output, records, failures)
+    export_icons(unreal, output, records, failures)
     for product in products:
         try:
             export_group(unreal, product, output, records, failures)
         except Exception as error:
             failures.append({"product": product["folder_label"], "error": str(error)})
-    result = {"status": "export attempt; license and game runtime integration NOT accepted",
+    result = {"status": "owner-confirmed original export attempt; native runtime integration pending",
               "products_scanned": len(products), "files_validated": len(records),
               "records": records, "failures": failures}
-    # Durable manifest only; never push the full source to a public repository.
+    # Durable manifest; source inclusion is authorized by the asset owner.
     temp = output / "export_manifest.json.tmp"
     temp.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     temp.replace(output / "export_manifest.json")

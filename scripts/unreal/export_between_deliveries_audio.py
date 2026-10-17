@@ -80,10 +80,10 @@ def export_audio(unreal, output):
                 records.append({"source_unreal_object": object_path, "kind": "soundwave",
                                 "category": category, "file": target.relative_to(output).as_posix(),
                                 "status": status, **details,
-                                "rights_status": "unverified - private recovery only"})
+                                "rights_status": "owner-confirmed"})
             except (OSError, ValueError, wave.Error, RuntimeError) as failure:
                 failures.append({"source_unreal_object": object_path, "error": str(failure)})
-    return {"status": "private source recovery; NOT approved for publication/APK",
+    return {"status": "owner-confirmed original audio recovery; Android packaging not yet verified",
             "records": records, "failures": failures,
             "files_validated": len(records)}
 

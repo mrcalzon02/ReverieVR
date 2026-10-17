@@ -1,0 +1,230 @@
+{
+  "schema": 1,
+  "project": "Between Deliveries / The Red Ledger",
+  "recorded_on": "2026-10-16",
+  "origin": "Original owner-controlled Google Drive Content tree",
+  "rights": "Owner confirms ownership and authorizes inclusion in ReverieVR; LicenseRef-Owner-Original-Assets; no general-purpose CC sublicense inferred",
+  "fidelity": "Byte-exact UE5.7 .uasset source packages, not mobile-ready media or preview JPEGs",
+  "portable_media_exported": false,
+  "android_runtime_integrated": false,
+  "entries": [
+    {
+      "path": "Content/texture/ICONS/icon_01_300_v2_rt_final.uasset",
+      "git_blob_sha": "1bb14547041d4370f8c849eb648f0e25792d7553",
+      "bytes": 183263,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_02_300_v2_rt_final.uasset",
+      "git_blob_sha": "97768c64f4c39eb621c633a8dfbc87773d5abfa7",
+      "bytes": 187957,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_03_300_v2_rt_final.uasset",
+      "git_blob_sha": "f470f38d7c32b80efef9fa15dbebb0a514852d35",
+      "bytes": 206721,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_04_300_v2_rt_final.uasset",
+      "git_blob_sha": "c5598a55b8a343400d1535367760387ba51f32c4",
+      "bytes": 188380,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_05_300_v2_rt_final.uasset",
+      "git_blob_sha": "dc43eb2386f45346d1cc8b196c0f8a01aabb720b",
+      "bytes": 185287,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_06_300_v2_rt_final.uasset",
+      "git_blob_sha": "ebc3acda56780e7aba97d5e12746c969a27159a1",
+      "bytes": 182203,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_07_300_v2_rt_final.uasset",
+      "git_blob_sha": "b64109d68395d89943eee2c0bcd4837037f1750c",
+      "bytes": 183500,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_08_300_v2_rt_final.uasset",
+      "git_blob_sha": "7f3a98397a1384a936eecf919cc379305b3225a8",
+      "bytes": 201408,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_09_300_v2_rt_final.uasset",
+      "git_blob_sha": "2688958b3e65296f4aca8a2ab98195825f942af8",
+      "bytes": 179121,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_10_300_v2_rt_final.uasset",
+      "git_blob_sha": "9772aed987214037088571fcb01c4b6c23e20239",
+      "bytes": 177171,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_11_300_v2_rt_final.uasset",
+      "git_blob_sha": "20b3b7a58126d8a138f440847258ef139b7b6dcd",
+      "bytes": 188219,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_12_300_v2_rt_final.uasset",
+      "git_blob_sha": "b7d5b9d5fbd8a4ecd7448dc39109255920f89902",
+      "bytes": 202768,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_13_300_v2_rt_final.uasset",
+      "git_blob_sha": "d8362e9203e9a2a00d28edf101067a381bb18180",
+      "bytes": 183856,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_14_300_v2_rt_final.uasset",
+      "git_blob_sha": "48fd60af218ced0fde1955749efb4811740cd322",
+      "bytes": 186716,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_15_300_v2_rt_final.uasset",
+      "git_blob_sha": "2233b8c232e04fe47fc2cffb4f732a3f94b1fff1",
+      "bytes": 186861,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_16_300_v2_rt_final.uasset",
+      "git_blob_sha": "51e7bb831e3406ca8450e464b973c7a65e2c893b",
+      "bytes": 205387,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_17_300_v2_rt_final.uasset",
+      "git_blob_sha": "895b5a875597cadfd61a570e3191da48478d9dbd",
+      "bytes": 174366,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_18_300_v2_rt_final.uasset",
+      "git_blob_sha": "5bf80cf82ac087cb6a7c0407dc4f0354e5b44c22",
+      "bytes": 181190,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_19_300_v2_rt_final.uasset",
+      "git_blob_sha": "7df43766b6da46998fc270c6bce7c9a31672aac2",
+      "bytes": 192945,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_20_300_v2_rt_final.uasset",
+      "git_blob_sha": "8864daa1f88c3c622bf39990230d5faeec5cd2c2",
+      "bytes": 204774,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_21_300_v2_rt_final.uasset",
+      "git_blob_sha": "5bf426f9b8af701da084088b4c6a16ff113db896",
+      "bytes": 176661,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_22_300_v2_rt_final.uasset",
+      "git_blob_sha": "c2c0610a280c52afaf909dfc790350a3e118a532",
+      "bytes": 178279,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_23_300_v2_rt_final.uasset",
+      "git_blob_sha": "ad0777076d7fc39d8674fecefd974523a5403b35",
+      "bytes": 195314,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/texture/ICONS/icon_24_300_v2_rt_final.uasset",
+      "git_blob_sha": "6ee33f62462d26f13be4c633a53ec6e5f32841f7",
+      "bytes": 191436,
+      "unreal_version": "5.7",
+      "source_dimensions": "300x300"
+    },
+    {
+      "path": "Content/Data_tables/Daily_variance_table.uasset",
+      "git_blob_sha": "77d7bb56a57aad23dcf5cee6f984177508dd02d9",
+      "bytes": 2663
+    },
+    {
+      "path": "Content/Data_tables/Random_events_table_list.uasset",
+      "git_blob_sha": "dbd2ee918f57dd3467bec6e558c4f3fc37a411af",
+      "bytes": 1992
+    },
+    {
+      "path": "Content/Data_tables/Incoming_deliveries.uasset",
+      "git_blob_sha": "948e005352ddf6a7c7eed4ef64803306393f6f11",
+      "bytes": 1931
+    },
+    {
+      "path": "Content/Data_tables/Delivery_schedule.uasset",
+      "git_blob_sha": "682fba5b74fbb5cb559a912d0d4d45118918306a",
+      "bytes": 1976
+    },
+    {
+      "path": "Content/Data_tables/Barinfo.uasset",
+      "git_blob_sha": "b589babfb939af4fd3176cd399e4fb6258b6fa65",
+      "bytes": 1894
+    },
+    {
+      "path": "Content/Data_tables/holding.uasset",
+      "git_blob_sha": "13943aa9f8fd1051d3400ab8e825d07c37cccb5b",
+      "bytes": 1882
+    },
+    {
+      "path": "Content/Data_tables/DT_ShopItems.uasset",
+      "git_blob_sha": "b40ba2809af2da8e5a6b921aa367b2552252d52e",
+      "bytes": 17513
+    },
+    {
+      "path": "Content/Models/Props/Barfront/Barfront.uasset",
+      "git_blob_sha": "b8e67efd5139cb48ca435904695241fbfbee0a76",
+      "bytes": 73783
+    },
+    {
+      "path": "Content/Models/Props/Stool/stool1.uasset",
+      "git_blob_sha": "d9d96c5b2880de87eec712803616286a1e96eda3",
+      "bytes": 218653
+    },
+    {
+      "path": "Content/Models/Props/Stool/STOOL.uasset",
+      "git_blob_sha": "a508e80fbb714f755475a5837e5932e85c66d832",
+      "bytes": 1381862
+    }
+  ]
+}
