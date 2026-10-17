@@ -62,6 +62,24 @@ produce the relevant battle impact; armor is not an unsupported purely
 decorative exception. No third-party textures or sample recordings were
 added.
 
+**Near-shore ballistic geometry repair:** During the armored landing pass,
+the original physical gun-mount z=-0.88 was found to put the muzzle at
+approximately z=-2.3, seaward of the soldier firing line z=-1.34 and
+the vehicle line z=-1.56. Under the real muzzle-origin ballistics these
+shore units were behind the muzzle and could not be shot. All three
+gun-mesh mount uses (barrel mesh, flash and muzzle-origin provider)
+now share `gunmesh::kMount={0,-0.76,+0.65}`, placing the gun breech
+low behind the seated viewpoint and its muzzle approximately z=-0.98
+to -0.60 for the five physical mounts, landward of the beach units.
+A short new cradle deck supports the mount. The same pre-recoil muzzle
+remains the **actual** projectile origin; no controller-origin hit bypass
+was reintroduced. Extended cannon trajectory regressions now assert
+that every weapon's shot intersects actual nearby soldier and armored
+car hit spheres. Strict host GCC/Clang and Clang ASan/UBSan passed these
+exact trajectory test bytes using the earlier locally mirrored gun and
+ballistic dependencies; full original gun geometry test/NDK/headset
+fit remains pending.
+
 The exact `breakwater_armor.h` and native regression source passed
 strict host GCC/Clang C++17 and Clang ASan+UBSan with a minimal test-only
 campaign dependency shim; the exact armor helper/test GitHub hashes were
