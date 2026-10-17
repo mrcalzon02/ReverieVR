@@ -62,6 +62,34 @@ produce the relevant battle impact; armor is not an unsupported purely
 decorative exception. No third-party textures or sample recordings were
 added.
 
+**Late-wave save, turret, and warning integration (2026-10-16):**
+One older checkpoint validator still rejected `wave_index > 8` after
+the campaign had been expanded to as many as 25 actual waves per
+period. The native reader now rejects the full 32-bit serialized value
+only when it is zero, above the 32-wave global cap, or later than that
+specific location/day/night/difficulty period's `waves::ForPeriod`
+limit. `waves::CheckpointAllowed` is shared with an executable test
+enumerating every allowable checkpoint position across all 18
+periods and four difficulty tiers, including invalid 257/65,537
+wraparound attempts and the final Siege 25-day/21-night boundaries.
+Old 80-byte shop state remains compatible, without changing the save
+structure.
+
+The purchased support turret no longer ignores vehicles just because
+their landing craft has unloaded: after any nearer surface vessel,
+it automatically shoots the closest deployed armored car with heavy
+penetration (7 HP per 15-damage turret report), credits/kill counter
+only on actual destruction, and an actual simulation-owned turret
+impact event. It still never damages aircraft. The short combat HUD
+now predicts the earliest legitimate armored car shell from the
+same physical travel-to-line distance and cooldown that control real
+fire, showing `ARMOR nS` instead of `SHORE nS` only if the vehicle's
+next salvo would happen first. This reuses the original one shore
+warning location instead of stacking another floating box.
+Destroying that car removes its prediction immediately. Exact
+standalone header tests passed GCC, Clang, and Clang ASan/UBSan; the
+complete Campaign/module/Android tests remain unexecuted.
+
 **Near-shore ballistic geometry repair:** During the armored landing pass,
 the original physical gun-mount z=-0.88 was found to put the muzzle at
 approximately z=-2.3, seaward of the soldier firing line z=-1.34 and
