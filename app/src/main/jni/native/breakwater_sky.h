@@ -61,6 +61,22 @@ void EmitSkyPanorama(uint8_t location,bool night,TriangleFn triangle) {
         }
     }
 
+    // Seal the zenith: a horizontal-only panorama leaves an empty cone
+    // directly overhead when the player looks up in Daydream VR. Extend
+    // the uppermost ring to one shared, world-space apex. Its ring color
+    // matches the final sky band, so the join has no daytime/night seam.
+    // One extra triangle per existing sky sector; no new shader/draw pass.
+    const SkyColor top=night?dusk[kSkyBands-1]:day[kSkyBands-1];
+    const SkyColor zenith={top.r*red,top.g*green,top.b*blue};
+    const SkyPoint apex={0.0f,40.0f,0.0f};
+    for(int sector=0;sector<kSkySegments;++sector) {
+        const float a=-kSkyPi+2.0f*kSkyPi*sector/kSkySegments;
+        const float b=-kSkyPi+2.0f*kSkyPi*(sector+1)/kSkySegments;
+        emit(SkyAt(a,kSkyRadius,0,heights[kSkyBands]),
+             SkyAt(b,kSkyRadius,0,heights[kSkyBands]),
+             apex,zenith);
+    }
+
     // Far, flat cloud silhouettes. Sparse cards curve around the panorama
     // and are not camera-facing per eye: VR parallax is world-consistent.
     const int clouds=night?8:12;
