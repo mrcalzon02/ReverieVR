@@ -384,6 +384,8 @@ Test Chamber requests an activation cue when its tint toggle changes. Red Ledger
 
 The service remains event-level. It does not accept module PCM, sound files, positional audio buffers, arbitrary tones, or mixer controls. It provides only named one-shot cues. Haptics are also not implemented by this path.
 
+**2026-10-16 Breakwater extension:** IDs 1–5 still mean machine, heavy, flak, missile and cannon. IDs 6–15 add hull impact, water splash, boat destruction, offshore gunboat salvo, infantry volley, bomber/strafer attack, SAM launch, actual wave start and shoreline collision. Events come from authoritative game transitions and positive-damage simulation events using the original eight-cue JNI packet and preloaded PCM sound bank, with no native host ABI structure change. The owner-original offline background song **Mars des Souvenirs** remains the independent music-volume-controlled ShellMenuMusic loop. APK and headset mix remain unverified.
+
 ### Ordered first-party gameplay sound cues (2026-10-15, expanded 2026-10-16)
 
 The new optional `request_sound(uint32_t cue_id)` host tail supports
