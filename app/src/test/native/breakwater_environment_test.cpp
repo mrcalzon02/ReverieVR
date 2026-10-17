@@ -14,6 +14,33 @@ int main() {
         const auto night=EnvironmentFor(location,true);
         assert(day.earth.r>night.earth.r);
         assert(day.sea.b>night.sea.b);
+        // Prop placement must use exact split-triangle surface heights:
+        // sampling the diagonal and the two outer edges must agree with
+        // the emitted 12-strip mesh, for all three rear slope profiles.
+        for(int strip=0;strip<12;++strip) {
+            const float z0=-.50f+strip*1.45f;
+            const float z1=z0+1.45f;
+            const float t0=strip/12.0f,t1=(strip+1)/12.0f;
+            const float center0=-1.12f+day.rise*t0*t0*.80f;
+            const float center1=-1.12f+day.rise*t1*t1*.80f;
+            const float flank0=center0+.38f*t0;
+            const float flank1=center1+.38f*t1;
+            assert(std::abs(RearGroundHeight(day,0,z0)-center0)<.0001f);
+            assert(std::abs(RearGroundHeight(day,0,z1)-center1)<.0001f);
+            assert(std::abs(RearGroundHeight(day,9.4f,z0)-flank0)<.0001f);
+            assert(std::abs(RearGroundHeight(day,-9.4f,z1)-flank1)<.0001f);
+            const float v=.35f,u=.68f;
+            const float z=z0+v*1.45f,x=u*9.4f;
+            const float lower=(1-u)*center0+(u-v)*flank0+v*flank1;
+            assert(std::abs(RearGroundHeight(day,x,z)-lower)<.0001f);
+            const float upper=(1-v)*center0+v*center1+
+                u*(flank1-center1);
+            assert(std::abs(RearGroundHeight(day,v*9.4f,z0+u*1.45f)-
+                            ((1-u)*center0+v*flank1+(u-v)*center1))<.0001f);
+            (void)upper;
+        }
+        assert(std::abs(RearGroundHeight(day,3.8f,8.1f)-
+                        RearGroundHeight(night,3.8f,8.1f))<.00001f);
         // Entire 360-degree circle closes without a silhouette seam.
         assert(RidgeHeight(location,0,true)==
                RidgeHeight(location,kLandscapeSectors,true));

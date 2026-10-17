@@ -90,6 +90,23 @@ void EmitLandscapeRing(uint8_t location,bool night,bool farRing,
     }
 }
 
+// Exact height of the faceted rear ground mesh at an x/z point. The
+// two-triangle strip diagonal changes interpolation at v==u, so merely
+// fitting a polynomial to z makes props visibly float or sink.
+inline float RearGroundHeight(const EnvironmentProfile& p,float x,float z) {
+    constexpr float nearZ=-.50f, step=1.45f, width=9.4f;
+    const float along=std::max(0.0f,std::min(12.0f,(z-nearZ)/step));
+    const int strip=std::min(11,static_cast<int>(along));
+    const float v=along-static_cast<float>(strip);
+    const float u=std::min(1.0f,std::abs(x)/width);
+    const float t0=strip/12.0f,t1=(strip+1)/12.0f;
+    const float y0=-1.12f+p.rise*t0*t0*.80f;
+    const float y1=-1.12f+p.rise*t1*t1*.80f;
+    const float flank0=y0+.38f*t0,flank1=y1+.38f*t1;
+    if(v<=u) return (1.0f-u)*y0+(u-v)*flank0+v*flank1;
+    return (1.0f-v)*y0+u*flank1+(v-u)*y1;
+}
+
 template<typename BoxFn,typename TriangleFn>
 void EmitSurroundingLandscape(uint8_t location,bool night,
                               BoxFn box,TriangleFn triangle) {
@@ -122,14 +139,18 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
             const float x=(n%2==0?-1.0f:1.0f)*(3.4f+(n%3)*1.4f);
             const float z=4.4f+(n/2)*1.65f;
             const float h=.85f+.24f*(n%3);
-            triangle(x-.40f,-.56f,z,x+.40f,-.56f,z,
-                     x,-.56f+h,z,p.hill.r*.68f,p.hill.g*.82f,p.hill.b*.69f);
-            box(x,-.55f,z,.10f,.45f,.10f,
+            const float ground=RearGroundHeight(p,x,z);
+            constexpr float trunk=.50f;
+            triangle(x-.40f,ground+trunk,z,
+                     x+.40f,ground+trunk,z,
+                     x,ground+trunk+h,z,
+                     p.hill.r*.68f,p.hill.g*.82f,p.hill.b*.69f);
+            box(x,ground+trunk*.50f,z,.10f,trunk,.10f,
                 night?.10f:.29f,night?.14f:.25f,night?.18f:.17f);
         }
         for(int n=0;n<6;++n) {
             const float z=1.4f+n*1.75f;
-            box(0,-1.07f+p.rise*(z/14.0f)*(z/14.0f)*.80f,z,
+            box(0,RearGroundHeight(p,0,z)+.015f,z,
                 .80f,.025f,1.55f,
                 night?.18f:.52f,night?.23f:.47f,night?.27f:.33f);
         }
@@ -137,13 +158,15 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
         // Iron Quay: recognizable fortified concrete and supply sheds.
         for(int side=-1;side<=1;side+=2) {
             const float x=static_cast<float>(side)*5.3f;
-            box(x,-.29f,7.2f,2.3f,1.45f,3.0f,
+            const float base=RearGroundHeight(p,x,7.2f);
+            box(x,base+.725f,7.2f,2.3f,1.45f,3.0f,
                 p.mountain.r,p.mountain.g,p.mountain.b);
-            box(x,-.02f,5.65f,2.65f,.19f,.32f,
+            box(x,base+1.50f,5.65f,2.65f,.19f,.32f,
                 p.distant.r,p.distant.g,p.distant.b);
-            box(x,-.04f,6.0f,.85f,.33f,.10f,
+            box(x,base+1.02f,6.0f,.85f,.33f,.10f,
                 night?.07f:.15f,night?.12f:.20f,night?.21f:.25f);
-            box(x,-.37f,8.2f,.42f,1.2f,.42f,
+            box(x,RearGroundHeight(p,x,8.2f)+.60f,8.2f,
+                .42f,1.2f,.42f,
                 night?.12f:.37f,night?.16f:.32f,night?.21f:.27f);
         }
     } else {
@@ -152,7 +175,7 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
             const float x=(n-4)*1.65f;
             const float z=7.0f+(n%3)*2.0f;
             const float h=1.9f+(n*5%7)*.51f;
-            const float y=-.40f;
+            const float y=RearGroundHeight(p,x,z)+.02f;
             triangle(x-.58f,y,z-.40f,x+.48f,y,z-.30f,
                      x+.10f,y+h,z+.12f,p.mountain.r,p.mountain.g,p.mountain.b);
             triangle(x+.48f,y,z-.30f,x+.37f,y,z+.53f,
