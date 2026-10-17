@@ -1,5 +1,7 @@
 ## Gumball deterministic assault director — 2026-10-16
 
+**Live tactic extension:** The same game-private formation descriptor now also drives ordinary Sour ship lateral steering, shot aim, and bounded fire-interval adjustments. Formation ID/slot are ephemeral `Enemy` data, initialized from actual spawn group; named cast ships, courier, ace, and fortress are deliberately exempt. Expanded exact-header/test host GCC/Clang/ASan+UBSan passed; integrated source committed/readback, but GLES2/NDK/APK/Daydream acceptance remains open. No public SDK ABI/save modification.
+
 Game-private `gumball_wave_formations.h` now determines actual `Simulation::update` enemy spawn positions/timing with eight seed/lane-cycled five-slot formations. The flight HUD shows the current doctrine and assault. The planner allocates no memory, uses the existing RNG draw, and changes no save or public SDK field. Exact planner/test passed host GCC, Clang and Clang ASan+UBSan with matching Git blobs; whole simulation suite, renderer/GLES2, APK and physical S9 remain unverified.
 
 ## Gumball ray click safety and focus rearm — 2026-10-16
