@@ -3,7 +3,7 @@
 **Role:** PROJECT MANAGEMENT / SOURCE README  
 **Parent:** [Breakwater implementation plan](BREAKWATER_BATTERY_VR.md) · [RV-0640 backlog](BACKLOG.md) · [Licensing policy](PUBLIC_DISTRIBUTION_AND_LICENSES.md)  
 **Checked:** 2026-10-15 (official source/artist listing and published license pages)  
-**Status:** **Linked CC0/third-party candidates only. No external sample recordings from this register have been selected, downloaded, hashed, imported or released.** The game uses fourteen additional deterministic **original synthesized** one-shot effects (ten confirmed battle events plus purchase, wave-clear, victory and defeat). Breakwater's already packaged original-owner song `Mars des Souvenirs` is licensed separately and is not a third-party SFX candidate.  
+**Status:** **Linked CC0/third-party candidates only. No external sample recordings from this register have been selected, downloaded, hashed, imported or released.** The game uses sixteen additional deterministic **original synthesized** one-shot effects (ten confirmed earlier battle events, four progression cues, and two new armored-car combat events). Breakwater's already packaged original-owner song `Mars des Souvenirs` is licensed separately and is not a third-party SFX candidate.  
 **Art direction:** Generic late-1990s/early-2000s Western military arcade sounds; punchy, legible, low-latency, inexpensive on Galaxy S9. Prefer authentic mechanical impact and modest environmental reverb over cinematic sci-fi or excessive bass.
 
 ## Linked source candidates
@@ -29,6 +29,23 @@ Each link goes to an original asset/download page, **not an unverified mirror**.
 
 - [Sonniss GDC Game Audio bundles](https://sonniss.com/gameaudiogdc/) — royalty-free **within synchronized finished productions**, but **not CC0**; [version 2.0 of the license](https://sonniss.com/gdc-bundle-license/) effective 2026-08-27 prohibits distributing the recordings as a standalone sound-effect collection, sample pack, or reusable project asset. **Do not commit its raw or transformed clips** to public `main`. May only be considered in a separate distribution approach after confirming the exact license and intended distribution.
 - Any individual file without a verified source URL or license, including CC-BY-only, NC, SA, proprietary game extracts, unknown mirror uploads, and voice lines falsely advertised as public domain. Avoid recognizable third-party games' signature sound designs.
+
+## Armored landing cue integration (2026-10-16)
+
+In addition to `Mars des Souvenirs` (the existing owner-original,
+packaged/looped Breakwater passive theme), two new original synthesized
+one-shot cues are now wired to **authoritative vehicle events**:
+`REVERIE_NATIVE_SOUND_ARMORED_GUN=20` only after a deployed armored car
+actually damages the battery, and
+`REVERIE_NATIVE_SOUND_ARMOR_DESTROYED=21` only when a live armor object is
+actually killed by a weapon, artillery, or airstrike. Both are generated
+at bank initialization and played by the existing static AudioTrack sound
+service; they are **not** samples extracted from the owner's song.
+This brings the new secondary event set to sixteen effects beyond the
+five mounted-gun sounds, with separate existing reload/support cues.
+No external CC0 sample has been imported, and the owner soundtrack
+remains separate under its original license. Android/headset mix and
+loop continuity are still unverified.
 
 ## Immediate per-cue sourcing priorities
 
