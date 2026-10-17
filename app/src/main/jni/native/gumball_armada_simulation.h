@@ -3,6 +3,7 @@
 #include "gumball_arcade_objectives.h"
 #include "gumball_cast_encounters.h"
 #include "gumball_shipyard.h"
+#include "gumball_wave_formations.h"
 #include "gumball_support_contracts.h"
 #include <algorithm>
 #include <array>
@@ -131,6 +132,11 @@ public:
     int target()const{return target_;}
     int spawned()const{return spawned_;}
     int wave()const{return target_>0?std::min(3,1+(spawned_*3)/target_):0;}
+    WaveFormation current_formation()const{
+        return FormationFor(seed_,destination_.id,spawned_>0?spawned_-1:0);
+    }
+    int assault()const{return spawned_>0?1+(spawned_-1)/5:1;}
+    int assault_count()const{return (target_+4)/5;}
     uint32_t sortie_cash()const{return sortie_cash_;}
     uint32_t completion_bonus()const{return completion_bonus_;}
     uint32_t shots_fired()const{return shots_fired_;}
@@ -319,11 +325,14 @@ public:
                 case EnemyKind::Fortress: hull=22+static_cast<int>(destination_.id/1024u)*4;break;
                 }
                 const uint32_t roll=next();
-                e={-1.65f+static_cast<float>(roll%331u)*.01f,1.35f,0.f,
+                const WaveEntry waveEntry=PlanWaveEntry(
+                    seed_,destination_.id,spawned_,target_,roll);
+                e={waveEntry.x,waveEntry.y,0.f,
                    kind==EnemyKind::Baff?2.12f:1.45f,hull,true,boss,kind};
-                ++spawned_;break;
+                ++spawned_;
+                spawn_clock_=waveEntry.next_delay;
+                break;
             }
-            spawn_clock_=(spawned_%5==0?3.50f:.94f);
         }
         for(auto& e:enemies_)if(e.active){
             e.age+=dt;
