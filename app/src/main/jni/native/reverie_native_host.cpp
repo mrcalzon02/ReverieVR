@@ -2,6 +2,8 @@
 #include "reverie_native_sound_queue.h"
 
 #include <android/log.h>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 #include <GLES2/gl2.h>
 #include <dlfcn.h>
 #include <jni.h>
@@ -73,6 +75,7 @@ struct NativeSession {
     const ReverieNativeModuleApiV1 *api = nullptr;
     void *instance = nullptr;
     std::string storage_root;
+    AAssetManager *asset_manager = nullptr;
     bool gl_ready = false;
     bool warned_inherited_gl_error = false;
     // Stored only for a failed GL creation callback, not a global log sink.
@@ -425,6 +428,54 @@ void HostRequestSound(uint32_t cue_id) {
     session->pending_sounds.Push(cue_id);
 }
 
+int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
+                      uint32_t *out_size) {
+    NativeSession *session=g_callback_session;
+    if(out_size) *out_size=0u;
+    if(!session || !session->asset_manager || !out_size || !path ||
+       !session->spec ||
+       std::strcmp(session->spec->id,"between-deliveries-red-ledger")!=0)
+        return REVERIE_NATIVE_SAVE_ERROR;
+    constexpr char prefix[]="native/red-ledger/icons/";
+    constexpr size_t prefix_length=sizeof(prefix)-1;
+    const size_t n=strnlen(path,128u);
+    if(n< prefix_length+11u || n>=128u ||
+       std::strncmp(path,prefix,prefix_length)!=0 ||
+       std::strstr(path,"..")!=nullptr) return REVERIE_NATIVE_SAVE_ERROR;
+    for(size_t i=prefix_length;i<n;++i) {
+        const char ch=path[i];
+        if(!((ch>='a'&&ch<='z')||(ch>='A'&&ch<='Z')||
+             (ch>='0'&&ch<='9')||ch=='_'||ch=='-'||ch=='.'))
+            return REVERIE_NATIVE_SAVE_ERROR;
+    }
+    AAsset *asset=AAssetManager_open(session->asset_manager,path,
+                                    AASSET_MODE_STREAMING);
+    if(!asset)return REVERIE_NATIVE_SAVE_NOT_FOUND;
+    const off64_t size=AAsset_getLength64(asset);
+    if(size<=0 || size>1024*1024) {
+        AAsset_close(asset);
+        return REVERIE_NATIVE_SAVE_ERROR;
+    }
+    *out_size=static_cast<uint32_t>(size);
+    if(!buffer || capacity<static_cast<uint32_t>(size)) {
+        AAsset_close(asset);
+        return REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;
+    }
+    uint8_t *dst=static_cast<uint8_t *>(buffer);
+    size_t at=0;
+    while(at<static_cast<size_t>(size)) {
+        const int got=AAsset_read(asset,dst+at,
+                                  static_cast<size_t>(size)-at);
+        if(got<=0) {
+            AAsset_close(asset);
+            return REVERIE_NATIVE_SAVE_ERROR;
+        }
+        at+=static_cast<size_t>(got);
+    }
+    AAsset_close(asset);
+    return REVERIE_NATIVE_SAVE_OK;
+}
+
 const ReverieNativeHostV1 kHostServices = {
     sizeof(ReverieNativeHostV1),
     REVERIE_NATIVE_MODULE_ABI_VERSION,
@@ -432,7 +483,8 @@ const ReverieNativeHostV1 kHostServices = {
     HostReadSave,
     HostWriteSave,
     HostRequestFeedback,
-    HostRequestSound
+    HostRequestSound,
+    HostReadAsset
 };
 
 const BuiltInModuleSpec *FindSpec(const char *id) {
@@ -593,12 +645,13 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
     JNIEnv *env,
     jclass,
     jstring module_id,
-    jstring storage_root
+    jstring storage_root,
+    jobject asset_manager
 ) {
     ClearError();
 
     if (module_id == nullptr
-        || storage_root == nullptr) {
+        || storage_root == nullptr || asset_manager == nullptr) {
         SetError(
             "Native module id and storage root are required."
         );
@@ -708,6 +761,12 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
     session->library = library;
     session->api = api;
     session->storage_root = storage_path;
+    session->asset_manager = AAssetManager_fromJava(env,asset_manager);
+    if(session->asset_manager==nullptr) {
+        SetError("Could not access packaged Android assets.");
+        DestroySession(session);
+        return 0;
+    }
 
     {
         CallbackSessionScope scope(session);

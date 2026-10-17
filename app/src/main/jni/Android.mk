@@ -19,7 +19,7 @@ LOCAL_SRC_FILES := native/reverie_native_host.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -llog -ldl -lGLESv2
+LOCAL_LDLIBS += -llog -ldl -lGLESv2 -landroid
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -51,7 +51,7 @@ LOCAL_SRC_FILES := \
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 
 include $(BUILD_SHARED_LIBRARY)
 

@@ -121,6 +121,15 @@ typedef struct ReverieNativeHostV1 {
     void (*request_sound)(
         uint32_t cue_id
     );
+
+    /* Optional append-only asset reader: packaged, read-only and scoped.
+       Asset bytes are never loaded from untrusted module save paths. */
+    int32_t (*read_asset)(
+        const char *asset_path,
+        void *buffer,
+        uint32_t capacity,
+        uint32_t *out_size
+    );
 } ReverieNativeHostV1;
 
 #define REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE \
@@ -135,6 +144,9 @@ typedef struct ReverieNativeHostV1 {
 #define REVERIE_NATIVE_HOST_V1_SOUND_MIN_SIZE \
     ((uint32_t)(offsetof(ReverieNativeHostV1, request_sound) \
         + sizeof(((ReverieNativeHostV1 *)0)->request_sound)))
+#define REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeHostV1, read_asset) \
+        + sizeof(((ReverieNativeHostV1 *)0)->read_asset)))
 
 typedef struct ReverieNativeModuleDescriptorV1 {
     uint32_t struct_size;

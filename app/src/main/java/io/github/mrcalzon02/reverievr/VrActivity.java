@@ -182,6 +182,7 @@ public final class VrActivity extends Activity
                     getFilesDir(),
                     "native-modules"
                 ),
+                getAssets(),
                 virtualInputBus,
                 preferences.getLoggingMode()
                     == LoggingMode.DEVELOPMENT

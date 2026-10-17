@@ -11,6 +11,7 @@
 #include "red_ledger_wholesale.h"
 #include "red_ledger_renovations.h"
 #include "red_ledger_stock_layout.h"
+#include "red_ledger_original_png.h"
 
 #include <GLES2/gl2.h>
 
@@ -22,6 +23,7 @@
 #include <cctype>
 #include <new>
 #include <memory>
+#include <vector>
 
 namespace {
 
@@ -157,6 +159,10 @@ struct ModuleState {
     GLsizei status_count = 0;
     bool status_dirty = true;
     GLuint atlas_texture = 0;
+    GLuint original_icons[24] = {};
+    GLuint original_icon_vbo = 0;
+    int original_icon_count = 0;
+    GLint icon_mode_location = -1;
     GLint position_location = -1;
     GLint uv_location = -1;
     GLint color_attribute_location = -1;
@@ -740,6 +746,7 @@ bool ActivateWorkTarget(
 GLuint BuildProgram() {
     static const char *kVertexShader =
         "uniform mat4 u_Mvp;\n"
+        "uniform float u_IconMode;\n"
         "attribute vec3 a_Position;\n"
         "attribute vec2 a_Uv;\n"
         "attribute vec3 a_Color;\n"
@@ -747,7 +754,7 @@ GLuint BuildProgram() {
         "varying vec2 v_Uv;\n"
         "varying vec3 v_Color;\n"
         "void main() {\n"
-        "  v_Uv = a_TileOrigin + a_Uv * 0.4921875;\n"
+        "  v_Uv = u_IconMode > 0.5 ? a_Uv : a_TileOrigin + a_Uv * 0.4921875;\n"
         "  v_Color = a_Color;\n"
         "  gl_Position = u_Mvp * vec4(a_Position, 1.0);\n"
         "}\n";
@@ -759,8 +766,8 @@ GLuint BuildProgram() {
         "varying vec2 v_Uv;\n"
         "varying vec3 v_Color;\n"
         "void main() {\n"
-        "  vec3 material = texture2D(u_Atlas, v_Uv).rgb;\n"
-        "  gl_FragColor = vec4(material * v_Color * u_Flicker, 1.0);\n"
+        "  vec4 material = texture2D(u_Atlas, v_Uv);\n"
+        "  gl_FragColor = vec4(material.rgb * v_Color * u_Flicker, material.a);\n"
         "}\n";
 
     static const ReverieNativeGlAttributeBindingV1 kBindings[] = {
@@ -824,6 +831,13 @@ void BuildCubeVertices(float *out) {
 void DestroyGl(
     ModuleState *state
 ) {
+    glDeleteTextures(24,state->original_icons);
+    for(GLuint &icon:state->original_icons)icon=0;
+    state->original_icon_count=0;
+    if(state->original_icon_vbo!=0){
+        glDeleteBuffers(1,&state->original_icon_vbo);
+        state->original_icon_vbo=0;
+    }
     if (state->atlas_texture != 0) {
         glDeleteTextures(1, &state->atlas_texture);
         state->atlas_texture = 0;
@@ -868,6 +882,7 @@ void DestroyGl(
     state->color_attribute_location = -1;
     state->tile_origin_location = -1;
     state->sampler_location = -1;
+    state->icon_mode_location = -1;
     state->active_material = -1;
     state->matrix_location = -1;
     state->flicker_location = -1;
@@ -876,6 +891,10 @@ void DestroyGl(
 void AbandonGl(
     ModuleState *state
 ) {
+    for(GLuint &icon:state->original_icons)icon=0;
+    state->original_icon_count=0;
+    state->original_icon_vbo=0;
+    state->icon_mode_location=-1;
     state->cube_vbo = 0;
     state->mug_vbo = 0;
     state->static_vbo = 0;
@@ -894,6 +913,7 @@ void AbandonGl(
     state->color_attribute_location = -1;
     state->tile_origin_location = -1;
     state->sampler_location = -1;
+    state->icon_mode_location = -1;
     state->active_material = -1;
     state->matrix_location = -1;
     state->flicker_location = -1;
@@ -942,6 +962,8 @@ int32_t InitializeGl(
         glGetAttribLocation(state->program, "a_TileOrigin");
     state->sampler_location =
         glGetUniformLocation(state->program, "u_Atlas");
+    state->icon_mode_location =
+        glGetUniformLocation(state->program,"u_IconMode");
     state->matrix_location =
         glGetUniformLocation(
             state->program,
@@ -1091,6 +1113,39 @@ int32_t InitializeGl(
     state->status_count=0;
     state->status_dirty=true;
 
+
+    // Exact original product icon cards: one immutable GPU quad per stock
+    // cell. The slot order matches the existing controller hit boxes.
+    float icon_quads[stock::kCells*6*geo::kStaticVertexStride]={};
+    for(int slot=0;slot<stock::kCells;++slot) {
+        const stock::Cell cell=stock::At(slot);
+        const float x0=cell.x-.098f,x1=cell.x+.098f;
+        const float y0=cell.y-.026f,y1=cell.y+.154f;
+        const float z=cell.z+.028f;
+        auto vertex=[&](int i,float x,float y,float u,float v) {
+            float *dst=icon_quads+
+                (slot*6+i)*geo::kStaticVertexStride;
+            dst[0]=x;dst[1]=y;dst[2]=z;
+            dst[3]=u;dst[4]=v;
+            dst[5]=1.f;dst[6]=1.f;dst[7]=1.f;
+            dst[8]=0.f;dst[9]=0.f;
+        };
+        // PNG memory begins with its TOP row, so world-space top uses v=0.
+        vertex(0,x0,y0,0.f,1.f);
+        vertex(1,x1,y0,1.f,1.f);
+        vertex(2,x1,y1,1.f,0.f);
+        vertex(3,x0,y0,0.f,1.f);
+        vertex(4,x1,y1,1.f,0.f);
+        vertex(5,x0,y1,0.f,0.f);
+    }
+    glGenBuffers(1,&state->original_icon_vbo);
+    if(state->original_icon_vbo!=0) {
+        glBindBuffer(GL_ARRAY_BUFFER,state->original_icon_vbo);
+        glBufferData(GL_ARRAY_BUFFER,sizeof(icon_quads),
+                     icon_quads,GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER,0);
+    }
+
     // Generate only on GL-context creation/recreation. The temporary CPU
     // buffer is freed immediately after upload; no runtime bitmap asset.
     // RGB565 is 32 KiB instead of 64 KiB RGBA8, and needs no
@@ -1123,6 +1178,49 @@ int32_t InitializeGl(
         );
     }
     pixels.reset();
+
+
+    // Load the owner's exported 300x300 transparent PNGs once per GL
+    // context. No thumbnail substitution, per-frame decoding or JNI calls.
+    const bool can_read_assets=state->host &&
+        state->host->struct_size>=REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE &&
+        state->host->read_asset!=nullptr;
+    if(can_read_assets && state->original_icon_vbo!=0) {
+        for(int index=0;index<24;++index) {
+            char asset[96]={};
+            std::snprintf(asset,sizeof(asset),
+                "native/red-ledger/icons/icon_%02d_300_v2_rt_final.png",
+                index+1);
+            uint32_t bytes=0;
+            const int32_t need=state->host->read_asset(asset,nullptr,0,&bytes);
+            if(need!=REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL ||
+               bytes<64u || bytes>1024u*1024u)continue;
+            std::vector<uint8_t> png(bytes);
+            uint32_t got=0;
+            if(state->host->read_asset(asset,png.data(),bytes,&got)!=
+                    REVERIE_NATIVE_SAVE_OK || got!=bytes)continue;
+            std::vector<uint8_t> rgba;
+            if(!reverie::redledger::original_png::Decode300Rgba(
+                    png.data(),png.size(),&rgba))continue;
+            glGenTextures(1,&state->original_icons[index]);
+            if(state->original_icons[index]==0)continue;
+            glBindTexture(GL_TEXTURE_2D,state->original_icons[index]);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,300,300,0,
+                         GL_RGBA,GL_UNSIGNED_BYTE,rgba.data());
+            ++state->original_icon_count;
+        }
+        glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+    }
+    char report[96]={};
+    std::snprintf(report,sizeof(report),
+        "Original Unreal shop icons loaded: %d/24",
+        state->original_icon_count);
+    Log(state,state->original_icon_count==24 ?
+        REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,report);
 
     if (state->atlas_texture == 0 || glGetError()
         != GL_NO_ERROR) {
@@ -1442,6 +1540,48 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
             2,GL_FLOAT,GL_FALSE,stride,
             reinterpret_cast<const void *>(8u*sizeof(float)));
         glDrawArrays(GL_TRIANGLES,0,state->status_count);
+    }
+
+
+    // Render the actual source artwork on each of the 24 physical stock
+    // cards; the ray-selection geometry remains unchanged.
+    if(room_index==1 && state->original_icon_vbo!=0 &&
+       state->original_icon_count>0) {
+        const GLboolean blended=glIsEnabled(GL_BLEND);
+        GLint src_rgb=GL_ONE,dst_rgb=GL_ZERO;
+        GLint src_alpha=GL_ONE,dst_alpha=GL_ZERO;
+        glGetIntegerv(GL_BLEND_SRC_RGB,&src_rgb);
+        glGetIntegerv(GL_BLEND_DST_RGB,&dst_rgb);
+        glGetIntegerv(GL_BLEND_SRC_ALPHA,&src_alpha);
+        glGetIntegerv(GL_BLEND_DST_ALPHA,&dst_alpha);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glUniform1f(state->icon_mode_location,1.f);
+        glUniform1f(state->flicker_location,1.f);
+        glBindBuffer(GL_ARRAY_BUFFER,state->original_icon_vbo);
+        glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+            3,GL_FLOAT,GL_FALSE,stride,reinterpret_cast<const void *>(0));
+        glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+            2,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(3u*sizeof(float)));
+        glVertexAttribPointer(static_cast<GLuint>(state->color_attribute_location),
+            3,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(5u*sizeof(float)));
+        glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
+            2,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(8u*sizeof(float)));
+        for(int slot=0;slot<stock::kCells;++slot) {
+            const stock::Cell cell=stock::At(slot);
+            const int source_icon=cell.faction*stock::kGroups+cell.group;
+            const GLuint texture=state->original_icons[source_icon];
+            if(texture==0)continue;
+            glBindTexture(GL_TEXTURE_2D,texture);
+            glDrawArrays(GL_TRIANGLES,slot*6,6);
+        }
+        glUniform1f(state->icon_mode_location,0.f);
+        glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+        glBlendFuncSeparate(src_rgb,dst_rgb,src_alpha,dst_alpha);
+        if(blended==GL_FALSE)glDisable(GL_BLEND);
     }
 
     // Dynamic props still use the unit-cube VBO and constant attributes.
@@ -2222,9 +2362,11 @@ int32_t RenderEye(
     glDisable(GL_BLEND);
     glDisable(GL_CULL_FACE);
 
+    glActiveTexture(GL_TEXTURE0);
     glUseProgram(
         state->program
     );
+    glUniform1f(state->icon_mode_location,0.f);
     glBindTexture(GL_TEXTURE_2D, state->atlas_texture);
     glUniform1i(state->sampler_location, 0);
     state->active_material = -1;

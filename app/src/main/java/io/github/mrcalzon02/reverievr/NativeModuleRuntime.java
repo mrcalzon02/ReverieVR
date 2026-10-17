@@ -83,6 +83,7 @@ final class NativeModuleRuntime implements AutoCloseable {
 
     private final File storageRoot;
     private final VirtualInputBus inputBus;
+    private final android.content.res.AssetManager packagedAssets;
     private final boolean developmentModulesAllowed;
 
     private long handle;
@@ -93,10 +94,12 @@ final class NativeModuleRuntime implements AutoCloseable {
 
     NativeModuleRuntime(
         File storageRoot,
+        android.content.res.AssetManager packagedAssets,
         VirtualInputBus inputBus,
         boolean developmentModulesAllowed
     ) {
         this.storageRoot = storageRoot;
+        this.packagedAssets = packagedAssets;
         this.inputBus = inputBus;
         this.developmentModulesAllowed =
             developmentModulesAllowed;
@@ -226,7 +229,8 @@ final class NativeModuleRuntime implements AutoCloseable {
         long created =
             nativeCreate(
                 safeModuleId,
-                moduleStorage.getAbsolutePath()
+                moduleStorage.getAbsolutePath(),
+                packagedAssets
             );
         if (created == 0L) {
             ReverieLog.incident(
@@ -488,7 +492,8 @@ final class NativeModuleRuntime implements AutoCloseable {
 
     private static native long nativeCreate(
         String moduleId,
-        String storageRoot
+        String storageRoot,
+        android.content.res.AssetManager packagedAssets
     );
 
     private static native float[] nativeGetShellLocomotionBounds(

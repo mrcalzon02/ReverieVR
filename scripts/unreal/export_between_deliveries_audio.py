@@ -57,12 +57,17 @@ def export_audio(unreal, output):
                 if not isinstance(asset, unreal.SoundWave):
                     continue  # SoundCues are not the original recorded samples.
                 name = str(asset.get_name())
-                if not re.fullmatch(r"[A-Za-z0-9_-]{1,120}", name):
+                # Preserve the Unicode Unreal object name in source metadata,
+                # but turn typography such as the apostrophe in
+                # People’s_Front_Rising into a portable Windows-safe filename.
+                safe_name = re.sub(r"[^A-Za-z0-9_-]", "_", name)
+                if (not 1 <= len(safe_name) <= 120 or
+                        safe_name.strip("_-") == ""):
                     raise ValueError("Unsafe SoundWave name")
-                if name.lower() in seen:
+                if safe_name.lower() in seen:
                     raise ValueError("Ambiguous duplicate SoundWave filename")
-                seen.add(name.lower())
-                target = output / category / (name + ".wav")
+                seen.add(safe_name.lower())
+                target = output / category / (safe_name + ".wav")
                 target.parent.mkdir(parents=True, exist_ok=True)
                 status = "existing - untouched"
                 if not target.exists():

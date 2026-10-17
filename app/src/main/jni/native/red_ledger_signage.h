@@ -145,8 +145,9 @@ inline size_t Emit(float *buffer,int room=0) {
             std::snprintf(label,sizeof(label),"%d %s",
                 stock::SupplierCode(cell.faction),
                 stock::GroupLabel(cell.group));
+            // Keep the clickable card label below its original product art.
             vertices=EmitLine(buffer,vertices,label,
-                cell.x,cell.y,cell.z+0.014f,0.0086f);
+                cell.x,cell.y-0.096f,cell.z+0.014f,0.0070f);
         }
     }
     return vertices;
