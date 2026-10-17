@@ -1,3 +1,7 @@
+## Gumball deterministic assault director — 2026-10-16
+
+Game-private `gumball_wave_formations.h` now determines actual `Simulation::update` enemy spawn positions/timing with eight seed/lane-cycled five-slot formations. The flight HUD shows the current doctrine and assault. The planner allocates no memory, uses the existing RNG draw, and changes no save or public SDK field. Exact planner/test passed host GCC, Clang and Clang ASan+UBSan with matching Git blobs; whole simulation suite, renderer/GLES2, APK and physical S9 remain unverified.
+
 ## Gumball ray click safety and focus rearm — 2026-10-16
 
 Game-private `gumball_menu_hit.h` supplies `MenuClickAllowed`, which rejects ray-owned clicks without a live UI hit, and `MenuPointerFocus::screenChanged`, which prevents stale ray hover across Chart/Loadout/Allies/Yard/Results transitions. Same native action IDs, pointer ABI and shell bindings. Exact hit helper, cursor/layout headers and committed menu-hit test passed GCC/Clang/sanitizer host checks (Part enum shim), plus supplementary 82-target checks. Whole GLES2 renderer/NDK/APK and physical S9 still unverified.
