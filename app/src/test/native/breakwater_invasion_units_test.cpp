@@ -22,9 +22,31 @@ int main() {
                 assert(SelectUnit(grade,wave,25u,roll,0u)==
                        waves::SelectInvasionUnit(grade,wave,25u,roll));
     assert(SelectUnit(13,25,25,7,0)==UnitType::ArmoredTransport);
-    assert(SelectUnit(13,25,25,7,1)!=UnitType::ArmoredTransport);
-    assert(SelectUnit(13,13,25,4,1)==UnitType::ArmoredTransport);
-    assert(SelectUnit(13,12,25,4,1)!=UnitType::ArmoredTransport);
+    assert(SelectUnit(13,25,25,(1u<<16u)|7u,1)!=UnitType::ArmoredTransport);
+    assert(SelectUnit(13,13,25,6,1)==UnitType::ArmoredTransport);
+    assert(SelectUnit(13,12,25,6,1)!=UnitType::ArmoredTransport);
+    // Regression: late gunboats and aircraft are never displaced by
+    // routine heavy transports, including the highest pressure band.
+    assert(SelectUnit(13,13,25,4,1)==UnitType::Gunboat);
+    assert(SelectUnit(13,13,25,5,1)==UnitType::Aircraft);
+    bool saw_heavy=false,saw_regular=false;
+    for(uint8_t wave=13;wave<25;++wave)
+        for(uint32_t high=0;high<16u;++high)
+            for(uint32_t low=0;low<256u;++low) {
+                const uint32_t roll=(high<<16u)|low;
+                const UnitType base=waves::SelectInvasionUnit(
+                    13u,wave,25u,roll);
+                const UnitType chosen=SelectUnit(13,wave,25,roll,1);
+                if(base==UnitType::Gunboat ||
+                   base==UnitType::Aircraft)assert(chosen==base);
+                if(chosen==UnitType::ArmoredTransport)saw_heavy=true;
+                if(chosen==UnitType::LandingCraft)saw_regular=true;
+            }
+    assert(saw_heavy && saw_regular);
+    assert(invasion::UnloadingSeconds(UnitType::ArmoredTransport)==1.25f);
+    assert(invasion::UnloadingSeconds(UnitType::LandingCraft)==0.0f);
+    static_assert(Campaign::kMaxArmor>=20u,"ten heavy ships carry 20 cars");
+    static_assert(Campaign::kMaxInfantry>=60u,"ten craft carry 60 soldiers");
     assert(EnemyStartingHp(UnitType::ArmoredTransport)==320);
     assert(invasion::VehicleCargo(UnitType::ArmoredTransport,true)==2);
     assert(invasion::VehicleCargo(UnitType::LandingCraft,true)==1);

@@ -33,6 +33,18 @@ int main(){
     assert(SelectInvasionUnit(3,16,16,4)==UnitType::LandingCraft);
     assert(SelectInvasionUnit(3,1,16,6)==UnitType::LandingCraft);
     assert(SelectInvasionUnit(3,16,16,6)==UnitType::Gunboat);
+    // The terminal pressure band used the same divisor for aircraft
+    // and gunboats, starving gunboats in high-grade invasions.
+    bool aircraft=false,gunboat=false,lander=false;
+    for(uint32_t high=0;high<128u;++high)
+      for(uint32_t low=0;low<128u;++low) {
+        const auto roll=(high<<16u)|low;
+        const auto kind=SelectInvasionUnit(13u,16u,16u,roll);
+        aircraft|=kind==UnitType::Aircraft;
+        gunboat|=kind==UnitType::Gunboat;
+        lander|=kind==UnitType::LandingCraft;
+      }
+    assert(aircraft && gunboat && lander);
     for(unsigned grade=0;grade<20;++grade)
       for(unsigned index=0;index<=32;++index)
         for(uint32_t roll=0;roll<256;++roll){

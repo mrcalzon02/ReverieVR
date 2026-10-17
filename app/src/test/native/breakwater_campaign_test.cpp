@@ -2660,12 +2660,22 @@ int main() {
     // Compare deterministic copies through the same elapsed invasion;
     // both other spawn streams are unchanged. The sunk heavy transport
     // suppresses precisely its two vehicle cargo slots.
-    for(int n=0;n<210;++n) {
+    bool observed_ramp_hold=false;
+    for(int n=0;n<235;++n) {
         flagship.Tick(.10f);
         flagshipSunk.Tick(.10f);
+        const Enemy &ship=flagship.enemies()[0];
+        if(flagship.phase()==Phase::Combat && ship.active &&
+           ship.type==UnitType::ArmoredTransport && ship.landed) {
+            observed_ramp_hold=true;
+            assert(ship.z==-2.2f && ship.attack_timer>0.0f);
+            assert(ship.passengers==4u);
+        }
         if(flagship.phase()==Phase::Defeat ||
            flagshipSunk.phase()==Phase::Defeat)break;
     }
+    // A lost battery can end the wave before the heavy reaches shore.
+    (void)observed_ramp_hold;
     if(flagship.phase()!=Phase::Defeat &&
        flagshipSunk.phase()!=Phase::Defeat) {
         assert(flagship.wave_status().armor_landed>=2u);
