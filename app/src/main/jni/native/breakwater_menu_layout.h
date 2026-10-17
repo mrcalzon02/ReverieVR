@@ -51,6 +51,17 @@ inline int HitShop(float x,float y) {
     if(ShopAction(9).Contains(x,y))return 9;
     return -1;
 }
+inline const char* DifficultyHint(int choice) {
+    // Difficulty zero-based tiers add to first-day wave and unit counts in
+    // Campaign::waves_this_period / Campaign::NextCount.
+    switch(choice) {
+        case 0: return "CADET - 2 THREATS 2 DAY WAVES";
+        case 1: return "REGULAR - 3 THREATS 3 DAY WAVES";
+        case 2: return "VETERAN - 4 THREATS 4 DAY WAVES";
+        case 3: return "SIEGE - 5 THREATS 5 DAY WAVES";
+        default: return "POINT AT A DIFFICULTY TO INSPECT";
+    }
+}
 inline int HitDifficulty(float x,float y) {
     for(int i=0;i<4;++i)if(DifficultyCard(i).Contains(x,y))return i;
     return -1;
