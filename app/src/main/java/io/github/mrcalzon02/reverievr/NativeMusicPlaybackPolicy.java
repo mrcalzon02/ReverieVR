@@ -12,12 +12,14 @@ final class NativeMusicPlaybackPolicy {
     static String cueForNativeModule(String moduleId) {
         if ("breakwater-battery".equals(moduleId))
             return "mars-des-souvenirs";
-        // These module IDs are only future cue contracts until admitted
-        // native games actually register them with the shell.
+        // Between Deliveries has been an admitted native module since
+        // its actual registered ID was established. Match that ID, not the
+        // retired "bar-project" planning label, or the shell mutes its theme.
+        if ("between-deliveries-red-ledger".equals(moduleId))
+            return "the-last-note-hangs-unresolved";
+        // Still reserved for a future admitted game module.
         if ("ministry-of-intelligence".equals(moduleId))
             return "last-bugle-call";
-        if ("bar-project".equals(moduleId))
-            return "the-last-note-hangs-unresolved";
         return null;
     }
 

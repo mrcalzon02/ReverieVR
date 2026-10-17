@@ -25,7 +25,7 @@ PC companion is needed.
 
 | Original recording | Project or use |
 |---|---|
-| The Last Note Hangs Unresolved.mp3 | Bar project; future native module cue |
+| The Last Note Hangs Unresolved.mp3 | Between Deliveries: The Red Ledger — active registered native-module cue (`between-deliveries-red-ledger`) |
 | Mars des Souvenirs.mp3 | Breakwater Battery (Beachhead-style) game's looping music |
 | Last Bugle Call.mp3 | Ministry of Intelligence; future native module cue |
 | Sky Lobby Drift.mp3 | ReverieVR lobby alternative |
@@ -45,9 +45,12 @@ A hosted game with an assigned soundtrack plays that specific cue.
 Unmatched native games, DOS and the video player continue muting
 shell music while playing.
 
-The two future bar/Ministry module identifiers exist as *routing policy*
-only, pending their actual admission to ReverieVR. No functionality is
-claimed for modules that are not yet registered.
+**Between Deliveries is registered** as `between-deliveries-red-ledger`;
+its owner-authorized theme is routed to the live module and looped while
+hosted. The Ministry game cue remains a future-module reservation.
+The Unreal project's additional SoundWave music packages remain archival
+source material, not Android-playable audio until separately exported,
+rights-reviewed and tested.
 
 ## No duplicate imports or alternate licensing
 

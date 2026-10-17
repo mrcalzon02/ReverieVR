@@ -125,6 +125,29 @@ public final class NativeMusicCatalogTest {
         assertNull(NativeMusicPlaybackPolicy.cueForNativeModule("classic-chess"));
     }
 
+    @Test public void admittedRedLedgerUsesItsOriginalPackagedMusic()
+        throws Exception {
+        // Match the registered module, not an obsolete project label.
+        assertEquals("between-deliveries-red-ledger",
+            NativeModuleRuntime.ID_RED_LEDGER);
+        String cue = NativeMusicPlaybackPolicy.cueForNativeModule(
+            NativeModuleRuntime.ID_RED_LEDGER);
+        assertEquals("the-last-note-hangs-unresolved", cue);
+        assertNull(NativeMusicPlaybackPolicy.cueForNativeModule("bar-project"));
+        String originalRow = cue + "\tThe Last Note Hangs Unresolved\t" +
+            "music/tracks/the-last-note-hangs-unresolved.mp3\t" +
+            "LicenseRef-Owner-Original-Music\t" +
+            "6be461d1d39bfd5f84d63a00562eb1fec905b121c231a4a2fa2c919800f6987d\n";
+        NativeMusicCatalog originals = NativeMusicCatalog.parseOwnerMusic(
+            new ByteArrayInputStream(originalRow.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(0, originals.indexOfId(cue));
+        assertEquals("music/tracks/the-last-note-hangs-unresolved.mp3",
+            originals.at(0).source);
+        assertFalse(originals.at(0).packagedResource());
+        assertEquals("LicenseRef-Owner-Original-Music", originals.at(0).license);
+        assertEquals(-1, originals.indexOfId("mars-des-souvenirs"));
+    }
+
     @Test public void emptyCatalogIsNotAccepted() throws Exception {
         try {
             parse("# no downloads approved yet\n");

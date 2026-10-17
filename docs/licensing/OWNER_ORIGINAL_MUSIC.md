@@ -26,5 +26,9 @@ with strict SHA-256 verification.
 **Assignments:** Sky Lobby Drift and Glass Lobby Drift alternate with
 Starry Cereal. Mars des Souvenirs is the cue for Breakwater Battery.
 Last Bugle Call is bound to the future Ministry of Intelligence native
-module; The Last Note Hangs Unresolved to the future bar module.
+module. The Last Note Hangs Unresolved is assigned to the **registered**
+Between Deliveries: The Red Ledger native module
+(`between-deliveries-red-ledger`) and loops through the shell's existing
+licensed MP3 player after a successful module launch. The shell remains
+responsible for music volume, mute, lifecycle pause and returning to Home.
 The other six tracks are available in the user-facing music library.
