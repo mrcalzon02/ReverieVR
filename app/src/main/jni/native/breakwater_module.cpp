@@ -662,6 +662,14 @@ void BuildScene(State *s) {
             bank=std::isfinite(e.bank)?e.bank:0.0f;
         }
         AppendSprite(s->sprite_mesh,sprite,e.x,y,e.z,width,height,bank);
+        if(e.type==UnitType::LandingCraft && e.carries_armor) {
+            // Vessel atlas is the active boat render path; show the real
+            // armored cargo here, rather than relying on the unused older
+            // procedural EmitVesselSilhouette recipe.
+            Box(s,e.x,-.43f,e.z-.08f,.50f,.21f,.45f,.34f,.39f,.31f);
+            Box(s,e.x,-.29f,e.z-.12f,.26f,.11f,.27f,.26f,.32f,.27f);
+            Box(s,e.x,-.28f,e.z+.11f,.065f,.064f,.37f,.21f,.24f,.20f);
+        }
     }
     for(const ArmoredVehicle &vehicle:game.armored_vehicles())
         EmitArmoredVehicleSilhouette(vehicle,
