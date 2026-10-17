@@ -1,3 +1,13 @@
+## 2026-10-16 — Gumball Loadout/Allies Back and NDK compile gate
+
+**Starting authority:** `mrcalzon02/ReverieVR`, only `main`; remote SHA `2adfd2d5efbd8a90c816a22eb4ac4cb1ef31b6ac`. Inspected authoritative AGENTS/project contract/current state, game module, navigation tests, Android.mk and Application.mk. The environment has GCC and Clang but cannot clone GitHub due DNS and has no Android NDK/GLES2 headers; whole-module compilation was not possible and is not claimed.
+
+**Implementation:** added `PrepSecondaryBack` as a game-private fresh-press input gate, preserving Shipyard's secondary focus toggle, and wired it into Loadout/Allies to return to Chart before navigation or purchase is evaluated. Updated compact help in both screens. New gate tests cover success in both screens, suppression while held, absence/idle cases, and Yard exclusion, alongside all previous Chart/Loadout navigation tests. Changed only the Gumball module, helper, and test; no shared shell Home, ABI or save changes.
+
+**Observed tests:** reconstructed **exact proposed Git blobs** `gumball_menu_layout.h` SHA `69b5e831a7d9678685b79a7cfa6402942451382d` and `gumball_menu_layout_test.cpp` SHA `23a03dc989cba38d3aa40492f980652da28804ee` locally. GCC and Clang `-std=c++17 -O1 -Wall -Wextra -Werror -pedantic` passed, as did Clang AddressSanitizer+UndefinedBehaviorSanitizer. The entire renderer module was **not compiled**; a syntax-balanced code inspection does not substitute for integration proof. Source GitHub commits accepted/read back: helper `c66bd3124e90aebc7a09b6e4539ed40e9e9a94f0`, test `f80f6c4f56a5adb258d159f2e93d8fb7e29df392`, game module `e8f4f95fab2489f0aa4b9be92a6c5d8baedd4cca`.
+
+**Module build gate:** added `scripts/verify-gumball-native-module.sh` to call real Android NDK `ndk-build` using existing Android.mk/Application.mk for both `armeabi-v7a` and `arm64-v8a`, independently checking library files and exported `reverie_native_module_entry_v1` via NDK llvm-readelf. Exact script SHA `6b7d293006566aac628591a182e5149d3a45d0a9`; bash syntax passed and no-NDK execution correctly failed with exit 2 rather than a false pass. Remote create commit `84ce7d9059de7baeb9a931c6bde454451eb46c44` and source readback verified. Still pending: actual NDK run, full APK build, S9 headset click/legibility/stereo validation.
+
 ## 2026-10-16 — Breakwater readable difficulty menus and idle-render repair (source)
 
 **Intent:** Continue Breakwater Battery VR's game-private readable-menu/3D artillery pass on authoritative `mrcalzon02/ReverieVR` `main`. Remote HEAD at preflight: `be267f7b63c104f4b79b787a2b299315de75b4ca`. Scope expressly excludes ReverieVR shell Home, Android control profile, Campaign wave/shot math, saves and GitHub Actions.
