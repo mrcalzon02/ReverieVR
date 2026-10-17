@@ -1,6 +1,7 @@
 #ifndef REVERIE_GUMBALL_WAVE_FORMATIONS_H
 #define REVERIE_GUMBALL_WAVE_FORMATIONS_H
 #include <cstdint>
+#include <cmath>
 namespace reverie { namespace gumball {
 // The five slots in an assault are an authored formation, not five random
 // independent X coordinates. Waves cycle the eight doctrines per lane.
@@ -57,6 +58,59 @@ inline WaveEntry PlanWaveEntry(uint32_t seed,uint32_t lane,int spawn,
     result.next_delay=endOfGroup?2.90f:
         (pattern==WaveFormation::RearPressure?.73f:.81f);
     return result;
+}
+// Flight behaviors for ordinary Sour ships. Specials, named rivals and
+// flagships retain their own movement and firing rules. Each output is
+// finite and bounded, so formations do not depend on player firing state.
+struct WaveTactics {
+    float lateral_speed=0.f;
+    float shot_aim=0.f;
+    float fire_interval_scale=1.f;
+};
+inline float WaveClamp(float value,float limit){
+    return value>limit?limit:(value< -limit?-limit:value);
+}
+inline WaveTactics TacticsFor(WaveFormation formation,unsigned slot,
+                             float age,float x,float playerX){
+    WaveTactics tactics;
+    if(!std::isfinite(age)||!std::isfinite(x)||!std::isfinite(playerX))
+        return tactics;
+    const float track=WaveClamp(playerX-x,1.f);
+    const float side=x<-.12f?-1.f:(x>.12f?1.f:0.f);
+    switch(formation){
+    case WaveFormation::Column: break; // disciplined straight line
+    case WaveFormation::Fan:
+        tactics.lateral_speed=side*.12f;
+        tactics.shot_aim=side*.12f;
+        break;
+    case WaveFormation::Pincer:
+        tactics.lateral_speed=track*.31f;
+        tactics.shot_aim=track*.16f;
+        break;
+    case WaveFormation::Crossfire:
+        tactics.lateral_speed=(slot%2u==0u?1.f:-1.f)*.21f;
+        tactics.shot_aim=-side*.20f;
+        break;
+    case WaveFormation::Spiral:
+        tactics.lateral_speed=std::sin(age*3.2f+static_cast<float>(slot)*.83f)*.43f;
+        tactics.shot_aim=std::sin(age*2.0f+static_cast<float>(slot))*.14f;
+        break;
+    case WaveFormation::RearPressure:
+        tactics.lateral_speed=track*.51f;
+        tactics.shot_aim=track*.22f;
+        tactics.fire_interval_scale=.93f;
+        break;
+    case WaveFormation::Siege:
+        tactics.shot_aim=-side*.11f;
+        tactics.fire_interval_scale=.94f;
+        break;
+    case WaveFormation::Escort:
+        if(slot!=2u)tactics.lateral_speed=WaveClamp(-x,.7f)*.19f;
+        tactics.shot_aim=track*.08f;
+        tactics.fire_interval_scale=1.08f;
+        break;
+    }
+    return tactics;
 }
 }} // namespace reverie::gumball
 #endif
