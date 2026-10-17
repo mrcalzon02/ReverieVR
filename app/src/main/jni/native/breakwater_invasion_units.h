@@ -9,19 +9,24 @@ namespace reverie { namespace breakwater { namespace invasion {
 inline UnitType SelectUnit(unsigned progression,uint8_t wave_index,
                            uint8_t waves_in_period,uint32_t roll,
                            uint8_t spawn_ordinal) {
-    if(progression<3u)return UnitType::Rowboat;
-    // Heavy armored landing ships appear only from the hard late-war
-    // progression onward and in the latter half of the actual period.
-    // The last wave guarantees a flagship (first spawned slot), so players
-    // cannot finish the campaign without encountering the new opponent.
-    if(progression>=10u && wave_index>(waves_in_period/2u) &&
-       ((roll%4u)==0u ||
-        (wave_index==waves_in_period && spawn_ordinal==0u)))
+    // Resolve existing pressure-band composition before promoting landers.
+    // The old roll % 4 heavy branch inadvertently stole all gunboats
+    // in pressure bands using the same divisor.
+    const UnitType baseline=waves::SelectInvasionUnit(
+        progression,wave_index,waves_in_period,roll);
+    if(progression<10u || wave_index<=waves_in_period/2u)return baseline;
+    if(wave_index==waves_in_period && spawn_ordinal==0u)
         return UnitType::ArmoredTransport;
-    // Preserve the authoritative pressure bands, increased aircraft and
-    // gunboat frequency, and all normal-wave unit composition unchanged.
-    return waves::SelectInvasionUnit(progression,wave_index,
-                                     waves_in_period,roll);
+    // Only upgrade ordinary landing vessels, not gunboats or aircraft.
+    if((baseline==UnitType::Rowboat ||
+        baseline==UnitType::LandingCraft) &&
+       ((roll>>16u)&3u)==0u)return UnitType::ArmoredTransport;
+    return baseline;
+}
+// An intact armored hull holds its beachhead with the bow ramp open;
+// cargo enters combat only after this exposed unloading interval.
+constexpr float UnloadingSeconds(UnitType kind) {
+    return kind==UnitType::ArmoredTransport?1.25f:0.0f;
 }
 // Armored ships have separate plating, not a misleading extension of HP.
 // Heavy cannon and missiles retain their full rated penetration.

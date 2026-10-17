@@ -325,7 +325,10 @@ void Campaign::Land(Enemy &e) {
     }
     // NextCount caps a wave at ten craft, each carrying no more than six.
     // Append-only slots preserve identity when other soldiers are killed.
-    for (uint8_t passenger = 0; passenger < e.passengers; ++passenger) {
+    const uint8_t infantry_before=infantry_spawn_cursor_;
+    for (uint8_t passenger = 0;
+         passenger < e.passengers &&
+         infantry_spawn_cursor_ < infantry_units_.size(); ++passenger) {
         Infantry &trooper = infantry_units_[infantry_spawn_cursor_++];
         const float spread = (static_cast<float>(passenger) -
             static_cast<float>(e.passengers - 1u) * 0.5f) * 0.27f;
@@ -341,9 +344,11 @@ void Campaign::Land(Enemy &e) {
     }
     e.active = false;
     e.landed = true;
-    infantry_ = static_cast<uint8_t>(infantry_ + e.passengers);
+    const uint8_t deployed=static_cast<uint8_t>(
+        infantry_spawn_cursor_-infantry_before);
+    infantry_ = static_cast<uint8_t>(infantry_ + deployed);
     wave_status_.troops_landed = static_cast<uint8_t>(
-        wave_status_.troops_landed + e.passengers);
+        wave_status_.troops_landed + deployed);
 }
 IncomingThreats Campaign::incoming_threats() const {
     IncomingThreats warning;
@@ -365,7 +370,8 @@ IncomingThreats Campaign::incoming_threats() const {
             end = bomber ? kBomberAttackEnd : kStraferAttackEnd;
             earliest = &warning.aircraft_seconds;
         } else if (enemy.type == UnitType::Gunboat ||
-                   enemy.type == UnitType::ArmoredTransport) {
+                   (enemy.type == UnitType::ArmoredTransport &&
+                    !enemy.landed)) {
             speed = enemy.type==UnitType::ArmoredTransport?.44f:kGunboatSpeed;
             start = kGunboatAttackStart;
             end = kGunboatAttackEnd;
@@ -689,6 +695,13 @@ void Campaign::TickStep(float dt) {
     }
     for (Enemy &e : enemies_) {
         if (!e.active) continue;
+        if (e.type == UnitType::ArmoredTransport && e.landed) {
+            // Keep the 3D ramp open and vulnerable until cargo is released.
+            // A kill at the beach denies both cars and four soldiers.
+            e.attack_timer=std::max(0.0f,e.attack_timer-dt);
+            if(e.attack_timer<=0.0f)Land(e);
+            continue;
+        }
         if (e.type == UnitType::Aircraft) {
             const bool bomber = e.aircraft_pattern == AircraftPattern::Bomber;
             e.z += (bomber ? kBomberSpeed : kStraferSpeed) * dt;
@@ -767,6 +780,10 @@ void Campaign::TickStep(float dt) {
                 }
                 e.active = false;
                 if (integrity_ == 0) { phase_ = Phase::Defeat; return; }
+            } else if(e.type==UnitType::ArmoredTransport) {
+                e.z=-2.2f;
+                e.landed=true;
+                e.attack_timer=invasion::UnloadingSeconds(e.type);
             } else Land(e);
         }
     }

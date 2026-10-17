@@ -21,7 +21,13 @@ inline UnitType SelectInvasionUnit(unsigned progression,unsigned wave_index,
     // Air and artillery remain gated by the campaign threat grade, but
     // a late wave's tighter formations make them increasingly likely.
     if(grade>=8u&&roll%(6u-pressure)==0u)return UnitType::Aircraft;
-    if(grade>=5u&&roll%(4u-pressure/2u)==0u)return UnitType::Gunboat;
+    // In band three, aircraft and gunboats both used roll % 3:
+    // earlier aircraft selection made later gunboats impossible.
+    // Mix independent high seeded bits only for this overlap.
+    const uint32_t gunboat_roll=(pressure==3u && grade>=8u)?
+        (roll^(roll>>16u)):roll;
+    if(grade>=5u&&gunboat_roll%(4u-pressure/2u)==0u)
+        return UnitType::Gunboat;
     if(roll%(3u-pressure/2u)==0u)return UnitType::LandingCraft;
     return UnitType::Rowboat;
 }

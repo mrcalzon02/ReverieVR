@@ -1327,6 +1327,20 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                 REVERIE_NATIVE_SOUND_BATTERY_LOST);
         }
         s->wrecks.RecordTransitions(enemies_before,s->campaign.enemies());
+        // A real heavy beaching triggers one shoreline cue and splash,
+        // never a repeated stereo-render sound.
+        for(size_t i=0;i<enemies_before.size();++i) {
+            const Enemy &prior=enemies_before[i];
+            const Enemy &now=s->campaign.enemies()[i];
+            if(prior.active && !prior.landed && now.active && now.landed &&
+               now.type==UnitType::ArmoredTransport) {
+                const float water[]={now.x,-.58f,now.z+.7f};
+                const float down[]={0.0f,-1.0f,0.0f};
+                s->impacts.RecordHit(water,down,.11f,ImpactKind::Water);
+                BattleSound(s,REVERIE_NATIVE_SOUND_SHORE_COLLISION);
+                break;
+            }
+        }
         s->battery_damage.Record(hull_before,s->campaign.integrity());
         const TurretShotEvent turret=s->campaign.turret_shot();
         if(turret.sequence!=turret_before) {
