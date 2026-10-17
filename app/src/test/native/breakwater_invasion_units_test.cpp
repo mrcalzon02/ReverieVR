@@ -14,6 +14,13 @@ int main() {
             if(wave<=12)
                 assert(SelectUnit(12,wave,25,roll,0)!=UnitType::ArmoredTransport);
         }
+    // Below the heavy threshold the new selector must delegate exactly
+    // to the existing escalating pressure-band mix, not reset it.
+    for(unsigned grade=3u;grade<10u;++grade)
+        for(uint8_t wave=1u;wave<=25u;++wave)
+            for(uint32_t roll=0;roll<64u;++roll)
+                assert(SelectUnit(grade,wave,25u,roll,0u)==
+                       waves::SelectInvasionUnit(grade,wave,25u,roll));
     assert(SelectUnit(13,25,25,7,0)==UnitType::ArmoredTransport);
     assert(SelectUnit(13,25,25,7,1)!=UnitType::ArmoredTransport);
     assert(SelectUnit(13,13,25,4,1)==UnitType::ArmoredTransport);
