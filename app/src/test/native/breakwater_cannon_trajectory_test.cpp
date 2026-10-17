@@ -60,7 +60,7 @@ int main(){
     float at[3]={};
     assert(trajectory::Prediction(ray,WeaponFor(WeaponKind::Flak).gravity,
                                   7.f,at));
-    assert(at[2]<-7.f);
+    assert(at[2]<-6.5f && at[2]>-8.0f); // post-reposition flak arc
     // The same cannon ray feeds hit checks and visible parabolic guide.
     const float hull[]={0.f,-.76f,-8.f};
     assert(trajectory::CannonShot(WeaponKind::MachineGun,straight,&ray));
