@@ -12,7 +12,8 @@ final class NativeCombatWaveform {
     static final int HULL = 10, SPLASH = 11, BOAT_DOWN = 12;
     static final int GUNBOAT = 13, VOLLEY = 14, BOMB = 15;
     static final int STRAFE = 16, SAM = 17, WAVE = 18, COLLISION = 19;
-    static final int COUNT = 20;
+    static final int PURCHASE = 20, CLEAR = 21, VICTORY = 22, DEFEAT = 23;
+    static final int COUNT = 24;
 
     private NativeCombatWaveform() {}
 
@@ -21,7 +22,7 @@ final class NativeCombatWaveform {
     static int cueForNativeEvent(int id) {
         // The JNI queue transmits 1-byte ordered cue IDs. The first five are
         // unchanged, followed by ten real battle-event effects.
-        return id>=1 && id<=15 ? MACHINE+id-1 : -1;
+        return id>=1 && id<=19 ? MACHINE+id-1 : -1;
     }
     static int weaponCueForNativeEvent(int id) {
         return id>=1 && id<=5 ? cueForNativeEvent(id) : -1;
@@ -55,6 +56,10 @@ final class NativeCombatWaveform {
         if (cue == SAM) return 460;
         if (cue == WAVE) return 390;
         if (cue == COLLISION) return 490;
+        if (cue == PURCHASE) return 155;
+        if (cue == CLEAR) return 410;
+        if (cue == VICTORY) return 770;
+        if (cue == DEFEAT) return 690;
         throw new IllegalArgumentException("Unknown cue");
     }
 
@@ -152,6 +157,29 @@ final class NativeCombatWaveform {
                     double freq=t<.17?523.25:659.25;
                     phase+=2*Math.PI*freq/SAMPLE_RATE;
                     signal=envelope*.44*Math.sin(phase);
+                }
+            } else if (cue >= PURCHASE && cue <= DEFEAT) {
+                // Four brief state-transition cues, intentionally distinct
+                // from and quieter than the looping Mars des Souvenirs song.
+                // No music asset is modified, restarted or mixed into PCM.
+                if (cue == PURCHASE) {
+                    phase += 2.0*Math.PI*(t<.065?520.0:780.0)/SAMPLE_RATE;
+                    signal = envelope*.30*Math.sin(phase)
+                        + envelope*.09*noise*Math.exp(-45.0*t);
+                } else if (cue == CLEAR) {
+                    phase += 2.0*Math.PI*(t<.14?392.0:t<.28?494.0:587.0)
+                        / SAMPLE_RATE;
+                    signal = envelope*.35*Math.sin(phase);
+                } else if (cue == VICTORY) {
+                    final double frequency = t<.19?392.0:
+                        t<.38?494.0:t<.56?587.0:784.0;
+                    phase += 2.0*Math.PI*frequency/SAMPLE_RATE;
+                    signal = envelope*.34*Math.sin(phase)
+                        + envelope*.08*Math.sin(phase*1.5);
+                } else {
+                    phase += 2.0*Math.PI*(210.0 - 125.0*p)/SAMPLE_RATE;
+                    signal = envelope*(.27*Math.sin(phase)
+                        + .11*noise*Math.exp(-9.0*t));
                 }
             } else if (cue == RELOAD) {
                 double clack = Math.exp(-58.0 * t) + (t >= 0.115 ?
