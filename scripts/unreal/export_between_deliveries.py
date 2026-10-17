@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import re
 import struct
+import zlib
 
 
 def valid_filename(name):
@@ -21,14 +22,55 @@ def valid_filename(name):
 
 
 def png_size(path):
+    """Validate the complete PNG chunk chain and CRCs, not just its 24-byte header."""
+    dimensions = None
+    saw_idat = False
+    saw_iend = False
     with open(path, "rb") as stream:
-        header = stream.read(24)
-    if len(header) < 24 or header[:8] != b"\x89PNG\r\n\x1a\n" or header[12:16] != b"IHDR":
-        raise ValueError("Exported texture is not a complete PNG header")
-    width, height = struct.unpack(">II", header[16:24])
-    if not (16 <= width <= 16384 and 16 <= height <= 16384):
-        raise ValueError("Unreasonable texture dimensions")
-    return width, height
+        if stream.read(8) != b"\x89PNG\r\n\x1a\n":
+            raise ValueError("Invalid PNG signature")
+        while True:
+            chunk = stream.read(8)
+            if len(chunk) != 8:
+                raise ValueError("Missing PNG IEND or truncated chunk")
+            length, kind = struct.unpack(">I4s", chunk)
+            if length > 256 * 1024 * 1024:
+                raise ValueError("Unreasonably large PNG chunk")
+            if dimensions is None and (kind != b"IHDR" or length != 13):
+                raise ValueError("PNG must begin with a 13-byte IHDR")
+            crc = zlib.crc32(kind)
+            remaining = length
+            ihdr = bytearray()
+            while remaining:
+                data = stream.read(min(remaining, 1024 * 1024))
+                if not data:
+                    raise ValueError("Truncated PNG data")
+                crc = zlib.crc32(data, crc)
+                if kind == b"IHDR":
+                    ihdr.extend(data)
+                remaining -= len(data)
+            tail = stream.read(4)
+            if len(tail) != 4 or struct.unpack(">I", tail)[0] != (crc & 0xffffffff):
+                raise ValueError("Truncated or CRC-corrupt PNG")
+            if kind == b"IHDR":
+                if dimensions is not None or length != 13:
+                    raise ValueError("Malformed PNG IHDR")
+                width, height = struct.unpack(">II", ihdr[:8])
+                if not (16 <= width <= 16384 and 16 <= height <= 16384):
+                    raise ValueError("Unreasonable texture dimensions")
+                dimensions = (width, height)
+            elif kind == b"IDAT":
+                saw_idat = True
+            elif kind == b"IEND":
+                if length != 0 or not saw_idat or dimensions is None:
+                    raise ValueError("Malformed PNG IEND")
+                saw_iend = True
+                if stream.read(1):
+                    raise ValueError("Trailing unexpected PNG data")
+                break
+    if not saw_iend:
+        raise ValueError("Incomplete PNG")
+    return dimensions
 
 
 def asset_sha(path):
