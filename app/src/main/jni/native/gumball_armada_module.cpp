@@ -1,5 +1,6 @@
 #include "gumball_armada_simulation.h"
 #include "gumball_shipyard_menu.h"
+#include "gumball_shipyard_readiness.h"
 #include "gumball_menu_hit.h"
 #include "reverie_native_vector_text.h"
 #include "gumball_menu_layout.h"
@@ -343,11 +344,10 @@ void ShipyardView(Module* m){
                   profile.mass,profile.demand,profile.power,
                   m->yard.count(Part::Thruster));
     TextFit(m,line,0,-1.51f,4.72f,.029f,.77f,.92f,.99f);
-    if(!m->yard.ready())TextFit(m,
-        "NOT FLIGHT READY: CORE / REACTOR / MOUNT / THRUST / POWER",
-        0,-1.68f,4.75f,.027f,1.f,.56f,.48f);
-    else Text(m,"READY  /  CLICK SAME PART TO REMOVE",
-              0,-1.68f,.028f,.65f,1.f,.77f);
+    const bool flightReady=m->yard.ready();
+    TextFit(m,reverie::gumball::FlightReadiness(m->yard),
+            0,-1.68f,4.75f,.027f,
+            flightReady?.65f:1.f,flightReady?1.f:.56f,flightReady?.77f:.48f);
 }
 void EnemyVisual(Module* m,const Enemy& e){
     const float x=e.x,y=e.y;

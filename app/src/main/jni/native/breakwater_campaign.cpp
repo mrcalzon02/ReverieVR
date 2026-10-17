@@ -1,5 +1,6 @@
 #include "breakwater_campaign.h"
 #include "breakwater_wave_schedule.h"
+#include "breakwater_wave_threat.h"
 #include "breakwater_infantry_tactics.h"
 #include "breakwater_cover.h"
 #include "breakwater_armor.h"
@@ -578,11 +579,8 @@ void Campaign::TickStep(float dt) {
                 (period_ == Period::Night ? 1u : 0u) +
                 (Tier(difficulty_) > 0u ? 1u : 0u);
             // Opening day: rowboats with exactly one passenger only.
-            const UnitType kind = progression < 2u ? UnitType::Rowboat :
-                (progression >= 8u && (choice % 6u == 0u)) ? UnitType::Aircraft :
-                (progression >= 5u && (choice % 4u == 0u)) ? UnitType::Gunboat :
-                (progression >= 3u && (choice % 3u == 0u)) ? UnitType::LandingCraft :
-                UnitType::Rowboat;
+            const UnitType kind = waves::SelectInvasionUnit(
+                progression,wave_index_,waves_this_period(),choice);
             const int hp = EnemyStartingHp(kind);
             e = {kind, (static_cast<int>(choice % 9u) - 4) * 0.65f,
                  -11.0f, static_cast<int16_t>(hp),

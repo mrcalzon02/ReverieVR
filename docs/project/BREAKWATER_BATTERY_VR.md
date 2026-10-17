@@ -900,3 +900,10 @@ Native test source checks location identity, night colors, counts, finite
 geometry, color bounds and invalid location rejection. Full native/NDK build,
 physical Galaxy S9 binocular rendering, target visibility and thermal
 acceptance remain outstanding.
+
+
+## Intra-period wave escalation (2026-10-16)
+
+The long nine-day campaign now escalates *within* the same day/night period, not merely when the next period begins. `breakwater_wave_threat.h::SelectInvasionUnit` retains the original deterministic per-spawn roll and day/location/difficulty base grade, then adds three bounded pressure bands as the player advances through that period's waves. The opening two grades remain one-soldier rowboat-only, and the first wave of every period preserves the previous spawn choice at that grade. Once landing craft, gunboats and aircraft are eligible, late waves favor heavier mixtures; aircraft can begin arriving toward the back of a suitably advanced period. Each wave still has the same fixed ten enemy slots, soldier/armor caps, save layout and shop handoff, and does not instantiate extra craft.
+
+The same source selector now drives the actual campaign spawn loop. `breakwater_wave_threat_test.cpp` verifies unchanged opening fairness, previous first-wave probabilities, all pressure transitions, representative new late-wave threats and deterministic bounded results. The host visual script includes the new test; Galaxy S9 pacing, perceived balance and full APK behavior still require device validation.

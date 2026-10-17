@@ -100,3 +100,10 @@ The **14 named character concepts** (six shopkeepers/operators, two friendly mid
 ## Full production roadmap and release-content targets
 
 The development roadmap is now decomposed into 19 gated production stages, S00 through S18, from source verification to one full arcade sortie, weapons/defenses, genuine player-built ships, salvage and shops, revisitable galaxy, four individual Sour general campaigns, finale, audio/art completion and signed APK acceptance. See [GUMBALL_ARMADA_STAGED_PLAN.md](GUMBALL_ARMADA_STAGED_PLAN.md). Quantified planned catalogs (functional blocks, enemies, authored missions, voices, music, effects, art provenance and integration gates) are in [GUMBALL_ARMADA_CONTENT_MATRIX.md](GUMBALL_ARMADA_CONTENT_MATRIX.md). All targets are **planned**, not claims that these assets or systems currently exist.
+
+
+## Exact flight-readiness feedback (2026-10-16)
+
+The Shipyard now displays the first **real launch blocker** from `FlightReadiness(yard)`, rather than the old identical CORE/REACTOR/MOUNT/THRUST/POWER warning for every invalid build. It checks the same authoritative connectivity, single Core, Thruster, Reactor, Gun Mount, supply/demand and mass/thruster-limit conditions used by `Shipyard::ready()`. The compact message names the equipment to add or the specific power/weight issue; restoring validity automatically shows Ready again. This only changes the existing feedback line, not the shell, editable slots, purchases, or 72-byte saved ship layout.
+
+An isolated C++ regression exercises ready, missing equipment, insufficient power, overweight and repair states. It is included in the existing Gumball host-verification script for GCC, Clang and Clang sanitizers. Integrated GLES2/APK and headset usability remain separate device gates.
