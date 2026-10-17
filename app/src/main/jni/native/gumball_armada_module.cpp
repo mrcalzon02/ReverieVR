@@ -330,7 +330,7 @@ void ShipyardView(Module* m){
                           m->yard.stock(p));
         else std::snprintf(line,sizeof(line),"RETURN");
         TextFit(m,line,x+.020f,y,1.12f,.031f,
-                (i<9&&m->yard.stock(p)==0u&&!isActive)?.48f:.96f,
+                .96f,
                 isActive?1.f:.91f,isActive?.70f:.85f);
     }
     const auto profile=m->yard.profile();
@@ -900,21 +900,17 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 }
             }else{
                 const int choice=m->yardCursor.toolIndex();
-                if(choice>=0&&choice<9){
-                    const Part candidate=static_cast<Part>(choice+2);
-                    if(m->yard.stock(candidate)>0u||candidate==m->brush){
-                        m->brush=candidate;
-                        m->yardCursor.toolChosen(); // immediately back to ship
-                        m->pointerFocus.padFocus=true; // preserve grid focus until ray moves
-                        std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
-                                      "ARMED %s: CLICK CELL TO SWAP",
-                                      YardPartName(m->brush));
-                        good=true;
-                    }else{
-                        std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
-                                      "NO %s LEFT IN STOCK",
-                                      YardPartName(candidate));
-                    }
+                if(m->yardCursor.chosenPart()!=Part::Empty){
+                    const Part candidate=m->yardCursor.chosenPart();
+                    m->brush=candidate; // empty stock is still valid for removal
+                    m->yardCursor.toolChosen(); // immediately back to ship
+                    m->pointerFocus.padFocus=true; // preserve grid focus until ray moves
+                    std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
+                        m->yard.stock(candidate)>0u?
+                            "ARMED %s: CLICK CELL TO EDIT":
+                            "ARMED %s: REMOVE FITTED PARTS",
+                        YardPartName(candidate));
+                    good=true;
                 }else if(choice==9){
                     m->inYard=false;good=true;
                 }
