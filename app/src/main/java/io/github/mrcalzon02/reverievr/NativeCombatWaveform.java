@@ -13,7 +13,8 @@ final class NativeCombatWaveform {
     static final int GUNBOAT = 13, VOLLEY = 14, BOMB = 15;
     static final int STRAFE = 16, SAM = 17, WAVE = 18, COLLISION = 19;
     static final int PURCHASE = 20, CLEAR = 21, VICTORY = 22, DEFEAT = 23;
-    static final int COUNT = 24;
+    static final int ARMORED_GUN = 24, ARMOR_DESTROYED = 25;
+    static final int COUNT = 26;
 
     private NativeCombatWaveform() {}
 
@@ -22,7 +23,7 @@ final class NativeCombatWaveform {
     static int cueForNativeEvent(int id) {
         // The JNI queue transmits 1-byte ordered cue IDs. The first five are
         // unchanged, followed by ten real battle-event effects.
-        return id>=1 && id<=19 ? MACHINE+id-1 : -1;
+        return id>=1 && id<=21 ? MACHINE+id-1 : -1;
     }
     static int weaponCueForNativeEvent(int id) {
         return id>=1 && id<=5 ? cueForNativeEvent(id) : -1;
@@ -60,6 +61,8 @@ final class NativeCombatWaveform {
         if (cue == CLEAR) return 410;
         if (cue == VICTORY) return 770;
         if (cue == DEFEAT) return 690;
+        if (cue == ARMORED_GUN) return 420;
+        if (cue == ARMOR_DESTROYED) return 630;
         throw new IllegalArgumentException("Unknown cue");
     }
 
@@ -157,6 +160,23 @@ final class NativeCombatWaveform {
                     double freq=t<.17?523.25:659.25;
                     phase+=2*Math.PI*freq/SAMPLE_RATE;
                     signal=envelope*.44*Math.sin(phase);
+                }
+            } else if (cue == ARMORED_GUN || cue == ARMOR_DESTROYED) {
+                if(cue==ARMORED_GUN) {
+                    // Heavy breech crack and lower mechanical boom, quite
+                    // different from an offshore gunboat's echo.
+                    phase += 2.0*Math.PI*(61.0 +
+                        190.0*Math.exp(-22.0*t))/SAMPLE_RATE;
+                    signal=envelope*(.56*noise*Math.exp(-15.0*t)+
+                        .49*Math.sin(phase)*Math.exp(-6.0*t));
+                } else {
+                    // Armor rupture and settling metallic debris.
+                    phase += 2.0*Math.PI*(72.0+
+                        120.0*Math.exp(-9.0*t))/SAMPLE_RATE;
+                    double fragments=(t>.13 && t<.39)?
+                        .15*noise*Math.exp(-7.0*(t-.13)):0.0;
+                    signal=envelope*(.56*noise*Math.exp(-8.0*t)+
+                        .34*Math.sin(phase)*Math.exp(-5.0*t)+fragments);
                 }
             } else if (cue >= PURCHASE && cue <= DEFEAT) {
                 // Four brief state-transition cues, intentionally distinct
