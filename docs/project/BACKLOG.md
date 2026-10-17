@@ -15,6 +15,8 @@
 
 # ReverieVR Backlog
 
+- RV-GAME-06/P3l — **Source-integrated, isolated GCC/Clang/sanitizer accepted; integrated/device pending:** inhabited stable Eden sites now produce bounded daily stocks in their own sector depots; real Lantern Pump HP controls reservoir output. No teleportation or synthetic command rations; faction control remains consequential. Extend to routed convoys, farm labor allocation, pump damage/repair balancing and contested supply-line interdiction after the complete 23-program host runner executes. Preserve 2,048-byte schema-6 save compatibility and local-versus-global infrastructure boundaries.
+
 - RV-0100/RV-0221 — **Source change, handset test pending:** Home and DOS-library touch locomotion speed doubled to 1.40 m/s using a Home-only 2× multiplier. Native game opt-in locomotion remains 0.70 m/s. Deterministic JVM rate/invalid-multiplier tests added; Daydream controller comfort/physical lens checks outstanding.
 - RV-042x — **Classic art and Chess reference development, Android acceptance pending:** removed 3×5 block-glyph renderer for all eight classic games, used original per-piece vector silhouettes in the existing GLES2 flat-mesh path, and added Chess Last CPU Move / Next vs Example panels with SAN move histories, exact legal moves and 3,865 CC0 Lichess ECO lines. Sourced original Livius twelve-piece SVG family separately under `art/source/chess/livius/`, with CC0 dedication; the SVG raster/atlas runtime integration and real-device visuals are **open**. Run native/JVM suite and package/install/headset proof before any device-accepted claim.
 

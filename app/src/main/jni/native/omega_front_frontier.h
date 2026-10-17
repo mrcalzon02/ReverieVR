@@ -9,6 +9,7 @@
 #include "omega_front_border.h"
 #include "omega_front_access.h"
 #include "omega_front_infrastructure.h"
+#include "omega_front_production.h"
 #include <array>
 #include <cstdint>
 
@@ -204,8 +205,8 @@ public:
     bool AdvanceDay() {
         if(deployed_)return false;
         ++day_;
-        // Hearthwell consumes actual food and water per day. No negative
-        // resource counts and no manufactured supplies from a time pulse.
+        // Hearthwell consumes actual food and water before civilian
+        // production. Every new unit then has a staffed physical source.
         FrontierSector &home=sectors_[6];
         const uint16_t need=static_cast<uint16_t>((population_+9)/10);
         if(home.food>=need)home.food-=need;
@@ -220,6 +221,16 @@ public:
             // New clean terrain is not magically a stocked farm or town.
             orchard.food=0;orchard.water=0;orchard.residents=0;
             ++morphology_epoch_;
+        }
+        // Civilian Eden production remains at its actual sector: faction
+        // depots are not free command supplies and new empty Eden has no staff.
+        for(int i=0;i<kFrontierSectors;++i){
+            FrontierSector &site=sectors_[i];
+            const DailyYield made=CivilProduction::Produce(i,
+                static_cast<unsigned>(site.ecology),site.stability,
+                site.anomaly,site.residents,site.claims,pump_health_);
+            site.food=CivilProduction::Store(site.food,made.food);
+            site.water=CivilProduction::Store(site.water,made.water);
         }
         // Healthy waterworks can transfer existing S011 stored water.
         if(pump_health_>0 && home.water<20 && sectors_[10].water>0){

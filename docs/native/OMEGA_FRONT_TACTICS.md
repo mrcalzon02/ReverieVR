@@ -1,5 +1,14 @@
 # Omega Front — Hearthfall Strategy and Tactical Implementation
 
+## Staffed Eden food and water production (P3l, 2026-10-16)
+
+`Frontier::AdvanceDay` still spends real Hearthwell civilian food/water first, then generates bounded physical stocks only at inhabited, stable, non-anomalous Eden sectors. `omega_front_production.h` is the deterministic allocation-free yield policy: civilian numbers bound output; stability below 35, anomalies, zero residents, and non-Eden sites stop output; instability and severe claims reduce harvest. Existing site stock is saturated at 65,535 to preserve the schema-6 16-bit storage contract. Production stays in each site's depot; faction-owned food is not credited to Hearthwell and command rations are not silently created.
+
+Lantern Pump S011 is an operator site (zero farm harvest). It generates water only with nonzero **real** Hearthwell pump integrity and scales yield with that integrity. M02/M04/M05/M06 remote tactical installations never alter this source; the earlier infrastructure scope is unchanged. The existing conditional S011→S007 transfer still physically debits the reservoir before crediting the town. Day-four uninhabited S009 emergence remains stockless.
+
+The standalone production policy passed GCC and Clang C++17 strict checks and Clang ASan/UBSan locally. A campaign+codec integration regression is registered alongside it, increasing the host runner to **23 programs**; the entire runner including that integrated test remains **unexecuted** because a complete checkout is unavailable. APK, NDK and S9/Daydream acceptance remain pending. No save-slot size, version, ABI or UI action changed.
+
+
 ## Scoped battlefield infrastructure: prevent remote damage to Hearthwell (2026-10-16)
 
 Fixed a strategic/campaign root cause: the six operations reuse a tactical field-station HP model, but previously every remote mission copied `Frontier::pump_health_` into its arena and wrote the resulting damage back to Hearthwell's **actual** central waterworks on after-action. A lost orchard, scrap yard, checkpoint, or ford engagement could therefore destroy the remote town's life-support system without ever visiting it. `omega_front_infrastructure.h` now holds the single authoritative rule: **M01 Pump Defense and M03 Receivership** (both at Lantern Pump S011) inherit and permanently update the actual waterworks health. **M02 White Orchard, M04 Ashrail Yard, M05 Charter Gate, and M06 Caravan Ford** instead open with a distinct 18-HP local field objective; their actual objective condition, battle casualties and report remaining-site health still resolve normally, but cannot change `Frontier::pump_health_`. No phantom repair or resource refund is performed.

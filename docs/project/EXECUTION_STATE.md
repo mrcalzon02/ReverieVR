@@ -1,3 +1,15 @@
+## 2026-10-16 — Omega Front production P3l; full integration checkout blocked
+
+**INTENT:** resume `mrcalzon02/ReverieVR` current `main` after verified waterworks boundary `2adfd2d5efbd8a90c816a22eb4ac4cb1ef31b6ac`. Scope Omega Front only; keep Home, other native games, 2,048-byte schema-6 campaign save and six operation scopes unchanged. Starting remote revision `ef4e592632eb939a07a589b7eb6d2c72037465d2` (58 descendant commits from waterworks repair).
+
+**RECONCILIATION:** inspected AGENTS, required project/native execution and design documents, complete 757-entry remote tree (not truncated), the 21-program runner and actual `AdvanceDay` source. Direct git clone/ls-remote and archive access failed in the isolated container (DNS/network disabled). No complete checkout, NDK, APK or Galaxy S9 runtime was available. No GitHub Actions initiated.
+
+**EXECUTE:** added deterministic allocation-free `omega_front_production.h`, connected actual populated/stable Eden sector daily yield to `Frontier::AdvanceDay`, preserving physical local depots, trust penalties and source-debited pump transport. S011 reservoir productivity uses real pump condition; deserted emergent Eden produces nothing. Added standalone and integrated persistence tests to existing runner (21→23), game-native behavioral contract, backlog and admission row.
+
+**OBSERVE:** newly authored standalone `omega_front_production_test.cpp` compiled and ran successfully with GCC C++17 and Clang C++17 `-O2 -Wall -Wextra -Wpedantic -Werror`, then Clang AddressSanitizer+UndefinedBehaviorSanitizer `-O1 -g`. All three executions printed their success marker. Campaign integration test is registered but **not executed**; full `bash scripts/verify-omega-front-tactics.sh` and `CXX=clang++ bash scripts/verify-omega-front-tactics.sh` remain blocked by absent checkout. Native documentation drift guard, NDK/APK and phone acceptance also not executed. Do not describe this as integrated or device accepted.
+
+**NEXT GATE:** acquire full tree in network-enabled checkout; run 23 registered tests under both compilers, integrated ASan/UBSan, `python3 scripts/verify-native-doc-sync.py --base HEAD^`, then NDK/APK and Galaxy S9/Daydream. Subsequent development: routed supplies and contested interception.
+
 ## 2026-10-16 — Gumball off-target clicks and stale screen focus
 
 **INTENT:** source-root menu correctness on `mrcalzon02/ReverieVR` `main`; remote head observed before mutations `9b2728273f4a13ebfe8731303c21bc5cc74c1c07`. Inspected Gumball module, hit/layout helpers, host registration, Java module identifier and Android.mk; preserve shell Home, ABI and saves.
