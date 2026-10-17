@@ -364,8 +364,9 @@ IncomingThreats Campaign::incoming_threats() const {
             start = bomber ? kBomberAttackStart : kStraferAttackStart;
             end = bomber ? kBomberAttackEnd : kStraferAttackEnd;
             earliest = &warning.aircraft_seconds;
-        } else if (enemy.type == UnitType::Gunboat) {
-            speed = kGunboatSpeed;
+        } else if (enemy.type == UnitType::Gunboat ||
+                   enemy.type == UnitType::ArmoredTransport) {
+            speed = enemy.type==UnitType::ArmoredTransport?.44f:kGunboatSpeed;
             start = kGunboatAttackStart;
             end = kGunboatAttackEnd;
             earliest = &warning.gunboat_seconds;
