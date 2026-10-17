@@ -1705,9 +1705,10 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
 
 
 
-    // The physical stockroom display follows the selected purchase card.
-    // In the bar, selecting a branded drink or snack also displays its actual
-    // packaged model on the counter. House lager has no source-packaged mesh.
+    // Actual owned packages sit on the stockroom shelf. Their presence
+    // follows the serialized SKU inventory, including purchases and sales.
+    // The selected offer is also inspectable on the stockroom podium, while
+    // the selected bar product is rendered on the counter, not in midair.
     int displayed_offer=-1;
     if(room_index==static_cast<int>(trade::Room::Stockroom))
         displayed_offer=state->market.offer();
@@ -1718,23 +1719,42 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
             displayed_offer=trade::kDrinks+state->market.snack();
     }
     const int product_index=products::IndexForOffer(displayed_offer);
-    if(product_index>=0) {
-        const ProductGlResource &resource=
-            state->product_resources[product_index];
-        if(resource.vbo!=0 && resource.texture!=0 &&
-           resource.vertex_count>0) {
-            const GLboolean blended=glIsEnabled(GL_BLEND);
-            GLint rgb_src=GL_ONE,rgb_dst=GL_ZERO;
-            GLint alpha_src=GL_ONE,alpha_dst=GL_ZERO;
-            glGetIntegerv(GL_BLEND_SRC_RGB,&rgb_src);
-            glGetIntegerv(GL_BLEND_DST_RGB,&rgb_dst);
-            glGetIntegerv(GL_BLEND_SRC_ALPHA,&alpha_src);
-            glGetIntegerv(GL_BLEND_DST_ALPHA,&alpha_dst);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    if(room_index==static_cast<int>(trade::Room::Stockroom) ||
+       (room_index==static_cast<int>(trade::Room::Bar) &&
+        product_index>=0)) {
+        const GLboolean blended=glIsEnabled(GL_BLEND);
+        GLint rgb_src=GL_ONE,rgb_dst=GL_ZERO;
+        GLint alpha_src=GL_ONE,alpha_dst=GL_ZERO;
+        glGetIntegerv(GL_BLEND_SRC_RGB,&rgb_src);
+        glGetIntegerv(GL_BLEND_DST_RGB,&rgb_dst);
+        glGetIntegerv(GL_BLEND_SRC_ALPHA,&alpha_src);
+        glGetIntegerv(GL_BLEND_DST_ALPHA,&alpha_dst);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glUniform1f(state->icon_mode_location,1.f);
+        glUniform1f(state->flicker_location,1.f);
+        // Original imported vertices are centered at the default podium.
+        // Transform only the model matrix; never mutate shared source data.
+        auto place_product=[state,vp](products::Placement place) {
+            float model[16],mvp[16];
+            const float scale=place.scale;
+            MakeTransform(model,
+                place.x-scale*products::kModelAnchorX,
+                place.y-scale*products::kModelAnchorY,
+                place.z-scale*products::kModelAnchorZ,
+                scale,scale,scale);
+            ReverieNativeMat4Multiply(mvp,vp,model);
+            glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,mvp);
+        };
+        for(int index=0;index<products::kCount;++index) {
+            const bool stocked=room_index==static_cast<int>(trade::Room::Stockroom) &&
+                products::UnitsOnHand(state->market,index)>0;
+            const bool selected=index==product_index;
+            if(!stocked && !selected)continue;
+            const ProductGlResource &resource=state->product_resources[index];
+            if(resource.vbo==0 || resource.texture==0 ||
+               resource.vertex_count<=0)continue;
             glBindTexture(GL_TEXTURE_2D,resource.texture);
-            glUniform1f(state->icon_mode_location,1.f);
-            glUniform1f(state->flicker_location,1.f);
             glBindBuffer(GL_ARRAY_BUFFER,resource.vbo);
             glVertexAttribPointer(static_cast<GLuint>(state->position_location),
                 3,GL_FLOAT,GL_FALSE,stride,reinterpret_cast<const void *>(0));
@@ -1747,12 +1767,21 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
             glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
                 2,GL_FLOAT,GL_FALSE,stride,
                 reinterpret_cast<const void *>(8u*sizeof(float)));
-            glDrawArrays(GL_TRIANGLES,0,resource.vertex_count);
-            glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
-            glUniform1f(state->icon_mode_location,0.f);
-            glBlendFuncSeparate(rgb_src,rgb_dst,alpha_src,alpha_dst);
-            if(blended==GL_FALSE)glDisable(GL_BLEND);
+            if(stocked) {
+                place_product(products::StockShelf(index));
+                glDrawArrays(GL_TRIANGLES,0,resource.vertex_count);
+            }
+            if(selected) {
+                place_product(room_index==static_cast<int>(trade::Room::Stockroom)?
+                    products::StockPodium():products::BarCounter());
+                glDrawArrays(GL_TRIANGLES,0,resource.vertex_count);
+            }
         }
+        glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,vp);
+        glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+        glUniform1f(state->icon_mode_location,0.f);
+        glBlendFuncSeparate(rgb_src,rgb_dst,alpha_src,alpha_dst);
+        if(blended==GL_FALSE)glDisable(GL_BLEND);
     }
 
     // Dynamic props still use the unit-cube VBO and constant attributes.
@@ -1846,6 +1875,11 @@ void DrawRoom(
                 1.68f,-0.48f,-0.72f,0.40f,0.20f,0.24f,
                 state->hovered_target==WorkTarget::CupOrder?0.76f:0.38f,
                 0.56f,0.26f,Material::Paper);
+            // Stored original branded items sit on this actual work shelf;
+            // their draw calls disappear when that SKU sells out.
+            DrawCube(state,view_projection,flicker,
+                -0.75f,-0.66f,-1.55f,2.20f,.08f,.50f,
+                .37f,.30f,.23f,Material::Wood);
             // Storage cases and distinguishable casks, not floating cards.
             for(int i=0;i<3;++i) {
                 DrawCube(state,view_projection,flicker,

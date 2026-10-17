@@ -23,6 +23,28 @@ constexpr Entry kCatalog[]={
         "native/red-ledger/textures/101snacks_texture_0.png"}
 };
 constexpr int kCount=sizeof(kCatalog)/sizeof(kCatalog[0]);
+
+// The native FBX decoder centers assets at this original podium anchor.
+// Positions are kept in one place so render placement and tests agree.
+struct Placement { float x,y,z,scale; };
+constexpr float kModelAnchorX=.60f;
+constexpr float kModelAnchorY=-.57f;
+constexpr float kModelAnchorZ=-1.54f;
+constexpr Placement StockShelf(int index) {
+    return {-1.55f+static_cast<float>(index)*.52f,-.42f,-1.55f,.78f};
+}
+constexpr Placement StockPodium() { return {.60f,-.57f,-1.54f,1.f}; }
+constexpr Placement BarCounter() { return {.65f,-.30f,-1.25f,.70f}; }
+inline int UnitsOnHand(const trade::Trade &market,int index) {
+    if(index<0 || index>=kCount)return 0;
+    const int offer=kCatalog[index].offer;
+    return offer<trade::kDrinks?
+        market.stock_drink(offer):market.stock_snack(offer-trade::kDrinks);
+}
+static_assert(StockShelf(0).x<StockShelf(3).x,
+              "Original products must occupy distinct shelf spaces");
+static_assert(StockPodium().scale==1.f,
+              "Inspect the full original model on the purchase plinth");
 constexpr int IndexForOffer(int offer) {
     for(int i=0;i<kCount;++i)
         if(kCatalog[i].offer==offer)return i;

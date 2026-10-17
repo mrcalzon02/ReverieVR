@@ -19,7 +19,17 @@ static std::vector<uint8_t> Read(const std::string &path) {
 int main(int argc,char **argv) {
     assert(argc==2);
     const std::string base=std::string(argv[1])+"/app/src/main/assets/";
+    trade::Trade inventory;
+    assert(products::UnitsOnHand(inventory,0)==1);
+    assert(products::UnitsOnHand(inventory,3)==1);
+    assert(products::UnitsOnHand(inventory,-1)==0);
+    assert(products::UnitsOnHand(inventory,products::kCount)==0);
     for(int i=0;i<products::kCount;++i) {
+        const auto shelf=products::StockShelf(i);
+        assert(shelf.scale>0.f && shelf.scale<1.f);
+        assert(shelf.z < -1.0f && shelf.x > -2.f && shelf.x < 1.0f);
+        assert(products::kCatalog[i].offer>0);
+        if(i>0)assert(products::StockShelf(i-1).x<shelf.x);
         const products::Entry &product=products::kCatalog[i];
         assert(products::IndexForOffer(product.offer)==i);
         for(int j=0;j<i;++j)assert(product.offer!=products::kCatalog[j].offer);
@@ -43,6 +53,12 @@ int main(int argc,char **argv) {
         assert(!original_png::DecodeRgba(damaged.data(),damaged.size(),
                                          1024u,&pixels));
     }
+    assert(inventory.SelectOffer(2));
+    assert(products::UnitsOnHand(inventory,1)==0);
+    assert(inventory.AcceptStock());
+    assert(products::UnitsOnHand(inventory,1)==trade::kDrinkCatalog[2].units);
+    assert(products::StockPodium().scale==1.f);
+    assert(products::BarCounter().scale<1.f);
     assert(products::IndexForOffer(5)==-1);
     assert(products::IndexForOffer(trade::kOffers)==-1);
     std::cout<<"Four original merchant meshes and textures validated\n";
