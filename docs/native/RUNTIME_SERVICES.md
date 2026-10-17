@@ -1,3 +1,7 @@
+## Gumball zero-stock edit recovery — 2026-10-16
+
+Gumball's game-private `YardCursor::chosenPart` exposes the nine component brushes irrespective of current inventory; `gumball_armada_module.cpp` can therefore select an exhausted brush to remove already fitted matching components. `Shipyard::edit` continues enforcing stock for placement/swaps, connectivity and core protection. Focus returns to the grid and the player's feedback identifies removal-only selection; Return is not a brush. Checked save and public platform input ABI unchanged. Strict isolated GCC/Clang/sanitizer host regressions pass; full GLES2, APK and headset gates remain unverified.
+
 ## Gumball game-private pointer focus handoff — 2026-10-16
 
 The Candy game's `MenuPointerFocus` now keeps the pointer's last active position fixed while D-pad focus has priority. Sub-threshold pointer movements accumulate until total movement exceeds 0.075 world units; a stationary ray still cannot steal focus from the D-pad. The native `gumball_armada_module.cpp` consumes this helper while retaining the existing host pointer ABI and Chart/Loadout/Allies/Shipyard hit rectangles. Exact menu-hit helper regression passed host GCC/Clang and Clang ASan+UBSan. Integrated GLES2/Android/Galaxy S9 validation remains pending.
