@@ -1,3 +1,7 @@
+## Gumball stock-independent part selection — 2026-10-16
+
+The game-private Shipyard cursor can arm all nine part brushes even at zero stock so installed matching components are removable/refundable; placement/replacement remains inventory constrained. Production menu code uses this same cursor selection rather than a second selection map. Strict host GCC/Clang/sanitizer regressions passed for removal/refund/save and cursor Return, while GLES2/Android/Daydream gates remain unverified. No shared SDK or shell Home changes.
+
 ## Gumball pointer focus priority correction — 2026-10-16
 
 The game-private `gumball_menu_hit.h` `MenuPointerFocus` fixes incremental ray motion failing to reclaim D-pad focus. It is consumed by the existing Gumball module without changing the shell input ABI or adding a second UI. The exact helper and extended menu-hit regression passed strict host GCC/Clang and Clang sanitizer; game GLES2/APK/device remains draft.
