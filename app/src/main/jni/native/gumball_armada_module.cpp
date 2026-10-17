@@ -742,9 +742,11 @@ void Update(void* p,const ReverieNativeInputV1* in){
     const bool padMoving=std::fabs(in->move_x)>.55f
         ||std::fabs(in->move_y)>.55f;
     if(phase==Phase::Chart&&padMoving)m->pointerFocus.padFocus=true;
-    if(phase==Phase::Chart
-       &&ReverieNativeInputHasPointerV1(in)
-       &&in->pointer_kind!=REVERIE_NATIVE_POINTER_NONE
+    const bool pointerRay=phase==Phase::Chart
+        &&ReverieNativeInputHasPointerV1(in)
+        &&in->pointer_kind!=REVERIE_NATIVE_POINTER_NONE;
+    MenuHit pointed{};
+    if(pointerRay
        &&std::isfinite(in->pointer_origin[2])
        &&std::isfinite(in->pointer_direction[2])
        &&std::fabs(in->pointer_direction[2])>.0001f){
@@ -761,6 +763,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 bool changed=false;
                 if(m->inYard){
                     hit=reverie::gumball::YardHit(px,py);
+                    pointed=hit;
                     if(hit.id>=0&&(m->yardCursor.x!=hit.x
                                     ||m->yardCursor.y!=hit.y)){
                         m->yardCursor.pointAt(hit.x,hit.y);
@@ -768,16 +771,19 @@ void Update(void* p,const ReverieNativeInputV1* in){
                     }
                 }else if(m->inSupport){
                     hit=reverie::gumball::SupportHit(px,py);
+                    pointed=hit;
                     if(hit.id>=0&&m->supportSelected!=hit.id){
                         m->supportSelected=hit.id;changed=true;
                     }
                 }else if(m->inLoadout){
                     hit=reverie::gumball::LoadoutHit(px,py);
+                    pointed=hit;
                     if(hit.id>=0&&m->loadoutSelected!=hit.id){
                         m->loadoutSelected=hit.id;changed=true;
                     }
                 }else{
                     hit=reverie::gumball::ChartHit(px,py);
+                    pointed=hit;
                     if(hit.id>=0&&m->selected!=hit.id){
                         m->selected=hit.id;changed=true;
                     }
@@ -791,6 +797,11 @@ void Update(void* p,const ReverieNativeInputV1* in){
             }
         }
     }
+    const bool mayClick=reverie::gumball::MenuClickAllowed(
+        pointerRay,m->pointerFocus.padFocus,padMoving,pointed);
+    const bool clickEdge=pressed&&!m->primary;
+    if(phase==Phase::Chart&&clickEdge&&!mayClick)
+        ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
     if(phase==Phase::Flight){
         const uint32_t kills=m->sim.kills();const int hp=m->sim.hp();
         const int shieldBefore=m->sim.shield();
@@ -825,7 +836,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
         }
-        if(pressed&&!m->primary){
+        if(clickEdge&&mayClick){
             bool good=false;
             if(m->loadoutSelected<4){
                 good=m->sim.buy(static_cast<Upgrade>(m->loadoutSelected));
@@ -859,7 +870,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
         }
-        if(pressed&&!m->primary){
+        if(clickEdge&&mayClick){
             bool good=false;
             if(m->supportSelected==8){m->inSupport=false;good=true;}
             else if(m->supportSelected<2){
@@ -901,7 +912,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
         }
-        if(pressed&&!m->primary){
+        if(clickEdge&&mayClick){
             bool good=false;
             if(!m->yardCursor.palette()){
                 const auto result=m->yard.edit(
@@ -947,7 +958,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
         }
-        if(pressed&&!m->primary){
+        if(clickEdge&&mayClick){
             bool good=false;
             if(m->selected>=0&&m->selected<3){
                 good=m->sim.launch(static_cast<unsigned>(m->selected));
