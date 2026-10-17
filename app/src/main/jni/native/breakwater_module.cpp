@@ -6,6 +6,7 @@
 #include "breakwater_terrain.h"
 #include "breakwater_cover.h"
 #include "breakwater_sky.h"
+#include "breakwater_environment.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
 #include "breakwater_surface_aim.h"
@@ -48,6 +49,7 @@ struct State {
     GLint sprite_matrix = -1, sprite_position = -1, sprite_uv = -1;
     GLint sprite_sampler = -1, sprite_tint = -1;
     bool sprite_gpu_dirty = true;
+    bool world_lighting=false,world_night=false;
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
     float flash = 0.0f, elapsed = 0.0f, reload_ready_flash = 0.0f;
     float turret_flash = 0.0f, infantry_flash = 0.0f;
@@ -86,6 +88,10 @@ void BattleSound(State *s,uint32_t cue) {
     ReverieNativeRequestSoundV1(s->host,cue);
 }
 void Vertex(State *s, float x,float y,float z, float r,float g,float b) {
+    if(s->world_lighting) {
+        const EnvironmentColor lit=IlluminateWorld({r,g,b},s->world_night);
+        r=lit.r;g=lit.g;b=lit.b;
+    }
     auto &v=s->mesh;
     v.push_back(x);v.push_back(y);v.push_back(z);
     v.push_back(r);v.push_back(g);v.push_back(b);
@@ -538,7 +544,9 @@ void BuildScene(State *s) {
     auto &game=s->campaign;
     s->mesh.clear();
     s->sprite_mesh.clear();
+    s->world_lighting=false;
     const bool night=game.period()==Period::Night;
+    const EnvironmentProfile landscape=EnvironmentFor(game.location(),night);
     // 360-degree layered horizon: no frontal backdrop edges when head turns.
     // Fixed panorama, clouds, sun/moon and distant smoke are shared by both
     // eyes and stay farther away than every gameplay target and sea strip.
@@ -546,14 +554,21 @@ void BuildScene(State *s) {
         [s](auto... arguments) { Triangle(s,arguments...); });
     for(int z=0;z<24;z++) {
         const float back=-2.0f-z*.92f;
-        const float shimmer=.02f*std::sin(s->elapsed*1.6f+z*.7f);
+        const float shimmer=.018f*std::sin(s->elapsed*1.6f+z*.7f);
         Triangle(s,-20,-1.10f,back,20,-1.10f,back,
                  20,-1.10f,back-.92f,
-                 night?.035f:.08f,night?.13f:.31f,night?.23f:.43f+shimmer);
+                 landscape.sea.r*.88f,landscape.sea.g*.88f,
+                 landscape.sea.b*.88f+shimmer);
         Triangle(s,-20,-1.10f,back,20,-1.10f,back-.92f,
                  -20,-1.10f,back-.92f,
-                 night?.04f:.09f,night?.15f:.36f,night?.27f:.49f+shimmer);
+                 landscape.sea.r,landscape.sea.g,
+                 landscape.sea.b+shimmer);
     }
+    // 360-degree physical rear uplands and campaign-specific mountains.
+    // World-space geometry lives inside the existing sky, no extra draw pass.
+    EmitSurroundingLandscape(game.location(),night,
+        [s](auto... values){Box(s,values...);},
+        [s](auto... values){Triangle(s,values...);});
     // World-space shore geometry is generated alongside the existing
     // simulation mesh. The beach ends at the real transport landing line;
     // only Campaign owns targets, collision and landfall behavior.
@@ -567,6 +582,9 @@ void BuildScene(State *s) {
     // Near-field gun geometry must NOT block world-space menus at z=-3.
     // The old parapet covered the credits line despite correct text/layout.
     // Show the actual 3D carriage while fighting; menu phases stay legible.
+    // Illuminate the physical battery/units (not sky or HUD) with distinct
+    // bright day and moon-blue night albedo while building shared vertices.
+    s->world_lighting=true;s->world_night=night;
     if(game.phase()==Phase::Combat) {
         // The shore platform, breech, collars, recessed muzzle and wheel
         // meshes are one deterministic XYZRGB triangle batch per scene.
@@ -768,6 +786,8 @@ void BuildScene(State *s) {
             EmitWreckFragments(wreck,[s](auto... vertices) {
                 Triangle(s,vertices...);
             });
+    // Fire, shell impacts and HUD stay luminous at night, unlike solid hulls.
+    s->world_lighting=false;
     // CPU-updated, fixed-capacity impact pulses render identically in both eyes.
     for(const ImpactPulse &impact:s->impacts.pulses())if(impact.remaining>0.0f) {
         const bool artillery=impact.kind==ImpactKind::ArtilleryBlast;

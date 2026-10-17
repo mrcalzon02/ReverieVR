@@ -35,13 +35,13 @@ void EmitSkyPanorama(uint8_t location,bool night,TriangleFn triangle) {
     const float heights[kSkyBands+1]={
         -4.0f,-1.1f,.2f,1.8f,3.8f,7.0f,11.0f,17.0f};
     const SkyColor day[kSkyBands]={
-        {.41f,.49f,.48f},{.41f,.53f,.55f},{.32f,.48f,.59f},
-        {.24f,.41f,.57f},{.17f,.34f,.52f},{.11f,.26f,.45f},
-        {.08f,.20f,.40f}};
+        {.59f,.75f,.79f},{.65f,.82f,.90f},{.49f,.75f,.94f},
+        {.37f,.64f,.93f},{.23f,.49f,.83f},{.14f,.34f,.71f},
+        {.09f,.23f,.56f}};
     const SkyColor dusk[kSkyBands]={
-        {.050f,.066f,.104f},{.039f,.055f,.097f},{.029f,.045f,.087f},
-        {.021f,.036f,.076f},{.016f,.027f,.063f},
-        {.011f,.019f,.053f},{.008f,.015f,.047f}};
+        {.047f,.093f,.18f},{.037f,.077f,.16f},{.029f,.063f,.15f},
+        {.022f,.046f,.13f},{.015f,.032f,.105f},
+        {.010f,.022f,.088f},{.006f,.012f,.068f}};
     // Campaign locations have subtly distinct atmospheric casts.
     const float red=location==1?.94f:location==2?.85f:1.0f;
     const float green=location==1?.91f:location==2?.94f:1.0f;

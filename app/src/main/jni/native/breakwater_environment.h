@@ -124,12 +124,14 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
             const float h=.85f+.24f*(n%3);
             triangle(x-.40f,-.56f,z,x+.40f,-.56f,z,
                      x,-.56f+h,z,p.hill.r*.68f,p.hill.g*.82f,p.hill.b*.69f);
-            box(x,-.55f,z,.10f,.45f,.10f,.29f,.25f,.17f);
+            box(x,-.55f,z,.10f,.45f,.10f,
+                night?.10f:.29f,night?.14f:.25f,night?.18f:.17f);
         }
         for(int n=0;n<6;++n) {
             const float z=1.4f+n*1.75f;
             box(0,-1.07f+p.rise*(z/14.0f)*(z/14.0f)*.80f,z,
-                .80f,.025f,1.55f,.52f,.47f,.33f);
+                .80f,.025f,1.55f,
+                night?.18f:.52f,night?.23f:.47f,night?.27f:.33f);
         }
     } else if(location==1) {
         // Iron Quay: recognizable fortified concrete and supply sheds.
@@ -139,8 +141,10 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
                 p.mountain.r,p.mountain.g,p.mountain.b);
             box(x,-.02f,5.65f,2.65f,.19f,.32f,
                 p.distant.r,p.distant.g,p.distant.b);
-            box(x,-.04f,6.0f,.85f,.33f,.10f,.15f,.20f,.25f);
-            box(x,-.37f,8.2f,.42f,1.2f,.42f,.37f,.32f,.27f);
+            box(x,-.04f,6.0f,.85f,.33f,.10f,
+                night?.07f:.15f,night?.12f:.20f,night?.21f:.25f);
+            box(x,-.37f,8.2f,.42f,1.2f,.42f,
+                night?.12f:.37f,night?.16f:.32f,night?.21f:.27f);
         }
     } else {
         // Blackcap Island: tall, asymmetric basalt fingers behind the fort.

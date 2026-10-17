@@ -18,15 +18,15 @@ struct CoastPalette {
 
 inline CoastPalette CoastColors(uint8_t location, bool night) {
     const CoastPalette daytime[] = {
-        {.59f, .55f, .43f, .76f, .73f, .58f}, // Shingle Bay
-        {.37f, .39f, .39f, .55f, .51f, .43f}, // Iron Quay
-        {.26f, .26f, .29f, .43f, .39f, .36f}  // Blackcap Island
+        {.83f, .75f, .54f, .91f, .85f, .63f}, // Shingle Bay
+        {.51f, .54f, .54f, .65f, .63f, .56f}, // Iron Quay
+        {.35f, .34f, .40f, .50f, .45f, .43f}  // Blackcap Island
     };
     if (location >= Campaign::kLocations) return {0,0,0,0,0,0};
     CoastPalette c = daytime[location];
     if (night) {
-        c.sand_r *= .44f; c.sand_g *= .52f; c.sand_b *= .65f;
-        c.detail_r *= .49f; c.detail_g *= .56f; c.detail_b *= .67f;
+        c.sand_r *= .32f; c.sand_g *= .43f; c.sand_b *= .69f;
+        c.detail_r *= .38f; c.detail_g *= .48f; c.detail_b *= .74f;
     }
     return c;
 }
@@ -59,6 +59,23 @@ void EmitCoastalTerrain(uint8_t location, bool night,
                  night?.30f:.72f,night?.41f:.87f,night?.54f:.91f);
     }
 
+    // Each beach has a different profile beyond its playable 7.72-wide
+    // center lane: rolling sandy dune, square quay, or fractured scree.
+    // These shoulders are scenery only; no new collision or troop blockers.
+    for(int side : {-1,1}) {
+        const float sign=static_cast<float>(side);
+        const float shoulder=location==0?4.65f:location==1?4.15f:5.10f;
+        const float crest=location==0?.32f:location==1?.14f:.54f;
+        const float color=location==0?1.05f:location==1?.77f:.63f;
+        triangle(sign*3.85f,y,-2.15f,
+                 sign*shoulder,y+crest,-1.48f,
+                 sign*3.85f,y,-.95f,
+                 c.sand_r*color,c.sand_g*color,c.sand_b*color);
+        triangle(sign*shoulder,y+crest,-1.48f,
+                 sign*(shoulder+.70f),y+crest*.76f,-.72f,
+                 sign*3.85f,y,-.95f,
+                 c.detail_r*.91f,c.detail_g*.91f,c.detail_b*.91f);
+    }
     if (location==0) {
         // Shingle Bay: small deterministic stone chips and sparse driftwood
         // against an unobstructed troop path. Nothing requires collision.
