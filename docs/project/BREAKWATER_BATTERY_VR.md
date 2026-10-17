@@ -126,6 +126,47 @@ ray regions and menu/footer clipping; device stereoscopic readability
 remains unverified. The renderer draws all of this in the same existing
 scene batch and does not add a per-eye menu simulation pass.
 
+### Idle-menu redraw suppression and difficulty preview — 2026-10-16 continuation
+
+The original Breakwater `Update` ended with an unconditional
+`scene_dirty=true`; `Draw` then regenerated the entire coastal water/sky,
+terrain, procedural UI, and sprite batch, and re-uploaded buffers every frame,
+including while the player was idle on a static shop/difficulty/result menu.
+The game's private `breakwater_scene_refresh.h` now makes this distinction
+explicit: combat phases continue refreshing every update, but Briefing, Shop,
+Victory and Defeat reuse the last complete scene until selection, button
+activation, pointer availability, or phase transition changes. Both eyes
+still render the same cached scene; no additional GL objects or draw calls,
+menu latency timers or gameplay changes were introduced. The backdrop
+is deliberately static while idling in menus; sea animation resumes in
+combat. On loss of pointer/Quick Menu focus, active UI highlights and the
+ghost sight clear on the **first** lost frame. Subsequent pointer-none frames
+neither advance gameplay nor repeatedly rebake frozen geometry. On pointer
+return, the complete UI is invalidated once and interaction is still held
+behind `PointerFocusGate`'s release requirement. The pause handler clears
+the stale pointer and hover state as well.
+
+The difficulty selector now shows one centered, fitted, selectable preview:
+CADET — 2 opening threats and 2 starting day waves; REGULAR — 3/3;
+VETERAN — 4/4; SIEGE — 5/5. Those exact opening numbers match
+`Campaign::NextCount` (2 + tier) and `Campaign::waves_this_period`
+(2 + tier at location 0, day 1, daytime). Later days and locations have
+their existing campaign scaling. The new preview lives between the title
+and four actual difficulty hitboxes without changing any hit target, input
+binding, wave logic, upgrade balance or persisted save format.
+
+The game-private regression includes real menu rectangle/text vertical
+separation and all four opening descriptions plus a deterministic
+`RefreshNeeded` policy fixture (5,000 idle frames per phase, redraw
+transitions, uninterrupted combat frames and pointer focus change).
+Host strict GCC, strict Clang, and Clang AddressSanitizer/UndefinedBehaviorSanitizer
+passed all four visual helper suites. The exact committed
+`breakwater_menu_layout.h`, test, `breakwater_scene_refresh.h`, and test
+matched independent `git hash-object` IDs after local reconstruction.
+The full game module and Android/GLES2/Galaxy S9 remain **not run** this
+session; actual menu clipping, controller focus and thermal improvement
+must be validated on device before acceptance.
+
 ### Shop inspection and gunshot model motion — 2026-10-16 continuation
 
 The new compact shop also explains the highlighted item on a single
