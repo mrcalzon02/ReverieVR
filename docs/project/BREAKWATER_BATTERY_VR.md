@@ -24,6 +24,54 @@ The original five weapon reports remain, and ten additional original determinist
 
 The module generates simple cuboid rowboats, military boats and individually positioned shore infantry silhouettes (body and head), plus distinct generated bomber/strafer silhouettes with dynamically banked, swept vertex-color wings. Rendered infantry positions and bounded combat-ray hitboxes share the campaign's authoritative soldier objects, and defeated soldiers are removed individually. Combat targeting now selects the nearest positive ray-surface intersection rather than hitbox-center depth for overlapping vessels, aircraft and infantry. The shared deterministic intersection helper rejects malformed rays; Galaxy S9 pointer alignment and headset hitbox proof remain outstanding.
 
+## Armored landing craft and shore vehicles — 2026-10-16
+
+Later-progression landing craft may now carry **one real light armored car**
+in addition to up to three infantry. The manifest is deterministic from
+the authoritative wave's seed/spawn hash; first-day rowboats are always
+one-soldier unarmored craft. Before the ramp opens, the armor remains cargo
+and cannot be targeted as an independent shore unit. **Sinking the transport
+cancels its infantry and armored cargo**, rather than magically spawning
+a vehicle on the beach. The active atlas ship-render path includes a small
+olive armored silhouette atop eligible landing craft.
+
+A surviving carrier produces one independent `ArmoredVehicle` (95 HP)
+in a fixed ten-slot, battle-only pool at the existing shore landing line.
+The vehicle rolls inland at 0.29 world units/s to z=-1.56, stops, and
+fires a four-damage armored cannon every 3.3 seconds while alive. Its
+confirmed attack emits a simulation-sequenced `ArmorShotEvent`, visible
+gun flash and a distinct synthesized gun report. Destroying the vehicle
+before its next shot cancels that attack. Armored units independently
+prevent wave completion until killed; a vehicle kill awards 110 credits
+and increments the armor-loss tally once. A battle reset clears all armor
+and its event without changing the existing 80-byte shop save schema or
+the max-ten-craft/minion capacities.
+
+Mounted weapons now use the same true cannon-origin ballistic solver
+to resolve a separate 0.43-radius car hitbox (y=-0.72) and the nearest
+physical cover/soldier/boat obstruction. In-arc targeting shows orange
+armor brackets and `ARMORED CAR HP n/95` on the existing compact HUD,
+with a faceted original olive chassis, wheel/track bodies, turret and
+barrel generated in the same shared stereo world geometry. A 20-damage
+machine-gun round deals 5 damage to a car's armor; the 35-damage Heavy
+Gun deals 17; the 42-damage Flak deals 14, and the missile and direct
+cannon deliver their regular damage. Real destroyed armor receives
+an explosion, distinct destruction sound and no further firing.
+Purchased artillery and airstrikes can also destroy deployed cars and
+produce the relevant battle impact; armor is not an unsupported purely
+decorative exception. No third-party textures or sample recordings were
+added.
+
+The exact `breakwater_armor.h` and native regression source passed
+strict host GCC/Clang C++17 and Clang ASan+UBSan with a minimal test-only
+campaign dependency shim; the exact armor helper/test GitHub hashes were
+verified. The broader `breakwater_campaign_test.cpp` now includes a
+seeded two-run test of cargo-carrier survival versus interception,
+independent armor HP, movement, reward and killing. That **full test,
+complete game module, Android NDK/APK, and Galaxy S9 headset visuals and
+sounds remain unexecuted** in this pass. The user can expect source
+implementation, not a claim of device-ready shipping or complete QA.
+
 ## Campaign credits and purchases
 
 Players earn credits for destroyed hulls, eliminated shore infantry and surviving a wave. Purchasing is allowed only between waves; upgrades have real effects in the simulation.
