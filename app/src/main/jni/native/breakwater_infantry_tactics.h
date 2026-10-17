@@ -16,7 +16,8 @@ constexpr float kInfantryPinSeconds=1.20f;
 // landing parties add two lateral maneuver troops and a rear support gunner,
 // assigned from passenger order with no RNG or save-schema changes.
 inline InfantryTactic AssignInfantryTactic(UnitType vessel,uint8_t passenger) {
-    if(vessel!=UnitType::LandingCraft)return InfantryTactic::Rifle;
+    if(vessel!=UnitType::LandingCraft &&
+       vessel!=UnitType::ArmoredTransport)return InfantryTactic::Rifle;
     switch(passenger%4u) {
         case 1: return InfantryTactic::FlankLeft;
         case 2: return InfantryTactic::FlankRight;
