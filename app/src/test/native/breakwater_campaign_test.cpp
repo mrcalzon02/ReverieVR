@@ -554,6 +554,31 @@ int main() {
         triangles=0;EmitWreckFragments(wrecks.pulses()[0],countTriangles);
         assert(triangles==0);
 
+        // Heavy wrecks have an extended, separately sinking plated hull.
+        // Both old vessels and aircraft retain their original 1.8s pulse.
+        WreckEffects heavy_wreck;
+        Enemy heavy_before{};heavy_before.active=true;
+        heavy_before.type=UnitType::ArmoredTransport;
+        heavy_before.hp=320;heavy_before.x=.3f;heavy_before.z=-4.1f;
+        Enemy heavy_after=heavy_before;
+        heavy_after.active=false;heavy_after.hp=-1;
+        assert(heavy_wreck.RecordDestroyed(heavy_before,heavy_after));
+        assert(heavy_wreck.pulses()[0].remaining==
+               WreckEffects::kHeavyDuration);
+        triangles=0;
+        EmitWreckFragments(heavy_wreck.pulses()[0],countTriangles);
+        assert(triangles==15); // shards + deck + foam + smoke
+        heavy_wreck.Tick(2.30f);
+        triangles=0;
+        EmitWreckFragments(heavy_wreck.pulses()[0],countTriangles);
+        assert(triangles==12); // armored deck still sinking
+        heavy_wreck.Tick(.80f);
+        triangles=0;
+        EmitWreckFragments(heavy_wreck.pulses()[0],countTriangles);
+        assert(triangles==0);
+        heavy_after.hp=320; // survived beaching / disembarked
+        assert(!heavy_wreck.RecordDestroyed(heavy_before,heavy_after));
+
         WreckEffects batch;
         std::array<Enemy,Campaign::kMaxEnemies> start{},finish{};
         for(size_t i=0;i<10;++i) {
@@ -2646,6 +2671,16 @@ int main() {
     assert(flagship.enemies()[0].carries_armor);
     assert(flagship.wave_status().armor_landed==0);
     assert(flagship.armored_vehicles()[0].active==false);
+    // The second actual spawned attacker is a fast gunboat escort in a
+    // separate lane, not merely a scripted label or visual decoration.
+    for(int n=0;n<35;++n)flagship.Tick(.05f);
+    assert(flagship.phase()==Phase::Combat);
+    assert(flagship.enemies()[0].active);
+    assert(flagship.enemies()[1].active);
+    assert(flagship.enemies()[1].type==UnitType::Gunboat);
+    assert(std::abs(flagship.enemies()[1].x-
+                    invasion::FlagshipEscortLane(
+                        flagship.enemies()[0].x))<.00001f);
     Campaign flagshipSunk=flagship;
     // Four correctly timed direct cannon hits defeat the actual armored
     // ship before landfall. Killing it prevents both cars and its troop

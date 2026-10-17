@@ -22,6 +22,14 @@ int main() {
                 assert(SelectUnit(grade,wave,25u,roll,0u)==
                        waves::SelectInvasionUnit(grade,wave,25u,roll));
     assert(SelectUnit(13,25,25,7,0)==UnitType::ArmoredTransport);
+    assert(SelectUnit(13,25,25,7,1)==UnitType::Gunboat);
+    assert(SelectUnit(13,25,25,7,2)!=UnitType::Gunboat);
+    assert(SelectUnit(9,25,25,7,1)==
+           waves::SelectInvasionUnit(9,25,25,7));
+    assert(invasion::FlagshipEscortLane(2.60f)>0.99f);
+    assert(invasion::FlagshipEscortLane(2.60f)<1.01f);
+    assert(invasion::FlagshipEscortLane(-2.60f)<-0.99f);
+    assert(invasion::FlagshipEscortLane(-2.60f)>-1.01f);
     assert(SelectUnit(13,25,25,(1u<<16u)|7u,1)!=UnitType::ArmoredTransport);
     assert(SelectUnit(13,13,25,6,1)==UnitType::ArmoredTransport);
     assert(SelectUnit(13,12,25,6,1)!=UnitType::ArmoredTransport);
