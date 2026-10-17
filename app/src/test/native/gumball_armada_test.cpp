@@ -14,6 +14,15 @@ int main(){
         doctrines[static_cast<unsigned>(entry.formation)]=true;
     }
     for(bool seen:doctrines)assert(seen);
+    // The live spawn loop must assign the seed-selected formation and slot,
+    // rather than only displaying a formation name on the HUD.
+    Simulation liveDoctrine(23);
+    assert(liveDoctrine.launch(0));
+    liveDoctrine.update(.05f,0.f,0.f,false);
+    assert(liveDoctrine.spawned()==1);
+    const Enemy& first=liveDoctrine.enemies()[0];
+    assert(first.active&&!first.boss&&first.formation_slot==0u);
+    assert(first.formation==FormationFor(23u,liveDoctrine.lane(0).id,0));
     Simulation game(42), replay(42);
     assert(game.node()==0 && game.cash()==100 && kLaneCount==4096);
     for(unsigned i=0;i<3;++i){
