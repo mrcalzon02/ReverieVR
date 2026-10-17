@@ -156,6 +156,7 @@ bool AimAtEnemy(const ReverieNativeInputV1 &input,const Enemy &enemy,
     const float center[]={enemy.x,
         enemy.type==UnitType::Aircraft?1.6f:-.63f,enemy.z};
     const float radius=enemy.type==UnitType::Rowboat?.62f:
+         enemy.type==UnitType::ArmoredTransport?1.48f:
          enemy.type==UnitType::LandingCraft?.82f:.78f;
     return ghost?RaySphereSurfaceDistance(input.pointer_origin,
         input.pointer_direction,center,radius,distance):
@@ -648,6 +649,15 @@ void BuildScene(State *s) {
     // movement, world positions, hit volumes, attacks, landfall and score.
     // Forward-facing world cards use the SAME mesh for both stereo eyes.
     for(const Enemy &e:game.enemies())if(e.active) {
+        if(e.type==UnitType::ArmoredTransport) {
+            // Heavy transports are actual faceted 3D geometry with the
+            // two-car cargo, armored bow, deck gun and animated bow ramp.
+            // Do not cover their mesh with an ordinary landing-boat card.
+            EmitHeavyTransportSilhouette(e,
+                [s](auto... values){Box(s,values...);},
+                [s](auto... values){Triangle(s,values...);});
+            continue;
+        }
         // Ship ramp/oars, gunboat flashes and bank-aware aircraft art are
         // selected purely from the live simulation pose, with no new
         // animation clocks or per-eye scene changes.
@@ -1089,6 +1099,7 @@ void BuildScene(State *s) {
             else
                 std::snprintf(label,sizeof(label),"%s HP %d/%d",
                     target.type==UnitType::Rowboat?"ROWBOAT":
+                    target.type==UnitType::ArmoredTransport?"HEAVY LANDER":
                     target.type==UnitType::LandingCraft?"LANDER":"GUNBOAT",
                     static_cast<int>(target.hp),
                     static_cast<int>(target.max_hp));
