@@ -1,3 +1,11 @@
+## 2026-10-16 — Breakwater late-wave checkpoint and armored defense repair
+
+**OBSERVE:** `Campaign::DeserializeShop` still rejected waves above 8 despite 12–25 legitimate waves per period. The purchased turret ignored landed armored cars and the HUD gave no warning of their incoming shell.
+
+**EXECUTE:** Shared full-word `waves::CheckpointAllowed` now validates serialized wave 1..real period maximum before narrowing, preserving 80-byte shop ABI; actual Siege last day/night 25/21 checkpoints exercised in native regression source. Turret selects nearer active vessel or deployed armor, applies heavy penetration (7 HP/shot), and records destruction once. `armor::SecondsToFire` derives live attack ETA from car travel and cooldown; compact SHORE warning now says ARMOR when vehicle shell is earlier.
+
+**VERIFIED:** GitHub source commits/readbacks and exact Git blob hash on both pure header/test pairs. GCC+Clang C++17 strict and Clang ASan/UBSan passed standalone wave-schedule and armor-timer suites (armor test uses narrowed mocked Campaign and mirrored ballistics). **Not run:** full Campaign test/module compile, Android NDK/Gradle/APK, physical Galaxy S9 headset. Evidence: `docs/records/2026-10-16-breakwater-armored-wave-acceptance-repair.md`.
+
 ## 2026-10-16 — Omega Front hostile claims and route security
 
 **INTENT:** continue hands-on game development on `main`, follow user's explicit direction to avoid microtests and repeated integration-check scaffolding. Prior accepted gameplay `431945a1d7575e5bc7ecaefd1d89d1575cd7f7c6` supports one-day physical convoys.
