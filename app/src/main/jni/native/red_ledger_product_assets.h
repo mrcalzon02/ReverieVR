@@ -28,7 +28,15 @@ constexpr Entry kCatalog[]={
     {6,"202HARD","native/red-ledger/models/202HARD.fbx",
         "native/red-ledger/textures/202HARD_texture_0.png"},
     {trade::kDrinks+1,"202snacks","native/red-ledger/models/202snacks.fbx",
-        "native/red-ledger/textures/202snacks_texture_0.png"}
+        "native/red-ledger/textures/202snacks_texture_0.png"},
+    {7,"303Draft","native/red-ledger/models/303Draft.fbx",
+        "native/red-ledger/textures/303Draft_texture_0.png"},
+    {8,"303beer","native/red-ledger/models/303beer.fbx",
+        "native/red-ledger/textures/303beer_texture_0.png"},
+    {9,"303hard","native/red-ledger/models/303hard.fbx",
+        "native/red-ledger/textures/303hard_texture_0.png"},
+    {trade::kDrinks+2,"303snacks","native/red-ledger/models/303snacks.fbx",
+        "native/red-ledger/textures/303snacks_texture_0.png"}
 };
 constexpr int kCount=sizeof(kCatalog)/sizeof(kCatalog[0]);
 
@@ -64,13 +72,16 @@ constexpr int IndexForOffer(int offer) {
         if(kCatalog[i].offer==offer)return i;
     return -1;
 }
-static_assert(kCount==8,"Two complete original supplier product sets");
+static_assert(kCount==12,"Three complete original supplier product sets");
 static_assert(IndexForOffer(0)==-1,"House lager is not a branded product");
 static_assert(IndexForOffer(19)==3,"First snack shares the real shop SKU");
 static_assert(IndexForOffer(4)==4 && IndexForOffer(5)==5 &&
               IndexForOffer(6)==6 && IndexForOffer(20)==7,
               "Map UED products to genuine catalog indices");
-static_assert(IndexForOffer(7)==-1,
-              "Unimported supplier offers must not display substitute art");
+static_assert(IndexForOffer(7)==8 && IndexForOffer(8)==9 &&
+              IndexForOffer(9)==10 && IndexForOffer(21)==11,
+              "Map Brewers Union products to their original files");
+static_assert(IndexForOffer(10)==-1,
+              "No model substitution for suppliers without imported art");
 }}}
 #endif

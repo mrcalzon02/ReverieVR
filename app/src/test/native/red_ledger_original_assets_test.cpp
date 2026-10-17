@@ -24,6 +24,8 @@ int main(int argc,char **argv) {
     assert(products::UnitsOnHand(inventory,3)==1);
     assert(products::UnitsOnHand(inventory,4)==1);
     assert(products::UnitsOnHand(inventory,7)==0);
+    assert(products::UnitsOnHand(inventory,8)==1);
+    assert(products::UnitsOnHand(inventory,11)==1);
     assert(products::UnitsOnHand(inventory,-1)==0);
     assert(products::UnitsOnHand(inventory,products::kCount)==0);
     for(int i=0;i<products::kCount;++i) {
@@ -73,7 +75,9 @@ int main(int argc,char **argv) {
     assert(products::BarCounter().scale<1.f);
     assert(products::IndexForOffer(5)==5);
     assert(products::IndexForOffer(20)==7);
-    assert(products::IndexForOffer(7)==-1);
+    assert(products::IndexForOffer(7)==8);
+    assert(products::IndexForOffer(21)==11);
+    assert(products::IndexForOffer(10)==-1);
     assert(products::IndexForOffer(trade::kOffers)==-1);
-    std::cout<<"Eight original merchant meshes and textures validated\n";
+    std::cout<<"Twelve original merchant meshes and textures validated\n";
 }
