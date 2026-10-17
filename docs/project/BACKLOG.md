@@ -17,6 +17,8 @@
 
 # ReverieVR Backlog
 
+- RV-GAME-06/P3p — **Omega Front source integrated, Android runtime unverified:** after or alongside six story operations, players can assault a faction-held outpost on-site using existing DEPLOY and capture-point tactical controls. Victory captures its actual sector, opens physical friendly supply access and pays bounded real salvage, while enemy influence on nearby sectors remains active; a defeat retains hostile control. 2,048-byte save schema 8 preserves active and last assault with backwards migration. Next: more distinct faction campaign objectives and multi-sector retaliation, not incremental test infrastructure.
+
 - RV-GAME-06/P3o — Source-integrated convoy interception. Threatened supply transports enter faction-specific tactical wagon-defense combat. Results spend real supplies, lose real escorts, adjust territorial pressure, and advance the campaign. Save schema 7 preserves combat; device play remains pending. Continue the faction campaign and convoy network without adding microtest infrastructure.
 
 - RV-GAME-06/P3n — **Game source implemented, APK/headset not yet verified:** hostile adjacent factions now build saved claim pressure and can physically raid independent depot food/water, limited to actual attacker storage. Existing REPAIR action secures a surveyed threatened route for finite supplies and one day; the war table indicates danger and patrol eligibility. Next gameplay: faction patrol formations, actual tactical interception of threatened caravans and operation-linked territorial campaigns, not test proliferation.

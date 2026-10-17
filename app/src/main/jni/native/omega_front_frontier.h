@@ -100,6 +100,9 @@ public:
     bool bridge_repaired() const {return bridge_;}
     bool deployed() const {return deployed_;}
     bool convoy_battle() const {return deployed_ && convoy_source_>=0;}
+    bool frontline_battle() const {return deployed_ && frontline_sector_>=0;}
+    bool last_frontline() const {return last_frontline_sector_>=0;}
+    int last_frontline_sector() const {return last_frontline_sector_;}
     bool last_convoy() const {return last_convoy_;}
     int last_convoy_source() const {return last_convoy_source_;}
     const Battle* current_battle() const {return deployed_?&battle_:nullptr;}
@@ -482,13 +485,67 @@ public:
         battle_=battle;deployed_=true;rations_-=2;
         return true;
     }
+    // Independent field assaults use the same tactical commander and fixed
+    // 24x24 battle arena without consuming or skipping authored M01-M06.
+    bool can_frontline_assault() const {
+        if(deployed_ || guards_<4 || rations_<2)return false;
+        const int target=location_;
+        const unsigned owner=sectors_[target].owner;
+        if(owner<1 || owner>kMajorFactions ||
+           intel_.level(target)!=Intelligence::Surveyed)return false;
+        // Future story-operation sites remain reserved until their authored
+        // battles are resolved; open battles never counterfeit story progress.
+        for(int op=operation_;op<kHearthfallOperations;++op)
+            if(TargetForOperation(op)==target)return false;
+        return true;
+    }
+    bool StartFrontlineAssault() {
+        if(!can_frontline_assault())return false;
+        const int target=location_;
+        const unsigned owner=sectors_[target].owner;
+        const uint32_t salt=0xF10A75u+static_cast<uint32_t>(day_)*131u+
+            static_cast<uint32_t>(target)*419u+
+            static_cast<uint32_t>(operation_)*997u;
+        Battle field(Mix(seed_,salt));
+        field.ClearUnits();
+        const Doctrine doctrine=owner==1?Doctrine::Hearthward:
+            owner==2?Doctrine::Meridian:
+            owner==4?Doctrine::Scrapline:
+            owner==6?Doctrine::LostNinth:Doctrine::Unaligned;
+        if(!field.ConfigureDoctrine(doctrine) ||
+           !field.ConfigureMission(Mission::CaptureOrchard))return false;
+        // Broken outpost walls and exposed approach road are real traversal
+        // and line-of-sight geometry on the existing tactical grid.
+        if(!field.SetGround(10,9,Ground::Wall) ||
+           !field.SetGround(10,10,Ground::Rubble) ||
+           !field.SetGround(11,14,Ground::Rubble))return false;
+        if(field.AddUnit(Side::Hearthwell,Class::Rifle,3,11)<0 ||
+           field.AddUnit(Side::Hearthwell,Class::Rifle,3,13)<0 ||
+           field.AddUnit(Side::Hearthwell,Class::Engineer,2,13)<0 ||
+           field.AddUnit(Side::Hearthwell,Class::Heavy,5,12)<0)return false;
+        const Class regular=owner==2?Class::Sentinel:
+            owner==4?Class::Salvager:
+            owner==6?Class::Legionary:Class::Rifle;
+        const Class guard=owner==6?Class::Legionary:Class::Heavy;
+        if(field.AddUnit(Side::Raiders,regular,18,10)<0 ||
+           field.AddUnit(Side::Raiders,regular,18,14)<0 ||
+           field.AddUnit(Side::Raiders,guard,21,12)<0 ||
+           field.AddUnit(Side::Raiders,Class::Rifle,19,11)<0)return false;
+        battle_=field;
+        frontline_sector_=target;
+        deployed_=true;
+        rations_-=2;
+        return true;
+    }
     // Only the owned live Battle can be finalized; repeated resolution pays
     // no duplicate salvage/food and casualties are permanent.
     bool ResolveOperation() {
         if(!deployed_||battle_.result()==Result::Active)return false;
         if(convoy_source_>=0)return ResolveConvoyBattle();
+        if(frontline_sector_>=0)return ResolveFrontlineAssault();
         last_convoy_=false;
         last_convoy_source_=-1;
+        last_frontline_sector_=-1;
         last_=FrontierReport{};
         last_.operation=operation_;
         last_.outcome=battle_.result();
@@ -555,6 +612,48 @@ public:
         }
         return true;
     }
+    bool ResolveFrontlineAssault() {
+        if(!deployed_ || frontline_sector_<0 ||
+           frontline_sector_!=location_ ||
+           battle_.result()==Result::Active)return false;
+        FrontierSector &site=sectors_[frontline_sector_];
+        const unsigned defender=site.owner;
+        if(defender<1 || defender>kMajorFactions)return false;
+        last_=FrontierReport{};
+        last_.operation=operation_<kHearthfallOperations
+            ?operation_:kHearthfallOperations-1;
+        last_.outcome=battle_.result();
+        last_.pump_remaining=static_cast<uint8_t>(battle_.pump_hp());
+        last_.battle_ticks=battle_.ticks();
+        for(int i=0;i<battle_.unit_count();++i){
+            const Unit *u=battle_.unit(i);
+            if(!u || u->alive())continue;
+            if(u->side==Side::Hearthwell)++last_.defenders_lost;
+            else ++last_.enemies_lost;
+        }
+        guards_=guards_>=last_.defenders_lost
+            ?guards_-last_.defenders_lost:0;
+        if(last_.outcome==Result::Defended){
+            site.owner=kIndependentOwner;
+            site.claims=static_cast<uint8_t>(site.claims>=30?site.claims-30:0);
+            const int scrap=site.wreck_mass<12?site.wreck_mass:12;
+            site.wreck_mass=static_cast<uint16_t>(site.wreck_mass-scrap);
+            if(salvage_<=1000000-scrap)salvage_+=scrap;
+            AdjustRelation(static_cast<int>(defender),-15);
+            trust_=trust_<=96?trust_+4:100;
+        }else{
+            site.claims=static_cast<uint8_t>(site.claims>84?100:site.claims+16);
+            AdjustRelation(static_cast<int>(defender),-4);
+            trust_=trust_>=4?trust_-4:0;
+        }
+        last_convoy_=false;
+        last_convoy_source_=-1;
+        last_frontline_sector_=frontline_sector_;
+        frontline_sector_=-1;
+        deployed_=false;
+        AdvanceDay();
+        return true;
+    }
     bool ResolveConvoyBattle() {
         if(!deployed_ || convoy_source_<0 ||
            battle_.result()==Result::Active)return false;
@@ -616,6 +715,7 @@ public:
         }
         last_convoy_=true;
         last_convoy_source_=source;
+        last_frontline_sector_=-1;
         convoy_source_=-1;
         deployed_=false;
         AdvanceDay(); // battle returns to the full dated campaign simulation
@@ -628,6 +728,7 @@ public:
         add(population_);add(rations_);add(salvage_);add(trust_);
         add(pump_health_);add(bridge_);add(morphology_epoch_);add(deployed_);
         add(convoy_source_+1);add(last_convoy_);add(last_convoy_source_+1);
+        add(frontline_sector_+1);add(last_frontline_sector_+1);
         for(int faction=1;faction<=kMajorFactions;++faction)
             add(static_cast<uint8_t>(relations_[faction]));
         for(int i=0;i<kFrontierSectors;++i){
@@ -676,6 +777,7 @@ private:
     uint32_t morphology_epoch_=0;
     bool bridge_=false,deployed_=false;
     int convoy_source_=-1,last_convoy_source_=-1;
+    int frontline_sector_=-1,last_frontline_sector_=-1;
     bool last_convoy_=false;
     FrontierReport last_{};
 };

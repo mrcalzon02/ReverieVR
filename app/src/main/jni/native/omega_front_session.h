@@ -88,6 +88,7 @@ public:
                 switch(action){
                 case FieldAction::Deploy:
                     performed=frontier.StartOperation();
+                    if(!performed)performed=frontier.StartFrontlineAssault();
                     if(performed)EnterBattle();
                     break;
                 case FieldAction::Forage:performed=frontier.ForageRations();break;

@@ -22,7 +22,7 @@ public:
         Bytes bytes{};
         Writer w{bytes};
         for(char c : "OFSTRAT1") {if(!c)break;w.U8(static_cast<uint8_t>(c));}
-        w.U16(7);w.U16(0); // v7 records active intercepted supply convoys
+        w.U16(8);w.U16(0); // v8 adds persistent local frontline assaults
         const Frontier &f=s.frontier;
         w.U32(f.seed_);
         w.U8(static_cast<uint8_t>(s.focused));
@@ -71,6 +71,8 @@ public:
         w.U8(static_cast<uint8_t>(f.convoy_source_+1));
         w.U8(f.last_convoy_?1:0);
         w.U8(static_cast<uint8_t>(f.last_convoy_source_+1));
+        w.U8(static_cast<uint8_t>(f.frontline_sector_+1));
+        w.U8(static_cast<uint8_t>(f.last_frontline_sector_+1));
         if(!w.ok)return false;
         uint64_t hash=Hash(bytes.data(),kBytes-8);
         for(size_t i=kBytes-8;i<kBytes;++i){bytes[i]=static_cast<uint8_t>(hash);hash>>=8;}
@@ -87,7 +89,7 @@ public:
         Reader r{data,kBytes-8};
         for(char c:"OFSTRAT1"){if(!c)break;if(r.U8()!=static_cast<uint8_t>(c))return false;}
         const uint16_t schema=r.U16();
-        if((schema<1 || schema>7)||r.U16()!=0)return false;
+        if((schema<1 || schema>8)||r.U16()!=0)return false;
         uint32_t seed=r.U32();
         const int focus=r.U8();
         const unsigned view=r.U8(),action=r.U8();
@@ -188,7 +190,7 @@ public:
             const unsigned pending=r.U8(),wasConvoy=r.U8(),lastSource=r.U8();
             if(pending>kFrontierSectors || lastSource>kFrontierSectors ||
                wasConvoy>1 || (pending!=0 && !f.deployed_) ||
-               (pending==0 && f.deployed_ &&
+               (pending==0 && f.deployed_ && schema==7 &&
                     f.operation_==kHearthfallOperations) ||
                (wasConvoy==0 && lastSource!=0) ||
                (wasConvoy!=0 && (lastSource==0 ||
@@ -201,6 +203,27 @@ public:
                 f.intel_.level(f.convoy_source_)!=Intelligence::Surveyed))
                 return false;
         }
+        if(schema>=8) {
+            const unsigned frontline=r.U8(),lastFront=r.U8();
+            if(frontline>kFrontierSectors || lastFront>kFrontierSectors ||
+               (frontline!=0 && (!f.deployed_ || f.convoy_source_>=0 ||
+                                 f.location_!=static_cast<int>(frontline)-1)) ||
+               (lastFront!=0 && (f.last_convoy_ ||
+                                 f.last_.outcome==Result::Active)) ||
+               (f.deployed_ && f.operation_==kHearthfallOperations &&
+                frontline==0 && f.convoy_source_<0))return false;
+            f.frontline_sector_=static_cast<int>(frontline)-1;
+            f.last_frontline_sector_=static_cast<int>(lastFront)-1;
+            if(f.frontline_sector_>=0){
+                const unsigned owner=f.sectors_[f.frontline_sector_].owner;
+                if(owner<1 || owner>kMajorFactions ||
+                   f.intel_.level(f.frontline_sector_)!=Intelligence::Surveyed)
+                    return false;
+                for(int op=f.operation_;op<kHearthfallOperations;++op)
+                    if(Frontier::TargetForOperation(op)==f.frontline_sector_)
+                        return false;
+            }
+        }
         while(r.position<r.capacity){if(r.U8()!=0)return false;}
         if(!r.ok)return false;
         if(f.deployed_){
@@ -212,6 +235,15 @@ public:
                 if(nested_schema<3 ||
                    next.tactical.battle.mission()!=Mission::HoldPump ||
                    f.ConvoyAmbusher(f.convoy_source_)==0)return false;
+            }else if(f.frontline_sector_>=0){
+                const unsigned owner=f.sectors_[f.frontline_sector_].owner;
+                const Doctrine expected=owner==1?Doctrine::Hearthward:
+                    owner==2?Doctrine::Meridian:
+                    owner==4?Doctrine::Scrapline:
+                    owner==6?Doctrine::LostNinth:Doctrine::Unaligned;
+                if(nested_schema<3 ||
+                   next.tactical.battle.mission()!=Mission::CaptureOrchard ||
+                   next.tactical.battle.doctrine()!=expected)return false;
             }else{
                 if(f.operation_>=kHearthfallOperations || (nested_schema>=2 &&
                    next.tactical.battle.mission()!=Frontier::MissionForOperation(f.operation_)))return false;

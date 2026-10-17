@@ -1,3 +1,11 @@
+## 2026-10-16 — Omega Front: sector outpost warfare
+
+**INTENT:** Continue substantive native game code on the current authoritative GitHub main, without new automated tests or redundant build infrastructure. Based on previously source-integrated cargo convoy interceptions and 6 fixed story missions.
+
+**EXECUTE:** Game state now starts faction outpost assaults from DEPLOY on an occupied enemy sector, while reserving future authored campaign targets. Battles use existing CaptureOrchard win condition, 24x24 combat, actual enemy doctrine/units, persistent loss consequences and real capture of faction ownership. Win removes bounded claim pressure and transfers finite wreck mass to salvage; loss leaves enemy ownership and intensifies claims. Normal civilian and faction daily simulation resumes afterward. Existing war table has contextual attack/after-action labels; no additional controls. Fixed 2048-byte campaign save internal schema 8 adds two bounded frontline source/report bytes, preserving older 1-7 schema decoding.
+
+**OBSERVE/CLAIM:** The implementation and documentation can be committed to and read back from remote main. No native compilation, APK packaging, Galaxy S9 runtime validation, GitHub Actions or testing framework added. Do not claim runnable or device-accepted status without direct evidence.
+
 ## 2026-10-16 — Red Ledger five-tier property investment slice
 
 **INTENT:** Continue actual Between Deliveries play systems without misrepresenting proprietary Unreal .uasset data as imported, finished assets. Preflight verified current `main` and inspected the private Drive source tree, full-scope contract, stockroom, bar service, room actions and composite saving.

@@ -151,10 +151,18 @@ void DrawMap(State *s){
                                   (f.location()==14 && !f.bridge_repaired());
         const bool securing=session.action==game::FieldAction::Repair &&
                             !infrastructure;
-        std::snprintf(line,sizeof(line),"%s  %s  MENU CHANGE",
-                      securing?"SECURE":actions[static_cast<int>(session.action)],
-                      remote?"SELECT NEIGHBOR":"CLICK EXECUTE");
-        Text(s,line,-1.098f,.010f,.93f,.92f,.60f);
+        const bool attack=session.action==game::FieldAction::Deploy &&
+                          f.can_frontline_assault();
+        if(attack){
+            std::snprintf(line,sizeof(line),"ASSAULT OUTPOST F%02u  2 RATIONS  CLICK",
+                target?target->owner:0u);
+            Text(s,line,-1.098f,.010f,1.f,.72f,.40f);
+        }else{
+            std::snprintf(line,sizeof(line),"%s  %s  MENU CHANGE",
+                          securing?"SECURE":actions[static_cast<int>(session.action)],
+                          remote?"SELECT NEIGHBOR":"CLICK EXECUTE");
+            Text(s,line,-1.098f,.010f,.93f,.92f,.60f);
+        }
     }
     if(f.operation()<game::kHearthfallOperations){
         std::snprintf(line,sizeof(line),"%d/%d %s  S%03d F%02u REL %d",
@@ -162,7 +170,15 @@ void DrawMap(State *s){
             game::Frontier::OperationName(f.operation()),f.target_sector()+1,
             f.operation_faction(),f.relation(f.operation_faction()));
         Text(s,line,-1.194f,.009f,.78f,.90f,.93f);
-    }else Text(s,"HEARTHFALL SIX OPERATIONS COMPLETE",-1.194f,.009f,.78f,.94f,.76f);
+    }else Text(s,"HEARTHFALL COMPLETE  OUTPOST WAR CONTINUES",
+                 -1.194f,.009f,.78f,.94f,.76f);
+    if(f.last_frontline()){
+        std::snprintf(line,sizeof(line),"LAST ASSAULT S%03d  %s  LOST %u",
+            f.last_frontline_sector()+1,
+            f.last_report().outcome==game::Result::Defended?"SECURED":"REPULSED",
+            f.last_report().defenders_lost);
+        Text(s,line,.73f,.009f,.97f,.75f,.48f);
+    }
     if(f.last_convoy()){
         std::snprintf(line,sizeof(line),"LAST CONVOY S%03d %s  LOST %u",
             f.last_convoy_source()+1,
@@ -255,6 +271,7 @@ void Draw(State *s){
     Rect(s,0,kCenterY,2*kHalf+.035f,2*kHalf+.035f,kBoardZ-.04f,.21f,.28f,.20f);
     const game::Battle &battle=s->session.tactical.battle;
     const bool defendingConvoy=s->session.frontier.convoy_battle();
+    const bool frontlineBattle=s->session.frontier.frontline_battle();
     for(int y=0;y<game::kWidth;++y)for(int x=0;x<game::kWidth;++x){
         float wx=(x+.5f)*kCell-kHalf;
         float wy=kCenterY+kHalf-(y+.5f)*kCell;
@@ -331,6 +348,10 @@ void Draw(State *s){
     if(defendingConvoy)
         std::snprintf(status,sizeof(status),"ESCORT WAGON HP %d  AMMO %d  TICK %u",
                       battle.pump_hp(),battle.ammo_stock(),battle.ticks());
+    else if(frontlineBattle)
+        std::snprintf(status,sizeof(status),"TAKE OUTPOST S%03d  HOLD %d/3  TICK %u",
+            s->session.frontier.location()+1,
+            battle.objective_progress(),battle.ticks());
     else if(battle.mission()==game::Mission::CaptureOrchard) {
         const int op=s->session.frontier.operation();
         const char *site=op==4?"CHARTER GATE":op==5?"CARAVAN FORD":"ORCHARD";
@@ -363,10 +384,12 @@ void Draw(State *s){
     char action[90];
     if(battle.result()==game::Result::Defended)
         std::snprintf(action,sizeof(action),defendingConvoy?
-                      "WAGON SAVED  CLICK REPORT":"DEFENDED  CLICK REPORT");
+                      "WAGON SAVED  CLICK REPORT":frontlineBattle?
+                      "OUTPOST TAKEN  CLICK REPORT":"DEFENDED  CLICK REPORT");
     else if(battle.result()==game::Result::Overrun)
         std::snprintf(action,sizeof(action),defendingConvoy?
-                      "CONVOY LOST  CLICK REPORT":"OVERRUN  CLICK REPORT");
+                      "CONVOY LOST  CLICK REPORT":frontlineBattle?
+                      "ASSAULT LOST  CLICK REPORT":"OVERRUN  CLICK REPORT");
     else if(s->session.tactical.paused)std::snprintf(action,sizeof(action),"%s",
         s->session.tactical.selected<0?"PAUSED  MENU RESUME":"PAUSED  CLICK UNIT TO CLEAR");
     else if(s->session.tactical.selected<0)std::snprintf(action,sizeof(action),"PICK A GREEN UNIT  CLICK");
