@@ -256,6 +256,39 @@ public:
         salvage_-=3;pump_health_=pump_health_+6>18?18:pump_health_+6;
         return true;
     }
+    // One escorted one-day cart convoy from an adjacent surveyed depot.
+    // Supplies physically leave the source and enter the commander's sector.
+    // Hearthward Orchard grants collection rights only after winning M02;
+    // foreign depots never silently become free Hearthwell inventory.
+    bool can_convoy(int source) const {
+        if(deployed_ || guards_<2 || rations_<1 || !can_travel(source) ||
+           intel_.level(source)!=Intelligence::Surveyed)return false;
+        const FrontierSector &from=sectors_[source];
+        const FrontierSector &here=sectors_[location_];
+        if(from.claims>=60 ||
+           !(from.owner==kIndependentOwner ||
+             (source==5 && operation_>=2) ||
+             (from.owner==0 && from.claims<30)))return false;
+        return (from.food>0 && here.food<65535u) ||
+               (from.water>0 && here.water<65535u);
+    }
+    bool Convoy(int source) {
+        if(!can_convoy(source))return false;
+        FrontierSector &from=sectors_[source];
+        FrontierSector &here=sectors_[location_];
+        const unsigned food=from.food<8u?from.food:8u;
+        const unsigned water=from.water<6u?from.water:6u;
+        const unsigned foodMoved=food<65535u-here.food?food:65535u-here.food;
+        const unsigned waterMoved=water<65535u-here.water?water:65535u-here.water;
+        if(foodMoved==0 && waterMoved==0)return false;
+        from.food=static_cast<uint16_t>(from.food-foodMoved);
+        from.water=static_cast<uint16_t>(from.water-waterMoved);
+        here.food=static_cast<uint16_t>(here.food+foodMoved);
+        here.water=static_cast<uint16_t>(here.water+waterMoved);
+        --rations_; // escort consumes a real field ration
+        AdvanceDay(); // ordinary consumption, farms, pump and debts all advance
+        return true;
+    }
     bool ForageRations() {
         if(deployed_ || sectors_[location_].ecology!=Ecology::Eden ||
            sectors_[location_].food<6 || rations_>90)return false;

@@ -1,3 +1,13 @@
+## 2026-10-16 — Omega Front supply convoy gameplay / microtest retirement
+
+**INTENT:** implement gameplay on `main` instead of building more incremental testing scaffolds, as explicitly directed. Original Omega Front source-only baseline included the eight-action war table and schema-6 fixed campaign saves.
+
+**IMPLEMENTATION:** on the existing remote-sector FORAGE action, `Session::Input` now calls `Frontier::Convoy`: take bounded food/water from an adjacent surveyed eligible depot into the current sector, paying one field ration, requiring two guards, and advancing a real campaign day. Only independent, low-pressure neutral, or M02-secured White Orchard stores qualify; high claims, blocked roads, enemy owners, unsurveyed sectors, full destinations, insufficient supplies or deployed battles are rejected. The old local FORAGE interaction remains. The native strategy HUD shows convoy availability. Real depot resources, mission effects and the existing codec persist changes without altering action count, save version, shell, or unrelated games.
+
+**SCOPE CLEANUP:** removed the 23-case standalone runner `scripts/verify-omega-front-tactics.sh` and seven one-rule helper fixture files as requested; remaining broader campaign game fixtures are not wired to any ongoing runner. No new tests or infrastructure added.
+
+**OBSERVATION LIMIT:** authoritative GitHub source edit and remote acceptance are the only intended claims this pass. No Android game build, local native compiler execution, APK install, or Galaxy S9/Daydream gameplay is claimed. Further effort should build game features and run the playable app, not proliferate small test programs.
+
 ## 2026-10-16 — Breakwater muzzle/beach ballistic reach root-cause correction
 
 **OBSERVED:** During armored-car integration, the real cannon model's -0.88-z breech offset placed its barrel mouth around z=-2.3, already seaward of deployed armor z=-2.23→-1.56 and infantry z=-2.28→-1.34. After last pass correctly removed free controller-origin shooting, these nearby shore combatants became unreachable. This is a geometry/root-cause issue, not a collision-radius or automatic-hit problem.

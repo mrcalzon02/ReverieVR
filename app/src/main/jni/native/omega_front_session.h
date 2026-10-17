@@ -74,7 +74,8 @@ public:
         if(in.primary && !primary_){
             bool performed=false;
             if(focused!=frontier.location()){
-                if(action==FieldAction::Scout)performed=frontier.Scout(focused);
+                if(action==FieldAction::Forage)performed=frontier.Convoy(focused);
+                else if(action==FieldAction::Scout)performed=frontier.Scout(focused);
                 else if(action==FieldAction::Parley)performed=frontier.Negotiate(focused);
                 else if(action==FieldAction::Accord)performed=frontier.ConcludeAccord(focused);
                 else performed=frontier.Travel(focused);

@@ -1,5 +1,14 @@
 # Omega Front — Hearthfall Strategy and Tactical Implementation
 
+## Playable supply convoys (2026-10-16)
+
+The existing eight-action war table now gives **FORAGE** two useful contexts without extra menu layers or a save migration. On the current sector, FORAGE still converts six local food to four field rations. While focused on an **adjacent surveyed sector**, FORAGE instead sends an escorted one-day convoy to collect up to eight existing food and six water from that neighbor into the commander's current sector. The source is debited before the destination is credited; one field ration is consumed, and all normal daily demands, production, environmental changes, and treaty obligations advance. Two guards remain necessary as escorts. A full destination depot, blocked crossing, too few rations/guards, unscouted source, claim pressure at least 60, or hostile foreign ownership rejects the action without a cargo transfer.
+
+The commander can draw on friendly independent sectors and low-pressure neutral stores, including Lantern Pump when accessible. **Winning M02 White Orchard** grants supply access to that orchard's physically continuing harvest without inventing a territory seizure. Enemy depots remain inaccessible. Completed checkpoint/ford battles can open additional friendly supply routes. The war table shows a compact convoy availability prompt and retains the existing denial feedback. Convoys operate only across one traversable sector edge: no teleportation, free hostile plunder, new persistent flags, new action ID, shell modification or schema-6 save change. No host/device build claim is made.
+
+At the creator's direction, the repetitive standalone Omega Front microtest runner has been retired; small single-rule test fixtures are removed, while existing full-play campaign fixture sources remain as historical references, not an ongoing verification program. Implementation work should prioritize game functionality and actual playable acceptance instead of proliferating validation scaffolds.
+
+
 ## Staffed Eden food and water production (P3l, 2026-10-16)
 
 `Frontier::AdvanceDay` still spends real Hearthwell civilian food/water first, then generates bounded physical stocks only at inhabited, stable, non-anomalous Eden sectors. `omega_front_production.h` is the deterministic allocation-free yield policy: civilian numbers bound output; stability below 35, anomalies, zero residents, and non-Eden sites stop output; instability and severe claims reduce harvest. Existing site stock is saturated at 65,535 to preserve the schema-6 16-bit storage contract. Production stays in each site's depot; faction-owned food is not credited to Hearthwell and command rations are not silently created.

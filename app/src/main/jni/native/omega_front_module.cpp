@@ -110,7 +110,14 @@ void DrawMap(State *s){
         const bool recon=session.action==game::FieldAction::Scout;
         const bool parley=session.action==game::FieldAction::Parley;
         const bool accord=session.action==game::FieldAction::Accord;
-        if(recon||parley||accord){
+        const bool convoy=session.action==game::FieldAction::Forage;
+        if(convoy){
+            const bool available=f.can_convoy(session.focused);
+            Text(s,available?"CONVOY IN  UP TO 8 FOOD 6 WATER  CLICK":
+                "CONVOY UNAVAILABLE  NEED ROUTE RATION ESCORT",
+                -1.098f,.010f,available?.70f:1.f,
+                available?.95f:.43f,.63f);
+        }else if(recon||parley||accord){
             std::snprintf(line,sizeof(line),"%s  CLICK  MENU CHANGE",
                           recon?"SCOUT":parley?"PARLEY":"ACCORD");
             Text(s,line,-1.098f,.011f,.91f,.90f,.64f);
