@@ -149,6 +149,7 @@ struct GunboatSalvoEvent {
     uint32_t sequence = 0;
     float x = 0, z = 0; // firing vessel position at the actual salvo
     uint8_t damage = 0; // actual hull loss, clamped at zero integrity
+    bool armored_transport = false; // heavy ship's distinct deck cannon
 };
 // A surviving gunboat reaching shore inflicts separate collision damage.
 // This is not a gun salvo; its effect belongs at the vessel's last position.
