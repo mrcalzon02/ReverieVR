@@ -1,6 +1,7 @@
 #include "breakwater_campaign.h"
 #include "breakwater_checkpoint.h"
 #include "breakwater_silhouettes.h"
+#include "breakwater_armor.h"
 #include "breakwater_sprite_atlas.h"
 #include "breakwater_terrain.h"
 #include "breakwater_cover.h"
@@ -34,6 +35,10 @@
 namespace {
 using namespace reverie::breakwater;
 constexpr float kShopZ = -3.0f;
+// Preserve existing vessel, infantry and cover target IDs.
+constexpr int kArmorTargetBase=kCoverTargetEnd;
+constexpr int kArmorTargetEnd=kArmorTargetBase+
+    static_cast<int>(Campaign::kMaxArmor);
 struct State {
     const ReverieNativeHostV1 *host = nullptr;
     Campaign campaign{Difficulty::Regular, 1049u};
@@ -59,6 +64,9 @@ struct State {
     AircraftAimFeedback aircraft_aim;
     SurfaceAimFeedback surface_aim;
     int cover_aim_index=-1;
+    int armor_aim_index=-1;
+    float armor_flash=0.0f;
+    float armor_flash_x=0.0f,armor_flash_z=0.0f;
     AircraftHitFeedback aircraft_hit;
     CombatInputLatch combat_input;
     PointerFocusGate pointer_focus;
@@ -183,6 +191,18 @@ int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game,
                 index=static_cast<int>(Campaign::kMaxEnemies)+i;
             }
         }
+    // Individual deployed armored cars are independent real ballistic
+    // targets, never the same hitbox as their already-disembarked transport.
+    if(!ghost)for(uint8_t i=0;i<game.armored_vehicles().size();++i) {
+        float depth=0.0f;
+        if(armor::Hits(game.armored_vehicles()[i],input.pointer_origin,
+                       input.pointer_direction,
+                       game.stats().projectile_gravity,&depth) &&
+           depth<best) {
+            best=depth;
+            index=kArmorTargetBase+i;
+        }
+    }
     // Physical cover occludes only when its exact ballistic hit is closer.
     if(!ghost) {
         float wallDepth=0.0f;
@@ -378,7 +398,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             Campaign::kMaxEnemies) && target<kCoverTargetBase;
         const bool coverTarget=target>=kCoverTargetBase &&
             target<kCoverTargetEnd;
-        const int16_t targetHp=enemyTarget?game.enemies()[target].hp:0;
+        const bool armorTarget=target>=kArmorTargetBase &&
+            target<kArmorTargetEnd;
+        const int16_t targetHp=enemyTarget?game.enemies()[target].hp:
+            armorTarget?game.armored_vehicles()[target-kArmorTargetBase].hp:0;
         const Enemy enemyBefore=enemyTarget?game.enemies()[target]:Enemy{};
         const float gravity=game.stats().projectile_gravity;
         if(enemyTarget)
@@ -393,6 +416,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             ProjectileHitsCover(cannon_input.pointer_origin,
                 cannon_input.pointer_direction,gravity,
                 game.shore_cover()[target-kCoverTargetBase],&impactDepth);
+        } else if(armorTarget) {
+            armor::Hits(game.armored_vehicles()[target-kArmorTargetBase],
+                        cannon_input.pointer_origin,
+                        cannon_input.pointer_direction,gravity,&impactDepth);
         }
         bool shot=false;
         if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies))
@@ -403,6 +430,9 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         else if(coverTarget)
             shot=game.FireAtCover(static_cast<uint8_t>(
                 target-kCoverTargetBase));
+        else if(armorTarget)
+            shot=game.FireAtArmor(static_cast<uint8_t>(
+                target-kArmorTargetBase));
         else if(in_arc)
             shot=game.FireMiss();
         if(shot){
@@ -418,6 +448,17 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 if(enemyTarget) {
                     if(game.enemies()[target].hp<targetHp) {
                         const bool destroyed=!game.enemies()[target].active;
+                        s->impacts.RecordHit(hit,down,.001f,
+                            destroyed?ImpactKind::Explosion:ImpactKind::Metal);
+                        BattleSound(s,destroyed?
+                            REVERIE_NATIVE_SOUND_BOAT_DESTROYED:
+                            REVERIE_NATIVE_SOUND_HULL_IMPACT);
+                    }
+                } else if(armorTarget) {
+                    const ArmoredVehicle &vehicle=game.armored_vehicles()[
+                        target-kArmorTargetBase];
+                    const bool destroyed=!vehicle.active;
+                    if(vehicle.hp<targetHp) {
                         s->impacts.RecordHit(hit,down,.001f,
                             destroyed?ImpactKind::Explosion:ImpactKind::Metal);
                         BattleSound(s,destroyed?
@@ -599,6 +640,30 @@ void BuildScene(State *s) {
             bank=std::isfinite(e.bank)?e.bank:0.0f;
         }
         AppendSprite(s->sprite_mesh,sprite,e.x,y,e.z,width,height,bank);
+    }
+    for(const ArmoredVehicle &vehicle:game.armored_vehicles())
+        EmitArmoredVehicleSilhouette(vehicle,
+            [s](auto... values){Box(s,values...);},
+            [s](auto... values){Triangle(s,values...);});
+    // A confirmed armored-gun shot flashes at the live vehicle's muzzle.
+    if(s->armor_flash>0.0f)
+        Box(s,s->armor_flash_x,-.53f,s->armor_flash_z+.75f,
+            .19f,.15f,.20f,1.0f,.79f,.32f);
+    if(s->armor_aim_index>=0 &&
+       s->armor_aim_index<static_cast<int>(Campaign::kMaxArmor)) {
+        const ArmoredVehicle &vehicle=game.armored_vehicles()[
+            static_cast<size_t>(s->armor_aim_index)];
+        if(vehicle.active) {
+            const float x=vehicle.x,z=vehicle.z+.04f;
+            // Target bracket around the real small tracked silhouette.
+            for(int side : {-1,1}) {
+                const float edge=x+side*.46f;
+                Triangle(s,edge,-.35f,z,edge,-.51f,z,
+                         edge-side*.11f,-.35f,z,.96f,.69f,.33f);
+                Triangle(s,edge,-1.03f,z,edge,-.88f,z,
+                         edge-side*.11f,-1.03f,z,.96f,.69f,.33f);
+            }
+        }
     }
     if(s->surface_aim.visible) {
         // Same exact CombatTarget ray as weapon damage. These small world-
@@ -948,6 +1013,20 @@ void BuildScene(State *s) {
                 Text(s,label,0,-.43f,-1.79f,.046f,.69f,1.0f,.78f);
             }
         }
+        if(s->armor_aim_index>=0 &&
+           s->armor_aim_index<static_cast<int>(Campaign::kMaxArmor)) {
+            const ArmoredVehicle &vehicle=game.armored_vehicles()[
+                static_cast<size_t>(s->armor_aim_index)];
+            if(vehicle.active) {
+                char armor_label[36];
+                std::snprintf(armor_label,sizeof(armor_label),
+                    "ARMORED CAR HP %d/%d",static_cast<int>(vehicle.hp),
+                    static_cast<int>(armor::kVehicleHp));
+                Panel(s,0,-.43f,-1.82f,3.02f,.31f,.19f,.22f,.18f);
+                Text(s,armor_label,0,-.43f,-1.79f,.039f,
+                     1.0f,.84f,.58f);
+            }
+        }
         if(s->cover_aim_index>=0 &&
            s->cover_aim_index<static_cast<int>(Campaign::kMaxCover)) {
             const ShoreCover &wall=game.shore_cover()[
@@ -1168,6 +1247,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->infantry_flash=std::max(0.0f,s->infantry_flash-copy.delta_seconds);
     s->gunboat_salvo_flash=std::max(0.0f,
         s->gunboat_salvo_flash-copy.delta_seconds);
+    s->armor_flash=std::max(0.0f,s->armor_flash-copy.delta_seconds);
     s->battery_damage.Tick(copy.delta_seconds);
     s->aircraft_hit.Tick(copy.delta_seconds);
     s->impacts.Tick(copy.delta_seconds);
@@ -1179,6 +1259,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         const uint32_t air_before=s->campaign.aircraft_attack().sequence;
         const uint32_t gunboat_before=s->campaign.gunboat_salvo().sequence;
         const uint32_t collision_before=s->campaign.gunboat_collision().sequence;
+        const uint32_t armor_before=s->campaign.armor_shot().sequence;
         const int32_t hull_before=s->campaign.integrity();
         const auto enemies_before=s->campaign.enemies();
         s->campaign.Tick(copy.delta_seconds);
@@ -1211,6 +1292,16 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             const float parapet[]={0.0f,-.70f,-.94f};
             const float down[]={0.0f,-1.0f,0.0f};
             s->impacts.RecordHit(parapet,down,.12f,ImpactKind::Metal);
+            BattleSound(s,REVERIE_NATIVE_SOUND_GUNBOAT_SALVO);
+        }
+        const ArmorShotEvent armored=s->campaign.armor_shot();
+        if(armored.sequence!=armor_before && armored.damage>0) {
+            s->armor_flash_x=armored.x;s->armor_flash_z=armored.z;
+            s->armor_flash=.14f;
+            const float parapet[]={std::max(-.9f,std::min(.9f,armored.x*.3f)),
+                                   -.76f,-.94f};
+            const float down[]={0.0f,-1.0f,0.0f};
+            s->impacts.RecordHit(parapet,down,.11f,ImpactKind::Metal);
             BattleSound(s,REVERIE_NATIVE_SOUND_GUNBOAT_SALVO);
         }
         const GunboatCollisionEvent collision=s->campaign.gunboat_collision();
@@ -1288,7 +1379,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                           s->ghost_position);
     }
     s->aim_ray_valid=false;
-    s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;
+    s->aircraft_aim={};s->surface_aim={};
+    s->cover_aim_index=-1;s->armor_aim_index=-1;
     if(s->campaign.phase()==Phase::Combat &&
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
         const bool cannon_valid=trajectory::CannonShot(
@@ -1306,6 +1398,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                 CombatTarget(target_input,s->campaign,false):-1);
         s->cover_aim_index=target>=kCoverTargetBase &&
             target<kCoverTargetEnd?target-kCoverTargetBase:-1;
+        s->armor_aim_index=target>=kArmorTargetBase &&
+            target<kArmorTargetEnd?target-kArmorTargetBase:-1;
         s->aircraft_aim=InspectAircraftAim(s->campaign,target);
         // Special SAM support retains the independent handheld lock; every
         // other mount targets with its own real cannon-origin trajectory.
