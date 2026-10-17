@@ -33,6 +33,21 @@ inline Vec Normalize(Vec v) {
     const float l=std::sqrt(Dot(v,v));
     return l>0.0001f && std::isfinite(l)?Scale(v,1.f/l):Vec{0.f,0.f,-1.f};
 }
+// Shared with combat targeting. This exactly matches the gun mesh's
+// moving barrel tip, not a controller offset or approximated camera ray.
+inline bool Muzzle(WeaponKind kind,const float* direction,float flash,Vec* out) {
+    if(!out || !direction ||
+       !std::isfinite(direction[0]) ||
+       !std::isfinite(direction[1]) ||
+       !std::isfinite(direction[2]))return false;
+    const float length2=Dot({direction[0],direction[1],direction[2]},
+                            {direction[0],direction[1],direction[2]});
+    if(!std::isfinite(length2) || length2<.000001f)return false;
+    const Vec aim=Normalize({direction[0],direction[1],direction[2]});
+    const Vec mount={0.f,-.76f,-.88f};
+    *out=Add(mount,Scale(aim,BarrelLength(kind)-RecoilDistance(flash)));
+    return true;
+}
 inline Vec RingPoint(Vec center,Vec right,Vec up,float radius,int i) {
     const float theta=2.f*kPi*static_cast<float>(i)/static_cast<float>(kSides);
     return Add(center,Add(Scale(right,radius*std::cos(theta)),
