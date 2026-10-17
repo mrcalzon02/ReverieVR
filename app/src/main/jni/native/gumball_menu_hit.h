@@ -30,6 +30,13 @@ struct MenuPointerFocus {
         return true;
     }
 };
+// A ray-owned click must land on an actual rendered button. D-pad
+// selection is authoritative while the player is navigating by pad,
+// and no-controller operation must continue using the focused item.
+inline bool MenuClickAllowed(bool rayPresent,bool padOwnsFocus,
+                             bool padMoving,const MenuHit& pointed){
+    return !rayPresent||padOwnsFocus||padMoving||pointed.id>=0;
+}
 inline MenuHit ChartHit(float x,float y){
     for(int i=0;i<3;++i){
         if(MenuInside(x,y,kChartRouteX[i],.22f,1.44f,1.09f))
