@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_wave_schedule.h"
 #include "breakwater_infantry_tactics.h"
 #include "breakwater_cover.h"
 #include <algorithm>
@@ -94,15 +95,9 @@ uint32_t Campaign::Hash(uint32_t tag) const {
     return x ^ (x >> 16);
 }
 uint8_t Campaign::waves_this_period() const {
-    // An actual long-form battery campaign: 244 to 352 distinct shop-separated
-    // assaults over the nine days / eighteen day-night periods. The cap stays
-    // well below the on-disk 32-bit index and the in-memory uint8_t index.
-    // Craft per individual wave remain pool-bounded by NextCount().
-    const unsigned difficulty = Tier(difficulty_);
-    const unsigned base = period_ == Period::Day ? 12u : 8u;
-    return static_cast<uint8_t>(std::min<unsigned>(
-        32u, base + 2u*difficulty +
-        static_cast<unsigned>(day_ - 1u) + 2u*location_));
+    // One schedule owns both the campaign's progress and its native tests.
+    return waves::ForPeriod(location_,day_,period_==Period::Night,
+                            Tier(difficulty_));
 }
 Stats Campaign::stats() const {
     Stats s;
