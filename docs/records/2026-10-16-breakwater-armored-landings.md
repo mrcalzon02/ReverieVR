@@ -38,7 +38,12 @@ hidden this problem by generating imaginary near-shore hits.
 `breakwater_gun_mesh.h` now defines one shared
 `kMount={0.f,-.76f,.65f}` for live model mesh, recoil/muzzle flash and
 `Muzzle` lookup, with a matching low, rear carriage base in
-`breakwater_module.cpp`. Every muzzle now sits landward of the
+`breakwater_module.cpp`. An immediate follow-up inspection found that
+the former fixed wheel hubs, shield faces and bracing triangles still used
+their old absolute offshore z coordinates; these were also moved relative
+to `kMount.z`, keeping the complete gun/chassis assembly intact. The
+barrel alone retains its confirmed-shot recoil while the carriage stays
+fixed. Every muzzle now sits landward of the
 beach's combatant hit spheres; no hand-ray origin fallback was added.
 Extended `breakwater_cannon_trajectory_test.cpp` explicitly shoots
 the real soldier fire-line sphere and armored-car sphere from all five
