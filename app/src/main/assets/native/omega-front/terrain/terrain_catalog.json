@@ -284,6 +284,246 @@
       "ground_category": "rubble",
       "visual_cover_hint": 2,
       "git_blob_sha": "24a6c7a05444355b06284867ca730ec9e9935ce1"
+    },
+    {
+      "id": "snow_ground",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/snow_ground.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "b801b93cd7b5201cdc624d90ab2f47b189a3cc27",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          29,
+          686,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
+    },
+    {
+      "id": "ice_sheet",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/ice_sheet.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "0a1a5b6f73e464f7d6d7e5a6c020f3a130bddcc3",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          180,
+          686,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
+    },
+    {
+      "id": "deep_water",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/deep_water.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "deep_water",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "5361542f86c320e18ca4c9dbafcca3886144149e",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          481,
+          501,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
+    },
+    {
+      "id": "black_glass",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/black_glass.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "rubble",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "19c9ce77215b369a9564c652adee1630a13da1c6",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          785,
+          309,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
+    },
+    {
+      "id": "reed_marsh",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/reed_marsh.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "74361f9693e8224cab38d2a333d11cd1cadf1cba",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          30,
+          500,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
+    },
+    {
+      "id": "fungal_growth",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/fungal_growth.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "da9522249ad886a3f28460d7dc18fd9a335b0a9a",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          332,
+          873,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
+    },
+    {
+      "id": "farmland_tilled",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/farmland_tilled.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "e50acc11a1883d9369a1921ea5f8a26e022edd8c",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          1103,
+          311,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
+    },
+    {
+      "id": "farmland_wheat",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/farmland_wheat.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "8b36d3d60f3c4ab1029d757c29a616fe36f7b824",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          1268,
+          311,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
+    },
+    {
+      "id": "dead_forest_floor",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/dead_forest_floor.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 1,
+      "git_blob_sha": "ad887d633c882cd6fba00e16f7bb87df760dce9a",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          636,
+          873,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
+    },
+    {
+      "id": "leaf_litter",
+      "batch": 3,
+      "path": "app/src/main/assets/native/omega-front/terrain/leaf_litter.png",
+      "width_px": 64,
+      "height_px": 64,
+      "footprint": [
+        1,
+        1
+      ],
+      "ground_category": "plain",
+      "visual_cover_hint": 0,
+      "git_blob_sha": "ad24a3147b5179f31d1dcc96b94d4e5b6835940b",
+      "provenance": {
+        "source_art": "omega_front_terrain_tileset_sheet.png",
+        "source_crop_rect": [
+          785,
+          872,
+          116,
+          116
+        ],
+        "method": "crop isolated original concept tile; resample to 64px"
+      }
     }
   ],
   "acceptance": {
@@ -292,5 +532,5 @@
     "renderer_integration": "not yet wired to GL texture loading",
     "headset_runtime": "not verified"
   },
-  "notes": "Raw PNGs in app/src/main/assets/native/omega-front/terrain. Current Omega Front native tactical renderer draws geometry; these pixel textures are not yet sampled in GLES2."
+  "notes": "30 individual 64x64 PNGs committed from Omega Front artwork, stored as actual Android assets; native GLES2 texture-sampling/render integration still pending. Original concept-art crops in batch 3 are disclosed explicitly."
 }
