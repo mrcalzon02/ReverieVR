@@ -55,6 +55,7 @@ struct State {
     bool world_lighting=false,world_night=false;
     bool world_palette_already_lit=false;
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
+    bool weapon_axis_latched = false;
     float flash = 0.0f, elapsed = 0.0f, reload_ready_flash = 0.0f;
     float turret_flash = 0.0f, infantry_flash = 0.0f;
     float gunboat_salvo_flash = 0.0f, gunboat_salvo_x = 0.0f;
@@ -988,6 +989,8 @@ void BuildScene(State *s) {
             WeaponFor(game.selected_weapon()).name,
             static_cast<unsigned>(game.magazine_left()));
         Text(s,ammo,0,.93f,-1.79f,.055f,.88f,.9f,.68f);
+        Text(s,"PAD LEFT/RIGHT SWITCH",0,.29f,-1.79f,.030f,
+             .75f,.87f,.76f);
         if(game.reloading()) {
             // Bounded progress bar: computed once during update, rendered
             // as the same scene geometry for both eyes.
@@ -1317,6 +1320,7 @@ void Pause(void *instance) {
     s->aim_ray_valid=false;
     s->held=false;
     s->secondary_held=false;
+    s->weapon_axis_latched=false;
     s->combat_input.Release();
     s->infantry_flash=0.0f;
     s->infantry_firing_mask=0u;
@@ -1498,6 +1502,26 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         }
         if(s->campaign.phase()==Phase::Shop)SaveState(s);
     }
+    // Accessible controller-axis weapon cycling: one change per deflection.
+    // A centered axis rearms it; holding a direction cannot spin weapons.
+    if(s->campaign.phase()==Phase::Combat) {
+        if(std::abs(copy.move_x)<.35f)s->weapon_axis_latched=false;
+        const int direction=copy.move_x>.75f?1:copy.move_x<-.75f?-1:0;
+        if(direction && !s->weapon_axis_latched) {
+            s->weapon_axis_latched=true;
+            const int start=static_cast<int>(s->campaign.selected_weapon());
+            bool changed=false;
+            for(int offset=1;offset<kWeaponCount;++offset) {
+                const int index=(start+direction*offset+kWeaponCount*2)%kWeaponCount;
+                const WeaponKind next=static_cast<WeaponKind>(index);
+                if(s->campaign.owns_weapon(next) && s->campaign.SelectWeapon(next)) {
+                    changed=true;s->sam_armed=false;break;
+                }
+            }
+            Feedback(s,changed?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                               REVERIE_NATIVE_FEEDBACK_FAILURE);
+        }
+    } else s->weapon_axis_latched=false;
     bool started_reload=false;
     if(secondary && !s->secondary_held &&
        s->campaign.phase()==Phase::Combat) {
