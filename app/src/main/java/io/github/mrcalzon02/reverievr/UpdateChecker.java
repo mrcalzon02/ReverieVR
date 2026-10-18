@@ -219,7 +219,8 @@ final class UpdateChecker implements AutoCloseable {
             JSONObject releaseJson =
                 releases.optJSONObject(index);
             if (releaseJson == null
-                || releaseJson.optBoolean("draft", false)) {
+                || releaseJson.optBoolean("draft", false) ||
+                !isHubReleaseTag(releaseJson.optString("tag_name",""))) {
                 continue;
             }
 
@@ -284,6 +285,13 @@ final class UpdateChecker implements AutoCloseable {
             null,
             "Installed version is current."
         );
+    }
+
+    // Native game releases have an independent signed catalog and updater.
+    // They must never enter the shell APK-install flow, even when a module
+    // release contains its own companion APK asset.
+    static boolean isHubReleaseTag(String tag){
+        return tag!=null && !tag.startsWith("module-");
     }
 
     private static int compareReleaseOrder(

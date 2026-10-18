@@ -7,6 +7,15 @@ import org.junit.Test;
 
 public final class UpdateCheckerTest {
     @Test
+    public void perGameReleaseNeverUpdatesTheHubApk() {
+        assertFalse(UpdateChecker.isHubReleaseTag("module-red-ledger-v0.3.0"));
+        assertFalse(UpdateChecker.isHubReleaseTag("module-breakwater-v1.0.0"));
+        assertFalse(UpdateChecker.isHubReleaseTag("module-omega-front-v0.9.0"));
+        assertTrue(UpdateChecker.isHubReleaseTag("phone-test-42-1"));
+        assertTrue(UpdateChecker.isHubReleaseTag("host-v0.2.0"));
+    }
+
+    @Test
     public void newerPhoneTestRunWins() {
         assertTrue(
             UpdateChecker.isPhoneTestNewer(
