@@ -63,10 +63,27 @@ final class TestChamberModels {
                 images=gltf.getJSONArray("images"),
                 textures=gltf.getJSONArray("textures"),
                 materials=gltf.getJSONArray("materials"),
-                meshes=gltf.getJSONArray("meshes");
+                meshes=gltf.getJSONArray("meshes"),
+                nodes=gltf.getJSONArray("nodes");
             if(meshes.length()>8||materials.length()>16)
                 throw new IOException("Excessive static-mesh components");
             for(int mi=0;mi<meshes.length();mi++){
+                // Blender's separate door handle is a child node with a
+                // local translation. Flatten nodes before uploading static
+                // world-space triangle arrays; preserve real model geometry.
+                float[] offset=new float[3];
+                for(int ni=0;ni<nodes.length();ni++){
+                    JSONObject node=nodes.getJSONObject(ni);
+                    if(node.optInt("mesh",-1)!=mi)continue;
+                    JSONArray xyz=node.optJSONArray("translation");
+                    if(xyz!=null){
+                        if(xyz.length()!=3)throw new IOException("Malformed glTF node translation");
+                        for(int axis=0;axis<3;axis++)
+                            offset[axis]=(float)xyz.getDouble(axis);
+                    }
+                    if(node.has("rotation")||node.has("scale"))
+                        throw new IOException("Unimplemented model rotation/scale; reject instead of deforming");
+                }
                 JSONArray pieces=meshes.getJSONObject(mi).getJSONArray("primitives");
                 if(pieces.length()>16)throw new IOException("Excessive GLB primitives");
                 for(int pi=0;pi<pieces.length();pi++){
@@ -95,11 +112,11 @@ final class TestChamberModels {
                         long vi=readIndex(file,index,views,binStart,binSize,k);
                         if(vi<0||vi>=count)throw new IOException("Index outside GLB mesh");
                         int idx=(int)vi;
-                        vertices[k*5]=readFloat(file,positions,views,binStart,binSize,
+                        vertices[k*5]=offset[0]+readFloat(file,positions,views,binStart,binSize,
                             idx,0,3);
-                        vertices[k*5+1]=readFloat(file,positions,views,binStart,binSize,
+                        vertices[k*5+1]=offset[1]+readFloat(file,positions,views,binStart,binSize,
                             idx,1,3);
-                        vertices[k*5+2]=readFloat(file,positions,views,binStart,binSize,
+                        vertices[k*5+2]=offset[2]+readFloat(file,positions,views,binStart,binSize,
                             idx,2,3);
                         vertices[k*5+3]=readFloat(file,uvs,views,binStart,binSize,
                             idx,0,2);
