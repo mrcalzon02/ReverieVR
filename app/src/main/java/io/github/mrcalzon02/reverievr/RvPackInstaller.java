@@ -135,6 +135,13 @@ final class RvPackInstaller {
                 }
             }
             if(!manifest || count<2)throw new IOException("Missing module manifest/assets");
+            // A signed archive hash alone does not establish which game or
+            // revision the contained manifest actually declares. Bind both
+            // identities BEFORE publishing or changing the active pointer.
+            RvPackManifest metadata=RvPackManifest.parse(
+                Files.readAllBytes(new File(stage,"module.json").toPath()));
+            if(!id.equals(metadata.id) || revision!=metadata.revision)
+                throw new IOException("Package module identity/revision mismatch");
             // Zip contents are bound to a signed catalog by the checked pack hash.
             Properties receipt=new Properties();
             receipt.setProperty("id",id);
