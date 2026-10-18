@@ -10,9 +10,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import org.json.JSONObject;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
@@ -209,10 +207,17 @@ public final class GameModulesActivity extends Activity {
     private void installRemote(GameModuleCatalog.Release release){
         status.setText("Downloading "+release.id+" r"+release.revision+"...");
         network.install(release,(directory,error)->{
+            if(isFinishing()||isDestroyed())return;
             status.setText(error==null?
                 "Installed "+release.id+" r"+release.revision:
                 "Install failed: "+error);
             refreshRows();
+        },(read,total)->{
+            if(isFinishing()||isDestroyed())return;
+            long percentage=total>0?(read*100L)/total:0L;
+            status.setText("Downloading "+release.id+" r"+release.revision+
+                " — "+percentage+"% ("+(read+1023L)/1024L+" / "+
+                (total+1023L)/1024L+" KiB)");
         });
     }
     private void chooseFile(){
@@ -263,14 +268,11 @@ public final class GameModulesActivity extends Activity {
                         }
                         bytes=out.toByteArray();
                     }
-                    JSONObject metadata=new JSONObject(
-                        new String(bytes,StandardCharsets.UTF_8));
-                    id=metadata.getString("id");
-                    revision=metadata.getLong("revision");
-                    if(metadata.getInt("schema")!=1 ||
-                       !"content".equals(metadata.getString("kind")) ||
-                       RvPackInstaller.namespace(id)==null || revision<1)
-                        throw new IOException("Unsupported game content manifest");
+                    // UI import and installer share the SAME strict parser;
+                    // never let JSONObject accept duplicate identity fields.
+                    RvPackManifest metadata=RvPackManifest.parse(bytes);
+                    id=metadata.id;
+                    revision=metadata.revision;
                 }
                 final String selectedId=id;
                 final long selectedRevision=revision;

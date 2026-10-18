@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
  */
 final class GameModuleUpdateService implements AutoCloseable {
     interface Callback<T> {void complete(T result,String error);}
+    interface Progress {void onBytes(long read,long total);}
     private final Context context;
     private final Handler ui=new Handler(Looper.getMainLooper());
     private final ExecutorService executor=Executors.newSingleThreadExecutor();
@@ -74,7 +75,8 @@ final class GameModuleUpdateService implements AutoCloseable {
         });
     }
 
-    void install(GameModuleCatalog.Release release,Callback<File> callback){
+    void install(GameModuleCatalog.Release release,Callback<File> callback,
+                 Progress progress){
         executor.execute(()->{
             File installed=null;String error=null;
             try {
@@ -91,7 +93,7 @@ final class GameModuleUpdateService implements AutoCloseable {
                 File partial=new File(downloads,
                     release.id+"-"+release.revision+".partial");
                 try {
-                    download(release,partial);
+                    download(release,partial,progress);
                     installed=installer.install(partial,release.id,
                         release.revision,release.sha256);
                 }finally{if(partial.exists())partial.delete();}
@@ -128,8 +130,8 @@ final class GameModuleUpdateService implements AutoCloseable {
         return out.toByteArray();
     }
 
-    private static void download(GameModuleCatalog.Release release,File partial)
-        throws IOException {
+    private void download(GameModuleCatalog.Release release,File partial,
+                          Progress progress)throws IOException {
         URL next=new URL(release.url);
         HttpURLConnection c=null;
         for(int hop=0;hop<5;++hop){
@@ -155,12 +157,21 @@ final class GameModuleUpdateService implements AutoCloseable {
             try(InputStream in=c.getInputStream();
                 FileOutputStream out=new FileOutputStream(partial)){
                 byte[] buf=new byte[16384];long total=0;int n;
+                long lastBucket=-1;
                 while((n=in.read(buf))!=-1){
                     total+=n;
                     if(total>release.byteCount ||
                        total>RvPackInstaller.MAX_ARCHIVE)
                         throw new IOException("Release exceeds declared size");
                     out.write(buf,0,n);
+                    // One UI callback per 5% progress interval, never one
+                    // runnable for every socket read or on the GL thread.
+                    long bucket=(total*20L)/release.byteCount;
+                    if(progress!=null&&bucket>lastBucket){
+                        lastBucket=bucket;
+                        final long completed=total;
+                        ui.post(()->progress.onBytes(completed,release.byteCount));
+                    }
                 }
                 out.getFD().sync();
                 if(total!=release.byteCount)
