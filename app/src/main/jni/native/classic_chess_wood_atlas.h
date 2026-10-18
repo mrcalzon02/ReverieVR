@@ -31,7 +31,7 @@ static constexpr char kNibbleHex[]=
     "eaa7103b87aaaa753377543345513511da86003da6aa8a633377733336302320ea20003ddca86532634311111332157aea10005dfda77633622222000330046a"
     "eca735675bbb9bbaa4777aaa351305dadda627774adaaccaa6886aaa370303da4114748b6bd9bfb888699bdd56333398220283ac7ad9cfaaa779aadd573333aa";
 static_assert(sizeof(kPalette)/sizeof(kPalette[0])==32u,"Chess wood palettes");
-static_assert(sizeof(kNibbleHex)-1==kPixelCount/2,"Chess wood pixel count");
+static_assert(sizeof(kNibbleHex)-1==kPixelCount,"Chess wood pixel count");
 inline int HexDigit(char c){
     if(c>='0'&&c<='9')return c-'0';
     if(c>='a'&&c<='f')return c-'a'+10;
