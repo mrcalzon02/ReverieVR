@@ -13,6 +13,7 @@
 #include <array>
 #include <cerrno>
 #include <cmath>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <fcntl.h>
@@ -98,7 +99,9 @@ int32_t WriteSave(const char* name,const void* bytes,uint32_t size){
             return REVERIE_NATIVE_SAVE_ERROR;}
         at+=static_cast<uint32_t>(written);
     }
-    bool valid=fsync(fd)==0 && close(fd)==0;
+    const bool synced=fsync(fd)==0;
+    const bool closed=close(fd)==0;
+    bool valid=synced&&closed;
     if(!valid||rename(stage.c_str(),path.c_str())!=0){
         unlink(stage.c_str());return REVERIE_NATIVE_SAVE_ERROR;
     }
