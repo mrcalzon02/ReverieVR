@@ -45,11 +45,10 @@ final class TestChamberTargeting {
         for(int i=0;i<16;i++)if(!Float.isFinite(view[i]))return -1;
         // Invert the rigid, column-major view transform: camera origin in
         // world space and the world-space direction of head-forward (-Z).
-        float[] origin={
-            -(view[0]*view[12]+view[1]*view[13]+view[2]*view[14]),
-            -(view[4]*view[12]+view[5]*view[13]+view[6]*view[14]),
-            -(view[8]*view[12]+view[9]*view[13]+view[10]*view[14])};
-        float[] direction={-view[2],-view[6],-view[10]};
+        final float ox=-(view[0]*view[12]+view[1]*view[13]+view[2]*view[14]);
+        final float oy=-(view[4]*view[12]+view[5]*view[13]+view[6]*view[14]);
+        final float oz=-(view[8]*view[12]+view[9]*view[13]+view[10]*view[14]);
+        final float dx=-view[2],dy=-view[6],dz=-view[10];
         float nearest=Float.POSITIVE_INFINITY;
         int selected=-1;
         for(int id=0;id<MODEL_COUNT;id++){
@@ -59,12 +58,13 @@ final class TestChamberTargeting {
             for(int axis=0;axis<3;axis++){
                 float low=bounds[id][axis]-AIM_PADDING;
                 float high=bounds[id][axis+3]+AIM_PADDING;
-                float d=direction[axis];
+                float o=axis==0?ox:axis==1?oy:oz;
+                float d=axis==0?dx:axis==1?dy:dz;
                 if(Math.abs(d)<1.e-7f){
-                    if(origin[axis]<low||origin[axis]>high){misses=true;break;}
+                    if(o<low||o>high){misses=true;break;}
                     continue;
                 }
-                float a=(low-origin[axis])/d,b=(high-origin[axis])/d;
+                float a=(low-o)/d,b=(high-o)/d;
                 if(a>b){float swap=a;a=b;b=swap;}
                 tNear=Math.max(tNear,a);
                 tFar=Math.min(tFar,b);
