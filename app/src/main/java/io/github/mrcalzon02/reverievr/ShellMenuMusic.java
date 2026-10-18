@@ -181,6 +181,14 @@ final class ShellMenuMusic implements AutoCloseable {
     void setHostedNativeModule(String moduleId) {
         final String id = NativeMusicPlaybackPolicy.cueForNativeModule(moduleId);
         hostedCueIndex = catalog == null ? -1 : catalog.indexOfId(id);
+        if(hostedCueIndex < 0 && catalog!=null && catalog.size()>0) {
+            // Failure to stage a game's theme must not silently mute the
+            // entire native game. Fall back to an existing packaged track.
+            ReverieLog.incident("MENU_MUSIC",
+                "Missing hosted soundtrack for "+moduleId+
+                "; playing packaged lobby music instead");
+            hostedCueIndex = Math.max(0,Math.min(lobbyIndex,catalog.size()-1));
+        }
         shellActive = hostedCueIndex >= 0;
         releasePlayer();
         syncPlayback();
