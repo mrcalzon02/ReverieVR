@@ -7,36 +7,39 @@ mkdir -p "$ARTIFACTS"
 adb logcat -c
 adb install -r "$APK"
 adb shell am start -W -n 'io.github.mrcalzon02.reverievr.game.testchamber/.GameVrActivity'   | tee "$ARTIFACTS/activity-launch.txt"
-sleep 6
-# Android 10 first-launch immersive mode displays a large blue tutorial
-# over the entire stereo scene. The original green screenshot check accepted
-# this system overlay; remove it and fail if it remains.
-for attempt in 1 2 3; do
-  adb exec-out screencap -p > "$ARTIFACTS/pre-overlay-check.png"
-  if python3 - "$ARTIFACTS/pre-overlay-check.png" <<'PY'
+sleep 12
+adb shell input keyevent KEYCODE_DPAD_CENTER
+adb shell input tap 400 500
+sleep 5
+# Android may display the immersive tutorial late, even AFTER the first
+# screenshot. Poll the FINAL screenshot and click using its landscape
+# framebuffer dimensions, not wm size (which remains portrait 1080x1920).
+for attempt in 1 2 3 4; do
+  adb exec-out screencap -p > "$ARTIFACTS/vr-screenshot.png"
+  if python3 - "$ARTIFACTS/vr-screenshot.png" <<'PY'
 from PIL import Image
 import sys
 pic=Image.open(sys.argv[1]).convert("RGB")
 r,g,b=pic.getpixel((pic.width//2,pic.height//5))
-# Android's blue "Viewing full screen" dialog across upper center.
 sys.exit(0 if b>160 and g>70 and b>r*2 and b>g*1.25 else 1)
 PY
   then
-    size="$(adb shell wm size | tr -d '\r' | tail -n 1)"
-    wh="${size##*: }"
-    width="${wh%x*}"
-    height="${wh#*x}"
-    # Known Android immersive tutorial's "Got it" control is roughly at
-    # x=55%, y=42% in landscape; click it, not the model underneath.
-    adb shell input tap "$((width*55/100))" "$((height*42/100))"
-    sleep 3
+    coords="$(python3 - "$ARTIFACTS/vr-screenshot.png" <<'PY'
+from PIL import Image
+import sys
+picture=Image.open(sys.argv[1])
+print(picture.width*55//100,picture.height*42//100)
+PY
+)"
+    read -r x y <<< "$coords"
+    adb shell input tap "$x" "$y"
+    sleep 4
   else
     break
   fi
 done
-adb shell input keyevent KEYCODE_DPAD_CENTER
-adb shell input tap 400 500
-sleep 5
+# Re-capture after the last dismissal attempt; this MUST be the image
+# validated and retained as actual stereo-screen acceptance evidence.
 adb exec-out screencap -p > "$ARTIFACTS/vr-screenshot.png"
 adb logcat -d -v time > "$ARTIFACTS/android-logcat.txt"
 adb shell dumpsys activity activities > "$ARTIFACTS/activity-state.txt"
