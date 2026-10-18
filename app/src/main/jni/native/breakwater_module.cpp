@@ -915,7 +915,27 @@ void BuildScene(State *s) {
     }
     // Infantry muzzle flashes live in the firing sprite tiles above;
     // do not draw a duplicate generic 3D flash at one arbitrary shooter.
-    if(game.phase()==Phase::Briefing) {
+    if(s->slot_picker) {
+        const menu::Rect frame=menu::kDifficultyPanel;
+        Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
+              .07f,.11f,.14f);
+        Text(s,"BREAKWATER",0,1.36f,-2.97f,.062f,.97f,.87f,.60f);
+        Text(s,"SELECT SAVE",0,.97f,-2.97f,.055f,.86f,.91f,.85f);
+        for(int slot=0;slot<3;++slot) {
+            const menu::Rect tile=menu::SlotCard(slot);
+            const bool focused=s->menu_focus==slot;
+            Panel(s,tile.x,tile.y,-3.f,tile.width,tile.height,
+                  focused?.26f:.14f,focused?.42f:.23f,focused?.38f:.28f);
+            char number[18];
+            std::snprintf(number,sizeof(number),"SLOT %d",slot+1);
+            Text(s,number,tile.x,tile.y+.08f,-2.97f,.044f,.95f,.92f,.74f);
+            Text(s,s->slot_exists[slot]?"CONTINUE":"NEW GAME",
+                 tile.x,tile.y-.11f,-2.97f,.033f,
+                 .81f,.91f,.82f);
+        }
+        Text(s,"SELECT A SAVE TO CONTINUE OR BEGIN",
+             0,-.42f,-2.97f,.034f,.85f,.91f,.86f);
+    } else if(game.phase()==Phase::Briefing) {
         const menu::Rect frame=menu::kDifficultyPanel;
         Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
               .075f,.105f,.13f);
@@ -945,6 +965,14 @@ void BuildScene(State *s) {
         Text(s,"BREAKWATER",0,1.36f,-2.97f,.060f,.95f,.84f,.59f);
         Text(s,Campaign::Locations()[game.location()].name,0,1.08f,-2.97f,
              .042f,.73f,.84f,.79f);
+        const menu::Rect reset=menu::kResetCard;
+        const bool resetFocused=s->menu_focus==10;
+        Panel(s,reset.x,reset.y,-3.f,reset.width,reset.height,
+              resetFocused?.36f:.18f,.17f,.19f);
+        Text(s,s->reset_armed?"CONFIRM RESET":"NEW RUN",
+             reset.x,reset.y,-2.975f,
+             font::FittedScale("CONFIRM RESET",reset.width,.027f),
+             1.f,.86f,.78f);
         char header[50];
         std::snprintf(header,sizeof(header),"%s  D%u  W%u/%u  %d CR",
             night?"NIGHT":"DAY",static_cast<unsigned>(game.day()),
@@ -1250,8 +1278,11 @@ void *Create(const ReverieNativeHostV1 *host) {
     s->mesh.reserve(81920);
     s->sprite_mesh.reserve(3000);
     s->font_mesh.reserve(12000);
-    // New players choose their difficulty. Returning players restore shop state.
-    LoadState(s);
+    // All launches choose a slot explicitly. Pre-v2 saves are ignored.
+    for(uint8_t slot=0;slot<3u;++slot) {
+        Campaign loaded;
+        s->slot_exists[slot]=ReadSlotState(s,slot,&loaded);
+    }
     return s;
 }
 void Destroy(void *instance) { delete static_cast<State *>(instance); }
@@ -1420,7 +1451,11 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     // Hover feedback corresponds precisely to the raycast menus, including
     // disabled armory slots. Only mark the scene dirty when focus changes.
     int next_focus=-1;
-    if(s->campaign.phase()==Phase::Briefing)
+    if(s->slot_picker) {
+        float x=0.0f,y=0.0f;
+        next_focus=AimAtPlane(copy,kShopZ,&x,&y)>0.0f?
+            menu::HitSlot(x,y):-1;
+    } else if(s->campaign.phase()==Phase::Briefing)
         next_focus=DifficultyTarget(copy);
     else if(s->campaign.phase()==Phase::Shop)
         next_focus=ShopTarget(copy,s->armory_page);
