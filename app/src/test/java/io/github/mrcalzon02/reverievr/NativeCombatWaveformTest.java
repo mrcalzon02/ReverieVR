@@ -95,7 +95,10 @@ public final class NativeCombatWaveformTest {
             int cue=NativeCombatWaveform.cueForNativeEvent(nativeId);
             assertEquals(NativeCombatWaveform.PURCHASE+nativeId-16,cue);
             byte[] pcm=NativeCombatWaveform.generatePcm16(cue);
-            assertTrue(pcm.length>=6000 && pcm.length<40000);
+            // The wave-clear event is deliberately a 1.18s musical
+            // fanfare, not the sub-second mechanical SFX used elsewhere.
+            final int limit=cue==NativeCombatWaveform.CLEAR?60000:40000;
+            assertTrue(pcm.length>=6000 && pcm.length<limit);
             assertTrue(hashes.add(java.util.Arrays.hashCode(pcm)));
             assertEquals(1,NativeCombatWaveform.voiceCount(cue));
         }
