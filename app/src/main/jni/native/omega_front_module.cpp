@@ -61,6 +61,11 @@ void DrawMap(State *s){
     char line[110];
     std::snprintf(line,sizeof(line),"DAY %d  GUARDS %d  RATIONS %d  SALVAGE %d",f.day(),f.guards(),f.rations(),f.salvage());
     Text(s,line,.916f,.009f,.77f,.85f,.88f);
+    // Initial strategic view now uses the same packaged terrain textures
+    // that tactical combat uses. Draw the permanent board first, then the
+    // sector sprites, then owner/selection/text overlays in a later pass.
+    s->base_vertices=s->mesh.size()/6u;
+    s->unit_vertices=s->base_vertices;
     constexpr float span=.395f;
     for(int i=0;i<game::kFrontierSectors;++i){
         const auto *sector=f.sector(i);
@@ -75,7 +80,25 @@ void DrawMap(State *s){
         if(f.intelligence(i)==game::Intelligence::Unknown){
             r=.12f;g=.16f;b=.20f;
         }
-        Rect(s,x,y,span*.96f,span*.96f,kBoardZ,r,g,b);
+        // Unexplored locations remain obscured: textures cannot leak
+        // geography that the existing scouting/intelligence rules hide.
+        const bool unknown=f.intelligence(i)==game::Intelligence::Unknown;
+        const int visual=sector->ecology==game::Ecology::Eden?
+                         omega_art::EdenMeadow:
+                         sector->ecology==game::Ecology::Wasteland?
+                         omega_art::WastelandAsh:omega_art::Road;
+        if(unknown || !s->sprites.Place(visual,x,y,span*.96f,
+                                        span*.96f,kBoardZ+.001f))
+            Rect(s,x,y,span*.96f,span*.96f,kBoardZ,r,g,b);
+        else {
+            // Keep the actual ecology/anomaly distinction legible even
+            // with art underneath, instead of replacing it with decoration.
+            Rect(s,x,y+span*.45f,span*.88f,span*.042f,
+                 kBoardZ+.002f,r,g,b);
+            if(sector->anomaly)
+                Rect(s,x-span*.32f,y-span*.30f,span*.08f,span*.11f,
+                     -1.851f,.76f,.43f,.91f);
+        }
         if(i==f.location()){
             // White roadpost = real troop location, not selected hover.
             Rect(s,x,y+span*.12f,span*.66f,span*.07f,-1.86f,.96f,.96f,.89f);
@@ -725,7 +748,13 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
         colored(s->base_vertices,s->unit_vertices);
         sprites(omega_art::kTerrainCount,omega_art::Count);
         colored(s->unit_vertices,total);
-    }else colored(0,total);
+    }else{
+        // Front map is the initial screen, not an unrelated all-geometry
+        // placeholder. Preserve text, fog-of-war, selection and click zones.
+        colored(0,s->base_vertices);
+        sprites(0,omega_art::kTerrainCount);
+        colored(s->base_vertices,total);
+    }
     s->sprites.upload=false;
     glBlendFuncSeparate(src_rgb,dst_rgb,src_alpha,dst_alpha);
     const GLenum error=glGetError();

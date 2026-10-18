@@ -15,6 +15,7 @@ namespace reverie { namespace omega_art {
 
 // Fixed 64-pixel art grid, one quad per simulated cell. No atlas UV guesses.
 enum TextureId { Soil=0, Road, Rubble, Wall, Water,
+                 EdenMeadow, WastelandAsh,
                  HearthwellHull, MeridianHull, ScraplineHull,
                  LostNinthHull, IndependentHull,
                  RifleH, RifleR, EngineerH, EngineerR, SalvagerH, SalvagerR,
@@ -22,13 +23,15 @@ enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  RifleHAlt, RifleRAlt, EngineerHAlt, EngineerRAlt,
                  SalvagerHAlt, SalvagerRAlt, SentinelHAlt, SentinelRAlt,
                  LegionaryHAlt, LegionaryRAlt, Count };
-constexpr int kTerrainCount=5;
+constexpr int kTerrainCount=7;
 static const char *const kPaths[Count]={
     "native/omega-front/terrain/cracked_earth.png",
     "native/omega-front/terrain/ruined_concrete.png",
     "native/omega-front/terrain/rocky_wasteland.png",
     "native/omega-front/terrain/rocky_scree.png",
     "native/omega-front/terrain/marsh_pool.png",
+    "native/omega-front/terrain/wet_meadow.png",
+    "native/omega-front/terrain/ash_waste.png",
     "native/omega-front/units/kenney/hearthwell_hull_north.png",
     "native/omega-front/units/kenney/meridian_hull_north.png",
     "native/omega-front/units/kenney/scrapline_hull_north.png",
