@@ -1,0 +1,206 @@
+package io.github.mrcalzon02.reverievr;
+
+import android.app.Activity;
+import android.app.Instrumentation;
+import android.content.Context;
+import android.content.Intent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import static org.junit.Assert.*;
+
+/**
+ * INTEGRATION test executed INSIDE the real ReverieVR hub APK on Android.
+ * No mocked identity, fake release feed, bypassed signer or mock installer.
+ * The public signed catalog is currently empty, so it proves real signed
+ * discovery and fail-closed acquisition; the installed companion test proves
+ * actual Android package admission. A published catalog entry is required
+ * before an authenticated remote content/APK download can be asserted.
+ */
+@RunWith(AndroidJUnit4.class)
+public final class HubGameModulesInstrumentedTest {
+    private static final String CHAMBER="procedural-test-chamber";
+    private static Context context(){
+        return InstrumentationRegistry.getInstrumentation().getTargetContext();
+    }
+
+    private static File makePack(File root,GameModuleRegistry.Entry game,int revision)
+        throws Exception {
+        File zip=new File(root,game.id+"-"+revision+".rvpack");
+        try(ZipOutputStream out=new ZipOutputStream(new FileOutputStream(zip))){
+            out.putNextEntry(new ZipEntry("module.json"));
+            String manifest="{\"schema\":1,\"kind\":\"content\",\"id\":\""+
+                game.id+"\",\"version\":\"0.1."+revision+
+                "\",\"revision\":"+revision+"}";
+            out.write(manifest.getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("assets/native/"+
+                game.contentNamespace+"/acquisition-probe.json"));
+            out.write(("{\"id\":\""+game.id+"\",\"revision\":"+revision+"}")
+                .getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+        }
+        return zip;
+    }
+
+    @Test public void allRegisteredGamesAcceptIsolatedAcquisitionUpdateRollback()
+        throws Exception{
+        File root=new File(context().getCacheDir(),
+            "game-integration-"+System.currentTimeMillis());
+        assertTrue(root.mkdirs());
+        try {
+            RvPackInstaller store=new RvPackInstaller(root);
+            assertTrue(GameModuleRegistry.GAMES.length>=15);
+            for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES){
+                File first=makePack(root,game,1);
+                File v1=store.install(first,game.id,1,RvPackInstaller.digest(first));
+                assertTrue(game.id,new File(v1,"native/"+game.contentNamespace+
+                    "/acquisition-probe.json").isFile());
+                File second=makePack(root,game,2);
+                File v2=store.install(second,game.id,2,RvPackInstaller.digest(second));
+                assertNotEquals("Revision did not change "+game.id,
+                    v1.getCanonicalPath(),v2.getCanonicalPath());
+                assertEquals("Update not active "+game.id,
+                    v2.getCanonicalPath(),store.activeAssets(game.id).getCanonicalPath());
+                assertTrue("Rollback rejected "+game.id,store.rollback(game.id));
+                assertEquals("Rollback active pointer "+game.id,
+                    v1.getCanonicalPath(),store.activeAssets(game.id).getCanonicalPath());
+            }
+            // Installing a different game cannot mutate an earlier game's
+            // active pointer; removing one game must leave another untouched.
+            GameModuleRegistry.Entry first=GameModuleRegistry.GAMES[0];
+            GameModuleRegistry.Entry last=GameModuleRegistry.GAMES[
+                GameModuleRegistry.GAMES.length-1];
+            assertNotNull(store.activeAssets(first.id));
+            assertTrue(store.removeContent(last.id));
+            assertNull(store.activeAssets(last.id));
+            assertNotNull(store.activeAssets(first.id));
+            for(GameModuleRegistry.Entry e:GameModuleRegistry.GAMES)
+                assertFalse("Cross-game assets allowed "+e.id,
+                    RvPackInstaller.allowedEntry(e.id,
+                        "assets/native/not-this-game/evil.json",false));
+        } finally {
+            delete(root);
+        }
+    }
+
+    private static void delete(File file){
+        if(file.isDirectory()){
+            File[] children=file.listFiles();
+            if(children!=null)for(File child:children)delete(child);
+        }
+        file.delete();
+    }
+
+    @Test public void actualInstalledCompanionMustMatchHubSignerAndIdentity(){
+        // CI installs both DEBUG APKS signed by the SAME Android debug key.
+        // A missing companion is a failure, not a skipped assertion.
+        CompanionGameRegistry.Descriptor game=
+            CompanionGameRegistry.installed(context(),CHAMBER);
+        assertNotNull("Actual signed Test Chamber APK not admitted by hub",game);
+        assertEquals("io.github.mrcalzon02.reverievr.game.testchamber",
+            game.packageName);
+        assertTrue("Installed Android version missing",
+            CompanionGameRegistry.installedVersion(context(),CHAMBER)>0);
+        for(GameModuleRegistry.Entry item:GameModuleRegistry.GAMES){
+            if(item.id.equals(CHAMBER))continue;
+            assertNull("Unexpected independent companion installed: "+item.id,
+                CompanionGameRegistry.installed(context(),item.id));
+        }
+    }
+
+    @Test public void liveSignedCatalogCheckUsesHubNetworkAndRealTrustKey()
+        throws Exception {
+        try(GameModuleUpdateService update=new GameModuleUpdateService(context())){
+            CountDownLatch done=new CountDownLatch(1);
+            final GameModuleCatalog.Verified[] catalog=new GameModuleCatalog.Verified[1];
+            final String[] failure=new String[1];
+            update.check((v,error)->{
+                catalog[0]=v;failure[0]=error;done.countDown();
+            });
+            assertTrue("Actual catalog fetch timed out",done.await(40,TimeUnit.SECONDS));
+            assertNull("Authenticated hub catalog fetch FAILED: "+failure[0],failure[0]);
+            assertNotNull("No verified production catalog",catalog[0]);
+            assertTrue("Catalog rolled back",catalog[0].catalogRevision>=1);
+            // The current public catalog intentionally declares zero updates.
+            assertEquals("Unexpected public module release; inspect publication",
+                0,catalog[0].releases.size());
+
+            // A standalone Release object may look valid but may NOT be
+            // downloaded without inclusion in the authenticated catalog.
+            GameModuleCatalog.Release unverified=new GameModuleCatalog.Release(
+                CHAMBER,"0.1.0","content",
+                "https://github.com/mrcalzon02/ReverieVR/releases/download/module-test-chamber-v0.1.0/scene.rvpack",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "reject untrusted descriptor","testing",2,100L,"0.1.0",26,1,1,2,
+                new String[]{"arm64-v8a"});
+            CountDownLatch rejected=new CountDownLatch(1);
+            final String[] rejectedReason=new String[1];
+            update.install(unverified,(where,error)->{
+                assertNull("Unverified release installed",where);
+                rejectedReason[0]=error;rejected.countDown();
+            },null);
+            assertTrue("Unverified acquisition did not respond",
+                rejected.await(10,TimeUnit.SECONDS));
+            assertTrue("Unverified release not rejected: "+rejectedReason[0],
+                rejectedReason[0]!=null &&
+                rejectedReason[0].contains("Unverified content release"));
+        }
+    }
+
+    private static View findText(View view,String exact){
+        if(view instanceof TextView && exact.equals(
+            ((TextView)view).getText().toString()))return view;
+        if(view instanceof ViewGroup){
+            ViewGroup group=(ViewGroup)view;
+            for(int i=0;i<group.getChildCount();i++){
+                View found=findText(group.getChildAt(i),exact);
+                if(found!=null)return found;
+            }
+        }
+        return null;
+    }
+
+    @Test public void actualHubGameManagerDisplaysAllGameAcquisitionChoices()
+        throws Exception{
+        Instrumentation instrument=InstrumentationRegistry.getInstrumentation();
+        Intent intent=new Intent(context(),GameModulesActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Activity activity=instrument.startActivitySync(intent);
+        assertNotNull("Cannot open real hub game manager",activity);
+        try{
+            instrument.waitForIdleSync();
+            final View[] control=new View[1];
+            instrument.runOnMainSync(()->{
+                control[0]=findText(activity.getWindow().getDecorView(),"Check releases");
+            });
+            assertNotNull("Hub has no signed game release action",control[0]);
+            assertTrue("Hub game releases control not clickable",
+                control[0] instanceof Button && control[0].isEnabled());
+            assertNotNull("Hub has no acquisition/import control",
+                findText(activity.getWindow().getDecorView(),"Import .rvpack"));
+            for(GameModuleRegistry.Entry item:GameModuleRegistry.GAMES)
+                assertNotNull("Game absent from hub module management UI: "+item.id,
+                    findText(activity.getWindow().getDecorView(),
+                        item.displayName+"\nBuilt-in"+(item.id.equals(CHAMBER)
+                            ?" | Game APK r"+CompanionGameRegistry.installedVersion(context(),CHAMBER)
+                            :"")));
+        } finally {
+            instrument.runOnMainSync(activity::finish);
+        }
+    }
+}
