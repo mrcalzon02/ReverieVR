@@ -1285,8 +1285,8 @@ int32_t InitializeGl(
 
 
     // Original Unreal merchandise is decoded and uploaded once per GL context.
-    // Four representative product classes are currently packaged; missing
-    // products never substitute guessed geometry or the UCX collision meshes.
+    // Original branded merchandise is loaded by SKU. Missing products
+    // never substitute guessed geometry or UCX collision meshes.
     int original_product_count=0;
     if(can_read_assets) {
         auto load_asset=[state](const char *path,uint32_t limit,
