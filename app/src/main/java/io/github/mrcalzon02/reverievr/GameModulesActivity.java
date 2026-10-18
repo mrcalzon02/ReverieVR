@@ -101,7 +101,7 @@ public final class GameModulesActivity extends Activity {
             development?"testing":"stable");
         if(release==null&&development)
             release=verified.find(id,kind,"stable");
-        return release;
+        return GameModuleCatalog.compatibleWithThisDevice(release)?release:null;
     }
     private void showGameActions(String id,long contentRev,long codeRev,
                                  GameModuleCatalog.Release contentRelease,

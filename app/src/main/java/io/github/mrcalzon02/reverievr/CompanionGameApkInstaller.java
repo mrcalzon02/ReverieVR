@@ -50,6 +50,10 @@ final class CompanionGameApkInstaller implements AutoCloseable {
             result.result("Native game release has not been authenticated",false);
             return;
         }
+        if(!GameModuleCatalog.compatibleWithThisDevice(release)){
+            result.result("Companion APK incompatible with this hub/device",false);
+            return;
+        }
         if(downloads==null){
             result.result("Android Download Manager unavailable",false);return;
         }

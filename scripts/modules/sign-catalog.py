@@ -34,7 +34,9 @@ def init(private,public):
                       "note":"Keep private key offline, NEVER in GitHub or the APK."},indent=2))
 
 def approved_release(entry):
-    required={"id","kind","channel","version","revision","size_bytes","sha256","url"}
+    required={"id","kind","channel","version","revision","size_bytes",
+              "sha256","url","min_hub","min_android_sdk","native_abi_min",
+              "native_abi_max","gles_major","abis"}
     if not required.issubset(entry):
         raise ValueError("Release is missing required fields")
     if entry["kind"] not in ("content","companion-apk"):
@@ -49,6 +51,20 @@ def approved_release(entry):
         raise ValueError("Invalid release size")
     if not SHA_RE.fullmatch(str(entry["sha256"])):
         raise ValueError("Invalid SHA-256")
+    if not SEMVER_RE.fullmatch(str(entry["min_hub"])):
+        raise ValueError("Invalid minimum ReverieVR hub version")
+    for number in ("min_android_sdk","native_abi_min","native_abi_max","gles_major"):
+        if not isinstance(entry[number],int):
+            raise ValueError("Non-integer compatibility value")
+    if not (26 <= entry["min_android_sdk"] <= 100 and
+            1 <= entry["native_abi_min"] <= entry["native_abi_max"] <= 32 and
+            2 <= entry["gles_major"] <= 4):
+        raise ValueError("Unsupported game compatibility requirements")
+    abis=entry["abis"]
+    if (not isinstance(abis,list) or not 1 <= len(abis) <= 2 or
+        len(set(abis))!=len(abis) or
+        any(abi not in ("armeabi-v7a","arm64-v8a") for abi in abis)):
+        raise ValueError("Unsupported native ABI selection")
     url=urlsplit(entry["url"])
     if (url.scheme!="https" or url.hostname!="github.com" or
         url.port is not None or url.query or url.fragment or

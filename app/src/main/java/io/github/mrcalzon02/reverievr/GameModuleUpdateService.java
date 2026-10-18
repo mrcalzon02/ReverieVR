@@ -81,6 +81,8 @@ final class GameModuleUpdateService implements AutoCloseable {
                 if(release==null||!"content".equals(release.kind) ||
                    verified==null || !verified.releases.contains(release))
                     throw new IOException("Unverified content release");
+                if(!GameModuleCatalog.compatibleWithThisDevice(release))
+                    throw new IOException("Content requires a different hub/device/ABI");
                 if(!GameModuleCatalog.approvedReleaseUrl(release.url,"content"))
                     throw new IOException("Untrusted game release URL");
                 File downloads=new File(context.getFilesDir(),"game-module-downloads");
