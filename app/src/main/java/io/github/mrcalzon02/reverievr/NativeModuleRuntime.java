@@ -82,6 +82,7 @@ final class NativeModuleRuntime implements AutoCloseable {
     }
 
     private final File storageRoot;
+    private final RvPackInstaller contentInstaller;
     private final VirtualInputBus inputBus;
     private final android.content.res.AssetManager packagedAssets;
     private final boolean developmentModulesAllowed;
@@ -99,6 +100,7 @@ final class NativeModuleRuntime implements AutoCloseable {
         boolean developmentModulesAllowed
     ) {
         this.storageRoot = storageRoot;
+        this.contentInstaller = new RvPackInstaller(storageRoot.getParentFile());
         this.packagedAssets = packagedAssets;
         this.inputBus = inputBus;
         this.developmentModulesAllowed =
@@ -226,11 +228,17 @@ final class NativeModuleRuntime implements AutoCloseable {
             return false;
         }
 
+        // Resolve only fully activated content. Running sessions pin their
+        // revision and do not see partial installs or mid-frame replacements.
+        File gameAssets = contentInstaller.activeAssets(safeModuleId);
+        String activeContentRoot = gameAssets == null
+            ? "" : gameAssets.getAbsolutePath();
         long created =
             nativeCreate(
                 safeModuleId,
                 moduleStorage.getAbsolutePath(),
-                packagedAssets
+                packagedAssets,
+                activeContentRoot
             );
         if (created == 0L) {
             ReverieLog.incident(
@@ -493,7 +501,8 @@ final class NativeModuleRuntime implements AutoCloseable {
     private static native long nativeCreate(
         String moduleId,
         String storageRoot,
-        android.content.res.AssetManager packagedAssets
+        android.content.res.AssetManager packagedAssets,
+        String activeContentRoot
     );
 
     private static native float[] nativeGetShellLocomotionBounds(

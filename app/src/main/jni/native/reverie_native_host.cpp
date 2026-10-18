@@ -76,6 +76,7 @@ struct NativeSession {
     const ReverieNativeModuleApiV1 *api = nullptr;
     void *instance = nullptr;
     std::string storage_root;
+    std::string content_root; // Verified immutable active game-content revision.
     AAssetManager *asset_manager = nullptr;
     bool gl_ready = false;
     bool warned_inherited_gl_error = false;
@@ -438,6 +439,36 @@ int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
     const uint32_t max_bytes=reverie::native::assets::MaximumBytes(
         session->spec->id,path);
     if(max_bytes==0u)return REVERIE_NATIVE_SAVE_ERROR;
+    // Installed content is mounted from the shell's verified immutable
+    // revision. Only previously classified module-owned relative paths can
+    // reach this root; never resolve saves, another game, or arbitrary URLs.
+    if(!session->content_root.empty()){
+        const std::string installed=session->content_root+"/"+path;
+        const int fd=open(installed.c_str(),O_RDONLY|O_CLOEXEC|O_NOFOLLOW);
+        if(fd>=0){
+            struct stat info={};
+            if(fstat(fd,&info)!=0||!S_ISREG(info.st_mode)||
+               info.st_size<=0||
+               static_cast<uint64_t>(info.st_size)>max_bytes){
+                close(fd);return REVERIE_NATIVE_SAVE_ERROR;
+            }
+            const uint32_t size=static_cast<uint32_t>(info.st_size);
+            *out_size=size;
+            if(!buffer||capacity<size){
+                close(fd);return REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;
+            }
+            uint8_t *dst=static_cast<uint8_t *>(buffer);
+            uint32_t at=0;
+            while(at<size){
+                ssize_t n=read(fd,dst+at,size-at);
+                if(n<=0){close(fd);return REVERIE_NATIVE_SAVE_ERROR;}
+                at+=static_cast<uint32_t>(n);
+            }
+            close(fd);
+            return REVERIE_NATIVE_SAVE_OK;
+        }
+        if(errno!=ENOENT)return REVERIE_NATIVE_SAVE_ERROR;
+    }
     AAsset *asset=AAssetManager_open(session->asset_manager,path,
                                     AASSET_MODE_STREAMING);
     if(!asset)return REVERIE_NATIVE_SAVE_NOT_FOUND;
@@ -636,12 +667,14 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
     jclass,
     jstring module_id,
     jstring storage_root,
-    jobject asset_manager
+    jobject asset_manager,
+    jstring content_root
 ) {
     ClearError();
 
     if (module_id == nullptr
-        || storage_root == nullptr || asset_manager == nullptr) {
+        || storage_root == nullptr || asset_manager == nullptr
+        || content_root == nullptr) {
         SetError(
             "Native module id and storage root are required."
         );
@@ -690,6 +723,29 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
         || storage_path[0] != '/') {
         SetError("Native module storage root is invalid.");
         return 0;
+    }
+    const char *content_chars=env->GetStringUTFChars(content_root,nullptr);
+    if(content_chars==nullptr)return 0;
+    std::string content_path(content_chars);
+    env->ReleaseStringUTFChars(content_root,content_chars);
+    // A companion game's content path must belong to its own id. Nothing
+    // supplied by the game itself can select a storage or executable path.
+    const size_t root_at=storage_path.rfind("/native-modules/");
+    if(root_at==std::string::npos ||
+       storage_path.substr(root_at+16u)!=std::string(spec->id)){
+        SetError("Invalid module-scoped private save root.");
+        return 0;
+    }
+    if(!content_path.empty()){
+        const std::string prefix=storage_path.substr(0,root_at)+
+            "/module-packs/"+spec->id+"/releases/";
+        if(content_path.compare(0,prefix.size(),prefix)!=0 ||
+           content_path.size()<prefix.size()+8u ||
+           content_path.compare(content_path.size()-7u,7u,"/assets")!=0 ||
+           content_path.find("..")!=std::string::npos){
+            SetError("Rejected content root outside selected game.");
+            return 0;
+        }
     }
 
     void *library =
@@ -751,6 +807,7 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
     session->library = library;
     session->api = api;
     session->storage_root = storage_path;
+    session->content_root = content_path;
     session->asset_manager = AAssetManager_fromJava(env,asset_manager);
     if(session->asset_manager==nullptr) {
         SetError("Could not access packaged Android assets.");

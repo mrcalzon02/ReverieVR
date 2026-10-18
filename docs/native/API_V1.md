@@ -1,3 +1,7 @@
+## Immutable downloaded game-content roots (2026-10-17)
+
+The native host now receives an optional validated **game-local** active content directory when a built-in game is opened. `HostReadAsset` reads module-scoped files from that immutable revision via bounded `open(O_NOFOLLOW)`/read, and falls back to packaged APK assets when the requested entry is absent. The Java `RvPackInstaller` decides which verified revision is active and `NativeModuleRuntime` pins that root for the duration of the game's session. This adds only an internal Java/JNI launch argument, not a field to the frozen game ABI v1. No native C++ executable file is loaded from this directory.
+
 ## Scoped Beckenburg room art — 2026-10-17
 
 The host's ABI-v1 read-only `read_asset` callback now admits `native/red-ledger/beckenburg/*.rlprop` for Red Ledger, alongside its existing original icons/models/textures. `reverie_native_asset_scope.h` enforces separate game IDs, extensions, length and bounded byte sizes without opening arbitrary filesystem paths. The game still requires packaged binary assets; this change alone does not prove that the room art appears on the Galaxy S9. Host ABI layout and existing Omega Front PNG access remain unchanged.

@@ -1,3 +1,7 @@
+## Downloaded data-package mounting (2026-10-17)
+
+`NativeModuleRuntime` supplies its selected game's `RvPackInstaller.activeAssets` immutable revision directory to `nativeCreate`. The host checks the expected private `/module-packs/<id>/releases/<rev>/assets` location, then performs a bounded read of the previously validated module-owned path; if the optional file is absent it falls back to Android AssetManager. This is an integrated content-resolution path, **not** a feature for independently downloaded native code. Source integration and JVM/host checks do not constitute APK/S9 acceptance.
+
 ## Beckenburg scoped asset root — 2026-10-17
 
 Native `HostReadAsset` classifies packaged paths with `reverie_native_asset_scope.h`; it admits only exact flat `native/red-ledger/beckenburg/*.rlprop` model names, does not accept paths from other modules or arbitrary folders, and continues to use Android's packaged AssetManager. Downloadable content-pack mounting is a separate planned service, not implied by this APK path fix. Native host ABI v1, saves and module lifecycle are unchanged.
