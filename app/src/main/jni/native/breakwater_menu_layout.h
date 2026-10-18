@@ -22,15 +22,15 @@ struct Rect {
 constexpr Rect kPanel={0.f,0.42f,6.10f,2.26f};
 constexpr Rect kDifficultyPanel={0.f,0.42f,6.10f,2.26f};
 constexpr float kColumnX[4]={-2.10f,-0.70f,0.70f,2.10f};
-constexpr float kShopRowY[2]={0.31f,-0.055f};
-constexpr float kCardWidth=1.23f,kCardHeight=0.30f;
+constexpr float kShopRowY[2]={0.34f,-0.04f};
+constexpr float kCardWidth=1.23f,kCardHeight=0.36f;
 constexpr float kActionY=-0.36f;
 constexpr float kActionWidth=1.60f,kActionHeight=0.24f;
 // Text baselines are part of the same shop layout contract: a tooltip that
 // fits horizontally must not overlap the top cards or status heading.
 constexpr float kShopStatusY=0.84f;
-constexpr float kShopHintY=0.60f;
-constexpr float kShopHintScale=0.036f;
+constexpr float kShopHintY=0.63f;
+constexpr float kShopHintScale=0.032f;
 constexpr float kShopCreditsY=-0.60f;
 constexpr float kShopCreditsScale=0.033f;
 inline Rect ShopCard(int index) {
