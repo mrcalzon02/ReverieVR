@@ -1,0 +1,113 @@
+name: ReverieVR hub game acquisition integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/reverie-hub-game-modules-ci.yml'
+      - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/HubGameModulesInstrumentedTest.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModule*.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/Companion*.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/RvPack*.java'
+      - 'app/build.gradle'
+      - 'game-apps/test-chamber/build.gradle'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reverie-hub-game-acquisition-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-installed-hub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable Android emulator acceleration
+        shell: bash
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Install pinned Android build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then SDKMANAGER="$(command -v sdkmanager || true)"; fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.22.1'
+      - name: Fetch authoritative native hub build inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew scripts/fetch-dosbox-pure.sh scripts/fetch-doom-shareware.sh scripts/fetch-kens-labyrinth.sh scripts/fetch-jetpack.sh scripts/verify-build-bootstrap.sh
+          ./scripts/fetch-dosbox-pure.sh
+          ./scripts/fetch-doom-shareware.sh
+          ./scripts/fetch-kens-labyrinth.sh
+          ./scripts/fetch-jetpack.sh
+          ./scripts/verify-build-bootstrap.sh
+      - name: Build real ReverieVR hub + signed-test companion + Android tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --stacktrace -PcompanionEmulatorAbi=true \
+            :app:assembleDebug :app:assembleDebugAndroidTest \
+            :companion-test-chamber:assembleDebug
+          mkdir -p validation/hub
+          HUB="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f -print -quit)"
+          CHAMBER="$(find game-apps/test-chamber/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f -print -quit)"
+          TEST="$(find app/build/outputs/apk/androidTest/debug -maxdepth 1 -name '*.apk' -type f -print -quit)"
+          test -f "$HUB" && test -f "$CHAMBER" && test -f "$TEST"
+          for NAME in 'lib/x86_64/libreverie_native_host.so' 'lib/x86_64/libreverie_module_test_chamber.so'; do
+            unzip -Z -1 "$HUB" | grep -Fx "$NAME"
+          done
+          unzip -Z -1 "$CHAMBER" | grep -Fx 'lib/x86_64/libreverie_companion_test_chamber.so'
+          python3 scripts/modules/verify-companion-contract.py
+          cp "$HUB" validation/hub/ReverieVR-hub-emulator.apk
+          cp "$CHAMBER" validation/hub/TestChamber-companion-emulator.apk
+          cp "$TEST" validation/hub/ReverieVR-module-tests.apk
+          sha256sum validation/hub/*.apk > validation/hub/SHA256.txt
+      - name: Execute real hub game management on Android 10
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          cores: 2
+          ram-size: 3072M
+          heap-size: 512M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            set -eu
+            mkdir -p validation/hub
+            adb logcat -c
+            adb install -r validation/hub/ReverieVR-hub-emulator.apk
+            adb install -r validation/hub/TestChamber-companion-emulator.apk
+            adb install -r validation/hub/ReverieVR-module-tests.apk
+            adb shell pm list packages | grep -Fx 'package:io.github.mrcalzon02.reverievr'
+            adb shell pm list packages | grep -Fx 'package:io.github.mrcalzon02.reverievr.game.testchamber'
+            adb shell am start -W -n io.github.mrcalzon02.reverievr/.MainActivity | tee validation/hub/hub-main-launch.txt
+            adb shell am instrument -w -r               io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner               | tee validation/hub/instrumentation-output.txt
+            grep -F 'OK (4 tests)' validation/hub/instrumentation-output.txt
+            adb logcat -d -v time > validation/hub/logcat.txt
+            adb exec-out screencap -p > validation/hub/hub-screen.png
+      - name: Keep APKs and actual acquisition/update test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reverie-hub-game-acquisition-${{ github.run_id }}
+          path: validation/hub/
+          retention-days: 14
+          if-no-files-found: warn
