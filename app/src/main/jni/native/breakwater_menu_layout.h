@@ -49,6 +49,15 @@ inline Rect ShopAction(int action) {
            Rect{0.f,0.f,0.f,0.f};
 }
 constexpr Rect kResetCard={2.30f,-.56f,1.18f,.22f};
+inline Rect DebriefAction(int action) {
+    return action>=0 && action<2?
+        Rect{action==0?-1.1f:1.1f,-.43f,1.86f,.33f}:
+        Rect{0.f,0.f,0.f,0.f};
+}
+inline int HitDebrief(float x,float y) {
+    for(int i=0;i<2;i++)if(DebriefAction(i).Contains(x,y))return i;
+    return -1;
+}
 inline Rect SlotCard(int index) {
     return index>=0 && index<3?
         Rect{-1.79f+index*1.79f,.20f,1.52f,.43f}:
