@@ -49,8 +49,9 @@ bool TestShowcase::CreateGl(){
     static const char *fs=
         "precision mediump float;\n"
         "uniform sampler2D uTex;\n"
+        "uniform vec3 uTint;\n"
         "varying vec2 vUv;\n"
-        "void main(){gl_FragColor=texture2D(uTex,vUv);}\n";
+        "void main(){vec4 t=texture2D(uTex,vUv);gl_FragColor=vec4(t.rgb*uTint,t.a);}\n";
     const ReverieNativeGlAttributeBindingV1 binds[]={
         {0u,"aPosition"},{1u,"aUv"}
     };
@@ -69,7 +70,8 @@ bool TestShowcase::CreateGl(){
     uv=glGetAttribLocation(program,"aUv");
     matrix=glGetUniformLocation(program,"uMvp");
     sampler=glGetUniformLocation(program,"uTex");
-    if(position<0||uv<0||matrix<0||sampler<0){
+    tint=glGetUniformLocation(program,"uTint");
+    if(position<0||uv<0||matrix<0||sampler<0||tint<0){
         ReleaseGl();restore();return false;
     }
     glActiveTexture(GL_TEXTURE0);
@@ -132,6 +134,10 @@ bool TestShowcase::Draw(const ReverieNativeEyeV1 *eye)const{
     glEnableVertexAttribArray(static_cast<GLuint>(uv));
     for(const auto &m:meshes){
         if(!m.vbo||!m.texture)continue;
+        // The aimed model is visually brighter; other original atlases
+        // retain their exact RGB values. Both eyes use identical focus.
+        if(m.model==focus)glUniform3f(tint,1.22f,1.14f,0.92f);
+        else glUniform3f(tint,1.f,1.f,1.f);
         const float *p=locations[m.model];
         const float s=p[3];
         float model[16]={

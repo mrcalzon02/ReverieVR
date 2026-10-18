@@ -74,6 +74,13 @@ Java_io_github_mrcalzon02_reverievr_game_testchamber_GameVrActivity_nativeCreate
     return static_cast<jlong>(reinterpret_cast<uintptr_t>(s));
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_io_github_mrcalzon02_reverievr_game_testchamber_GameVrActivity_nativeSetFocusedModel(
+    JNIEnv *,jclass,jlong handle,jint id){
+    Session *s=SessionFrom(handle);
+    if(s)s->showcase.focus=(id>=0&&id<5)?id:-1;
+}
+
 extern "C" JNIEXPORT jboolean JNICALL
 Java_io_github_mrcalzon02_reverievr_game_testchamber_GameVrActivity_nativeAddModelMesh(
     JNIEnv *env,jclass,jlong handle,jint model,jfloatArray vertices,

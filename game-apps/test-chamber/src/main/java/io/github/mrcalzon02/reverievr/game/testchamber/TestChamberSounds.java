@@ -16,7 +16,6 @@ final class TestChamberSounds implements AutoCloseable {
     private final SoundPool pool;
     private final int[] ids=new int[FILES.length];
     private final boolean[] ready=new boolean[FILES.length];
-    private int next=0;
 
     TestChamberSounds(AssetManager assets)throws IOException{
         AudioAttributes attrs=new AudioAttributes.Builder()
@@ -49,8 +48,11 @@ final class TestChamberSounds implements AutoCloseable {
             }
         }
     }
-    void playNext(){
-        final int index=next++%FILES.length;
+    void playForFocus(int model){
+        // A stable object -> cue mapping makes each gallery asset testable.
+        // Empty space selects the general beacon (sixth effect).
+        final int index=model==0?1:model==1?0:model==2?4:
+            model==3?3:model==4?2:5;
         synchronized(ready){
             if(!ready[index]){
                 Log.w("TestChamberSound","Cue not loaded yet: "+FILES[index]);

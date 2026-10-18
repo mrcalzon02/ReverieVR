@@ -17,7 +17,8 @@ struct TestShowcaseMesh {
 struct TestShowcase {
     std::vector<TestShowcaseMesh> meshes;
     GLuint program=0;
-    GLint matrix=-1,sampler=-1,position=-1,uv=-1;
+    GLint matrix=-1,sampler=-1,position=-1,uv=-1,tint=-1;
+    int focus=-1;
     bool Add(int model,const std::vector<float>&vertices,
              int width,int height,const std::vector<uint32_t>&argb);
     bool HasFiveModels()const;
