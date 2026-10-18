@@ -1886,7 +1886,9 @@ int main() {
     assert(turret.Purchase(Upgrade::SupportTurret));
     assert(turret.stats().turret);
     assert(turret.BeginWave());
-    for(int i=0;i<160;i++) turret.Tick(0.05f);
+    // The visible ally now waits for its actual shoreline engagement
+    // range, then requires two 1.35-second hits to sink a rowboat.
+    for(int i=0;i<190;i++) turret.Tick(0.05f);
     assert(turret.wave_status().boats_sunk>=1);
     assert(turret.wave_status().troops_landed==0);
 
