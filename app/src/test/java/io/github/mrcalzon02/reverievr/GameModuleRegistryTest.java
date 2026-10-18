@@ -12,7 +12,8 @@ public class GameModuleRegistryTest {
             assertTrue(ids.add(entry.id));
             assertTrue(packages.add(entry.companionPackage));
         }
-        assertEquals(14,ids.size());
+        assertEquals(15,ids.size());
+        assertNotNull(GameModuleRegistry.find("procedural-test-chamber"));
         assertNull(GameModuleRegistry.find("classic-hypothetical"));
         assertNull(RvPackInstaller.namespace("classic-hypothetical"));
         assertNull(GameModuleRegistry.find("../red-ledger"));

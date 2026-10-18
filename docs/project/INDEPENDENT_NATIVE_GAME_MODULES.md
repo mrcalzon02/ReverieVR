@@ -1,3 +1,7 @@
+## Phase 4 first executable companion source (2026-10-17)
+
+A separate Android app target `:companion-test-chamber` is included in `settings.gradle`, rooted at `game-apps/test-chamber/`. It links the EXISTING `test_chamber_module.cpp` and procedural OpenKTG generator into its own armv7/arm64 shared library through NDK Android.mk, exports a small JNI adapter over ABI v1 and renders through a dedicated Cardboard `GameVrActivity` with independent package ID `io.github.mrcalzon02.reverievr.game.testchamber`. The installed companion is discoverable in the compact game manager only if Android confirms its matching publisher certificate. The same app can be launched directly for isolated phone/headset testing. This is **source only**. The separate APK has not been built, installed, stereo-verified or accepted on a Galaxy S9. It demonstrates an implementation target for the phase-4 test; it does not establish phase-5 game migration or justify phase-6 hub slimming.
+
 # Independent Native Game Modules — ReverieVR
 
 **Plan, not implemented.** Target: Galaxy S9 / Daydream, Android API 26+, C++17/GLES2. Source: \`mrcalzon02/ReverieVR\`, \`main\` only. No new GitHub Actions.

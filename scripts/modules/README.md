@@ -1,3 +1,21 @@
+## Standalone native test chamber APK (Phase 4 source target)
+
+The first independent native executable is now a real Gradle application module, **`:companion-test-chamber`**:
+
+```sh
+./gradlew :companion-test-chamber:assembleDebug
+# Or, with the SAME persistent distribution signing identity as the hub:
+./gradlew :companion-test-chamber:assembleRelease \
+  -PphoneTestKeystorePath=/secure/reverievr-phone-test.jks \
+  -PphoneTestStorePassword=... -PphoneTestKeyPassword=... \
+  -PphoneTestKeyAlias=... \
+  -PtestChamberVersionCode=1 -PtestChamberVersionName=0.1.0
+```
+
+Avoid putting secrets into shared terminal history, CI output or git; supply the configured signer through secure local mechanisms where possible. Never rotate the hub signer to make a companion package install.
+
+Target app ID: `io.github.mrcalzon02.reverievr.game.testchamber`. The Gradle module builds the existing procedural Test Chamber `reverie_native_module_entry_v1` source plus a JNI adapter and Cardboard stereo Activity. Verify both ABI-specific ELF objects, Android manifest package, signature lineage, Daydream eye rendering, trigger, pause/resume and return-to-hub on a Galaxy S9. **Not yet compiled or tested on device in this session.** It is a separate test executable, not an updater hot-loading arbitrary native files.
+
 # Independent native game releases — operator tools
 
 **Current state (2026-10-17):** signed per-game catalog parser, bounded content importer, transactional asset resolver, Stage A manager, installed companion-package admission, and two local pack/signing tools exist in source. **No independent game release or companion APK has been published or device accepted.** Do not advertise these as finished S9 features until a working APK has been installed and rendered.

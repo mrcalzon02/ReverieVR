@@ -1,3 +1,7 @@
+## Standalone Test Chamber ABI reuse (2026-10-17, source only)
+
+The separate `:companion-test-chamber` Gradle application includes the existing C++ `test_chamber_module.cpp` directly, preserving its unchanged `reverie_native_module_entry_v1` ABI-v1 implementation. `game-apps/test-chamber/src/main/jni/companion_test_chamber_bridge.cpp` validates module identity, native ABI and required GLES2, and calls the real create/update/per-eye render/GL-release/destroy callbacks through a module-local JNI bridge. Game code remains independently packaged, but this cannot be called a verified APK or proof of Galaxy S9 behavior without NDK, Cardboard lifecycle and handset checks. Core hub native host/ABI header remain unchanged.
+
 ## Immutable downloaded game-content roots (2026-10-17)
 
 The native host now receives an optional validated **game-local** active content directory when a built-in game is opened. `HostReadAsset` reads module-scoped files from that immutable revision via bounded `open(O_NOFOLLOW)`/read, and falls back to packaged APK assets when the requested entry is absent. The Java `RvPackInstaller` decides which verified revision is active and `NativeModuleRuntime` pins that root for the duration of the game's session. This adds only an internal Java/JNI launch argument, not a field to the frozen game ABI v1. No native C++ executable file is loaded from this directory.

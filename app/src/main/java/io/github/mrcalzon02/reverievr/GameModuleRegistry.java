@@ -49,7 +49,9 @@ final class GameModuleRegistry {
         new Entry("classic-breakout","Breakout","classic-breakout",
             "io.github.mrcalzon02.reverievr.game.classicbreakout",false),
         new Entry("classic-chutes-ladders","Chutes & Ladders","classic-chutes-ladders",
-            "io.github.mrcalzon02.reverievr.game.classicchutesladders",false)
+            "io.github.mrcalzon02.reverievr.game.classicchutesladders",false),
+        new Entry("procedural-test-chamber","Test Chamber Companion (Test)","test-chamber",
+            "io.github.mrcalzon02.reverievr.game.testchamber",true)
     };
     static {
         Set<String> ids=new HashSet<>(),packages=new HashSet<>(),namespaces=new HashSet<>();

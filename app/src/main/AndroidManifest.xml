@@ -50,6 +50,7 @@
         <package android:name="io.github.mrcalzon02.reverievr.game.classicreversi" />
         <package android:name="io.github.mrcalzon02.reverievr.game.classicbreakout" />
         <package android:name="io.github.mrcalzon02.reverievr.game.classicchutesladders" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.testchamber" />
     </queries>
 
     <application
