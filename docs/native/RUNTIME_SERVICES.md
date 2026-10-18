@@ -1,3 +1,7 @@
+## Beckenburg scoped asset root — 2026-10-17
+
+Native `HostReadAsset` classifies packaged paths with `reverie_native_asset_scope.h`; it admits only exact flat `native/red-ledger/beckenburg/*.rlprop` model names, does not accept paths from other modules or arbitrary folders, and continues to use Android's packaged AssetManager. Downloadable content-pack mounting is a separate planned service, not implied by this APK path fix. Native host ABI v1, saves and module lifecycle are unchanged.
+
 ## Gumball game-private tracked flight pointer — 2026-10-16
 
 Reuses the existing sanitized `ReverieNativeInputV1` tracked-controller world-space ray without a new service or shell mapping. Inside active Gumball sorties only, its intersection with the displayed flight plane directs the ship toward a visible target; orientation movement is independent of the touchpad primary-fire action. `Simulation::pointer_move_speed` scales tracking response with purchased/fitted thrust rather than teleporting the ship. Loss/invalidity of the tracked ray falls back to existing pad movement. The exact isolated helper/test passed GCC, Clang, and Clang ASan+UBSan; renderer/APK/S9 tracking acceptance remains unverified.

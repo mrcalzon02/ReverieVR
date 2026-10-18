@@ -1,3 +1,7 @@
+## Scoped Beckenburg room art — 2026-10-17
+
+The host's ABI-v1 read-only `read_asset` callback now admits `native/red-ledger/beckenburg/*.rlprop` for Red Ledger, alongside its existing original icons/models/textures. `reverie_native_asset_scope.h` enforces separate game IDs, extensions, length and bounded byte sizes without opening arbitrary filesystem paths. The game still requires packaged binary assets; this change alone does not prove that the room art appears on the Galaxy S9. Host ABI layout and existing Omega Front PNG access remain unchanged.
+
 ## Omega Front native admission — 2026-10-15
 
 The Development-only `omega-front` native module is registered in the built-in host allowlist as `libreverie_module_omega_front.so`, has a corresponding Android.mk shared target and uses unchanged native ABI v1 with a real `reverie_native_module_entry_v1`. It owns one 24×24 battle controller and GLES2 war table, with a single update per simulation tick and read-only stereo eye passes. No C ABI fields were added. Java confines it to Development logging mode. NDK build, ABI exports inside an APK, installation and Galaxy S9 checks remain unverified.

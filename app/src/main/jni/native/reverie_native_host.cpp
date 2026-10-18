@@ -1,5 +1,6 @@
 #include "reverie_native_sdk.h"
 #include "reverie_native_sound_queue.h"
+#include "reverie_native_asset_scope.h"
 
 #include <android/log.h>
 #include <android/asset_manager.h>
@@ -434,39 +435,14 @@ int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
     if(out_size) *out_size=0u;
     if(!session || !session->asset_manager || !out_size || !path ||
        !session->spec) return REVERIE_NATIVE_SAVE_ERROR;
-    const bool ledger=std::strcmp(session->spec->id,"between-deliveries-red-ledger")==0;
-    const bool omega=std::strcmp(session->spec->id,"omega-front")==0;
-    if(!ledger && !omega)return REVERIE_NATIVE_SAVE_ERROR;
-    const char *root=ledger?"native/red-ledger/":"native/omega-front/";
-    const size_t root_length=std::strlen(root);
-    const size_t n=strnlen(path,128u);
-    if(n<root_length+8u || n>=128u ||
-       std::strncmp(path,root,root_length)!=0 ||
-       std::strstr(path,"..")!=nullptr) return REVERIE_NATIVE_SAVE_ERROR;
-    const char *leaf=path+root_length;
-    const bool icon=ledger && std::strncmp(leaf,"icons/",6)==0;
-    const bool model=ledger && std::strncmp(leaf,"models/",7)==0;
-    const bool texture=ledger && std::strncmp(leaf,"textures/",9)==0;
-    const bool terrain=omega && std::strncmp(leaf,"terrain/",8)==0;
-    const bool unit=omega && std::strncmp(leaf,"units/kenney/",13)==0;
-    const bool shared=omega && std::strncmp(leaf,"shared/",7)==0;
-    if(!icon && !model && !texture && !terrain && !unit && !shared)
-        return REVERIE_NATIVE_SAVE_ERROR;
-    const size_t prefix_length=root_length+
-        (icon?6u:model?7u:texture?9u:terrain?8u:unit?13u:7u);
-    if(omega && (n<4u || std::strcmp(path+n-4u,".png")!=0))
-        return REVERIE_NATIVE_SAVE_ERROR;
-    for(size_t i=prefix_length;i<n;++i) {
-        const char ch=path[i];
-        if(!((ch>='a'&&ch<='z')||(ch>='A'&&ch<='Z')||
-             (ch>='0'&&ch<='9')||ch=='_'||ch=='-'||ch=='.'))
-            return REVERIE_NATIVE_SAVE_ERROR;
-    }
+    const uint32_t max_bytes=reverie::native::assets::MaximumBytes(
+        session->spec->id,path);
+    if(max_bytes==0u)return REVERIE_NATIVE_SAVE_ERROR;
     AAsset *asset=AAssetManager_open(session->asset_manager,path,
                                     AASSET_MODE_STREAMING);
     if(!asset)return REVERIE_NATIVE_SAVE_NOT_FOUND;
     const off64_t size=AAsset_getLength64(asset);
-    if(size<=0 || size>(icon?1024*1024:3*1024*1024)) {
+    if(size<=0 || size>static_cast<off64_t>(max_bytes)) {
         AAsset_close(asset);
         return REVERIE_NATIVE_SAVE_ERROR;
     }
