@@ -13,7 +13,11 @@ int main(){
     trajectory::ShotRay ray{};
     assert(trajectory::CannonShot(WeaponKind::MachineGun,straight,&ray));
     assert(std::abs(ray.origin[0])<1.e-5f);
-    assert(std::abs(ray.origin[1]+.76f)<1.e-5f);
+    assert(std::abs(ray.origin[1]+.53f)<1.e-5f);
+    // The lowered aim used to clip the player's parapet; no mount may
+    // point into the emplacement beneath its minimum safe declination.
+    const float intoParapet[]={0.f,-.40f,-1.f};
+    assert(!trajectory::CannonShot(WeaponKind::MachineGun,intoParapet,&ray));
     assert(ray.origin[2]> -1.34f && ray.origin[2]< -.4f);
     // The gun must not overhang the shore-firing line: infantry and
     // unloaded armor are shootable *in front of* the physical muzzle.
