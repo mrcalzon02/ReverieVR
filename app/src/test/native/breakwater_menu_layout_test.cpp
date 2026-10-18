@@ -35,10 +35,10 @@ int main(){
         std::snprintf(count,sizeof(count),"%d DAY WAVES",12+2*tier);
         assert(std::strstr(hint,count)!=nullptr);
         assert(4.f*FittedScale(hint,5.65f,.045f)*std::strlen(hint)<5.65f);
-        const float baseline=.31f, height=.045f*2.60f;
+        const float baseline=.64f, height=.040f*2.60f;
         const Rect difficulty=DifficultyCard(tier);
         assert(baseline-height>difficulty.y+difficulty.height*.5f);
-        assert(baseline+height<.74f-.059f*2.60f);
+        assert(baseline+height<.98f-.052f*2.60f);
     }
     assert(std::strstr(DifficultyHint(-1),"POINT AT")!=nullptr);
     assert(HitShop(0.f,-1.18f)==-1); // footer is a label, not a button
@@ -55,18 +55,21 @@ int main(){
     assert(FittedScale("UPGRADES",ShopAction(9).width,.052f)>0.f);
     assert(!Inside({0.f,-1.70f,1.0f,.10f},kPanel)); // old clipped footer
     // New textual footer extends at most 3 glyph rows above/below center.
-    assert(-.95f-.039f*2.5f > kPanel.y-kPanel.height*.5f);
-    // Actual vector-font glyphs extend up to 2.59*scale each direction.
+    assert(kShopCreditsY-kShopCreditsScale*2.60f > kPanel.y-kPanel.height*.5f);
+    // Conservative glyph box covers old strokes and new proportional Lato.
     const float maxHintExtent=2.60f*kShopHintScale;
-    const float maxStatusExtent=2.60f*.048f;
+    const float maxStatusExtent=2.60f*.040f;
     assert(kShopHintY-maxHintExtent >
            kShopRowY[0]+kCardHeight*.5f);
     assert(kShopHintY+maxHintExtent <
            kShopStatusY-maxStatusExtent);
     assert(kShopCreditsY-2.60f*kShopCreditsScale >
            kPanel.y-kPanel.height*.5f);
-    // No card or lettering descends below the -1.10 world sea plane.
-    assert(kPanel.y-kPanel.height*.5f>=-1.1001f);
-    assert(-.95f-.039f*2.5f> -1.10f);
+    // Raised optical-footprint bound, not merely the physical sea plane.
+    assert(kPanel.y-kPanel.height*.5f >= -.7101f);
+    assert(kPanel.y-kPanel.height*.5f >= -1.1001f);
+    assert(kShopRowY[1]-kCardHeight*.5f > kActionY+kActionHeight*.5f);
+    assert(kActionY-kActionHeight*.5f > kShopCreditsY+2.60f*kShopCreditsScale);
+    assert(kShopCreditsY-kShopCreditsScale*2.60f > -1.10f);
     std::cout<<"Breakwater compact menu bounds, text fitting and target parity passed\n";
 }
