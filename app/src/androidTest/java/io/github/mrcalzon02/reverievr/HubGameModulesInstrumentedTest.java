@@ -119,7 +119,10 @@ public final class HubGameModulesInstrumentedTest {
                 GameModuleRegistry.find(module.id));
             assertTrue("Duplicate C++ game identity "+module.id,found.add(module.id));
         }
-        File home=new File(context().getFilesDir(),"native-module-integration");
+        // The native host deliberately accepts ONLY files/native-modules/<id>.
+        // Testing from a made-up folder is correctly rejected by its security
+        // gate and says nothing about whether the actual game starts.
+        File home=new File(context().getFilesDir(),"native-modules");
         assertTrue(home.isDirectory()||home.mkdirs());
         // Game state and extracted assets are isolated per ID. This probes
         // genuine C++ create/resume/update/pause/destroy callbacks rather
