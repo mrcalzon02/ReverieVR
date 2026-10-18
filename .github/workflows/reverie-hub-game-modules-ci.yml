@@ -119,7 +119,7 @@ jobs:
             adb shell am instrument -w -r               io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner               | tee validation/hub/instrumentation-output.txt
             adb logcat -d -v time > validation/hub/logcat.txt
             grep -F 'OK (6 tests)' validation/hub/instrumentation-output.txt
-            grep -F 'BreakwaterAssets: Authentic BWM1 models loaded 3/3' validation/hub/logcat.txt
+            grep -F 'Authentic BWM1 models loaded 3/3' validation/hub/logcat.txt
             grep -F 'Breakwater verified-pack asset native/breakwater/beckenburg/' validation/hub/logcat.txt
             adb exec-out screencap -p > validation/hub/hub-screen.png
       - name: Keep APKs and actual acquisition/update test evidence
