@@ -1,0 +1,170 @@
+package io.github.mrcalzon02.reverievr.game.testchamber;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.opengl.GLES20;
+import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Toast;
+import com.google.cardboard.sdk.CardboardView;
+import com.google.cardboard.sdk.HeadTransform;
+import com.google.cardboard.sdk.Viewport;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.microedition.khronos.egl.EGLConfig;
+
+/**
+ * Small independent APK exercising the actual shared native Test Chamber.
+ * It uses Cardboard stereoscopic eye transforms; no desktop or VR shell is
+ * necessary after this Android package has been installed. This does NOT
+ * yet replace the production hub/controller/runtime integration.
+ */
+public final class GameVrActivity extends Activity
+        implements CardboardView.Renderer {
+    private static final String GAME_ID="procedural-test-chamber";
+    private static final String HOST_PACKAGE="io.github.mrcalzon02.reverievr";
+    private static final float NEAR=0.08f, FAR=120.f;
+    private static final boolean AVAILABLE;
+    static {
+        boolean loaded;
+        try{
+            System.loadLibrary("reverie_companion_test_chamber");
+            loaded=true;
+        }catch(UnsatisfiedLinkError failure){
+            loaded=false;
+        }
+        AVAILABLE=loaded;
+    }
+    private static native long nativeCreate();
+    private static native boolean nativeSurfaceCreated(long handle);
+    private static native void nativeSurfaceReleased(long handle);
+    private static native void nativeResume(long handle);
+    private static native void nativePause(long handle);
+    private static native void nativeUpdate(long handle,float seconds,
+                                            boolean primaryPressed);
+    private static native boolean nativeRenderEye(long handle,int eyeIndex,
+                                                   float[] view,float[] projection);
+    private static native void nativeDestroy(long handle);
+
+    private final Object nativeLock=new Object();
+    private final AtomicBoolean pendingTrigger=new AtomicBoolean();
+    private CardboardView viewer;
+    private long instance;
+    private long previousFrameNanos;
+    private volatile boolean surfaceReady;
+    private final AtomicBoolean failureReported=new AtomicBoolean();
+
+    @Override protected void onCreate(Bundle saved){
+        super.onCreate(saved);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                             WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        immersive();
+        final Intent requested=getIntent();
+        if(requested!=null && requested.hasExtra("reverie_game_id") &&
+           (!GAME_ID.equals(requested.getStringExtra("reverie_game_id")) ||
+            requested.getIntExtra("reverie_protocol",-1)!=1)){
+            showFailure("Companion launch protocol mismatch");
+            return;
+        }
+        if(!AVAILABLE){
+            showFailure("Native Test Chamber library unavailable");
+            return;
+        }
+        synchronized(nativeLock){instance=nativeCreate();}
+        if(instance==0L){
+            showFailure("Native Test Chamber could not initialize");
+            return;
+        }
+        CardboardView.setUseCardboardGlSurfaceView(true);
+        viewer=new CardboardView(this);
+        viewer.setStereoRenderMode(true);
+        viewer.setRenderer(this);
+        viewer.setOnTriggerEvent(()->pendingTrigger.set(true));
+        setContentView(viewer);
+    }
+
+    private void immersive(){
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|
+            View.SYSTEM_UI_FLAG_FULLSCREEN|
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|
+            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    }
+    private void showFailure(String explanation){
+        if(!failureReported.compareAndSet(false,true))return;
+        runOnUiThread(()->{
+            Toast.makeText(this,explanation,Toast.LENGTH_LONG).show();
+            finish();
+        });
+    }
+    @Override protected void onResume(){
+        super.onResume();
+        immersive();
+        synchronized(nativeLock){if(instance!=0L)nativeResume(instance);}
+        if(viewer!=null)viewer.onResume();
+    }
+    @Override protected void onPause(){
+        if(viewer!=null)viewer.onPause();
+        synchronized(nativeLock){if(instance!=0L)nativePause(instance);}
+        super.onPause();
+    }
+    @Override protected void onDestroy(){
+        if(viewer!=null)viewer.onPause();
+        synchronized(nativeLock){
+            if(instance!=0L){
+                nativeDestroy(instance);
+                instance=0L;
+            }
+        }
+        super.onDestroy();
+    }
+    @Override public void onNewFrame(HeadTransform pose){
+        long now=System.nanoTime();
+        float seconds=previousFrameNanos==0L?0.f:
+            Math.max(0.f,Math.min(.05f,(now-previousFrameNanos)*1.0e-9f));
+        previousFrameNanos=now;
+        synchronized(nativeLock){
+            if(instance!=0L)nativeUpdate(instance,seconds,
+                pendingTrigger.getAndSet(false));
+        }
+    }
+    @Override public void onDrawEye(CardboardView.Eye eye){
+        GLES20.glClearColor(.045f,.085f,.14f,1.f);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
+        synchronized(nativeLock){
+            if(instance==0L||!surfaceReady)return;
+            int eyeIndex=eye.getEyeType()==CardboardView.Eye.LEFT?0:1;
+            if(!nativeRenderEye(instance,eyeIndex,
+                eye.getEyeView(),eye.getPerspective(NEAR,FAR)))
+                showFailure("Native game stereo render failed");
+        }
+    }
+    @Override public void onFinishFrame(Viewport vp){}
+    @Override public void onSurfaceChanged(int width,int height){
+        GLES20.glViewport(0,0,width,height);
+    }
+    @Override public void onSurfaceCreated(EGLConfig config){
+        synchronized(nativeLock){
+            surfaceReady=instance!=0L&&nativeSurfaceCreated(instance);
+        }
+        if(!surfaceReady)showFailure("Native game GL resources failed");
+    }
+    @Override public void onRendererShutdown(){
+        synchronized(nativeLock){
+            if(instance!=0L&&surfaceReady)nativeSurfaceReleased(instance);
+            surfaceReady=false;
+        }
+    }
+    @Override public void onBackPressed(){
+        Intent hub=getPackageManager().getLaunchIntentForPackage(HOST_PACKAGE);
+        if(hub!=null){
+            try{startActivity(hub);}catch(RuntimeException ignored){}
+        }
+        finish();
+    }
+}
