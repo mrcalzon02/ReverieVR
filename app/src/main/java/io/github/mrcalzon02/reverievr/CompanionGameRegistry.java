@@ -58,6 +58,19 @@ final class CompanionGameRegistry {
         }
     }
 
+    static long installedVersion(Context context,String gameId){
+        Descriptor accepted=installed(context,gameId);
+        if(accepted==null)return 0L;
+        try{
+            PackageInfo info=context.getPackageManager().getPackageInfo(
+                accepted.packageName,0);
+            return Build.VERSION.SDK_INT>=28?
+                info.getLongVersionCode():info.versionCode;
+        }catch(PackageManager.NameNotFoundException | SecurityException e){
+            return 0L;
+        }
+    }
+
     static boolean launch(Activity hub,String gameId){
         Descriptor selected=installed(hub,gameId);
         if(selected==null)return false;
