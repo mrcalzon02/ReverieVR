@@ -21,7 +21,7 @@ APPID="io.github.mrcalzon02.reverievr.game.testchamber"
 NATIVE_MODULE="reverie_companion_test_chamber"
 JAVA_CLASS=("io.github.mrcalzon02.reverievr.game.testchamber"
             ".GameVrActivity")
-METHODS=("nativeCreate","nativeAddModelMesh","nativeSurfaceCreated","nativeSurfaceReleased",
+METHODS=("nativeCreate","nativeAddModelMesh","nativeSetFocusedModel","nativeSurfaceCreated","nativeSurfaceReleased",
          "nativeResume","nativePause","nativeUpdate","nativeRenderEye",
          "nativeDestroy")
 ABI_REL="app/src/main/jni/native/test_chamber_module.cpp"
@@ -123,6 +123,14 @@ def check_source():
     required(java,"TestChamberModels.load(","Approved GLB loader not invoked")
     required(java,"new TestChamberSounds(","No packaged game sounds loaded")
     required(bridge,"showcase.Draw(","Stereo game mesh renderer not called")
+    required(java,"TestChamberTargeting.pick(headView)","Gaze pointing not wired")
+    required(java,"nativeSetFocusedModel(instance,target)","Gaze focus not reaching renderer")
+    required(contents("game-apps/test-chamber/src/main/java/"+
+        JAVA_CLASS.replace(".","/").replace("GameVrActivity","TestChamberSounds")+".java"),
+        "TestChamberTargeting.cueFor(","Sound effects not mapped to physical models")
+    required(contents("game-apps/test-chamber/src/main/java/"+
+        JAVA_CLASS.replace(".","/").replace("GameVrActivity","TestChamberTargeting")+".java"),
+        "static int pick(float[] view)","Headless gaze selector unavailable")
     for relative in (ABI_REL,"third_party/openktg/src/gentexture.cpp"):
         required(mk,relative,"Missing actual native module linkage")
     required(native,"reverie_native_module_entry_v1","Native game entry missing")
