@@ -148,6 +148,7 @@ final class UiFeedback implements AutoCloseable {
 
     void resumeForLifecycle() {
         lifecycleActive = true;
+        combatSound.resumeForLifecycle();
     }
 
     private void playActivationNow() {
