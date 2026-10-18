@@ -79,7 +79,7 @@ struct State {
     CombatInputLatch combat_input;
     PointerFocusGate pointer_focus;
     bool armory_page=false, sam_armed=false, ghost_on=false;
-    bool slot_picker=true;
+    bool slot_picker=true, reset_armed=false;
     uint8_t save_slot=0u;
     bool slot_exists[3]={false,false,false};
     int menu_focus=-1;
@@ -280,6 +280,28 @@ void BallisticWaterImpact(State *s,const ReverieNativeInputV1 &input,
 }
 void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     Campaign &game=s->campaign;
+    if(s->slot_picker) {
+        if(!edge)return;
+        float x=0.0f,y=0.0f;
+        const int slot=AimAtPlane(input,kShopZ,&x,&y)>0.0f?
+            menu::HitSlot(x,y):-1;
+        if(slot<0 || slot>=3) {
+            Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
+        }
+        s->save_slot=static_cast<uint8_t>(slot);
+        Campaign loaded;
+        if(ReadSlotState(s,s->save_slot,&loaded)) {
+            game=loaded;s->slot_exists[slot]=true;
+        } else {
+            game=Campaign(Difficulty::Regular,1049u);
+            s->slot_exists[slot]=false;
+        }
+        s->slot_picker=false;s->reset_armed=false;
+        s->menu_focus=-1;
+        Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        return;
+    }
     if(game.phase()==Phase::Briefing) {
         if(!edge)return;
         const int choice=DifficultyTarget(input);
@@ -301,6 +323,25 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     } else if(game.phase()==Phase::Shop) {
         if(!edge)return;
         const int target=ShopTarget(input,s->armory_page);
+        if(target==10) {
+            if(!s->reset_armed) {
+                s->reset_armed=true;
+                Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            } else {
+                const bool cleared=!ReverieNativeHostSupportsSaveV1(s->host) ||
+                    ClearCheckpoint(s->host,s->save_slot);
+                if(cleared) {
+                    game=Campaign(Difficulty::Regular,1049u);
+                    s->slot_exists[s->save_slot]=false;
+                    s->reset_armed=false;s->armory_page=false;
+                    s->menu_focus=-1;
+                }
+                Feedback(s,cleared?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                                   REVERIE_NATIVE_FEEDBACK_FAILURE);
+            }
+            return;
+        }
+        s->reset_armed=false;
         bool done=false;
         if(target==9) {
             s->armory_page=!s->armory_page;
@@ -538,11 +579,14 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         // A restart must not resurrect the old shop checkpoint after app exit.
         // Keep the in-memory restart usable on hosts without save support.
         const bool checkpoint_cleared =
-            !ReverieNativeHostSupportsSaveV1(s->host) || ClearCheckpoint(s->host);
+            !ReverieNativeHostSupportsSaveV1(s->host) ||
+            ClearCheckpoint(s->host,s->save_slot);
         if(!checkpoint_cleared)
             ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,"Breakwater",
                 "Restarted in memory, but clearing the old checkpoint failed.");
         game=Campaign(Difficulty::Regular,1049u);
+        s->slot_exists[s->save_slot]=false;
+        s->reset_armed=false;
         s->impacts=ImpactEffects{};
         s->wrecks.Clear();
         s->battery_damage=BatteryDamageFeedback{};
