@@ -8,7 +8,7 @@ on:
       - '.github/workflows/breakwater-companion-ci.yml'
       - 'game-apps/breakwater/**'
       - 'scripts/modules/verify-breakwater-companion.py'
-      - 'scripts/modules/test-breakwater-targeting.sh'
+      - 'scripts/modules/test_all_game_content_packages.py'
       - 'app/src/main/jni/native/breakwater_*.cpp'
       - 'app/src/main/jni/native/breakwater_*.h'
       - 'app/src/main/assets/native/breakwater/**'
@@ -57,15 +57,15 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.22.1'
 
-      - name: Verify packaged owner assets and renderer integration
+      - name: Verify native game registry and independent build source
         run: |
           set -euo pipefail
           python3 scripts/modules/verify-game-identity-matrix.py
 
-      - name: Run Android-free model gaze and sound tests
+      - name: Run all native game package contract regressions
         run: |
           set -euo pipefail
-          sh scripts/modules/test-breakwater-targeting.sh
+          python3 -m unittest discover -s scripts/modules -p 'test_all_game_content_packages.py' -v
 
       - name: Build independent Breakwater Battery APK
         run: |
@@ -73,7 +73,7 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace :companion-breakwater:assembleDebug
 
-      - name: Validate installable APK binary and packaged content
+      - name: Validate real standalone code and three packaged BWM1 assets
         shell: bash
         run: |
           set -euo pipefail
@@ -84,7 +84,7 @@ jobs:
           APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/apksigner"
           "$APKSIGNER" verify --verbose --print-certs "$APK"
           "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/companion-badging.txt"
-          grep -F "package: name='io.github.mrcalzon02.reverievr.game.testchamber'" "$RUNNER_TEMP/companion-badging.txt"
+          grep -F "package: name='io.github.mrcalzon02.reverievr.game.breakwater'" "$RUNNER_TEMP/companion-badging.txt"
           sha256sum "$APK" | tee "$RUNNER_TEMP/companion-sha256.txt"
           mkdir -p validation
           cp "$APK" validation/BreakwaterBattery-companion-debug.apk
@@ -190,7 +190,7 @@ jobs:
             exit 1
           }
           "$SDK/aapt" dump badging "$APK" | tee "$RUNNER_TEMP/companion-badging.txt"
-          grep -F "package: name='io.github.mrcalzon02.reverievr.game.testchamber'" "$RUNNER_TEMP/companion-badging.txt"
+          grep -F "package: name='io.github.mrcalzon02.reverievr.game.breakwater'" "$RUNNER_TEMP/companion-badging.txt"
           grep -F "versionCode='${{ steps.signed.outputs.version_code }}'" "$RUNNER_TEMP/companion-badging.txt"
           mkdir -p signed-validation
           cp "$APK" signed-validation/BreakwaterBattery-companion-signed-testing.apk
