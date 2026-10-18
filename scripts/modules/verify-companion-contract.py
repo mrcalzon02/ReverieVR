@@ -200,7 +200,13 @@ def check_source():
     print("PASS: Gradle module, package identity, Android visibility, "
           "JNI declarations, native ABI module and Cardboard callbacks")
 
-def verify_apk(path):
+def verify_apk(path,abi_target="device"):
+    if abi_target not in ("device","emulator"):
+        raise ValueError("Unknown APK target: "+abi_target)
+    required_abis=(
+        (("armeabi-v7a",1,40),("arm64-v8a",2,183))
+        if abi_target=="device" else (("x86_64",2,62),)
+    )
     if not path.is_file():
         raise ValueError("APK missing: "+str(path))
     with zipfile.ZipFile(path) as archive:
@@ -223,8 +229,13 @@ def verify_apk(path):
             if hashlib.sha256(archive.read(name)).digest()!=hashlib.sha256(
                     (ASSET_ROOT/"sfx"/(cue+".wav")).read_bytes()).digest():
                 raise ValueError("Packaged WAV differs from verified source: "+name)
-        for arch,elf_class,machine in (
-            ("armeabi-v7a",1,40),("arm64-v8a",2,183)):
+        packaged={name.split("/")[1] for name in archive.namelist()
+                  if name.startswith("lib/") and name.count("/")==2}
+        expected={abi for abi,_,_ in required_abis}
+        if packaged!=expected:
+            raise ValueError("Wrong target ABIs: expected "+str(sorted(expected))+
+                             " got "+str(sorted(packaged)))
+        for arch,elf_class,machine in required_abis:
             filename="lib/"+arch+"/lib"+NATIVE_MODULE+".so"
             try:data=archive.read(filename)
             except KeyError:
@@ -257,10 +268,12 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--apk",type=Path,
                         help="Optional independently built Test Chamber APK")
+    parser.add_argument("--target",choices=("device","emulator"),
+                        default="device",help="Exact Android ABI set to verify")
     args=parser.parse_args()
     try:
         check_source()
-        if args.apk is not None:verify_apk(args.apk)
+        if args.apk is not None:verify_apk(args.apk,args.target)
     except (ValueError, OSError, zipfile.BadZipFile) as error:
         print("FAIL:",error,file=sys.stderr)
         sys.exit(1)
