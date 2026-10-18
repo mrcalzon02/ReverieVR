@@ -53,15 +53,6 @@ android {
             if(hasSigner) signingConfig = signingConfigs.publisher
         }
     }
-    tasks.register("requirePublisherSigner") {
-        doLast {
-            if(!hasSigner) throw new GradleException(
-                "Companion release needs the SAME publisher keystore as ReverieVR")
-        }
-    }
-    tasks.matching { it.name == "assembleRelease" }.configureEach {
-        dependsOn("requirePublisherSigner")
-    }
     // SoundPool.openFd needs actual seekable, non-compressed WAV assets.
     androidResources {
         noCompress += ["wav"]
@@ -77,4 +68,15 @@ android {
 dependencies {
     implementation project(":cardboard")
     implementation "com.google.protobuf:protobuf-javalite:3.19.4"
+}
+
+// Project tasks are registered at project scope, outside the Android DSL.
+tasks.register("requirePublisherSigner") {
+    doLast {
+        if(!hasSigner) throw new GradleException(
+            "Companion release needs the SAME publisher keystore as ReverieVR")
+    }
+}
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    dependsOn("requirePublisherSigner")
 }
