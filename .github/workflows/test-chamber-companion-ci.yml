@@ -108,3 +108,98 @@ jobs:
             game-apps/test-chamber/.cxx/**/build_command.txt
           retention-days: 7
           if-no-files-found: ignore
+
+  signed-test-package:
+    name: Verify real hub-signing identity on companion release APK
+    needs: build-and-verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install reproducible Android native toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then SDKMANAGER="$(command -v sdkmanager || true)"; fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.22.1'
+      - name: Read existing ReverieVR signing identity
+        id: signer
+        shell: bash
+        env:
+          PHONE_TEST_KEYSTORE_BASE64: ${{ secrets.PHONE_TEST_KEYSTORE_BASE64 }}
+          PHONE_TEST_STORE_PASSWORD: ${{ secrets.PHONE_TEST_STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          [[ -n "$PHONE_TEST_KEYSTORE_BASE64" && -n "$PHONE_TEST_STORE_PASSWORD" ]] || {
+            echo "::error::Existing phone-test signing secret unavailable; cannot issue compatible companion APK"
+            exit 1
+          }
+          KEYSTORE="$RUNNER_TEMP/reverie-companion-publisher.jks"
+          printf '%s' "$PHONE_TEST_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          ALIAS="$(keytool -list -v -keystore "$KEYSTORE" -storepass "$PHONE_TEST_STORE_PASSWORD" |
+            sed -n 's/^Alias name: //p' | head -n 1)"
+          [[ -n "$ALIAS" ]] || { echo "::error::No publisher alias found"; exit 1; }
+          keytool -exportcert -keystore "$KEYSTORE" -storepass "$PHONE_TEST_STORE_PASSWORD"             -alias "$ALIAS" -file "$RUNNER_TEMP/publisher-cert.der" >/dev/null
+          echo "keystore=$KEYSTORE" >> "$GITHUB_OUTPUT"
+          echo "alias=$ALIAS" >> "$GITHUB_OUTPUT"
+          echo "sha=$(sha256sum "$RUNNER_TEMP/publisher-cert.der" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - name: Compile independent publisher-signed release APK
+        id: signed
+        shell: bash
+        env:
+          ORG_GRADLE_PROJECT_phoneTestKeystorePath: ${{ steps.signer.outputs.keystore }}
+          ORG_GRADLE_PROJECT_phoneTestStorePassword: ${{ secrets.PHONE_TEST_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_phoneTestKeyAlias: ${{ steps.signer.outputs.alias }}
+          ORG_GRADLE_PROJECT_phoneTestKeyPassword: ${{ secrets.PHONE_TEST_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          RELEASE_CODE="$(($(date -u +%s) - 1577836800))"
+          [[ "$RELEASE_CODE" =~ ^[0-9]+$ ]] && (( RELEASE_CODE > 1 && RELEASE_CODE < 2100000000 ))
+          echo "version_code=$RELEASE_CODE" >> "$GITHUB_OUTPUT"
+          ./gradlew --no-daemon --stacktrace \
+            -PtestChamberVersionCode="$RELEASE_CODE" \
+            -PtestChamberVersionName=0.1.0-testing \
+            :companion-test-chamber:assembleRelease
+      - name: Read back package name, certificate, ABI and game assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find game-apps/test-chamber/build/outputs/apk/release -maxdepth 1 -name '*.apk' -type f -print -quit)"
+          test -n "$APK"
+          python3 scripts/modules/verify-companion-contract.py --apk "$APK"
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0"
+          "$SDK/apksigner" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/signer-evidence.txt"
+          ACTUAL="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/signer-evidence.txt" | head -n 1 | tr '[:upper:]' '[:lower:]')"
+          [[ "$ACTUAL" == "${{ steps.signer.outputs.sha }}" ]] || {
+            echo "::error::Companion APK signer does not match ReverieVR phone-test signer"
+            exit 1
+          }
+          "$SDK/aapt" dump badging "$APK" | tee "$RUNNER_TEMP/companion-badging.txt"
+          grep -F "package: name='io.github.mrcalzon02.reverievr.game.testchamber'" "$RUNNER_TEMP/companion-badging.txt"
+          grep -F "versionCode='${{ steps.signed.outputs.version_code }}'" "$RUNNER_TEMP/companion-badging.txt"
+          mkdir -p signed-validation
+          cp "$APK" signed-validation/TestChamber-companion-signed-testing.apk
+          cp "$RUNNER_TEMP/companion-badging.txt" "$RUNNER_TEMP/signer-evidence.txt" signed-validation/
+          sha256sum "$APK" > signed-validation/SHA256.txt
+          echo "source_sha=${GITHUB_SHA}" > signed-validation/SOURCE-REVISION.txt
+          echo "publisher_cert_sha256=${{ steps.signer.outputs.sha }}" >> signed-validation/SOURCE-REVISION.txt
+          echo "version_code=${{ steps.signed.outputs.version_code }}" >> signed-validation/SOURCE-REVISION.txt
+      - name: Retain signed companion APK for physical device admission test
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-chamber-signed-testing-${{ github.run_id }}
+          path: signed-validation/
+          retention-days: 14
+          if-no-files-found: error
