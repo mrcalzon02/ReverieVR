@@ -64,6 +64,28 @@ public class RvPackInstallerTest {
             fail("Cross game asset accepted");
         }catch(IOException expected){assertTrue(expected.getMessage().contains("Rejected ZIP"));}
     }
+    @Test public void refusesManifestAndLicenseOnlyPack() throws Exception {
+        File dir=Files.createTempDirectory("rvpack-empty-content").toFile();
+        File pack=new File(dir,"metadata-only.rvpack");
+        try(ZipOutputStream out=new ZipOutputStream(new FileOutputStream(pack))){
+            out.putNextEntry(new ZipEntry("module.json"));
+            out.write(("{\"schema\":1,\"kind\":\"content\",\"id\":\""+ID+
+                "\",\"version\":\"0.1.0\",\"revision\":1}")
+                .getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("licenses/asset-provenance.json"));
+            out.write("{}".getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+        }
+        RvPackInstaller installer=new RvPackInstaller(dir);
+        try {
+            installer.install(pack,ID,1,RvPackInstaller.digest(pack));
+            fail("Metadata-only game update accepted");
+        }catch(IOException expected){
+            assertTrue(expected.getMessage().contains("actual game content"));
+        }
+        assertNull(installer.activeAssets(ID));
+    }
     @Test public void rejectsDamagedRoomMeshBeforeActivation() throws Exception {
         File dir=Files.createTempDirectory("rvpack-corrupt-mesh").toFile();
         File pack=new File(dir,"damaged.rvpack");

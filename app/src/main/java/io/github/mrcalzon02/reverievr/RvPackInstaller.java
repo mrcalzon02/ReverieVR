@@ -90,7 +90,9 @@ final class RvPackInstaller {
         File stage=new File(releases,".pending-"+ver);
         if(stage.exists())deleteTree(stage);
         if(!stage.mkdirs())throw new IOException("Cannot create staging directory");
-        int count=0;long total=0;boolean manifest=false;Set<String> names=new HashSet<>();
+        int count=0;long total=0;boolean manifest=false;
+        int payloadCount=0;
+        Set<String> names=new HashSet<>();
         try {
             try(ZipInputStream in=new ZipInputStream(new FileInputStream(pack))){
                 ZipEntry entry;byte[] buf=new byte[16384];
@@ -127,11 +129,13 @@ final class RvPackInstaller {
                         // Validate actual game mesh bytes before activation,
                         // not merely the archive filename or hash.
                         RvPackAssetValidator.verify(name,target);
+                        if(name.startsWith("assets/"))payloadCount++;
                     }
                     in.closeEntry();
                 }
             }
-            if(!manifest || count<2)throw new IOException("Missing module manifest/assets");
+            if(!manifest || payloadCount==0)
+                throw new IOException("Missing actual game content assets");
             // A signed archive hash alone does not establish which game or
             // revision the contained manifest actually declares. Bind both
             // identities BEFORE publishing or changing the active pointer.
