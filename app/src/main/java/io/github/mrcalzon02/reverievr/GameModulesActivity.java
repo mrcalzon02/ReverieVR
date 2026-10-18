@@ -79,9 +79,11 @@ public final class GameModulesActivity extends Activity {
             File installed=store.activeAssets(id);
             String local=installed==null?"Built-in / no content pack":
                 "Content r"+installed.getParentFile().getName();
+            final boolean development=new ReveriePreferences(this)
+                .getLoggingMode()==LoggingMode.DEVELOPMENT;
             GameModuleCatalog.Release release=verified==null?null:
-                verified.find(id,"content","testing");
-            if(release==null&&verified!=null)
+                verified.find(id,"content",development?"testing":"stable");
+            if(release==null&&verified!=null && development)
                 release=verified.find(id,"content","stable");
             LinearLayout row=new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
@@ -109,8 +111,9 @@ public final class GameModulesActivity extends Activity {
             }
             row.addView(action);
             GameModuleCatalog.Release apkRelease=verified==null?null:
-                verified.find(id,"companion-apk","testing");
-            if(apkRelease==null&&verified!=null)
+                verified.find(id,"companion-apk",
+                    development?"testing":"stable");
+            if(apkRelease==null&&verified!=null && development)
                 apkRelease=verified.find(id,"companion-apk","stable");
             if(apkRelease!=null){
                 GameModuleCatalog.Release selectedApk=apkRelease;
