@@ -98,6 +98,10 @@ public final class GameVrActivity extends Activity
                     primitive.argb))
                     throw new java.io.IOException(
                         "JNI/GLES2 asset staging failed for model "+primitive.modelId);
+                // Gaze selection uses the *same* real imported triangles and
+                // translations as native GLES2, not approximate station dots.
+                TestChamberTargeting.includePrimitive(
+                    primitive.modelId,primitive.vertices);
             }
             Log.i("TestChamberAssets","Staged "+meshes.size()+
                 " textured primitives from five approved Beckenburg GLB models");
