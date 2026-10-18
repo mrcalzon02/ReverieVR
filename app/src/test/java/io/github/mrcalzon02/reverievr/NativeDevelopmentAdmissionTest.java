@@ -14,7 +14,7 @@ public class NativeDevelopmentAdmissionTest {
             BuiltInBindingProfiles.nativeProfileForModule(NativeModuleRuntime.ID_GUMBALL_ARMADA));
         assertEquals(BuiltInBindingProfiles.ID_NATIVE_CLASSICS,
             BuiltInBindingProfiles.nativeProfileForModule(NativeModuleRuntime.ID_OMEGA_FRONT));
-        assertEquals(BuiltInBindingProfiles.ID_NATIVE_STANDARD,
+        assertEquals(BuiltInBindingProfiles.ID_NATIVE_BREAKWATER,
             BuiltInBindingProfiles.nativeProfileForModule(NativeModuleRuntime.ID_BREAKWATER_BATTERY));
     }
 }
