@@ -80,6 +80,9 @@ struct State {
     PointerFocusGate pointer_focus;
     bool armory_page=false, sam_armed=false, ghost_on=false;
     bool slot_picker=true, reset_armed=false;
+    bool round_summary=false, summary_requires_release=false;
+    int32_t wave_credits_before=0,wave_hull_before=100;
+    int32_t wave_credits_gained=0,wave_hull_lost=0;
     uint8_t save_slot=0u;
     bool slot_exists[3]={false,false,false};
     int menu_focus=-1;
@@ -260,6 +263,24 @@ void LoadState(State *s) {
     if(ReadSlotState(s,s->save_slot,&snapshot))
         s->campaign=snapshot;
 }
+bool BeginActiveWave(State *s,bool captureSelect) {
+    if(!s || !s->campaign.BeginWave())return false;
+    s->round_summary=false;s->summary_requires_release=false;
+    s->wave_credits_before=s->campaign.credits();
+    s->wave_hull_before=s->campaign.integrity();
+    s->wave_credits_gained=0;s->wave_hull_lost=0;
+    BattleSound(s,REVERIE_NATIVE_SOUND_WAVE_START);
+    if(captureSelect)s->combat_input.CaptureUiPress();
+    s->wrecks.Clear();
+    s->battery_damage=BatteryDamageFeedback{};
+    s->infantry_flash=0.0f;s->infantry_firing_mask=0u;
+    s->gunboat_salvo_flash=0.0f;
+    s->aircraft_aim={};s->surface_aim={};
+    s->cover_aim_index=-1;s->armor_aim_index=-1;
+    s->aircraft_hit=AircraftHitFeedback{};
+    s->sam_armed=false;
+    return true;
+}
 void BallisticWaterImpact(State *s,const ReverieNativeInputV1 &input,
                           float gravity) {
     if(input.pointer_direction[2]>=-.0001f)return;
@@ -347,19 +368,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             s->armory_page=!s->armory_page;
             done=true;
         } else if(target==8) {
-            done=game.BeginWave();
-            if(done) {
-                BattleSound(s,REVERIE_NATIVE_SOUND_WAVE_START);
-                s->combat_input.CaptureUiPress();
-                s->wrecks.Clear();
-                s->battery_damage=BatteryDamageFeedback{};
-                s->infantry_flash=0.0f;
-                s->infantry_firing_mask=0u;
-                s->gunboat_salvo_flash=0.0f;
-                s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
-                s->aircraft_hit=AircraftHitFeedback{};
-                s->sam_armed=false;
-            }
+            done=BeginActiveWave(s,true);
         }
         else if(target>=0 && target<8){
             if(s->armory_page) {
@@ -1623,16 +1632,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     if(!down)s->combat_input.Release();
     // Reload takes priority if both controls are pressed on the same frame.
     if(down && !started_reload)Interact(s,copy,!s->held);
-    if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop) {
-        if(s->campaign.BeginWave()) {
-            BattleSound(s,REVERIE_NATIVE_SOUND_WAVE_START);
-            s->wrecks.Clear();
-            s->battery_damage=BatteryDamageFeedback{};
-            s->infantry_flash=0.0f;
-            s->infantry_firing_mask=0u;
-            s->gunboat_salvo_flash=0.0f;
-            if(down)s->combat_input.CaptureUiPress();
-        }
+    if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop &&
+       !s->round_summary) {
+        BeginActiveWave(s,down);
     }
     // The phantom sight follows the controller rather than a barrel that
     // can no longer physically elevate to the target.
