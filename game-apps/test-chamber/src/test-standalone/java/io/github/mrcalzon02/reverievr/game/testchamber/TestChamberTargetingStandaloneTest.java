@@ -1,45 +1,70 @@
 package io.github.mrcalzon02.reverievr.game.testchamber;
 
-/** Run with javac/java on a developer machine; no Android SDK required. */
+/** Android-free coverage for imported triangle bounds, aim and audio. */
 public final class TestChamberTargetingStandaloneTest {
     private static void require(boolean condition,String message){
         if(!condition)throw new AssertionError(message);
     }
-    private static float[] lookAt(float[] target){
-        float length=(float)Math.sqrt(target[0]*target[0]+target[1]*target[1]+
-            target[2]*target[2]);
-        float fx=target[0]/length,fy=target[1]/length,fz=target[2]/length;
-        float rx=-fz,ry=0f,rz=fx;
+    private static float[] lookAt(float x,float y,float z){
+        float length=(float)Math.sqrt(x*x+y*y+z*z);
+        float fx=x/length,fy=y/length,fz=z/length;
+        float rx=-fz,rz=fx;
         length=(float)Math.sqrt(rx*rx+rz*rz);
         rx/=length;rz/=length;
-        float ux=ry*fz-rz*fy;
-        float uy=rz*fx-rx*fz;
-        float uz=rx*fy-ry*fx;
-        return new float[]{rx,ux,-fx,0,ry,uy,-fy,0,rz,uz,-fz,0,0,0,0,1};
+        float ux=-rz*fy,uy=rz*fx-rx*fz,uz=rx*fy;
+        return new float[]{rx,ux,-fx,0,0,uy,-fy,0,rz,uz,-fz,0,0,0,0,1};
+    }
+    private static float[] pointMesh(float x,float y,float z){
+        return new float[]{
+            x-.15f,y-.15f,z,0,0,
+            x+.15f,y-.15f,z,1,0,
+            x,y+.15f,z,0,1};
     }
     public static void main(String[] args){
         require(TestChamberTargeting.MODEL_COUNT==5,"Unexpected model count");
+        require(TestChamberTargeting.pick(lookAt(0,-1.5f,-2))==-1,
+            "Unregistered models must not receive phantom gaze hits");
+        // The mesh is intentionally OFF-CENTER in each station's local
+        // coordinates. A guessed target point would miss these objects.
+        float[][] places={
+            {-2.25f,-1.50f,-1.92f,1f},
+            {-1.17f,-1.50f,-2.08f,1f},
+            {1.35f,-1.50f,-2.42f,1f},
+            {0,-1.50f,-2.05f,.82f},
+            {2.65f,-1.50f,-2.90f,.86f}
+        };
         for(int model=0;model<5;model++){
-            require(TestChamberTargeting.pick(
-                lookAt(TestChamberTargeting.CENTERS[model]))==model,
-                "Target not selectable: "+model);
+            TestChamberTargeting.includePrimitive(model,pointMesh(.24f,.22f,0));
+            float[] p=places[model];
+            require(TestChamberTargeting.pick(lookAt(p[0]+p[3]*.24f,
+                p[1]+p[3]*.22f,p[2]))==model,
+                "Actual textured geometry not selectable: "+model);
         }
-        require(TestChamberTargeting.pick(lookAt(new float[]{0f,2f,-1f}))==-1,
-            "Empty sky must not select a model");
-        require(TestChamberTargeting.pick(lookAt(new float[]{0f,0f,1f}))==-1,
-            "Backward gaze must not select front-row objects");
-        require(TestChamberTargeting.pick(null)==-1,"Null pose not rejected");
-        require(TestChamberTargeting.pick(new float[4])==-1,"Short pose not rejected");
-        float[] corrupt=lookAt(TestChamberTargeting.CENTERS[0]);
-        corrupt[0]=Float.NaN;
-        require(TestChamberTargeting.pick(corrupt)!=0,"NaN pose selected invalid model");
+        // Submesh union: second triangle moves the bounds, not replaces it.
+        TestChamberTargeting.includePrimitive(0,pointMesh(.50f,.20f,-.15f));
+        float[] p=places[0];
+        require(TestChamberTargeting.pick(lookAt(p[0]+.5f,p[1]+.2f,p[2]-.15f))==0,
+            "Second GLB primitive was not incorporated");
+        require(TestChamberTargeting.pick(lookAt(0,2,-1))==-1,
+            "Empty sky must not select an object");
+        require(TestChamberTargeting.pick(lookAt(0,0,1))==-1,
+            "Backward gaze must not select front objects");
+        require(TestChamberTargeting.pick(null)==-1,"Null view accepted");
+        require(TestChamberTargeting.pick(new float[4])==-1,"Short view accepted");
+        float[] bad=lookAt(-2.25f,-1.5f,-2);
+        bad[0]=Float.NaN;
+        require(TestChamberTargeting.pick(bad)==-1,"Corrupt view selected model");
+        boolean rejected=false;
+        try{TestChamberTargeting.includePrimitive(0,pointMesh(Float.NaN,0,0));}
+        catch(IllegalArgumentException expected){rejected=true;}
+        require(rejected,"Malformed GLB submesh not rejected");
         boolean[] cues=new boolean[6];
         for(int model=-1;model<5;model++){
-            int id=TestChamberTargeting.cueFor(model);
-            require(id>=0&&id<6&&!cues[id],"Duplicate or missing sound mapping");
-            cues[id]=true;
+            int cue=TestChamberTargeting.cueFor(model);
+            require(cue>=0&&cue<6&&!cues[cue],"Duplicate or missing sound mapping");
+            cues[cue]=true;
         }
-        for(boolean known:cues)require(known,"Unmapped packaged sound effect");
-        System.out.println("PASS: all 5 gaze stations, no-target cases, malformed poses, and 6 distinct audio cues");
+        for(boolean mapped:cues)require(mapped,"Unmapped WAV");
+        System.out.println("PASS: imported mesh bounds, five selectable models, submesh union, invalid inputs and six WAV cues");
     }
 }
