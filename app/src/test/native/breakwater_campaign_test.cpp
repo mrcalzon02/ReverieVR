@@ -1029,13 +1029,17 @@ int main() {
             return REVERIE_NATIVE_SAVE_NOT_FOUND;
         };
         host.write_save=[](const char* slot,const void* data,uint32_t size)->int32_t {
-            assert(std::strcmp(slot,"breakwater-v1.bin")==0);
+            assert(std::strcmp(slot,CheckpointSlot(0u))==0);
             assert(data==nullptr && size==0u);
             ++clear_writes;
             return REVERIE_NATIVE_SAVE_OK;
         };
-        assert(ClearCheckpoint(&host));
+        assert(ClearCheckpoint(&host,0u));
         assert(clear_writes==1);
+        assert(CheckpointSlot(1u)!=nullptr && CheckpointSlot(2u)!=nullptr);
+        assert(std::strcmp(CheckpointSlot(0u),CheckpointSlot(1u))!=0);
+        assert(CheckpointSlot(3u)==nullptr);
+        assert(!ClearCheckpoint(&host,3u));
         assert(IsClearedCheckpoint(REVERIE_NATIVE_SAVE_OK,0u));
         assert(!IsClearedCheckpoint(REVERIE_NATIVE_SAVE_NOT_FOUND,0u));
         assert(!IsClearedCheckpoint(REVERIE_NATIVE_SAVE_ERROR,0u));
@@ -1063,7 +1067,9 @@ int main() {
             ++boxes;
             assert(std::isfinite(x)&&std::isfinite(y)&&std::isfinite(z));
             assert(w>0&&h>0&&d>0);
-            assert(std::abs(x)<4.0f&&z>=-2.25f&&z<=-.80f);
+            // Only scenery extends past the combat lane: piers, side
+            // mountains and seawalls stay within the 20-unit panorama.
+            assert(std::abs(x)<=20.001f&&z>=-2.50f&&z<=1.50f);
             assert(r>=0&&g>=0&&b>=0&&r<=1&&g<=1&&b<=1);
         };
         auto triangle=[&](float x0,float y0,float z0,
@@ -1078,9 +1084,13 @@ int main() {
             // The following four intentionally widen into each location's
             // scenic shoulders, outside the traversable infantry lane.
             const bool scenicShoulder=triangles>20&&triangles<=24;
-            const float reach=scenicShoulder?
-                (location==0?5.35f:location==1?4.85f:5.80f):4.0f;
-            const float zNear=scenicShoulder?-.71f:-.80f;
+            const bool flankExtension=location!=1u &&
+                triangles>24&&triangles<=28;
+            const float reach=flankExtension?20.01f:
+                scenicShoulder?(location==0?5.35f:
+                    location==1?4.85f:5.80f):4.0f;
+            const float zNear=flankExtension?1.451f:
+                scenicShoulder?-.71f:-.80f;
             assert(x0>=-reach-.001f&&x0<=reach+.001f);
             assert(x1>=-reach-.001f&&x1<=reach+.001f);
             assert(x2>=-reach-.001f&&x2<=reach+.001f);
@@ -1091,8 +1101,8 @@ int main() {
             assert(r>=0&&g>=0&&b>=0&&r<=1&&g<=1&&b<=1);
         };
         EmitCoastalTerrain(location,false,box,triangle);
-        const int expectedTriangles[]={42,29,32};
-        const int expectedBoxes[]={2,8,8};
+        const int expectedTriangles[]={46,29,36};
+        const int expectedBoxes[]={20,46,26};
         assert(triangles==expectedTriangles[location]);
         assert(boxes==expectedBoxes[location]);
         const CoastPalette day=CoastColors(location,false);
