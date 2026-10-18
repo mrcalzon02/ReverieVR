@@ -227,6 +227,10 @@ public final class GameVrActivity extends Activity
         }
     }
     @Override public void onDrawEye(CardboardView.Eye eye){
+        // The pinned Cardboard Eye starts with an all-zero eyeViewMatrix.
+        // CardboardView does NOT call applyHeadView itself; the hub already
+        // performs this step. Without it all triangles clip to w=0.
+        eye.applyHeadView(headView);
         // Evidence that Cardboard actually invokes the application's stereo
         // callback, not merely the SDK's distortion overlay. Keep logs bounded.
         renderedEyeCallbacks++;

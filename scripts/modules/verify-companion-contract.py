@@ -156,6 +156,8 @@ def check_source():
     required(java,"new TestChamberSounds(","No packaged game sounds loaded")
     required(bridge,"showcase.Draw(","Stereo game mesh renderer not called")
     required(java,"TestChamberTargeting.pick(headView)","Gaze pointing not wired")
+    required(java,"eye.applyHeadView(headView);",
+             "Missing actual per-eye head transform: blank stereo framebuffer")
     required(java,"TestChamberTargeting.includePrimitive(",
              "Imported GLB geometry is not registered for gaze picking")
     check_scene_transform_contract()
