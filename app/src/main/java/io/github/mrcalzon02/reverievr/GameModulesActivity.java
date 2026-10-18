@@ -63,70 +63,105 @@ public final class GameModulesActivity extends Activity {
     }
     private void refreshRows(){
         rows.removeAllViews();
+        final boolean development=new ReveriePreferences(this)
+            .getLoggingMode()==LoggingMode.DEVELOPMENT;
         for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES){
             final String id=game.id;
-            File installed=store.activeAssets(id);
-            String local=installed==null?"Built-in / no content pack":
-                "Content r"+installed.getParentFile().getName();
-            final boolean development=new ReveriePreferences(this)
-                .getLoggingMode()==LoggingMode.DEVELOPMENT;
-            GameModuleCatalog.Release release=verified==null?null:
-                verified.find(id,"content",development?"testing":"stable");
-            if(release==null&&verified!=null && development)
-                release=verified.find(id,"content","stable");
+            File content=store.activeAssets(id);
+            long contentRev=content==null?0L:parseRevision(content);
+            long codeRev=CompanionGameRegistry.installedVersion(this,id);
+            String details=contentRev==0?"Built-in":
+                "Content r"+contentRev+" ("+
+                (store.installedBytes(id)+1023L)/1024L+" KiB)";
+            if(codeRev>0L)details+=" | Game APK r"+codeRev;
+            GameModuleCatalog.Release contentUpdate=offer(id,"content",
+                development);
+            GameModuleCatalog.Release nativeUpdate=offer(id,"companion-apk",
+                development);
             LinearLayout row=new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
             TextView title=new TextView(this);
-            title.setText(game.displayName+"\n"+local);
+            title.setText(game.displayName+"\n"+details);
             row.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+            boolean anyAction=contentRev>0L||codeRev>0L||
+                (contentUpdate!=null&&contentUpdate.revision>contentRev)||
+                (nativeUpdate!=null&&nativeUpdate.revision>codeRev);
             Button action=new Button(this);
-            if(release!=null&& (installed==null ||
-                release.revision>parseRevision(installed))){
-                GameModuleCatalog.Release selected=release;
-                action.setText("Update r"+release.revision);
-                action.setOnClickListener(v->installRemote(selected));
-            }else if(installed!=null){
-                action.setText("Rollback");
-                action.setOnClickListener(v->{
-                    try{
-                        status.setText(store.rollback(id)?"Rolled back "+id:
-                            "No previous revision for "+id);
-                    }catch(IOException e){status.setText("Rollback: "+e.getMessage());}
-                    refreshRows();
-                });
-            }else{
-                action.setText("No pack");
-                action.setEnabled(false);
-            }
+            action.setText(anyAction?"Manage":"Bundled");
+            action.setEnabled(anyAction);
+            action.setOnClickListener(v->showGameActions(id,contentRev,codeRev,
+                contentUpdate,nativeUpdate));
             row.addView(action);
-            GameModuleCatalog.Release apkRelease=verified==null?null:
-                verified.find(id,"companion-apk",
-                    development?"testing":"stable");
-            if(apkRelease==null&&verified!=null && development)
-                apkRelease=verified.find(id,"companion-apk","stable");
-            if(apkRelease!=null){
-                GameModuleCatalog.Release selectedApk=apkRelease;
-                Button getApk=new Button(this);
-                getApk.setText("Game APK");
-                getApk.setOnClickListener(v->apkInstaller.install(
-                    verified,selectedApk,(message,started)->{
-                        status.setText(message);
-                        if(started)refreshRows();
-                    }));
-                row.addView(getApk);
-            }
-            // Native code is launched ONLY from an independently installed,
-            // Android-signed companion package with the expected identity.
-            if(CompanionGameRegistry.installed(this,id)!=null){
-                Button play=new Button(this);play.setText("Play APK");
-                play.setOnClickListener(v->{
-                    if(!CompanionGameRegistry.launch(this,id))
-                        status.setText("Companion launch rejected for "+id);
-                });
-                row.addView(play);
-            }
             rows.addView(row);
         }
+    }
+    private GameModuleCatalog.Release offer(String id,String kind,
+                                              boolean development){
+        if(verified==null)return null;
+        GameModuleCatalog.Release release=verified.find(id,kind,
+            development?"testing":"stable");
+        if(release==null&&development)
+            release=verified.find(id,kind,"stable");
+        return release;
+    }
+    private void showGameActions(String id,long contentRev,long codeRev,
+                                 GameModuleCatalog.Release contentRelease,
+                                 GameModuleCatalog.Release apkRelease){
+        java.util.ArrayList<String> labels=new java.util.ArrayList<>();
+        java.util.ArrayList<Runnable> actions=new java.util.ArrayList<>();
+        if(contentRelease!=null&&contentRelease.revision>contentRev){
+            labels.add("Update content to r"+contentRelease.revision);
+            actions.add(()->installRemote(contentRelease));
+        }
+        if(apkRelease!=null&&apkRelease.revision>codeRev){
+            labels.add("Install game APK r"+apkRelease.revision);
+            actions.add(()->apkInstaller.install(verified,apkRelease,
+                (message,started)->{
+                    status.setText(message);
+                    if(started)refreshRows();
+                }));
+        }
+        if(codeRev>0L){
+            labels.add("Play installed game APK");
+            actions.add(()->{
+                if(!CompanionGameRegistry.launch(this,id))
+                    status.setText("Companion launch rejected for "+id);
+            });
+        }
+        if(contentRev>0L){
+            labels.add("Rollback content");
+            actions.add(()->{
+                try{
+                    status.setText(store.rollback(id)?"Rolled back "+id:
+                        "No previous content revision");
+                }catch(IOException error){
+                    status.setText("Rollback failed: "+error.getMessage());
+                }
+                refreshRows();
+            });
+            labels.add("Remove downloaded content (keep saves)");
+            actions.add(()->new AlertDialog.Builder(this)
+                .setTitle("Remove "+id+" content?")
+                .setMessage("Bundled game and player saves will remain.")
+                .setNegativeButton("Cancel",null)
+                .setPositiveButton("Remove",(dialog,which)->{
+                    try{
+                        status.setText(store.removeContent(id)?
+                            "Removed downloaded content; saves preserved":
+                            "No optional content installed");
+                    }catch(IOException error){
+                        status.setText("Content removal failed: "+
+                            error.getMessage());
+                    }
+                    refreshRows();
+                }).show());
+        }
+        if(labels.isEmpty())return;
+        new AlertDialog.Builder(this).setTitle(id)
+            .setItems(labels.toArray(new String[0]),
+                (dialog,which)->actions.get(which).run())
+            .setNegativeButton("Cancel",null)
+            .show();
     }
     private static long parseRevision(File assets){
         try{return Long.parseLong(assets.getParentFile().getName());}
