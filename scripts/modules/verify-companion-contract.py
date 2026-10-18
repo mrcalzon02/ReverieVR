@@ -111,7 +111,7 @@ def check_scene_transform_contract():
             raise ValueError("Unterminated model placement table: "+marker)
         segment=source[start:end]
         rows=[]
-        for raw in re.findall(r"\\{\\s*([-+\\d.fF,\\s]+)\\s*\\}",segment):
+        for raw in re.findall(r"\{\s*([-+\d.fF,\s]+)\s*\}",segment):
             fields=[x.strip().rstrip("fF") for x in raw.split(",") if x.strip()]
             if len(fields)==4:
                 rows.append(tuple(float(x) for x in fields))
