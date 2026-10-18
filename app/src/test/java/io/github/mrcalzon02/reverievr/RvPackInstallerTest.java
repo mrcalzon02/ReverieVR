@@ -19,7 +19,10 @@ public class RvPackInstallerTest {
                 .getBytes(StandardCharsets.UTF_8));
             out.closeEntry();
             out.putNextEntry(new ZipEntry(path));
-            out.write(new byte[]{'R','L','B','P',1,0,0,0});
+            byte[] model=new byte[16+3*40+256*256*2];
+            model[0]='R';model[1]='L';model[2]='B';model[3]='P';
+            model[4]=1;model[8]=3;model[12]=0;model[13]=1;
+            out.write(model);
             out.closeEntry();
         }
         return file;
@@ -60,6 +63,29 @@ public class RvPackInstallerTest {
             new RvPackInstaller(dir).install(pack,ID,1,RvPackInstaller.digest(pack));
             fail("Cross game asset accepted");
         }catch(IOException expected){assertTrue(expected.getMessage().contains("Rejected ZIP"));}
+    }
+    @Test public void rejectsDamagedRoomMeshBeforeActivation() throws Exception {
+        File dir=Files.createTempDirectory("rvpack-corrupt-mesh").toFile();
+        File pack=new File(dir,"damaged.rvpack");
+        try(ZipOutputStream out=new ZipOutputStream(new FileOutputStream(pack))){
+            out.putNextEntry(new ZipEntry("module.json"));
+            out.write(("{\"schema\":1,\"kind\":\"content\",\"id\":\""+ID+
+                "\",\"version\":\"0.1.0\",\"revision\":1}")
+                .getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry(
+                "assets/native/red-ledger/beckenburg/wall.rlprop"));
+            out.write(new byte[]{'B','A','D'});
+            out.closeEntry();
+        }
+        RvPackInstaller store=new RvPackInstaller(dir);
+        try{
+            store.install(pack,ID,1,RvPackInstaller.digest(pack));
+            fail("Damaged room mesh activated");
+        }catch(IOException expected){
+            assertTrue(expected.getMessage().contains("room model"));
+        }
+        assertNull(store.activeAssets(ID));
     }
     @Test public void rejectsPackWithDifferentDeclaredRevision() throws Exception {
         File dir=Files.createTempDirectory("rvpack-identity").toFile();
