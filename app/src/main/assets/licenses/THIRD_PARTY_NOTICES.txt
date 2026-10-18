@@ -68,6 +68,13 @@ Starry Cereal music:
   approved Suno downloads, exact file hashes and rights checks.
   https://suno.com/terms-of-service
 
+Breakwater Battery native menu font:
+  Lato Semibold, copyright 2010-2014 tyPoland, Lukasz Dziedzic,
+  Reserved Font Name "Lato".
+  Licensed under SIL Open Font License 1.1 (not MIT).
+  The APK embeds an offline-derived 512x64 antialiased alpha atlas.
+  Full license and attribution: LICENSES/OFL-1.1.txt in source/release.
+
 Project logos:
   Original creator/redistribution grant not yet verified.
   No MIT, CC BY or CC0 grant is asserted for those assets.
