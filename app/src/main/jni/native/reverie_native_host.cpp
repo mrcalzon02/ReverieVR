@@ -465,6 +465,11 @@ int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
                 at+=static_cast<uint32_t>(n);
             }
             close(fd);
+            // A bounded testable signal distinguishing verified downloaded
+            // BWM1 bytes from identical assets bundled in the hub APK.
+            if(std::strcmp(session->spec->id,"breakwater-battery")==0)
+                __android_log_print(ANDROID_LOG_INFO,"ReverieNativeHost",
+                    "Breakwater verified-pack asset %s (%u bytes)",path,size);
             return REVERIE_NATIVE_SAVE_OK;
         }
         if(errno!=ENOENT)return REVERIE_NATIVE_SAVE_ERROR;

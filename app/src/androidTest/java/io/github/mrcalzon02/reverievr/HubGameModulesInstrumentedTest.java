@@ -119,10 +119,11 @@ public final class HubGameModulesInstrumentedTest {
                 GameModuleRegistry.find(module.id));
             assertTrue("Duplicate C++ game identity "+module.id,found.add(module.id));
         }
-        // The native host deliberately accepts ONLY files/native-modules/<id>.
-        // Testing from a made-up folder is correctly rejected by its security
-        // gate and says nothing about whether the actual game starts.
-        File home=new File(context().getFilesDir(),"native-modules");
+        // Preserve the strict /native-modules/<id> suffix while never
+        // touching actual player saves. The app-private cache sandbox has
+        // an independent module-packs directory alongside native-modules.
+        File sandbox=new File(context().getCacheDir(),"all-games-native-tests");
+        File home=new File(sandbox,"native-modules");
         assertTrue(home.isDirectory()||home.mkdirs());
         // Game state and extracted assets are isolated per ID. This probes
         // genuine C++ create/resume/update/pause/destroy callbacks rather
@@ -143,6 +144,65 @@ public final class HubGameModulesInstrumentedTest {
                 assertFalse("Game remained active after stop: "+game.id,
                     runtime.isRunning());
             }
+        } finally{
+            delete(sandbox);
+        }
+    }
+
+    @Test public void realBreakwaterBeckenburgContentLoadsThroughHub()
+        throws Exception {
+        File root=new File(context().getCacheDir(),
+            "verified-breakwater-"+System.nanoTime());
+        assertTrue(root.mkdirs());
+        final String[] names={
+            "ammo_box_mp_1.bwm","concrete_block_1.bwm","wooden_crate_1.bwm"
+        };
+        try {
+            File pack=new File(root,"breakwater-real-models.rvpack");
+            try(ZipOutputStream out=new ZipOutputStream(new FileOutputStream(pack))){
+                out.putNextEntry(new ZipEntry("module.json"));
+                out.write(("{\"schema\":1,\"kind\":\"content\","+
+                    "\"id\":\"breakwater-battery\",\"revision\":1,"+
+                    "\"version\":\"0.1.0\"}").getBytes(StandardCharsets.UTF_8));
+                out.closeEntry();
+                for(String name:names){
+                    String path="native/breakwater/beckenburg/"+name;
+                    byte[] data;
+                    try(java.io.InputStream stream=context().getAssets().open(path);
+                        java.io.ByteArrayOutputStream bytes=
+                            new java.io.ByteArrayOutputStream()){
+                        byte[] buffer=new byte[8192];
+                        int count;
+                        while((count=stream.read(buffer))!=-1)
+                            bytes.write(buffer,0,count);
+                        data=bytes.toByteArray();
+                    }
+                    assertTrue("Game mesh absent from real hub "+path,data.length>=35);
+                    out.putNextEntry(new ZipEntry("assets/"+path));
+                    out.write(data);
+                    out.closeEntry();
+                }
+            }
+            RvPackInstaller installer=new RvPackInstaller(root);
+            File assets=installer.install(pack,"breakwater-battery",1,
+                RvPackInstaller.digest(pack));
+            assertEquals(assets.getCanonicalPath(),
+                installer.activeAssets("breakwater-battery").getCanonicalPath());
+            for(String name:names)
+                assertTrue("Actual imported model missing "+name,new File(
+                    assets,"native/breakwater/beckenburg/"+name).isFile());
+            File home=new File(root,"native-modules");
+            assertTrue(home.isDirectory()||home.mkdirs());
+            try(NativeModuleRuntime runtime=new NativeModuleRuntime(
+                home,context().getAssets(),null,true)){
+                boolean started=runtime.start("breakwater-battery");
+                assertTrue("Verified model-backed Breakwater launch failed: "+
+                    runtime.getLastError(),started);
+                runtime.update(NativeModuleRuntime.POINTER_NONE,null,null);
+                runtime.stop();
+            }
+        }finally{
+            delete(root);
         }
     }
 

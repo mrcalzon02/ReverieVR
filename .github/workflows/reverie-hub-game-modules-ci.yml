@@ -12,6 +12,10 @@ on:
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModule*.java'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/Companion*.java'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/RvPack*.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java'
+      - 'app/src/main/jni/native/reverie_native_host.cpp'
+      - 'app/src/main/jni/native/breakwater_module.cpp'
+      - 'app/src/main/jni/native/reverie_native_asset_scope.h'
       - 'app/build.gradle'
       - 'game-apps/test-chamber/build.gradle'
 
@@ -113,8 +117,10 @@ jobs:
             adb shell pm list packages | grep -Fx 'package:io.github.mrcalzon02.reverievr.game.testchamber'
             adb shell am start -W -n io.github.mrcalzon02.reverievr/.MainActivity | tee validation/hub/hub-main-launch.txt
             adb shell am instrument -w -r               io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner               | tee validation/hub/instrumentation-output.txt
-            grep -F 'OK (5 tests)' validation/hub/instrumentation-output.txt
             adb logcat -d -v time > validation/hub/logcat.txt
+            grep -F 'OK (6 tests)' validation/hub/instrumentation-output.txt
+            grep -F 'BreakwaterAssets: Authentic BWM1 models loaded 3/3' validation/hub/logcat.txt
+            grep -F 'Breakwater verified-pack asset native/breakwater/beckenburg/' validation/hub/logcat.txt
             adb exec-out screencap -p > validation/hub/hub-screen.png
       - name: Keep APKs and actual acquisition/update test evidence
         if: always()

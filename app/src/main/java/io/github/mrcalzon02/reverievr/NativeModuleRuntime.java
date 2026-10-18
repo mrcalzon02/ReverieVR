@@ -16,12 +16,8 @@ final class NativeModuleRuntime implements AutoCloseable {
     static final String ID_FORWARD_DETACHMENT = "iron-sight-forward-detachment";
 
     static boolean isDevelopmentOnly(String id) {
-        return ID_GUMBALL_ARMADA.equals(id)
-            || ID_OMEGA_FRONT.equals(id)
-            || ID_RED_LEDGER.equals(id)
-            || ID_BREAKWATER_BATTERY.equals(id)
-            || ID_LANTERN_DESK.equals(id)
-            || ID_FORWARD_DETACHMENT.equals(id);
+        GameModuleRegistry.Entry game=GameModuleRegistry.find(id);
+        return game!=null&&game.developmentOnly;
     }
 
     static final int POINTER_NONE = 0;

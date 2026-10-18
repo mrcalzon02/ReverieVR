@@ -1405,9 +1405,16 @@ void *Create(const ReverieNativeHostV1 *host) {
             return dest?code==REVERIE_NATIVE_SAVE_OK:
                         code==REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;
         };
+        size_t admitted=0u;
         for(size_t i=0;i<imported::kAssetPaths.size();++i)
-            imported::Load(&s->beckenburg_models[i],
-                           imported::kAssetPaths[i],reader);
+            if(imported::Load(&s->beckenburg_models[i],
+                              imported::kAssetPaths[i],reader))++admitted;
+        char report[96];
+        std::snprintf(report,sizeof(report),"Authentic BWM1 models loaded %zu/%zu",
+                      admitted,imported::kAssetPaths.size());
+        host->log(admitted==imported::kAssetPaths.size()?
+                  REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,
+                  "BreakwaterAssets",report);
     }
     s->mesh.reserve(81920);
     s->sprite_mesh.reserve(3000);
