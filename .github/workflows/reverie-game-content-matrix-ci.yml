@@ -47,6 +47,57 @@ jobs:
           mkdir -p validation
           cp "${RUNNER_TEMP}/breakwater-models-r1.rvpack" validation/
           sha256sum validation/*.rvpack > validation/SHA256.txt
+      - name: Build and verify real Red Ledger icon content update
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/red-ledger/assets/icons" validation
+          cp app/src/main/assets/native/red-ledger/icons/icon_*.png \
+             "${RUNNER_TEMP}/red-ledger/assets/icons/"
+          test "$(find "${RUNNER_TEMP}/red-ledger/assets/icons" -type f | wc -l)" -eq 24
+          python3 scripts/modules/build-content-pack.py \
+            --id between-deliveries-red-ledger \
+            --source "${RUNNER_TEMP}/red-ledger/assets" \
+            --output validation/red-ledger-icons-r1.rvpack \
+            --revision 1 --version 0.1.0
+          python3 scripts/modules/verify-content-pack.py \
+            validation/red-ledger-icons-r1.rvpack
+          python3 - <<'PY'
+          import zipfile
+          path="validation/red-ledger-icons-r1.rvpack"
+          with zipfile.ZipFile(path) as z:
+              content=[p for p in z.namelist() if p.startswith(
+                  "assets/native/red-ledger/icons/") and p.endswith(".png")]
+              assert len(content)==24,(len(content),content)
+          print("PASS: all 24 real Red Ledger shop icon paths packaged")
+          PY
+      - name: Build and verify real Omega Front terrain and unit sprite update
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/modules/build-content-pack.py \
+            --id omega-front \
+            --source app/src/main/assets/native/omega-front \
+            --output validation/omega-front-art-r1.rvpack \
+            --revision 1 --version 0.1.0
+          python3 scripts/modules/verify-content-pack.py \
+            validation/omega-front-art-r1.rvpack
+          python3 - <<'PY'
+          import pathlib,re,zipfile
+          renderer=pathlib.Path(
+              "app/src/main/jni/native/omega_front_texture_renderer.h").read_text()
+          referenced=re.findall(r'"(native/omega-front/[^"]+\.png)"',renderer)
+          with zipfile.ZipFile("validation/omega-front-art-r1.rvpack") as z:
+              members=set(z.namelist())
+              missing=sorted("assets/"+p for p in referenced
+                             if "assets/"+p not in members)
+              assert len(referenced)>=40,(len(referenced),missing)
+              assert not missing,missing
+          print("PASS:",len(referenced),
+                "actual native Omega Front sprite paths match signed-format pack")
+          PY
+      - name: Seal genuine multi-game offline test packages
+        run: sha256sum validation/*.rvpack > validation/SHA256.txt
       - name: Test prior release and ZIP integrity contracts
         run: |
           python3 -m unittest discover -s scripts/modules -p 'test_verify_content_pack.py' -v
@@ -55,7 +106,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: breakwater-models-content-test-${{ github.run_id }}
+          name: reverie-real-native-content-probes-${{ github.run_id }}
           path: validation/
           retention-days: 14
           if-no-files-found: error
