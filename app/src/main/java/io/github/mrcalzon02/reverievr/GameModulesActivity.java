@@ -33,6 +33,7 @@ public final class GameModulesActivity extends Activity {
         "Checkers","Pong","Snake","Reversi","Breakout","Chutes & Ladders"};
 
     private GameModuleUpdateService network;
+    private CompanionGameApkInstaller apkInstaller;
     private RvPackInstaller store;
     private final ExecutorService io=Executors.newSingleThreadExecutor();
     private GameModuleCatalog.Verified verified;
@@ -42,6 +43,7 @@ public final class GameModulesActivity extends Activity {
     @Override public void onCreate(Bundle saved){
         super.onCreate(saved);
         network=new GameModuleUpdateService(this);
+        apkInstaller=new CompanionGameApkInstaller(this);
         store=new RvPackInstaller(getFilesDir());
         ScrollView scroll=new ScrollView(this);
         LinearLayout base=new LinearLayout(this);
@@ -66,6 +68,10 @@ public final class GameModulesActivity extends Activity {
         refreshRows();
     }
 
+    @Override protected void onResume(){
+        super.onResume();
+        if(rows!=null)refreshRows();
+    }
     private void refreshRows(){
         rows.removeAllViews();
         for(int i=0;i<IDS.length;++i){
@@ -102,6 +108,21 @@ public final class GameModulesActivity extends Activity {
                 action.setEnabled(false);
             }
             row.addView(action);
+            GameModuleCatalog.Release apkRelease=verified==null?null:
+                verified.find(id,"companion-apk","testing");
+            if(apkRelease==null&&verified!=null)
+                apkRelease=verified.find(id,"companion-apk","stable");
+            if(apkRelease!=null){
+                GameModuleCatalog.Release selectedApk=apkRelease;
+                Button getApk=new Button(this);
+                getApk.setText("Game APK");
+                getApk.setOnClickListener(v->apkInstaller.install(
+                    verified,selectedApk,(message,started)->{
+                        status.setText(message);
+                        if(started)refreshRows();
+                    }));
+                row.addView(getApk);
+            }
             // Native code is launched ONLY from an independently installed,
             // Android-signed companion package with the expected identity.
             if(CompanionGameRegistry.installed(this,id)!=null){
@@ -151,7 +172,14 @@ public final class GameModulesActivity extends Activity {
         Uri uri=data.getData();
         status.setText("Validating local content pack...");
         io.execute(()->{
-            File tmp=new File(getCacheDir(),"manual-game-content.rvpack");
+            File tmp;
+            try {
+                tmp=File.createTempFile("manual-game-content-", ".rvpack",getCacheDir());
+            }catch(IOException creationError){
+                runOnUiThread(()->status.setText(
+                    "Cannot prepare imported content: "+creationError.getMessage()));
+                return;
+            }
             try{
                 try(InputStream in=getContentResolver().openInputStream(uri);
                     FileOutputStream out=new FileOutputStream(tmp)){
@@ -220,6 +248,7 @@ public final class GameModulesActivity extends Activity {
     }
     @Override protected void onDestroy(){
         network.close();
+        apkInstaller.close();
         io.shutdownNow();
         super.onDestroy();
     }
