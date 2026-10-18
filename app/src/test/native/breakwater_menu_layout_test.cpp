@@ -25,12 +25,12 @@ int main(){
         assert(Inside(c,kDifficultyPanel,.10f));
         assert(HitDifficulty(c.x,c.y)==i);
     }
-    // The exact opening threat and daytime wave counts match the
-    // campaign's 2 + difficulty-tier default starting formulas.
+    // The exact opening threat counts are triple the original complement;
+    // campaign day/night period counts remain unchanged.
     for(int tier=0;tier<4;++tier) {
         const char *hint=DifficultyHint(tier);
         char count[20]={};
-        std::snprintf(count,sizeof(count),"%d FOES",2+tier);
+        std::snprintf(count,sizeof(count),"%d FOES",3*(2+tier));
         assert(std::strstr(hint,count)!=nullptr);
         std::snprintf(count,sizeof(count),"%d DAY WAVES",12+2*tier);
         assert(std::strstr(hint,count)!=nullptr);
@@ -40,6 +40,18 @@ int main(){
         assert(baseline-height>difficulty.y+difficulty.height*.5f);
         assert(baseline+height<.98f-.052f*2.60f);
     }
+    for(int i=0;i<3;++i) {
+        const Rect slot=SlotCard(i);
+        assert(Inside(slot,kDifficultyPanel,.10f));
+        assert(HitSlot(slot.x,slot.y)==i);
+    }
+    for(int i=0;i<2;++i) {
+        const Rect action=DebriefAction(i);
+        assert(Inside(action,kPanel,.10f));
+        assert(HitDebrief(action.x,action.y)==i);
+    }
+    assert(Inside(kResetCard,kPanel,.03f));
+    assert(HitShop(kResetCard.x,kResetCard.y)==10);
     assert(std::strstr(DifficultyHint(-1),"POINT AT")!=nullptr);
     assert(HitShop(0.f,-1.18f)==-1); // footer is a label, not a button
     assert(HitShop(NAN,0.f)==-1);
