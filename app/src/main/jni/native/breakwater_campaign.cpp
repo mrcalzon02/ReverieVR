@@ -765,7 +765,12 @@ void Campaign::TickStep(float dt) {
         const float speed = e.type == UnitType::Rowboat ? 0.9f :
             e.type == UnitType::ArmoredTransport ? .44f :
             e.type == UnitType::LandingCraft ? 0.62f : kGunboatSpeed;
-        e.z += speed * dt;
+        // Armed gunboats are not troop carriers or kamikaze landing craft.
+        // Stop short of shore and sustain fire; only player/support damage
+        // can destroy them. Troop transports still progress to their ramps.
+        e.z = e.type==UnitType::Gunboat?
+            std::min(invasion::kGunboatStandOffZ,e.z+speed*dt):
+            e.z+speed*dt;
         if (e.type == UnitType::Gunboat ||
             e.type == UnitType::ArmoredTransport) {
             e.attack_timer = std::max(0.0f, e.attack_timer - dt);
@@ -794,27 +799,17 @@ void Campaign::TickStep(float dt) {
             }
         }
         if (e.z >= invasion::BeachingZ(e.type)) {
-            if (e.type == UnitType::Gunboat) {
-                const int32_t hull_before = integrity_;
-                integrity_ = std::max(0, integrity_ - 8);
-                const int32_t actual_damage = hull_before - integrity_;
-                if (actual_damage > 0) {
-                    ++gunboat_collision_.sequence;
-                    gunboat_collision_.x = e.x;
-                    gunboat_collision_.z = e.z;
-                    gunboat_collision_.damage = static_cast<uint8_t>(actual_damage);
-                }
-                e.active = false;
-                if (integrity_ == 0) { phase_ = Phase::Defeat; return; }
-            } else if(e.type==UnitType::ArmoredTransport) {
+            if(e.type==UnitType::ArmoredTransport) {
                 e.z=invasion::BeachingZ(e.type);
                 e.landed=true;
                 e.attack_timer=invasion::UnloadingSeconds(e.type);
             } else Land(e);
         }
     }
-    // Surviving armored cars roll down the landed ramp and become active
-    // beachhead gun platforms. The attack and its damage are authoritative,
+    // Only armor that has been physically unloaded from a surviving
+    // transport can enter this loop. The moving vehicle is silent until
+    // its real shore firing position and cooldown are both satisfied.
+    // The attack and its damage are authoritative,
     // and destroying the vehicle suppresses all future salvos.
     for(ArmoredVehicle &vehicle:armor_) {
         if(!vehicle.active)continue;
