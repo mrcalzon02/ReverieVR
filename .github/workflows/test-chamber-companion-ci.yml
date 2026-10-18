@@ -1,0 +1,110 @@
+name: Test Chamber independent APK validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/test-chamber-companion-ci.yml'
+      - 'game-apps/test-chamber/**'
+      - 'scripts/modules/verify-companion-contract.py'
+      - 'scripts/modules/test-test-chamber-targeting.sh'
+      - 'app/src/main/jni/native/test_chamber_module.cpp'
+      - 'app/src/main/jni/native/reverie_native_*.h'
+      - 'app/src/main/AndroidManifest.xml'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java'
+      - 'cardboard-adapter/**'
+      - 'third_party/openktg/**'
+      - 'settings.gradle'
+      - 'build.gradle'
+      - 'gradle/wrapper/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: companion-test-chamber-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-verify:
+    name: Build Android ABIs and verify real game payload
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out authoritative main source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK and NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then SDKMANAGER="$(command -v sdkmanager || true)"; fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.22.1'
+
+      - name: Verify packaged owner assets and renderer integration
+        run: |
+          set -euo pipefail
+          python3 scripts/modules/verify-companion-contract.py
+
+      - name: Run Android-free model gaze and sound tests
+        run: |
+          set -euo pipefail
+          sh scripts/modules/test-test-chamber-targeting.sh
+
+      - name: Build independent Test Chamber APK
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace :companion-test-chamber:assembleDebug
+
+      - name: Validate installable APK binary and packaged content
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find game-apps/test-chamber/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+          python3 scripts/modules/verify-companion-contract.py --apk "$APK"
+          AAPT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/aapt"
+          APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/apksigner"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          "$AAPT" dump badging "$APK" | tee "$RUNNER_TEMP/companion-badging.txt"
+          grep -F "package: name='io.github.mrcalzon02.reverievr.game.testchamber'" "$RUNNER_TEMP/companion-badging.txt"
+          sha256sum "$APK" | tee "$RUNNER_TEMP/companion-sha256.txt"
+          mkdir -p validation
+          cp "$APK" validation/TestChamber-companion-debug.apk
+          cp "$RUNNER_TEMP/companion-badging.txt" validation/
+          cp "$RUNNER_TEMP/companion-sha256.txt" validation/
+          printf '%s\n' "Built from commit ${GITHUB_SHA}" > validation/SOURCE-REVISION.txt
+
+      - name: Save verified debug APK and evidence
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-chamber-debug-${{ github.run_id }}
+          path: validation/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-chamber-diagnostics-${{ github.run_id }}
+          path: |
+            game-apps/test-chamber/build/reports/
+            game-apps/test-chamber/build/outputs/logs/
+            game-apps/test-chamber/.cxx/**/build_command.txt
+          retention-days: 7
+          if-no-files-found: ignore
