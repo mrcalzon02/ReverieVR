@@ -13,16 +13,77 @@ import struct
 import subprocess
 import sys
 import zipfile
+import json
+import wave
 
 ROOT=Path(__file__).resolve().parents[2]
 APPID="io.github.mrcalzon02.reverievr.game.testchamber"
 NATIVE_MODULE="reverie_companion_test_chamber"
 JAVA_CLASS=("io.github.mrcalzon02.reverievr.game.testchamber"
             ".GameVrActivity")
-METHODS=("nativeCreate","nativeSurfaceCreated","nativeSurfaceReleased",
+METHODS=("nativeCreate","nativeAddModelMesh","nativeSurfaceCreated","nativeSurfaceReleased",
          "nativeResume","nativePause","nativeUpdate","nativeRenderEye",
          "nativeDestroy")
 ABI_REL="app/src/main/jni/native/test_chamber_module.cpp"
+ASSET_ROOT=ROOT/"game-apps/test-chamber/src/main/assets"
+APP_MODELS=("crate","chair","shelf","table","door")
+GAME_EFFECTS=("select","wood_knock","metal_clang","coin_chime","mechanism","beacon")
+
+def check_fixture_assets():
+    total_tris=0
+    for model in APP_MODELS:
+        file=ASSET_ROOT/"models"/(model+".glb")
+        if not file.is_file():raise ValueError("Game model missing: "+str(file))
+        data=file.read_bytes()
+        if len(data)<32 or data[:4]!=b"glTF":
+            raise ValueError("Missing actual glTF GLB data for "+model)
+        if struct.unpack_from("<II",data,4)!=(2,len(data)):
+            raise ValueError("GLB version or file length mismatch for "+model)
+        size,kind=struct.unpack_from("<II",data,12)
+        if kind!=0x4e4f534a or size<2 or size>len(data)-28:
+            raise ValueError("Invalid GLB JSON chunk for "+model)
+        obj=json.loads(data[20:20+size])
+        views=obj["bufferViews"]
+        accessors=obj["accessors"]
+        images=obj["images"]
+        materials=obj["materials"]
+        textures=obj["textures"]
+        meshes=obj["meshes"]
+        if not meshes or not images or not materials:
+            raise ValueError("Not a textured game mesh: "+model)
+        bin_offset=20+size
+        length,kind=struct.unpack_from("<II",data,bin_offset)
+        if kind!=0x004e4942 or bin_offset+8+length>len(data):
+            raise ValueError("Missing GLB binary payload: "+model)
+        for mesh in meshes:
+            for primitive in mesh.get("primitives",[]):
+                a=primitive["attributes"]
+                v=accessors[a["POSITION"]]
+                uv=accessors[a["TEXCOORD_0"]]
+                i=accessors[primitive["indices"]]
+                if (v["componentType"]!=5126 or uv["componentType"]!=5126 or
+                    v["count"]!=uv["count"] or i["count"]<3 or
+                    i["count"]>18000 or i["count"]%3!=0):
+                    raise ValueError("Invalid GLB triangle/UV mesh "+model)
+                total_tris+=i["count"]//3
+                material=materials[primitive["material"]]
+                tex=material["pbrMetallicRoughness"]["baseColorTexture"]["index"]
+                img=images[textures[tex]["source"]]
+                if img.get("mimeType")!="image/png":
+                    raise ValueError("Unsupported embedded atlas for "+model)
+                view=views[img["bufferView"]]
+                off=bin_offset+8+view.get("byteOffset",0)
+                if data[off:off+8]!=b"\\x89PNG\\r\\n\\x1a\\n":
+                    raise ValueError("Model atlas is not PNG: "+model)
+    for effect in GAME_EFFECTS:
+        file=ASSET_ROOT/"sfx"/(effect+".wav")
+        if not file.is_file():raise ValueError("Missing game audio: "+effect)
+        with wave.open(str(file),"rb") as clip:
+            if (clip.getnchannels()!=1 or clip.getsampwidth()!=2 or
+                clip.getframerate()!=22050 or
+                clip.getnframes()<2000 or clip.getnframes()>22050):
+                raise ValueError("Wrong audible PCM effect format: "+effect)
+    return total_tris
 
 def contents(path):
     p=ROOT/path
@@ -57,6 +118,11 @@ def check_source():
              "Android cannot see installed game")
     required(registry,'"'+APPID+'"',"Game registry not connected")
     required(mk,"LOCAL_MODULE := "+NATIVE_MODULE,"Wrong native ELF")
+    required(mk,"companion_showcase_renderer.cpp","Real model renderer not linked")
+    required(gradle,'noCompress += ["wav"]',"PCM game audio must be seekable")
+    required(java,"TestChamberModels.load(","Approved GLB loader not invoked")
+    required(java,"new TestChamberSounds(","No packaged game sounds loaded")
+    required(bridge,"showcase.Draw(","Stereo game mesh renderer not called")
     for relative in (ABI_REL,"third_party/openktg/src/gentexture.cpp"):
         required(mk,relative,"Missing actual native module linkage")
     required(native,"reverie_native_module_entry_v1","Native game entry missing")
@@ -64,13 +130,16 @@ def check_source():
              "Native ABI version changed")
     for method in METHODS:
         required(java,"native "+("boolean" if method in (
-            "nativeSurfaceCreated","nativeRenderEye") else
+            "nativeSurfaceCreated","nativeRenderEye","nativeAddModelMesh") else
             "long" if method=="nativeCreate" else "void")+
             " "+method+"(","JNI declaration missing")
         required(bridge,"_"+method+"(","JNI implementation missing")
     for callback in ("onNewFrame(","onDrawEye(","onSurfaceCreated(",
                      "onRendererShutdown(","onBackPressed("):
         required(java,callback,"Missing companion game lifecycle callback")
+    triangles=check_fixture_assets()
+    print("PASS: five embedded Beckenburg GLB assets, %d triangles, "
+          "six PCM sound effects, stereo GLES2/JNI lifecycle" % triangles)
     print("PASS: Gradle module, package identity, Android visibility, "
           "JNI declarations, native ABI module and Cardboard callbacks")
 
@@ -78,6 +147,17 @@ def verify_apk(path):
     if not path.is_file():
         raise ValueError("APK missing: "+str(path))
     with zipfile.ZipFile(path) as archive:
+        for model in APP_MODELS:
+            name="assets/models/"+model+".glb"
+            if name not in archive.namelist():
+                raise ValueError("APK omitted owned 3D model: "+name)
+        for cue in GAME_EFFECTS:
+            name="assets/sfx/"+cue+".wav"
+            info=archive.getinfo(name) if name in archive.namelist() else None
+            if info is None:
+                raise ValueError("APK omitted audible effect: "+name)
+            if info.compress_type!=zipfile.ZIP_STORED:
+                raise ValueError("APK compressed PCM WAV; SoundPool openFd will fail: "+name)
         for arch,elf_class,machine in (
             ("armeabi-v7a",1,40),("arm64-v8a",2,183)):
             filename="lib/"+arch+"/lib"+NATIVE_MODULE+".so"
@@ -104,6 +184,8 @@ def verify_apk(path):
                          "Game did not export native ABI")
                 required(proc.stdout,"GameVrActivity_nativeCreate",
                          "Game JNI bridge missing")
+                required(proc.stdout,"GameVrActivity_nativeAddModelMesh",
+                         "Textured GLB mesh JNI entry is missing")
             print("PASS:",arch,"native ABI entry and JNI bridge are packaged")
     print("APK static checks passed. Install, stereo GL and S9 tests still required.")
 
