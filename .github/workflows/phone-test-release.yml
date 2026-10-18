@@ -333,6 +333,24 @@ jobs:
           # Confirm the actual loadable ELF symbols, Android CPU class and
           # private dependencies. Merely finding a .so in the APK is not enough.
           python3 scripts/verify-native-module-exports.py "$APK"
+
+          # The Omega Front runtime must actually ship the unit/terrain PNGs.
+          # Check APK payload bytes, not merely Git blob presence or a manifest.
+          # Both groups contain individual source sprites, not generated atlases.
+          OMEGA_PNG_COUNT=0
+          for SOURCE in app/src/main/assets/native/omega-front/terrain/*.png \
+                        app/src/main/assets/native/omega-front/units/kenney/*.png; do
+            [[ -f "$SOURCE" ]] || { echo "::error::Missing Omega Front PNG: $SOURCE" >&2; exit 1; }
+            ENTRY="assets/${SOURCE#app/src/main/assets/}"
+            printf '%s\n' "$NATIVE_APK_ENTRIES" | grep -Fx "$ENTRY"
+            unzip -p "$APK" "$ENTRY" | cmp - "$SOURCE"
+            OMEGA_PNG_COUNT=$((OMEGA_PNG_COUNT+1))
+          done
+          (( OMEGA_PNG_COUNT >= 60 )) || {
+            echo "::error::Omega Front PNG count incomplete: $OMEGA_PNG_COUNT" >&2
+            exit 1
+          }
+          echo "OMEGA FRONT APK ASSET CONTRACT: PASS: $OMEGA_PNG_COUNT exact PNGs"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libreverie_dos_host.so"
           unzip -l "$APK" | grep -F "lib/arm64-v8a/libreverie_dos_host.so"
           unzip -l "$APK" | grep -F "lib/armeabi-v7a/libcardboard_sdk_jni.so"
