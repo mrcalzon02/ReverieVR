@@ -312,9 +312,11 @@ public final class HubGameModulesInstrumentedTest {
             for(GameModuleRegistry.Entry item:GameModuleRegistry.GAMES)
                 assertNotNull("Game absent from hub module management UI: "+item.id,
                     findText(activity.getWindow().getDecorView(),
-                        item.displayName+"\nBuilt-in"+(item.id.equals(CHAMBER)
-                            ?" | Game APK r"+CompanionGameRegistry.installedVersion(context(),CHAMBER)
-                            :"")));
+                        item.displayName+"\nBuilt-in"+
+                            (CompanionGameRegistry.installedVersion(context(),item.id)>0
+                                ?" | Game APK r"+CompanionGameRegistry.installedVersion(
+                                    context(),item.id)
+                                :"")));
             // REAL user interaction: this invokes the app's remote catalog
             // acquisition/update code, with its embedded ECDSA trust root.
             instrument.runOnMainSync(control[0]::performClick);
