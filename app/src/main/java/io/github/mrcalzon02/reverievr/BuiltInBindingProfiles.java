@@ -20,12 +20,15 @@ final class BuiltInBindingProfiles {
         "native-standard";
     static final String ID_NATIVE_CLASSICS =
         "native-classics";
+    static final String ID_NATIVE_BREAKWATER = "native-breakwater";
 
     static String nativeProfileForModule(String moduleId) {
         // Board cursor, Snake direction and Pong paddle need the Daydream
         // touchpad axes; immersive worlds must retain shell-owned locomotion.
         // Gumball Armada is a seated arcade flight game, not shell travel.
         // Route its Daydream pad directly to guest X/Y just like the classics.
+        if ("breakwater-battery".equals(moduleId))
+            return ID_NATIVE_BREAKWATER;
         return moduleId != null
             && (moduleId.startsWith("classic-")
                 || "gumball-armada".equals(moduleId)
@@ -163,6 +166,7 @@ final class BuiltInBindingProfiles {
         for (BindingProfile profile : PROFILES) {
             if (!ID_NATIVE_STANDARD.equals(profile.id)
                 && !ID_NATIVE_CLASSICS.equals(profile.id)
+                && !ID_NATIVE_BREAKWATER.equals(profile.id)
                 && !ID_NONE.equals(profile.id)) {
                 result.add(profile);
             }
@@ -566,6 +570,20 @@ final class BuiltInBindingProfiles {
                 nativeStandard
             )
         );
+
+        // Seated Breakwater uses Daydream pad L/R to change mounted guns.
+        // Only this game's profile receives these axes, preserving other
+        // immersive modules' shell locomotion policies.
+        List<InputBinding> nativeBreakwater =
+            new ArrayList<>(nativeStandard);
+        nativeBreakwater.add(InputBinding.analog(
+            BindingInput.TOUCHPAD_X,
+            VirtualOutput.joystickAxisX(), 1.0f, 0.28f));
+        profiles.add(new BindingProfile(
+            ID_NATIVE_BREAKWATER,
+            "Breakwater — touchpad left/right weapon switching",
+            nativeBreakwater
+        ));
 
         // Classic games have no shell-travel capability. Reuse all native
         // Select, rocker and HID actions, adding only Daydream's centered
