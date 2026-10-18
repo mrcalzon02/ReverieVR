@@ -70,6 +70,27 @@ class AllGameContentPackagesTest(unittest.TestCase):
                 builder.build("classic-chess",source,output,1,"not-a-version")
             self.assertFalse(output.exists())
 
+    def test_breakwater_real_mesh_format_is_downloadable_and_corruption_rejected(self):
+        import struct
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            source=root/"assets"/"beckenburg"
+            source.mkdir(parents=True)
+            # One BWM1 triangle, three valid signed XYZ/color vertices.
+            valid=b"BWM1"+struct.pack("<I",1)+bytes(27)
+            mesh=source/"concrete_block_1.bwm"
+            mesh.write_bytes(valid)
+            output=root/"breakwater.rvpack"
+            built=builder.build("breakwater-battery",root/"assets",
+                                output,1,"0.1.0")
+            checked=verifier.validate(output)
+            self.assertEqual(1,checked["triangles"])
+            self.assertEqual(built["sha256"],checked["sha256"])
+            mesh.write_bytes(valid[:-1])
+            with self.assertRaisesRegex(ValueError,"triangle count"):
+                builder.build("breakwater-battery",root/"assets",
+                              root/"corrupt.rvpack",2,"0.1.1")
+
     def test_wrong_game_asset_namespace_rejected_by_verifier(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)
