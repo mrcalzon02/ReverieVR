@@ -101,7 +101,7 @@ public final class GameVrActivity extends Activity
             }
             Log.i("TestChamberAssets","Staged "+meshes.size()+
                 " textured primitives from five approved Beckenburg GLB models");
-            audio=new TestChamberSounds(getAssets());
+            audio=new TestChamberSounds(this,getAssets());
         }catch(Exception error){
             Log.e("TestChamberAssets","Cannot activate full test scene",error);
             showFailure("Missing game models or sound assets: "+error.getMessage());
