@@ -28,3 +28,11 @@ The Android-free gaze/sound mapping regression is executable via `sh scripts/mod
 The debug companion can use the *same* `phoneTestKeystorePath`, `phoneTestStorePassword`, `phoneTestKeyAlias`, and `phoneTestKeyPassword` Gradle properties as ReverieVR. Pass the already approved publisher key explicitly; the default Android debug certificate is NOT assumed to match the hub. Release assembly rejects a missing publisher keystore. Never commit the keystore or its passwords. Ordinary Android activation key codes (D-pad center, A, button 1, Enter, Space), primary mouse/gamepad button events, and Cardboard trigger are now recognized; key autorepeat does not retrigger cues. Back/Home remain system-controlled.
 
 `TestChamberSounds` now requests Android audio focus while foregrounded, pauses and abandons focus on pause, and logs an explicit warning if focused playback fails. `scripts/modules/verify-companion-contract.py` checks model/WAV bytes against packaged APK bytes, all JNI symbols, the signer gate, input dispatch and audio focus. These are source/build checks; Galaxy S9 speaker/headset, controller and GPU acceptance remains unverified.
+
+## Mesh-accurate gaze targeting (2026-10-18)
+
+The companion now registers the decoded, transformed triangles from the five imported GLBs with its gaze picker as they are staged for the native renderer. Each model's submesh bounds are accumulated, and a forward world-space ray chooses the nearest intersected padded bounds. This replaces the earlier hard-coded station-point approximation, so scaled geometry and separate mesh pieces can be selected where they actually appear. The gaze path avoids temporary arrays. A source verifier compares the Java placement transforms against native GLES2 placement and rejects mismatches.
+
+The Android-independent regression checks off-center geometry, all five targets, second submeshes, sky and rear gaze, invalid data, and six distinct sound assignments. Java source blob hashes match tested local files and GitHub readback.
+
+Remaining gate: Android SDK/NDK APK compilation and actual Galaxy S9 stereo rendering, controller selection, and audible sound verification. No new APK release or headset acceptance is claimed.
