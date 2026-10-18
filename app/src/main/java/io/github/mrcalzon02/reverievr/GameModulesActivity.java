@@ -102,6 +102,16 @@ public final class GameModulesActivity extends Activity {
                 action.setEnabled(false);
             }
             row.addView(action);
+            // Native code is launched ONLY from an independently installed,
+            // Android-signed companion package with the expected identity.
+            if(CompanionGameRegistry.installed(this,id)!=null){
+                Button play=new Button(this);play.setText("Play APK");
+                play.setOnClickListener(v->{
+                    if(!CompanionGameRegistry.launch(this,id))
+                        status.setText("Companion launch rejected for "+id);
+                });
+                row.addView(play);
+            }
             rows.addView(row);
         }
     }

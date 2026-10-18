@@ -30,6 +30,16 @@
         android:name="android.permission.BLUETOOTH_CONNECT"
         tools:targetApi="s" />
 
+    <!-- Explicit companion native-game package visibility on API 30+. -->
+    <queries>
+        <package android:name="io.github.mrcalzon02.reverievr.game.redledger" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.breakwater" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.omegafront" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.gumballarmada" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.ministry" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.forwarddetachment" />
+    </queries>
+
     <application
         android:name=".ReverieApplication"
         android:allowBackup="true"
