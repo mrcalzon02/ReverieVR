@@ -470,6 +470,12 @@ int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
             if(std::strcmp(session->spec->id,"breakwater-battery")==0)
                 __android_log_print(ANDROID_LOG_INFO,"ReverieNativeHost",
                     "Breakwater verified-pack asset %s (%u bytes)",path,size);
+            // Evidence of the actual immutable verified-revision read.
+            // This is emitted only after the bytes were fully read, not when
+            // the game falls back to content embedded in the hub APK.
+            __android_log_print(ANDROID_LOG_INFO,"ReverieNativeHost",
+                "Game verified-pack asset id=%s path=%s bytes=%u",
+                session->spec->id,path,size);
             return REVERIE_NATIVE_SAVE_OK;
         }
         if(errno!=ENOENT)return REVERIE_NATIVE_SAVE_ERROR;
