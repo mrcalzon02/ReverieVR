@@ -274,8 +274,9 @@ bool Campaign::DeserializeShop(const uint8_t *source, size_t length) {
 }
 
 uint8_t Campaign::NextCount() const {
-    return static_cast<uint8_t>(std::min<unsigned>(10u, 2u + Tier(difficulty_) +
-         location_ + (day_ - 1u) + (period_ == Period::Night ? 1u : 0u)));
+    const unsigned base=2u+Tier(difficulty_)+location_+
+        (day_-1u)+(period_==Period::Night?1u:0u);
+    return static_cast<uint8_t>(std::min<unsigned>(30u,base*3u));
 }
 bool Campaign::BeginWave() {
     if (phase_ != Phase::Shop) return false;
