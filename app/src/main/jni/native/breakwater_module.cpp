@@ -23,7 +23,7 @@
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
-#include "reverie_native_vector_text.h"
+#include "breakwater_font_atlas.h"
 
 #include <GLES2/gl2.h>
 #include <algorithm>
@@ -46,9 +46,12 @@ struct State {
     GLuint program = 0, vbo = 0;
     GLint matrix = -1, position = -1, color = -1;
     GLuint sprite_program = 0, sprite_vbo = 0, sprite_texture = 0;
+    GLuint font_program = 0, font_vbo = 0, font_texture = 0;
+    GLint font_matrix = -1, font_position = -1, font_uv = -1;
+    GLint font_color = -1, font_sampler = -1;
     GLint sprite_matrix = -1, sprite_position = -1, sprite_uv = -1;
     GLint sprite_sampler = -1, sprite_tint = -1;
-    bool sprite_gpu_dirty = true;
+    bool sprite_gpu_dirty = true, font_gpu_dirty = true;
     bool world_lighting=false,world_night=false;
     bool world_palette_already_lit=false;
     bool held = false, secondary_held = false, scene_dirty = true, gpu_dirty = true;
@@ -80,6 +83,7 @@ struct State {
     float ghost_position[3]={}, shot_origin[3]={}, shot_gravity=0;
     std::vector<float> mesh;
     std::vector<float> sprite_mesh;
+    std::vector<float> font_mesh;
 };
 void Feedback(State *s, uint32_t code) {
     ReverieNativeRequestFeedbackV1(s->host, code);
@@ -125,7 +129,7 @@ void Box(State *s,float x,float y,float z,float w,float h,float d,
 }
 void Text(State *s,const char *text,float x,float y,float z,float scale,
           float r,float g,float b) {
-    reverie::nativeart::StrokeText(s->mesh,text,x,y,scale,r,g,b,z);
+    font::AppendText(s->font_mesh,text,x,y,scale,r,g,b,z);
 }
 float AimAtPlane(const ReverieNativeInputV1 &input,float z,float *x,float *y) {
     if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE ||
@@ -547,6 +551,7 @@ void BuildScene(State *s) {
     auto &game=s->campaign;
     s->mesh.clear();
     s->sprite_mesh.clear();
+    s->font_mesh.clear();
     s->world_lighting=false;
     const bool night=game.period()==Period::Night;
     const EnvironmentProfile landscape=EnvironmentFor(game.location(),night);
@@ -870,12 +875,12 @@ void BuildScene(State *s) {
             Panel(s,tile.x,tile.y+tile.height*.45f,-2.99f,
                   tile.width-.08f,.014f,.77f,.77f,.61f);
             Text(s,choices[n],tile.x,tile.y,-2.96f,
-                 menu::FittedScale(choices[n],tile.width,.048f),
+                 font::FittedScale(choices[n],tile.width,.048f),
                  hover?1.f:.90f,hover?.99f:.92f,.76f);
         }
         const char *difficulty_hint=menu::DifficultyHint(s->menu_focus);
         Text(s,difficulty_hint,0,.64f,-2.96f,
-             menu::FittedScale(difficulty_hint,5.65f,.040f),
+             font::FittedScale(difficulty_hint,5.65f,.040f),
              .90f,.93f,.75f);
         Text(s,"POINT AND SELECT",0,-.40f,-2.96f,.045f,.86f,.88f,.79f);
     } else if(game.phase()==Phase::Shop) {
@@ -892,7 +897,7 @@ void BuildScene(State *s) {
             static_cast<unsigned>(game.waves_this_period()),
             game.credits());
         Text(s,header,0,menu::kShopStatusY,-2.97f,
-             menu::FittedScale(header,5.75f,.040f),.91f,.90f,.77f);
+             font::FittedScale(header,5.75f,.040f),.91f,.90f,.77f);
         // Focus-dependent inspection and purchase eligibility are
         // shown as real vector text; no extra tabs or inert details panel.
         const int focused=s->menu_focus;
@@ -909,7 +914,7 @@ void BuildScene(State *s) {
             ShopDisplayPrice(s,focused),game.credits(),
             focus_owned,focus_active);
         Text(s,hint,0,menu::kShopHintY,-2.972f,
-             menu::FittedScale(hint,5.65f,menu::kShopHintScale),
+             font::FittedScale(hint,5.65f,menu::kShopHintScale),
              .87f,.96f,.85f);
         // Everything interactive fits within the dark board and uses
         // exactly the same menu::Rect as the pointer hit-test.
@@ -943,7 +948,7 @@ void BuildScene(State *s) {
                  (n==5?"SAM":WeaponFor(weapon).name):
                  (n==3?tier_label:labels[n]);
             Text(s,title,x,y+.080f,-2.973f,
-                 menu::FittedScale(title,tile.width,.034f),
+                 font::FittedScale(title,tile.width,.034f),
                  .97f,.94f,.76f);
             char amount[20];
             if(owned)std::snprintf(amount,sizeof(amount),
@@ -957,7 +962,7 @@ void BuildScene(State *s) {
                              x-.45f,y-.085f,-2.952f,.155f,.155f);
             const float amount_x=x+(icon!=SpriteId::Count?.095f:0.0f);
             Text(s,amount,amount_x,y-.085f,-2.973f,
-                 menu::FittedScale(amount,tile.width-(icon!=SpriteId::Count?.22f:0.f),.033f),
+                 font::FittedScale(amount,tile.width-(icon!=SpriteId::Count?.22f:0.f),.033f),
                  .89f,.93f,.87f);
         }
         for(int action=8;action<=9;++action) {
@@ -968,13 +973,13 @@ void BuildScene(State *s) {
             const char *title=action==8?"START":
                 (s->armory_page?"UPGRADES":"ARMORY");
             Text(s,title,tile.x,tile.y,-2.974f,
-                 menu::FittedScale(title,tile.width,.052f),
+                 font::FittedScale(title,tile.width,.052f),
                  .96f,.96f,.81f);
         }
         char summary[40];
         std::snprintf(summary,sizeof(summary),"CREDITS %d",game.credits());
         Text(s,summary,0,menu::kShopCreditsY,-2.967f,
-             menu::FittedScale(summary,3.50f,menu::kShopCreditsScale),.92f,.86f,.64f);
+             font::FittedScale(summary,3.50f,menu::kShopCreditsScale),.92f,.86f,.64f);
     } else if(game.phase()==Phase::Combat) {
         char digits[32];std::snprintf(digits,sizeof(digits),"HULL %d",game.integrity());
         Text(s,digits,0,1.20f,-2.0f,.075f,.92f,.92f,.74f);
@@ -1171,9 +1176,14 @@ void DestroyGl(State *s) {
     if(s->sprite_vbo)glDeleteBuffers(1,&s->sprite_vbo);
     if(s->sprite_program)glDeleteProgram(s->sprite_program);
     if(s->sprite_texture)glDeleteTextures(1,&s->sprite_texture);
+    if(s->font_vbo)glDeleteBuffers(1,&s->font_vbo);
+    if(s->font_program)glDeleteProgram(s->font_program);
+    if(s->font_texture)glDeleteTextures(1,&s->font_texture);
     s->vbo=0;s->program=0;
     s->sprite_vbo=0;s->sprite_program=0;s->sprite_texture=0;
+    s->font_vbo=0;s->font_program=0;s->font_texture=0;
     s->scene_dirty=true;s->gpu_dirty=true;s->sprite_gpu_dirty=true;
+    s->font_gpu_dirty=true;
 }
 void *Create(const ReverieNativeHostV1 *host) {
     if(!ReverieNativeHostSupportsLogV1(host))return nullptr;
@@ -1182,6 +1192,7 @@ void *Create(const ReverieNativeHostV1 *host) {
     s->host=host;
     s->mesh.reserve(81920);
     s->sprite_mesh.reserve(3000);
+    s->font_mesh.reserve(12000);
     // New players choose their difficulty. Returning players restore shop state.
     LoadState(s);
     return s;
@@ -1194,6 +1205,7 @@ int32_t GlCreate(void *instance) {
     ReverieNativeGlStateCaptureV1(&previous);
     s->vbo=0;s->program=0;
     s->sprite_vbo=0;s->sprite_program=0;s->sprite_texture=0;
+    s->font_vbo=0;s->font_program=0;s->font_texture=0;
     const char *vs="uniform mat4 u_Mvp; attribute vec3 a_Pos; attribute vec3 a_Col;"
                    "varying vec3 v_Col;void main(){gl_Position=u_Mvp*vec4(a_Pos,1.);"
                    "v_Col=a_Col;}";
@@ -1240,7 +1252,46 @@ int32_t GlCreate(void *instance) {
                 kSpriteAtlasHeight,0,GL_RGBA,GL_UNSIGNED_BYTE,atlas.data());
         }
     }
-    const bool okay=s->program && s->vbo && s->position>=0 &&
+    // Offline-derived Lato glyph alpha, generated once per GL context.
+    const char *fvs="uniform mat4 u_Mvp;attribute vec3 a_Pos;"
+        "attribute vec2 a_Uv;attribute vec3 a_Col;"
+        "varying vec2 v_Uv;varying vec3 v_Col;"
+        "void main(){gl_Position=u_Mvp*vec4(a_Pos,1.0);"
+        "v_Uv=a_Uv;v_Col=a_Col;}";
+    const char *ffs="precision mediump float;uniform sampler2D u_Glyph;"
+        "varying vec2 v_Uv;varying vec3 v_Col;"
+        "void main(){float coverage=texture2D(u_Glyph,v_Uv).a;"
+        "if(coverage<0.01)discard;gl_FragColor=vec4(v_Col,coverage);}";
+    const ReverieNativeGlAttributeBindingV1 fontBindings[]={
+        {0u,"a_Pos"},{1u,"a_Uv"},{2u,"a_Col"}};
+    s->font_program=ReverieNativeBuildProgram(fvs,ffs,fontBindings,3);
+    std::vector<unsigned char> font_pixels;
+    const bool font_decoded=font::DecodeAtlas(font_pixels);
+    if(s->font_program && font_decoded) {
+        s->font_position=glGetAttribLocation(s->font_program,"a_Pos");
+        s->font_uv=glGetAttribLocation(s->font_program,"a_Uv");
+        s->font_color=glGetAttribLocation(s->font_program,"a_Col");
+        s->font_matrix=glGetUniformLocation(s->font_program,"u_Mvp");
+        s->font_sampler=glGetUniformLocation(s->font_program,"u_Glyph");
+        glGenBuffers(1,&s->font_vbo);
+        glGenTextures(1,&s->font_texture);
+        if(s->font_texture) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D,s->font_texture);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+            glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_ALPHA,font::kWidth,font::kHeight,
+                0,GL_ALPHA,GL_UNSIGNED_BYTE,font_pixels.data());
+            glPixelStorei(GL_UNPACK_ALIGNMENT,4);
+        }
+    }
+    const bool okay=font_decoded && s->font_program && s->font_vbo &&
+        s->font_texture && s->font_position>=0 && s->font_uv>=0 &&
+        s->font_color>=0 && s->font_matrix>=0 && s->font_sampler>=0 &&
+        s->program && s->vbo && s->position>=0 &&
         s->color>=0 && s->matrix>=0 && s->sprite_program &&
         s->sprite_vbo && s->sprite_texture &&
         s->sprite_position>=0 && s->sprite_uv>=0 &&
@@ -1248,6 +1299,7 @@ int32_t GlCreate(void *instance) {
         s->sprite_tint>=0 && glGetError()==GL_NO_ERROR;
     if(!okay)DestroyGl(s);
     s->scene_dirty=true;s->gpu_dirty=true;s->sprite_gpu_dirty=true;
+    s->font_gpu_dirty=true;
     ReverieNativeGlStateRestoreV1(&previous);
     return okay?1:0;
 }
@@ -1535,12 +1587,14 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
     if(s->scene_dirty) {
         BuildScene(s);
         s->scene_dirty=false;s->gpu_dirty=true;s->sprite_gpu_dirty=true;
+        s->font_gpu_dirty=true;
     }
     ReverieNativeGlStateV1 prior={};
-    ReverieNativeGlAttribStateV1 pa={},ca={};
+    ReverieNativeGlAttribStateV1 pa={},ca={},fa={};
     ReverieNativeGlStateCaptureV1(&prior);
     ReverieNativeGlAttribCaptureV1(&pa,static_cast<GLuint>(s->position));
     ReverieNativeGlAttribCaptureV1(&ca,static_cast<GLuint>(s->color));
+    ReverieNativeGlAttribCaptureV1(&fa,static_cast<GLuint>(s->font_color));
     glEnable(GL_DEPTH_TEST);glDisable(GL_BLEND);glDisable(GL_CULL_FACE);
     glUseProgram(s->program);
     glBindBuffer(GL_ARRAY_BUFFER,s->vbo);
@@ -1585,6 +1639,45 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
         glDrawArrays(GL_TRIANGLES,0,
             static_cast<GLsizei>(s->sprite_mesh.size()/5));
     }
+    if(!s->font_mesh.empty()) {
+        GLint oldSrcRgb=GL_ONE,oldDstRgb=GL_ZERO;
+        GLint oldSrcAlpha=GL_ONE,oldDstAlpha=GL_ZERO;
+        GLboolean oldDepthWrite=GL_TRUE;
+        glGetIntegerv(GL_BLEND_SRC_RGB,&oldSrcRgb);
+        glGetIntegerv(GL_BLEND_DST_RGB,&oldDstRgb);
+        glGetIntegerv(GL_BLEND_SRC_ALPHA,&oldSrcAlpha);
+        glGetIntegerv(GL_BLEND_DST_ALPHA,&oldDstAlpha);
+        glGetBooleanv(GL_DEPTH_WRITEMASK,&oldDepthWrite);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+        glUseProgram(s->font_program);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,s->font_texture);
+        glUniform1i(s->font_sampler,0);
+        glBindBuffer(GL_ARRAY_BUFFER,s->font_vbo);
+        if(s->font_gpu_dirty) {
+            glBufferData(GL_ARRAY_BUFFER,
+                static_cast<GLsizeiptr>(s->font_mesh.size()*sizeof(float)),
+                s->font_mesh.data(),GL_DYNAMIC_DRAW);
+            s->font_gpu_dirty=false;
+        }
+        glEnableVertexAttribArray(static_cast<GLuint>(s->font_position));
+        glEnableVertexAttribArray(static_cast<GLuint>(s->font_uv));
+        glEnableVertexAttribArray(static_cast<GLuint>(s->font_color));
+        glVertexAttribPointer(static_cast<GLuint>(s->font_position),3,GL_FLOAT,
+            GL_FALSE,8*sizeof(float),reinterpret_cast<void*>(0));
+        glVertexAttribPointer(static_cast<GLuint>(s->font_uv),2,GL_FLOAT,
+            GL_FALSE,8*sizeof(float),reinterpret_cast<void*>(3*sizeof(float)));
+        glVertexAttribPointer(static_cast<GLuint>(s->font_color),3,GL_FLOAT,
+            GL_FALSE,8*sizeof(float),reinterpret_cast<void*>(5*sizeof(float)));
+        glUniformMatrix4fv(s->font_matrix,1,GL_FALSE,vp);
+        glDrawArrays(GL_TRIANGLES,0,
+            static_cast<GLsizei>(s->font_mesh.size()/8));
+        glBlendFuncSeparate(oldSrcRgb,oldDstRgb,oldSrcAlpha,oldDstAlpha);
+        glDepthMask(oldDepthWrite);
+    }
+    ReverieNativeGlAttribRestoreV1(&fa);
     ReverieNativeGlAttribRestoreV1(&ca);
     ReverieNativeGlAttribRestoreV1(&pa);
     ReverieNativeGlStateRestoreV1(&prior);
