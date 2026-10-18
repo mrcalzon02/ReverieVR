@@ -72,6 +72,10 @@ inline void EmitTurret(float targetX,float targetZ,float flash,
              endX+rx*.64f,barrelY+.065f,endZ+rz*.64f,
              endX+rx*.64f,barrelY-.065f,endZ+rz*.64f,
              .24f,.28f,.24f);
+    triangle(startX-rx,barrelY+.065f,startZ-rz,
+             endX-rx*.64f,barrelY-.065f,endZ-rz*.64f,
+             endX-rx*.64f,barrelY+.065f,endZ-rz*.64f,
+             .21f,.25f,.23f);
     // Actual shot-only muzzle flash. It originates at the 3D barrel tip.
     if(std::isfinite(flash)&&flash>0.f) {
         const float tipX=endX+dx*.12f,tipZ=endZ+dz*.12f;
