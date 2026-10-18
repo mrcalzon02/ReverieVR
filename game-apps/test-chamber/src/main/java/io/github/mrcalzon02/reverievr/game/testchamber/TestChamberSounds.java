@@ -1,8 +1,11 @@
 package io.github.mrcalzon02.reverievr.game.testchamber;
 
+import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.media.SoundPool;
 import android.util.Log;
 import java.io.IOException;
@@ -14,37 +17,52 @@ final class TestChamberSounds implements AutoCloseable {
         "coin_chime.wav","mechanism.wav","beacon.wav"
     };
     private final SoundPool pool;
+    private final AudioManager manager;
+    private final AudioFocusRequest focusRequest;
     private final int[] ids=new int[FILES.length];
     private final boolean[] ready=new boolean[FILES.length];
-    private boolean announcedReady=false;
+    private boolean allLoaded=false;
+    private boolean welcomePlayed=false;
+    private volatile boolean focused=false;
+    private volatile boolean foreground=false;
 
-    TestChamberSounds(AssetManager assets)throws IOException{
+    TestChamberSounds(Context context,AssetManager assets)throws IOException{
         AudioAttributes attrs=new AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_GAME)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build();
+        manager=(AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
+        if(manager==null)throw new IOException("Android AudioManager unavailable");
         pool=new SoundPool.Builder().setMaxStreams(4)
             .setAudioAttributes(attrs).build();
+        focusRequest=new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            .setAudioAttributes(attrs)
+            .setOnAudioFocusChangeListener(change->{
+                if(change==AudioManager.AUDIOFOCUS_GAIN){
+                    focused=true;
+                    if(foreground){
+                        pool.autoResume();
+                        maybeWelcome();
+                    }
+                }else{
+                    focused=false;
+                    pool.autoPause();
+                }
+            }).build();
         pool.setOnLoadCompleteListener((soundPool,id,status)->{
             if(status!=0){
                 Log.e("TestChamberSound","Failed to decode cue "+id);
                 return;
             }
-            boolean all=true;
             synchronized(ready){
                 for(int i=0;i<ids.length;i++)if(ids[i]==id)ready[i]=true;
-                for(boolean loaded:ready)if(!loaded)all=false;
-                if(all&&!announcedReady)announcedReady=true;
-                else all=false;
+                boolean loaded=true;
+                for(boolean value:ready)if(!value)loaded=false;
+                allLoaded=loaded;
             }
-            // The beacon confirms audio actually initializes, not just that
-            // SoundPool objects were allocated. Never loop ambient noise.
-            if(all){
-                int stream=pool.play(ids[5],0.7f,0.7f,1,0,1.f);
-                Log.i("TestChamberSound",stream==0?
-                    "Beacon playback failed on pre-load completion":
-                    "Six game cues loaded; audible welcome beacon played");
-            }
+            // Welcome cue plays once only after the app is foregrounded AND
+            // Android actually granted audio focus, regardless of load order.
+            maybeWelcome();
         });
         for(int i=0;i<FILES.length;i++){
             try(AssetFileDescriptor asset=assets.openFd("sfx/"+FILES[i])){
@@ -60,7 +78,27 @@ final class TestChamberSounds implements AutoCloseable {
             }
         }
     }
+    private void maybeWelcome(){
+        int cue=0;
+        synchronized(ready){
+            if(foreground&&focused&&allLoaded&&!welcomePlayed){
+                welcomePlayed=true;
+                cue=ids[5];
+            }
+        }
+        if(cue!=0){
+            int played=pool.play(cue,0.7f,0.7f,1,0,1.f);
+            Log.i("TestChamberSound",played==0?
+                "Welcome cue failed despite audio focus":
+                "All six WAVs loaded; focused welcome beacon played");
+        }
+    }
+
     void playForFocus(int model){
+        if(!foreground||!focused){
+            Log.w("TestChamberSound","Sound suppressed: activity lacks audio focus");
+            return;
+        }
         // A stable object -> cue mapping makes each gallery asset testable.
         // Empty space selects the general beacon (sixth effect).
         final int index=TestChamberTargeting.cueFor(model);
@@ -74,9 +112,23 @@ final class TestChamberSounds implements AutoCloseable {
         if(stream==0)Log.w("TestChamberSound","Cue not playing: "+FILES[index]);
         else Log.i("TestChamberSound","Audible test cue "+FILES[index]);
     }
-    void pause(){pool.autoPause();}
-    void resume(){pool.autoResume();}
+    void pause(){
+        foreground=false;
+        focused=false;
+        pool.autoPause();
+        manager.abandonAudioFocusRequest(focusRequest);
+    }
+    void resume(){
+        foreground=true;
+        focused=manager.requestAudioFocus(focusRequest)==
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        if(focused){
+            pool.autoResume();
+            maybeWelcome();
+        }else Log.w("TestChamberSound","Audio focus not granted");
+    }
     @Override public void close(){
+        pause();
         pool.release();
     }
 }
