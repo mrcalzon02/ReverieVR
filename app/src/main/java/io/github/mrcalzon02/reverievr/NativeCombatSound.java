@@ -12,25 +12,49 @@ final class NativeCombatSound implements AutoCloseable {
     private final AudioTrack[][] tracks = new AudioTrack[NativeCombatWaveform.COUNT][];
     private final int[] nextVoice = new int[NativeCombatWaveform.COUNT];
 
+    private long retryAfterMs;
+    private boolean closed;
+
     NativeCombatSound() {
-        for (int cue = 0; cue < tracks.length; cue++) {
-            byte[] pcm = NativeCombatWaveform.generatePcm16(cue);
-            tracks[cue] = new AudioTrack[NativeCombatWaveform.voiceCount(cue)];
-            for (int voice = 0; voice < tracks[cue].length; voice++) {
-                AudioTrack candidate = null;
+        for(int cue=0;cue<tracks.length;cue++)
+            tracks[cue]=new AudioTrack[NativeCombatWaveform.voiceCount(cue)];
+        prepareMissingVoices();
+    }
+
+    /** Android can reject static voices before its audio route is ready.
+     * Recreate only missing voices at lifecycle resume and after a bounded
+     * three-second playback retry; never initialize on the GL render thread. */
+    void resumeForLifecycle() { prepareMissingVoices(); }
+
+    private void prepareMissingVoices() {
+        if(closed)return;
+        for(int cue=0;cue<tracks.length;cue++) {
+            boolean needed=false;
+            for(AudioTrack voice:tracks[cue])if(voice==null)needed=true;
+            if(!needed)continue;
+            final byte[] pcm=NativeCombatWaveform.generatePcm16(cue);
+            for(int i=0;i<tracks[cue].length;i++) {
+                if(tracks[cue][i]!=null)continue;
+                AudioTrack candidate=null;
                 try {
-                    candidate = new AudioTrack(AudioManager.STREAM_MUSIC,
-                        NativeCombatWaveform.SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT, pcm.length, AudioTrack.MODE_STATIC);
-                    if (candidate.getState() != AudioTrack.STATE_INITIALIZED
-                        || candidate.write(pcm, 0, pcm.length) != pcm.length) {
+                    candidate=new AudioTrack(AudioManager.STREAM_MUSIC,
+                        NativeCombatWaveform.SAMPLE_RATE,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        pcm.length,AudioTrack.MODE_STATIC);
+                    if(candidate.getState()!=AudioTrack.STATE_INITIALIZED ||
+                       candidate.write(pcm,0,pcm.length)!=pcm.length) {
                         candidate.release();
+                        ReverieLog.incident("NATIVE_AUDIO",
+                            "Could not preload native cue " + cue);
                         continue;
                     }
-                    candidate.setStereoVolume(.34f, .34f);
-                    tracks[cue][voice] = candidate;
-                } catch (RuntimeException unavailable) {
-                    if (candidate != null) candidate.release();
+                    candidate.setStereoVolume(.72f,.72f);
+                    tracks[cue][i]=candidate;
+                } catch(RuntimeException failure) {
+                    if(candidate!=null)candidate.release();
+                    ReverieLog.error("NATIVE_AUDIO",
+                        "Static audio voice creation failed for cue " + cue,failure);
                 }
             }
         }
@@ -45,7 +69,14 @@ final class NativeCombatSound implements AutoCloseable {
 
     void play(int cue) {
         if (cue < 0 || cue >= tracks.length) return;
+        if(closed)return;
         AudioTrack[] voices = tracks[cue];
+        boolean missing=true;
+        for(AudioTrack voice:voices)if(voice!=null)missing=false;
+        if(missing && android.os.SystemClock.uptimeMillis()>=retryAfterMs) {
+            retryAfterMs=android.os.SystemClock.uptimeMillis()+3000L;
+            prepareMissingVoices();
+        }
         int start = nextVoice[cue];
         for (int offset = 0; offset < voices.length; offset++) {
             int slot = (start + offset) % voices.length;
@@ -58,7 +89,12 @@ final class NativeCombatSound implements AutoCloseable {
                 track.setPlaybackHeadPosition(0);
                 track.play();
             } catch (RuntimeException unavailable) {
-                // Loss of audio route must not interrupt the running native game.
+                // Release the failed static voice; the next bounded retry
+                // recreates it rather than leaving combat silent forever.
+                ReverieLog.error("NATIVE_AUDIO",
+                    "Audio playback failed for native cue "+cue,unavailable);
+                try {track.release();} catch(RuntimeException ignored){}
+                voices[slot]=null;
             }
             return;
         }
@@ -81,6 +117,7 @@ final class NativeCombatSound implements AutoCloseable {
     @Override
     public void close() {
         stop();
+        closed=true;
         for (AudioTrack[] voices : tracks) {
             if (voices == null) continue;
             for (int i = 0; i < voices.length; i++) {
