@@ -19,6 +19,8 @@ on:
       - 'app/src/main/jni/native/reverie_native_asset_scope.h'
       - 'app/build.gradle'
       - 'game-apps/test-chamber/build.gradle'
+      - 'game-apps/breakwater/**'
+      - 'settings.gradle'
 
 permissions:
   contents: read
@@ -69,12 +71,14 @@ jobs:
           set -euo pipefail
           ./gradlew --no-daemon --stacktrace -PcompanionEmulatorAbi=true \
             :app:assembleDebug :app:assembleDebugAndroidTest \
-            :companion-test-chamber:assembleDebug
+            :companion-test-chamber:assembleDebug \
+            :companion-breakwater:assembleDebug
           mkdir -p validation/hub
           HUB="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f -print -quit)"
           CHAMBER="$(find game-apps/test-chamber/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f -print -quit)"
           TEST="$(find app/build/outputs/apk/androidTest/debug -maxdepth 1 -name '*.apk' -type f -print -quit)"
-          test -f "$HUB" && test -f "$CHAMBER" && test -f "$TEST"
+          BREAKWATER="$(find game-apps/breakwater/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f -print -quit)"
+          test -f "$HUB" && test -f "$CHAMBER" && test -f "$TEST" && test -f "$BREAKWATER"
           python3 - "$HUB" <<'PY'
           import json,sys,zipfile
           from pathlib import Path
@@ -90,9 +94,15 @@ jobs:
           print("PASS: all",len(games),"native game libraries packaged in real hub APK")
           PY
           unzip -Z -1 "$CHAMBER" | grep -Fx 'lib/x86_64/libreverie_companion_test_chamber.so'
+          unzip -Z -1 "$BREAKWATER" | grep -Fx 'lib/x86_64/libreverie_companion_breakwater.so'
+          for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1; do
+            unzip -Z -1 "$BREAKWATER" |
+              grep -Fx "assets/native/breakwater/beckenburg/${MODEL}.bwm"
+          done
           python3 scripts/modules/verify-companion-contract.py
           cp "$HUB" validation/hub/ReverieVR-hub-emulator.apk
           cp "$CHAMBER" validation/hub/TestChamber-companion-emulator.apk
+          cp "$BREAKWATER" validation/hub/Breakwater-companion-emulator.apk
           cp "$TEST" validation/hub/ReverieVR-module-tests.apk
           sha256sum validation/hub/*.apk > validation/hub/SHA256.txt
       - name: Execute real hub game management on Android 10
@@ -113,9 +123,11 @@ jobs:
             adb logcat -c
             adb install -r validation/hub/ReverieVR-hub-emulator.apk
             adb install -r validation/hub/TestChamber-companion-emulator.apk
+            adb install -r validation/hub/Breakwater-companion-emulator.apk
             adb install -r validation/hub/ReverieVR-module-tests.apk
             adb shell pm list packages | grep -Fx 'package:io.github.mrcalzon02.reverievr'
             adb shell pm list packages | grep -Fx 'package:io.github.mrcalzon02.reverievr.game.testchamber'
+            adb shell pm list packages | grep -Fx 'package:io.github.mrcalzon02.reverievr.game.breakwater'
             adb shell am start -W -n io.github.mrcalzon02.reverievr/.MainActivity | tee validation/hub/hub-main-launch.txt
             adb shell am instrument -w -r               io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner               | tee validation/hub/instrumentation-output.txt
             adb logcat -d -v time > validation/hub/logcat.txt

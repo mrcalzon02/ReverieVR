@@ -36,15 +36,19 @@ def check():
             not re.fullmatch(r"libreverie_module_[a-z0-9_]+\.so",
                 x["native_library"]) or
             type(x["development_only"]) is not bool or
-            x["companion_build_target"] not in (None,":companion-test-chamber")):
+            x["companion_build_target"] not in (
+                None,":companion-test-chamber",":companion-breakwater")):
             raise ValueError("Malformed identity: "+str(game))
         for unique,seen in ((game,ids),(x["companion_package"],packages),
                             (x["content_namespace"],namespaces),
                             (x["native_library"],libraries)):
             if unique in seen:raise ValueError("Duplicate game identity: "+unique)
             seen.add(unique)
-        if x["companion_build_target"] is not None and game!="procedural-test-chamber":
-            raise ValueError("Unverified companion build target falsely declared")
+        actual=x["companion_build_target"]
+        expected={ "procedural-test-chamber":":companion-test-chamber",
+                   "breakwater-battery":":companion-breakwater" }.get(game)
+        if actual!=expected:
+            raise ValueError("Missing or unverified independent game target: "+game)
         by_id[game]=x
     if len(items)!=15:
         raise ValueError("Expected 15 authoritative game identities, got "+str(len(items)))
@@ -83,8 +87,16 @@ def check():
     if len(targets)!=len(items) or set(targets)!=expected:
         raise ValueError("Android.mk does not build every required native game")
     settings=(ROOT/"settings.gradle").read_text("utf-8")
-    if 'include(":companion-test-chamber")' not in settings:
-        raise ValueError("Test Chamber companion target missing")
+    for target,path in (
+            ("companion-test-chamber","game-apps/test-chamber"),
+            ("companion-breakwater","game-apps/breakwater")):
+        if f'include(":{target}")' not in settings:
+            raise ValueError("Independent native game build missing: "+target)
+        for suffix in ("build.gradle","src/main/AndroidManifest.xml",
+                       "src/main/jni/Android.mk"):
+            if not (ROOT/path/suffix).is_file():
+                raise ValueError("Independent game has no real build source: "+
+                                 target+"/"+suffix)
     print("PASS:",len(items),
           "game IDs, content namespaces, native libraries and companion "
           "package identities match across JSON, Java, C++ and Android.mk")

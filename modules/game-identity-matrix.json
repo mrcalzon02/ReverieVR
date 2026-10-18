@@ -15,7 +15,7 @@
       "companion_package": "io.github.mrcalzon02.reverievr.game.breakwater",
       "native_library": "libreverie_module_breakwater.so",
       "development_only": true,
-      "companion_build_target": null
+      "companion_build_target": ":companion-breakwater"
     },
     {
       "id": "omega-front",

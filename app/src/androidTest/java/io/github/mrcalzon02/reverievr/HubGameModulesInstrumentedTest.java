@@ -216,8 +216,16 @@ public final class HubGameModulesInstrumentedTest {
             game.packageName);
         assertTrue("Installed Android version missing",
             CompanionGameRegistry.installedVersion(context(),CHAMBER)>0);
+        CompanionGameRegistry.Descriptor breakwater=
+            CompanionGameRegistry.installed(context(),"breakwater-battery");
+        assertNotNull("Real standalone Breakwater APK not admitted by hub",breakwater);
+        assertEquals("io.github.mrcalzon02.reverievr.game.breakwater",
+            breakwater.packageName);
+        assertTrue("Installed native Breakwater code revision missing",
+            CompanionGameRegistry.installedVersion(context(),"breakwater-battery")>0);
         for(GameModuleRegistry.Entry item:GameModuleRegistry.GAMES){
-            if(item.id.equals(CHAMBER))continue;
+            if(item.id.equals(CHAMBER) ||
+               item.id.equals("breakwater-battery"))continue;
             assertNull("Unexpected independent companion installed: "+item.id,
                 CompanionGameRegistry.installed(context(),item.id));
         }
