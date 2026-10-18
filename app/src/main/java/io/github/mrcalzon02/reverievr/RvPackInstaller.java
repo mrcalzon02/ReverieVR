@@ -186,6 +186,41 @@ final class RvPackInstaller {
         return true;
     }
 
+    /**
+     * Remove optional installed content only. Native saves are in the
+     * separate native-modules directory and must never be touched here.
+     * Caller must ensure this game's session is stopped.
+     */
+    synchronized boolean removeContent(String id)throws IOException{
+        if(namespace(id)==null)throw new IOException("Unknown module");
+        File mod=new File(root,id);
+        if(!mod.exists())return false;
+        if(!mod.getCanonicalFile().getParentFile().equals(root.getCanonicalFile()))
+            throw new IOException("Invalid content directory");
+        deleteTree(mod);
+        return true;
+    }
+
+    synchronized long installedBytes(String id){
+        if(namespace(id)==null)return 0L;
+        File mod=new File(root,id);
+        return sizeOf(mod);
+    }
+    private static long sizeOf(File root){
+        if(java.nio.file.Files.isSymbolicLink(root.toPath()))return 0L;
+        if(root.isFile())return root.length();
+        if(!root.isDirectory())return 0L;
+        long total=0;
+        File[] files=root.listFiles();
+        if(files==null)return 0L;
+        for(File f:files) {
+            long size=sizeOf(f);
+            if(size<0||total>Long.MAX_VALUE-size)return Long.MAX_VALUE;
+            total+=size;
+        }
+        return total;
+    }
+
     private static boolean validInstalled(File mod,Properties p){
         String id=p.getProperty("id"),rev=p.getProperty("revision"),
             sha=p.getProperty("sha256");
