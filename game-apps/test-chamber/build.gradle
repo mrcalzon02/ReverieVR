@@ -47,6 +47,10 @@ android {
             if(hasSigner) signingConfig = signingConfigs.publisher
         }
     }
+    // SoundPool.openFd needs actual seekable, non-compressed WAV assets.
+    androidResources {
+        noCompress += ["wav"]
+    }
     externalNativeBuild {
         ndkBuild { path = file("src/main/jni/Android.mk") }
     }

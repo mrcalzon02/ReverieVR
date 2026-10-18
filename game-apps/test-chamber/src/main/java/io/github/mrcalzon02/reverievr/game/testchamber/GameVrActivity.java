@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.opengl.GLES20;
 import android.os.Bundle;
 import android.view.View;
+import android.view.MotionEvent;
+import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -37,6 +39,8 @@ public final class GameVrActivity extends Activity
         AVAILABLE=loaded;
     }
     private static native long nativeCreate();
+    private static native boolean nativeAddModelMesh(long handle,int modelId,
+        float[] vertices,int width,int height,int[] argb);
     private static native boolean nativeSurfaceCreated(long handle);
     private static native void nativeSurfaceReleased(long handle);
     private static native void nativeResume(long handle);
@@ -50,6 +54,7 @@ public final class GameVrActivity extends Activity
     private final Object nativeLock=new Object();
     private final AtomicBoolean pendingTrigger=new AtomicBoolean();
     private CardboardView viewer;
+    private TestChamberSounds audio;
     private long instance;
     private long previousFrameNanos;
     private volatile boolean surfaceReady;
@@ -78,12 +83,46 @@ public final class GameVrActivity extends Activity
             showFailure("Native Test Chamber could not initialize");
             return;
         }
+        // Fail visibly if the APK lacks any purchased game models/textures.
+        // Do not disguise an incomplete build by displaying only cube props.
+        try{
+            java.util.List<TestChamberModels.Primitive> meshes=
+                TestChamberModels.load(getAssets());
+            for(TestChamberModels.Primitive primitive:meshes){
+                if(!nativeAddModelMesh(instance,primitive.modelId,
+                    primitive.vertices,primitive.width,primitive.height,
+                    primitive.argb))
+                    throw new java.io.IOException(
+                        "JNI/GLES2 asset staging failed for model "+primitive.modelId);
+            }
+            Log.i("TestChamberAssets","Staged "+meshes.size()+
+                " textured primitives from five approved Beckenburg GLB models");
+            audio=new TestChamberSounds(getAssets());
+        }catch(Exception error){
+            Log.e("TestChamberAssets","Cannot activate full test scene",error);
+            showFailure("Missing game models or sound assets: "+error.getMessage());
+            return;
+        }
         CardboardView.setUseCardboardGlSurfaceView(true);
         viewer=new CardboardView(this);
         viewer.setStereoRenderMode(true);
         viewer.setRenderer(this);
-        viewer.setOnTriggerEvent(()->pendingTrigger.set(true));
+        viewer.setOnTriggerEvent(this::triggerTestEffect);
         setContentView(viewer);
+    }
+
+    private void triggerTestEffect(){
+        // Original C++ chamber tint changes AND an audible effect plays on
+        // every Daydream trigger or fallback screen tap.
+        pendingTrigger.set(true);
+        if(audio!=null)audio.playNext();
+    }
+    @Override public boolean onTouchEvent(MotionEvent event){
+        if(event.getActionMasked()==MotionEvent.ACTION_DOWN){
+            triggerTestEffect();
+            return true;
+        }
+        return super.onTouchEvent(event);
     }
 
     private void immersive(){
@@ -120,6 +159,10 @@ public final class GameVrActivity extends Activity
                 nativeDestroy(instance);
                 instance=0L;
             }
+        }
+        if(audio!=null){
+            audio.close();
+            audio=null;
         }
         super.onDestroy();
     }
