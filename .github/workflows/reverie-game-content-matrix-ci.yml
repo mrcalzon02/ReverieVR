@@ -1,0 +1,34 @@
+name: ReverieVR all-game content package contracts
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/reverie-game-content-matrix-ci.yml'
+      - 'modules/game-identity-matrix.json'
+      - 'scripts/modules/build-content-pack.py'
+      - 'scripts/modules/verify-content-pack.py'
+      - 'scripts/modules/verify-game-identity-matrix.py'
+      - 'scripts/modules/test_all_game_content_packages.py'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java'
+      - 'app/src/main/jni/Android.mk'
+      - 'app/src/main/jni/native/reverie_native_host.cpp'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-all-games:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify native game identity alignment across Java C++ build and release tooling
+        run: python3 scripts/modules/verify-game-identity-matrix.py
+      - name: Test independent game content builds, namespaces and pack integrity
+        run: python3 -m unittest discover -s scripts/modules -p 'test_all_game_content_packages.py' -v
+      - name: Test prior release and ZIP integrity contracts
+        run: |
+          python3 -m unittest discover -s scripts/modules -p 'test_verify_content_pack.py' -v
+          python3 -m unittest discover -s scripts/modules -p 'test_publish_module_release.py' -v
