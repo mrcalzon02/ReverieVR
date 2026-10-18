@@ -18,7 +18,7 @@ NAMESPACES={
     for entry in json.loads(MATRIX.read_text("utf-8"))["games"]
 }
 
-EXTENSIONS=(".rlprop",".png",".ogg",".wav",".mp3",".json",".rvdata",".atlas")
+EXTENSIONS=(".rlprop",".bwm",".png",".ogg",".wav",".mp3",".json",".rvdata",".atlas")
 
 def validate(path):
     if not path.is_file() or not 22<=path.stat().st_size<=64*1024*1024:
@@ -59,6 +59,20 @@ def validate(path):
             assets+=1
             data=z.read(entry)
             actual[name]={"bytes":len(data),"sha256":hashlib.sha256(data).hexdigest()}
+            if name.endswith(".bwm"):
+                if game!="breakwater-battery" or not name.startswith(
+                        "assets/native/breakwater/beckenburg/"):
+                    raise ValueError("BWM1 model outside approved Breakwater location")
+                if len(data)<35 or len(data)>8+2048*27 or data[:4]!=b"BWM1":
+                    raise ValueError("Invalid BWM1 model header")
+                count=struct.unpack_from("<I",data,4)[0]
+                if not 1<=count<=2048 or len(data)!=8+count*27:
+                    raise ValueError("Invalid BWM1 model triangle count")
+                for at in range(8,len(data),9):
+                    xyz=struct.unpack_from("<hhh",data,at)
+                    if any(value<=-32000 or value>=32000 for value in xyz):
+                        raise ValueError("Invalid BWM1 mesh coordinates")
+                triangles+=count
             if name.endswith(".rlprop"):
                 if len(data)<16:raise ValueError("Truncated RLBP mesh")
                 magic,version,vertices,atlas=struct.unpack("<4sIII",data[:16])

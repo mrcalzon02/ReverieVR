@@ -7,6 +7,22 @@
 namespace reverie { namespace native { namespace assets {
 inline uint32_t MaximumBytes(const char *id,const char *path){
     if(!id||!path)return 0u;
+    // Actual Breakwater imports are BWM1 meshes, already shipped in the
+    // bundled APK. Previously the host rejected ALL Breakwater reads.
+    if(std::strcmp(id,"breakwater-battery")==0){
+        constexpr const char *root="native/breakwater/beckenburg/";
+        const size_t r=std::strlen(root),n=strnlen(path,128u);
+        if(n>=128u||n<=r+4u||std::strncmp(path,root,r)!=0||
+           std::strcmp(path+n-4u,".bwm")!=0||
+           std::strstr(path,"..")!=nullptr)return 0u;
+        for(size_t i=r;i<n;++i){
+            const char c=path[i];
+            if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
+                (c>='0'&&c<='9')||c=='_'||c=='-'||c=='.'))
+                return 0u;
+        }
+        return 8u+2048u*27u; // Exact compiled BWM1 mesh upper bound.
+    }
     const bool red=std::strcmp(id,"between-deliveries-red-ledger")==0;
     const bool omega=std::strcmp(id,"omega-front")==0;
     if(!red&&!omega)return 0u;

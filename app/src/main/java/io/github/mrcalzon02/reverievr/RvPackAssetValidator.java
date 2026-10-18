@@ -20,6 +20,28 @@ final class RvPackAssetValidator {
         if(name==null||file==null||!file.isFile())
             throw new IOException("Missing content asset");
         if(name.endsWith(".rlprop"))verifyRoomMesh(file);
+        if(name.endsWith(".bwm"))verifyBreakwaterMesh(file);
+    }
+    private static void verifyBreakwaterMesh(File file)throws IOException {
+        final long limit=8L+2048L*27L;
+        if(file.length()<35L||file.length()>limit)
+            throw new IOException("Invalid BWM1 game mesh size");
+        byte[] bytes=java.nio.file.Files.readAllBytes(file.toPath());
+        ByteBuffer buffer=ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+        if(buffer.get()!=66||buffer.get()!=87||buffer.get()!=77||buffer.get()!=49)
+            throw new IOException("Invalid BWM1 game mesh magic");
+        int triangles=buffer.getInt();
+        if(triangles<1||triangles>2048||bytes.length!=8L+(long)triangles*27L)
+            throw new IOException("Invalid BWM1 triangle count or byte length");
+        // Three authentic XYZ/color vertices per triangle, with signed
+        // 16-bit coordinates. Match the C++ model parser exactly.
+        for(int at=8;at<bytes.length;at+=9){
+            for(int axis=0;axis<3;axis++){
+                short value=buffer.getShort(at+axis*2);
+                if(value<=-32000||value>=32000)
+                    throw new IOException("Invalid BWM1 vertex coordinate");
+            }
+        }
     }
     private static void verifyRoomMesh(File file)throws IOException {
         byte[] header=new byte[16];

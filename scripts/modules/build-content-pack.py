@@ -18,7 +18,7 @@ NAMESPACES={
     for entry in json.loads(MATRIX.read_text("utf-8"))["games"]
 }
 
-EXTENSIONS = {".rlprop", ".png", ".ogg", ".wav", ".mp3",
+EXTENSIONS = {".rlprop", ".bwm", ".png", ".ogg", ".wav", ".mp3",
               ".json", ".rvdata", ".atlas"}
 MAX_FILE = 4 * 1024 * 1024
 MAX_PACKED = 64 * 1024 * 1024
@@ -53,6 +53,18 @@ def checked_assets(directory, namespace):
                 raise ValueError("Invalid triangle count: " + relative)
             if len(data) != 16 + vertices * 40 + 256 * 256 * 2:
                 raise ValueError("Room mesh has wrong byte count: " + relative)
+        if f.suffix == ".bwm":
+            if namespace != "breakwater" or not relative.startswith("beckenburg/"):
+                raise ValueError("BWM1 meshes belong only to Breakwater Beckenburg")
+            if len(data)<35 or len(data)>8+2048*27 or data[:4]!=b"BWM1":
+                raise ValueError("Invalid BWM1 model header")
+            triangles=struct.unpack_from("<I",data,4)[0]
+            if not 1<=triangles<=2048 or len(data)!=8+triangles*27:
+                raise ValueError("Invalid BWM1 model triangle count")
+            for at in range(8,len(data),9):
+                xyz=struct.unpack_from("<hhh",data,at)
+                if any(value<=-32000 or value>=32000 for value in xyz):
+                    raise ValueError("Invalid BWM1 mesh coordinates")
         # Red Ledger's native renderer reads the approved Beckenburg
         # flat directory, not top-level red-ledger/*.rlprop paths.
         if (namespace == "red-ledger" and f.suffix == ".rlprop" and
