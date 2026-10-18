@@ -16,20 +16,23 @@ struct Rect {
     }
 };
 // Single authoritative geometry for BOTH ray hit-tests and drawn widgets.
-constexpr Rect kPanel={0.f,0.28f,6.10f,2.76f};
-constexpr Rect kDifficultyPanel={0.f,0.27f,6.10f,2.75f};
+// Compact vertical footprint (-0.71..1.55 m at z=-3) preserves optical
+// breathing room below the last label. This is a source geometry bound,
+// NOT proof of a specific headset's per-eye visible field.
+constexpr Rect kPanel={0.f,0.42f,6.10f,2.26f};
+constexpr Rect kDifficultyPanel={0.f,0.42f,6.10f,2.26f};
 constexpr float kColumnX[4]={-2.10f,-0.70f,0.70f,2.10f};
-constexpr float kShopRowY[2]={0.27f,-0.22f};
-constexpr float kCardWidth=1.23f,kCardHeight=0.40f;
-constexpr float kActionY=-0.66f;
-constexpr float kActionWidth=1.60f,kActionHeight=0.30f;
+constexpr float kShopRowY[2]={0.31f,-0.055f};
+constexpr float kCardWidth=1.23f,kCardHeight=0.30f;
+constexpr float kActionY=-0.36f;
+constexpr float kActionWidth=1.60f,kActionHeight=0.24f;
 // Text baselines are part of the same shop layout contract: a tooltip that
 // fits horizontally must not overlap the top cards or status heading.
-constexpr float kShopStatusY=0.86f;
-constexpr float kShopHintY=0.61f;
-constexpr float kShopHintScale=0.043f;
-constexpr float kShopCreditsY=-0.95f;
-constexpr float kShopCreditsScale=0.039f;
+constexpr float kShopStatusY=0.84f;
+constexpr float kShopHintY=0.60f;
+constexpr float kShopHintScale=0.036f;
+constexpr float kShopCreditsY=-0.60f;
+constexpr float kShopCreditsScale=0.033f;
 inline Rect ShopCard(int index) {
     return index>=0 && index<8 ?
         Rect{kColumnX[index%4],kShopRowY[index/4],kCardWidth,kCardHeight} :
@@ -37,7 +40,7 @@ inline Rect ShopCard(int index) {
 }
 inline Rect DifficultyCard(int index) {
     return index>=0 && index<4 ?
-        Rect{kColumnX[index],-0.24f,kCardWidth,0.43f} :
+        Rect{kColumnX[index],0.28f,kCardWidth,0.38f} :
         Rect{0.f,0.f,0.f,0.f};
 }
 inline Rect ShopAction(int action) {
