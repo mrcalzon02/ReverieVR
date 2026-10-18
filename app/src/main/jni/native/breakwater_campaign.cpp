@@ -643,7 +643,7 @@ void Campaign::TickStep(float dt) {
             }
             --remaining_to_spawn_;
             ++spawned_;
-            spawn_timer_ = 1.6f;
+            spawn_timer_ = 0.65f;
             break;
         }
     }
