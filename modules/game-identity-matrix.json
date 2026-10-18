@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "games": [
+    {
+      "id": "between-deliveries-red-ledger",
+      "content_namespace": "red-ledger",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.redledger",
+      "native_library": "libreverie_module_red_ledger.so",
+      "development_only": true,
+      "companion_build_target": null
+    },
+    {
+      "id": "breakwater-battery",
+      "content_namespace": "breakwater",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.breakwater",
+      "native_library": "libreverie_module_breakwater.so",
+      "development_only": true,
+      "companion_build_target": null
+    },
+    {
+      "id": "omega-front",
+      "content_namespace": "omega-front",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.omegafront",
+      "native_library": "libreverie_module_omega_front.so",
+      "development_only": true,
+      "companion_build_target": null
+    },
+    {
+      "id": "gumball-armada",
+      "content_namespace": "gumball-armada",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.gumballarmada",
+      "native_library": "libreverie_module_gumball_armada.so",
+      "development_only": true,
+      "companion_build_target": null
+    },
+    {
+      "id": "ministry-lantern-desk",
+      "content_namespace": "lantern-desk",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.ministry",
+      "native_library": "libreverie_module_lantern_desk.so",
+      "development_only": true,
+      "companion_build_target": null
+    },
+    {
+      "id": "iron-sight-forward-detachment",
+      "content_namespace": "forward-detachment",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.forwarddetachment",
+      "native_library": "libreverie_module_forward_detachment.so",
+      "development_only": true,
+      "companion_build_target": null
+    },
+    {
+      "id": "classic-chess",
+      "content_namespace": "classic-chess",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.classicchess",
+      "native_library": "libreverie_module_classic_chess.so",
+      "development_only": false,
+      "companion_build_target": null
+    },
+    {
+      "id": "classic-go",
+      "content_namespace": "classic-go",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.classicgo",
+      "native_library": "libreverie_module_classic_go.so",
+      "development_only": false,
+      "companion_build_target": null
+    },
+    {
+      "id": "classic-checkers",
+      "content_namespace": "classic-checkers",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.classiccheckers",
+      "native_library": "libreverie_module_classic_checkers.so",
+      "development_only": false,
+      "companion_build_target": null
+    },
+    {
+      "id": "classic-pong",
+      "content_namespace": "classic-pong",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.classicpong",
+      "native_library": "libreverie_module_classic_pong.so",
+      "development_only": false,
+      "companion_build_target": null
+    },
+    {
+      "id": "classic-snake",
+      "content_namespace": "classic-snake",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.classicsnake",
+      "native_library": "libreverie_module_classic_snake.so",
+      "development_only": false,
+      "companion_build_target": null
+    },
+    {
+      "id": "classic-reversi",
+      "content_namespace": "classic-reversi",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.classicreversi",
+      "native_library": "libreverie_module_classic_reversi.so",
+      "development_only": false,
+      "companion_build_target": null
+    },
+    {
+      "id": "classic-breakout",
+      "content_namespace": "classic-breakout",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.classicbreakout",
+      "native_library": "libreverie_module_classic_breakout.so",
+      "development_only": false,
+      "companion_build_target": null
+    },
+    {
+      "id": "classic-chutes-ladders",
+      "content_namespace": "classic-chutes-ladders",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.classicchutesladders",
+      "native_library": "libreverie_module_classic_chutes_ladders.so",
+      "development_only": false,
+      "companion_build_target": null
+    },
+    {
+      "id": "procedural-test-chamber",
+      "content_namespace": "test-chamber",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.testchamber",
+      "native_library": "libreverie_module_test_chamber.so",
+      "development_only": true,
+      "companion_build_target": ":companion-test-chamber"
+    }
+  ]
+}
