@@ -15,6 +15,7 @@ import sys
 import zipfile
 import json
 import wave
+import hashlib
 
 ROOT=Path(__file__).resolve().parents[2]
 APPID="io.github.mrcalzon02.reverievr.game.testchamber"
@@ -120,10 +121,26 @@ def check_source():
     required(mk,"LOCAL_MODULE := "+NATIVE_MODULE,"Wrong native ELF")
     required(mk,"companion_showcase_renderer.cpp","Real model renderer not linked")
     required(gradle,'noCompress += ["wav"]',"PCM game audio must be seekable")
+    required(gradle,'if(hasSigner) signingConfig = signingConfigs.publisher',
+             "Companion cannot use the hub's signing identity")
+    required(gradle,'dependsOn("requirePublisherSigner")',
+             "Companion release does not enforce signing")
     required(java,"TestChamberModels.load(","Approved GLB loader not invoked")
     required(java,"new TestChamberSounds(","No packaged game sounds loaded")
     required(bridge,"showcase.Draw(","Stereo game mesh renderer not called")
     required(java,"TestChamberTargeting.pick(headView)","Gaze pointing not wired")
+    required(java,"isActivationKey(","Gamepad input dispatch missing")
+    required(java,"onGenericMotionEvent(","Bluetooth/controller pointer handling missing")
+    required(java,"new TestChamberSounds(this,getAssets())",
+             "Android audio focus must receive Activity Context")
+    sounds=contents("game-apps/test-chamber/src/main/java/"+
+        JAVA_CLASS.replace(".","/").replace("GameVrActivity","TestChamberSounds")+".java")
+    required(sounds,"AudioFocusRequest.Builder","Sound focus lifecycle unavailable")
+    required(sounds,"manager.requestAudioFocus(focusRequest)",
+             "Audio cannot request focus on resume")
+    required(sounds,"manager.abandonAudioFocusRequest(focusRequest)",
+             "Audio focus not abandoned on pause")
+    required(sounds,"maybeWelcome()","Audible diagnostics cannot prove readiness")
     required(java,"nativeSetFocusedModel(instance,target)","Gaze focus not reaching renderer")
     required(contents("game-apps/test-chamber/src/main/java/"+
         JAVA_CLASS.replace(".","/").replace("GameVrActivity","TestChamberSounds")+".java"),
@@ -159,6 +176,11 @@ def verify_apk(path):
             name="assets/models/"+model+".glb"
             if name not in archive.namelist():
                 raise ValueError("APK omitted owned 3D model: "+name)
+            actual=hashlib.sha256(archive.read(name)).digest()
+            expected=hashlib.sha256(
+                (ASSET_ROOT/"models"/(model+".glb")).read_bytes()).digest()
+            if actual!=expected:
+                raise ValueError("Packaged 3D model differs from verified source: "+name)
         for cue in GAME_EFFECTS:
             name="assets/sfx/"+cue+".wav"
             info=archive.getinfo(name) if name in archive.namelist() else None
@@ -166,6 +188,9 @@ def verify_apk(path):
                 raise ValueError("APK omitted audible effect: "+name)
             if info.compress_type!=zipfile.ZIP_STORED:
                 raise ValueError("APK compressed PCM WAV; SoundPool openFd will fail: "+name)
+            if hashlib.sha256(archive.read(name)).digest()!=hashlib.sha256(
+                    (ASSET_ROOT/"sfx"/(cue+".wav")).read_bytes()).digest():
+                raise ValueError("Packaged WAV differs from verified source: "+name)
         for arch,elf_class,machine in (
             ("armeabi-v7a",1,40),("arm64-v8a",2,183)):
             filename="lib/"+arch+"/lib"+NATIVE_MODULE+".so"
@@ -190,10 +215,9 @@ def verify_apk(path):
                     raise ValueError("ELF symbol tool failed: "+proc.stderr[:300])
                 required(proc.stdout,"reverie_native_module_entry_v1",
                          "Game did not export native ABI")
-                required(proc.stdout,"GameVrActivity_nativeCreate",
-                         "Game JNI bridge missing")
-                required(proc.stdout,"GameVrActivity_nativeAddModelMesh",
-                         "Textured GLB mesh JNI entry is missing")
+                for method in METHODS:
+                    required(proc.stdout,"GameVrActivity_"+method,
+                             "Compiled native JNI entry missing for "+method)
             print("PASS:",arch,"native ABI entry and JNI bridge are packaged")
     print("APK static checks passed. Install, stereo GL and S9 tests still required.")
 
