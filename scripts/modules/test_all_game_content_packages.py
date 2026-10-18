@@ -87,7 +87,7 @@ class AllGameContentPackagesTest(unittest.TestCase):
             self.assertEqual(1,checked["triangles"])
             self.assertEqual(built["sha256"],checked["sha256"])
             mesh.write_bytes(valid[:-1])
-            with self.assertRaisesRegex(ValueError,"triangle count"):
+            with self.assertRaisesRegex(ValueError,"Invalid BWM1 model header"):
                 builder.build("breakwater-battery",root/"assets",
                               root/"corrupt.rvpack",2,"0.1.1")
 
