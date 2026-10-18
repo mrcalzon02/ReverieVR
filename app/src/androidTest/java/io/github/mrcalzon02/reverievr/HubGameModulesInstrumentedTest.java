@@ -175,19 +175,27 @@ public final class HubGameModulesInstrumentedTest {
         return null;
     }
 
-    @Test public void actualHubGameManagerDisplaysAllGameAcquisitionChoices()
+    @Test public void actualHubGameManagerDisplaysAndChecksAvailableReleases()
         throws Exception{
         Instrumentation instrument=InstrumentationRegistry.getInstrumentation();
-        Intent intent=new Intent(context(),GameModulesActivity.class);
+        Intent intent=new Intent(context(),MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        Activity activity=instrument.startActivitySync(intent);
-        assertNotNull("Cannot open real hub game manager",activity);
+        Activity hub=instrument.startActivitySync(intent);
+        assertNotNull("Cannot launch real ReverieVR hub",hub);
+        Instrumentation.ActivityMonitor monitor=instrument.addMonitor(
+            GameModulesActivity.class.getName(),null,false);
+        Activity manager=null;
         try{
+            View manage=hub.findViewById(R.id.manage_game_modules_button);
+            assertNotNull("Hub main menu cannot acquire games",manage);
+            instrument.runOnMainSync(manage::performClick);
+            manager=instrument.waitForMonitorWithTimeout(monitor,15000);
+            assertNotNull("Hub main-menu button did not open Game Modules",manager);
+            final Activity activity=manager;
             instrument.waitForIdleSync();
             final View[] control=new View[1];
-            instrument.runOnMainSync(()->{
-                control[0]=findText(activity.getWindow().getDecorView(),"Check releases");
-            });
+            instrument.runOnMainSync(()->control[0]=
+                findText(activity.getWindow().getDecorView(),"Check releases"));
             assertNotNull("Hub has no signed game release action",control[0]);
             assertTrue("Hub game releases control not clickable",
                 control[0] instanceof Button && control[0].isEnabled());
@@ -199,8 +207,52 @@ public final class HubGameModulesInstrumentedTest {
                         item.displayName+"\nBuilt-in"+(item.id.equals(CHAMBER)
                             ?" | Game APK r"+CompanionGameRegistry.installedVersion(context(),CHAMBER)
                             :"")));
+            // REAL user interaction: this invokes the app's remote catalog
+            // acquisition/update code, with its embedded ECDSA trust root.
+            instrument.runOnMainSync(control[0]::performClick);
+            long deadline=System.currentTimeMillis()+35000L;
+            String current="";
+            while(System.currentTimeMillis()<deadline){
+                final String[] visible=new String[1];
+                instrument.runOnMainSync(()->{
+                    android.view.ViewGroup screen=(android.view.ViewGroup)
+                        activity.getWindow().getDecorView();
+                    visible[0]=findStatus(screen);
+                });
+                current=visible[0];
+                if(current.startsWith("Authenticated catalog r") ||
+                   current.startsWith("Release check:"))break;
+                Thread.sleep(300L);
+            }
+            assertTrue("Hub UI cannot verify release catalog: "+current,
+                current.startsWith("Authenticated catalog r"));
+            assertTrue("Unexpected release inventory: "+current,
+                current.contains("0 game releases"));
         } finally {
-            instrument.runOnMainSync(activity::finish);
+            instrument.removeMonitor(monitor);
+            final Activity ownedManager=manager;
+            instrument.runOnMainSync(()->{
+                if(ownedManager!=null)ownedManager.finish();
+                hub.finish();
+            });
         }
+    }
+
+    private static String findStatus(View root){
+        if(root instanceof TextView){
+            String label=((TextView)root).getText().toString();
+            if(label.startsWith("Checking signed game") ||
+               label.startsWith("Authenticated catalog") ||
+               label.startsWith("Release check:") ||
+               label.startsWith("Game content:"))return label;
+        }
+        if(root instanceof ViewGroup){
+            ViewGroup group=(ViewGroup)root;
+            for(int i=0;i<group.getChildCount();i++){
+                String v=findStatus(group.getChildAt(i));
+                if(!v.isEmpty())return v;
+            }
+        }
+        return "";
     }
 }
