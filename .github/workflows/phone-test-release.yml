@@ -48,6 +48,22 @@ jobs:
             exit 0
           fi
 
+          # A push replacing a queued release must not erase an already
+          # accepted, unfulfilled .github/phone-test-trigger request.
+          # GitHub concurrency keeps one pending run; only the newest run
+          # survives. The marker remains requested until a signed release
+          # tag actually contains the marker commit.
+          last_request="$(git log -1 --format=%H "$GITHUB_SHA" -- .github/phone-test-trigger)"
+          if [[ -n "$last_request" ]]; then
+            last_release="$(git for-each-ref --sort=-creatordate --count=1 \
+              --format='%(refname:short)' 'refs/tags/phone-test-*')"
+            if [[ -z "$last_release" ]] || \
+               ! git merge-base --is-ancestor "$last_request" "$last_release^{commit}"; then
+              echo 'publish=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
           # Retain the existing cadence: the second, fourth, sixth, etc.
           # verified [rv-hourly] development commit publishes one APK.
           subject="$(git log -1 --format=%s "$GITHUB_SHA")"
