@@ -83,12 +83,11 @@ public final class GameModulesActivity extends Activity {
             TextView title=new TextView(this);
             title.setText(game.displayName+"\n"+details);
             row.addView(title,new LinearLayout.LayoutParams(0,-2,1));
-            boolean anyAction=contentRev>0L||codeRev>0L||
-                (contentUpdate!=null&&contentUpdate.revision>contentRev)||
-                (nativeUpdate!=null&&nativeUpdate.revision>codeRev);
             Button action=new Button(this);
-            action.setText(anyAction?"Manage":"Bundled");
-            action.setEnabled(anyAction);
+            action.setText("Manage");
+            // A game with no installed content must still be able to check
+            // its own signed release feed and install its first revision.
+            action.setEnabled(true);
             action.setOnClickListener(v->showGameActions(id,contentRev,codeRev,
                 contentUpdate,nativeUpdate));
             row.addView(action);
@@ -109,6 +108,8 @@ public final class GameModulesActivity extends Activity {
                                  GameModuleCatalog.Release apkRelease){
         java.util.ArrayList<String> labels=new java.util.ArrayList<>();
         java.util.ArrayList<Runnable> actions=new java.util.ArrayList<>();
+        labels.add("Check updates for this game");
+        actions.add(()->checkRemoteFor(id));
         if(contentRelease!=null&&contentRelease.revision>contentRev){
             labels.add("Update content to r"+contentRelease.revision);
             actions.add(()->installRemote(contentRelease));
@@ -167,6 +168,34 @@ public final class GameModulesActivity extends Activity {
         try{return Long.parseLong(assets.getParentFile().getName());}
         catch(RuntimeException e){return 0L;}
     }
+    private void checkRemoteFor(String gameId){
+        status.setText("Checking "+gameId+" releases...");
+        network.check((catalog,error)->{
+            if(error!=null){
+                status.setText(gameId+" check failed: "+error+
+                    " (offline installation unchanged)");
+                return;
+            }
+            verified=catalog;
+            final boolean dev=new ReveriePreferences(this)
+                .getLoggingMode()==LoggingMode.DEVELOPMENT;
+            GameModuleCatalog.Release data=offer(gameId,"content",dev);
+            GameModuleCatalog.Release code=offer(gameId,"companion-apk",dev);
+            File local=store.activeAssets(gameId);
+            long contentRev=local==null?0L:parseRevision(local);
+            long codeRev=CompanionGameRegistry.installedVersion(this,gameId);
+            String result=(data!=null&&data.revision>contentRev)
+                ?"content r"+data.revision+" available"
+                :"no new content release";
+            if(code!=null&&code.revision>codeRev)
+                result+=", game APK r"+code.revision+" available";
+            else result+=", no new code release";
+            status.setText(gameId+": "+result+
+                " (authenticated catalog r"+catalog.catalogRevision+")");
+            refreshRows();
+        });
+    }
+
     private void checkRemote(){
         status.setText("Checking signed game releases...");
         network.check((catalog,error)->{
