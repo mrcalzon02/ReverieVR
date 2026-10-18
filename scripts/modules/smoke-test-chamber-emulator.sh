@@ -6,6 +6,14 @@ ARTIFACTS="${GITHUB_WORKSPACE:-$PWD}/validation/emulator"
 mkdir -p "$ARTIFACTS"
 adb logcat -c
 adb install -r "$APK"
+# Test-only Android 10 AVD initialization: the first immersive-mode prompt
+# overlays the VR frame and is not part of the game's framebuffer.
+adb shell settings put secure immersive_mode_confirmations confirmed
+CONFIRMATION="$(adb shell settings get secure immersive_mode_confirmations | tr -d '\r')"
+[[ "$CONFIRMATION" == "confirmed" ]] || {
+  echo "Android AVD rejected fullscreen test configuration" >&2
+  exit 1
+}
 adb shell am start -W -n 'io.github.mrcalzon02.reverievr.game.testchamber/.GameVrActivity'   | tee "$ARTIFACTS/activity-launch.txt"
 sleep 12
 adb shell input keyevent KEYCODE_DPAD_CENTER
