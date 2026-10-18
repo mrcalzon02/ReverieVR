@@ -73,7 +73,7 @@ def check_fixture_assets():
                     raise ValueError("Unsupported embedded atlas for "+model)
                 view=views[img["bufferView"]]
                 off=bin_offset+8+view.get("byteOffset",0)
-                if data[off:off+8]!=b"\\x89PNG\\r\\n\\x1a\\n":
+                if data[off:off+8]!=b"\x89PNG\r\n\x1a\n":
                     raise ValueError("Model atlas is not PNG: "+model)
     for effect in GAME_EFFECTS:
         file=ASSET_ROOT/"sfx"/(effect+".wav")
