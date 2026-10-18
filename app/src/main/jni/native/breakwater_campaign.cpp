@@ -5,6 +5,7 @@
 #include "breakwater_cover.h"
 #include "breakwater_armor.h"
 #include "breakwater_invasion_units.h"
+#include "breakwater_support_turret.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -669,13 +670,13 @@ void Campaign::TickStep(float dt) {
         if (turret_timer_ <= 0.0f) {
             Enemy *target = nullptr;
             for (Enemy &candidate : enemies_) {
-                if (candidate.active && candidate.type != UnitType::Aircraft &&
+                if (support::InRange(candidate) &&
                     (target == nullptr || candidate.z > target->z))
                     target = &candidate;
             }
             ArmoredVehicle *vehicle = nullptr;
             for (ArmoredVehicle &candidate : armor_)
-                if(candidate.active &&
+                if(support::InRange(candidate) &&
                    (vehicle == nullptr || candidate.z > vehicle->z))
                     vehicle=&candidate;
             if(target && vehicle && target->z>=vehicle->z)
