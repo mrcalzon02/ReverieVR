@@ -324,13 +324,19 @@ void Campaign::Land(Enemy &e) {
                  -2.23f,armor::kVehicleHp,true,1.8f+.45f*n};
         ++wave_status_.armor_landed;
     }
-    // NextCount caps a wave at ten craft, each carrying no more than six.
-    // Append-only slots preserve identity when other soldiers are killed.
-    const uint8_t infantry_before=infantry_spawn_cursor_;
-    for (uint8_t passenger = 0;
-         passenger < e.passengers &&
-         infantry_spawn_cursor_ < infantry_units_.size(); ++passenger) {
-        Infantry &trooper = infantry_units_[infantry_spawn_cursor_++];
+    // Reuse only defeated troops' slots for larger waves.
+    uint8_t deployed=0;
+    for (uint8_t passenger=0;passenger<e.passengers;++passenger) {
+        size_t slot=infantry_units_.size();
+        for(size_t i=0;i<infantry_spawn_cursor_;++i)
+            if(!infantry_units_[i].active) { slot=i; break; }
+        if(slot==infantry_units_.size()) {
+            if(infantry_spawn_cursor_>=infantry_units_.size())break;
+            slot=infantry_spawn_cursor_++;
+        }
+        Infantry &trooper=infantry_units_[slot];
+        trooper=Infantry{};
+        ++deployed;
         const float spread = (static_cast<float>(passenger) -
             static_cast<float>(e.passengers - 1u) * 0.5f) * 0.27f;
         trooper.x = std::max(-3.1f, std::min(3.1f, e.x + spread));
@@ -345,8 +351,6 @@ void Campaign::Land(Enemy &e) {
     }
     e.active = false;
     e.landed = true;
-    const uint8_t deployed=static_cast<uint8_t>(
-        infantry_spawn_cursor_-infantry_before);
     infantry_ = static_cast<uint8_t>(infantry_ + deployed);
     wave_status_.troops_landed = static_cast<uint8_t>(
         wave_status_.troops_landed + deployed);
