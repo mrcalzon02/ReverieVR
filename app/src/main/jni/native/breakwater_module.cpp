@@ -16,6 +16,7 @@
 #include "breakwater_wrecks.h"
 #include "breakwater_gun_mesh.h"
 #include "breakwater_support_turret.h"
+#include "breakwater_beckenburg_mesh.h"
 #include "breakwater_cannon_trajectory.h"
 #include "breakwater_menu_layout.h"
 #include "breakwater_shop_feedback.h"
@@ -69,6 +70,8 @@ struct State {
     bool aim_ray_valid=false;
     ImpactEffects impacts;
     WreckEffects wrecks;
+    // Loaded once from packaged, owner-approved Beckenburg source conversions.
+    std::array<imported::Model,imported::kAssetPaths.size()> beckenburg_models{};
     BatteryDamageFeedback battery_damage;
     AircraftAimFeedback aircraft_aim;
     SurfaceAimFeedback surface_aim;
@@ -756,6 +759,31 @@ void BuildScene(State *s) {
         Triangle(s,x-w,y,z,x,y-w,z,x+w,y,z,r*.68f,g*.68f,b*.68f);
         Box(s,x,y,z,.025f,.025f,.025f,1,1,1);
     }
+    // Genuine imported PSX source meshes use their original triangle
+    // geometry and embedded texture colors. These objects are not the
+    // retired procedural cuboids, and they do not alter combat collision.
+    // Keep the service props at the sides of the emplacement so the seated
+    // player and mounted weapon retain clear sightlines down the beach.
+    if(game.phase()==Phase::Combat) {
+        const auto emit=[s](auto... verts){Triangle(s,verts...);};
+        const auto &models=s->beckenburg_models;
+        models[imported::Concrete].Emit(-3.21f,-1.12f,-1.75f,
+                                        2.15f,.12f,emit);
+        models[imported::Concrete].Emit(3.29f,-1.12f,-1.77f,
+                                        2.15f,-.10f,emit);
+        models[imported::WoodenCrate].Emit(-2.88f,-1.04f,-.66f,
+                                           1.35f,.24f,emit);
+        models[imported::WoodenCrate].Emit(3.08f,-1.04f,-.60f,
+                                           1.22f,-.27f,emit);
+        models[imported::AmmoBox].Emit(-2.93f,-.52f,-.61f,
+                                       2.45f,.21f,emit);
+        // Purchased support equipment uses a visible matching supply
+        // box instead of relying entirely on its earlier mesh recipe.
+        if(game.stats().turret)
+            models[imported::AmmoBox].Emit(
+                support::kTurretX+.52f,-.86f,support::kTurretZ+.38f,
+                2.05f,.55f,emit);
+    }
     if(game.stats().turret) {
         // This is the actual purchased allied battery, not a tiny symbolic
         // block or a turret spawning in response to each enemy shot.
@@ -1369,6 +1397,18 @@ void *Create(const ReverieNativeHostV1 *host) {
     State *s=new(std::nothrow) State();
     if(!s)return nullptr;
     s->host=host;
+    if(host->struct_size>=REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE &&
+       host->read_asset) {
+        const auto reader=[host](const char* path,void* dest,
+                                 uint32_t capacity,uint32_t* received) {
+            const int32_t code=host->read_asset(path,dest,capacity,received);
+            return dest?code==REVERIE_NATIVE_SAVE_OK:
+                        code==REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;
+        };
+        for(size_t i=0;i<imported::kAssetPaths.size();++i)
+            imported::Load(&s->beckenburg_models[i],
+                           imported::kAssetPaths[i],reader);
+    }
     s->mesh.reserve(81920);
     s->sprite_mesh.reserve(3000);
     s->font_mesh.reserve(12000);
