@@ -14,6 +14,7 @@
 #include "breakwater_wrecks.h"
 #include "breakwater_cover.h"
 #include "breakwater_weapons.h"
+#include "breakwater_support_turret.h"
 #include "breakwater_checkpoint.h"
 #include <cassert>
 #include <cmath>
@@ -1486,11 +1487,20 @@ int main() {
     assert(turret_game.BeginWave());
     assert(turret_game.turret_shot().sequence==0);
     assert(turret_game.infantry_volley().sequence==0);
-    turret_game.Tick(.05f);
+    const auto initial_undamaged=turret_game.enemies();
+    for(int frame=0;frame<100;frame++)turret_game.Tick(.05f);
+    // Automatic defenses must not silently shoot spawn-point rowboats
+    // beyond their actual visible gun emplacement and firing sector.
+    assert(turret_game.turret_shot().sequence==0);
+    assert(turret_game.enemies()[0].hp==
+           initial_undamaged[0].hp || initial_undamaged[0].hp==0);
+    for(int frame=0;frame<200 &&
+        turret_game.turret_shot().sequence==0;frame++)
+        turret_game.Tick(.05f);
     const TurretShotEvent first_turret_shot=turret_game.turret_shot();
     assert(first_turret_shot.sequence==1 && !first_turret_shot.destroyed);
+    assert(first_turret_shot.z>=support::kMinimumTargetZ);
     assert(turret_game.enemies()[0].active && turret_game.enemies()[0].hp==5);
-    assert(std::abs(first_turret_shot.z+11.0f)<.0001f);
     ImpactEffects turret_fx;
     assert(turret_fx.RecordTurretImpact(first_turret_shot.x,
                                         first_turret_shot.z,false));
@@ -1510,6 +1520,27 @@ int main() {
     assert(!turret_fx.RecordTurretImpact(
         std::numeric_limits<float>::quiet_NaN(),-11.0f,false));
 
+    // The allied gun physically exists only once bought. Its emitter
+    // has many separate physical bodies, a directed muzzle, and a flash
+    // dependent on a real authored shot rather than a permanent spark.
+    int turretBoxes=0,turretFaces=0;
+    support::EmitTurret(0.f,-4.1f,.16f,
+        [&](auto...){++turretBoxes;},
+        [&](auto...){++turretFaces;});
+    assert(turretBoxes>=12 && turretFaces>=6);
+    float turretX=0.f,turretY=0.f,turretZ=0.f;
+    support::MuzzleToward(0.f,-4.1f,&turretX,&turretY,&turretZ);
+    assert(turretX<support::kTurretX);
+    assert(turretZ<support::kTurretZ);
+    assert(turretY==support::kTurretMuzzleY);
+    Enemy offshore{};
+    offshore.active=true;offshore.hp=40;offshore.type=UnitType::Rowboat;
+    offshore.z=-11.f;
+    assert(!support::InRange(offshore));
+    offshore.z=-4.f;
+    assert(support::InRange(offshore));
+    offshore.type=UnitType::Aircraft;
+    assert(!support::InRange(offshore));
     // Surface intersection ordering must beat center-distance ordering.
     // The farther center's larger hull can be the first struck surface.
     const float rayOrigin[]={0,0,5}, rayForward[]={0,0,-1};
