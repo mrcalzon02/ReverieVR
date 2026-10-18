@@ -1,0 +1,81 @@
+name: Test Chamber Android 10 emulator smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/test-chamber-emulator.yml'
+      - 'scripts/modules/smoke-test-chamber-emulator.sh'
+      - 'game-apps/test-chamber/**'
+      - 'cardboard-adapter/build.gradle'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-chamber-emulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  emulator-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable KVM acceleration
+        shell: bash
+        run: |
+          if [[ -e /dev/kvm ]]; then sudo chmod 666 /dev/kvm; fi
+      - name: Install Android build components
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then SDKMANAGER="$(command -v sdkmanager || true)"; fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.22.1'
+      - name: Build test-only x86-64 companion alongside S9 ARM ABIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace -PcompanionEmulatorAbi=true \
+            :companion-test-chamber:assembleDebug
+          APK="$(find game-apps/test-chamber/build/outputs/apk/debug -name '*.apk' -type f -print -quit)"
+          test -n "$APK"
+          unzip -Z -1 "$APK" | grep -Fx 'lib/x86_64/libreverie_companion_test_chamber.so'
+          unzip -Z -1 "$APK" | grep -Fx 'lib/x86_64/libcardboard_sdk_jni.so'
+          python3 scripts/modules/verify-companion-contract.py --apk "$APK"
+          mkdir -p validation
+          cp "$APK" validation/TestChamber-companion-emulator.apk
+      - name: Install on Android 10 software/hardware virtual device
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          cores: 2
+          ram-size: 2048M
+          heap-size: 384M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            python3 -m pip install --quiet Pillow
+            bash scripts/modules/smoke-test-chamber-emulator.sh validation/TestChamber-companion-emulator.apk
+      - name: Preserve emulator APK, framebuffer, and Android logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-chamber-emulator-${{ github.run_id }}
+          path: validation/
+          retention-days: 14
+          if-no-files-found: warn

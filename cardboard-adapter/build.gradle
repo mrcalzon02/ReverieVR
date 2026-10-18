@@ -16,6 +16,10 @@ android {
 
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a"
+            // Software Android 10 emulator only; normal Daydream ARM builds
+            // remain exactly the two approved device architectures.
+            if(project.hasProperty("companionEmulatorAbi"))
+                abiFilters "x86_64"
         }
 
         externalNativeBuild {

@@ -25,7 +25,11 @@ android {
             .toString().toInteger()
         versionName = (project.findProperty("testChamberVersionName") ?: "0.1.0")
             .toString()
-        ndk { abiFilters "armeabi-v7a", "arm64-v8a" }
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+            if(project.hasProperty("companionEmulatorAbi"))
+                abiFilters "x86_64"
+        }
         externalNativeBuild {
             ndkBuild { arguments("APP_PLATFORM=android-26","APP_STL=c++_static") }
         }
