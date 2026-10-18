@@ -963,6 +963,41 @@ void BuildScene(State *s) {
         }
         Text(s,"SELECT A SAVE TO CONTINUE OR BEGIN",
              0,-.42f,-2.97f,.034f,.85f,.91f,.86f);
+    } else if(s->round_summary) {
+        const menu::Rect frame=menu::kPanel;
+        Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
+              .065f,.10f,.13f);
+        Text(s,"WAVE COMPLETE",0,1.31f,-2.97f,.068f,
+             .96f,.86f,.54f);
+        char line[92];
+        const Status score=game.wave_status();
+        std::snprintf(line,sizeof(line),"VESSELS %u    AIRCRAFT %u    ARMOR %u",
+            static_cast<unsigned>(score.boats_sunk),
+            static_cast<unsigned>(score.aircraft_destroyed),
+            static_cast<unsigned>(score.armor_destroyed));
+        Text(s,line,0,.96f,-2.97f,
+             font::FittedScale(line,5.75f,.041f),.85f,.92f,.85f);
+        std::snprintf(line,sizeof(line),"TROOPS STOPPED %u / LANDED %u",
+            static_cast<unsigned>(score.troops_stopped),
+            static_cast<unsigned>(score.troops_landed));
+        Text(s,line,0,.70f,-2.97f,
+             font::FittedScale(line,5.7f,.042f),.87f,.91f,.88f);
+        std::snprintf(line,sizeof(line),"CREDITS EARNED +%d    HULL DAMAGE %d",
+            s->wave_credits_gained,s->wave_hull_lost);
+        Text(s,line,0,.43f,-2.97f,
+             font::FittedScale(line,5.8f,.040f),.94f,.89f,.64f);
+        std::snprintf(line,sizeof(line),"HULL %d    CREDITS %d",
+            game.integrity(),game.credits());
+        Text(s,line,0,.17f,-2.97f,
+             font::FittedScale(line,5.7f,.040f),.83f,.92f,.82f);
+        for(int action=0;action<2;++action) {
+            const menu::Rect tile=menu::DebriefAction(action);
+            const bool focus=s->menu_focus==action;
+            Panel(s,tile.x,tile.y,-3.f,tile.width,tile.height,
+                  focus?.29f:.16f,focus?.43f:.27f,focus?.39f:.29f);
+            Text(s,action==0?"UPGRADES":"NEXT WAVE",
+                 tile.x,tile.y,-2.97f,.045f,.94f,.95f,.77f);
+        }
     } else if(game.phase()==Phase::Briefing) {
         const menu::Rect frame=menu::kDifficultyPanel;
         Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
