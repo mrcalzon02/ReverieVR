@@ -14,6 +14,7 @@
 #include "red_ledger_original_png.h"
 #include "red_ledger_original_fbx.h"
 #include "red_ledger_product_assets.h"
+#include "red_ledger_beckenburg_props.h"
 
 #include <GLES2/gl2.h>
 
@@ -43,6 +44,7 @@ namespace products = reverie::redledger::products;
 namespace fbx = reverie::redledger::fbx;
 namespace original_png = reverie::redledger::original_png;
 namespace property = reverie::redledger::property;
+namespace curated = reverie::redledger::beckenburg;
 
 // Include the far rear doorway in seated work-ray reach.
 constexpr float kMaximumWorkReach = 4.25f;
@@ -173,6 +175,7 @@ struct ModuleState {
     GLuint original_icons[24] = {};
     GLuint original_icon_vbo = 0;
     ProductGlResource product_resources[products::kCount] = {};
+    ProductGlResource curated_props[curated::kCount] = {};
     int original_icon_count = 0;
     GLint icon_mode_location = -1;
     GLint position_location = -1;
@@ -881,6 +884,11 @@ void DestroyGl(
         if(resource.texture!=0)glDeleteTextures(1,&resource.texture);
         resource=ProductGlResource{};
     }
+    for(ProductGlResource &resource:state->curated_props) {
+        if(resource.vbo!=0)glDeleteBuffers(1,&resource.vbo);
+        if(resource.texture!=0)glDeleteTextures(1,&resource.texture);
+        resource=ProductGlResource{};
+    }
     if (state->atlas_texture != 0) {
         glDeleteTextures(1, &state->atlas_texture);
         state->atlas_texture = 0;
@@ -938,6 +946,8 @@ void AbandonGl(
     state->original_icon_count=0;
     state->original_icon_vbo=0;
     for(ProductGlResource &resource:state->product_resources)
+        resource=ProductGlResource{};
+    for(ProductGlResource &resource:state->curated_props)
         resource=ProductGlResource{};
     state->icon_mode_location=-1;
     state->cube_vbo = 0;
@@ -1358,6 +1368,65 @@ int32_t InitializeGl(
                   original_product_count,products::kCount);
     Log(state,original_product_count==products::kCount?
         REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,model_report);
+
+
+    // Only the five curated furnishings are requested from the APK. Real
+    // triangles/material pixels are decoded once per GL-context lifecycle.
+    // A licensed, intentionally packaged prop is optional; never copy the
+    // original purchased archive into the public source tree.
+    int curated_loaded=0;
+    if(can_read_assets) {
+        for(int n=0;n<curated::kCount;++n) {
+            const curated::Placement &spec=curated::kProps[n];
+            uint32_t size=0u;
+            if(state->host->read_asset(spec.path,nullptr,0,&size)!=
+                    REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL ||
+               size<16u+curated::kTextureBytes ||
+               size>3u*1024u*1024u)continue;
+            std::vector<uint8_t> file(size);
+            uint32_t actual=0u;
+            if(state->host->read_asset(spec.path,file.data(),size,&actual)!=
+                    REVERIE_NATIVE_SAVE_OK || actual!=size)continue;
+            std::vector<float> geometry;
+            const uint8_t *rgb565=nullptr;
+            if(!curated::Decode(file.data(),file.size(),&geometry,&rgb565))
+                continue;
+            ProductGlResource &resource=state->curated_props[n];
+            glGenBuffers(1,&resource.vbo);
+            glGenTextures(1,&resource.texture);
+            if(resource.vbo!=0 && resource.texture!=0) {
+                glBindBuffer(GL_ARRAY_BUFFER,resource.vbo);
+                glBufferData(GL_ARRAY_BUFFER,geometry.size()*sizeof(float),
+                             geometry.data(),GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER,0);
+                glBindTexture(GL_TEXTURE_2D,resource.texture);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+                glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,
+                             static_cast<GLsizei>(curated::kAtlasSide),
+                             static_cast<GLsizei>(curated::kAtlasSide),0,GL_RGB,
+                             GL_UNSIGNED_SHORT_5_6_5,rgb565);
+                if(glGetError()==GL_NO_ERROR) {
+                    resource.vertex_count=static_cast<GLsizei>(
+                        geometry.size()/curated::kStride);
+                    ++curated_loaded;
+                    continue;
+                }
+            }
+            if(resource.vbo!=0)glDeleteBuffers(1,&resource.vbo);
+            if(resource.texture!=0)glDeleteTextures(1,&resource.texture);
+            resource=ProductGlResource{};
+        }
+        glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+    }
+    char curated_report[96]={};
+    std::snprintf(curated_report,sizeof(curated_report),
+                  "Beckenburg curated meshes loaded: %d/%d",
+                  curated_loaded,curated::kCount);
+    Log(state,curated_loaded==curated::kCount?
+        REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,curated_report);
 
     Log(
         state,
@@ -1789,6 +1858,47 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
         glUniform1f(state->icon_mode_location,0.f);
         glBlendFuncSeparate(rgb_src,rgb_dst,alpha_src,alpha_dst);
         if(blended==GL_FALSE)glDisable(GL_BLEND);
+    }
+
+
+    // Additional furniture uses original Beckenburg mesh triangles, not
+    // placeholder blocks. One VBO/texture bind per placed optional prop,
+    // using the same MVP, z-buffer and GLES2 shader as the bar products.
+    bool drew_curated=false;
+    const int active_room=static_cast<int>(state->market.room());
+    for(int n=0;n<curated::kCount;++n) {
+        const curated::Placement &p=curated::kProps[n];
+        const ProductGlResource &r=state->curated_props[n];
+        if(p.room!=active_room||r.vbo==0||r.texture==0||
+           r.vertex_count<=0)continue;
+        if(!drew_curated) {
+            glUniform1f(state->icon_mode_location,1.f);
+            glUniform1f(state->flicker_location,flicker);
+            drew_curated=true;
+        }
+        float model[16],mvp[16];
+        MakeTransform(model,p.x,p.y,p.z,p.scale,p.scale,p.scale);
+        ReverieNativeMat4Multiply(mvp,vp,model);
+        glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,mvp);
+        glBindTexture(GL_TEXTURE_2D,r.texture);
+        glBindBuffer(GL_ARRAY_BUFFER,r.vbo);
+        glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+            3,GL_FLOAT,GL_FALSE,stride,reinterpret_cast<const void *>(0));
+        glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+            2,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(3u*sizeof(float)));
+        glVertexAttribPointer(static_cast<GLuint>(state->color_attribute_location),
+            3,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(5u*sizeof(float)));
+        glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
+            2,GL_FLOAT,GL_FALSE,stride,
+            reinterpret_cast<const void *>(8u*sizeof(float)));
+        glDrawArrays(GL_TRIANGLES,0,r.vertex_count);
+    }
+    if(drew_curated) {
+        glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,vp);
+        glUniform1f(state->icon_mode_location,0.f);
+        glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
     }
 
     // Dynamic props still use the unit-cube VBO and constant attributes.
