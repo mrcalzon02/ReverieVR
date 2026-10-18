@@ -73,6 +73,8 @@ public final class VrActivity extends Activity
     private ReveriePreferences preferences;
     private UiFeedback uiFeedback;
     private ShellMenuMusic menuMusic;
+    // Keeps coastal ambience active while the native battery is hosted.
+    private volatile boolean breakwaterHosted;
     private HomeAmbientAudio homeAmbientAudio;
     private LocalVideoPlayer videoPlayer;
     private final java.util.concurrent.ExecutorService calibratedMediaExecutor =
@@ -1926,7 +1928,9 @@ public final class VrActivity extends Activity
         // Never create/pause/release Android AudioTrack on Cardboard's GL thread.
         runOnUiThread(() -> {
             if(homeAmbientAudio != null)
-                homeAmbientAudio.setEnvironment(environment, homeActive);
+                homeAmbientAudio.setEnvironment(
+                    breakwaterHosted?HomeEnvironment.DUNE_BEACH:environment,
+                    homeActive || breakwaterHosted);
         });
     }
 
@@ -2037,9 +2041,12 @@ public final class VrActivity extends Activity
             return false;
         }
 
+        breakwaterHosted = "breakwater-battery".equals(moduleId);
         runOnUiThread(() -> {
             if (menuMusic != null)
                 menuMusic.setHostedNativeModule(moduleId);
+            if (homeAmbientAudio != null && breakwaterHosted)
+                homeAmbientAudio.setEnvironment(HomeEnvironment.DUNE_BEACH,true);
         });
         ReverieLog.milestone(
             "NATIVE_MODULE",
@@ -2053,6 +2060,12 @@ public final class VrActivity extends Activity
 
     @Override
     public void onNativeModuleStopRequested() {
+        breakwaterHosted = false;
+        runOnUiThread(() -> {
+            if(homeAmbientAudio!=null && preferences!=null)
+                homeAmbientAudio.setEnvironment(
+                    preferences.getHomeEnvironment(),false);
+        });
         if (nativeModuleRuntime != null) {
             nativeModuleRuntime.stop();
         }
