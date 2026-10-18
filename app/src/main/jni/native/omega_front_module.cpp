@@ -1,5 +1,6 @@
 #include "omega_front_campaign_save.h"
 #include "omega_front_texture_renderer.h"
+#include "omega_front_sound.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
@@ -720,9 +721,26 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     const uint32_t old_orders=s->session.orders+s->session.tactical.issued;
     const uint32_t old_tick=s->session.tactical.battle.ticks();
     const auto old_view=s->session.view;
+    const game::Result old_result=s->session.tactical.battle.result();
     if(s->session.Input(action)){
         const uint32_t tick=s->session.tactical.battle.ticks();
         const uint32_t new_orders=s->session.orders+s->session.tactical.issued;
+        // The native sound bank is host-owned and mixed only for actual
+        // simulation transitions during input/update, never per VR eye.
+        if(old_view!=game::FrontMode::Tactical &&
+           s->session.view==game::FrontMode::Tactical) {
+            ReverieNativeRequestSoundV1(s->host,REVERIE_NATIVE_SOUND_WAVE_START);
+        }else if(old_view==game::FrontMode::Tactical &&
+                 s->session.view==game::FrontMode::Tactical) {
+            const game::Battle &battle=s->session.tactical.battle;
+            const uint32_t shot=reverie::omega_audio::TickFireCue(battle,old_tick);
+            if(shot && !ReverieNativeRequestSoundV1(s->host,shot))
+                ReverieNativeRequestFeedbackV1(s->host,
+                                                 REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE);
+            const uint32_t outcome=reverie::omega_audio::OutcomeCue(
+                old_result,battle.result());
+            if(outcome)ReverieNativeRequestSoundV1(s->host,outcome);
+        }
         // Strategy actions and tactical commands are saved immediately. The
         // eye passes never advance the world or write persistent storage.
         if(ReverieNativeHostSupportsSaveV1(s->host) &&
