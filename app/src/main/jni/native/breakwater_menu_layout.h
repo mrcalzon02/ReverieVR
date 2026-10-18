@@ -48,20 +48,31 @@ inline Rect ShopAction(int action) {
            action==9 ? Rect{-0.90f,kActionY,kActionWidth,kActionHeight} :
            Rect{0.f,0.f,0.f,0.f};
 }
+constexpr Rect kResetCard={2.30f,-.56f,1.18f,.22f};
+inline Rect SlotCard(int index) {
+    return index>=0 && index<3?
+        Rect{-1.79f+index*1.79f,.20f,1.52f,.43f}:
+        Rect{0.f,0.f,0.f,0.f};
+}
+inline int HitSlot(float x,float y) {
+    for(int i=0;i<3;i++)if(SlotCard(i).Contains(x,y))return i;
+    return -1;
+}
 inline int HitShop(float x,float y) {
     for(int i=0;i<8;++i) if(ShopCard(i).Contains(x,y))return i;
     if(ShopAction(8).Contains(x,y))return 8;
     if(ShopAction(9).Contains(x,y))return 9;
+    if(kResetCard.Contains(x,y))return 10;
     return -1;
 }
 inline const char* DifficultyHint(int choice) {
-    // First wave craft count remains 2+tier; the long campaign now opens
-    // with 12+2*tier distinct daytime assaults, not the old 2+tier.
+    // First-wave incoming craft have been tripled; daytime wave count
+    // remains the existing long-form campaign schedule.
     switch(choice) {
-        case 0: return "CADET - 2 FOES 12 DAY WAVES";
-        case 1: return "REGULAR - 3 FOES 14 DAY WAVES";
-        case 2: return "VETERAN - 4 FOES 16 DAY WAVES";
-        case 3: return "SIEGE - 5 FOES 18 DAY WAVES";
+        case 0: return "CADET - 6 FOES 12 DAY WAVES";
+        case 1: return "REGULAR - 9 FOES 14 DAY WAVES";
+        case 2: return "VETERAN - 12 FOES 16 DAY WAVES";
+        case 3: return "SIEGE - 15 FOES 18 DAY WAVES";
         default: return "POINT AT A DIFFICULTY TO INSPECT";
     }
 }
