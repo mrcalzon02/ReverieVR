@@ -15,6 +15,7 @@
 #include "breakwater_impacts.h"
 #include "breakwater_wrecks.h"
 #include "breakwater_gun_mesh.h"
+#include "breakwater_support_turret.h"
 #include "breakwater_cannon_trajectory.h"
 #include "breakwater_menu_layout.h"
 #include "breakwater_shop_feedback.h"
@@ -58,6 +59,7 @@ struct State {
     bool weapon_axis_latched = false;
     float flash = 0.0f, elapsed = 0.0f, reload_ready_flash = 0.0f;
     float turret_flash = 0.0f, infantry_flash = 0.0f;
+    float turret_target_x=0.0f,turret_target_z=-4.6f;
     float gunboat_salvo_flash = 0.0f, gunboat_salvo_x = 0.0f;
     float gunboat_salvo_z = 0.0f;
     uint64_t infantry_firing_mask=0u;
@@ -755,9 +757,31 @@ void BuildScene(State *s) {
         Box(s,x,y,z,.025f,.025f,.025f,1,1,1);
     }
     if(game.stats().turret) {
-        Box(s,2.15f,-.76f,-1.40f,.42f,.32f,1.14f,.36f,.44f,.39f);
-        if(s->turret_flash>0.0f)
-            Box(s,2.15f,-.76f,-2.06f,.20f,.20f,.18f,1.0f,.77f,.32f);
+        // This is the actual purchased allied battery, not a tiny symbolic
+        // block or a turret spawning in response to each enemy shot.
+        support::EmitTurret(s->turret_target_x,s->turret_target_z,
+            s->turret_flash,
+            [s](auto... vertices){Box(s,vertices...);},
+            [s](auto... vertices){Triangle(s,vertices...);});
+        Text(s,"ALLY TURRET",support::kTurretX,.36f,
+             support::kTurretZ+.03f,.031f,.75f,.93f,.68f);
+        // One short-lived tracer links the REAL friendly muzzle to the
+        // exact enemy that was hit by the authoritative turret event.
+        if(s->turret_flash>0.0f) {
+            float muzzleX=0.f,muzzleY=0.f,muzzleZ=0.f;
+            support::MuzzleToward(s->turret_target_x,s->turret_target_z,
+                                   &muzzleX,&muzzleY,&muzzleZ);
+            const float dx=s->turret_target_x-muzzleX;
+            const float dz=s->turret_target_z-muzzleZ;
+            const float len=std::sqrt(dx*dx+dz*dz);
+            const float ux=len>.001f?dx/len:0.f;
+            const float uz=len>.001f?dz/len:-1.f;
+            const float sideX=-uz*.023f,sideZ=ux*.023f;
+            Triangle(s,muzzleX+sideX,muzzleY,muzzleZ+sideZ,
+                     muzzleX-sideX,muzzleY,muzzleZ-sideZ,
+                     s->turret_target_x,-.64f,s->turret_target_z,
+                     .94f,.80f,.34f);
+        }
     }
     // One atlas card per live enemy: the campaign continues owning all
     // movement, world positions, hit volumes, attacks, landfall and score.
@@ -1608,7 +1632,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         const TurretShotEvent turret=s->campaign.turret_shot();
         if(turret.sequence!=turret_before) {
             s->impacts.RecordTurretImpact(turret.x,turret.z,turret.destroyed);
-            s->turret_flash=.10f;
+            s->turret_target_x=turret.x;
+            s->turret_target_z=turret.z;
+            s->turret_flash=.16f;
             BattleSound(s,turret.destroyed?
                 REVERIE_NATIVE_SOUND_BOAT_DESTROYED:
                 REVERIE_NATIVE_SOUND_HULL_IMPACT);
