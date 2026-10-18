@@ -246,8 +246,23 @@ public final class GameVrActivity extends Activity
                 " projection="+p[0]+","+p[5]+","+p[10]+
                 " glFramebuffer="+getFramebufferBinding());
         }
+        // Cardboard uses one shared stereo FBO. glClear ignores glViewport,
+        // so clearing twice without a scissor erases the FIRST eye when the
+        // second eye renders. Confine each clear to that eye's viewport.
+        int[] eyeViewport=new int[4],priorScissor=new int[4];
+        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT,eyeViewport,0);
+        boolean hadScissor=GLES20.glIsEnabled(GLES20.GL_SCISSOR_TEST);
+        if(hadScissor)
+            GLES20.glGetIntegerv(GLES20.GL_SCISSOR_BOX,priorScissor,0);
+        GLES20.glEnable(GLES20.GL_SCISSOR_TEST);
+        GLES20.glScissor(eyeViewport[0],eyeViewport[1],
+            eyeViewport[2],eyeViewport[3]);
         GLES20.glClearColor(.045f,.085f,.14f,1.f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
+        if(hadScissor)
+            GLES20.glScissor(priorScissor[0],priorScissor[1],
+                priorScissor[2],priorScissor[3]);
+        else GLES20.glDisable(GLES20.GL_SCISSOR_TEST);
         synchronized(nativeLock){
             if(instance==0L||!surfaceReady)return;
             int eyeIndex=eye.getEyeType()==CardboardView.Eye.LEFT?0:1;
