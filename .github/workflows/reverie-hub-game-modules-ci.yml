@@ -7,6 +7,8 @@ on:
     paths:
       - '.github/workflows/reverie-hub-game-modules-ci.yml'
       - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/HubGameModulesInstrumentedTest.java'
+      - 'modules/game-identity-matrix.json'
+      - 'scripts/modules/verify-game-identity-matrix.py'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModule*.java'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/Companion*.java'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/RvPack*.java'
@@ -68,9 +70,20 @@ jobs:
           CHAMBER="$(find game-apps/test-chamber/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f -print -quit)"
           TEST="$(find app/build/outputs/apk/androidTest/debug -maxdepth 1 -name '*.apk' -type f -print -quit)"
           test -f "$HUB" && test -f "$CHAMBER" && test -f "$TEST"
-          for NAME in 'lib/x86_64/libreverie_native_host.so' 'lib/x86_64/libreverie_module_test_chamber.so'; do
-            unzip -Z -1 "$HUB" | grep -Fx "$NAME"
-          done
+          python3 - "$HUB" <<'PY'
+          import json,sys,zipfile
+          from pathlib import Path
+          hub=Path(sys.argv[1])
+          games=json.loads(Path("modules/game-identity-matrix.json").read_text())["games"]
+          with zipfile.ZipFile(hub) as archive:
+              names=set(archive.namelist())
+              expected={"lib/x86_64/libreverie_native_host.so"}
+              expected.update("lib/x86_64/"+g["native_library"] for g in games)
+              missing=sorted(expected-names)
+              if missing:
+                  raise SystemExit("Hub is missing game binaries: "+str(missing))
+          print("PASS: all",len(games),"native game libraries packaged in real hub APK")
+          PY
           unzip -Z -1 "$CHAMBER" | grep -Fx 'lib/x86_64/libreverie_companion_test_chamber.so'
           python3 scripts/modules/verify-companion-contract.py
           cp "$HUB" validation/hub/ReverieVR-hub-emulator.apk
