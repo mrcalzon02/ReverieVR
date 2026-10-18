@@ -100,7 +100,7 @@ jobs:
             adb shell pm list packages | grep -Fx 'package:io.github.mrcalzon02.reverievr.game.testchamber'
             adb shell am start -W -n io.github.mrcalzon02.reverievr/.MainActivity | tee validation/hub/hub-main-launch.txt
             adb shell am instrument -w -r               io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner               | tee validation/hub/instrumentation-output.txt
-            grep -F 'OK (4 tests)' validation/hub/instrumentation-output.txt
+            grep -F 'OK (5 tests)' validation/hub/instrumentation-output.txt
             adb logcat -d -v time > validation/hub/logcat.txt
             adb exec-out screencap -p > validation/hub/hub-screen.png
       - name: Keep APKs and actual acquisition/update test evidence
