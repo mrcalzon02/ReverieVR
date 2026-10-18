@@ -1,0 +1,121 @@
+name: Independent Breakwater Battery native game APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/breakwater-companion-ci.yml'
+      - 'game-apps/breakwater/**'
+      - 'app/src/main/jni/native/breakwater_*.cpp'
+      - 'app/src/main/jni/native/breakwater_*.h'
+      - 'app/src/main/assets/native/breakwater/**'
+      - 'scripts/modules/verify-breakwater-companion.py'
+      - 'settings.gradle'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: breakwater-native-code-${ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  signed-companion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Galaxy S9 Android SDK and NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then SDKMANAGER="$(command -v sdkmanager || true)"; fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.22.1'
+      - name: Load existing hub publisher certificate
+        id: publisher
+        shell: bash
+        env:
+          PHONE_TEST_KEYSTORE_BASE64: ${{ secrets.PHONE_TEST_KEYSTORE_BASE64 }}
+          PHONE_TEST_STORE_PASSWORD: ${{ secrets.PHONE_TEST_STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          [[ -n "$PHONE_TEST_KEYSTORE_BASE64" && -n "$PHONE_TEST_STORE_PASSWORD" ]] || {
+            echo "::error::Publisher signing secret unavailable"; exit 1;
+          }
+          KEYSTORE="$RUNNER_TEMP/reverie-breakwater-publisher.jks"
+          printf '%s' "$PHONE_TEST_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          ALIAS="$(keytool -list -v -keystore "$KEYSTORE" -storepass "$PHONE_TEST_STORE_PASSWORD" |
+            sed -n 's/^Alias name: //p' | head -n 1)"
+          [[ -n "$ALIAS" ]] || exit 1
+          keytool -exportcert -keystore "$KEYSTORE" -storepass "$PHONE_TEST_STORE_PASSWORD" \
+            -alias "$ALIAS" -file "$RUNNER_TEMP/publisher.der" >/dev/null
+          echo "keystore=$KEYSTORE" >> "$GITHUB_OUTPUT"
+          echo "alias=$ALIAS" >> "$GITHUB_OUTPUT"
+          echo "digest=$(sha256sum "$RUNNER_TEMP/publisher.der" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - name: Build fully standalone publisher-signed Breakwater APK
+        id: build
+        shell: bash
+        env:
+          ORG_GRADLE_PROJECT_phoneTestKeystorePath: ${{ steps.publisher.outputs.keystore }}
+          ORG_GRADLE_PROJECT_phoneTestStorePassword: ${{ secrets.PHONE_TEST_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_phoneTestKeyAlias: ${{ steps.publisher.outputs.alias }}
+          ORG_GRADLE_PROJECT_phoneTestKeyPassword: ${{ secrets.PHONE_TEST_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          CODE="$(($(date -u +%s) - 1577836800))"
+          ((CODE > 1 && CODE < 2100000000))
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          ./gradlew --no-daemon --stacktrace \
+            -PbreakwaterVersionCode="$CODE" \
+            -PbreakwaterVersionName=0.1.0-testing \
+            :companion-breakwater:assembleRelease
+      - name: Verify actual game code, model bytes and publisher signer
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find game-apps/breakwater/build/outputs/apk/release \
+            -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+          python3 scripts/modules/verify-breakwater-companion.py --apk "$APK"
+          TOOLS="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0"
+          "$TOOLS/apksigner" verify --verbose --print-certs "$APK" |
+            tee "$RUNNER_TEMP/publisher-verification.txt"
+          actual="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' \
+            "$RUNNER_TEMP/publisher-verification.txt" | head -n 1 |
+            tr '[:upper:]' '[:lower:]')"
+          [[ "$actual" == "${{ steps.publisher.outputs.digest }}" ]] || {
+            echo "::error::Not signed by installed ReverieVR hub identity";exit 1;
+          }
+          "$TOOLS/aapt" dump badging "$APK" > "$RUNNER_TEMP/package.txt"
+          grep -F "package: name='io.github.mrcalzon02.reverievr.game.breakwater'" \
+            "$RUNNER_TEMP/package.txt"
+          grep -F "versionCode='${{ steps.build.outputs.code }'" "$RUNNER_TEMP/package.txt"
+          mkdir -p signed-validation
+          cp "$APK" signed-validation/BreakwaterBattery-companion-signed-testing.apk
+          cp "$RUNNER_TEMP/publisher-verification.txt" \
+             "$RUNNER_TEMP/package.txt" signed-validation/
+          sha256sum "$APK" > signed-validation/SHA256.txt
+          echo "source_sha=${GITHUB_SHA}" > signed-validation/SOURCE-REVISION.txt
+          echo "version_code=${{ steps.build.outputs.code }}" >> signed-validation/SOURCE-REVISION.txt
+          echo "publisher_cert_sha256=${{ steps.publisher.outputs.digest }}" >> \
+            signed-validation/SOURCE-REVISION.txt
+      - name: Retain independently installable code release for S9 testing
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakwater-signed-companion-${{ github.run_id }}
+          path: signed-validation/
+          retention-days: 14
+          if-no-files-found: error
