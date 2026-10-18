@@ -76,6 +76,54 @@ void EmitCoastalTerrain(uint8_t location, bool night,
                  sign*3.85f,y,-.95f,
                  c.detail_r*.91f,c.detail_g*.91f,c.detail_b*.91f);
     }
+    // Continue the shoreline beyond the playable lanes all the way toward
+    // the circular backdrop. A short center-only beach left two conspicuous
+    // gaps when looking left and right in the headset.
+    for(int side : {-1,1}) {
+        const float sign=static_cast<float>(side);
+        if(location==1) {
+            // Iron Quay: substantial harbor piers, edge walls, bollards and
+            // a distant gantry. These remain decorative, never hitboxes.
+            box(sign*12.0f,-1.11f,-.46f,16.0f,.32f,3.65f,
+                c.sand_r*.73f,c.sand_g*.75f,c.sand_b*.78f);
+            box(sign*12.0f,-.79f,-2.26f,16.0f,.65f,.32f,
+                c.detail_r*.72f,c.detail_g*.73f,c.detail_b*.74f);
+            for(int index=0;index<7;index++) {
+                const float x=sign*(5.05f+index*2.3f);
+                box(x,-.38f,-2.22f,.32f,.35f,.36f,
+                    .30f,.30f,.29f);
+                box(x,-.16f,-2.22f,.46f,.14f,.48f,
+                    .22f,.24f,.24f);
+            }
+            const float towerX=sign*13.6f;
+            box(towerX,.68f,.22f,.24f,3.35f,.26f,
+                c.detail_r*.75f,c.detail_g*.75f,c.detail_b*.77f);
+            box(towerX-sign*1.3f,2.30f,.22f,2.70f,.21f,.28f,
+                c.detail_r*.83f,c.detail_g*.84f,c.detail_b*.85f);
+            box(towerX-sign*2.50f,1.76f,.22f,.055f,1.03f,.055f,
+                .28f,.27f,.25f);
+        } else {
+            // Shingle Bay and Blackcap: wide natural side slopes instead of
+            // abrupt squared-off terrain beside the battery position.
+            const float shade=location==0?.84f:.65f;
+            triangle(sign*3.80f,y,-2.15f,
+                     sign*20.0f,y+.34f,-2.30f,
+                     sign*20.0f,y+.18f,1.45f,
+                     c.sand_r*shade,c.sand_g*shade,c.sand_b*shade);
+            triangle(sign*3.80f,y,-2.15f,
+                     sign*20.0f,y+.18f,1.45f,
+                     sign*3.80f,y,1.45f,
+                     c.detail_r*shade,c.detail_g*shade,c.detail_b*shade);
+            for(int n=0;n<9;n++) {
+                const float x=sign*(5.2f+n*1.60f);
+                const float height=location==0?.24f+.07f*(n%3):
+                    .60f+.12f*(n%4);
+                box(x,y+height*.42f,.42f+(n%3)*.37f,
+                    .72f,height,.75f,
+                    c.detail_r*.76f,c.detail_g*.78f,c.detail_b*.80f);
+            }
+        }
+    }
     if (location==0) {
         // Shingle Bay: small deterministic stone chips and sparse driftwood
         // against an unobstructed troop path. Nothing requires collision.
