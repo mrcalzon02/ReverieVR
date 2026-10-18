@@ -11,6 +11,9 @@ on:
       - 'scripts/modules/verify-content-pack.py'
       - 'scripts/modules/verify-game-identity-matrix.py'
       - 'scripts/modules/test_all_game_content_packages.py'
+      - 'scripts/modules/test-native-asset-scope.cpp'
+      - 'app/src/main/jni/native/reverie_native_asset_scope.h'
+      - 'app/src/main/assets/native/breakwater/**'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java'
       - 'app/src/main/jni/Android.mk'
       - 'app/src/main/jni/native/reverie_native_host.cpp'
@@ -28,7 +31,31 @@ jobs:
         run: python3 scripts/modules/verify-game-identity-matrix.py
       - name: Test independent game content builds, namespaces and pack integrity
         run: python3 -m unittest discover -s scripts/modules -p 'test_all_game_content_packages.py' -v
+      - name: Verify native game-owned asset resolver and forbidden cross-game paths
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Iapp/src/main/jni/native \
+            scripts/modules/test-native-asset-scope.cpp -o "${RUNNER_TEMP}/game-asset-scope"
+          "${RUNNER_TEMP}/game-asset-scope"
+      - name: Package real Breakwater Beckenburg models without modifying the APK
+        run: |
+          python3 scripts/modules/build-content-pack.py \
+            --id breakwater-battery \
+            --source app/src/main/assets/native/breakwater \
+            --output "${RUNNER_TEMP}/breakwater-models-r1.rvpack" \
+            --revision 1 --version 0.1.0
+          python3 scripts/modules/verify-content-pack.py "${RUNNER_TEMP}/breakwater-models-r1.rvpack"
+          mkdir -p validation
+          cp "${RUNNER_TEMP}/breakwater-models-r1.rvpack" validation/
+          sha256sum validation/*.rvpack > validation/SHA256.txt
       - name: Test prior release and ZIP integrity contracts
         run: |
           python3 -m unittest discover -s scripts/modules -p 'test_verify_content_pack.py' -v
           python3 -m unittest discover -s scripts/modules -p 'test_publish_module_release.py' -v
+      - name: Retain real game model content package for manual hub import testing
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakwater-models-content-test-${{ github.run_id }}
+          path: validation/
+          retention-days: 14
+          if-no-files-found: error
