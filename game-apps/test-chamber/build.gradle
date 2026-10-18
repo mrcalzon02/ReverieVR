@@ -41,11 +41,26 @@ android {
         }
     }
     buildTypes {
-        debug { debuggable = true }
+        // When the operator supplies the hub's phone-test keystore, sign
+        // this debug probe with THAT identity as well. Otherwise Android
+        // considers its package unrelated and the hub correctly rejects it.
+        debug {
+            debuggable = true
+            if(hasSigner) signingConfig = signingConfigs.publisher
+        }
         release {
             minifyEnabled = false
             if(hasSigner) signingConfig = signingConfigs.publisher
         }
+    }
+    tasks.register("requirePublisherSigner") {
+        doLast {
+            if(!hasSigner) throw new GradleException(
+                "Companion release needs the SAME publisher keystore as ReverieVR")
+        }
+    }
+    tasks.matching { it.name == "assembleRelease" }.configureEach {
+        dependsOn("requirePublisherSigner")
     }
     // SoundPool.openFd needs actual seekable, non-compressed WAV assets.
     androidResources {
