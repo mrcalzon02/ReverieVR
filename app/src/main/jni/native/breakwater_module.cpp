@@ -936,10 +936,17 @@ void BuildScene(State *s) {
         // A brief world-space tracer starts at the vessel that actually fired.
         // It persists if that vessel sinks before the next stereo render.
         const float x=s->gunboat_salvo_x,z=s->gunboat_salvo_z+.38f;
-        Triangle(s,x-.035f,-.33f,z,x+.035f,-.33f,z,
-                 0.0f,-.75f,-.94f,1.0f,.77f,.31f);
-        Triangle(s,x,-.28f,z,0.0f,-.70f,-.94f,
-                 0.0f,-.80f,-.94f,.95f,.56f,.22f);
+        // The former full-length beam crossed other enemy vessels and
+        // appeared to shoot them. Render a local deck-gun tracer and show
+        // the separately authoritative impact at the battery instead.
+        const float dx=-x,dz=-.94f-z;
+        const float span=std::sqrt(dx*dx+dz*dz);
+        const float extent=span>.001f?std::min(1.0f,1.2f/span):0.0f;
+        const float tipX=x+dx*extent,tipZ=z+dz*extent;
+        Triangle(s,x-.045f,-.30f,z,x+.045f,-.30f,z,
+                 tipX,-.37f,tipZ,1.0f,.78f,.31f);
+        Triangle(s,x,-.25f,z,tipX,-.37f,tipZ,
+                 x,-.36f,z,.95f,.57f,.22f);
     }
     // Infantry muzzle flashes live in the firing sprite tiles above;
     // do not draw a duplicate generic 3D flash at one arbitrary shooter.
