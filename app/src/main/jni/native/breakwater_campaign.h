@@ -241,7 +241,9 @@ private:
     void TickStep(float dt);
     bool FinishedWave() const;
     void CompleteWave();
-    void Land(Enemy &enemy);
+    // Atomic unloading: a full shore roster makes the transport wait,
+    // not erase its passengers or carried armor without a kill.
+    bool Land(Enemy &enemy);
     uint8_t NextCount() const;
     Difficulty difficulty_;
     uint32_t seed_;
