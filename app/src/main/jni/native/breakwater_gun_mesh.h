@@ -27,7 +27,9 @@ struct Vec {float x,y,z;};
     // barrel tips stay landward of the advancing infantry/armor firing line.
     // Previously z=-.88 pushed every 1.25-1.63-unit muzzle beyond the beach,
     // making landed enemies physically behind the cannon's shot origin.
-    constexpr Vec kMount={0.f,-.76f,.65f};
+    // Raise the breech above the battery parapet; launch and visible
+    // barrel use the same elevated mount, not an under-cover trajectory.
+    constexpr Vec kMount={0.f,-.53f,.65f};
 inline Vec Add(Vec a,Vec b){return {a.x+b.x,a.y+b.y,a.z+b.z};}
 inline Vec Scale(Vec a,float v){return {a.x*v,a.y*v,a.z*v};}
 inline float Dot(Vec a,Vec b){return a.x*b.x+a.y*b.y+a.z*b.z;}
