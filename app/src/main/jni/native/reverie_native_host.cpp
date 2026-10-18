@@ -449,10 +449,11 @@ int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
     const bool texture=ledger && std::strncmp(leaf,"textures/",9)==0;
     const bool terrain=omega && std::strncmp(leaf,"terrain/",8)==0;
     const bool unit=omega && std::strncmp(leaf,"units/kenney/",13)==0;
-    if(!icon && !model && !texture && !terrain && !unit)
+    const bool shared=omega && std::strncmp(leaf,"shared/",7)==0;
+    if(!icon && !model && !texture && !terrain && !unit && !shared)
         return REVERIE_NATIVE_SAVE_ERROR;
     const size_t prefix_length=root_length+
-        (icon?6u:model?7u:texture?9u:terrain?8u:13u);
+        (icon?6u:model?7u:texture?9u:terrain?8u:unit?13u:7u);
     if(omega && (n<4u || std::strcmp(path+n-4u,".png")!=0))
         return REVERIE_NATIVE_SAVE_ERROR;
     for(size_t i=prefix_length;i<n;++i) {

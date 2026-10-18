@@ -16,6 +16,9 @@ namespace reverie { namespace omega_art {
 // Fixed 64-pixel art grid, one quad per simulated cell. No atlas UV guesses.
 enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  EdenMeadow, WastelandAsh,
+                 SharedGrass, SharedSand, SharedRock, SharedRoad,
+                 SharedConcrete, SharedSteel,
+                 SupplyCrate, MetalBarrel, LivingTree, DeadTree,
                  HearthwellHull, MeridianHull, ScraplineHull,
                  LostNinthHull, IndependentHull,
                  RifleH, RifleR, EngineerH, EngineerR, SalvagerH, SalvagerR,
@@ -23,7 +26,8 @@ enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  RifleHAlt, RifleRAlt, EngineerHAlt, EngineerRAlt,
                  SalvagerHAlt, SalvagerRAlt, SentinelHAlt, SentinelRAlt,
                  LegionaryHAlt, LegionaryRAlt, Count };
-constexpr int kTerrainCount=7;
+// Ground and environmental-prop sprites render beneath units and indicators.
+constexpr int kTerrainCount=17;
 static const char *const kPaths[Count]={
     "native/omega-front/terrain/cracked_earth.png",
     "native/omega-front/terrain/ruined_concrete.png",
@@ -32,6 +36,16 @@ static const char *const kPaths[Count]={
     "native/omega-front/terrain/marsh_pool.png",
     "native/omega-front/terrain/wet_meadow.png",
     "native/omega-front/terrain/ash_waste.png",
+    "native/omega-front/shared/grass.png",
+    "native/omega-front/shared/sand.png",
+    "native/omega-front/shared/rock.png",
+    "native/omega-front/shared/road.png",
+    "native/omega-front/shared/concrete.png",
+    "native/omega-front/shared/steel.png",
+    "native/omega-front/shared/supply_crate.png",
+    "native/omega-front/shared/metal_barrel.png",
+    "native/omega-front/shared/living_tree.png",
+    "native/omega-front/shared/dead_tree.png",
     "native/omega-front/units/kenney/hearthwell_hull_north.png",
     "native/omega-front/units/kenney/meridian_hull_north.png",
     "native/omega-front/units/kenney/scrapline_hull_north.png",

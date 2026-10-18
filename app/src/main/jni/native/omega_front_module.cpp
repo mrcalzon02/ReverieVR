@@ -83,10 +83,12 @@ void DrawMap(State *s){
         // Unexplored locations remain obscured: textures cannot leak
         // geography that the existing scouting/intelligence rules hide.
         const bool unknown=f.intelligence(i)==game::Intelligence::Unknown;
+        // Shared material textures are drawn only for known geography.
         const int visual=sector->ecology==game::Ecology::Eden?
-                         omega_art::EdenMeadow:
+                         omega_art::SharedGrass:
                          sector->ecology==game::Ecology::Wasteland?
-                         omega_art::WastelandAsh:omega_art::Road;
+                         (i%3==0?omega_art::SharedRock:omega_art::SharedSand):
+                         (i%2==0?omega_art::SharedRoad:omega_art::SharedConcrete);
         if(unknown || !s->sprites.Place(visual,x,y,span*.96f,
                                         span*.96f,kBoardZ+.001f))
             Rect(s,x,y,span*.96f,span*.96f,kBoardZ,r,g,b);
@@ -393,6 +395,9 @@ void Draw(State *s){
     const bool defendingConvoy=s->session.frontier.convoy_battle();
     const bool frontlineBattle=s->session.frontier.frontline_battle();
     const bool defendingOutpost=s->session.frontier.frontline_defense();
+    const auto *location=s->session.frontier.sector(s->session.frontier.location());
+    const bool verdant=location && location->ecology==game::Ecology::Eden;
+    const bool wasted=location && location->ecology==game::Ecology::Wasteland;
     for(int y=0;y<game::kWidth;++y)for(int x=0;x<game::kWidth;++x){
         float wx=(x+.5f)*kCell-kHalf;
         float wy=kCenterY+kHalf-(y+.5f)*kCell;
@@ -403,11 +408,15 @@ void Draw(State *s){
         else if(ground==game::Ground::Wall){r=.13f;g=.14f;b=.18f;}
         else if(ground==game::Ground::DeepWater){r=.10f;g=.33f;b=.53f;}
         if((x+y)%2){r*=.92f;g*=.92f;b*=.92f;}
-        const int sprite=ground==game::Ground::Road?omega_art::Road:
-                         ground==game::Ground::Rubble?omega_art::Rubble:
-                         ground==game::Ground::Wall?omega_art::Wall:
+        // Only appearance changes: the logical Ground and terrain costs do not.
+        const int sprite=ground==game::Ground::Road?omega_art::SharedRoad:
+                         ground==game::Ground::Rubble?omega_art::SharedRock:
+                         ground==game::Ground::Wall?
+                         ((x+y)%3?omega_art::SharedConcrete:omega_art::SharedSteel):
                          ground==game::Ground::DeepWater?omega_art::Water:
-                         omega_art::Soil;
+                         verdant?omega_art::SharedGrass:
+                         wasted?((x+y)%4==0?omega_art::SharedRock:omega_art::SharedSand):
+                         ((x+y)%5==0?omega_art::SharedSand:omega_art::SharedGrass);
         if(!s->sprites.Place(sprite,wx,wy,kCell*.965f,kCell*.965f,kBoardZ)){
             Rect(s,wx,wy,kCell*.965f,kCell*.965f,kBoardZ,r,g,b);
             if(ground==game::Ground::Rubble)
@@ -416,6 +425,11 @@ void Draw(State *s){
             if(ground==game::Ground::Wall)
                 Rect(s,wx,wy,kCell*.77f,kCell*.74f,kBoardZ+.015f,.36f,.39f,.39f);
         }
+        // Low-poly deadwood marks occasional existing rubble/cover cells.
+        // This decor never becomes phantom collision or an opaque UI overlay.
+        if(ground==game::Ground::Rubble && (x*7+y*11)%13==0)
+            s->sprites.Place(omega_art::DeadTree,wx,wy,kCell*.83f,
+                             kCell*.83f,kBoardZ+.004f);
         if(x==s->session.tactical.cursor_x && y==s->session.tactical.cursor_y){
             Line(s,wx-kCell*.43f,wy+kCell*.42f,wx+kCell*.43f,wy+kCell*.42f,
                  kCell*.070f,-1.84f,1.f,.90f,.38f);
@@ -433,34 +447,48 @@ void Draw(State *s){
         wx=(x+.5f)*kCell-kHalf;wy=kCenterY+kHalf-(y+.5f)*kCell;
     };
     float px=0,py=0;center(2,12,px,py);
-    Rect(s,px,py,kCell*.76f,kCell*.74f,-1.85f,
-         defendingConvoy?.69f:defendingOutpost?.50f:.22f,
-         defendingConvoy?.44f:defendingOutpost?.52f:.74f,
-         defendingConvoy?.20f:defendingOutpost?.55f:.87f);
+    // PSX barrel = physical pump; cargo crate = convoy supply socket.
+    // Successful sprites replace the large colored placeholder rectangles.
+    const bool centerAsset=s->sprites.Place(
+        defendingConvoy?omega_art::SupplyCrate:omega_art::MetalBarrel,
+        px,py,kCell*.88f,kCell*.88f,kBoardZ+.006f);
+    if(!centerAsset)
+        Rect(s,px,py,kCell*.76f,kCell*.74f,-1.85f,
+             defendingConvoy?.69f:defendingOutpost?.50f:.22f,
+             defendingConvoy?.44f:defendingOutpost?.52f:.74f,
+             defendingConvoy?.20f:defendingOutpost?.55f:.87f);
     if(defendingOutpost){
         Rect(s,px,py+kCell*.22f,kCell*.90f,kCell*.13f,
              -1.843f,.25f,.29f,.34f);
     }
-    if(defendingConvoy){
+    if(defendingConvoy && !centerAsset){
         Rect(s,px-kCell*.23f,py-kCell*.31f,kCell*.18f,kCell*.18f,
              -1.84f,.15f,.13f,.12f);
         Rect(s,px+kCell*.23f,py-kCell*.31f,kCell*.18f,kCell*.18f,
              -1.84f,.15f,.13f,.12f);
-    }else Rect(s,px,py+kCell*.18f,kCell*.36f,kCell*.15f,
-               -1.84f,.75f,.90f,.95f);
+    }else if(!defendingConvoy && !centerAsset)
+        Rect(s,px,py+kCell*.18f,kCell*.36f,kCell*.15f,
+             -1.84f,.75f,.90f,.95f);
     center(5,12,px,py);
-    Rect(s,px,py,kCell*.78f,kCell*.72f,-1.85f,.65f,.44f,.15f);
-    Line(s,px-kCell*.25f,py,px+kCell*.25f,py,kCell*.09f,-1.84f,.95f,.77f,.34f);
+    if(!s->sprites.Place(omega_art::SupplyCrate,px,py,
+                         kCell*.78f,kCell*.78f,kBoardZ+.006f))
+        Rect(s,px,py,kCell*.78f,kCell*.72f,-1.85f,.65f,.44f,.15f);
+    Line(s,px-kCell*.25f,py,px+kCell*.25f,py,kCell*.065f,-1.84f,.95f,.77f,.34f);
     // Mission marker is at the actual game-logic target; never an inert UI
     // ornament. Capture needs occupation, relay needs a living engineer and
     // two finite demolition charges from the team's field components.
     if(battle.mission()!=game::Mission::HoldPump){
         center(battle.objective_x(),battle.objective_y(),px,py);
         const bool orchard=battle.mission()==game::Mission::CaptureOrchard;
-        Rect(s,px,py,kCell*.94f,kCell*.94f,-1.857f,
-             orchard?.91f:.65f,orchard?.81f:.48f,orchard?.25f:.95f);
-        Rect(s,px,py,kCell*.58f,kCell*.58f,-1.854f,
-             orchard?.24f:.37f,orchard?.56f:.24f,orchard?.20f:.64f);
+        // The orchard objective uses an orthographic overhead render of
+        // the actual shared Retro Tree GLB, not a new AI illustration.
+        if(!orchard || !s->sprites.Place(omega_art::LivingTree,px,py,
+                                        kCell*.90f,kCell*.90f,kBoardZ+.007f)){
+            Rect(s,px,py,kCell*.94f,kCell*.94f,-1.857f,
+                 orchard?.91f:.65f,orchard?.81f:.48f,orchard?.25f:.95f);
+            Rect(s,px,py,kCell*.58f,kCell*.58f,-1.854f,
+                 orchard?.24f:.37f,orchard?.56f:.24f,orchard?.20f:.64f);
+        }
         for(int i=0;i<battle.objective_progress();++i){
             Rect(s,px-kCell*.27f+kCell*.16f*i,py-kCell*.27f,
                  kCell*.12f,kCell*.10f,-1.842f,.93f,.99f,.41f);
