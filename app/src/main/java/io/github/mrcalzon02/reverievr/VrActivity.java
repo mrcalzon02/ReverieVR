@@ -1771,7 +1771,10 @@ public final class VrActivity extends Activity
 
     @Override
     public void onNativeModuleSoundCueRequested(int cueId) {
-        if(uiFeedback==null || cueId<1 || cueId>15)return;
+        // Preserve the entire ABI-v1 sound range, including Breakwater's
+        // purchase/wave/armor cues 16..21 and Red Ledger's cues 22..27.
+        if(uiFeedback==null || cueId<1 ||
+           cueId>RedLedgerSound.LAST_CUE)return;
         runOnUiThread(() -> uiFeedback.nativeSoundCue(cueId));
     }
 
