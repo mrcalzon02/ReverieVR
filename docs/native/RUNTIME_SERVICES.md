@@ -194,6 +194,30 @@ DOS Quick Menu → Bindings opens **DOS Mouse Control** with direct choices for 
 
 # ReverieVR Native Runtime Services
 
+## Breakwater headset controls and audio recovery — 2026-10-17
+
+The hosted `breakwater-battery` module uses the game-specific
+`native-breakwater` binding profile, deriving from existing native-standard
+controls and additionally routing Daydream touchpad X to the existing
+`ReverieNativeInputV1.move_x` axis. One left/right deflection cycles owned
+mounted weapons after a neutral release; select continues to fire and the
+secondary input remains reload. Other native modules keep their own profiles.
+No SDK ABI, global shell bindings, Android permissions or Home navigation
+were changed.
+
+The existing ABI-v1 ordered native sound requests remain enqueued/drained by
+the host; `VrActivity` forwards the entire supported 1–27 cue range, not just
+1–15. The UI-thread bank retries creation of unavailable static `AudioTrack`
+voices on lifecycle resume or a bounded missing-voice retry, and failures are
+logged. While Breakwater is hosted, its original beach ambience remains active
+without per-eye audio calls, alongside the authorized staged owner soundtrack
+and the separate music-only volume/mute policy. Missing game soundtrack IDs
+fall back to available packaged lobby music rather than silently disabling all
+native-game music. Actual Galaxy S9 sound-route and mix acceptance still
+requires physical testing.
+
+
+
 **Status:** implemented first-party runtime services; higher-level configuration surface remains provisional and S9 comfort validation is still required where noted.
 
 **Purpose:** document shell-owned services that native games consume indirectly around ABI v1. These services are part of the native-game platform contract even when they are not C ABI functions.
