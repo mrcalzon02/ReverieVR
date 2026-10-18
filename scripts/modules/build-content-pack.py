@@ -12,14 +12,12 @@ from pathlib import Path
 import struct
 import zipfile
 
-NAMESPACES = {
-    "between-deliveries-red-ledger": "red-ledger",
-    "breakwater-battery": "breakwater",
-    "omega-front": "omega-front",
-    "gumball-armada": "gumball-armada",
-    "ministry-lantern-desk": "lantern-desk",
-    "iron-sight-forward-detachment": "forward-detachment",
+MATRIX=Path(__file__).resolve().parents[2]/"modules/game-identity-matrix.json"
+NAMESPACES={
+    entry["id"]:entry["content_namespace"]
+    for entry in json.loads(MATRIX.read_text("utf-8"))["games"]
 }
+
 EXTENSIONS = {".rlprop", ".png", ".ogg", ".wav", ".mp3",
               ".json", ".rvdata", ".atlas"}
 MAX_FILE = 4 * 1024 * 1024
@@ -57,9 +55,13 @@ def checked_assets(directory, namespace):
                 raise ValueError("Room mesh has wrong byte count: " + relative)
         # Red Ledger's native renderer reads the approved Beckenburg
         # flat directory, not top-level red-ledger/*.rlprop paths.
-        if namespace == "red-ledger" and f.suffix == ".rlprop":
+        if (namespace == "red-ledger" and f.suffix == ".rlprop" and
+                not relative.startswith("beckenburg/")):
             relative = "beckenburg/" + relative
-        items.append(("assets/native/" + namespace + "/" + relative, data))
+        name="assets/native/" + namespace + "/" + relative
+        if len(name)>160 or any(previous==name for previous,_ in items):
+            raise ValueError("Duplicate or oversized game asset path: "+name)
+        items.append((name,data))
     return items
 
 def zip_write(z, path, payload):
@@ -71,12 +73,12 @@ def zip_write(z, path, payload):
 def build(module, source, output, revision, version):
     namespace = NAMESPACES.get(module)
     if namespace is None:
-        if module.startswith("classic-") and module[8:].replace("-", "").isalnum():
-            namespace = module
-        else:
-            raise ValueError("Module is not approved")
+        raise ValueError("Module is not in the authoritative game registry")
     if revision < 1 or revision > 2147483647:
         raise ValueError("Invalid revision")
+    if not __import__("re").fullmatch(
+        r"[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z0-9.-]+)?",version):
+        raise ValueError("Invalid semantic game content version")
     assets = checked_assets(source, namespace)
     manifest = {
         "schema": 1, "id": module, "kind": "content",

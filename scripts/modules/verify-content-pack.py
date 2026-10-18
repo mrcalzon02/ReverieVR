@@ -12,7 +12,12 @@ import zipfile
 MAX_ENTRIES=512
 MAX_UNCOMPRESSED=96*1024*1024
 MAX_FILE=4*1024*1024
-NAMESPACES={"between-deliveries-red-ledger":"red-ledger","breakwater-battery":"breakwater","omega-front":"omega-front","gumball-armada":"gumball-armada","ministry-lantern-desk":"lantern-desk","iron-sight-forward-detachment":"forward-detachment","procedural-test-chamber":"test-chamber",**{k:k for k in ("classic-chess","classic-go","classic-checkers","classic-pong","classic-snake","classic-reversi","classic-breakout","classic-chutes-ladders")}}
+MATRIX=Path(__file__).resolve().parents[2]/"modules/game-identity-matrix.json"
+NAMESPACES={
+    entry["id"]:entry["content_namespace"]
+    for entry in json.loads(MATRIX.read_text("utf-8"))["games"]
+}
+
 EXTENSIONS=(".rlprop",".png",".ogg",".wav",".mp3",".json",".rvdata",".atlas")
 
 def validate(path):
