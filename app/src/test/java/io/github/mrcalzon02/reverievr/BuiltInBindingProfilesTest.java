@@ -91,9 +91,17 @@ public final class BuiltInBindingProfilesTest {
             BuiltInBindingProfiles.nativeProfileForModule("omega-front")
         );
         assertEquals(
-            BuiltInBindingProfiles.ID_NATIVE_STANDARD,
+            BuiltInBindingProfiles.ID_NATIVE_BREAKWATER,
             BuiltInBindingProfiles.nativeProfileForModule("breakwater-battery")
         );
+        VirtualInputBus breakwaterBus=new VirtualInputBus();
+        InputBindingEngine breakwaterEngine=new InputBindingEngine(
+            breakwaterBus,BuiltInBindingProfiles.byId(
+                BuiltInBindingProfiles.ID_NATIVE_BREAKWATER));
+        breakwaterEngine.submitAxis(BindingInput.TOUCHPAD_X,.95f);
+        assertEquals(.95f,breakwaterBus.getJoystickAxisX(),.0001f);
+        breakwaterEngine.submitAxis(BindingInput.TOUCHPAD_X,0.f);
+        assertEquals(0.f,breakwaterBus.getJoystickAxisX(),.0001f);
         assertFalse(BuiltInBindingProfiles.isDosProfileId(
             BuiltInBindingProfiles.ID_NATIVE_CLASSICS));
 
