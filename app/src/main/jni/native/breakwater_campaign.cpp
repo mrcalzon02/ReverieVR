@@ -406,7 +406,13 @@ IncomingThreats Campaign::incoming_threats() const {
         const float until_zone = std::max(0.0f, (start - enemy.z) / speed);
         const float until_fire = std::max(until_zone,
                                           std::max(0.0f, enemy.attack_timer));
-        if (enemy.z + speed * until_fire > end) continue;
+        // The gunboat holds at its real offshore station rather than
+        // continuing to sail through the beach during its cooldown.
+        const float projectedZ=enemy.type==UnitType::Gunboat?
+            std::min(invasion::kGunboatStandOffZ,
+                     enemy.z+speed*until_fire):
+            enemy.z+speed*until_fire;
+        if (projectedZ > end) continue;
         if (*earliest < 0.0f || until_fire < *earliest)
             *earliest = until_fire;
     }
