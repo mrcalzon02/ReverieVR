@@ -6,10 +6,50 @@
 #include "reverie_native_flat_mesh.h"
 #include "classic_vector_art.h"
 #include "classic_chess_book.h"
+#include "classic_chess_sprite_atlas.h"
 #include <cassert>
 #include <cmath>
 #include <iostream>
 using namespace reverie::classics;
+
+
+static void TestChessSpriteAtlas(){
+    using namespace reverie::chessart;
+    std::vector<uint8_t> image;
+    assert(Decode(image));
+    assert(image.size()==kPixels*2);
+    assert(kWidth==384&&kHeight==128);
+    for(int kind=1;kind<=6;kind++){
+        assert(TileForPiece(kind)==kind-1);
+        assert(TileForPiece(-kind)==kind+5);
+    }
+    assert(TileForPiece(0)==-1&&TileForPiece(7)==-1);
+    for(int tile=0;tile<12;++tile){
+        int lit=0,black=0,solid=0;
+        for(int y=0;y<64;++y)for(int x=0;x<64;++x){
+            const int ox=(tile%6)*64+x,oy=(tile/6)*64+y;
+            const std::size_t offset=(oy*kWidth+ox)*2;
+            const int l=image[offset],a=image[offset+1];
+            if(a>0){++lit;if(l<128)++black;}
+            if(a==255)++solid;
+        }
+        // The original SVG shapes must be present, not letter glyphs
+        // or an all-transparent texture accidentally shipping in the APK.
+        assert(lit>=500&&lit<=2800);
+        assert(solid>=150);
+        assert(black>=180);
+    }
+    // Specific repair guard: both knights' main silhouettes are filled,
+    // including the SVG paths without an explicit Z close command.
+    for(int tile:{1,7}){
+        int filled=0;
+        for(int y=0;y<64;++y)for(int x=0;x<64;++x){
+            const int at=(((tile/6)*64+y)*kWidth+(tile%6)*64+x)*2;
+            if(image[at+1]>=200)++filled;
+        }
+        assert(filled>=700);
+    }
+}
 
 static void TestFlatGeometry(){
     using namespace reverie::flatmesh;
@@ -834,6 +874,7 @@ static void TestBreakout() {
 }
 
 int main() {
+    TestChessSpriteAtlas();
     TestClassicArtworkAndOpeningIndex();
     TestFlatGeometry();
     TestBreakout();
