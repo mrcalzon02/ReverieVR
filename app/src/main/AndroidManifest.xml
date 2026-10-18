@@ -69,6 +69,11 @@
             android:screenOrientation="landscape"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <provider
+            android:name=".VerifiedCompanionApkProvider"
+            android:authorities="io.github.mrcalzon02.reverievr.verified-game-apk"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+        <provider
             android:name=".GameSaveMigrationProvider"
             android:authorities="io.github.mrcalzon02.reverievr.game-saves"
             android:exported="true"

@@ -108,9 +108,9 @@ final class CompanionGameApkInstaller implements AutoCloseable {
     private void verifyAndOffer(GameModuleCatalog.Release release,
                                 Callback cb,Uri uri){
         File temp=null;
+        boolean handedToInstaller=false;
         try{
-            temp=File.createTempFile("reverie-game-apk-", ".apk",
-                activity.getCacheDir());
+            temp=VerifiedCompanionApkProvider.create(activity);
             try(InputStream in=activity.getContentResolver().openInputStream(uri);
                 FileOutputStream out=new FileOutputStream(temp)){
                 if(in==null)throw new IOException("Downloaded APK cannot be opened");
@@ -126,25 +126,37 @@ final class CompanionGameApkInstaller implements AutoCloseable {
             CompanionApkVerifier.Result verified=
                 CompanionApkVerifier.verify(activity,temp,release);
             if(!verified.valid)throw new IOException(verified.reason);
+            // A verified private APK, never the original download URI,
+            // is the data Android Package Installer will actually read.
+            final File trustedFile=temp;
+            final Uri trustedUri=VerifiedCompanionApkProvider.uriFor(
+                activity,trustedFile);
             activity.runOnUiThread(()->{
                 Intent install=new Intent(Intent.ACTION_VIEW);
-                install.setDataAndType(uri,"application/vnd.android.package-archive");
+                install.setDataAndType(trustedUri,
+                    "application/vnd.android.package-archive");
+                install.setClipData(android.content.ClipData.newRawUri(
+                    "Verified ReverieVR companion APK",trustedUri));
                 install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 try{
                     activity.startActivity(install);
                     if(cb!=null)cb.result(
-                        "Android package installer opened; approval required",true);
+                        "Verified APK passed to Android; approval required",true);
                 }catch(RuntimeException e){
+                    trustedFile.delete();
                     if(cb!=null)cb.result("Android package installer unavailable",false);
                 }
             });
+            handedToInstaller=true;
         }catch(Exception e){
             String problem=e.getMessage();
             activity.runOnUiThread(()->{
                 if(cb!=null)cb.result("APK rejected: "+problem,false);
             });
         }finally{
-            if(temp!=null)temp.delete();
+            // Keep the exact verified inode available until Android has
+            // consumed its URI grant; discard expired files after 48 hours.
+            if(temp!=null&&!handedToInstaller)temp.delete();
         }
     }
 
