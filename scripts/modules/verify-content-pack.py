@@ -34,7 +34,7 @@ def validate(path):
         if not isinstance(rev,int) or not 1<=rev<=2147483647:
             raise ValueError("Invalid content revision")
         prefix="assets/native/"+NAMESPACES[game]+"/"
-        total=0;assets=0;triangles=0
+        total=0;assets=0;triangles=0;actual={}
         for entry in z.infolist():
             name=entry.filename
             if (name.startswith("/") or ".." in name or "\\" in name or ":" in name or
@@ -53,6 +53,7 @@ def validate(path):
                 raise ValueError("Unapproved game asset: "+name)
             assets+=1
             data=z.read(entry)
+            actual[name]={"bytes":len(data),"sha256":hashlib.sha256(data).hexdigest()}
             if name.endswith(".rlprop"):
                 if len(data)<16:raise ValueError("Truncated RLBP mesh")
                 magic,version,vertices,atlas=struct.unpack("<4sIII",data[:16])
@@ -61,6 +62,21 @@ def validate(path):
                     len(data)!=16+vertices*40+256*256*2):
                     raise ValueError("Invalid RLBP data: "+name)
                 triangles+=vertices//3
+        records=manifest.get("files",manifest.get("models"))
+        if not isinstance(records,list) or len(records)!=assets:
+            raise ValueError("Pack manifest must enumerate every game asset")
+        declared={}
+        for row in records:
+            if not isinstance(row,dict) or not isinstance(row.get("path"),str):
+                raise ValueError("Invalid asset manifest entry")
+            name=row["path"]
+            if name in declared or name not in actual:
+                raise ValueError("Duplicate or undeclared game asset")
+            if (row.get("bytes")!=actual[name]["bytes"] or
+                row.get("sha256")!=actual[name]["sha256"]):
+                raise ValueError("Game asset size/hash mismatch: "+name)
+            declared[name]=row
+        if set(declared)!=set(actual):raise ValueError("Hidden game asset in ZIP")
         if not assets:raise ValueError("Pack has no playable assets")
         if z.testzip() is not None:raise ValueError("Corrupted ZIP checksum")
     return {"game":game,"revision":rev,"assets":assets,"triangles":triangles,"bytes":path.stat().st_size,"sha256":hashlib.sha256(path.read_bytes()).hexdigest()}
