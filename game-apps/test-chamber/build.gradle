@@ -1,0 +1,61 @@
+plugins {
+    id "com.android.application"
+}
+
+// This independent APK is a native-code deployment probe, not an update
+// to the ReverieVR hub. Production installation must use the SAME publisher
+// certificate as the host; do not replace an installed signing lineage.
+def sharedKeystore = (project.findProperty("phoneTestKeystorePath") ?: "").toString()
+def sharedStorePassword = (project.findProperty("phoneTestStorePassword") ?: "").toString()
+def sharedAlias = (project.findProperty("phoneTestKeyAlias") ?: "").toString()
+def sharedKeyPassword = (project.findProperty("phoneTestKeyPassword")
+    ?: sharedStorePassword).toString()
+def hasSigner = !sharedKeystore.isEmpty() && !sharedStorePassword.isEmpty() &&
+    !sharedAlias.isEmpty() && !sharedKeyPassword.isEmpty() &&
+    file(sharedKeystore).isFile()
+
+android {
+    namespace = "io.github.mrcalzon02.reverievr.game.testchamber"
+    compileSdk = 36
+    defaultConfig {
+        applicationId = "io.github.mrcalzon02.reverievr.game.testchamber"
+        minSdk = 26
+        targetSdk = 36
+        versionCode = (project.findProperty("testChamberVersionCode") ?: "1")
+            .toString().toInteger()
+        versionName = (project.findProperty("testChamberVersionName") ?: "0.1.0")
+            .toString()
+        ndk { abiFilters "armeabi-v7a", "arm64-v8a" }
+        externalNativeBuild {
+            ndkBuild { arguments("APP_PLATFORM=android-26","APP_STL=c++_static") }
+        }
+    }
+    signingConfigs {
+        if(hasSigner){
+            publisher {
+                storeFile = file(sharedKeystore)
+                storePassword = sharedStorePassword
+                keyAlias = sharedAlias
+                keyPassword = sharedKeyPassword
+            }
+        }
+    }
+    buildTypes {
+        debug { debuggable = true }
+        release {
+            minifyEnabled = false
+            if(hasSigner) signingConfig = signingConfigs.publisher
+        }
+    }
+    externalNativeBuild {
+        ndkBuild { path = file("src/main/jni/Android.mk") }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    implementation project(":cardboard")
+    implementation "com.google.protobuf:protobuf-javalite:3.19.4"
+}
