@@ -58,7 +58,7 @@ final class NativeCombatWaveform {
         if (cue == WAVE) return 390;
         if (cue == COLLISION) return 490;
         if (cue == PURCHASE) return 155;
-        if (cue == CLEAR) return 410;
+        if (cue == CLEAR) return 1180;
         if (cue == VICTORY) return 770;
         if (cue == DEFEAT) return 690;
         if (cue == ARMORED_GUN) return 420;
@@ -187,9 +187,25 @@ final class NativeCombatWaveform {
                     signal = envelope*.30*Math.sin(phase)
                         + envelope*.09*noise*Math.exp(-45.0*t);
                 } else if (cue == CLEAR) {
-                    phase += 2.0*Math.PI*(t<.14?392.0:t<.28?494.0:587.0)
-                        / SAMPLE_RATE;
-                    signal = envelope*.35*Math.sin(phase);
+                    // A short, recognizable four-note brass-like fanfare:
+                    // G4-B4-D5-G5 with a held final chord. The note attack
+                    // and sustain are independent of the generic SFX envelope.
+                    final double frequency=t<.18?392.00:
+                        t<.36?493.88:t<.55?587.33:783.99;
+                    final double noteStart=t<.18?0.0:
+                        t<.36?.18:t<.55?.36:.55;
+                    final double local=t-noteStart;
+                    final double attack=Math.min(1.0,local*58.0);
+                    final double tail=Math.min(1.0,
+                        Math.max(0.0,(1.18-t)/.20));
+                    phase += 2.0*Math.PI*frequency/SAMPLE_RATE;
+                    signal=.38*attack*tail*(.75*Math.sin(phase)+
+                        .17*Math.sin(2.0*phase)+.08*Math.sin(3.0*phase));
+                    if(t>=.55) {
+                        // Quiet chord below the held tonic resolves the cue.
+                        signal+=.09*tail*Math.sin(2.0*Math.PI*392.0*t)
+                            +.07*tail*Math.sin(2.0*Math.PI*587.33*t);
+                    }
                 } else if (cue == VICTORY) {
                     final double frequency = t<.19?392.0:
                         t<.38?494.0:t<.56?587.0:784.0;
