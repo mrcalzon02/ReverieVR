@@ -2,6 +2,7 @@
 #define REVERIE_BREAKWATER_SKY_H
 
 #include "breakwater_campaign.h"
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 
@@ -58,7 +59,10 @@ void EmitSkyPanorama(uint8_t location,bool night,TriangleFn triangle) {
             2.0f*kSkyPi*(sector+1)/kSkySegments;
         for(int band=0;band<kSkyBands;++band) {
             const SkyColor base=night?dusk[band]:day[band];
-            const SkyColor color={base.r*red,base.g*green,base.b*blue};
+            // Blackcap's cool atmospheric cast must not exceed display
+            // linear RGB range; high upper-band blue otherwise tops 1.0.
+            const SkyColor color={base.r*red,base.g*green,
+                                  std::min(1.0f,base.b*blue)};
             const SkyPoint a=SkyAt(angle0,kSkyRadius,0,heights[band]);
             const SkyPoint b=SkyAt(angle1,kSkyRadius,0,heights[band]);
             const SkyPoint c=SkyAt(angle1,kSkyRadius,0,heights[band+1]);
