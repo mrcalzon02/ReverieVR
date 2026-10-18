@@ -13,6 +13,10 @@
         android:name="android.hardware.sensor.gyroscope"
         android:required="true" />
 
+    <!-- Only publisher-signed companion game packages can request saves. -->
+    <permission
+        android:name="io.github.mrcalzon02.reverievr.permission.GAME_SAVE_READ"
+        android:protectionLevel="signature" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
@@ -55,6 +59,12 @@
             android:resizeableActivity="false"
             android:screenOrientation="landscape"
             android:configChanges="orientation|screenSize|keyboardHidden" />
+        <provider
+            android:name=".GameSaveMigrationProvider"
+            android:authorities="io.github.mrcalzon02.reverievr.game-saves"
+            android:exported="true"
+            android:grantUriPermissions="false"
+            android:readPermission="io.github.mrcalzon02.reverievr.permission.GAME_SAVE_READ" />
         <activity
             android:name=".GameModulesActivity"
             android:exported="false" />
