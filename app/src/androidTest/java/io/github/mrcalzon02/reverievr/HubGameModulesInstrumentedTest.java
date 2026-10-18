@@ -127,8 +127,9 @@ public final class HubGameModulesInstrumentedTest {
         try(NativeModuleRuntime runtime=new NativeModuleRuntime(
             home,context().getAssets(),null,true)){
             for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES){
+                boolean started=runtime.start(game.id);
                 assertTrue("JNI/C++ game launch FAILED: "+game.id+
-                    " cause="+runtime.getLastError(),runtime.start(game.id));
+                    " cause="+runtime.getLastError(),started);
                 assertEquals("Wrong active game after launch "+game.id,
                     game.id,runtime.getActiveModuleId());
                 runtime.update(NativeModuleRuntime.POINTER_NONE,null,null);
