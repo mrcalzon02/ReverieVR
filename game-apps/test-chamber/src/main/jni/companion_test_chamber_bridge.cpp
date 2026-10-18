@@ -1,6 +1,7 @@
 // Android JNI bridge for the independent Test Chamber native-code probe.
 // Compiles the EXISTING test_chamber_module.cpp unchanged into its own APK.
 #include "reverie_native_module.h"
+#include "companion_showcase_renderer.h"
 #include <android/log.h>
 #include <jni.h>
 #include <algorithm>
@@ -17,6 +18,7 @@ struct Session {
     const ReverieNativeModuleApiV1 *api=nullptr;
     void *instance=nullptr;
     bool gl_ready=false;
+    TestShowcase showcase;
 };
 void Log(int32_t level,const char *tag,const char *message){
     const int priority=level==REVERIE_NATIVE_LOG_ERROR?ANDROID_LOG_ERROR:
@@ -73,6 +75,29 @@ Java_io_github_mrcalzon02_reverievr_game_testchamber_GameVrActivity_nativeCreate
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
+Java_io_github_mrcalzon02_reverievr_game_testchamber_GameVrActivity_nativeAddModelMesh(
+    JNIEnv *env,jclass,jlong handle,jint model,jfloatArray vertices,
+    jint width,jint height,jintArray pixels){
+    Session *s=SessionFrom(handle);
+    if(!s||s->gl_ready||!vertices||!pixels||
+       model<0||model>=5||width<1||height<1||width>1024||height>1024)
+        return JNI_FALSE;
+    const jsize count=env->GetArrayLength(vertices);
+    const jsize pixel_count=env->GetArrayLength(pixels);
+    if(count<15||count>90000||count%15!=0||
+       pixel_count!=width*height)return JNI_FALSE;
+    std::vector<float> data(static_cast<size_t>(count));
+    std::vector<jint> argb(static_cast<size_t>(pixel_count));
+    env->GetFloatArrayRegion(vertices,0,count,data.data());
+    env->GetIntArrayRegion(pixels,0,pixel_count,argb.data());
+    if(env->ExceptionCheck())return JNI_FALSE;
+    // Packed Java ARGB pixels have the same 32-bit bit representation.
+    std::vector<uint32_t> colors(argb.begin(),argb.end());
+    return s->showcase.Add(model,data,width,height,colors)
+        ?JNI_TRUE:JNI_FALSE;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
 Java_io_github_mrcalzon02_reverievr_game_testchamber_GameVrActivity_nativeSurfaceCreated(
     JNIEnv *,jclass,jlong handle){
     Session *s=SessionFrom(handle);
@@ -80,7 +105,13 @@ Java_io_github_mrcalzon02_reverievr_game_testchamber_GameVrActivity_nativeSurfac
     // The module's InitializeGl abandons stale IDs after GL context loss.
     s->gl_ready=false;
     s->gl_ready=s->api->on_gl_context_created(s->instance)!=0;
-    return s->gl_ready?JNI_TRUE:JNI_FALSE;
+    if(!s->gl_ready)return JNI_FALSE;
+    if(!s->showcase.CreateGl()){
+        s->api->release_gl_context(s->instance);
+        s->gl_ready=false;
+        return JNI_FALSE;
+    }
+    return JNI_TRUE;
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -88,6 +119,7 @@ Java_io_github_mrcalzon02_reverievr_game_testchamber_GameVrActivity_nativeSurfac
     JNIEnv *,jclass,jlong handle){
     Session *s=SessionFrom(handle);
     if(!s||!s->gl_ready)return;
+    s->showcase.ReleaseGl();
     s->api->release_gl_context(s->instance);
     s->gl_ready=false;
 }
@@ -134,7 +166,8 @@ Java_io_github_mrcalzon02_reverievr_game_testchamber_GameVrActivity_nativeRender
     env->GetFloatArrayRegion(view,0,16,eye.view);
     env->GetFloatArrayRegion(projection,0,16,eye.projection);
     if(env->ExceptionCheck())return JNI_FALSE;
-    return s->api->render_eye(s->instance,&eye)?JNI_TRUE:JNI_FALSE;
+    if(!s->api->render_eye(s->instance,&eye))return JNI_FALSE;
+    return s->showcase.Draw(&eye)?JNI_TRUE:JNI_FALSE;
 }
 
 extern "C" JNIEXPORT void JNICALL

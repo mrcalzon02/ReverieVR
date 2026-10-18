@@ -4,6 +4,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := reverie_companion_test_chamber
 LOCAL_SRC_FILES := \
     companion_test_chamber_bridge.cpp \
+    companion_showcase_renderer.cpp \
     ../../../../../app/src/main/jni/native/test_chamber_module.cpp \
     ../../../../../third_party/openktg/src/gentexture.cpp
 LOCAL_C_INCLUDES := \
