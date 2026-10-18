@@ -1091,13 +1091,16 @@ int main() {
                     location==1?4.85f:5.80f):4.0f;
             const float zNear=flankExtension?1.451f:
                 scenicShoulder?-.71f:-.80f;
+            // Lateral slopes begin 5 cm farther seaward than the former
+            // center-only beach; no other triangle may exceed that bound.
+            const float zFar=flankExtension?-2.301f:-2.25f;
             assert(x0>=-reach-.001f&&x0<=reach+.001f);
             assert(x1>=-reach-.001f&&x1<=reach+.001f);
             assert(x2>=-reach-.001f&&x2<=reach+.001f);
             assert(y0>=-1.10f&&y1>=-1.10f&&y2>=-1.10f);
-            assert(z0>=-2.25f&&z0<=zNear);
-            assert(z1>=-2.25f&&z1<=zNear);
-            assert(z2>=-2.25f&&z2<=zNear);
+            assert(z0>=zFar&&z0<=zNear);
+            assert(z1>=zFar&&z1<=zNear);
+            assert(z2>=zFar&&z2<=zNear);
             assert(r>=0&&g>=0&&b>=0&&r<=1&&g<=1&&b<=1);
         };
         EmitCoastalTerrain(location,false,box,triangle);
