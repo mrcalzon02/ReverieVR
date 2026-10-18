@@ -122,6 +122,13 @@ def main():
     size=artifact.stat().st_size
     if not 22<=size<=512*1024*1024:
         raise ValueError("Package outside supported size")
+    if artifact.suffix==".rvpack":
+        check=Path(__file__).with_name("verify-content-pack.py")
+        result=subprocess.run([sys.executable,str(check),str(artifact)],
+                              capture_output=True,text=True)
+        if result.returncode!=0:
+            raise ValueError("Game content failed offline validation: "+
+                             result.stderr.strip()[:1000])
     local_hash=digest(artifact)
     if run(["git","branch","--show-current"],1)!="main":
         raise ValueError("Only authoritative main can publish game releases")
