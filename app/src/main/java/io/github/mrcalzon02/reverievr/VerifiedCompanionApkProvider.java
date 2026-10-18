@@ -4,6 +4,8 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.MatrixCursor;
+import android.provider.OpenableColumns;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import java.io.File;
@@ -37,6 +39,7 @@ public final class VerifiedCompanionApkProvider extends ContentProvider {
         File dir=folder(context),trusted=file.getCanonicalFile();
         if(!dir.equals(trusted.getParentFile()) ||
            !trusted.getName().matches("verified-companion-[A-Za-z0-9-]{6,80}\\.apk") ||
+           java.nio.file.Files.isSymbolicLink(file.toPath()) ||
            !trusted.isFile()||trusted.length()<22||trusted.length()>MAX_APK)
             throw new IOException("APK is outside verified installation staging");
         return new Uri.Builder().scheme("content").authority(AUTHORITY)
@@ -62,9 +65,8 @@ public final class VerifiedCompanionApkProvider extends ContentProvider {
         discardExpired(getContext());
         return true;
     }
-    @Override public ParcelFileDescriptor openFile(Uri uri,String mode)
-        throws FileNotFoundException{
-        if(uri==null||!"r".equals(mode)||
+    private File verifiedFile(Uri uri)throws FileNotFoundException{
+        if(uri==null||!"content".equals(uri.getScheme())||
            !AUTHORITY.equals(uri.getAuthority())||
            uri.getPathSegments().size()!=1)
             throw new FileNotFoundException("Invalid game APK request");
@@ -76,14 +78,40 @@ public final class VerifiedCompanionApkProvider extends ContentProvider {
                java.nio.file.Files.isSymbolicLink(f.toPath()) ||
                !f.isFile()||f.length()<22||f.length()>MAX_APK)
                 throw new FileNotFoundException("Unverified APK request");
-            return ParcelFileDescriptor.open(f,ParcelFileDescriptor.MODE_READ_ONLY);
+            return f;
         }catch(IOException e){throw new FileNotFoundException("APK staging unavailable");}
     }
+    @Override public ParcelFileDescriptor openFile(Uri uri,String mode)
+        throws FileNotFoundException{
+        if(!"r".equals(mode))throw new FileNotFoundException("Read-only APK handle");
+        return ParcelFileDescriptor.open(verifiedFile(uri),
+            ParcelFileDescriptor.MODE_READ_ONLY);
+    }
     @Override public String getType(Uri uri){
-        return "application/vnd.android.package-archive";
+        try{verifiedFile(uri);return "application/vnd.android.package-archive";}
+        catch(FileNotFoundException ignored){return null;}
     }
     @Override public Cursor query(Uri uri,String[] projection,String selection,
-                                  String[] args,String sortOrder){return null;}
+                                  String[] args,String sortOrder){
+        // Android's document consumers, including Package Installer on some
+        // supported versions, request OpenableColumns before openFile().
+        final File file;
+        try{file=verifiedFile(uri);}
+        catch(FileNotFoundException e){return null;}
+        String[] fields=projection==null?
+            new String[]{OpenableColumns.DISPLAY_NAME,OpenableColumns.SIZE}:
+            projection;
+        MatrixCursor result=new MatrixCursor(fields,1);
+        Object[] values=new Object[fields.length];
+        for(int i=0;i<fields.length;i++){
+            if(OpenableColumns.DISPLAY_NAME.equals(fields[i]))
+                values[i]=file.getName();
+            else if(OpenableColumns.SIZE.equals(fields[i]))
+                values[i]=file.length();
+        }
+        result.addRow(values);
+        return result;
+    }
     @Override public Uri insert(Uri uri,ContentValues values){
         throw new UnsupportedOperationException("Read-only verified game packages");
     }
