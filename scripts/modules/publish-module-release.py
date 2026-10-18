@@ -52,6 +52,59 @@ def digest(path):
         for data in iter(lambda:handle.read(65536),b""):sha.update(data)
     return sha.hexdigest()
 
+def ensure_draft(tag,remote_head,title,notes):
+    """Re-read GitHub after ambiguous creates; do not create duplicate tags."""
+    for attempt in range(3):
+        release=inspect_release(tag)
+        if release is not None:
+            if not release.get("isDraft"):
+                raise RuntimeError("Release is already published; refusing mutation")
+            return release
+        try:
+            # One write attempt, followed by remote observation. A connector
+            # timeout may occur AFTER GitHub accepted the release.
+            run(["gh","release","create",tag,"--repo",REPO,
+                 "--target",remote_head,"--title",title,
+                 "--notes",notes,"--draft"],1)
+        except RuntimeError:
+            release=inspect_release(tag)
+            if release is not None and release.get("isDraft"):
+                return release
+            if attempt==2:raise
+            time.sleep(min(2**attempt,8))
+    raise RuntimeError("GitHub did not accept the draft release")
+
+def ensure_asset(tag,artifact):
+    """Never clobber an existing uploaded binary; verify its bytes afterward."""
+    for attempt in range(3):
+        release=inspect_release(tag)
+        if release is None or not release.get("isDraft"):
+            raise RuntimeError("Draft release disappeared before asset upload")
+        existing=[x for x in release.get("assets",[])
+                  if x.get("name")==artifact.name]
+        if len(existing)>1:
+            raise RuntimeError("Duplicate release asset names")
+        if existing:
+            if existing[0].get("size")!=artifact.stat().st_size:
+                raise RuntimeError("Existing release asset size differs; no overwrite")
+            return
+        try:
+            run(["gh","release","upload",tag,str(artifact),"--repo",REPO],1)
+        except RuntimeError:
+            # Upload may have been accepted despite a timeout. Inspect before
+            # the next write rather than blindly retrying an existing filename.
+            observed=inspect_release(tag)
+            if observed and any(x.get("name")==artifact.name for x in
+                                observed.get("assets",[])):
+                continue
+            if attempt==2:raise
+            time.sleep(min(2**attempt,8))
+    release=inspect_release(tag)
+    if release is None or not any(x.get("name")==artifact.name and
+                                  x.get("size")==artifact.stat().st_size
+                                  for x in release.get("assets",[])):
+        raise RuntimeError("Provider did not accept the game release payload")
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--tag",required=True)
@@ -79,19 +132,8 @@ def main():
                      "--jq",".commit.sha"],3)
     if local_head!=remote_head:
         raise ValueError("Local source HEAD differs from accepted GitHub main")
-    release=inspect_release(args.tag)
-    if release is None:
-        run(["gh","release","create",args.tag,"--repo",REPO,
-             "--target",remote_head,"--title",args.title,
-             "--notes",args.notes,"--draft"],3)
-        release=inspect_release(args.tag)
-    if release is None or not release.get("isDraft"):
-        raise ValueError("Expected verified draft release, not mutable published asset")
-    existing=[a for a in release.get("assets",[])
-              if a.get("name")==artifact.name]
-    if len(existing)>1:raise ValueError("Duplicate asset name in release")
-    if not existing:
-        run(["gh","release","upload",args.tag,str(artifact),"--repo",REPO],3)
+    release=ensure_draft(args.tag,remote_head,args.title,args.notes)
+    ensure_asset(args.tag,artifact)
     release=inspect_release(args.tag)
     if release is None or not any(a.get("name")==artifact.name and
                                   a.get("size")==size
