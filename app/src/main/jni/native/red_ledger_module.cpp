@@ -40,6 +40,8 @@ namespace mugs = reverie::redledger::mug;
 namespace trade = reverie::redledger::trade;
 namespace stock = reverie::redledger::stock;
 namespace products = reverie::redledger::products;
+namespace fbx = reverie::redledger::fbx;
+namespace original_png = reverie::redledger::original_png;
 namespace property = reverie::redledger::property;
 
 // Include the far rear doorway in seated work-ray reach.
