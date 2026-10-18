@@ -40,8 +40,11 @@ inline bool WeaponWithinTraverse(const float *d, WeaponKind kind) {
     if(!d || !std::isfinite(d[0]) || !std::isfinite(d[1]) ||
        !std::isfinite(d[2]) || d[2]>=-.18f) return false;
     const float horizontal=-d[2];
+    // Never depress the barrel into the battery's own parapet. Both the
+    // 3D tube and the ballistic launch ray obey this shared traverse check.
     return std::abs(d[0])<=horizontal*2.5f &&
-           std::abs(d[1])<=horizontal*WeaponTraverseLimit(kind);
+           d[1]>=-.12f*horizontal &&
+           d[1]<=horizontal*WeaponTraverseLimit(kind);
 }
 inline bool ProjectilePosition(const float *origin,const float *direction,
                                float t,float gravity,float *out) {
