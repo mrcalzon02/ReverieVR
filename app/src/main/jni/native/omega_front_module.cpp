@@ -533,6 +533,43 @@ void Draw(State *s){
             SpriteEquipment(s,*u,px,py,battle.doctrine());
         else UnitSprite(s,*u,px,py,battle.doctrine());
     }
+    // Visualize the *actual resolved* last combat shot, not a fabricated
+    // animation or a continuous raycast. One deterministic 2D tracer per
+    // 250-ms simulation tick, with a small impact cross on the real cell.
+    // These are colored UI triangles rendered AFTER actors and PSX props.
+    if(!s->session.tactical.paused && battle.ticks()>0u){
+        const game::Event event=battle.last_event();
+        if(event.tick==battle.ticks()){
+            const game::Unit *attacker=battle.unit(event.actor);
+            const game::Unit *victim=event.pump?nullptr:battle.unit(event.target);
+            if(attacker && (event.pump || victim)){
+                float ax=0,ay=0,bx=0,by=0;
+                center(attacker->x,attacker->y,ax,ay);
+                if(event.pump)center(2,12,bx,by);
+                else center(victim->x,victim->y,bx,by);
+                const bool melee=attacker->role==game::Class::Legionary;
+                const float rr=event.damage>0?1.0f:.63f;
+                const float gg=event.damage>0?.72f:.73f;
+                const float bb=event.damage>0?.31f:.72f;
+                // Close combat gets a short slash; ranged weapons trace
+                // from the muzzle to the actual affected target tile.
+                if(melee){
+                    Line(s,bx-kCell*.20f,by-kCell*.18f,
+                         bx+kCell*.21f,by+kCell*.18f,
+                         kCell*.070f,-1.834f,rr,gg,bb);
+                }else{
+                    Line(s,ax,ay,bx,by,kCell*.042f,-1.834f,rr,gg,bb);
+                }
+                if(event.damage>0){
+                    const float h=kCell*.14f;
+                    Line(s,bx-h,by-h,bx+h,by+h,kCell*.055f,
+                         -1.832f,1.f,.88f,.39f);
+                    Line(s,bx-h,by+h,bx+h,by-h,kCell*.055f,
+                         -1.832f,1.f,.88f,.39f);
+                }
+            }
+        }
+    }
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
     char status[96];
