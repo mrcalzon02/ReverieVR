@@ -7,12 +7,45 @@
 #include "classic_vector_art.h"
 #include "classic_chess_book.h"
 #include "classic_chess_sprite_atlas.h"
+#include "classic_chess_wood_atlas.h"
 #include <cassert>
 #include <cmath>
 #include <iostream>
 using namespace reverie::classics;
 
 
+static void TestChessWoodAtlas(){
+    using namespace reverie::chesswood;
+    assert(kWidth==64&&kHeight==32&&kTile==32);
+    std::vector<uint16_t> pixels;
+    assert(Decode(pixels)&&pixels.size()==static_cast<size_t>(kPixelCount));
+    int uniqueLight=0,uniqueDark=0;
+    double light=0.0,dark=0.0;
+    for(int band=0;band<2;++band){
+        for(int y=0;y<32;++y)for(int x=0;x<32;++x){
+            const uint16_t pixel=pixels[y*kWidth+x+band*32];
+            // Actual source image grain, not a single-color rectangle.
+            bool seenEarlier=false;
+            for(int prevY=0;prevY<=y && !seenEarlier;++prevY){
+                const int lim=prevY==y?x:32;
+                for(int prevX=0;prevX<lim;++prevX){
+                    if(pixels[prevY*kWidth+prevX+band*32]==pixel){
+                        seenEarlier=true;break;
+                    }
+                }
+            }
+            if(!seenEarlier)(band?uniqueDark:uniqueLight)++;
+            const double luminance=(.2126*((pixel>>11)&31)/31.0+
+                                    .7152*((pixel>>5)&63)/63.0+
+                                    .0722*(pixel&31)/31.0);
+            if(band)dark+=luminance;
+            else light+=luminance;
+        }
+    }
+    assert(uniqueLight>=6&&uniqueDark>=6);
+    // Both wood sources remain distinguishable under PSX-era quantization.
+    assert((light-dark)/1024.0>.25);
+}
 static void TestChessSpriteAtlas(){
     using namespace reverie::chessart;
     std::vector<uint8_t> image;
@@ -874,6 +907,7 @@ static void TestBreakout() {
 }
 
 int main() {
+    TestChessWoodAtlas();
     TestChessSpriteAtlas();
     TestClassicArtworkAndOpeningIndex();
     TestFlatGeometry();
