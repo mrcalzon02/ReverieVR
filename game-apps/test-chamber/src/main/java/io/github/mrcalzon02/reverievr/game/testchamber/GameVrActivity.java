@@ -6,6 +6,7 @@ import android.opengl.GLES20;
 import android.os.Bundle;
 import android.view.View;
 import android.view.MotionEvent;
+import android.view.KeyEvent;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
@@ -126,6 +127,40 @@ public final class GameVrActivity extends Activity
             return true;
         }
         return super.onTouchEvent(event);
+    }
+
+    private static boolean isActivationKey(int key){
+        // Non-Daydream Bluetooth gamepads and phone/VR remotes commonly
+        // surface face click as a standard Android KeyEvent, not as a
+        // Cardboard magnet/trigger callback. Never intercept Back/Home.
+        return key==KeyEvent.KEYCODE_DPAD_CENTER ||
+            key==KeyEvent.KEYCODE_BUTTON_A ||
+            key==KeyEvent.KEYCODE_BUTTON_1 ||
+            key==KeyEvent.KEYCODE_ENTER ||
+            key==KeyEvent.KEYCODE_SPACE;
+    }
+
+    @Override public boolean onKeyDown(int key,KeyEvent event){
+        if(isActivationKey(key)){
+            // Do not play a new effect on every key-repeat tick.
+            if(event.getRepeatCount()==0)triggerTestEffect();
+            return true;
+        }
+        return super.onKeyDown(key,event);
+    }
+
+    @Override public boolean onKeyUp(int key,KeyEvent event){
+        if(isActivationKey(key))return true;
+        return super.onKeyUp(key,event);
+    }
+
+    @Override public boolean onGenericMotionEvent(MotionEvent event){
+        if(event.getActionMasked()==MotionEvent.ACTION_BUTTON_PRESS &&
+           (event.getActionButton()&MotionEvent.BUTTON_PRIMARY)!=0){
+            triggerTestEffect();
+            return true;
+        }
+        return super.onGenericMotionEvent(event);
     }
 
     private void immersive(){
