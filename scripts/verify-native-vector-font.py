@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 MODULES={
     "classic_games_module.cpp": "classicart::StrokeText",
-    "breakwater_module.cpp": "nativeart::StrokeText",
+    "breakwater_module.cpp": "font::AppendText",
     "omega_front_module.cpp": "nativeart::StrokeText",
     "recon_projects_module.cpp": "nativeart::StrokeText",
 }
@@ -25,4 +25,4 @@ art=(ROOT/"app/src/main/jni/native/classic_vector_art.h").read_text(
 assert "flatmesh::Segment" in art
 assert "void ChessPiece(" in art
 assert "case 39:" in art  # Correctly escaped apostrophe char
-print("PASS four native renderer variants use vector strokes and chess symbols")
+print("PASS Breakwater Lato atlas, three other stroke renderers and chess symbols")
