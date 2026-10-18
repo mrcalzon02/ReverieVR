@@ -62,6 +62,7 @@ public final class GameVrActivity extends Activity
     private long instance;
     private long previousFrameNanos;
     private volatile boolean surfaceReady;
+    private int renderedEyeCallbacks;
     private final AtomicBoolean failureReported=new AtomicBoolean();
 
     @Override protected void onCreate(Bundle saved){
@@ -226,6 +227,21 @@ public final class GameVrActivity extends Activity
         }
     }
     @Override public void onDrawEye(CardboardView.Eye eye){
+        // Evidence that Cardboard actually invokes the application's stereo
+        // callback, not merely the SDK's distortion overlay. Keep logs bounded.
+        renderedEyeCallbacks++;
+        if(renderedEyeCallbacks==1 || renderedEyeCallbacks==2 ||
+           renderedEyeCallbacks%600==0){
+            float[] v=eye.getEyeView(),p=eye.getPerspective(NEAR,FAR);
+            int[] viewport=new int[4];
+            GLES20.glGetIntegerv(GLES20.GL_VIEWPORT,viewport,0);
+            Log.i("TestChamberFrame","eyeCallback="+renderedEyeCallbacks+
+                " type="+eye.getEyeType()+" viewport="+viewport[0]+","+
+                viewport[1]+","+viewport[2]+","+viewport[3]+
+                " viewT="+v[12]+","+v[13]+","+v[14]+
+                " projection="+p[0]+","+p[5]+","+p[10]+
+                " glFramebuffer="+getFramebufferBinding());
+        }
         GLES20.glClearColor(.045f,.085f,.14f,1.f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
         synchronized(nativeLock){
@@ -235,6 +251,11 @@ public final class GameVrActivity extends Activity
                 eye.getEyeView(),eye.getPerspective(NEAR,FAR)))
                 showFailure("Native game stereo render failed");
         }
+    }
+    private static int getFramebufferBinding(){
+        int[] fbo=new int[1];
+        GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING,fbo,0);
+        return fbo[0];
     }
     @Override public void onFinishFrame(Viewport vp){}
     @Override public void onSurfaceChanged(int width,int height){

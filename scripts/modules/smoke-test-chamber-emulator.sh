@@ -58,6 +58,8 @@ root=pathlib.Path(sys.argv[1])
 log=(root/"android-logcat.txt").read_text(errors="replace")
 assert "Staged " in log and "textured primitives" in log, "GLB decode/JNI staging not observed"
 assert "Uploaded " in log and "textured GLB submeshes" in log, "GLES2 upload not observed"
+assert "TestChamberFrame" in log and "eyeCallback=" in log, (
+    "Cardboard never invoked the game-specific per-eye render callback")
 assert "AndroidRuntime: FATAL EXCEPTION" not in log, "Android fatal exception occurred"
 assert ("Audible test cue" in log or
         "Sound suppressed: activity lacks audio focus" in log),        "No controller/touch-triggered audio event observed"
@@ -69,6 +71,22 @@ assert not (b>160 and g>70 and b>r*2 and b>g*1.25), (
 sample=picture.resize((96,72))
 colors=len(set(sample.getdata()))
 assert colors>=20, f"Blank/monochromatic VR output: only {colors} colors"
+# Cardboard's black lens mask and white gear glyphs can make a completely
+# empty framebuffer look colorful. Require actual variation INSIDE BOTH
+# stereoscopic eye centers, away from Android UI and lens boundaries.
+for eye, region in (
+    ("left",(.16,.30,.35,.68)),
+    ("right",(.65,.30,.84,.68))
+):
+    a,b,c,d=region
+    patch=picture.crop((int(a*picture.width),int(b*picture.height),
+                        int(c*picture.width),int(d*picture.height)))
+    # Dominant clear color (11,22,36) or a few compression-edge shades is
+    # not evidence of native world rendering.
+    buckets=set(patch.resize((80,80)).getdata())
+    assert len(buckets)>=12, (
+        f"{eye} eye is flat: only {len(buckets)} inner-scene colors")
+
 print("EMULATOR SMOKE PASS: five actual models decoded + GPU uploaded, "
       "controller/touch cue dispatched, Android stayed alive, "
       f"VR screenshot {picture.width}x{picture.height}, {colors} colors")
