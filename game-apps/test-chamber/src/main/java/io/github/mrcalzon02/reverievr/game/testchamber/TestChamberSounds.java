@@ -16,6 +16,7 @@ final class TestChamberSounds implements AutoCloseable {
     private final SoundPool pool;
     private final int[] ids=new int[FILES.length];
     private final boolean[] ready=new boolean[FILES.length];
+    private boolean announcedReady=false;
 
     TestChamberSounds(AssetManager assets)throws IOException{
         AudioAttributes attrs=new AudioAttributes.Builder()
@@ -29,9 +30,20 @@ final class TestChamberSounds implements AutoCloseable {
                 Log.e("TestChamberSound","Failed to decode cue "+id);
                 return;
             }
+            boolean all=true;
             synchronized(ready){
-                for(int i=0;i<ids.length;i++)
-                    if(ids[i]==id)ready[i]=true;
+                for(int i=0;i<ids.length;i++)if(ids[i]==id)ready[i]=true;
+                for(boolean loaded:ready)if(!loaded)all=false;
+                if(all&&!announcedReady)announcedReady=true;
+                else all=false;
+            }
+            // The beacon confirms audio actually initializes, not just that
+            // SoundPool objects were allocated. Never loop ambient noise.
+            if(all){
+                int stream=pool.play(ids[5],0.7f,0.7f,1,0,1.f);
+                Log.i("TestChamberSound",stream==0?
+                    "Beacon playback failed on pre-load completion":
+                    "Six game cues loaded; audible welcome beacon played");
             }
         });
         for(int i=0;i<FILES.length;i++){
@@ -63,6 +75,8 @@ final class TestChamberSounds implements AutoCloseable {
         if(stream==0)Log.w("TestChamberSound","Cue not playing: "+FILES[index]);
         else Log.i("TestChamberSound","Audible test cue "+FILES[index]);
     }
+    void pause(){pool.autoPause();}
+    void resume(){pool.autoResume();}
     @Override public void close(){
         pool.release();
     }

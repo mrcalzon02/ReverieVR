@@ -148,10 +148,12 @@ public final class GameVrActivity extends Activity
         super.onResume();
         immersive();
         synchronized(nativeLock){if(instance!=0L)nativeResume(instance);}
+        if(audio!=null)audio.resume();
         if(viewer!=null)viewer.onResume();
     }
     @Override protected void onPause(){
         if(viewer!=null)viewer.onPause();
+        if(audio!=null)audio.pause();
         synchronized(nativeLock){if(instance!=0L)nativePause(instance);}
         super.onPause();
     }
