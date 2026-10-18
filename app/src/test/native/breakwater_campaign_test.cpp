@@ -718,21 +718,32 @@ int main() {
                 const auto mesh=sky(location,night);
                 const int plumes=location==1?3:location==2?1:0;
                 const size_t expected=static_cast<size_t>(
-                    (kSkySegments*kSkyBands*2+(night?8:12)*3+10+
+                    (kSkySegments*kSkyBands*2+kSkySegments+
+                     (night?8:12)*3+10+
                      (night?48:0)+plumes*2)*9);
                 assert(mesh.size()==expected);
                 assert(mesh==sky(location,night));
                 bool left=false,right=false,frontSeen=false,backSeen=false;
+                size_t apexVertices=0;
                 for(size_t i=0;i<mesh.size();i+=3) {
                     const float x=mesh[i],y=mesh[i+1],z=mesh[i+2];
                     assert(std::isfinite(x) && std::isfinite(y) &&
                            std::isfinite(z));
-                    assert(y>=-4.001f && y<=17.001f);
+                    assert(y>=-4.001f && y<=40.001f);
                     const float radius=std::sqrt(x*x+z*z);
-                    assert(radius>24.0f && radius<27.5f);
+                    if(std::abs(y-40.0f)<.001f) {
+                        // The closed zenith cone uses one exact center
+                        // vertex per sky sector, above the prior 17m ring.
+                        assert(radius<.001f);
+                        ++apexVertices;
+                    } else {
+                        assert(y<=17.001f);
+                        assert(radius>24.0f && radius<27.5f);
+                    }
                     left|=x< -20.0f;right|=x>20.0f;
                     frontSeen|=z< -20.0f;backSeen|=z>20.0f;
                 }
+                assert(apexVertices==static_cast<size_t>(kSkySegments));
                 assert(left && right && frontSeen && backSeen);
             }
         }
