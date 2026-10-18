@@ -16,14 +16,59 @@
 #include "breakwater_weapons.h"
 #include "breakwater_support_turret.h"
 #include "breakwater_checkpoint.h"
+#include "breakwater_beckenburg_mesh.h"
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <fstream>
+#include <iterator>
 #include <limits>
 #include <iostream>
 using namespace reverie::breakwater;
 
 int main() {
+    // Real purchased Beckenburg asset conversions must exist in the APK
+    // source tree, remain strict source geometry (no fallback primitives),
+    // and emit visible XYZRGB triangles at combat emplacement positions.
+    {
+        const unsigned expectedFaces[]={100u,184u,96u};
+        for(size_t n=0;n<imported::kAssetPaths.size();++n) {
+            std::string path="app/src/main/assets/";
+            path+=imported::kAssetPaths[n];
+            std::ifstream input(path,std::ios::binary);
+            assert(input.good());
+            const std::vector<uint8_t> bytes(
+                (std::istreambuf_iterator<char>(input)),
+                std::istreambuf_iterator<char>());
+            imported::Model model;
+            assert(model.Parse(bytes.data(),bytes.size()));
+            assert(model.triangles==expectedFaces[n]);
+            size_t drawn=0;
+            const size_t emit=model.Emit(2.1f,-1.01f,-1.43f,2.f,.2f,
+                [&](float x0,float y0,float z0,
+                    float x1,float y1,float z1,
+                    float x2,float y2,float z2,
+                    float red,float green,float blue) {
+                    ++drawn;
+                    for(float c : {x0,y0,z0,x1,y1,z1,x2,y2,z2,
+                                   red,green,blue})
+                        assert(std::isfinite(c));
+                    assert(red>=0.f&&red<=1.f);
+                    assert(green>=0.f&&green<=1.f);
+                    assert(blue>=0.f&&blue<=1.f);
+                });
+            assert(emit==expectedFaces[n]&&drawn==expectedFaces[n]);
+            assert(model.Emit(0.f,0.f,0.f,-1.f,0.f,
+                [&](auto...){assert(false);})==0u);
+            const std::vector<uint8_t> corrupt(bytes.begin(),bytes.end()-1);
+            imported::Model invalid;
+            assert(!invalid.Parse(corrupt.data(),corrupt.size()));
+            assert(!invalid.valid());
+            std::vector<uint8_t> badMagic=bytes;
+            badMagic[0]='X';
+            assert(!invalid.Parse(badMagic.data(),badMagic.size()));
+        }
+    }
     // Real shoreline cover must share geometry with physics, block only
     // lower/parabolic shots, take actual ammunition and disappear on death.
     {
