@@ -79,6 +79,9 @@ struct State {
     CombatInputLatch combat_input;
     PointerFocusGate pointer_focus;
     bool armory_page=false, sam_armed=false, ghost_on=false;
+    bool slot_picker=true;
+    uint8_t save_slot=0u;
+    bool slot_exists[3]={false,false,false};
     int menu_focus=-1;
     bool pointer_visible=false;
     float ghost_position[3]={}, shot_origin[3]={}, shot_gravity=0;
@@ -230,25 +233,32 @@ int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game,
     }
     return index;
 }
-bool SaveState(State *s) {
-    if(!ReverieNativeHostSupportsSaveV1(s->host))return false;
-    uint8_t bytes[Campaign::kSerializedSize]={};
-    if(!s->campaign.SerializeShop(bytes,sizeof(bytes)))return false;
-    return s->host->write_save(kCheckpointSlot,bytes,
-        static_cast<uint32_t>(sizeof(bytes)))==REVERIE_NATIVE_SAVE_OK;
-}
-void LoadState(State *s) {
-    if(!ReverieNativeHostSupportsSaveV1(s->host))return;
+bool ReadSlotState(State *s,uint8_t slot,Campaign *out) {
+    if(!s || !out || !ReverieNativeHostSupportsSaveV1(s->host) ||
+       !CheckpointSlot(slot))return false;
     uint8_t bytes[Campaign::kSerializedSize]={};
     uint32_t size=0;
-    const int32_t status=s->host->read_save(kCheckpointSlot,bytes,
+    const int32_t result=s->host->read_save(CheckpointSlot(slot),bytes,
         static_cast<uint32_t>(sizeof(bytes)),&size);
-    if(status==REVERIE_NATIVE_SAVE_NOT_FOUND || IsClearedCheckpoint(status,size))return;
-    if(status!=REVERIE_NATIVE_SAVE_OK || size!=sizeof(bytes) ||
-       !s->campaign.DeserializeShop(bytes,size)) {
-        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,"Breakwater",
-            "Save rejected; keeping fresh campaign instead of resetting partially.");
-    }
+    if(result!=REVERIE_NATIVE_SAVE_OK || size!=sizeof(bytes))return false;
+    Campaign snapshot;
+    if(!snapshot.DeserializeShop(bytes,size))return false;
+    *out=snapshot;
+    return true;
+}
+bool SaveState(State *s) {
+    if(!s || !ReverieNativeHostSupportsSaveV1(s->host))return false;
+    uint8_t bytes[Campaign::kSerializedSize]={};
+    if(!s->campaign.SerializeShop(bytes,sizeof(bytes)))return false;
+    const bool saved=s->host->write_save(CheckpointSlot(s->save_slot),bytes,
+        static_cast<uint32_t>(sizeof(bytes)))==REVERIE_NATIVE_SAVE_OK;
+    if(saved)s->slot_exists[s->save_slot]=true;
+    return saved;
+}
+void LoadState(State *s) {
+    Campaign snapshot;
+    if(ReadSlotState(s,s->save_slot,&snapshot))
+        s->campaign=snapshot;
 }
 void BallisticWaterImpact(State *s,const ReverieNativeInputV1 &input,
                           float gravity) {
