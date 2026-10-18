@@ -21,6 +21,7 @@
 #endif
 #if CLASSIC_GAME_KIND == 5
 #include "classic_chess_book.h"
+#include "classic_chess_sprite_atlas.h"
 #endif
 namespace {
 using namespace reverie::classics;
@@ -70,6 +71,10 @@ struct Module {
     int chessAnalyzedPly=-1;
     int chessPanelTab=0; // 0 = legal next move; 1 = indexed classical line
     bool chessPanelHover=false;
+    GLuint chessProgram=0,chessVbo=0,chessTexture=0;
+    GLint chessPos=-1,chessUv=-1,chessMvp=-1,chessSampler=-1;
+    bool chessReady=false;
+    std::vector<float> chessSprites;
 #endif
     GLuint program=0,vbo=0,staticVbo=0;
     GLint pos=-1,col=-1,mvp=-1;
@@ -133,10 +138,32 @@ void ChessPanelExample(Module *m,const std::string &name,float x,float y){
         ChessPanelLine(m,name.substr(14),x,y-.19f,14);
 }
 #endif
+
+#if CLASSIC_GAME_KIND == 5
+void AppendChessSprite(Module *m,int piece,float x,float y){
+    const int tile=reverie::chessart::TileForPiece(piece);
+    if(tile<0)return;
+    const float half=.151f,z=-2.918f;
+    const float l=x-half,r=x+half,t=y+half,b=y-half;
+    const float u0=(tile%6)*64.f/reverie::chessart::kWidth;
+    const float v0=(tile/6)*64.f/reverie::chessart::kHeight;
+    const float u1=u0+64.f/reverie::chessart::kWidth;
+    const float v1=v0+64.f/reverie::chessart::kHeight;
+    // Atlas is stored SVG top-first, so v0 belongs to the TOP of the quad.
+    const float vertices[]={
+        l,t,z,u0,v0, l,b,z,u0,v1, r,b,z,u1,v1,
+        l,t,z,u0,v0, r,b,z,u1,v1, r,t,z,u1,v0
+    };
+    m->chessSprites.insert(m->chessSprites.end(),vertices,vertices+30);
+}
+#endif
 void RebuildBoard(Module *m,bool fixed){
     m->staticPass=fixed;
     if(fixed)m->staticVertices.clear();
     else m->vertices.clear();
+#if CLASSIC_GAME_KIND == 5
+    if(!fixed)m->chessSprites.clear();
+#endif
     const reverie::boardgames::State &s=m->board;
     const int size=s.Size();
     const float gap=BoardSpacing(s);
@@ -185,15 +212,15 @@ void RebuildBoard(Module *m,bool fixed){
                      piece>0?.09f:.98f,piece>0?.12f:.98f,
                      piece>0?.13f:.93f);
             }else if(s.kind==reverie::boardgames::Kind::Chess){
-                // Ivory/ebony tokens with six genuinely distinct chess
-                // silhouettes. Never substitute P/N/B/R/Q/K text.
-                Disc(m,px,py,.129f,-2.949f,.06f,.09f,.11f);
-                Disc(m,px,py,.121f,-2.940f,
-                     piece>0?.94f:.10f,piece>0?.90f:.14f,
-                     piece>0?.78f:.19f);
-                reverie::classicart::ChessPiece(Emit(m),piece,px,py,.101f,
-                     piece>0?.08f:.96f,piece>0?.13f:.92f,
-                     piece>0?.17f:.78f);
+                // Opposite-valued backing keeps the source white and
+                // black Livius outlines legible on both square colors.
+                Disc(m,px,py,.148f,-2.949f,.60f,.49f,.29f);
+                Disc(m,px,py,.140f,-2.940f,
+                     piece>0?.085f:.93f,piece>0?.115f:.90f,
+                     piece>0?.15f:.78f);
+#if CLASSIC_GAME_KIND == 5
+                AppendChessSprite(m,piece,px,py);
+#endif
             }else{
                 // Checkers retain physical tokens and true crowned kings.
                 Disc(m,px,py,.125f,-2.947f,
@@ -491,6 +518,13 @@ void Rebuild(Module *m,bool fixed){
 #endif // CLASSIC_GAME_KIND == 6
 }
 void DestroyGl(Module *m){
+#if CLASSIC_GAME_KIND == 5
+    if(m->chessTexture)glDeleteTextures(1,&m->chessTexture);
+    if(m->chessVbo)glDeleteBuffers(1,&m->chessVbo);
+    if(m->chessProgram)glDeleteProgram(m->chessProgram);
+    m->chessTexture=m->chessVbo=m->chessProgram=0;
+    m->chessReady=false;
+#endif
     if(m->vbo)glDeleteBuffers(1,&m->vbo);
     if(m->staticVbo)glDeleteBuffers(1,&m->staticVbo);
     if(m->program)glDeleteProgram(m->program);
@@ -498,6 +532,63 @@ void DestroyGl(Module *m){
     m->staticCount=0;
     m->dirty=m->upload=true;
 }
+
+#if CLASSIC_GAME_KIND == 5
+bool CreateChessSprites(Module *m){
+    const char *vs=
+        "uniform mat4 u_Mvp;attribute vec3 a_Pos;attribute vec2 a_Uv;"
+        "varying vec2 v_Uv;void main(){v_Uv=a_Uv;"
+        "gl_Position=u_Mvp*vec4(a_Pos,1.);}";
+    const char *fs=
+        "precision mediump float;uniform sampler2D u_Tex;varying vec2 v_Uv;"
+        "void main(){vec4 pixel=texture2D(u_Tex,v_Uv);"
+        "if(pixel.a<0.02)discard;gl_FragColor=pixel;}";
+    const ReverieNativeGlAttributeBindingV1 bindings[]={
+        {0u,"a_Pos"},{1u,"a_Uv"}};
+    char diagnostic[256]={};
+    m->chessProgram=ReverieNativeBuildProgramDiagnosticV1(
+        vs,fs,bindings,2,diagnostic,sizeof(diagnostic));
+    if(!m->chessProgram){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+            "ClassicChessArt",diagnostic[0]?diagnostic:"Chess sprite shader failed");
+        return false;
+    }
+    m->chessPos=glGetAttribLocation(m->chessProgram,"a_Pos");
+    m->chessUv=glGetAttribLocation(m->chessProgram,"a_Uv");
+    m->chessMvp=glGetUniformLocation(m->chessProgram,"u_Mvp");
+    m->chessSampler=glGetUniformLocation(m->chessProgram,"u_Tex");
+    std::vector<uint8_t> pixels;
+    if(m->chessPos<0||m->chessUv<0||m->chessMvp<0||m->chessSampler<0||
+       !reverie::chessart::Decode(pixels)){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+            "ClassicChessArt","Atlas RLE decode or shader uniforms invalid");
+        return false;
+    }
+    GLint unpack=4;
+    glGetIntegerv(GL_UNPACK_ALIGNMENT,&unpack);
+    glGenBuffers(1,&m->chessVbo);
+    glGenTextures(1,&m->chessTexture);
+    if(!m->chessVbo||!m->chessTexture)return false;
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,m->chessTexture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE_ALPHA,
+        reverie::chessart::kWidth,reverie::chessart::kHeight,0,
+        GL_LUMINANCE_ALPHA,GL_UNSIGNED_BYTE,pixels.data());
+    glPixelStorei(GL_UNPACK_ALIGNMENT,unpack);
+    if(glGetError()!=GL_NO_ERROR){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+            "ClassicChessArt","Livius GLES2 atlas upload failed");
+        return false;
+    }
+    m->chessReady=true;
+    return true;
+}
+#endif
 void *Create(const ReverieNativeHostV1 *host){
     Module *m=new(std::nothrow) Module();
     if(m){
@@ -542,6 +633,9 @@ int32_t GlCreate(void *ptr){
     }
     bool ok=m->program&&m->vbo&&m->staticVbo&&
         m->pos>=0&&m->col>=0&&m->mvp>=0;
+#if CLASSIC_GAME_KIND == 5
+    if(ok)ok=CreateChessSprites(m);
+#endif
     if(ok){
         // Bake immutable primitives once per GL context, for both eyes.
         Rebuild(m,true);
@@ -806,6 +900,13 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
         glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(
             m->vertices.size()*sizeof(float)),m->vertices.data(),GL_DYNAMIC_DRAW);
         m->upload=false;
+#if CLASSIC_GAME_KIND == 5
+        glBindBuffer(GL_ARRAY_BUFFER,m->chessVbo);
+        glBufferData(GL_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(m->chessSprites.size()*sizeof(float)),
+            m->chessSprites.data(),GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER,m->vbo);
+#endif
     }
     glEnableVertexAttribArray(static_cast<GLuint>(m->pos));
     glEnableVertexAttribArray(static_cast<GLuint>(m->col));
@@ -823,6 +924,38 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
     };
     drawLayer(m->staticVbo,m->staticCount);
     drawLayer(m->vbo,static_cast<GLsizei>(m->vertices.size()/6));
+
+#if CLASSIC_GAME_KIND == 5
+    // One GPU atlas and one dynamic quad buffer for both stereo eyes.
+    if(m->chessReady && !m->chessSprites.empty()){
+        GLint srcRgb=GL_ONE,dstRgb=GL_ZERO,srcAlpha=GL_ONE,dstAlpha=GL_ZERO;
+        GLboolean depthWrite=GL_TRUE;
+        glGetIntegerv(GL_BLEND_SRC_RGB,&srcRgb);
+        glGetIntegerv(GL_BLEND_DST_RGB,&dstRgb);
+        glGetIntegerv(GL_BLEND_SRC_ALPHA,&srcAlpha);
+        glGetIntegerv(GL_BLEND_DST_ALPHA,&dstAlpha);
+        glGetBooleanv(GL_DEPTH_WRITEMASK,&depthWrite);
+        glDepthMask(GL_FALSE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glUseProgram(m->chessProgram);
+        glBindBuffer(GL_ARRAY_BUFFER,m->chessVbo);
+        glVertexAttribPointer(static_cast<GLuint>(m->chessPos),3,GL_FLOAT,
+            GL_FALSE,5*sizeof(float),reinterpret_cast<void*>(0));
+        glVertexAttribPointer(static_cast<GLuint>(m->chessUv),2,GL_FLOAT,
+            GL_FALSE,5*sizeof(float),reinterpret_cast<void*>(3*sizeof(float)));
+        glUniformMatrix4fv(m->chessMvp,1,GL_FALSE,vp);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,m->chessTexture);
+        glUniform1i(m->chessSampler,0);
+        glDrawArrays(GL_TRIANGLES,0,
+            static_cast<GLsizei>(m->chessSprites.size()/5));
+        glDepthMask(depthWrite);
+        glBlendFuncSeparate(static_cast<GLenum>(srcRgb),
+            static_cast<GLenum>(dstRgb),static_cast<GLenum>(srcAlpha),
+            static_cast<GLenum>(dstAlpha));
+    }
+#endif
     ReverieNativeGlAttribRestoreV1(&b);
     ReverieNativeGlAttribRestoreV1(&a);
     ReverieNativeGlStateRestoreV1(&prior);
