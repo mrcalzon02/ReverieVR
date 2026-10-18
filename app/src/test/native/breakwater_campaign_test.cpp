@@ -1074,17 +1074,24 @@ int main() {
             assert(std::isfinite(x0)&&std::isfinite(y0)&&std::isfinite(z0));
             assert(std::isfinite(x1)&&std::isfinite(y1)&&std::isfinite(z1));
             assert(std::isfinite(x2)&&std::isfinite(y2)&&std::isfinite(z2));
-            assert(x0>=-4.0f&&x0<=4.0f);
-            assert(x1>=-4.0f&&x1<=4.0f);
-            assert(x2>=-4.0f&&x2<=4.0f);
+            // The first 20 triangles are the gameplay beach and surf.
+            // The following four intentionally widen into each location's
+            // scenic shoulders, outside the traversable infantry lane.
+            const bool scenicShoulder=triangles>20&&triangles<=24;
+            const float reach=scenicShoulder?
+                (location==0?5.35f:location==1?4.85f:5.80f):4.0f;
+            const float zNear=scenicShoulder?-.71f:-.80f;
+            assert(x0>=-reach-.001f&&x0<=reach+.001f);
+            assert(x1>=-reach-.001f&&x1<=reach+.001f);
+            assert(x2>=-reach-.001f&&x2<=reach+.001f);
             assert(y0>=-1.10f&&y1>=-1.10f&&y2>=-1.10f);
-            assert(z0>=-2.25f&&z0<=-.80f);
-            assert(z1>=-2.25f&&z1<=-.80f);
-            assert(z2>=-2.25f&&z2<=-.80f);
+            assert(z0>=-2.25f&&z0<=zNear);
+            assert(z1>=-2.25f&&z1<=zNear);
+            assert(z2>=-2.25f&&z2<=zNear);
             assert(r>=0&&g>=0&&b>=0&&r<=1&&g<=1&&b<=1);
         };
         EmitCoastalTerrain(location,false,box,triangle);
-        const int expectedTriangles[]={38,25,28};
+        const int expectedTriangles[]={42,29,32};
         const int expectedBoxes[]={2,8,8};
         assert(triangles==expectedTriangles[location]);
         assert(boxes==expectedBoxes[location]);
