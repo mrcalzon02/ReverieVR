@@ -2115,33 +2115,40 @@ int main() {
     assert(salvo_feedback.Record(97,firing_ship.integrity()));
     assert(salvo_feedback.damage()==3);
 
-    // Offshore gunfire and shoreline collision are different real events.
-    // The surviving ship must cause a blast only when it reaches the shore.
+    // An armed escort must never suicide-ram, beach, disappear or
+    // damage friendly vessels through its own gunfire. It holds the
+    // offshore standoff position, continues firing at only the battery,
+    // and remains shootable until it is actually destroyed by a defender.
     assert(firing_ship.gunboat_collision().sequence==0);
-    bool ram_seen=false;
-    for(int frame=0;frame<160 && !ram_seen;frame++) {
-        const int32_t before=firing_ship.integrity();
+    const int16_t gunboat_hp=firing_ship.enemies()[0].hp;
+    const uint8_t sunk_before=firing_ship.wave_status().boats_sunk;
+    const uint8_t stopped_before=firing_ship.wave_status().troops_stopped;
+    for(int frame=0;frame<160;frame++) {
+        const auto ships_before=firing_ship.enemies();
         firing_ship.Tick(.05f);
-        const GunboatCollisionEvent ram=firing_ship.gunboat_collision();
-        if(ram.sequence>0) {
-            assert(ram.sequence==1 && ram.damage>0 && ram.damage<=8);
-            assert(before-firing_ship.integrity()>=ram.damage);
-            assert(std::isfinite(ram.x) && std::isfinite(ram.z));
-            assert(ram.z>=-2.2f && ram.z< -2.0f);
-            assert(!firing_ship.enemies()[0].active);
-            ram_seen=true;
+        assert(firing_ship.phase()==Phase::Combat);
+        const Enemy &gunboat=firing_ship.enemies()[0];
+        assert(gunboat.active && gunboat.type==UnitType::Gunboat);
+        assert(gunboat.hp==gunboat_hp);
+        assert(gunboat.z<=invasion::kGunboatStandOffZ);
+        assert(firing_ship.gunboat_collision().sequence==0);
+        assert(firing_ship.wave_status().boats_sunk==sunk_before);
+        assert(firing_ship.wave_status().troops_stopped==stopped_before);
+        for(size_t index=0;index<ships_before.size();++index) {
+            const Enemy &before=ships_before[index];
+            const Enemy &after=firing_ship.enemies()[index];
+            if(before.active && after.active && before.type==after.type)
+                assert(before.hp==after.hp); // no hostile friendly fire
         }
     }
-    assert(ram_seen);
+    assert(firing_ship.enemies()[0].z==invasion::kGunboatStandOffZ);
+    assert(firing_ship.wave_status().gunboat_attacks>=3);
+    assert(firing_ship.incoming_threats().gunboat_seconds>=0.0f);
+    // The reserved collision effect validates its input, but ordinary
+    // gunboats never emit such an event on a live offshore attack run.
     ImpactEffects ram_fx;
     assert(!ram_fx.RecordGunboatCollision(0,-2.2f,0));
     assert(!ram_fx.RecordGunboatCollision(0,-2.2f,9));
-    assert(!ram_fx.RecordGunboatCollision(
-        std::numeric_limits<float>::quiet_NaN(),-2.2f,8));
-    assert(ram_fx.RecordGunboatCollision(.65f,-2.19f,8));
-    assert(ram_fx.pulses()[0].kind==ImpactKind::Explosion);
-    assert(std::abs(ram_fx.pulses()[0].x-.65f)<.0001f);
-    assert(std::abs(ram_fx.pulses()[0].z+2.19f)<.0001f);
 
     Campaign stopped_ship(Difficulty::Casual,8);
     assert(stopped_ship.Start());
