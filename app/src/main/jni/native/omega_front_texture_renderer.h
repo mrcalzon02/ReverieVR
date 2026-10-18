@@ -19,6 +19,7 @@ enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  SharedGrass, SharedSand, SharedRock, SharedRoad,
                  SharedConcrete, SharedSteel,
                  SupplyCrate, MetalBarrel, LivingTree, DeadTree,
+                 AmmoBox, RelayMonitor,
                  HearthwellHull, MeridianHull, ScraplineHull,
                  LostNinthHull, IndependentHull,
                  RifleH, RifleR, EngineerH, EngineerR, SalvagerH, SalvagerR,
@@ -26,8 +27,9 @@ enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  RifleHAlt, RifleRAlt, EngineerHAlt, EngineerRAlt,
                  SalvagerHAlt, SalvagerRAlt, SentinelHAlt, SentinelRAlt,
                  LegionaryHAlt, LegionaryRAlt, Count };
-// Ground and environmental-prop sprites render beneath units and indicators.
-constexpr int kTerrainCount=17;
+// Ground then environmental props then combat units. Flat 2D sprite planes.
+constexpr int kGroundCount=13;
+constexpr int kTerrainCount=19;
 static const char *const kPaths[Count]={
     "native/omega-front/terrain/cracked_earth.png",
     "native/omega-front/terrain/ruined_concrete.png",
@@ -46,6 +48,8 @@ static const char *const kPaths[Count]={
     "native/omega-front/shared/metal_barrel.png",
     "native/omega-front/shared/living_tree.png",
     "native/omega-front/shared/dead_tree.png",
+    "native/omega-front/shared/ammo_box.png",
+    "native/omega-front/shared/relay_monitor.png",
     "native/omega-front/units/kenney/hearthwell_hull_north.png",
     "native/omega-front/units/kenney/meridian_hull_north.png",
     "native/omega-front/units/kenney/scrapline_hull_north.png",
@@ -188,8 +192,8 @@ private:
         // Copy their exact RGBA pixels to transparent 64x64 cell canvases
         // in memory at load time, never distort/stretch the original sprite.
         std::array<uint8_t,64u*64u*4u> cell{};
-        const unsigned left=(slot>=RifleH && image.width>44u)?
-                            10u:(64u-image.width)/2u;
+        // Center the visible art consistently at the same logical cell.
+        const unsigned left=(64u-image.width)/2u;
         const unsigned top=(64u-image.height)/2u;
         if(left+image.width>64u||top+image.height>64u)return false;
         for(unsigned y=0;y<image.height;++y){

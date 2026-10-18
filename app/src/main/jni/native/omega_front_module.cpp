@@ -121,6 +121,14 @@ void DrawMap(State *s){
              independent?.25f:sector->owner?.91f:.60f,
              independent?.90f:sector->owner?.32f:.64f,
              independent?.94f:sector->owner?.28f:.67f);
+        // Source-derived resource silhouettes on SURVEYED sectors only.
+        // Never reveal unsurveyed inventory, ownership or scouting results.
+        const int resource=sector->wreck_mass>0?omega_art::SupplyCrate:
+                           sector->ecology==game::Ecology::Eden && sector->food>0?
+                           omega_art::LivingTree:-1;
+        if(resource>=0)
+            s->sprites.Place(resource,x-span*.28f,y-span*.28f,
+                             span*.26f,span*.26f,kBoardZ+.008f);
     }
     const auto *target=f.sector(session.focused);
     if(target){
@@ -470,8 +478,9 @@ void Draw(State *s){
         Rect(s,px,py+kCell*.18f,kCell*.36f,kCell*.15f,
              -1.84f,.75f,.90f,.95f);
     center(5,12,px,py);
-    if(!s->sprites.Place(omega_art::SupplyCrate,px,py,
-                         kCell*.78f,kCell*.78f,kBoardZ+.006f))
+    // Live ammunition stock belongs at the existing supply socket.
+    if(!s->sprites.Place(omega_art::AmmoBox,px,py,
+                         kCell*.82f,kCell*.82f,kBoardZ+.006f))
         Rect(s,px,py,kCell*.78f,kCell*.72f,-1.85f,.65f,.44f,.15f);
     Line(s,px-kCell*.25f,py,px+kCell*.25f,py,kCell*.065f,-1.84f,.95f,.77f,.34f);
     // Mission marker is at the actual game-logic target; never an inert UI
@@ -480,10 +489,12 @@ void Draw(State *s){
     if(battle.mission()!=game::Mission::HoldPump){
         center(battle.objective_x(),battle.objective_y(),px,py);
         const bool orchard=battle.mission()==game::Mission::CaptureOrchard;
-        // The orchard objective uses an orthographic overhead render of
-        // the actual shared Retro Tree GLB, not a new AI illustration.
-        if(!orchard || !s->sprites.Place(omega_art::LivingTree,px,py,
-                                        kCell*.90f,kCell*.90f,kBoardZ+.007f)){
+        // The real campaign objective is either an orchard or enemy relay.
+        // The original PSX meshes were baked to overhead 2D sprite PNGs.
+        const int objectiveArt=orchard?omega_art::LivingTree:
+                               omega_art::RelayMonitor;
+        if(!s->sprites.Place(objectiveArt,px,py,kCell*.90f,
+                             kCell*.90f,kBoardZ+.007f)){
             Rect(s,px,py,kCell*.94f,kCell*.94f,-1.857f,
                  orchard?.91f:.65f,orchard?.81f:.48f,orchard?.25f:.95f);
             Rect(s,px,py,kCell*.58f,kCell*.58f,-1.854f,
@@ -772,16 +783,22 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
     const size_t total=s->mesh.size()/6u;
     if(s->session.view==game::FrontMode::Tactical){
         colored(0,s->base_vertices);
-        sprites(0,omega_art::kTerrainCount);
+        sprites(0,omega_art::kGroundCount);
+        // After ground, objective/cover overlays must not erase the real
+        // PSX props. Then draw actors over props, and UI over both.
         colored(s->base_vertices,s->unit_vertices);
+        sprites(omega_art::kGroundCount,omega_art::kTerrainCount);
         sprites(omega_art::kTerrainCount,omega_art::Count);
         colored(s->unit_vertices,total);
     }else{
         // Front map is the initial screen, not an unrelated all-geometry
         // placeholder. Preserve text, fog-of-war, selection and click zones.
         colored(0,s->base_vertices);
-        sprites(0,omega_art::kTerrainCount);
+        sprites(0,omega_art::kGroundCount);
         colored(s->base_vertices,total);
+        // Resource art sits in the surveyed sector corner, above terrain
+        // and below none of the central sector labels.
+        sprites(omega_art::kGroundCount,omega_art::kTerrainCount);
     }
     s->sprites.upload=false;
     glBlendFuncSeparate(src_rgb,dst_rgb,src_alpha,dst_alpha);

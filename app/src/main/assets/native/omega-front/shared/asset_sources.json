@@ -1,11 +1,11 @@
 {
-  "format_version": 1,
+  "format_version": 2,
   "master_index": "https://docs.google.com/document/d/18G144Qd0-L5rL7NdqxMykqkXaBHtu8-ytr_yYPol6rI/edit",
   "logical_cell": "one 64×64 PNG texture per 24×24 tactical-grid cell",
-  "production": "Six existing shared material PNGs plus four independent deterministic overhead projections of genuine shared GLBs. No generated sprite atlas, no synthetic concept sprites.",
+  "production": "Six existing shared 64x64 terrain materials and six independently baked 64x64 overhead projections of real PSX/Retro Tree GLBs. The original 3D sources remain in the shared asset library; tactics is 2D.",
   "rights": "Shared-owner license claims and purchase cover in-game use. Purchased full GLB source archives remain in Google Drive and are not replicated here; material transfer upstream pack identity has not been independently classified. No assertion that all sources are CC0.",
-  "scope": "Loaded by SpriteRenderer, selected in omega_front_module.cpp for strategic ecology, tactical ground, and occupied gameplay objectives. Unit art remains the committed Kenney source.",
-  "verification": "Verified source PNG dimensions (all 64x64) and SHA-256 against source transfer, 10 Git binary blobs and runtime code references. APK/GLES2 Galaxy S9 render is not yet verified.",
+  "scope": "All 12 PNGs are loaded in the GLES2 SpriteRenderer and selected by omega_front_module.cpp for strategic terrain, surveyed sector resources, tactical ground, physical objectives, ammo supply, and rubble vegetation.",
+  "verification": "Original 64x64 dimensions and SHA-256 checked for new PSX-derived PNGs; Git PNG blobs and references verified on main after commit. Device APK/gameplay verification remains outstanding.",
   "assets": [
     {
       "name": "grass",
@@ -138,7 +138,41 @@
       "runtime_path": "app/src/main/assets/native/omega-front/shared/dead_tree.png",
       "width": 64,
       "height": 64
+    },
+    {
+      "name": "ammo_box",
+      "sha": "cdd2800193aadb1ce80500df3c8d9e9756a90579",
+      "sha256": "fd4bc318a5da525263501606aeda2010df4a455c8a6065c26b8bb60a0c77cbd0",
+      "kind": "3d_overhead_derivative",
+      "use": "Live ammunition resupply at existing tactical supply socket",
+      "source": "PSX Mega Pack / Items & Weapons / ammo_box_1_1.glb",
+      "source_sha256": "e8dc7bd61dbc2e6983344368cb1907e147cca9c7f4b3f69408e4752987cd57ef",
+      "source_size": 262024,
+      "source_url": "https://drive.google.com/file/d/16mgN5zGML6wk7vVmqyH6s9peijXW2Auw/view",
+      "baked_png_url": "https://drive.google.com/file/d/14KOAA0UFJuxHxZrDx337Gf5NU2a_iwVl/view",
+      "license": "Owner-purchased PSX Mega Pack commercial-use license",
+      "rendering": "offline orthographic triangle rasterizer 128x128 supersampled to 64x64 RGBA; no 3D runtime mesh",
+      "runtime_path": "app/src/main/assets/native/omega-front/shared/ammo_box.png",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "name": "relay_monitor",
+      "sha": "1b0114866723bcef84e64eaf9f8a20225602130c",
+      "sha256": "6221909be9a3aed99b084061bad7209cb1a101678ec8003a4c6014cc6d7baa4a",
+      "kind": "3d_overhead_derivative",
+      "use": "Disable Relay mission artwork anchored to the battle's objective coordinates",
+      "source": "PSX Mega Pack / Electronics & Misc / monitoring_screen_mp_1.glb",
+      "source_sha256": "5027390e7d005b5a9767b24618a38a30bab6aa535fd1319ac67ae5d109a89097",
+      "source_size": 285236,
+      "source_url": "https://drive.google.com/file/d/16CTPPAgPvbevkfD2pgF3PEoBX_TV3511/view",
+      "baked_png_url": "https://drive.google.com/file/d/1sCZvo-PdYKdK0zRdmW9wlm0mqyOY-VTF/view",
+      "license": "Owner-purchased PSX Mega Pack commercial-use license",
+      "rendering": "offline orthographic triangle rasterizer 128x128 supersampled to 64x64 RGBA; no 3D runtime mesh",
+      "runtime_path": "app/src/main/assets/native/omega-front/shared/relay_monitor.png",
+      "width": 64,
+      "height": 64
     }
   ],
-  "rendering_contract": "Omega Front combat is exclusively a 2D 24x24 tactical board. The shared PSX GLBs are used only as sources for deterministic, pre-rendered overhead PNGs. Never spawn 3D combat scenes, world geometry or 3D collisions. A separate optional VR management room/table may display this flat board, without changing the tactics renderer."
+  "rendering_contract": "Strict 2D tactics (24x24 fixed grid), 2D combat units and 2D overhead sprites. 3D belongs only to the optional separate VR management room/table, never to combat simulation."
 }
