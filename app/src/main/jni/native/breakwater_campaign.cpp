@@ -317,8 +317,17 @@ void Campaign::Land(Enemy &e) {
     // Armor is created ONLY on a successful, live landing; sinking the
     // landing craft beforehand destroys both its infantry and vehicle.
     const uint8_t vehicles=invasion::VehicleCargo(e.type,e.carries_armor);
-    for(uint8_t n=0;n<vehicles && armor_spawn_cursor_<armor_.size();++n) {
-        ArmoredVehicle &vehicle=armor_[armor_spawn_cursor_++];
+    for(uint8_t n=0;n<vehicles;++n) {
+        // An armored landing may reuse a destroyed vehicle's retired slot.
+        // Living vehicles are never displaced to make room for later waves.
+        size_t slot=armor_.size();
+        for(size_t i=0;i<armor_spawn_cursor_;++i)
+            if(!armor_[i].active) {slot=i;break;}
+        if(slot==armor_.size()) {
+            if(armor_spawn_cursor_>=armor_.size())break;
+            slot=armor_spawn_cursor_++;
+        }
+        ArmoredVehicle &vehicle=armor_[slot];
         const float offset=vehicles==2u?(n==0u?-.43f:.43f):0.0f;
         vehicle={std::max(-3.1f,std::min(3.1f,e.x+offset)),
                  -2.23f,armor::kVehicleHp,true,1.8f+.45f*n};
