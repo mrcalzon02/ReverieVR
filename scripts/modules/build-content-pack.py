@@ -55,6 +55,10 @@ def checked_assets(directory, namespace):
                 raise ValueError("Invalid triangle count: " + relative)
             if len(data) != 16 + vertices * 40 + 256 * 256 * 2:
                 raise ValueError("Room mesh has wrong byte count: " + relative)
+        # Red Ledger's native renderer reads the approved Beckenburg
+        # flat directory, not top-level red-ledger/*.rlprop paths.
+        if namespace == "red-ledger" and f.suffix == ".rlprop":
+            relative = "beckenburg/" + relative
         items.append(("assets/native/" + namespace + "/" + relative, data))
     return items
 
