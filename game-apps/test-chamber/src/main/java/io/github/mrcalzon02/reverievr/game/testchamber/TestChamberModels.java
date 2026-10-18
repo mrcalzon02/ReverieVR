@@ -135,13 +135,13 @@ final class TestChamberModels {
                     if(!"image/png".equals(image.getString("mimeType")))
                         throw new IOException("Only owner-packaged PNG atlas supported");
                     JSONObject imageView=views.getJSONObject(image.getInt("bufferView"));
-                    int offset=imageView.optInt("byteOffset",0),
+                    int imageOffset=imageView.optInt("byteOffset",0),
                         length=imageView.getInt("byteLength");
-                    if(offset<0||length<=0||length>2*1024*1024||
-                       offset+length>binSize)
+                    if(imageOffset<0||length<=0||length>2*1024*1024||
+                       imageOffset+length>binSize)
                         throw new IOException("Invalid embedded PNG bounds");
                     Bitmap bitmap=BitmapFactory.decodeByteArray(bytes,
-                        binStart+offset,length);
+                        binStart+imageOffset,length);
                     if(bitmap==null||bitmap.getWidth()<1||bitmap.getHeight()<1||
                        bitmap.getWidth()>1024||bitmap.getHeight()>1024)
                         throw new IOException("Embedded PNG atlas decoder failure");
