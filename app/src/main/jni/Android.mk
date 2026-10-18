@@ -84,7 +84,7 @@ LOCAL_SRC_FILES := native/breakwater_module.cpp native/breakwater_campaign.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 # Candy-space flight campaign; single APK / no new runtime dependency.
