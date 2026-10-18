@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/test-chamber-emulator.yml'
       - 'scripts/modules/smoke-test-chamber-emulator.sh'
+      - 'scripts/modules/verify-companion-contract.py'
       - 'game-apps/test-chamber/**'
       - 'cardboard-adapter/build.gradle'
 
@@ -53,7 +54,7 @@ jobs:
           test -n "$APK"
           unzip -Z -1 "$APK" | grep -Fx 'lib/x86_64/libreverie_companion_test_chamber.so'
           unzip -Z -1 "$APK" | grep -Fx 'lib/x86_64/libcardboard_sdk_jni.so'
-          python3 scripts/modules/verify-companion-contract.py --apk "$APK"
+          python3 scripts/modules/verify-companion-contract.py --target emulator --apk "$APK"
           mkdir -p validation
           cp "$APK" validation/TestChamber-companion-emulator.apk
       - name: Install on Android 10 software/hardware virtual device
