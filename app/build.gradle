@@ -217,10 +217,13 @@ android {
         )
 
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a"
-            // The real ReverieVR hub, not a mock, runs on the Android CI AVD.
-            // This ABI is ONLY added when explicitly requested for tests.
-            if(project.hasProperty("companionEmulatorAbi")) abiFilters "x86_64"
+            // Emulator tests build ONLY x86-64; normal phone builds
+            // remain unchanged with both Galaxy S9 ARM architectures.
+            if(project.hasProperty("companionEmulatorAbi")) {
+                abiFilters "x86_64"
+            } else {
+                abiFilters "armeabi-v7a", "arm64-v8a"
+            }
         }
         externalNativeBuild {
             ndkBuild {
