@@ -433,6 +433,10 @@ public final class MainActivity extends Activity
             this::openBluetoothSettings
         );
 
+        // Game releases are independent of the ReverieVR APK updater.
+        Button gameModules=findViewById(R.id.manage_game_modules_button);
+        uiFeedback.bind(gameModules,()->startActivity(
+            new Intent(this,GameModulesActivity.class)));
         uiFeedback.bind(
             checkUpdateButton,
             () -> checkForUpdates(true)

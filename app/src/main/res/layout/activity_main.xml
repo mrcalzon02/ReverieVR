@@ -282,6 +282,14 @@
                 android:text="@string/auto_update_check_label" />
 
             <Button
+                android:id="@+id/manage_game_modules_button"
+                style="@style/ReverieSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Manage Game Modules" />
+
+            <Button
                 android:id="@+id/check_update_button"
                 style="@style/ReverieSecondaryButton"
                 android:layout_width="match_parent"
