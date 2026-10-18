@@ -32,8 +32,14 @@ inline float FlagshipEscortLane(float flagship_x) {
     const float lane=flagship_x+(flagship_x>=0.0f?-1.60f:1.60f);
     return lane<-2.60f?-2.60f:lane>2.60f?2.60f:lane;
 }
+// Gunboats are armed escorts, not disposable landing barges. Hold at
+// a genuine offshore firing station instead of ramming shore and
+// disappearing. This also keeps them targetable until the player sinks them.
+constexpr float kGunboatStandOffZ=-3.75f;
+static_assert(kGunboatStandOffZ < -2.20f,
+              "Gunboats must remain seaward of the landing line");
 // Big assault hulls reach the beach with their bows well ahead of
-// their world-space centers. Ordinary craft keep their original stop line.
+// their world-space centers. Ordinary troop craft keep their stop line.
 constexpr float BeachingZ(UnitType kind) {
     return kind==UnitType::ArmoredTransport?-3.40f:-2.20f;
 }
