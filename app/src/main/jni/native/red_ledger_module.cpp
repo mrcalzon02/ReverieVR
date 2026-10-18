@@ -1370,22 +1370,21 @@ int32_t InitializeGl(
         REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,model_report);
 
 
-    // Only the five curated furnishings are requested from the APK. Real
-    // triangles/material pixels are decoded once per GL-context lifecycle.
-    // A licensed, intentionally packaged prop is optional; never copy the
-    // original purchased archive into the public source tree.
+    // One GPU copy per unique curated Beckenburg interior model. Room
+    // instances share these buffers/textures; never upload per eye/frame.
+    // The private licensed mesh derivatives are optional APK assets.
     int curated_loaded=0;
     if(can_read_assets) {
         for(int n=0;n<curated::kCount;++n) {
-            const curated::Placement &spec=curated::kProps[n];
+            const curated::Asset &asset=curated::kAssets[n];
             uint32_t size=0u;
-            if(state->host->read_asset(spec.path,nullptr,0,&size)!=
+            if(state->host->read_asset(asset.path,nullptr,0,&size)!=
                     REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL ||
                size<16u+curated::kTextureBytes ||
                size>3u*1024u*1024u)continue;
             std::vector<uint8_t> file(size);
             uint32_t actual=0u;
-            if(state->host->read_asset(spec.path,file.data(),size,&actual)!=
+            if(state->host->read_asset(asset.path,file.data(),size,&actual)!=
                     REVERIE_NATIVE_SAVE_OK || actual!=size)continue;
             std::vector<float> geometry;
             const uint8_t *rgb565=nullptr;
@@ -1861,23 +1860,28 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
     }
 
 
-    // Additional furniture uses original Beckenburg mesh triangles, not
-    // placeholder blocks. One VBO/texture bind per placed optional prop,
-    // using the same MVP, z-buffer and GLES2 shader as the bar products.
+    // Actual Beckenburg modular room surfaces and furniture. Render the
+    // purchased geometry through the existing z-tested GLES2 material path.
+    // A single imported asset can be instanced across rooms and renovation
+    // tiers without repeated GL allocations or altered interaction targets.
     bool drew_curated=false;
     const int active_room=static_cast<int>(state->market.room());
-    for(int n=0;n<curated::kCount;++n) {
-        const curated::Placement &p=curated::kProps[n];
-        const ProductGlResource &r=state->curated_props[n];
-        if(p.room!=active_room||r.vbo==0||r.texture==0||
-           r.vertex_count<=0)continue;
+    const int walls_tier=state->renovations.tier(property::Walls);
+    const int floor_tier=state->renovations.tier(property::Floor);
+    const int ceiling_tier=state->renovations.tier(property::Ceiling);
+    const int seating_tier=state->renovations.tier(property::Seating);
+    for(const curated::Placement &p:curated::kPlacements) {
+        if(!curated::Visible(p,active_room,walls_tier,floor_tier,
+                             ceiling_tier,seating_tier))continue;
+        const ProductGlResource &r=state->curated_props[p.asset];
+        if(r.vbo==0||r.texture==0||r.vertex_count<=0)continue;
         if(!drew_curated) {
             glUniform1f(state->icon_mode_location,1.f);
             glUniform1f(state->flicker_location,flicker);
             drew_curated=true;
         }
         float model[16],mvp[16];
-        MakeTransform(model,p.x,p.y,p.z,p.scale,p.scale,p.scale);
+        curated::MakePlacementTransform(p,model);
         ReverieNativeMat4Multiply(mvp,vp,model);
         glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,mvp);
         glBindTexture(GL_TEXTURE_2D,r.texture);
@@ -1943,11 +1947,14 @@ void DrawRoom(
             DrawCube(state,view_projection,flicker,
                 .38f,.90f,-1.85f,.54f,.09f,.42f,
                 .78f,.69f,.45f,Material::Metal);
-        for(int i=0;i<state->renovations.tier(property::Seating);++i)
-            DrawCube(state,view_projection,flicker,
-                1.0f+static_cast<float>(i%3)*.34f,
-                -.75f,-1.70f-static_cast<float>(i/3)*.42f,
-                .23f,.27f,.25f,.42f,.28f,.20f,Material::Wood);
+        // Only use the original primitive stools if the licensed chair
+        // mesh is not packaged. Avoid rendering cuboids through new chairs.
+        if(state->curated_props[4].vertex_count<=0)
+            for(int i=0;i<state->renovations.tier(property::Seating);++i)
+                DrawCube(state,view_projection,flicker,
+                    1.0f+static_cast<float>(i%3)*.34f,
+                    -.75f,-1.70f-static_cast<float>(i/3)*.42f,
+                    .23f,.27f,.25f,.42f,.28f,.20f,Material::Wood);
     }
     if (state->market.room()!=trade::Room::Bar) {
         const bool stock=state->market.room()==trade::Room::Stockroom;
