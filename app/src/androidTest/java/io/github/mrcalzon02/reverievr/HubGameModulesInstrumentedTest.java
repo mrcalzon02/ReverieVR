@@ -106,6 +106,42 @@ public final class HubGameModulesInstrumentedTest {
         file.delete();
     }
 
+    @Test public void allRegisteredNativeGameLibrariesStartUpdateAndStop()
+        throws Exception{
+        assertTrue("Native C++ host failed to load",NativeModuleRuntime.isAvailable());
+        java.util.List<NativeModuleRuntime.Descriptor> discovered=
+            NativeModuleRuntime.listBuiltIns(true);
+        assertEquals("Native C++ catalog diverges from verified Java registry",
+            GameModuleRegistry.GAMES.length,discovered.size());
+        java.util.HashSet<String> found=new java.util.HashSet<>();
+        for(NativeModuleRuntime.Descriptor module:discovered){
+            assertNotNull("Unknown native game binary: "+module.id,
+                GameModuleRegistry.find(module.id));
+            assertTrue("Duplicate C++ game identity "+module.id,found.add(module.id));
+        }
+        File home=new File(context().getFilesDir(),"native-module-integration");
+        assertTrue(home.isDirectory()||home.mkdirs());
+        // Game state and extracted assets are isolated per ID. This probes
+        // genuine C++ create/resume/update/pause/destroy callbacks rather
+        // than simply checking whether ELF files exist in the APK.
+        try(NativeModuleRuntime runtime=new NativeModuleRuntime(
+            home,context().getAssets(),null,true)){
+            for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES){
+                assertTrue("JNI/C++ game launch FAILED: "+game.id+
+                    " cause="+runtime.getLastError(),runtime.start(game.id));
+                assertEquals("Wrong active game after launch "+game.id,
+                    game.id,runtime.getActiveModuleId());
+                runtime.update(NativeModuleRuntime.POINTER_NONE,null,null);
+                runtime.drainSoundCues();
+                runtime.pauseForLifecycle();
+                runtime.resumeForLifecycle();
+                runtime.stop();
+                assertFalse("Game remained active after stop: "+game.id,
+                    runtime.isRunning());
+            }
+        }
+    }
+
     @Test public void actualInstalledCompanionMustMatchHubSignerAndIdentity(){
         // CI installs both DEBUG APKS signed by the SAME Android debug key.
         // A missing companion is a failure, not a skipped assertion.
