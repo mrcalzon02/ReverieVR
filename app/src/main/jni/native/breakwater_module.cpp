@@ -859,8 +859,8 @@ void BuildScene(State *s) {
         const menu::Rect frame=menu::kDifficultyPanel;
         Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
               .075f,.105f,.13f);
-        Text(s,"BREAKWATER",0,1.34f,-2.97f,.078f,.97f,.87f,.60f);
-        Text(s,"SELECT DIFFICULTY",0,.74f,-2.97f,.059f,.83f,.88f,.83f);
+        Text(s,"BREAKWATER",0,1.36f,-2.97f,.062f,.97f,.87f,.60f);
+        Text(s,"SELECT DIFFICULTY",0,.98f,-2.97f,.052f,.83f,.88f,.83f);
         const char *choices[]={"CADET","REGULAR","VETERAN","SIEGE"};
         for(int n=0;n<4;n++) {
             const menu::Rect tile=menu::DifficultyCard(n);
@@ -874,17 +874,17 @@ void BuildScene(State *s) {
                  hover?1.f:.90f,hover?.99f:.92f,.76f);
         }
         const char *difficulty_hint=menu::DifficultyHint(s->menu_focus);
-        Text(s,difficulty_hint,0,.31f,-2.96f,
-             menu::FittedScale(difficulty_hint,5.65f,.045f),
+        Text(s,difficulty_hint,0,.64f,-2.96f,
+             menu::FittedScale(difficulty_hint,5.65f,.040f),
              .90f,.93f,.75f);
-        Text(s,"POINT AND SELECT",0,-.91f,-2.96f,.049f,.86f,.88f,.79f);
+        Text(s,"POINT AND SELECT",0,-.40f,-2.96f,.045f,.86f,.88f,.79f);
     } else if(game.phase()==Phase::Shop) {
         const menu::Rect frame=menu::kPanel;
         Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
               .065f,.095f,.12f);
-        Text(s,"BREAKWATER",0,1.46f,-2.97f,.069f,.95f,.84f,.59f);
-        Text(s,Campaign::Locations()[game.location()].name,0,1.16f,-2.97f,
-             .050f,.73f,.84f,.79f);
+        Text(s,"BREAKWATER",0,1.36f,-2.97f,.060f,.95f,.84f,.59f);
+        Text(s,Campaign::Locations()[game.location()].name,0,1.08f,-2.97f,
+             .042f,.73f,.84f,.79f);
         char header[50];
         std::snprintf(header,sizeof(header),"%s  D%u  W%u/%u  %d CR",
             night?"NIGHT":"DAY",static_cast<unsigned>(game.day()),
@@ -892,7 +892,7 @@ void BuildScene(State *s) {
             static_cast<unsigned>(game.waves_this_period()),
             game.credits());
         Text(s,header,0,menu::kShopStatusY,-2.97f,
-             menu::FittedScale(header,5.75f,.048f),.91f,.90f,.77f);
+             menu::FittedScale(header,5.75f,.040f),.91f,.90f,.77f);
         // Focus-dependent inspection and purchase eligibility are
         // shown as real vector text; no extra tabs or inert details panel.
         const int focused=s->menu_focus;
@@ -942,8 +942,8 @@ void BuildScene(State *s) {
             const char *title=s->armory_page?
                  (n==5?"SAM":WeaponFor(weapon).name):
                  (n==3?tier_label:labels[n]);
-            Text(s,title,x,y+.085f,-2.973f,
-                 menu::FittedScale(title,tile.width,.043f),
+            Text(s,title,x,y+.080f,-2.973f,
+                 menu::FittedScale(title,tile.width,.034f),
                  .97f,.94f,.76f);
             char amount[20];
             if(owned)std::snprintf(amount,sizeof(amount),
@@ -954,10 +954,10 @@ void BuildScene(State *s) {
                 static_cast<uint8_t>(n));
             if(icon!=SpriteId::Count)
                 AppendSprite(s->sprite_mesh,icon,
-                             x-.45f,y-.11f,-2.952f,.155f,.155f);
+                             x-.45f,y-.085f,-2.952f,.155f,.155f);
             const float amount_x=x+(icon!=SpriteId::Count?.095f:0.0f);
-            Text(s,amount,amount_x,y-.109f,-2.973f,
-                 menu::FittedScale(amount,tile.width-(icon!=SpriteId::Count?.22f:0.f),.041f),
+            Text(s,amount,amount_x,y-.085f,-2.973f,
+                 menu::FittedScale(amount,tile.width-(icon!=SpriteId::Count?.22f:0.f),.033f),
                  .89f,.93f,.87f);
         }
         for(int action=8;action<=9;++action) {
