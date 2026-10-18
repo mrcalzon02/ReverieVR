@@ -323,6 +323,25 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         return;
     }
+    if(s->round_summary) {
+        if(!edge || s->summary_requires_release)return;
+        float x=0.0f,y=0.0f;
+        const int action=AimAtPlane(input,kShopZ,&x,&y)>0.0f?
+            menu::HitDebrief(x,y):-1;
+        if(action<0) {
+            Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
+        }
+        SaveState(s);
+        s->round_summary=false;s->menu_focus=-1;
+        if(action==1 && !BeginActiveWave(s,true)) {
+            s->round_summary=true;
+            Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
+        }
+        Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        return;
+    }
     if(game.phase()==Phase::Briefing) {
         if(!edge)return;
         const int choice=DifficultyTarget(input);
@@ -1466,8 +1485,13 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             menu::HitSlot(x,y):-1;
     } else if(s->campaign.phase()==Phase::Briefing)
         next_focus=DifficultyTarget(copy);
-    else if(s->campaign.phase()==Phase::Shop)
-        next_focus=ShopTarget(copy,s->armory_page);
+    else if(s->campaign.phase()==Phase::Shop) {
+        if(s->round_summary) {
+            float x=0.0f,y=0.0f;
+            next_focus=AimAtPlane(copy,kShopZ,&x,&y)>0.0f?
+                menu::HitDebrief(x,y):-1;
+        } else next_focus=ShopTarget(copy,s->armory_page);
+    }
     if(next_focus!=s->menu_focus) {
         s->menu_focus=next_focus;
         s->scene_dirty=true;
@@ -1513,6 +1537,15 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                 completed==Phase::Victory?
                 REVERIE_NATIVE_SOUND_CAMPAIGN_VICTORY:
                 REVERIE_NATIVE_SOUND_BATTERY_LOST);
+            if(completed==Phase::Shop) {
+                s->round_summary=true;
+                s->summary_requires_release=true;
+                s->wave_credits_gained=std::max<int32_t>(
+                    0,s->campaign.credits()-s->wave_credits_before);
+                s->wave_hull_lost=std::max<int32_t>(
+                    0,s->wave_hull_before-s->campaign.integrity());
+                s->menu_focus=-1;
+            }
         }
         s->wrecks.RecordTransitions(enemies_before,s->campaign.enemies());
         // A real heavy beaching triggers one shoreline cue and splash,
@@ -1598,7 +1631,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             s->reload_ready_flash=.55f;
             Feedback(s,REVERIE_NATIVE_FEEDBACK_RELOAD_READY);
         }
-        if(s->campaign.phase()==Phase::Shop)SaveState(s);
+        // Save the acknowledged shop, not an unacknowledged score screen.
     }
     // Accessible controller-axis weapon cycling: one change per deflection.
     // A centered axis rearms it; holding a direction cannot spin weapons.
@@ -1628,8 +1661,11 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         Feedback(s,started_reload?REVERIE_NATIVE_FEEDBACK_RELOAD_START:
                   REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
-    // Release restores gun ownership; no held UI press can become gunfire.
-    if(!down)s->combat_input.Release();
+    // The firing press must be released before it can acknowledge results.
+    if(!down) {
+        s->combat_input.Release();
+        s->summary_requires_release=false;
+    }
     // Reload takes priority if both controls are pressed on the same frame.
     if(down && !started_reload)Interact(s,copy,!s->held);
     if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop &&
