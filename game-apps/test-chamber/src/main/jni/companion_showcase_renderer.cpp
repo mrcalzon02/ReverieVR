@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <utility>
 
 bool TestShowcase::Add(int id,const std::vector<float>&data,
                        int width,int height,const std::vector<uint32_t>&argb){
