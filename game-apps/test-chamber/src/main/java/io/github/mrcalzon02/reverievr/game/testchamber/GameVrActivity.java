@@ -171,35 +171,13 @@ public final class GameVrActivity extends Activity
         }
         super.onDestroy();
     }
-    private static final float[][] TARGETS={
-        {-2.25f,-1.15f,-1.92f},  // crate, wooden knock
-        {-1.17f,-1.02f,-2.08f},  // chair, select
-        { 1.35f,-0.85f,-2.42f},  // shelf, mechanism
-        { 0.00f,-1.05f,-2.05f},  // table, coins
-        { 2.20f,-0.45f,-2.90f}   // door, metal clang
-    };
-    private static int gazeTarget(float[] v){
-        int chosen=-1;float closest=0.23f*0.23f;
-        for(int i=0;i<TARGETS.length;i++){
-            float[] p=TARGETS[i];
-            // OpenGL column-major view matrix. Work in camera-space:
-            // head offsets and rotation are already in this matrix.
-            float x=v[0]*p[0]+v[4]*p[1]+v[8]*p[2]+v[12];
-            float y=v[1]*p[0]+v[5]*p[1]+v[9]*p[2]+v[13];
-            float z=v[2]*p[0]+v[6]*p[1]+v[10]*p[2]+v[14];
-            if(z>=-0.1f)continue;
-            float distance=(x*x+y*y)/(z*z);
-            if(distance<closest){closest=distance;chosen=i;}
-        }
-        return chosen;
-    }
     @Override public void onNewFrame(HeadTransform pose){
         long now=System.nanoTime();
         float seconds=previousFrameNanos==0L?0.f:
             Math.max(0.f,Math.min(.05f,(now-previousFrameNanos)*1.0e-9f));
         previousFrameNanos=now;
         pose.getHeadView(headView,0);
-        int target=gazeTarget(headView);
+        int target=TestChamberTargeting.pick(headView);
         focusedModel=target;
         synchronized(nativeLock){
             if(instance!=0L){

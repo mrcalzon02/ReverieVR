@@ -63,8 +63,7 @@ final class TestChamberSounds implements AutoCloseable {
     void playForFocus(int model){
         // A stable object -> cue mapping makes each gallery asset testable.
         // Empty space selects the general beacon (sixth effect).
-        final int index=model==0?1:model==1?0:model==2?4:
-            model==3?3:model==4?2:5;
+        final int index=TestChamberTargeting.cueFor(model);
         synchronized(ready){
             if(!ready[index]){
                 Log.w("TestChamberSound","Cue not loaded yet: "+FILES[index]);
