@@ -57,6 +57,8 @@ public final class VrActivity extends Activity
         "io.github.mrcalzon02.reverievr.REQUEST_DOS_PICKER";
     static final String EXTRA_REQUEST_UPDATE_CHECK =
         "io.github.mrcalzon02.reverievr.REQUEST_UPDATE_CHECK";
+    static final String EXTRA_REQUEST_GAME_MODULE_MANAGER =
+        "io.github.mrcalzon02.reverievr.REQUEST_GAME_MODULE_MANAGER";
     static final String EXTRA_REQUEST_BLUETOOTH_SETTINGS =
         "io.github.mrcalzon02.reverievr.REQUEST_BLUETOOTH_SETTINGS";
     static final String EXTRA_REQUEST_CONTROLLER_PAIRING =
@@ -1637,6 +1639,11 @@ public final class VrActivity extends Activity
         returnToPhonePicker(
             EXTRA_REQUEST_UPDATE_CHECK
         );
+    }
+
+    @Override
+    public void onGameModuleManagerRequested(){
+        returnToPhonePicker(EXTRA_REQUEST_GAME_MODULE_MANAGER);
     }
 
     @Override

@@ -912,6 +912,14 @@ public final class MainActivity extends Activity
                 }
 
                 if (data.getBooleanExtra(
+                        VrActivity.EXTRA_REQUEST_GAME_MODULE_MANAGER,
+                        false
+                    )) {
+                    startActivity(new Intent(this,GameModulesActivity.class));
+                    return;
+                }
+
+                if (data.getBooleanExtra(
                         VrActivity.EXTRA_REQUEST_BLUETOOTH_SETTINGS,
                         false
                     )) {

@@ -56,6 +56,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVideoPlaybackRequested();
         void onMediaSelectionRequested();
         void onDosImportRequested();
+        void onGameModuleManagerRequested();
         void onUpdateCheckRequested();
         void onBluetoothSettingsRequested();
         void onControllerPairingRequested();
@@ -175,6 +176,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final String INTERNAL_MUSIC_PLAYER_ID = "reverie-music-player";
     private static final String INTERNAL_TEXT_EDITOR_ID = "reverie-text-editor";
     private static final String INTERNAL_CONTROLLER_LAB_ID = "reverie-controller-lab";
+    private static final String INTERNAL_GAME_MODULE_MANAGER_ID = "reverie-game-module-manager";
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
     private static final int HOME_LEFT_PIXEL_RIGHT = 248;
@@ -766,6 +768,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 apps.add(entry);
             }
         }
+        // Native-game update management is always reachable from the first
+        // shelf page, even when no optional content is currently installed.
+        // Install permission/file selection happens on the phone screen.
+        games.add(0,new NativeModuleRuntime.Descriptor(
+            INTERNAL_GAME_MODULE_MANAGER_ID,"Manage Game Downloads / Updates"));
         apps.add(new NativeModuleRuntime.Descriptor(
             INTERNAL_MODEL_VIEWER_ID, "3D Model Viewer (OBJ)"));
         apps.add(new NativeModuleRuntime.Descriptor(
@@ -5650,6 +5657,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     mode = MODE_CONTROLLER;
                     hoveredButton = -1;
                     textureDirty = true;
+                    return;
+                }
+
+                if(module!=null&&INTERNAL_GAME_MODULE_MANAGER_ID.equals(module.id)){
+                    host.onGameModuleManagerRequested();
+                    hoveredButton=-1;
+                    textureDirty=true;
                     return;
                 }
 

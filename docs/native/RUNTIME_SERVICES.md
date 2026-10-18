@@ -1,3 +1,7 @@
+## Independent native game content manager VR handoff — 2026-10-17
+
+The native games shelf now includes a first-page **Manage Game Downloads / Updates** entry. It performs the established Stage B-to-Stage A result handoff (not a nested Android permission prompt inside the headset) and opens the compact `GameModulesActivity` on the phone. This route is available without network or optional game packs. Signed catalog status, local pack import, rollback, save-safe removal and separately verified companion APK installation are handled by the existing module manager. This is source integration only until the APK/Daydream selection, lifecycle and return-to-headset behavior are tested on the Galaxy S9.
+
 ## Downloaded data-package mounting (2026-10-17)
 
 `NativeModuleRuntime` supplies its selected game's `RvPackInstaller.activeAssets` immutable revision directory to `nativeCreate`. The host checks the expected private `/module-packs/<id>/releases/<rev>/assets` location, then performs a bounded read of the previously validated module-owned path; if the optional file is absent it falls back to Android AssetManager. This is an integrated content-resolution path, **not** a feature for independently downloaded native code. Source integration and JVM/host checks do not constitute APK/S9 acceptance.
