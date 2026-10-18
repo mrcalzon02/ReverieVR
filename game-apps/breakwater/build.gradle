@@ -1,0 +1,85 @@
+plugins { id "com.android.application" }
+
+// This is the full existing Breakwater C++ game in a separate Android app,
+// not a dormant slot in the hub. Source remains in the authoritative game tree.
+def keyPath=(project.findProperty("phoneTestKeystorePath") ?: "").toString()
+def storePass=(project.findProperty("phoneTestStorePassword") ?: "").toString()
+def keyAlias=(project.findProperty("phoneTestKeyAlias") ?: "").toString()
+def keyPass=(project.findProperty("phoneTestKeyPassword") ?: storePass).toString()
+def signerReady=!keyPath.isEmpty() && !storePass.isEmpty() &&
+    !keyAlias.isEmpty() && !keyPass.isEmpty() && file(keyPath).isFile()
+
+android {
+    namespace="io.github.mrcalzon02.reverievr.game.breakwater"
+    compileSdk=36
+    defaultConfig {
+        applicationId="io.github.mrcalzon02.reverievr.game.breakwater"
+        minSdk=26
+        targetSdk=36
+        versionCode=(project.findProperty("breakwaterVersionCode") ?: "1")
+            .toString().toInteger()
+        versionName=(project.findProperty("breakwaterVersionName") ?: "0.1.0")
+            .toString()
+        ndk {
+            if(project.hasProperty("companionEmulatorAbi"))
+                abiFilters "x86_64"
+            else abiFilters "armeabi-v7a","arm64-v8a"
+        }
+        externalNativeBuild {
+            ndkBuild { arguments("APP_PLATFORM=android-26","APP_STL=c++_static") }
+        }
+    }
+    signingConfigs {
+        if(signerReady){
+            publisher {
+                storeFile=file(keyPath)
+                storePassword=storePass
+                keyAlias=keyAlias
+                keyPassword=keyPass
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            debuggable=true
+            if(signerReady)signingConfig=signingConfigs.publisher
+        }
+        release {
+            minifyEnabled=false
+            if(signerReady)signingConfig=signingConfigs.publisher
+        }
+    }
+    // Only the three selected, already packaged Breakwater BWM1 meshes.
+    // Never drag the entire main hub asset library into a companion APK.
+    sourceSets {
+        main { assets.srcDirs += ["$buildDir/generated/breakwater-assets"] }
+    }
+    externalNativeBuild {
+        ndkBuild { path=file("src/main/jni/Android.mk") }
+    }
+    compileOptions {
+        sourceCompatibility=JavaVersion.VERSION_17
+        targetCompatibility=JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    implementation project(":cardboard")
+    implementation "com.google.protobuf:protobuf-javalite:3.19.4"
+}
+tasks.register("stageBreakwaterAssets",Copy){
+    from(rootProject.file("app/src/main/assets/native/breakwater"))
+    into("$buildDir/generated/breakwater-assets/native/breakwater")
+    include "**/*.bwm"
+}
+tasks.matching {it.name=="preBuild"}.configureEach{
+    dependsOn("stageBreakwaterAssets")
+}
+tasks.register("requireBreakwaterPublisherSigner"){
+    doLast {
+        if(!signerReady)throw new GradleException(
+            "Standalone Breakwater release requires the hub's signing identity")
+    }
+}
+tasks.matching {it.name=="assembleRelease"}.configureEach{
+    dependsOn("requireBreakwaterPublisherSigner")
+}

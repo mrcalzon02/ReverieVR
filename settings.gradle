@@ -21,3 +21,6 @@ include(":companion-test-chamber")
 project(":companion-test-chamber").projectDir = file("game-apps/test-chamber")
 include(":cardboard")
 project(":cardboard").projectDir = file("cardboard-adapter")
+
+include(":companion-breakwater")
+project(":companion-breakwater").projectDir = file("game-apps/breakwater")
