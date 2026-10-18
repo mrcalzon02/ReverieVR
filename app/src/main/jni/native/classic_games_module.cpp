@@ -22,6 +22,7 @@
 #if CLASSIC_GAME_KIND == 5
 #include "classic_chess_book.h"
 #include "classic_chess_sprite_atlas.h"
+#include "classic_chess_wood_atlas.h"
 #endif
 namespace {
 using namespace reverie::classics;
@@ -72,9 +73,11 @@ struct Module {
     int chessPanelTab=0; // 0 = legal next move; 1 = indexed classical line
     bool chessPanelHover=false;
     GLuint chessProgram=0,chessVbo=0,chessTexture=0;
+    GLuint chessBoardVbo=0,chessBoardTexture=0;
     GLint chessPos=-1,chessUv=-1,chessMvp=-1,chessSampler=-1;
     bool chessReady=false;
     std::vector<float> chessSprites;
+    std::vector<float> chessBoardSprites;
 #endif
     GLuint program=0,vbo=0,staticVbo=0;
     GLint pos=-1,col=-1,mvp=-1;
@@ -140,6 +143,19 @@ void ChessPanelExample(Module *m,const std::string &name,float x,float y){
 #endif
 
 #if CLASSIC_GAME_KIND == 5
+void AppendChessBoardSquare(Module *m,bool dark,float x,float y,float gap){
+    // A different licensed PSX wood tile for each alternating square.
+    // Rendered at chessboard depth, strictly behind pieces/highlights.
+    const float half=(gap-.020f)*.5f,z=-2.993f;
+    const float l=x-half,r=x+half,t=y+half,b=y-half;
+    const float u0=dark?.5f:0.f,u1=u0+.5f;
+    const float vertices[]={
+        l,t,z,u0,0, l,b,z,u0,1, r,b,z,u1,1,
+        l,t,z,u0,0, r,b,z,u1,1, r,t,z,u1,0
+    };
+    m->chessBoardSprites.insert(m->chessBoardSprites.end(),
+                                vertices,vertices+30);
+}
 void AppendChessSprite(Module *m,int piece,float x,float y){
     const int tile=reverie::chessart::TileForPiece(piece);
     if(tile<0)return;
@@ -162,7 +178,8 @@ void RebuildBoard(Module *m,bool fixed){
     if(fixed)m->staticVertices.clear();
     else m->vertices.clear();
 #if CLASSIC_GAME_KIND == 5
-    if(!fixed)m->chessSprites.clear();
+    if(fixed)m->chessBoardSprites.clear();
+    else m->chessSprites.clear();
 #endif
     const reverie::boardgames::State &s=m->board;
     const int size=s.Size();
@@ -191,6 +208,10 @@ void RebuildBoard(Module *m,bool fixed){
         }else if(fixed){
             Rect(m,px,py,gap-.008f,gap-.008f,-3.00f,
                  dark?.19f:.77f,dark?.32f:.80f,dark?.35f:.70f);
+#if CLASSIC_GAME_KIND == 5
+            if(s.kind==reverie::boardgames::Kind::Chess)
+                AppendChessBoardSquare(m,dark,px,py,gap);
+#endif
         }
         if(!fixed){
         int cell=y*size+x;
@@ -519,10 +540,13 @@ void Rebuild(Module *m,bool fixed){
 }
 void DestroyGl(Module *m){
 #if CLASSIC_GAME_KIND == 5
+    if(m->chessBoardTexture)glDeleteTextures(1,&m->chessBoardTexture);
+    if(m->chessBoardVbo)glDeleteBuffers(1,&m->chessBoardVbo);
     if(m->chessTexture)glDeleteTextures(1,&m->chessTexture);
     if(m->chessVbo)glDeleteBuffers(1,&m->chessVbo);
     if(m->chessProgram)glDeleteProgram(m->chessProgram);
     m->chessTexture=m->chessVbo=m->chessProgram=0;
+    m->chessBoardTexture=m->chessBoardVbo=0;
     m->chessReady=false;
 #endif
     if(m->vbo)glDeleteBuffers(1,&m->vbo);
@@ -585,6 +609,31 @@ bool CreateChessSprites(Module *m){
             "ClassicChessArt","Livius GLES2 atlas upload failed");
         return false;
     }
+    // Source-derived PSX wood lives in a separate, immutable RGB565 atlas.
+    // The existing chess shader handles both opaque RGB board material and
+    // alpha-masked Livius pieces without loading a raw purchased texture.
+    std::vector<uint16_t> wood;
+    if(!reverie::chesswood::Decode(wood)){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+            "ClassicChessArt","Licensed wood board atlas decode failed");
+        return false;
+    }
+    glGenBuffers(1,&m->chessBoardVbo);
+    glGenTextures(1,&m->chessBoardTexture);
+    if(!m->chessBoardVbo||!m->chessBoardTexture)return false;
+    glBindTexture(GL_TEXTURE_2D,m->chessBoardTexture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,
+        reverie::chesswood::kWidth,reverie::chesswood::kHeight,0,
+        GL_RGB,GL_UNSIGNED_SHORT_5_6_5,wood.data());
+    if(glGetError()!=GL_NO_ERROR){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+            "ClassicChessArt","Licensed wood GLES2 atlas upload failed");
+        return false;
+    }
     m->chessReady=true;
     return true;
 }
@@ -643,6 +692,12 @@ int32_t GlCreate(void *ptr){
         glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(
             m->staticVertices.size()*sizeof(float)),
             m->staticVertices.data(),GL_STATIC_DRAW);
+#if CLASSIC_GAME_KIND == 5
+        glBindBuffer(GL_ARRAY_BUFFER,m->chessBoardVbo);
+        glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(
+            m->chessBoardSprites.size()*sizeof(float)),
+            m->chessBoardSprites.data(),GL_STATIC_DRAW);
+#endif
         const GLenum error=glGetError();
         if(error!=GL_NO_ERROR){
             char detail[80];
@@ -923,6 +978,26 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
         glDrawArrays(GL_TRIANGLES,0,count);
     };
     drawLayer(m->staticVbo,m->staticCount);
+#if CLASSIC_GAME_KIND == 5
+    // Board must be rendered after the fixed backing but BEFORE highlights,
+    // control markers and pieces; its opaque RGB texture writes depth.
+    if(m->chessReady && !m->chessBoardSprites.empty()){
+        glUseProgram(m->chessProgram);
+        glBindBuffer(GL_ARRAY_BUFFER,m->chessBoardVbo);
+        glVertexAttribPointer(static_cast<GLuint>(m->chessPos),3,GL_FLOAT,
+            GL_FALSE,5*sizeof(float),reinterpret_cast<void*>(0));
+        glVertexAttribPointer(static_cast<GLuint>(m->chessUv),2,GL_FLOAT,
+            GL_FALSE,5*sizeof(float),reinterpret_cast<void*>(3*sizeof(float)));
+        glUniformMatrix4fv(m->chessMvp,1,GL_FALSE,vp);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,m->chessBoardTexture);
+        glUniform1i(m->chessSampler,0);
+        glDrawArrays(GL_TRIANGLES,0,
+            static_cast<GLsizei>(m->chessBoardSprites.size()/5));
+        glUseProgram(m->program);
+        glUniformMatrix4fv(m->mvp,1,GL_FALSE,vp);
+    }
+#endif
     drawLayer(m->vbo,static_cast<GLsizei>(m->vertices.size()/6));
 
 #if CLASSIC_GAME_KIND == 5
