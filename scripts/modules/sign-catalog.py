@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 
 RELEASE_PREFIX = "/mrcalzon02/ReverieVR/releases/download/"
 SHA_RE = re.compile(r"^[0-9a-f]{64}$")
-SEMVER_RE = re.compile(r"^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-z0-9.-]+)?$")
+SEMVER_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z0-9.-]+)?$")
 
 def call(*arguments):
     subprocess.run(["openssl",*map(str,arguments)],check=True)
