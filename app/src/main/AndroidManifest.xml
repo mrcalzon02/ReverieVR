@@ -42,6 +42,14 @@
         <package android:name="io.github.mrcalzon02.reverievr.game.gumballarmada" />
         <package android:name="io.github.mrcalzon02.reverievr.game.ministry" />
         <package android:name="io.github.mrcalzon02.reverievr.game.forwarddetachment" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.classicchess" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.classicgo" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.classiccheckers" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.classicpong" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.classicsnake" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.classicreversi" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.classicbreakout" />
+        <package android:name="io.github.mrcalzon02.reverievr.game.classicchutesladders" />
     </queries>
 
     <application

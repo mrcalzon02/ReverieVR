@@ -22,26 +22,12 @@ final class CompanionGameRegistry {
         Descriptor(String id,String pkg){gameId=id;packageName=pkg;}
         String activityName(){return packageName+".GameVrActivity";}
     }
-    private static final Descriptor[] KNOWN={
-        new Descriptor("between-deliveries-red-ledger",
-            "io.github.mrcalzon02.reverievr.game.redledger"),
-        new Descriptor("breakwater-battery",
-            "io.github.mrcalzon02.reverievr.game.breakwater"),
-        new Descriptor("omega-front",
-            "io.github.mrcalzon02.reverievr.game.omegafront"),
-        new Descriptor("gumball-armada",
-            "io.github.mrcalzon02.reverievr.game.gumballarmada"),
-        new Descriptor("ministry-lantern-desk",
-            "io.github.mrcalzon02.reverievr.game.ministry"),
-        new Descriptor("iron-sight-forward-detachment",
-            "io.github.mrcalzon02.reverievr.game.forwarddetachment")
-    };
     private CompanionGameRegistry(){}
 
     static Descriptor find(String gameId){
-        for(Descriptor entry:KNOWN)if(entry.gameId.equals(gameId))
-            return entry;
-        return null;
+        GameModuleRegistry.Entry entry=GameModuleRegistry.find(gameId);
+        return entry==null?null:
+            new Descriptor(entry.id,entry.companionPackage);
     }
 
     static Descriptor installed(Context context,String gameId){

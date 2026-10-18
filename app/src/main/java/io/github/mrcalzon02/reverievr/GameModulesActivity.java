@@ -21,17 +21,6 @@ import java.util.zip.ZipFile;
 /** Compact Stage A manager for independently downloaded game content. */
 public final class GameModulesActivity extends Activity {
     private static final int PICK_RVPACK=7312;
-    private static final String[] IDS={
-        "between-deliveries-red-ledger","breakwater-battery","omega-front",
-        "gumball-armada","ministry-lantern-desk",
-        "iron-sight-forward-detachment","classic-chess","classic-go",
-        "classic-checkers","classic-pong","classic-snake",
-        "classic-reversi","classic-breakout","classic-chutes-ladders"};
-    private static final String[] LABELS={
-        "Red Ledger","Breakwater Battery","Omega Front","Gumball Armada",
-        "Ministry of Intelligence","Forward Detachment","Chess","Go",
-        "Checkers","Pong","Snake","Reversi","Breakout","Chutes & Ladders"};
-
     private GameModuleUpdateService network;
     private CompanionGameApkInstaller apkInstaller;
     private RvPackInstaller store;
@@ -74,8 +63,8 @@ public final class GameModulesActivity extends Activity {
     }
     private void refreshRows(){
         rows.removeAllViews();
-        for(int i=0;i<IDS.length;++i){
-            final String id=IDS[i];
+        for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES){
+            final String id=game.id;
             File installed=store.activeAssets(id);
             String local=installed==null?"Built-in / no content pack":
                 "Content r"+installed.getParentFile().getName();
@@ -88,7 +77,7 @@ public final class GameModulesActivity extends Activity {
             LinearLayout row=new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
             TextView title=new TextView(this);
-            title.setText(LABELS[i]+"\n"+local);
+            title.setText(game.displayName+"\n"+local);
             row.addView(title,new LinearLayout.LayoutParams(0,-2,1));
             Button action=new Button(this);
             if(release!=null&& (installed==null ||

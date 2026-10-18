@@ -35,14 +35,8 @@ final class RvPackInstaller {
     }
 
     static String namespace(String id) {
-        if ("between-deliveries-red-ledger".equals(id)) return "red-ledger";
-        if ("breakwater-battery".equals(id)) return "breakwater";
-        if ("omega-front".equals(id)) return "omega-front";
-        if ("gumball-armada".equals(id)) return "gumball-armada";
-        if ("ministry-lantern-desk".equals(id)) return "lantern-desk";
-        if ("iron-sight-forward-detachment".equals(id)) return "forward-detachment";
-        if (id != null && id.matches("classic-[a-z0-9-]{2,48}")) return id;
-        return null;
+        GameModuleRegistry.Entry entry=GameModuleRegistry.find(id);
+        return entry==null?null:entry.contentNamespace;
     }
 
     static boolean allowedEntry(String id, String name, boolean directory) {
