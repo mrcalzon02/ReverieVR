@@ -314,10 +314,17 @@ bool Campaign::BeginWave() {
     phase_ = Phase::Combat;
     return true;
 }
-void Campaign::Land(Enemy &e) {
-    // Armor is created ONLY on a successful, live landing; sinking the
-    // landing craft beforehand destroys both its infantry and vehicle.
+bool Campaign::Land(Enemy &e) {
+    // Passengers are real active combatants, not disposable sprite cargo.
+    // Reserve ALL required slots before deploying ANYTHING. Otherwise a
+    // busy 30-boat wave made live boats disappear at the shore with no
+    // landed troopers, hits, or player gunfire.
+    if(!e.active)return false;
     const uint8_t vehicles=invasion::VehicleCargo(e.type,e.carries_armor);
+    size_t freeArmor=0u,freeInfantry=0u;
+    for(const ArmoredVehicle &car:armor_)if(!car.active)++freeArmor;
+    for(const Infantry &trooper:infantry_units_)if(!trooper.active)++freeInfantry;
+    if(freeArmor<vehicles || freeInfantry<e.passengers)return false;
     for(uint8_t n=0;n<vehicles;++n) {
         // An armored landing may reuse a destroyed vehicle's retired slot.
         // Living vehicles are never displaced to make room for later waves.
@@ -364,6 +371,7 @@ void Campaign::Land(Enemy &e) {
     infantry_ = static_cast<uint8_t>(infantry_ + deployed);
     wave_status_.troops_landed = static_cast<uint8_t>(
         wave_status_.troops_landed + deployed);
+    return true;
 }
 IncomingThreats Campaign::incoming_threats() const {
     IncomingThreats warning;
@@ -721,8 +729,8 @@ void Campaign::TickStep(float dt) {
     for (Enemy &e : enemies_) {
         if (!e.active) continue;
         if (e.type == UnitType::ArmoredTransport && e.landed) {
-            // Keep the 3D ramp open and vulnerable until cargo is released.
-            // A kill at the beach denies both cars and four soldiers.
+            // Unloading waits with the ramp open until *all* cargo can
+            // enter the bounded roster. The ship remains destructible.
             e.attack_timer=std::max(0.0f,e.attack_timer-dt);
             if(e.attack_timer<=0.0f)Land(e);
             continue;
@@ -804,7 +812,10 @@ void Campaign::TickStep(float dt) {
                 e.z=invasion::BeachingZ(e.type);
                 e.landed=true;
                 e.attack_timer=invasion::UnloadingSeconds(e.type);
-            } else Land(e);
+            } else {
+                e.z=invasion::BeachingZ(e.type);
+                Land(e); // if the roster is full, remain loaded and visible
+            }
         }
     }
     // Only armor that has been physically unloaded from a surviving
