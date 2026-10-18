@@ -96,6 +96,33 @@ def required(text,needle,message):
     if needle not in text:
         raise ValueError(message+": "+needle)
 
+def check_scene_transform_contract():
+    """Gaze hitboxes must use precisely the native GLES2 placement matrix."""
+    java=contents("game-apps/test-chamber/src/main/java/io/github/mrcalzon02/"
+                  "reverievr/game/testchamber/TestChamberTargeting.java")
+    renderer=contents("game-apps/test-chamber/src/main/jni/"
+                      "companion_showcase_renderer.cpp")
+    def extract(source, marker):
+        start=source.find(marker)
+        if start<0:
+            raise ValueError("Missing model placement table: "+marker)
+        end=source.find("};",start)
+        if end<0:
+            raise ValueError("Unterminated model placement table: "+marker)
+        segment=source[start:end]
+        rows=[]
+        for raw in re.findall(r"\\{\\s*([-+\\d.fF,\\s]+)\\s*\\}",segment):
+            fields=[x.strip().rstrip("fF") for x in raw.split(",") if x.strip()]
+            if len(fields)==4:
+                rows.append(tuple(float(x) for x in fields))
+        if len(rows)!=5:
+            raise ValueError("Expected five render/target transforms: "+marker)
+        return rows
+    gaze=extract(java,"TRANSFORMS={")
+    draw=extract(renderer,"locations[5][4]={")
+    if gaze!=draw:
+        raise ValueError("Java gaze bounds do not match native GLES2 placements")
+
 def check_source():
     settings=contents("settings.gradle")
     gradle=contents("game-apps/test-chamber/build.gradle")
@@ -129,6 +156,9 @@ def check_source():
     required(java,"new TestChamberSounds(","No packaged game sounds loaded")
     required(bridge,"showcase.Draw(","Stereo game mesh renderer not called")
     required(java,"TestChamberTargeting.pick(headView)","Gaze pointing not wired")
+    required(java,"TestChamberTargeting.includePrimitive(",
+             "Imported GLB geometry is not registered for gaze picking")
+    check_scene_transform_contract()
     required(java,"isActivationKey(","Gamepad input dispatch missing")
     required(java,"onGenericMotionEvent(","Bluetooth/controller pointer handling missing")
     required(java,"new TestChamberSounds(this,getAssets())",
