@@ -37,8 +37,12 @@ final class TestChamberSounds implements AutoCloseable {
         });
         for(int i=0;i<FILES.length;i++){
             try(AssetFileDescriptor asset=assets.openFd("sfx/"+FILES[i])){
-                ids[i]=pool.load(asset,1);
-                if(ids[i]==0)throw new IOException("SoundPool refused "+FILES[i]);
+                // A tiny WAV may finish decoding before load() returns.
+                // Serialize ID assignment with the onLoadComplete callback.
+                synchronized(ready){
+                    ids[i]=pool.load(asset,1);
+                    if(ids[i]==0)throw new IOException("SoundPool refused "+FILES[i]);
+                }
             }catch(IOException error){
                 pool.release();
                 throw error;
