@@ -19,7 +19,8 @@ NAMESPACES={
     for entry in json.loads(MATRIX.read_text("utf-8"))["games"]
 }
 
-EXTENSIONS=(".rlprop",".bwm",".png",".ogg",".wav",".mp3",".json",".rvdata",".atlas")
+OWNED_BAR_FBX=["owned_ashtray.fbx","owned_cigar.fbx","owned_cigar_box_open.fbx","owned_cigar_box_closed.fbx"]
+EXTENSIONS=(".rlprop",".bwm",".fbx",".png",".ogg",".wav",".mp3",".json",".rvdata",".atlas")
 
 def validate(path):
     if not path.is_file() or not 22<=path.stat().st_size<=64*1024*1024:
@@ -60,6 +61,15 @@ def validate(path):
             assets+=1
             data=z.read(entry)
             actual[name]={"bytes":len(data),"sha256":hashlib.sha256(data).hexdigest()}
+            if name.endswith(".fbx"):
+                if game!="between-deliveries-red-ledger" or name not in {
+                        "assets/native/red-ledger/models/"+leaf
+                        for leaf in OWNED_BAR_FBX}:
+                    raise ValueError("Unapproved owner bar FBX: "+name)
+                if not 100<=len(data)<=100000 or not data.startswith(
+                        b"Kaydara FBX Binary  ") or struct.unpack_from(
+                        "<I",data,23)[0]!=7400:
+                    raise ValueError("Invalid owner model FBX 7.4: "+name)
             if name.endswith(".bwm"):
                 if game!="breakwater-battery" or not name.startswith(
                         "assets/native/breakwater/beckenburg/"):
