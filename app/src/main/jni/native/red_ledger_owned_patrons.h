@@ -1,6 +1,6 @@
 #ifndef REVERIE_RED_LEDGER_OWNED_PATRONS_H
 #define REVERIE_RED_LEDGER_OWNED_PATRONS_H
-// Two real owner-authored civilian figures. Selected GLB source geometry,
+// REJECTED: previous character LODs failed visual inspection; none load.
 // decimated with UV seam preservation and 64px derived source JPEG palettes.
 // These RLBP *static poses* have no skin, no joints and NO animation.
 // Compatible with the existing optional patron interaction/hitbox.
@@ -10,8 +10,8 @@ namespace reverie { namespace redledger { namespace owned_patrons {
 constexpr size_t kCount=2u;
 enum Model : size_t {Gopnick=0u,PinkDress=1u};
 constexpr const char *kPaths[kCount]={
-    "native/red-ledger/beckenburg/patron_gopnick.rlprop",
-    "native/red-ledger/beckenburg/patron_pink_dress.rlprop"
+    "native/red-ledger/rejected-assets/never-shipped-gopnick.rlprop",
+    "native/red-ledger/rejected-assets/never-shipped-pink-dress.rlprop"
 };
 inline Model ForPatron(PatronKind kind) {
     // Consistent, deterministic variants; never infer actual NPC gender
