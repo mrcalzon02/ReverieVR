@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
 import java.io.*;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -38,6 +39,16 @@ final class CompanionGameApkInstaller implements AutoCloseable {
             activity.registerReceiver(receiver,filter,Context.RECEIVER_NOT_EXPORTED);
         else activity.registerReceiver(receiver,filter);
         registered=true;
+    }
+
+    // Every attempt gets its own DownloadManager destination. Android will
+    // not replace an existing destination on retry; fixed filenames made
+    // failed/abandoned updates permanently un-downloadable.
+    static String downloadFilename(String id,long revision){
+        if(GameModuleRegistry.find(id)==null||revision<1)
+            throw new IllegalArgumentException("Invalid game download identity");
+        return "reverie-game-"+id+"-r"+revision+"-"+
+            UUID.randomUUID().toString()+".apk";
     }
 
     synchronized void install(GameModuleCatalog.Verified catalog,
@@ -69,7 +80,7 @@ final class CompanionGameApkInstaller implements AutoCloseable {
             }
             return;
         }
-        String filename="reverie-game-"+release.id+"-r"+release.revision+".apk";
+        String filename=downloadFilename(release.id,release.revision);
         DownloadManager.Request request=new DownloadManager.Request(
             Uri.parse(release.url));
         request.setTitle("ReverieVR: "+release.id+" r"+release.revision);
@@ -102,15 +113,21 @@ final class CompanionGameApkInstaller implements AutoCloseable {
             }
             Uri uri=downloads.getUriForDownloadedFile(id);
             if(uri==null){
+                downloads.remove(id);
                 if(cb!=null)cb.result("Game APK download failed",false);
                 return;
             }
-            io.execute(()->verifyAndOffer(candidate,cb,uri));
+            try{
+                io.execute(()->verifyAndOffer(candidate,cb,uri,id));
+            }catch(java.util.concurrent.RejectedExecutionException cancelled){
+                downloads.remove(id);
+                if(cb!=null)cb.result("Game APK verification interrupted",false);
+            }
         }
     };
 
     private void verifyAndOffer(GameModuleCatalog.Release release,
-                                Callback cb,Uri uri){
+                                Callback cb,Uri uri,long downloadId){
         File temp=null;
         boolean handedToInstaller=false;
         try{
@@ -161,6 +178,10 @@ final class CompanionGameApkInstaller implements AutoCloseable {
             // Keep the exact verified inode available until Android has
             // consumed its URI grant; discard expired files after 48 hours.
             if(temp!=null&&!handedToInstaller)temp.delete();
+            // Android reads a separate private, verified copy through the
+            // controlled provider, so the untrusted DownloadManager file
+            // must not be retained after validation or failure.
+            downloads.remove(downloadId);
         }
     }
 
