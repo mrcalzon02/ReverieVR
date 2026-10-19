@@ -15,7 +15,8 @@ import shutil
 ROOT=Path(__file__).resolve().parents[2]
 TOOL_ROOT=Path(__file__).resolve().parent
 BREAKWATER=(
-    "ammo_box_mp_1.bwm","concrete_block_1.bwm","wooden_crate_1.bwm"
+    "ammo_box_mp_1.bwm","concrete_block_1.bwm","wooden_crate_1.bwm",
+    "owner_boat_rowboat.bwm"
 )
 OMEGA_SHARED=(
     "ammo_box.png","concrete.png","dead_tree.png","grass.png",
