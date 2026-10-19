@@ -19,6 +19,35 @@ public final class RvPackAssetValidatorTest {
             fail("Unsupported model version accepted");
         }catch(IOException expected){assertTrue(expected.getMessage().contains("layout"));}
     }
+    @Test public void rejectsNonfiniteAndInvalidTextureCoordinates()throws Exception{
+        File mesh=Files.createTempFile("mesh-invalid-floats",".rlprop").toFile();
+        byte[] bytes=new byte[16+3*40+256*256*2];
+        bytes[0]='R';bytes[1]='L';bytes[2]='B';bytes[3]='P';
+        bytes[4]=1;bytes[8]=3;bytes[13]=1;
+        java.nio.ByteBuffer values=java.nio.ByteBuffer.wrap(bytes)
+            .order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        // XYZ UV RGB are the first eight floats of each RLBP vertex.
+        values.putFloat(16,Float.NaN);
+        Files.write(mesh.toPath(),bytes);
+        try{
+            RvPackAssetValidator.verify("beckenburg/room.rlprop",mesh);
+            fail("Accepted a nonfinite position");
+        }catch(IOException expected){assertTrue(expected.getMessage().contains("Nonfinite"));}
+        values.putFloat(16,0.0f);
+        values.putFloat(16+3*4,1.25f);
+        Files.write(mesh.toPath(),bytes);
+        try{
+            RvPackAssetValidator.verify("beckenburg/room.rlprop",mesh);
+            fail("Accepted out of range UV");
+        }catch(IOException expected){assertTrue(expected.getMessage().contains("UV/color"));}
+        values.putFloat(16+3*4,0.5f);
+        values.putFloat(16+7*4,Float.POSITIVE_INFINITY);
+        Files.write(mesh.toPath(),bytes);
+        try{
+            RvPackAssetValidator.verify("beckenburg/room.rlprop",mesh);
+            fail("Accepted nonfinite RGB");
+        }catch(IOException expected){assertTrue(expected.getMessage().contains("Nonfinite"));}
+    }
     @Test public void validatesAuthenticBreakwaterMeshAndRejectsCorruption()
         throws Exception{
         File file=Files.createTempFile("beckenburg-game",".bwm").toFile();
