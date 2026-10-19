@@ -1,4 +1,4 @@
-## Standalone native test chamber APK (Phase 4 source target)
+## Independent native game packaging and deliveries
 
 The first independent native executable is now a real Gradle application module, **`:companion-test-chamber`**:
 
@@ -14,13 +14,13 @@ The first independent native executable is now a real Gradle application module,
 
 Avoid putting secrets into shared terminal history, CI output or git; supply the configured signer through secure local mechanisms where possible. Never rotate the hub signer to make a companion package install.
 
-Target app ID: `io.github.mrcalzon02.reverievr.game.testchamber`. The Gradle module builds the existing procedural Test Chamber `reverie_native_module_entry_v1` source plus a JNI adapter and Cardboard stereo Activity. Verify both ABI-specific ELF objects, Android manifest package, signature lineage, Daydream eye rendering, trigger, pause/resume and return-to-hub on a Galaxy S9. **Not yet compiled or tested on device in this session.** It is a separate test executable, not an updater hot-loading arbitrary native files.
+Target app ID: `io.github.mrcalzon02.reverievr.game.testchamber`. The Gradle module builds the existing procedural Test Chamber `reverie_native_module_entry_v1` source plus a JNI adapter and Cardboard stereo Activity. Verify both ABI-specific ELF objects, Android manifest package, signature lineage, Daydream eye rendering, trigger, pause/resume and return-to-hub on a Galaxy S9. **Both native companion APK families have passed build and certificate checks in GitHub Actions; a physical Galaxy S9 acceptance run is still required.** It is a separate test executable, not an updater hot-loading arbitrary native files.
 
 # Independent native game releases — operator tools
 
-**Current state (2026-10-17):** signed per-game catalog parser, bounded content importer, transactional asset resolver, Stage A manager, installed companion-package admission, and two local pack/signing tools exist in source. **No independent game release or companion APK has been published or device accepted.** Do not advertise these as finished S9 features until a working APK has been installed and rendered.
+**Current state (2026-10-18):** signed catalog verifier, bounded game downloads, private transactional asset installer and rollback, compact game manager, and independent Test Chamber and Breakwater APKs have passed CI build/admission tests. All 15 game IDs have verified content packager support; the real Breakwater model revision was read by its native game on Android. The public signed catalog still contains no independent game releases. Galaxy S9 stereoscopic/audio/controller testing is separate.
 
-No GitHub Actions are required or to be added. Continue on \`main\`.
+GitHub Actions is now explicitly authorized for emulator validation and signed companion-build artifacts; the release operator still verifies exact payloads and catalog signatures before publication. Continue on `main`.
 
 ## 1. Build one real Red Ledger data pack
 
@@ -84,10 +84,22 @@ Publish both exact signed catalog bytes on \`main\`; the app checks \`https://ra
 
 ## 4. Native C++ code releases
 
-The \`CompanionGameRegistry\` currently recognizes known package IDs and requires the installed game APK to have **the same Android signing certificate** as ReverieVR and an explicit exported \`GameVrActivity\`. It does not yet build, install, or prove a companion APK. The separate tiny Test Chamber VR companion remains a physical-device implementation gate: do not replace the bundled games or slim the main APK based solely on package discovery.
+The \`CompanionGameRegistry\` currently recognizes known package IDs and requires the installed game APK to have **the same Android signing certificate** as ReverieVR and an explicit exported \`GameVrActivity\`. Independent APKs exist for Test Chamber and Breakwater. The hub's actual Android emulator integration recognizes installed matching-signer companions; do not remove the bundled implementations until their physical-device lifecycle and update transitions are proved.
 
 Native code delivery should use Android Package Installer and user consent. A different Android package has a separate private data area and GLES context; save transfer, input/comfort parity and safe return to the hub must be tested explicitly. No downloaded writable \`.so\` execution workaround.
 
 ## 5. Verified technical limitations
 
 The current connected GitHub file tools can commit text source and metadata, but have not published the local binary \`.rvpack\` as a GitHub Release asset. The Android SDK/NDK and physical Galaxy S9 were unavailable in the authoring environment. Tests performed locally on the selected 14 converted models and the C++ path classifier are recorded separately. **Phases 5 and 6 may not remove any bundled game or reset saves until the companion APK and rollback gates pass.**
+
+## Verified release preflight and retry discipline
+
+For content updates, the canonical release tag is `module-<full-game-id>-v<version>` (for example, `module-omega-front-v0.1.0`). The embedded `module.json` must match the tag's registered game ID and semantic version. The game revision is independent of both the game-code Android `versionCode` and the hub version.
+
+For companion APKs, use the same canonical tag convention. The release preflight requires `aapt` and `apksigner` on the operator's PATH, verifies the exact registered Android application ID and `versionName`, and **requires** `--publisher-cert-sha256 <trusted-hub-certificate-fingerprint>` when invoking `publish-module-release.py`. Do not supply the SHA-256 of the APK file instead of the signing certificate. An APK for a game without an actual compiled companion target is refused.
+
+The publish tool first validates the artifact and release tag, then reconciles existing GitHub draft state, uploads without overwriting existing names, re-downloads and hashes the exact bytes, and publishes only on explicit `--publish`. Separately, `sign-catalog.py` rejects unregistered games, mismatched GitHub release tags, unbuilt companion packages, duplicate module revisions and non-increasing catalog revisions. Its ECDSA private key remains **offline**. The public catalog must not advertise an asset before that release is published and verified; the hub uses the signed catalog, not individual GitHub Actions artifacts.
+
+The Game Modules APK downloader now uses a unique destination per attempt (Android DownloadManager rejects an existing destination), verifies a private copy before invoking Android's package installer, and removes its downloaded staging file afterward. The Android installer still requires explicit user approval and matching signing identity. This prevents routine retries from getting stuck on an old APK filename or accumulating redundant 512 MB download files.
+
+Validation entry points: `ReverieVR all-game content package contracts` checks all 15 game identities, real native art packs, publisher preflight, catalog signing controls and rollback; `ReverieVR hub game acquisition integration` installs actual APKs on Android and checks module acquisition and native execution; `Breakwater Battery independent APK validation` verifies the signed standalone release. These are evidence of CI scope only; a successful Android emulator is not physical Daydream acceptance.
