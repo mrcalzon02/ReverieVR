@@ -52,8 +52,12 @@ final class RvPackInstaller {
         String p="assets/native/"+ns+"/";
         if (!name.startsWith(p)) return false;
         if(directory)return true;
-        return ("breakwater-battery".equals(id)&&name.endsWith(".bwm"))||
-            name.endsWith(".rlprop")||name.endsWith(".png")||
+        return ("breakwater-battery".equals(id)&&
+                name.startsWith("assets/native/breakwater/beckenburg/")&&
+                name.endsWith(".bwm"))||
+            ("between-deliveries-red-ledger".equals(id)&&
+                name.startsWith("assets/native/red-ledger/beckenburg/")&&
+                name.endsWith(".rlprop"))||name.endsWith(".png")||
             name.endsWith(".ogg")||name.endsWith(".wav")||
             name.endsWith(".mp3")||name.endsWith(".json")||
             name.endsWith(".rvdata")||name.endsWith(".atlas");
