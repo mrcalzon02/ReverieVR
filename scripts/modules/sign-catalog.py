@@ -16,6 +16,11 @@ from urllib.parse import urlsplit
 RELEASE_PREFIX = "/mrcalzon02/ReverieVR/releases/download/"
 SHA_RE = re.compile(r"^[0-9a-f]{64}$")
 SEMVER_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z0-9.-]+)?$")
+MATRIX=Path(__file__).resolve().parents[2]/"modules/game-identity-matrix.json"
+
+def registered_games():
+    return {record["id"]:record for record in
+            json.loads(MATRIX.read_text("utf-8"))["games"]}
 
 def call(*arguments):
     subprocess.run(["openssl",*map(str,arguments)],check=True)
@@ -74,8 +79,18 @@ def approved_release(entry):
     suffix=".rvpack" if entry["kind"]=="content" else ".apk"
     if not url.path.endswith(suffix):
         raise ValueError("Release URL type mismatch")
-    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{2,80}",entry["id"]):
-        raise ValueError("Unsafe module ID")
+    game=registered_games().get(entry["id"])
+    if game is None:
+        raise ValueError("Catalog contains an unregistered game ID")
+    if entry["kind"]=="companion-apk" and game["companion_build_target"] is None:
+        raise ValueError("Catalog advertises a game APK with no proven build target")
+    # Publisher and Android must agree on which immutable release owns each
+    # asset. A well-formed GitHub URL pointing to ANOTHER game is not enough.
+    remainder=url.path[len(RELEASE_PREFIX):]
+    pieces=remainder.split("/")
+    tag="module-"+entry["id"]+"-v"+entry["version"]
+    if len(pieces)!=2 or pieces[0]!=tag or not pieces[1]:
+        raise ValueError("Catalog URL names wrong game or version release tag")
     return entry
 
 def sign(source,catalog,signature,private):
@@ -89,7 +104,16 @@ def sign(source,catalog,signature,private):
     modules=proposed.get("modules")
     if not isinstance(modules,list) or len(modules)>128:
         raise ValueError("Invalid release list")
-    for entry in modules:approved_release(entry)
+    seen=set()
+    for entry in modules:
+        approved_release(entry)
+        key=(entry["id"],entry["kind"],entry["channel"],entry["revision"])
+        if key in seen:raise ValueError("Duplicate game release revision")
+        seen.add(key)
+    if catalog.exists():
+        previous=json.loads(catalog.read_text("utf-8"))
+        if proposed["catalog_revision"]<=int(previous.get("catalog_revision",0)):
+            raise ValueError("Catalog revision must exceed published local revision")
     # One immutable exact JSON byte sequence for the ECDSA signature.
     raw=(json.dumps(proposed,sort_keys=True,separators=(",",":"))+"\n").encode("utf-8")
     if len(raw)>256*1024:
