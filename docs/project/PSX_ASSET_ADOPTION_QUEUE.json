@@ -58,6 +58,20 @@
           "java": "10 exact-source asset-validator cases executed PASS",
           "git_hashes": "verified all 3 BWM source blob IDs, Python builder/verifier and Java validator source blob IDs"
         }
+      },
+      "runtime_composite": {
+        "source": "app/src/main/jni/native/breakwater_asset_composition.h",
+        "scene": "app/src/main/jni/native/breakwater_module.cpp",
+        "test": "app/src/test/native/breakwater_asset_composition_test.cpp",
+        "source_mesh_types": 3,
+        "placements": 11,
+        "turret_additional_placements": 1,
+        "emitted_source_triangles": {
+          "normal": 1344,
+          "turret": 1440
+        },
+        "status": "committed on main; exact-source C++17 compile/test PASS; not yet verified on Galaxy S9",
+        "constraint": "Composite mesh placements use original sampled texture colors, no primitive substitutes, static set dressing only, do not occupy central gun sightline or alter hostile collision/health"
       }
     },
     {
@@ -264,5 +278,42 @@
       "no Galaxy S9 APK render/audio/controls acceptance",
       "complete real Omega Front pack not locally produced in this session"
     ]
-  }
+  },
+  "synthesis_next_targets": [
+    {
+      "project": "breakwater-battery",
+      "priority": "P0",
+      "gap": "actual authored gunboat, landing craft and infantry model geometry",
+      "source_strategy": "search Beckenburg and owner-approved inventory for period-relevant original boat, character and weapon meshes; otherwise author new source geometry explicitly, not repurpose crates as vehicles",
+      "readiness": "requires exact appropriate licensed meshes or original authoring and Galaxy S9 runtime acceptance"
+    },
+    {
+      "project": "omega-front",
+      "priority": "P1",
+      "gap": "additional tactical unit silhouettes and terrain transitions",
+      "source_strategy": "derive overhead baked atlases and color-indexed variants from approved Kenney/CC0 geometries already used; preserve unit selection readability",
+      "readiness": "requires actual direct renderer registration and collision/selection verification"
+    },
+    {
+      "project": "between-deliveries-red-ledger",
+      "priority": "P0",
+      "gap": "real 14 private converted interiors in signed module content",
+      "source_strategy": "reuse the existing selected private RLBP derivatives; DO NOT fake replacements because private delivery is the blocker",
+      "readiness": "blocked on access to the approved converted files and signed release material"
+    },
+    {
+      "project": "beckenburg",
+      "priority": "P1",
+      "gap": "remaining ghost-hunting equipment physical tier silhouettes",
+      "source_strategy": "first exploit currently registered GLB tools/shelves/van props; synthesize bespoke higher-tier shells only when distinct source gaps documented",
+      "readiness": "review game equipment tier runtime geometry and network/view consistency"
+    },
+    {
+      "project": "test-chamber",
+      "priority": "P2",
+      "gap": "specific optional switch/lamp interaction gallery",
+      "source_strategy": "extend existing five-GLB / six-WAV companion gallery rather than replacing it",
+      "readiness": "existing gallery source-present; optional gallery additions require device testing"
+    }
+  ]
 }
