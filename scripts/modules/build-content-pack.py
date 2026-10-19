@@ -93,7 +93,7 @@ def zip_write(z, path, payload):
     info.external_attr = 0o100644 << 16
     z.writestr(info, payload, compresslevel=9)
 
-def build(module, source, output, revision, version):
+def build(module, source, output, revision, version, *, provenance=None):
     namespace = NAMESPACES.get(module)
     if namespace is None:
         raise ValueError("Module is not in the authoritative game registry")
@@ -110,8 +110,12 @@ def build(module, source, output, revision, version):
         "files": [{"path": p, "bytes": len(b), "sha256": sha(b)}
                   for p, b in assets]
     }
-    provenance = {"source": "Approved, owner-curated game assets",
-                  "game": module, "count": len(assets)}
+    if provenance is None:
+        provenance = {"source": "Approved, owner-curated game assets",
+                      "game": module, "count": len(assets)}
+    if not isinstance(provenance, dict) or provenance.get("game") != module or \
+       provenance.get("count") != len(assets):
+        raise ValueError("Provenance must bind the selected game and asset count")
     output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output, "w") as z:
         zip_write(z, "module.json",
