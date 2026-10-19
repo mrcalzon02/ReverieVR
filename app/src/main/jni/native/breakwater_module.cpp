@@ -861,10 +861,21 @@ void BuildScene(State *s) {
             Box(s,e.x,-.28f,e.z+.11f,.065f,.064f,.37f,.21f,.24f,.20f);
         }
     }
-    for(const ArmoredVehicle &vehicle:game.armored_vehicles())
-        EmitArmoredVehicleSilhouette(vehicle,
-            [s](auto... values){Box(s,values...);},
-            [s](auto... values){Triangle(s,values...);});
+    for(const ArmoredVehicle &vehicle:game.armored_vehicles()) {
+        if(!vehicle.active)continue;
+        // Real owner-authored APC geometry replaces the temporary primitive
+        // armor silhouette. Bound the displayed body to the *existing* hit
+        // sphere and retain the existing independent armor simulation.
+        if(s->beckenburg_models[imported::OwnerAPC].valid()) {
+            s->beckenburg_models[imported::OwnerAPC].Emit(
+                vehicle.x,-.74f,vehicle.z,1.f,1.57079632679f,
+                [s](auto... values){Triangle(s,values...);});
+        } else {
+            EmitArmoredVehicleSilhouette(vehicle,
+                [s](auto... values){Box(s,values...);},
+                [s](auto... values){Triangle(s,values...);});
+        }
+    }
     // A confirmed armored-gun shot flashes at the live vehicle's muzzle.
     if(s->armor_flash>0.0f)
         Box(s,s->armor_flash_x,-.53f,s->armor_flash_z+.75f,
