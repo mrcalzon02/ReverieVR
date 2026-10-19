@@ -427,14 +427,17 @@
     "red_ledger_import": {
       "selected_files": 6,
       "game_content_triangles": 13710,
-      "local_pack_sha256": "9729165a3ba9d260cf03babcd525bf40afd2d6c7a5d84b39e3390e043341c705",
-      "bytes": 431094,
+      "local_pack_sha256": "1423ed233a6745aefe72030c8e5e868bd43250d6bea498ae7242594c45dd1500",
+      "bytes": 431129,
       "packager": "scripts/modules/build-red-ledger-owned-pack.py",
       "verifier": "scripts/modules/verify-content-pack.py",
       "test": "scripts/modules/test_red_ledger_owned_pack.py",
       "signed": false,
       "device_accepted": false,
-      "install_mechanism": "Exact four FBX allowlisted in Java installer and Python pack validator. Original 14 private PSX room assets are NOT part of this six-file package; installers replace active game pack, so coordinate a complete merged revision when those private files exist before release."
+      "install_mechanism": "Exact four FBX allowlisted in Java installer and Python pack validator. Original 14 private PSX room assets are NOT part of this six-file package; installers replace active game pack, so coordinate a complete merged revision when those private files exist before release.",
+      "pack_merge_option": "scripts/modules/build-red-ledger-owned-pack.py --private-rooms <exact-private-14-model-directory> combines new six with all 14 existing room models for one full twenty-model revision; tested with synthetic fixture only.",
+      "pack_merge_status": "regression PASS using synthetic private room models; real private 14-model source absent; do not publish six-file replacement over an installed room pack",
+      "test_scope": "Host GCC/Clang real-source smoke PASS; Python four pack tests PASS, deterministic source packing; Java 17 six-source validation PASS; Android APK and VR acceptance not run."
     }
   }
 }
