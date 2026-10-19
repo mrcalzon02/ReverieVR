@@ -103,3 +103,28 @@ The publish tool first validates the artifact and release tag, then reconciles e
 The Game Modules APK downloader now uses a unique destination per attempt (Android DownloadManager rejects an existing destination), verifies a private copy before invoking Android's package installer, and removes its downloaded staging file afterward. The Android installer still requires explicit user approval and matching signing identity. This prevents routine retries from getting stuck on an old APK filename or accumulating redundant 512 MB download files.
 
 Validation entry points: `ReverieVR all-game content package contracts` checks all 15 game identities, real native art packs, publisher preflight, catalog signing controls and rollback; `ReverieVR hub game acquisition integration` installs actual APKs on Android and checks module acquisition and native execution; `Breakwater Battery independent APK validation` verifies the signed standalone release. These are evidence of CI scope only; a successful Android emulator is not physical Daydream acceptance.
+
+### Prepare the next catalog from a verified GitHub release
+
+After an operator-run `publish-module-release.py --publish` reports a fully read-back, accepted release, capture its JSON receipt outside the repository. The script now records the registered game ID, game version, revision, package type, source commit, SHA-256 and signed APK certificate validation. Never use a draft release, unverified CI download, or untrusted hand-written receipt as if published.
+
+```sh
+python3 scripts/modules/prepare-catalog-candidate.py \
+  --receipt /secure/release-receipts/breakwater-v0.1.0.json \
+  --output modules/catalog-source.json \
+  --channel testing --min-hub 0.1.0-dev
+
+# This creates ONLY an unsigned proposed catalog. The existing offline
+# key holder must sign and verify catalog-v1.json/catalog-v1.sig afterward.
+python3 scripts/modules/sign-catalog.py sign \
+  --source modules/catalog-source.json \
+  --catalog modules/catalog-v1.json \
+  --signature modules/catalog-v1.sig \
+  --private /secure/offline/reverie-module-publisher.pem
+python3 scripts/modules/sign-catalog.py verify \
+  --catalog modules/catalog-v1.json \
+  --signature modules/catalog-v1.sig \
+  --public-der app/src/main/assets/native/modules/catalog-key.der
+```
+
+The candidate utility verifies the previous catalog against the embedded public publisher key, refuses to overwrite an existing candidate, enforces strictly higher game and catalog revisions, and validates the constructed URL against the actual game package registry. The operator reviews the candidate before signing. **The catalog remains empty until an approved testing release has been uploaded, remotely verified, signed into the catalog, committed and independently observed.**
