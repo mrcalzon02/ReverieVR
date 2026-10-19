@@ -3,6 +3,9 @@
 #include <cassert>
 #include <cstdint>
 #include <vector>
+#include <fstream>
+#include <iterator>
+#include <string>
 using namespace reverie::breakwater;
 int main(){
     static_assert(dressing::kEmplacements.size()==11u);
@@ -29,4 +32,32 @@ int main(){
     drawn=0u;
     assert(dressing::Emit(models,true,4.f,-4.f,sink)==9u);
     assert(drawn==9u);
+    // Full-world scene acceptance uses the THREE ACTUAL committed mesh blobs,
+    // not just synthetic one-triangle fixtures. Tests run at repo root.
+    std::array<imported::Model,imported::kAssetPaths.size()> authentic{};
+    for(size_t i=0;i<authentic.size();++i){
+        std::ifstream file(std::string("app/src/main/assets/")+
+                           imported::kAssetPaths[i],std::ios::binary);
+        assert(file.is_open());
+        const std::vector<uint8_t> source{std::istreambuf_iterator<char>(file),
+                                          std::istreambuf_iterator<char>()};
+        assert(authentic[i].Parse(source.data(),source.size()));
+    }
+    assert(authentic[imported::Concrete].triangles==100u);
+    assert(authentic[imported::WoodenCrate].triangles==184u);
+    assert(authentic[imported::AmmoBox].triangles==96u);
+    bool finite=true;
+    drawn=0u;
+    const auto real=[&](auto... vertices){
+        ++drawn;
+        const std::array<float,sizeof...(vertices)> numbers{{
+            static_cast<float>(vertices)...
+        }};
+        for(float value:numbers)if(!std::isfinite(value))finite=false;
+    };
+    assert(dressing::Emit(authentic,false,4.f,-4.f,real)==1344u);
+    assert(drawn==1344u&&finite);
+    drawn=0u;
+    assert(dressing::Emit(authentic,true,4.f,-4.f,real)==1440u);
+    assert(drawn==1440u&&finite);
 }
