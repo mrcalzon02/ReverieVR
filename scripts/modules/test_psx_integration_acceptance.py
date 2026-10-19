@@ -51,7 +51,7 @@ class PSXIntegrationAcceptance(unittest.TestCase):
         for name,blob_sha in BWM.items():
             data=(source()/"beckenburg"/name).read_bytes()
             self.assertEqual(
-                hashlib.sha1(b"blob "+str(len(data)).encode()+b"\\0"+data).hexdigest(),
+                hashlib.sha1(b"blob "+str(len(data)).encode()+bytes([0])+data).hexdigest(),
                 blob_sha,
                 "Source mesh changed; re-review original PSX provenance and render")
             self.assertEqual(data[:4],b"BWM1")
