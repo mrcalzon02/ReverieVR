@@ -30,7 +30,7 @@
         "app/src/main/assets/native/breakwater/beckenburg/wooden_crate_1.bwm"
       ],
       "role": "Visible beach/fortification dressing and ally turret ammunition; verify actually drawn during daytime/nighttime and owned-turret scenes.",
-      "acceptance": "Confirm mesh-load path and in-scene draw call, camera visibility in 360-degree stereo, texture/material correctness, FPS on Galaxy S9; do not claim these models replace existing boats, soldiers, or combat vehicles."
+      "acceptance": "Native source readback verified on main: breakwater_module.cpp loads the three BWM1 assets at session initialization and emits their actual converted triangles during Combat, with an added ammo-box instance beside a purchased support turret. Remaining: APK asset readback, correct stereo visibility/lighting/placement and Galaxy S9 frame budget. Do not claim device rendering yet."
     },
     {
       "id": "VR-PSX-002",
@@ -67,7 +67,7 @@
       "source_family": "Owner-purchased PSX Mega Pack",
       "status": "authored",
       "role": "Real bar/stockroom/living fixtures, interaction and lighting, not replacements for 24 original Unreal SKU models.",
-      "acceptance": "Use existing scoped RLBP asset reader, ensure native/red-ledger/beckenburg route is accepted and package the private converted game-ready assets in the correct signed content pack; read back APK, then render and interact on headset."
+      "acceptance": "Native source readback verified: reverie_native_asset_scope.h already accepts native/red-ledger/beckenburg/*.rlprop and native_asset_scope_test.cpp exercises its scoping restrictions. Remaining: supply exact private converted model bytes through authorized signed game-content packaging, confirm HostReadAsset readback, RLBP decode, 14-model/25-placement live scene rendering, interaction and device acceptance. Do not regress source scoping or replace original 24 Unreal SKU models."
     },
     {
       "id": "VR-PSX-005",
