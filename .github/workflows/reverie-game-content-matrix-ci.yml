@@ -10,6 +10,9 @@ on:
       - 'scripts/modules/build-content-pack.py'
       - 'scripts/modules/verify-content-pack.py'
       - 'scripts/modules/verify-game-identity-matrix.py'
+      - 'scripts/modules/release-package-identity.py'
+      - 'scripts/modules/publish-module-release.py'
+      - 'scripts/modules/test_release_package_identity.py'
       - 'scripts/modules/test_all_game_content_packages.py'
       - 'scripts/modules/test-native-asset-scope.cpp'
       - 'app/src/main/jni/native/reverie_native_asset_scope.h'
@@ -98,6 +101,8 @@ jobs:
           PY
       - name: Seal genuine multi-game offline test packages
         run: sha256sum validation/*.rvpack > validation/SHA256.txt
+      - name: Check release-to-game ID version and publisher certificate preflight
+        run: python3 -m unittest discover -s scripts/modules -p 'test_release_package_identity.py' -v
       - name: Test prior release and ZIP integrity contracts
         run: |
           python3 -m unittest discover -s scripts/modules -p 'test_verify_content_pack.py' -v
