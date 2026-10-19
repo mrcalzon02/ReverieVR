@@ -437,7 +437,9 @@
       "install_mechanism": "Exact four FBX allowlisted in Java installer and Python pack validator. Original 14 private PSX room assets are NOT part of this six-file package; installers replace active game pack, so coordinate a complete merged revision when those private files exist before release.",
       "pack_merge_option": "scripts/modules/build-red-ledger-owned-pack.py --private-rooms <exact-private-14-model-directory> combines new six with all 14 existing room models for one full twenty-model revision; tested with synthetic fixture only.",
       "pack_merge_status": "regression PASS using synthetic private room models; real private 14-model source absent; do not publish six-file replacement over an installed room pack",
-      "test_scope": "Host GCC/Clang real-source smoke PASS; Python four pack tests PASS, deterministic source packing; Java 17 six-source validation PASS; Android APK and VR acceptance not run."
+      "test_scope": "Host GCC/Clang real-source smoke PASS; Python four pack tests PASS, deterministic source packing; Java 17 six-source validation PASS; Android APK and VR acceptance not run.",
+      "character_converter": "scripts/modules/convert-owned-red-ledger-patrons.py",
+      "character_source_rerun": "Both author-original GLBs rebuilt to exact checked-in RLBP SHA256 values using source-hash-locked numpy/trimesh/Pillow converter; gopnick cf4d3415f7e87d748c43513caf6f903203afc62af658d616be47ea197659aeb0 and pink 4e0fa322d3c8e9f4aef9c8d51cc7c0609f6fc6fe2d1aaaf98d70e32bd3a874de."
     }
   }
 }
