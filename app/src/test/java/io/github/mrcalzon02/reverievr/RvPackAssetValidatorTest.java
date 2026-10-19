@@ -74,6 +74,26 @@ public final class RvPackAssetValidatorTest {
             assertTrue(expected.getMessage().contains("coordinate"));
         }
     }
+    @Test public void validatesScopedOwnerBlenderModelAndRejectsVersion()
+        throws Exception {
+        File file=Files.createTempFile("owned-bar",".fbx").toFile();
+        byte[] bytes=new byte[100];
+        byte[] magic="Kaydara FBX Binary  ".getBytes(
+            java.nio.charset.StandardCharsets.US_ASCII);
+        System.arraycopy(magic,0,bytes,0,magic.length);
+        bytes[23]=(byte)0xE8;bytes[24]=(byte)0x1C; // FBX version 7400
+        Files.write(file.toPath(),bytes);
+        RvPackAssetValidator.verify(
+            "assets/native/red-ledger/models/owned_cigar.fbx",file);
+        bytes[0]=0;Files.write(file.toPath(),bytes);
+        try {
+            RvPackAssetValidator.verify(
+                "assets/native/red-ledger/models/owned_cigar.fbx",file);
+            fail("Corrupt selected Blender FBX accepted");
+        } catch(IOException expected){
+            assertTrue(expected.getMessage().contains("signature"));
+        }
+    }
     @Test public void rejectsTruncatedAsset()throws Exception{
         File file=Files.createTempFile("empty",".rlprop").toFile();
         try{RvPackAssetValidator.verify("empty.rlprop",file);fail("Empty room mesh");}
