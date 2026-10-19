@@ -57,7 +57,13 @@ final class RvPackInstaller {
                 name.endsWith(".bwm"))||
             ("between-deliveries-red-ledger".equals(id)&&
                 name.startsWith("assets/native/red-ledger/beckenburg/")&&
-                name.endsWith(".rlprop"))||name.endsWith(".png")||
+                name.endsWith(".rlprop"))||
+            ("between-deliveries-red-ledger".equals(id)&&(
+                name.equals("assets/native/red-ledger/models/owned_ashtray.fbx")||
+                name.equals("assets/native/red-ledger/models/owned_cigar.fbx")||
+                name.equals("assets/native/red-ledger/models/owned_cigar_box_open.fbx")||
+                name.equals("assets/native/red-ledger/models/owned_cigar_box_closed.fbx")))||
+            name.endsWith(".png")||
             name.endsWith(".ogg")||name.endsWith(".wav")||
             name.endsWith(".mp3")||name.endsWith(".json")||
             name.endsWith(".rvdata")||name.endsWith(".atlas");
