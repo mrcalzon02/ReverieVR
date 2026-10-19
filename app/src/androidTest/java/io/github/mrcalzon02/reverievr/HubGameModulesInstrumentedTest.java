@@ -206,6 +206,26 @@ public final class HubGameModulesInstrumentedTest {
         }
     }
 
+    @Test public void repeatedCompanionDownloadsUseUniquePrivateDestinations(){
+        String first=CompanionGameApkInstaller.downloadFilename(
+            "breakwater-battery",17);
+        String retry=CompanionGameApkInstaller.downloadFilename(
+            "breakwater-battery",17);
+        assertNotEquals("Retry would collide with a previous Android download",
+            first,retry);
+        assertTrue(first.startsWith("reverie-game-breakwater-battery-r17-"));
+        assertTrue(first.endsWith(".apk"));
+        assertFalse(first.contains("/"));
+        try{
+            CompanionGameApkInstaller.downloadFilename("unknown-game",1);
+            fail("Unregistered download game accepted");
+        }catch(IllegalArgumentException expected){}
+        try{
+            CompanionGameApkInstaller.downloadFilename("breakwater-battery",0);
+            fail("Invalid download version accepted");
+        }catch(IllegalArgumentException expected){}
+    }
+
     @Test public void actualInstalledCompanionMustMatchHubSignerAndIdentity(){
         // CI installs both DEBUG APKS signed by the SAME Android debug key.
         // A missing companion is a failure, not a skipped assertion.
