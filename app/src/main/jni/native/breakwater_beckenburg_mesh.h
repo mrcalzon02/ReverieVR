@@ -16,16 +16,17 @@ namespace reverie { namespace breakwater { namespace imported {
 // Each triangle stores three source vertices as signed 16-bit XYZ * 8192
 // plus its three corresponding sampled RGB texels. There are no pointers,
 // GPU resources, animations or endianness-sensitive structure casts.
-constexpr std::array<const char*,4> kAssetPaths={{
+constexpr std::array<const char*,5> kAssetPaths={{
     "native/breakwater/beckenburg/concrete_block_1.bwm",
     "native/breakwater/beckenburg/wooden_crate_1.bwm",
     "native/breakwater/beckenburg/ammo_box_mp_1.bwm",
-    "native/breakwater/beckenburg/owner_boat_rowboat.bwm"
+    "native/breakwater/beckenburg/owner_boat_rowboat.bwm",
+    "native/breakwater/beckenburg/owner_apc_armor.bwm"
 }};
 constexpr size_t kTriangleBytes=27u;
 constexpr uint32_t kMaxTriangles=2048u;
 constexpr uint32_t kMaxAssetBytes=8u+kMaxTriangles*kTriangleBytes;
-enum ModelKind : size_t { Concrete=0u, WoodenCrate=1u, AmmoBox=2u, OwnerRowboat=3u };
+enum ModelKind : size_t { Concrete=0u, WoodenCrate=1u, AmmoBox=2u, OwnerRowboat=3u, OwnerAPC=4u };
 constexpr uint32_t ReadU32(const uint8_t *data) {
     return static_cast<uint32_t>(data[0])|
            (static_cast<uint32_t>(data[1])<<8u)|
