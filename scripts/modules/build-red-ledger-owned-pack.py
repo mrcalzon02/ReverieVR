@@ -46,7 +46,12 @@ def tool(filename):
     spec.loader.exec_module(module)
     return module
 
-def build(output,revision,version):
+ROOMS=(
+    "switch","lamp_off","door","shelf","chair","wall","floor",
+    "window","crate","barrel","table","mattress","lamp_on","coffee_table"
+)
+
+def build(output,revision,version,private_rooms=None):
     root=ROOT/"app/src/main/assets/native/red-ledger"
     with tempfile.TemporaryDirectory(prefix="red-ledger-owner-curated-") as temp:
         stage=Path(temp)
@@ -60,32 +65,57 @@ def build(output,revision,version):
             target=stage/entry
             target.parent.mkdir(parents=True,exist_ok=True)
             shutil.copyfile(src,target)
+        additional=[]
+        if private_rooms is not None:
+            if not private_rooms.is_dir() or private_rooms.is_symlink():
+                raise ValueError("Original private room source must be a real directory")
+            discovered=list(private_rooms.rglob("*"))
+            selected={x.name for x in discovered if x.is_file()}
+            expected={name+".rlprop" for name in ROOMS}
+            if selected!=expected or any(x.is_symlink() for x in discovered):
+                raise ValueError("Private room source is not the 14-model complete set")
+            for name in sorted(expected):
+                chosen=private_rooms/name
+                if not chosen.is_file() or chosen.is_symlink():
+                    raise ValueError("Missing private room source: "+name)
+                target=stage/"beckenburg"/name
+                target.parent.mkdir(parents=True,exist_ok=True)
+                shutil.copyfile(chosen,target)
+                additional.append({"path":"beckenburg/"+name,
+                                   "sha256":hashlib.sha256(target.read_bytes()).hexdigest()})
         provenance={
             "schema":1,"game":GAME,"count":len(FILES),
             "rights":"Owner-created, commercial game inclusion approved. Raw source ZIP stays in private Beckenburg Drive.",
-            "source":"Models.zip extracted, six individually selected in-game files",
+            "source":"Models.zip extracted; six selected owner files, optionally full private PSX rooms",
+            "private_rooms_included":len(additional),
+            "private_room_files":additional,
             "master_index":"https://docs.google.com/document/d/18G144Qd0-L5rL7NdqxMykqkXaBHtu8-ytr_yYPol6rI/edit",
             "models":[{"file":f,"source_drive_id":SOURCE_IDS[f],
                        "sha256":SHA256[f]} for f in FILES],
             "limits":"Real static patron meshes; rigs/animations and Galaxy S9 visual acceptance still pending"
         }
+        provenance["count"]=len(FILES)+len(additional)
         result=tool("build-content-pack.py").build(
             GAME,stage,output,revision,version,provenance=provenance)
     verified=tool("verify-content-pack.py").validate(output)
-    if verified["game"]!=GAME or verified["assets"]!=len(FILES) or (
+    if verified["game"]!=GAME or verified["assets"]!=len(FILES)+len(additional) or (
         verified["sha256"]!=result["sha256"]):
         output.unlink(missing_ok=True)
         raise ValueError("Red Ledger owner content failed independent verification")
-    return {"game":GAME,"assets":len(FILES),"triangles":verified["triangles"],
+    return {"game":GAME,"assets":len(FILES)+len(additional),
+            "private_rooms_merged":len(additional),
+            "triangles":verified["triangles"],
             "bytes":verified["bytes"],"sha256":verified["sha256"],
-            "file":str(output),"status":"unsigned local content; no remote signing or headset proof"}
+            "file":str(output),"status":"unsigned local content; merge existing private room models before an upgrade, no signing or headset proof"}
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--output",type=Path,required=True)
     p.add_argument("--revision",type=int,required=True)
     p.add_argument("--version",required=True)
+    p.add_argument("--private-rooms",type=Path,default=None,
+        help="Directory with the complete 14 existing private PSX room RLBP files; required to preserve them in an upgrade")
     opts=p.parse_args()
-    print(json.dumps(build(opts.output,opts.revision,opts.version),
+    print(json.dumps(build(opts.output,opts.revision,opts.version,opts.private_rooms),
                      indent=2,sort_keys=True))
 if __name__=="__main__":main()
