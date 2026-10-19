@@ -16,6 +16,7 @@
 #include "red_ledger_product_assets.h"
 #include "red_ledger_beckenburg_props.h"
 #include "red_ledger_owned_smoking.h"
+#include "red_ledger_owned_patrons.h"
 
 #include <GLES2/gl2.h>
 
@@ -47,6 +48,7 @@ namespace original_png = reverie::redledger::original_png;
 namespace property = reverie::redledger::property;
 namespace curated = reverie::redledger::beckenburg;
 namespace owned_smoke = reverie::redledger::smoking;
+namespace owned_people = reverie::redledger::owned_patrons;
 
 // Include the far rear doorway in seated work-ray reach.
 constexpr float kMaximumWorkReach = 4.25f;
@@ -179,6 +181,7 @@ struct ModuleState {
     ProductGlResource product_resources[products::kCount] = {};
     ProductGlResource curated_props[curated::kCount] = {};
     ProductGlResource owned_bar_props[owned_smoke::kCount] = {};
+    ProductGlResource owned_patrons[owned_people::kCount] = {};
     int original_icon_count = 0;
     GLint icon_mode_location = -1;
     GLint position_location = -1;
@@ -882,6 +885,11 @@ void DestroyGl(
         glDeleteBuffers(1,&state->original_icon_vbo);
         state->original_icon_vbo=0;
     }
+    for(ProductGlResource &resource:state->owned_patrons) {
+        if(resource.vbo!=0)glDeleteBuffers(1,&resource.vbo);
+        if(resource.texture!=0)glDeleteTextures(1,&resource.texture);
+        resource=ProductGlResource{};
+    }
     for(ProductGlResource &resource:state->owned_bar_props) {
         if(resource.vbo!=0)glDeleteBuffers(1,&resource.vbo);
         resource=ProductGlResource{};
@@ -1475,6 +1483,58 @@ int32_t InitializeGl(
         smoke_loaded,owned_smoke::kCount);
     Log(state,smoke_loaded==static_cast<int>(owned_smoke::kCount)?
         REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,smoke_report);
+    // Authored standing character meshes with 64px versions of their real
+    // JPEG materials. These are STATIC poses, not falsely animated actors.
+    // Only one of the two patron types is drawn at a time.
+    int imported_patrons=0;
+    if(can_read_assets)for(size_t index=0;index<owned_people::kCount;++index) {
+        const char *name=owned_people::kPaths[index];
+        uint32_t size=0u;
+        if(state->host->read_asset(name,nullptr,0u,&size)!=
+               REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL ||
+           size<16u+curated::kTextureBytes ||
+           size>3u*1024u*1024u)continue;
+        std::vector<uint8_t> file(size);
+        uint32_t actual=0u;
+        if(state->host->read_asset(name,file.data(),size,&actual)!=
+               REVERIE_NATIVE_SAVE_OK || actual!=size)continue;
+        std::vector<float> geometry;
+        const uint8_t *texture=nullptr;
+        if(!curated::Decode(file.data(),file.size(),&geometry,&texture) ||
+           geometry.empty() || geometry.size()%curated::kStride)continue;
+        ProductGlResource &resource=state->owned_patrons[index];
+        glGenBuffers(1,&resource.vbo);
+        glGenTextures(1,&resource.texture);
+        if(resource.vbo!=0 && resource.texture!=0) {
+            glBindBuffer(GL_ARRAY_BUFFER,resource.vbo);
+            glBufferData(GL_ARRAY_BUFFER,geometry.size()*sizeof(float),
+                         geometry.data(),GL_STATIC_DRAW);
+            glBindTexture(GL_TEXTURE_2D,resource.texture);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,256,256,0,GL_RGB,
+                         GL_UNSIGNED_SHORT_5_6_5,texture);
+            if(glGetError()==GL_NO_ERROR) {
+                resource.vertex_count=static_cast<GLsizei>(
+                    geometry.size()/curated::kStride);
+                ++imported_patrons;
+                continue;
+            }
+        }
+        if(resource.vbo!=0)glDeleteBuffers(1,&resource.vbo);
+        if(resource.texture!=0)glDeleteTextures(1,&resource.texture);
+        resource=ProductGlResource{};
+    }
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+    char patron_report[96];
+    std::snprintf(patron_report,sizeof(patron_report),
+        "Real owner patron meshes loaded: %d/%zu",
+        imported_patrons,owned_people::kCount);
+    Log(state,imported_patrons==static_cast<int>(owned_people::kCount)?
+        REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,patron_report);
     Log(
         state,
         REVERIE_NATIVE_LOG_INFO,
@@ -1990,6 +2050,45 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
         glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,vp);
     }
 
+    // Keep the simulation's EXACT patron identity and interaction target.
+    // Only the visible mesh is different. Fall back to the previous patron
+    // geometry if no exported RLBP is available.
+    if(active_room==0 && state->simulation.current_patron()!=nullptr) {
+        const auto kind=state->simulation.current_patron()->kind;
+        const auto index=owned_people::ForPatron(kind);
+        const ProductGlResource &r=state->owned_patrons[index];
+        if(r.vbo!=0 && r.texture!=0 && r.vertex_count>0) {
+            const float model[16]={
+                1.f,0.f,0.f,0.f, 0.f,1.f,0.f,0.f,
+                0.f,0.f,1.f,0.f,
+                owned_people::kPatronX,owned_people::kPatronY,
+                owned_people::kPatronZ,1.f
+            };
+            float mvp[16];
+            ReverieNativeMat4Multiply(mvp,vp,model);
+            glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,mvp);
+            glUniform1f(state->flicker_location,flicker);
+            glUniform1f(state->icon_mode_location,1.f);
+            glBindTexture(GL_TEXTURE_2D,r.texture);
+            glBindBuffer(GL_ARRAY_BUFFER,r.vbo);
+            glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+                3,GL_FLOAT,GL_FALSE,stride,reinterpret_cast<const void *>(0));
+            glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+                2,GL_FLOAT,GL_FALSE,stride,
+                reinterpret_cast<const void *>(3u*sizeof(float)));
+            glVertexAttribPointer(static_cast<GLuint>(state->color_attribute_location),
+                3,GL_FLOAT,GL_FALSE,stride,
+                reinterpret_cast<const void *>(5u*sizeof(float)));
+            glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
+                2,GL_FLOAT,GL_FALSE,stride,
+                reinterpret_cast<const void *>(8u*sizeof(float)));
+            glDrawArrays(GL_TRIANGLES,0,r.vertex_count);
+        }
+        glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,vp);
+        glUniform1f(state->icon_mode_location,0.f);
+        glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+    }
+
     // Dynamic props still use the unit-cube VBO and constant attributes.
     glDisableVertexAttribArray(
         static_cast<GLuint>(state->color_attribute_location)
@@ -2282,8 +2381,11 @@ void DrawRoom(
         );
     }
 
-    if (state->simulation.current_patron()
-        != nullptr) {
+    if (state->simulation.current_patron()!=nullptr &&
+        // The original primitive rendering is a FAILURE fallback only.
+        // Render the actual selected hand-authored civilian when available.
+        state->owned_patrons[owned_people::ForPatron(
+            state->simulation.current_patron()->kind)].vertex_count<=0) {
         const bool patron_hover =
             state->hovered_target
                 == WorkTarget::Patron;
