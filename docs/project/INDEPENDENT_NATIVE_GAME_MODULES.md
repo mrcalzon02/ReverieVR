@@ -18,7 +18,7 @@ Use two stages. First, signed downloadable **content-only game packs**, with exi
 * \`NativeModuleRuntime.java\`: bundled-only enumeration and launches, stable game IDs and private module save directories.
 * \`Android.mk\`: individual game shared-library build targets; **not** individually deployed releases yet.
 * \`UpdateChecker.java\` / \`UpdateInstaller.java\` / \`UpdatePackageVerifier.java\`: existing signed whole-hub APK updater through ReverieVR GitHub Releases.
-* **Bug to correct first:** \`HostReadAsset\` for Red Ledger currently admits only \`icons/\`, \`models/\` and \`textures/\`. It rejects \`native/red-ledger/beckenburg/*.rlprop\` even if these assets are in the APK. The staged 14 Beckenburg meshes cannot show until its allowlist/scoped reader is corrected and the files packaged.
+* **Red Ledger asset-scope repair now implemented on main:** `reverie_native_asset_scope.h` admits `native/red-ledger/beckenburg/*.rlprop` and native unit tests check the namespace boundary. Fourteen curated private RLBP models and 25 game placements are defined; the public asset directory does **not** contain their private payload. The signed package and Galaxy S9 runtime proof remain outstanding.
 
 Retain module IDs including \`between-deliveries-red-ledger\`, \`breakwater-battery\`, \`omega-front\`, \`gumball-armada\`, \`ministry-lantern-desk\`, the separate \`iron-sight-forward-detachment\`, and individual \`classic-*\` games. Test Chamber remains bundled for safe fallback.
 
@@ -96,3 +96,20 @@ Fully operable in phone 2D setup and headset VR, with head-gaze dwell fallback. 
 Report each gate as one of **source committed / release uploaded / installed / rendered on S9**, never conflate them. Log \`CATALOG_FAILED\`, \`SIGNATURE_REJECTED\`, \`DIGEST_MISMATCH\`, \`ZIP_INVALID\`, \`NO_SPACE\`, \`INSTALL_STAGED\`, \`INSTALL_ACTIVE\`, \`COMPANION_INCOMPATIBLE\`, \`ROLLBACK\` and \`LAUNCH_FAILED\` without sensitive data.
 
 **First executable slice:** Red Ledger Beckenburg-path repair, then offline metadata/catalog parser + tests, then immutable signed \`.rvpack\` installer + fallback, then headset UI, then a verified actual Red Ledger content release. Do not start dynamic-code loading before that pipeline is independently working.
+
+
+## 2026-10-18 — executable PSX content selection and import boundary
+
+There are now project-scoped packaging entrypoints and both the Python offline pack verifier and the Android installer reject RLBP vertices with NaN/Inf coordinates or invalid UV/color values. BWM1 files belong only in the Breakwater directory; RLBP files belong only in Red Ledger's beckenburg directory. These fixes, source tests, and exact private asset selection are committed, but no installed/rendered-on-headset result follows merely from this.
+
+Run in a full checked-out repository with approved inputs (substitute actual local private/output directories):
+
+```sh
+python3 scripts/modules/build-red-ledger-psx-pack.py --source PRIVATE_14_RLBP_DIRECTORY --output OUTPUT/red-ledger.rvpack --revision 1 --version 0.1.0
+python3 scripts/modules/build-bundled-psx-content.py --id breakwater-battery --output OUTPUT/breakwater.rvpack --revision 1 --version 0.1.0
+python3 scripts/modules/build-bundled-psx-content.py --id omega-front --output OUTPUT/omega-front.rvpack --revision 1 --version 0.1.0
+python3 scripts/modules/verify-content-pack.py OUTPUT/red-ledger.rvpack
+python3 -m unittest discover -s scripts/modules -p 'test*psx*.py'
+```
+
+The Red Ledger entrypoint refuses any incomplete 14-prop set. The other two select only already-admitted bundled game assets and never republish upstream commercial source archives. Every resulting pack is an unsigned local candidate until packaged and published through the authorized trusted release catalog. The game-specific release must be installed and its selected textures/geometry verified on a Galaxy S9, independently of the other game modules, before it is considered integrated at runtime.
