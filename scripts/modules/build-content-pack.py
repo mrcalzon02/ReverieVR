@@ -19,7 +19,8 @@ NAMESPACES={
     for entry in json.loads(MATRIX.read_text("utf-8"))["games"]
 }
 
-EXTENSIONS = {".rlprop", ".bwm", ".png", ".ogg", ".wav", ".mp3",
+OWNED_BAR_FBX = ["owned_ashtray.fbx","owned_cigar.fbx","owned_cigar_box_open.fbx","owned_cigar_box_closed.fbx"]
+EXTENSIONS = {".rlprop", ".bwm", ".fbx", ".png", ".ogg", ".wav", ".mp3",
               ".json", ".rvdata", ".atlas"}
 MAX_FILE = 4 * 1024 * 1024
 MAX_PACKED = 64 * 1024 * 1024
@@ -44,6 +45,14 @@ def checked_assets(directory, namespace):
         data = f.read_bytes()
         if not data or len(data) > MAX_FILE:
             raise ValueError("Invalid file size: " + relative)
+        if f.suffix == ".fbx":
+            if namespace!="red-ledger" or relative not in {
+                    "models/"+name for name in OWNED_BAR_FBX}:
+                raise ValueError("Unapproved owner bar FBX: "+relative)
+            if not 100<=len(data)<=100000 or not data.startswith(
+                    b"Kaydara FBX Binary  ") or struct.unpack_from(
+                    "<I",data,23)[0]!=7400:
+                raise ValueError("Invalid owner model FBX 7.4: "+relative)
         if f.suffix == ".rlprop":
             if namespace != "red-ledger":
                 raise ValueError("RLBP meshes belong only to Red Ledger")
