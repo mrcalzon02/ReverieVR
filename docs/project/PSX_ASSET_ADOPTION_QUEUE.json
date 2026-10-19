@@ -44,7 +44,20 @@
         "mesh_count": 3,
         "source_triangles": 380,
         "verified_with": "exact remote blob SHA matched local copy of scripts/modules/build-content-pack.py and verify-content-pack.py",
-        "scope": "local packaging integrity only; no signed catalog or installed proof"
+        "scope": "local packaging integrity only; no signed catalog or installed proof",
+        "bundled_wrapper": {
+          "sha256": "6f9b499a6e0046b69761b4e2edac91eaf1d05b6dc0b9fa38ab8f8524ad85d798",
+          "bytes": 4719,
+          "meshes": 3,
+          "triangles": 380,
+          "status": "real checked-in mesh bytes, deterministic local package; unsigned/not installed",
+          "script": "scripts/modules/build-bundled-psx-content.py"
+        },
+        "test_execution": {
+          "python": "13 independently executed offline cases; 4 committed test_psx_integration_acceptance.py cases executed PASS",
+          "java": "10 exact-source asset-validator cases executed PASS",
+          "git_hashes": "verified all 3 BWM source blob IDs, Python builder/verifier and Java validator source blob IDs"
+        }
       }
     },
     {
@@ -84,7 +97,7 @@
       "role": "Real bar/stockroom/living fixtures, interaction and lighting, not replacements for 24 original Unreal SKU models.",
       "acceptance": "Native source readback verified: reverie_native_asset_scope.h already accepts native/red-ledger/beckenburg/*.rlprop and native_asset_scope_test.cpp exercises its scoping restrictions. Remaining: supply exact private converted model bytes through authorized signed game-content packaging, confirm HostReadAsset readback, RLBP decode, 14-model/25-placement live scene rendering, interaction and device acceptance. Do not regress source scoping or replace original 24 Unreal SKU models.",
       "packager": "scripts/modules/build-red-ledger-psx-pack.py",
-      "packaging_status": "source-ready; rejects absent model from required exact fourteen; private .rlprop bytes not accessible in source checkout; ZIP not produced or installed here"
+      "packaging_status": "14-name wrapper executed against synthetic-only RLBP data: accepted complete 14-model fixture with provenance; refused missing chair; exact wrapper source SHA matched remote. Owner-selected private real 14-file derivative payload still absent from packaging environment."
     },
     {
       "id": "VR-PSX-005",
@@ -243,6 +256,13 @@
       "sha256": "4c67fbbfad628bd9bfabd45df1498817bddc1b1d3f699ed77ba4387a0bf8ef67",
       "signing": "not signed",
       "deployment": "not installed"
-    }
+    },
+    "test_execution": "Python 3.13: 13 pack invariant tests PASS; committed 4-case real Breakwater test module PASS; synthetic 14-RLBP Red Ledger boundary PASS; Java 21 javac --release 17 exact GitHub RvPackAssetValidator compiled and 10 smoke tests PASS. This is NOT Android API26 binary validation or GLES2 rendering.",
+    "current_blockers": [
+      "private actual 14 RLBP derivatives not accessible as files to this local build",
+      "current signed catalog and module publisher signature not available to produce trusted installable package",
+      "no Galaxy S9 APK render/audio/controls acceptance",
+      "complete real Omega Front pack not locally produced in this session"
+    ]
   }
 }
