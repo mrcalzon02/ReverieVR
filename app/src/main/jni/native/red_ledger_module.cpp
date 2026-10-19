@@ -15,6 +15,7 @@
 #include "red_ledger_original_fbx.h"
 #include "red_ledger_product_assets.h"
 #include "red_ledger_beckenburg_props.h"
+#include "red_ledger_owned_smoking.h"
 
 #include <GLES2/gl2.h>
 
@@ -45,6 +46,7 @@ namespace fbx = reverie::redledger::fbx;
 namespace original_png = reverie::redledger::original_png;
 namespace property = reverie::redledger::property;
 namespace curated = reverie::redledger::beckenburg;
+namespace owned_smoke = reverie::redledger::smoking;
 
 // Include the far rear doorway in seated work-ray reach.
 constexpr float kMaximumWorkReach = 4.25f;
@@ -176,6 +178,7 @@ struct ModuleState {
     GLuint original_icon_vbo = 0;
     ProductGlResource product_resources[products::kCount] = {};
     ProductGlResource curated_props[curated::kCount] = {};
+    ProductGlResource owned_bar_props[owned_smoke::kCount] = {};
     int original_icon_count = 0;
     GLint icon_mode_location = -1;
     GLint position_location = -1;
@@ -879,6 +882,10 @@ void DestroyGl(
         glDeleteBuffers(1,&state->original_icon_vbo);
         state->original_icon_vbo=0;
     }
+    for(ProductGlResource &resource:state->owned_bar_props) {
+        if(resource.vbo!=0)glDeleteBuffers(1,&resource.vbo);
+        resource=ProductGlResource{};
+    }
     for(ProductGlResource &resource:state->product_resources) {
         if(resource.vbo!=0)glDeleteBuffers(1,&resource.vbo);
         if(resource.texture!=0)glDeleteTextures(1,&resource.texture);
@@ -1427,6 +1434,47 @@ int32_t InitializeGl(
     Log(state,curated_loaded==curated::kCount?
         REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,curated_report);
 
+    // Owner-authored cigars/ashtrays: load genuine FBX source faces only once
+    // per GL context. Four curated exports, not a full raw model collection.
+    // One already allocated material atlas is shared by these four VBOs.
+    int smoke_loaded=0;
+    if(can_read_assets)for(size_t n=0u;n<owned_smoke::kCount;++n) {
+        const char *source=owned_smoke::kModels[n].path;
+        uint32_t bytes=0u;
+        if(state->host->read_asset(source,nullptr,0u,&bytes)!=
+               REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL ||
+           bytes<100u || bytes>100000u)continue;
+        std::vector<uint8_t> file(bytes);
+        uint32_t received=0u;
+        if(state->host->read_asset(source,file.data(),bytes,&received)!=
+               REVERIE_NATIVE_SAVE_OK || received!=bytes)continue;
+        std::vector<float> vertices;
+        if(!owned_smoke::Build(file.data(),file.size(),
+             static_cast<owned_smoke::ModelIndex>(n),&vertices) ||
+           vertices.empty() ||vertices.size()%owned_smoke::kStride!=0u)
+            continue;
+        ProductGlResource &asset=state->owned_bar_props[n];
+        glGenBuffers(1,&asset.vbo);
+        if(!asset.vbo)continue;
+        glBindBuffer(GL_ARRAY_BUFFER,asset.vbo);
+        glBufferData(GL_ARRAY_BUFFER,vertices.size()*sizeof(float),
+                     vertices.data(),GL_STATIC_DRAW);
+        if(glGetError()==GL_NO_ERROR){
+            asset.vertex_count=static_cast<GLsizei>(
+                vertices.size()/owned_smoke::kStride);
+            ++smoke_loaded;
+        } else {
+            glDeleteBuffers(1,&asset.vbo);
+            asset=ProductGlResource{};
+        }
+    }
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    char smoke_report[96];
+    std::snprintf(smoke_report,sizeof(smoke_report),
+        "Owner-authored smoking meshes loaded: %d/%zu",
+        smoke_loaded,owned_smoke::kCount);
+    Log(state,smoke_loaded==static_cast<int>(owned_smoke::kCount)?
+        REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,smoke_report);
     Log(
         state,
         REVERIE_NATIVE_LOG_INFO,
@@ -1903,6 +1951,43 @@ void DrawStaticRoom(ModuleState *state, const float *vp, float flicker) {
         glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,vp);
         glUniform1f(state->icon_mode_location,0.f);
         glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+    }
+
+    // Actual hand-authored bar objects. The currently served patron
+    // controls the cigar and whether the box is open; no bogus sale SKU,
+    // extra simulation timer, collision volume or patron is invented.
+    // Content VBOs are immutable; stereo eyes share exact scene state.
+    if(active_room==0) {
+        const bool patron=state->simulation.current_patron()!=nullptr;
+        for(const owned_smoke::Placement &p:owned_smoke::kBarProps) {
+            if(!owned_smoke::Visible(p,active_room,patron))continue;
+            const ProductGlResource &r=state->owned_bar_props[p.model];
+            if(r.vertex_count<=0||r.vbo==0)continue;
+            const float model[16]={
+                1.f,0.f,0.f,0.f, 0.f,1.f,0.f,0.f,
+                0.f,0.f,1.f,0.f, p.x,p.y,p.z,1.f
+            };
+            float mvp[16];
+            ReverieNativeMat4Multiply(mvp,vp,model);
+            glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,mvp);
+            glUniform1f(state->flicker_location,flicker);
+            glUniform1f(state->icon_mode_location,0.f);
+            glBindTexture(GL_TEXTURE_2D,state->atlas_texture);
+            glBindBuffer(GL_ARRAY_BUFFER,r.vbo);
+            glVertexAttribPointer(static_cast<GLuint>(state->position_location),
+                3,GL_FLOAT,GL_FALSE,stride,reinterpret_cast<const void *>(0));
+            glVertexAttribPointer(static_cast<GLuint>(state->uv_location),
+                2,GL_FLOAT,GL_FALSE,stride,
+                reinterpret_cast<const void *>(3u*sizeof(float)));
+            glVertexAttribPointer(static_cast<GLuint>(state->color_attribute_location),
+                3,GL_FLOAT,GL_FALSE,stride,
+                reinterpret_cast<const void *>(5u*sizeof(float)));
+            glVertexAttribPointer(static_cast<GLuint>(state->tile_origin_location),
+                2,GL_FLOAT,GL_FALSE,stride,
+                reinterpret_cast<const void *>(8u*sizeof(float)));
+            glDrawArrays(GL_TRIANGLES,0,r.vertex_count);
+        }
+        glUniformMatrix4fv(state->matrix_location,1,GL_FALSE,vp);
     }
 
     // Dynamic props still use the unit-cube VBO and constant attributes.
