@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import struct
@@ -74,12 +75,21 @@ def validate(path):
                         raise ValueError("Invalid BWM1 mesh coordinates")
                 triangles+=count
             if name.endswith(".rlprop"):
+                if game!="between-deliveries-red-ledger" or not name.startswith(
+                        "assets/native/red-ledger/beckenburg/") or "/" in name[
+                            len("assets/native/red-ledger/beckenburg/"):]:
+                    raise ValueError("RLBP mesh outside Red Ledger Beckenburg scope")
                 if len(data)<16:raise ValueError("Truncated RLBP mesh")
                 magic,version,vertices,atlas=struct.unpack("<4sIII",data[:16])
                 if ((magic,version,atlas)!=(b"RLBP",1,256) or vertices==0 or
                     vertices>50000 or vertices%3 or
                     len(data)!=16+vertices*40+256*256*2):
                     raise ValueError("Invalid RLBP data: "+name)
+                for row in struct.iter_unpack("<10f",memoryview(data)[16:16+vertices*40]):
+                    if not all(math.isfinite(value) for value in row[:8]):
+                        raise ValueError("Nonfinite RLBP vertex: "+name)
+                    if not all(0.0<=value<=1.0 for value in row[3:8]):
+                        raise ValueError("Invalid RLBP UV/color: "+name)
                 triangles+=vertices//3
         records=manifest.get("files",manifest.get("models"))
         if not isinstance(records,list) or len(records)!=assets:
