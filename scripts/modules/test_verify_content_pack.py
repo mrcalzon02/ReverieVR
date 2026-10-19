@@ -39,6 +39,36 @@ class ContentReleaseVerifierTests(unittest.TestCase):
             result=validator.validate(self.archive(d))
             self.assertEqual((result["assets"],result["triangles"]),(1,1))
 
+    def test_nan_position_rejected_with_matching_hash(self):
+        with tempfile.TemporaryDirectory() as folder:
+            original=self.archive(folder)
+            with zipfile.ZipFile(original) as source:
+                manifest=json.loads(source.read("module.json"))
+                data=bytearray(source.read(self.ASSET))
+            struct.pack_into("<f",data,16,float("nan"))
+            manifest["files"][0]["sha256"]=hashlib.sha256(data).hexdigest()
+            modified=Path(folder)/"nonfinite.rvpack"
+            with zipfile.ZipFile(modified,"w") as z:
+                z.writestr("module.json",json.dumps(manifest))
+                z.writestr(self.ASSET,data)
+            with self.assertRaisesRegex(ValueError,"Nonfinite"):
+                validator.validate(modified)
+
+    def test_out_of_range_uv_rejected_even_with_valid_digest(self):
+        with tempfile.TemporaryDirectory() as folder:
+            original=self.archive(folder)
+            with zipfile.ZipFile(original) as source:
+                manifest=json.loads(source.read("module.json"))
+                data=bytearray(source.read(self.ASSET))
+            struct.pack_into("<f",data,16+3*4,1.25)
+            manifest["files"][0]["sha256"]=hashlib.sha256(data).hexdigest()
+            modified=Path(folder)/"bad-uv.rvpack"
+            with zipfile.ZipFile(modified,"w") as z:
+                z.writestr("module.json",json.dumps(manifest))
+                z.writestr(self.ASSET,data)
+            with self.assertRaisesRegex(ValueError,"UV/color"):
+                validator.validate(modified)
+
     def test_changed_manifest_hash_is_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaisesRegex(ValueError,"size/hash mismatch"):
