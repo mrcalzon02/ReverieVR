@@ -1,0 +1,187 @@
+{
+  "schema": "reverievr.psx_asset_adoption.v1",
+  "reviewed_at": "2026-10-18",
+  "master_index": "https://docs.google.com/document/d/18G144Qd0-L5rL7NdqxMykqkXaBHtu8-ytr_yYPol6rI/edit",
+  "shared_drive_folder": "https://drive.google.com/drive/folders/1IW8c_FO1YkkLkVWQyRqhKmRBd1S5Ql8R",
+  "labels": {
+    "present": "source/runtime path was observed in a repository, not headset-verified",
+    "authored": "implementation or loader exists, separately staged content/device evidence outstanding",
+    "queued": "assigned to project; not imported for this usage",
+    "conditional": "style/license or technical suitability must be checked before use",
+    "exclude": "deliberately not assigned"
+  },
+  "rights": {
+    "purchased_psx_mega_pack": "Owner-confirmed commercial game-use rights at pack level; do not distribute the untouched paid source archive as a substitute asset library. Expanded folder preview version 2.9 is not proven identical to v3.2.1 ZIP.",
+    "classic_64_and_retro_tree": "CC0 per owner; maintain original provenance/notice.",
+    "unrelated_archives": "AS-012 through AS-018 have separate source and license identities; inspect supplied license/readme before shipping.",
+    "derivatives": "Only selected game-use meshes/textures or baked sprites in each game's own signed content/release pack; source originals remain in Drive."
+  },
+  "assignments": [
+    {
+      "id": "VR-PSX-001",
+      "project": "breakwater-battery",
+      "priority": "P0",
+      "source": "ammo_box_mp_1; concrete_block_1; wooden_crate_1",
+      "source_family": "PSX Mega Pack selected converted .bwm",
+      "status": "present",
+      "runtime_paths": [
+        "app/src/main/assets/native/breakwater/beckenburg/ammo_box_mp_1.bwm",
+        "app/src/main/assets/native/breakwater/beckenburg/concrete_block_1.bwm",
+        "app/src/main/assets/native/breakwater/beckenburg/wooden_crate_1.bwm"
+      ],
+      "role": "Visible beach/fortification dressing and ally turret ammunition; verify actually drawn during daytime/nighttime and owned-turret scenes.",
+      "acceptance": "Confirm mesh-load path and in-scene draw call, camera visibility in 360-degree stereo, texture/material correctness, FPS on Galaxy S9; do not claim these models replace existing boats, soldiers, or combat vehicles."
+    },
+    {
+      "id": "VR-PSX-002",
+      "project": "breakwater-battery",
+      "priority": "P1",
+      "source": "Retro Tree Pack v1.0",
+      "source_id": "1gXiE4bwnlVV4_0UIdyQ-qgb2nLY3UvUl",
+      "status": "queued",
+      "role": "Coastal hills, rear-facing treeline, terrain silhouettes and LOD across campaign backgrounds.",
+      "acceptance": "Select specific GLBs, document original member paths, batch LODs/cull, test day-night lighting, full 360 movement-independent view and S9 frame budget."
+    },
+    {
+      "id": "VR-PSX-003",
+      "project": "breakwater-battery",
+      "priority": "P1",
+      "source": "kenney_detail_barrier_type_a.glb",
+      "source_id": "1QmVqIjabITMXXh9rdcwSVsy_TZOOpYS5",
+      "status": "conditional",
+      "role": "Bunker perimeter and beach approach barricades; period-appropriate selection only.",
+      "acceptance": "Confirm converted asset and original archive license/mesh mapping; generate bounded GLES2-compatible mesh; confirm placement, collision and occlusion."
+    },
+    {
+      "id": "VR-PSX-004",
+      "project": "between-deliveries-red-ledger",
+      "priority": "P0",
+      "source": "light_switch_1.glb; ceiling_lamp_1_off.glb; door_1_loose.glb; shelf_mp_6.glb; chair_mp_5.glb",
+      "source_ids": [
+        "1NjpBld90_JZu6D3rBKeNIUpVWIWpNCbU",
+        "1QCYJxy6Y304tEnvyCUaIhgU5u_MgyegB",
+        "15iG_N9Im5QAmWAFqS20I7K6f83tk4QBc",
+        "10oe2_da014wJf9_tm3YdEIjpFSAmHezf",
+        "1h0jLPo08n44TyKMAhgfiM8A50aFYQ8zf"
+      ],
+      "source_family": "Owner-purchased PSX Mega Pack",
+      "status": "authored",
+      "role": "Real bar/stockroom/living fixtures, interaction and lighting, not replacements for 24 original Unreal SKU models.",
+      "acceptance": "Use existing scoped RLBP asset reader, ensure native/red-ledger/beckenburg route is accepted and package the private converted game-ready assets in the correct signed content pack; read back APK, then render and interact on headset."
+    },
+    {
+      "id": "VR-PSX-005",
+      "project": "between-deliveries-red-ledger",
+      "priority": "P1",
+      "source": "kenney_detail_dumpster_closed.glb; kenney_detail_bench.glb; kenney_road_asphalt_damaged.glb",
+      "source_ids": [
+        "1lMMOnVkTDB1Tk-mxHv4SzCLNLisqR6Fp",
+        "1PZg-6x8Bp6StvXNrFS1UQzJQWtolsRzZ",
+        "1LXNqNl9GetOinpDi2qzzpBhCIBoq6yCL"
+      ],
+      "status": "conditional",
+      "role": "Outdoor delivery alley, waiting zone and district street scenery.",
+      "acceptance": "Verify original kit license and converted source correspondence; apply palette/scale and pedestrian clearances, GLES2 draw + culling; no entire pack upload."
+    },
+    {
+      "id": "VR-PSX-006",
+      "project": "between-deliveries-red-ledger",
+      "priority": "P2",
+      "source": "ggbot_car08_van_shell.glb",
+      "source_id": "11erPea78NCTD3XHWRREKuHcHaE0S70RR",
+      "status": "conditional",
+      "role": "Delivery/service-van exterior only if period, scale and silhouette match the Red Ledger district.",
+      "acceptance": "Inspect mesh, UV, conversion rights/provenance and scene relevance; do not substitute for authored shop models or gameplay transport."
+    },
+    {
+      "id": "VR-PSX-007",
+      "project": "omega-front",
+      "priority": "P0",
+      "source": "Shared 64x64 materials and six PSX/Retro Tree-derived overhead PNGs",
+      "status": "present",
+      "runtime_paths": [
+        "app/src/main/assets/native/omega-front/shared/asset_sources.json",
+        "app/src/main/assets/native/omega-front/shared/"
+      ],
+      "role": "Terrain sectors, crates, barrels, trees, supply objectives and tactical overhead icons already mapped in renderer/catalog.",
+      "acceptance": "Preserve existing source SHA-256, faction clarity, tactical tile order and actual load sites; verify Galaxy S9 fullscreen/UI readability."
+    },
+    {
+      "id": "VR-PSX-008",
+      "project": "omega-front",
+      "priority": "P1",
+      "source": "kenney_road_asphalt_straight.glb; kenney_road_asphalt_side.glb; kenney_road_asphalt_damaged.glb",
+      "source_ids": [
+        "1uZijCbSepMkIlKL3orUgmUtkgocO02Up",
+        "1QcwhM8fKu-JGUL8c5Ywtl1fcPrGQ581c",
+        "1LXNqNl9GetOinpDi2qzzpBhCIBoq6yCL"
+      ],
+      "status": "conditional",
+      "role": "Baked overhead road variants for existing tactical terrain; retain native 2D renderer.",
+      "acceptance": "Compare against already authored road.png/terrain catalog; import only visibly distinct orthographic tiles; no 3D model render in tactical mode."
+    },
+    {
+      "id": "VR-PSX-009",
+      "project": "test-chamber",
+      "priority": "P1",
+      "source": "light_switch_1.glb; ceiling_lamp_1_off.glb; door_1_loose.glb",
+      "source_ids": [
+        "1NjpBld90_JZu6D3rBKeNIUpVWIWpNCbU",
+        "1QCYJxy6Y304tEnvyCUaIhgU5u_MgyegB",
+        "15iG_N9Im5QAmWAFqS20I7K6f83tk4QBc"
+      ],
+      "status": "queued",
+      "role": "Small reproducible licensed asset-loading stress scene for independent module APK/content-pack acceptance.",
+      "acceptance": "Converted GLES2 subset, geometry counters, stereo depth, both eyes, interactive toggle/door, static-size hash, signed content install/update/uninstall and rollback test."
+    },
+    {
+      "id": "VR-PSX-010",
+      "project": "ministry-lantern-desk",
+      "priority": "P2",
+      "source": "Retro Tree Pack v1.0; kenney_retro-urban-kit.zip",
+      "source_ids": [
+        "1gXiE4bwnlVV4_0UIdyQ-qgb2nLY3UvUl",
+        "1T5k4KkqwWJ84rpl1WnMSbx5LxgKjpC11"
+      ],
+      "status": "conditional",
+      "role": "Low-poly airfield perimeter or aerial photo terrain only if the game's historical analogue and photo composition are retained.",
+      "acceptance": "Source-version/license audit of urban kit, photo-distance LOD and purposeful in-world recon effect; avoid modern electronics, cars and generic combat aircraft."
+    },
+    {
+      "id": "VR-PSX-011",
+      "project": "gumball-armada",
+      "priority": "P2",
+      "source": "PSX Mega Pack lighting/modular geometry",
+      "status": "conditional",
+      "role": "Optional station and hangar structural mesh bases only, with new candy-themed materials; no generic military craft substitution.",
+      "acceptance": "Preserve candy-world identity and high-contrast UI; use selected source GLBs only after visual fit/renderer acceptance."
+    },
+    {
+      "id": "VR-PSX-012",
+      "project": "reverie-vr-hub",
+      "priority": "P2",
+      "source": "PSX shader references (AS-020)",
+      "status": "conditional",
+      "role": "Optional native GLES2 game-specific retro filter, never the default hub control/UI readability mode.",
+      "acceptance": "Do not copy Godot/Unity shader text into native GLES2 unchanged; license audit, parameterized comfort and no HUD degradation."
+    },
+    {
+      "id": "VR-PSX-013",
+      "project": "classic-native-games-chess",
+      "priority": "NONE",
+      "source": "Generic PSX furniture/model packs",
+      "status": "exclude",
+      "role": "Existing acquired chess artwork must not be replaced by blocky low-poly placeholders.",
+      "acceptance": "No substitution. Finish using the game's actual intended chess assets."
+    },
+    {
+      "id": "VR-PSX-014",
+      "project": "openra-and-dos-emulators",
+      "priority": "NONE",
+      "source": "Generic PSX prop library",
+      "status": "exclude",
+      "role": "Emulators need accurate original rendering and controls, not substitute world meshes.",
+      "acceptance": "No gameplay visual import."
+    }
+  ]
+}
