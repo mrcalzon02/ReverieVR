@@ -2,6 +2,8 @@ package io.github.mrcalzon02.reverievr;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -47,13 +49,8 @@ final class RvPackAssetValidator {
         byte[] header=new byte[16];
         if(file.length()<header.length+ATLAS_BYTES+VERTEX_STRIDE*3L)
             throw new IOException("Truncated Beckenburg room model");
-        try(FileInputStream in=new FileInputStream(file)){
-            int count=0;
-            while(count<header.length){
-                int got=in.read(header,count,header.length-count);
-                if(got<0)throw new IOException("Truncated mesh header");
-                count+=got;
-            }
+        try(DataInputStream in=new DataInputStream(new BufferedInputStream(new FileInputStream(file)))){
+            in.readFully(header);
         }
         ByteBuffer b=ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN);
         if(b.get()!=82||b.get()!=76||b.get()!=66||b.get()!=80)
@@ -65,5 +62,23 @@ final class RvPackAssetValidator {
         long expected=16L+(long)vertices*VERTEX_STRIDE+ATLAS_BYTES;
         if(file.length()!=expected)
             throw new IOException("Beckenburg model length mismatch");
+        // The native RLBP decoder rejects NaN/Inf positions and invalid UV
+        // or colour channels. Reject the same bytes BEFORE atomically
+        // activating an update, rather than silently dropping its meshes.
+        try(DataInputStream in=new DataInputStream(new BufferedInputStream(new FileInputStream(file)))){
+            in.skipNBytes(16);
+            byte[] vertex=new byte[VERTEX_STRIDE];
+            ByteBuffer values=ByteBuffer.wrap(vertex).order(ByteOrder.LITTLE_ENDIAN);
+            for(int n=0;n<vertices;n++){
+                in.readFully(vertex);
+                for(int axis=0;axis<8;axis++){
+                    float value=values.getFloat(axis*4);
+                    if(!Float.isFinite(value))
+                        throw new IOException("Nonfinite Beckenburg mesh vertex");
+                    if(axis>=3 && (value<0.0f || value>1.0f))
+                        throw new IOException("Invalid Beckenburg mesh UV/color");
+                }
+            }
+        }
     }
 }
