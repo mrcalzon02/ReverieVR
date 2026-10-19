@@ -32,7 +32,20 @@
       "role": "Visible beach/fortification dressing and ally turret ammunition; verify actually drawn during daytime/nighttime and owned-turret scenes.",
       "acceptance": "Native source readback verified on main: breakwater_module.cpp loads the three BWM1 assets at session initialization and emits their actual converted triangles during Combat, with an added ammo-box instance beside a purchased support turret. Remaining: APK asset readback, correct stereo visibility/lighting/placement and Galaxy S9 frame budget. Do not claim device rendering yet.",
       "packager": "scripts/modules/build-bundled-psx-content.py",
-      "packaging_status": "source-ready; exact three BWM1 meshes present in repository; ZIP not run or published in this connector session"
+      "packaging_status": "local unsigned .rvpack assembled and independently verified from all three real remote-readback BWM1 bytes on 2026-10-18; ZIP not uploaded, signed, installed or S9-tested",
+      "pack_validation": {
+        "source_blob_shas": {
+          "ammo_box_mp_1": "06f34332b7c28f3dcf3e8018eba1d5d911900cee",
+          "concrete_block_1": "d4c689a9de820698d29fbc2cb4189788c67b1e93",
+          "wooden_crate_1": "2c7e79a71ab856f09dff09f9eb5bea90f2d59a4d"
+        },
+        "local_pack_sha256": "4c67fbbfad628bd9bfabd45df1498817bddc1b1d3f699ed77ba4387a0bf8ef67",
+        "pack_bytes": 4478,
+        "mesh_count": 3,
+        "source_triangles": 380,
+        "verified_with": "exact remote blob SHA matched local copy of scripts/modules/build-content-pack.py and verify-content-pack.py",
+        "scope": "local packaging integrity only; no signed catalog or installed proof"
+      }
     },
     {
       "id": "VR-PSX-002",
@@ -139,7 +152,28 @@
       "status": "queued",
       "role": "Small reproducible licensed asset-loading stress scene for independent module APK/content-pack acceptance.",
       "acceptance": "Converted GLES2 subset, geometry counters, stereo depth, both eyes, interactive toggle/door, static-size hash, signed content install/update/uninstall and rollback test.",
-      "packaging_status": "three-mesh Test Chamber source integration remains queued; no false mesh-in-chamber claim"
+      "packaging_status": "The test chamber ALREADY ships five original Beckenburg GLBs and six PCM WAV files as a separate companion APK. The optional switch/lamp/door-interaction three-item extension is still queued, not required to prove the gallery exists.",
+      "current_gallery": {
+        "status": "present-in-separate-Test-Chamber-companion-source",
+        "assets": [
+          "crate.glb",
+          "chair.glb",
+          "shelf.glb",
+          "table.glb",
+          "door.glb"
+        ],
+        "sfx": [
+          "select.wav",
+          "wood_knock.wav",
+          "metal_clang.wav",
+          "coin_chime.wav",
+          "mechanism.wav",
+          "beacon.wav"
+        ],
+        "runtime_reader": "game-apps/test-chamber/src/main/java/io/github/mrcalzon02/reverievr/game/testchamber/TestChamberModels.java",
+        "source_index": "game-apps/test-chamber/ASSET_PROVENANCE.md",
+        "device_status": "not Galaxy S9 accepted in this pass"
+      }
     },
     {
       "id": "VR-PSX-010",
@@ -201,6 +235,14 @@
       "app/src/test/java/io/github/mrcalzon02/reverievr/RvPackAssetValidatorTest.java",
       "app/src/test/java/io/github/mrcalzon02/reverievr/RvPackInstallerTest.java"
     ],
-    "rules": "Do not promote built, staged, packed, committed, installed, visible or tested between levels without corresponding evidence"
+    "rules": "Do not promote built, staged, packed, committed, installed, visible or tested between levels without corresponding evidence",
+    "local_pack_proof": {
+      "game": "breakwater-battery",
+      "assets": 3,
+      "triangles": 380,
+      "sha256": "4c67fbbfad628bd9bfabd45df1498817bddc1b1d3f699ed77ba4387a0bf8ef67",
+      "signing": "not signed",
+      "deployment": "not installed"
+    }
   }
 }
