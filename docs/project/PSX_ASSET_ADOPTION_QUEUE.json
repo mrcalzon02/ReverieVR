@@ -15,7 +15,8 @@
     "classic_64_and_retro_tree": "CC0 per owner; maintain original provenance/notice.",
     "unrelated_archives": "AS-012 through AS-018 have separate source and license identities; inspect supplied license/readme before shipping.",
     "derivatives": "Only selected game-use meshes/textures or baked sprites in each game's own signed content/release pack; source originals remain in Drive.",
-    "owner_models_zip": "Owner attests full rights to hand-authored source Models.zip, retained privately in Beckenburg Drive. A limited pair of BWM1 mesh derivatives ships within Breakwater; source archives and unselected high-poly files are NOT copied."
+    "owner_models_zip": "Owner attests full rights to hand-authored source Models.zip, retained privately in Beckenburg Drive. A limited pair of BWM1 mesh derivatives ships within Breakwater; source archives and unselected high-poly files are NOT copied.",
+    "owner_created_smoking_and_patrons": "Selected original hand-authored FBX (<100KB each) and two derived low-poly character RLBP models; user confirmed full rights. Source ZIP remains in private Beckenburg Drive. No mass model dumps."
   },
   "assignments": [
     {
@@ -290,6 +291,59 @@
       "packaging": "Breakwater curated content wrapper now includes both .bwm assets alongside the original three, with source hash/count regression updates. No signed release or APK/device acceptance claimed.",
       "validation": "GitHub main byte-level blob readback passed; validated both BWM1 signatures, lengths and every quantized XYZ coordinate. 5 assets total, 3504 source-derived BWM1 triangles. C++/Python game regression changes committed; full native/Android tests not run in this turn.",
       "next_gates": "Compile full Android game, check both stereo eyes, actual near rowboat and post-landing armor visibility, ship material fidelity and 60fps/memory on Galaxy S9; tune LOD and rig separate military figures."
+    },
+    {
+      "id": "VR-PSX-016",
+      "project": "between-deliveries-red-ledger",
+      "priority": "P0",
+      "source_family": "Owner-authored Models.zip",
+      "status": "present",
+      "source_ids": [
+        "1YwHhFq1VU-C-lnpKSHgamVmlR4OZlycH",
+        "1ArWVQA_YaqTccMVNwzGzGSACEN9FcM7c",
+        "177JIJjphFwIYsGZ0gqmNuqNtkuhnJyPt",
+        "1iLTY7TkgZ3ynqCVjQxVCp-c3ON_Iep_m"
+      ],
+      "files": [
+        "app/src/main/assets/native/red-ledger/models/owned_ashtray.fbx",
+        "app/src/main/assets/native/red-ledger/models/owned_cigar.fbx",
+        "app/src/main/assets/native/red-ledger/models/owned_cigar_box_open.fbx",
+        "app/src/main/assets/native/red-ledger/models/owned_cigar_box_closed.fbx"
+      ],
+      "native_decoder": "app/src/main/jni/native/red_ledger_owned_smoking.h",
+      "native_runtime": "app/src/main/jni/native/red_ledger_module.cpp",
+      "runtime": "Real Blender FBX v7.4 geometry and UVs parsed on game init and VBO uploaded once; bar displays ashtray permanently, cigar/open box while patron exists, closed box otherwise. Material colors tinted via existing procedural wood/metal atlas; no new sale SKU or changing interaction hitboxes.",
+      "tests": "Actual four source FBX tested by host g++ and clang++ C++17 -Werror, plus Java17 6-file asset smoke; all PASS. New tests wired into scripts/verify-red-ledger.sh.",
+      "limits": "No individual cigar trade actions or smoking AI; only bar scene integration. Distinct source diffuse maps need additional baking to reach full authored material fidelity; Android Daydream visual test outstanding."
+    },
+    {
+      "id": "VR-PSX-017",
+      "project": "between-deliveries-red-ledger",
+      "priority": "P0",
+      "source_family": "Owner-authored Models.zip hand-authored civilian GLBs",
+      "status": "present",
+      "source_ids": [
+        "1LG8sk3hAnSxzNGzIhtXRM5jQlygdGCv9",
+        "1El0F9_NiddJo3QfhZubA5wKyYLvyPY7e"
+      ],
+      "files": [
+        "app/src/main/assets/native/red-ledger/beckenburg/patron_gopnick.rlprop",
+        "app/src/main/assets/native/red-ledger/beckenburg/patron_pink_dress.rlprop"
+      ],
+      "native_manifest": "app/src/main/jni/native/red_ledger_owned_patrons.h",
+      "native_runtime": "app/src/main/jni/native/red_ledger_module.cpp",
+      "triangles_original": [
+        746654,
+        784444
+      ],
+      "triangles_converted": [
+        6792,
+        6918
+      ],
+      "original_textures": "Source JPEG 2048x2048 baked as 64px reduced texture, packed into native 256x256 RGB565 RLBP",
+      "patron_selection": "Deterministic by current simulated PatronKind, preserving identity and payment/order/hit state. Old block-built customer is a fallback only when imported file fails to load.",
+      "rigging": "Both source GLBs have zero joint skins and zero animation tracks. Separate AccuRig FBX/metadata exist but no retargeting applied; display static patron pose only.",
+      "tests": "Actual RLBP bytes validated by GCC, Clang, Java17; texture variance and nonfinite length tests; source blob hash readback; no Galaxy S9 visuals/perf accepted."
     }
   ],
   "native_import_validation": {
@@ -369,6 +423,18 @@
       "1nS62iNJsOG0mLBOFvJ_74GG72VRiOOu7",
       "1e_kUjwv6wp8EaDgbNdtKwqxcbrYP0apD"
     ],
-    "runtime_source_class": "owner-authored, not part of PSX Mega Pack"
+    "runtime_source_class": "owner-authored, not part of PSX Mega Pack",
+    "red_ledger_import": {
+      "selected_files": 6,
+      "game_content_triangles": 13710,
+      "local_pack_sha256": "9729165a3ba9d260cf03babcd525bf40afd2d6c7a5d84b39e3390e043341c705",
+      "bytes": 431094,
+      "packager": "scripts/modules/build-red-ledger-owned-pack.py",
+      "verifier": "scripts/modules/verify-content-pack.py",
+      "test": "scripts/modules/test_red_ledger_owned_pack.py",
+      "signed": false,
+      "device_accepted": false,
+      "install_mechanism": "Exact four FBX allowlisted in Java installer and Python pack validator. Original 14 private PSX room assets are NOT part of this six-file package; installers replace active game pack, so coordinate a complete merged revision when those private files exist before release."
+    }
   }
 }
