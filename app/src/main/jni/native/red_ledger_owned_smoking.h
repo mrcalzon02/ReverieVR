@@ -97,7 +97,7 @@ inline bool Build(const uint8_t *file,size_t length,ModelIndex model,
                 hi[j]=std::max(hi[j],next.xyz[j]);
             }
             if(signed_point<0) {
-                if(polygon.size()<3u ||polygon.size()>16u)return false;
+                if(polygon.size()<3u ||polygon.size()>64u)return false;
                 for(size_t k=1;k+1<polygon.size();++k)
                     triangles.push_back({{polygon[0],polygon[k],polygon[k+1u]}});
                 polygon.clear();
