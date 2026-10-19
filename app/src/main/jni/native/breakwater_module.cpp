@@ -798,6 +798,33 @@ void BuildScene(State *s) {
     // movement, world positions, hit volumes, attacks, landfall and score.
     // Forward-facing world cards use the SAME mesh for both stereo eyes.
     for(const Enemy &e:game.enemies())if(e.active) {
+        // The owner's actual GLB boat geometry is simplified to BWM1 for
+        // close-range rowboats. Distant boats retain inexpensive atlas art.
+        // Campaign still exclusively owns travel, passengers, damage and hit
+        // spheres; model rendering must not create additional targets.
+        if(e.type==UnitType::Rowboat && e.z>-7.5f &&
+           std::fabs(e.x)<8.f &&
+           s->beckenburg_models[imported::OwnerRowboat].valid()) {
+            s->beckenburg_models[imported::OwnerRowboat].Emit(
+                e.x,-.77f,e.z,1.18f,1.57079632679f,
+                [s](auto... values){Triangle(s,values...);});
+            // Preserve the original simulation-relative wake effect.
+            const float wake=VesselWakePhase(e.z);
+            for(int side=-1;side<=1;side+=2) {
+                const float sx=static_cast<float>(side);
+                Triangle(s,e.x+sx*.24f,-1.095f,e.z-.42f,
+                         e.x+sx*(.50f+.07f*wake),-1.095f,
+                         e.z-1.00f-.19f*wake,
+                         e.x+sx*.40f,-1.095f,
+                         e.z-.92f-.10f*wake,.61f,.76f,.77f);
+            }
+            // Passengers remain tied to the boat's authoritative count.
+            if(e.passengers>0) {
+                Box(s,e.x,-.60f,e.z+.06f,.16f,.20f,.14f,.36f,.40f,.31f);
+                Box(s,e.x,-.42f,e.z+.06f,.13f,.13f,.13f,.61f,.54f,.37f);
+            }
+            continue;
+        }
         if(e.type==UnitType::ArmoredTransport) {
             // Heavy transports are actual faceted 3D geometry with the
             // two-car cargo, armored bow, deck gun and animated bow ramp.
