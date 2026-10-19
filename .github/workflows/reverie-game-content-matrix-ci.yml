@@ -15,6 +15,8 @@ on:
       - 'scripts/modules/test_release_package_identity.py'
       - 'scripts/modules/sign-catalog.py'
       - 'scripts/modules/test_sign_catalog_contract.py'
+      - 'scripts/modules/prepare-catalog-candidate.py'
+      - 'scripts/modules/test_prepare_catalog_candidate.py'
       - 'scripts/modules/test_all_game_content_packages.py'
       - 'scripts/modules/test-native-asset-scope.cpp'
       - 'app/src/main/jni/native/reverie_native_asset_scope.h'
@@ -107,6 +109,8 @@ jobs:
         run: python3 -m unittest discover -s scripts/modules -p 'test_release_package_identity.py' -v
       - name: Verify signed catalog duplicate, ownership and anti-rollback controls
         run: python3 -m unittest discover -s scripts/modules -p 'test_sign_catalog_contract.py' -v
+      - name: Verify proposed catalog update creation and strict receipt binding
+        run: python3 -m unittest discover -s scripts/modules -p 'test_prepare_catalog_candidate.py' -v
       - name: Test prior release and ZIP integrity contracts
         run: |
           python3 -m unittest discover -s scripts/modules -p 'test_verify_content_pack.py' -v
