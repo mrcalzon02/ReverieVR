@@ -14,7 +14,8 @@
     "purchased_psx_mega_pack": "Owner-confirmed commercial game-use rights at pack level; do not distribute the untouched paid source archive as a substitute asset library. Expanded folder preview version 2.9 is not proven identical to v3.2.1 ZIP.",
     "classic_64_and_retro_tree": "CC0 per owner; maintain original provenance/notice.",
     "unrelated_archives": "AS-012 through AS-018 have separate source and license identities; inspect supplied license/readme before shipping.",
-    "derivatives": "Only selected game-use meshes/textures or baked sprites in each game's own signed content/release pack; source originals remain in Drive."
+    "derivatives": "Only selected game-use meshes/textures or baked sprites in each game's own signed content/release pack; source originals remain in Drive.",
+    "owner_models_zip": "Owner attests full rights to hand-authored source Models.zip, retained privately in Beckenburg Drive. A limited pair of BWM1 mesh derivatives ships within Breakwater; source archives and unselected high-poly files are NOT copied."
   },
   "assignments": [
     {
@@ -250,11 +251,50 @@
       "status": "exclude",
       "role": "Emulators need accurate original rendering and controls, not substitute world meshes.",
       "acceptance": "No gameplay visual import."
+    },
+    {
+      "id": "VR-PSX-015",
+      "project": "breakwater-battery",
+      "priority": "P0",
+      "source_family": "Owner-authored Models.zip Drive extraction",
+      "source": [
+        "Models/boat.glb",
+        "Models/APC.obj"
+      ],
+      "source_ids": [
+        "1nS62iNJsOG0mLBOFvJ_74GG72VRiOOu7",
+        "1e_kUjwv6wp8EaDgbNdtKwqxcbrYP0apD"
+      ],
+      "status": "present",
+      "scope": "real selected game-use derivatives only",
+      "native_render": "app/src/main/jni/native/breakwater_module.cpp",
+      "native_parser": "app/src/main/jni/native/breakwater_beckenburg_mesh.h",
+      "runtime_paths": [
+        "app/src/main/assets/native/breakwater/beckenburg/owner_boat_rowboat.bwm",
+        "app/src/main/assets/native/breakwater/beckenburg/owner_apc_armor.bwm"
+      ],
+      "source_triangles": {
+        "rowboat": 9358,
+        "APC": 8816
+      },
+      "game_triangles": {
+        "rowboat": 1180,
+        "APC": 1944
+      },
+      "native_blob_shas": {
+        "rowboat": "089a616c268188f5f37ea68c5cdd3fe6689b3889",
+        "APC": "f74706ae039f4567615f27eb2633e7fdbc4b4a1d"
+      },
+      "render_behavior": "Near rowboats now take the source-derived 3D hull instead of a flat card; distant boats keep the original sprite LOD. Landed armored vehicles take the source-derived APC instead of primitive boxes. Existing Campaign damage, targeting, positions and scoring are untouched.",
+      "material_quality": "First-pass normal-shaded compact GLES2 vertex colors approximate the originals; full 1024px source texture sampling/UV adaptation not yet implemented. Original untouched archive remains in private Drive.",
+      "packaging": "Breakwater curated content wrapper now includes both .bwm assets alongside the original three, with source hash/count regression updates. No signed release or APK/device acceptance claimed.",
+      "validation": "GitHub main byte-level blob readback passed; validated both BWM1 signatures, lengths and every quantized XYZ coordinate. 5 assets total, 3504 source-derived BWM1 triangles. C++/Python game regression changes committed; full native/Android tests not run in this turn.",
+      "next_gates": "Compile full Android game, check both stereo eyes, actual near rowboat and post-landing armor visibility, ship material fidelity and 60fps/memory on Galaxy S9; tune LOD and rig separate military figures."
     }
   ],
   "native_import_validation": {
     "platform": "Galaxy S9 / Daydream arm64 + GLES2",
-    "pipeline_status": "committed-only; no tested APK/rvpack upload or headset acceptance recorded",
+    "pipeline_status": "Updated owner-authored Breakwater boat/APC checked-in and scoped; end-to-end APK/device acceptance not yet performed",
     "tests": [
       "scripts/modules/test_red_ledger_psx_pack.py",
       "scripts/modules/test_bundled_psx_content.py",
@@ -315,5 +355,20 @@
       "source_strategy": "extend existing five-GLB / six-WAV companion gallery rather than replacing it",
       "readiness": "existing gallery source-present; optional gallery additions require device testing"
     }
-  ]
+  ],
+  "new_owner_library": {
+    "original_archive_drive_id": "1WNdSqT0wtxvYy6HZ2OCU3vWHUt-uFZw8",
+    "extracted_root_id": "12qjt1ySgKH4gESqY7wVrp0lx36GyIeDk",
+    "source_inventory": "https://github.com/mrcalzon02/HB-TTRPG-tools/blob/main/software/beckenburg/assets/owned-models-drive-inventory.json",
+    "files_indexed": 448,
+    "glbs": 312,
+    "fbxs": 63,
+    "source_meshes_measured": 16,
+    "rigging_warning": "The 15 sampled GLBs have zero skins/animations. Separate animation FBXs must not be misrepresented as attached rigs.",
+    "selected_source_ids": [
+      "1nS62iNJsOG0mLBOFvJ_74GG72VRiOOu7",
+      "1e_kUjwv6wp8EaDgbNdtKwqxcbrYP0apD"
+    ],
+    "runtime_source_class": "owner-authored, not part of PSX Mega Pack"
+  }
 }
