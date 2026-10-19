@@ -54,6 +54,18 @@ public class RvPackInstallerTest {
     @Test public void rejectsTraversalAndCrossGameFiles() throws Exception {
         assertFalse(RvPackInstaller.allowedEntry(ID,"assets/native/red-ledger/../other.png",false));
         assertFalse(RvPackInstaller.allowedEntry(ID,"assets/native/omega-front/tank.png",false));
+        assertTrue(RvPackInstaller.allowedEntry(ID,
+            "assets/native/red-ledger/models/owned_ashtray.fbx",false));
+        assertTrue(RvPackInstaller.allowedEntry(ID,
+            "assets/native/red-ledger/models/owned_cigar.fbx",false));
+        assertTrue(RvPackInstaller.allowedEntry(ID,
+            "assets/native/red-ledger/models/owned_cigar_box_open.fbx",false));
+        assertTrue(RvPackInstaller.allowedEntry(ID,
+            "assets/native/red-ledger/models/owned_cigar_box_closed.fbx",false));
+        assertFalse(RvPackInstaller.allowedEntry(ID,
+            "assets/native/red-ledger/models/owned_unknown.fbx",false));
+        assertFalse(RvPackInstaller.allowedEntry("omega-front",
+            "assets/native/omega-front/models/owned_cigar.fbx",false));
         assertFalse(RvPackInstaller.allowedEntry(ID,"assets/native/red-ledger/payload.so",false));
         assertFalse(RvPackInstaller.allowedEntry(ID,"assets/native/red-ledger/a.jar",false));
         assertTrue(RvPackInstaller.allowedEntry(ID,"assets/native/red-ledger/beckenburg/door.rlprop",false));
