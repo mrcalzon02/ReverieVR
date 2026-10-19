@@ -7,6 +7,7 @@ It does NOT sign a catalog or fabricate a device acceptance result.
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import re
@@ -111,6 +112,8 @@ def main():
     p.add_argument("--file",type=Path,required=True)
     p.add_argument("--title",required=True)
     p.add_argument("--notes",required=True,help="Versioned changelog text")
+    p.add_argument("--publisher-cert-sha256",
+                   help="Required for APKs: SHA-256 of the hub publisher certificate")
     p.add_argument("--publish",action="store_true",
                    help="Publish after remote byte-for-byte verification")
     args=p.parse_args()
@@ -129,6 +132,11 @@ def main():
         if result.returncode!=0:
             raise ValueError("Game content failed offline validation: "+
                              result.stderr.strip()[:1000])
+    preflight=Path(__file__).with_name("release-package-identity.py")
+    spec=importlib.util.spec_from_file_location("reverie_release_identity",preflight)
+    identity=importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(identity)
+    release_identity=identity.validate(args.tag,artifact,args.publisher_cert_sha256)
     local_hash=digest(artifact)
     if run(["git","branch","--show-current"],1)!="main":
         raise ValueError("Only authoritative main can publish game releases")
@@ -162,6 +170,10 @@ def main():
         "repository":REPO,"tag":args.tag,"name":artifact.name,
         "size_bytes":size,"sha256":local_hash,
         "source_revision":remote_head,
+        "game_id":release_identity["game"],
+        "game_version":release_identity["version"],
+        "game_revision":release_identity["revision"],
+        "game_kind":release_identity["kind"],
         "draft":release["isDraft"],"release_url":release["url"],
         "catalog_ready":not release["isDraft"],
         "device_tested":False
