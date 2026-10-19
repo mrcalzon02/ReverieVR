@@ -20,6 +20,7 @@ BWM={
     "ammo_box_mp_1.bwm":"06f34332b7c28f3dcf3e8018eba1d5d911900cee",
     "concrete_block_1.bwm":"d4c689a9de820698d29fbc2cb4189788c67b1e93",
     "wooden_crate_1.bwm":"2c7e79a71ab856f09dff09f9eb5bea90f2d59a4d",
+    "owner_boat_rowboat.bwm":"089a616c268188f5f37ea68c5cdd3fe6689b3889",
 }
 
 def tool(name):
@@ -47,18 +48,18 @@ def malformed(source_pack,destination,target):
             edited.writestr(name,data)
 
 class PSXIntegrationAcceptance(unittest.TestCase):
-    def test_three_original_geometry_assets_have_known_blob_hashes(self):
+    def test_four_checked_in_geometry_assets_have_known_blob_hashes(self):
         for name,blob_sha in BWM.items():
             data=(source()/"beckenburg"/name).read_bytes()
             self.assertEqual(
                 hashlib.sha1(b"blob "+str(len(data)).encode()+bytes([0])+data).hexdigest(),
                 blob_sha,
-                "Source mesh changed; re-review original PSX provenance and render")
+                "Source mesh changed; re-review original Beckenburg provenance and render")
             self.assertEqual(data[:4],b"BWM1")
             self.assertEqual(len(data),8+struct.unpack_from("<I",data,4)[0]*27)
         triangles=sum(struct.unpack_from("<I",(source()/"beckenburg"/name).read_bytes(),4)[0]
                       for name in BWM)
-        self.assertEqual(triangles,380)
+        self.assertEqual(triangles,1560)
 
     def test_pack_and_independent_verify_are_reproducible(self):
         with tempfile.TemporaryDirectory(prefix="psx-authentic-") as folder:
@@ -70,8 +71,8 @@ class PSXIntegrationAcceptance(unittest.TestCase):
             self.assertEqual(a.read_bytes(),b.read_bytes())
             self.assertEqual(first["sha256"],second["sha256"])
             self.assertEqual(first["sha256"],validated["sha256"])
-            self.assertEqual(validated["assets"],3)
-            self.assertEqual(validated["triangles"],380)
+            self.assertEqual(validated["assets"],4)
+            self.assertEqual(validated["triangles"],1560)
             with zipfile.ZipFile(a) as archive:
                 manifest=json.loads(archive.read("module.json"))
                 self.assertEqual(len(manifest["files"]),3)
