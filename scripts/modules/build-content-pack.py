@@ -8,6 +8,7 @@ No GitHub Actions, source archive, executable code or local key handling.
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import struct
 import zipfile
@@ -44,6 +45,11 @@ def checked_assets(directory, namespace):
         if not data or len(data) > MAX_FILE:
             raise ValueError("Invalid file size: " + relative)
         if f.suffix == ".rlprop":
+            if namespace != "red-ledger":
+                raise ValueError("RLBP meshes belong only to Red Ledger")
+            if "/" in relative and (not relative.startswith("beckenburg/") or
+                                    "/" in relative[len("beckenburg/"):]):
+                raise ValueError("RLBP paths must be flat Beckenburg entries")
             if len(data) < 16:
                 raise ValueError("Truncated room mesh: " + relative)
             magic, version, vertices, side = struct.unpack_from("<4sIII", data)
@@ -53,6 +59,11 @@ def checked_assets(directory, namespace):
                 raise ValueError("Invalid triangle count: " + relative)
             if len(data) != 16 + vertices * 40 + 256 * 256 * 2:
                 raise ValueError("Room mesh has wrong byte count: " + relative)
+            for row in struct.iter_unpack("<10f", memoryview(data)[16:16+vertices*40]):
+                if not all(math.isfinite(value) for value in row[:8]):
+                    raise ValueError("Nonfinite room mesh vertex: " + relative)
+                if not all(0.0 <= value <= 1.0 for value in row[3:8]):
+                    raise ValueError("Room mesh has invalid UV/color: " + relative)
         if f.suffix == ".bwm":
             if namespace != "breakwater" or not relative.startswith("beckenburg/"):
                 raise ValueError("BWM1 meshes belong only to Breakwater Beckenburg")
