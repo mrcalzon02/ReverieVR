@@ -57,6 +57,14 @@ public class RvPackInstallerTest {
         assertFalse(RvPackInstaller.allowedEntry(ID,"assets/native/red-ledger/payload.so",false));
         assertFalse(RvPackInstaller.allowedEntry(ID,"assets/native/red-ledger/a.jar",false));
         assertTrue(RvPackInstaller.allowedEntry(ID,"assets/native/red-ledger/beckenburg/door.rlprop",false));
+        assertFalse(RvPackInstaller.allowedEntry(ID,
+            "assets/native/red-ledger/door.rlprop",false));
+        assertFalse(RvPackInstaller.allowedEntry("omega-front",
+            "assets/native/omega-front/beckenburg/door.rlprop",false));
+        assertFalse(RvPackInstaller.allowedEntry("breakwater-battery",
+            "assets/native/breakwater/side.bwm",false));
+        assertTrue(RvPackInstaller.allowedEntry("breakwater-battery",
+            "assets/native/breakwater/beckenburg/wooden_crate_1.bwm",false));
         File dir=Files.createTempDirectory("rvpack-traversal").toFile();
         File pack=zip(dir,"evil.rvpack","assets/native/omega-front/tank.png",1);
         try{
