@@ -4,10 +4,10 @@ plugins { id "com.android.application" }
 // not a dormant slot in the hub. Source remains in the authoritative game tree.
 def keyPath=(project.findProperty("phoneTestKeystorePath") ?: "").toString()
 def storePass=(project.findProperty("phoneTestStorePassword") ?: "").toString()
-def keyAlias=(project.findProperty("phoneTestKeyAlias") ?: "").toString()
+def publisherAlias=(project.findProperty("phoneTestKeyAlias") ?: "").toString()
 def keyPass=(project.findProperty("phoneTestKeyPassword") ?: storePass).toString()
 def signerReady=!keyPath.isEmpty() && !storePass.isEmpty() &&
-    !keyAlias.isEmpty() && !keyPass.isEmpty() && file(keyPath).isFile()
+    !publisherAlias.isEmpty() && !keyPass.isEmpty() && file(keyPath).isFile()
 
 android {
     namespace="io.github.mrcalzon02.reverievr.game.breakwater"
@@ -34,7 +34,7 @@ android {
             publisher {
                 storeFile=file(keyPath)
                 storePassword=storePass
-                keyAlias=keyAlias
+                keyAlias=publisherAlias
                 keyPassword=keyPass
             }
         }
