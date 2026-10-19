@@ -13,7 +13,7 @@ using namespace reverie::breakwater;
 
 int main() {
     static_assert(imported::OwnerRowboat==3u,"Owned rowboat index changed");
-    static_assert(imported::kAssetPaths.size()==4u,"Missing owner mesh");
+    static_assert(imported::kAssetPaths.size()==5u,"Missing owner mesh");
     const char *source="app/src/main/assets/native/breakwater/beckenburg/"
                        "owner_boat_rowboat.bwm";
     std::ifstream file(source,std::ios::binary);
