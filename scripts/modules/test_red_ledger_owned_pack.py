@@ -40,6 +40,30 @@ class OwnerRedLedgerPackAcceptance(unittest.TestCase):
                 files=json.loads(archive.read("module.json"))["files"]
                 self.assertEqual({row["path"] for row in files},{
                     "assets/native/red-ledger/"+relative for relative in mod.FILES})
+    def test_full_room_content_merge_preserves_all_existing_private_models(self):
+        # Synthetic room data tests merger behavior; they do NOT stand for
+        # the actual owner's 14 private PSX source meshes.
+        import struct
+        with tempfile.TemporaryDirectory(prefix="red-ledger-merge-") as d:
+            root=Path(d)
+            private=root/"private"
+            private.mkdir()
+            data=struct.pack("<4sIII",b"RLBP",1,3,256)+bytes(3*40+256*256*2)
+            for name in mod.ROOMS:
+                (private/(name+".rlprop")).write_bytes(data)
+            output=root/"full.rvpack"
+            result=mod.build(output,3,"0.1.2",private)
+            self.assertEqual(result["assets"],20)
+            self.assertEqual(result["private_rooms_merged"],14)
+            with zipfile.ZipFile(output) as archive:
+                paths=archive.namelist()
+                for name in mod.ROOMS:
+                    self.assertIn("assets/native/red-ledger/beckenburg/"+name+".rlprop",paths)
+                self.assertIn("assets/native/red-ledger/beckenburg/patron_gopnick.rlprop",paths)
+            (private/"chair.rlprop").unlink()
+            with self.assertRaisesRegex(ValueError,"14-model complete"):
+                mod.build(root/"incomplete.rvpack",4,"0.1.3",private)
+
     def test_unapproved_fbx_and_damaged_owner_model_are_refused(self):
         with tempfile.TemporaryDirectory(prefix="owner-negative-") as d:
             root=Path(d)
