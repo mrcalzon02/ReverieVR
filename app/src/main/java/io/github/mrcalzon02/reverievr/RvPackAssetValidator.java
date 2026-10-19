@@ -49,24 +49,22 @@ final class RvPackAssetValidator {
         byte[] header=new byte[16];
         if(file.length()<header.length+ATLAS_BYTES+VERTEX_STRIDE*3L)
             throw new IOException("Truncated Beckenburg room model");
+        // Read and validate the same open file stream. No skipNBytes:
+        // that newer JDK convenience method is not provided by Android 8.
         try(DataInputStream in=new DataInputStream(new BufferedInputStream(new FileInputStream(file)))){
             in.readFully(header);
-        }
-        ByteBuffer b=ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN);
-        if(b.get()!=82||b.get()!=76||b.get()!=66||b.get()!=80)
-            throw new IOException("Unexpected RLBP model magic");
-        int version=b.getInt(),vertices=b.getInt(),atlasSide=b.getInt();
-        if(version!=1||vertices<3||vertices%3!=0||
-           vertices>MAX_VERTICES||atlasSide!=256)
-            throw new IOException("Unsupported Beckenburg model layout");
-        long expected=16L+(long)vertices*VERTEX_STRIDE+ATLAS_BYTES;
-        if(file.length()!=expected)
-            throw new IOException("Beckenburg model length mismatch");
-        // The native RLBP decoder rejects NaN/Inf positions and invalid UV
-        // or colour channels. Reject the same bytes BEFORE atomically
-        // activating an update, rather than silently dropping its meshes.
-        try(DataInputStream in=new DataInputStream(new BufferedInputStream(new FileInputStream(file)))){
-            in.skipNBytes(16);
+            ByteBuffer b=ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN);
+            if(b.get()!=82||b.get()!=76||b.get()!=66||b.get()!=80)
+                throw new IOException("Unexpected RLBP model magic");
+            int version=b.getInt(),vertices=b.getInt(),atlasSide=b.getInt();
+            if(version!=1||vertices<3||vertices%3!=0||
+               vertices>MAX_VERTICES||atlasSide!=256)
+                throw new IOException("Unsupported Beckenburg model layout");
+            long expected=16L+(long)vertices*VERTEX_STRIDE+ATLAS_BYTES;
+            if(file.length()!=expected)
+                throw new IOException("Beckenburg model length mismatch");
+            // Match the C++ native renderer: XYZ, UV and RGB are the first
+            // eight floats; final two floats are currently unused.
             byte[] vertex=new byte[VERTEX_STRIDE];
             ByteBuffer values=ByteBuffer.wrap(vertex).order(ByteOrder.LITTLE_ENDIAN);
             for(int n=0;n<vertices;n++){
