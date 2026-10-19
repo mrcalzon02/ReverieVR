@@ -30,7 +30,9 @@
         "app/src/main/assets/native/breakwater/beckenburg/wooden_crate_1.bwm"
       ],
       "role": "Visible beach/fortification dressing and ally turret ammunition; verify actually drawn during daytime/nighttime and owned-turret scenes.",
-      "acceptance": "Native source readback verified on main: breakwater_module.cpp loads the three BWM1 assets at session initialization and emits their actual converted triangles during Combat, with an added ammo-box instance beside a purchased support turret. Remaining: APK asset readback, correct stereo visibility/lighting/placement and Galaxy S9 frame budget. Do not claim device rendering yet."
+      "acceptance": "Native source readback verified on main: breakwater_module.cpp loads the three BWM1 assets at session initialization and emits their actual converted triangles during Combat, with an added ammo-box instance beside a purchased support turret. Remaining: APK asset readback, correct stereo visibility/lighting/placement and Galaxy S9 frame budget. Do not claim device rendering yet.",
+      "packager": "scripts/modules/build-bundled-psx-content.py",
+      "packaging_status": "source-ready; exact three BWM1 meshes present in repository; ZIP not run or published in this connector session"
     },
     {
       "id": "VR-PSX-002",
@@ -67,7 +69,9 @@
       "source_family": "Owner-purchased PSX Mega Pack",
       "status": "authored",
       "role": "Real bar/stockroom/living fixtures, interaction and lighting, not replacements for 24 original Unreal SKU models.",
-      "acceptance": "Native source readback verified: reverie_native_asset_scope.h already accepts native/red-ledger/beckenburg/*.rlprop and native_asset_scope_test.cpp exercises its scoping restrictions. Remaining: supply exact private converted model bytes through authorized signed game-content packaging, confirm HostReadAsset readback, RLBP decode, 14-model/25-placement live scene rendering, interaction and device acceptance. Do not regress source scoping or replace original 24 Unreal SKU models."
+      "acceptance": "Native source readback verified: reverie_native_asset_scope.h already accepts native/red-ledger/beckenburg/*.rlprop and native_asset_scope_test.cpp exercises its scoping restrictions. Remaining: supply exact private converted model bytes through authorized signed game-content packaging, confirm HostReadAsset readback, RLBP decode, 14-model/25-placement live scene rendering, interaction and device acceptance. Do not regress source scoping or replace original 24 Unreal SKU models.",
+      "packager": "scripts/modules/build-red-ledger-psx-pack.py",
+      "packaging_status": "source-ready; rejects absent model from required exact fourteen; private .rlprop bytes not accessible in source checkout; ZIP not produced or installed here"
     },
     {
       "id": "VR-PSX-005",
@@ -104,7 +108,9 @@
         "app/src/main/assets/native/omega-front/shared/"
       ],
       "role": "Terrain sectors, crates, barrels, trees, supply objectives and tactical overhead icons already mapped in renderer/catalog.",
-      "acceptance": "Preserve existing source SHA-256, faction clarity, tactical tile order and actual load sites; verify Galaxy S9 fullscreen/UI readability."
+      "acceptance": "Preserve existing source SHA-256, faction clarity, tactical tile order and actual load sites; verify Galaxy S9 fullscreen/UI readability.",
+      "packager": "scripts/modules/build-bundled-psx-content.py",
+      "packaging_status": "source-ready; checked-in shared PNG and native full tactical content selected; ZIP not run or published in this connector session"
     },
     {
       "id": "VR-PSX-008",
@@ -132,7 +138,8 @@
       ],
       "status": "queued",
       "role": "Small reproducible licensed asset-loading stress scene for independent module APK/content-pack acceptance.",
-      "acceptance": "Converted GLES2 subset, geometry counters, stereo depth, both eyes, interactive toggle/door, static-size hash, signed content install/update/uninstall and rollback test."
+      "acceptance": "Converted GLES2 subset, geometry counters, stereo depth, both eyes, interactive toggle/door, static-size hash, signed content install/update/uninstall and rollback test.",
+      "packaging_status": "three-mesh Test Chamber source integration remains queued; no false mesh-in-chamber claim"
     },
     {
       "id": "VR-PSX-010",
@@ -183,5 +190,17 @@
       "role": "Emulators need accurate original rendering and controls, not substitute world meshes.",
       "acceptance": "No gameplay visual import."
     }
-  ]
+  ],
+  "native_import_validation": {
+    "platform": "Galaxy S9 / Daydream arm64 + GLES2",
+    "pipeline_status": "committed-only; no tested APK/rvpack upload or headset acceptance recorded",
+    "tests": [
+      "scripts/modules/test_red_ledger_psx_pack.py",
+      "scripts/modules/test_bundled_psx_content.py",
+      "scripts/modules/test_verify_content_pack.py",
+      "app/src/test/java/io/github/mrcalzon02/reverievr/RvPackAssetValidatorTest.java",
+      "app/src/test/java/io/github/mrcalzon02/reverievr/RvPackInstallerTest.java"
+    ],
+    "rules": "Do not promote built, staged, packed, committed, installed, visible or tested between levels without corresponding evidence"
+  }
 }
