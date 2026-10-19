@@ -20,7 +20,7 @@ class BundledPSXContentTest(unittest.TestCase):
                 self.assertTrue(all((root/rel).is_file() for rel in files))
                 self.assertFalse(any("source/" in rel.as_posix() for rel in files))
         root,files=tool.source_files("breakwater-battery")
-        self.assertEqual(len(files),4)
+        self.assertEqual(len(files),5)
         self.assertEqual({p.name for p in files},set(tool.BREAKWATER))
         root,files=tool.source_files("omega-front")
         self.assertGreaterEqual(len(files),len(tool.OMEGA_SHARED))
