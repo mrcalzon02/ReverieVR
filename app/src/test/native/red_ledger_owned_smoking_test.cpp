@@ -36,7 +36,9 @@ int main(int argc,char **argv) {
         for(int axis=0;axis<3;++axis)
             assert(hi[axis]-lo[axis]>kModels[i].size[axis]*.95f &&
                    hi[axis]-lo[axis]<kModels[i].size[axis]*1.05f);
-        assert(!Build(raw.data(),raw.size()-3u,
+        std::vector<uint8_t> corrupt=raw;
+        corrupt[0]=0; // Corrupt the actual FBX signature, not optional padding.
+        assert(!Build(corrupt.data(),corrupt.size(),
                       static_cast<ModelIndex>(i),&vertices));
     }
     assert(Visible(kBarProps[0],0,false));
