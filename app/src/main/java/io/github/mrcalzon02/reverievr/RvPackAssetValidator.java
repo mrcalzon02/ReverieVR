@@ -23,6 +23,26 @@ final class RvPackAssetValidator {
             throw new IOException("Missing content asset");
         if(name.endsWith(".rlprop"))verifyRoomMesh(file);
         if(name.endsWith(".bwm"))verifyBreakwaterMesh(file);
+        if(name.startsWith("assets/native/red-ledger/models/owned_")&&
+           name.endsWith(".fbx"))verifyOwnedBarFbx(file);
+    }
+    private static void verifyOwnedBarFbx(File file)throws IOException {
+        if(file.length()<100L||file.length()>100000L)
+            throw new IOException("Owned Red Ledger FBX exceeds scoped size");
+        byte[] header=new byte[27];
+        try(DataInputStream in=new DataInputStream(
+                new BufferedInputStream(new FileInputStream(file)))) {
+            in.readFully(header);
+        }
+        byte[] magic="Kaydara FBX Binary  ".getBytes(
+            java.nio.charset.StandardCharsets.US_ASCII);
+        for(int i=0;i<magic.length;i++)
+            if(header[i]!=magic[i])
+                throw new IOException("Invalid owner model FBX signature");
+        int version=ByteBuffer.wrap(header,23,4)
+            .order(ByteOrder.LITTLE_ENDIAN).getInt();
+        if(version!=7400)
+            throw new IOException("Unsupported owner model FBX version");
     }
     private static void verifyBreakwaterMesh(File file)throws IOException {
         final long limit=8L+2048L*27L;
