@@ -31,7 +31,11 @@ int main() {
     // source tree, remain strict source geometry (no fallback primitives),
     // and emit visible XYZRGB triangles at combat emplacement positions.
     {
-        const unsigned expectedFaces[]={100u,184u,96u};
+        // Check all five actual source models, not the original three.
+        const unsigned expectedFaces[]={100u,184u,96u,1180u,1944u};
+        static_assert(sizeof(expectedFaces)/sizeof(expectedFaces[0])==
+                      imported::kAssetPaths.size(),
+                      "Every Beckenburg model needs a face count");
         for(size_t n=0;n<imported::kAssetPaths.size();++n) {
             std::string path="app/src/main/assets/";
             path+=imported::kAssetPaths[n];
