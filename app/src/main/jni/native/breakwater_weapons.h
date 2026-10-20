@@ -68,43 +68,79 @@ inline bool ProjectileHitsSphere(const float *origin,const float *direction,
     for(int i=0;i<3;i++)
         if(!std::isfinite(center[i]) || !std::isfinite(origin[i]) ||
            !std::isfinite(direction[i]))return false;
-    // The projectile must be travelling into the scene. Each enemy sphere
-    // occupies a bounded depth interval, which bounds the minimizer.
     if(direction[2]>=-.0001f)return false;
-    const float atZ=(center[2]-origin[2])/direction[2];
-    const float halfWindow=radius / -direction[2]+.18f;
-    const float from=std::max(.001f,atZ-halfWindow);
-    const float to=std::min(40.0f,atZ+halfWindow);
+    const double atZ=(static_cast<double>(center[2])-origin[2])/direction[2];
+    const double halfWindow=static_cast<double>(radius)/-direction[2]+.18;
+    const double from=std::max(.001,atZ-halfWindow);
+    const double to=std::min(40.0,atZ+halfWindow);
     if(to<=from)return false;
-    // Golden-section minimization over the target's depth slice; no heap
-    // allocation, frame-independent result and independent of stereo eye.
-    auto distanceSquared=[&](float t) {
-        float point[3]={};
-        if(!ProjectilePosition(origin,direction,t,gravity,point))
-            return 1.0e30f;
-        const float dx=point[0]-center[0],dy=point[1]-center[1],
-                    dz=point[2]-center[2];
+    const double x=static_cast<double>(origin[0])-center[0];
+    const double y=static_cast<double>(origin[1])-center[1];
+    const double z=static_cast<double>(origin[2])-center[2];
+    const double vx=direction[0],vy=direction[1],vz=direction[2],g=gravity;
+    const auto squared=[&](double t) {
+        const double dx=x+vx*t,dy=y+vy*t-g*t*t,dz=z+vz*t;
         return dx*dx+dy*dy+dz*dz;
     };
-    float lo=from,hi=to;
-    constexpr float invphi=.61803398875f;
-    float a=hi-(hi-lo)*invphi,b=lo+(hi-lo)*invphi;
-    float da=distanceSquared(a),db=distanceSquared(b);
-    for(int n=0;n<22;n++) {
-        if(da>db) {lo=a;a=b;da=db;b=lo+(hi-lo)*invphi;db=distanceSquared(b);}
-        else {hi=b;b=a;db=da;a=hi-(hi-lo)*invphi;da=distanceSquared(a);}
+    const double radiusSquared=static_cast<double>(radius)*radius;
+    if(squared(from)<=radiusSquared) {
+        *distance=static_cast<float>(from);
+        return true;
     }
-    const float nearest=(lo+hi)*.5f;
-    if(distanceSquared(nearest)>radius*radius)return false;
-    // Find the first positive point inside the sphere, preserving depth
-    // ordering among multiple candidate targets.
-    float low=from,high=nearest;
-    for(int n=0;n<18;n++) {
-        const float mid=(low+high)*.5f;
-        if(distanceSquared(mid)<=radius*radius)high=mid;
-        else low=mid;
+    // Distance squared along a parabola is quartic, not unimodal.
+    // A whole-window golden-section search can miss a close target or
+    // the second arc crossing. Isolate all cubic-derivative stationary
+    // points and scan them in shot-travel order for the first contact.
+    const double a0=x*vx+y*vy+z*vz;
+    const double a1=vx*vx+vy*vy+vz*vz-2.0*g*y;
+    const double a2=-3.0*g*vy;
+    const double a3=2.0*g*g;
+    const auto derivative=[&](double t) {
+        return ((a3*t+a2)*t+a1)*t+a0;
+    };
+    double knots[4]={from,to};
+    size_t count=2;
+    if(a3>0.0) {
+        const double discriminant=a2*a2-3.0*a3*a1;
+        if(discriminant>0.0) {
+            const double root=std::sqrt(discriminant);
+            const double first=(-a2-root)/(3.0*a3);
+            const double second=(-a2+root)/(3.0*a3);
+            if(first>from && first<to)knots[count++]=first;
+            if(second>from && second<to)knots[count++]=second;
+        }
     }
-    *distance=high;
+    std::sort(knots,knots+count);
+    double firstInside=-1.0;
+    for(size_t i=1;i<count;++i) {
+        const double left=knots[i-1],right=knots[i];
+        const double dl=derivative(left),dr=derivative(right);
+        if((dl<0.0 && dr>0.0) || (dl>0.0 && dr<0.0)) {
+            double lo=left,hi=right;
+            for(int n=0;n<44;++n) {
+                const double mid=(lo+hi)*.5;
+                if((derivative(mid)>0.0)==(dl>0.0))lo=mid;
+                else hi=mid;
+            }
+            const double stationary=(lo+hi)*.5;
+            if(squared(stationary)<=radiusSquared) {
+                firstInside=stationary;
+                break;
+            }
+        }
+        if(squared(right)<=radiusSquared) {
+            firstInside=right;
+            break;
+        }
+    }
+    if(firstInside<0.0)return false;
+    double lo=from,hi=firstInside;
+    for(int n=0;n<32;++n) {
+        const double mid=(lo+hi)*.5;
+        if(squared(mid)<=radiusSquared)hi=mid;
+        else lo=mid;
+    }
+    *distance=static_cast<float>(hi);
     return true;
 }
 // Independent ghost sight represents the actual controller pointer, even

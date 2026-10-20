@@ -110,6 +110,15 @@ produce the relevant battle impact; armor is not an unsupported purely
 decorative exception. No third-party textures or sample recordings were
 added.
 
+**Ballistic contact integrity:** Sphere interception now isolates every
+stationary point of the squared distance along a parabolic projectile path,
+then finds the first actual contact in travel order. The former single
+whole-window golden-section minimum could miss a close target surrounding
+the muzzle or a valid second arc crossing. Native cannon regressions cover
+both hits and an unrelated miss. The solver remains allocation-free and
+shared by the actual mounted gun and hitbox checks; physical headset
+acceptance is still pending.
+
 **Late-wave save, turret, and warning integration (2026-10-16):**
 One older checkpoint validator still rejected `wave_index > 8` after
 the campaign had been expanded to as many as 25 actual waves per

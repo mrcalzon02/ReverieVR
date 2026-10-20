@@ -85,5 +85,24 @@ int main(){
         (contact[2]-hull[2])*(contact[2]-hull[2]);
     assert(delta<=.75f*.75f+.0001f);
     // The controller origin is nowhere in this equation.
+    // The former whole-interval golden search missed a muzzle already
+    // inside a near-shore hitbox when the ballistic arc curved away.
+    const float nearOrigin[]={0.f,-.53f,-.6f};
+    const float nearDirection[]={.08521823f,.24901655f,-.07121048f};
+    const float nearCenter[]={.00809122f,-.621198f,-.7982596f};
+    float collisionDepth=-1.f;
+    assert(ProjectileHitsSphere(nearOrigin,nearDirection,.04948996f,
+                                nearCenter,.3154524f,&collisionDepth));
+    assert(collisionDepth>=.001f && collisionDepth<.01f);
+    // A steep shot can approach the same depth twice: the later arc
+    // intersection is real even when an earlier local minimum misses.
+    const float arcDirection[]={-.10626425f,1.25882215f,-.05921985f};
+    const float arcCenter[]={-1.6028084f,6.1521764f,-1.1978322f};
+    assert(ProjectileHitsSphere(nearOrigin,arcDirection,.054517f,
+                                arcCenter,.34490247f,&collisionDepth));
+    assert(collisionDepth>13.f && collisionDepth<16.f);
+    const float arcMiss[]={-8.f,8.f,-1.1978322f};
+    assert(!ProjectileHitsSphere(nearOrigin,arcDirection,.054517f,
+                                 arcMiss,.34490247f,&collisionDepth));
     std::cout<<"Breakwater muzzle geometry, in-arc targeting and impact agreement passed\n";
 }
