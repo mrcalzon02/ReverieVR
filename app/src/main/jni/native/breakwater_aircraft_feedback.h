@@ -5,8 +5,34 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 
 namespace reverie { namespace breakwater {
+
+// SAM is a controller-ray weapon, not a surface-boat selector. Compare
+// ONLY live aircraft against the same 0.78-radius aircraft hit spheres used
+// by ordinary ghost-ray targeting; the nearest valid intersection wins.
+// One pure selection drives both the HUD bracket and the actual launch.
+inline int NearestSamAircraft(
+    const std::array<Enemy,Campaign::kMaxEnemies> &enemies,
+    const float *origin,const float *direction) {
+    if(!origin || !direction)return -1;
+    float nearest=std::numeric_limits<float>::infinity();
+    int target=-1;
+    for(size_t i=0;i<enemies.size();++i) {
+        const Enemy &enemy=enemies[i];
+        if(!enemy.active || enemy.hp<=0 ||
+           enemy.type!=UnitType::Aircraft)continue;
+        const float center[]={enemy.x,1.6f,enemy.z};
+        float depth=0.0f;
+        if(RaySphereSurfaceDistance(origin,direction,center,.78f,&depth) &&
+           depth<nearest) {
+            nearest=depth;
+            target=static_cast<int>(i);
+        }
+    }
+    return target;
+}
 
 // The UI never guesses which sprite is targeted: it uses the same final
 // CombatTarget enemy slot chosen by the native ray intersection path.
@@ -36,6 +62,14 @@ inline AircraftAimFeedback InspectAircraftAim(const Campaign &game, int slot) {
     result.hp = enemy.hp;
     result.x = enemy.x;
     result.z = enemy.z;
+    return result;
+}
+
+// A purchased SAM is itself a valid aircraft weapon, even without the
+// permanent AA upgrade. Never show AA REQUIRED while a SAM lock is armed.
+inline AircraftAimFeedback InspectSamAim(const Campaign &game,int slot) {
+    AircraftAimFeedback result=InspectAircraftAim(game,slot);
+    if(result.visible)result.equipped=game.sam_charges()>0;
     return result;
 }
 

@@ -2706,6 +2706,36 @@ int main() {
     sam_game.Tick(.05f);
     assert(sam_game.enemies()[0].active &&
            sam_game.enemies()[0].type==UnitType::Aircraft);
+    // A closer surface boat intersects this SAM ray first, but cannot
+    // steal the actual aircraft-only lock. The second aircraft remains
+    // selectable if the nearer one is destroyed or leaves the volume.
+    std::array<Enemy,Campaign::kMaxEnemies> sam_candidates{};
+    sam_candidates[0]={UnitType::Rowboat,0.f,-1.f,20,1,true,false};
+    sam_candidates[1]={UnitType::Aircraft,0.f,-4.8f,100,0,true,false};
+    sam_candidates[2]={UnitType::Aircraft,0.f,-5.2f,100,0,true,false};
+    const float sam_origin[]={0.f,-.63f,0.f};
+    const float sam_direction[]={0.f,.446f,-1.f};
+    const float boat_center[]={0.f,-.63f,-1.f};
+    const float plane_center[]={0.f,1.6f,-4.8f};
+    float boat_depth=0.f,plane_depth=0.f;
+    assert(RaySphereSurfaceDistance(sam_origin,sam_direction,
+                                    boat_center,.62f,&boat_depth));
+    assert(RaySphereSurfaceDistance(sam_origin,sam_direction,
+                                    plane_center,.78f,&plane_depth));
+    assert(boat_depth<plane_depth);
+    assert(NearestSamAircraft(sam_candidates,sam_origin,sam_direction)==1);
+    sam_candidates[1].active=false;
+    assert(NearestSamAircraft(sam_candidates,sam_origin,sam_direction)==2);
+    sam_candidates[2].hp=0;
+    assert(NearestSamAircraft(sam_candidates,sam_origin,sam_direction)==-1);
+    sam_candidates[2].hp=100;
+    sam_candidates[2].x=std::numeric_limits<float>::quiet_NaN();
+    assert(NearestSamAircraft(sam_candidates,sam_origin,sam_direction)==-1);
+    assert(NearestSamAircraft(sam_candidates,nullptr,sam_direction)==-1);
+    // SAM charges confer a real aircraft lock without a separate AA purchase.
+    assert(InspectAircraftAim(sam_game,0).visible);
+    assert(!InspectAircraftAim(sam_game,0).equipped);
+    assert(InspectSamAim(sam_game,0).equipped);
     assert(!sam_game.CallSam(1)); // unoccupied slot
     assert(sam_game.sam_charges()==1);
     assert(sam_game.CallSam(0));

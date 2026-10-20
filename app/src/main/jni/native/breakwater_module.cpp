@@ -198,6 +198,11 @@ int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game,
     if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE ||
        (!ghost && !GunWithinTraverse(input.pointer_direction,
                                     game.selected_weapon())))return -1;
+    // Ghost selection is reserved for SAM. A nearer boat must not steal
+    // the aircraft lock or prevent a purchased missile from launching.
+    if(ghost)return NearestSamAircraft(game.enemies(),
+                                      input.pointer_origin,
+                                      input.pointer_direction);
     float best=1e9f;int index=-1;
     for(uint8_t i=0;i<game.enemies().size();i++) {
         float depth=0;
@@ -1842,7 +1847,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             target<kCoverTargetEnd?target-kCoverTargetBase:-1;
         s->armor_aim_index=target>=kArmorTargetBase &&
             target<kArmorTargetEnd?target-kArmorTargetBase:-1;
-        s->aircraft_aim=InspectAircraftAim(s->campaign,target);
+        s->aircraft_aim=s->sam_armed?
+            InspectSamAim(s->campaign,target):
+            InspectAircraftAim(s->campaign,target);
         // Special SAM support retains the independent handheld lock; every
         // other mount targets with its own real cannon-origin trajectory.
         if(!s->sam_armed) {
