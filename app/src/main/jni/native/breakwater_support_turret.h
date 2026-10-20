@@ -4,6 +4,7 @@
 #include "breakwater_campaign.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace reverie { namespace breakwater { namespace support {
 constexpr float kTurretX=2.15f;
@@ -15,12 +16,45 @@ constexpr float kMinimumTargetZ=-4.60f;
 constexpr float kMaximumTargetZ=-1.34f;
 inline bool InRange(const Enemy& enemy) {
     return enemy.active && enemy.hp>0 && enemy.type!=UnitType::Aircraft &&
-           std::isfinite(enemy.z) &&
+           std::isfinite(enemy.x) && std::isfinite(enemy.z) &&
            enemy.z>=kMinimumTargetZ && enemy.z<=kMaximumTargetZ;
 }
 inline bool InRange(const ArmoredVehicle& vehicle) {
-    return vehicle.active && vehicle.hp>0 && std::isfinite(vehicle.z) &&
+    return vehicle.active && vehicle.hp>0 && std::isfinite(vehicle.x) &&
+           std::isfinite(vehicle.z) &&
            vehicle.z>=kMinimumTargetZ && vehicle.z<=kMaximumTargetZ;
+}
+// Select the nearest real surface threat to the right-flank gun itself.
+// Ship and unloaded-armor candidates share one distance comparison;
+// stable iteration order breaks ties without random or per-eye state.
+struct SurfaceTarget {
+    Enemy* enemy=nullptr;
+    ArmoredVehicle* vehicle=nullptr;
+};
+inline SurfaceTarget ClosestSurfaceTarget(
+    std::array<Enemy,Campaign::kMaxEnemies>& enemies,
+    std::array<ArmoredVehicle,Campaign::kMaxArmor>& armor) {
+    SurfaceTarget chosen{};
+    double nearest=std::numeric_limits<double>::infinity();
+    for(Enemy& candidate:enemies) {
+        if(!InRange(candidate))continue;
+        const double dx=static_cast<double>(candidate.x)-kTurretX;
+        const double dz=static_cast<double>(candidate.z)-kTurretZ;
+        const double distance=dx*dx+dz*dz;
+        if(distance<nearest) {
+            nearest=distance;chosen.enemy=&candidate;chosen.vehicle=nullptr;
+        }
+    }
+    for(ArmoredVehicle& candidate:armor) {
+        if(!InRange(candidate))continue;
+        const double dx=static_cast<double>(candidate.x)-kTurretX;
+        const double dz=static_cast<double>(candidate.z)-kTurretZ;
+        const double distance=dx*dx+dz*dz;
+        if(distance<nearest) {
+            nearest=distance;chosen.enemy=nullptr;chosen.vehicle=&candidate;
+        }
+    }
+    return chosen;
 }
 // Build the stationary, recognizably friendly 3D emplacement. This is
 // scenery linked to the actual purchased turret; there is no dummy actor.

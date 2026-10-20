@@ -675,28 +675,16 @@ void Campaign::TickStep(float dt) {
             break;
         }
     }
-    // Purchased support turrets defend against the closest surface threat,
-    // including armored vehicles already deployed ashore. Aircraft remain
-    // immune. Target selection is based on the real live z positions; no
-    // imaginary shot is emitted when there is nothing eligible to hit.
+    // Purchased support turrets defend against the nearest physical surface
+    // threat to the right-flank gun, including unloaded armored vehicles.
+    // Aircraft remain immune. Only live finite targets generate shots.
     if (stats().turret) {
         turret_timer_ -= dt;
         if (turret_timer_ <= 0.0f) {
-            Enemy *target = nullptr;
-            for (Enemy &candidate : enemies_) {
-                if (support::InRange(candidate) &&
-                    (target == nullptr || candidate.z > target->z))
-                    target = &candidate;
-            }
-            ArmoredVehicle *vehicle = nullptr;
-            for (ArmoredVehicle &candidate : armor_)
-                if(support::InRange(candidate) &&
-                   (vehicle == nullptr || candidate.z > vehicle->z))
-                    vehicle=&candidate;
-            if(target && vehicle && target->z>=vehicle->z)
-                vehicle=nullptr;
-            else if(vehicle)
-                target=nullptr;
+            const support::SurfaceTarget chosen =
+                support::ClosestSurfaceTarget(enemies_,armor_);
+            Enemy *target = chosen.enemy;
+            ArmoredVehicle *vehicle = chosen.vehicle;
             if (target || vehicle) {
                 const float hit_x = vehicle?vehicle->x:target->x;
                 const float hit_z = vehicle?vehicle->z:target->z;

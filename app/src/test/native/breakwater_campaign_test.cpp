@@ -1519,6 +1519,32 @@ int main() {
     support_fx.Tick(ImpactEffects::kArtilleryLifetime);
     assert(support_fx.pulses()[0].remaining==0.0f);
 
+    // Turret target priority uses distance from its own right-flank mount,
+    // not whichever boat has the greatest shoreward z coordinate.
+    std::array<Enemy,Campaign::kMaxEnemies> turret_ships{};
+    std::array<ArmoredVehicle,Campaign::kMaxArmor> turret_cars{};
+    turret_ships[0]={UnitType::Rowboat,-2.60f,-1.50f,20,1,true,false};
+    turret_ships[1]={UnitType::Rowboat,2.10f,-3.00f,20,1,true,false};
+    turret_cars[0]={2.10f,-2.20f,95,true,0.f};
+    auto closest=support::ClosestSurfaceTarget(turret_ships,turret_cars);
+    assert(closest.vehicle==&turret_cars[0] && closest.enemy==nullptr);
+    turret_cars[0].active=false;
+    closest=support::ClosestSurfaceTarget(turret_ships,turret_cars);
+    assert(closest.enemy==&turret_ships[1] && closest.vehicle==nullptr);
+    turret_ships[1].x=std::numeric_limits<float>::quiet_NaN();
+    closest=support::ClosestSurfaceTarget(turret_ships,turret_cars);
+    assert(closest.enemy==&turret_ships[0]);
+    turret_ships[0].type=UnitType::Aircraft;
+    closest=support::ClosestSurfaceTarget(turret_ships,turret_cars);
+    assert(closest.enemy==nullptr && closest.vehicle==nullptr);
+    turret_ships[0]={UnitType::Rowboat,2.1f,-2.1f,20,1,true,false};
+    turret_ships[1]=turret_ships[0];
+    closest=support::ClosestSurfaceTarget(turret_ships,turret_cars);
+    assert(closest.enemy==&turret_ships[0]); // stable tie
+    turret_ships[0].z=-5.f;
+    closest=support::ClosestSurfaceTarget(turret_ships,turret_cars);
+    assert(closest.enemy==&turret_ships[1]); // out-of-range skipped
+
     // An actual purchased turret produces a position-accurate shot event,
     // and a killing shot becomes an explosion rather than a generic spark.
     Campaign without_turret(Difficulty::Casual,41);
