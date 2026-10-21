@@ -1,11 +1,17 @@
 name: Build signed NUTBUSTER using existing ReverieVR signing secrets
 on:
   workflow_dispatch:
+    inputs:
+      nutbuster_source_sha:
+        description: 'Optional exact NUTBUSTER commit SHA to sign; empty signs current main'
+        required: false
+        type: string
   push:
     branches: [main]
     paths: [.github/workflows/nutbuster-signer.yml]
   schedule:
-    - cron: '*/15 * * * *'
+    # Avoid :00/:15/:30/:45 peak-minute schedule congestion; GitHub schedules may be delayed.
+    - cron: '7,22,37,52 * * * *'
 permissions:
   contents: write
 concurrency:
@@ -18,14 +24,19 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       EXPECTED_CERT: 464dc2d100c3bb14deac1da680d29418cc22e60e1857852cb54541f7d7787f7c
+      REQUESTED_SOURCE_SHA: ${{ inputs.nutbuster_source_sha }}
     steps:
       - name: Lock NUTBUSTER source to one commit
         id: source
         shell: bash
         run: |
           set -euo pipefail
-          SHA="$(git ls-remote https://github.com/mrcalzon02/NUTBUSTER-R.git refs/heads/main | awk '{print $1}')"
-          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]
+          SHA="$REQUESTED_SOURCE_SHA"
+          if [[ -z "$SHA" ]]; then
+            SHA="$(git ls-remote https://github.com/mrcalzon02/NUTBUSTER-R.git refs/heads/main | awk '{print $1}')"
+          fi
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo '::error::Invalid NUTBUSTER source commit'; exit 1; }
+          echo "Signing exact NUTBUSTER source commit $SHA"
           TAG="nutbuster-signer-$SHA"
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
