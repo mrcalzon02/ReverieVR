@@ -104,7 +104,7 @@ jobs:
           TAG: ${{ steps.source.outputs.tag }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" --repo mrcalzon02/ReverieVR --target "$GITHUB_SHA" --draft --prerelease --title "NUTBUSTER signing handoff" --notes 'NUTBUSTER APK signed with the EXISTING ReverieVR certificate. Signing handoff only, not a ReverieVR game release.'
+          gh release create "$TAG" --repo mrcalzon02/ReverieVR --target "$GITHUB_SHA" --prerelease --title "NUTBUSTER signing handoff" --notes 'NUTBUSTER APK signed with the EXISTING ReverieVR certificate. Signing handoff only, not a ReverieVR game release.'
           gh release upload "$TAG" handoff/NUTBUSTER-Android-phone-test.apk handoff/BUILD-EVIDENCE.txt handoff/SHA256SUMS.txt --repo mrcalzon02/ReverieVR
           gh api "repos/mrcalzon02/ReverieVR/releases/tags/$TAG" > "$RUNNER_TEMP/handoff.json"
           python3 - <<'PY'
