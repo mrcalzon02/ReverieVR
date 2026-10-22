@@ -24,11 +24,27 @@ on:
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java'
       - 'app/src/main/jni/Android.mk'
       - 'app/src/main/jni/native/reverie_native_host.cpp'
+      - 'app/src/main/jni/native/omega_front_*.h'
+      - 'app/src/main/jni/native/omega_front_module.cpp'
+      - 'app/src/test/native/omega_front_*_test.cpp'
+      - 'scripts/verify-omega-front-playability.sh'
 
 permissions:
   contents: read
 
 jobs:
+  verify-omega-front:
+    name: Omega Front real C++ boot-to-battle regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute every Omega Front tactical and campaign regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/verify-omega-front-playability.sh
+
   verify-all-games:
     runs-on: ubuntu-latest
     timeout-minutes: 8
