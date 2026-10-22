@@ -13,6 +13,9 @@ public class GameModuleRegistryTest {
             assertTrue(packages.add(entry.companionPackage));
         }
         assertEquals(15,ids.size());
+        // The game must appear in the normal VR Games shelf and pass
+        // NativeModuleRuntime.start without a Development logging gate.
+        assertFalse(GameModuleRegistry.find("omega-front").developmentOnly);
         assertNotNull(GameModuleRegistry.find("procedural-test-chamber"));
         assertNull(GameModuleRegistry.find("classic-hypothetical"));
         assertNull(RvPackInstaller.namespace("classic-hypothetical"));

@@ -27,7 +27,7 @@ final class GameModuleRegistry {
         new Entry("breakwater-battery","Breakwater Battery","breakwater",
             "io.github.mrcalzon02.reverievr.game.breakwater",true),
         new Entry("omega-front","Omega Front","omega-front",
-            "io.github.mrcalzon02.reverievr.game.omegafront",true),
+            "io.github.mrcalzon02.reverievr.game.omegafront",false),
         new Entry("gumball-armada","Gumball Armada","gumball-armada",
             "io.github.mrcalzon02.reverievr.game.gumballarmada",true),
         new Entry("ministry-lantern-desk","Ministry of Intelligence","lantern-desk",

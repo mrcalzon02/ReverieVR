@@ -866,7 +866,7 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
 const ReverieNativeModuleApiV1 api={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
     {sizeof(ReverieNativeModuleDescriptorV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
-     kId,"Omega Front: Hearthwell Defense [DEV]",2u,0u},
+     kId,"Omega Front: Hearthwell Defense",2u,0u},
     Create,Destroy,GlStart,GlEnd,Resume,Pause,Update,Render,nullptr
 };
 }

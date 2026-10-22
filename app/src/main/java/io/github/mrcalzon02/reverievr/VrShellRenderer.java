@@ -762,7 +762,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         List<NativeModuleRuntime.Descriptor> apps = new ArrayList<>();
         List<NativeModuleRuntime.Descriptor> games = new ArrayList<>();
         for (NativeModuleRuntime.Descriptor entry : nativeModules) {
-            if (entry.id.startsWith("classic-")) {
+            // Omega Front is a native VR strategy game; place it on the
+            // playable Games shelf rather than burying it among utilities.
+            if (entry.id.startsWith("classic-")
+                || NativeModuleRuntime.ID_OMEGA_FRONT.equals(entry.id)) {
                 games.add(entry);
             } else {
                 apps.add(entry);
