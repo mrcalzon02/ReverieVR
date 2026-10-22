@@ -29,8 +29,8 @@ int main() {
     // simulation advances only on input update time.
     assert(game.tactical.battle.ticks()==0);
     const Unit *soldier=game.tactical.battle.unit(0);
-    assert(soldier && soldier->x==4 && soldier->y==11);
-    game.Input({0,0,0,false,false,4,11});
+    assert(soldier && soldier->x==3 && soldier->y==11);
+    game.Input({0,0,0,false,false,3,11});
     Tap(game);
     assert(game.tactical.selected==0);
     game.Input({0,0,0,false,false,7,11});
@@ -38,7 +38,7 @@ int main() {
     assert(game.tactical.battle.queued(0)==1);
     for(int i=0;i<3;++i)game.Input({.10f,0,0,false,false,-1,-1});
     assert(game.tactical.battle.ticks()==1);
-    assert(game.tactical.battle.unit(0)->x==5);
+    assert(game.tactical.battle.unit(0)->x==4);
     const auto checkpoint=game.tactical.battle.Checksum();
     CampaignSave::Bytes bytes{};
     assert(CampaignSave::Encode(game,&bytes));
@@ -47,7 +47,7 @@ int main() {
     assert(resumed.view==FrontMode::Tactical);
     assert(resumed.frontier.deployed());
     assert(resumed.tactical.battle.Checksum()==checkpoint);
-    assert(resumed.tactical.battle.unit(0)->x==5);
+    assert(resumed.tactical.battle.unit(0)->x==4);
     assert(resumed.tactical.battle.queued(0)==1);
     for(int i=0;i<3;++i)resumed.Input({.10f,0,0,false,false,-1,-1});
     assert(resumed.tactical.battle.ticks()>=2);

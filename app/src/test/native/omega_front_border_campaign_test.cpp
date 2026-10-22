@@ -34,7 +34,14 @@ int main(){
     const int before_claims=d.sector(7)->claims;
     assert(d.Travel(7)); // 1 movement ration plus <=2 seized by the patrol
     assert(d.rations()==before_rations-3);
-    assert(d.sector(7)->food==before_food+2);
+    // The patrol physically moves two rations before Travel advances
+    // one day of regular civilian production at that same local site.
+    const FrontierSector &borderSite=*d.sector(7);
+    const DailyYield harvest=CivilProduction::Produce(7,
+        static_cast<unsigned>(borderSite.ecology),borderSite.stability,
+        borderSite.anomaly,borderSite.residents,borderSite.claims,d.pump_health());
+    assert(borderSite.food==CivilProduction::Store(
+        static_cast<uint16_t>(before_food+2),harvest.food));
     assert(d.trust()==before_trust-2 && d.relation(2)==before_relation-4);
     assert(d.sector(7)->claims==before_claims+8);
     assert(d.border_inspected(4) && d.last_border_inspection()==4);

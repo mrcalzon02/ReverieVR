@@ -33,7 +33,7 @@ int main(){
     // persist fractional logical turns, and continue deterministically.
     for(int i=0;i<8;++i)Tap(campaign,false,true);
     assert(campaign.action==FieldAction::Wait); // full cycle
-    for(int i=0;i<3;++i)Tap(campaign,false,true);
+    for(int i=0;i<4;++i)Tap(campaign,false,true);
     assert(campaign.action==FieldAction::Deploy);
     Tap(campaign,true);
     assert(campaign.view==FrontMode::Tactical);
