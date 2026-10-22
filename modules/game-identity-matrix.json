@@ -22,7 +22,7 @@
       "content_namespace": "omega-front",
       "companion_package": "io.github.mrcalzon02.reverievr.game.omegafront",
       "native_library": "libreverie_module_omega_front.so",
-      "development_only": true,
+      "development_only": false,
       "companion_build_target": null
     },
     {
