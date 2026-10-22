@@ -76,7 +76,7 @@ int main(){
     assert(!CampaignSave::Decode(&restored,bytes.data(),bytes.size()-1));
     assert(restored.Checksum()==before);
     // A forged but correctly resealed record still fails schema validation.
-    damage=bytes;damage[8]=7;Reseal(damage); // incompatible version
+    damage=bytes;damage[8]=99;Reseal(damage); // unsupported future schema
     assert(!CampaignSave::Decode(&restored,damage.data(),damage.size()));
     assert(restored.Checksum()==before);
     damage=bytes;damage[16]=99;Reseal(damage); // sector cursor beyond 4x4

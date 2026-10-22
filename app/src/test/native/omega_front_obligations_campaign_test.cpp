@@ -29,7 +29,7 @@ int main(){
     const int deadline=f.obligation_due_day(3);
     CampaignSave::Bytes bytes{};
     assert(CampaignSave::Encode(source,&bytes));
-    assert(bytes[8]==6); // internal save v6, still 2048-byte slot
+    assert(bytes[8]==9); // current v9, still fixed 2048-byte slot
     Session restored(7);
     assert(CampaignSave::Decode(&restored,bytes.data(),bytes.size()));
     assert(restored.Checksum()==source.Checksum());

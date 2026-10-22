@@ -43,7 +43,7 @@ int main(){
     assert(scrap.frontier.last_report().outcome==before.outcome);
     assert(!scrap.frontier.ConcludeAccord(9));
     CampaignSave::Bytes bytes{};
-    assert(CampaignSave::Encode(scrap,&bytes) && bytes[8]==6);
+    assert(CampaignSave::Encode(scrap,&bytes) && bytes[8]==9);
     Session loaded(8);
     assert(CampaignSave::Decode(&loaded,bytes.data(),bytes.size()));
     assert(loaded.Checksum()==scrap.Checksum());

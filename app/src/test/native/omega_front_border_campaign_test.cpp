@@ -38,7 +38,7 @@ int main(){
     assert(d.trust()==before_trust-2 && d.relation(2)==before_relation-4);
     assert(d.sector(7)->claims==before_claims+8);
     assert(d.border_inspected(4) && d.last_border_inspection()==4);
-    assert(CampaignSave::Encode(defaulted,&bytes) && bytes[8]==6);
+    assert(CampaignSave::Encode(defaulted,&bytes) && bytes[8]==9);
     Session resumed(3);
     assert(CampaignSave::Decode(&resumed,bytes.data(),bytes.size()));
     assert(resumed.Checksum()==defaulted.Checksum());

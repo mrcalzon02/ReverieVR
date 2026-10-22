@@ -98,7 +98,7 @@ int main(){
     // a genuine v2 save round trip. No fake replay award occurs on reload.
     CampaignSave::Bytes snapshot{};
     assert(CampaignSave::Encode(scrap,&snapshot));
-    assert(snapshot[8]==6);
+    assert(snapshot[8]==9);
     Session restored(100);
     assert(CampaignSave::Decode(&restored,snapshot.data(),snapshot.size()));
     assert(restored.Checksum()==scrap.Checksum());
