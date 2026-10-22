@@ -2,6 +2,7 @@ package io.github.mrcalzon02.reverievr;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
@@ -17,7 +18,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.junit.Test;
@@ -190,6 +193,134 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 throw new AssertionError("Cannot clean game-content test sandbox",failure);
             }
         }
+    }
+
+    // These methods operate the exact Java -> JNI -> C++ native game path
+    // used by Daydream. The emulator substitutes a scripted controller and
+    // GLES2 pbuffer for a headset; it does not fake tactical game state.
+    private static long omegaFrame(NativeModuleRuntime runtime,File evidence)
+        throws IOException {
+        float[] view=new float[16],projection=new float[16];
+        Matrix.setIdentityM(view,0);
+        Matrix.perspectiveM(projection,0,80.f,1.f,0.08f,150.f);
+        GLES20.glClearColor(0,0,0,1);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
+        for(int eye=0;eye<2;eye++)
+            assertTrue("Omega Front native eye rendering failed: "+
+                runtime.getLastError(),runtime.renderEye(eye,view,projection));
+        GLES20.glFinish();
+        ByteBuffer pixels=ByteBuffer.allocateDirect(512*512*4);
+        GLES20.glReadPixels(0,0,512,512,GLES20.GL_RGBA,
+            GLES20.GL_UNSIGNED_BYTE,pixels);
+        assertEquals("Omega Front GPU readback error",
+            GLES20.GL_NO_ERROR,GLES20.glGetError());
+        pixels.rewind();
+        CRC32 crc=new CRC32();
+        byte[] piece=new byte[8192];
+        while(pixels.hasRemaining()){
+            int count=Math.min(pixels.remaining(),piece.length);
+            pixels.get(piece,0,count);crc.update(piece,0,count);
+        }
+        if(evidence!=null){
+            pixels.rewind();
+            int[] argb=new int[512*512];
+            for(int y=0;y<512;y++)for(int x=0;x<512;x++){
+                int red=pixels.get()&255,green=pixels.get()&255;
+                int blue=pixels.get()&255,alpha=pixels.get()&255;
+                argb[(511-y)*512+x]=(alpha<<24)|(red<<16)|(green<<8)|blue;
+            }
+            Bitmap image=Bitmap.createBitmap(argb,512,512,Bitmap.Config.ARGB_8888);
+            try(FileOutputStream out=new FileOutputStream(evidence)){
+                assertTrue("Could not encode Omega Front framebuffer",
+                    image.compress(Bitmap.CompressFormat.PNG,100,out));
+            }
+            image.recycle();
+        }
+        return crc.getValue();
+    }
+
+    private static long omegaTap(NativeModuleRuntime runtime,
+                                 VirtualInputBus controls,float x,float y){
+        float[] aim={x,y,0.f},forward={0.f,0.f,-1.f};
+        VirtualOutput fire=VirtualOutput.joystickButton(0);
+        controls.applyDigital(fire,true);
+        runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,aim,forward);
+        long sound=runtime.drainSoundCues();
+        controls.applyDigital(fire,false);
+        runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,aim,forward);
+        return sound;
+    }
+
+    @Test public void omegaFrontReallyTravelsDeploysOrdersAndRestoresInGles()
+        throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        assertFalse("Omega Front hidden behind Development mode",
+            GameModuleRegistry.find("omega-front").developmentOnly);
+        boolean listed=false;
+        for(NativeModuleRuntime.Descriptor d:NativeModuleRuntime.listBuiltIns(false))
+            if(d.id.equals("omega-front"))listed=true;
+        assertTrue("Omega Front absent from normal playable native games",listed);
+        File base=new File(app.getCacheDir(),"omega-front-ci-"+System.nanoTime());
+        assertTrue(base.mkdirs());
+        File home=new File(base,"native-modules");
+        assertTrue(home.mkdirs());
+        File screenshot=new File(app.getFilesDir(),"omega-front-ci-tactical.png");
+        VirtualInputBus bus=new VirtualInputBus();
+        try(Pbuffer egl=new Pbuffer();
+            NativeModuleRuntime runtime=new NativeModuleRuntime(
+                home,app.getAssets(),bus,false)){
+            assertTrue("Omega Front normal native start failed: "+
+                runtime.getLastError(),runtime.start("omega-front"));
+            assertTrue("Omega Front GLES2 initialization failed",
+                runtime.onSurfaceCreated());
+            long sector=omegaFrame(runtime,null);
+            // Sector 11 (x=2,y=2) is the first real deployment mission.
+            long travelSound=omegaTap(runtime,bus,.1975f,-.1775f);
+            long traveled=omegaFrame(runtime,null);
+            assertNotEquals("Strategic travel did not update real 2D pixels",
+                sector,traveled);
+            long deploySound=omegaTap(runtime,bus,.1975f,-.1775f);
+            long tactical=omegaFrame(runtime,null);
+            assertNotEquals("Deploy did not enter visible tactical battle",
+                traveled,tactical);
+            assertEquals("Real native battle-start cue not emitted",14L,
+                deploySound&255L);
+            // Aim at Hearthwell's starting soldier, then issue an actual
+            // movement order to cell (6,11) via the same controller button.
+            omegaTap(runtime,bus,-.6205f,.0565f);
+            omegaTap(runtime,bus,-.4015f,.0565f);
+            for(int pulse=0;pulse<4;pulse++){
+                Thread.sleep(115);
+                runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                    new float[]{-.4015f,.0565f,0.f},
+                    new float[]{0.f,0.f,-1.f});
+            }
+            long moved=omegaFrame(runtime,screenshot);
+            assertNotEquals("Tactical input/step produced no visible change",
+                tactical,moved);
+            runtime.pauseForLifecycle();
+            File saved=new File(home,"omega-front/frontier.v1");
+            assertTrue("No actual native campaign checkpoint",saved.isFile());
+            assertEquals("Native campaign checkpoint size",2048L,saved.length());
+            runtime.releaseSurface();
+            runtime.stop();
+            assertTrue("Cannot relaunch saved native Omega Front",
+                runtime.start("omega-front"));
+            assertTrue("Cannot restore Omega Front GLES2 after relaunch",
+                runtime.onSurfaceCreated());
+            long restored=omegaFrame(runtime,null);
+            assertEquals("Native reload changed the saved 2D battle view",
+                moved,restored);
+            runtime.releaseSurface();
+            runtime.stop();
+            Log.i("OmegaFrontPlayability",
+                "PASS omega-front emulator nativeLaunch=true publicGames=true "+
+                "travel=true deploy=true controllerOrder=true combatStep=true "+
+                "stereoGles2=true saveResume=true screenshot="+
+                screenshot.getAbsolutePath()+" initialCRC="+sector+
+                " travelCRC="+traveled+" battleCRC="+tactical+
+                " movedCRC="+moved+" restoredCRC="+restored);
+        }finally{remove(base);}
     }
 
     @Test public void redLedgerReal24DownloadedIconsRenderThroughNativeGles(){
