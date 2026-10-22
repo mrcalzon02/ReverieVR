@@ -51,8 +51,16 @@ int main(){
     assert(resumed.Checksum()==defaulted.Checksum());
     assert(resumed.frontier.Travel(6));
     const int food=resumed.frontier.sector(7)->food;
+    const int rationsBeforeReturn=resumed.frontier.rations();
     assert(resumed.frontier.Travel(7));
-    assert(resumed.frontier.sector(7)->food==food); // no repeat confiscation
+    assert(resumed.frontier.rations()==rationsBeforeReturn-1);
+    const FrontierSector &returnSite=*resumed.frontier.sector(7);
+    const DailyYield expectedReturn=CivilProduction::Produce(7,
+        static_cast<unsigned>(returnSite.ecology),returnSite.stability,
+        returnSite.anomaly,returnSite.residents,returnSite.claims,
+        resumed.frontier.pump_health());
+    assert(returnSite.food==CivilProduction::Store(
+        static_cast<uint16_t>(food),expectedReturn.food)); // no second seizure
     // A forged charged treaty without the real broken status must be rejected
     // even when an attacker has recomputed the outer record checksum.
     Session clean(414);
@@ -73,7 +81,16 @@ int main(){
     assert(!older.frontier.border_inspected(4));
     assert(older.frontier.Travel(6));
     const int retained=older.frontier.sector(7)->food;
+    const int grandfatheredRations=older.frontier.rations();
     assert(older.frontier.Travel(7));
-    assert(older.frontier.sector(7)->food==retained); // grandfathered breach
+    assert(older.frontier.rations()==grandfatheredRations-1);
+    const FrontierSector &grandfatheredSite=*older.frontier.sector(7);
+    const DailyYield expectedGrandfathered=CivilProduction::Produce(7,
+        static_cast<unsigned>(grandfatheredSite.ecology),
+        grandfatheredSite.stability,grandfatheredSite.anomaly,
+        grandfatheredSite.residents,grandfatheredSite.claims,
+        older.frontier.pump_health());
+    assert(grandfatheredSite.food==CivilProduction::Store(
+        static_cast<uint16_t>(retained),expectedGrandfathered.food)); // no retrocharge
     std::cout << "Omega Front border patrol campaign/save regressions passed\n";
 }
