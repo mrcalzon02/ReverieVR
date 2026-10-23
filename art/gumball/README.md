@@ -28,6 +28,21 @@ deterministic lane ID. Assets are destroyed/reloaded across context changes.
 Source art remains outside APK assets. Missing runtime files are logged, not
 misrepresented as loaded.
 
+Two additional 96x86 derivatives are cropped from the canonical
+`art/gumball/source/pip_parfait_cherry_whiz.png` and
+`art/gumball/source/lolly_wren_soft_landing.png` studies (original
+1536x1024, source rectangle x=1150,y=5,w=128,h=118). These are portraits,
+not replacement ship sprites. When the existing Pip/Lolly escort is active,
+the actual GLES2 flight HUD selects the corresponding character portrait;
+both existing ally flight actors remain unchanged. Approved Drive originals
+are retained and never bundled directly. The ten total derivatives require
+165,200 bytes of raw RGB565+header data.
+
+**Current evidence:** Source-sheet crop contents were visually inspected and
+ten format-correct derivative assets generated locally from live Drive originals.
+Those local outputs are **not** committed binaries and are not proof that
+Gradle has executed its own converter or that the Android device has loaded them.
+
 **Current evidence:** source changes and GitHub readback verified; exact asset
 allowlist header passes strict host GCC, Clang and sanitizer checks. The build
 task has **not** been executed against the real atlas with Gradle, and there is
