@@ -16,6 +16,25 @@ Run `python3 scripts/gumball_prepare_art.py` (Pillow installed) to generate
 `app/src/main/assets/gumball/nodes`. The script refuses missing, wrong-size,
 or mislabeled source; `--verify` compares exact RGBA pixels for all tiles.
 
+**October 23 production Chart slice:** `app/build.gradle` now registers
+`stageGumballRouteArt` as an Android variant-owned generated asset source.
+It crops the approved 1672x941 Candy Cosmos sheet directly with Java ImageIO
+(no runtime PNG decoding or Pillow dependency), resizes exactly eight
+game-bound cells to 96x86, and writes 16,520-byte `GAI1` RGB565 assets under
+`native/gumball/nodes/`. `gumball_armada_module.cpp` requests those exact
+files through the native host's scoped asset reader at GL-context creation,
+uploads GLES2 textures, and draws them on real Chart lane cards selected by
+deterministic lane ID. Assets are destroyed/reloaded across context changes.
+Source art remains outside APK assets. Missing runtime files are logged, not
+misrepresented as loaded.
+
+**Current evidence:** source changes and GitHub readback verified; exact asset
+allowlist header passes strict host GCC, Clang and sanitizer checks. The build
+task has **not** been executed against the real atlas with Gradle, and there is
+no Android APK/GLES2/S9 screenshot, hence actual packaging, runtime loads and
+on-headset display are still pending. This is route-card artwork, not the
+4096-node navigable galaxy, character sprite integration, or 3D Shipyard.
+
 **Acceptance:** These generated PNGs are not proof of gameplay integration.
 The current Gumball native GLES2 module uses procedural flat meshes and has
 no asset-to-texture renderer. A runtime loader, GLES2 texture lifecycle, and
