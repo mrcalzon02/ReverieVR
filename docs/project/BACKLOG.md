@@ -40,9 +40,10 @@
 ## New native game — Gumball Armada
 
 - GUM-ART-01 — **Source-integrated, not Android/device accepted:** eight approved
-  Candy Cosmos route images now have a build-time conversion into compact
+  Candy Cosmos route images and two named Pip/Lolly escort portraits have a
+  build-time conversion into compact
   generated RGB565 APK assets and live native Chart texture upload/draw logic
-  keyed by real lane IDs. Allowlist strict host tests passed. Next: run Gradle
+  keyed by real lane IDs plus active named escort guest. Allowlist strict host tests passed. Next: run Gradle
   asset stage, inspect APK packaged bytes, build GLES2 both ABIs, and verify
   actual route images and headset readability on S9. Separately integrate
   genuine character/ship artwork after extraction and preserve 3D Shipyard scope.
