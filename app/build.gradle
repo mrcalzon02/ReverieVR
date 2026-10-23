@@ -89,7 +89,7 @@ abstract class StageGumballRouteArtTask extends DefaultTask {
             if (character == null ||
                 character.width != 1536 || character.height != 1024)
                 throw new GradleException("Wrong Gumball ally sheet: " + name)
-            def portrait = character.getSubimage(1150, 5, 128, 130)
+            def portrait = character.getSubimage(1150, 5, 128, 118)
             def resized = new java.awt.image.BufferedImage(
                 width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
             def graphics = resized.createGraphics()
