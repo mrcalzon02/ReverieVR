@@ -499,11 +499,27 @@ private:
         int choice = -1, priority = 999;
         for (int j=0; j<count_; ++j) {
             if (units_[j].side != Side::Hearthwell || !CanShoot(id,j)) continue;
-            int distance = Distance(u.x,u.y,units_[j].x,units_[j].y);
-            // Meridian security prioritizes exposed engineers, but cannot
-            // target anybody outside personal line of sight and range.
-            int score=distance;
-            if(doctrine_==Doctrine::Meridian && units_[j].role==Class::Engineer)score-=20;
+            const Unit &target=units_[j];
+            const int distance=Distance(u.x,u.y,target.x,target.y);
+            // Every shot obeys the SAME LOS, range, cover, armor, ammo
+            // consumption and damage rules as a player-issued shot.
+            // Organized doctrine troops know not to waste ammunition into
+            // entrenched armor while an exposed objective specialist stands
+            // nearby. Advanced armies also finish actually wounded targets;
+            // no omniscient pursuit, bonus health or fabricated damage.
+            int score=distance*4;
+            if(doctrine_!=Doctrine::Unaligned){
+                const int cover=ground(target.x,target.y)==Ground::Rubble?2:0;
+                score+=cover*5+Armor(target.role)*2+FormationArmor(j)*2;
+                const int minimum=BaseDamage(u.role)-Armor(target.role)-
+                                  cover-FormationArmor(j);
+                if(target.hp<=minimum)score-=16; // guaranteed finishing shot
+                else if(target.hp<=minimum+2)score-=6; // plausible casualty
+                if(mission_==Mission::DisableRelay &&
+                   target.role==Class::Engineer)score-=8;
+                if(doctrine_==Doctrine::Meridian &&
+                   target.role==Class::Engineer)score-=28;
+            }
             if(score<priority){priority=score;choice=j;}
         }
         if (choice >= 0) { Shoot(id,choice); return; }
