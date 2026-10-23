@@ -40,10 +40,12 @@ using reverie::gumball::Part;
 const char kId[]="gumball-armada";
 const char kName[]="Gumball Armada: Candy King Search [DEV]";
 constexpr unsigned kRouteArtworkCount=8u;
+constexpr unsigned kArtworkCount=kRouteArtworkCount+2u;
 constexpr uint32_t kRouteArtworkBytes=8u+96u*86u*2u;
-const char* const kRouteArtworkNames[kRouteArtworkCount]={
+const char* const kRouteArtworkNames[kArtworkCount]={
     "gummy_world","chocolate_world","ice_candy_world","citrus_world",
-    "gas_giant","ring_world","outpost_station","crystal_field"
+    "gas_giant","ring_world","outpost_station","crystal_field",
+    "pip_parfait","lolly_wren"
 };
 struct Module {
     const ReverieNativeHostV1* host=nullptr;
@@ -64,7 +66,7 @@ struct Module {
     bool primary=false,campaignSaveError=false,shipSaveError=false,shipLoadWarning=false,upload=true;
     float navTime=0;
     GLuint program=0,vbo=0;GLint pos=-1,col=-1,mvp=-1;
-    GLuint routeProgram=0,routeVbo=0,routeTextures[kRouteArtworkCount]{};
+    GLuint routeProgram=0,routeVbo=0,routeTextures[kArtworkCount]{};
     GLint routeCorner=-1,routeMvp=-1,routeRect=-1,routeSampler=-1;
     std::vector<float> mesh;
 };
@@ -727,11 +729,12 @@ void Destroy(void* p){delete static_cast<Module*>(p);}
 // task already converts approved atlas cells to RGB565; native code never
 // decodes the full source PNG or accepts another module's asset path.
 bool LoadRouteArtwork(Module* m,unsigned index){
-    if(index>=kRouteArtworkCount||!m->host
+    if(index>=kArtworkCount||!m->host
        ||m->host->struct_size<REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE
        ||!m->host->read_asset)return false;
     char path[112];
-    std::snprintf(path,sizeof(path),"native/gumball/nodes/%s.rgb565",
+    std::snprintf(path,sizeof(path),"native/gumball/%s/%s.rgb565",
+                  index<kRouteArtworkCount?"nodes":"allies",
                   kRouteArtworkNames[index]);
     uint32_t required=0;
     const int info=m->host->read_asset(path,nullptr,0,&required);
@@ -831,9 +834,9 @@ int32_t GlStart(void* p){
                 glBindBuffer(GL_ARRAY_BUFFER,m->routeVbo);
                 glBufferData(GL_ARRAY_BUFFER,sizeof(corners),corners,GL_STATIC_DRAW);
                 unsigned loaded=0;
-                for(unsigned i=0;i<kRouteArtworkCount;++i)
+                for(unsigned i=0;i<kArtworkCount;++i)
                     if(LoadRouteArtwork(m,i))++loaded;
-                if(loaded!=kRouteArtworkCount)
+                if(loaded!=kArtworkCount)
                     ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_WARN,kId,
                                        "Gumball route-card artwork partially unavailable");
             }
@@ -846,7 +849,7 @@ int32_t GlStart(void* p){
 }
 void GlEnd(void* p){
     auto* m=static_cast<Module*>(p);if(!m)return;
-    glDeleteTextures(kRouteArtworkCount,m->routeTextures);
+    glDeleteTextures(kArtworkCount,m->routeTextures);
     for(GLuint& texture:m->routeTextures)texture=0;
     if(m->routeVbo)glDeleteBuffers(1,&m->routeVbo);
     if(m->routeProgram)glDeleteProgram(m->routeProgram);
@@ -1158,8 +1161,12 @@ int32_t Render(void* p,const ReverieNativeEyeV1* eye){
     glVertexAttribPointer(static_cast<GLuint>(m->col),3,GL_FLOAT,GL_FALSE,6*sizeof(float),reinterpret_cast<const void*>(3*sizeof(float)));
     glUniformMatrix4fv(m->mvp,1,GL_FALSE,mvp);
     glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(m->mesh.size()/6));
-    if(m->routeProgram&&m->routeVbo&&m->sim.phase()==Phase::Chart
-       &&!m->inLoadout&&!m->inSupport&&!m->inYard){
+    const bool chartArt=m->sim.phase()==Phase::Chart
+        &&!m->inLoadout&&!m->inSupport&&!m->inYard;
+    const bool allyArt=m->sim.phase()==Phase::Flight&&m->sim.guest_active()
+        &&(m->sim.guest()==CastGuest::PipParfait
+            ||m->sim.guest()==CastGuest::LollyWren);
+    if(m->routeProgram&&m->routeVbo&&(chartArt||allyArt)){
         glUseProgram(m->routeProgram);
         glBindBuffer(GL_ARRAY_BUFFER,m->routeVbo);
         glEnableVertexAttribArray(2u);
@@ -1168,15 +1175,29 @@ int32_t Render(void* p,const ReverieNativeEyeV1* eye){
         glUniformMatrix4fv(m->routeMvp,1,GL_FALSE,mvp);
         glUniform1i(m->routeSampler,0);
         glActiveTexture(GL_TEXTURE0);
-        for(unsigned lane=0;lane<3u;++lane){
-            const unsigned image=reverie::gumball::Mix(
-                m->sim.lane(lane).id)%kRouteArtworkCount;
+        if(chartArt){
+            for(unsigned lane=0;lane<3u;++lane){
+                const unsigned image=reverie::gumball::Mix(
+                    m->sim.lane(lane).id)%kRouteArtworkCount;
+                const GLuint texture=m->routeTextures[image];
+                if(!texture)continue;
+                glBindTexture(GL_TEXTURE_2D,texture);
+                glUniform4f(m->routeRect,
+                            reverie::gumball::kChartRouteX[lane]+.50f,
+                            .56f,.26f,.24f);
+                glDrawArrays(GL_TRIANGLES,0,6);
+            }
+        }else if(allyArt){
+            // These are real expression crops from each named companion's
+            // approved sheet. The independent combat actor remains its ship.
+            const unsigned image=m->sim.guest()==CastGuest::PipParfait
+                ?kRouteArtworkCount:kRouteArtworkCount+1u;
             const GLuint texture=m->routeTextures[image];
-            if(!texture)continue;
-            glBindTexture(GL_TEXTURE_2D,texture);
-            glUniform4f(m->routeRect,reverie::gumball::kChartRouteX[lane]+.50f,
-                        .56f,.26f,.24f);
-            glDrawArrays(GL_TRIANGLES,0,6);
+            if(texture){
+                glBindTexture(GL_TEXTURE_2D,texture);
+                glUniform4f(m->routeRect,-1.72f,-.73f,.35f,.32f);
+                glDrawArrays(GL_TRIANGLES,0,6);
+            }
         }
     }
     const GLenum error=glGetError();
