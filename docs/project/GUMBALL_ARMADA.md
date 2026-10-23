@@ -17,6 +17,16 @@ overwriting enemy warning text. Host path allowlist is exact-name and
 game-scoped; asset GPU resources are context-lifecycle owned. Full concept
 boards stay out of the APK.
 
+The same Android variant task now also extracts the two canonical
+character-expression panels for Pip Parfait and Lolly Wren. The actual flight
+HUD selects Pip's portrait during Pip's real offensive escort, or Lolly's
+during Lolly's real rescue escort. The existing companion actor/shot behavior
+and ship visuals remain operational and distinct. Each of the ten assets is
+16,520 bytes (165,200 total) and sourced from one of the three already
+retained game art masters. Source portrait crop is x=1150,y=5,w=128,h=118
+within each approved 1536x1024 character sheet, yielding a compact,
+readable and original identity rather than generic candy iconography.
+
 **Acceptance ladder:** approved concept artwork discovered (14 Drive PNGs);
 runtime derivative recipe committed; Android asset generation/build not run;
 APK inclusion not read back; native texture loading/drawing and device
