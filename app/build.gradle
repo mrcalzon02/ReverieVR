@@ -10,6 +10,81 @@ abstract class StageOwnerMusicTask extends DefaultTask {
     abstract org.gradle.api.file.DirectoryProperty getOutputDirectory()
 }
 
+// Gumball route artwork is derived from the approved text-free master sheet
+// at build time. Only eight tiles with an actual Chart consumer are packaged;
+// the multi-megabyte concept sheet stays outside APK inputs. No Pillow,
+// network dependency or new Android runtime decoder is required.
+abstract class StageGumballRouteArtTask extends DefaultTask {
+    @org.gradle.api.tasks.InputFile
+    abstract org.gradle.api.file.RegularFileProperty getSourceAtlas()
+    @org.gradle.api.tasks.OutputDirectory
+    abstract org.gradle.api.file.DirectoryProperty getOutputDirectory()
+
+    @org.gradle.api.tasks.TaskAction
+    void stage() {
+        def source = javax.imageio.ImageIO.read(sourceAtlas.get().asFile)
+        if (source == null || source.width != 1672 || source.height != 941)
+            throw new GradleException("Gumball approved Candy Cosmos atlas has unexpected dimensions")
+        final int columns = 8, rows = 5, width = 96, height = 86
+        // Exact cells of art/gumball/node_atlas.json; native registry uses
+        // exactly these eight names. RGB565 is 16,520 bytes per route tile.
+        def cells = [
+            0: "gummy_world", 2: "chocolate_world",
+            5: "ice_candy_world", 6: "citrus_world",
+            8: "gas_giant", 14: "ring_world",
+            24: "outpost_station", 33: "crystal_field"
+        ]
+        File outputRoot = outputDirectory.get().asFile
+        project.delete(outputRoot)
+        File dir = new File(outputRoot, "native/gumball/nodes")
+        if (!dir.mkdirs() && !dir.isDirectory())
+            throw new GradleException("Cannot create generated Gumball asset directory")
+        cells.each { index, name ->
+            int col = index % columns, row = index.intdiv(columns)
+            int left = col * source.width.intdiv(columns)
+            int top = row * source.height.intdiv(rows)
+            int right = (col + 1) * source.width.intdiv(columns)
+            int bottom = (row + 1) * source.height.intdiv(rows)
+            def crop = source.getSubimage(left, top, right - left, bottom - top)
+            def resized = new java.awt.image.BufferedImage(
+                width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
+            def graphics = resized.createGraphics()
+            try {
+                graphics.setRenderingHint(
+                    java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+                graphics.drawImage(crop, 0, 0, width, height, null)
+            } finally {
+                graphics.dispose()
+            }
+            def bytes = new java.io.ByteArrayOutputStream(8 + width * height * 2)
+            // GAI1 / uint16LE width / uint16LE height / RGB565 little-endian.
+            bytes.write([71, 65, 73, 49, width, 0, height, 0] as byte[])
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int rgb = resized.getRGB(x, y)
+                    int value = ((rgb >> 19) & 31) << 11 |
+                        ((rgb >> 10) & 63) << 5 | ((rgb >> 3) & 31)
+                    bytes.write(value & 255)
+                    bytes.write((value >> 8) & 255)
+                }
+            }
+            File dest = new File(dir, name + ".rgb565")
+            dest.bytes = bytes.toByteArray()
+            if (dest.length() != 8 + width * height * 2)
+                throw new GradleException("Incomplete Gumball asset: " + name)
+        }
+    }
+}
+
+def stageGumballRouteArt = tasks.register(
+    "stageGumballRouteArt", StageGumballRouteArtTask
+) {
+    sourceAtlas.set(rootProject.layout.projectDirectory.file(
+        "art/gumball/source/candy_cosmos_asset_atlas.png"))
+    outputDirectory.set(layout.buildDirectory.dir("generated/gumballRouteAssets"))
+}
+
 // Public-distribution guard: the Valve CC BY-NC-SA mesh must not silently
 // enter an APK through Android's automatic src/main/assets packaging.
 // A separate user-controlled importer may be implemented later.
@@ -369,6 +444,9 @@ androidComponents {
     onVariants(selector().all()) { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(
             stageOwnerMusicAssets, { task -> task.outputDirectory }
+        )
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            stageGumballRouteArt, { task -> task.outputDirectory }
         )
     }
 }
