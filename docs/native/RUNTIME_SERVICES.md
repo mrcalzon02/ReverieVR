@@ -9,14 +9,15 @@ The native games shelf now includes a first-page **Manage Game Downloads / Updat
 ## Gumball Chart artwork: read-only scoped asset consumer — 2026-10-23
 
 The existing native host `read_asset` optional ABI-v1 tail now recognizes
-exactly eight named `native/gumball/nodes/*.rgb565` derivatives when and only
+eight named `native/gumball/nodes/*.rgb565` plus two exact `native/gumball/allies/*.rgb565` derivatives when and only
 when the active module ID is `gumball-armada`, limited to 16,520 bytes each.
 Other modules remain isolated. These are generated at build time from the
 approved Candy Cosmos sheet (kept out of the APK) and staged into each Android
 variant by `StageGumballRouteArtTask`; this does **not** expand the public
 native ABI. The game checks the GAI1 header and exact width/height/byte count
 before GLES2 upload, binds textures to deterministic live route-card lane IDs,
-and re-creates/deletes them with the graphics context. Access-policy header
+plus binds the reviewed Pip/Lolly character portrait to their live
+Flight escort encounter, and re-creates/deletes all textures with the graphics context. Access-policy header
 was byte-mirrored and passed strict GCC, Clang and ASan/UBSan host tests;
 Gradle stage, actual APK content, native GLES2 render path and S9 headset
 presentation have not yet been executed/accepted.
