@@ -135,7 +135,7 @@ final class RvPackInstaller {
                         }
                         if("module.json".equals(name)){
                             manifest=true;
-                            if(fileBytes>16384)throw new IOException("Oversized manifest");
+                            if(fileBytes>64*1024)throw new IOException("Oversized manifest");
                         }
                         // Validate actual game mesh bytes before activation,
                         // not merely the archive filename or hash.

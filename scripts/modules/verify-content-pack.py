@@ -13,6 +13,7 @@ import zipfile
 MAX_ENTRIES=512
 MAX_UNCOMPRESSED=96*1024*1024
 MAX_FILE=4*1024*1024
+MAX_MANIFEST=64*1024
 MATRIX=Path(__file__).resolve().parents[2]/"modules/game-identity-matrix.json"
 NAMESPACES={
     entry["id"]:entry["content_namespace"]
@@ -30,7 +31,7 @@ def validate(path):
         if len(names)>MAX_ENTRIES or len(names)<2 or len(names)!=len(set(names)) or "module.json" not in names:
             raise ValueError("Invalid or duplicate ZIP entries")
         info=z.getinfo("module.json")
-        if info.file_size>16384:
+        if info.file_size>MAX_MANIFEST:
             raise ValueError("Oversized module.json")
         manifest=json.loads(z.read("module.json"))
         if not isinstance(manifest,dict) or manifest.get("schema")!=1 or manifest.get("kind")!="content":

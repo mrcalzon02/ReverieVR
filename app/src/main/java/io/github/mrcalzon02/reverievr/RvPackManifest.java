@@ -21,7 +21,7 @@ final class RvPackManifest {
         this.id=id; this.version=version; this.revision=revision;
     }
     static RvPackManifest parse(byte[] input) throws IOException {
-        if(input==null||input.length==0||input.length>16384)
+        if(input==null||input.length==0||input.length>64*1024)
             throw new IOException("Invalid module manifest length");
         final String json;
         try {

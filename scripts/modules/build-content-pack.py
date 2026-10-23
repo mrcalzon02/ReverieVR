@@ -25,6 +25,7 @@ EXTENSIONS = {".rlprop", ".bwm", ".fbx", ".png", ".ogg", ".wav", ".mp3",
 MAX_FILE = 4 * 1024 * 1024
 MAX_PACKED = 64 * 1024 * 1024
 MAX_ENTRIES = 512
+MAX_MANIFEST = 64 * 1024
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
@@ -125,10 +126,12 @@ def build(module, source, output, revision, version, *, provenance=None):
     if not isinstance(provenance, dict) or provenance.get("game") != module or \
        provenance.get("count") != len(assets):
         raise ValueError("Provenance must bind the selected game and asset count")
+    manifest_bytes = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+    if len(manifest_bytes)>MAX_MANIFEST:
+        raise ValueError("Game content manifest exceeds bounded Android limit")
     output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output, "w") as z:
-        zip_write(z, "module.json",
-                  json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode())
+        zip_write(z, "module.json",manifest_bytes)
         for p, b in assets:
             zip_write(z, p, b)
         zip_write(z, "licenses/asset-provenance.json",
