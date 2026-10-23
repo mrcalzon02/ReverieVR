@@ -127,12 +127,12 @@ void Chart(Module* m){
         Frame(m,x,.22f,1.44f,1.09f,m->selected==n);
         const auto lane=m->sim.lane(static_cast<unsigned>(n));
         std::snprintf(text,sizeof(text),"LANE %c  %04u",'A'+n,lane.id);
-        TextFit(m,text,x,.57f,1.32f,.034f,1.f,.88f,.95f);
+        TextFit(m,text,x-.17f,.57f,.94f,.034f,1.f,.88f,.95f);
         Text(m,names[n],x,.35f,.031f,.69f,1.f,.84f);
         const CastGuest rival=m->sim.route_guest(static_cast<unsigned>(n));
         TextFit(m,rival==CastGuest::None?"CLEAR OF KNOWN RIVALS":
             reverie::gumball::CastGuestName(rival),
-            x+.18f,.13f,.87f,.027f,1.f,.70f,.51f);
+            x,.13f,1.31f,.029f,1.f,.70f,.51f);
         if(lane.fortress)Text(m,"FORTRESS ROUTE",x,-.08f,.027f,1.f,.45f,.47f);
         else{
             std::snprintf(text,sizeof(text),"RISK %u   REWARD %uG",
@@ -1174,8 +1174,8 @@ int32_t Render(void* p,const ReverieNativeEyeV1* eye){
             const GLuint texture=m->routeTextures[image];
             if(!texture)continue;
             glBindTexture(GL_TEXTURE_2D,texture);
-            glUniform4f(m->routeRect,reverie::gumball::kChartRouteX[lane]-.50f,
-                        .13f,.34f,.30f);
+            glUniform4f(m->routeRect,reverie::gumball::kChartRouteX[lane]+.50f,
+                        .56f,.26f,.24f);
             glDrawArrays(GL_TRIANGLES,0,6);
         }
     }
