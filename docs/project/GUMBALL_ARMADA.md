@@ -3,6 +3,28 @@
 **Target:** ReverieVR, one phone-resident APK, Galaxy S9 / Daydream.  
 **Status (2026-10-16):** Development-only S01/S02 combat, S03 starter weapons, S08/S09 objectives/salvage, **partial S06 connected shipyard**, and **partial source-integrated named lane rivals plus purchasable companion support contracts** with checked V3 campaign saves. Complete integrated game/Android/Daydream acceptance remains open. The standalone shipyard component and tests were byte-verified against the commit and passed strict GCC/Clang and Clang ASan/UBSan. The integrated Android/NDK APK and physical S9 headset playthrough remain unverified; authored textures, deep voiced announcer and full campaigns remain unimplemented.
 
+## Approved Candy Cosmos route-card imagery — 2026-10-23 source integration
+
+The first bounded production-art integration uses eight approved atlas cells
+of the 14-image retained Drive set, keyed to live `Simulation::lane(id)`
+rather than invented stations or new characters. Java ImageIO crops the
+existing approved source PNG at build time into 96x86 RGB565 GAI1 files,
+adding 132,160 bytes in total across eight assets to generated Android
+asset inputs. The module uses the host-scoped asset reader to validate and
+upload those files at GL context creation; a separate GLES2 textured-quad
+pass displays the corresponding tile beside each route's lane ID without
+overwriting enemy warning text. Host path allowlist is exact-name and
+game-scoped; asset GPU resources are context-lifecycle owned. Full concept
+boards stay out of the APK.
+
+**Acceptance ladder:** approved concept artwork discovered (14 Drive PNGs);
+runtime derivative recipe committed; Android asset generation/build not run;
+APK inclusion not read back; native texture loading/drawing and device
+display not verified. The exact access-scope header passed strict GCC/Clang
+and Clang ASan+UBSan host smoke checks; the actual GLES2 module/Gradle build
+and Galaxy S9 remain open. No character portrait sprites, genuine 3D craft,
+3D ship renderer or complete 4096-node traversable map is claimed.
+
 ## Eight deterministic assault formations — 2026-10-16
 
 **Live combat tactics extension (2026-10-16):** These doctrines now change **actual enemy behavior**, not only initial spawn positions. The ordinary Scout/Interceptor/Bomber actors retain a nonpersistent formation/slot ID and use deterministic bounded `TacticsFor` outputs for lateral drift, projectile aim and firing cadence: fan spreads, pincers track, crossfire alternates, spirals weave, rear pressure aggressively pursues, siege angles inward, escort flanks close toward center and column holds the line. Named cast fighters, couriers, elite aces and bosses keep their authored special attacks. The live `Simulation::update` spawn/steer/shot scheduler consumes the tactic values; no new save field or public ABI.
