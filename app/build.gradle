@@ -17,6 +17,10 @@ abstract class StageOwnerMusicTask extends DefaultTask {
 abstract class StageGumballRouteArtTask extends DefaultTask {
     @org.gradle.api.tasks.InputFile
     abstract org.gradle.api.file.RegularFileProperty getSourceAtlas()
+    @org.gradle.api.tasks.InputFile
+    abstract org.gradle.api.file.RegularFileProperty getPipSheet()
+    @org.gradle.api.tasks.InputFile
+    abstract org.gradle.api.file.RegularFileProperty getLollySheet()
     @org.gradle.api.tasks.OutputDirectory
     abstract org.gradle.api.file.DirectoryProperty getOutputDirectory()
 
@@ -74,6 +78,47 @@ abstract class StageGumballRouteArtTask extends DefaultTask {
             if (dest.length() != 8 + width * height * 2)
                 throw new GradleException("Incomplete Gumball asset: " + name)
         }
+        // The source cast studies are concept boards, not sprite sheets.
+        // Extract a reviewed expression panel of each actual encounter ally
+        // for the sortie HUD; do not substitute generic candy characters.
+        [
+            pip_parfait: pipSheet.get().asFile,
+            lolly_wren: lollySheet.get().asFile
+        ].each { name, sheet ->
+            def character = javax.imageio.ImageIO.read(sheet)
+            if (character == null ||
+                character.width != 1536 || character.height != 1024)
+                throw new GradleException("Wrong Gumball ally sheet: " + name)
+            def portrait = character.getSubimage(1150, 5, 128, 130)
+            def resized = new java.awt.image.BufferedImage(
+                width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
+            def graphics = resized.createGraphics()
+            try {
+                graphics.setRenderingHint(
+                    java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+                graphics.drawImage(portrait, 0, 0, width, height, null)
+            } finally {
+                graphics.dispose()
+            }
+            def bytes = new java.io.ByteArrayOutputStream(8 + width * height * 2)
+            bytes.write([71, 65, 73, 49, width, 0, height, 0] as byte[])
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++) {
+                    int rgb = resized.getRGB(x, y)
+                    int value = ((rgb >> 19) & 31) << 11 |
+                        ((rgb >> 10) & 63) << 5 | ((rgb >> 3) & 31)
+                    bytes.write(value & 255)
+                    bytes.write((value >> 8) & 255)
+                }
+            File allies = new File(outputRoot, "native/gumball/allies")
+            if (!allies.mkdirs() && !allies.isDirectory())
+                throw new GradleException("Cannot stage Gumball allies")
+            File dest = new File(allies, name + ".rgb565")
+            dest.bytes = bytes.toByteArray()
+            if (dest.length() != 8 + width * height * 2)
+                throw new GradleException("Incomplete Gumball ally: " + name)
+        }
     }
 }
 
@@ -82,6 +127,10 @@ def stageGumballRouteArt = tasks.register(
 ) {
     sourceAtlas.set(rootProject.layout.projectDirectory.file(
         "art/gumball/source/candy_cosmos_asset_atlas.png"))
+    pipSheet.set(rootProject.layout.projectDirectory.file(
+        "art/gumball/source/pip_parfait_cherry_whiz.png"))
+    lollySheet.set(rootProject.layout.projectDirectory.file(
+        "art/gumball/source/lolly_wren_soft_landing.png"))
     outputDirectory.set(layout.buildDirectory.dir("generated/gumballRouteAssets"))
 }
 
