@@ -143,11 +143,101 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
     // Muzzle reinforcement has a second observable ring.
     Tube(emit,Add(tip,Scale(aim,-.10f)),tip,right,up,
          radius*.97f,radius*.92f,.42f,.44f,.40f);
-    if(kind==WeaponKind::Flak || kind==WeaponKind::MissileBattery) {
-        // A visible offset second launcher barrel for heavy antiair mounts.
-        const Vec offset=Scale(right,.26f);
-        Tube(emit,Add(rear,offset),Add(tip,offset),right,up,
-             radius*.69f,radius*.62f,.33f,.38f,.34f);
+    // Changing weapons must visibly exchange the entire barrel assembly.
+    // Every silhouette here is tied to the active WeaponKind and therefore
+    // appears identically on the mounted cannon AND its miniature rack copy.
+    // Keep the central tube's moving tip aligned with Muzzle()/ballistics.
+    switch(kind) {
+        case WeaponKind::MachineGun: {
+            // Rotary machine gun: five exposed slender barrels and binding
+            // collars surrounding the primary, correctly aimed muzzle.
+            for(int side : {-1,1})for(int tier : {-1,1}) {
+                const Vec offset=Add(Scale(right,.115f*side),
+                                     Scale(up,.10f*tier));
+                Tube(emit,Add(rear,Add(Scale(aim,.30f),offset)),
+                     Add(tip,offset),right,up,
+                     .032f,.027f,.20f,.24f,.24f,false);
+            }
+            Tube(emit,Add(rear,Scale(aim,.64f)),
+                 Add(rear,Scale(aim,.78f)),right,up,
+                 .185f,.185f,.46f,.48f,.42f,false);
+            // A broad feed block on the starboard side is an unambiguous
+            // machine-gun feature, even from above the seated breech.
+            const Vec feed=Add(rear,Add(Scale(aim,.26f),Scale(right,.26f)));
+            Tri(emit,Add(feed,Scale(up,.13f)),
+                     Add(feed,Scale(up,-.13f)),
+                     Add(feed,Scale(right,.20f)),.42f,.36f,.25f);
+            break;
+        }
+        case WeaponKind::HeavyGun: {
+            // A single massive jacketed barrel, two external recoil
+            // cylinders and a thick rear sleeve; no antiair pipe array.
+            Tube(emit,Add(rear,Scale(aim,.43f)),
+                 Add(rear,Scale(aim,1.02f)),right,up,
+                 .215f,.195f,.28f,.34f,.32f,false);
+            Tube(emit,Add(rear,Scale(aim,.92f)),
+                 Add(rear,Scale(aim,1.07f)),right,up,
+                 .205f,.205f,.51f,.50f,.43f,false);
+            for(int side : {-1,1}) {
+                const Vec offset=Scale(right,.29f*side);
+                Tube(emit,Add(rear,offset),
+                     Add(rear,Add(Scale(aim,.75f),offset)),
+                     right,up,.072f,.062f,.31f,.34f,.29f,false);
+            }
+            break;
+        }
+        case WeaponKind::Flak: {
+            // Twin extra-long outboard AA barrels and separate flash
+            // suppressors form a recognizable triple-barrel flak mounting.
+            for(int side : {-1,1}) {
+                const Vec offset=Scale(right,.34f*side);
+                Tube(emit,Add(rear,Add(Scale(aim,.22f),offset)),
+                     Add(tip,offset),right,up,
+                     .105f,.093f,.28f,.38f,.33f);
+                Tube(emit,Add(tip,Add(Scale(aim,-.16f),offset)),
+                     Add(tip,offset),right,up,
+                     .14f,.13f,.43f,.48f,.39f,false);
+            }
+            break;
+        }
+        case WeaponKind::MissileBattery: {
+            // Four unmistakable rocket canisters in a 2x2 array. Their
+            // actual open, dark muzzle bores face the aircraft. The small
+            // central aiming tube still aligns with the launch ray.
+            for(int side : {-1,1})for(int tier : {-1,1}) {
+                const Vec offset=Add(Scale(right,.255f*side),
+                                     Scale(up,.205f*tier));
+                Tube(emit,Add(rear,Add(Scale(aim,.28f),offset)),
+                     Add(rear,Add(Scale(aim,length-.045f),offset)),
+                     right,up,.108f,.102f,.31f,.36f,.29f);
+            }
+            // Launcher crossbraces visibly join the four canisters, rather
+            // than pretending the missile mount is another gun barrel.
+            for(int station=0;station<2;++station) {
+                const Vec center=Add(rear,Scale(aim,station?.89f:.39f));
+                Tube(emit,Add(center,Scale(right,-.32f)),
+                     Add(center,Scale(right,.32f)),aim,up,
+                     .048f,.048f,.36f,.39f,.31f,false);
+            }
+            break;
+        }
+        case WeaponKind::DirectCannon: {
+            // Enormous bore, paired hydropneumatic recoil tubes, and two
+            // distinct enlarged muzzle-brake chambers; not a missile pod.
+            for(int station=0;station<2;++station) {
+                const float offset=station?.23f:.43f;
+                Tube(emit,Add(tip,Scale(aim,-offset-.095f)),
+                     Add(tip,Scale(aim,-offset)),right,up,
+                     .235f,.225f,.48f,.47f,.39f);
+            }
+            for(int side : {-1,1}) {
+                const Vec offset=Scale(right,.31f*side);
+                Tube(emit,Add(rear,offset),
+                     Add(rear,Add(Scale(aim,.82f),offset)),right,up,
+                     .062f,.051f,.44f,.45f,.38f,false);
+            }
+            break;
+        }
     }
     // Every fixed carriage piece follows the relocated gun breech as a
     // solid assembly; only barrel/breech tube retracts on confirmed fire.
