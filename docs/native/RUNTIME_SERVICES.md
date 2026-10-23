@@ -6,6 +6,21 @@ The native games shelf now includes a first-page **Manage Game Downloads / Updat
 
 `NativeModuleRuntime` supplies its selected game's `RvPackInstaller.activeAssets` immutable revision directory to `nativeCreate`. The host checks the expected private `/module-packs/<id>/releases/<rev>/assets` location, then performs a bounded read of the previously validated module-owned path; if the optional file is absent it falls back to Android AssetManager. This is an integrated content-resolution path, **not** a feature for independently downloaded native code. Source integration and JVM/host checks do not constitute APK/S9 acceptance.
 
+## Gumball Chart artwork: read-only scoped asset consumer — 2026-10-23
+
+The existing native host `read_asset` optional ABI-v1 tail now recognizes
+exactly eight named `native/gumball/nodes/*.rgb565` derivatives when and only
+when the active module ID is `gumball-armada`, limited to 16,520 bytes each.
+Other modules remain isolated. These are generated at build time from the
+approved Candy Cosmos sheet (kept out of the APK) and staged into each Android
+variant by `StageGumballRouteArtTask`; this does **not** expand the public
+native ABI. The game checks the GAI1 header and exact width/height/byte count
+before GLES2 upload, binds textures to deterministic live route-card lane IDs,
+and re-creates/deletes them with the graphics context. Access-policy header
+was byte-mirrored and passed strict GCC, Clang and ASan/UBSan host tests;
+Gradle stage, actual APK content, native GLES2 render path and S9 headset
+presentation have not yet been executed/accepted.
+
 ## Beckenburg scoped asset root — 2026-10-17
 
 Native `HostReadAsset` classifies packaged paths with `reverie_native_asset_scope.h`; it admits only exact flat `native/red-ledger/beckenburg/*.rlprop` model names, does not accept paths from other modules or arbitrary folders, and continues to use Android's packaged AssetManager. Downloadable content-pack mounting is a separate planned service, not implied by this APK path fix. Native host ABI v1, saves and module lifecycle are unchanged.
