@@ -23,19 +23,27 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
         }
         return 8u+2048u*27u; // Exact compiled BWM1 mesh upper bound.
     }
-    // The Gumball Chart consumes only these eight reviewed Candy Cosmos
-    // derivatives, never arbitrary Drive art or another module's asset root.
+    // The Gumball module may read only ten game-bound author-approved
+    // derivatives, never arbitrary concept sheets or another game's assets.
     if(std::strcmp(id,"gumball-armada")==0){
         constexpr const char* root="native/gumball/nodes/";
-        const size_t r=std::strlen(root),n=strnlen(path,128u);
-        if(n>=128u||n<=r||std::strncmp(path,root,r)!=0)return 0u;
+        constexpr const char* allies="native/gumball/allies/";
+        const size_t r=std::strlen(root),a=std::strlen(allies);
+        const size_t n=strnlen(path,128u);
+        if(n>=128u)return 0u;
         constexpr const char* approved[]={
             "gummy_world.rgb565","chocolate_world.rgb565",
             "ice_candy_world.rgb565","citrus_world.rgb565",
             "gas_giant.rgb565","ring_world.rgb565",
             "outpost_station.rgb565","crystal_field.rgb565"};
-        for(const char* name:approved)
-            if(std::strcmp(path+r,name)==0)return 16520u;
+        if(n>r&&std::strncmp(path,root,r)==0){
+            for(const char* name:approved)
+                if(std::strcmp(path+r,name)==0)return 16520u;
+        }
+        if(n>a&&std::strncmp(path,allies,a)==0 &&
+           (std::strcmp(path+a,"pip_parfait.rgb565")==0 ||
+            std::strcmp(path+a,"lolly_wren.rgb565")==0))
+            return 16520u;
         return 0u;
     }
     const bool red=std::strcmp(id,"between-deliveries-red-ledger")==0;
