@@ -26,6 +26,8 @@ abstract class StageGumballRouteArtTask extends DefaultTask {
 
     @org.gradle.api.tasks.TaskAction
     void stage() {
+        // Gradle runs on headless builders; never require an X11 display.
+        System.setProperty("java.awt.headless", "true")
         def source = javax.imageio.ImageIO.read(sourceAtlas.get().asFile)
         if (source == null || source.width != 1672 || source.height != 941)
             throw new GradleException("Gumball approved Candy Cosmos atlas has unexpected dimensions")
