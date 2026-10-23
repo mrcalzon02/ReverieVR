@@ -1,5 +1,6 @@
 #include "omega_front_campaign_save.h"
 #include "omega_front_texture_renderer.h"
+#include "omega_front_cc0_palette.h"
 #include "omega_front_sound.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
@@ -434,6 +435,15 @@ void Draw(State *s){
             if(ground==game::Ground::Wall)
                 Rect(s,wx,wy,kCell*.77f,kCell*.74f,kBoardZ+.015f,.36f,.39f,.39f);
         }
+        // Mission-specific licensed CC0 pixel art overlays the actual
+        // Beckenburg ground substrate, never changes Ground movement rules.
+        // Every selected 16x16 tile is nearest-neighbor scaled onto this 2D
+        // cell. Absent DLC artwork leaves the original ground intact.
+        const int cc0Tile=omega_art::GroundVariant(
+            ground,s->session.frontier.operation(),x,y);
+        if(cc0Tile>=0)
+            s->sprites.Place(omega_art::kCc0First+cc0Tile,wx,wy,
+                             kCell*.965f,kCell*.965f,kBoardZ+.002f);
         // Low-poly deadwood marks occasional existing rubble/cover cells.
         // This decor never becomes phantom collision or an opaque UI overlay.
         if(ground==game::Ground::Rubble && (x*7+y*11)%13==0)
@@ -839,11 +849,14 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
     if(s->session.view==game::FrontMode::Tactical){
         colored(0,s->base_vertices);
         sprites(0,omega_art::kGroundCount);
+        // Licensed 2D RPG overlays remain underneath the actors/UI; they
+        // are decoration for real Ground cells, never a third dimension.
+        sprites(omega_art::kCc0First,omega_art::Count);
         // After ground, objective/cover overlays must not erase the real
         // PSX props. Then draw actors over props, and UI over both.
         colored(s->base_vertices,s->unit_vertices);
         sprites(omega_art::kGroundCount,omega_art::kTerrainCount);
-        sprites(omega_art::kTerrainCount,omega_art::Count);
+        sprites(omega_art::kTerrainCount,omega_art::kCc0First);
         colored(s->unit_vertices,total);
     }else{
         // Front map is the initial screen, not an unrelated all-geometry

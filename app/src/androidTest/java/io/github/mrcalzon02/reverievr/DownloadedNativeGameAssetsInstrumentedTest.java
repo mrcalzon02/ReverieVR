@@ -137,7 +137,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 count+=packageFolder(output,assets,"native/omega-front/terrain");
                 count+=packageFolder(output,assets,"native/omega-front/shared");
                 count+=packageFolder(output,assets,"native/omega-front/units/kenney");
-                assertTrue("Real Omega Front sprite inventory",count>=60);
+                count+=packageFolder(output,assets,"native/omega-front/rpg_cc0");
+                assertEquals("Real Omega Front CC0 source + sprite inventory",141,count);
             }else throw new IOException("Unknown integrated game test");
         }
         return count;
@@ -327,7 +328,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         runInstalledAssets("between-deliveries-red-ledger",24);
     }
     @Test public void omegaFrontDownloadedTexturesRenderThroughNativeGles(){
-        // 31 terrain + 13 shared + 32 Kenney files (including their catalogs).
-        runInstalledAssets("omega-front",76);
+        // 76 original files plus 64 genuinely CC0 16px art files and
+        // one licensing manifest, all loaded through the native asset scope.
+        runInstalledAssets("omega-front",141);
     }
 }

@@ -1,0 +1,797 @@
+{
+  "schema": 1,
+  "asset_set": "omega-front-kenney-cc0-rpg",
+  "license": "CC0-1.0",
+  "copyright": "Kenney (voluntary credit)",
+  "official_sources": [
+    {
+      "pack": "Tiny Battle",
+      "url": "https://kenney.nl/assets/tiny-battle",
+      "license": "CC0-1.0"
+    },
+    {
+      "pack": "RPG Urban Pack",
+      "url": "https://kenney.nl/assets/rpg-urban-pack",
+      "license": "CC0-1.0"
+    },
+    {
+      "pack": "Roguelike City Pack",
+      "url": "https://opengameart.org/content/roguelike-modern-city-pack",
+      "license": "CC0-1.0"
+    }
+  ],
+  "byte_identical_source": "https://github.com/shorepine/kenney/tree/3694c6879e487c108f55677be7dd2ca75b07cc3b/2d",
+  "source_commit": "3694c6879e487c108f55677be7dd2ca75b07cc3b",
+  "graphics_contract": "Only 2D sprites in native GLES2 tactical 24x24. Each untouched 16x16 source PNG is nearest-neighbor enlarged 4x to a 64x64 logical tile in RAM; no changes to collision, Ground, cover or simulation. All 64 slots are reachable via GroundVariant(). Original RPG Maker engine RTP excluded.",
+  "count": 64,
+  "tiles": [
+    {
+      "texture_slot": 44,
+      "name": "tiny_battle_0000",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0000.png",
+      "source_blob_sha": "e743c54239ad02d5d34f9b8ce3c98d5b9e4c8feb",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0000.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 45,
+      "name": "tiny_battle_0001",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0001.png",
+      "source_blob_sha": "9f8471ab183cd7cc2fc9e3d7d90fa2bcb57be26f",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0001.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 46,
+      "name": "tiny_battle_0002",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0002.png",
+      "source_blob_sha": "8f24c62e833011bf2dc2e2025dc636f6c10a54b5",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0002.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 47,
+      "name": "tiny_battle_0003",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0003.png",
+      "source_blob_sha": "c23c31401a484074ba4628f4b25042215363e728",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0003.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 48,
+      "name": "tiny_battle_0004",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0004.png",
+      "source_blob_sha": "feff7bda1070b9b4b26d56bf5f72638550bb9756",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0004.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 49,
+      "name": "tiny_battle_0005",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0005.png",
+      "source_blob_sha": "84e19fdb8998eade62a9c94fc512b203117f7de0",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0005.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 50,
+      "name": "tiny_battle_0006",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0006.png",
+      "source_blob_sha": "214e07fc5a08bd9a6e48a591ddaeb49c1f780dbc",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0006.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 51,
+      "name": "tiny_battle_0007",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0007.png",
+      "source_blob_sha": "f70820c4e12b8bb7d7c6198ce164a1810b61dbd5",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0007.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 52,
+      "name": "tiny_battle_0008",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0008.png",
+      "source_blob_sha": "2e75f79a663159b6f08d44d81e49573cc45d6be6",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0008.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 53,
+      "name": "tiny_battle_0009",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0009.png",
+      "source_blob_sha": "2d8ae17178c87f07780cbe4363b060cf2a5713dc",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0009.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 54,
+      "name": "tiny_battle_0010",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0010.png",
+      "source_blob_sha": "507671f21c3668f2f379dd6b5d8aae0d8b7e84a8",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0010.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 55,
+      "name": "tiny_battle_0011",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0011.png",
+      "source_blob_sha": "2215a20849a7bb19f74c98bb9a0b128135855929",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0011.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 56,
+      "name": "tiny_battle_0012",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0012.png",
+      "source_blob_sha": "7881ff4fb99a63ac86787c3464f3c13e6c2c5185",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0012.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 57,
+      "name": "tiny_battle_0013",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0013.png",
+      "source_blob_sha": "fe9c7d4e4b4b59bb3e6452231a7a5d77cb4eb334",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0013.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 58,
+      "name": "tiny_battle_0014",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0014.png",
+      "source_blob_sha": "6a2440fbfefa6f2ceae26157e88de72f6773bb43",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0014.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 59,
+      "name": "tiny_battle_0015",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0015.png",
+      "source_blob_sha": "cedaafc490dc18f0e6d31bef64309d0aa8047662",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0015.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 60,
+      "name": "tiny_battle_0016",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0016.png",
+      "source_blob_sha": "2f9c405f9a5afd4eaa3ecf53c00e31dabd3b6b38",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0016.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 61,
+      "name": "tiny_battle_0017",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0017.png",
+      "source_blob_sha": "a0289732e8ab1381150e6fddc54dbdcc3c7db9e8",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0017.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 62,
+      "name": "tiny_battle_0018",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0018.png",
+      "source_blob_sha": "c83b944534b3f8b8e9ba1f7389d1f95a2989893d",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0018.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 63,
+      "name": "tiny_battle_0019",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0019.png",
+      "source_blob_sha": "b59cc14f03d8ff2ed03e235a27d10fcdeb9016c7",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0019.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 64,
+      "name": "tiny_battle_0020",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0020.png",
+      "source_blob_sha": "210b4af5b836add0ba65f2a5928f8c2323d85cf2",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0020.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 65,
+      "name": "tiny_battle_0021",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0021.png",
+      "source_blob_sha": "907df46f717ba235a5863c5ec8812f2aaba6d2f8",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0021.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 66,
+      "name": "tiny_battle_0022",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0022.png",
+      "source_blob_sha": "35dd5229f7eb282d2b741c5f8c58d2d9fa5e737e",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0022.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 67,
+      "name": "tiny_battle_0023",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0023.png",
+      "source_blob_sha": "e8c11976eca84fea98c2260c4d0fb3fdbebd57c6",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0023.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 68,
+      "name": "tiny_battle_0024",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0024.png",
+      "source_blob_sha": "60c8245f1a7520fa3ad298798e17997122180b5b",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0024.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 69,
+      "name": "tiny_battle_0025",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0025.png",
+      "source_blob_sha": "7e64e19932b2e675043506d475887d1c8a2cc633",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0025.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 70,
+      "name": "tiny_battle_0026",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0026.png",
+      "source_blob_sha": "ea388332855e963d457b29057d5ae336cdd3a611",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0026.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 71,
+      "name": "tiny_battle_0027",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0027.png",
+      "source_blob_sha": "1cf1d1ebceb83217fa880dbdd5f3d0d2855d1216",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0027.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 72,
+      "name": "tiny_battle_0028",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0028.png",
+      "source_blob_sha": "2ea2db1e4bbae873f8ac25b102607e6108607d41",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0028.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 73,
+      "name": "tiny_battle_0029",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0029.png",
+      "source_blob_sha": "254969fdc0e159a62a2ee9fc08740f0c0df19d87",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0029.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 74,
+      "name": "tiny_battle_0030",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0030.png",
+      "source_blob_sha": "e39fe394fddc7aed795d45bec82bbd124556ba0b",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0030.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 75,
+      "name": "tiny_battle_0031",
+      "source_path": "2d/Tiny Battle/Tiles/tile_0031.png",
+      "source_blob_sha": "c16d51e875368d969d8111469992ff11ddf84c6a",
+      "runtime_path": "native/omega-front/rpg_cc0/tiny_battle_0031.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "top-down strategy ground, water edges, installations and battlefield wreck props"
+    },
+    {
+      "texture_slot": 76,
+      "name": "rpg_urban_0000",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0000.png",
+      "source_blob_sha": "36d6f3c58fa7dc2c6f2d6780340b2756f89274c2",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0000.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 77,
+      "name": "rpg_urban_0001",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0001.png",
+      "source_blob_sha": "9e2d39cc378592b9009c093476b5b9df184d23aa",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0001.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 78,
+      "name": "rpg_urban_0002",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0002.png",
+      "source_blob_sha": "ef1d34ed8008f0798b2adf473834664b096ffe14",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0002.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 79,
+      "name": "rpg_urban_0003",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0003.png",
+      "source_blob_sha": "caa088d68f476f7be14eda70916c3dcc50bd7f3f",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0003.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 80,
+      "name": "rpg_urban_0004",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0004.png",
+      "source_blob_sha": "ddf785f061da266b5ad30ed163900730d927443f",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0004.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 81,
+      "name": "rpg_urban_0005",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0005.png",
+      "source_blob_sha": "1d398f9199be269a0b00845bd802b80134a25f26",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0005.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 82,
+      "name": "rpg_urban_0006",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0006.png",
+      "source_blob_sha": "ae9ab7611364cd10f951769cd7520027b30f4ce4",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0006.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 83,
+      "name": "rpg_urban_0007",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0007.png",
+      "source_blob_sha": "12944607e144bcb0a1654cea6aeb9f74f6f75fe1",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0007.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 84,
+      "name": "rpg_urban_0008",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0008.png",
+      "source_blob_sha": "162f21b7814116d4c873accb8019efc55d336544",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0008.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 85,
+      "name": "rpg_urban_0009",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0009.png",
+      "source_blob_sha": "5035c3ce752d11d20be0c01c5b6f13cb7323625d",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0009.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 86,
+      "name": "rpg_urban_0010",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0010.png",
+      "source_blob_sha": "8a4f0b512ed4b49a8f1d602f6a2aece7d5cf744b",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0010.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 87,
+      "name": "rpg_urban_0011",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0011.png",
+      "source_blob_sha": "e84c2d3503c4213d1a461c7e6a12e59b0b744e66",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0011.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 88,
+      "name": "rpg_urban_0012",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0012.png",
+      "source_blob_sha": "d999ae7f1ad474fc2a06c576b8cc57b9787d1d4c",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0012.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 89,
+      "name": "rpg_urban_0013",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0013.png",
+      "source_blob_sha": "5b1094c26b4192321b07fb478b86cff264521573",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0013.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 90,
+      "name": "rpg_urban_0014",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0014.png",
+      "source_blob_sha": "1a133af8e6f3b9032d250a02977366e5bf7d865d",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0014.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 91,
+      "name": "rpg_urban_0015",
+      "source_path": "2d/RPG Urban Pack/Tiles/tile_0015.png",
+      "source_blob_sha": "1bc642b6f0e75a575a5466eebd9b48ef85ccf8c4",
+      "runtime_path": "native/omega-front/rpg_cc0/rpg_urban_0015.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "urban district soil, coasts, city paving and stone floors"
+    },
+    {
+      "texture_slot": 92,
+      "name": "roguelike_city_0000",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0000.png",
+      "source_blob_sha": "d47471dd69145fd362e13dd7d8e1daa174d2001a",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0000.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 93,
+      "name": "roguelike_city_0001",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0001.png",
+      "source_blob_sha": "d843664aafa6ee89fa0ed4a3c5cbc3b50cec8880",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0001.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 94,
+      "name": "roguelike_city_0002",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0002.png",
+      "source_blob_sha": "40ab9d37e02fa6164954b48af1a7e34d01b01ed9",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0002.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 95,
+      "name": "roguelike_city_0003",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0003.png",
+      "source_blob_sha": "015f0bf93d6908ea8a91e8d903e566fae9bd11f7",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0003.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 96,
+      "name": "roguelike_city_0004",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0004.png",
+      "source_blob_sha": "a43abb562f749fed67d01cd5ae9478181c5a32bd",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0004.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 97,
+      "name": "roguelike_city_0005",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0005.png",
+      "source_blob_sha": "16fb06f10f66f10868929d772ecb7dcd490440be",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0005.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 98,
+      "name": "roguelike_city_0006",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0006.png",
+      "source_blob_sha": "bedf77636dd070f048a2c00003964a4e65201a4b",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0006.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 99,
+      "name": "roguelike_city_0007",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0007.png",
+      "source_blob_sha": "596d0b972cdc504287ac4df42def29a402870b1d",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0007.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 100,
+      "name": "roguelike_city_0008",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0008.png",
+      "source_blob_sha": "c79ba48a923848b23fbb50460b66f2b33199eea2",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0008.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 101,
+      "name": "roguelike_city_0009",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0009.png",
+      "source_blob_sha": "dd347d611f31501e6b9afe87211e0715ece36ded",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0009.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 102,
+      "name": "roguelike_city_0010",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0010.png",
+      "source_blob_sha": "2cc1b1b5e05c64708333df5dc7b71cbe56e3b777",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0010.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 103,
+      "name": "roguelike_city_0011",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0011.png",
+      "source_blob_sha": "a88f427a463bad6c2658343b3e48d7a0145f508d",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0011.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 104,
+      "name": "roguelike_city_0012",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0012.png",
+      "source_blob_sha": "ac1a988f55e843f1a8fdb94e140022bf10da2216",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0012.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 105,
+      "name": "roguelike_city_0013",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0013.png",
+      "source_blob_sha": "ffc9624d73e22c0d5fd4a3d4225823dcae00c417",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0013.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 106,
+      "name": "roguelike_city_0014",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0014.png",
+      "source_blob_sha": "a06314dea5a27d054c33346588cb44a4bfb2eb3e",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0014.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    },
+    {
+      "texture_slot": 107,
+      "name": "roguelike_city_0015",
+      "source_path": "2d/Roguelike City Pack/Tiles/tile_0015.png",
+      "source_blob_sha": "b207a42bf16c05bfc9c3d181086bf5063ffe1900",
+      "runtime_path": "native/omega-front/rpg_cc0/roguelike_city_0015.png",
+      "pixel_size": [
+        16,
+        16
+      ],
+      "tactical_usage": "ruined masonry, roads and city block ground"
+    }
+  ]
+}

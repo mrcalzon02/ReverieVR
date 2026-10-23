@@ -10,6 +10,7 @@ on:
       - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/DownloadedNativeGameAssetsInstrumentedTest.java'
       - 'app/src/main/jni/native/omega_front_*.h'
       - 'app/src/main/jni/native/omega_front_module.cpp'
+      - 'app/src/main/assets/native/omega-front/rpg_cc0/**'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java'
       - 'modules/game-identity-matrix.json'
       - 'scripts/modules/verify-game-identity-matrix.py'
@@ -136,13 +137,14 @@ jobs:
             adb logcat -d -v time > validation/hub/logcat.txt
             grep -F 'OK (10 tests)' validation/hub/instrumentation-output.txt
             grep -F 'PASS real downloaded between-deliveries-red-ledger assets=24' validation/hub/logcat.txt
-            grep -F 'PASS real downloaded omega-front assets=76' validation/hub/logcat.txt
+            grep -F 'PASS real downloaded omega-front assets=141' validation/hub/logcat.txt
             grep -F 'PASS omega-front emulator nativeLaunch=true publicGames=true travel=true deploy=true controllerOrder=true combatStep=true stereoGles2=true saveResume=true' validation/hub/logcat.txt
             adb exec-out run-as io.github.mrcalzon02.reverievr cat files/omega-front-ci-tactical.png > validation/hub/omega-front-tactical.png
             test -s validation/hub/omega-front-tactical.png
             python3 -c 'from pathlib import Path; image=Path("validation/hub/omega-front-tactical.png").read_bytes(); assert image.startswith(bytes((137,80,78,71,13,10,26,10))), "No actual GLES2 tactical PNG"; print("PASS Omega Front GLES2 tactical framebuffer captured from Android")'
             grep -F 'Game verified-pack asset id=between-deliveries-red-ledger' validation/hub/logcat.txt
             grep -F 'Game verified-pack asset id=omega-front' validation/hub/logcat.txt
+            grep -F 'Tactical PNG textures loaded: 108/108' validation/hub/logcat.txt
             grep -F 'Authentic BWM1 models loaded 5/5' validation/hub/logcat.txt
             grep -F 'Breakwater verified-pack asset native/breakwater/beckenburg/' validation/hub/logcat.txt
             adb exec-out screencap -p > validation/hub/hub-screen.png

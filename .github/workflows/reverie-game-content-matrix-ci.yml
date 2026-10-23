@@ -28,6 +28,8 @@ on:
       - 'app/src/main/jni/native/omega_front_module.cpp'
       - 'app/src/test/native/omega_front_*_test.cpp'
       - 'scripts/verify-omega-front-playability.sh'
+      - 'scripts/modules/verify-omega-front-cc0.py'
+      - 'app/src/main/assets/native/omega-front/rpg_cc0/**'
 
 permissions:
   contents: read
@@ -114,11 +116,13 @@ jobs:
               members=set(z.namelist())
               missing=sorted("assets/"+p for p in referenced
                              if "assets/"+p not in members)
-              assert len(referenced)>=40,(len(referenced),missing)
+              assert len(referenced)==108,(len(referenced),missing)
               assert not missing,missing
           print("PASS:",len(referenced),
                 "actual native Omega Front sprite paths match signed-format pack")
           PY
+      - name: Validate real 16x16 CC0 RPG tile sources and all renderer selections
+        run: python3 scripts/modules/verify-omega-front-cc0.py
       - name: Seal genuine multi-game offline test packages
         run: sha256sum validation/*.rvpack > validation/SHA256.txt
       - name: Check release-to-game ID version and publisher certificate preflight

@@ -26,10 +26,13 @@ enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  SentinelH, SentinelR, LegionaryH, LegionaryR,
                  RifleHAlt, RifleRAlt, EngineerHAlt, EngineerRAlt,
                  SalvagerHAlt, SalvagerRAlt, SentinelHAlt, SentinelRAlt,
-                 LegionaryHAlt, LegionaryRAlt, Count };
+                 LegionaryHAlt, LegionaryRAlt, RpgCc0First,
+                 Count=RpgCc0First+64 };
 // Ground then environmental props then combat units. Flat 2D sprite planes.
 constexpr int kGroundCount=13;
 constexpr int kTerrainCount=19;
+constexpr int kCc0First=RpgCc0First;
+constexpr int kCc0Count=64;
 static const char *const kPaths[Count]={
     "native/omega-front/terrain/cracked_earth.png",
     "native/omega-front/terrain/ruined_concrete.png",
@@ -74,7 +77,71 @@ static const char *const kPaths[Count]={
     "native/omega-front/units/kenney/sentinel_hearthwell_guard.png",
     "native/omega-front/units/kenney/sentinel_raider_meridian.png",
     "native/omega-front/units/kenney/legionary_hearthwell_guard.png",
-    "native/omega-front/units/kenney/legionary_raider_lost_ninth.png"
+    "native/omega-front/units/kenney/legionary_raider_lost_ninth.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0000.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0001.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0002.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0003.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0004.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0005.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0006.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0007.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0008.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0009.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0010.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0011.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0012.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0013.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0014.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0015.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0016.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0017.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0018.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0019.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0020.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0021.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0022.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0023.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0024.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0025.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0026.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0027.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0028.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0029.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0030.png",
+    "native/omega-front/rpg_cc0/tiny_battle_0031.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0000.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0001.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0002.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0003.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0004.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0005.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0006.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0007.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0008.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0009.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0010.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0011.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0012.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0013.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0014.png",
+    "native/omega-front/rpg_cc0/rpg_urban_0015.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0000.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0001.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0002.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0003.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0004.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0005.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0006.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0007.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0008.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0009.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0010.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0011.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0012.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0013.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0014.png",
+    "native/omega-front/rpg_cc0/roguelike_city_0015.png"
 };
 class SpriteRenderer {
 public:
@@ -188,18 +255,27 @@ private:
         if(!DecodePng(png.data(),length,image)||
            image.width==0u||image.height==0u||
            image.width>64u||image.height>64u)return false;
-        // Kenney Shooter originals remain unmodified (33-52x43).
-        // Copy their exact RGBA pixels to transparent 64x64 cell canvases
-        // in memory at load time, never distort/stretch the original sprite.
+        // Source PNGs are immutable: Kenney Shooter uses native 33-52x43
+        // character art, while imported CC0 RPG tiles are 16x16 pixel art.
+        // Enlarge only the latter by exact 4x nearest-neighbor sampling for
+        // one logical combat tile (never blur/interpolate source art).
         std::array<uint8_t,64u*64u*4u> cell{};
         // Center the visible art consistently at the same logical cell.
-        const unsigned left=(64u-image.width)/2u;
-        const unsigned top=(64u-image.height)/2u;
-        if(left+image.width>64u||top+image.height>64u)return false;
-        for(unsigned y=0;y<image.height;++y){
-            std::memcpy(cell.data()+((top+y)*64u+left)*4u,
-                image.rgba.data()+size_t(y)*image.width*4u,
-                size_t(image.width)*4u);
+        if(slot>=kCc0First) {
+            if(image.width!=16u || image.height!=16u)return false;
+            for(unsigned y=0;y<64u;++y)
+                for(unsigned x=0;x<64u;++x)
+                    std::memcpy(cell.data()+(y*64u+x)*4u,
+                        image.rgba.data()+((y/4u)*16u+x/4u)*4u,4u);
+        }else{
+            const unsigned left=(64u-image.width)/2u;
+            const unsigned top=(64u-image.height)/2u;
+            if(left+image.width>64u||top+image.height>64u)return false;
+            for(unsigned y=0;y<image.height;++y){
+                std::memcpy(cell.data()+((top+y)*64u+left)*4u,
+                    image.rgba.data()+size_t(y)*image.width*4u,
+                    size_t(image.width)*4u);
+            }
         }
         glGenTextures(1,&textures_[slot]);
         if(!textures_[slot])return false;
