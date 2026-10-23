@@ -20,6 +20,12 @@ int main(){
     }
     assert(MaximumBytes(gumball,"native/gumball/nodes/../gummy_world.rgb565")==0u);
     assert(MaximumBytes(gumball,"native/gumball/nodes/unknown.rgb565")==0u);
+    assert(MaximumBytes(gumball,"native/gumball/allies/pip_parfait.rgb565")==16520u);
+    assert(MaximumBytes(gumball,"native/gumball/allies/lolly_wren.rgb565")==16520u);
+    assert(MaximumBytes(red,"native/gumball/allies/pip_parfait.rgb565")==0u);
+    assert(MaximumBytes(omega,"native/gumball/allies/lolly_wren.rgb565")==0u);
+    assert(MaximumBytes(gumball,"native/gumball/allies/not_canonical.rgb565")==0u);
+    assert(MaximumBytes(gumball,"native/gumball/allies/../pip_parfait.rgb565")==0u);
     assert(MaximumBytes(gumball,"native/gumball/nodes/gummy_world.png")==0u);
     assert(MaximumBytes(gumball,"native/gumball/nodes/sub/gummy_world.rgb565")==0u);
     assert(MaximumBytes(gumball,"native/gumball/nodes/gummy_world.rgb565.bak")==0u);
