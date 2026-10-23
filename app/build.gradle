@@ -41,10 +41,10 @@ abstract class StageGumballRouteArtTask extends DefaultTask {
             throw new GradleException("Cannot create generated Gumball asset directory")
         cells.each { index, name ->
             int col = index % columns, row = index.intdiv(columns)
-            int left = col * source.width.intdiv(columns)
-            int top = row * source.height.intdiv(rows)
-            int right = (col + 1) * source.width.intdiv(columns)
-            int bottom = (row + 1) * source.height.intdiv(rows)
+            int left = (col * source.width).intdiv(columns)
+            int top = (row * source.height).intdiv(rows)
+            int right = ((col + 1) * source.width).intdiv(columns)
+            int bottom = ((row + 1) * source.height).intdiv(rows)
             def crop = source.getSubimage(left, top, right - left, bottom - top)
             def resized = new java.awt.image.BufferedImage(
                 width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
