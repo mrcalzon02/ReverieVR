@@ -81,6 +81,35 @@ int main(){
     gunmesh::Build([&](auto... v){rejected(v...);},
                     WeaponKind::MachineGun,nonfinite);
     assert(rejected.numbers.empty());
+    // Real purchased-weapon previews must lie in the physical pick cuboids.
+    const float eye[]={0.f,0.f,0.f};
+    for(uint8_t id=0;id<kWeaponCount;++id) {
+        const gunmesh::RackSlot slot=gunmesh::RackLocation(id);
+        const float ray[]={slot.x,slot.y,slot.z};
+        assert(gunmesh::HitRack(eye,ray)==id);
+        Geometry miniature;
+        gunmesh::RackModel([&](auto... v){miniature(v...);},
+                           static_cast<WeaponKind>(id));
+        assert(miniature.all_valid && miniature.numbers.size()/12u>240u);
+        assert(miniature.min_x>=slot.x-gunmesh::kRackHalfX);
+        assert(miniature.max_x<=slot.x+gunmesh::kRackHalfX);
+        assert(miniature.min_y>=slot.y-gunmesh::kRackHalfY);
+        assert(miniature.max_y<=slot.y+gunmesh::kRackHalfY);
+        assert(miniature.min_z>=slot.z-gunmesh::kRackHalfZ);
+        assert(miniature.max_z<=slot.z+gunmesh::kRackHalfZ);
+    }
+    const float right[]={1.f,0.f,-1.f};
+    const float behind[]={0.f,0.f,1.f};
+    const float bad[]={NAN,0.f,-1.f};
+    assert(gunmesh::HitRack(eye,right)==-1);
+    assert(gunmesh::HitRack(eye,behind)==-1);
+    assert(gunmesh::HitRack(eye,bad)==-1);
+    assert(gunmesh::HitRack(nullptr,right)==-1);
+    assert(gunmesh::HitRack(eye,nullptr)==-1);
+    Geometry nonexistent;
+    gunmesh::RackModel([&](auto... v){nonexistent(v...);},
+                       static_cast<WeaponKind>(kWeaponCount));
+    assert(nonexistent.numbers.empty());
     std::cout<<"Breakwater 3D cannon: 5 mounted shapes, directional elevation, "
              <<"finite deterministic solid mesh passed\n";
 }

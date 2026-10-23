@@ -92,6 +92,7 @@ struct State {
     uint8_t save_slot=0u;
     bool slot_exists[3]={false,false,false};
     int menu_focus=-1;
+    int rack_focus=-1;
     bool pointer_visible=false;
     float ghost_position[3]={}, shot_origin[3]={}, shot_gravity=0;
     std::vector<float> mesh;
@@ -414,6 +415,18 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         }
         Feedback(s,done?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(game.phase()==Phase::Combat) {
+        // Physical left rack takes priority over a gunshot. Capture the
+        // entire press even if it is locked/reloading; no drag-to-fire.
+        const int rackTarget=gunmesh::HitRack(input.pointer_origin,
+                                              input.pointer_direction);
+        if(rackTarget>=0) {
+            if(!s->combat_input.CaptureOneShotPress(edge))return;
+            const bool ok=game.SelectWeapon(static_cast<WeaponKind>(rackTarget));
+            if(ok)s->sam_armed=false;
+            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                          REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
+        }
         float x=0,y=0;
         const CombatHudTarget hud = AimAtPlane(input,-1.8f,&x,&y)>0 ?
             HitCombatSupportHud(x,y) : CombatHudTarget::None;
@@ -707,6 +720,34 @@ void BuildScene(State *s) {
         if(s->flash>0.0f)
             gunmesh::Flash([s](auto... vertices){Triangle(s,vertices...);},
                            equipped,aim,s->flash);
+        // Always-left cabinet: five visible mounting shelves, with a true
+        // miniature 3D mesh for each gun actually owned by this campaign.
+        const float rackMiddle=gunmesh::kRackTop-2.f*gunmesh::kRackStep;
+        Box(s,gunmesh::kRackX-.54f,rackMiddle,gunmesh::kRackZ-.35f,
+            .065f,1.93f,.12f,.31f,.33f,.30f);
+        Box(s,gunmesh::kRackX+.54f,rackMiddle,gunmesh::kRackZ-.35f,
+            .065f,1.93f,.12f,.31f,.33f,.30f);
+        for(uint8_t id=0;id<kWeaponCount;++id) {
+            const gunmesh::RackSlot slot=gunmesh::RackLocation(id);
+            const WeaponKind kind=static_cast<WeaponKind>(id);
+            const bool owned=game.owns_weapon(kind);
+            const bool active=game.selected_weapon()==kind;
+            const bool hover=s->rack_focus==id;
+            Box(s,slot.x,slot.y,slot.z-.29f,.98f,.30f,.06f,
+                active?.19f:hover?.27f:.13f,
+                active?.40f:hover?.35f:.21f,
+                active?.27f:owned?.29f:.15f);
+            if(owned)
+                gunmesh::RackModel([s](auto... vertices){Triangle(s,vertices...);},
+                                   kind);
+            Text(s,owned?WeaponFor(kind).name:"LOCKED",
+                 slot.x+.21f,slot.y,slot.z+.29f,.023f,
+                 active?.63f:owned?.92f:.58f,
+                 active?1.f:owned?.93f:.61f,
+                 active?.68f:owned?.78f:.60f);
+        }
+        Text(s,"LEFT RACK",gunmesh::kRackX,gunmesh::kRackTop+.28f,
+             gunmesh::kRackZ+.20f,.026f,.82f,.93f,.75f);
     }
     if(s->flash>0.0f) {
         const float *shot=s->shot_direction;
@@ -1219,7 +1260,7 @@ void BuildScene(State *s) {
             WeaponFor(game.selected_weapon()).name,
             static_cast<unsigned>(game.magazine_left()));
         Text(s,ammo,0,.93f,-1.79f,.055f,.88f,.9f,.68f);
-        Text(s,"PAD LEFT/RIGHT SWITCH",0,.29f,-1.79f,.030f,
+        Text(s,"CLICK LEFT RACK OR PAD LEFT RIGHT",0,.29f,-1.79f,.029f,
              .75f,.87f,.76f);
         if(game.reloading()) {
             // Bounded progress bar: computed once during update, rendered
@@ -1568,6 +1609,7 @@ void Pause(void *instance) {
     s->pointer_focus.RequireRelease();
     s->pointer_visible=false;
     s->menu_focus=-1;
+    s->rack_focus=-1;
     s->ghost_on=false;
     s->aim_ray_valid=false;
     s->held=false;
@@ -1590,6 +1632,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     const Phase phase_before=s->campaign.phase();
     const bool pointer_was_visible=s->pointer_visible;
     const int previous_focus=s->menu_focus;
+    const int previous_rack_focus=s->rack_focus;
     // Quick Menu/temporary controller loss withdraws the gameplay ray.
     // Do not advance enemies, reloads, effects, or score while defenseless.
     if(!s->pointer_focus.Filter(
@@ -1602,12 +1645,13 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
         s->pointer_visible=false;
         s->menu_focus=-1;
+        s->rack_focus=-1;
         s->ghost_on=false;
         s->aim_ray_valid=false;
         // Pointer-none frames are paused, not active combat frames.
         // Redraw once to clear targeting/hover; repeated menu-held frames
         // must not rebake the entire scene.
-        if(previous_focus!=-1 || pointer_was_visible)
+        if(previous_focus!=-1 || previous_rack_focus!=-1 || pointer_was_visible)
             s->scene_dirty=true;
         return;
     }
@@ -1615,6 +1659,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     copy.primary_down=down?1u:0u;
     copy.secondary_down=secondary?1u:0u;
     s->pointer_visible=true;
+    s->rack_focus=s->campaign.phase()==Phase::Combat ?
+        gunmesh::HitRack(copy.pointer_origin,copy.pointer_direction):-1;
     // Hover feedback corresponds precisely to the raycast menus, including
     // disabled armory slots. Only mark the scene dirty when focus changes.
     int next_focus=-1;
@@ -1638,6 +1684,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     // All mounted guns, including the missile pod, follow permitted
     // aim. Ghost sights are independent only when outside the mount arc.
     if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
+       s->rack_focus<0 &&
        GunWithinTraverse(copy.pointer_direction,
                          s->campaign.selected_weapon())) {
         for(int k=0;k<3;k++)s->gun_direction[k]=copy.pointer_direction[k];

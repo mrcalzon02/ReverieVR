@@ -168,6 +168,69 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
         {.44f,-.42f,mount.z-.36f},
         {-.44f,-.42f,mount.z-.36f},.52f,.54f,.47f);
 }
+// Selectable real miniature artillery models mounted in a cabinet left of
+// the seated player. This does not change the combat gun, ammunition or saves.
+constexpr float kRackX=-2.10f,kRackZ=-1.72f,kRackTop=.55f;
+constexpr float kRackStep=.35f,kRackHalfX=.49f,kRackHalfY=.151f,
+                kRackHalfZ=.32f;
+struct RackSlot {float x,y,z;};
+inline RackSlot RackLocation(uint8_t id) {
+    return {kRackX,kRackTop-static_cast<float>(id)*kRackStep,kRackZ};
+}
+// The selectable box encloses the same world-space mesh that is drawn.
+inline int HitRack(const float *origin,const float *direction) {
+    if(!origin || !direction)return -1;
+    for(int axis=0;axis<3;++axis)
+        if(!std::isfinite(origin[axis]) || !std::isfinite(direction[axis]))
+            return -1;
+    int found=-1;
+    float nearest=40.f;
+    for(uint8_t id=0;id<kWeaponCount;++id) {
+        const RackSlot slot=RackLocation(id);
+        const float center[]={slot.x,slot.y,slot.z};
+        const float half[]={kRackHalfX,kRackHalfY,kRackHalfZ};
+        float enter=0.f,exit=40.f;
+        bool valid=true;
+        for(int axis=0;axis<3;++axis) {
+            const float lo=center[axis]-half[axis];
+            const float hi=center[axis]+half[axis];
+            const float d=direction[axis],o=origin[axis];
+            if(std::abs(d)<.000001f) {
+                if(o<lo || o>hi){valid=false;break;}
+                continue;
+            }
+            float a=(lo-o)/d,b=(hi-o)/d;
+            if(a>b)std::swap(a,b);
+            enter=std::max(enter,a);
+            exit=std::min(exit,b);
+            if(enter>exit){valid=false;break;}
+        }
+        if(valid && exit>=enter && enter<nearest) {
+            nearest=enter;found=id;
+        }
+    }
+    return found;
+}
+template<typename Emit>
+inline void RackModel(Emit emit,WeaponKind kind) {
+    const uint8_t id=static_cast<uint8_t>(kind);
+    if(!WeaponValid(id))return;
+    const RackSlot slot=RackLocation(id);
+    const auto transform=[&](float &x,float &y,float &z) {
+        x=slot.x-.22f+x*.21f;
+        y=slot.y+(y+.84f)*.21f;
+        z=slot.z+(z+.06f)*.21f;
+    };
+    constexpr float forward[]={0.f,0.f,-1.f};
+    // Same five physical gunmeshes as the player's cannon, scaled only.
+    Build([&](float x0,float y0,float z0,float x1,float y1,float z1,
+              float x2,float y2,float z2,float r,float g,float b) {
+        transform(x0,y0,z0);
+        transform(x1,y1,z1);
+        transform(x2,y2,z2);
+        emit(x0,y0,z0,x1,y1,z1,x2,y2,z2,r,g,b);
+    },kind,forward);
+}
 // A real muzzle-flash volume built from triangles around the tube's moving
 // mouth. Called only for a confirmed 90-ms shot, not when Select is rejected.
 template<typename Emit>
