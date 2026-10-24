@@ -944,9 +944,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         });
         // Crop the quad to the arc region: no full-eye transparent overdraw.
         hudUvBuffer = allocate(new float[] {
-            280f / HUD_TEXTURE_WIDTH, 284f / HUD_TEXTURE_HEIGHT,
+            PowerHudArcGeometry.CROP_LEFT / HUD_TEXTURE_WIDTH, 284f / HUD_TEXTURE_HEIGHT,
             451f / HUD_TEXTURE_WIDTH, 284f / HUD_TEXTURE_HEIGHT,
-            280f / HUD_TEXTURE_WIDTH, 42f / HUD_TEXTURE_HEIGHT,
+            PowerHudArcGeometry.CROP_LEFT / HUD_TEXTURE_WIDTH, 42f / HUD_TEXTURE_HEIGHT,
             451f / HUD_TEXTURE_WIDTH, 42f / HUD_TEXTURE_HEIGHT
         });
 
@@ -8849,7 +8849,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void updateHudVertices() {
         // Cardboard restores each full eye before rendering this global HUD.
-        final float originalLeft = 2f * 280f / HUD_TEXTURE_WIDTH - 1f;
+        final float originalLeft = 2f * PowerHudArcGeometry.CROP_LEFT / HUD_TEXTURE_WIDTH - 1f;
         final float right = PowerHudArcGeometry.inwardInViewport(
             2f * 451f / HUD_TEXTURE_WIDTH - 1f);
         final float originalTop = 1f - 2f * 42f / HUD_TEXTURE_HEIGHT;
