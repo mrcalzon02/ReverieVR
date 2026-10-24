@@ -1,6 +1,7 @@
 #include "gumball_armada_simulation.h"
 #include "gumball_shipyard_menu.h"
 #include "gumball_ship_3d.h"
+#include "gumball_space_3d.h"
 #include "gumball_shipyard_readiness.h"
 #include "gumball_menu_hit.h"
 #include "reverie_native_vector_text.h"
@@ -385,6 +386,7 @@ void ShipyardView(Module* m){
 void Flight(Module* m){
     Background(m);
     const auto& s=m->sim;
+    reverie::gumball::AppendSpaceLane(m->mesh,s.elapsed(),s.node());
     // Live Sour vessels are assembled from exactly the player's voxel parts.
     // Simulation continues governing enemy tactics and bullet collisions.
     for(const auto& e:s.enemies())if(e.active){
@@ -402,6 +404,16 @@ void Flight(Module* m){
         Rect(m,drop.x,drop.y,.063f,.063f,-2.79f,.98f,.97f,.66f);
     }
     for(const auto& shot:s.shots())if(shot.active){
+        if(!shot.zone&&!shot.mine&&!shot.bomb){
+            const float depth=-3.25f-std::max(0.f,shot.y+.4f)*.35f;
+            reverie::gumball::AppendSpaceBox(
+                m->mesh,shot.x,shot.y,depth,
+                shot.damage>=4?.048f:.027f,
+                shot.damage>=4?.115f:.072f,.055f,
+                shot.hostile?1.f:.35f,shot.hostile?.30f:1.f,
+                shot.ally?.46f:.74f);
+            continue;
+        }
         if(shot.zone&&shot.warning>0.f){
             // Three fixed horizontal warning cells, safe until countdown ends.
             Rect(m,shot.x,shot.y,.44f,.09f,-2.81f,.99f,.34f,.20f);
