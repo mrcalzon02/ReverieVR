@@ -74,6 +74,8 @@ int main(){
         for(uint32_t variant=0;variant<3u;++variant){
             auto enemy=ShipAssembly::enemy(kind,variant);
             assert(enemy.connected());
+            assert(enemy.ready());
+            assert(enemy.profile().power>=enemy.profile().demand);
             assert(enemy.count(Part::Core)==1);
             assert(enemy.count(Part::Thruster)>=1);
             assert(enemy.count(Part::Mount)>=1);
