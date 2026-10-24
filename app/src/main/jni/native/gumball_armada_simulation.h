@@ -79,6 +79,14 @@ public:
         if(ship_ready_)ship_profile_=ship.profile();
         return ship_ready_;
     }
+    // 3D ShipAssembly supplies the same physical profile contract as the
+    // legacy flat yard; one simulation path powers both player builds.
+    bool configure_ship_profile(const ShipProfile& profile,bool ready) {
+        if(phase_!=Phase::Chart)return false;
+        ship_ready_=ready;
+        if(ready)ship_profile_=profile;
+        return ready;
+    }
     bool ship_ready()const{return ship_ready_;}
     const SupportContracts& support()const{return support_;}
     bool hire_support(SupportKind kind){
