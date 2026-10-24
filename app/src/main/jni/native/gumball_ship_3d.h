@@ -211,19 +211,21 @@ inline void AppendAssemblyMesh(std::vector<float>& mesh,const ShipAssembly& ship
         {{{-1,-1,-1},{1,-1,-1},{1,-1,1},{-1,-1,1}}}
     };
     constexpr float light[]={1.f,.52f,.69f,.83f,.91f,.57f};
-    // Painter-safe face order for the host's current flat-color pass:
-    // far back, side/top faces, then near front. Volume slices likewise
-    // render from negative Z toward the viewer without needing to clear
-    // shell-owned depth buffers. True arbitrary-orbit depth remains gated.
-    constexpr int drawOrder[]={1,2,3,4,5,0};
-    for(int z=0;z<kShipDepth;++z)
+    // Painter ordering follows yaw without clearing the shell's depth.
+    // This is an interim GLES2 draw order, not a fully depth-tested pass.
+    const int faceOrder[]={ca>=0.f?1:0,
+                           sa>=0.f?2:3,4,5,
+                           sa>=0.f?3:2,ca>=0.f?0:1};
+    for(int zi=0;zi<kShipDepth;++zi)
     for(int y=0;y<kShipSize;++y)
-    for(int x=0;x<kShipSize;++x){
+    for(int xi=0;xi<kShipSize;++xi){
+        const int z=ca>=0.f?zi:kShipDepth-1-zi;
+        const int x=sa>=0.f?kShipSize-1-xi:xi;
         const Part p=ship.at(x,y,z);
         if(p==Part::Empty)continue;
         const unsigned type=static_cast<unsigned>(p);
         const float half=(p==Part::Wing?.38f:p==Part::Mount?.35f:.46f);
-        for(int faceIndex:drawOrder){
+        for(int faceIndex:faceOrder){
             const int f=faceIndex;
             if(ship.at(x+dx[f],y+dy[f],z+dz[f])!=Part::Empty)continue;
             const float shade=light[f]*tint;
