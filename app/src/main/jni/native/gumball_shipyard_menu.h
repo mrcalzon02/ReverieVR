@@ -30,7 +30,7 @@ struct YardCursor {
                 }
             }
         }else if(dy!=0){
-            y=std::max(0,std::min(palette()?4:6,y+dy));
+            y=std::max(0,std::min(palette()?6:6,y+dy));
             if(palette()){toolX=x;toolY=y;}
             else {lastX=x;lastY=y;}
         }
@@ -39,7 +39,7 @@ struct YardCursor {
     void pointAt(int gx,int gy){
         if(gx>=0&&gx<=6&&gy>=0&&gy<=6){
             x=gx;y=gy;lastX=gx;lastY=gy;
-        }else if(gx>=7&&gx<=8&&gy>=0&&gy<=4){
+        }else if(gx>=7&&gx<=8&&gy>=0&&gy<=6){
             x=gx;y=gy;toolX=gx;toolY=gy;
         }
     }
