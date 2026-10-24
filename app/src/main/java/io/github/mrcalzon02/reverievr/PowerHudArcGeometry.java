@@ -6,6 +6,10 @@ final class PowerHudArcGeometry {
     static final float SWEEP = 45.0f;
     static final float OUTER = 177.0f;
     static final float INNER = 157.0f;
+    // Include the left-hand percentage labels in the cropped HUD quad.
+    static final float CROP_LEFT = 200.0f;
+    static final float LABEL_LEFT_OF_ARC_START = 46.0f;
+    static final float LABEL_BASELINE_BELOW_ARC_START = 6.0f;
     static final float TRACK_WIDTH = 13.0f;
     static final float PROGRESS_WIDTH = 11.0f;
     static final float DROP = 52.0f;
@@ -28,12 +32,17 @@ final class PowerHudArcGeometry {
     static float scaledNearTopRight(float value, float anchor) {
         return anchor + (value - anchor) * OUTPUT_SCALE;
     }
+    static float arcStartX(float radius) {
+        return CENTER + radius * (float)Math.cos(Math.toRadians(START));
+    }
+    static float arcStartY(float radius) {
+        return CENTER + radius * (float)Math.sin(Math.toRadians(START));
+    }
     static float labelCenterX(float radius) {
-        return CENTER + radius * (float)Math.cos(Math.toRadians(START + SWEEP / 2f));
+        return arcStartX(radius) - LABEL_LEFT_OF_ARC_START;
     }
     static float labelTopBaselineY(float radius) {
-        return CENTER + radius * (float)Math.sin(Math.toRadians(START + SWEEP / 2f))
-            - 24f;
+        return arcStartY(radius) + LABEL_BASELINE_BELOW_ARC_START;
     }
     private PowerHudArcGeometry() {}
     static float progress(int pct) {
