@@ -224,8 +224,8 @@ void RebuildBoard(Module *m,bool fixed){
         Rect(m,0,0,3.08f,3.08f,-3.045f,.34f,.24f,.15f);
 #if CLASSIC_GAME_KIND == 5
         Text(m,kTitle,0,1.65f,.051f,.91f,.94f,.94f);
-        ChessPanelRect(m,-2.03f,.06f,1.25f,2.78f,-3.040f,.085f,.122f,.158f);
-        ChessPanelRect(m, 2.03f,.06f,1.25f,2.78f,-3.040f,.085f,.122f,.158f);
+        ChessPanelRect(m,-2.03f,.02f,1.25f,3.14f,-3.040f,.085f,.122f,.158f);
+        ChessPanelRect(m, 2.03f,.02f,1.25f,3.14f,-3.040f,.085f,.122f,.158f);
         ChessPanelText(m,"CPU LAST",-2.03f,1.24f,.031f,.73f,.91f,.98f);
         ChessPanelText(m,"MOVE BOOK",2.03f,1.24f,.031f,.73f,.91f,.98f);
 #else
@@ -391,11 +391,11 @@ void RebuildBoard(Module *m,bool fixed){
         }
         if(s.kind==reverie::boardgames::Kind::Chess&&s.side==1){
 #if CLASSIC_GAME_KIND == 5
-            ChessPanelRect(m,2.03f,-.65f,.98f,.32f,-3.026f,
+            ChessPanelRect(m,2.03f,-.98f,.98f,.32f,-3.026f,
                            m->boardControlHover==1?.38f:.23f,.36f,.42f);
             ChessPanelText(m,s.chessDifficulty==0?"AI EASY":
                            s.chessDifficulty==2?"AI HARD":"AI NORMAL",
-                           2.03f,-.65f,.027f,1.f,1.f,.89f,.91f);
+                           2.03f,-.98f,.027f,1.f,1.f,.89f,.91f);
             if(s.selected>=0&&s.selected<64&&
                s.cells[s.selected]==1&&s.selected/8==1){
                 const char *promo=s.promotionChoice==4?"PROMO ROOK":
@@ -404,9 +404,9 @@ void RebuildBoard(Module *m,bool fixed){
                 ChessPanelText(m,promo,2.03f,.66f,.025f,.91f,.92f,.75f);
             }
             if(s.ChessDrawClaimable()){
-                ChessPanelRect(m,2.03f,-1.15f,.98f,.30f,-3.026f,
+                ChessPanelRect(m,2.03f,-1.36f,.98f,.30f,-3.026f,
                                .23f,.36f,.42f);
-                ChessPanelText(m,"CLAIM DRAW",2.03f,-1.15f,.024f,
+                ChessPanelText(m,"CLAIM DRAW",2.03f,-1.36f,.024f,
                                1.f,1.f,.89f,.91f);
             }
 #endif
@@ -894,7 +894,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                                 copy.pointer_direction,&panelX,&panelY);
     const int controlHover=chessPanelAim&&!m->board.finished&&
         m->board.side==1&&std::abs(panelX)<.49f&&
-        panelY<-.49f&&panelY>-.81f?1:0;
+        panelY<-.82f&&panelY>-1.14f?1:0;
     const bool chessPanelHover=chessPanelAim &&
         std::abs(panelX)<.525f&&panelY>.70f&&panelY<1.06f;
 #else
@@ -989,7 +989,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             }else if(
 #if CLASSIC_GAME_KIND == 5
                     chessPanelAim && std::abs(panelX)<.49f &&
-                    panelY<-.99f && panelY>-1.30f &&
+                    panelY<-1.21f && panelY>-1.51f &&
 #else
                     false &&
 #endif
