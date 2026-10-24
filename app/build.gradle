@@ -248,6 +248,18 @@ def updateChannelEnabled =
         && phoneTestRunNumber > 0
         && phoneTestSignerSha256.length() == 64
 
+// New Google Play upload generation; legacy phone-test keys cannot sign Play releases.
+def playUploadKeystorePath = (project.findProperty("playUploadKeystorePath") ?: "").toString()
+def playUploadStorePassword = (project.findProperty("playUploadStorePassword") ?: "").toString()
+def playUploadKeyAlias = (project.findProperty("playUploadKeyAlias") ?: "").toString()
+def playUploadKeyPassword = (project.findProperty("playUploadKeyPassword") ?: "").toString()
+def playUploadConfigured =
+    !playUploadKeystorePath.isEmpty()
+        && !playUploadStorePassword.isEmpty()
+        && !playUploadKeyPassword.isEmpty()
+        && playUploadKeyAlias == "reverievr-play-upload-v1"
+        && file(playUploadKeystorePath).isFile()
+
 
 /*
  * All eleven owner-authorized songs are staged into every APK variant.
@@ -420,6 +432,14 @@ android {
                 keyPassword = phoneTestKeyPassword
             }
         }
+        if (playUploadConfigured) {
+            playUpload {
+                storeFile = file(playUploadKeystorePath)
+                storePassword = playUploadStorePassword
+                keyAlias = playUploadKeyAlias
+                keyPassword = playUploadKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -445,6 +465,18 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+
+        // New Play AAB distribution only. No legacy GitHub APK update channel.
+        play {
+            initWith release
+            debuggable = false
+            signingConfig = null
+            matchingFallbacks = ["release", "debug"]
+            buildConfigField("boolean", "UPDATE_CHANNEL_ENABLED", "false")
+            if (playUploadConfigured) {
+                signingConfig = signingConfigs.playUpload
+            }
         }
     }
 
@@ -542,4 +574,20 @@ tasks.configureEach { task ->
             }
         }
     }
+}
+
+tasks.register("validatePlayUploadSigning") {
+    doLast {
+        if (!playUploadConfigured) {
+            throw new GradleException("Play bundle blocked: supply NEW reverievr-play-upload-v1 upload key properties")
+        }
+        if (playUploadKeystorePath &&
+            phoneTestKeystorePath &&
+            file(playUploadKeystorePath).canonicalPath == file(phoneTestKeystorePath).canonicalPath) {
+            throw new GradleException("Play bundle blocked: must not reuse legacy ReverieVR phone-test key")
+        }
+    }
+}
+tasks.configureEach { task ->
+    if (task.name in ["bundlePlay", "assemblePlay"]) task.dependsOn("validatePlayUploadSigning")
 }

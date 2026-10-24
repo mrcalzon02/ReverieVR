@@ -1,0 +1,6 @@
+# NEW Google Play Upload Signing (2026)
+ReverieVR has a dedicated Gradle `play` build type for Play Store AAB uploads. It requires a brand-new `reverievr-play-upload-v1` upload key generated locally with Rupee Rush's `scripts/generate-new-play-upload-keys.ps1`. The older `phoneTest` signing key remains a separate legacy GitHub sideload channel and is not accepted by `bundlePlay`.
+
+Set four Gradle project properties `playUploadKeystorePath`, `playUploadStorePassword`, `playUploadKeyAlias`, and `playUploadKeyPassword` to supply the new upload key. Do not commit credentials or private key files.
+
+Play App Signing must be configured in Google Play Console. Google's device-signing certificate, not this upload certificate, controls Android signature-protected cross-app permissions. Before publishing audit ReverieVR companion apps, save migration providers, Play policy on `REQUEST_INSTALL_PACKAGES`, and update paths. The `play` variant disables the legacy GitHub updater; this source configuration is not a claim of a compiled, device-tested, or published AAB.
