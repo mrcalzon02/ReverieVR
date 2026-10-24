@@ -23,6 +23,8 @@
 #include "classic_chess_book.h"
 #include "classic_chess_sprite_atlas.h"
 #include "classic_chess_wood_atlas.h"
+#include "classic_chess_panel_layout.h"
+#include "breakwater_font_atlas.h"
 #endif
 namespace {
 using namespace reverie::classics;
@@ -76,6 +78,11 @@ struct Module {
     GLuint chessBoardVbo=0,chessBoardTexture=0;
     GLint chessPos=-1,chessUv=-1,chessMvp=-1,chessSampler=-1;
     bool chessReady=false;
+    GLuint fontProgram=0,fontVbo=0,fontStaticVbo=0,fontTexture=0;
+    GLint fontPos=-1,fontUv=-1,fontCol=-1,fontMvp=-1,fontSampler=-1;
+    GLsizei fontStaticCount=0;
+    bool fontReady=false;
+    std::vector<float> fontVertices,fontStaticVertices;
     std::vector<float> chessSprites;
     std::vector<float> chessBoardSprites;
 #endif
@@ -95,11 +102,15 @@ void Triangle(Module *m,float ax,float ay,float bx,float by,float cx,float cy,
 void Rect(Module *m,float x,float y,float w,float h,float z,float r,float g,float b){
     reverie::flatmesh::Rect(Emit(m),x,y,w,h,z,r,g,b);
 }
-// Every classic uses the same connected-stroke vector font: no more
-// 3x5 pixel-block letters, including decimal scores and menu/status text.
+// Chess: normal proportional Lato text; other classics are unaffected.
 void Text(Module *m,const char *s,float x,float y,float scale,
           float r,float g,float b){
+#if CLASSIC_GAME_KIND == 5
+    auto &v=m->staticPass?m->fontStaticVertices:m->fontVertices;
+    reverie::breakwater::font::AppendText(v,s,x,y,scale,r,g,b,-2.885f);
+#else
     reverie::classicart::StrokeText(Emit(m),s,x,y,scale,r,g,b);
+#endif
 }
 void Segment(Module *m,float x,float y,float xx,float yy,float width,
              float r,float g,float b){
@@ -130,10 +141,30 @@ void BoardOutline(Module *m,float x,float y,float length,
     Rect(m,x+half,y,.020f,length,-2.94f,r,g,b);
 }
 #if CLASSIC_GAME_KIND == 5
-void ChessPanelLine(Module *m,const std::string &message,
-                    float x,float y,size_t maxChars=14){
-    const std::string line=message.substr(0,maxChars);
-    Text(m,line.c_str(),x,y,.0195f,.94f,.96f,.85f);
+void ChessPanelTransform(std::vector<float>& v,size_t start,size_t stride,int side){
+    for(size_t i=start;i+stride<=v.size();i+=stride)
+        reverie::chesspanel::Transform(side,v[i],v[i+2]);
+}
+void ChessPanelRect(Module *m,float x,float y,float w,float h,float z,
+                    float r,float g,float b){
+    auto &v=Emit(m);
+    const size_t start=v.size();
+    reverie::flatmesh::Rect(v,x,y,w,h,z,r,g,b);
+    ChessPanelTransform(v,start,6,x<0?-1:1);
+}
+void ChessPanelText(Module *m,const char *s,float x,float y,float scale,
+                    float r,float g,float b,float width=1.06f){
+    auto &v=m->staticPass?m->fontStaticVertices:m->fontVertices;
+    const size_t start=v.size();
+    reverie::breakwater::font::AppendText(v,s,x,y,
+        reverie::breakwater::font::FittedScale(s,width,scale),
+        r,g,b,-3.012f);
+    ChessPanelTransform(v,start,8,x<0?-1:1);
+}
+void ChessPanelLine(Module *m,const std::string &msg,float x,float y,
+                    size_t maxChars=14){
+    const std::string line=msg.substr(0,maxChars);
+    ChessPanelText(m,line.c_str(),x,y,.027f,.94f,.96f,.85f);
 }
 void ChessPanelExample(Module *m,const std::string &name,float x,float y){
     ChessPanelLine(m,name,x,y,14);
@@ -178,21 +209,27 @@ void RebuildBoard(Module *m,bool fixed){
     if(fixed)m->staticVertices.clear();
     else m->vertices.clear();
 #if CLASSIC_GAME_KIND == 5
-    if(fixed)m->chessBoardSprites.clear();
-    else m->chessSprites.clear();
+    if(fixed){m->chessBoardSprites.clear();m->fontStaticVertices.clear();}
+    else {m->chessSprites.clear();m->fontVertices.clear();}
 #endif
     const reverie::boardgames::State &s=m->board;
     const int size=s.Size();
     const float gap=BoardSpacing(s);
     if(fixed){
-        Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
-        Rect(m,0,0,3.08f,3.08f,-3.045f,.34f,.24f,.15f);
-        Text(m,kTitle,0,1.58f,.082f,.91f,.94f,.94f);
 #if CLASSIC_GAME_KIND == 5
-        Rect(m,-2.01f,.13f,1.18f,2.54f,-3.032f,.085f,.122f,.158f);
-        Rect(m, 2.01f,.13f,1.18f,2.54f,-3.032f,.085f,.122f,.158f);
-        Text(m,"CPU LAST",-2.01f,1.16f,.026f,.73f,.91f,.98f);
-        Text(m,"MOVE BOOK",2.01f,1.16f,.026f,.73f,.91f,.98f);
+        Rect(m,0,0,3.10f,3.55f,-3.10f,.032f,.058f,.092f);
+#else
+        Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
+#endif
+        Rect(m,0,0,3.08f,3.08f,-3.045f,.34f,.24f,.15f);
+#if CLASSIC_GAME_KIND == 5
+        Text(m,kTitle,0,1.65f,.051f,.91f,.94f,.94f);
+        ChessPanelRect(m,-2.03f,.06f,1.25f,2.78f,-3.040f,.085f,.122f,.158f);
+        ChessPanelRect(m, 2.03f,.06f,1.25f,2.78f,-3.040f,.085f,.122f,.158f);
+        ChessPanelText(m,"CPU LAST",-2.03f,1.24f,.031f,.73f,.91f,.98f);
+        ChessPanelText(m,"MOVE BOOK",2.03f,1.24f,.031f,.73f,.91f,.98f);
+#else
+        Text(m,kTitle,0,1.58f,.082f,.91f,.94f,.94f);
 #endif
     }
     for(int y=0;y<size;y++)for(int x=0;x<size;x++){
@@ -286,7 +323,11 @@ void RebuildBoard(Module *m,bool fixed){
     }else if(fixed){
         Text(m,s.kind==reverie::boardgames::Kind::Reversi
              ?"SELECT A MARKED SQUARE":"SELECT PIECE THEN DESTINATION",
+#if CLASSIC_GAME_KIND == 5
+             0,-1.60f,.025f,.84f,.90f,.87f);
+#else
              0,-1.58f,.040f,.84f,.90f,.87f);
+#endif
     }
     if(!fixed && s.kind==reverie::boardgames::Kind::Go &&
        !s.finished){
@@ -318,7 +359,11 @@ void RebuildBoard(Module *m,bool fixed){
         Text(m,s.kind==reverie::boardgames::Kind::Go&&s.goReview
              ?"MARK DEAD GROUPS":m->cpuFailed?"CPU ERROR RESTART":
              s.side==1?"YOUR TURN":"CPU THINKING",
+#if CLASSIC_GAME_KIND == 5
+             0,1.40f,.032f,.95f,.95f,.78f);
+#else
              0,1.34f,.064f,.95f,.95f,.78f);
+#endif
         if(s.kind==reverie::boardgames::Kind::Reversi){
             char scored[64];
             std::snprintf(scored,sizeof(scored),"BLACK %d  WHITE %d",
@@ -345,24 +390,26 @@ void RebuildBoard(Module *m,bool fixed){
             Text(m,"CLAIM DRAW",1.94f,-1.25f,.042f,1.f,1.f,.89f);
         }
         if(s.kind==reverie::boardgames::Kind::Chess&&s.side==1){
-            Rect(m,1.94f,-.65f,.96f,.39f,-2.98f,
-                 m->boardControlHover==1?.38f:.23f,.36f,.42f);
-            Text(m,s.chessDifficulty==0?"AI EASY":
-                   s.chessDifficulty==2?"AI HARD":"AI NORMAL",
-                 1.94f,-.65f,.042f,1.f,1.f,.89f);
+#if CLASSIC_GAME_KIND == 5
+            ChessPanelRect(m,2.03f,-.65f,.98f,.32f,-3.026f,
+                           m->boardControlHover==1?.38f:.23f,.36f,.42f);
+            ChessPanelText(m,s.chessDifficulty==0?"AI EASY":
+                           s.chessDifficulty==2?"AI HARD":"AI NORMAL",
+                           2.03f,-.65f,.027f,1.f,1.f,.89f,.91f);
             if(s.selected>=0&&s.selected<64&&
                s.cells[s.selected]==1&&s.selected/8==1){
                 const char *promo=s.promotionChoice==4?"PROMO ROOK":
                     s.promotionChoice==3?"PROMO BISHOP":
                     s.promotionChoice==2?"PROMO KNIGHT":"PROMO QUEEN";
-                Text(m,promo,1.88f,.66f,.036f,.91f,.92f,.75f);
+                ChessPanelText(m,promo,2.03f,.66f,.025f,.91f,.92f,.75f);
             }
             if(s.ChessDrawClaimable()){
-                Rect(m,1.94f,-1.25f,.96f,.39f,-2.98f,
-                     .23f,.36f,.42f);
-                Text(m,"CLAIM DRAW",1.94f,-1.25f,.042f,
-                     1.f,1.f,.89f);
+                ChessPanelRect(m,2.03f,-1.15f,.98f,.30f,-3.026f,
+                               .23f,.36f,.42f);
+                ChessPanelText(m,"CLAIM DRAW",2.03f,-1.15f,.024f,
+                               1.f,1.f,.89f,.91f);
             }
+#endif
         }
     }
 #if CLASSIC_GAME_KIND == 5
@@ -373,7 +420,7 @@ void RebuildBoard(Module *m,bool fixed){
         ChessPanelLine(m,"OPENING "+book.eco,-2.01f,.18f);
         ChessPanelExample(m,book.opening,-2.01f,-.12f);
         ChessPanelLine(m,"CC0 ECO INDEX",-2.01f,-.84f);
-        Rect(m,2.01f,.88f,1.05f,.36f,-2.966f,
+        ChessPanelRect(m,2.03f,.88f,1.05f,.36f,-3.026f,
              m->chessPanelHover?.32f:.21f,
              m->chessPanelHover?.45f:.34f,.48f);
         ChessPanelLine(m,m->chessPanelTab==0?"NEXT > EXAMPLE":
@@ -392,8 +439,12 @@ void RebuildBoard(Module *m,bool fixed){
         }
     }
 #endif
-    if(fixed)m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
-    else {m->dirty=false;m->upload=true;}
+    if(fixed){
+        m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
+#if CLASSIC_GAME_KIND == 5
+        m->fontStaticCount=static_cast<GLsizei>(m->fontStaticVertices.size()/8);
+#endif
+    }else {m->dirty=false;m->upload=true;}
 }
 void Rebuild(Module *m,bool fixed){
 #if CLASSIC_GAME_KIND == 6
