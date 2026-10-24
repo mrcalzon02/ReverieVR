@@ -13,6 +13,7 @@ MENU_HIT="$ROOT/app/src/test/native/gumball_menu_hit_test.cpp"
 FORMATION="$ROOT/app/src/test/native/gumball_wave_formations_test.cpp"
 FLIGHT="$ROOT/app/src/test/native/gumball_flight_control_test.cpp"
 READINESS="$ROOT/app/src/test/native/gumball_shipyard_readiness_test.cpp"
+SHIP3D="$ROOT/app/src/test/native/gumball_ship_3d_test.cpp"
 INCLUDE="$ROOT/app/src/main/jni/native"
 for compiler in g++ clang++; do
     if ! command -v "$compiler" >/dev/null 2>&1; then
@@ -29,6 +30,9 @@ for compiler in g++ clang++; do
     "$compiler" -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
         -I"$INCLUDE" "$SHIPYARD" -o "$WORK/shipyard-$compiler"
     "$WORK/shipyard-$compiler"
+    "$compiler" -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
+        -I"$INCLUDE" "$SHIP3D" -o "$WORK/ship3d-$compiler"
+    "$WORK/ship3d-$compiler"
     "$compiler" -std=c++17 -O1 -Wall -Wextra -Werror -pedantic \
         -I"$INCLUDE" "$READINESS" -o "$WORK/readiness-$compiler"
     "$WORK/readiness-$compiler"
@@ -64,6 +68,10 @@ if command -v clang++ >/dev/null 2>&1; then
         -fsanitize=address,undefined -fno-omit-frame-pointer \
         -I"$INCLUDE" "$SHIPYARD" -o "$WORK/shipyard-sanitized"
     "$WORK/shipyard-sanitized"
+    clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic \
+        -fsanitize=address,undefined -fno-omit-frame-pointer \
+        -I"$INCLUDE" "$SHIP3D" -o "$WORK/ship3d-sanitized"
+    "$WORK/ship3d-sanitized"
     clang++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic \
         -fsanitize=address,undefined -fno-omit-frame-pointer \
         -I"$INCLUDE" "$READINESS" -o "$WORK/readiness-sanitized"
