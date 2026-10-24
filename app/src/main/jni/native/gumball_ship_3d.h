@@ -178,6 +178,11 @@ public:
         if(kind%2u){add(3,3,3,Part::Shield);add(3,3,1,Part::Battery);}
         if((kind+salt)%3u==0u){add(3,2,3,Part::Armor);add(4,2,2,Part::Cargo);}
         if(kind>=4u){add(2,2,2,Part::Mount);add(3,4,3,Part::Armor);}
+        // Enemy factories obey the exact same launch gates as the player.
+        // Reinforce heavier variants with a connected second thruster and
+        // optional reactor supply rather than granting free physics.
+        if(!ship.ready())add(3,5,2,Part::Thruster);
+        if(!ship.ready())add(4,3,3,Part::Battery);
         return ship;
     }
 private:
