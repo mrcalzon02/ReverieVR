@@ -382,93 +382,20 @@ void ShipyardView(Module* m){
             0,-1.68f,4.75f,.027f,
             flightReady?.65f:1.f,flightReady?1.f:.56f,flightReady?.77f:.48f);
 }
-void EnemyVisual(Module* m,const Enemy& e){
-    const float x=e.x,y=e.y;
-    switch(e.kind){
-    case EnemyKind::Scout:
-        Disc(m,x,y,.16f,-2.90f,.81f,.29f,.37f);
-        Disc(m,x,y,.085f,-2.88f,1.f,.72f,.80f);
-        Tri(m,x,y+.24f,x-.07f,y+.10f,x+.07f,y+.10f,-2.86f,.97f,.86f,.50f);
-        break;
-    case EnemyKind::Interceptor:
-        Tri(m,x,y-.18f,x-.24f,y+.09f,x,y+.25f,-2.90f,.34f,.87f,.26f);
-        Tri(m,x,y-.18f,x,y+.25f,x+.24f,y+.09f,-2.90f,.68f,.91f,.27f);
-        Rect(m,x,y+.02f,.11f,.14f,-2.86f,.96f,.98f,.60f);
-        break;
-    case EnemyKind::Nib:
-        // Thin jagged minelayer with a row of explicitly visible mines.
-        Tri(m,x,y+.24f,x-.19f,y-.17f,x+.19f,y-.17f,
-            -2.92f,.26f,.77f,.42f);
-        Rect(m,x,y,.105f,.33f,-2.88f,.96f,.78f,.18f);
-        Disc(m,x-.12f,y-.12f,.055f,-2.86f,.28f,.98f,.78f);
-        Disc(m,x+.12f,y-.12f,.055f,-2.86f,.28f,.98f,.78f);
-        break;
-    case EnemyKind::Biff:
-        Disc(m,x,y,.22f,-2.92f,.72f,.40f,.17f);
-        Rect(m,x-.15f,y-.04f,.17f,.22f,-2.88f,.96f,.77f,.38f);
-        Disc(m,x+.17f,y+.09f,.08f,-2.86f,1.f,.91f,.50f);
-        break;
-    case EnemyKind::Baff:
-        Disc(m,x,y,.22f,-2.92f,.58f,.36f,.16f);
-        Rect(m,x+.15f,y-.04f,.17f,.22f,-2.88f,.96f,.77f,.38f);
-        Tri(m,x,y+.21f,x-.14f,y+.09f,x+.14f,y+.09f,
-            -2.86f,.98f,.91f,.52f);
-        break;
-    case EnemyKind::Blort:
-        // Rotund grenadier silhouette and twin hazardous sour bomb racks.
-        Disc(m,x,y,.245f,-2.90f,.68f,.78f,.12f);
-        Rect(m,x-.23f,y-.09f,.11f,.19f,-2.88f,.97f,.31f,.11f);
-        Rect(m,x+.23f,y-.09f,.11f,.19f,-2.88f,.97f,.31f,.11f);
-        Disc(m,x,y+.06f,.09f,-2.86f,.98f,.34f,.21f);
-        break;
-    case EnemyKind::Bomber:
-        Rect(m,x,y,.25f,.29f,-2.90f,.72f,.64f,.18f);
-        Disc(m,x-.18f,y-.04f,.105f,-2.87f,.96f,.80f,.23f);
-        Disc(m,x+.18f,y-.04f,.105f,-2.87f,.96f,.80f,.23f);
-        Rect(m,x,y+.12f,.12f,.09f,-2.86f,.96f,.94f,.59f);
-        break;
-    case EnemyKind::Ace:
-        Tri(m,x,y+.24f,x-.29f,y-.19f,x+.29f,y-.19f,-2.91f,.83f,.26f,.69f);
-        Tri(m,x,y+.20f,x-.16f,y-.12f,x+.16f,y-.12f,-2.88f,.96f,.74f,.24f);
-        Disc(m,x,y,.078f,-2.86f,.99f,.90f,.63f);
-        break;
-    case EnemyKind::Courier:
-        // Long, fast gold cargo pod: a visible priority target to intercept.
-        Rect(m,x,y,.17f,.38f,-2.90f,.95f,.62f,.12f);
-        Tri(m,x,y+.28f,x-.13f,y+.09f,x+.13f,y+.09f,
-            -2.88f,1.f,.89f,.31f);
-        Disc(m,x-.13f,y-.12f,.085f,-2.87f,.38f,.94f,.84f);
-        Disc(m,x+.13f,y-.12f,.085f,-2.87f,.38f,.94f,.84f);
-        break;
-    case EnemyKind::Cinnamon:
-        Rect(m,x,y,.24f,.28f,-2.90f,.64f,.32f,.18f);
-        Tri(m,x,y+.21f,x-.13f,y+.07f,x+.13f,y+.07f,
-            -2.87f,.99f,.68f,.31f);
-        Disc(m,x-.16f,y-.11f,.08f,-2.86f,1.f,.52f,.17f);
-        break;
-    case EnemyKind::Sydney:
-        Tri(m,x,y+.24f,x-.29f,y-.18f,x+.29f,y-.18f,
-            -2.90f,.20f,.77f,.94f);
-        Rect(m,x,y,.11f,.19f,-2.86f,.97f,.98f,.98f);
-        break;
-    case EnemyKind::Jules:
-        Disc(m,x,y,.25f,-2.91f,.76f,.40f,.88f);
-        Disc(m,x,y,.14f,-2.88f,.98f,.93f,.62f);
-        Rect(m,x,y-.16f,.29f,.07f,-2.86f,.30f,.17f,.35f);
-        break;
-    case EnemyKind::Fortress:
-        Rect(m,x,y,.52f,.34f,-2.92f,.56f,.15f,.19f);
-        Disc(m,x-.28f,y-.10f,.13f,-2.89f,.81f,.18f,.23f);
-        Disc(m,x+.28f,y-.10f,.13f,-2.89f,.81f,.18f,.23f);
-        Rect(m,x,y+.12f,.27f,.18f,-2.87f,.92f,.58f,.27f);
-        Disc(m,x,y+.10f,.09f,-2.85f,.98f,.92f,.55f);
-        break;
-    }
-}
 void Flight(Module* m){
     Background(m);
     const auto& s=m->sim;
-    for(const auto& e:s.enemies())if(e.active)EnemyVisual(m,e);
+    // Live Sour vessels are assembled from exactly the player's voxel parts.
+    // Simulation continues governing enemy tactics and bullet collisions.
+    for(const auto& e:s.enemies())if(e.active){
+        const unsigned kind=static_cast<unsigned>(e.kind);
+        const auto enemy=ShipAssembly::enemy(kind,
+            s.node()+static_cast<unsigned>(e.formation_slot));
+        const float depth=-3.45f-std::max(0.f,e.y+1.3f)*.92f;
+        reverie::gumball::AppendAssemblyMesh(
+            m->mesh,enemy,e.x,e.y*.75f+.18f,depth,
+            kind>=4u?.13f:.10f,3.14159265f,.92f);
+    }
     for(const auto& drop:s.salvage().items())if(drop.active){
         // Recovered gumdrop cash requires steering into the flying pickup.
         Disc(m,drop.x,drop.y,.092f,-2.81f,.92f,.81f,.21f);
@@ -563,36 +490,10 @@ void Flight(Module* m){
         Rect(m,m->flightTargetX,m->flightTargetY,.022f,.12f,
              -2.76f,.38f,1.f,.84f);
     }
-    float x=s.player_x(),y=s.player_y();
-    Tri(m,x,y+.22f,x-.19f,y-.17f,x+.19f,y-.17f,-2.85f,.92f,.66f,.94f);
-    Disc(m,x,y,.075f,-2.83f,.29f,.91f,.96f);
-    float wing=.21f+.016f*s.level(Upgrade::Hull);
-    Tri(m,x-.08f,y,x-wing,y-.22f,x-.10f,y-.12f,-2.84f,.21f,.81f,.71f);
-    Tri(m,x+.08f,y,x+wing,y-.22f,x+.10f,y-.12f,-2.84f,.21f,.81f,.71f);
-    for(int i=0;i<1+s.level(Upgrade::Blaster)/4;++i)
-        Rect(m,x+(i-1)*.09f,y+.17f,.03f,.16f,-2.82f,1.f,.87f,.33f);
-    // Draw the actual connected construction cells on the combat vessel.
-    // Rendering is derived from shipyard ownership, never decorative fake slots.
-    for(int gy=0;gy<7;++gy)for(int gx=0;gx<7;++gx){
-        const Part part=m->yard.at(gx,gy);
-        if(part==Part::Empty)continue;
-        const float ox=x+(gx-3)*.062f,oy=y+(3-gy)*.061f;
-        if(part==Part::Core)Disc(m,ox,oy,.069f,-2.78f,.97f,.89f,.65f);
-        else if(part==Part::Thruster){
-            Rect(m,ox,oy,.055f,.079f,-2.79f,.30f,.94f,.90f);
-            Tri(m,ox-.026f,oy-.031f,ox+.026f,oy-.031f,ox,oy-.115f,
-                -2.78f,1.f,.56f,.17f);
-        }else if(part==Part::Wing){
-            Tri(m,ox,oy+.048f,ox-.047f,oy-.045f,ox+.047f,oy-.045f,
-                -2.79f,.68f,.91f,.48f);
-        }else if(part==Part::Armor)Rect(m,ox,oy,.056f,.056f,-2.79f,.81f,.59f,.27f);
-        else if(part==Part::Shield)Disc(m,ox,oy,.055f,-2.79f,.35f,.80f,1.f);
-        else if(part==Part::Mount)Rect(m,ox,oy+.034f,.038f,.11f,-2.78f,1.f,.34f,.35f);
-        else if(part==Part::Cargo)Disc(m,ox,oy,.056f,-2.78f,.62f,.82f,.97f);
-        else if(part==Part::Reactor)Disc(m,ox,oy,.055f,-2.78f,.98f,.70f,.31f);
-        else if(part==Part::Battery)Rect(m,ox,oy,.052f,.052f,-2.78f,.98f,.91f,.41f);
-        else Rect(m,ox,oy,.054f,.054f,-2.79f,.42f,.27f,.30f);
-    }
+    // The live player model is the actual saved 3D X/Y/Z assembly.
+    reverie::gumball::AppendAssemblyMesh(
+        m->mesh,m->ship,s.player_x(),s.player_y(),
+        -2.55f,.10f,0.f);
     char text[96];
     Rect(m,0,1.48f,5.f,.35f,-2.92f,.056f,.060f,.12f);
     std::snprintf(text,sizeof(text),"HULL %d  SHIELD %d  GUMBALLS %u",s.hp(),s.shield(),s.cash());
