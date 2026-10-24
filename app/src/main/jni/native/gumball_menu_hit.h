@@ -70,9 +70,9 @@ inline MenuHit YardHit(float x,float y){
         if(MenuInside(x,y,-1.47f+(gx-3)*.28f,.075f+(3-gy)*.28f,
                       .270f,.270f))
             return {0,gx,gy};
-    for(int i=0;i<10;++i)
+    for(int i=0;i<14;++i)
         if(MenuInside(x,y,.23f+(i%2)*1.34f,
-                      .79f-(i/2)*.345f,1.20f,.32f))
+                      .79f-(i/2)*.270f,1.20f,.255f))
             return {1,7+(i%2),i/2};
     return {};
 }
