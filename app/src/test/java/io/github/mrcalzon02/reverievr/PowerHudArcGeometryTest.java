@@ -27,12 +27,24 @@ public final class PowerHudArcGeometryTest {
         assertEquals(45f, PowerHudArcGeometry.progress(100), 0.001f);
     }
 
-    @Test public void shrinkBySeventyPercentAndCenterLabels() {
+    @Test public void labelsSitLeftOfArcStartAndRemainInHudTextureCrop() {
         assertEquals(0.30f, PowerHudArcGeometry.OUTPUT_SCALE, 0.0001f);
         assertEquals(399.7f, PowerHudArcGeometry.scaledNearTopRight(280f, 451f),
             0.0001f);
-        assertTrue(PowerHudArcGeometry.labelCenterX(PowerHudArcGeometry.OUTER) > 330f);
-        assertTrue(PowerHudArcGeometry.labelTopBaselineY(PowerHudArcGeometry.OUTER) < 110f);
+        // The widest "P 100%" label is centered, never clipped by the quad.
+        for (float radius : new float[] {
+            PowerHudArcGeometry.OUTER, PowerHudArcGeometry.INNER
+        }) {
+            float center = PowerHudArcGeometry.labelCenterX(radius);
+            assertTrue(center - 40f > PowerHudArcGeometry.CROP_LEFT);
+            assertTrue(center + 40f < PowerHudArcGeometry.arcStartX(radius));
+            assertEquals(PowerHudArcGeometry.arcStartY(radius) + 6f,
+                PowerHudArcGeometry.labelTopBaselineY(radius), 0.0001f);
+        }
+        // Independent percentage rows must not overlap vertically.
+        assertTrue(PowerHudArcGeometry.labelTopBaselineY(PowerHudArcGeometry.INNER)
+            - PowerHudArcGeometry.labelTopBaselineY(PowerHudArcGeometry.OUTER)
+            > 18f);
     }
 
     @Test public void powerHudMovesFifteenPercentUpAndLeftWithoutResizing() {
