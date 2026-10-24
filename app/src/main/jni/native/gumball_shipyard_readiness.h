@@ -1,6 +1,7 @@
 #ifndef REVERIE_GUMBALL_SHIPYARD_READINESS_H
 #define REVERIE_GUMBALL_SHIPYARD_READINESS_H
 #include "gumball_shipyard.h"
+#include "gumball_ship_3d.h"
 namespace reverie { namespace gumball {
 // Actual launch gates in the same order as Shipyard::ready(). The yard UI
 // must say which build constraint blocks launch, not list every requirement.
@@ -16,6 +17,19 @@ inline const char* FlightReadiness(const Shipyard& yard) {
     if(profile.mass>18*yard.count(Part::Thruster))
         return "OVERWEIGHT / ADD THRUSTER OR REMOVE PARTS";
     return "READY / CLICK SAME PART TO REMOVE";
+}
+
+inline const char* FlightReadiness(const ShipAssembly& ship) {
+    if(!ship.connected())return "CONNECT ALL X / Y / Z PARTS";
+    if(ship.count(Part::Core)!=1)return "MISSING SHIP CORE";
+    if(ship.count(Part::Thruster)<1)return "ADD AT LEAST ONE THRUSTER";
+    if(ship.count(Part::Reactor)<1)return "ADD A REACTOR FOR POWER";
+    if(ship.count(Part::Mount)<1)return "ADD A GUN MOUNT";
+    const ShipProfile p=ship.profile();
+    if(p.power<p.demand)return "POWER DEFICIT / ADD BATTERY OR REACTOR";
+    if(p.mass>18*ship.count(Part::Thruster))
+        return "OVERWEIGHT / ADD THRUSTER OR REMOVE PARTS";
+    return "3D SHIP READY / CLICK SAME PART TO REMOVE";
 }
 }}
 #endif
