@@ -436,6 +436,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final VrUiTargetStabilizer uiTargetStabilizer =
         new VrUiTargetStabilizer();
     private final GazeDwellSelection gazeDwell = new GazeDwellSelection();
+    private final GazeFallbackPolicy gazeFallbackPolicy = new GazeFallbackPolicy();
     private final GazeDwellSelection gazeRecoveryDwell = new GazeDwellSelection();
     private boolean gazeFallbackActive;
     private boolean gazeRecoveryMenuShown;
@@ -1901,8 +1902,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Phone-only recovery stays available, but short BLE/controller pose
         // gaps must never summon a modal over DOS gameplay on their own.
         // Require a deliberate five-second upwards gaze to open Quick Menu.
-        boolean phoneOnly = noUsableController(frameNanos);
-        gazeFallbackActive = phoneOnly;
+        // Do not turn a sub-second BLE hiccup or transient disconnect into
+        // a headset gaze cursor. Stale controller input still stops at its
+        // existing 750ms safety gate; only the fallback handoff is delayed.
+        boolean usableController = !noUsableController(frameNanos);
+        gazeFallbackActive = gazeFallbackPolicy.shouldUseGaze(
+            preferences.getVrPointerMode(), usableController, frameNanos);
+        boolean phoneOnly = !usableController && gazeFallbackActive;
         // Brief pose gaps retain visual continuity and should not
         // summon a fullscreen recovery modal over hosted gameplay.
         ControllerSnapshot recoveryPose = locomotionControllerSnapshot;
@@ -2413,13 +2419,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         boolean usingControllerPointer =
             updateActivePointer(frameNanos);
-        UiRayHit hit =
-            calculateUiRayHit(
+        boolean usingGazePointer =
+            gazeFallbackActive && !usingControllerPointer;
+        // While waiting out a brief controller dropout, there is no
+        // headset interaction ray at all: no hover, reticle or dwell blip.
+        UiRayHit hit = (usingControllerPointer || usingGazePointer)
+            ? calculateUiRayHit(
                 activePointerOrigin,
                 activePointerDirection
-            );
+            ) : UiRayHit.miss();
         scenePointerHit.reset();
-        if ((usingControllerPointer || gazeFallbackActive)
+        if ((usingControllerPointer || usingGazePointer)
                 && mode == MODE_HOME && !orientationMenuVisible) {
             homeEnvironmentRenderer.hitScene(activePointerOrigin,
                 activePointerDirection, preferences.getHomeEnvironment(),
@@ -2536,7 +2546,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             | (quickMenuSettingsVisible ? 1 << 9 : 0)
             | (phonePanelVisible ? 1 << 10 : 0);
         boolean dwellSelect = gazeDwell.update(
-            gazeFallbackActive && !selecting, dwellContext,
+            usingGazePointer && !selecting, dwellContext,
             validDwellTarget, frameNanos);
         int progressTick = (int) (gazeDwell.progress() * 50f);
         if (progressTick != lastGazeProgressTick) {
@@ -3717,6 +3727,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         activeNativePointerKind =
             NativeModuleRuntime.POINTER_NONE;
+        if (!gazeFallbackActive) {
+            // An interrupted controller still owns the input source during
+            // the handoff grace period. Never substitute the head ray.
+            setActivePointerSource("Controller tracking interrupted");
+            activePointerOrigin[0] = 0.0f;
+            activePointerOrigin[1] = 0.0f;
+            activePointerOrigin[2] = 0.0f;
+            activePointerDirection[0] = 0.0f;
+            activePointerDirection[1] = 0.0f;
+            activePointerDirection[2] = 0.0f;
+            return false;
+        }
         setActivePointerSource("Gaze");
         activePointerOrigin[0] =
             headInertialTranslation.x()
