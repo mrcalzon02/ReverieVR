@@ -1970,6 +1970,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             frameNanos
         );
         updateNativeLocomotion(frameNanos);
+        // IK gait uses actual translated distance, not a fake held-input
+        // animation. Update ONCE per Cardboard frame, never once per eye.
+        homeEnvironmentRenderer.setAvatarLegFrame(
+            nativeLocomotion.x(), nativeLocomotion.z(), frameNanos,
+            mode == MODE_HOME || mode == MODE_DOS_LIBRARY);
 
         // Apply shell recenter on WORLD coordinates. Pre-multiplying
         // yawMatrix in eye space converts vertical pitch into sideways roll.
@@ -2341,7 +2346,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             dt,
             limitX,
             limitZ,
-            homeTravel ? 2.0f : 1.0f
+            homeTravel ? 4.0f : 1.0f
         );
     }
 

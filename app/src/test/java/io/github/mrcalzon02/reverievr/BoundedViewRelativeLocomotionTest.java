@@ -50,6 +50,21 @@ public final class BoundedViewRelativeLocomotionTest {
         home.update(0f,-1f,0f,-1f,.05f,3f,3f,2f);
         assertEquals(-.140f,home.z(),.0001f);
     }
+    @Test public void doubledHomeSpeedStillPreservesNativeAndBounds() {
+        BoundedViewRelativeLocomotion fasterHome=new BoundedViewRelativeLocomotion();
+        BoundedViewRelativeLocomotion oldHome=new BoundedViewRelativeLocomotion();
+        BoundedViewRelativeLocomotion nativeGame=new BoundedViewRelativeLocomotion();
+        fasterHome.update(0f,-1f,0f,-1f,.05f,4f,4f,4f);
+        oldHome.update(0f,-1f,0f,-1f,.05f,4f,4f,2f);
+        nativeGame.update(0f,-1f,0f,-1f,.05f,4f,4f,1f);
+        assertEquals(-.140f,fasterHome.z(),.0001f);
+        assertEquals(2f*oldHome.z(),fasterHome.z(),.0001f);
+        assertEquals(-.035f,nativeGame.z(),.0001f);
+        for(int i=0;i<100;i++)
+            fasterHome.update(0f,-1f,0f,-1f,.05f,1.4f,1.4f,4f);
+        assertEquals(-1.4f,fasterHome.z(),.0001f);
+    }
+
     @Test public void invalidSpeedMultiplierDoesNotMove() {
         BoundedViewRelativeLocomotion m=new BoundedViewRelativeLocomotion();
         m.update(0f,-1f,0f,-1f,.05f,3f,3f,Float.NaN);

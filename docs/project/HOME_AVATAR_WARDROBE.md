@@ -19,3 +19,22 @@ Future owned/licensed 3D models may replace the starter silhouettes. Normalize r
 - Apply persists through app restart, Back cancels, Surprise Me only changes draft.
 - Mirror diagnostic geometry remains visible and aligned per eye.
 - Android unit tests and APK build must pass; S9/Daydream headset validation must confirm readability, occlusion, stereo, input, recovery, rendering budget and warmth. **Neither build nor physical headset validation is claimed by source commit alone.**
+
+## Locomotion / IK extension (24 October 2026)
+
+Home-room and DOS-library travel speed doubles **again** from the previous
+1.4 m/s to 2.8 m/s at full analog deflection, using the existing
+`BoundedViewRelativeLocomotion` speed multiplier 4.0× of its 0.70 m/s
+base. Native-game speed multipliers remain at 1.0×, the movement bounds
+remain unchanged, the 28% touchpad deadzone stays intact and movement
+still halts immediately on release, menu focus or controller loss.
+
+The avatar preview's lower body now has analytic two-bone IK, with a
+thigh, shin, stable knee pole, alternating gait targets, ground-contact
+stance and foot lift. Motion is driven by **actual bounded locomotion
+displacement**, not by a merely held touchpad; standing at a travel
+boundary returns to idle. Joint and mesh scratch buffers are reused on
+the GL thread and updated once per headset frame for both eyes.
+The Daydream headset provides no real-world ankle tracking; this is a
+procedural gait rig and vanity preview rather than a true body-tracking
+system. Full 3D skinned avatar adoption remains an art/integration task.

@@ -51,7 +51,19 @@ final class HomeEnvironmentRenderer {
     private final Mesh wardrobeDoor=mesh(HomeAvatarWardrobeGeometry.wardrobeDoor());
     private final Mesh wardrobeTrim=mesh(HomeAvatarWardrobeGeometry.wardrobeTrim());
     private final Mesh wardrobeHandles=mesh(HomeAvatarWardrobeGeometry.wardrobeHandles());
-    private final Mesh avatarLegs=mesh(HomeAvatarWardrobeGeometry.legs());
+    // IK triangles are generated once per world frame and drawn per eye.
+    private final HomeAvatarLegIk legIk=new HomeAvatarLegIk();
+    private final float[] legTriangles=new float[HomeAvatarLegIk.MESH_FLOATS];
+    private final FloatBuffer legBuffer=ByteBuffer.allocateDirect(
+        HomeAvatarLegIk.MESH_FLOATS*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+
+    void setAvatarLegFrame(float x,float z,long frameNanos,boolean walkingEnabled) {
+        legIk.update(x,z,frameNanos,walkingEnabled);
+        legIk.writeMesh(legTriangles);
+        legBuffer.clear();
+        legBuffer.put(legTriangles);
+        legBuffer.position(0);
+    }
     private final Mesh avatarArms=mesh(HomeAvatarWardrobeGeometry.arms());
     private final Mesh avatarTorso=mesh(HomeAvatarWardrobeGeometry.torso());
     private final Mesh avatarHead=mesh(HomeAvatarWardrobeGeometry.head());
@@ -625,8 +637,8 @@ final class HomeEnvironmentRenderer {
         float[] c=HomeAvatarProfile.RGB[p.color];
         boolean armor=p.theme==1||p.theme==4||p.theme==7||p.theme==10;
         boolean ghost=p.theme==9;
-        draw(avatarLegs,armor?.32f:c[0]*.57f,
-            armor?.36f:c[1]*.57f,armor?.44f:c[2]*.57f,1f);
+        drawIkLegs(armor?.32f:c[0]*.57f,
+            armor?.36f:c[1]*.57f,armor?.44f:c[2]*.57f);
         draw(avatarArms,c[0]*.82f,c[1]*.82f,c[2]*.82f,1f);
         draw(avatarTorso,c[0],c[1],c[2],1f);
         draw(avatarHead,ghost?.73f:.72f,ghost?.89f:.65f,ghost?.95f:.56f,1f);
@@ -635,6 +647,20 @@ final class HomeEnvironmentRenderer {
             p.eyes==2?.91f:.22f,p.eyes==2?1f:.30f,1f);
         draw(avatarHats[p.hat],c[0]*.82f,c[1]*.82f,c[2]*.82f,1f);
         draw(avatarAccessories[p.extra],.99f,.79f,.33f,1f);
+    }
+
+    private void drawIkLegs(float red,float green,float blue) {
+        if(program==0)return;
+        GLES20.glUseProgram(program);
+        legBuffer.position(0);
+        GLES20.glVertexAttribPointer(positionHandle,3,
+            GLES20.GL_FLOAT,false,0,legBuffer);
+        GLES20.glEnableVertexAttribArray(positionHandle);
+        GLES20.glUniformMatrix4fv(mvpHandle,1,false,mvp,0);
+        GLES20.glUniform4f(colorHandle,red,green,blue,1f);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES,0,
+            HomeAvatarLegIk.MESH_FLOATS/3);
+        GLES20.glDisableVertexAttribArray(positionHandle);
     }
 
     private void drawMirrorLines(int count, float red, float green,
