@@ -342,7 +342,11 @@ void RebuildBoard(Module *m,bool fixed){
     if(!fixed && s.finished){
         const char *msg=s.winner==1?"YOU WIN":s.winner==-1?
             "CPU WINS":"DRAW";
+#if CLASSIC_GAME_KIND == 5
+        Text(m,msg,0,1.40f,.032f,1.f,.91f,.58f);
+#else
         Text(m,msg,0,1.34f,.074f,1.f,.91f,.58f);
+#endif
         if(s.kind==reverie::boardgames::Kind::Go){
             char scored[64];
             std::snprintf(scored,sizeof(scored),"BLACK %.1f  WHITE %.1f",
@@ -354,7 +358,12 @@ void RebuildBoard(Module *m,bool fixed){
                           s.ReversiCount(1),s.ReversiCount(-1));
             Text(m,scored,0,1.15f,.044f,.95f,.96f,.85f);
         }
+#if CLASSIC_GAME_KIND == 5
+        ChessPanelText(m,"RESTART",2.03f,-1.35f,.031f,
+                       1.f,.95f,.78f);
+#else
         Text(m,"PRESS TO RESTART",1.91f,.66f,.043f,1.f,.95f,.78f);
+#endif
     }else if(!fixed){
         Text(m,s.kind==reverie::boardgames::Kind::Go&&s.goReview
              ?"MARK DEAD GROUPS":m->cpuFailed?"CPU ERROR RESTART":
@@ -423,8 +432,8 @@ void RebuildBoard(Module *m,bool fixed){
         ChessPanelRect(m,2.03f,.88f,1.05f,.36f,-3.026f,
              m->chessPanelHover?.32f:.21f,
              m->chessPanelHover?.45f:.34f,.48f);
-        ChessPanelLine(m,m->chessPanelTab==0?"NEXT > EXAMPLE":
-                        "EXAMPLE > NEXT",2.01f,.87f);
+        ChessPanelLine(m,m->chessPanelTab==0?"NEXT: EXAMPLE":
+                        "EXAMPLE: NEXT",2.01f,.87f);
         if(m->chessPanelTab==0){
             ChessPanelLine(m,"PLAY "+book.recommended,2.01f,.47f);
             ChessPanelLine(m,book.recommendationOrigin.substr(0,14),
