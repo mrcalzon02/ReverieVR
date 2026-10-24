@@ -30,6 +30,7 @@ final class ReveriePreferences {
     private static final String KEY_VIDEO_PROJECTION = "video_projection";
     private static final String KEY_VIDEO_LENS_UNWARP = "video_lens_unwarp";
     private static final String KEY_HOME_ENVIRONMENT = "home_environment";
+    private static final String KEY_HOME_AVATAR = "home_avatar_profile_v1";
     private static final String KEY_VR_POINTER_MODE = "vr_pointer_mode";
     private static final String KEY_CONTROLLER_LEFT_HANDED = "controller_left_handed";
     private static final String KEY_ACTIVE_CONTROLLER = "selected_controller";
@@ -392,6 +393,16 @@ final class ReveriePreferences {
                 safe.preferenceValue
             )
             .apply();
+    }
+
+    HomeAvatarProfile getHomeAvatarProfile() {
+        try { return HomeAvatarProfile.decode(preferences.getString(
+            KEY_HOME_AVATAR,HomeAvatarProfile.DEFAULT.encode())); }
+        catch(ClassCastException damaged) { return HomeAvatarProfile.DEFAULT; }
+    }
+    void setHomeAvatarProfile(HomeAvatarProfile profile) {
+        if(profile==null)throw new IllegalArgumentException("Missing avatar");
+        preferences.edit().putString(KEY_HOME_AVATAR,profile.encode()).apply();
     }
 
     VrPointerMode getVrPointerMode() {

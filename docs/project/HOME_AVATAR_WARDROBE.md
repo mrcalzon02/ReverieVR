@@ -1,0 +1,21 @@
+# Home avatar wardrobe — design and integration
+
+**Requirement established: 2026-10-24.** ReverieVR has a complete shell-owned, offline avatar identity rather than a cosmetic fake button.
+
+## Experience
+The existing white-room mirror gets a neighboring low-poly wooden wardrobe with physical gaze/controller ray interaction. The **Avatar Wardrobe** Home button provides access from the forest and beach environments as well. The same shell input actions and five-second controller-free gaze fallback select targets, with ordinary Back and Quick Menu recovery.
+
+Twelve initial identities: Everyday Dreamer, Astral Ranger, Forest Warden, Deep-Sea Diver, Clockwork Robot, Candy Admiral, Moon Witch, Pixel Paladin, Noir Sleuth, Friendly Phantom, Retro Racer, Cozy Critter. Player customization independently adjusts palette (8), headwear (8), accessory (8) and eyes (4). Each identity initializes a different themed ensemble. Randomize previews a draft; Apply/Save commits the choice to a versioned local SharedPreferences profile, and Back/Discard cancels changes. Invalid/newer save formats fall back to default.
+
+The existing planar mirror still renders headset/controller diagnostics. Its additional low-triangle avatar figure is a **stylistic preview**, not simulated full-body tracked motion or a full optical reflection. Preview changes live in the editor and committed state is used afterward. These starter assets are authored in first-party code, not unrelated stock sprites, and require no network service, Google dependencies or additional native game module.
+
+## Expansion contract
+Future owned/licensed 3D models may replace the starter silhouettes. Normalize rig scale, skeleton and named attachment slots for body, outfit, hat, accessory and face. Use S9-friendly geometry/material budgets with LODs; never ingest a whole purchased source pack. A future versioned read-only cosmetic descriptor can be exposed through the native module SDK after its compatibility and ownership contract is defined. Cosmetic preferences must not alter a game's economy, combat or saves.
+
+## Acceptance gates
+- Wardrobe is physically next to the mirror; controller click and gaze-dwell can open it.
+- Home button works in all environments and Back/Quick Menu always recover.
+- All 12 themes and every cosmetic selection render differently and have working controls.
+- Apply persists through app restart, Back cancels, Surprise Me only changes draft.
+- Mirror diagnostic geometry remains visible and aligned per eye.
+- Android unit tests and APK build must pass; S9/Daydream headset validation must confirm readability, occlusion, stereo, input, recovery, rendering budget and warmth. **Neither build nor physical headset validation is claimed by source commit alone.**

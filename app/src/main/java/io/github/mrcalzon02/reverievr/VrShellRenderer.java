@@ -171,6 +171,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final int MODE_EMULATOR_CONFIRM = 16;
     private static final int MODE_CONTROLLER_SOURCE = 17;
     private static final int MODE_MUSIC_LIBRARY = 18;
+    private static final int MODE_WARDROBE = 21;
     private static final String INTERNAL_MODEL_VIEWER_ID = "reverie-model-viewer";
     private static final String INTERNAL_MEDIA_PLAYER_ID = "reverie-media-player";
     private static final String INTERNAL_MUSIC_PLAYER_ID = "reverie-music-player";
@@ -260,7 +261,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {0, 0, 0, 0},
         {42, 498, 230, 544}, // Classic Games
         {42, 604, 230, 650}, // Emulator Modules
-        {780, 570, 982, 618} // Exit to Phone (right Quick Options)
+        {780, 570, 982, 618}, // Exit to Phone (right Quick Options)
+        {42, 657, 230, 699}  // Avatar Wardrobe
     };
 
     // Virtual targets are intercepted in world-space by
@@ -268,6 +270,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
     // Index 24 is the local Phone Screen Close control, never native games
     // while the panel is visible.
     private static final int[][] PHONE_PANEL_BUTTONS = new int[29][4];
+
+    private static final int[][] WARDROBE_BUTTONS = new int[][] {
+        {120,235,485,283},{539,235,904,283},
+        {120,313,485,361},{539,313,904,361},
+        {120,391,485,439},{539,391,904,439},
+        {120,469,485,517},{539,469,904,517},
+        {120,547,485,595},{539,547,904,595},
+        {120,635,350,695},{370,635,650,695},{670,635,904,695}
+    };
 
     private static final int[][] MUSIC_BUTTONS = new int[][] {
         {140, 235, 884, 300},
@@ -631,6 +642,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int nativeLibraryPage;
     private int emulatorCatalogPage;
     private HomeEnvironment lastAmbientEnvironment;
+    private HomeAvatarProfile wardrobeDraft=HomeAvatarProfile.DEFAULT;
     private boolean lastAmbientHomeActive;
     private int musicCatalogPage;
     private String[] musicCatalogTitles = new String[0];
@@ -2805,7 +2817,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     hoveredButton >= 19 && hoveredButton < 19 + PhonePanelControlGeometry.COUNT
                         ? hoveredButton - 19 : -1);
             }
-            if (mode == MODE_HOME
+            if ((mode == MODE_HOME || mode == MODE_WARDROBE)
                 && homeEnvironment == HomeEnvironment.WHITE_ROOM
                 && !orientationMenuVisible) {
                 homeEnvironmentRenderer.drawMirrorEye(
@@ -2817,7 +2829,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     controllerAnchorWorld[2],
                     activePointerDirection[0],
                     activePointerDirection[1],
-                    activePointerDirection[2]
+                    activePointerDirection[2],
+                    mode==MODE_WARDROBE
+                        ?wardrobeDraft:preferences.getHomeAvatarProfile()
                 );
             }
         } else {
@@ -4611,7 +4625,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     HOME_PIXEL_BOTTOM
                 );
             best = nearer(best, right);
-            return nearer(best, hitHomeKeyboard(origin, direction));
+            best=nearer(best,hitHomeKeyboard(origin,direction));
+            if(preferences.getHomeEnvironment()==HomeEnvironment.WHITE_ROOM
+                && !phonePanelVisible) {
+                float t=HomeAvatarWardrobeGeometry.hitDistance(origin,direction);
+                if(t>0f)best=nearer(best,new UiRayHit(27,t));
+            }
+            return best;
         }
 
         return hitPanel(
@@ -4836,7 +4856,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return NativeModuleRuntime.isAvailable()
                     && !nativeGames.isEmpty();
             }
-            if(index==25 || index==26)return true;
+            if(index==25 || index==26 || index==27)return true;
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
                 && index == 12) {
                 return false;
@@ -5149,6 +5169,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     musicCatalogPage = 0;
                     mode = MODE_MUSIC_LIBRARY;
                     break;
+                case 27:
+                    openWardrobe();
+                    break;
                 case 26:
                     host.onExitToPhoneRequested();
                     return;
@@ -5262,6 +5285,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 default:
                     break;
             }
+        } else if (mode == MODE_WARDROBE) {
+            selectWardrobeItem(hoveredButton);
         } else if (mode == MODE_MUSIC_LIBRARY) {
             switch (hoveredButton) {
                 case 0:
@@ -5886,6 +5911,30 @@ final class VrShellRenderer implements CardboardView.Renderer {
         textureDirty = true;
     }
 
+    private void openWardrobe() {
+        wardrobeDraft=preferences.getHomeAvatarProfile();
+        mode=MODE_WARDROBE;hoveredButton=-1;
+        uiTargetStabilizer.reset();textureDirty=true;
+    }
+    private void selectWardrobeItem(int index) {
+        if(index>=0&&index<10)
+            wardrobeDraft=wardrobeDraft.step(index/2,index%2==0?-1:1);
+        else if(index==10) {
+            preferences.setHomeAvatarProfile(wardrobeDraft);mode=MODE_HOME;
+        } else if(index==11) {
+            wardrobeDraft=preferences.getHomeAvatarProfile();mode=MODE_HOME;
+        } else if(index==12) {
+            java.util.Random r=new java.util.Random(System.nanoTime());
+            wardrobeDraft=new HomeAvatarProfile(
+                r.nextInt(HomeAvatarProfile.THEMES.length),
+                r.nextInt(HomeAvatarProfile.COLORS.length),
+                r.nextInt(HomeAvatarProfile.HATS.length),
+                r.nextInt(HomeAvatarProfile.EXTRAS.length),
+                r.nextInt(HomeAvatarProfile.EYES.length));
+        } else {host.onUiActionRejected();return;}
+        hoveredButton=-1;textureDirty=true;
+    }
+
     private void handleEnvironmentSelection(
         int button
     ) {
@@ -6208,6 +6257,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (mode == MODE_DOS_LIBRARY
             || mode == MODE_MEDIA_LIBRARY
             || mode == MODE_ENVIRONMENT
+            || mode == MODE_WARDROBE
             || mode == MODE_CONTROLLER
             || mode == MODE_KEYBOARD
             || mode == MODE_NATIVE_LIBRARY
@@ -6296,6 +6346,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (mode == MODE_KEYBOARD) {
             return KEYBOARD_BUTTONS;
         }
+        if (mode == MODE_WARDROBE)return WARDROBE_BUTTONS;
         if (mode == MODE_MUSIC_LIBRARY) {
             return MUSIC_BUTTONS;
         }
@@ -6462,6 +6513,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             drawKeyboard(canvas, paint);
         } else if (mode == MODE_MUSIC_LIBRARY) {
             drawNativeMusicLibrary(canvas, paint);
+        } else if (mode == MODE_WARDROBE) {
+            drawWardrobeMenu(canvas,paint);
         } else if (mode == MODE_EMULATOR_CATALOG ||
                    mode == MODE_EMULATOR_CONFIRM) {
             drawEmulatorCatalog(canvas,paint);
@@ -6949,6 +7002,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new String[] {"Emulator Modules"}, 25, 1);
         drawHomeButtons(canvas, paint,
             new String[] {"Exit to Phone"}, 26, 1);
+        drawHomeButtons(canvas, paint,
+            new String[] {"Avatar Wardrobe"}, 27, 1);
 
         paint.setFakeBoldText(true);
         paint.setColor(Color.WHITE);
@@ -7357,6 +7412,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return "Browse public emulator source modules, license and download status.";
             case 26:
                 return "Leave the headset shell and return to the phone interface.";
+            case 27:
+                return "Customize your avatar; or select the wardrobe beside the mirror.";
             default:
                 return "Choose a destination or quick option.";
         }
@@ -8229,6 +8286,35 @@ final class VrShellRenderer implements CardboardView.Renderer {
         } else {
             drawButtons(canvas, paint, labels, MEDIA_BUTTONS);
         }
+    }
+
+    private void drawWardrobeMenu(Canvas canvas, Paint paint) {
+        HomeAvatarProfile p=wardrobeDraft;
+        paint.setFakeBoldText(true);
+        paint.setColor(Color.rgb(89,228,217));
+        paint.setTextSize(34f*uiScale);
+        canvas.drawText("THE REVERIE WARDROBE",90,105,paint);
+        paint.setFakeBoldText(false);
+        paint.setColor(Color.rgb(176,196,211));
+        paint.setTextSize(19f*uiScale);
+        canvas.drawText("Change your look in the mirror. Apply saves; Back discards.",90,145,paint);
+        canvas.drawText("12 themed identities, interchangeable outfits and details",90,176,paint);
+        String[] rows={"IDENTITY: "+HomeAvatarProfile.THEMES[p.theme],
+            "COLOR: "+HomeAvatarProfile.COLORS[p.color],
+            "HEADWEAR: "+HomeAvatarProfile.HATS[p.hat],
+            "ACCESSORY: "+HomeAvatarProfile.EXTRAS[p.extra],
+            "EYES: "+HomeAvatarProfile.EYES[p.eyes]};
+        paint.setTextSize(19f*uiScale);
+        for(int i=0;i<rows.length;i++) {
+            paint.setColor(Color.rgb(238,225,191));
+            canvas.drawText(rows[i],125,224+i*78,paint);
+        }
+        drawButtons(canvas,paint,new String[]{
+            "PREVIOUS THEME","NEXT THEME","PREVIOUS COLOR","NEXT COLOR",
+            "PREVIOUS HAT","NEXT HAT","PREVIOUS ITEM","NEXT ITEM",
+            "PREVIOUS EYES","NEXT EYES",
+            "APPLY + SAVE","BACK / DISCARD","SURPRISE ME"
+        },WARDROBE_BUTTONS);
     }
 
     private void drawEnvironmentMenu(

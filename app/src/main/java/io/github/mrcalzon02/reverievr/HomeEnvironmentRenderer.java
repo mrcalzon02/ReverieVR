@@ -47,6 +47,28 @@ final class HomeEnvironmentRenderer {
             -HeadsetMirrorProjection.HALF_HEIGHT,
             HeadsetMirrorProjection.HALF_HEIGHT,
             HeadsetMirrorProjection.HALF_WIDTH));
+    private final Mesh wardrobeCase=mesh(HomeAvatarWardrobeGeometry.wardrobeCase());
+    private final Mesh wardrobeDoor=mesh(HomeAvatarWardrobeGeometry.wardrobeDoor());
+    private final Mesh wardrobeTrim=mesh(HomeAvatarWardrobeGeometry.wardrobeTrim());
+    private final Mesh wardrobeHandles=mesh(HomeAvatarWardrobeGeometry.wardrobeHandles());
+    private final Mesh avatarLegs=mesh(HomeAvatarWardrobeGeometry.legs());
+    private final Mesh avatarArms=mesh(HomeAvatarWardrobeGeometry.arms());
+    private final Mesh avatarTorso=mesh(HomeAvatarWardrobeGeometry.torso());
+    private final Mesh avatarHead=mesh(HomeAvatarWardrobeGeometry.head());
+    private final Mesh avatarFace=mesh(HomeAvatarWardrobeGeometry.face());
+    private final Mesh[] avatarEyes=makeAvatarParts(0);
+    private final Mesh[] avatarHats=makeAvatarParts(1);
+    private final Mesh[] avatarAccessories=makeAvatarParts(2);
+    private static Mesh[] makeAvatarParts(int type) {
+        int count=type==0?HomeAvatarProfile.EYES.length:
+            type==1?HomeAvatarProfile.HATS.length:HomeAvatarProfile.EXTRAS.length;
+        Mesh[] meshes=new Mesh[count];
+        for(int i=0;i<count;i++)meshes[i]=mesh(type==0
+            ?HomeAvatarWardrobeGeometry.eyes(i):type==1
+                ?HomeAvatarWardrobeGeometry.headwear(i)
+                :HomeAvatarWardrobeGeometry.accessory(i));
+        return meshes;
+    }
     private final HeadsetMirrorProjection mirrorProjection =
         new HeadsetMirrorProjection();
     private final float[] mirrorLineScratch = new float[
@@ -466,6 +488,10 @@ final class HomeEnvironmentRenderer {
                 draw(birchPanelSeams, 0.69f, 0.60f, 0.48f, 1.0f);
                 draw(birchBaseboards, 0.78f, 0.70f, 0.56f, 1.0f);
                 draw(roomFurniture, 0.66f, 0.56f, 0.45f, 1.0f);
+                draw(wardrobeCase,.43f,.30f,.25f,1f);
+                draw(wardrobeDoor,.63f,.48f,.36f,1f);
+                draw(wardrobeTrim,.86f,.73f,.49f,1f);
+                draw(wardrobeHandles,.94f,.80f,.43f,1f);
                 draw(birchDetailTrim, 0.80f, 0.74f, 0.64f, 1.0f);
                 draw(birchDetailArt, 0.39f, 0.51f, 0.49f, 1.0f);
                 draw(birchDetailFurniture, 0.79f, 0.66f, 0.42f, 1.0f);
@@ -573,7 +599,8 @@ final class HomeEnvironmentRenderer {
     void drawMirrorEye(PlayerHeadRig rig, int eyeIndex,
         boolean controllerVisible, float controllerX,
         float controllerY, float controllerZ,
-        float directionX, float directionY, float directionZ) {
+        float directionX, float directionY, float directionZ,
+        HomeAvatarProfile profile) {
         if (program == 0 || !mirrorProjection.prepare(rig, eyeIndex)) {
             return;
         }
@@ -581,6 +608,7 @@ final class HomeEnvironmentRenderer {
         GLES20.glDisable(GLES20.GL_BLEND);
         draw(mirrorFrame, 0.13f, 0.19f, 0.23f, 1.0f);
         draw(mirrorGlass, 0.08f, 0.14f, 0.18f, 1.0f);
+        drawAvatarInMirror(profile);
         int headsetCount = mirrorProjection.writeHeadset(mirrorLineScratch);
         drawMirrorLines(headsetCount, 0.35f, 0.91f, 1.0f);
         if (controllerVisible) {
@@ -589,6 +617,24 @@ final class HomeEnvironmentRenderer {
                 directionX, directionY, directionZ, mirrorLineScratch);
             drawMirrorLines(controllerCount, 1.0f, 0.72f, 0.26f);
         }
+    }
+
+    /** Styled mirror preview, NOT a claim of positional full-body tracking. */
+    private void drawAvatarInMirror(HomeAvatarProfile chosen) {
+        HomeAvatarProfile p=chosen==null?HomeAvatarProfile.DEFAULT:chosen;
+        float[] c=HomeAvatarProfile.RGB[p.color];
+        boolean armor=p.theme==1||p.theme==4||p.theme==7||p.theme==10;
+        boolean ghost=p.theme==9;
+        draw(avatarLegs,armor?.32f:c[0]*.57f,
+            armor?.36f:c[1]*.57f,armor?.44f:c[2]*.57f,1f);
+        draw(avatarArms,c[0]*.82f,c[1]*.82f,c[2]*.82f,1f);
+        draw(avatarTorso,c[0],c[1],c[2],1f);
+        draw(avatarHead,ghost?.73f:.72f,ghost?.89f:.65f,ghost?.95f:.56f,1f);
+        draw(avatarFace,ghost?.55f:.85f,ghost?.74f:.73f,ghost?.88f:.67f,1f);
+        draw(avatarEyes[p.eyes],p.eyes==2?.10f:.08f,
+            p.eyes==2?.91f:.22f,p.eyes==2?1f:.30f,1f);
+        draw(avatarHats[p.hat],c[0]*.82f,c[1]*.82f,c[2]*.82f,1f);
+        draw(avatarAccessories[p.extra],.99f,.79f,.33f,1f);
     }
 
     private void drawMirrorLines(int count, float red, float green,
