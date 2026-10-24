@@ -85,6 +85,42 @@ constexpr int FavoriteSnack(PatronKind p) {
     const int faction=FactionFor(p);
     return faction>=0&&faction<kFactions?faction:-1;
 }
+// Author-confirmed clientele design: cleanliness is a property of who the
+// player attracts and serves, never a manual cleaning or trash-spawn task.
+// Provisional balancing values (0..100), not quotations from the GDD.
+struct PatronEnvironment {
+    int32_t cleanliness_required;
+    int32_t cleanliness_impact;
+    int32_t fight_risk;
+};
+constexpr PatronEnvironment EnvironmentFor(PatronKind p) {
+    switch (p) {
+        case PatronKind::RailWorker: return {25, -5, 18};
+        case PatronKind::NightClerk: return {75, -1, 2};
+        case PatronKind::MilitiaVeteran: return {55, -3, 12};
+        case PatronKind::Mechanic: return {35, -4, 8};
+        case PatronKind::DirectorateCourier: return {65, -2, 5};
+        case PatronKind::SalihorskHauler: return {20, -7, 24};
+    }
+    return {50, -3, 10};
+}
+// Starting condition is intentionally poor. Purchased improvements increase
+// the baseline, while the clientele actually served changes the outcome.
+constexpr int32_t StartingCleanliness() { return 20; }
+constexpr int32_t ClampCleanliness(int32_t value) {
+    return value < 0 ? 0 : (value > 100 ? 100 : value);
+}
+constexpr int32_t CleanlinessAfterService(int32_t current, PatronKind patron,
+                                          int32_t upgrade_tier) {
+    const int32_t tier = upgrade_tier < 0 ? 0 : (upgrade_tier > 5 ? 5 : upgrade_tier);
+    const int32_t impact = EnvironmentFor(patron).cleanliness_impact;
+    // Upgrades resist wear; they do not make rough patrons harmless.
+    const int32_t mitigated = impact + (tier < -impact ? tier : -impact);
+    return ClampCleanliness(current + mitigated);
+}
+constexpr bool AcceptsCleanliness(PatronKind patron, int32_t cleanliness) {
+    return ClampCleanliness(cleanliness) >= EnvironmentFor(patron).cleanliness_required;
+}
 struct ServiceBonus { int32_t cents; int32_t reputation; int32_t favor; };
 inline ServiceBonus RateService(PatronKind patron,int drink,int snack) {
     const int faction=FactionFor(patron);
