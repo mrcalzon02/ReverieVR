@@ -1,5 +1,6 @@
 #include "gumball_armada_simulation.h"
 #include "gumball_shipyard_menu.h"
+#include "gumball_ship_3d.h"
 #include "gumball_shipyard_readiness.h"
 #include "gumball_menu_hit.h"
 #include "reverie_native_vector_text.h"
@@ -36,6 +37,8 @@ using reverie::gumball::SupportKit;
 using reverie::gumball::Weapon;
 using reverie::gumball::Shipyard;
 using reverie::gumball::ShipyardSave;
+using reverie::gumball::ShipAssembly;
+using reverie::gumball::Ship3DSave;
 using reverie::gumball::Part;
 const char kId[]="gumball-armada";
 const char kName[]="Gumball Armada: Candy King Search [DEV]";
@@ -50,7 +53,10 @@ const char* const kRouteArtworkNames[kArtworkCount]={
 struct Module {
     const ReverieNativeHostV1* host=nullptr;
     Simulation sim;
-    Shipyard yard;
+    ShipAssembly ship;
+    int shipLayer=2;
+    bool previewShip=false;
+    float previewYaw=.5f,previewZoom=.20f;
     int selected=0; // routes, upgrades, weapons, shipyard
     bool inYard=false;
     bool inSupport=false;
@@ -159,10 +165,10 @@ void Chart(Module* m){
                     +((m->sim.bosses()>>2u)&1u)
                     +((m->sim.bosses()>>3u)&1u)));
     TextFit(m,text,0,-1.39f,4.2f,.034f,1.f,.88f,.64f);
-    Text(m,m->yard.ready()?"PAD SELECT   CLICK TO OPEN / FLY":
+    Text(m,m->ship.ready()?"PAD SELECT   CLICK TO OPEN / FLY":
          "SHIP NOT READY  /  OPEN SHIPYARD",
-         0,-1.64f,.027f,m->yard.ready()?.73f:1.f,
-         m->yard.ready()?.86f:.43f,.89f);
+         0,-1.64f,.027f,m->ship.ready()?.73f:1.f,
+         m->ship.ready()?.86f:.43f,.89f);
 }
 void LoadoutView(Module* m){
     Background(m);
@@ -303,7 +309,9 @@ void ShipyardView(Module* m){
     Background(m);
     char line[116];
     Text(m,"CANDY SHIPYARD",0,1.48f,.061f,.97f,.83f,.96f);
-    TextFit(m,"PAD MOVE / CLICK TO EDIT / MINUS SWITCHES GRID AND PARTS",
+    TextFit(m,m->previewShip?
+        "3D VIEW: PAD LEFT/RIGHT ROTATES / UP/DOWN ZOOMS / CLICK TO EXIT":
+        "PAD MOVE / CLICK TO EDIT / MINUS SWITCHES GRID AND PARTS",
             0,1.20f,4.64f,.028f,.76f,.94f,.93f);
     Text(m,"YOUR SHIP", -1.47f,1.00f,.032f,.83f,.96f,1.f);
     Text(m,"PARTS",.89f,1.00f,.032f,.83f,.96f,1.f);
@@ -311,13 +319,14 @@ void ShipyardView(Module* m){
     // clipped the entire leftmost editing column outside the view.
     Rect(m,-1.47f,.075f,2.06f,2.02f,-2.96f,.045f,.065f,.105f);
     const char* marks[]={" ","C","F","A","W","T","R","B","S","G","H"};
+    if(!m->previewShip)
     for(int y=0;y<7;++y)for(int x=0;x<7;++x){
         const float gx=-1.47f+(x-3)*.28f;
         const float gy=.075f+(3-y)*.28f;
         const bool focused=!m->yardCursor.palette()
             &&m->yardCursor.x==x&&m->yardCursor.y==y;
         Frame(m,gx,gy,.270f,.270f,focused);
-        const Part part=m->yard.at(x,y);
+        const Part part=m->ship.at(x,y,m->shipLayer);
         if(part!=Part::Empty){
             const unsigned id=static_cast<unsigned>(part);
             static const float colors[11][3]={
@@ -330,37 +339,46 @@ void ShipyardView(Module* m){
             Text(m,marks[id],gx,gy,.038f,.08f,.08f,.13f);
         }
     }
-    for(int i=0;i<10;++i){
+    if(m->previewShip){
+        reverie::gumball::AppendAssemblyMesh(
+            m->mesh,m->ship,-1.47f,.075f,-2.34f,
+            m->previewZoom,m->previewYaw);
+    }
+    for(int i=0;i<14;++i){
         const int row=i/2,col=i%2;
         const float x=.23f+col*1.34f;
-        const float y=.79f-row*.345f;
-        const Part p=static_cast<Part>(i+2);
+        const float y=.79f-row*.270f;
+        const Part p=i<9?static_cast<Part>(i+2):Part::Empty;
         const bool isActive=i<9&&m->brush==p;
         const bool focused=m->yardCursor.palette()
             &&m->yardCursor.x==7+col&&m->yardCursor.y==row;
-        Frame(m,x,y,1.20f,.32f,focused);
+        Frame(m,x,y,1.20f,.255f,focused);
         if(isActive){
             Rect(m,x-.55f,y,.045f,.20f,-2.85f,.31f,1.f,.63f);
         }
         if(i<9)
             std::snprintf(line,sizeof(line),"%s  %u",YardPartName(p),
-                          m->yard.stock(p));
-        else std::snprintf(line,sizeof(line),"RETURN");
+                          m->ship.stock(p));
+        else {
+            const char* commands[]={"RETURN","SLICE -","SLICE +",
+                                     "3D PREVIEW","ROTATE 45"};
+            std::snprintf(line,sizeof(line),"%s",commands[i-9]);
+        }
         TextFit(m,line,x+.020f,y,1.12f,.031f,
                 .96f,
                 isActive?1.f:.91f,isActive?.70f:.85f);
     }
-    const auto profile=m->yard.profile();
-    std::snprintf(line,sizeof(line),"ARMED: %s  /  STOCK %u",
-                  YardPartName(m->brush),m->yard.stock(m->brush));
+    const auto profile=m->ship.profile();
+    std::snprintf(line,sizeof(line),"SLICE %d/5  /  %s  /  STOCK %u",
+                  m->shipLayer+1,YardPartName(m->brush),m->ship.stock(m->brush));
     TextFit(m,line,0,-1.10f,4.65f,.036f,1.f,.92f,.72f);
     TextFit(m,m->yardFeedback,0,-1.32f,4.65f,.032f,.84f,1.f,.87f);
     std::snprintf(line,sizeof(line),"MASS %d  /  POWER %d:%d  /  THRUSTERS %d",
                   profile.mass,profile.demand,profile.power,
-                  m->yard.count(Part::Thruster));
+                  m->ship.count(Part::Thruster));
     TextFit(m,line,0,-1.51f,4.72f,.029f,.77f,.92f,.99f);
-    const bool flightReady=m->yard.ready();
-    TextFit(m,reverie::gumball::FlightReadiness(m->yard),
+    const bool flightReady=m->ship.ready();
+    TextFit(m,reverie::gumball::FlightReadiness(m->ship),
             0,-1.68f,4.75f,.027f,
             flightReady?.65f:1.f,flightReady?1.f:.56f,flightReady?.77f:.48f);
 }
@@ -1084,7 +1102,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                     m->yardCursor.toolChosen(); // immediately back to ship
                     m->pointerFocus.padFocus=true; // preserve grid focus until ray moves
                     std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
-                        m->yard.stock(candidate)>0u?
+                        m->ship.stock(candidate)>0u?
                             "ARMED %s: CLICK CELL TO EDIT":
                             "ARMED %s: REMOVE FITTED PARTS",
                         YardPartName(candidate));
