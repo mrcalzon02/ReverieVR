@@ -8299,6 +8299,24 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setTextSize(19f*uiScale);
         canvas.drawText("Change your look in the mirror. Apply saves; Back discards.",90,145,paint);
         canvas.drawText("12 themed identities, interchangeable outfits and details",90,176,paint);
+        // Live 2D thumbnail remains visible when the outdoor Home scenes
+        // have no mirror. Color, face and headwear update on every edit.
+        paint.setColor(Color.rgb(23,39,54));
+        canvas.drawRoundRect(788f,36f,966f,207f,13f,13f,paint);
+        float[] avatarColor=HomeAvatarProfile.RGB[p.color];
+        paint.setColor(Color.rgb((int)(avatarColor[0]*255f),
+            (int)(avatarColor[1]*255f),(int)(avatarColor[2]*255f)));
+        canvas.drawRoundRect(838f,133f,916f,192f,9f,9f,paint);
+        paint.setColor(p.theme==9 ? Color.rgb(163,224,242):
+            Color.rgb(220,192,165));
+        canvas.drawCircle(877f,109f,30f,paint);
+        paint.setColor(p.eyes==2 ? Color.rgb(30,236,250):
+            Color.rgb(33,60,77));
+        canvas.drawCircle(865f,108f,p.eyes==1?2f:4f,paint);
+        canvas.drawCircle(889f,108f,p.eyes==1?2f:4f,paint);
+        paint.setColor(Color.rgb(240,199,87));
+        if(p.hat!=0)canvas.drawRoundRect(842f,71f,912f,84f,3f,3f,paint);
+        if(p.extra!=0)canvas.drawCircle(878f,157f,9f,paint);
         String[] rows={"IDENTITY: "+HomeAvatarProfile.THEMES[p.theme],
             "COLOR: "+HomeAvatarProfile.COLORS[p.color],
             "HEADWEAR: "+HomeAvatarProfile.HATS[p.hat],
