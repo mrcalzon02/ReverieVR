@@ -57,17 +57,34 @@ final class HomeEnvironmentRenderer {
     private final FloatBuffer legBuffer=ByteBuffer.allocateDirect(
         HomeAvatarLegIk.MESH_FLOATS*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
 
-    void setAvatarLegFrame(float x,float z,long frameNanos,boolean walkingEnabled) {
+    // Dynamic meshes are created ONLY when the body/garment selection changes,
+    // once per onNewFrame, and shared unchanged between the stereo eye passes.
+    private HomeAvatarProfile builtAvatar;
+    private Mesh avatarArms=mesh(HomeAvatarBodyGeometry.arms(HomeAvatarProfile.DEFAULT));
+    private Mesh avatarTorso=mesh(HomeAvatarBodyGeometry.torso(HomeAvatarProfile.DEFAULT));
+    private Mesh avatarOutfit=mesh(HomeAvatarBodyGeometry.outfit(HomeAvatarProfile.DEFAULT));
+    private Mesh avatarHair=mesh(HomeAvatarBodyGeometry.hair(HomeAvatarProfile.DEFAULT));
+    private final Mesh avatarHead=mesh(HomeAvatarWardrobeGeometry.head());
+    private Mesh avatarFace=mesh(HomeAvatarBodyGeometry.face(HomeAvatarProfile.DEFAULT));
+    private final float[] avatarMvpScratch=new float[16];
+    void setAvatarLegFrame(float x,float z,long frameNanos,
+        boolean walkingEnabled,HomeAvatarProfile profile) {
+        HomeAvatarProfile p=profile==null?HomeAvatarProfile.DEFAULT:profile;
+        if(builtAvatar==null || !builtAvatar.sameGeometry(p)) {
+            avatarArms=mesh(HomeAvatarBodyGeometry.arms(p));
+            avatarTorso=mesh(HomeAvatarBodyGeometry.torso(p));
+            avatarOutfit=mesh(HomeAvatarBodyGeometry.outfit(p));
+            avatarHair=mesh(HomeAvatarBodyGeometry.hair(p));
+            avatarFace=mesh(HomeAvatarBodyGeometry.face(p));
+            legIk.setBodyShape(p);
+            builtAvatar=p;
+        }
         legIk.update(x,z,frameNanos,walkingEnabled);
         legIk.writeMesh(legTriangles);
         legBuffer.clear();
         legBuffer.put(legTriangles);
         legBuffer.position(0);
     }
-    private final Mesh avatarArms=mesh(HomeAvatarWardrobeGeometry.arms());
-    private final Mesh avatarTorso=mesh(HomeAvatarWardrobeGeometry.torso());
-    private final Mesh avatarHead=mesh(HomeAvatarWardrobeGeometry.head());
-    private final Mesh avatarFace=mesh(HomeAvatarWardrobeGeometry.face());
     private final Mesh[] avatarEyes=makeAvatarParts(0);
     private final Mesh[] avatarHats=makeAvatarParts(1);
     private final Mesh[] avatarAccessories=makeAvatarParts(2);
@@ -75,6 +92,8 @@ final class HomeEnvironmentRenderer {
         int count=type==0?HomeAvatarProfile.EYES.length:
             type==1?HomeAvatarProfile.HATS.length:HomeAvatarProfile.EXTRAS.length;
         Mesh[] meshes=new Mesh[count];
+        // Geometry beyond the legacy eight hats/props receives a real
+        // author-created mesh from its matching identity family.
         for(int i=0;i<count;i++)meshes[i]=mesh(type==0
             ?HomeAvatarWardrobeGeometry.eyes(i):type==1
                 ?HomeAvatarWardrobeGeometry.headwear(i)
@@ -635,18 +654,28 @@ final class HomeEnvironmentRenderer {
     private void drawAvatarInMirror(HomeAvatarProfile chosen) {
         HomeAvatarProfile p=chosen==null?HomeAvatarProfile.DEFAULT:chosen;
         float[] c=HomeAvatarProfile.RGB[p.color];
-        boolean armor=p.theme==1||p.theme==4||p.theme==7||p.theme==10;
+        boolean armor=p.outfit==4||p.outfit==17||p.outfit==20;
         boolean ghost=p.theme==9;
+        float scale=p.heightScale();
+        System.arraycopy(mvp,0,avatarMvpScratch,0,16);
+        // Anchor feet to floor as height varies; restore MVP before
+        // drawing the headset/controller wireframe reflection.
+        Matrix.translateM(mvp,0,0f,-.79f*(1f-scale),0f);
+        Matrix.scaleM(mvp,0,1f,scale,1f);
         drawIkLegs(armor?.32f:c[0]*.57f,
             armor?.36f:c[1]*.57f,armor?.44f:c[2]*.57f);
         draw(avatarArms,c[0]*.82f,c[1]*.82f,c[2]*.82f,1f);
         draw(avatarTorso,c[0],c[1],c[2],1f);
+        float[] fabric=HomeAvatarProfile.RGB[p.fabric];
+        draw(avatarOutfit,fabric[0],fabric[1],fabric[2],1f);
         draw(avatarHead,ghost?.73f:.72f,ghost?.89f:.65f,ghost?.95f:.56f,1f);
         draw(avatarFace,ghost?.55f:.85f,ghost?.74f:.73f,ghost?.88f:.67f,1f);
         draw(avatarEyes[p.eyes],p.eyes==2?.10f:.08f,
             p.eyes==2?.91f:.22f,p.eyes==2?1f:.30f,1f);
+        draw(avatarHair,c[0]*.45f,c[1]*.43f,c[2]*.40f,1f);
         draw(avatarHats[p.hat],c[0]*.82f,c[1]*.82f,c[2]*.82f,1f);
         draw(avatarAccessories[p.extra],.99f,.79f,.33f,1f);
+        System.arraycopy(avatarMvpScratch,0,mvp,0,16);
     }
 
     private void drawIkLegs(float red,float green,float blue) {

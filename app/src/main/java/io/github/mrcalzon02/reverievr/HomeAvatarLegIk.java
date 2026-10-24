@@ -15,7 +15,19 @@ final class HomeAvatarLegIk {
     static final int MESH_FLOATS=108; // 4 limb ribbons + 2 foot ribbons
     private static final float FLOOR_Y=-.79f;
     private static final float HIP_Y=-.26f;
-    private static final float SIDE_Z=.185f;
+    private float sideZ=.185f;
+    private float thighRadius=.070f;
+    private float shinRadius=.055f;
+    private float footHalf=.113f;
+    /** Morph leg separation and limb mass without changing the IK solve. */
+    void setBodyShape(HomeAvatarProfile profile) {
+        if(profile==null)profile=HomeAvatarProfile.DEFAULT;
+        sideZ=.095f+.032f*profile.hips;
+        thighRadius=.052f+.011f*profile.muscle+.003f*profile.hips;
+        shinRadius=.040f+.009f*profile.muscle;
+        footHalf=.090f+.009f*profile.hips;
+        solvePose();
+    }
     private static final float STRIDE_METERS=.52f;
     private final float[] joints=new float[JOINT_FLOATS];
     private float previousX,previousZ;
@@ -71,14 +83,14 @@ final class HomeAvatarLegIk {
         int at=0;
         for(int i=0;i<2;i++) {
             int v=i*9;
-            at=ribbon(out,at,v,v+3,.070f);
-            at=ribbon(out,at,v+3,v+6,.055f);
+            at=ribbon(out,at,v,v+3,thighRadius);
+            at=ribbon(out,at,v+3,v+6,shinRadius);
             float x=joints[v+6]-.012f;
             float y=joints[v+7]+.012f;
             float z=joints[v+8];
             at=quad(out,at,
-                x,y,z-.113f,x,y,z+.113f,
-                x,y+.048f,z-.113f,x,y+.048f,z+.113f);
+                x,y,z-footHalf,x,y,z+footHalf,
+                x,y+.048f,z-footHalf,x,y+.048f,z+footHalf);
         }
         if(at!=MESH_FLOATS)
             throw new IllegalStateException("IK geometry length mismatch");
@@ -93,10 +105,10 @@ final class HomeAvatarLegIk {
             float cycle=phase+(leg==0?0f:(float)Math.PI);
             float progress=(float)Math.sin(cycle);
             // Stance foot remains on floor; swing foot lifts into its arc.
-            float ankleZ=side*SIDE_Z + motionBlend*.135f*(float)Math.cos(cycle);
+            float ankleZ=side*sideZ + motionBlend*.135f*(float)Math.cos(cycle);
             float ankleY=FLOOR_Y + motionBlend*.095f*Math.max(0f,progress);
             float hipY=HIP_Y + motionBlend*.020f*(float)Math.sin(phase*2f);
-            float hipZ=side*SIDE_Z;
+            float hipZ=side*sideZ;
             float hx=HomeAvatarWardrobeGeometry.MIRROR_X-.020f;
             set(i,hx,hipY,hipZ);
             // Foot is slightly in front of knee, on the mirror side.

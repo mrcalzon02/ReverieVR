@@ -277,7 +277,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {120,391,485,439},{539,391,904,439},
         {120,469,485,517},{539,469,904,517},
         {120,547,485,595},{539,547,904,595},
-        {120,635,350,695},{370,635,650,695},{670,635,904,695}
+        {120,635,350,695},{370,635,650,695},{670,635,904,695},
+        {120,182,430,228},{452,182,754,228}
     };
 
     private static final int[][] MUSIC_BUTTONS = new int[][] {
@@ -643,6 +644,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int emulatorCatalogPage;
     private HomeEnvironment lastAmbientEnvironment;
     private HomeAvatarProfile wardrobeDraft=HomeAvatarProfile.DEFAULT;
+    private int wardrobePage;
     private boolean lastAmbientHomeActive;
     private int musicCatalogPage;
     private String[] musicCatalogTitles = new String[0];
@@ -1974,7 +1976,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // animation. Update ONCE per Cardboard frame, never once per eye.
         homeEnvironmentRenderer.setAvatarLegFrame(
             nativeLocomotion.x(), nativeLocomotion.z(), frameNanos,
-            mode == MODE_HOME || mode == MODE_DOS_LIBRARY);
+            mode == MODE_HOME || mode == MODE_DOS_LIBRARY,
+            mode==MODE_WARDROBE?wardrobeDraft:preferences.getHomeAvatarProfile());
 
         // Apply shell recenter on WORLD coordinates. Pre-multiplying
         // yawMatrix in eye space converts vertical pitch into sideways roll.
@@ -5918,26 +5921,28 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
     private void openWardrobe() {
         wardrobeDraft=preferences.getHomeAvatarProfile();
+        wardrobePage=0;
         mode=MODE_WARDROBE;hoveredButton=-1;
         uiTargetStabilizer.reset();textureDirty=true;
     }
     private void selectWardrobeItem(int index) {
-        if(index>=0&&index<10)
-            wardrobeDraft=wardrobeDraft.step(index/2,index%2==0?-1:1);
-        else if(index==10) {
+        if(index>=0 && index<10) {
+            int field=HomeAvatarProfile.PAGE_FIELDS[wardrobePage][index/2];
+            wardrobeDraft=wardrobeDraft.step(field,index%2==0?-1:1);
+        } else if(index==10) {
             preferences.setHomeAvatarProfile(wardrobeDraft);mode=MODE_HOME;
         } else if(index==11) {
             wardrobeDraft=preferences.getHomeAvatarProfile();mode=MODE_HOME;
         } else if(index==12) {
-            java.util.Random r=new java.util.Random(System.nanoTime());
-            wardrobeDraft=new HomeAvatarProfile(
-                r.nextInt(HomeAvatarProfile.THEMES.length),
-                r.nextInt(HomeAvatarProfile.COLORS.length),
-                r.nextInt(HomeAvatarProfile.HATS.length),
-                r.nextInt(HomeAvatarProfile.EXTRAS.length),
-                r.nextInt(HomeAvatarProfile.EYES.length));
+            wardrobeDraft=HomeAvatarProfile.random(
+                new java.util.Random(System.nanoTime()));
+        } else if(index==13 || index==14) {
+            wardrobePage=Math.floorMod(wardrobePage+(index==13?-1:1),
+                HomeAvatarProfile.PAGE_FIELDS.length);
         } else {host.onUiActionRejected();return;}
-        hoveredButton=-1;textureDirty=true;
+        hoveredButton=-1;
+        uiTargetStabilizer.reset();
+        textureDirty=true;
     }
 
     private void handleEnvironmentSelection(
@@ -8297,47 +8302,75 @@ final class VrShellRenderer implements CardboardView.Renderer {
         HomeAvatarProfile p=wardrobeDraft;
         paint.setFakeBoldText(true);
         paint.setColor(Color.rgb(89,228,217));
-        paint.setTextSize(34f*uiScale);
-        canvas.drawText("THE REVERIE WARDROBE",90,105,paint);
+        paint.setTextSize(32f*uiScale);
+        canvas.drawText("THE REVERIE WARDROBE",90,98,paint);
         paint.setFakeBoldText(false);
         paint.setColor(Color.rgb(176,196,211));
-        paint.setTextSize(19f*uiScale);
-        canvas.drawText("Change your look in the mirror. Apply saves; Back discards.",90,145,paint);
-        canvas.drawText("12 themed identities, interchangeable outfits and details",90,176,paint);
-        // Live 2D thumbnail remains visible when the outdoor Home scenes
-        // have no mirror. Color, face and headwear update on every edit.
-        paint.setColor(Color.rgb(23,39,54));
-        canvas.drawRoundRect(788f,36f,966f,207f,13f,13f,paint);
-        float[] avatarColor=HomeAvatarProfile.RGB[p.color];
-        paint.setColor(Color.rgb((int)(avatarColor[0]*255f),
-            (int)(avatarColor[1]*255f),(int)(avatarColor[2]*255f)));
-        canvas.drawRoundRect(838f,133f,916f,192f,9f,9f,paint);
-        paint.setColor(p.theme==9 ? Color.rgb(163,224,242):
-            Color.rgb(220,192,165));
-        canvas.drawCircle(877f,109f,30f,paint);
-        paint.setColor(p.eyes==2 ? Color.rgb(30,236,250):
-            Color.rgb(33,60,77));
-        canvas.drawCircle(865f,108f,p.eyes==1?2f:4f,paint);
-        canvas.drawCircle(889f,108f,p.eyes==1?2f:4f,paint);
-        paint.setColor(Color.rgb(240,199,87));
-        if(p.hat!=0)canvas.drawRoundRect(842f,71f,912f,84f,3f,3f,paint);
-        if(p.extra!=0)canvas.drawCircle(878f,157f,9f,paint);
-        String[] rows={"IDENTITY: "+HomeAvatarProfile.THEMES[p.theme],
-            "COLOR: "+HomeAvatarProfile.COLORS[p.color],
-            "HEADWEAR: "+HomeAvatarProfile.HATS[p.hat],
-            "ACCESSORY: "+HomeAvatarProfile.EXTRAS[p.extra],
-            "EYES: "+HomeAvatarProfile.EYES[p.eyes]};
-        paint.setTextSize(19f*uiScale);
-        for(int i=0;i<rows.length;i++) {
+        paint.setTextSize(18f*uiScale);
+        canvas.drawText("48 identities / 24 outfit families / all body types",90,129,paint);
+        canvas.drawText("SELECT • Preview in mirror • SAVE commits / BACK discards",90,155,paint);
+        canvas.drawText("Page "+(wardrobePage+1)+"/"+HomeAvatarProfile.PAGE_NAMES.length+
+            " - "+HomeAvatarProfile.PAGE_NAMES[wardrobePage],90,177,paint);
+        drawWardrobeThumbnail(canvas,paint,p);
+        String[] labels=new String[WARDROBE_BUTTONS.length];
+        for(int i=0;i<5;i++) {
+            int field=HomeAvatarProfile.PAGE_FIELDS[wardrobePage][i];
+            String name=HomeAvatarProfile.FIELD_NAMES[field];
             paint.setColor(Color.rgb(238,225,191));
-            canvas.drawText(rows[i],125,224+i*78,paint);
+            paint.setTextSize(18f*uiScale);
+            canvas.drawText(name+": "+p.fieldLabel(field),125,229+i*78,paint);
+            labels[i*2]="PREVIOUS";
+            labels[i*2+1]="NEXT";
         }
-        drawButtons(canvas,paint,new String[]{
-            "PREVIOUS THEME","NEXT THEME","PREVIOUS COLOR","NEXT COLOR",
-            "PREVIOUS HAT","NEXT HAT","PREVIOUS ITEM","NEXT ITEM",
-            "PREVIOUS EYES","NEXT EYES",
-            "APPLY + SAVE","BACK / DISCARD","SURPRISE ME"
-        },WARDROBE_BUTTONS);
+        labels[10]="APPLY + SAVE";labels[11]="BACK / DISCARD";
+        labels[12]="SURPRISE ME";
+        labels[13]="PREVIOUS PAGE";labels[14]="NEXT PAGE";
+        drawButtons(canvas,paint,labels,WARDROBE_BUTTONS);
+    }
+
+    private void drawWardrobeThumbnail(Canvas canvas,Paint paint,HomeAvatarProfile p) {
+        // Always-present full-figure preview for beach and forest scenes.
+        // Every body slider must change visible proportions, not just a label.
+        paint.setColor(Color.rgb(23,39,54));
+        canvas.drawRoundRect(788f,28f,966f,222f,13f,13f,paint);
+        float x=877f,h=HomeAvatarBodyGeometry.shoulder(p)*80f;
+        float hip=HomeAvatarBodyGeometry.hips(p)*80f;
+        float waist=HomeAvatarBodyGeometry.waist(p)*80f;
+        float top=109f-(p.height-3)*5.0f;
+        float bottom=181f;
+        float muscle=7f+p.muscle*1.75f;
+        float[] c=HomeAvatarProfile.RGB[p.color];
+        paint.setColor(Color.rgb((int)(c[0]*255),(int)(c[1]*255),(int)(c[2]*255)));
+        // Matched arms, shoulders, tapered waist, hips and two legs.
+        canvas.drawRoundRect(x-hip*.76f,bottom-3f,x-hip*.10f,212f,3f,3f,paint);
+        canvas.drawRoundRect(x+hip*.10f,bottom-3f,x+hip*.76f,212f,3f,3f,paint);
+        canvas.drawRoundRect(x-h-muscle,top+2f,x-h+2f,bottom-13f,5f,5f,paint);
+        canvas.drawRoundRect(x+h-2f,top+2f,x+h+muscle,bottom-13f,5f,5f,paint);
+        android.graphics.Path silhouette=new android.graphics.Path();
+        silhouette.moveTo(x-h,top);silhouette.lineTo(x+h,top);
+        silhouette.lineTo(x+waist,bottom-29f);
+        silhouette.lineTo(x+hip,bottom);
+        silhouette.lineTo(x-hip,bottom);
+        silhouette.lineTo(x-waist,bottom-29f);silhouette.close();
+        canvas.drawPath(silhouette,paint);
+        float[] garment=HomeAvatarProfile.RGB[p.fabric];
+        paint.setColor(Color.rgb((int)(garment[0]*255),
+            (int)(garment[1]*255),(int)(garment[2]*255)));
+        if(p.outfit%8==3 || p.outfit%8==2)
+            canvas.drawRoundRect(x-hip-4,bottom-13f,x+hip+4,bottom+10f,2f,2f,paint);
+        else canvas.drawRoundRect(x-waist,top+19f,x+waist,bottom-25f,2f,2f,paint);
+        paint.setColor(p.theme==9?Color.rgb(163,224,242):Color.rgb(220,192,165));
+        float faceY=top-17f;
+        canvas.drawCircle(x,faceY,19f,paint);
+        paint.setColor(p.eyes==2?Color.rgb(30,236,250):Color.rgb(33,60,77));
+        canvas.drawCircle(x-7f,faceY,p.eyes==1?2f:3f,paint);
+        canvas.drawCircle(x+7f,faceY,p.eyes==1?2f:3f,paint);
+        paint.setColor(Color.rgb(85,63,67));
+        if(p.hair>0)canvas.drawRoundRect(x-20f,faceY-19f,x+20f,
+            faceY-13f,3f,3f,paint);
+        paint.setColor(Color.rgb(240,199,87));
+        if(p.hat!=0)canvas.drawRoundRect(x-24f,faceY-24f,x+24f,faceY-18f,3f,3f,paint);
+        if(p.extra!=0)canvas.drawCircle(x,bottom-46f,6f,paint);
     }
 
     private void drawEnvironmentMenu(

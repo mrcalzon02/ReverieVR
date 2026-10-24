@@ -65,6 +65,28 @@ final class HomeAvatarWardrobeGeometry {
                 triangle(-.07f,.88f,.07f,.88f,0f,1.16f),
                 triangle(.10f,.88f,.30f,.88f,.22f,1.12f));
             case 7:return rectangle(MIRROR_X-.019f,-.28f,1.01f,.28f,1.07f);
+            case 8:return join(rectangle(MIRROR_X-.019f,-.31f,.79f,.31f,.84f),
+                triangle(-.32f,.83f,-.25f,.83f,-.29f,.98f),
+                triangle(.25f,.83f,.32f,.83f,.29f,.98f));
+            case 9:return join(rectangle(MIRROR_X-.019f,-.29f,.75f,.29f,1.07f),
+                rectangle(MIRROR_X-.021f,-.34f,.55f,-.25f,.89f),
+                rectangle(MIRROR_X-.021f,.25f,.55f,.34f,.89f));
+            case 10:return join(rectangle(MIRROR_X-.019f,-.39f,.76f,.39f,.83f),
+                triangle(-.35f,.83f,-.01f,.83f,-.25f,1.08f),
+                triangle(.01f,.83f,.35f,.83f,.25f,1.08f),
+                triangle(-.11f,.81f,.11f,.81f,0f,1.11f));
+            case 11:return join(rectangle(MIRROR_X-.019f,-.30f,.78f,.30f,.94f),
+                rectangle(MIRROR_X-.020f,-.43f,.75f,.18f,.80f));
+            case 12:return join(rectangle(MIRROR_X-.019f,-.32f,.73f,-.23f,.37f),
+                rectangle(MIRROR_X-.019f,.23f,.73f,.32f,.37f),
+                rectangle(MIRROR_X-.019f,-.32f,.77f,.32f,.93f));
+            case 13:return join(rectangle(MIRROR_X-.020f,-.31f,.78f,.31f,.84f),
+                rectangle(MIRROR_X-.021f,-.07f,.82f,.07f,.96f));
+            case 14:return rectangle(MIRROR_X-.023f,-.31f,.59f,.31f,.71f);
+            case 15:return join(rectangle(MIRROR_X-.019f,-.31f,.78f,.31f,.84f),
+                triangle(-.31f,.83f,-.19f,.83f,-.25f,.99f),
+                triangle(-.06f,.83f,.06f,.83f,0f,1.02f),
+                triangle(.19f,.83f,.31f,.83f,.25f,.99f));
             default:return new float[0];
         }
     }
@@ -82,6 +104,25 @@ final class HomeAvatarWardrobeGeometry {
                 triangle(-.16f,.24f,.16f,.24f,0f,-.03f));
             case 7:return join(triangle(-.04f,.34f,-.04f,.17f,-.27f,.27f),
                 triangle(.04f,.34f,.04f,.17f,.27f,.27f));
+            case 8:return join(rectangle(MIRROR_X-.017f,-.53f,.17f,-.31f,.41f),
+                rectangle(MIRROR_X-.017f,.31f,.17f,.53f,.41f));
+            case 9:return join(rectangle(MIRROR_X-.017f,.33f,-.31f,.52f,-.68f),
+                triangle(-.35f,.34f,-.24f,.34f,.47f,-.42f));
+            case 10:return join(rectangle(MIRROR_X-.018f,-.34f,.29f,.34f,.37f),
+                rectangle(MIRROR_X-.019f,.30f,.29f,.40f,-.44f));
+            case 11:return join(rectangle(MIRROR_X-.024f,-.34f,.55f,-.02f,.69f),
+                rectangle(MIRROR_X-.024f,.02f,.55f,.34f,.69f));
+            case 12:return join(rectangle(MIRROR_X-.018f,-.62f,-.33f,-.49f,.29f),
+                rectangle(MIRROR_X-.018f,.49f,-.33f,.62f,.29f),
+                rectangle(MIRROR_X-.019f,-.68f,-.40f,-.46f,-.30f),
+                rectangle(MIRROR_X-.019f,.46f,-.40f,.68f,-.30f));
+            case 13:return join(triangle(-.42f,.33f,-.73f,-.23f,-.54f,.38f),
+                triangle(.42f,.33f,.73f,-.23f,.54f,.38f));
+            case 14:return join(rectangle(MIRROR_X-.019f,-.04f,.22f,.04f,-.06f),
+                rectangle(MIRROR_X-.020f,-.16f,-.04f,.16f,-.19f));
+            case 15:return join(rectangle(MIRROR_X+.012f,-.42f,.27f,.42f,-.51f),
+                rectangle(MIRROR_X-.018f,-.35f,.34f,-.28f,-.32f),
+                rectangle(MIRROR_X-.018f,.28f,.34f,.35f,-.32f));
             default:return new float[0];
         }
     }
