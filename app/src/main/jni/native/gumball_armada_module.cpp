@@ -594,8 +594,8 @@ void SaveShipyard(Module* m){
     if(!ReverieNativeHostSupportsSaveV1(m->host)){
         m->shipSaveError=true;return;
     }
-    const ShipyardSave state=m->yard.snapshot();
-    const int result=m->host->write_save("shipyard.v1",&state,
+    const Ship3DSave state=m->ship.snapshot();
+    const int result=m->host->write_save("shipyard.v2",&state,
                                        static_cast<uint32_t>(sizeof(state)));
     if(result!=REVERIE_NATIVE_SAVE_OK){
         m->shipSaveError=true;
@@ -627,20 +627,43 @@ void* Create(const ReverieNativeHostV1* host){
                                         "Invalid campaign save ignored");
         }else if(result!=REVERIE_NATIVE_SAVE_NOT_FOUND)
             ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,"Campaign save read failed");
-        ShipyardSave ship{};
-        uint32_t shipBytes=0;
-        const int shipCode=host->read_save("shipyard.v1",&ship,sizeof(ship),&shipBytes);
-        if(shipCode==REVERIE_NATIVE_SAVE_OK){
-            if(shipBytes!=sizeof(ship)||!m->yard.restore(ship)){
+        // V2 is authoritative. Do not roll back invalid V2 to V1.
+        Ship3DSave volume{};uint32_t shipBytes=0;
+        const int read3=host->read_save("shipyard.v2",&volume,
+                                      sizeof(volume),&shipBytes);
+        if(read3==REVERIE_NATIVE_SAVE_OK){
+            if(shipBytes!=sizeof(volume)||!m->ship.restore(volume)){
                 m->shipLoadWarning=true;
                 ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_WARN,kId,
-                                   "Invalid shipyard save; restored default ship");
+                                   "Invalid 3D ship save; default assembly restored");
             }
-        }else if(shipCode!=REVERIE_NATIVE_SAVE_NOT_FOUND)
+        }else if(read3==REVERIE_NATIVE_SAVE_NOT_FOUND){
+            // Checked migration into Z=2. Retain old slot as rollback backup.
+            ShipyardSave flat{};uint32_t oldBytes=0;
+            const int read1=host->read_save("shipyard.v1",&flat,
+                                          sizeof(flat),&oldBytes);
+            if(read1==REVERIE_NATIVE_SAVE_OK){
+                Shipyard legacy;
+                if(oldBytes==sizeof(flat)&&legacy.restore(flat)){
+                    m->ship.import_legacy(legacy);
+                    SaveShipyard(m);
+                }else{
+                    m->shipLoadWarning=true;
+                    ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_WARN,kId,
+                                       "Invalid legacy ship save; default restored");
+                }
+            }else if(read1!=REVERIE_NATIVE_SAVE_NOT_FOUND){
+                m->shipLoadWarning=true;
+                ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,
+                                   "Legacy shipyard save read failed");
+            }
+        }else{
+            m->shipLoadWarning=true;
             ReverieNativeLogV1(host,REVERIE_NATIVE_LOG_ERROR,kId,
-                               "Shipyard save read failed");
+                               "3D shipyard save read failed");
+        }
     }
-    m->sim.configure_ship(m->yard);
+    m->sim.configure_ship_profile(m->ship.profile(),m->ship.ready());
     Rebuild(m);return m;
 }
 void Destroy(void* p){delete static_cast<Module*>(p);}
@@ -992,7 +1015,7 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
                               "%s",reverie::gumball::ShipEditMessage(result));
                 if(good){
-                    m->sim.configure_ship(m->yard);
+                    m->sim.configure_ship_profile(m->ship.profile(),m->ship.ready());
                     SaveShipyard(m);
                 }
             }else{
