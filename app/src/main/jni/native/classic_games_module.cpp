@@ -886,13 +886,23 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     const bool second=copy.secondary_down!=0;
     const bool secondaryEdge=second&&!m->previousSecondary;
     m->previousSecondary=second;
-    const int controlHover=aim&&!m->board.finished&&m->board.side==1&&
-        (m->board.kind==reverie::boardgames::Kind::Chess||
-         m->board.kind==reverie::boardgames::Kind::Checkers)&&
-        hx>1.49f&&hx<2.42f&&hy<-.45f&&hy>-.85f?1:0;
 #if CLASSIC_GAME_KIND == 5
-    const bool chessPanelHover=aim &&
-        hx>1.46f&&hx<2.58f&&hy>.68f&&hy<1.10f;
+    float panelX=0.f,panelY=0.f;
+    const bool chessPanelAim=
+        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
+        reverie::chesspanel::Hit(1,copy.pointer_origin,
+                                copy.pointer_direction,&panelX,&panelY);
+    const int controlHover=chessPanelAim&&!m->board.finished&&
+        m->board.side==1&&std::abs(panelX)<.49f&&
+        panelY<-.49f&&panelY>-.81f?1:0;
+    const bool chessPanelHover=chessPanelAim &&
+        std::abs(panelX)<.525f&&panelY>.70f&&panelY<1.06f;
+#else
+    const int controlHover=aim&&!m->board.finished&&m->board.side==1&&
+        m->board.kind==reverie::boardgames::Kind::Checkers&&
+        hx>1.49f&&hx<2.42f&&hy<-.45f&&hy>-.85f?1:0;
+#endif
+#if CLASSIC_GAME_KIND == 5
     if(chessPanelHover!=m->chessPanelHover){
         m->chessPanelHover=chessPanelHover;
         m->dirty=true;
@@ -963,10 +973,12 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                      m->board.goReview &&
                      hx> -2.42f&&hx< -1.49f&&hy<-.99f&&hy> -1.50f)
                 m->board.ResumeGoPlay();
-            else if(aim &&
-                    (m->board.kind==reverie::boardgames::Kind::Chess||
-                     m->board.kind==reverie::boardgames::Kind::Checkers) &&
-                    hx>1.49f&&hx<2.42f&&hy<-.45f&&hy>-.85f){
+            else if(
+#if CLASSIC_GAME_KIND == 5
+                    controlHover==1 ||
+#endif
+                    (aim && m->board.kind==reverie::boardgames::Kind::Checkers &&
+                     hx>1.49f&&hx<2.42f&&hy<-.45f&&hy>-.85f)){
                 int &difficulty=
                     m->board.kind==reverie::boardgames::Kind::Chess
                         ?m->board.chessDifficulty:m->board.checkerDifficulty;
@@ -974,10 +986,15 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                 ReverieNativeRequestFeedbackV1(m->host,
                     REVERIE_NATIVE_FEEDBACK_ACTIVATION);
                 m->dirty=true;
-            }else if(aim &&
+            }else if(
+#if CLASSIC_GAME_KIND == 5
+                    chessPanelAim && std::abs(panelX)<.49f &&
+                    panelY<-.99f && panelY>-1.30f &&
+#else
+                    false &&
+#endif
                     m->board.kind==reverie::boardgames::Kind::Chess &&
-                    m->board.ChessDrawClaimable() &&
-                    hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f)
+                    m->board.ChessDrawClaimable())
                 m->board.ClaimChessDraw();
             else if(aim &&
                     m->board.kind==reverie::boardgames::Kind::Checkers &&
