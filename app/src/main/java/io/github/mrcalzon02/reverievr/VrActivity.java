@@ -189,7 +189,8 @@ public final class VrActivity extends Activity
                 getAssets(),
                 virtualInputBus,
                 preferences.getLoggingMode()
-                    == LoggingMode.DEVELOPMENT
+                    == LoggingMode.DEVELOPMENT,
+                preferences
             );
         inputManager =
             (InputManager) getSystemService(Context.INPUT_SERVICE);

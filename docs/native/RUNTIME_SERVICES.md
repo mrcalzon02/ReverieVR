@@ -1,3 +1,28 @@
+## Shared wardrobe profile in native games — 2026-10-24
+
+On every hub-hosted native module launch, the shell reads the persisted
+avatar from the same `ReveriePreferences` instance as the Home wardrobe
+and passes an immutable 15-value snapshot through the JVM/JNI bridge.
+`NativeModuleRuntime.nativeCreate` validates and initializes that data
+before calling the native module's `create`. Its optional
+`ReverieNativeHostV1.read_avatar` service is scoped to the current module
+callback. This is **one global cosmetic identity**, not a separate copy in
+each game's save folder; returning to the wardrobe and entering a different
+game carries the most recently applied appearance.
+
+Existing native games that do not consume the new callback remain compatible.
+A shared native mesh helper and Test Chamber renderer demonstrate the
+character; other games still require deliberate scene-specific integration
+to **show** the shared body. Independently installed companion APKs cannot
+read another Android app's private preferences; a separate explicitly
+authorized inter-app handoff is still required for them.
+
+The shared physical hit shape is a stretched-sphere ellipsoid; its dimensions
+do not change when the player selects a small or enormous avatar. No native
+combat, economy, or save behavior has been altered. Host-side acceptance
+requires ABI contract checks, Gradle/NDK compilation, APK and actual S9/Daydream
+stereo/collision tests; source integration alone is not device acceptance.
+
 ## Independent native game content manager VR handoff — 2026-10-17
 
 The native games shelf now includes a first-page **Manage Game Downloads / Updates** entry. It performs the established Stage B-to-Stage A result handoff (not a nested Android permission prompt inside the headset) and opens the compact `GameModulesActivity` on the phone. This route is available without network or optional game packs. Signed catalog status, local pack import, rollback, save-safe removal and separately verified companion APK installation are handled by the existing module manager. This is source integration only until the APK/Daydream selection, lifecycle and return-to-headset behavior are tested on the Galaxy S9.

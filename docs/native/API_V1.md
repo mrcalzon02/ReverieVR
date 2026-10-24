@@ -1,3 +1,46 @@
+## Shared wardrobe avatar host service and ellipsoid body — 2026-10-24
+
+**Implemented in source; Android/S9 acceptance pending.** The shell now hands
+its saved Home avatar to every **hub-hosted** native module by a read-only,
+optional tail callback `read_avatar` on `ReverieNativeHostV1`. It follows
+`read_asset` and preserves all preceding ABI-v1 offsets and existing module
+entries. The stable `ReverieNativeAvatarV1` is 2 headers plus 15 ordered
+`uint32_t` indices: theme, accent, hat, accessory, eyes, presentation,
+physique, height, shoulders, waist, hips, musculature, outfit, hairstyle,
+fabric. `REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1=15` and the snapshot
+`schema_version=1`; this snapshot is distinct from the Java preferences
+string format `v2`. Consumers must first check
+`REVERIE_NATIVE_HOST_V1_AVATAR_MIN_SIZE` and use
+`ReverieNativeReadAvatarV1`. The helper rejects malformed/unknown fields
+and pre-extension hosts; the host falls back to a valid default profile if
+JNI data is missing. Call the reader in a guest callback and cache the result
+in module state as needed; the snapshot is pinned at module launch. Game saves
+never store nor own the global avatar profile.
+
+The JVM reads `ReveriePreferences.getHomeAvatarProfile()` at launch and
+passes the 15-value validated profile to `nativeCreate`. The JNI host stores
+a copy in the native session, accessible only during that module's callback,
+without allowing access to any other game files. This does not constitute an
+inter-app Android data bridge for independently installed companion APKs.
+
+`reverie_native_avatar_geometry.h` supplies low-cost first-party **stretched
+spheres** for each portion of a reusable seven-piece 3D figure. Torso, hips,
+both arms, both legs and head are shaped from the same profile. The default
+collision primitive `ReverieNativeAvatarCollisionV1` is an **ellipsoid**,
+a stretched sphere with radius 0.27m horizontally, radius 0.85m vertically,
+center 0.85m above the feet. It is the standard player collision shape,
+independent of visual body, theme, clothing, and gender presentation.
+This is mathematically an ellipsoid, not a cylindrical capsule with
+hemispherical ends. The collision helper is provided for opted-in physics
+implementations; preexisting native game physics is not silently changed.
+
+The Procedural Test Chamber is the first native consumer; it obtains the
+snapshot and prepares a visible seven-ellipsoid low-poly character on GL
+creation, preserving its existing procedural scene and stereo contract.
+Other hosted modules **have access to the avatar immediately**, but must
+invoke the shared render helper or attach their own rigged asset to actually
+display that body. Availability is not the same as visual adoption.
+
 ## Standalone Test Chamber ABI reuse (2026-10-17, source only)
 
 The separate `:companion-test-chamber` Gradle application includes the existing C++ `test_chamber_module.cpp` directly, preserving its unchanged `reverie_native_module_entry_v1` ABI-v1 implementation. `game-apps/test-chamber/src/main/jni/companion_test_chamber_bridge.cpp` validates module identity, native ABI and required GLES2, and calls the real create/update/per-eye render/GL-release/destroy callbacks through a module-local JNI bridge. Game code remains independently packaged, but this cannot be called a verified APK or proof of Galaxy S9 behavior without NDK, Cardboard lifecycle and handset checks. Core hub native host/ABI header remain unchanged.
@@ -116,7 +159,7 @@ Module ids are treated as storage/security identifiers, not display strings. Cur
 
 ## Host services
 
-`ReverieNativeHostV1` currently exposes five services (the fifth is an optional append-only ordered-sound tail).
+`ReverieNativeHostV1` exposes seven callbacks with ordered-sound, module-scoped asset access, and avatar identity appended to the original ABI-v1 host prefix.
 
 ### Logging
 

@@ -75,6 +75,14 @@ public class HomeAvatarProfileTest {
             validate(mesh);
         }
     }
+    @Test public void nativeProfileSnapshotMatchesSavedFieldOrder() {
+        HomeAvatarProfile p=HomeAvatarProfile.DEFAULT.step(0,1)
+            .step(6,4).step(11,1).step(12,2);
+        int[] values=p.forNativeModules();
+        assertEquals(15,values.length);
+        for(int i=0;i<15;i++)assertEquals(p.get(i),values[i]);
+        assertEquals(values[0],HomeAvatarProfile.decode(p.encode()).theme);
+    }
     @Test public void randomizeIsValidAndNonPersistent() {
         Random r=new Random(4567);
         for(int i=0;i<128;i++) {

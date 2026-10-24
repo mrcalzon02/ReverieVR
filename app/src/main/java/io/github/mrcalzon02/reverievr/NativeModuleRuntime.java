@@ -82,6 +82,7 @@ final class NativeModuleRuntime implements AutoCloseable {
     private final VirtualInputBus inputBus;
     private final android.content.res.AssetManager packagedAssets;
     private final boolean developmentModulesAllowed;
+    private final ReveriePreferences avatarPreferences;
 
     private long handle;
     private long lastUpdateNanos;
@@ -93,7 +94,8 @@ final class NativeModuleRuntime implements AutoCloseable {
         File storageRoot,
         android.content.res.AssetManager packagedAssets,
         VirtualInputBus inputBus,
-        boolean developmentModulesAllowed
+        boolean developmentModulesAllowed,
+        ReveriePreferences avatarPreferences
     ) {
         this.storageRoot = storageRoot;
         this.contentInstaller = new RvPackInstaller(storageRoot.getParentFile());
@@ -101,6 +103,7 @@ final class NativeModuleRuntime implements AutoCloseable {
         this.inputBus = inputBus;
         this.developmentModulesAllowed =
             developmentModulesAllowed;
+        this.avatarPreferences = avatarPreferences;
     }
 
     static boolean isAvailable() {
@@ -234,7 +237,10 @@ final class NativeModuleRuntime implements AutoCloseable {
                 safeModuleId,
                 moduleStorage.getAbsolutePath(),
                 packagedAssets,
-                activeContentRoot
+                activeContentRoot,
+                avatarPreferences == null
+                    ? HomeAvatarProfile.DEFAULT.forNativeModules()
+                    : avatarPreferences.getHomeAvatarProfile().forNativeModules()
             );
         if (created == 0L) {
             ReverieLog.incident(
@@ -498,7 +504,8 @@ final class NativeModuleRuntime implements AutoCloseable {
         String moduleId,
         String storageRoot,
         android.content.res.AssetManager packagedAssets,
-        String activeContentRoot
+        String activeContentRoot,
+        int[] avatarValues
     );
 
     private static native float[] nativeGetShellLocomotionBounds(

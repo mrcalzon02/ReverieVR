@@ -1,3 +1,19 @@
+## Avatar identity and collider extension — 2026-10-24
+
+The ABI v1 layout remains append-only. The new `ReverieNativeHostV1.read_avatar`
+optional tail, the `ReverieNativeAvatarV1` field layout and the
+`REVERIE_NATIVE_HOST_V1_AVATAR_MIN_SIZE` macro are owned by
+`reverie_native_module.h` and documented in `API_V1.md`.
+The avatar reader/validation and fixed player ellipsoid are authored in
+`reverie_native_sdk.h`, mirrored by `SDK_HELPERS.md`.
+The procedural 3D avatar builder resides in
+`reverie_native_avatar_geometry.h`, a new reusable standard mapped to
+`SDK_HELPERS.md` and `SYSTEMS_CATALOG.md`; native Java host launch
+handoff is mapped to `RUNTIME_SERVICES.md`. Tests belong to the
+existing native ABI contract suite and Java avatar-profile tests.
+This note constitutes the same-change contract review for the new
+cross-module avatar service.
+
 # ReverieVR Native Documentation Contract Index
 
 **Status:** normative maintenance contract.
@@ -31,6 +47,7 @@ Do not use "documentation will be updated later" as a normal completion state.
 |---|---|---|---|
 | Native C ABI layout, version, callbacks, constants | `app/src/main/jni/native/reverie_native_module.h` | `docs/native/API_V1.md` | Implemented ABI v1 |
 | Shared native ABI-consumption helpers | `app/src/main/jni/native/reverie_native_sdk.h` | `docs/native/SDK_HELPERS.md` | Implemented provisional SDK helper layer |
+| Shared native avatar ellipsoid and figure mesh generator | `app/src/main/jni/native/reverie_native_avatar_geometry.h` | `docs/native/SDK_HELPERS.md`, `docs/native/SYSTEMS_CATALOG.md` | Implemented provisional figure mesh; device proof pending |
 | Shared native GL state guard | `app/src/main/jni/native/reverie_native_gl_state.h` | `docs/native/GL_RENDERING_STANDARD.md` | Implemented focused guard; device validation pending |
 | Shared flat mesh generator | `app/src/main/jni/native/reverie_native_flat_mesh.h` | `docs/native/CORE_UTILITIES.md` | Implemented provisional C++17 triangle/rectangle/segment/disc helper |
 | Shared native matrix/shader core utilities | `app/src/main/jni/native/reverie_native_math.h`, `app/src/main/jni/native/reverie_native_gl_utils.h` | `docs/native/CORE_UTILITIES.md` | Implemented provisional shared utilities |

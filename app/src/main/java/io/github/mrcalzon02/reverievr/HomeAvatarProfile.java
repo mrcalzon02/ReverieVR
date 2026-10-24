@@ -129,6 +129,8 @@ final class HomeAvatarProfile {
         }
         return of(v);
     }
+    /** Fixed snapshot order shared with the append-only native AvatarV1 ABI. */
+    int[] forNativeModules() { return fields(); }
     private int[] fields() {
         return new int[]{theme,color,hat,extra,eyes,presentation,physique,
             height,shoulders,waist,hips,muscle,outfit,hair,fabric};

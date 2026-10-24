@@ -1,4 +1,5 @@
 #include "reverie_native_sdk.h"
+#include "reverie_native_avatar_geometry.h"
 #include "reverie_native_sound_queue.h"
 
 #include <cstddef>
@@ -55,6 +56,17 @@ void DummyFeedback(
 void DummySound(uint32_t cue_id) {
     captured_sound_cue=cue_id;
     ++captured_sound_calls;
+}
+
+int32_t DummyReadAvatar(ReverieNativeAvatarV1 *out,uint32_t capacity) {
+    if(out==nullptr ||capacity<sizeof(ReverieNativeAvatarV1))return -1;
+    ReverieNativeAvatarV1 profile={};
+    profile.struct_size=sizeof(profile);
+    profile.schema_version=REVERIE_NATIVE_AVATAR_SCHEMA_V1;
+    const uint32_t values[15]={47u,15u,15u,15u,3u,0u,10u,6u,6u,4u,6u,6u,23u,11u,15u};
+    for(int i=0;i<15;i++)profile.fields[i]=values[i];
+    *out=profile;
+    return 1;
 }
 
 }  // namespace
@@ -555,6 +567,63 @@ int main() {
         ReverieNativeApiHasMandatoryV1(&api) == 0,
         "different ABI version must fail mandatory v1 helper"
     );
+
+
+    // Shell avatar tail is strictly optional. Older hosts keep all services.
+    ReverieNativeAvatarV1 old_snapshot={};
+    host.struct_size=REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE;
+    host.read_avatar=DummyReadAvatar;
+    Check(!ReverieNativeHostSupportsAvatarV1(&host),
+        "old native host must not claim an absent avatar tail");
+    Check(!ReverieNativeReadAvatarV1(&host,&old_snapshot),
+        "old native host avatar getter must fail harmlessly");
+    host.struct_size=REVERIE_NATIVE_HOST_V1_AVATAR_MIN_SIZE;
+    Check(ReverieNativeHostSupportsAvatarV1(&host),
+        "extended native host should advertise its read-only avatar tail");
+    Check(ReverieNativeReadAvatarV1(&host,&old_snapshot)
+        && old_snapshot.fields[REVERIE_NATIVE_AVATAR_THEME]==47u
+        && old_snapshot.fields[REVERIE_NATIVE_AVATAR_MUSCLE]==6u,
+        "avatar must arrive as an exact, validated cross-module snapshot");
+    old_snapshot.fields[REVERIE_NATIVE_AVATAR_HIPS]=700u;
+    Check(!ReverieNativeAvatarValidV1(&old_snapshot),
+        "malformed body fields must not be treated as valid profiles");
+    old_snapshot.fields[REVERIE_NATIVE_AVATAR_HIPS]=6u;
+    Check(ReverieNativeAvatarValidV1(&old_snapshot),
+        "restoring the valid body field must recover snapshot validation");
+    float sphere[REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1*3u]={};
+    ReverieNativeBodyEllipsoidV1 collider=
+        ReverieNativeAvatarCollisionV1(1.0f,0.0f,-1.0f);
+    Check(ReverieNativeEllipsoidContainsV1(
+        &collider,1.0f,.85f,-1.0f),
+        "collision ellipsoid must contain its center");
+    Check(!ReverieNativeEllipsoidContainsV1(
+        &collider,1.4f,.85f,-1.0f),
+        "collision ellipsoid must reject exterior points");
+    Check(ReverieNativeWriteEllipsoidTrianglesV1(
+        sphere,sizeof(sphere)/sizeof(float),&collider),
+        "stretched sphere tessellation must fit the documented buffer");
+    Check(!ReverieNativeWriteEllipsoidTrianglesV1(
+        sphere,3u,&collider),
+        "stretched sphere tessellation must reject small buffers");
+    float figure[REVERIE_NATIVE_AVATAR_FIGURE_FLOATS_V1]={};
+    Check(ReverieNativeWriteAvatarFigureV1(
+        &old_snapshot,0.0f,0.0f,-1.0f,
+        figure,sizeof(figure)/sizeof(float)),
+        "avatar geometry must be synthesized from the shared body dimensions");
+    bool geometry_finite=true;
+    for(float coordinate:figure)
+        if(!std::isfinite(coordinate))geometry_finite=false;
+    Check(geometry_finite,
+        "all seven spheres in the shared native avatar must stay finite");
+    Check(!ReverieNativeWriteAvatarFigureV1(
+        &old_snapshot,0.0f,0.0f,-1.0f,figure,3u),
+        "shared avatar figure must not overflow caller buffers");
+    float red=0.f,green=0.f,blue=0.f;
+    ReverieNativeAvatarColorV1(
+        old_snapshot.fields[REVERIE_NATIVE_AVATAR_ACCENT_COLOR],
+        &red,&green,&blue);
+    Check(red>0.f && green>0.f && blue>0.f,
+        "shared accent-color palette must produce valid material values");
 
     if (failures != 0) {
         std::fprintf(

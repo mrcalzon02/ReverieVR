@@ -1,4 +1,5 @@
 #include "reverie_native_sdk.h"
+#include "reverie_native_avatar_geometry.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
@@ -24,6 +25,8 @@ struct ModuleState {
     GLuint program = 0;
     GLuint vbo = 0;
     GLuint texture = 0;
+    ReverieNativeAvatarV1 avatar = {};
+    GLsizei avatar_vertex_count = 0;
 
     GLint position_location = -1;
     GLint uv_location = -1;
@@ -340,12 +343,31 @@ int32_t InitializeGl(ModuleState *state) {
         GL_ARRAY_BUFFER,
         state->vbo
     );
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        sizeof(kRoomVertices),
-        kRoomVertices,
-        GL_STATIC_DRAW
-    );
+    // Same 15-field profile as the Home wardrobe, delivered by the host.
+    // Assemble seven stretched spheres once per GL creation, never per eye.
+    std::vector<float> figure(REVERIE_NATIVE_AVATAR_FIGURE_FLOATS_V1);
+    const bool figure_ok=ReverieNativeWriteAvatarFigureV1(
+        &state->avatar,1.05f,-1.5f,-1.3f,
+        figure.data(),figure.size())!=0;
+    std::vector<float> room_and_avatar(
+        kRoomVertices,kRoomVertices+
+            sizeof(kRoomVertices)/sizeof(kRoomVertices[0]));
+    if(figure_ok) {
+        room_and_avatar.reserve(room_and_avatar.size()
+            +REVERIE_NATIVE_AVATAR_FIGURE_VERTICES_V1*5u);
+        for(size_t i=0;i<figure.size();i+=3u) {
+            room_and_avatar.push_back(figure[i]);
+            room_and_avatar.push_back(figure[i+1u]);
+            room_and_avatar.push_back(figure[i+2u]);
+            room_and_avatar.push_back(.5f);
+            room_and_avatar.push_back(.5f);
+        }
+    }
+    state->avatar_vertex_count=figure_ok
+        ?static_cast<GLsizei>(REVERIE_NATIVE_AVATAR_FIGURE_VERTICES_V1):0;
+    glBufferData(GL_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(room_and_avatar.size()*sizeof(float)),
+        room_and_avatar.data(),GL_STATIC_DRAW);
 
     glGenTextures(1, &state->texture);
     if (state->texture == 0) {
@@ -432,6 +454,15 @@ void *Create(
     }
 
     state->host = host;
+    state->avatar.struct_size=sizeof(ReverieNativeAvatarV1);
+    state->avatar.schema_version=REVERIE_NATIVE_AVATAR_SCHEMA_V1;
+    const uint32_t defaults[REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1]={
+        0u,0u,0u,0u,0u,2u,3u,3u,3u,3u,3u,3u,0u,2u,0u
+    };
+    std::memcpy(state->avatar.fields,defaults,sizeof(defaults));
+    ReverieNativeAvatarV1 selected={};
+    if(ReverieNativeReadAvatarV1(host,&selected))
+        state->avatar=selected;
 
     try {
         GenerateProceduralTexture(state);
@@ -682,6 +713,22 @@ int32_t RenderEye(
         0,
         36
     );
+
+    if(state->avatar_vertex_count>0) {
+        float red=1.f,green=1.f,blue=1.f;
+        ReverieNativeAvatarColorV1(
+            state->avatar.fields[REVERIE_NATIVE_AVATAR_ACCENT_COLOR],
+            &red,&green,&blue);
+        glUniform3f(state->tint_location,red,green,blue);
+        // Torso/hips/arms/legs share the selected wardrobe accent.
+        glDrawArrays(GL_TRIANGLES,36,
+            6*REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1);
+        // Skin/face portion is a separate mesh region.
+        glUniform3f(state->tint_location,.90f,.73f,.62f);
+        glDrawArrays(GL_TRIANGLES,
+            36+6*REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1,
+            REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1);
+    }
 
     ReverieNativeGlAttribRestoreV1(
         &uv_state

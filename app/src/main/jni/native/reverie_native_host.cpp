@@ -77,6 +77,7 @@ struct NativeSession {
     void *instance = nullptr;
     std::string storage_root;
     std::string content_root; // Verified immutable active game-content revision.
+    ReverieNativeAvatarV1 avatar = {}; // One shell identity per hosted session.
     AAssetManager *asset_manager = nullptr;
     bool gl_ready = false;
     bool warned_inherited_gl_error = false;
@@ -508,6 +509,15 @@ int32_t HostReadAsset(const char *path,void *buffer,uint32_t capacity,
     return REVERIE_NATIVE_SAVE_OK;
 }
 
+int32_t HostReadAvatar(ReverieNativeAvatarV1 *out,uint32_t capacity) {
+    const NativeSession *session=g_callback_session;
+    if(session==nullptr)return 0;
+    if(out==nullptr||capacity<sizeof(ReverieNativeAvatarV1))return -1;
+    if(!ReverieNativeAvatarValidV1(&session->avatar))return 0;
+    std::memcpy(out,&session->avatar,sizeof(session->avatar));
+    return 1;
+}
+
 const ReverieNativeHostV1 kHostServices = {
     sizeof(ReverieNativeHostV1),
     REVERIE_NATIVE_MODULE_ABI_VERSION,
@@ -516,7 +526,8 @@ const ReverieNativeHostV1 kHostServices = {
     HostWriteSave,
     HostRequestFeedback,
     HostRequestSound,
-    HostReadAsset
+    HostReadAsset,
+    HostReadAvatar
 };
 
 const BuiltInModuleSpec *FindSpec(const char *id) {
@@ -679,7 +690,8 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
     jstring module_id,
     jstring storage_root,
     jobject asset_manager,
-    jstring content_root
+    jstring content_root,
+    jintArray avatar_values
 ) {
     ClearError();
 
@@ -819,6 +831,26 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeCreate(
     session->api = api;
     session->storage_root = storage_path;
     session->content_root = content_path;
+    // Fail closed to a fixed valid profile; malformed input can never
+    // make a native game unloadable or overwrite its own save.
+    const uint32_t default_fields[REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1] = {
+        0u,0u,0u,0u,0u,2u,3u,3u,3u,3u,3u,3u,0u,2u,0u
+    };
+    session->avatar.struct_size=sizeof(ReverieNativeAvatarV1);
+    session->avatar.schema_version=REVERIE_NATIVE_AVATAR_SCHEMA_V1;
+    std::memcpy(session->avatar.fields,default_fields,sizeof(default_fields));
+    if(avatar_values!=nullptr &&
+        env->GetArrayLength(avatar_values)==
+            static_cast<jsize>(REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1)) {
+        jint received[REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1] = {};
+        env->GetIntArrayRegion(avatar_values,0,
+            static_cast<jsize>(REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1),received);
+        ReverieNativeAvatarV1 proposed=session->avatar;
+        for(uint32_t i=0;i<REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1;i++)
+            proposed.fields[i]=static_cast<uint32_t>(received[i]);
+        if(ReverieNativeAvatarValidV1(&proposed))
+            session->avatar=proposed;
+    }
     session->asset_manager = AAssetManager_fromJava(env,asset_manager);
     if(session->asset_manager==nullptr) {
         SetError("Could not access packaged Android assets.");

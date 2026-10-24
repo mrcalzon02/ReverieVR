@@ -1,3 +1,17 @@
+## Shared shell avatar and standardized ellipsoid — 2026-10-24
+
+The global Home avatar is now a read-only native-host capability (not a new
+per-game save). ABI-v1 host extensions offer a versioned fixed 15-field
+avatar profile; `reverie_native_sdk.h` gates compatibility and validates
+every choice. Reusable `reverie_native_avatar_geometry.h` synthesizes a
+seven-part full-body avatar using bounded triangle meshes formed from
+elongated spheres, while `ReverieNativeAvatarCollisionV1` defines a
+fixed-size player ellipsoid separate from cosmetic body shape. The
+Procedural Test Chamber consumes the host snapshot and builds a visible
+sample avatar. Other native games have the shared API available but
+their own actual avatar visuals remain an adoption task. Standalone
+companion APKs also require an inter-app identity bridge.
+
 ## Gumball controller-aim combat steering — 2026-10-16
 
 The Gumball game-private tracked-controller world ray now supplies a 2D flight target on the existing candy combat plane; a small crosshair shows the destination. `FlightAxesToTarget` converts that target to bounded steering, and the authoritative `Simulation::update` caps movement using genuine purchased Thruster levels, installed engine profile and existing flight modifiers. Touchpad primary remains weapon fire; pad directions are a fallback when tracked aiming is unavailable. No shell-global binding, native ABI field, save schema or shared Home behavior changes. Exact helper and regression passed host GCC/Clang/Clang ASan+UBSan; full native/APK/Daydream flight control remains pending.

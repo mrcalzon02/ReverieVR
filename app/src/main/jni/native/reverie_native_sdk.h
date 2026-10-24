@@ -120,6 +120,79 @@ static inline int ReverieNativeRequestSoundV1(
     return 1;
 }
 
+
+/** Validate every index, including fields sourced from older saved avatars. */
+static inline int ReverieNativeAvatarValidV1(
+    const ReverieNativeAvatarV1 *avatar
+) {
+    static const uint32_t counts[REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1] = {
+        48u,16u,16u,16u,4u,3u,12u,7u,7u,7u,7u,7u,24u,12u,16u
+    };
+    if (avatar == NULL
+        || avatar->struct_size != sizeof(ReverieNativeAvatarV1)
+        || avatar->schema_version != REVERIE_NATIVE_AVATAR_SCHEMA_V1)
+        return 0;
+    for(uint32_t i=0u;i<REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1;i++)
+        if(avatar->fields[i]>=counts[i])return 0;
+    return 1;
+}
+
+/** Fixed nominal VR player body: a stretched 3D sphere (ellipsoid).
+ * Physical collision is independent of cosmetic height, shape and costume.
+ * The caller places feet at groundY; body center is groundY + 0.85 m.
+ */
+typedef struct ReverieNativeBodyEllipsoidV1 {
+    float center_x,center_y,center_z;
+    float radius_x,radius_y,radius_z;
+} ReverieNativeBodyEllipsoidV1;
+
+static inline ReverieNativeBodyEllipsoidV1
+ReverieNativeAvatarCollisionV1(float player_x,float ground_y,float player_z) {
+    ReverieNativeBodyEllipsoidV1 shape = {
+        player_x, ground_y + .85f, player_z, .27f, .85f, .27f
+    };
+    return shape;
+}
+
+static inline int ReverieNativeEllipsoidContainsV1(
+    const ReverieNativeBodyEllipsoidV1 *body,
+    float x,float y,float z
+) {
+    if(body==NULL || !(body->radius_x>0.0f)
+        || !(body->radius_y>0.0f) || !(body->radius_z>0.0f)
+        || !(fabsf(body->center_x)<=FLT_MAX)
+        || !(fabsf(body->center_y)<=FLT_MAX)
+        || !(fabsf(body->center_z)<=FLT_MAX)
+        || !(fabsf(body->radius_x)<=FLT_MAX)
+        || !(fabsf(body->radius_y)<=FLT_MAX)
+        || !(fabsf(body->radius_z)<=FLT_MAX)
+        || !(fabsf(x)<=FLT_MAX) || !(fabsf(y)<=FLT_MAX)
+        || !(fabsf(z)<=FLT_MAX))return 0;
+    const float dx=(x-body->center_x)/body->radius_x;
+    const float dy=(y-body->center_y)/body->radius_y;
+    const float dz=(z-body->center_z)/body->radius_z;
+    return dx*dx+dy*dy+dz*dz<=1.0f;
+}
+
+static inline int ReverieNativeHostSupportsAvatarV1(
+    const ReverieNativeHostV1 *host
+) {
+    return host!=NULL
+        && host->abi_version==REVERIE_NATIVE_MODULE_ABI_VERSION
+        && host->struct_size>=REVERIE_NATIVE_HOST_V1_AVATAR_MIN_SIZE
+        && host->read_avatar!=NULL;
+}
+static inline int ReverieNativeReadAvatarV1(
+    const ReverieNativeHostV1 *host,ReverieNativeAvatarV1 *out
+) {
+    if(out==NULL||!ReverieNativeHostSupportsAvatarV1(host))return 0;
+    ReverieNativeAvatarV1 tmp = {0};
+    if(host->read_avatar(&tmp,(uint32_t)sizeof(tmp))!=1
+        || !ReverieNativeAvatarValidV1(&tmp))return 0;
+    *out=tmp;
+    return 1;
+}
+
 static inline int ReverieNativeDescriptorHasMandatoryV1(
     const ReverieNativeModuleDescriptorV1 *descriptor
 ) {

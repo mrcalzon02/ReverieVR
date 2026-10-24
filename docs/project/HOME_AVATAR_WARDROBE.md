@@ -1,3 +1,24 @@
+## Shared native avatar integration — 2026-10-24
+
+The Home wardrobe owns the **single** saved avatar for every native module
+hosted by this ReverieVR installation. Its 15 identity/body/clothing fields
+are copied at game launch through a versioned, optional ABI-v1 callback.
+Neither v1 native game saves nor native module authoring control this profile;
+all games can opt into the same original body and outfit selection without
+rewriting their own character creator. The native Test Chamber renders a
+primitive seven-ellipsoid avatar using the shared body proportions and
+accent color, representing the first reference consumer.
+
+Native physics uses a standard player ellipsoid (a stretched 3D sphere,
+0.27m horizontal radius and 0.85m vertical radius), supplied as a common
+helper. It is not procedurally reshaped by wardrobe body type, and existing
+game collisions remain unchanged unless a game deliberately adopts the
+shared primitive. This is the first-party low-poly body interchange path;
+authored rigged 3D bodies and fitted outfits still require art integration.
+Separate APKs have Android-private preferences and therefore do not yet
+share this profile automatically; they require an explicit permissioned
+handoff. JNI/NDK/Android and Daydream validation remain outstanding.
+
 # Home avatar wardrobe — design and integration
 
 **Requirement established: 2026-10-24.** ReverieVR has a complete shell-owned, offline avatar identity rather than a cosmetic fake button.

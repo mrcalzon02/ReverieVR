@@ -88,6 +88,37 @@ enum ReverieNativeSoundCueV1 {
     REVERIE_NATIVE_SOUND_MAX_V1 = REVERIE_NATIVE_SOUND_RED_LEDGER_DRAWER
 };
 
+
+/*
+ * Shell-wide, read-only avatar identity snapshot. This is the 15-field
+ * materialized projection of HomeAvatarProfile v2, NOT a module save.
+ * One profile belongs to the user regardless of which native game loads.
+ */
+#define REVERIE_NATIVE_AVATAR_SCHEMA_V1 1u
+#define REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1 15u
+enum ReverieNativeAvatarFieldV1 {
+    REVERIE_NATIVE_AVATAR_THEME=0,
+    REVERIE_NATIVE_AVATAR_ACCENT_COLOR=1,
+    REVERIE_NATIVE_AVATAR_HAT=2,
+    REVERIE_NATIVE_AVATAR_ACCESSORY=3,
+    REVERIE_NATIVE_AVATAR_EYES=4,
+    REVERIE_NATIVE_AVATAR_PRESENTATION=5,
+    REVERIE_NATIVE_AVATAR_PHYSIQUE=6,
+    REVERIE_NATIVE_AVATAR_HEIGHT=7,
+    REVERIE_NATIVE_AVATAR_SHOULDERS=8,
+    REVERIE_NATIVE_AVATAR_WAIST=9,
+    REVERIE_NATIVE_AVATAR_HIPS=10,
+    REVERIE_NATIVE_AVATAR_MUSCLE=11,
+    REVERIE_NATIVE_AVATAR_OUTFIT=12,
+    REVERIE_NATIVE_AVATAR_HAIR=13,
+    REVERIE_NATIVE_AVATAR_FABRIC=14
+};
+typedef struct ReverieNativeAvatarV1 {
+    uint32_t struct_size;
+    uint32_t schema_version;
+    uint32_t fields[REVERIE_NATIVE_AVATAR_FIELD_COUNT_V1];
+} ReverieNativeAvatarV1;
+
 typedef struct ReverieNativeHostV1 {
     uint32_t struct_size;
     uint32_t abi_version;
@@ -137,6 +168,15 @@ typedef struct ReverieNativeHostV1 {
         uint32_t capacity,
         uint32_t *out_size
     );
+    /*
+     * Optional ABI-v1 append-only global profile snapshot. Games may copy
+     * it during create/update; no writes or access to another module's save.
+     * Returns 1 on success, 0 without a profile, negative for bad buffers.
+     */
+    int32_t (*read_avatar)(
+        ReverieNativeAvatarV1 *out_avatar,
+        uint32_t capacity
+    );
 } ReverieNativeHostV1;
 
 #define REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE \
@@ -154,6 +194,9 @@ typedef struct ReverieNativeHostV1 {
 #define REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE \
     ((uint32_t)(offsetof(ReverieNativeHostV1, read_asset) \
         + sizeof(((ReverieNativeHostV1 *)0)->read_asset)))
+#define REVERIE_NATIVE_HOST_V1_AVATAR_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeHostV1, read_avatar) \
+        + sizeof(((ReverieNativeHostV1 *)0)->read_avatar)))
 
 typedef struct ReverieNativeModuleDescriptorV1 {
     uint32_t struct_size;

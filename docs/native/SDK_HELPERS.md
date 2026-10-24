@@ -1,3 +1,27 @@
+## Shared avatar SDK and stretched-sphere reference — 2026-10-24
+
+`ReverieNativeHostSupportsAvatarV1(host)` checks the optional append-only
+host tail. `ReverieNativeReadAvatarV1(host,&avatar)` reads and validates
+a size-tagged 15-field snapshot into the caller's structure, failing
+harmlessly on older native hosts. `ReverieNativeAvatarValidV1` checks
+all 15 catalog indices, version and structure size.
+
+`ReverieNativeAvatarCollisionV1(x,feetY,z)` supplies the unchanging
+ellipsoid player hit body (0.27m horizontal radii, 0.85m vertical radius)
+and `ReverieNativeEllipsoidContainsV1` tests whether a point falls inside.
+This collision standard is independent of visual physique and does not
+retroactively replace existing game physics.
+
+New reusable `reverie_native_avatar_geometry.h` generates tessellated
+stretched spheres and a seven-part figure from the global avatar snapshot:
+`ReverieNativeWriteEllipsoidTrianglesV1`,
+`ReverieNativeWriteAvatarFigureV1`, and
+`ReverieNativeAvatarColorV1`. Mesh generation is CPU-side, bounded,
+and is intended to run once per profile change or GL creation, **never
+separately per eye**. Caller owns its buffer, GL resources and materials.
+The shared figure is a low-poly baseline, not a claim of rigged clothing,
+tracked feet or game-specific animation.
+
 # ReverieVR Native SDK Helpers
 
 **Status:** implemented provisional shared helper layer. These helpers encode current ABI-v1 consumption rules but do not add or replace ABI fields.
