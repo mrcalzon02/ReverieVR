@@ -38,12 +38,18 @@ int main(){
                                   .075f+(3-y)*.28f);
         assert(hit.id==0&&hit.x==x&&hit.y==y);
     }
-    for(int i=0;i<10;++i){
+    for(int i=0;i<14;++i){
         const MenuHit hit=YardHit(.23f+(i%2)*1.34f,
-                                  .79f-(i/2)*.345f);
+                                  .79f-(i/2)*.270f);
         assert(hit.id==1&&hit.x==7+(i%2)&&hit.y==i/2);
     }
     assert(YardHit(-2.49f,-1.60f).id==-1);
+    for(int i=10;i<14;++i){
+        YardCursor sliceControl;
+        sliceControl.pointAt(7+i%2,i/2);
+        assert(sliceControl.palette()&&sliceControl.toolIndex()==i);
+        assert(sliceControl.chosenPart()==Part::Empty);
+    }
     YardCursor cursor;
     assert(cursor.x==4&&cursor.y==2&&!cursor.palette());
     cursor.switchFocus();
