@@ -596,6 +596,12 @@ void DestroyGl(Module *m){
     if(m->chessTexture)glDeleteTextures(1,&m->chessTexture);
     if(m->chessVbo)glDeleteBuffers(1,&m->chessVbo);
     if(m->chessProgram)glDeleteProgram(m->chessProgram);
+    if(m->fontTexture)glDeleteTextures(1,&m->fontTexture);
+    if(m->fontVbo)glDeleteBuffers(1,&m->fontVbo);
+    if(m->fontStaticVbo)glDeleteBuffers(1,&m->fontStaticVbo);
+    if(m->fontProgram)glDeleteProgram(m->fontProgram);
+    m->fontTexture=m->fontVbo=m->fontStaticVbo=m->fontProgram=0;
+    m->fontStaticCount=0;m->fontReady=false;
     m->chessTexture=m->chessVbo=m->chessProgram=0;
     m->chessBoardTexture=m->chessBoardVbo=0;
     m->chessReady=false;
@@ -688,6 +694,63 @@ bool CreateChessSprites(Module *m){
     m->chessReady=true;
     return true;
 }
+
+bool CreateChessFont(Module *m){
+    const char *vs="uniform mat4 u_Mvp;attribute vec3 a_Pos;"
+        "attribute vec2 a_Uv;attribute vec3 a_Col;"
+        "varying vec2 v_Uv;varying vec3 v_Col;"
+        "void main(){gl_Position=u_Mvp*vec4(a_Pos,1.);"
+        "v_Uv=a_Uv;v_Col=a_Col;}";
+    const char *fs="precision mediump float;uniform sampler2D u_Glyph;"
+        "varying vec2 v_Uv;varying vec3 v_Col;"
+        "void main(){float a=texture2D(u_Glyph,v_Uv).a;"
+        "if(a<.01)discard;gl_FragColor=vec4(v_Col,a);}";
+    const ReverieNativeGlAttributeBindingV1 bindings[]={
+        {0u,"a_Pos"},{1u,"a_Uv"},{2u,"a_Col"}};
+    char diagnostic[256]={};
+    m->fontProgram=ReverieNativeBuildProgramDiagnosticV1(
+        vs,fs,bindings,3,diagnostic,sizeof(diagnostic));
+    if(!m->fontProgram){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+                           "ClassicChessFont",diagnostic);
+        return false;
+    }
+    m->fontPos=glGetAttribLocation(m->fontProgram,"a_Pos");
+    m->fontUv=glGetAttribLocation(m->fontProgram,"a_Uv");
+    m->fontCol=glGetAttribLocation(m->fontProgram,"a_Col");
+    m->fontMvp=glGetUniformLocation(m->fontProgram,"u_Mvp");
+    m->fontSampler=glGetUniformLocation(m->fontProgram,"u_Glyph");
+    std::vector<unsigned char> pixels;
+    if(m->fontPos<0||m->fontUv<0||m->fontCol<0||
+       m->fontMvp<0||m->fontSampler<0||
+       !reverie::breakwater::font::DecodeAtlas(pixels)){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+                           "ClassicChessFont","Lato atlas invalid");
+        return false;
+    }
+    glGenBuffers(1,&m->fontVbo);
+    glGenBuffers(1,&m->fontStaticVbo);
+    glGenTextures(1,&m->fontTexture);
+    if(!m->fontVbo||!m->fontStaticVbo||!m->fontTexture)return false;
+    GLint unpack=4;
+    glGetIntegerv(GL_UNPACK_ALIGNMENT,&unpack);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,m->fontTexture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_ALPHA,
+        reverie::breakwater::font::kWidth,
+        reverie::breakwater::font::kHeight,0,GL_ALPHA,
+        GL_UNSIGNED_BYTE,pixels.data());
+    glPixelStorei(GL_UNPACK_ALIGNMENT,unpack);
+    m->fontReady=glGetError()==GL_NO_ERROR;
+    if(!m->fontReady)ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+                                      "ClassicChessFont","Atlas upload failed");
+    return m->fontReady;
+}
 #endif
 void *Create(const ReverieNativeHostV1 *host){
     Module *m=new(std::nothrow) Module();
@@ -735,6 +798,7 @@ int32_t GlCreate(void *ptr){
         m->pos>=0&&m->col>=0&&m->mvp>=0;
 #if CLASSIC_GAME_KIND == 5
     if(ok)ok=CreateChessSprites(m);
+    if(ok)ok=CreateChessFont(m);
 #endif
     if(ok){
         // Bake immutable primitives once per GL context, for both eyes.
@@ -748,6 +812,10 @@ int32_t GlCreate(void *ptr){
         glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(
             m->chessBoardSprites.size()*sizeof(float)),
             m->chessBoardSprites.data(),GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER,m->fontStaticVbo);
+        glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(
+            m->fontStaticVertices.size()*sizeof(float)),
+            m->fontStaticVertices.data(),GL_STATIC_DRAW);
 #endif
         const GLenum error=glGetError();
         if(error!=GL_NO_ERROR){
@@ -761,6 +829,9 @@ int32_t GlCreate(void *ptr){
         }
         // Deterministic recipe stays in source; release expanded CPU copy.
         std::vector<float>().swap(m->staticVertices);
+#if CLASSIC_GAME_KIND == 5
+        std::vector<float>().swap(m->fontStaticVertices);
+#endif
     }
     if(!ok)DestroyGl(m);
     m->dirty=m->upload=true;
@@ -1000,6 +1071,11 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
     ReverieNativeGlStateCaptureV1(&prior);
     ReverieNativeGlAttribCaptureV1(&a,static_cast<GLuint>(m->pos));
     ReverieNativeGlAttribCaptureV1(&b,static_cast<GLuint>(m->col));
+#if CLASSIC_GAME_KIND == 5
+    ReverieNativeGlAttribStateV1 fontAttrib={};
+    if(m->fontReady)ReverieNativeGlAttribCaptureV1(
+        &fontAttrib,static_cast<GLuint>(m->fontCol));
+#endif
     glEnable(GL_DEPTH_TEST);glDisable(GL_BLEND);glDisable(GL_CULL_FACE);
     glUseProgram(m->program);glBindBuffer(GL_ARRAY_BUFFER,m->vbo);
     if(m->upload){
@@ -1011,6 +1087,10 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
         glBufferData(GL_ARRAY_BUFFER,
             static_cast<GLsizeiptr>(m->chessSprites.size()*sizeof(float)),
             m->chessSprites.data(),GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER,m->fontVbo);
+        glBufferData(GL_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(m->fontVertices.size()*sizeof(float)),
+            m->fontVertices.data(),GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER,m->vbo);
 #endif
     }
@@ -1080,6 +1160,47 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
         glBlendFuncSeparate(static_cast<GLenum>(srcRgb),
             static_cast<GLenum>(dstRgb),static_cast<GLenum>(srcAlpha),
             static_cast<GLenum>(dstAlpha));
+    }
+#endif
+
+#if CLASSIC_GAME_KIND == 5
+    if(m->fontReady){
+        GLint srcRgb=GL_ONE,dstRgb=GL_ZERO,srcAlpha=GL_ONE,dstAlpha=GL_ZERO;
+        GLboolean depthWrite=GL_TRUE;
+        glGetIntegerv(GL_BLEND_SRC_RGB,&srcRgb);
+        glGetIntegerv(GL_BLEND_DST_RGB,&dstRgb);
+        glGetIntegerv(GL_BLEND_SRC_ALPHA,&srcAlpha);
+        glGetIntegerv(GL_BLEND_DST_ALPHA,&dstAlpha);
+        glGetBooleanv(GL_DEPTH_WRITEMASK,&depthWrite);
+        glDepthMask(GL_FALSE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glUseProgram(m->fontProgram);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,m->fontTexture);
+        glUniform1i(m->fontSampler,0);
+        glUniformMatrix4fv(m->fontMvp,1,GL_FALSE,vp);
+        glEnableVertexAttribArray(static_cast<GLuint>(m->fontPos));
+        glEnableVertexAttribArray(static_cast<GLuint>(m->fontUv));
+        glEnableVertexAttribArray(static_cast<GLuint>(m->fontCol));
+        const auto drawFont=[&](GLuint buffer,GLsizei count){
+            if(count<=0)return;
+            glBindBuffer(GL_ARRAY_BUFFER,buffer);
+            glVertexAttribPointer(static_cast<GLuint>(m->fontPos),3,GL_FLOAT,
+                GL_FALSE,8*sizeof(float),reinterpret_cast<void*>(0));
+            glVertexAttribPointer(static_cast<GLuint>(m->fontUv),2,GL_FLOAT,
+                GL_FALSE,8*sizeof(float),reinterpret_cast<void*>(3*sizeof(float)));
+            glVertexAttribPointer(static_cast<GLuint>(m->fontCol),3,GL_FLOAT,
+                GL_FALSE,8*sizeof(float),reinterpret_cast<void*>(5*sizeof(float)));
+            glDrawArrays(GL_TRIANGLES,0,count);
+        };
+        drawFont(m->fontStaticVbo,m->fontStaticCount);
+        drawFont(m->fontVbo,static_cast<GLsizei>(m->fontVertices.size()/8));
+        glDepthMask(depthWrite);
+        glBlendFuncSeparate(static_cast<GLenum>(srcRgb),
+            static_cast<GLenum>(dstRgb),static_cast<GLenum>(srcAlpha),
+            static_cast<GLenum>(dstAlpha));
+        ReverieNativeGlAttribRestoreV1(&fontAttrib);
     }
 #endif
     ReverieNativeGlAttribRestoreV1(&b);
