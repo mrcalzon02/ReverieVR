@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <initializer_list>
 using namespace reverie::chesspanel;
 static bool Near(float a,float b){return std::fabs(a-b)<0.0003f;}
 int main(){
