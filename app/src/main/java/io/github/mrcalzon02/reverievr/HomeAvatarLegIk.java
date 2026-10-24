@@ -46,7 +46,7 @@ final class HomeAvatarLegIk {
             ?(float)Math.hypot(worldX-previousX,worldZ-previousZ):0f;
         previousX=worldX;previousZ=worldZ;
         // Teleports, recenter or scene reset must not kick legs into a spasm.
-        if(displacement>.12f)displacement=0f;
+        if(displacement>.35f)displacement=0f;
         if(displacement>.00025f) {
             phase=(phase + displacement/STRIDE_METERS
                 *(float)(Math.PI*2.0))%(float)(Math.PI*2.0);
