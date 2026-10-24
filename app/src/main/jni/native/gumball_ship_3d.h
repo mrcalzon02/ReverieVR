@@ -206,6 +206,11 @@ inline void AppendAssemblyMesh(std::vector<float>& mesh,const ShipAssembly& ship
         {{{-1,-1,-1},{1,-1,-1},{1,-1,1},{-1,-1,1}}}
     };
     constexpr float light[]={1.f,.52f,.69f,.83f,.91f,.57f};
+    // Painter-safe face order for the host's current flat-color pass:
+    // far back, side/top faces, then near front. Volume slices likewise
+    // render from negative Z toward the viewer without needing to clear
+    // shell-owned depth buffers. True arbitrary-orbit depth remains gated.
+    constexpr int drawOrder[]={1,2,3,4,5,0};
     for(int z=0;z<kShipDepth;++z)
     for(int y=0;y<kShipSize;++y)
     for(int x=0;x<kShipSize;++x){
@@ -213,7 +218,8 @@ inline void AppendAssemblyMesh(std::vector<float>& mesh,const ShipAssembly& ship
         if(p==Part::Empty)continue;
         const unsigned type=static_cast<unsigned>(p);
         const float half=(p==Part::Wing?.38f:p==Part::Mount?.35f:.46f);
-        for(int f=0;f<6;++f){
+        for(int faceIndex:drawOrder){
+            const int f=faceIndex;
             if(ship.at(x+dx[f],y+dy[f],z+dz[f])!=Part::Empty)continue;
             const float shade=light[f]*tint;
             const int triangles[]={0,1,2,0,2,3};
