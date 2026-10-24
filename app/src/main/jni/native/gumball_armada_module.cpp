@@ -996,19 +996,31 @@ void Update(void* p,const ReverieNativeInputV1* in){
             Rebuild(m);
         }
         if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
-            const int dx=std::fabs(x)>std::fabs(y)?(x>0.f?1:-1):0;
-            // Screen-up must move the cursor UP, not down the grid/list.
-            const int dy=std::fabs(y)>=std::fabs(x)?(y>0.f?-1:1):0;
-            m->yardCursor.move(dx,dy);
+            if(m->previewShip){
+                if(std::fabs(x)>=std::fabs(y))
+                    m->previewYaw+=(x>0.f?.25f:-.25f);
+                else
+                    m->previewZoom=std::max(.11f,std::min(.29f,
+                        m->previewZoom+(y>0.f?.015f:-.015f)));
+            }else{
+                const int dx=std::fabs(x)>std::fabs(y)?(x>0.f?1:-1):0;
+                const int dy=std::fabs(y)>=std::fabs(x)?(y>0.f?-1:1):0;
+                m->yardCursor.move(dx,dy);
+            }
             m->navTime=.15f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
         }
         if(clickEdge&&mayClick){
             bool good=false;
-            if(!m->yardCursor.palette()){
-                const auto result=m->yard.edit(
-                    m->yardCursor.x,m->yardCursor.y,m->brush);
+            if(m->previewShip){
+                m->previewShip=false;
+                good=true;
+                std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
+                              "3D PREVIEW CLOSED / GRID READY");
+            }else if(!m->yardCursor.palette()){
+                const auto result=m->ship.edit(
+                    m->yardCursor.x,m->yardCursor.y,m->shipLayer,m->brush);
                 good=result==reverie::gumball::ShipEdit::Placed
                     ||result==reverie::gumball::ShipEdit::Replaced
                     ||result==reverie::gumball::ShipEdit::Removed;
@@ -1033,6 +1045,23 @@ void Update(void* p,const ReverieNativeInputV1* in){
                     good=true;
                 }else if(choice==9){
                     m->inYard=false;m->pointerFocus.screenChanged();good=true;
+                }else if(choice==10||choice==11){
+                    const int next=m->shipLayer+(choice==10?-1:1);
+                    if(next>=0&&next<reverie::gumball::kShipDepth){
+                        m->shipLayer=next;good=true;
+                    }
+                    m->yardCursor.toolChosen();
+                    std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
+                                  "EDITING DEPTH SLICE %d / 5",m->shipLayer+1);
+                }else if(choice==12){
+                    m->previewShip=true;good=true;
+                    m->yardCursor.toolChosen();
+                    std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
+                                  "3D PREVIEW: PAD ROTATES / ZOOMS");
+                }else if(choice==13){
+                    m->previewYaw+=.78539816f;good=true;
+                    m->yardCursor.toolChosen();
+                    m->previewShip=true;
                 }
             }
             ReverieNativeRequestFeedbackV1(m->host,good?
