@@ -25,7 +25,9 @@ public class HomeAvatarProfileTest {
     }
     @Test public void bodyTypesIncludeSmallAndLargeForEveryPresentation() {
         for(int gender=0;gender<HomeAvatarProfile.PRESENTATIONS.length;gender++) {
-            HomeAvatarProfile base=HomeAvatarProfile.DEFAULT.step(5,gender-2);
+            HomeAvatarProfile base=HomeAvatarProfile.DEFAULT.step(5,gender-2)
+                .step(6,-HomeAvatarProfile.DEFAULT.physique);
+            assertEquals(0,base.physique);
             for(int kind=0;kind<HomeAvatarProfile.PHYSIQUES.length;kind++) {
                 HomeAvatarProfile p=base;
                 for(int i=0;i<kind;i++)p=p.step(6,1);
@@ -49,7 +51,7 @@ public class HomeAvatarProfileTest {
         assertEquals(5,HomeAvatarProfile.PAGE_FIELDS[0].length);
     }
     @Test public void corruptedOldOrFutureSavesResetSafely() {
-        for(String s:new String[]{"","v3:0:0:0:0:0","v1:12:0:0:0:0",
+        for(String s:new String[]{"","v3:0:0:0:0:0","v1:48:0:0:0:0",
             "v1:x:0:0:0:0","v2:1:2:3","v1:1:2:3:4:5:6"})
             assertEquals(HomeAvatarProfile.DEFAULT.encode(),HomeAvatarProfile.decode(s).encode());
     }
