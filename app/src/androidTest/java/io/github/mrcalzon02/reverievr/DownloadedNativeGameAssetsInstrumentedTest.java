@@ -161,7 +161,9 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             assertTrue(home.mkdirs());
             try(Pbuffer egl=new Pbuffer();
                 NativeModuleRuntime runtime=new NativeModuleRuntime(
-                    home,app.getAssets(),null,true)){
+                    home,app.getAssets(),null,true,
+                new ReveriePreferences(
+                InstrumentationRegistry.getInstrumentation().getContext()))){
                 boolean started=runtime.start(id);
                 assertTrue("Native game failed to start "+id+": "+
                     runtime.getLastError(),started);
@@ -269,7 +271,9 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         VirtualInputBus bus=new VirtualInputBus();
         try(Pbuffer egl=new Pbuffer();
             NativeModuleRuntime runtime=new NativeModuleRuntime(
-                home,app.getAssets(),bus,false)){
+                home,app.getAssets(),bus,false,
+                new ReveriePreferences(
+                InstrumentationRegistry.getInstrumentation().getContext()))){
             assertTrue("Omega Front normal native start failed: "+
                 runtime.getLastError(),runtime.start("omega-front"));
             assertTrue("Omega Front GLES2 initialization failed",

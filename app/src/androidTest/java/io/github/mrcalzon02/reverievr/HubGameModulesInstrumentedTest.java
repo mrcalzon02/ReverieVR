@@ -129,7 +129,9 @@ public final class HubGameModulesInstrumentedTest {
         // genuine C++ create/resume/update/pause/destroy callbacks rather
         // than simply checking whether ELF files exist in the APK.
         try(NativeModuleRuntime runtime=new NativeModuleRuntime(
-            home,context().getAssets(),null,true)){
+            home,context().getAssets(),null,true,
+            new ReveriePreferences(
+                InstrumentationRegistry.getInstrumentation().getContext()))){
             for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES){
                 boolean started=runtime.start(game.id);
                 assertTrue("JNI/C++ game launch FAILED: "+game.id+
@@ -194,7 +196,9 @@ public final class HubGameModulesInstrumentedTest {
             File home=new File(root,"native-modules");
             assertTrue(home.isDirectory()||home.mkdirs());
             try(NativeModuleRuntime runtime=new NativeModuleRuntime(
-                home,context().getAssets(),null,true)){
+                home,context().getAssets(),null,true,
+            new ReveriePreferences(
+                InstrumentationRegistry.getInstrumentation().getContext()))){
                 boolean started=runtime.start("breakwater-battery");
                 assertTrue("Verified model-backed Breakwater launch failed: "+
                     runtime.getLastError(),started);
