@@ -60,9 +60,10 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
     const bool terrain=omega&&std::strncmp(leaf,"terrain/",8u)==0;
     const bool units=omega&&std::strncmp(leaf,"units/kenney/",13u)==0;
     const bool shared=omega&&std::strncmp(leaf,"shared/",7u)==0;
-    if(!icons&&!models&&!textures&&!interiors&&!terrain&&!units&&!shared)return 0u;
+    const bool cc0=omega&&std::strncmp(leaf,"rpg_cc0/",8u)==0;
+    if(!icons&&!models&&!textures&&!interiors&&!terrain&&!units&&!shared&&!cc0)return 0u;
     const size_t start=r+(icons?6u:models?7u:textures?9u:
-        interiors?11u:terrain?8u:units?13u:7u);
+        interiors?11u:terrain?8u:units?13u:cc0?8u:7u);
     if(n<=start)return 0u;
     if(omega&&(n<4u||std::strcmp(path+n-4u,".png")!=0))return 0u;
     if(interiors&&(n<7u||std::strcmp(path+n-7u,".rlprop")!=0))return 0u;
@@ -71,6 +72,32 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
         const char c=path[i];
         if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
             (c>='0'&&c<='9')||c=='_'||c=='-'||c=='.'))return 0u;
+    }
+    if(cc0){
+        // Admit ONLY the 64 original, indexed CC0 tiles shipped by Omega
+        // Front; no arbitrary files in the new read-capable directory.
+        const char *name=leaf+8u;
+        struct Group {const char* prefix;unsigned count;};
+        const Group groups[]={{"tiny_battle_",32u},
+                              {"rpg_urban_",16u},
+                              {"roguelike_city_",16u}};
+        bool approved=false;
+        for(const Group &group:groups){
+            const size_t prefix=std::strlen(group.prefix);
+            if(std::strncmp(name,group.prefix,prefix)!=0)continue;
+            if(std::strlen(name)!=prefix+8u ||
+               std::strcmp(name+prefix+4u,".png")!=0)return 0u;
+            unsigned index=0u;
+            for(unsigned i=0;i<4u;++i){
+                const char digit=name[prefix+i];
+                if(digit<'0'||digit>'9')return 0u;
+                index=index*10u+static_cast<unsigned>(digit-'0');
+            }
+            approved=index<group.count;
+            break;
+        }
+        if(!approved)return 0u;
+        return 256u*1024u; // Same bounded buffer as Omega GLES loader.
     }
     return icons?1024u*1024u:3u*1024u*1024u;
 }
