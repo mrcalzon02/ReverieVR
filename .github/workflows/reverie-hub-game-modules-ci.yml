@@ -21,6 +21,7 @@ on:
       - 'app/src/main/jni/native/reverie_native_host.cpp'
       - 'app/src/main/jni/native/breakwater_module.cpp'
       - 'app/src/main/jni/native/reverie_native_asset_scope.h'
+      - 'app/src/test/native/native_asset_scope_test.cpp'
       - 'app/build.gradle'
       - 'game-apps/test-chamber/build.gradle'
       - 'game-apps/breakwater/**'
@@ -73,6 +74,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          c++ -std=c++17 -Wall -Wextra -Werror \
+            app/src/test/native/native_asset_scope_test.cpp \
+            -o "${RUNNER_TEMP}/reverie-native-asset-scope-test"
+          "${RUNNER_TEMP}/reverie-native-asset-scope-test"
+          python3 scripts/modules/verify-omega-front-cc0.py
           ./gradlew --no-daemon --stacktrace -PcompanionEmulatorAbi=true \
             :app:assembleDebug :app:assembleDebugAndroidTest \
             :companion-test-chamber:assembleDebug \
