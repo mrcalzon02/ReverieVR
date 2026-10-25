@@ -52,6 +52,16 @@
 
 **Trigger:** `.github/workflows/reverie-hub-game-modules-ci.yml` already watches both changed test files. Do not add a duplicate workflow. **Required evidence:** `:app:compileDebugAndroidTestJavaWithJavac` success; emulator execution and `OK (10 tests)`; real Red Ledger and Omega Front downloaded-asset probes; native launch/stereo/campaign/save-resume output; published CI artifacts and exact run URL. Check real new logs; prior passing companion CI is not a substitute.
 
+## Recovery repair — Omega Front sprite host admission (2026-10-25)
+
+**Exact observed failure:** [hub integration run 40235295816](https://github.com/mrcalzon02/ReverieVR/actions/runs/40235295816) reported `OK (10 tests)` but failed after reporting `Tactical PNG textures loaded: 44/108` in the real Android 10 emulator. [Artifact 12614956394](https://github.com/mrcalzon02/ReverieVR/actions/runs/40235295816/artifacts/12614956394) holds the actual CI evidence.
+
+**Source diagnosis:** `omega_front_texture_renderer.h` lists 44 initial terrain/shared/Kenney PNGs and 64 CC0 RPG tile PNGs under `native/omega-front/rpg_cc0/`. The host `reverie_native_asset_scope.h` allowed the former directories but excluded `rpg_cc0/` entirely. These source files exist in Git; the game itself could not open them through `HostReadAsset`. No PNG decoder or GLES workaround is needed as the first repair.
+
+**Committed repair:** `b698919` adds exact 64-name admission/other-game/path traversal tests; `3325494` documents the native read contract; `4369eea` adds the actual C++17 host assertion runner and source-catalog verifier to the existing hub CI before emulator installation; `cb2025b` admits only those specific indexed 64 sprites with a 256 KiB per-read bound. Neither other modules' asset roots nor platform ABI changes. CI [run 40236921289](https://github.com/mrcalzon02/ReverieVR/actions/runs/40236921289) was triggered; **acceptance pending observed completion**.
+
+**Acceptance to record next:** host C++ asset-scope assertions pass; authoritative 64-source catalog passes; all 10 installed Android instrumented tests pass; the native log explicitly says `Tactical PNG textures loaded: 108/108`; all five Breakwater BWM imports are verified from the installed content pack; artifacts and tactical framebuffer retained. Only then mark RV-REC-01's emulator gate complete; physical Galaxy S9 gates remain separate.
+
 ## Definition of recovery
 
 Recovery is **not** complete because source compiles or several APKs exist. It requires a working reference phone, controllable VR Home and games, correct module asset delivery and native updates, successful current validation suite, verified in-place headset updates and saved progress preservation. Continue implementing features only while their prerequisite test gates remain truthful and actionable.
