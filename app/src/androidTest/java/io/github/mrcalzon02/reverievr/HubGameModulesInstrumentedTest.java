@@ -156,8 +156,11 @@ public final class HubGameModulesInstrumentedTest {
         File root=new File(context().getCacheDir(),
             "verified-breakwater-"+System.nanoTime());
         assertTrue(root.mkdirs());
+        // Require every authentic model from the activated downloaded pack.
         final String[] names={
-            "ammo_box_mp_1.bwm","concrete_block_1.bwm","wooden_crate_1.bwm"
+            "concrete_block_1.bwm","wooden_crate_1.bwm",
+            "ammo_box_mp_1.bwm","owner_boat_rowboat.bwm",
+            "owner_apc_armor.bwm"
         };
         try {
             File pack=new File(root,"breakwater-real-models.rvpack");
