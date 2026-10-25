@@ -1,5 +1,6 @@
 #include "../../main/jni/native/reverie_native_asset_scope.h"
 #include <cassert>
+#include <cstdio>
 #include <string>
 using reverie::native::assets::MaximumBytes;
 int main(){
@@ -46,5 +47,27 @@ int main(){
     assert(MaximumBytes(red,"native/red-ledger/beckenburg/")==0u);
     assert(MaximumBytes("not-a-module","native/red-ledger/models/a.fbx")==0u);
     assert(MaximumBytes(nullptr,"native/red-ledger/models/a.fbx")==0u);
+    // Exactly the 64 licensed Omega Front RPG tiles, no other paths.
+    for (unsigned i=0;i<64u;++i) {
+        const char* family=i<32u?"tiny_battle_":
+            i<48u?"rpg_urban_":"roguelike_city_";
+        const unsigned slot=i<32u?i:i<48u?i-32u:i-48u;
+        char path[128];
+        std::snprintf(path,sizeof(path),
+            "native/omega-front/rpg_cc0/%s%04u.png",family,slot);
+        assert(MaximumBytes(omega,path)==256u*1024u);
+        assert(MaximumBytes(red,path)==0u);
+        assert(MaximumBytes(gumball,path)==0u);
+    }
+    assert(MaximumBytes(omega,"native/omega-front/rpg_cc0/tiny_battle_0032.png")==0u);
+    assert(MaximumBytes(omega,"native/omega-front/rpg_cc0/rpg_urban_0016.png")==0u);
+    assert(MaximumBytes(omega,"native/omega-front/rpg_cc0/roguelike_city_0016.png")==0u);
+    assert(MaximumBytes(omega,"native/omega-front/rpg_cc0/tiny_battle_000A.png")==0u);
+    assert(MaximumBytes(omega,"native/omega-front/rpg_cc0/tiny_battle_1.png")==0u);
+    assert(MaximumBytes(omega,"native/omega-front/rpg_cc0/tiny_battle_0000.png.bak")==0u);
+    assert(MaximumBytes(omega,"native/omega-front/rpg_cc0/other_0000.png")==0u);
+    assert(MaximumBytes(omega,"native/omega-front/rpg_cc0/sub/tiny_battle_0000.png")==0u);
+    assert(MaximumBytes(omega,"native/omega-front/rpg_cc0/../tiny_battle_0000.png")==0u);
+    assert(MaximumBytes(omega,"native/red-ledger/rpg_cc0/tiny_battle_0000.png")==0u);
     assert(MaximumBytes(red,nullptr)==0u);
 }
