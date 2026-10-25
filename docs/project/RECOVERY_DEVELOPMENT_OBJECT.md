@@ -2,14 +2,14 @@
 
 **Authority:** operational campaign checkpoint; **tracking issue:** [RV-REC #6](https://github.com/mrcalzon02/ReverieVR/issues/6).
 **Established:** 2026-10-25; **canonical development branch:** `main`.
-**Status:** ACTIVE — first scoped test fix committed with this record; no emulator/device acceptance claimed before observed CI results.
+**Status:** ACTIVE — all ten Android 10 emulator instrumented tests passed in run 40234352374, while the overall workflow failed on the strict 108/108 native texture-loader log check. Five-model Breakwater coverage and native loader evidence repair are ongoing. Galaxy S9 acceptance remains OPEN.
 **Scope:** restore trustworthy Android game acquisition/launch testing; finish release/install/asset/feature verification without erasing any existing functionality.
 **Governing documents:** [INSTRUCTIONS](INSTRUCTIONS.md), [EXECUTION_CONTRACT](EXECUTION_CONTRACT.md), [BACKLOG](BACKLOG.md), [ACCEPTANCE_LEDGER](ACCEPTANCE_LEDGER.md), [INDEPENDENT_NATIVE_GAME_MODULES](INDEPENDENT_NATIVE_GAME_MODULES.md). This file does not replace any of them.
 
 ## Resume here — deterministic handoff
 
 1. Read `AGENTS.md`, the governing documents, this file, and [issue #6](https://github.com/mrcalzon02/ReverieVR/issues/6). Query current remote `main` SHA, recent relevant workflow results, and published Releases; **never assume this snapshot is still latest**.
-2. Resume **RV-REC-01** by inspecting the first CI run triggered by the commit that introduced this document and the repaired Android instrumented tests. The preceding failure is [hub acquisition integration run 40159108734](https://github.com/mrcalzon02/ReverieVR/actions/runs/40159108734): `:app:compileDebugAndroidTestJavaWithJavac`, four stale constructor calls.
+2. Resume **RV-REC-01** by checking the most recent Android hub integration workflow result. The original four-fixture compilation failure in [40159108734](https://github.com/mrcalzon02/ReverieVR/actions/runs/40159108734) was fixed; all ten tests passed in [40234352374](https://github.com/mrcalzon02/ReverieVR/actions/runs/40234352374), but the strict `Tactical PNG textures loaded: 108/108` asset log check failed. The next commits require all five actual Breakwater models from the signed-content pack and print actual Omega sprite-loader counts before enforcing 108/108. Repair broken assets or load behavior rather than relaxing the threshold.
 3. If CI still fails, inspect the failing **job step logs** and repair the authoritative test/runtime code, preserving the coverage and re-running existing workflow. If CI passes, retain its run ID, test count, logcat evidence, Android APK artifacts and checksum in issue #6 and acceptance ledger. Emulator success is NOT hardware acceptance.
 4. Proceed to the next priority item with an executable acceptance gate. Do not burn development time continuously polling Actions; check a completed run only when useful.
 5. On each material change, record `baseline SHA → changed paths → tests/workflow result → artifact and release identity → S9 evidence (or explicit NOT TESTED) → open blocker → next action` and sync the issue. Never claim that local uncommitted changes have been inspected using only GitHub remote APIs.
@@ -31,7 +31,7 @@
 
 | ID | Priority | Engineering target | Minimum acceptance and truth boundary | State at creation |
 |---|---|---|---|---|
-| RV-REC-01 | P0 | Repair hub Android instrumented-test constructor drift without bypassing avatar transmission or save isolation | Four fixtures compile; all 10 intended Android instrumentation tests actually execute and pass; retain emulator artifact/logcat/screenshots | **FIX COMMITTED IN THIS CHANGE, CI PENDING** |
+| RV-REC-01 | P0 | Repair hub Android instrumented-test constructor drift without bypassing avatar transmission or save isolation | Four fixtures compile; all 10 Android instrumentation tests pass; native Omega texture count 108/108 and five verified-pack Breakwater meshes; retain emulator artifact/logcat/screenshots | **10 TESTS PASSED; ASSET LOG GATE FAILED in 40234352374; repeat after model fixture/check repairs** |
 | RV-REC-02 | P0 | Daydream controller/gaze-beam flicker, reconnection, Home/native launch and recovery | Galaxy S9 real controller attach/stall/remove/reconnect, no spurious gaze ray, five-second gaze fallback and native entry/exit/saves; video/diagnostic proof | NOT DEVICE ACCEPTED |
 | RV-REC-03 | P0 | Hub in-place testing/stable update channel reliability | Two signer-continuous releases, newer versionCode, actual installed update, no settings/save loss, visible fallback | NOT DEVICE ACCEPTED |
 | RV-REC-04 | P0 | Independent per-game code/content distribution | Two real signed catalog revisions of one named native game; download, verify, install, update, rollback, offline relaunch, preserve saves; device acceptance separately | CATALOG EMPTY |
@@ -55,3 +55,10 @@
 ## Definition of recovery
 
 Recovery is **not** complete because source compiles or several APKs exist. It requires a working reference phone, controllable VR Home and games, correct module asset delivery and native updates, successful current validation suite, verified in-place headset updates and saved progress preservation. Continue implementing features only while their prerequisite test gates remain truthful and actionable.
+
+## Recovery observation — 2026-10-25 / first real emulator run
+
+- Baseline commit `e14ccfe6fd279c19a9bada8fb9a3e7817ce404e6`; [CI run 40234352374](https://github.com/mrcalzon02/ReverieVR/actions/runs/40234352374): Android 10 emulator installed real hub plus Test Chamber and Breakwater companion APKs and reported **`OK (10 tests)`**. Red Ledger 24 downloaded icons loaded through real native GLES2; Omega Front 141 files, combat travel/command/save-resume and valid captured tactical PNG all passed.
+- Workflow still **FAILED**, because its exact `Tactical PNG textures loaded: 108/108` native log count assertion did not match. The source lists 108 exact-case unique sprite files, all committed. This proves file existence, **not** successful upload of all 108. Inspect the actual count; no weakening of the gate is authorized.
+- Run retained [artifact 12614900094](https://github.com/mrcalzon02/ReverieVR/actions/runs/40234352374/artifacts/12614900094) containing APKs, checksums, logcat, instrumented output and Omega Front framebuffer.
+- Next repair: `e1eff485...` updates Breakwater fixture from three to all five genuine BWM meshes; `8b486e...` prints actual loaded texture count and demands verified-pack evidence for all five Breakwater meshes. The CI on the resulting head must finish and be inspected. A passing instrumented suite alone cannot close RV-REC-01. No Galaxy S9 hardware proof has been obtained.
