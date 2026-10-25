@@ -369,3 +369,7 @@ Do not replace the expected archive with:
 On-device validation must confirm that the packaged asset is re-verified,
 registered as **DOOM Shareware v1.9**, and reaches the DOSBox Pure installer /
 autostart flow without network access.
+
+## Mandatory APK compliance checklist — every phone-test and Play candidate
+
+The existing `scripts/verify-build-bootstrap.sh` release preflight now runs `python3 tools/verify_apk_release_gate.py --checklist-only` to fail when the 38-control [Android release checklist](docs/APK_RELEASE_COMPLIANCE_GATE.md) is missing or incomplete. This static pass is **not** certification of a signed APK. For every proposed public/mobile release, complete the build-specific evidence manifest and run `python3 tools/verify_apk_release_gate.py --evidence <manifest.json> --apk <signed.apk>`, followed by signing and actual handset verification. GitHub phone-test sideload builds stay independent of the future Play Console approval path; do not use a Play upload certificate to replace the established phone-test update identity. The dormant `google-play` branch adds the stricter release-candidate functional test runner. 
