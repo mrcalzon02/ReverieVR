@@ -46,6 +46,7 @@ def functional_tests():
     # NO stub / bypass: every listed subprocess must pass before proceeding.
     run([sys.executable, "tools/verify_apk_release_gate.py", "--checklist-only"])
     run(["sh", "scripts/verify-build-bootstrap.sh"])
+    run(["bash", "scripts/verify-play-native-functional.sh"])
     run(["./gradlew", "test", ":app:assembleDebug", ":controller-app:assembleDebug"])
     for path in ["scripts/verify-native-abi-contract.py", "scripts/verify-native-module-exports.py"]:
         run([sys.executable, path])
