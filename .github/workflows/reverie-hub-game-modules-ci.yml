@@ -144,9 +144,13 @@ jobs:
             python3 -c 'from pathlib import Path; image=Path("validation/hub/omega-front-tactical.png").read_bytes(); assert image.startswith(bytes((137,80,78,71,13,10,26,10))), "No actual GLES2 tactical PNG"; print("PASS Omega Front GLES2 tactical framebuffer captured from Android")'
             grep -F 'Game verified-pack asset id=between-deliveries-red-ledger' validation/hub/logcat.txt
             grep -F 'Game verified-pack asset id=omega-front' validation/hub/logcat.txt
+            # Print the native count before retaining the full 108/108 gate.
+            grep -F 'Tactical PNG textures loaded:' validation/hub/logcat.txt
             grep -F 'Tactical PNG textures loaded: 108/108' validation/hub/logcat.txt
             grep -F 'Authentic BWM1 models loaded 5/5' validation/hub/logcat.txt
-            grep -F 'Breakwater verified-pack asset native/breakwater/beckenburg/' validation/hub/logcat.txt
+            for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1 owner_boat_rowboat owner_apc_armor; do
+              grep -F "Breakwater verified-pack asset native/breakwater/beckenburg/${MODEL}.bwm" validation/hub/logcat.txt
+            done
             adb exec-out screencap -p > validation/hub/hub-screen.png
       - name: Keep APKs and actual acquisition/update test evidence
         if: always()
