@@ -71,6 +71,9 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 python3 scripts/verify-dependency-baseline.py
 
+# Required static release-test coverage; APK and Play approval require separate evidence.
+python3 tools/verify_apk_release_gate.py --checklist-only
+
 echo "ReverieVR build bootstrap verified."
 echo "  Gradle wrapper: $wrapper_hash"
 echo "  Gradle distribution SHA-256: $EXPECTED_DISTRIBUTION_SHA256"
