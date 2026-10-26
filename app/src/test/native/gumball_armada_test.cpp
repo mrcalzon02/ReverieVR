@@ -343,6 +343,17 @@ int main(){
             assert(sawNib&&sawMine&&!sawAssist);
             foundNib=true;
         }else if(expected==CastGuest::CrumbclankTwins){
+            if(!(sawBiff&&sawBaff&&sawBomb&&!sawAssist))
+                std::cerr<<"Crumbclank encounter diagnostic: seed="<<seed
+                         <<" destination="<<lane.id
+                         <<" hazard="<<static_cast<unsigned>(lane.hazard)
+                         <<" spawned="<<trial.spawned()
+                         <<" wave="<<trial.wave()
+                         <<" phase="<<static_cast<int>(trial.phase())
+                         <<" hp="<<trial.hp()
+                         <<" Biff="<<sawBiff<<" Baff="<<sawBaff
+                         <<" bomb="<<sawBomb
+                         <<" assist="<<sawAssist<<'\\n';
             assert(sawBiff&&sawBaff&&sawBomb&&!sawAssist);
             assert(trial.twin_bonus_paid()==0u); // cannot claim kill bonus while no weapons fired
             foundTwins=true;
