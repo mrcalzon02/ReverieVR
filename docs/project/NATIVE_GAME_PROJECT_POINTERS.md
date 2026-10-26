@@ -286,6 +286,18 @@ All gameplay advances in native Update once per frame, with common cached vertex
 
 **Scale rule:** 100 levels and 10 full world prestiges are release targets, not excuses to load/render all rooms simultaneously. The 24×24 starter is a test fixture; full tactics, campaign and room structure must not be quietly cut to accommodate UI or hardware.
 
+## RV-GAME-SITKA — Sitka
+
+**Status:** new standalone native game **proposal only**; no runnable module, packaged assets, catalog button or APK are claimed. **Official player-facing title: Sitka**, with no subtitle. Canonical design and coastal-geodata/rights plan: [Sitka](SITKA.md).
+
+**Identity:** a slow, peaceful, geography-grounded Sitka Sound, Alaska fishing and beachcombing game. Tour recognizable beaches and coves on foot or by boat, fish, find crabs and unusual shells, observe local wildlife, keep a field journal, and upgrade rods, bait, tackle and vessels. No combat, timers or punitive progression.
+
+**Visual/platform approach:** adapt low-poly PSX-inspired techniques from Beckenburg and Malefic Veil to ReverieVR's own GLES2/Daydream renderer, with offline processed licensed USGS elevation, NOAA coastal/bathymetry and compliant OpenStreetMap features. Google Earth may be used only within its permitted terms for reference or a separately licensed online integration; **do not scrape or trace Google map imagery or 3D tiles into game meshes**.
+
+**First playable gate:** two real Sitka-area shoreline pockets, reliable 3DoF cast/bite/reel/land mechanic, crab or shell find, useful tackle upgrade, comfortable boat/shore travel, persistent journal/save, sound, honest native-app launch and physical Galaxy S9 stereo/thermal acceptance. Do not add an inert Native Apps launch option before there is a functioning game.
+
+---
+
 ## Recommended implementation order
 
 1. **Between Deliveries** — smallest space, richest direct hand interaction, strongest test of the native-module interaction layer.
