@@ -47,9 +47,14 @@ jobs:
           for cc in g++ clang++; do
             for game_test in breakwater_campaign breakwater_cannon_trajectory breakwater_wave_schedule breakwater_wave_threat breakwater_armor breakwater_invasion_units breakwater_shop_feedback breakwater_menu_layout; do
               echo "FUNCTIONAL TEST: $game_test via $cc"
+              extra=()
+              if [[ "$game_test" == breakwater_campaign ]]; then
+                extra=(app/src/main/jni/native/breakwater_campaign.cpp)
+              fi
               "$cc" -std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic \
                 -Iapp/src/main/jni/native \
-                "app/src/test/native/${game_test}_test.cpp" -o "${RUNNER_TEMP}/${cc}-${game_test}" -lz
+                "app/src/test/native/${game_test}_test.cpp" "${extra[@]}" \
+                -o "${RUNNER_TEMP}/${cc}-${game_test}" -lz
               "${RUNNER_TEMP}/${cc}-${game_test}"
             done
           done
@@ -115,9 +120,15 @@ jobs:
           set -euo pipefail
           for cc in g++ clang++; do
             for game_test in lantern_desk_simulation forward_detachment_simulation; do
+              extra=()
+              if [[ "$game_test" == lantern_desk_simulation ]]; then
+                extra=(app/src/main/jni/native/lantern_desk_simulation.cpp)
+              else
+                extra=(app/src/main/jni/native/forward_detachment_simulation.cpp)
+              fi
               "$cc" -std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic \
                 -Iapp/src/main/jni/native \
-                "app/src/test/native/${game_test}_test.cpp" \
+                "app/src/test/native/${game_test}_test.cpp" "${extra[@]}" \
                 -o "${RUNNER_TEMP}/${cc}-${game_test}"
               "${RUNNER_TEMP}/${cc}-${game_test}"
             done
