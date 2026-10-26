@@ -1,0 +1,164 @@
+name: ReverieVR all integrated games — functional diagnostics
+
+# Source-level game behavior checks. The independent hub Android CI executes
+# EVERY registered native library via Java/JNI/GLES2 and archives 15 frames.
+# No cosmetic screenshot-diff/visual-style test blocks functional acceptance.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/reverie-all-integrated-games-ci.yml'
+      - 'modules/game-identity-matrix.json'
+      - 'scripts/ci/verify-integrated-game-functional-coverage.py'
+      - 'scripts/verify-gumball-armada.sh'
+      - 'scripts/verify-omega-front-playability.sh'
+      - 'app/src/main/jni/native/**'
+      - 'app/src/test/native/**'
+      - 'app/src/main/assets/native/breakwater/**'
+      - 'app/src/main/assets/native/red-ledger/**'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-registry:
+    name: All 15 native game IDs have real runtime or logic acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check every game is mapped to a real functional or Android JNI/GLES2 test
+        run: |
+          set -euo pipefail
+          python3 scripts/modules/verify-game-identity-matrix.py
+          python3 scripts/ci/verify-integrated-game-functional-coverage.py
+
+  breakwater-combat:
+    name: Breakwater Battery combat, campaign, waves, purchases and aiming
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute real coastal-defense mechanics (both compilers)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cc in g++ clang++; do
+            for game_test in breakwater_campaign breakwater_cannon_trajectory breakwater_wave_schedule breakwater_wave_threat breakwater_armor breakwater_invasion_units breakwater_shop_feedback breakwater_menu_layout; do
+              echo "FUNCTIONAL TEST: $game_test via $cc"
+              "$cc" -std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic \
+                -Iapp/src/main/jni/native \
+                "app/src/test/native/${game_test}_test.cpp" -o "${RUNNER_TEMP}/${cc}-${game_test}" -lz
+              "${RUNNER_TEMP}/${cc}-${game_test}"
+            done
+          done
+          echo 'PASS: Breakwater Battery core gameplay controls/campaign'
+
+  red-ledger:
+    name: Red Ledger patron, faction, economy and trade simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run factual bar-economy and customer action tests, not cosmetic geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cc in g++ clang++; do
+            for game_test in red_ledger_simulation red_ledger_faction_integration red_ledger_trade red_ledger_wholesale red_ledger_stock_layout; do
+              echo "FUNCTIONAL TEST: $game_test via $cc"
+              extra=()
+              if [[ "$game_test" == red_ledger_simulation || "$game_test" == red_ledger_faction_integration || "$game_test" == red_ledger_wholesale ]]; then
+                extra=(app/src/main/jni/native/red_ledger_simulation.cpp)
+              fi
+              "$cc" -std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic \
+                -Iapp/src/main/jni/native \
+                "app/src/test/native/${game_test}_test.cpp" "${extra[@]}" \
+                -o "${RUNNER_TEMP}/${cc}-${game_test}"
+              "${RUNNER_TEMP}/${cc}-${game_test}"
+            done
+          done
+          echo 'PASS: Red Ledger functional patrons, trade and stock'
+
+  classic-eight:
+    name: Chess, Checkers, Go, Reversi, Pong, Snake, Breakout and Chutes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actual classic rules, AI, game input and paddle-physics regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cc in g++ clang++; do
+            for game_test in classic_games classic_pong_dynamics; do
+              echo "FUNCTIONAL TEST: $game_test via $cc"
+              "$cc" -std=c++17 -O1 -pthread -Wall -Wextra -Werror -Wpedantic \
+                -Iapp/src/main/jni/native \
+                "app/src/test/native/${game_test}_test.cpp" \
+                -o "${RUNNER_TEMP}/${cc}-${game_test}"
+              "${RUNNER_TEMP}/${cc}-${game_test}"
+            done
+          done
+          echo 'PASS: all eight native classic game logic families'
+
+  recon-missions:
+    name: Lantern Desk reconnaissance and Iron Sight patrol-to-debrief
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exercise real mission transitions and choices in both recon games
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cc in g++ clang++; do
+            for game_test in lantern_desk_simulation forward_detachment_simulation; do
+              "$cc" -std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic \
+                -Iapp/src/main/jni/native \
+                "app/src/test/native/${game_test}_test.cpp" \
+                -o "${RUNNER_TEMP}/${cc}-${game_test}"
+              "${RUNNER_TEMP}/${cc}-${game_test}"
+            done
+          done
+          echo 'PASS: Lantern Desk and Iron Sight complete mission cycles'
+
+  gumball-campaign:
+    name: Gumball Armada route select, shipyard and actual combat simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute full existing real Gumball Armada gameplay suite
+        run: bash scripts/verify-gumball-armada.sh
+
+  omega-campaign:
+    name: Omega Front boot-to-battle, campaign, sprites and input regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute full existing real Omega Front campaign suite
+        run: bash scripts/verify-omega-front-playability.sh
+
+  native-runtime:
+    name: Shared native ABI, asset-scoping and companion contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure native host ABI and game isolation remain operational
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cc in g++ clang++; do
+            for game_test in native_abi_contract native_asset_scope; do
+              "$cc" -std=c++17 -O1 -Wall -Wextra -Werror -Wpedantic \
+                -Iapp/src/main/jni/native \
+                "app/src/test/native/${game_test}_test.cpp" \
+                -o "${RUNNER_TEMP}/${cc}-${game_test}"
+              "${RUNNER_TEMP}/${cc}-${game_test}"
+            done
+          done
+          echo 'PASS: native game entry ABI and scoped asset reads'
