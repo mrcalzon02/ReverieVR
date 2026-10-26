@@ -146,7 +146,8 @@ jobs:
             adb shell pm list packages | grep -Fx 'package:io.github.mrcalzon02.reverievr.game.testchamber'
             adb shell pm list packages | grep -Fx 'package:io.github.mrcalzon02.reverievr.game.breakwater'
             adb shell am start -W -n io.github.mrcalzon02.reverievr/.MainActivity | tee validation/hub/hub-main-launch.txt
-            adb shell am instrument -w -r               io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner               | tee validation/hub/instrumentation-output.txt
+            # Only independent hub/game tests belong in the full-install suite. The staged APK-upgrade tests require their own pre-upgrade sentinel and run in the Recovery Simulation workflow.
+            adb shell am instrument -w -r -e class io.github.mrcalzon02.reverievr.HubGameModulesInstrumentedTest,io.github.mrcalzon02.reverievr.DownloadedNativeGameAssetsInstrumentedTest io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner | tee validation/hub/instrumentation-output.txt
             adb logcat -d -v time > validation/hub/logcat.txt
             grep -F 'OK (11 tests)' validation/hub/instrumentation-output.txt
             grep -F 'PASS real downloaded between-deliveries-red-ledger assets=24' validation/hub/logcat.txt
