@@ -81,6 +81,11 @@ inline int LoadoutNavigate(int selection,int horizontal,int vertical){
 }
 // Layout centers and sizes, all in native flat-mesh world units.
 constexpr float kChartRouteX[3]={-1.55f,0.f,1.55f};
+constexpr float kChartRouteCardY=-.25f;
+constexpr float kChartRouteCardHeight=.76f;
+constexpr float kChartRouteNodeY=.27f;
+constexpr float kChartMapOriginY=.78f;
+
 constexpr float kChartActionX[3]={-1.55f,0.f,1.55f};
 constexpr float kLoadoutUpgradeX[4]={-1.82f,-.61f,.60f,1.81f};
 constexpr float kLoadoutWeaponX[3]={-1.55f,0.f,1.55f};
