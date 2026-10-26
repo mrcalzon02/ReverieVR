@@ -4,7 +4,7 @@
 #include "gumball_space_3d.h"
 #include "gumball_shipyard_readiness.h"
 #include "gumball_menu_hit.h"
-#include "reverie_native_vector_text.h"
+#include "reverie_native_lato_text.h"
 #include "gumball_menu_layout.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
@@ -76,6 +76,7 @@ struct Module {
     GLuint routeProgram=0,routeVbo=0,routeTextures[kArtworkCount]{};
     GLint routeCorner=-1,routeMvp=-1,routeRect=-1,routeSampler=-1;
     std::vector<float> mesh;
+    reverie::nativetext::LatoLayer font;
 };
 void Rect(Module* m,float x,float y,float w,float h,float z,float r,float g,float b){
     reverie::flatmesh::Rect(m->mesh,x,y,w,h,z,r,g,b);
@@ -86,20 +87,16 @@ void Disc(Module* m,float x,float y,float d,float z,float r,float g,float b){
 void Tri(Module* m,float x,float y,float a,float b,float c,float d,float z,float r,float g,float bl){
     reverie::flatmesh::Triangle(m->mesh,x,y,a,b,c,d,z,r,g,bl);
 }
-// Reuse the platform native vector font, not unreadable 3x5 pixel squares.
+// All Gumball menu, shipyard, in-flight and status letters are actual Lato
+// alpha-glyph quads. Position, game focus, option IDs and control input
+// remain unchanged; fitting uses proportional font advances.
 void Text(Module* m,const char* message,float x,float y,float sz,
           float r,float g,float b){
-    if(message&&sz>0.f)
-        reverie::nativeart::StrokeText(m->mesh,message,x,y,sz,r,g,b,-2.85f);
+    m->font.Text(message,x,y,sz,r,g,b,-2.85f);
 }
-// Width remains four stroke-font units per character; prevent label overflow.
 void TextFit(Module* m,const char* message,float x,float y,float maxWidth,
              float size,float r,float g,float b){
-    if(!message||maxWidth<=0.f)return;
-    const size_t count=std::strlen(message);
-    if(!count)return;
-    Text(m,message,x,y,
-         std::min(size,maxWidth/(4.f*static_cast<float>(count))),r,g,b);
+    m->font.Fit(message,x,y,maxWidth,size,r,g,b,-2.85f);
 }
 void Frame(Module* m,float x,float y,float w,float h,bool focus){
     Rect(m,x,y,w,h,-2.96f,focus?.35f:.13f,focus?.21f:.11f,focus?.48f:.18f);
@@ -579,7 +576,7 @@ void Result(Module* m){
     Text(m,"CLICK TO RETURN TO CHART",0,-1.17f,.038f,.74f,.94f,.88f);
 }
 void Rebuild(Module* m){
-    m->mesh.clear();
+    m->mesh.clear();m->font.Clear();
     if(m->inYard)ShipyardView(m);
     else if(m->inSupport)SupportView(m);
     else if(m->inLoadout)LoadoutView(m);
@@ -753,6 +750,13 @@ int32_t GlStart(void* p){
         if(m->vbo)glDeleteBuffers(1,&m->vbo);
         glDeleteProgram(m->program);m->vbo=0;m->program=0;
     }
+    if(good && !m->font.Create()){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,kId,
+                           "Lato font atlas initialization failed");
+        glDeleteBuffers(1,&m->vbo);
+        glDeleteProgram(m->program);
+        m->vbo=m->program=0;good=false;
+    }
     if(good){
         // Separate, persistent textured-quad renderer; it does not rebuild
         // the flat HUD mesh or allocate textures during stereo eye rendering.
@@ -809,6 +813,7 @@ void GlEnd(void* p){
     if(m->routeProgram)glDeleteProgram(m->routeProgram);
     if(m->vbo)glDeleteBuffers(1,&m->vbo);
     if(m->program)glDeleteProgram(m->program);
+    m->font.Release();
     m->routeVbo=0;m->routeProgram=0;
     m->vbo=0;m->program=0;m->upload=true;
 }
@@ -1183,12 +1188,13 @@ int32_t Render(void* p,const ReverieNativeEyeV1* eye){
             }
         }
     }
+    const bool fontOk=m->font.Draw(mvp);
     const GLenum error=glGetError();
     ReverieNativeGlAttribRestoreV1(&c);
     ReverieNativeGlAttribRestoreV1(&b);
     ReverieNativeGlAttribRestoreV1(&a);
     ReverieNativeGlStateRestoreV1(&state);
-    return error==GL_NO_ERROR?1:0;
+    return fontOk && error==GL_NO_ERROR ? 1:0;
 }
 const ReverieNativeModuleApiV1 api={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
