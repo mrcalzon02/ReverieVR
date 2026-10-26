@@ -328,6 +328,82 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         }finally{remove(base);}
     }
 
+
+    /**
+     * Preserve real installed-GLES2 initial/menu frames for EVERY registered
+     * native game, including built-in classic board/arcade games. No generated
+     * thumbnails, no synthetic scene and no temporary 'proof' splash art.
+     * DOS titles are a DIFFERENT runtime and need their own DOS capture gate.
+     */
+    @Test public void captureAllNativeMainMenus() throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File root=new File(app.getCacheDir(),"native-menu-ci-"+System.nanoTime());
+        assertTrue("Could not allocate game menu capture sandbox",root.mkdirs());
+        File home=new File(root,"native-modules");
+        assertTrue("Could not allocate isolated native game saves",home.mkdirs());
+        java.util.List<NativeModuleRuntime.Descriptor> built=
+            NativeModuleRuntime.listBuiltIns(true);
+        StringBuilder rows=new StringBuilder("module_id,status,eye_frame_crc32,png_bytes\\n");
+        StringBuilder failures=new StringBuilder();
+        int saved=0;
+        try(Pbuffer egl=new Pbuffer()){
+            for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES){
+                boolean present=false;
+                for(NativeModuleRuntime.Descriptor item:built)
+                    if(game.id.equals(item.id))present=true;
+                if(!present){
+                    rows.append(game.id).append(",NOT_REGISTERED,0,0\\n");
+                    failures.append(game.id).append(": missing native library entry; ");
+                    continue;
+                }
+                File evidence=new File(app.getFilesDir(),
+                    "native-menu-"+game.id+".png");
+                try(NativeModuleRuntime runtime=new NativeModuleRuntime(
+                    home,app.getAssets(),null,true,
+                    new ReveriePreferences(
+                        InstrumentationRegistry.getInstrumentation().getContext()))){
+                    assertTrue("Native menu launch failed "+game.id+": "+
+                        runtime.getLastError(),runtime.start(game.id));
+                    try{
+                        assertTrue("GLES2 context failed "+game.id+": "+
+                            runtime.getLastError(),runtime.onSurfaceCreated());
+                        runtime.update(NativeModuleRuntime.POINTER_NONE,null,null);
+                        long crc=omegaFrame(runtime,evidence);
+                        assertTrue("Empty real frame "+game.id,
+                            evidence.isFile() && evidence.length()>300L);
+                        rows.append(game.id).append(",CAPTURED,")
+                            .append(crc).append(",").append(evidence.length())
+                            .append("\\n");
+                        saved++;
+                        Log.i(TAG,"PASS REAL native menu capture id="+game.id+
+                            " crc32="+crc+" bytes="+evidence.length());
+                    }finally{
+                        runtime.releaseSurface();
+                        runtime.stop();
+                    }
+                }catch(Exception | AssertionError failure){
+                    rows.append(game.id).append(",FAILED,0,0\\n");
+                    failures.append(game.id).append(": ")
+                        .append(failure.toString().replace(',', ' '))
+                        .append("; ");
+                    Log.e(TAG,"FAIL native menu capture id="+game.id,failure);
+                }
+            }
+        }finally{
+            try(FileOutputStream csv=app.openFileOutput(
+                    "native-menu-capture.csv",Context.MODE_PRIVATE)){
+                csv.write(rows.toString().getBytes(StandardCharsets.UTF_8));
+                csv.getFD().sync();
+            }
+            remove(root);
+        }
+        assertEquals("A native game menu was not captured: "+failures,
+            GameModuleRegistry.GAMES.length,saved);
+        Log.i(TAG,"PASS all "+saved+" registered native game initial menus "
+            +"captured from installed Android GLES2 implementation");
+    }
+
+
     @Test public void redLedgerReal24DownloadedIconsRenderThroughNativeGles(){
         runInstalledAssets("between-deliveries-red-ledger",24);
     }
