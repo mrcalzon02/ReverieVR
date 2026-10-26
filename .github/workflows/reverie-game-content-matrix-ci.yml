@@ -32,6 +32,7 @@ on:
       - 'app/src/test/native/gumball_menu_layout_test.cpp'
       - 'app/src/test/native/gumball_menu_hit_test.cpp'
       - 'app/src/test/native/gumball_armada_test.cpp'
+      - 'app/src/test/native/gumball_ship_3d_test.cpp'
       - 'scripts/verify-gumball-armada.sh'
       - 'app/src/test/native/omega_front_*_test.cpp'
       - 'scripts/verify-omega-front-playability.sh'
