@@ -463,6 +463,7 @@ int main(){
     for(uint32_t seed=1;seed<=512&&!(cinnamon&&sydney&&jules);++seed){
         Simulation probe(seed);
         auto saveProbe=probe.snapshot();saveProbe.visited=2u;
+        saveProbe.levels[0]=12u;
         saveProbe.levels[1]=12u;saveProbe.levels[3]=12u;
         saveProbe.checksum=SnapshotChecksum(saveProbe);
         assert(probe.restore(saveProbe));
@@ -471,9 +472,24 @@ int main(){
            &&next!=CastGuest::JawbreakerJules)continue;
         assert(probe.launch(0)&&probe.guest()==next);
         bool zoned=false,shifting=false,heavy=false;
+        const auto castLane=probe.lane(0);
+        const int warmupLimit=(6+static_cast<int>(castLane.hazard)*2)/2-1;
         for(int i=0;i<820&&probe.phase()==Phase::Flight;++i){
-            // Fly out of Sydney's neutral corridor to exercise the zone effect.
-            probe.update(.025f,next==CastGuest::SydneySlipstream?.8f:0.f,0.f,false);
+            // Protect the sortie from its three-escape failure during the
+            // early ordinary formation, then stop shooting BEFORE the
+            // named encounter to observe actual live hazards and movement.
+            const bool defending=probe.spawned()<warmupLimit;
+            float move=next==CastGuest::SydneySlipstream?.8f:0.f;
+            if(defending){
+                const Enemy* closest=nullptr;
+                for(const auto& e:probe.enemies())if(e.active)
+                    if(!closest||e.y<closest->y)closest=&e;
+                if(closest){
+                    const float delta=closest->x-probe.player_x();
+                    move=delta>.035f?1.f:delta<-.035f?-1.f:0.f;
+                }
+            }
+            probe.update(.025f,move,0.f,defending);
             shifting|=probe.slipstream_active()&&
                 (probe.movement_multiplier()>=1.40f||probe.movement_multiplier()<=.60f);
             for(const auto& e:probe.enemies())if(e.active&&e.kind==EnemyKind::Jules)
