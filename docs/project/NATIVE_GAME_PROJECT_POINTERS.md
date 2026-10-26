@@ -288,7 +288,7 @@ All gameplay advances in native Update once per frame, with common cached vertex
 
 ## RV-GAME-SITKA — Sitka
 
-**Status:** new standalone native game **proposal only**; no runnable module, packaged assets, catalog button or APK are claimed. **Official player-facing title: Sitka**, with no subtitle. Canonical design and coastal-geodata/rights plan: [Sitka](SITKA.md).
+**Status:** original native game concept with a **source-integrated desktop editor, geodata baker and standalone C++ water/weather adapter**; no real surveyed Sitka terrain asset, GLES2 game module, catalog button, APK or S9 runtime proof. See [editor/geodata integration](SITKA_EDITOR_PIPELINE.md). **Official player-facing title: Sitka**, with no subtitle. Canonical design and coastal-geodata/rights plan: [Sitka](SITKA.md).
 
 **Identity:** a slow, peaceful, geography-grounded Sitka Sound, Alaska fishing and beachcombing game. Tour recognizable beaches and coves on foot or by boat, fish, find crabs and unusual shells, observe local wildlife, keep a field journal, and upgrade rods, bait, tackle and vessels. No combat, timers or punitive progression.
 
