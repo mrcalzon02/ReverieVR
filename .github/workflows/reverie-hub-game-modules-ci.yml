@@ -148,7 +148,7 @@ jobs:
             adb shell am start -W -n io.github.mrcalzon02.reverievr/.MainActivity | tee validation/hub/hub-main-launch.txt
             adb shell am instrument -w -r               io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner               | tee validation/hub/instrumentation-output.txt
             adb logcat -d -v time > validation/hub/logcat.txt
-            grep -F 'OK (10 tests)' validation/hub/instrumentation-output.txt
+            grep -F 'OK (11 tests)' validation/hub/instrumentation-output.txt
             grep -F 'PASS real downloaded between-deliveries-red-ledger assets=24' validation/hub/logcat.txt
             grep -F 'PASS real downloaded omega-front assets=141' validation/hub/logcat.txt
             grep -F 'PASS omega-front emulator nativeLaunch=true publicGames=true travel=true deploy=true controllerOrder=true combatStep=true stereoGles2=true saveResume=true' validation/hub/logcat.txt
