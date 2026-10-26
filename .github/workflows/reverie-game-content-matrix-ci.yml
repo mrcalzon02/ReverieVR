@@ -26,6 +26,12 @@ on:
       - 'app/src/main/jni/native/reverie_native_host.cpp'
       - 'app/src/main/jni/native/omega_front_*.h'
       - 'app/src/main/jni/native/omega_front_module.cpp'
+      - 'app/src/main/jni/native/gumball_armada_module.cpp'
+      - 'app/src/main/jni/native/gumball_menu_layout.h'
+      - 'app/src/main/jni/native/gumball_menu_hit.h'
+      - 'app/src/test/native/gumball_menu_layout_test.cpp'
+      - 'app/src/test/native/gumball_menu_hit_test.cpp'
+      - 'scripts/verify-gumball-armada.sh'
       - 'app/src/test/native/omega_front_*_test.cpp'
       - 'scripts/verify-omega-front-playability.sh'
       - 'scripts/modules/verify-omega-front-cc0.py'
@@ -35,6 +41,18 @@ permissions:
   contents: read
 
 jobs:
+  verify-gumball-controls:
+    name: Gumball Armada real route selection and gameplay regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify real chart focus, delayed lane launch and complete Gumball gameplay
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/verify-gumball-armada.sh
+
   verify-omega-front:
     name: Omega Front real C++ boot-to-battle regression
     runs-on: ubuntu-latest
