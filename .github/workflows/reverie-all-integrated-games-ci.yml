@@ -71,7 +71,7 @@ jobs:
         run: |
           set -euo pipefail
           for cc in g++ clang++; do
-            for game_test in red_ledger_simulation red_ledger_faction_integration red_ledger_trade red_ledger_wholesale red_ledger_stock_layout; do
+            for game_test in red_ledger_simulation red_ledger_faction_integration red_ledger_trade red_ledger_wholesale red_ledger_stock_layout red_ledger_clientele; do
               echo "FUNCTIONAL TEST: $game_test via $cc"
               extra=()
               if [[ "$game_test" == red_ledger_simulation || "$game_test" == red_ledger_faction_integration || "$game_test" == red_ledger_wholesale ]]; then
