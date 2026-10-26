@@ -308,14 +308,33 @@ int main(){
             ||(expected==CastGuest::NibNoxious&&foundNib)
             ||(expected==CastGuest::CrumbclankTwins&&foundTwins))continue;
         auto progressed=trial.snapshot();progressed.visited=2;
-        progressed.levels[1]=12;progressed.levels[3]=12; // survive long enough to inspect encounter
+        progressed.levels[1]=12;progressed.levels[3]=12;
+        // Guest tests require a player who fights. An idle ship may fail a
+        // Sweep after its third escaped enemy, before twins even spawn.
+        if(expected==CastGuest::CrumbclankTwins)
+            progressed.levels[0]=12; // actual maximum purchased blaster
+
         progressed.checksum=SnapshotChecksum(progressed);
         assert(trial.restore(progressed)&&trial.launch(0));
         assert(trial.guest()==expected);
         bool sawAssist=false,sawGrenadier=false,sawBomb=false;
         bool sawNib=false,sawMine=false,sawBiff=false,sawBaff=false;
         for(int tick=0;tick<750&&trial.phase()==Phase::Flight;++tick){
-            trial.update(.025f,0.f,0.f,false);
+            float move=0.f;
+            const bool combat=expected==CastGuest::CrumbclankTwins;
+            if(combat){
+                // Aim at the nearest real enemy rather than idling until
+                // the third escape ends the sortie before the guest wave.
+                const Enemy* closest=nullptr;
+                for(const auto& enemy:trial.enemies())if(enemy.active){
+                    if(!closest||enemy.y<closest->y)closest=&enemy;
+                }
+                if(closest){
+                    const float error=closest->x-trial.player_x();
+                    move=error>.035f?1.f:error<-.035f?-1.f:0.f;
+                }
+            }
+            trial.update(.025f,move,0.f,combat);
             sawAssist|=trial.guest_active();
             for(const auto& enemy:trial.enemies())if(enemy.active){
                 sawGrenadier|=enemy.kind==EnemyKind::Blort;
