@@ -39,11 +39,14 @@ int main(){
     assert(upgraded.cleanliness()==100);
     assert(upgraded.comfortable(PatronKind::NightClerk));
     // Preserve all six distinct patron/supplier trajectories and data.
-    for(const auto& patron:Simulation::PatronCatalog()) {
-        const int faction=trade::FactionFor(patron.kind);
+    const PatronKind kinds[6]={PatronKind::RailWorker,PatronKind::NightClerk,
+        PatronKind::MilitiaVeteran,PatronKind::Mechanic,
+        PatronKind::DirectorateCourier,PatronKind::SalihorskHauler};
+    for(PatronKind kind:kinds){
+        const int faction=trade::FactionFor(kind);
         assert(faction>=0&&faction<trade::kFactions);
-        upgraded.served(patron.kind,trade::FavoriteDrink(patron.kind),
-                        trade::FavoriteSnack(patron.kind),5);
+        upgraded.served(kind,trade::FavoriteDrink(kind),
+                        trade::FavoriteSnack(kind),5);
         assert(upgraded.affinity(faction)==2);
     }
     std::array<uint8_t,State::kSerializedSize> bytes{};
