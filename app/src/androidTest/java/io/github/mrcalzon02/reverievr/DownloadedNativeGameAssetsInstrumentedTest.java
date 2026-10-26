@@ -335,6 +335,90 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
      * thumbnails, no synthetic scene and no temporary 'proof' splash art.
      * DOS titles are a DIFFERENT runtime and need their own DOS capture gate.
      */
+    /**
+     * Genuine installed native C++ GLES2 test of the Gumball route map:
+     * pointer focus does not launch, first click arms, premature repeat
+     * cannot fly, locked route is visibly distinct, third edge click launches.
+     * No fake screenshot, no synthetic direct Simulation::launch shortcut.
+     */
+    @Test public void gumballRouteMapFocusArmLockThenFlyInGles()
+        throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File base=new File(app.getCacheDir(),"gumball-route-ci-"+System.nanoTime());
+        assertTrue("No isolated Gumball route sandbox",base.mkdirs());
+        File home=new File(base,"native-modules");
+        assertTrue("No isolated Gumball save home",home.mkdirs());
+        final float[] target={reverieRouteX(),.27f,0.f};
+        final float[] direction={0.f,0.f,-1.f};
+        File saved=new File(home,"gumball-armada/campaign.v1");
+        File focused=new File(app.getFilesDir(),"gumball-route-focused.png");
+        File armed=new File(app.getFilesDir(),"gumball-route-armed.png");
+        File locked=new File(app.getFilesDir(),"gumball-route-locked.png");
+        File flight=new File(app.getFilesDir(),"gumball-route-flight.png");
+        VirtualInputBus input=new VirtualInputBus();
+        VirtualOutput fire=VirtualOutput.joystickButton(0);
+        try(Pbuffer egl=new Pbuffer();
+            NativeModuleRuntime runtime=new NativeModuleRuntime(
+                home,app.getAssets(),input,true,
+                new ReveriePreferences(
+                    InstrumentationRegistry.getInstrumentation().getContext()))){
+            assertTrue("Gumball native route chart failed to start: "+
+                runtime.getLastError(),runtime.start("gumball-armada"));
+            assertTrue("Gumball real GLES2 context failed: "+
+                runtime.getLastError(),runtime.onSurfaceCreated());
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction); // controller ray hover selects lane C
+            long focusedFrame=omegaFrame(runtime,focused);
+            assertFalse("Simply hovering launched a sortie",saved.exists());
+            input.applyDigital(fire,true);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction); // first edge: arm selected lane
+            input.applyDigital(fire,false);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction);
+            input.applyDigital(fire,true);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction); // too-quick second edge MUST NOT launch
+            input.applyDigital(fire,false);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction);
+            assertFalse("Quick-repeat launched before route lock",saved.exists());
+            long armedFrame=omegaFrame(runtime,armed);
+            assertNotEquals("Gumball map did not visibly highlight armed route",
+                            focusedFrame,armedFrame);
+            for(int tick=0;tick<9;++tick){
+                Thread.sleep(60L);
+                runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                    target,direction);
+            }
+            assertFalse("Route timer auto-launched without separate click",
+                        saved.exists());
+            long lockedFrame=omegaFrame(runtime,locked);
+            assertNotEquals("Route LOCKED state did not change real map pixels",
+                            armedFrame,lockedFrame);
+            input.applyDigital(fire,true);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction); // deliberately confirm same lane
+            input.applyDigital(fire,false);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction);
+            long flightFrame=omegaFrame(runtime,flight);
+            assertNotEquals("Confirmed lane did not render actual flight",
+                            lockedFrame,flightFrame);
+            assertTrue("Confirmed lane did not write actual campaign save",
+                       saved.isFile()&&saved.length()>0L);
+            Log.i(TAG,"PASS real Gumball map hover, armed highlight, "
+                +"350ms lock, explicit second-click flight and save");
+            runtime.releaseSurface();
+            runtime.stop();
+        }finally{remove(base);}
+    }
+
+    private static float reverieRouteX(){
+        // Same x as kChartRouteX[2]; no hidden Android-only hitbox expansion.
+        return 1.55f;
+    }
+
     @Test public void captureAllNativeMainMenus() throws Exception {
         Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
         File root=new File(app.getCacheDir(),"native-menu-ci-"+System.nanoTime());
