@@ -3,9 +3,13 @@
 **Official title:** Sitka (no subtitle).  
 **Proposed project ID:** RV-GAME-SITKA; tentative module ID `sitka`.  
 **Category:** ReverieVR > Native Apps / Projects, once functional.  
-**Stage:** Proposal/design only — not implemented or downloadable.  
+**Stage:** First source-only authoring/tooling milestone committed; not a playable VR environment or downloadable game.  
 **Platforms:** Android Daydream VR (reference Samsung Galaxy S9, Daydream View/controller, 30 FPS sustained); native Windows, Linux and macOS desktop; provisional PC VR through OpenXR/SteamVR on supported Windows/Linux configurations.  
 **Reference:** Owner-supplied overview image of Sitka Sound, 2026-10-26.
+
+## Current authoring milestone — 2026-10-26
+
+**Source integrated on ReverieVR `main`, not a playable game:** A separate desktop [Sitka editor and terrain pipeline](SITKA_EDITOR_PIPELINE.md) has been added. The editor uses the genuine Beckenburg Java 17 editor palette/water controls and the same independent weather module consumed by Malefic Veil. A deterministic offline DEM+shoreline-to-low-poly terrain baker requires independently supplied, appropriately licensed geographic datasets; the Python synthetic-fixture regression passed. A game-private C++17 water/weather data adapter and host regression passed GCC/Clang sanitizer checks. Real Sitka geographic tiles, desktop GUI compile/preview, GLES2 terrain/water rendering, native game registration, APK and S9 headset execution remain **unverified and unimplemented**. Do not equate authored profiles with visual rendering, or expose an inert app icon.
 
 ## Identity
 
@@ -120,4 +124,4 @@ For every ingested source record download source, version/date, attribution/lice
 
 Sitka is an **independent native application/game concept** beside Breakwater Battery, Gumball Armada, Red Ledger, Omega Front and other native modules—not a Breakwater mode, a Classic Game or a ROM. It will be hosted as a ReverieVR Android native module **and** offered as independently packaged native desktop applications on Windows, Linux and macOS; optional PC VR is an additional mode of the Windows/Linux desktop game, not a separate fork. It should ultimately have its own module ID, state, assets, packaging and update manifest as the host's independent native-module delivery is validated. This is a Sitka-specific scope change; it does **not** by itself declare the whole ReverieVR Android shell desktop-compatible. The project name remains **Sitka**.
 
-This document **only indexes and specifies a proposal**. It does not claim a new GitHub repository, authored meshes, installed game, executable module, source integration, published APK or headset validation, and does not authorize starting those tasks without further direction.
+This record specifies the Sitka game and documents its **source-integrated authoring pipeline only**. It does not claim an independent GitHub repository, a surveyed Sitka mesh, a working GLES2 renderer, an executable Sitka module, installed game, published APK or headset validation. Continue implementation only within the user-authorized environment milestone and explicit next work.
