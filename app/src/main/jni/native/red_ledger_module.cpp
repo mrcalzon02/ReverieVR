@@ -47,6 +47,7 @@ namespace products = reverie::redledger::products;
 namespace fbx = reverie::redledger::fbx;
 namespace original_png = reverie::redledger::original_png;
 namespace property = reverie::redledger::property;
+namespace clientele = reverie::redledger::clientele;
 namespace curated = reverie::redledger::beckenburg;
 namespace owned_smoke = reverie::redledger::smoking;
 namespace owned_people = reverie::redledger::owned_patrons;
