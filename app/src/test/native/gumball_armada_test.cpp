@@ -321,7 +321,11 @@ int main(){
         bool sawNib=false,sawMine=false,sawBiff=false,sawBaff=false;
         for(int tick=0;tick<750&&trial.phase()==Phase::Flight;++tick){
             float move=0.f;
-            const bool combat=expected==CastGuest::CrumbclankTwins;
+            // Clear only the initial ordinary ships before Biff/Baff.
+            // Continuing max-level rapid fire into their arrival destroys
+            // the guests before either can create its real bomb hazard.
+            const bool combat=expected==CastGuest::CrumbclankTwins &&
+                trial.spawned()<((6+static_cast<int>(lane.hazard)*2)/2-1);
             if(combat){
                 // Aim at the nearest real enemy rather than idling until
                 // the third escape ends the sortie before the guest wave.
