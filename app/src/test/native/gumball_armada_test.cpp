@@ -311,8 +311,11 @@ int main(){
         progressed.levels[1]=12;progressed.levels[3]=12;
         // Guest tests require a player who fights. An idle ship may fail a
         // Sweep after its third escaped enemy, before twins even spawn.
-        if(expected==CastGuest::CrumbclankTwins)
-            progressed.levels[0]=12; // actual maximum purchased blaster
+        const bool needsMidwaveFoe=expected==CastGuest::CrumbclankTwins
+            ||expected==CastGuest::BlortBlister
+            ||expected==CastGuest::NibNoxious;
+        if(needsMidwaveFoe)
+            progressed.levels[0]=12; // real max-level blaster to keep sortie alive
 
         progressed.checksum=SnapshotChecksum(progressed);
         assert(trial.restore(progressed)&&trial.launch(0));
@@ -321,10 +324,11 @@ int main(){
         bool sawNib=false,sawMine=false,sawBiff=false,sawBaff=false;
         for(int tick=0;tick<750&&trial.phase()==Phase::Flight;++tick){
             float move=0.f;
-            // Clear only the initial ordinary ships before Biff/Baff.
-            // Continuing max-level rapid fire into their arrival destroys
-            // the guests before either can create its real bomb hazard.
-            const bool combat=expected==CastGuest::CrumbclankTwins &&
+            // Clear early regular ships, then let each mid-wave named
+            // encounter (Blort/Nib/Biff/Baff) actually spawn and fire.
+            // Never idle through the third sweep escape before the guest,
+            // and never destroy the named target before its hazard appears.
+            const bool combat=needsMidwaveFoe &&
                 trial.spawned()<((6+static_cast<int>(lane.hazard)*2)/2-1);
             if(combat){
                 // Aim at the nearest real enemy rather than idling until
