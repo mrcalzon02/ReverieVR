@@ -128,6 +128,30 @@ void Chart(Module* m){
                   generals[sector<4u?sector:3u]);
     TextFit(m,text,0,.94f,3.70f,.034f,1.f,.63f,.55f);
 
+    const char* names[]={"SOUR SWEEP","INTERCEPT","RECOVERY"};
+    for(int n=0;n<3;++n){
+        const float x=reverie::gumball::kChartRouteX[n];
+        Frame(m,x,.22f,1.44f,1.09f,m->selected==n);
+        const auto lane=m->sim.lane(static_cast<unsigned>(n));
+        std::snprintf(text,sizeof(text),"LANE %c  %04u",'A'+n,lane.id);
+        TextFit(m,text,x-.17f,.57f,.94f,.034f,1.f,.88f,.95f);
+        Text(m,names[n],x,.35f,.031f,.69f,1.f,.84f);
+        const CastGuest rival=m->sim.route_guest(static_cast<unsigned>(n));
+        TextFit(m,rival==CastGuest::None?"CLEAR OF KNOWN RIVALS":
+            reverie::gumball::CastGuestName(rival),
+            x,.13f,1.31f,.029f,1.f,.70f,.51f);
+        if(lane.fortress)Text(m,"FORTRESS ROUTE",x,-.08f,.027f,1.f,.45f,.47f);
+        else{
+            std::snprintf(text,sizeof(text),"RISK %u   REWARD %uG",
+                          lane.hazard,lane.reward);
+            TextFit(m,text,x,-.08f,1.30f,.027f,.90f,.88f,.72f);
+        }
+        Text(m,m->routeLaunch.armed==n?
+             (m->routeLaunch.ready(n)?"CLICK AGAIN TO FLY":"LOCKING ROUTE"):
+             (m->selected==n?"CLICK TO SELECT":"HOVER TO HIGHLIGHT"),
+             x,-.23f,.025f,.61f,.94f,1.f);
+    }
+
     // Branching strategic MAP: current sector leads into three independent
     // authored lane routes. The chosen path is highlighted by pad/ray focus,
     // while the stronger GOLD route requires a deliberate arm-and-confirm.
@@ -157,29 +181,6 @@ void Chart(Module* m){
             Rect(m,x,-.384f,1.22f*ratio,.028f,-2.919f,
                  ratio>=1.f?.96f:.51f,ratio>=1.f?.91f:.75f,.24f);
         }
-    }
-    const char* names[]={"SOUR SWEEP","INTERCEPT","RECOVERY"};
-    for(int n=0;n<3;++n){
-        const float x=reverie::gumball::kChartRouteX[n];
-        Frame(m,x,.22f,1.44f,1.09f,m->selected==n);
-        const auto lane=m->sim.lane(static_cast<unsigned>(n));
-        std::snprintf(text,sizeof(text),"LANE %c  %04u",'A'+n,lane.id);
-        TextFit(m,text,x-.17f,.57f,.94f,.034f,1.f,.88f,.95f);
-        Text(m,names[n],x,.35f,.031f,.69f,1.f,.84f);
-        const CastGuest rival=m->sim.route_guest(static_cast<unsigned>(n));
-        TextFit(m,rival==CastGuest::None?"CLEAR OF KNOWN RIVALS":
-            reverie::gumball::CastGuestName(rival),
-            x,.13f,1.31f,.029f,1.f,.70f,.51f);
-        if(lane.fortress)Text(m,"FORTRESS ROUTE",x,-.08f,.027f,1.f,.45f,.47f);
-        else{
-            std::snprintf(text,sizeof(text),"RISK %u   REWARD %uG",
-                          lane.hazard,lane.reward);
-            TextFit(m,text,x,-.08f,1.30f,.027f,.90f,.88f,.72f);
-        }
-        Text(m,m->routeLaunch.armed==n?
-             (m->routeLaunch.ready(n)?"CLICK AGAIN TO FLY":"LOCKING ROUTE"):
-             (m->selected==n?"CLICK TO SELECT":"HOVER TO HIGHLIGHT"),
-             x,-.23f,.025f,.61f,.94f,1.f);
     }
 
     const int selection[]={12,10,11};
@@ -1148,7 +1149,9 @@ void Update(void* p,const ReverieNativeInputV1* in){
         }
         if(clickEdge&&mayClick){
             bool good=false;
+            bool handledRoute=false;
             if(m->selected>=0&&m->selected<3){
+                handledRoute=true;
                 switch(m->routeLaunch.press(m->selected)){
                 case reverie::gumball::RoutePress::Armed:
                     // First click only selects the highlighted MAP path.
@@ -1183,8 +1186,12 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 m->inLoadout=true;m->loadoutSelected=0;
                 m->pointerFocus.screenChanged();good=true;
             }
-            ReverieNativeRequestFeedbackV1(m->host,good?
-                REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            // Armed/Waiting already issued their own focus/denied feedback.
+            // Only actual Launch or utility actions emit activation/failure.
+            if(!handledRoute || good)
+                ReverieNativeRequestFeedbackV1(m->host,good?
+                    REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                    REVERIE_NATIVE_FEEDBACK_FAILURE);
             Rebuild(m);
         }
     }else if(pressed&&!m->primary&&m->sim.recover()){
