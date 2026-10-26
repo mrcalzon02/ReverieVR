@@ -41,6 +41,29 @@ permissions:
   contents: read
 
 jobs:
+  verify-gumball-map-input:
+    name: Gumball real chart selection functional gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and verify actual map input, route-lock delay and controller focus
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/gumball_menu_layout_test.cpp \
+              -o "${RUNNER_TEMP}/gumball-map-${compiler}"
+            "${RUNNER_TEMP}/gumball-map-${compiler}"
+            "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/gumball_menu_hit_test.cpp \
+              -o "${RUNNER_TEMP}/gumball-hit-${compiler}"
+            "${RUNNER_TEMP}/gumball-hit-${compiler}"
+          done
+
   verify-gumball-controls:
     name: Gumball Armada real route selection and gameplay regression
     runs-on: ubuntu-latest
