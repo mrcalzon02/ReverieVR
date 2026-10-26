@@ -10,6 +10,7 @@
 #include "red_ledger_trade.h"
 #include "red_ledger_wholesale.h"
 #include "red_ledger_renovations.h"
+#include "red_ledger_clientele.h"
 #include "red_ledger_stock_layout.h"
 #include "red_ledger_original_png.h"
 #include "red_ledger_original_fbx.h"
@@ -162,6 +163,7 @@ struct ModuleState {
     Simulation simulation;
     trade::Trade market;
     property::Renovations renovations;
+    clientele::State clientele;
     int hovered_offer = -1;
     bool ledger_visible = false;
 
@@ -535,14 +537,19 @@ bool SaveState(ModuleState *state) {
     if (state==nullptr || !ReverieNativeHostSupportsSaveV1(state->host))
         return false;
     uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize+
-                  property::Renovations::kSerializedSize]={};
+                  property::Renovations::kSerializedSize+
+                  clientele::State::kSerializedSize]={};
     size_t first=0u;
     if (!state->simulation.Serialize(bytes,Simulation::kSerializedSize,&first)
         || first!=Simulation::kSerializedSize
         || !state->market.Serialize(bytes+first,trade::Trade::kSerializedSize)
         || !state->renovations.serialize(
             bytes+first+trade::Trade::kSerializedSize,
-            property::Renovations::kSerializedSize)) {
+            property::Renovations::kSerializedSize)
+        || !state->clientele.serialize(
+            bytes+first+trade::Trade::kSerializedSize+
+            property::Renovations::kSerializedSize,
+            clientele::State::kSerializedSize)) {
         Log(state,REVERIE_NATIVE_LOG_ERROR,"Red Ledger composite save encoding failed.");
         return false;
     }
@@ -559,13 +566,17 @@ void LoadState(ModuleState *state) {
     if (state==nullptr || !ReverieNativeHostSupportsSaveV1(state->host))
         return;
     uint8_t bytes[Simulation::kSerializedSize+trade::Trade::kSerializedSize+
-                  property::Renovations::kSerializedSize]={};
+                  property::Renovations::kSerializedSize+
+                  clientele::State::kSerializedSize]={};
     uint32_t size=0u;
     const int32_t result=state->host->read_save(
         kSaveSlot,bytes,static_cast<uint32_t>(sizeof(bytes)),&size);
     if (result==REVERIE_NATIVE_SAVE_NOT_FOUND) return;
-    if (result!=REVERIE_NATIVE_SAVE_OK || size!=sizeof(bytes)) {
-        Log(state,REVERIE_NATIVE_LOG_WARN,"Red Ledger pre-1.0 save rejected (v4 required).");
+    constexpr size_t kLegacySize=Simulation::kSerializedSize+
+        trade::Trade::kSerializedSize+property::Renovations::kSerializedSize;
+    if (result!=REVERIE_NATIVE_SAVE_OK ||
+        (size!=kLegacySize && size!=sizeof(bytes))) {
+        Log(state,REVERIE_NATIVE_LOG_WARN,"Red Ledger incompatible save size.");
         return;
     }
     // Keep active state atomic: corrupted or incompatible development saves
@@ -573,12 +584,15 @@ void LoadState(ModuleState *state) {
     Simulation base=state->simulation;
     trade::Trade market=state->market;
     property::Renovations renovations=state->renovations;
+    clientele::State clienteleState;
     if (!base.Deserialize(bytes,Simulation::kSerializedSize,true)
         || !market.Deserialize(bytes+Simulation::kSerializedSize,
             trade::Trade::kSerializedSize)
         || !renovations.deserialize(
             bytes+Simulation::kSerializedSize+trade::Trade::kSerializedSize,
-            property::Renovations::kSerializedSize)) {
+            property::Renovations::kSerializedSize)
+        || (size==sizeof(bytes) && !clienteleState.deserialize(
+            bytes+kLegacySize,clientele::State::kSerializedSize))) {
         Log(state,REVERIE_NATIVE_LOG_WARN,
             "Red Ledger rejected corrupt v4 game state; fresh state preserved.");
         return;
@@ -586,8 +600,10 @@ void LoadState(ModuleState *state) {
     state->simulation=base;
     state->market=market;
     state->renovations=renovations;
+    state->clientele=clienteleState;
     Log(state,REVERIE_NATIVE_LOG_INFO,
-        "Red Ledger six-supplier stock and eight renovations restored.");
+        size==kLegacySize?"Red Ledger v4 save migrated to clientele baseline.":
+        "Red Ledger clientele condition, stock and renovations restored.");
 }
 
 bool ActivateWorkTarget(
@@ -631,8 +647,10 @@ bool ActivateWorkTarget(
         case WorkTarget::Patron: {
             const auto *patron=simulation.current_patron();
             if (patron && state->market.SnackAvailable()) {
-                const auto bonus=trade::RateService(patron->kind,
-                    state->market.drink(),state->market.snack());
+                const int servedDrink=state->market.drink();
+                const int servedSnack=state->market.snack();
+                const auto bonus=trade::RateService(
+                    patron->kind,servedDrink,servedSnack);
                 // Stage both service and premium calculations before touching
                 // live state; never collect a snack on a failed sale.
                 Simulation staged=simulation;
@@ -640,12 +658,17 @@ bool ActivateWorkTarget(
                     staged.ApplyServicePremium(
                         bonus.cents+state->renovations.service_premium(
                             state->market.drink(),state->market.snack()),
-                        std::min(4,bonus.reputation+
+                        std::min(4,state->clientele.reputation_premium(
+                            patron->kind,bonus.reputation)+
                             state->renovations.reputation_bonus()));
                 if (changed) {
                     simulation=staged;
                     state->market.ConsumeSnack();
                     state->market.RecordService(patron->kind);
+                    state->clientele.served(patron->kind,
+                        servedDrink,servedSnack,
+                        state->renovations.tier(property::Floor)+
+                        state->renovations.tier(property::Seating));
                 }
             }
             break;
@@ -677,7 +700,14 @@ bool ActivateWorkTarget(
             const int32_t today=simulation.day();
             simulation.CloseDay();
             changed=simulation.day()!=today;
-            if (changed) state->ledger_visible=true;
+            if (changed) {
+                state->ledger_visible=true;
+                state->clientele.next_day(
+                    state->renovations.tier(property::Walls)+
+                    state->renovations.tier(property::Floor)+
+                    state->renovations.tier(property::Ceiling)+
+                    state->renovations.tier(property::Seating));
+            }
             break;
         }
         case WorkTarget::DoorStock:
@@ -1697,8 +1727,10 @@ void RefreshStatusBoard(ModuleState *state) {
             trade::kDrinkCatalog[market.drink()].name);
         std::snprintf(rows[4],sizeof(rows[4]),"WITH: %s",
             market.snack()<0?"NONE":trade::kSnackCatalog[market.snack()].name);
-        std::snprintf(rows[5],sizeof(rows[5]),"CASH: %d  BEER: %d  CUPS: %d",
-            sim.cash_cents(),sim.beer_units(),sim.clean_cups());
+        std::snprintf(rows[5],sizeof(rows[5]),
+            "CASH:%d BEER:%d CUPS:%d BAR:%d/100",
+            sim.cash_cents(),sim.beer_units(),sim.clean_cups(),
+            state->clientele.cleanliness());
     } else if(room==trade::Room::Stockroom) {
         const int sku=market.offer();
         const int stock=sku<trade::kDrinks?
