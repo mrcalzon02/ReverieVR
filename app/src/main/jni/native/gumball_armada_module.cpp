@@ -131,25 +131,27 @@ void Chart(Module* m){
     const char* names[]={"SOUR SWEEP","INTERCEPT","RECOVERY"};
     for(int n=0;n<3;++n){
         const float x=reverie::gumball::kChartRouteX[n];
-        Frame(m,x,.22f,1.44f,1.09f,m->selected==n);
+        Frame(m,x,reverie::gumball::kChartRouteCardY,1.44f,
+              reverie::gumball::kChartRouteCardHeight,m->selected==n);
         const auto lane=m->sim.lane(static_cast<unsigned>(n));
         std::snprintf(text,sizeof(text),"LANE %c  %04u",'A'+n,lane.id);
-        TextFit(m,text,x-.17f,.57f,.94f,.034f,1.f,.88f,.95f);
-        Text(m,names[n],x,.35f,.031f,.69f,1.f,.84f);
+        TextFit(m,text,x,.035f,1.32f,.030f,1.f,.88f,.95f);
+        TextFit(m,names[n],x,-.115f,1.32f,.034f,.69f,1.f,.84f);
         const CastGuest rival=m->sim.route_guest(static_cast<unsigned>(n));
         TextFit(m,rival==CastGuest::None?"CLEAR OF KNOWN RIVALS":
             reverie::gumball::CastGuestName(rival),
-            x,.13f,1.31f,.029f,1.f,.70f,.51f);
-        if(lane.fortress)Text(m,"FORTRESS ROUTE",x,-.08f,.027f,1.f,.45f,.47f);
+            x,-.265f,1.31f,.026f,1.f,.70f,.51f);
+        if(lane.fortress)TextFit(m,"FORTRESS ROUTE",x,-.410f,1.32f,
+                                .025f,1.f,.45f,.47f);
         else{
             std::snprintf(text,sizeof(text),"RISK %u   REWARD %uG",
                           lane.hazard,lane.reward);
-            TextFit(m,text,x,-.08f,1.30f,.027f,.90f,.88f,.72f);
+            TextFit(m,text,x,-.410f,1.30f,.025f,.90f,.88f,.72f);
         }
-        Text(m,m->routeLaunch.armed==n?
+        TextFit(m,m->routeLaunch.armed==n?
              (m->routeLaunch.ready(n)?"CLICK AGAIN TO FLY":"LOCKING ROUTE"):
              (m->selected==n?"CLICK TO SELECT":"HOVER TO HIGHLIGHT"),
-             x,-.23f,.025f,.61f,.94f,1.f);
+             x,-.553f,1.30f,.023f,.61f,.94f,1.f);
     }
 
     // Branching strategic MAP: current sector leads into three independent
@@ -157,7 +159,8 @@ void Chart(Module* m){
     // while the stronger GOLD route requires a deliberate arm-and-confirm.
     // These real route links are GPU geometry, NOT symbolic glyph lettering.
     const int chosen=m->selected>=0&&m->selected<3?m->selected:-1;
-    Disc(m,0.f,.815f,.075f,-2.925f,.78f,.92f,.98f);
+    Disc(m,0.f,reverie::gumball::kChartMapOriginY,.10f,
+         -2.925f,.78f,.92f,.98f);
     for(int lane=0;lane<3;++lane){
         const float x=reverie::gumball::kChartRouteX[lane];
         const bool highlighted=chosen==lane;
@@ -167,18 +170,20 @@ void Chart(Module* m){
         const float b=armed?.24f:highlighted?.42f:.58f;
         const float width=armed?.039f:highlighted?.028f:.012f;
         const float z=-2.925f;
-        reverie::flatmesh::Segment(m->mesh,0.f,.785f,
-            x*.53f,.727f,width,z,r,g,b);
-        reverie::flatmesh::Segment(m->mesh,x*.53f,.727f,
-            x,.684f,width,z,r,g,b);
-        Disc(m,x,.682f,armed?.084f:highlighted?.061f:.045f,
+        const float origin=reverie::gumball::kChartMapOriginY;
+        const float endpoint=reverie::gumball::kChartRouteNodeY;
+        reverie::flatmesh::Segment(m->mesh,0.f,origin-.025f,
+            x*.48f,.545f,width,z,r,g,b);
+        reverie::flatmesh::Segment(m->mesh,x*.48f,.545f,
+            x,endpoint,width,z,r,g,b);
+        Disc(m,x,endpoint,armed?.102f:highlighted?.086f:.061f,
              -2.922f,r,g,b);
         if(armed){
             // Delay gauge fills only when elapsed, but never auto-launches.
             const float ratio=std::min(1.f,
                 m->routeLaunch.elapsed/
                 reverie::gumball::RouteLaunchGate::kLockSeconds);
-            Rect(m,x,-.384f,1.22f*ratio,.028f,-2.919f,
+            Rect(m,x,-.616f,1.22f*ratio,.028f,-2.919f,
                  ratio>=1.f?.96f:.51f,ratio>=1.f?.91f:.75f,.24f);
         }
     }
@@ -198,15 +203,15 @@ void Chart(Module* m){
                     +((m->sim.bosses()>>3u)&1u)));
     TextFit(m,text,0,-1.39f,4.2f,.034f,1.f,.88f,.64f);
     if(m->routeLaunch.armed>=0)
-        Text(m,m->routeLaunch.ready(m->routeLaunch.armed)?
+        TextFit(m,m->routeLaunch.ready(m->routeLaunch.armed)?
              "PATH LOCKED - CLICK SAME LANE TO LAUNCH":
              "PATH SELECTED - ROUTE LOCKING...",
-             0,-1.64f,.026f,.98f,.84f,.46f);
+             0,-1.64f,4.50f,.026f,.98f,.84f,.46f);
     else
-        Text(m,m->ship.ready()?
+        TextFit(m,m->ship.ready()?
              "CHOOSE PATH - CLICK TO ARM / CLICK AGAIN TO FLY":
              "SHIP NOT READY / OPEN SHIPYARD",
-             0,-1.64f,.025f,m->ship.ready()?.73f:1.f,
+             0,-1.64f,4.50f,.025f,m->ship.ready()?.73f:1.f,
              m->ship.ready()?.86f:.43f,.89f);
 }
 void LoadoutView(Module* m){
