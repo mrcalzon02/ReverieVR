@@ -61,6 +61,13 @@ adb exec-out run-as "$PKG" cat files/omega-front-ci-tactical.png > "$OUT/native-
 # including the built-in classic chess/go/checkers/arcade games. This is NOT
 # a substitute for separately booting the DOS runtime's shareware archives.
 run_test "$PKG.DownloadedNativeGameAssetsInstrumentedTest" captureAllNativeMainMenus native-menu-capture
+# Controller-ray focus, explicit route arming, time-gated commit and actual
+# launch of one native Gumball campaign lane, all inside installed Android GL.
+run_test "$PKG.DownloadedNativeGameAssetsInstrumentedTest" gumballRouteMapFocusArmLockThenFlyInGles gumball-route-map
+for STATE in focused armed locked flight; do
+  adb exec-out run-as "$PKG" cat "files/gumball-route-$STATE.png" > "$OUT/gumball-route-$STATE.png"
+  test -s "$OUT/gumball-route-$STATE.png"
+done
 adb exec-out run-as "$PKG" cat files/native-menu-capture.csv > "$OUT/native-menu-capture.csv"
 python3 - "$OUT/native-menu-capture.csv" <<'PY'
 import csv,sys
@@ -84,7 +91,9 @@ python3 - "$OUT" <<'PY'
 import hashlib,json,sys
 from pathlib import Path
 p=Path(sys.argv[1])
-images=['before-upgrade-screen.png','after-upgrade-screen.png','native-omega-tactical.png']
+images=['before-upgrade-screen.png','after-upgrade-screen.png','native-omega-tactical.png',
+        'gumball-route-focused.png','gumball-route-armed.png',
+        'gumball-route-locked.png','gumball-route-flight.png']
 for name in images:
     b=(p/name).read_bytes()
     assert len(b)>300 and b.startswith(bytes((137,80,78,71,13,10,26,10))),f"Missing actual PNG: {name}"
@@ -118,6 +127,7 @@ result={'lab':'ReverieVR Android Recovery Simulation',
         'production_phone_test_signer':'not exercised (debug signer only)',
         's9_headset_acceptance':'not tested',
         'native_game_first_menu_gles2':native_captures,
+        'gumball_delayed_route_map':'actual JNI/GLES2 hover, first-click arm, 350ms lock, second-click flight + campaign save',
         'dos_archived_game_interfaces':'NOT captured; requires real DOS runtime launch and framebuffer',
         'captures':{name:{'size_bytes':(p/name).stat().st_size,
             'sha256':hashlib.sha256((p/name).read_bytes()).hexdigest()} for name in images}}
