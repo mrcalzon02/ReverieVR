@@ -343,7 +343,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         assertTrue("Could not allocate isolated native game saves",home.mkdirs());
         java.util.List<NativeModuleRuntime.Descriptor> built=
             NativeModuleRuntime.listBuiltIns(true);
-        StringBuilder rows=new StringBuilder("module_id,status,eye_frame_crc32,png_bytes\\n");
+        StringBuilder rows=new StringBuilder("module_id,status,eye_frame_crc32,png_bytes\n");
         StringBuilder failures=new StringBuilder();
         int saved=0;
         try(Pbuffer egl=new Pbuffer()){
@@ -352,7 +352,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 for(NativeModuleRuntime.Descriptor item:built)
                     if(game.id.equals(item.id))present=true;
                 if(!present){
-                    rows.append(game.id).append(",NOT_REGISTERED,0,0\\n");
+                    rows.append(game.id).append(",NOT_REGISTERED,0,0\n");
                     failures.append(game.id).append(": missing native library entry; ");
                     continue;
                 }
@@ -373,7 +373,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                             evidence.isFile() && evidence.length()>300L);
                         rows.append(game.id).append(",CAPTURED,")
                             .append(crc).append(",").append(evidence.length())
-                            .append("\\n");
+                            .append("\n");
                         saved++;
                         Log.i(TAG,"PASS REAL native menu capture id="+game.id+
                             " crc32="+crc+" bytes="+evidence.length());
@@ -382,7 +382,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                         runtime.stop();
                     }
                 }catch(Exception | AssertionError failure){
-                    rows.append(game.id).append(",FAILED,0,0\\n");
+                    rows.append(game.id).append(",FAILED,0,0\n");
                     failures.append(game.id).append(": ")
                         .append(failure.toString().replace(',', ' '))
                         .append("; ");
