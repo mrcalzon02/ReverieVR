@@ -1172,6 +1172,8 @@ void Update(void* p,const ReverieNativeInputV1* in){
                 case reverie::gumball::RoutePress::Launch:
                     good=m->sim.launch(static_cast<unsigned>(m->selected));
                     if(good)Save(m); // consume pending escort exactly once
+                    else ReverieNativeRequestFeedbackV1(
+                        m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
                     break;
                 case reverie::gumball::RoutePress::Ignored: break;
                 }
