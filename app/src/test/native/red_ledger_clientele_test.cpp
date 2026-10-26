@@ -45,9 +45,10 @@ int main(){
     for(PatronKind kind:kinds){
         const int faction=trade::FactionFor(kind);
         assert(faction>=0&&faction<trade::kFactions);
+        const int before=upgraded.affinity(faction);
         upgraded.served(kind,trade::FavoriteDrink(kind),
                         trade::FavoriteSnack(kind),5);
-        assert(upgraded.affinity(faction)==2);
+        assert(upgraded.affinity(faction)==before+2);
     }
     std::array<uint8_t,State::kSerializedSize> bytes{};
     assert(!upgraded.serialize(nullptr,bytes.size()));
