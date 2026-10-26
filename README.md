@@ -4,9 +4,18 @@
 
 # ReverieVR
 
-ReverieVR is an independent, offline-first Android VR platform intended to restore useful life to Google Daydream-era phone/headset hardware without depending on Google's discontinued Daydream services.
+ReverieVR is an independent, offline-first **cross-platform VR and desktop environment**. The existing Android Daydream APK restores useful life to Daydream-era hardware without discontinued Google services; the expanded product target is a **complete native desktop ReverieVR hub** for Windows, Linux and macOS, with optional OpenXR/SteamVR operation on supported Windows/Linux headsets.
 
-The initial reference target is a Samsung Galaxy S9 used with a Daydream View headset and controller. The architecture should remain portable enough to support other compatible Android phones and simple 3DoF viewers where practical.
+**Current implementation status:** the repository is Android-first; the native desktop applications and OpenXR/SteamVR desktop mode are **planned, not shipped or hardware-validated**. The Samsung Galaxy S9 with Daydream View/controller remains the original and protected reference configuration.
+
+| Target | Intended delivery | Required functionality |
+| --- | --- | --- |
+| Android | Existing full ReverieVR APK | Standalone Daydream VR, all Android-native shell services |
+| Windows | Native desktop installer/executable | Entire ReverieVR Home, apps/games/media, keyboard/mouse/gamepad, optional PC OpenXR |
+| Linux | Native desktop package/executable | Entire hub and library, keyboard/mouse/gamepad, optional supported OpenXR |
+| macOS | Native desktop .app | Entire hub and library in non-VR desktop mode; SteamVR is not a requirement |
+
+The desktop hub must operate **without** an Android phone, headset, emulator, Steam installation, or always-on network connection. It is not just a port of one game, an APK wrapper, or the Laptop Link utility. See the [full project-wide expansion specification](docs/project/DESKTOP_PLATFORM_EXPANSION.md) for scope, subsystem parity, platform adapter architecture and acceptance gates.
 
 ## Public source and third-party licensing
 
@@ -55,7 +64,7 @@ this forward change.
 
 ## VR Home atmospheric environments\n\nThe default offline APK source includes three low-poly environments: a Birch Living Room with recessed, mesh-cut outdoor window views and passing birds; a forest with layered panoramic sky, hills, rabbits/deer and flying birds; and a beach with coastal sky, headland, crabs and gull silhouettes. Home uses original procedurally synthesized environment-specific PCM ambience through the existing Android audio lifecycle, without downloading any sounds on the phone. See [atmosphere integration, CC0 recording candidates and acceptance requirements](docs/project/HOME_ENVIRONMENT_ATMOSPHERE.md). The five linked external CC0 recordings are **not bundled**; Android APK/device validation of the new implementation remains pending.\n\n## Status
 
-**Pre-alpha / foundation bootstrap.**
+**Android implementation: pre-alpha / foundation bootstrap. Desktop (Windows/Linux/macOS): accepted product direction, not implemented or released. PC OpenXR/SteamVR: provisional target, not implemented or validated.**
 
 The first product path is:
 
@@ -73,6 +82,7 @@ The VR home is the shell-owned control plane for settings, recovery, media, and 
 Development is governed by:
 
 - [Project Instructions](docs/project/INSTRUCTIONS.md)
+- [Complete desktop platform expansion and PC OpenXR plan](docs/project/DESKTOP_PLATFORM_EXPANSION.md)
 - [Controller Layouts and Unified Rebinding Contract](docs/project/CONTROLLER_LAYOUTS_AND_BINDINGS.md)
 - [XR Accessibility and Comfort Acceptance Standard](docs/project/ACCESSIBILITY_AND_COMFORT.md)
 - [Repository Execution Contract](docs/project/EXECUTION_CONTRACT.md)
