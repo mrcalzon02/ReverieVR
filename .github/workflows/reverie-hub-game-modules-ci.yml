@@ -161,9 +161,9 @@ jobs:
             grep -F 'Tactical PNG textures loaded:' validation/hub/logcat.txt
             grep -F 'Tactical PNG textures loaded: 108/108' validation/hub/logcat.txt
             grep -F 'Authentic BWM1 models loaded 5/5' validation/hub/logcat.txt
-            for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1 owner_boat_rowboat owner_apc_armor; do
-              grep -F "Breakwater verified-pack asset native/breakwater/beckenburg/${MODEL}.bwm" validation/hub/logcat.txt
-            done
+            # Emulator action executes each script line as its own sh -c call.
+            # Keep the five independent verified-pack assertions on ONE line.
+            for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1 owner_boat_rowboat owner_apc_armor; do grep -F "Breakwater verified-pack asset native/breakwater/beckenburg/${MODEL}.bwm" validation/hub/logcat.txt; done
             adb exec-out screencap -p > validation/hub/hub-screen.png
       - name: Keep APKs and actual acquisition/update test evidence
         if: always()
