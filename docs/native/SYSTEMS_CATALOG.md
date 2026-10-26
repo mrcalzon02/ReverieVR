@@ -231,3 +231,7 @@ When an implementation is removed, renamed, promoted, or downgraded, update its 
 - `docs/native/CONTRACT_INDEX.md`;
 - this catalog;
 - the machine drift guard where the fact can be checked.
+
+## Native font standardization — 2026-10-26
+
+`app/src/main/jni/native/reverie_native_lato_text.h` is the **implemented provisional shared GLES2 UI glyph layer** using the same licensed Lato Semibold atlas already proven in Breakwater and Classic Chess. Ministry: Lantern Desk and Iron Sight: Forward Detachment source now consume its alpha-glyph batches; Android emulator and S9 acceptance remain distinct. The legacy `reverie_native_vector_text.h` remains as a separately classified geometry-stroke legacy method, **not genuine font rasterization**. Normative behavior and per-screen scope: [NATIVE_VECTOR_TEXT_STANDARD.md](NATIVE_VECTOR_TEXT_STANDARD.md). 
