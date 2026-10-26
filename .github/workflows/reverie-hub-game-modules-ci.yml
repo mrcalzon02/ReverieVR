@@ -10,6 +10,8 @@ on:
       - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/DownloadedNativeGameAssetsInstrumentedTest.java'
       - 'app/src/main/jni/native/omega_front_*.h'
       - 'app/src/main/jni/native/omega_front_module.cpp'
+      - 'app/src/main/jni/native/omega_front_png.h'
+      - 'app/src/test/native/omega_front_png_test.cpp'
       - 'app/src/main/assets/native/omega-front/rpg_cc0/**'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java'
       - 'modules/game-identity-matrix.json'
@@ -79,6 +81,11 @@ jobs:
             -o "${RUNNER_TEMP}/reverie-native-asset-scope-test"
           "${RUNNER_TEMP}/reverie-native-asset-scope-test"
           python3 scripts/modules/verify-omega-front-cc0.py
+          c++ -std=c++17 -Wall -Wextra -Werror \
+            app/src/test/native/omega_front_png_test.cpp -lz \
+            -o "${RUNNER_TEMP}/reverie-omega-front-png-test"
+          "${RUNNER_TEMP}/reverie-omega-front-png-test" \
+            app/src/main/assets/native/omega-front/rpg_cc0/*.png
           ./gradlew --no-daemon --stacktrace -PcompanionEmulatorAbi=true \
             :app:assembleDebug :app:assembleDebugAndroidTest \
             :companion-test-chamber:assembleDebug \
