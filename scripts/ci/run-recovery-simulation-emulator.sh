@@ -57,6 +57,25 @@ cmp "$OUT/private-data-before.txt" "$OUT/private-data-after.txt"
 run_test "$PKG.HubGameModulesInstrumentedTest" allRegisteredGamesAcceptIsolatedAcquisitionUpdateRollback module-update-rollback
 run_test "$PKG.DownloadedNativeGameAssetsInstrumentedTest" omegaFrontReallyTravelsDeploysOrdersAndRestoresInGles native-omega-gles-capture
 adb exec-out run-as "$PKG" cat files/omega-front-ci-tactical.png > "$OUT/native-omega-tactical.png"
+# Capture genuine initial/menu GLES2 frames of ALL registered native games,
+# including the built-in classic chess/go/checkers/arcade games. This is NOT
+# a substitute for separately booting the DOS runtime's shareware archives.
+run_test "$PKG.DownloadedNativeGameAssetsInstrumentedTest" captureAllNativeMainMenus native-menu-capture
+adb exec-out run-as "$PKG" cat files/native-menu-capture.csv > "$OUT/native-menu-capture.csv"
+python3 - "$OUT/native-menu-capture.csv" <<'PY'
+import csv,sys
+from pathlib import Path
+rows=list(csv.DictReader(Path(sys.argv[1]).open()))
+assert len(rows)==15, f"Expected 15 packaged native menu captures, found {len(rows)}"
+assert all(r['status']=='CAPTURED' and int(r['png_bytes'])>300 for r in rows), "Missing real native GLES2 menu evidence"
+assert len(set(r['module_id'] for r in rows))==len(rows), "Duplicate game capture"
+print("PASS 15 installed native game menu framebuffer captures",flush=True)
+PY
+for ID in $(python3 -c 'import csv; from pathlib import Path; print(" ".join(x["module_id"] for x in csv.DictReader(Path("validation/recovery-simulation/native-menu-capture.csv").open())))'); do
+  [[ "$ID" =~ ^[a-z0-9-]+$ ]] || { echo "Unsafe native menu game id: $ID" >&2; exit 1; }
+  adb exec-out run-as "$PKG" cat "files/native-menu-$ID.png" > "$OUT/native-menu-$ID.png"
+  test -s "$OUT/native-menu-$ID.png"
+done
 capture after-upgrade
 grep -Eq 'versionCode=182163800([^0-9]|$)' "$OUT/after-upgrade-package.txt"
 adb logcat -d -v time > "$OUT/android-logcat.txt"
@@ -74,6 +93,19 @@ assert trace.count('TRACE ') == 0
 assert 'jitter_5000_frames_stale_count,' in trace
 assert trace.count('\n')>=15
 assert (p/'private-data-before.txt').read_bytes()==(p/'private-data-after.txt').read_bytes()
+import csv,re
+menus=list(csv.DictReader((p/'native-menu-capture.csv').open()))
+assert len(menus)==15
+native_captures={}
+for row in menus:
+    name=row['module_id']
+    assert re.fullmatch(r'[a-z0-9-]+',name)
+    assert row['status']=='CAPTURED' and int(row['png_bytes'])>300
+    path=p/('native-menu-'+name+'.png')
+    blob=path.read_bytes()
+    assert len(blob)==int(row['png_bytes']) and blob.startswith(bytes((137,80,78,71,13,10,26,10))),name
+    native_captures[name]={'crc32':row['eye_frame_crc32'],
+        'sha256':hashlib.sha256(blob).hexdigest(),'size_bytes':len(blob)}
 assert 'PASS controller gaze trace' in (p/'android-logcat.txt').read_text()
 result={'lab':'ReverieVR Android Recovery Simulation',
         'android_api':29,'emulator_arch':'x86_64',
@@ -85,9 +117,11 @@ result={'lab':'ReverieVR Android Recovery Simulation',
         'visual_capture':'actual emulator Stage-A screenshots and GLES2 offscreen render',
         'production_phone_test_signer':'not exercised (debug signer only)',
         's9_headset_acceptance':'not tested',
+        'native_game_first_menu_gles2':native_captures,
+        'dos_archived_game_interfaces':'NOT captured; requires real DOS runtime launch and framebuffer',
         'captures':{name:{'size_bytes':(p/name).stat().st_size,
             'sha256':hashlib.sha256((p/name).read_bytes()).hexdigest()} for name in images}}
 (p/'capture-manifest.json').write_text(json.dumps(result,indent=2)+'\n')
-print('PASS: Android emulator upgrade, retained private state, 5,000-frame gaze simulation, real module rollback and GLES2 capture')
+print('PASS: Android emulator upgrade, saved state, 5000-frame gaze simulation, 15 real native menus, module rollback and GLES2 capture')
 PY
 sha256sum "$OUT"/*.png "$OUT"/*.apk > "$OUT/SHA256SUMS.txt"
