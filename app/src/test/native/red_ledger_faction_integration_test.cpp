@@ -115,13 +115,13 @@ int main() {
     assert(visitor.TakeCleanCup()&&visitor.FillSpecialDrink());
     const auto *buyer=visitor.current_patron();
     assert(buyer!=nullptr);
-    const auto quote=trade::RateService(buyer->kind,7,2);
+    const auto renovationQuote=trade::RateService(buyer->kind,7,2);
     assert(visitor.ServeHeldCup());
-    const int expected=buyer->drink_price_cents+quote.cents+
+    const int expected=buyer->drink_price_cents+renovationQuote.cents+
                        upgrades.service_premium(7,2);
     assert(visitor.ApplyServicePremium(
-        quote.cents+upgrades.service_premium(7,2),
-        std::min(4,quote.reputation+upgrades.reputation_bonus())));
+        renovationQuote.cents+upgrades.service_premium(7,2),
+        std::min(4,renovationQuote.reputation+upgrades.reputation_bonus())));
     assert(visitor.pending_payment_cents()==expected);
     assert(visitor.CollectPayment());
     assert(visitor.cash_cents()==2200+expected);
