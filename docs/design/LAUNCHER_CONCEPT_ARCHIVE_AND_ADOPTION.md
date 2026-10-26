@@ -40,3 +40,19 @@ The real in-headset UI is `VrShellRenderer`, using world-space Canvas/menu geome
 - A curated retro FPS hallway/maze interface template useful for DOOM/Ken integration without suggesting replacement of their authentic engines/screens.
 
 **Do not automatically implement any idea** merely because image generation illustrated it. Treat this page as design backlog, not an asset staging manifest or permission to redistribute third-party IP.
+
+## Real in-application capture baseline (verified 2026-10-25)
+
+**Actual installed Android 10 CI run [40286810374](https://github.com/mrcalzon02/ReverieVR/actions/runs/40286810374): SUCCESS.** The production Java/JNI/GLES2 module runtime instantiated and rendered all 15 game IDs declared by `modules/game-identity-matrix.json` inside a 512×512 EGL offscreen target. The installed test logged `OK (1 test)` for the strict capture gate. An independent unzip/PNG decode pass verified **15/15 actual PNG files**, their 512×512 dimensions and their distinct per-frame pixel content. All 15 IDs have `CAPTURED` rows with nonempty byte counts and CRC32 in `native-menu-capture.csv` and individual SHA256 in `capture-manifest.json`.
+
+The exact package is preserved outside transient Actions retention in the owner's existing ReverieVR Drive collection:
+
+- [**Real Android Emulator Captures — owner folder**](https://drive.google.com/drive/folders/1F349hjDiyR-QoNYbJkffsnCHK96dbnTs)
+- [Complete run #40286810374 original capture ZIP](https://drive.google.com/file/d/1fwauYd8EtmHcGPAp7Jn3QV7rsssqDfYa/view) (original 15 unmodified PNGs, manifest, package/install/signing data, update-data checks, logcat and controller policy trace)
+- [Fifteen-game overview image](https://drive.google.com/file/d/11QpNGV8lcK45ek3eEn8skgPER31YmPy4/view) (visually labeled and downscaled for review; **not** a shipping asset)
+
+**Actual images versus concept:** The genuine Breakwater first frame is a 3-slot coastal-defense save selector, NOT an idyllic fishing game; Gumball has a dark native Chart/Loadout/Shipyard/Allies menu, not the mockup's 2D download cards; Omega Front has a tactical/strategic screen; several classic native modules show floating labels/board geometry that appear clipped or crowded in this *identity-view, square FOV=80°* emulator screenshot. These captures alone do **not** establish an app layout defect on the curved/stereo S9 shell, because the test camera pose and projection differ. Capture proper per-eye headset projections, compare text bounds/focus and test high-contrast readability before targeted renderer fixes. Procedural Test Chamber first frame is 3D test geometry, not a proven menu; don't re-label it as an installed functional menu screenshot.
+
+**Not yet captured:** Actual DOS executable interfaces (DOOM Shareware, Ken's Labyrinth, Jetpack) must boot through their genuine DOSBox runtime and render their native display. AI mockup versions are irrelevant to this gate. The first phase is a reproducible, real Android capture baseline; no migration of live launcher UI was claimed here.
+
+**Adoption order:** (1) projection-accurate actual in-headset UI screenshots and real DOS screens, (2) unify all actual native games under a truthful native-game shelf without hiding legitimate utilities, (3) replace native three-item page stepping with a compact continuous scroll list using proven DOS list navigation/hitboxes, (4) add title-specific selected-detail panel only from trusted game metadata, (5) validate real physical Daydream input and Galaxy S9 binocular legibility. Keep the five AI concepts separate from all runtime tests.
