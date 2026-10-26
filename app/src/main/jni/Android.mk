@@ -63,7 +63,7 @@ LOCAL_SRC_FILES := native/recon_projects_module.cpp native/lantern_desk_simulati
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DRECON_PROJECT_KIND=0
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 LOCAL_PATH := $(REVERIE_JNI_PATH)
@@ -73,7 +73,7 @@ LOCAL_SRC_FILES := native/recon_projects_module.cpp native/forward_detachment_si
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DRECON_PROJECT_KIND=1
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 # Development-only seated-defense native module
