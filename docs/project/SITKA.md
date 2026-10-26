@@ -4,7 +4,7 @@
 **Proposed project ID:** RV-GAME-SITKA; tentative module ID `sitka`.  
 **Category:** ReverieVR > Native Apps / Projects, once functional.  
 **Stage:** Proposal/design only — not implemented or downloadable.  
-**Target:** Samsung Galaxy S9, Daydream View, Daydream controller, 30 FPS sustained.  
+**Platforms:** Android Daydream VR (reference Samsung Galaxy S9, Daydream View/controller, 30 FPS sustained); native Windows, Linux and macOS desktop; provisional PC VR through OpenXR/SteamVR on supported Windows/Linux configurations.  
 **Reference:** Owner-supplied overview image of Sitka Sound, 2026-10-26.
 
 ## Identity
@@ -14,6 +14,37 @@ A gentle, relaxing VR fishing and beachcombing game along the real coast of Sitk
 **Loop:** choose coastal destination on nautical-style chart -> travel by shore or boat -> explore from comfortable stationary/teleport viewpoints -> cast and reel, beachcomb, observe marine wildlife -> document discoveries in a field journal -> return to dock -> upgrade tackle or vessel -> explore farther.
 
 The landscape is geographically grounded but stylized in a beautiful low-polygon PSX-inspired aesthetic using techniques learned from The Beckenburg Project and The Malefic Veil. Those projects' desktop renderers are **not** assumed compatible with ReverieVR GLES2; transfer suitable mesh, occlusion, material, LOD and caching techniques deliberately.
+
+## Cross-platform delivery and play modes
+
+**Product requirement (design target, not an implemented feature):** Sitka is one game with the same coastline, fishing, beachcombing, discoveries, gear progression, boat upgrades and versioned save data across supported platforms. Android Daydream remains the reference/lowest-budget renderer; desktop play is first-class, not a headset simulator or an Android emulator.
+
+| Target | Required experience | XR status |
+| --- | --- | --- |
+| Android APK | Existing seated Daydream 3DoF path hosted by ReverieVR, including shell Quick Menu/recenter/recovery | Reference VR target |
+| Windows x64 | Native windowed/full-screen desktop game, keyboard/mouse and gamepad | Provisional PC VR using OpenXR with SteamVR as a runtime where available |
+| Linux x86_64 | Native windowed/full-screen desktop game, keyboard/mouse and gamepad | Provisional OpenXR PC VR using supported SteamVR or Monado runtimes |
+| macOS (Apple Silicon priority; Intel evaluated separately) | Native windowed/full-screen desktop game, keyboard/mouse and gamepad | No SteamVR requirement; optional future XR only after viable runtime/device validation |
+
+SteamVR ended official macOS support in 2020. Do not advertise SteamVR on macOS, assume an OpenXR runtime exists, or make an XR headset mandatory for a desktop build.
+
+### Engineering boundary
+
+- Keep fishing rules, world streaming/LOD decisions, wildlife, weather/tide simulation, upgrades, journal, progression and serialization in a portable deterministic native game core. Adapt the existing ReverieVR native-game module/ABI as required by an explicit design review; do **not** assume that an Android .so or the Android host application can be copied unchanged to Windows, Linux or macOS.
+- Provide thin platform hosts: Android/ReverieVR Daydream; Windows desktop; Linux desktop; macOS desktop; and an optional PC OpenXR adapter. Isolate OS window creation, graphics context, input transport, audio devices, filesystem, update delivery, headset tracking, frame submission and controller discovery from game rules.
+- Preserve a common asset source and legal/source provenance records, with platform-specific shader compilation, texture formats, meshes/LOD budgets and packaging. Reuse Beckenburg/Malefic Veil's editor, water, terrain and weather *techniques* where compatible; their Java renderer and tools are not assumed to run unmodified inside Android or desktop Sitka.
+- Support flat-screen orbit/look camera, walking and optional comfortable viewpoint teleport; make dock/boat travel, shore interactions, cast/reel/tension, inventory, journal and menus fully operable without head tracking. Desktop UI must use a real readable font, native window resizing, aspect-ratio adaptation, and cursor/gamepad focus handling.
+- Map **actions**, not physical buttons: desktop WASD/arrow movement, mouse-look, primary cast/interact, secondary/cancel, wheel/key/gamepad reel and menu actions; configurable bindings and left-handed/accessibility alternatives. VR uses the host-normalized controller/pointer and supports supported OpenXR controller profiles without assuming a specific 6DoF device.
+- PC VR uses OpenXR (SteamVR is a selectable runtime, not a game-engine dependency). Detect loader/runtime/session/controller availability, avoid phantom VR options, and recover cleanly to a standard desktop window when XR is absent or initialization fails. XR mode must meet headset-native timing and comfort requirements before calling it supported.
+- Store portable, versioned saves in normal platform application-data directories. Share schema/content identity and migration checks, but **do not** promise automatic cloud synchronization or silent cross-device transfer. Separate settings for desktop FOV/graphics, Android stereo/thermal and PC headset/runtime preferences.
+- Deliver independently packaged platform artifacts (Android APK, Windows package, Linux package and macOS app bundle) and identify platform/architecture in the existing independent-module version/update metadata. A Steam store release or Steamworks integration is not authorized or required by provisional SteamVR compatibility.
+
+### Modes and performance
+
+- **Android Daydream:** seated 3DoF, dual-eye rendering, conservative PSX-style shader/terrain budget, stable reference 30 FPS and sustained S9 thermals.
+- **Desktop flat-screen:** one camera, adjustable resolution/quality, windowed/fullscreen, uncapped or configurable frame pacing; initial acceptance target is stable 60 FPS on an explicitly recorded test machine, not a universal hardware guarantee.
+- **PC VR (provisional):** render stereo via OpenXR swapchains, pass headset pose/controller actions from the XR host, update simulation once per frame, and target the active device's refresh rate with bounded motion-to-photon latency. No headset-camera bobbing or forced roll.
+- The lower-spec Android path must not regress because desktop offers better water, weather, viewing distance or geometry. The same authored shoreline and simulation must remain recognizable across quality settings.
 
 ## Coastal-world mapping
 
@@ -75,12 +106,18 @@ For every ingested source record download source, version/date, attribution/lice
 
 **E — Boat and gear:** launch/return, two destinations, an actual upgrade purchase affecting play, persistence/save compatibility.
 
-**F — Integration and acceptance:** module descriptor and versioned asset package, Native Apps / Projects registration **only when functioning**, native C++/NDK/APK checks, S9 physical launch, 30 FPS thermal/frame pacing, audio, shell/exit/reconnect, save/load and update-delivery behavior.
+**F — Integration and acceptance:** Android module descriptor and versioned asset package, Native Apps / Projects registration **only when functioning**, native C++/NDK/APK checks, S9 physical launch, 30 FPS thermal/frame pacing, audio, shell/exit/reconnect, save/load and update-delivery behavior.
 
-**Minimum honest playable acceptance:** launch Sitka from ReverieVR; visit two recognizable Sitka shoreline destinations; cast and land a fish; inspect a crab or rare shell; upgrade tackle; depart and return; save/exit/relaunch to intact progress; hear environmental audio; no loss of shell recovery. If a feature cannot perform, it remains a design entry rather than an inert button.
+**G — Desktop foundation (separately gated):** extract/verify portable simulation and serialization; desktop host window, input/action mapping, graphics/audio/file adapters; source-accurate one-cove scene and fishing loop on Windows, Linux and macOS. Validate native builds and actual interactive launch on each OS, including mouse/keyboard/gamepad and full game-state save/load.
+
+**H — Provisional PC VR (separately gated):** wire OpenXR runtime discovery, optional VR entry/exit and controller actions, stereo submission and runtime-failure fallback for Windows/Linux; measure frame pacing and comfort on actual supported headsets. Do not mark SteamVR compatible merely because an OpenXR library compiles.
+
+**Android minimum honest playable acceptance:** launch Sitka from ReverieVR; visit two recognizable Sitka shoreline destinations; cast and land a fish; inspect a crab or rare shell; upgrade tackle; depart and return; save/exit/relaunch to intact progress; hear environmental audio; no loss of shell recovery. If a feature cannot perform, it remains a design entry rather than an inert button.
+
+**Desktop acceptance additionally requires:** start from the native OS executable with **no** headset or Android host; complete the same fishing/beachcombing/upgrade/save loop with keyboard/mouse or gamepad; verify install/start/exit and restored saves separately on Windows, Linux and macOS. **PC VR acceptance additionally requires** a real supported OpenXR headset/runtime session, stable stereo output, mapped controls and recoverable exit; it is provisional until physically verified.
 
 ## Project separation and scope
 
-Sitka is an **independent native application/game concept** beside Breakwater Battery, Gumball Armada, Red Ledger, Omega Front and other native modules—not a Breakwater mode, a Classic Game, a ROM or a desktop project port. It should ultimately have its own module ID, state, assets, packaging and update manifest as the host's independent native-module delivery is validated. The project name remains **Sitka**.
+Sitka is an **independent native application/game concept** beside Breakwater Battery, Gumball Armada, Red Ledger, Omega Front and other native modules—not a Breakwater mode, a Classic Game or a ROM. It will be hosted as a ReverieVR Android native module **and** offered as independently packaged native desktop applications on Windows, Linux and macOS; optional PC VR is an additional mode of the Windows/Linux desktop game, not a separate fork. It should ultimately have its own module ID, state, assets, packaging and update manifest as the host's independent native-module delivery is validated. This is a Sitka-specific scope change; it does **not** by itself declare the whole ReverieVR Android shell desktop-compatible. The project name remains **Sitka**.
 
 This document **only indexes and specifies a proposal**. It does not claim a new GitHub repository, authored meshes, installed game, executable module, source integration, published APK or headset validation, and does not authorize starting those tasks without further direction.
