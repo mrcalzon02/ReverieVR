@@ -1,3 +1,14 @@
+## Test Chamber reusable wardrobe mesh adoption — 2026-10-26
+
+The original optional `ReverieNativeHostV1.read_avatar` ABI tail is
+unchanged. The Test Chamber now additionally calls the shared
+`ReverieNativeWriteAvatarWardrobeV1` before its GLES2 vertex-buffer
+upload; it uses the returned visibility mask and material tint
+function to render garment/costume parts on the same selected global
+avatar. No new host ABI fields or game save schema are introduced.
+This is source-level adoption pending full JNI/NDK/APK and headset
+acceptance.
+
 ## Shared wardrobe avatar host service and ellipsoid body — 2026-10-24
 
 **Implemented in source; Android/S9 acceptance pending.** The shell now hands

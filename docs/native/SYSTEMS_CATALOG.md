@@ -1,3 +1,20 @@
+## Shared native wardrobe apparel renderer — 2026-10-26
+
+Source-implemented reusable `reverie_native_avatar_wardrobe.h` defines
+profile-driven, low-poly geometry for 24 outfits, 12 hairstyles,
+16 headwear choices, 16 accessories and 4 eye styles. Each optional
+group is represented as two simple stretched spheres with a visibility
+mask; every generated vertex is bounded and deterministic. The
+`procedural-test-chamber` now combines seven body components and
+twelve apparel pieces inside its existing static VBO at GL creation.
+Material groups are drawn per eye from the same VBO, without rebuilding
+any geometry during rendering. Native games can adopt the same helper
+but are **not claimed** to be individually wearing these meshes yet.
+Legacy module games and fixed player collision remain unaffected.
+Test-source checks cover full and empty outfits and finite vertex
+positions. Android NDK, APK, Galaxy S9 stereo/performance validation
+remain outstanding.
+
 ## Shared shell avatar and standardized ellipsoid — 2026-10-24
 
 The global Home avatar is now a read-only native-host capability (not a new

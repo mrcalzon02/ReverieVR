@@ -1,3 +1,21 @@
+## Native wardrobe outfit geometry — 2026-10-26
+
+**Implemented in source; device acceptance pending.** The new
+`reverie_native_avatar_wardrobe.h` adds
+`ReverieNativeWriteAvatarWardrobeV1` and
+`ReverieNativeAvatarWardrobeTintV1`. Modules already receiving the
+read-only global `ReverieNativeAvatarV1` can build a profile-fitted
+low-poly costume once at GL creation (not once per eye). The generator
+emits twelve fixed-mesh slots: main garment, lower garment, two trim
+details, two hair pieces, two hat pieces, two accessory pieces and two
+eyes. A per-slot visibility mask means the None choices never draw
+invisible content. Twenty-four outfit families have eight cut patterns
+and three trim families; hairstyle, hat, accessory, fabric color and eye
+style are independent. This is a deliberately inexpensive **procedural
+placeholder art pipeline**, not imported rigged assets or a full
+weighted clothing solver. The user-owned physic collider is unchanged;
+wardrobe selection only affects appearance.
+
 ## Shared avatar SDK and stretched-sphere reference — 2026-10-24
 
 `ReverieNativeHostSupportsAvatarV1(host)` checks the optional append-only
