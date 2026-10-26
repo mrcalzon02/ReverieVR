@@ -34,11 +34,11 @@ python3 scripts/sitka/build_coast.py \
   --dem /data/approved/elevation.tif \
   --coast /data/approved/land-polygons.geojson \
   --provenance /data/approved/sources.json \
-  --output build/sitka/coast/cove.sitkam \
+  --output build/sitka/coast/cove.json \
   --step 12
 ```
 
-Run `python3 scripts/sitka/build_coast.py --help` for the exact supported CLI. Do not infer this is an executable example until the actual approved source files exist. The exporter validates the inputs, generates fixed triangles in a local metre-based scene and writes a binary `.sitkam` mesh and neighboring JSON description. **No approved Sitka geography was fetched, baked or staged during this milestone.**
+Run `python3 scripts/sitka/build_coast.py --help` for the exact supported CLI. Do not infer this is an executable example until the actual approved source files exist. The exporter validates metadata presence and rejects explicitly Google-labelled sources (it does not independently prove that a declared license is valid), generates fixed triangles in a local metre-based scene and writes a binary `.sitkam` mesh and neighboring JSON description. **No approved Sitka geography was fetched, baked or staged during this milestone.**
 
 Use public-domain USGS Alaska elevation tiles as available, NOAA shoreline/bathymetry where actually suitable, and OSM geographic vectors only with compatible ODbL attribution and derived-database obligations. The owner's Google Earth map screenshot is *conceptual* and must never be pixel-traced or converted to a mesh. Every terrain/geographic input must carry a provider, acquisition URL, retrieval date, coverage, license, CRS, original checksum and transformation metadata. Actual dataset coverage and vertical datum still need local verification. Terrain must eventually be clipped for dry shore, water mask, tidal level, boat route and collision rather than treating an authored water rectangle as navigable ocean.
 
