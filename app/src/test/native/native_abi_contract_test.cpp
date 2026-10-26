@@ -193,12 +193,12 @@ int main() {
         Check(ReverieNativeRequestSoundV1(&host,cue) != 0,
               "valid ordered cue should dispatch");
     }
-    Check(captured_sound_calls==15u &&
-          captured_sound_cue==REVERIE_NATIVE_SOUND_SHORE_COLLISION,
-          "one callback per distinct weapon report");
+    Check(captured_sound_calls==REVERIE_NATIVE_SOUND_MAX_V1 &&
+          captured_sound_cue==REVERIE_NATIVE_SOUND_MAX_V1,
+          "one callback per valid ordered sound cue");
     Check(ReverieNativeRequestSoundV1(&host,0u)==0 &&
           ReverieNativeRequestSoundV1(&host,9999u)==0 &&
-          captured_sound_calls==15u,
+          captured_sound_calls==REVERIE_NATIVE_SOUND_MAX_V1,
           "invalid cue ids rejected without reaching host");
     host.request_sound=nullptr;
     Check(ReverieNativeRequestSoundV1(&host,
