@@ -23,6 +23,49 @@ int main(){
         const int vertical=ChartNavigate(id,0,ChartBottom(id)?-1:1);
         assert(ChartNavigate(vertical,0,ChartBottom(id)?1:-1)==id);
     }
+    // Strategic map: hover/highlight never launches, first click arms only.
+    RouteLaunchGate route;
+    assert(route.armed==-1 && !route.ready(0));
+    assert(route.press(0)==RoutePress::Armed);
+    assert(route.armed==0 && !route.ready(0));
+    assert(route.press(0)==RoutePress::Waiting); // accidental double-click
+    for(int tick=0;tick<6;++tick)route.advance(.05f);
+    assert(!route.ready(0));
+    route.advance(.05f);
+    assert(route.ready(0)); // selection lock ready after 350ms
+    assert(route.armed==0); // no automatic game launch when delay elapses
+    assert(route.press(0)==RoutePress::Launch);
+    assert(route.armed==-1); // must explicitly rearm on return
+    assert(route.press(1)==RoutePress::Armed);
+    route.advance(.05f);
+    route.focus(2); // changing lanes cancels the original confirmation
+    assert(route.armed==-1&&!route.ready(1));
+    assert(route.press(2)==RoutePress::Armed);
+    for(int tick=0;tick<7;++tick)route.advance(.05f);
+    assert(route.ready(2));
+    route.focus(kChartLoadout); // utility focus also cancels armed route
+    assert(route.armed==-1);
+    assert(route.press(kChartShipyard)==RoutePress::Ignored);
+    assert(route.armed==-1);
+    route.press(1);
+    route.reset(); // exiting to shipyard/loadout or ending a sortie
+    assert(route.armed==-1&&!route.ready(1));
+    assert(route.press(-1)==RoutePress::Ignored);
+    // Invalid, skipped and oversized time increments cannot bypass delay.
+    assert(route.press(0)==RoutePress::Armed);
+    route.advance(-1.f);route.advance(5.f);route.advance(0.f);
+    assert(!route.ready(0));
+    for(int tick=0;tick<7;++tick)route.advance(.05f);
+    assert(route.ready(0));
+    assert(route.press(0)==RoutePress::Launch);
+    // Navigation keeps all routes reachable without a mouse or headset ray.
+    for(int n=0;n<3;++n){
+        RouteLaunchGate item;
+        assert(item.press(n)==RoutePress::Armed);
+        assert(item.press(n)==RoutePress::Waiting);
+        for(int k=0;k<7;++k)item.advance(.05f);
+        assert(item.press(n)==RoutePress::Launch);
+    }
     // The App/Minus edge can exit Loadout or Allies but never hijacks
     // the Shipyard's separate grid/palette switch.
     assert(PrepSecondaryBack(true,false,false,true,false));
