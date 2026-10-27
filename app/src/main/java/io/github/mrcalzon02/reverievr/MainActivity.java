@@ -123,6 +123,8 @@ public final class MainActivity extends Activity
     private Button clearLogsButton;
     private Button controllerActionButton;
     private View updatePanel;
+    private Button developerOptionsButton;
+    private Button gameModulesButton;
     private VrRuntimePreflight.Result vrRuntimePreflight;
     private RadioGroup loggingModeGroup;
 
@@ -192,7 +194,7 @@ public final class MainActivity extends Activity
             "Stage A setup screen ready."
         );
 
-        if (BuildConfig.UPDATE_CHANNEL_ENABLED
+        if (DevelopmentAccess.selfUpdates(preferences)
             && preferences.isAutoUpdateCheckEnabled()) {
             checkForUpdates(false);
         }
@@ -351,7 +353,7 @@ public final class MainActivity extends Activity
         vrRuntimeStatusText = findViewById(R.id.vr_runtime_status);
         updatePanel = findViewById(R.id.update_panel);
         updatePanel.setVisibility(
-            BuildConfig.UPDATE_CHANNEL_ENABLED
+            DevelopmentAccess.selfUpdates(preferences)
                 ? View.VISIBLE
                 : View.GONE
         );
@@ -375,6 +377,8 @@ public final class MainActivity extends Activity
         submitDiagnosticsButton =
             findViewById(R.id.submit_diagnostics_button);
         clearLogsButton = findViewById(R.id.clear_logs_button);
+        developerOptionsButton = findViewById(R.id.developer_options_button);
+        gameModulesButton = findViewById(R.id.manage_game_modules_button);
         loggingModeGroup = findViewById(R.id.logging_mode_group);
     }
 
@@ -398,6 +402,100 @@ public final class MainActivity extends Activity
         );
 
 
+    }
+
+    /** The master switch cannot override a Play build's compile-time policy boundary. */
+    private void refreshDeveloperEntryPoints() {
+        if (updatePanel != null) {
+            updatePanel.setVisibility(
+                DevelopmentAccess.selfUpdates(preferences) ? View.VISIBLE : View.GONE);
+        }
+        if (gameModulesButton != null) {
+            gameModulesButton.setVisibility(
+                DevelopmentAccess.gameManager(preferences) ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void showDeveloperOptions() {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setPadding(28, 12, 28, 8);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        TextView description = new TextView(this);
+        description.setText(BuildConfig.PLAY_DISTRIBUTION
+            ? "Developer diagnostics are available. Google Play delivery permanently "
+                + "disables external APK installation, self-updates and executable downloads."
+            : "Development controls are off by default. Switch on Developer Mode, then "
+                + "choose individual tools. Install operations still require explicit consent "
+                + "and a valid signing identity.");
+        panel.addView(description);
+
+        Switch master = new Switch(this);
+        master.setText("Developer Mode");
+        master.setChecked(preferences.isDeveloperModeEnabled());
+        panel.addView(master);
+
+        Switch content = new Switch(this);
+        content.setText("Test independent game content downloads");
+        content.setChecked(!BuildConfig.PLAY_DISTRIBUTION
+            && preferences.isDeveloperContentDownloadsEnabled());
+        panel.addView(content);
+
+        Switch apk = new Switch(this);
+        apk.setText("Test signed companion APK installation");
+        apk.setChecked(!BuildConfig.PLAY_DISTRIBUTION
+            && preferences.isDeveloperCompanionApksEnabled());
+        panel.addView(apk);
+
+        Switch emulator = new Switch(this);
+        emulator.setText("Test emulator source downloads");
+        emulator.setChecked(!BuildConfig.PLAY_DISTRIBUTION
+            && preferences.isDeveloperEmulatorSourcesEnabled());
+        panel.addView(emulator);
+
+        Switch updater = new Switch(this);
+        updater.setText("Test ReverieVR self-updater (signed builds)");
+        updater.setChecked(!BuildConfig.PLAY_DISTRIBUTION
+            && preferences.isDeveloperAppUpdatesEnabled());
+        panel.addView(updater);
+
+        Switch[] features = {content, apk, emulator, updater};
+        Runnable refresh = () -> {
+            boolean available = !BuildConfig.PLAY_DISTRIBUTION
+                && preferences.isDeveloperModeEnabled();
+            for (Switch feature : features) feature.setEnabled(available);
+            updater.setEnabled(available && BuildConfig.UPDATE_CHANNEL_ENABLED);
+            refreshDeveloperEntryPoints();
+        };
+        master.setOnCheckedChangeListener((view, checked) -> {
+            preferences.setDeveloperModeEnabled(checked);
+            refresh.run();
+        });
+        content.setOnCheckedChangeListener((view, checked) -> {
+            if (!BuildConfig.PLAY_DISTRIBUTION)
+                preferences.setDeveloperContentDownloadsEnabled(checked);
+            refresh.run();
+        });
+        apk.setOnCheckedChangeListener((view, checked) -> {
+            if (!BuildConfig.PLAY_DISTRIBUTION)
+                preferences.setDeveloperCompanionApksEnabled(checked);
+            refresh.run();
+        });
+        emulator.setOnCheckedChangeListener((view, checked) -> {
+            if (!BuildConfig.PLAY_DISTRIBUTION)
+                preferences.setDeveloperEmulatorSourcesEnabled(checked);
+            refresh.run();
+        });
+        updater.setOnCheckedChangeListener((view, checked) -> {
+            if (!BuildConfig.PLAY_DISTRIBUTION)
+                preferences.setDeveloperAppUpdatesEnabled(checked);
+            refresh.run();
+        });
+        refresh.run();
+        new AlertDialog.Builder(this)
+            .setTitle("Advanced · Developer tools")
+            .setView(panel)
+            .setPositiveButton("Close", (dialog, which) -> refreshDeveloperEntryPoints())
+            .show();
     }
 
     private void configureActions() {
@@ -436,14 +534,17 @@ public final class MainActivity extends Activity
             this::openBluetoothSettings
         );
 
-        // Game releases are independent of the ReverieVR APK updater.
-        Button gameModules=findViewById(R.id.manage_game_modules_button);
-        if (BuildConfig.PLAY_DISTRIBUTION) {
-            gameModules.setVisibility(View.GONE);
-        } else {
-            uiFeedback.bind(gameModules,()->startActivity(
-                new Intent(this,GameModulesActivity.class)));
-        }
+        // This manager is test-only. Google Play cannot unlock the installer.
+        gameModulesButton.setVisibility(
+            DevelopmentAccess.gameManager(preferences) ? View.VISIBLE : View.GONE);
+        uiFeedback.bind(gameModulesButton, () -> {
+            if (DevelopmentAccess.gameManager(preferences)) {
+                startActivity(new Intent(this, GameModulesActivity.class));
+            } else {
+                uiFeedback.failure(gameModulesButton);
+            }
+        });
+        uiFeedback.bind(developerOptionsButton, this::showDeveloperOptions);
         uiFeedback.bind(
             checkUpdateButton,
             () -> checkForUpdates(true)
@@ -912,7 +1013,7 @@ public final class MainActivity extends Activity
                         VrActivity.EXTRA_REQUEST_UPDATE_CHECK,
                         false
                     )) {
-                    if (BuildConfig.UPDATE_CHANNEL_ENABLED) {
+                    if (DevelopmentAccess.selfUpdates(preferences)) {
                         checkForUpdates(true);
                     }
                     return;
@@ -922,7 +1023,7 @@ public final class MainActivity extends Activity
                         VrActivity.EXTRA_REQUEST_GAME_MODULE_MANAGER,
                         false
                     )) {
-                    if (!BuildConfig.PLAY_DISTRIBUTION) {
+                    if (DevelopmentAccess.gameManager(preferences)) {
                         startActivity(new Intent(this,GameModulesActivity.class));
                     }
                     return;
@@ -2988,6 +3089,10 @@ public final class MainActivity extends Activity
     }
 
     private void checkForUpdates(boolean userInitiated) {
+        if (!DevelopmentAccess.selfUpdates(preferences) || updateChecker == null) {
+            if (userInitiated) uiFeedback.failure(checkUpdateButton);
+            return;
+        }
         checkUpdateButton.setEnabled(false);
         updateStatusText.setText(R.string.update_checking);
 
