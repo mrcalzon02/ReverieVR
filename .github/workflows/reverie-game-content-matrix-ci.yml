@@ -97,6 +97,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify native game identity alignment across Java C++ build and release tooling
         run: python3 scripts/modules/verify-game-identity-matrix.py
+      - name: Validate Sitka source-only binary terrain and GLES2 index batching
+        shell: bash
+        run: |
+          set -euo pipefail
+          c++ -std=c++17 -Wall -Wextra -Werror -Wpedantic \
+            app/src/test/native/sitka_terrain_mesh_test.cpp \
+            -o "${RUNNER_TEMP}/sitka-terrain-mesh-test"
+          "${RUNNER_TEMP}/sitka-terrain-mesh-test"
       - name: Test independent game content builds, namespaces and pack integrity
         run: python3 -m unittest discover -s scripts/modules -p 'test_all_game_content_packages.py' -v
       - name: Verify native game-owned asset resolver and forbidden cross-game paths

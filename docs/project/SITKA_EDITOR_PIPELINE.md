@@ -21,7 +21,7 @@
   Context release deletes buffers/program; recreation rebuilds them.
 - `sitka_terrain_module.cpp` implements the actual native module ABI and
   reads only `sitka/coast/terrain.sitkam` through host `read_asset`.
-  It is an internal build target, **not** a playable/registered module.
+  It is a **source-only ABI prototype**, deliberately absent from `Android.mk` and the playable host registry until real content and gameplay are available.
   No synthetic mesh is bundled as geography, and the host content
   allowlist has intentionally **not** been expanded to admit Sitka yet.
 - `app/src/test/native/sitka_terrain_mesh_test.cpp` exercises the

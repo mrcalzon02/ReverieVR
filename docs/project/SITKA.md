@@ -17,7 +17,7 @@ The original `.sitkam` binary contract now has a strict native C++17 reader and
 GLES2-safe 16-bit triangle batching. The game-private terrain renderer uses the
 existing native shader/matrix/GL-state helpers, immutable indexed VBO/EBO uploads
 once per GL context, and the same buffers for both eyes. A source-only
-`reverie_module_sitka` NDK target consumes a bounded host `read_asset` mesh
+`sitka_terrain_module.cpp` ABI prototype consumes a bounded host `read_asset` mesh
 and rejects missing/corrupt content. **It is deliberately not registered in
 the host's playable module catalog and has no launcher control**: no verified
 licensed Sitka mesh has been staged, and no fishing/shore gameplay exists.
