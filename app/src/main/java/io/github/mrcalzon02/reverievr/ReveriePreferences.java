@@ -19,6 +19,11 @@ final class ReveriePreferences {
     private static final String KEY_MUSIC_MUTED = "music_muted";
     private static final String KEY_AUTO_UPDATE_CHECK = "auto_update_check";
     private static final String KEY_LOGGING_MODE = "logging_mode";
+    private static final String KEY_DEVELOPER_MODE = "developer_mode";
+    private static final String KEY_DEVELOPER_CONTENT = "developer_content_downloads";
+    private static final String KEY_DEVELOPER_COMPANION_APKS = "developer_companion_apks";
+    private static final String KEY_DEVELOPER_EMULATORS = "developer_emulator_sources";
+    private static final String KEY_DEVELOPER_APP_UPDATES = "developer_app_updates";
     private static final String KEY_VR_SETUP_VERSION = "vr_setup_version";
     private static final String KEY_VR_SETUP_STEP = "vr_setup_step";
     private static final String KEY_USER_IPD_METERS = "user_ipd_meters";
@@ -589,6 +594,47 @@ final class ReveriePreferences {
             .remove(KEY_USER_IPD_METERS)
             .remove(KEY_UI_SCALE)
             .apply();
+    }
+
+    /** The master developer switch is independent from verbose logging. */
+    boolean isDeveloperModeEnabled() {
+        return preferences.getBoolean(KEY_DEVELOPER_MODE, false);
+    }
+
+    void setDeveloperModeEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_DEVELOPER_MODE, enabled).apply();
+    }
+
+    boolean isDeveloperContentDownloadsEnabled() {
+        return preferences.getBoolean(KEY_DEVELOPER_CONTENT, false);
+    }
+
+    void setDeveloperContentDownloadsEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_DEVELOPER_CONTENT, enabled).apply();
+    }
+
+    boolean isDeveloperCompanionApksEnabled() {
+        return preferences.getBoolean(KEY_DEVELOPER_COMPANION_APKS, false);
+    }
+
+    void setDeveloperCompanionApksEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_DEVELOPER_COMPANION_APKS, enabled).apply();
+    }
+
+    boolean isDeveloperEmulatorSourcesEnabled() {
+        return preferences.getBoolean(KEY_DEVELOPER_EMULATORS, false);
+    }
+
+    void setDeveloperEmulatorSourcesEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_DEVELOPER_EMULATORS, enabled).apply();
+    }
+
+    boolean isDeveloperAppUpdatesEnabled() {
+        return preferences.getBoolean(KEY_DEVELOPER_APP_UPDATES, false);
+    }
+
+    void setDeveloperAppUpdatesEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_DEVELOPER_APP_UPDATES, enabled).apply();
     }
 
     void reset() {
