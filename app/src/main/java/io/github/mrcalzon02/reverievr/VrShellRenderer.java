@@ -789,8 +789,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Native-game update management is always reachable from the first
         // shelf page, even when no optional content is currently installed.
         // Install permission/file selection happens on the phone screen.
-        games.add(0,new NativeModuleRuntime.Descriptor(
-            INTERNAL_GAME_MODULE_MANAGER_ID,"Manage Game Downloads / Updates"));
+        if (!BuildConfig.PLAY_DISTRIBUTION) {
+            games.add(0,new NativeModuleRuntime.Descriptor(
+                INTERNAL_GAME_MODULE_MANAGER_ID,"Manage Game Downloads / Updates"));
+        }
         apps.add(new NativeModuleRuntime.Descriptor(
             INTERNAL_MODEL_VIEWER_ID, "3D Model Viewer (OBJ)"));
         apps.add(new NativeModuleRuntime.Descriptor(
@@ -5619,7 +5621,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void handleEmulatorConfirmSelection(int button) {
-        if(button==0&&selectedEmulator!=null) {
+        if(button==0&&selectedEmulator!=null && !BuildConfig.PLAY_DISTRIBUTION) {
             host.onEmulatorSourceDownloadRequested(selectedEmulator.id);
             mode=MODE_EMULATOR_CATALOG;
         } else if(button==1) mode=MODE_EMULATOR_CATALOG;
@@ -5718,7 +5720,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     return;
                 }
 
-                if(module!=null&&INTERNAL_GAME_MODULE_MANAGER_ID.equals(module.id)){
+                if(!BuildConfig.PLAY_DISTRIBUTION && module!=null
+                    && INTERNAL_GAME_MODULE_MANAGER_ID.equals(module.id)){
                     host.onGameModuleManagerRequested();
                     hoveredButton=-1;
                     textureDirty=true;
