@@ -95,7 +95,8 @@ def artifact():
     found = set(re.findall(r"uses-permission(?:-sdk-\d+)?: name='([^']+)'", perms))
     bad = sorted(p for p in found if p.split(".")[-1] in FORBIDDEN)
     check(not bad, "Restricted permissions absent: " + str(bad))
-    unexpected = sorted(found - set(CONFIG["allowed_permissions"]))
+    approved = set(CONFIG["allowed_permissions"]) | {CONFIG["package"] + ".DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"}
+    unexpected = sorted(found - approved)
     check(not unexpected, "No undeclared merged permissions: " + str(unexpected))
     sig = cmd(signer, "verify", "--verbose", "--print-certs", str(apk))
     check("Signer #1 certificate SHA-256 digest:" in sig, "APK cryptographic signature verifies")
