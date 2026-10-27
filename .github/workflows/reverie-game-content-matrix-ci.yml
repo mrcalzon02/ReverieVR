@@ -35,6 +35,10 @@ on:
       - 'app/src/test/native/gumball_ship_3d_test.cpp'
       - 'scripts/verify-gumball-armada.sh'
       - 'app/src/test/native/omega_front_*_test.cpp'
+      - 'app/src/main/jni/native/sitka_terrain_*.h'
+      - 'app/src/main/jni/native/sitka_terrain_module.cpp'
+      - 'app/src/test/native/sitka_terrain_mesh_test.cpp'
+      - 'scripts/sitka/verify-ndk-terrain.sh'
       - 'scripts/verify-omega-front-playability.sh'
       - 'scripts/modules/verify-omega-front-cc0.py'
       - 'app/src/main/assets/native/omega-front/rpg_cc0/**'
@@ -43,6 +47,16 @@ permissions:
   contents: read
 
 jobs:
+  verify-sitka-ndk-source-only:
+    name: Sitka source-only GLES2 Android NDK ABI link gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link Sitka prototype with Android NDK for Galaxy S9 ARM ABIs
+        shell: bash
+        run: bash scripts/sitka/verify-ndk-terrain.sh
+
   verify-gumball-map-input:
     name: Gumball real chart selection functional gate
     runs-on: ubuntu-latest
