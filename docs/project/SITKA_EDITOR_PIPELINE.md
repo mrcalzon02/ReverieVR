@@ -2,7 +2,34 @@
 
 **Date:** 2026-10-26  
 **Project:** [Sitka](SITKA.md), the original peaceful Sitka Sound fishing/beachcombing game hosted by ReverieVR.  
-**Status:** First environment **source milestone**. Authoring-tool source and independent terrain generation are committed, with synthetic-fixture and native-adapter host tests. No real Sitka DEM/coastline tile, rendered coast scene, compiled desktop editor run, Android native module, launcher entry, APK, or Galaxy S9 acceptance is claimed.
+**Status:** Authoring tools and a game-private GLES2 terrain renderer proof are in source, with synthetic CPU and fake-GL host checks. No real Sitka DEM/coastline tile, displayed terrain, compiled desktop editor run, NDK/APK acceptance, launcher entry, or Galaxy S9 acceptance is claimed.
+
+## Native terrain proof — 2026-10-27
+
+- `app/src/main/jni/native/sitka_terrain_mesh.h` strictly decodes the
+  exporter `SITKA01\\0` header, little-endian 32-bit vertex/index counts,
+  double projected origin, 15-byte XYZ/RGB vertices and uint32 triangles.
+  It rejects bad magic, oversized counts, truncated/trailing bytes,
+  nonfinite coordinates, invalid/duplicate indices and degenerate triangles.
+- GLES2 core does not guarantee `GL_UNSIGNED_INT` indices. The terrain
+  adapter remaps triangles into batches of at most 65,535 unique vertices
+  with `GL_UNSIGNED_SHORT` indices, retaining triangle order and colors.
+- `sitka_terrain_gl.h` uploads each batch to static VBO/EBO pairs **once
+  per GL context**, uses the shared shader/matrix/GL-state guard and
+  separately preserves the element-buffer binding absent from that guard.
+  Each eye issues indexed draws with no CPU terrain rebuild or upload.
+  Context release deletes buffers/program; recreation rebuilds them.
+- `sitka_terrain_module.cpp` implements the actual native module ABI and
+  reads only `sitka/coast/terrain.sitkam` through host `read_asset`.
+  It is an internal build target, **not** a playable/registered module.
+  No synthetic mesh is bundled as geography, and the host content
+  allowlist has intentionally **not** been expanded to admit Sitka yet.
+- `app/src/test/native/sitka_terrain_mesh_test.cpp` exercises the
+  synthetic exporter-compatible fixture, malformed bytes and a 70,002
+  vertex remapping split. Local GCC C++17 and Clang ASan/UBSan passed.
+  A local fake-GLES2 smoke exercised two indexed eye draws, unchanged
+  static upload count and release/rebuild; it does **not** prove driver
+  rendering, NDK compilation, stereo optics or frame pacing.
 
 ## Reuse of the actual shared toolchain
 
@@ -46,13 +73,13 @@ Use public-domain USGS Alaska elevation tiles as available, NOAA shoreline/bathy
 
 - `scripts/sitka/build_coast.py` outputs a compact, deterministic `.sitkam` mesh with documented magic/header, origin, vertex positions/colors and triangle indices, alongside the provenance JSON.
 - Runtime axes: east +X, up +Y, north +Z. Preserve each tile's projected coordinate origin and static edge samples for consistent neighboring chunks and LOD.
-- C++ environment parser is independent of GL so fixed-update/dual-eye render state remains stable. Actual Android VBO uploads, water surface mesh, optical depth, sun/sky, cloud/rain particles, shoreline shaders, occlusion/collision and atlas staging **are not integrated** yet.
+- The environment parser remains independent of GL. The game-private indexed terrain VBO/EBO source now exists, but real Android driver rendering and module admission are unverified. Water surface mesh, optical depth, sun/sky, cloud/rain particles, shoreline shaders, occlusion/collision and atlas staging are not integrated.
 - Weather is a static saved preset profile at this milestone. Dynamic weather transitions, generated soundscape and 3D rainfall require separate real integration with the ReverieVR shell-owned audio/runtime services.
 
 ## Verified gates and outstanding work
 
 **Passed locally:** `python3 scripts/sitka/test_build_coast.py` (one synthetic fixture suite, deterministic export and provenance/input rejection); strict GCC C++17 host build and execution of `app/src/test/native/sitka_environment_test.cpp`, plus Clang AddressSanitizer/UndefinedBehaviorSanitizer execution of the same C++ adapter regression.
 
-**Not executed/accepted:** editor `javac` with full Beckenburg source present; displayed Swing water/sky interaction; USGS/NOAA Sitka source acquisition and triangulation; real coordinate/datum check; actual terrain render; GLES2 shader/vertex-buffer implementation; Android NDK/Gradle build, headset frame-pacing and comfort, module packaging/update acquisition; gameplay rod/crab/shell/boat progression.
+**Not executed/accepted:** editor `javac` with full Beckenburg source present; displayed Swing water/sky interaction; USGS/NOAA Sitka source acquisition and triangulation; real coordinate/datum check; actual GL driver terrain render; Android NDK/Gradle build, headset frame-pacing and comfort, module admission/packaging/update acquisition; gameplay rod/crab/shell/boat progression.
 
-**Next concrete milestone:** obtain verified, legally distributable Sitka DEM and shoreline vectors; bake one genuinely accurate cove; use current Sitka editor to place water/weather against the real coast; implement GLES2 cached terrain/water rendering in an actual Sitka native module; run host, NDK, APK and device tests; only then add a functioning Native Apps entry. Do not duplicate or overwrite Beckenburg/Malefic assets.
+**Next concrete milestone:** verify this exact source target with the real Android NDK and a real GLES2 context, then acquire approved, legally distributable Sitka DEM and shoreline vectors, bake a genuine cove, integrate authored water/weather, measure actual S9 stereo frame pacing, and only register Sitka after real fishing/shore activities work. Do not ship the synthetic fixture as geographic content or duplicate Beckenburg/Malefic assets.
