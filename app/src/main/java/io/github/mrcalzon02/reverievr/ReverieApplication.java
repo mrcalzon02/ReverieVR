@@ -2,7 +2,7 @@ package io.github.mrcalzon02.reverievr;
 
 import android.app.Application;
 
-public final class ReverieApplication extends Application {
+public class ReverieApplication extends Application {
     private ControllerManager controllerManager;
     private InputBindingManager inputBindingManager;
 
