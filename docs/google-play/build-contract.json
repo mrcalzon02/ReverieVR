@@ -1,0 +1,15 @@
+{
+  "package": "io.github.mrcalzon02.reverievr",
+  "module": "app",
+  "modules": [
+    "app"
+  ],
+  "allowed_permissions": [
+    "android.permission.INTERNET",
+    "android.permission.BLUETOOTH",
+    "android.permission.BLUETOOTH_ADMIN",
+    "android.permission.BLUETOOTH_SCAN",
+    "android.permission.BLUETOOTH_CONNECT"
+  ],
+  "remove_install_permission": true
+}
