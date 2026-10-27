@@ -78,7 +78,8 @@
       "androidx.appcompat:appcompat": "1.6.1",
       "com.google.android.gms:play-services-vision": "20.1.3",
       "com.google.android.material:material": "1.12.0",
-      "org.jspecify:jspecify": "1.0.0"
+      "org.jspecify:jspecify": "1.0.0",
+      "javax.el:javax.el-api": "3.0.1-b06"
     },
     "build_codegen": {
       "com.google.protobuf:protoc": "3.19.4"
@@ -164,6 +165,11 @@
         "component": "DOOM shareware sample",
         "license": "id Software shareware (copyright retained)",
         "record": "third_party/doom-shareware/README.md"
+      },
+      {
+        "component": "Expression Language 3.0 API (MBassador / SMBJ R8 dependency)",
+        "license": "CDDL-1.1 OR GPL-2.0 with classpath exception; verify exact bundled artifact",
+        "record": "docs/dependencies/EL-API.md"
       }
     ],
     "commercial_distribution": "HOLD: Valve derivative is removed from current main tree, but earlier public history/releases, Daydream model and current DOOM shareware packaging must be reviewed, plus GPL corresponding source.",
