@@ -416,6 +416,7 @@ android {
             "UPDATE_CHANNEL_ENABLED",
             updateChannelEnabled.toString()
         )
+        buildConfigField("boolean", "PLAY_DISTRIBUTION", "false")
         buildConfigField(
             "String",
             "DISTRIBUTION_SIGNER_SHA256",
@@ -474,6 +475,7 @@ android {
             signingConfig = null
             matchingFallbacks = ["release", "debug"]
             buildConfigField("boolean", "UPDATE_CHANNEL_ENABLED", "false")
+            buildConfigField("boolean", "PLAY_DISTRIBUTION", "true")
             if (playUploadConfigured) {
                 signingConfig = signingConfigs.playUpload
             }
@@ -539,6 +541,9 @@ dependencies {
     implementation "com.google.protobuf:protobuf-javalite:3.19.4"
     // Optional read-only Windows SMB2/SMB3 import (Apache-2.0). No PC helper.
     implementation "com.hierynomus:smbj:0.15.0"
+    // MBassador (SMBJ transitively) references the Java Expression Language API.
+    // Supply the real API for R8 rather than ignoring a missing runtime class.
+    implementation "javax.el:javax.el-api:3.0.1-b06"
     testImplementation "junit:junit:4.13.2"
     androidTestImplementation "androidx.test:runner:1.6.2"
     androidTestImplementation "androidx.test.ext:junit:1.2.1"
