@@ -53,6 +53,23 @@ def source():
                     check(component.get(ANDROID + "exported") in ("true", "false"),
                           mod + ": exported explicit on filtered component " +
                           str(component.get(ANDROID + "name")))
+    if CONFIG["package"] == "io.github.mrcalzon02.reverievr":
+        gradle_text = (ROOT / "app/build.gradle").read_text()
+        check('buildConfigField("boolean", "PLAY_DISTRIBUTION", "true")' in gradle_text,
+              "Play build must disable independent game and app update entrypoints")
+        manifest_overlay = ET.parse(ROOT / "app/src/play/AndroidManifest.xml").getroot()
+        app_overlay = manifest_overlay.find("application")
+        required_removals = {".GameModulesActivity", ".VerifiedCompanionApkProvider"}
+        actual_removals = set()
+        if app_overlay is not None:
+            for component in app_overlay:
+                if component.get(TOOLS + "node") == "remove":
+                    actual_removals.add(component.get(ANDROID + "name"))
+        check(required_removals <= actual_removals,
+              "Play variant removes sideload game updater Activity and APK provider")
+        renderer_text = (ROOT / "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java").read_text()
+        check('if (!BuildConfig.PLAY_DISTRIBUTION)' in renderer_text,
+              "Game download and emulator source-download UI is Play-gated")
     if CONFIG["remove_install_permission"]:
         overlay = ROOT / CONFIG["module"] / "src/play/AndroidManifest.xml"
         check(overlay.is_file(), "Play manifest permission-removal overlay exists")
@@ -86,6 +103,11 @@ def artifact():
     sdk = pathlib.Path(os.environ.get("ANDROID_SDK_ROOT") or
                        os.environ.get("ANDROID_HOME", "")) / "build-tools/36.0.0"
     aapt, signer = str(sdk / "aapt"), str(sdk / "apksigner")
+    if CONFIG["package"] == "io.github.mrcalzon02.reverievr":
+        compiled = cmd(aapt, "dump", "xmltree", str(apk), "AndroidManifest.xml")
+        for forbidden in ("GameModulesActivity", "VerifiedCompanionApkProvider"):
+            check(forbidden not in compiled,
+                  "Play APK does not register external game installer: " + forbidden)
     badging = cmd(aapt, "dump", "badging", str(apk))
     pkg = re.search(r"^package: name='([^']+)'", badging, re.M)
     target = re.search(r"^targetSdkVersion:'(\d+)'", badging, re.M)
@@ -135,8 +157,14 @@ def review():
     check(ledger.get("policy_center") == "https://play.google/developer-content-policy/",
           "Official policy-center source recorded")
     entries = ledger.get("policies", [])
-    check(len(entries) >= 56 and len({x.get("name") for x in entries}) == len(entries),
-          "Complete distinct policy coverage")
+    expected_file = ROOT / "docs/google-play/required-policy-categories.json"
+    expected = json.loads(expected_file.read_text())["categories"]
+    actual = [entry.get("name") for entry in entries]
+    missing = sorted(set(expected) - set(actual))
+    duplicates = sorted({name for name in actual if actual.count(name) > 1})
+    check(not missing and not duplicates and len(expected) >= 56,
+          "Complete policy inventory (missing=" + str(missing) +
+          ", duplicated=" + str(duplicates) + ")")
     for e in entries:
         ok = e.get("status") in ("compliant", "not-applicable")
         ok = ok and len(str(e.get("evidence", "")).strip()) >= 15
