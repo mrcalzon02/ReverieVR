@@ -142,7 +142,8 @@ public final class MainActivity extends Activity
 
         preferences = new ReveriePreferences(this);
         uiFeedback = new UiFeedback(this);
-        updateChecker = new UpdateChecker();
+        // Play deliveries and all hosted games are updated through Play itself.
+        updateChecker = BuildConfig.PLAY_DISTRIBUTION ? null : new UpdateChecker();
         controllerManager =
             ((ReverieApplication) getApplication()).getControllerManager();
         inputManager =
@@ -170,11 +171,13 @@ public final class MainActivity extends Activity
                     + vrRuntimePreflight.detail
             );
         }
-        updateInstaller =
-            new UpdateInstaller(
-                this,
-                () -> uiFeedback.failure(installUpdateButton)
-            );
+        if (!BuildConfig.PLAY_DISTRIBUTION) {
+            updateInstaller =
+                new UpdateInstaller(
+                    this,
+                    () -> uiFeedback.failure(installUpdateButton)
+                );
+        }
         configurePersistentControls();
         configureActions();
         refreshStaticStatus();
@@ -435,8 +438,12 @@ public final class MainActivity extends Activity
 
         // Game releases are independent of the ReverieVR APK updater.
         Button gameModules=findViewById(R.id.manage_game_modules_button);
-        uiFeedback.bind(gameModules,()->startActivity(
-            new Intent(this,GameModulesActivity.class)));
+        if (BuildConfig.PLAY_DISTRIBUTION) {
+            gameModules.setVisibility(View.GONE);
+        } else {
+            uiFeedback.bind(gameModules,()->startActivity(
+                new Intent(this,GameModulesActivity.class)));
+        }
         uiFeedback.bind(
             checkUpdateButton,
             () -> checkForUpdates(true)
@@ -915,7 +922,9 @@ public final class MainActivity extends Activity
                         VrActivity.EXTRA_REQUEST_GAME_MODULE_MANAGER,
                         false
                     )) {
-                    startActivity(new Intent(this,GameModulesActivity.class));
+                    if (!BuildConfig.PLAY_DISTRIBUTION) {
+                        startActivity(new Intent(this,GameModulesActivity.class));
+                    }
                     return;
                 }
 
