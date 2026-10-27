@@ -332,6 +332,13 @@ def stageOwnerMusicAssets = tasks.register(
     }
 }
 
+// A Play build can compile in CI with ID=0, but production eligibility
+// is blocked until the actual Play Console Games services project ID is set.
+def playGamesProjectId = (project.findProperty('playGamesProjectId') ?: '0').toString()
+if (!(playGamesProjectId ==~ /[0-9]{1,24}/)) {
+    throw new GradleException('Invalid playGamesProjectId: use the decimal Games services project ID shown in Play Console')
+}
+
 android {
     // Native music player opens packaged Suno tracks as seekable FD slices.
     // Keep approved MP3/WAV assets uncompressed in the APK.
@@ -470,6 +477,7 @@ android {
 
         // New Play AAB distribution only. No legacy GitHub APK update channel.
         play {
+            resValue 'string', 'game_services_project_id', playGamesProjectId
             initWith release
             debuggable = false
             signingConfig = null
@@ -538,6 +546,8 @@ androidComponents {
 
 dependencies {
     implementation project(":cardboard")
+    playImplementation 'com.google.android.gms:play-services-games-v2:22.1.0'
+
     implementation "com.google.protobuf:protobuf-javalite:3.19.4"
     // Optional read-only Windows SMB2/SMB3 import (Apache-2.0). No PC helper.
     implementation "com.hierynomus:smbj:0.15.0"
