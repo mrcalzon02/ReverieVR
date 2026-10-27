@@ -4866,7 +4866,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return NativeModuleRuntime.isAvailable()
                     && !nativeGames.isEmpty();
             }
-            if(index==25 || index==26 || index==27)return true;
+            if (index == 25) return !BuildConfig.PLAY_DISTRIBUTION;
+            if (index == 26 || index == 27) return true;
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
                 && index == 12) {
                 return false;
@@ -5186,6 +5187,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     host.onExitToPhoneRequested();
                     return;
                 case 25:
+                    if (BuildConfig.PLAY_DISTRIBUTION) break;
                     emulatorCatalogPage=0;
                     selectedEmulator=null;
                     mode=MODE_EMULATOR_CATALOG;
@@ -7011,8 +7013,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new String[] {leftLabels[6]}, 18, 1);
         drawHomeButtons(canvas, paint,
             new String[] {"Classic Games"}, 24, 1);
-        drawHomeButtons(canvas, paint,
-            new String[] {"Emulator Modules"}, 25, 1);
+        if (!BuildConfig.PLAY_DISTRIBUTION) {
+            drawHomeButtons(canvas, paint,
+                new String[] {"Emulator Modules"}, 25, 1);
+        }
         drawHomeButtons(canvas, paint,
             new String[] {"Exit to Phone"}, 26, 1);
         drawHomeButtons(canvas, paint,
