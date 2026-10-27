@@ -308,14 +308,41 @@ int main(){
             ||(expected==CastGuest::NibNoxious&&foundNib)
             ||(expected==CastGuest::CrumbclankTwins&&foundTwins))continue;
         auto progressed=trial.snapshot();progressed.visited=2;
-        progressed.levels[1]=12;progressed.levels[3]=12; // survive long enough to inspect encounter
+        progressed.levels[1]=12;progressed.levels[3]=12;
+        // Guest tests require a player who fights. An idle ship may fail a
+        // Sweep after its third escaped enemy, before twins even spawn.
+        const bool needsMidwaveFoe=expected==CastGuest::CrumbclankTwins
+            ||expected==CastGuest::BlortBlister
+            ||expected==CastGuest::NibNoxious;
+        if(needsMidwaveFoe)
+            progressed.levels[0]=12; // real max-level blaster to keep sortie alive
+
         progressed.checksum=SnapshotChecksum(progressed);
         assert(trial.restore(progressed)&&trial.launch(0));
         assert(trial.guest()==expected);
         bool sawAssist=false,sawGrenadier=false,sawBomb=false;
         bool sawNib=false,sawMine=false,sawBiff=false,sawBaff=false;
         for(int tick=0;tick<750&&trial.phase()==Phase::Flight;++tick){
-            trial.update(.025f,0.f,0.f,false);
+            float move=0.f;
+            // Clear early regular ships, then let each mid-wave named
+            // encounter (Blort/Nib/Biff/Baff) actually spawn and fire.
+            // Never idle through the third sweep escape before the guest,
+            // and never destroy the named target before its hazard appears.
+            const bool combat=needsMidwaveFoe &&
+                trial.spawned()<((6+static_cast<int>(lane.hazard)*2)/2-1);
+            if(combat){
+                // Aim at the nearest real enemy rather than idling until
+                // the third escape ends the sortie before the guest wave.
+                const Enemy* closest=nullptr;
+                for(const auto& enemy:trial.enemies())if(enemy.active){
+                    if(!closest||enemy.y<closest->y)closest=&enemy;
+                }
+                if(closest){
+                    const float error=closest->x-trial.player_x();
+                    move=error>.035f?1.f:error<-.035f?-1.f:0.f;
+                }
+            }
+            trial.update(.025f,move,0.f,combat);
             sawAssist|=trial.guest_active();
             for(const auto& enemy:trial.enemies())if(enemy.active){
                 sawGrenadier|=enemy.kind==EnemyKind::Blort;
@@ -343,6 +370,17 @@ int main(){
             assert(sawNib&&sawMine&&!sawAssist);
             foundNib=true;
         }else if(expected==CastGuest::CrumbclankTwins){
+            if(!(sawBiff&&sawBaff&&sawBomb&&!sawAssist))
+                std::cerr<<"Crumbclank encounter diagnostic: seed="<<seed
+                         <<" destination="<<lane.id
+                         <<" hazard="<<static_cast<unsigned>(lane.hazard)
+                         <<" spawned="<<trial.spawned()
+                         <<" wave="<<trial.wave()
+                         <<" phase="<<static_cast<int>(trial.phase())
+                         <<" hp="<<trial.hp()
+                         <<" Biff="<<sawBiff<<" Baff="<<sawBaff
+                         <<" bomb="<<sawBomb
+                         <<" assist="<<sawAssist<<'\n';
             assert(sawBiff&&sawBaff&&sawBomb&&!sawAssist);
             assert(trial.twin_bonus_paid()==0u); // cannot claim kill bonus while no weapons fired
             foundTwins=true;
@@ -425,6 +463,7 @@ int main(){
     for(uint32_t seed=1;seed<=512&&!(cinnamon&&sydney&&jules);++seed){
         Simulation probe(seed);
         auto saveProbe=probe.snapshot();saveProbe.visited=2u;
+        saveProbe.levels[0]=12u;
         saveProbe.levels[1]=12u;saveProbe.levels[3]=12u;
         saveProbe.checksum=SnapshotChecksum(saveProbe);
         assert(probe.restore(saveProbe));
@@ -433,9 +472,24 @@ int main(){
            &&next!=CastGuest::JawbreakerJules)continue;
         assert(probe.launch(0)&&probe.guest()==next);
         bool zoned=false,shifting=false,heavy=false;
+        const auto castLane=probe.lane(0);
+        const int warmupLimit=(6+static_cast<int>(castLane.hazard)*2)/2-1;
         for(int i=0;i<820&&probe.phase()==Phase::Flight;++i){
-            // Fly out of Sydney's neutral corridor to exercise the zone effect.
-            probe.update(.025f,next==CastGuest::SydneySlipstream?.8f:0.f,0.f,false);
+            // Protect the sortie from its three-escape failure during the
+            // early ordinary formation, then stop shooting BEFORE the
+            // named encounter to observe actual live hazards and movement.
+            const bool defending=probe.spawned()<warmupLimit;
+            float move=next==CastGuest::SydneySlipstream?.8f:0.f;
+            if(defending){
+                const Enemy* closest=nullptr;
+                for(const auto& e:probe.enemies())if(e.active)
+                    if(!closest||e.y<closest->y)closest=&e;
+                if(closest){
+                    const float delta=closest->x-probe.player_x();
+                    move=delta>.035f?1.f:delta<-.035f?-1.f:0.f;
+                }
+            }
+            probe.update(.025f,move,0.f,defending);
             shifting|=probe.slipstream_active()&&
                 (probe.movement_multiplier()>=1.40f||probe.movement_multiplier()<=.60f);
             for(const auto& e:probe.enemies())if(e.active&&e.kind==EnemyKind::Jules)

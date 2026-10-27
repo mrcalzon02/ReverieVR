@@ -100,3 +100,7 @@ When another duplicated utility appears:
 6. document limitations as explicitly as capabilities.
 
 This keeps the eventual ReverieVR game SDK composed of proven pieces rather than speculative abstraction.
+
+## Reusable licensed Lato native UI font layer (2026-10-26)
+
+The `reverie_native_lato_text.h` GLES2 helper is the shared genuine-font text utility for game-specific HUDs. It consumes the previously licensed, compressed `breakwater_font_atlas.h` Lato Semibold atlas (OFL-1.1), batches true glyph UV quads and creates one alpha texture/shader/VBO per module GL context. `LatoLayer::Clear/Text/Fit` operate during menu rebuild; `Create` and `Release` belong to context lifetime; `Draw(vp)` issues the game-font draw and restores host-owned GL and bound attribute/blend state. Only the source's texture decompression requires the Android system `-lz` library; no new data download, font binary or ABI changes. Physical S9 legibility and sustained performance require separate acceptance. This is for actual UI lettering; decorative 3D signage can remain game-specific.

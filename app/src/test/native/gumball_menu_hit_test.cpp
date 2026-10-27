@@ -6,7 +6,11 @@
 using namespace reverie::gumball;
 int main(){
     for(int i=0;i<3;++i){
-        assert(ChartHit(kChartRouteX[i],.22f).id==i);
+        assert(ChartHit(kChartRouteX[i],kChartRouteNodeY).id==i);
+        assert(ChartHit(kChartRouteX[i],kChartRouteCardY).id==i);
+        assert(ChartHit(kChartRouteX[i],-.58f).id==i);
+        assert(ChartHit(kChartRouteX[i],.15f).id==i);
+        assert(ChartHit(kChartRouteX[i],.50f).id==-1); // visual line, not an invisible oversized button
         assert(ChartHit(kChartActionX[i],-.94f).id==
                (i==0?12:(i==1?10:11)));
     }

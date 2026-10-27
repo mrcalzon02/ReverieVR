@@ -10,7 +10,8 @@ public class NativeDevelopmentAdmissionTest {
         assertTrue(NativeModuleRuntime.isDevelopmentOnly(NativeModuleRuntime.ID_RED_LEDGER));
         assertTrue(NativeModuleRuntime.isDevelopmentOnly(NativeModuleRuntime.ID_LANTERN_DESK));
         assertTrue(NativeModuleRuntime.isDevelopmentOnly(NativeModuleRuntime.ID_FORWARD_DETACHMENT));
-        assertFalse(NativeModuleRuntime.isDevelopmentOnly("procedural-test-chamber"));
+        // The companion test chamber is intentionally development-gated.
+        assertTrue(NativeModuleRuntime.isDevelopmentOnly("procedural-test-chamber"));
         assertEquals(BuiltInBindingProfiles.ID_NATIVE_CLASSICS,
             BuiltInBindingProfiles.nativeProfileForModule(NativeModuleRuntime.ID_GUMBALL_ARMADA));
         assertEquals(BuiltInBindingProfiles.ID_NATIVE_CLASSICS,

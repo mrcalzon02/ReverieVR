@@ -15,3 +15,4 @@ Before reading, changing, validating, committing, or pushing ReverieVR:
 9. Follow DEEFM for every material operation: **Intent -> Execute -> Observe -> Verify -> Claim**.
 
 Conversation history, memory, prompts, and handoffs are context. They are not proof of repository state.
+10. For active release-recovery work, consult [`docs/project/RECOVERY_DEVELOPMENT_OBJECT.md`](docs/project/RECOVERY_DEVELOPMENT_OBJECT.md) and GitHub issue #6; preserve its evidence-gated statuses and next-resumption action.

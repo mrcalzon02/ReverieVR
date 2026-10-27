@@ -5,6 +5,7 @@
 
 #include <float.h>
 #include <math.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -186,7 +187,8 @@ static inline int ReverieNativeReadAvatarV1(
     const ReverieNativeHostV1 *host,ReverieNativeAvatarV1 *out
 ) {
     if(out==NULL||!ReverieNativeHostSupportsAvatarV1(host))return 0;
-    ReverieNativeAvatarV1 tmp = {0};
+    ReverieNativeAvatarV1 tmp;
+    memset(&tmp, 0, sizeof(tmp));
     if(host->read_avatar(&tmp,(uint32_t)sizeof(tmp))!=1
         || !ReverieNativeAvatarValidV1(&tmp))return 0;
     *out=tmp;

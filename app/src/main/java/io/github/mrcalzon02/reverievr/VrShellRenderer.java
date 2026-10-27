@@ -1923,7 +1923,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // existing 750ms safety gate; only the fallback handoff is delayed.
         boolean usableController = !noUsableController(frameNanos);
         gazeFallbackActive = gazeFallbackPolicy.shouldUseGaze(
-            preferences.getVrPointerMode(), usableController, frameNanos);
+            preferences.getVrPointerMode(), usableController,
+            controllerConnected || gamepadPointerAvailable, frameNanos);
         boolean phoneOnly = !usableController && gazeFallbackActive;
         // Brief pose gaps retain visual continuity and should not
         // summon a fullscreen recovery modal over hosted gameplay.

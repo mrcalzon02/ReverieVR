@@ -26,7 +26,19 @@ on:
       - 'app/src/main/jni/native/reverie_native_host.cpp'
       - 'app/src/main/jni/native/omega_front_*.h'
       - 'app/src/main/jni/native/omega_front_module.cpp'
+      - 'app/src/main/jni/native/gumball_armada_module.cpp'
+      - 'app/src/main/jni/native/gumball_menu_layout.h'
+      - 'app/src/main/jni/native/gumball_menu_hit.h'
+      - 'app/src/test/native/gumball_menu_layout_test.cpp'
+      - 'app/src/test/native/gumball_menu_hit_test.cpp'
+      - 'app/src/test/native/gumball_armada_test.cpp'
+      - 'app/src/test/native/gumball_ship_3d_test.cpp'
+      - 'scripts/verify-gumball-armada.sh'
       - 'app/src/test/native/omega_front_*_test.cpp'
+      - 'app/src/main/jni/native/sitka_terrain_*.h'
+      - 'app/src/main/jni/native/sitka_terrain_module.cpp'
+      - 'app/src/test/native/sitka_terrain_mesh_test.cpp'
+      - 'scripts/sitka/verify-ndk-terrain.sh'
       - 'scripts/verify-omega-front-playability.sh'
       - 'scripts/modules/verify-omega-front-cc0.py'
       - 'app/src/main/assets/native/omega-front/rpg_cc0/**'
@@ -35,6 +47,51 @@ permissions:
   contents: read
 
 jobs:
+  verify-sitka-ndk-source-only:
+    name: Sitka source-only GLES2 Android NDK ABI link gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link Sitka prototype with Android NDK for Galaxy S9 ARM ABIs
+        shell: bash
+        run: bash scripts/sitka/verify-ndk-terrain.sh
+
+  verify-gumball-map-input:
+    name: Gumball real chart selection functional gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and verify actual map input, route-lock delay and controller focus
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/gumball_menu_layout_test.cpp \
+              -o "${RUNNER_TEMP}/gumball-map-${compiler}"
+            "${RUNNER_TEMP}/gumball-map-${compiler}"
+            "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/gumball_menu_hit_test.cpp \
+              -o "${RUNNER_TEMP}/gumball-hit-${compiler}"
+            "${RUNNER_TEMP}/gumball-hit-${compiler}"
+          done
+
+  verify-gumball-controls:
+    name: Gumball Armada real route selection and gameplay regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify real chart focus, delayed lane launch and complete Gumball gameplay
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/verify-gumball-armada.sh
+
   verify-omega-front:
     name: Omega Front real C++ boot-to-battle regression
     runs-on: ubuntu-latest
@@ -54,6 +111,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify native game identity alignment across Java C++ build and release tooling
         run: python3 scripts/modules/verify-game-identity-matrix.py
+      - name: Validate Sitka source-only binary terrain and GLES2 index batching
+        shell: bash
+        run: |
+          set -euo pipefail
+          c++ -std=c++17 -Wall -Wextra -Werror -Wpedantic \
+            app/src/test/native/sitka_terrain_mesh_test.cpp \
+            -o "${RUNNER_TEMP}/sitka-terrain-mesh-test"
+          "${RUNNER_TEMP}/sitka-terrain-mesh-test"
       - name: Test independent game content builds, namespaces and pack integrity
         run: python3 -m unittest discover -s scripts/modules -p 'test_all_game_content_packages.py' -v
       - name: Verify native game-owned asset resolver and forbidden cross-game paths

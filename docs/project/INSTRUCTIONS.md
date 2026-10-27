@@ -5,7 +5,7 @@
 
 ## 1. Purpose
 
-ReverieVR is an independent Android VR platform intended to make Daydream-era phone/headset hardware useful again for local VR applications, small games, and video playback after Google's Daydream platform was discontinued.
+ReverieVR is an independent **cross-platform VR and desktop platform**. Its existing Android Daydream application makes Daydream-era phone/headset hardware useful again for local applications, games and media without Google's discontinued services. Its expanded product requirement is the **complete ReverieVR desktop environment**, natively runnable on Windows, Linux and macOS with all hosted first-party capabilities, and provisional PC VR via OpenXR/SteamVR where available.
 
 Reference hardware:
 
@@ -32,6 +32,9 @@ ReverieVR should:
 11. provide a shell-global power/status HUD for the handset and currently bound controller when battery telemetry is available;
 12. make automatic quality-of-life behavior optional and locally configurable;
 13. remain buildable, understandable, testable, and recoverable.
+14. provide full native desktop ReverieVR applications for Windows, Linux and macOS, not an APK emulator, single-game port or phone companion;
+15. operate the complete Home, rooms, avatars/wardrobe, native games, classics/DOS, media, shell UI, module download/update, saving and recovery using keyboard/mouse or gamepad **without any headset**;
+16. provide **optional** OpenXR-based PC VR, provisionally including SteamVR on supported Windows/Linux systems, without making Steam, Steamworks, an XR runtime or Android a dependency of desktop mode.
 
 ## 3. Reference interaction model
 
@@ -108,9 +111,9 @@ A reliable route back to Stage A must exist so the user can:
 - inspect diagnostics;
 - retry entry into VR.
 
-### 3.5 Single-APK / phone-first authority
+### 3.5 Single-APK / phone-first authority (Android deliverable; does not exclude native desktop builds)
 
-**ReverieVR is a complete phone-resident VR system, not a client for a PC.**
+**The Android ReverieVR APK is a complete phone-resident VR system, never a client requiring a PC.** This Android independence remains mandatory even as the separately compiled complete desktop host is developed.
 The canonical Android deliverable is **one ReverieVR APK**. Stage A, Stage B,
 stereo/head tracking, Home, input routing, controller-free gaze-and-dwell
 recovery, native app/game hosting, media viewing, DOS hosting, the emulator
@@ -195,6 +198,18 @@ offline, enter and exit VR without a controller, use gaze recovery, open
 first-party native content and locally available media, and survive a
 laptop/peripheral disconnect without terminating the shell. Check the
 single APK install/update path separately from any optional component.
+
+### 3.6 Project-wide native desktop and optional PC VR authority (2026-10-26)
+
+**Authorized product expansion:** develop **the entire ReverieVR shell/hub and native/content module library** as independently launchable and usable desktop applications for Windows, Linux and macOS. Desktop users must be able to enter the familiar Home environment without a headset, use keyboard/mouse or gamepads, interact with functional global menus, customize avatars, launch actual installed native and classic games, operate DOS/media systems where permitted, persist progress, and acquire/update modules through appropriately packaged platform-native delivery. Desktop hardware capacity may enable enhanced render quality, but does not permit degradation of the original Galaxy S9 / Daydream path.
+
+Desktop products run **locally**, without running the Android APK, requiring an Android phone, shipping an inert recreation of the menus, requiring Steam/SteamVR, or depending on network connectivity for installed core features. A desktop project containing only one game or a PC-to-phone control/video bridge does **not** fulfill this directive. The existing optional Windows Laptop Link utility and RV-0246 SteamVR phone-as-headset work remain separate, independently scoped features; their prior exclusion of desktop hosting applies only inside that peripheral project and is no longer a global prohibition.
+
+**Required platforms:** Windows x86_64, Linux x86_64 and macOS Apple Silicon initially; Mac Intel support is separately evaluated. No platform may be called accepted without actual executable launch, hub interaction and representative module lifecycle validation on that OS. PC VR is a **provisional optional** OpenXR mode on supported Windows/Linux configurations with SteamVR as one possible active runtime, not a mandatory dependency or Steam-store integration. macOS SteamVR is not a delivery commitment.
+
+Host services own OS-windowing, file access, display/HMD, controller transport, audio, install/update mechanics and safe exit; shared modules own game rules/state and use host-normalized interactions. Use genuine portable code, shaders/assets and versioned saves, while keeping platform-specific native binaries and installer packages. Device-specific functionality must be capability-gated, not presented as working by inert menus or invented telemetry. Cross-platform feature parity covers all supported first-party hub features and hosted games, subject to documented legal restrictions on third-party distribution.
+
+The normative subsystem/architecture/acceptance plan is [Desktop Platform Expansion](DESKTOP_PLATFORM_EXPANSION.md). This direction is **planned**; writing this rule is not evidence desktop builds, SteamVR integration or cross-OS validation already exist.
 
 ## 4. Performance doctrine
 

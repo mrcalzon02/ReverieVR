@@ -34,9 +34,12 @@ int main(){
     assert(ship.stock(Part::Armor)==3u);
     assert(ship.ready());
     // Atomic replacement refunds stock and leaves no intermediate break.
-    assert(ship.edit(3,4,2,Part::Wing)==ShipEdit::Replaced);
-    assert(!ship.ready());  // deleted last thruster
-    assert(ship.edit(3,4,2,Part::Thruster)==ShipEdit::Replaced);
+    // The legacy starter fits its sole thruster at (3,1,2).
+    // (3,4,2) is its shield: swapping that cannot disable propulsion.
+    assert(ship.at(3,1,2)==Part::Thruster);
+    assert(ship.edit(3,1,2,Part::Wing)==ShipEdit::Replaced);
+    assert(!ship.ready());  // genuinely removed last fitted thruster
+    assert(ship.edit(3,1,2,Part::Thruster)==ShipEdit::Replaced);
     assert(ship.ready());
     const Ship3DSave good=ship.snapshot();
     assert(good.version==2u&&good.magic==0x33424853u);

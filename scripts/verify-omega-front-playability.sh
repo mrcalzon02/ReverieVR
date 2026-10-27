@@ -12,13 +12,21 @@ failures=0
 for source in "$root"/app/src/test/native/omega_front_*_test.cpp; do
     name="$(basename "$source" .cpp)"
     count=$((count + 1))
+    libraries=()
+    arguments=()
+    if [[ "$name" == omega_front_png_test ]]; then
+        # The decoder uses zlib; exercise the real 64 unmodified PNG files
+        # under the same full-suite runner, not only in hub CI.
+        libraries=(-lz)
+        arguments=("$root"/app/src/main/assets/native/omega-front/rpg_cc0/*.png)
+    fi
     if ! "${CXX:-c++}" -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
-       -I "$root/app/src/main/jni/native" "$source" -o "$tmp/$name"; then
+       -I "$root/app/src/main/jni/native" "$source" -o "$tmp/$name" "${libraries[@]}"; then
         echo "FAIL BUILD: $name" >&2
         failures=$((failures + 1))
         continue
     fi
-    if "$tmp/$name"; then
+    if "$tmp/$name" "${arguments[@]}"; then
         echo "PASS: $name"
     else
         echo "FAIL EXECUTION: $name" >&2

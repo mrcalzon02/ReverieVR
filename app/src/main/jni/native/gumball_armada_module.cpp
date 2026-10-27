@@ -4,7 +4,7 @@
 #include "gumball_space_3d.h"
 #include "gumball_shipyard_readiness.h"
 #include "gumball_menu_hit.h"
-#include "reverie_native_vector_text.h"
+#include "reverie_native_lato_text.h"
 #include "gumball_menu_layout.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
@@ -58,7 +58,8 @@ struct Module {
     int shipLayer=2;
     bool previewShip=false;
     float previewYaw=.5f,previewZoom=.20f;
-    int selected=0; // routes, upgrades, weapons, shipyard
+    int selected=0; // chart hover focus; never an implicit launch
+    reverie::gumball::RouteLaunchGate routeLaunch;
     bool inYard=false;
     bool inSupport=false;
     bool inLoadout=false;
@@ -76,6 +77,7 @@ struct Module {
     GLuint routeProgram=0,routeVbo=0,routeTextures[kArtworkCount]{};
     GLint routeCorner=-1,routeMvp=-1,routeRect=-1,routeSampler=-1;
     std::vector<float> mesh;
+    reverie::nativetext::LatoLayer font;
 };
 void Rect(Module* m,float x,float y,float w,float h,float z,float r,float g,float b){
     reverie::flatmesh::Rect(m->mesh,x,y,w,h,z,r,g,b);
@@ -86,20 +88,16 @@ void Disc(Module* m,float x,float y,float d,float z,float r,float g,float b){
 void Tri(Module* m,float x,float y,float a,float b,float c,float d,float z,float r,float g,float bl){
     reverie::flatmesh::Triangle(m->mesh,x,y,a,b,c,d,z,r,g,bl);
 }
-// Reuse the platform native vector font, not unreadable 3x5 pixel squares.
+// All Gumball menu, shipyard, in-flight and status letters are actual Lato
+// alpha-glyph quads. Position, game focus, option IDs and control input
+// remain unchanged; fitting uses proportional font advances.
 void Text(Module* m,const char* message,float x,float y,float sz,
           float r,float g,float b){
-    if(message&&sz>0.f)
-        reverie::nativeart::StrokeText(m->mesh,message,x,y,sz,r,g,b,-2.85f);
+    m->font.Text(message,x,y,sz,r,g,b,-2.85f);
 }
-// Width remains four stroke-font units per character; prevent label overflow.
 void TextFit(Module* m,const char* message,float x,float y,float maxWidth,
              float size,float r,float g,float b){
-    if(!message||maxWidth<=0.f)return;
-    const size_t count=std::strlen(message);
-    if(!count)return;
-    Text(m,message,x,y,
-         std::min(size,maxWidth/(4.f*static_cast<float>(count))),r,g,b);
+    m->font.Fit(message,x,y,maxWidth,size,r,g,b,-2.85f);
 }
 void Frame(Module* m,float x,float y,float w,float h,bool focus){
     Rect(m,x,y,w,h,-2.96f,focus?.35f:.13f,focus?.21f:.11f,focus?.48f:.18f);
@@ -133,23 +131,61 @@ void Chart(Module* m){
     const char* names[]={"SOUR SWEEP","INTERCEPT","RECOVERY"};
     for(int n=0;n<3;++n){
         const float x=reverie::gumball::kChartRouteX[n];
-        Frame(m,x,.22f,1.44f,1.09f,m->selected==n);
+        Frame(m,x,reverie::gumball::kChartRouteCardY,1.44f,
+              reverie::gumball::kChartRouteCardHeight,m->selected==n);
         const auto lane=m->sim.lane(static_cast<unsigned>(n));
         std::snprintf(text,sizeof(text),"LANE %c  %04u",'A'+n,lane.id);
-        TextFit(m,text,x-.17f,.57f,.94f,.034f,1.f,.88f,.95f);
-        Text(m,names[n],x,.35f,.031f,.69f,1.f,.84f);
+        TextFit(m,text,x,.035f,1.32f,.030f,1.f,.88f,.95f);
+        TextFit(m,names[n],x,-.115f,1.32f,.034f,.69f,1.f,.84f);
         const CastGuest rival=m->sim.route_guest(static_cast<unsigned>(n));
         TextFit(m,rival==CastGuest::None?"CLEAR OF KNOWN RIVALS":
             reverie::gumball::CastGuestName(rival),
-            x,.13f,1.31f,.029f,1.f,.70f,.51f);
-        if(lane.fortress)Text(m,"FORTRESS ROUTE",x,-.08f,.027f,1.f,.45f,.47f);
+            x,-.265f,1.31f,.026f,1.f,.70f,.51f);
+        if(lane.fortress)TextFit(m,"FORTRESS ROUTE",x,-.410f,1.32f,
+                                .025f,1.f,.45f,.47f);
         else{
             std::snprintf(text,sizeof(text),"RISK %u   REWARD %uG",
                           lane.hazard,lane.reward);
-            TextFit(m,text,x,-.08f,1.30f,.027f,.90f,.88f,.72f);
+            TextFit(m,text,x,-.410f,1.30f,.025f,.90f,.88f,.72f);
         }
-        Text(m,m->selected==n?"CLICK TO LAUNCH":"SELECT LANE",
-             x,-.23f,.026f,.61f,.94f,1.f);
+        TextFit(m,m->routeLaunch.armed==n?
+             (m->routeLaunch.ready(n)?"CLICK AGAIN TO FLY":"LOCKING ROUTE"):
+             (m->selected==n?"CLICK TO SELECT":"HOVER TO HIGHLIGHT"),
+             x,-.553f,1.30f,.023f,.61f,.94f,1.f);
+    }
+
+    // Branching strategic MAP: current sector leads into three independent
+    // authored lane routes. The chosen path is highlighted by pad/ray focus,
+    // while the stronger GOLD route requires a deliberate arm-and-confirm.
+    // These real route links are GPU geometry, NOT symbolic glyph lettering.
+    const int chosen=m->selected>=0&&m->selected<3?m->selected:-1;
+    Disc(m,0.f,reverie::gumball::kChartMapOriginY,.10f,
+         -2.925f,.78f,.92f,.98f);
+    for(int lane=0;lane<3;++lane){
+        const float x=reverie::gumball::kChartRouteX[lane];
+        const bool highlighted=chosen==lane;
+        const bool armed=m->routeLaunch.armed==lane;
+        const float r=armed?1.f:highlighted?.92f:.20f;
+        const float g=armed?.78f:highlighted?.81f:.39f;
+        const float b=armed?.24f:highlighted?.42f:.58f;
+        const float width=armed?.039f:highlighted?.028f:.012f;
+        const float z=-2.925f;
+        const float origin=reverie::gumball::kChartMapOriginY;
+        const float endpoint=reverie::gumball::kChartRouteNodeY;
+        reverie::flatmesh::Segment(m->mesh,0.f,origin-.025f,
+            x*.48f,.545f,width,z,r,g,b);
+        reverie::flatmesh::Segment(m->mesh,x*.48f,.545f,
+            x,endpoint,width,z,r,g,b);
+        Disc(m,x,endpoint,armed?.102f:highlighted?.086f:.061f,
+             -2.922f,r,g,b);
+        if(armed){
+            // Delay gauge fills only when elapsed, but never auto-launches.
+            const float ratio=std::min(1.f,
+                m->routeLaunch.elapsed/
+                reverie::gumball::RouteLaunchGate::kLockSeconds);
+            Rect(m,x,-.616f,1.22f*ratio,.028f,-2.919f,
+                 ratio>=1.f?.96f:.51f,ratio>=1.f?.91f:.75f,.24f);
+        }
     }
 
     const int selection[]={12,10,11};
@@ -166,10 +202,17 @@ void Chart(Module* m){
                     +((m->sim.bosses()>>2u)&1u)
                     +((m->sim.bosses()>>3u)&1u)));
     TextFit(m,text,0,-1.39f,4.2f,.034f,1.f,.88f,.64f);
-    Text(m,m->ship.ready()?"PAD SELECT   CLICK TO OPEN / FLY":
-         "SHIP NOT READY  /  OPEN SHIPYARD",
-         0,-1.64f,.027f,m->ship.ready()?.73f:1.f,
-         m->ship.ready()?.86f:.43f,.89f);
+    if(m->routeLaunch.armed>=0)
+        TextFit(m,m->routeLaunch.ready(m->routeLaunch.armed)?
+             "PATH LOCKED - CLICK SAME LANE TO LAUNCH":
+             "PATH SELECTED - ROUTE LOCKING...",
+             0,-1.64f,4.50f,.026f,.98f,.84f,.46f);
+    else
+        TextFit(m,m->ship.ready()?
+             "CHOOSE PATH - CLICK TO ARM / CLICK AGAIN TO FLY":
+             "SHIP NOT READY / OPEN SHIPYARD",
+             0,-1.64f,4.50f,.025f,m->ship.ready()?.73f:1.f,
+             m->ship.ready()?.86f:.43f,.89f);
 }
 void LoadoutView(Module* m){
     Background(m);
@@ -579,7 +622,7 @@ void Result(Module* m){
     Text(m,"CLICK TO RETURN TO CHART",0,-1.17f,.038f,.74f,.94f,.88f);
 }
 void Rebuild(Module* m){
-    m->mesh.clear();
+    m->mesh.clear();m->font.Clear();
     if(m->inYard)ShipyardView(m);
     else if(m->inSupport)SupportView(m);
     else if(m->inLoadout)LoadoutView(m);
@@ -753,6 +796,13 @@ int32_t GlStart(void* p){
         if(m->vbo)glDeleteBuffers(1,&m->vbo);
         glDeleteProgram(m->program);m->vbo=0;m->program=0;
     }
+    if(good && !m->font.Create()){
+        ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,kId,
+                           "Lato font atlas initialization failed");
+        glDeleteBuffers(1,&m->vbo);
+        glDeleteProgram(m->program);
+        m->vbo=m->program=0;good=false;
+    }
     if(good){
         // Separate, persistent textured-quad renderer; it does not rebuild
         // the flat HUD mesh or allocate textures during stereo eye rendering.
@@ -809,6 +859,7 @@ void GlEnd(void* p){
     if(m->routeProgram)glDeleteProgram(m->routeProgram);
     if(m->vbo)glDeleteBuffers(1,&m->vbo);
     if(m->program)glDeleteProgram(m->program);
+    m->font.Release();
     m->routeVbo=0;m->routeProgram=0;
     m->vbo=0;m->program=0;m->upload=true;
 }
@@ -823,7 +874,13 @@ void Update(void* p,const ReverieNativeInputV1* in){
     // click acts on it. Pad navigation is preferred while the pad is moving.
     const bool padMoving=std::fabs(in->move_x)>.55f
         ||std::fabs(in->move_y)>.55f;
-    if(phase==Phase::Chart&&padMoving)m->pointerFocus.padFocus=true;
+    if(phase==Phase::Chart){
+        if(padMoving)m->pointerFocus.padFocus=true;
+        const bool wasReady=m->routeLaunch.ready(m->selected);
+        m->routeLaunch.advance(dt);
+        if(!wasReady&&m->routeLaunch.ready(m->selected))
+            Rebuild(m); // update LOCKED gauge only once; never launch here
+    }
     const bool pointerRay=phase==Phase::Chart
         &&ReverieNativeInputHasPointerV1(in)
         &&in->pointer_kind!=REVERIE_NATIVE_POINTER_NONE;
@@ -867,7 +924,9 @@ void Update(void* p,const ReverieNativeInputV1* in){
                     hit=reverie::gumball::ChartHit(px,py);
                     pointed=hit;
                     if(hit.id>=0&&m->selected!=hit.id){
-                        m->selected=hit.id;changed=true;
+                        m->selected=hit.id;
+                        m->routeLaunch.focus(hit.id);
+                        changed=true;
                     }
                 }
                 if(changed){
@@ -1084,36 +1143,66 @@ void Update(void* p,const ReverieNativeInputV1* in){
         m->navTime-=dt;
         const float x=in->move_x,y=in->move_y;
         if(m->navTime<=0.f&&(std::fabs(x)>.6f||std::fabs(y)>.6f)){
-            m->selected=ChartNavigate(m->selected,
+            const int next=ChartNavigate(m->selected,
                 std::fabs(x)>std::fabs(y)?(x>0.f?1:-1):0,
                 std::fabs(y)>=std::fabs(x)?(y>0.f?-1:1):0);
+            m->routeLaunch.focus(next);
+            m->selected=next;
             m->navTime=.19f;
             ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
             Rebuild(m);
         }
         if(clickEdge&&mayClick){
             bool good=false;
+            bool handledRoute=false;
             if(m->selected>=0&&m->selected<3){
-                good=m->sim.launch(static_cast<unsigned>(m->selected));
-                if(good)Save(m); // consume pending escort exactly once
+                handledRoute=true;
+                switch(m->routeLaunch.press(m->selected)){
+                case reverie::gumball::RoutePress::Armed:
+                    // First click only selects the highlighted MAP path.
+                    ReverieNativeRequestFeedbackV1(
+                        m->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+                    Rebuild(m);
+                    break;
+                case reverie::gumball::RoutePress::Waiting:
+                    // Quick repeat/touch jitter cannot launch prematurely.
+                    ReverieNativeRequestFeedbackV1(
+                        m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+                    break;
+                case reverie::gumball::RoutePress::Launch:
+                    good=m->sim.launch(static_cast<unsigned>(m->selected));
+                    if(good)Save(m); // consume pending escort exactly once
+                    else ReverieNativeRequestFeedbackV1(
+                        m->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+                    break;
+                case reverie::gumball::RoutePress::Ignored: break;
+                }
             }else if(m->selected==10){
+                m->routeLaunch.reset();
                 m->inYard=true;m->yardCursor=YardCursor{};
                 m->pointerFocus.screenChanged();
                 std::snprintf(m->yardFeedback,sizeof(m->yardFeedback),
                               "SELECT PART ON RIGHT / CLICK SHIP TO EDIT");
                 good=true;
             }else if(m->selected==11){
+                m->routeLaunch.reset();
                 m->inSupport=true;m->supportSelected=0;
                 m->pointerFocus.screenChanged();good=true;
             }else if(m->selected==12){
+                m->routeLaunch.reset();
                 m->inLoadout=true;m->loadoutSelected=0;
                 m->pointerFocus.screenChanged();good=true;
             }
-            ReverieNativeRequestFeedbackV1(m->host,good?
-                REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            // Armed/Waiting already issued their own focus/denied feedback.
+            // Only actual Launch or utility actions emit activation/failure.
+            if(!handledRoute || good)
+                ReverieNativeRequestFeedbackV1(m->host,good?
+                    REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                    REVERIE_NATIVE_FEEDBACK_FAILURE);
             Rebuild(m);
         }
     }else if(pressed&&!m->primary&&m->sim.recover()){
+        m->routeLaunch.reset();
         m->pointerFocus.screenChanged();
         Save(m);Rebuild(m);
         ReverieNativeRequestFeedbackV1(m->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
@@ -1183,12 +1272,13 @@ int32_t Render(void* p,const ReverieNativeEyeV1* eye){
             }
         }
     }
+    const bool fontOk=m->font.Draw(mvp);
     const GLenum error=glGetError();
     ReverieNativeGlAttribRestoreV1(&c);
     ReverieNativeGlAttribRestoreV1(&b);
     ReverieNativeGlAttribRestoreV1(&a);
     ReverieNativeGlStateRestoreV1(&state);
-    return error==GL_NO_ERROR?1:0;
+    return fontOk && error==GL_NO_ERROR ? 1:0;
 }
 const ReverieNativeModuleApiV1 api={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,

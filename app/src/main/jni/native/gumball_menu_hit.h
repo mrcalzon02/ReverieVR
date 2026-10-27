@@ -42,7 +42,12 @@ inline bool MenuClickAllowed(bool rayPresent,bool padOwnsFocus,
 }
 inline MenuHit ChartHit(float x,float y){
     for(int i=0;i<3;++i){
-        if(MenuInside(x,y,kChartRouteX[i],.22f,1.44f,1.09f))
+        // Route cards and visible map destination nodes share the same
+        // actual selectable lane. No oversized invisible UI over the origin.
+        if(MenuInside(x,y,kChartRouteX[i],kChartRouteCardY,
+                      1.44f,kChartRouteCardHeight)
+           ||MenuInside(x,y,kChartRouteX[i],kChartRouteNodeY,
+                         .30f,.27f))
             return {i,-1,-1};
         if(MenuInside(x,y,kChartActionX[i],-.94f,1.43f,.55f))
             return {i==0?12:(i==1?10:11),-1,-1};

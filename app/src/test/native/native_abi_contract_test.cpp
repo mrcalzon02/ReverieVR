@@ -1,5 +1,6 @@
 #include "reverie_native_sdk.h"
 #include "reverie_native_avatar_geometry.h"
+#include "reverie_native_avatar_wardrobe.h"
 #include "reverie_native_sound_queue.h"
 
 #include <cstddef>
@@ -193,12 +194,12 @@ int main() {
         Check(ReverieNativeRequestSoundV1(&host,cue) != 0,
               "valid ordered cue should dispatch");
     }
-    Check(captured_sound_calls==15u &&
-          captured_sound_cue==REVERIE_NATIVE_SOUND_SHORE_COLLISION,
-          "one callback per distinct weapon report");
+    Check(captured_sound_calls==REVERIE_NATIVE_SOUND_MAX_V1 &&
+          captured_sound_cue==REVERIE_NATIVE_SOUND_MAX_V1,
+          "one callback per valid ordered sound cue");
     Check(ReverieNativeRequestSoundV1(&host,0u)==0 &&
           ReverieNativeRequestSoundV1(&host,9999u)==0 &&
-          captured_sound_calls==15u,
+          captured_sound_calls==REVERIE_NATIVE_SOUND_MAX_V1,
           "invalid cue ids rejected without reaching host");
     host.request_sound=nullptr;
     Check(ReverieNativeRequestSoundV1(&host,
@@ -624,6 +625,71 @@ int main() {
         &red,&green,&blue);
     Check(red>0.f && green>0.f && blue>0.f,
         "shared accent-color palette must produce valid material values");
+
+
+    ReverieNativeAvatarV1 wardrobe_avatar={};
+    wardrobe_avatar.struct_size=sizeof(wardrobe_avatar);
+    wardrobe_avatar.schema_version=REVERIE_NATIVE_AVATAR_SCHEMA_V1;
+    const uint32_t baseline[15]={
+        0u,0u,0u,0u,0u,2u,3u,3u,3u,3u,3u,3u,0u,0u,0u
+    };
+    for(int k=0;k<15;k++)wardrobe_avatar.fields[k]=baseline[k];
+    static float plain[REVERIE_NATIVE_WARDROBE_FLOATS_V1];
+    static float ornate[REVERIE_NATIVE_WARDROBE_FLOATS_V1];
+    uint32_t plain_visible=0u,ornate_visible=0u;
+    Check(ReverieNativeWriteAvatarWardrobeV1(
+        &wardrobe_avatar,0.f,0.f,-1.f,plain,
+        REVERIE_NATIVE_WARDROBE_FLOATS_V1,&plain_visible)!=0,
+        "plain outfit must produce bounded VR-ready geometry");
+    Check(plain_visible==(3u|12u|3072u),
+        "no hair/hat/accessory must not produce invisible props");
+    wardrobe_avatar.fields[REVERIE_NATIVE_AVATAR_OUTFIT]=23u;
+    wardrobe_avatar.fields[REVERIE_NATIVE_AVATAR_HAIR]=11u;
+    wardrobe_avatar.fields[REVERIE_NATIVE_AVATAR_HAT]=15u;
+    wardrobe_avatar.fields[REVERIE_NATIVE_AVATAR_ACCESSORY]=15u;
+    wardrobe_avatar.fields[REVERIE_NATIVE_AVATAR_EYES]=2u;
+    wardrobe_avatar.fields[REVERIE_NATIVE_AVATAR_SHOULDERS]=6u;
+    wardrobe_avatar.fields[REVERIE_NATIVE_AVATAR_MUSCLE]=6u;
+    Check(ReverieNativeWriteAvatarWardrobeV1(
+        &wardrobe_avatar,0.f,0.f,-1.f,ornate,
+        REVERIE_NATIVE_WARDROBE_FLOATS_V1,&ornate_visible)!=0,
+        "fully dressed avatar must generate the wardrobe mesh");
+    Check(ornate_visible==((1u<<REVERIE_NATIVE_WARDROBE_SLOTS_V1)-1u),
+        "garments/hair/hats/accessories/eyes must all be visible");
+    bool geometry_different=false,geometry_finite=true;
+    for(size_t k=0u;k<REVERIE_NATIVE_WARDROBE_FLOATS_V1;k++) {
+        if(plain[k]!=ornate[k])geometry_different=true;
+        if(!std::isfinite(ornate[k]))geometry_finite=false;
+    }
+    Check(geometry_different&&geometry_finite,
+        "outfits and body shapes must change finite 3D vertices");
+    Check(!ReverieNativeWriteAvatarWardrobeV1(
+        &wardrobe_avatar,0.f,0.f,-1.f,ornate,3u,&ornate_visible),
+        "generator must reject undersized buffers");
+    Check(ornate_visible==0u,
+        "invalid generator output must clear the visibility bitmask");
+    Check(!ReverieNativeWriteAvatarWardrobeV1(
+        &wardrobe_avatar,0.f,0.f,-1.f,ornate,
+        REVERIE_NATIVE_WARDROBE_FLOATS_V1,nullptr),
+        "missing visibility bitmask must fail closed");
+    float cloth_r=0.f,cloth_g=0.f,cloth_b=0.f;
+    wardrobe_avatar.fields[REVERIE_NATIVE_AVATAR_FABRIC]=13u;
+    ReverieNativeAvatarWardrobeTintV1(
+        &wardrobe_avatar,0u,&cloth_r,&cloth_g,&cloth_b);
+    Check(cloth_r>0.f&&cloth_g>0.f&&cloth_b>0.f,
+        "garment tint must come from the selected wardrobe fabric");
+    float eyes_r=0.f,eyes_g=0.f,eyes_b=0.f;
+    ReverieNativeAvatarWardrobeTintV1(
+        &wardrobe_avatar,5u,&eyes_r,&eyes_g,&eyes_b);
+    Check(eyes_g>.5f&&eyes_b>.5f,
+        "cyber eyes must differ visibly from regular eyes");
+    const ReverieNativeBodyEllipsoidV1 invariant_collider=
+        ReverieNativeAvatarCollisionV1(0.f,0.f,0.f);
+    wardrobe_avatar.fields[REVERIE_NATIVE_AVATAR_PHYSIQUE]=11u;
+    Check(invariant_collider.radius_x==.27f
+        && invariant_collider.radius_y==.85f
+        && invariant_collider.radius_z==.27f,
+        "visual wardrobe changes cannot alter collision geometry");
 
     if (failures != 0) {
         std::fprintf(

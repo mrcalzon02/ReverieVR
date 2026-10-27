@@ -63,7 +63,7 @@ LOCAL_SRC_FILES := native/recon_projects_module.cpp native/lantern_desk_simulati
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DRECON_PROJECT_KIND=0
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 LOCAL_PATH := $(REVERIE_JNI_PATH)
@@ -73,7 +73,7 @@ LOCAL_SRC_FILES := native/recon_projects_module.cpp native/forward_detachment_si
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DRECON_PROJECT_KIND=1
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 # Development-only seated-defense native module
@@ -95,7 +95,7 @@ LOCAL_SRC_FILES := native/gumball_armada_module.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 # Omega Front Development-only native war table.
@@ -143,7 +143,8 @@ LOCAL_LDLIBS += -lGLESv2 -lm
 include $(BUILD_SHARED_LIBRARY)
 
 
-# Original low-poly board game; no extra runtime or textures.
+# Classic Checkers board with the existing licensed Lato glyph atlas.
+# The offline compressed atlas needs Android's system zlib, as Chess already does.
 LOCAL_PATH := $(REVERIE_JNI_PATH)
 include $(CLEAR_VARS)
 LOCAL_MODULE := reverie_module_classic_checkers
@@ -151,7 +152,7 @@ LOCAL_SRC_FILES := native/classic_games_module.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=3
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 

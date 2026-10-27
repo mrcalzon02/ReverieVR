@@ -1,5 +1,6 @@
 #include "reverie_native_sdk.h"
 #include "reverie_native_avatar_geometry.h"
+#include "reverie_native_avatar_wardrobe.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
@@ -27,6 +28,8 @@ struct ModuleState {
     GLuint texture = 0;
     ReverieNativeAvatarV1 avatar = {};
     GLsizei avatar_vertex_count = 0;
+    GLsizei wardrobe_vertex_count = 0;
+    uint32_t wardrobe_visible = 0u;
 
     GLint position_location = -1;
     GLint uv_location = -1;
@@ -365,6 +368,27 @@ int32_t InitializeGl(ModuleState *state) {
     }
     state->avatar_vertex_count=figure_ok
         ?static_cast<GLsizei>(REVERIE_NATIVE_AVATAR_FIGURE_VERTICES_V1):0;
+    // Same selected outfit, hair, hat, accessory and eye style as Home.
+    // Prepared once per GL context, never in per-eye rendering.
+    std::vector<float> wearables(REVERIE_NATIVE_WARDROBE_FLOATS_V1);
+    uint32_t visible=0u;
+    const bool wardrobe_ok=figure_ok && ReverieNativeWriteAvatarWardrobeV1(
+        &state->avatar,1.05f,-1.5f,-1.3f,
+        wearables.data(),wearables.size(),&visible)!=0;
+    state->wardrobe_vertex_count=wardrobe_ok
+        ?static_cast<GLsizei>(REVERIE_NATIVE_WARDROBE_VERTICES_V1):0;
+    state->wardrobe_visible=wardrobe_ok?visible:0u;
+    if(wardrobe_ok) {
+        room_and_avatar.reserve(room_and_avatar.size()
+            +REVERIE_NATIVE_WARDROBE_VERTICES_V1*5u);
+        for(size_t i=0;i<wearables.size();i+=3u) {
+            room_and_avatar.push_back(wearables[i]);
+            room_and_avatar.push_back(wearables[i+1u]);
+            room_and_avatar.push_back(wearables[i+2u]);
+            room_and_avatar.push_back(.5f);
+            room_and_avatar.push_back(.5f);
+        }
+    }
     glBufferData(GL_ARRAY_BUFFER,
         static_cast<GLsizeiptr>(room_and_avatar.size()*sizeof(float)),
         room_and_avatar.data(),GL_STATIC_DRAW);
@@ -728,6 +752,24 @@ int32_t RenderEye(
         glDrawArrays(GL_TRIANGLES,
             36+6*REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1,
             REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1);
+    }
+
+    // Six paired material sections: garment, trim, hair, hat, prop,
+    // eyes. Draw only visible meshes; absent accessories are not rendered.
+    if(state->wardrobe_vertex_count>0) {
+        const GLint wardrobe_start=36+state->avatar_vertex_count;
+        for(unsigned group=0u;group<6u;group++) {
+            const uint32_t mask=3u<<(group*2u);
+            if((state->wardrobe_visible&mask)==0u)continue;
+            float r=1.f,g=1.f,b=1.f;
+            ReverieNativeAvatarWardrobeTintV1(
+                &state->avatar,group,&r,&g,&b);
+            glUniform3f(state->tint_location,r,g,b);
+            glDrawArrays(GL_TRIANGLES,
+                wardrobe_start+static_cast<GLint>(
+                    group*2u*REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1),
+                2*REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1);
+        }
     }
 
     ReverieNativeGlAttribRestoreV1(

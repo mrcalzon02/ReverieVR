@@ -3,7 +3,7 @@
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
 #include "reverie_native_flat_mesh.h"
-#include "reverie_native_vector_text.h"
+#include "reverie_native_lato_text.h"
 #if !defined(RECON_PROJECT_KIND) || (RECON_PROJECT_KIND != 0 && RECON_PROJECT_KIND != 1)
 #error "Select a recon project"
 #endif
@@ -43,13 +43,14 @@ struct State {
     GLuint shader=0,vbo=0;
     GLint pos=-1,col=-1,mvp=-1;
     std::vector<float> mesh;
+    reverie::nativetext::LatoLayer font;
 };
 void Rect(State *s,float x,float y,float w,float h,float z,float r,float g,float b){
     reverie::flatmesh::Rect(s->mesh,x,y,w,h,z,r,g,b);
 }
 void Text(State *s,const char *str,float y,float size,
           float r,float g,float b){
-    reverie::nativeart::StrokeText(s->mesh,str,0.f,y,size,r,g,b,-2.87f);
+    s->font.Fit(str,0.f,y,4.66f,size,r,g,b,-2.87f);
 }
 int Choices(const State *s){
 #if RECON_PROJECT_KIND == 0
@@ -62,7 +63,7 @@ int Choices(const State *s){
     return 1;
 }
 void DrawBoard(State *s){
-    s->mesh.clear();
+    s->mesh.clear();s->font.Clear();
     Rect(s,0,0,5.0f,3.45f,-3.03f,.028f,.050f,.076f);
     Rect(s,0,1.43f,4.75f,.44f,-2.99f,.13f,.21f,.22f);
     Text(s,kHeader,1.39f,.053f,.93f,.94f,.83f);
@@ -215,6 +216,12 @@ int32_t GlStart(void *p){
         if(s->vbo)glDeleteBuffers(1,&s->vbo);
         glDeleteProgram(s->shader);s->shader=0;s->vbo=0;return 0;
     }
+    if(!s->font.Create()){
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_ERROR,kId,
+                           "Lato font GPU atlas initialization failed");
+        glDeleteBuffers(1,&s->vbo);glDeleteProgram(s->shader);
+        s->vbo=s->shader=0;return 0;
+    }
     s->upload=true;
     return 1;
 }
@@ -222,6 +229,7 @@ void GlEnd(void *p){
     State *s=static_cast<State *>(p);if(!s)return;
     if(s->vbo)glDeleteBuffers(1,&s->vbo);
     if(s->shader)glDeleteProgram(s->shader);
+    s->font.Release();
     s->vbo=0;s->shader=0;s->upload=true;
 }
 void Resume(void *){} void Pause(void *){}
@@ -266,11 +274,12 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
                           6*sizeof(float),reinterpret_cast<const void *>(3*sizeof(float)));
     glUniformMatrix4fv(s->mvp,1,GL_FALSE,matrix);
     glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->mesh.size()/6));
-    GLenum error=glGetError();
+    const bool baseOk=glGetError()==GL_NO_ERROR;
+    const bool fontOk=s->font.Draw(matrix);
     ReverieNativeGlAttribRestoreV1(&b);
     ReverieNativeGlAttribRestoreV1(&a);
     ReverieNativeGlStateRestoreV1(&old);
-    return error==GL_NO_ERROR?1:0;
+    return baseOk && fontOk ? 1:0;
 }
 const ReverieNativeModuleApiV1 api={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,

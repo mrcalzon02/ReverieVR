@@ -1,0 +1,136 @@
+name: ReverieVR Android Recovery Simulation + Capture
+
+# User-triggered Android recovery laboratory. Runs on changes to this lab only;
+# avoids rebuilding the full hub for unrelated assets/game commits.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/reverie-android-recovery-simulation.yml'
+      - 'scripts/ci/run-recovery-simulation-emulator.sh'
+      - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/RecoverySimulationInstrumentedTest.java'
+      - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/DownloadedNativeGameAssetsInstrumentedTest.java'
+      - 'modules/game-identity-matrix.json'
+      - 'app/src/main/jni/native/classic_games_module.cpp'
+      - 'app/src/main/jni/native/recon_projects_module.cpp'
+      - 'app/src/main/jni/native/omega_front_module.cpp'
+      - 'app/src/main/jni/native/gumball_armada_module.cpp'
+      - 'app/src/main/jni/native/red_ledger_module.cpp'
+      - 'app/src/main/jni/native/red_ledger_clientele.h'
+      - 'app/src/test/native/red_ledger_clientele_test.cpp'
+      - 'app/src/main/jni/native/gumball_menu_layout.h'
+      - 'app/src/main/jni/native/gumball_menu_hit.h'
+      - 'app/src/test/native/gumball_menu_layout_test.cpp'
+      - 'app/src/test/native/gumball_menu_hit_test.cpp'
+      - 'app/src/main/jni/native/reverie_native_lato_text.h'
+      - 'app/src/main/jni/Android.mk'
+      - 'app/src/main/jni/native/breakwater_font_atlas.h'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/GazeFallbackPolicy.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/ControllerPoseVisibility.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/UpdateChecker.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/RvPackInstaller.java'
+      - 'app/build.gradle'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reverie-android-recovery-simulation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  emulate-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable Android emulator acceleration
+        shell: bash
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Install pinned Android build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then SDKMANAGER="$(command -v sdkmanager || true)"; fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.22.1'
+      - name: Fetch existing authoritative hub build inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew scripts/fetch-dosbox-pure.sh scripts/fetch-doom-shareware.sh scripts/fetch-kens-labyrinth.sh scripts/fetch-jetpack.sh scripts/verify-build-bootstrap.sh
+          ./scripts/fetch-dosbox-pure.sh
+          ./scripts/fetch-doom-shareware.sh
+          ./scripts/fetch-kens-labyrinth.sh
+          ./scripts/fetch-jetpack.sh
+          ./scripts/verify-build-bootstrap.sh
+      - name: Build two signer-identical emulator APKs with ordered version codes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p validation/recovery-simulation
+          ./gradlew --no-daemon --stacktrace \
+            -PcompanionEmulatorAbi=true -PphoneTestRunNumber=101 \
+            -PphoneTestRunAttempt=1 -PphoneTestBuildEpochSeconds=1760000000 \
+            :app:assembleDebug
+          OLD="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -s "$OLD"
+          cp "$OLD" validation/recovery-simulation/ReverieVR-debug-old-x86_64.apk
+          ./gradlew --no-daemon --stacktrace \
+            -PcompanionEmulatorAbi=true -PphoneTestRunNumber=101 \
+            -PphoneTestRunAttempt=2 -PphoneTestBuildEpochSeconds=1760000600 \
+            :app:assembleDebug :app:assembleDebugAndroidTest
+          NEW="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          TEST="$(find app/build/outputs/apk/androidTest/debug -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -s "$NEW" && test -s "$TEST"
+          cp "$NEW" validation/recovery-simulation/ReverieVR-debug-new-x86_64.apk
+          cp "$TEST" validation/recovery-simulation/ReverieVR-android-tests.apk
+          AAPT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/aapt"
+          APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/apksigner"
+          for ORDER in old new; do
+            APK="validation/recovery-simulation/ReverieVR-debug-${ORDER}-x86_64.apk"
+            "$AAPT" dump badging "$APK" > "validation/recovery-simulation/${ORDER}-badging.txt"
+            "$APKSIGNER" verify --print-certs "$APK" > "validation/recovery-simulation/${ORDER}-signature.txt"
+            unzip -Z -1 "$APK" | grep -Fx 'lib/x86_64/libreverie_native_host.so'
+          done
+          grep -F "versionCode='182163200'" validation/recovery-simulation/old-badging.txt
+          grep -F "versionCode='182163800'" validation/recovery-simulation/new-badging.txt
+          OLD_SIGNER="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' validation/recovery-simulation/old-signature.txt | head -1)"
+          NEW_SIGNER="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' validation/recovery-simulation/new-signature.txt | head -1)"
+          test -n "$OLD_SIGNER" && test "$OLD_SIGNER" = "$NEW_SIGNER"
+          echo 'PASS: two x86_64 Android APKs share identical signer and have strictly increasing versionCode'
+      - name: Install, simulate controller outages, upgrade, and capture Android 10
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          cores: 2
+          ram-size: 3072M
+          heap-size: 512M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: bash scripts/ci/run-recovery-simulation-emulator.sh
+      - name: Preserve actual emulator frames, policy traces and installer evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reverie-android-recovery-capture-${{ github.run_id }}
+          path: |
+            validation/recovery-simulation/
+            !validation/recovery-simulation/*.apk
+          retention-days: 14
+          if-no-files-found: warn

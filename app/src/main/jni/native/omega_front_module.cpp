@@ -7,7 +7,7 @@
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
 #include "reverie_native_flat_mesh.h"
-#include "reverie_native_vector_text.h"
+#include "reverie_native_lato_text.h"
 #include <GLES2/gl2.h>
 #include <cmath>
 #include <cstdio>
@@ -35,6 +35,7 @@ struct State {
     game::Result saved_result=game::Result::Active;
     game::FrontMode saved_view=game::FrontMode::SectorMap;
     std::vector<float> mesh;
+    reverie::nativetext::LatoLayer font;
     reverie::omega_art::SpriteRenderer sprites;
     size_t base_vertices=0,unit_vertices=0;
 };
@@ -44,20 +45,21 @@ void Rect(State *s,float x,float y,float w,float h,float z,float r,float g,float
 void Line(State *s,float x,float y,float xx,float yy,float w,float z,float r,float g,float b){
     reverie::flatmesh::Segment(s->mesh,x,y,xx,yy,w,z,r,g,b);
 }
-// Native outline lettering; coordinates and font scaling are unchanged.
+// Genuine proportional Lato glyphs, never simulated stroke geometry.
+// Screen and sector label widths are bounded independently for legibility.
 void Text(State *s,const char *msg,float center_y,float px,
           float r,float g,float b){
-    reverie::nativeart::StrokeText(s->mesh,msg,0.f,center_y,px,r,g,b,kNear);
+    s->font.Fit(msg,0.f,center_y,2.07f,px,r,g,b,kNear);
 }
 void TextAt(State *s,const char *msg,float cx,float center_y,float px,
             float r,float g,float b){
-    reverie::nativeart::StrokeText(s->mesh,msg,cx,center_y,px,r,g,b,kNear);
+    s->font.Fit(msg,cx,center_y,.34f,px,r,g,b,kNear);
 }
 void DrawMap(State *s){
     const game::Session &session=s->session;
     const game::Frontier &f=session.frontier;
     s->mesh.clear();s->mesh.reserve(14000);
-    s->sprites.Clear();
+    s->font.Clear();s->sprites.Clear();
     Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
     Text(s,"OMEGA FRONT  HEARTHFALL",1.070f,.014f,.92f,.94f,.81f);
     char line[110];
@@ -397,7 +399,7 @@ void SpriteEquipment(State *s,const game::Unit &u,float x,float y,
 void Draw(State *s){
     if(s->session.view==game::FrontMode::SectorMap){DrawMap(s);return;}
     s->mesh.clear();s->mesh.reserve(75000);
-    s->sprites.Clear();
+    s->font.Clear();s->sprites.Clear();
     Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
     Rect(s,0,kCenterY,2*kHalf+.035f,2*kHalf+.035f,kBoardZ-.04f,.21f,.28f,.20f);
     s->base_vertices=s->mesh.size()/6u;
@@ -714,6 +716,12 @@ int32_t GlStart(void *p){
         glDeleteProgram(s->program);
         s->program=s->vbo=0;return 0;
     }
+    if(!s->font.Create()){
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_ERROR,kId,
+                           "Lato font atlas initialization failed");
+        glDeleteBuffers(1,&s->vbo);glDeleteProgram(s->program);
+        s->vbo=s->program=0;return 0;
+    }
     s->sprites.Initialize(s->host);
     Draw(s);s->upload=true;
     return 1;
@@ -722,6 +730,7 @@ void GlEnd(void *p){
     State *s=static_cast<State *>(p);if(!s)return;
     if(s->vbo)glDeleteBuffers(1,&s->vbo);
     if(s->program)glDeleteProgram(s->program);
+    s->font.Release();
     s->sprites.Shutdown();
     s->vbo=0;s->program=0;s->upload=true;
 }
@@ -869,12 +878,13 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
         sprites(omega_art::kGroundCount,omega_art::kTerrainCount);
     }
     s->sprites.upload=false;
+    const bool fontOk=s->font.Draw(matrix);
     glBlendFuncSeparate(src_rgb,dst_rgb,src_alpha,dst_alpha);
     const GLenum error=glGetError();
     ReverieNativeGlAttribRestoreV1(&b);
     ReverieNativeGlAttribRestoreV1(&a);
     ReverieNativeGlStateRestoreV1(&old);
-    return error==GL_NO_ERROR?1:0;
+    return fontOk && error==GL_NO_ERROR ? 1:0;
 }
 const ReverieNativeModuleApiV1 api={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,

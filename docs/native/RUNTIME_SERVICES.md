@@ -31,6 +31,22 @@ The native games shelf now includes a first-page **Manage Game Downloads / Updat
 
 `NativeModuleRuntime` supplies its selected game's `RvPackInstaller.activeAssets` immutable revision directory to `nativeCreate`. The host checks the expected private `/module-packs/<id>/releases/<rev>/assets` location, then performs a bounded read of the previously validated module-owned path; if the optional file is absent it falls back to Android AssetManager. This is an integrated content-resolution path, **not** a feature for independently downloaded native code. Source integration and JVM/host checks do not constitute APK/S9 acceptance.
 
+## Omega Front CC0 tactical sprite admission — 2026-10-25
+
+The host-owned `reverie_native_asset_scope.h` read classifier must admit exactly
+the 64 licensed `native/omega-front/rpg_cc0/*.png` runtime sprites referenced
+by `omega_front_texture_renderer.h`: `tiny_battle_0000`–`0031`,
+`rpg_urban_0000`–`0015`, and `roguelike_city_0000`–`0015`.
+Every filename has four decimal digits, an exact `.png` suffix and is
+scoped to `omega-front`. Each read has a 256 KiB cap; sibling directories,
+unexpected names/indices, parent traversal, and attempts by other games
+are denied. Existing terrain/shared/Kenney reads and other games' asset
+roots remain unchanged. This repairs a host permission rejection confirmed
+by Android emulator run 40235295816 (44/108 texture uploads), **not** an
+excuse to bypass PNG decode, GPU upload, or the strict 108/108 runtime
+verification. Native/game API and save formats are unchanged. Android CI
+and Galaxy S9 headset verification are separate required acceptance gates.
+
 ## Gumball Chart artwork: read-only scoped asset consumer — 2026-10-23
 
 The existing native host `read_asset` optional ABI-v1 tail now recognizes

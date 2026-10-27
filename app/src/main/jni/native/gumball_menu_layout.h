@@ -30,6 +30,31 @@ inline int ChartNavigate(int selection,int horizontal,int vertical){
         ChartColumn(selection),vertical>0);
     return selection;
 }
+// A lane click first commits a highlighted route on the strategic chart.
+// Launch needs a separate click AFTER the route-lock delay; no hover,
+// controller jitter, held click or passive elapsed time may launch a mission.
+enum class RoutePress : unsigned char { Ignored, Armed, Waiting, Launch };
+struct RouteLaunchGate {
+    int armed=-1;
+    float elapsed=0.f;
+    static constexpr float kLockSeconds=.35f;
+    void reset(){armed=-1;elapsed=0.f;}
+    void focus(int item){if(armed>=0 && armed!=item)reset();}
+    void advance(float dt){
+        if(armed>=0 && dt>0.f && dt<=.05f)
+            elapsed=elapsed+dt>kLockSeconds?kLockSeconds:elapsed+dt;
+    }
+    bool ready(int item)const{
+        return armed==item&&elapsed>=kLockSeconds;
+    }
+    RoutePress press(int item){
+        if(item<0||item>2){reset();return RoutePress::Ignored;}
+        if(armed!=item){armed=item;elapsed=0.f;return RoutePress::Armed;}
+        if(!ready(item))return RoutePress::Waiting;
+        reset();
+        return RoutePress::Launch;
+    }
+};
 // The hosted game's secondary action leaves equipment/support screens.
 // Shipyard deliberately owns secondary for palette/grid focus, not Back.
 inline bool PrepSecondaryBack(bool inLoadout,bool inSupport,bool inYard,
@@ -56,6 +81,11 @@ inline int LoadoutNavigate(int selection,int horizontal,int vertical){
 }
 // Layout centers and sizes, all in native flat-mesh world units.
 constexpr float kChartRouteX[3]={-1.55f,0.f,1.55f};
+constexpr float kChartRouteCardY=-.25f;
+constexpr float kChartRouteCardHeight=.76f;
+constexpr float kChartRouteNodeY=.27f;
+constexpr float kChartMapOriginY=.78f;
+
 constexpr float kChartActionX[3]={-1.55f,0.f,1.55f};
 constexpr float kLoadoutUpgradeX[4]={-1.82f,-.61f,.60f,1.81f};
 constexpr float kLoadoutWeaponX[3]={-1.55f,0.f,1.55f};

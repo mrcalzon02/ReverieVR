@@ -1,3 +1,20 @@
+## Shared native wardrobe apparel renderer — 2026-10-26
+
+Source-implemented reusable `reverie_native_avatar_wardrobe.h` defines
+profile-driven, low-poly geometry for 24 outfits, 12 hairstyles,
+16 headwear choices, 16 accessories and 4 eye styles. Each optional
+group is represented as two simple stretched spheres with a visibility
+mask; every generated vertex is bounded and deterministic. The
+`procedural-test-chamber` now combines seven body components and
+twelve apparel pieces inside its existing static VBO at GL creation.
+Material groups are drawn per eye from the same VBO, without rebuilding
+any geometry during rendering. Native games can adopt the same helper
+but are **not claimed** to be individually wearing these meshes yet.
+Legacy module games and fixed player collision remain unaffected.
+Test-source checks cover full and empty outfits and finite vertex
+positions. Android NDK, APK, Galaxy S9 stereo/performance validation
+remain outstanding.
+
 ## Shared shell avatar and standardized ellipsoid — 2026-10-24
 
 The global Home avatar is now a read-only native-host capability (not a new
@@ -231,3 +248,7 @@ When an implementation is removed, renamed, promoted, or downgraded, update its 
 - `docs/native/CONTRACT_INDEX.md`;
 - this catalog;
 - the machine drift guard where the fact can be checked.
+
+## Native font standardization — 2026-10-26
+
+`app/src/main/jni/native/reverie_native_lato_text.h` is the **implemented provisional shared GLES2 UI glyph layer** using the same licensed Lato Semibold atlas already proven in Breakwater and Classic Chess. Ministry: Lantern Desk and Iron Sight: Forward Detachment source now consume its alpha-glyph batches; Android emulator and S9 acceptance remain distinct. The legacy `reverie_native_vector_text.h` remains as a separately classified geometry-stroke legacy method, **not genuine font rasterization**. Normative behavior and per-screen scope: [NATIVE_VECTOR_TEXT_STANDARD.md](NATIVE_VECTOR_TEXT_STANDARD.md). 

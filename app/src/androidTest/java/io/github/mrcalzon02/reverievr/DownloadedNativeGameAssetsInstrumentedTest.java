@@ -161,7 +161,9 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             assertTrue(home.mkdirs());
             try(Pbuffer egl=new Pbuffer();
                 NativeModuleRuntime runtime=new NativeModuleRuntime(
-                    home,app.getAssets(),null,true)){
+                    home,app.getAssets(),null,true,
+                new ReveriePreferences(
+                InstrumentationRegistry.getInstrumentation().getContext()))){
                 boolean started=runtime.start(id);
                 assertTrue("Native game failed to start "+id+": "+
                     runtime.getLastError(),started);
@@ -269,7 +271,9 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         VirtualInputBus bus=new VirtualInputBus();
         try(Pbuffer egl=new Pbuffer();
             NativeModuleRuntime runtime=new NativeModuleRuntime(
-                home,app.getAssets(),bus,false)){
+                home,app.getAssets(),bus,false,
+                new ReveriePreferences(
+                InstrumentationRegistry.getInstrumentation().getContext()))){
             assertTrue("Omega Front normal native start failed: "+
                 runtime.getLastError(),runtime.start("omega-front"));
             assertTrue("Omega Front GLES2 initialization failed",
@@ -323,6 +327,166 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 " movedCRC="+moved+" restoredCRC="+restored);
         }finally{remove(base);}
     }
+
+
+    /**
+     * Preserve real installed-GLES2 initial/menu frames for EVERY registered
+     * native game, including built-in classic board/arcade games. No generated
+     * thumbnails, no synthetic scene and no temporary 'proof' splash art.
+     * DOS titles are a DIFFERENT runtime and need their own DOS capture gate.
+     */
+    /**
+     * Genuine installed native C++ GLES2 test of the Gumball route map:
+     * pointer focus does not launch, first click arms, premature repeat
+     * cannot fly, locked route is visibly distinct, third edge click launches.
+     * No fake screenshot, no synthetic direct Simulation::launch shortcut.
+     */
+    @Test public void gumballRouteMapFocusArmLockThenFlyInGles()
+        throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File base=new File(app.getCacheDir(),"gumball-route-ci-"+System.nanoTime());
+        assertTrue("No isolated Gumball route sandbox",base.mkdirs());
+        File home=new File(base,"native-modules");
+        assertTrue("No isolated Gumball save home",home.mkdirs());
+        final float[] target={reverieRouteX(),.27f,0.f};
+        final float[] direction={0.f,0.f,-1.f};
+        File saved=new File(home,"gumball-armada/campaign.v1");
+        File focused=new File(app.getFilesDir(),"gumball-route-focused.png");
+        File armed=new File(app.getFilesDir(),"gumball-route-armed.png");
+        File locked=new File(app.getFilesDir(),"gumball-route-locked.png");
+        File flight=new File(app.getFilesDir(),"gumball-route-flight.png");
+        VirtualInputBus input=new VirtualInputBus();
+        VirtualOutput fire=VirtualOutput.joystickButton(0);
+        try(Pbuffer egl=new Pbuffer();
+            NativeModuleRuntime runtime=new NativeModuleRuntime(
+                home,app.getAssets(),input,true,
+                new ReveriePreferences(
+                    InstrumentationRegistry.getInstrumentation().getContext()))){
+            assertTrue("Gumball native route chart failed to start: "+
+                runtime.getLastError(),runtime.start("gumball-armada"));
+            assertTrue("Gumball real GLES2 context failed: "+
+                runtime.getLastError(),runtime.onSurfaceCreated());
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction); // controller ray hover selects lane C
+            long focusedFrame=omegaFrame(runtime,focused);
+            assertFalse("Simply hovering launched a sortie",saved.exists());
+            input.applyDigital(fire,true);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction); // first edge: arm selected lane
+            input.applyDigital(fire,false);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction);
+            input.applyDigital(fire,true);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction); // too-quick second edge MUST NOT launch
+            input.applyDigital(fire,false);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction);
+            assertFalse("Quick-repeat launched before route lock",saved.exists());
+            long armedFrame=omegaFrame(runtime,armed);
+            assertNotEquals("Gumball map did not visibly highlight armed route",
+                            focusedFrame,armedFrame);
+            for(int tick=0;tick<9;++tick){
+                Thread.sleep(60L);
+                runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                    target,direction);
+            }
+            assertFalse("Route timer auto-launched without separate click",
+                        saved.exists());
+            long lockedFrame=omegaFrame(runtime,locked);
+            assertNotEquals("Route LOCKED state did not change real map pixels",
+                            armedFrame,lockedFrame);
+            input.applyDigital(fire,true);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction); // deliberately confirm same lane
+            input.applyDigital(fire,false);
+            runtime.update(NativeModuleRuntime.POINTER_VIRTUAL_CONTROLLER,
+                target,direction);
+            long flightFrame=omegaFrame(runtime,flight);
+            assertNotEquals("Confirmed lane did not render actual flight",
+                            lockedFrame,flightFrame);
+            assertTrue("Confirmed lane did not write actual campaign save",
+                       saved.isFile()&&saved.length()>0L);
+            Log.i(TAG,"PASS real Gumball map hover, armed highlight, "
+                +"350ms lock, explicit second-click flight and save");
+            runtime.releaseSurface();
+            runtime.stop();
+        }finally{remove(base);}
+    }
+
+    private static float reverieRouteX(){
+        // Same x as kChartRouteX[2]; no hidden Android-only hitbox expansion.
+        return 1.55f;
+    }
+
+    @Test public void captureAllNativeMainMenus() throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File root=new File(app.getCacheDir(),"native-menu-ci-"+System.nanoTime());
+        assertTrue("Could not allocate game menu capture sandbox",root.mkdirs());
+        File home=new File(root,"native-modules");
+        assertTrue("Could not allocate isolated native game saves",home.mkdirs());
+        java.util.List<NativeModuleRuntime.Descriptor> built=
+            NativeModuleRuntime.listBuiltIns(true);
+        StringBuilder rows=new StringBuilder("module_id,status,eye_frame_crc32,png_bytes\n");
+        StringBuilder failures=new StringBuilder();
+        int saved=0;
+        try(Pbuffer egl=new Pbuffer()){
+            for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES){
+                boolean present=false;
+                for(NativeModuleRuntime.Descriptor item:built)
+                    if(game.id.equals(item.id))present=true;
+                if(!present){
+                    rows.append(game.id).append(",NOT_REGISTERED,0,0\n");
+                    failures.append(game.id).append(": missing native library entry; ");
+                    continue;
+                }
+                File evidence=new File(app.getFilesDir(),
+                    "native-menu-"+game.id+".png");
+                try(NativeModuleRuntime runtime=new NativeModuleRuntime(
+                    home,app.getAssets(),null,true,
+                    new ReveriePreferences(
+                        InstrumentationRegistry.getInstrumentation().getContext()))){
+                    assertTrue("Native menu launch failed "+game.id+": "+
+                        runtime.getLastError(),runtime.start(game.id));
+                    try{
+                        assertTrue("GLES2 context failed "+game.id+": "+
+                            runtime.getLastError(),runtime.onSurfaceCreated());
+                        runtime.update(NativeModuleRuntime.POINTER_NONE,null,null);
+                        long crc=omegaFrame(runtime,evidence);
+                        assertTrue("Empty real frame "+game.id,
+                            evidence.isFile() && evidence.length()>300L);
+                        rows.append(game.id).append(",CAPTURED,")
+                            .append(crc).append(",").append(evidence.length())
+                            .append("\n");
+                        saved++;
+                        Log.i(TAG,"PASS REAL native menu capture id="+game.id+
+                            " crc32="+crc+" bytes="+evidence.length());
+                    }finally{
+                        runtime.releaseSurface();
+                        runtime.stop();
+                    }
+                }catch(Exception | AssertionError failure){
+                    rows.append(game.id).append(",FAILED,0,0\n");
+                    failures.append(game.id).append(": ")
+                        .append(failure.toString().replace(',', ' '))
+                        .append("; ");
+                    Log.e(TAG,"FAIL native menu capture id="+game.id,failure);
+                }
+            }
+        }finally{
+            try(FileOutputStream csv=app.openFileOutput(
+                    "native-menu-capture.csv",Context.MODE_PRIVATE)){
+                csv.write(rows.toString().getBytes(StandardCharsets.UTF_8));
+                csv.getFD().sync();
+            }
+            remove(root);
+        }
+        assertEquals("A native game menu was not captured: "+failures,
+            GameModuleRegistry.GAMES.length,saved);
+        Log.i(TAG,"PASS all "+saved+" registered native game initial menus "
+            +"captured from installed Android GLES2 implementation");
+    }
+
 
     @Test public void redLedgerReal24DownloadedIconsRenderThroughNativeGles(){
         runInstalledAssets("between-deliveries-red-ledger",24);

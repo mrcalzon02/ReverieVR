@@ -1,3 +1,18 @@
+## Native wardrobe visual adoption — 2026-10-26
+
+The global identity handoff is now used by an expanded
+`procedural-test-chamber` outfit renderer, rather than merely mapping
+every appearance to the same seven colored body primitives. The shared
+`reverie_native_avatar_wardrobe.h` composes twelve more visible
+low-poly ellipsoids for eight garment shapes × three detail families
+(24 outfits), hair, hats, accessory groups and eyes. Native games have
+a deterministic model+material builder for the complete saved avatar.
+The active game must deliberately call this helper to display the
+selection; other games are not yet claimed to render the full wardrobe.
+Cosmetic appearance is independent of the fixed stretched-sphere player
+collider. This does not import final rigged model assets, implement
+complex fabric simulation or validate mobile headset frame rate.
+
 ## Shared native avatar integration — 2026-10-24
 
 The Home wardrobe owns the **single** saved avatar for every native module
