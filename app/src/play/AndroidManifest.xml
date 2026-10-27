@@ -1,3 +1,11 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Play owns app/game delivery. The sideload-only package installer and game
+         downloader do not exist as exported or registered Play components. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+        tools:node="remove" />
+    <application>
+        <activity android:name=".GameModulesActivity" tools:node="remove" />
+        <provider android:name=".VerifiedCompanionApkProvider" tools:node="remove" />
+    </application>
 </manifest>
