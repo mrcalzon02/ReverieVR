@@ -29,8 +29,14 @@ public final class GameModulesActivity extends Activity {
 
     @Override public void onCreate(Bundle saved){
         super.onCreate(saved);
-        network=new GameModuleUpdateService(this);
-        apkInstaller=new CompanionGameApkInstaller(this);
+        ReveriePreferences options = new ReveriePreferences(this);
+        if (!DevelopmentAccess.gameManager(options)) {
+            finish();
+            return;
+        }
+        network = new GameModuleUpdateService(this);
+        if (DevelopmentAccess.companionApks(options))
+            apkInstaller = new CompanionGameApkInstaller(this);
         store=new RvPackInstaller(getFilesDir());
         ScrollView scroll=new ScrollView(this);
         LinearLayout base=new LinearLayout(this);
@@ -44,6 +50,8 @@ public final class GameModulesActivity extends Activity {
         commands.setOrientation(LinearLayout.HORIZONTAL);
         Button check=new Button(this);check.setText("Check releases");
         Button importFile=new Button(this);importFile.setText("Import .rvpack");
+        importFile.setVisibility(DevelopmentAccess.gameContent(options)
+            ? android.view.View.VISIBLE : android.view.View.GONE);
         commands.addView(check,new LinearLayout.LayoutParams(0,-2,1));
         commands.addView(importFile,new LinearLayout.LayoutParams(0,-2,1));
         base.addView(commands);
@@ -57,12 +65,15 @@ public final class GameModulesActivity extends Activity {
 
     @Override protected void onResume(){
         super.onResume();
+        if (!DevelopmentAccess.gameManager(new ReveriePreferences(this))) {
+            finish();
+            return;
+        }
         if(rows!=null)refreshRows();
     }
     private void refreshRows(){
         rows.removeAllViews();
-        final boolean development=new ReveriePreferences(this)
-            .getLoggingMode()==LoggingMode.DEVELOPMENT;
+        final boolean development=new ReveriePreferences(this).isDeveloperModeEnabled();
         for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES){
             final String id=game.id;
             File content=store.activeAssets(id);
@@ -72,10 +83,12 @@ public final class GameModulesActivity extends Activity {
                 "Content r"+contentRev+" ("+
                 (store.installedBytes(id)+1023L)/1024L+" KiB)";
             if(codeRev>0L)details+=" | Game APK r"+codeRev;
-            GameModuleCatalog.Release contentUpdate=offer(id,"content",
-                development);
-            GameModuleCatalog.Release nativeUpdate=offer(id,"companion-apk",
-                development);
+            GameModuleCatalog.Release contentUpdate=
+                DevelopmentAccess.gameContent(new ReveriePreferences(this))
+                    ? offer(id,"content",development) : null;
+            GameModuleCatalog.Release nativeUpdate=
+                DevelopmentAccess.companionApks(new ReveriePreferences(this))
+                    ? offer(id,"companion-apk",development) : null;
             LinearLayout row=new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
             TextView title=new TextView(this);
@@ -106,13 +119,18 @@ public final class GameModulesActivity extends Activity {
                                  GameModuleCatalog.Release apkRelease){
         java.util.ArrayList<String> labels=new java.util.ArrayList<>();
         java.util.ArrayList<Runnable> actions=new java.util.ArrayList<>();
-        labels.add("Check updates for this game");
-        actions.add(()->checkRemoteFor(id));
-        if(contentRelease!=null&&contentRelease.revision>contentRev){
+        if (DevelopmentAccess.gameManager(new ReveriePreferences(this))) {
+            labels.add("Check updates for this game");
+            actions.add(()->checkRemoteFor(id));
+        }
+        if(DevelopmentAccess.gameContent(new ReveriePreferences(this))
+            && contentRelease!=null&&contentRelease.revision>contentRev){
             labels.add("Update content to r"+contentRelease.revision);
             actions.add(()->installRemote(contentRelease));
         }
-        if(apkRelease!=null&&apkRelease.revision>codeRev){
+        if(DevelopmentAccess.companionApks(new ReveriePreferences(this))
+            && apkInstaller != null && apkRelease!=null
+            && apkRelease.revision>codeRev){
             labels.add("Install game APK r"+apkRelease.revision);
             actions.add(()->apkInstaller.install(verified,apkRelease,
                 (message,started)->{
@@ -120,14 +138,16 @@ public final class GameModulesActivity extends Activity {
                     if(started)refreshRows();
                 }));
         }
-        if(codeRev>0L){
+        if(DevelopmentAccess.companionApks(new ReveriePreferences(this))
+            && codeRev>0L){
             labels.add("Play installed game APK");
             actions.add(()->{
                 if(!CompanionGameRegistry.launch(this,id))
                     status.setText("Companion launch rejected for "+id);
             });
         }
-        if(contentRev>0L){
+        if(DevelopmentAccess.gameContent(new ReveriePreferences(this))
+            && contentRev>0L){
             labels.add("Rollback content");
             actions.add(()->{
                 try{
@@ -167,6 +187,7 @@ public final class GameModulesActivity extends Activity {
         catch(RuntimeException e){return 0L;}
     }
     private void checkRemoteFor(String gameId){
+        if (!DevelopmentAccess.gameManager(new ReveriePreferences(this))) return;
         status.setText("Checking "+gameId+" releases...");
         network.check((catalog,error)->{
             if(error!=null){
@@ -175,8 +196,7 @@ public final class GameModulesActivity extends Activity {
                 return;
             }
             verified=catalog;
-            final boolean dev=new ReveriePreferences(this)
-                .getLoggingMode()==LoggingMode.DEVELOPMENT;
+            final boolean dev=new ReveriePreferences(this).isDeveloperModeEnabled();
             GameModuleCatalog.Release data=offer(gameId,"content",dev);
             GameModuleCatalog.Release code=offer(gameId,"companion-apk",dev);
             File local=store.activeAssets(gameId);
@@ -195,6 +215,7 @@ public final class GameModulesActivity extends Activity {
     }
 
     private void checkRemote(){
+        if (!DevelopmentAccess.gameManager(new ReveriePreferences(this))) return;
         status.setText("Checking signed game releases...");
         network.check((catalog,error)->{
             if(error!=null){status.setText("Release check: "+error);return;}
@@ -205,6 +226,10 @@ public final class GameModulesActivity extends Activity {
         });
     }
     private void installRemote(GameModuleCatalog.Release release){
+        if (!DevelopmentAccess.gameContent(new ReveriePreferences(this))) {
+            status.setText("Game content downloads are disabled in Developer options.");
+            return;
+        }
         status.setText("Downloading "+release.id+" r"+release.revision+"...");
         network.install(release,(directory,error)->{
             if(isFinishing()||isDestroyed())return;
@@ -221,6 +246,7 @@ public final class GameModulesActivity extends Activity {
         });
     }
     private void chooseFile(){
+        if (!DevelopmentAccess.gameContent(new ReveriePreferences(this))) return;
         Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
@@ -305,8 +331,8 @@ public final class GameModulesActivity extends Activity {
         });
     }
     @Override protected void onDestroy(){
-        network.close();
-        apkInstaller.close();
+        if (network != null) network.close();
+        if (apkInstaller != null) apkInstaller.close();
         io.shutdownNow();
         super.onDestroy();
     }
