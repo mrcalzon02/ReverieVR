@@ -76,6 +76,23 @@ Use public-domain USGS Alaska elevation tiles as available, NOAA shoreline/bathy
 - The environment parser remains independent of GL. The game-private indexed terrain VBO/EBO source now exists, but real Android driver rendering and module admission are unverified. Water surface mesh, optical depth, sun/sky, cloud/rain particles, shoreline shaders, occlusion/collision and atlas staging are not integrated.
 - Weather is a static saved preset profile at this milestone. Dynamic weather transitions, generated soundscape and 3D rainfall require separate real integration with the ReverieVR shell-owned audio/runtime services.
 
+## Source-only Android NDK link gate — 2026-10-27
+
+`scripts/sitka/verify-ndk-terrain.sh` is a real NDK cross-link check
+for the deliberately unregistered `sitka_terrain_module.cpp`. The
+`reverie-game-content-matrix-ci.yml` workflow now runs it in a separate
+job whenever a Sitka terrain source, fixture regression or the probe itself
+changes. It uses the build host's installed NDK, or installs pinned
+NDK `27.2.12479018` through Android SDK Manager.
+
+The script builds **ARMv7 API 21** and **ARM64 API 21** shared libraries
+with GLES2, rejects undefined link symbols, verifies the ELF machine
+type and requires the public `reverie_native_module_entry_v1` symbol.
+These are temporary CI proof binaries only: **not** `Android.mk` targets,
+not uploaded APK assets, not a new game identity, and not a real display or
+headset test. NDK link acceptance depends on the exact workflow run passing;
+a committed build gate alone is not passing evidence.
+
 ## Verified gates and outstanding work
 
 **Passed locally:** `python3 scripts/sitka/test_build_coast.py` (one synthetic fixture suite, deterministic export and provenance/input rejection); strict GCC C++17 host build and execution of `app/src/test/native/sitka_environment_test.cpp`, plus Clang AddressSanitizer/UndefinedBehaviorSanitizer execution of the same C++ adapter regression.
