@@ -477,8 +477,8 @@ android {
 
         // New Play AAB distribution only. No legacy GitHub APK update channel.
         play {
-            resValue 'string', 'game_services_project_id', playGamesProjectId
             initWith release
+            resValue 'string', 'game_services_project_id', playGamesProjectId
             debuggable = false
             signingConfig = null
             matchingFallbacks = ["release", "debug"]
