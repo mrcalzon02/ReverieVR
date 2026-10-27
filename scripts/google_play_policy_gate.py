@@ -68,8 +68,12 @@ def source():
         check(required_removals <= actual_removals,
               "Play variant removes sideload game updater Activity and APK provider")
         renderer_text = (ROOT / "app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java").read_text()
-        check('if (!BuildConfig.PLAY_DISTRIBUTION)' in renderer_text,
-              "Game download and emulator source-download UI is Play-gated")
+        gates = (ROOT / "app/src/main/java/io/github/mrcalzon02/reverievr/DevelopmentAccess.java").read_text()
+        check(all(token in renderer_text for token in
+                  ("DevelopmentAccess.gameManager(preferences)",
+                   "DevelopmentAccess.emulatorSources(preferences)"))
+              and "return !playDistribution && developerMode && selectedFeature;" in gates,
+              "Game manager and emulator source buttons require Play-disabled developer privileges")
     if CONFIG["remove_install_permission"]:
         overlay = ROOT / CONFIG["module"] / "src/play/AndroidManifest.xml"
         check(overlay.is_file(), "Play manifest permission-removal overlay exists")
