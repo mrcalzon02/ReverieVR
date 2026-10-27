@@ -789,7 +789,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Native-game update management is always reachable from the first
         // shelf page, even when no optional content is currently installed.
         // Install permission/file selection happens on the phone screen.
-        if (!BuildConfig.PLAY_DISTRIBUTION) {
+        if (DevelopmentAccess.gameManager(preferences)) {
             games.add(0,new NativeModuleRuntime.Descriptor(
                 INTERNAL_GAME_MODULE_MANAGER_ID,"Manage Game Downloads / Updates"));
         }
@@ -4866,7 +4866,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return NativeModuleRuntime.isAvailable()
                     && !nativeGames.isEmpty();
             }
-            if (index == 25) return !BuildConfig.PLAY_DISTRIBUTION;
+            if (index == 25) return DevelopmentAccess.emulatorSources(preferences);
             if (index == 26 || index == 27) return true;
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
                 && index == 12) {
@@ -5187,7 +5187,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     host.onExitToPhoneRequested();
                     return;
                 case 25:
-                    if (BuildConfig.PLAY_DISTRIBUTION) break;
+                    if (!DevelopmentAccess.emulatorSources(preferences)) break;
                     emulatorCatalogPage=0;
                     selectedEmulator=null;
                     mode=MODE_EMULATOR_CATALOG;
@@ -5261,7 +5261,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     requestRecenter();
                     break;
                 case 11:
-                    if (BuildConfig.UPDATE_CHANNEL_ENABLED) {
+                    if (DevelopmentAccess.selfUpdates(preferences)) {
                         host.onUpdateCheckRequested();
                     } else {
                         host.onBluetoothSettingsRequested();
@@ -5623,7 +5623,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void handleEmulatorConfirmSelection(int button) {
-        if(button==0&&selectedEmulator!=null && !BuildConfig.PLAY_DISTRIBUTION) {
+        if(button==0&&selectedEmulator!=null
+            && DevelopmentAccess.emulatorSources(preferences)) {
             host.onEmulatorSourceDownloadRequested(selectedEmulator.id);
             mode=MODE_EMULATOR_CATALOG;
         } else if(button==1) mode=MODE_EMULATOR_CATALOG;
@@ -5722,7 +5723,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     return;
                 }
 
-                if(!BuildConfig.PLAY_DISTRIBUTION && module!=null
+                if(DevelopmentAccess.gameManager(preferences) && module!=null
                     && INTERNAL_GAME_MODULE_MANAGER_ID.equals(module.id)){
                     host.onGameModuleManagerRequested();
                     hoveredButton=-1;
@@ -7013,7 +7014,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             new String[] {leftLabels[6]}, 18, 1);
         drawHomeButtons(canvas, paint,
             new String[] {"Classic Games"}, 24, 1);
-        if (!BuildConfig.PLAY_DISTRIBUTION) {
+        if (DevelopmentAccess.emulatorSources(preferences)) {
             drawHomeButtons(canvas, paint,
                 new String[] {"Emulator Modules"}, 25, 1);
         }
