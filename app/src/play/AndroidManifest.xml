@@ -4,8 +4,10 @@
          downloader do not exist as exported or registered Play components. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"
         tools:node="remove" />
-    <application>
+    <application android:name=".PlayGamesApplication" tools:replace="android:name">
         <activity android:name=".GameModulesActivity" tools:node="remove" />
         <provider android:name=".VerifiedCompanionApkProvider" tools:node="remove" />
+        <meta-data android:name="com.google.android.gms.games.APP_ID"
+            android:value="@string/game_services_project_id" />
     </application>
 </manifest>
