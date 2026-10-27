@@ -1644,7 +1644,7 @@ public final class VrActivity extends Activity
 
     @Override
     public void onGameModuleManagerRequested(){
-        if (!BuildConfig.PLAY_DISTRIBUTION)
+        if (DevelopmentAccess.gameManager(preferences))
             returnToPhonePicker(EXTRA_REQUEST_GAME_MODULE_MANAGER);
     }
 
@@ -1955,7 +1955,7 @@ public final class VrActivity extends Activity
 
     @Override
     public void onEmulatorCatalogOpened() {
-        if (BuildConfig.PLAY_DISTRIBUTION) return;
+        if (!DevelopmentAccess.emulatorSources(preferences)) return;
         // GitHub queries happen off the renderer; merely opening the list
         // never downloads sources or executables.
         emulatorSourceExecutor.execute(() -> {
@@ -1986,7 +1986,7 @@ public final class VrActivity extends Activity
 
     @Override
     public void onEmulatorSourceDownloadRequested(String moduleId) {
-        if (BuildConfig.PLAY_DISTRIBUTION) {
+        if (!DevelopmentAccess.emulatorSources(preferences)) {
             runOnUiThread(() -> uiFeedback.failure());
             return;
         }
