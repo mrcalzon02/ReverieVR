@@ -6,6 +6,7 @@
 #include "reverie_native_flat_mesh.h"
 #include "classic_vector_art.h"
 #include "classic_chess_book.h"
+#include "classic_chess_reference.h"
 #include "classic_chess_sprite_atlas.h"
 #include "classic_chess_wood_atlas.h"
 #include <cassert>
@@ -84,6 +85,67 @@ static void TestChessSpriteAtlas(){
     }
 }
 
+
+static void TestChessIdentityHoverAndReference() {
+    using reverie::boardgames::Kind;
+    using reverie::boardgames::State;
+    using namespace reverie::chessref;
+    State game;game.Reset(Kind::Chess);
+    // The actual playable board is White human at bottom; Black CPU on top.
+    assert(game.cells[59]==5&&game.cells[60]==6);
+    assert(game.cells[3]==-5&&game.cells[4]==-6);
+    assert(PieceName(game.cells[59])=="WHITE QUEEN");
+    assert(PieceName(game.cells[60])=="WHITE KING");
+    assert(PieceName(game.cells[3])=="BLACK QUEEN");
+    assert(PieceName(game.cells[4])=="BLACK KING");
+    assert(Square(59)=="d1"&&Square(60)=="e1");
+    assert(Square(3)=="d8"&&Square(4)=="e8");
+    assert(Square(-1)=="--");
+    assert(Destinations(game,59).empty()); // queen is blocked at d1
+    assert(Destinations(game,3).empty()); // black queen is blocked at d8
+    auto white=Destinations(game,52); // e2 pawn
+    assert(white.size()==2&&white[0]==36&&white[1]==44);
+    auto black=Destinations(game,12); // e7 pawn during White's turn
+    assert(black.size()==2&&black[0]==20&&black[1]==28);
+    assert(std::find(white.begin(),white.end(),28)==white.end());
+    assert(!game.ChessMove(12,28)); // Black cannot play on White's turn
+    assert(!game.ChessMove(59,31)); // blocked queen cannot jump
+    assert(game.ChessMove(52,36));
+    assert(!game.ChessMove(52,44)); // wrong turn and now empty
+    assert(game.ChessMove(12,28)); // legal Black response
+    assert(game.ChessLegal(59,31)); // White queen d1-h5 now clear
+    const auto queen=Destinations(game,59);
+    assert(std::find(queen.begin(),queen.end(),31)!=queen.end());
+    assert(kEntries==3865);
+    const auto start=Read(0),last=Read(kEntries-1);
+    assert(start.eco=="A00"&&start.name=="Amar Opening");
+    assert(last.eco=="E99");
+    assert(Read(-1).name.empty()&&Read(kEntries).name.empty());
+    bool grob=false;
+    for(int i=0;i<kEntries;++i) {
+        const auto entry=Read(i);
+        if(entry.name=="Grob Opening"){
+            assert(entry.eco=="A00"&&entry.san=="g4");
+            grob=true;break;
+        }
+    }
+    assert(grob);
+    assert(!Matching(game).empty());
+    const int current=Current(game);
+    assert(current>=0&&current<kEntries);
+    assert(Read(current).san.find("e4")!=std::string::npos);
+    State fresh;fresh.Reset(Kind::Chess);
+    assert(Current(fresh)==-1);
+    auto wrapped=Wrap("The queen moves diagonally or in straight lines",17);
+    assert(wrapped.size()>1);
+    std::string recovered;
+    for(const auto &line:wrapped){
+        if(!recovered.empty())recovered+=" ";
+        recovered+=line;
+        assert(line.size()<=17);
+    }
+    assert(recovered=="The queen moves diagonally or in straight lines");
+}
 static void TestFlatGeometry(){
     using namespace reverie::flatmesh;
     std::vector<float> a,b;
@@ -909,6 +971,7 @@ static void TestBreakout() {
 int main() {
     TestChessWoodAtlas();
     TestChessSpriteAtlas();
+    TestChessIdentityHoverAndReference();
     TestClassicArtworkAndOpeningIndex();
     TestFlatGeometry();
     TestBreakout();
