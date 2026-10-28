@@ -66,7 +66,12 @@ final class HomeEnvironmentRenderer {
     private Mesh avatarHair=mesh(HomeAvatarBodyGeometry.hair(HomeAvatarProfile.DEFAULT));
     private final Mesh avatarHead=mesh(HomeAvatarWardrobeGeometry.head());
     private Mesh avatarFace=mesh(HomeAvatarBodyGeometry.face(HomeAvatarProfile.DEFAULT));
-    private final float[] avatarMvpScratch=new float[16];
+    // The mirror draws projected, clipped triangles into one reused per-eye buffer.
+    // Portrait meshes remain immutable and are only rebuilt for wardrobe changes.
+    private final float[] avatarHeadCenter = new float[3];
+    private float[] avatarMirrorScratch = new float[2048];
+    private FloatBuffer avatarMirrorVertices = ByteBuffer.allocateDirect(2048 * 4)
+        .order(ByteOrder.nativeOrder()).asFloatBuffer();
     void setAvatarLegFrame(float x,float z,long frameNanos,
         boolean walkingEnabled,HomeAvatarProfile profile) {
         HomeAvatarProfile p=profile==null?HomeAvatarProfile.DEFAULT:profile;
@@ -624,7 +629,7 @@ final class HomeEnvironmentRenderer {
 
     /**
      * Small planar diagnostic mirror on the white-room right side.
-     * Shows only headset/eye and controller proxies, not the environment.
+     * Shows per-eye projected avatar, headset and controller proxies.
      * Drawn after the room and before UI with the same corrected eye MVP.
      */
     void drawMirrorEye(PlayerHeadRig rig, int eyeIndex,
@@ -639,7 +644,9 @@ final class HomeEnvironmentRenderer {
         GLES20.glDisable(GLES20.GL_BLEND);
         draw(mirrorFrame, 0.13f, 0.19f, 0.23f, 1.0f);
         draw(mirrorGlass, 0.08f, 0.14f, 0.18f, 1.0f);
-        drawAvatarInMirror(profile);
+        if (rig.copyHeadCenter(avatarHeadCenter)) {
+            drawAvatarInMirror(profile);
+        }
         int headsetCount = mirrorProjection.writeHeadset(mirrorLineScratch);
         drawMirrorLines(headsetCount, 0.35f, 0.91f, 1.0f);
         if (controllerVisible) {
@@ -650,45 +657,75 @@ final class HomeEnvironmentRenderer {
         }
     }
 
-    /** Styled mirror preview, NOT a claim of positional full-body tracking. */
+    /**
+     * Draw the selected avatar as a world-positioned per-eye reflection,
+     * rather than triangles permanently glued onto the mirror glass.
+     * Daydream does not track the user's limbs: the existing IK gait remains
+     * a procedural cosmetic animation, not a pose-tracking claim.
+     */
     private void drawAvatarInMirror(HomeAvatarProfile chosen) {
-        HomeAvatarProfile p=chosen==null?HomeAvatarProfile.DEFAULT:chosen;
-        float[] c=HomeAvatarProfile.RGB[p.color];
-        boolean armor=p.outfit==4||p.outfit==17||p.outfit==20;
-        boolean ghost=p.theme==9;
-        float scale=p.heightScale();
-        System.arraycopy(mvp,0,avatarMvpScratch,0,16);
-        // Anchor feet to floor as height varies; restore MVP before
-        // drawing the headset/controller wireframe reflection.
-        Matrix.translateM(mvp,0,0f,-.79f*(1f-scale),0f);
-        Matrix.scaleM(mvp,0,1f,scale,1f);
-        drawIkLegs(armor?.32f:c[0]*.57f,
-            armor?.36f:c[1]*.57f,armor?.44f:c[2]*.57f);
-        draw(avatarArms,c[0]*.82f,c[1]*.82f,c[2]*.82f,1f);
-        draw(avatarTorso,c[0],c[1],c[2],1f);
-        float[] fabric=HomeAvatarProfile.RGB[p.fabric];
-        draw(avatarOutfit,fabric[0],fabric[1],fabric[2],1f);
-        draw(avatarHead,ghost?.73f:.72f,ghost?.89f:.65f,ghost?.95f:.56f,1f);
-        draw(avatarFace,ghost?.55f:.85f,ghost?.74f:.73f,ghost?.88f:.67f,1f);
-        draw(avatarEyes[p.eyes],p.eyes==2?.10f:.08f,
-            p.eyes==2?.91f:.22f,p.eyes==2?1f:.30f,1f);
-        draw(avatarHair,c[0]*.45f,c[1]*.43f,c[2]*.40f,1f);
-        draw(avatarHats[p.hat],c[0]*.82f,c[1]*.82f,c[2]*.82f,1f);
-        draw(avatarAccessories[p.extra],.99f,.79f,.33f,1f);
-        System.arraycopy(avatarMvpScratch,0,mvp,0,16);
+        HomeAvatarProfile p = chosen == null ? HomeAvatarProfile.DEFAULT : chosen;
+        float[] c = HomeAvatarProfile.RGB[p.color];
+        boolean armor = p.outfit == 4 || p.outfit == 17 || p.outfit == 20;
+        boolean ghost = p.theme == 9;
+        float scale = p.heightScale();
+        drawProjectedAvatarPart(legBuffer, HomeAvatarLegIk.MESH_FLOATS / 3,
+            scale, armor ? .32f : c[0] * .57f,
+            armor ? .36f : c[1] * .57f, armor ? .44f : c[2] * .57f);
+        drawProjectedAvatarPart(avatarArms, scale,
+            c[0] * .82f, c[1] * .82f, c[2] * .82f);
+        drawProjectedAvatarPart(avatarTorso, scale, c[0], c[1], c[2]);
+        float[] fabric = HomeAvatarProfile.RGB[p.fabric];
+        drawProjectedAvatarPart(avatarOutfit, scale,
+            fabric[0], fabric[1], fabric[2]);
+        drawProjectedAvatarPart(avatarHead, scale,
+            ghost ? .73f : .72f, ghost ? .89f : .65f, ghost ? .95f : .56f);
+        drawProjectedAvatarPart(avatarFace, scale,
+            ghost ? .55f : .85f, ghost ? .74f : .73f, ghost ? .88f : .67f);
+        drawProjectedAvatarPart(avatarEyes[p.eyes], scale,
+            p.eyes == 2 ? .10f : .08f,
+            p.eyes == 2 ? .91f : .22f, p.eyes == 2 ? 1f : .30f);
+        drawProjectedAvatarPart(avatarHair, scale,
+            c[0] * .45f, c[1] * .43f, c[2] * .40f);
+        drawProjectedAvatarPart(avatarHats[p.hat], scale,
+            c[0] * .82f, c[1] * .82f, c[2] * .82f);
+        drawProjectedAvatarPart(avatarAccessories[p.extra], scale,
+            .99f, .79f, .33f);
     }
 
-    private void drawIkLegs(float red,float green,float blue) {
-        if(program==0)return;
+    private void drawProjectedAvatarPart(Mesh mesh, float scale,
+        float red, float green, float blue) {
+        if (mesh != null) {
+            drawProjectedAvatarPart(mesh.vertices, mesh.vertexCount,
+                scale, red, green, blue);
+        }
+    }
+
+    private void drawProjectedAvatarPart(FloatBuffer source, int vertexCount,
+        float scale, float red, float green, float blue) {
+        if (program == 0 || vertexCount <= 0) return;
+        // A clipped triangle can generate at most five output triangles.
+        int required = vertexCount * 15;
+        if (required > avatarMirrorScratch.length) {
+            avatarMirrorScratch = new float[required];
+            avatarMirrorVertices = ByteBuffer.allocateDirect(required * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        }
+        int count = mirrorProjection.writeAvatarTriangles(
+            source, vertexCount,
+            avatarHeadCenter[0], avatarHeadCenter[1], avatarHeadCenter[2],
+            scale, avatarMirrorScratch);
+        if (count == 0) return;
+        avatarMirrorVertices.clear();
+        avatarMirrorVertices.put(avatarMirrorScratch, 0, count * 3);
+        avatarMirrorVertices.position(0);
         GLES20.glUseProgram(program);
-        legBuffer.position(0);
-        GLES20.glVertexAttribPointer(positionHandle,3,
-            GLES20.GL_FLOAT,false,0,legBuffer);
+        GLES20.glVertexAttribPointer(positionHandle, 3,
+            GLES20.GL_FLOAT, false, 0, avatarMirrorVertices);
         GLES20.glEnableVertexAttribArray(positionHandle);
-        GLES20.glUniformMatrix4fv(mvpHandle,1,false,mvp,0);
-        GLES20.glUniform4f(colorHandle,red,green,blue,1f);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES,0,
-            HomeAvatarLegIk.MESH_FLOATS/3);
+        GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0);
+        GLES20.glUniform4f(colorHandle, red, green, blue, 1f);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, count);
         GLES20.glDisableVertexAttribArray(positionHandle);
     }
 
