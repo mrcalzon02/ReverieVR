@@ -16,9 +16,6 @@ namespace reverie { namespace omega_art {
 // Fixed 64-pixel art grid, one quad per simulated cell. No atlas UV guesses.
 enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  EdenMeadow, WastelandAsh,
-                 MapSalt, MapGravel, MapSteppe, MapMud, MapRusted, MapEmbers,
-                 MapTundra, MapPines, MapFord, MapRiverbank, MapGravelRoad,
-                 MapRubble, MapOrchard, MapScree,
                  SharedGrass, SharedSand, SharedRock, SharedRoad,
                  SharedConcrete, SharedSteel,
                  SupplyCrate, MetalBarrel, LivingTree, DeadTree,
@@ -30,10 +27,16 @@ enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  RifleHAlt, RifleRAlt, EngineerHAlt, EngineerRAlt,
                  SalvagerHAlt, SalvagerRAlt, SentinelHAlt, SentinelRAlt,
                  LegionaryHAlt, LegionaryRAlt, RpgCc0First,
-                 Count=RpgCc0First+64 };
+                 // Retain original CC0 slots 44..107. Continental-only art
+                 // is appended AFTER those legacy catalog IDs.
+                 MapSalt=RpgCc0First+64, MapGravel, MapSteppe,
+                 MapMud, MapRusted, MapEmbers, MapTundra, MapPines,
+                 MapFord, MapRiverbank, MapGravelRoad, MapRubble,
+                 MapOrchard, MapScree, Count };
 // Ground then environmental props then combat units. Flat 2D sprite planes.
-constexpr int kGroundCount=27; // Original 13 + 14 approved regional tiles.
-constexpr int kTerrainCount=33; // Same six environmental props after ground.
+constexpr int kGroundCount=13;
+constexpr int kTerrainCount=19;
+constexpr int kMapFirst=MapSalt; // Additional continental ground slots.
 constexpr int kCc0First=RpgCc0First;
 constexpr int kCc0Count=64;
 static const char *const kPaths[Count]={
@@ -44,20 +47,6 @@ static const char *const kPaths[Count]={
     "native/omega-front/terrain/marsh_pool.png",
     "native/omega-front/terrain/wet_meadow.png",
     "native/omega-front/terrain/ash_waste.png",
-    "native/omega-front/terrain/cracked_salt_flat.png",
-    "native/omega-front/terrain/dirt_and_gravel.png",
-    "native/omega-front/terrain/dry_steppe.png",
-    "native/omega-front/terrain/muddy_ruts.png",
-    "native/omega-front/terrain/rusted_wasteland.png",
-    "native/omega-front/terrain/scorched_embers.png",
-    "native/omega-front/terrain/frost_tundra.png",
-    "native/omega-front/terrain/pine_forest_floor.png",
-    "native/omega-front/terrain/shallow_ford.png",
-    "native/omega-front/terrain/riverbank_diagonal.png",
-    "native/omega-front/terrain/gravel_road_ns.png",
-    "native/omega-front/terrain/rubble_lot.png",
-    "native/omega-front/terrain/orchard_rows.png",
-    "native/omega-front/terrain/rocky_scree.png",
     "native/omega-front/shared/grass.png",
     "native/omega-front/shared/sand.png",
     "native/omega-front/shared/rock.png",
@@ -158,7 +147,21 @@ static const char *const kPaths[Count]={
     "native/omega-front/rpg_cc0/roguelike_city_0012.png",
     "native/omega-front/rpg_cc0/roguelike_city_0013.png",
     "native/omega-front/rpg_cc0/roguelike_city_0014.png",
-    "native/omega-front/rpg_cc0/roguelike_city_0015.png"
+    "native/omega-front/rpg_cc0/roguelike_city_0015.png",
+    "native/omega-front/terrain/cracked_salt_flat.png",
+    "native/omega-front/terrain/dirt_and_gravel.png",
+    "native/omega-front/terrain/dry_steppe.png",
+    "native/omega-front/terrain/muddy_ruts.png",
+    "native/omega-front/terrain/rusted_wasteland.png",
+    "native/omega-front/terrain/scorched_embers.png",
+    "native/omega-front/terrain/frost_tundra.png",
+    "native/omega-front/terrain/pine_forest_floor.png",
+    "native/omega-front/terrain/shallow_ford.png",
+    "native/omega-front/terrain/riverbank_diagonal.png",
+    "native/omega-front/terrain/gravel_road_ns.png",
+    "native/omega-front/terrain/rubble_lot.png",
+    "native/omega-front/terrain/orchard_rows.png",
+    "native/omega-front/terrain/rocky_scree.png",
 };
 class SpriteRenderer {
 public:

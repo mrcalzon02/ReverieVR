@@ -16,8 +16,10 @@ palette = (root / "app/src/main/jni/native/omega_front_cc0_palette.h").read_text
 if catalog["license"] != "CC0-1.0" or len(catalog["tiles"]) != 64 or catalog["count"] != 64:
     raise SystemExit("Omega Front CC0 manifest must declare all 64 licensed sources")
 png_paths = re.findall(r'"(native/omega-front/[^"]+\.png)"', renderer)
-if len(png_paths) != 108 or len(set(png_paths)) != 108:
-    raise SystemExit(f"Expected 108 distinct runtime sprite paths; got {len(png_paths)}")
+# The original 108 slots remain ordered identically. New approved land
+# materials are append-only at slots 108..121; CC0 source slots stay 44..107.
+if len(png_paths) != 122 or len(set(png_paths)) != 122:
+    raise SystemExit(f"Expected 122 distinct runtime sprite paths; got {len(png_paths)}")
 seen = set()
 for i, item in enumerate(catalog["tiles"]):
     path = item["runtime_path"]
@@ -34,4 +36,4 @@ for i, item in enumerate(catalog["tiles"]):
         raise SystemExit(f"CC0 source must be real 16x16 tile: {path}")
 if "kCc0VisualTiles=64" not in palette or "GroundVariant" not in palette:
     raise SystemExit("CC0 art lacks authoritative gameplay selection")
-print("PASS: 64 byte-identical Kenney CC0 RPG tiles, licensed and live in the 108-path renderer")
+print("PASS: 64 byte-identical Kenney CC0 RPG tiles, licensed and live in the 122-path renderer")

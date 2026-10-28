@@ -1258,6 +1258,9 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
         // placeholder. Preserve text, fog-of-war, selection and click zones.
         colored(0,s->base_vertices);
         sprites(0,omega_art::kGroundCount);
+        // World-specific ground art has append-only texture slots, keeping
+        // all preexisting 64 CC0 asset IDs stable at slots 44..107.
+        sprites(omega_art::kMapFirst,omega_art::Count);
         colored(s->base_vertices,total);
         // Resource art sits in the surveyed sector corner, above terrain
         // and below none of the central sector labels.

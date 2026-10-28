@@ -22,8 +22,10 @@ int main(){
     assert(a.frontier.rations()==21);
     assert(a.tactical.battle.ticks()==0);
     // Ended tactical battle returns to the map and resolves exactly once.
-    for(int i=0;i<160 && a.tactical.battle.result()==Result::Active;++i)
-        a.Input({.1f,0,0,false,false,-1,-1});
+    for(int i=0;i<160 && a.tactical.battle.result()==Result::Active;++i){
+        a.Input({0,0,0,false,false,-1,-1,true});
+        a.Input({0,0,0,false,false,-1,-1,false});
+    }
     assert(a.tactical.battle.result()!=Result::Active);
     const auto prior=a.frontier.Checksum();
     Tap(a,true);
@@ -59,9 +61,9 @@ int main(){
                 if(fight.unit(j)->alive() && fight.QueueAttack(i,j))break;
             }
         }
-        winner.Input({.10f,0,0,false,false,-1,-1});
-        winner.Input({.10f,0,0,false,false,-1,-1});
-        winner.Input({.05f,0,0,false,false,-1,-1});
+        // Explicit one-turn resolution after queuing friendly attacks.
+        winner.Input({0,0,0,false,false,-1,-1,true});
+        winner.Input({0,0,0,false,false,-1,-1,false});
     }
     assert(winner.tactical.battle.result()==Result::Defended);
     const int before_award=winner.frontier.salvage();
