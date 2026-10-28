@@ -23,9 +23,11 @@ combat, economy, or save behavior has been altered. Host-side acceptance
 requires ABI contract checks, Gradle/NDK compilation, APK and actual S9/Daydream
 stereo/collision tests; source integration alone is not device acceptance.
 
-## Independent native game content manager VR handoff — 2026-10-17
+## Unified in-headset Native Games gallery — 2026-10-28
 
-The native games shelf now includes a first-page **Manage Game Downloads / Updates** entry. It performs the established Stage B-to-Stage A result handoff (not a nested Android permission prompt inside the headset) and opens the compact `GameModulesActivity` on the phone. This route is available without network or optional game packs. Signed catalog status, local pack import, rollback, save-safe removal and separately verified companion APK installation are handled by the existing module manager. This is source integration only until the APK/Daydream selection, lifecycle and return-to-headset behavior are tested on the Galaxy S9.
+Home now has one **Native Games** entry; the separate Classic Games Home button is removed. It opens a gallery of all fifteen native modules compiled into the unified APK: the original first-party native games and the eight classics together. Even previously development-labelled bundled games are shown and launch-admitted independent of the shell logging mode; their in-development tag is retained and is not a finished-playability claim. Every card uses its own actual ID through the host native start, save and failure-handling path. Six cards are visible per page with Previous and Next paging, shell pointer/gaze focus and a Home return.
+
+The user expressly removed the in-headset Manage Games / Downloads button. The gallery's fourth action is now **Native Tools**, opening existing in-headset utilities (3D model viewer, music, text pad, controller lab, media) without adding another Home button. The Stage A game manager remains separately available if its recovery/content functionality is needed, but has no gallery entry. This source arrangement is not proof of APK compilation, successful launch of every native game, physical S9 Daydream interaction, or VR comfort and legibility.
 
 ## Downloaded data-package mounting (2026-10-17)
 

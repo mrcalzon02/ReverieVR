@@ -252,17 +252,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         {292, 348, 718, 454},
         {292, 476, 718, 526},
         {292, 535, 718, 582},
-        {42, 551, 230, 597},
+        {42, 498, 230, 544}, // Phone Screen, after removing Classic Games
         // 19-23 remain reserved for the world-space phone controls.
         {0, 0, 0, 0},
         {0, 0, 0, 0},
         {0, 0, 0, 0},
         {0, 0, 0, 0},
         {0, 0, 0, 0},
-        {42, 498, 230, 544}, // Classic Games
-        {42, 604, 230, 650}, // Emulator Modules
+        {0, 0, 0, 0}, // No Home Classic Games button; phone panel still reserves 24
+        {42, 551, 230, 597}, // Emulator Modules
         {780, 570, 982, 618}, // Exit to Phone (right Quick Options)
-        {42, 657, 230, 699}  // Avatar Wardrobe
+        {42, 604, 230, 650}  // Avatar Wardrobe
     };
 
     // Virtual targets are intercepted in world-space by
@@ -760,14 +760,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
         this.dosSession = dosSession;
         this.nativeModuleRuntime =
             nativeModuleRuntime;
-        nativeModules =
-            NativeModuleRuntime.listBuiltIns(
-                preferences.getLoggingMode()
-                    == LoggingMode.DEVELOPMENT
-            );
-        // Show only packaged native modules and functional shell applications.
-        // Do not create launch buttons for simulation-only concepts.
-        // Development modules are filtered before this by the host catalogue.
+        // Installed games must not depend on a logging verbosity setting.
+        nativeModules = NativeModuleRuntime.listBuiltIns(true);
+        // Include all fifteen packaged games; keep functional shell tools
+        // accessible from the gallery without a second Home entry.
         List<NativeModuleRuntime.Descriptor> apps = new ArrayList<>();
         List<NativeModuleRuntime.Descriptor> games = new ArrayList<>();
         for (NativeModuleRuntime.Descriptor entry : nativeModules) {
@@ -4851,14 +4847,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (index >= HOME_KEYBOARD_HIT_OFFSET)
                 return index - HOME_KEYBOARD_HIT_OFFSET < KEYBOARD_BUTTONS.length;
             if (index == 2) {
-                return !nativeApps.isEmpty();
+                return NativeModuleRuntime.isAvailable() && !nativeGames.isEmpty();
             }
             if (phonePanelVisible && index >= 19)
                 return index < 19 + PhonePanelControlGeometry.COUNT;
-            if (index == 24) {
-                return NativeModuleRuntime.isAvailable()
-                    && !nativeGames.isEmpty();
-            }
+            if (index == 24) return false; // Classic Games removed from Home
             if(index==25 || index==26 || index==27)return true;
             if (!BuildConfig.UPDATE_CHANNEL_ENABLED
                 && index == 12) {
@@ -4907,7 +4900,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if (index == NativeGamesGallery.PREVIOUS
                 || index == NativeGamesGallery.NEXT)
                 return NativeGamesGallery.pageCount(count) > 1;
-            return index == NativeGamesGallery.MANAGE
+            return index == NativeGamesGallery.TOOLS
                 || index == NativeGamesGallery.HOME;
         }
         if (mode == MODE_NATIVE_LIBRARY) {
@@ -5160,9 +5153,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     mode = MODE_DOS_LIBRARY;
                     break;
                 case 2:
-                    if (!nativeApps.isEmpty()) {
+                    if (NativeModuleRuntime.isAvailable() && !nativeGames.isEmpty()) {
                         nativeLibraryPage = 0;
-                        mode = MODE_NATIVE_LIBRARY;
+                        mode = MODE_NATIVE_GAMES;
                     } else {
                         host.onUiActionRejected();
                     }
@@ -5196,15 +5189,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     host.onEmulatorCatalogOpened();
                     break;
                 case 24:
+                    // Only the local phone-panel close action remains.
                     if (phonePanelVisible) {
                         dismissPhonePanel();
                         return;
                     }
-                    if (NativeModuleRuntime.isAvailable()
-                        && !nativeGames.isEmpty()) {
-                        nativeLibraryPage = 0;
-                        mode = MODE_NATIVE_GAMES;
-                    } else host.onUiActionRejected();
+                    host.onUiActionRejected();
                     break;
                 case 18:
                     // The preview pipeline is not connected to the 3D
@@ -5682,8 +5672,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
             nativeLibraryPage = (nativeLibraryPage + pages - 1) % pages;
         } else if (button == NativeGamesGallery.NEXT && pages > 1) {
             nativeLibraryPage = (nativeLibraryPage + 1) % pages;
-        } else if (button == NativeGamesGallery.MANAGE) {
-            host.onGameModuleManagerRequested();
+        } else if (button == NativeGamesGallery.TOOLS) {
+            nativeLibraryPage = 0;
+            mode = MODE_NATIVE_LIBRARY; // Existing non-game utilities.
         } else if (button == NativeGamesGallery.HOME) {
             mode = MODE_HOME;
         } else {
@@ -7025,11 +7016,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                             + dosModuleIds.length
                 );
 
-        String nativeLabel =
-            NativeModuleRuntime.isAvailable()
-                && !nativeModules.isEmpty()
-                ? "Native Apps"
-                : "Native Apps";
+        String nativeLabel = "Native Games";
 
         String[] leftLabels =
             new String[] {
@@ -7052,8 +7039,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
         // Media/DOS/Native positions or changing their saved navigation.
         drawHomeButtons(canvas, paint,
             new String[] {leftLabels[6]}, 18, 1);
-        drawHomeButtons(canvas, paint,
-            new String[] {"Classic Games"}, 24, 1);
         drawHomeButtons(canvas, paint,
             new String[] {"Emulator Modules"}, 25, 1);
         drawHomeButtons(canvas, paint,
@@ -7435,7 +7420,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             case 1:
                 return "Browse and launch imported DOS game modules.";
             case 2:
-                return "Open packaged games, native projects and first-party apps.";
+                return "Launch all fifteen bundled native and classic games.";
             case 3:
                 return "Change the persistent 3D home environment.";
             case 4:
@@ -7462,8 +7447,6 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 return "Resume the last valid media, DOS, or native activity.";
             case 14:
                 return "Open controller status, pairing, pointer, and input tools.";
-            case 24:
-                return "Play original native Pong, Snake, and chutes-and-ladders.";
             case 25:
                 return "Browse public emulator source modules, license and download status.";
             case 26:
@@ -8033,7 +8016,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         paint.setColor(Color.WHITE);
         paint.setTextSize(31.0f * uiScale);
         canvas.drawText(
-            mode == MODE_NATIVE_GAMES ? "CLASSIC GAMES" : "NATIVE APPS / PROJECTS",
+            "NATIVE APPS / TOOLS",
             90,
             175,
             paint

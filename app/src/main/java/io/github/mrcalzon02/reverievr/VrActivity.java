@@ -188,8 +188,8 @@ public final class VrActivity extends Activity
                 ),
                 getAssets(),
                 virtualInputBus,
-                preferences.getLoggingMode()
-                    == LoggingMode.DEVELOPMENT,
+                // Shipped first-party games are playable independent of logging mode.
+                true,
                 preferences
             );
         inputManager =

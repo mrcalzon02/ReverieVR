@@ -7,7 +7,7 @@ import java.util.List;
 
 /** Data-driven PSX gallery for actual loaded native modules, not static menu art. */
 final class NativeGamesGallery {
-    static final int PAGE_SIZE=6, PREVIOUS=6, NEXT=7, MANAGE=8, HOME=9;
+    static final int PAGE_SIZE=6, PREVIOUS=6, NEXT=7, TOOLS=8, HOME=9;
     static final int[][] BUTTONS={
         {60,177,343,397},{370,177,653,397},{680,177,963,397},
         {60,416,343,636},{370,416,653,636},{680,416,963,636},
@@ -58,7 +58,7 @@ final class NativeGamesGallery {
         }
         nav(c,p,PREVIOUS,"PREVIOUS",pages>1,hover,scale);
         nav(c,p,NEXT,"NEXT",pages>1,hover,scale);
-        nav(c,p,MANAGE,"DOWNLOADS / UPDATES",true,hover,scale);
+        nav(c,p,TOOLS,"NATIVE TOOLS",true,hover,scale);
         nav(c,p,HOME,"HOME",true,hover,scale);
         p.setTextAlign(Paint.Align.LEFT);
         p.setStyle(Paint.Style.FILL);
@@ -90,7 +90,7 @@ final class NativeGamesGallery {
         p.setColor(Color.rgb(137,190,201));
         fit(c,p,game.id.startsWith("classic-")?"CLASSIC  /  SELECT TO PLAY"
             :NativeModuleRuntime.isDevelopmentOnly(game.id)
-                ?"DEVELOPMENT  /  SELECT TO PLAY"
+                ?"IN DEVELOPMENT  /  PLAY"
                 :"NATIVE GAME  /  SELECT TO PLAY",
             (x+right)/2f,bottom-11,right-x-20,12f,true);
         p.setColor(hover?Color.rgb(251,214,103):Color.rgb(65,131,183));
