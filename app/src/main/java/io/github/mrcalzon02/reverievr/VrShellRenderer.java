@@ -294,6 +294,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return HomeKeyboardGeometry.keyRects();
     }
 
+    private static final int[][] NATIVE_GAMES_BUTTONS = NativeGamesGallery.BUTTONS;
+
     private static final int[][] NATIVE_LIBRARY_BUTTONS = new int[][] {
         {140, 235, 884, 300},
         {140, 315, 884, 380},
@@ -771,18 +773,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
         for (NativeModuleRuntime.Descriptor entry : nativeModules) {
             // Omega Front is a native VR strategy game; place it on the
             // playable Games shelf rather than burying it among utilities.
-            if (entry.id.startsWith("classic-")
-                || NativeModuleRuntime.ID_OMEGA_FRONT.equals(entry.id)) {
+            if (GameModuleRegistry.find(entry.id) != null
+                || entry.id.startsWith("classic-")) {
                 games.add(entry);
             } else {
                 apps.add(entry);
             }
         }
-        // Native-game update management is always reachable from the first
-        // shelf page, even when no optional content is currently installed.
-        // Install permission/file selection happens on the phone screen.
-        games.add(0,new NativeModuleRuntime.Descriptor(
-            INTERNAL_GAME_MODULE_MANAGER_ID,"Manage Game Downloads / Updates"));
+        // Order featured games like the user-selected gallery reference.
+        // Only registered, loaded native modules appear as game launch cards.
+        Collections.sort(games, (left, right) -> Integer.compare(
+            NativeGamesGallery.order(left.id), NativeGamesGallery.order(right.id)));
+        // Game downloads have their own persistent action on every gallery page.
         apps.add(new NativeModuleRuntime.Descriptor(
             INTERNAL_MODEL_VIEWER_ID, "3D Model Viewer (OBJ)"));
         apps.add(new NativeModuleRuntime.Descriptor(
@@ -4897,7 +4899,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return index >= 0 && index < CONTROLLER_SOURCE_BUTTONS.length;
         }
 
-        if (mode == MODE_NATIVE_LIBRARY || mode == MODE_NATIVE_GAMES) {
+        if (mode == MODE_NATIVE_GAMES) {
+            int count = nativeGames.size();
+            if (index >= 0 && index < NativeGamesGallery.PAGE_SIZE)
+                return NativeGamesGallery.moduleIndex(
+                    nativeLibraryPage, index, count) >= 0;
+            if (index == NativeGamesGallery.PREVIOUS
+                || index == NativeGamesGallery.NEXT)
+                return NativeGamesGallery.pageCount(count) > 1;
+            return index == NativeGamesGallery.MANAGE
+                || index == NativeGamesGallery.HOME;
+        }
+        if (mode == MODE_NATIVE_LIBRARY) {
             int count = currentNativeShelf().size();
             if (index >= 0 && index <= 2) {
                 int moduleIndex =
@@ -5647,9 +5660,46 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return mode == MODE_NATIVE_GAMES ? nativeGames : nativeApps;
     }
 
+    private void handleNativeGamesSelection(int button) {
+        int count = nativeGames.size();
+        int pages = NativeGamesGallery.pageCount(count);
+        int index = NativeGamesGallery.moduleIndex(nativeLibraryPage, button, count);
+        if (index >= 0) {
+            NativeModuleRuntime.Descriptor selected = nativeGames.get(index);
+            if (host.onNativeModulePlaybackRequested(selected.id)) {
+                clearNativeModuleFailure();
+                preferences.markLastActivityNative(
+                    selected.id, selected.displayName);
+                nativeSurfaceReady = false;
+                mode = MODE_NATIVE;
+                hoveredButton = -1;
+                textureDirty = true;
+                return;
+            }
+            noteNativeModuleFailure(selected.id);
+            host.onUiActionRejected();
+        } else if (button == NativeGamesGallery.PREVIOUS && pages > 1) {
+            nativeLibraryPage = (nativeLibraryPage + pages - 1) % pages;
+        } else if (button == NativeGamesGallery.NEXT && pages > 1) {
+            nativeLibraryPage = (nativeLibraryPage + 1) % pages;
+        } else if (button == NativeGamesGallery.MANAGE) {
+            host.onGameModuleManagerRequested();
+        } else if (button == NativeGamesGallery.HOME) {
+            mode = MODE_HOME;
+        } else {
+            host.onUiActionRejected();
+        }
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
     private void handleNativeLibrarySelection(
         int button
     ) {
+        if (mode == MODE_NATIVE_GAMES) {
+            handleNativeGamesSelection(button);
+            return;
+        }
         List<NativeModuleRuntime.Descriptor> shelf = currentNativeShelf();
         int count = shelf.size();
         int pageCount =
@@ -6356,9 +6406,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
 
         if (mode == MODE_EMULATOR_CATALOG) return NATIVE_LIBRARY_BUTTONS;
         if (mode == MODE_EMULATOR_CONFIRM) return EMULATOR_CONFIRM_BUTTONS;
-        if (mode == MODE_NATIVE_LIBRARY || mode == MODE_NATIVE_GAMES) {
-            return NATIVE_LIBRARY_BUTTONS;
-        }
+        if (mode == MODE_NATIVE_GAMES) return NATIVE_GAMES_BUTTONS;
+        if (mode == MODE_NATIVE_LIBRARY) return NATIVE_LIBRARY_BUTTONS;
 
         if (mode == MODE_DOS_LIBRARY) {
             return DOS_LIBRARY_BUTTONS;
@@ -6491,7 +6540,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint.setFakeBoldText(true);
             // Wardrobe has a screen-specific title in this same region.
             // Do not paint the generic brand over its header.
-            if (mode != MODE_WARDROBE) {
+            if (mode != MODE_WARDROBE && mode != MODE_NATIVE_GAMES) {
                 canvas.drawText(
                     "REVERIE VR",
                     90,
@@ -7960,6 +8009,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
         Canvas canvas,
         Paint paint
     ) {
+        if (mode == MODE_NATIVE_GAMES) {
+            NativeGamesGallery.draw(canvas, paint, nativeGames,
+                nativeLibraryPage, hoveredButton, uiScale,
+                preferences.getLoggingMode() == LoggingMode.DEVELOPMENT,
+                lastNativeFailureReason);
+            return;
+        }
         List<NativeModuleRuntime.Descriptor> shelf = currentNativeShelf();
         int count = shelf.size();
         int pageCount =
