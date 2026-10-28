@@ -29,7 +29,7 @@ struct State {
     const ReverieNativeHostV1 *host=nullptr;
     game::Session session{414u};
     game::Menu menu;
-    bool has_campaign=false,block_primary=false,pointer_primary_down=false;
+    bool has_campaign=false,block_primary=false,block_secondary=false,pointer_primary_down=false;
     bool secondary_consumed=false;
     float secondary_hold=0;
     GLuint program=0,vbo=0;
@@ -916,6 +916,7 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             // order a move. This remains true if a menu is closed by Back.
             if(s->menu.screen==game::MenuScreen::Playing){
                 s->block_primary=true;
+                s->block_secondary=true;
                 s->session.ResetEdges();
             }
             Draw(s);
@@ -970,6 +971,11 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     if(s->block_primary){
         if(!action.primary)s->block_primary=false;
         action.primary=false;
+    }
+    // Closing the pause menu with MINUS must not also cycle a field command.
+    if(s->block_secondary){
+        if(!action.secondary)s->block_secondary=false;
+        action.secondary=false;
     }
     const uint32_t old_orders=s->session.orders+s->session.tactical.issued;
     const uint32_t old_tick=s->session.tactical.battle.ticks();
