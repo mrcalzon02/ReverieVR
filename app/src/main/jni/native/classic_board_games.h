@@ -16,7 +16,8 @@ namespace reverie { namespace boardgames {
 
 enum class Kind : uint8_t { Checkers=3, Go=4, Chess=5, Reversi=7 };
 struct State {
-    // Human plays Black (+1); CPU plays White (-1).
+    // Chess: White human (+1) at ranks 1-2, Black CPU (-1) at 7-8.
+    // Go: Black human (+1), White CPU (-1). The sign is game-specific.
     // Go is full 19x19, chess and checkers retain standard 8x8.
     static constexpr int kGoSize=19,kCapacity=kGoSize*kGoSize;
     using Board=std::array<int8_t,kCapacity>;
