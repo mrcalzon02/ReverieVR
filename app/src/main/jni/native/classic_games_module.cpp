@@ -192,6 +192,44 @@ void ChessWikiText(Module *m,const std::string &line,float x,float y,
         reverie::breakwater::font::FittedScale(line.c_str(),5.05f,scale),
         .91f,.95f,.85f,-2.725f);
 }
+
+void ChessWikiOpen(Module *m,int section){
+    m->chessWikiOpen=true;
+    m->chessWikiSection=section;
+    m->chessWikiPage=0;
+    m->chessWikiIndex=std::max(0,reverie::chessref::Current(m->board));
+    m->chessWikiMatches=reverie::chessref::Matching(m->board);
+    m->dirty=true;
+}
+void ChessWikiClick(Module *m,float x,float y) {
+    if(y>1.30f && x>2.08f){m->chessWikiOpen=false;m->dirty=true;return;}
+    if(y>.91f&&y<1.29f){
+        const int tab=std::clamp(static_cast<int>(std::floor(
+            (x+2.675f)/1.07f)),0,4);
+        m->chessWikiSection=tab;
+        m->chessWikiPage=0;
+        if(tab==0)m->chessWikiIndex=std::max(0,
+            reverie::chessref::Current(m->board));
+        m->dirty=true;
+        return;
+    }
+    if(y< -1.22f&&y> -1.64f){
+        const int change=x< -1.47f?-10:x<0.f?-1:x<1.47f?1:10;
+        int maxPage=0;
+        if(m->chessWikiSection==1)
+            maxPage=std::max(0,static_cast<int>(m->chessWikiMatches.size())-1);
+        else if(m->chessWikiSection==2)
+            maxPage=std::max(0,static_cast<int>(
+                (m->board.chessSanHistory.size()+19)/20)-1);
+        else if(m->chessWikiSection==3)maxPage=8;
+        else maxPage=reverie::chessref::kEntries-1;
+        if(m->chessWikiSection==0||m->chessWikiSection==4)
+            m->chessWikiIndex=std::clamp(m->chessWikiIndex+change,0,maxPage);
+        else
+            m->chessWikiPage=std::clamp(m->chessWikiPage+change,0,maxPage);
+        m->dirty=true;
+    }
+}
 void ChessWikiDraw(Module *m) {
     const auto &state=m->board;
     using namespace reverie::chessref;
@@ -1079,6 +1117,23 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     m->previousSecondary=second;
 #if CLASSIC_GAME_KIND == 5
     float panelX=0.f,panelY=0.f;
+    float leftPanelX=0.f,leftPanelY=0.f;
+    const bool chessLeftPanelAim=
+        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
+        reverie::chesspanel::Hit(-1,copy.pointer_origin,
+                                copy.pointer_direction,&leftPanelX,&leftPanelY);
+    float wikiX=0.f,wikiY=0.f;
+    bool wikiAim=false;
+    if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
+       std::abs(copy.pointer_direction[2])>.00001f){
+        const float t=(-2.75f-copy.pointer_origin[2])/copy.pointer_direction[2];
+        if(t>0.f&&t<30.f){
+            wikiX=copy.pointer_origin[0]+t*copy.pointer_direction[0];
+            wikiY=copy.pointer_origin[1]+t*copy.pointer_direction[1];
+            wikiAim=std::isfinite(wikiX)&&std::isfinite(wikiY)&&
+                std::abs(wikiX)<2.82f&&std::abs(wikiY)<1.77f;
+        }
+    }
     const bool chessPanelAim=
         copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
         reverie::chesspanel::Hit(1,copy.pointer_origin,
@@ -1143,12 +1198,22 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     }
     if(edge){
 #if CLASSIC_GAME_KIND == 5
-        if(m->chessPanelHover){
-            m->chessPanelTab=1-m->chessPanelTab;
-            m->dirty=true;
+        if(m->chessWikiOpen) {
+            if(wikiAim)ChessWikiClick(m,wikiX,wikiY);
             ReverieNativeRequestFeedbackV1(m->host,
                 REVERIE_NATIVE_FEEDBACK_ACTIVATION);
-        }else
+        } else if(
+            (chessLeftPanelAim && std::abs(leftPanelX)<.82f &&
+                std::abs(leftPanelY)<1.57f) ||
+            (chessPanelAim && std::abs(panelX)<.82f &&
+                std::abs(panelY)<1.57f &&
+                controlHover!=1 &&
+                !(m->board.ChessDrawClaimable()&&
+                  panelY< -1.21f && panelY> -1.51f))) {
+            ChessWikiOpen(m,chessLeftPanelAim?0:1);
+            ReverieNativeRequestFeedbackV1(m->host,
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        } else
 #endif
         if(m->board.finished||m->cpuFailed) {
             m->cpuFailed=false;
@@ -1214,6 +1279,43 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                             "ClassicCpu",error.what());
     }
 #if CLASSIC_GAME_KIND == 5
+    // Each pointer/cursor hover names the actual board piece and previews
+    // exactly those king-safe destinations the chess engine would accept.
+    // Opponent inspection uses hypothetical next-turn rules, never executes.
+    int hover=-1;
+    if(aim){
+        const int x=static_cast<int>(std::floor((hx+4.f*gap)/gap));
+        const int y=static_cast<int>(std::floor((4.f*gap-hy)/gap));
+        if(x>=0&&x<8&&y>=0&&y<8)hover=y*8+x;
+    }else if(m->boardCursorActive){
+        hover=m->boardCursorY*8+m->boardCursorX;
+    }
+    if(m->chessWikiOpen)hover=-1;
+    if(hover!=m->chessHoverSquare){
+        m->chessHoverSquare=hover;
+        m->dirty=true;
+    }
+    const int preview=m->board.selected>=0?m->board.selected:hover;
+    if(preview!=m->chessPreviewSquare ||
+       m->chessPreviewPly!=m->board.ply){
+        m->chessPreviewSquare=preview;
+        m->chessPreviewPly=m->board.ply;
+        m->chessLegalDestinations=
+            reverie::chessref::Destinations(m->board,preview);
+        m->dirty=true;
+    }
+    if(preview>=0){
+        m->chessPulseClock+=std::clamp(copy.delta_seconds,0.f,.1f);
+        if(m->chessPulseClock>=.38f){
+            m->chessPulseClock=0.f;
+            m->chessPulseLit=!m->chessPulseLit;
+            m->dirty=true;
+        }
+    }else if(!m->chessPulseLit){
+        m->chessPulseLit=true;
+        m->chessPulseClock=0.f;
+        m->dirty=true;
+    }
     // Advisory ECO lookup runs on the game's single Update, never during
     // either eye draw. Re-scan only when a legally played move increments ply.
     if(m->chessAnalyzedPly!=m->board.ply){
