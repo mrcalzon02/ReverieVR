@@ -24,15 +24,15 @@ public final class ControllerPoseVisibilityTest {
         assertFalse(ControllerPoseVisibility.live(true,true,BASE,delayed));
         assertTrue(ControllerPoseVisibility.holdModel(true,true,BASE,delayed));
         assertTrue(ControllerPoseVisibility.holdModel(true,true,BASE,
-            BASE + ControllerPoseVisibility.MODEL_HOLD_NANOS));
+            BASE + 120_000_000_000L));
         assertFalse(ControllerPoseVisibility.live(true,true,BASE,
-            BASE + ControllerPoseVisibility.MODEL_HOLD_NANOS));
+            BASE + 120_000_000_000L));
     }
 
     @Test
-    public void prolongedGapStopsDrawingAndNeverRoutesInput() {
-        long expired = BASE + ControllerPoseVisibility.MODEL_HOLD_NANOS + 1L;
-        assertFalse(ControllerPoseVisibility.holdModel(true,true,BASE,expired));
+    public void prolongedGapFreezesModelAndNeverRoutesInput() {
+        long expired = BASE + 120_000_000_000L + 1L;
+        assertTrue(ControllerPoseVisibility.holdModel(true,true,BASE,expired));
         assertFalse(ControllerPoseVisibility.live(true,true,BASE,expired));
     }
 
