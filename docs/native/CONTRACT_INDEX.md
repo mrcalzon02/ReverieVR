@@ -143,3 +143,12 @@ For native SDK-facing changes, the completion evidence should include:
 - build/package evidence when applicable;
 - device/runtime evidence when the claim requires it;
 - synchronized handbook/API/standard wording.
+
+## Cross-platform authored scene contract (2026-10-28)
+
+- Implementation: `app/src/main/jni/native/reverie_scene_document.h` and the opt-in Test Chamber resource path in `test_chamber_module.cpp`, with exact asset scope in `reverie_native_asset_scope.h`.
+- Normative documentation: [SCENE_BRIDGE.md](SCENE_BRIDGE.md), covering `REVSCENE 1`, security, draw order and staging guarantees.
+- Producers: `tools/desktop/SceneDocument.java`, `ReverieDesktop.java` and `tools/desktop/SceneDocumentTest.java`.
+- Verification: `scripts/verify-desktop-scene-bridge.sh` compiles the Java producer and native consumer and runs fixed malformed-data, geometry and asset-scope tests. The existing module ABI v1 declarations and SDK helper layout do not change.
+- Scope: Test Chamber development content only, not a general ability for all registered games to load authored scenes. Physical APK rendering and real desktop native-game hosting remain unaccepted.
+

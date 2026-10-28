@@ -14,6 +14,15 @@ public final class SceneDocumentTest {
         d.environment="forest_glade";
         d.pieces.add(new SceneDocument.Piece("rock-1","box","-",1,2,3,45,1.5));
         d.pieces.add(new SceneDocument.Piece("prop","obj","app/src/main/assets/models/daydream/example.obj",-3,1,2,0,2));
+        // Optional cross-language fixture for the portable C++ scene parser.
+        if(args.length>1) throw new IllegalArgumentException("Usage: SceneDocumentTest [fixture-output-path]");
+        if(args.length==1) {
+            SceneDocument nativeScene=new SceneDocument();
+            nativeScene.environment="forest_glade";
+            nativeScene.pieces.add(new SceneDocument.Piece("rock-1","box","-",1,2,3,45,1.5));
+            nativeScene.pieces.add(new SceneDocument.Piece("column","cylinder","-",-3,1,2,0,2));
+            Files.writeString(java.nio.file.Path.of(args[0]),nativeScene.encode());
+        }
         String encoded=d.encode();
         SceneDocument decoded=SceneDocument.decode(encoded);
         if(!decoded.encode().equals(encoded) || decoded.pieces.size()!=2) throw new AssertionError("Round trip");

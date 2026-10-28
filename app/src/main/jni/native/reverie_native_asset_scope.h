@@ -7,6 +7,10 @@
 namespace reverie { namespace native { namespace assets {
 inline uint32_t MaximumBytes(const char *id,const char *path){
     if(!id||!path)return 0u;
+    // Exactly one authored scene; no arbitrary file access for modules.
+    if(std::strcmp(id,"procedural-test-chamber")==0)
+        return std::strcmp(path,"native/test-chamber/scene.rvscene")==0
+            ? 150000u : 0u;
     // Actual Breakwater imports are BWM1 meshes, already shipped in the
     // bundled APK. Previously the host rejected ALL Breakwater reads.
     if(std::strcmp(id,"breakwater-battery")==0){

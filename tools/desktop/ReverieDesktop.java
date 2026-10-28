@@ -27,6 +27,7 @@ public final class ReverieDesktop {
         new JSpinner(new SpinnerNumberModel(1.0,0.01,500.0,0.1))
     };
     private final View view=new View();
+    private JButton publishTest;
     private final Map<String,ObjMeshReader.Mesh> meshes=new HashMap<>();
     private final Deque<String> undo=new ArrayDeque<>(), redo=new ArrayDeque<>();
     private SceneDocument scene=new SceneDocument();
@@ -52,6 +53,9 @@ public final class ReverieDesktop {
         upper.add(new JLabel("Project")); upper.add(project);
         upper.add(new JLabel("Home biome")); upper.add(environment);
         JButton save=button("Save scene",this::save); upper.add(save);
+        publishTest=button("Stage Test Chamber for APK",this::publishTestChamber);
+        publishTest.setToolTipText("Copies only box/cylinder layout into the Test Chamber APK assets; rebuild the Android app to see changes");
+        publishTest.setEnabled(false);upper.add(publishTest);
         JButton revert=button("Reload",()->{if(confirmDiscard())load(activeId);});upper.add(revert);
         JButton reset=button("Reset view",()->{view.yaw=.55;view.pitch=.43;view.distance=20;view.repaint();});upper.add(reset);
         project.addActionListener(e->{if(updating)return;String target=(String)project.getSelectedItem();
@@ -103,11 +107,34 @@ public final class ReverieDesktop {
             SceneDocument found=SceneDocument.load(file(id));
             scene=found;activeId=id;nextId=1;meshes.clear();undo.clear();redo.clear();dirty=false;
             updating=true;project.setSelectedItem(id);environment.setSelectedItem(scene.environment);updating=false;
-            refreshObjects(-1);status.setText("Authoring only - "+id+" | "+file(id));view.repaint();
+            refreshObjects(-1);
+            publishTest.setEnabled("procedural-test-chamber".equals(activeId));
+            status.setText("Authoring only - "+id+" | "+file(id));view.repaint();
         }catch(IOException ex){updating=true;project.setSelectedItem(activeId);updating=false;error("Scene load failed",ex);}
     }
-    private void save(){try{scene.save(file(activeId));dirty=false;status.setText("Saved "+file(activeId)+" (staging format; no Android module import yet)");}
+    private void save(){try{scene.save(file(activeId));dirty=false;status.setText("Saved "+file(activeId)+" (desktop scene document)");}
         catch(IOException|IllegalArgumentException ex){error("Scene save failed",ex);}}
+    private void publishTestChamber(){
+        if(!"procedural-test-chamber".equals(activeId))return;
+        Path dest=repo.resolve("app/src/main/assets/native/test-chamber/scene.rvscene");
+        try{
+            if(scene.pieces.stream().anyMatch(p->p.kind.equals("obj")))
+                throw new IOException("OBJ references cannot render in the native Test Chamber yet. Remove them or use primitives.");
+            String encoded=scene.encode();
+            if(encoded.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>150000)
+                throw new IOException("Native scene exceeds its 150000-byte size limit");
+            if(Files.exists(dest)){
+                int approval=JOptionPane.showConfirmDialog(frame,
+                    "Replace the bundled Test Chamber scene? The next full APK build will include this layout.",
+                    "Stage native scene",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+                if(approval!=JOptionPane.YES_OPTION)return;
+            }
+            scene.save(file(activeId));
+            scene.save(dest);
+            dirty=false;
+            status.setText("Staged "+scene.pieces.size()+" objects: "+repo.relativize(dest)+" — rebuild APK to test in VR");
+        }catch(IOException|IllegalArgumentException ex){error("Test Chamber scene staging failed",ex);}
+    }
     private boolean confirmDiscard(){if(!dirty)return true;
         int choice=JOptionPane.showConfirmDialog(frame,"Discard unsaved edits to "+activeId+"?","Unsaved scene",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
         return choice==JOptionPane.YES_OPTION;

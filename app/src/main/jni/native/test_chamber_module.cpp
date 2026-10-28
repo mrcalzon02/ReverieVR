@@ -1,4 +1,5 @@
 #include "reverie_native_sdk.h"
+#include "reverie_scene_document.h"
 #include "reverie_native_avatar_geometry.h"
 #include "reverie_native_avatar_wardrobe.h"
 #include "reverie_native_gl_state.h"
@@ -41,6 +42,9 @@ struct ModuleState {
     bool alternate_tint = false;
 
     std::vector<uint8_t> rgba;
+    // Optional editor-authored primitives, identical across eye renders.
+    std::vector<float> editor_mesh;
+    GLsizei editor_vertex_count = 0;
 };
 
 void Log(
@@ -389,6 +393,9 @@ int32_t InitializeGl(ModuleState *state) {
             room_and_avatar.push_back(.5f);
         }
     }
+    // Authored geometry follows room/avatar/wardrobe in this single VBO.
+    room_and_avatar.insert(room_and_avatar.end(),
+        state->editor_mesh.begin(),state->editor_mesh.end());
     glBufferData(GL_ARRAY_BUFFER,
         static_cast<GLsizeiptr>(room_and_avatar.size()*sizeof(float)),
         room_and_avatar.data(),GL_STATIC_DRAW);
@@ -487,6 +494,45 @@ void *Create(
     ReverieNativeAvatarV1 selected={};
     if(ReverieNativeReadAvatarV1(host,&selected))
         state->avatar=selected;
+
+    // One exact allowlisted bundled asset. Unavailable keeps original room;
+    // present invalid content fails loudly instead of rendering fake props.
+    if(host->struct_size>=REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE
+        && host->read_asset!=nullptr) {
+        uint32_t length=0;
+        const char *path="native/test-chamber/scene.rvscene";
+        const int32_t status=host->read_asset(path,nullptr,0u,&length);
+        if(status==REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL &&
+            length>0u && length<=reverie::authoring::kSceneMaxBytes) {
+            std::vector<char> scene_bytes(length);
+            uint32_t consumed=0;
+            if(host->read_asset(path,scene_bytes.data(),length,&consumed)
+                !=REVERIE_NATIVE_SAVE_OK || consumed!=length) {
+                Log(state,REVERIE_NATIVE_LOG_ERROR,
+                    "Desktop-authored scene asset read failed.");
+                delete state;
+                return nullptr;
+            }
+            try {
+                const auto authored=reverie::authoring::ParseScene(
+                    scene_bytes.data(),scene_bytes.size());
+                state->editor_mesh=reverie::authoring::PrimitiveTriangles(authored);
+                state->editor_vertex_count=static_cast<GLsizei>(
+                    state->editor_mesh.size()/5u);
+                Log(state,REVERIE_NATIVE_LOG_INFO,
+                    "Verified editor-authored primitives loaded for both eyes.");
+            } catch(const std::exception &error) {
+                Log(state,REVERIE_NATIVE_LOG_ERROR,error.what());
+                delete state;
+                return nullptr;
+            }
+        } else if(status!=REVERIE_NATIVE_SAVE_NOT_FOUND) {
+            Log(state,REVERIE_NATIVE_LOG_ERROR,
+                "Desktop-authored scene missing valid bounded resource.");
+            delete state;
+            return nullptr;
+        }
+    }
 
     try {
         GenerateProceduralTexture(state);
@@ -770,6 +816,13 @@ int32_t RenderEye(
                     group*2u*REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1),
                 2*REVERIE_NATIVE_AVATAR_VERTICES_PER_PART_V1);
         }
+    }
+
+    if(state->editor_vertex_count>0) {
+        const GLint editor_start=36+state->avatar_vertex_count
+            +state->wardrobe_vertex_count;
+        glUniform3f(state->tint_location,.65f,.88f,1.0f);
+        glDrawArrays(GL_TRIANGLES,editor_start,state->editor_vertex_count);
     }
 
     ReverieNativeGlAttribRestoreV1(
