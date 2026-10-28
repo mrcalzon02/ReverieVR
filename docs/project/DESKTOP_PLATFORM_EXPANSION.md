@@ -1,12 +1,12 @@
 # ReverieVR — complete desktop platform expansion
 
-**Decision date:** 2026-10-26. **Status:** accepted product direction; implementation **planned**, not present or validated.  
+**Decision date:** 2026-10-26. **Status:** product-wide target accepted; Java17 desktop scene-authoring workbench source integrated October 28, 2026; playable desktop hub and OpenXR still unimplemented/unvalidated.  
 **Authority:** `docs/project/INSTRUCTIONS.md`; subject to `docs/project/EXECUTION_CONTRACT.md`.  
 **Scope:** **the entire ReverieVR application and its hosted library**. This is not a Sitka-specific port, a desktop-only game, an Android emulator, a remote-control utility, or a replacement for the Daydream APK.
 
 ## Product requirement
 
-ReverieVR shall be one **cross-platform offline-first VR-and-desktop hub** offering the same first-party Home rooms, avatar identity and wardrobe, library discovery/launch, native games, classic games, DOS/emulator surfaces where legally and technically available, local media, interaction/Quick Menu, settings, saving, audio, diagnostics, and independent module acquisition/update flows. All supported desktop systems must boot, navigate, launch, play and recover **without a headset, Android phone, laptop companion, Steam installation, internet connection or SteamVR**. Network access is needed only for user-initiated update/download features.
+ReverieVR shall be one **cross-platform offline-first VR-and-desktop hub** offering the same first-party Home rooms, avatar identity and wardrobe, library discovery/launch, native games, classic games, DOS/emulator surfaces where legally and technically available, local media, interaction/Quick Menu, settings, saving, audio, diagnostics, and coherent **whole-application release/update** flows. All supported desktop systems must boot, navigate, launch, play and recover **without a headset, Android phone, laptop companion, Steam installation, internet connection or SteamVR**. Network access is needed only for user-initiated update/download features.
 
 | OS / architecture | Required primary distribution | Primary interaction | XR posture |
 | --- | --- | --- | --- |
@@ -26,7 +26,7 @@ Do not claim a platform is released until actual installation, hub operation and
 | Classics and DOS | Real input/game rendering, content rights, state and orderly exit on desktop; full catalog parity is an explicit acceptance item | Port/rebuild emulator integrations and OS-specific filesystem/graphics, not APK reuse |
 | Media/music | Offline local files, audio playback, virtual cinema/360 displays with a desktop viewing mode; no phone-dependent file picker | Desktop native file chooser and video/audio backend; licensed codecs/content only |
 | Controllers/UI | Common semantic actions, rebinding, reticle, accessible menus, virtual keyboard for VR and physical keyboard on PC | Daydream/BLE and Android side buttons remain Android-only; desktop controllers use desktop HID/gamepad |
-| Module store/updater | Same module IDs, dependency/version/save contracts, opt-in module installs, per-module upgrades, rollback/error handling | Signed/checksummed platform+architecture-specific artifacts, desktop install paths, no APK on PC |
+| Bundled game catalog / updater | Keep the same module IDs, save/ABI contracts, bundled game library and whole-application update integrity | One cohesive platform-specific installed application; no separate native-game installer or independently updated game archives |
 | Avatar identity | Same selectable profiles/body classes and collision conventions across hub and compatible games | Platform-specific rendering/performance profiles |
 | Saves/settings | Versioned portable state schema and compatible module saves; explicit import/export/migration | OS app-data paths, separately scoped graphics/UI settings; **no assumed cloud sync** |
 | Status, diagnostics, recovery | Honest capability and device state, performance monitor, repair/reset, shell-owned navigation | Phone/controller battery only when present; desktop power/HMD telemetry only when real; no fake HUD values |
@@ -43,7 +43,7 @@ Current authoritative source is Android-first: Android Gradle shell, Java lifecy
 3. **Rendering abstraction:** extract platform-neutral scene/mesh/material and frame data from GLES2-specific calls; use a tested desktop graphics backend suitable for all three OSs (with macOS Metal path or a demonstrated compatible translation). Preserve the original Android low-poly GPU path and 30 FPS thermal budget. Desktop 2D must render one camera, optional OpenXR stereo must render two views from **one** simulation update.
 4. **Host-native modules:** retain versioned game ABI semantics but inspect actual GL assumptions, dynamic library names, symbol calling conventions, ownership, threads, context lifetime and available host services before changing headers. Only append compatible ABI features with synchronized SDK docs/tests, or introduce a documented v2 adapter; never break Android v1 modules by accident.
 5. **Classic/emulator/media plugins:** audit content and dependencies one by one; provide actual desktop backends instead of mirroring an Android screen or omitting the feature silently.
-6. **Portable content pipeline:** use authored common assets, offline builds and the shared editor tools, with per-platform shader/texture/audio packaging, source and license attribution. Retain per-module independently downloadable/installable package manifests with OS/CPU/renderer capabilities, checksums and compatibility metadata.
+6. **Portable content pipeline:** use authored common assets, offline builds and shared editor tools, with per-platform shader/texture/audio packaging and source/license attribution. The deliverable is **one unified app and bundled games library per supported OS**, with a versioned platform/architecture-aware **whole-application** update manifest; do not resurrect independently downloadable game packages.
 7. **Input/UX:** desktop keyboard/mouse default, gamepad alternative, physical screen menus and usable VR-room flat navigation. XR headset detection never hijacks desktop input or activates gaze while a live controller is bound. Preserve reserved Quick Menu, Home and safe exit.
 8. **Privacy/recovery:** no new screen OCR/analysis or unconsented pixel export; explicit consent for capture/network devices; local-first data. A broken VR runtime, missing headset, controller disconnect, absent module, or update failure must leave the desktop hub usable.
 
@@ -52,6 +52,14 @@ Current authoritative source is Android-first: Android Gradle shell, Java lifecy
 **Desktop ReverieVR VR mode:** optional OpenXR API adapter inside the native Windows/Linux application. Discover the system's **active** OpenXR runtime, obtain tracked headset/controller input and submit stereo swapchains to it. SteamVR can be the active runtime, but it is not required to launch the desktop app, and Steamworks/store integration is not required. Validate Windows first; Linux headset/driver compatibility is hardware-dependent. Do not promise SteamVR on macOS. VR frame timing must follow the **headset's actual refresh rate**, not the phone's 30 FPS target.
 
 **RV-0246 SteamVR Laptop Link:** separate existing project to allow a Galaxy S9 to function as a streamed PC SteamVR headset for third-party PC VR software. Its older document says **not** to port the ReverieVR hub to PC because it scoped only that peripheral project. That exclusion is superseded **only as a global product constraint** by this newly authorized whole-platform expansion; the RV-0246 peripheral project, its security restrictions and its unverified status remain intact. Keep the two integrations separate; neither must depend on the other.
+
+## Current desktop development increment — 2026-10-28
+
+`tools/desktop/` is a **source-integrated Java 17 Swing workbench** that compiles against the *actual canonical* Java game registry, Home environments and bounded OBJ parser. It offers a practical, headset-free 3D wireframe authoring viewport (orbit, zoom, mouse selection), primitive scene placement, repository-local OBJ import, per-object transforms, undo/redo and atomic saves of versioned `REVSCENE 1` documents. The Windows `run.cmd` and Linux/macOS `run.sh` build/run it from a checkout with a JDK 17+; `test.sh` runs the scene codec tests.
+
+**Validation boundary:** source compilation and persistence tests passed locally with signature-compatible stand-ins for those three existing Java types; an Xvfb desktop smoke kept the GUI process running. A full source-tree build on actual Windows/Linux/macOS machines, native-game execution, actual Android GLES Home visual parity, consuming authored scenes inside native games, installers, and OpenXR/SteamVR are **not** yet proved. The workbench does **not** expose inert game launch controls.
+
+The next integration step is to consume `.rvscene` via a portable/native reader in a real test module, then prove the scene appears in Android and desktop host renderers without maintaining separate edited layouts. Scene data in workspace directories are authoring drafts until that bridge is complete.
 
 ## Delivery roadmap and non-negotiable gates
 
@@ -67,7 +75,7 @@ Current authoritative source is Android-first: Android Gradle shell, Java lifecy
 
 **D5 — Optional PC XR:** Windows OpenXR runtime entry/exit/stereo/action bindings/comfort/Quick Menu; real SteamVR headset validation; Linux runtime/HMD test matrix; graceful return to window on XR failure.
 
-**D6 — Packaging and independent updates:** platform+arch release artifacts and module manifests, checksums/signing/provenance, distribution and install/uninstall/update/rollback/restart scenarios for each target OS; retain independent Android APK updater.
+**D6 — Unified platform packaging and updates:** one whole-app release artifact per platform/arch with bundled supported games; checksums/signing/provenance, distribution and install/uninstall/update/rollback/restart scenarios on every target OS. Retain the unified Android APK updater.
 
 **D7 — Acceptance:** cold start, Home, avatar selection, native games, classics, DOS, media, game exit, controller disconnect, module acquisition/update, offline save recovery and clean OS exit on each OS; sustained Android S9 30 FPS/thermals, measured desktop flat frame pacing and PC VR compositor timing at HMD-native cadence. Release labels distinguish partial prototype, desktop beta and full library parity.
 
