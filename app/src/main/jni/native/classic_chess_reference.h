@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <map>
+#include <utility>
 #include <string>
 #include <vector>
 
@@ -65,6 +67,27 @@ inline std::vector<int> Matching(const boardgames::State &board) {
             matching.push_back(i);
     }
     return matching;
+}
+// Evidence table for indexed continuations. Counts represent number of
+// matching CC0 catalog lines, NEVER odds, winning chances or engine scores.
+inline std::vector<std::pair<std::string,int>>
+NextMoveCounts(const boardgames::State &board) {
+    std::map<std::string,int> counts;
+    if(board.kind!=boardgames::Kind::Chess)return {};
+    const auto &history=board.chessSanHistory;
+    for(int i=0;i<kEntries;++i){
+        size_t depth=0,nextSize=0;const char *next=nullptr;
+        if(chessbook::BookLineMatches(chessbook::kOpeningLines[i],
+            history,history.size(),&depth,&next,&nextSize)&&
+            next&&nextSize){
+            ++counts[std::string(next,nextSize)];
+        }
+    }
+    std::vector<std::pair<std::string,int>> result(counts.begin(),counts.end());
+    std::stable_sort(result.begin(),result.end(),[](const auto &a,const auto &b){
+        return a.second!=b.second?a.second>b.second:a.first<b.first;
+    });
+    return result;
 }
 // Find deepest historically matching opening, even after an off-book move.
 inline int Current(const boardgames::State &board) {
