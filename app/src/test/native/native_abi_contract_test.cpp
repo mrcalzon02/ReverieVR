@@ -656,12 +656,12 @@ int main() {
         "fully dressed avatar must generate the wardrobe mesh");
     Check(ornate_visible==((1u<<REVERIE_NATIVE_WARDROBE_SLOTS_V1)-1u),
         "garments/hair/hats/accessories/eyes must all be visible");
-    bool geometry_different=false,geometry_finite=true;
+    bool geometry_different=false,wardrobe_geometry_finite=true;
     for(size_t k=0u;k<REVERIE_NATIVE_WARDROBE_FLOATS_V1;k++) {
         if(plain[k]!=ornate[k])geometry_different=true;
-        if(!std::isfinite(ornate[k]))geometry_finite=false;
+        if(!std::isfinite(ornate[k]))wardrobe_geometry_finite=false;
     }
-    Check(geometry_different&&geometry_finite,
+    Check(geometry_different&&wardrobe_geometry_finite,
         "outfits and body shapes must change finite 3D vertices");
     Check(!ReverieNativeWriteAvatarWardrobeV1(
         &wardrobe_avatar,0.f,0.f,-1.f,ornate,3u,&ornate_visible),
