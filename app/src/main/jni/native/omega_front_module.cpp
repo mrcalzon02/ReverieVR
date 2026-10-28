@@ -1,4 +1,5 @@
 #include "omega_front_campaign_save.h"
+#include "omega_front_menu.h"
 #include "omega_front_texture_renderer.h"
 #include "omega_front_cc0_palette.h"
 #include "omega_front_sound.h"
@@ -27,6 +28,10 @@ constexpr float kNear = -1.86f;
 struct State {
     const ReverieNativeHostV1 *host=nullptr;
     game::Session session{414u};
+    game::Menu menu;
+    bool has_campaign=false,block_primary=false,pointer_primary_down=false;
+    bool secondary_consumed=false;
+    float secondary_hold=0;
     GLuint program=0,vbo=0;
     GLint pos=-1,color=-1,mvp=-1;
     bool upload=true,save_failed=false,load_failed=false;
@@ -55,6 +60,88 @@ void TextAt(State *s,const char *msg,float cx,float center_y,float px,
             float r,float g,float b){
     s->font.Fit(msg,cx,center_y,.34f,px,r,g,b,kNear);
 }
+
+void DrawMenu(State *s) {
+    const auto screen=s->menu.screen;
+    const game::Frontier &f=s->session.frontier;
+    s->mesh.clear();s->mesh.reserve(2000);
+    s->font.Clear();s->sprites.Clear();
+    s->base_vertices=s->unit_vertices=0;
+    Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.017f,.032f,.047f);
+    Rect(s,0,.98f,1.97f,.28f,kBoardZ-.07f,.065f,.125f,.176f);
+    Rect(s,0,.735f,1.72f,.012f,kBoardZ-.05f,.57f,.69f,.73f);
+    Text(s,"OMEGA FRONT",1.028f,.022f,.94f,.94f,.81f);
+    const char *caption=screen==game::MenuScreen::Title?
+        "HEARTHFALL  /  FRONTIER COMMAND":
+        screen==game::MenuScreen::Campaign?"CAMPAIGN  /  HEARTHFALL THEATER":
+        screen==game::MenuScreen::Controls?"FIELD MANUAL  /  CONTROLS":
+        screen==game::MenuScreen::ConfirmNew?"CAMPAIGN  /  CONFIRM RESET":
+        "COMMAND PAUSED  /  OPTIONS";
+    Text(s,caption,.837f,.011f,.62f,.80f,.86f);
+    Rect(s,0,-.015f,1.72f,1.38f,kBoardZ-.064f,.034f,.061f,.087f);
+    const int count=s->menu.Count(s->has_campaign);
+    for(int i=0;i<count;++i){
+        const float y=game::Menu::ButtonY(i);
+        const bool focus=i==s->menu.selected;
+        Rect(s,0,y,1.55f,.19f,kBoardZ-.042f,
+             focus?.20f:.074f,focus?.31f:.125f,focus?.38f:.17f);
+        Rect(s,-.745f,y,.035f,.152f,kBoardZ-.039f,
+             focus?.94f:.26f,focus?.75f:.43f,focus?.37f:.51f);
+        Text(s,s->menu.Label(i,s->has_campaign),y,.012f,
+             focus?1.f:.80f,focus?.92f:.88f,focus?.73f:.88f);
+    }
+    char line[128];
+    if(screen==game::MenuScreen::Campaign){
+        if(f.operation()<game::kHearthfallOperations)
+            std::snprintf(line,sizeof(line),"OP %02d/%02d  %s",
+                          f.operation()+1,game::kHearthfallOperations,
+                          game::Frontier::OperationName(f.operation()));
+        else std::snprintf(line,sizeof(line),"HEARTHFALL COMPLETE  FRONTIER CONTINUES");
+        Text(s,line,-.57f,.011f,.85f,.91f,.78f);
+        std::snprintf(line,sizeof(line),"DAY %d  SECTOR S%03d  GUARDS %d  RATIONS %d",
+                      f.day(),f.location()+1,f.guards(),f.rations());
+        Text(s,line,-.71f,.010f,.71f,.84f,.87f);
+        Text(s,"STRATEGY  LOGISTICS  DIPLOMACY  TACTICAL BATTLES",
+             -.855f,.010f,.68f,.77f,.80f);
+    }else if(screen==game::MenuScreen::Controls){
+        Text(s,"SECTOR MAP: TOUCHPAD TO FOCUS A SECTOR",.08f,.010f,.86f,.92f,.84f);
+        Text(s,"CLICK: EXECUTE CURRENT SECTOR ACTION",-.065f,.010f,.86f,.92f,.84f);
+        Text(s,"MINUS TAP: CYCLE 8 FIELD ACTIONS",-.21f,.010f,.86f,.92f,.84f);
+        Text(s,"BATTLE: CLICK UNIT THEN CLICK TARGET",-.355f,.010f,.86f,.92f,.84f);
+        Text(s,"MINUS TAP: MODE / PAUSE / REPORT RESET",-.50f,.009f,.86f,.92f,.84f);
+        Text(s,"HOLD MINUS: OPEN COMMAND MENU",-.645f,.010f,1.f,.82f,.50f);
+        Text(s,"POINT AT MENU TAB AND CLICK  /  MINUS TO BACK",-.79f,.009f,.65f,.78f,.84f);
+    }else if(screen==game::MenuScreen::ConfirmNew){
+        Text(s,"EXISTING CAMPAIGN PROGRESS WILL BE REPLACED",
+             -.59f,.011f,1.f,.67f,.46f);
+        Text(s,"THIS CANNOT BE UNDONE",-.75f,.012f,1.f,.77f,.64f);
+    }else if(screen==game::MenuScreen::Pause){
+        std::snprintf(line,sizeof(line),"DAY %d  S%03d  %s",
+                      f.day(),f.location()+1,
+                      s->session.view==game::FrontMode::Tactical?
+                      "TACTICAL ENGAGEMENT":"SECTOR COMMAND");
+        Text(s,line,-.65f,.011f,.74f,.87f,.90f);
+        Text(s,"SIMULATION HALTED WHILE THIS MENU IS OPEN",
+             -.80f,.010f,.73f,.85f,.66f);
+    }else{
+        Text(s,s->has_campaign?"CONTINUE YOUR SAVED HEARTHFALL FRONTIER":
+             "ESTABLISH HEARTHWELL AND DEFEND THE NEW EDEN",
+             -.64f,.011f,.79f,.90f,.78f);
+        Text(s,"OPERATIONS  /  SUPPLY LINES  /  FIELD COMMAND",
+             -.80f,.010f,.69f,.79f,.82f);
+    }
+    if(s->save_failed || s->load_failed)
+        Text(s,s->save_failed?"SAVE FAILED  PROGRESS NOT STORED":
+             "CHECKPOINT UNREADABLE  START A NEW CAMPAIGN",
+             -.977f,.011f,1.f,.46f,.43f);
+    else Text(s,"TOUCHPAD SELECT   CLICK CONFIRM   MINUS BACK",
+              -.991f,.010f,.62f,.75f,.79f);
+    s->upload=true;
+}
+void DrawMenuTab(State *s){
+    Rect(s,.89f,1.065f,.33f,.145f,kBoardZ-.035f,.22f,.32f,.38f);
+    TextAt(s,"MENU",.89f,1.065f,.011f,.96f,.92f,.70f);
+}
 void DrawMap(State *s){
     const game::Session &session=s->session;
     const game::Frontier &f=session.frontier;
@@ -62,6 +149,9 @@ void DrawMap(State *s){
     s->font.Clear();s->sprites.Clear();
     Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
     Text(s,"OMEGA FRONT  HEARTHFALL",1.070f,.014f,.92f,.94f,.81f);
+    Text(s,"TOUCHPAD FOCUS  CLICK ORDER  MINUS NEXT  HOLD MINUS MENU",
+         .997f,.008f,.71f,.84f,.85f);
+    DrawMenuTab(s);
     char line[110];
     std::snprintf(line,sizeof(line),"DAY %d  GUARDS %d  RATIONS %d  SALVAGE %d",f.day(),f.guards(),f.rations(),f.salvage());
     Text(s,line,.916f,.009f,.77f,.85f,.88f);
@@ -397,6 +487,7 @@ void SpriteEquipment(State *s,const game::Unit &u,float x,float y,
          kCell*.68f*hp,kCell*.055f,-1.841f,.22f,.92f,.32f);
 }
 void Draw(State *s){
+    if(s->menu.screen!=game::MenuScreen::Playing){DrawMenu(s);return;}
     if(s->session.view==game::FrontMode::SectorMap){DrawMap(s);return;}
     s->mesh.clear();s->mesh.reserve(75000);
     s->font.Clear();s->sprites.Clear();
@@ -584,6 +675,9 @@ void Draw(State *s){
     }
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
+    Text(s,"TOUCHPAD CURSOR  CLICK UNIT / ORDER  MINUS MODE  HOLD MINUS MENU",
+         .983f,.008f,.71f,.84f,.85f);
+    DrawMenuTab(s);
     char status[96];
     if(defendingConvoy)
         std::snprintf(status,sizeof(status),"ESCORT WAGON HP %d  AMMO %d  TICK %u",
@@ -659,6 +753,7 @@ bool SaveState(State *s){
                            "Hearthwell checkpoint write failed; playing in memory");
     s->save_failed=!ok;
     if(ok){
+        s->has_campaign=true;
         s->load_failed=false;
         s->saved_tick=s->session.tactical.battle.ticks();
         s->saved_orders=s->session.orders+s->session.tactical.issued;
@@ -681,6 +776,7 @@ void LoadState(State *s){
                            "Invalid or unreadable Hearthwell checkpoint; fresh skirmish kept");
         s->load_failed=true;
     }else{
+        s->has_campaign=true;
         s->saved_tick=s->session.tactical.battle.ticks();
         s->saved_orders=s->session.orders+s->session.tactical.issued;
         s->saved_view=s->session.view;
@@ -737,7 +833,7 @@ void GlEnd(void *p){
 void Resume(void *){}
 void Pause(void *p){
     State *s=static_cast<State *>(p);
-    if(s && ReverieNativeHostSupportsSaveV1(s->host)){
+    if(s && s->has_campaign && ReverieNativeHostSupportsSaveV1(s->host)){
         const bool previous=s->save_failed;
         SaveState(s);
         if(previous!=s->save_failed)Draw(s);
@@ -751,28 +847,94 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     action.dt=in->delta_seconds;
     action.x=in->move_x;action.y=in->move_y;
     action.primary=in->primary_down!=0;action.secondary=in->secondary_down!=0;
+    float pointer_x=0,pointer_y=0;
+    bool pointing=false;
     if(ReverieNativeInputHasPointerV1(in) &&
        in->pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
        std::fabs(in->pointer_direction[2])>.0001f){
         const float t=(kBoardZ-in->pointer_origin[2])/in->pointer_direction[2];
         if(t>0.f && t<100.f){
-            const float x=in->pointer_origin[0]+t*in->pointer_direction[0];
-            const float y=in->pointer_origin[1]+t*in->pointer_direction[1];
-            if(s->session.view==game::FrontMode::SectorMap){
-                constexpr float span=.395f;
-                const int gx=static_cast<int>(std::floor((x+2.f*span)/span));
-                const int gy=static_cast<int>(std::floor((kCenterY+2.f*span-y)/span));
-                if(gx>=0 && gx<4 && gy>=0 && gy<4){
-                    action.pointer_x=gx;action.pointer_y=gy;
-                }
-            }else{
-                const int gx=static_cast<int>(std::floor((x+kHalf)/kCell));
-                const int gy=static_cast<int>(std::floor((kCenterY+kHalf-y)/kCell));
-                if(game::Battle::Inside(gx,gy)){
-                    action.pointer_x=gx;action.pointer_y=gy;
+            pointer_x=in->pointer_origin[0]+t*in->pointer_direction[0];
+            pointer_y=in->pointer_origin[1]+t*in->pointer_direction[1];
+            pointing=true;
+            if(s->menu.screen==game::MenuScreen::Playing){
+                if(s->session.view==game::FrontMode::SectorMap){
+                    constexpr float span=.395f;
+                    const int gx=static_cast<int>(std::floor((pointer_x+2.f*span)/span));
+                    const int gy=static_cast<int>(std::floor((kCenterY+2.f*span-pointer_y)/span));
+                    if(gx>=0&&gx<4&&gy>=0&&gy<4){
+                        action.pointer_x=gx;action.pointer_y=gy;
+                    }
+                }else{
+                    const int gx=static_cast<int>(std::floor((pointer_x+kHalf)/kCell));
+                    const int gy=static_cast<int>(std::floor((kCenterY+kHalf-pointer_y)/kCell));
+                    if(game::Battle::Inside(gx,gy)){
+                        action.pointer_x=gx;action.pointer_y=gy;
+                    }
                 }
             }
         }
+    }
+    const bool click=action.primary&&!s->pointer_primary_down;
+    s->pointer_primary_down=action.primary;
+    if(s->menu.screen!=game::MenuScreen::Playing){
+        const game::MenuScreen old_screen=s->menu.screen;
+        const int old_selection=s->menu.selected;
+        const bool had_campaign=s->has_campaign;
+        const game::MenuCommand command=s->menu.Input(action.dt,action.y,
+            action.primary,action.secondary,pointing,pointer_x,pointer_y,
+            s->has_campaign);
+        if(command==game::MenuCommand::StartNew ||
+           (command==game::MenuCommand::Resume && !had_campaign)){
+            s->session=game::Session(414u);
+            s->has_campaign=true;
+            s->load_failed=false;
+            SaveState(s);
+        }
+        if(command!=game::MenuCommand::None ||
+           s->menu.screen!=old_screen || s->menu.selected!=old_selection){
+            // Do not let the same physical click both enter the game and
+            // order a move. This remains true if a menu is closed by Back.
+            if(s->menu.screen==game::MenuScreen::Playing){
+                s->block_primary=true;
+                s->session.ResetEdges();
+            }
+            Draw(s);
+            ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }
+        return;
+    }
+    if(pointing && game::Menu::MenuShortcut(pointer_x,pointer_y) && click){
+        s->menu.OpenPause(action.primary,action.secondary);
+        s->block_primary=true;
+        s->secondary_hold=0;
+        Draw(s);
+        ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        return;
+    }
+    // A short MINUS tap cycles actions as before. Holding it opens the
+    // command menu instead; only the release of a short tap is forwarded
+    // so a long press never silently changes the chosen field action.
+    if(action.secondary){
+        s->secondary_hold+=std::max(0.f,std::min(.1f,action.dt));
+        if(s->secondary_hold>=.65f){
+            s->menu.OpenPause(action.primary,true);
+            s->secondary_consumed=true;
+            s->secondary_hold=0;
+            s->block_primary=true;
+            Draw(s);
+            ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            return;
+        }
+        action.secondary=false;
+    }else{
+        action.secondary=s->secondary_hold>0.f&&!s->secondary_consumed;
+        s->secondary_hold=0;
+        s->secondary_consumed=false;
+    }
+    if(s->block_primary){
+        if(!action.primary)s->block_primary=false;
+        action.primary=false;
     }
     const uint32_t old_orders=s->session.orders+s->session.tactical.issued;
     const uint32_t old_tick=s->session.tactical.battle.ticks();
@@ -855,7 +1017,9 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
         s->sprites.DrawRange(matrix,first,last);
     };
     const size_t total=s->mesh.size()/6u;
-    if(s->session.view==game::FrontMode::Tactical){
+    if(s->menu.screen!=game::MenuScreen::Playing){
+        colored(0,total);
+    }else if(s->session.view==game::FrontMode::Tactical){
         colored(0,s->base_vertices);
         sprites(0,omega_art::kGroundCount);
         // Licensed 2D RPG overlays remain underneath the actors/UI; they
