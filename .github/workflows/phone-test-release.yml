@@ -13,8 +13,10 @@ permissions:
 
 # Retain the established non-cancelling signed-release queue. A newer
 # development commit must not interrupt signing or APK publication.
+# Ordinary development pushes share one pending slot; explicit [rv-release]
+# requests are commit-scoped to prevent unrelated pushes from displacing them.
 concurrency:
-  group: reverievr-phone-test-release
+  group: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, '[rv-release]') && format('reverievr-explicit-{0}', github.sha) || 'reverievr-phone-test-release' }}
   cancel-in-progress: false
 
 jobs:
