@@ -216,7 +216,8 @@ jobs:
               members=set(z.namelist())
               missing=sorted("assets/"+p for p in referenced
                              if "assets/"+p not in members)
-              assert len(referenced)==108,(len(referenced),missing)
+              # 108 preexisting sprite paths + 14 approved regional terrain sheets.
+    assert len(referenced)==122,(len(referenced),missing)
               assert not missing,missing
           print("PASS:",len(referenced),
                 "actual native Omega Front sprite paths match signed-format pack")
