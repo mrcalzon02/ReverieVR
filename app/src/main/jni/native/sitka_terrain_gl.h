@@ -21,6 +21,8 @@ public:
     TerrainGl& operator=(const TerrainGl&) = delete;
     bool ready() const { return program_ != 0u && !batches_.empty(); }
     size_t batch_count() const { return batches_.size(); }
+    // Number of successful static VBO/EBO batch uploads in this GL context.
+    size_t upload_count() const { return upload_count_; }
 
     // Must run on the active shell GL context. Release before context loss.
     bool Create(const TerrainMesh& mesh, std::string* error = nullptr) {
@@ -86,6 +88,7 @@ public:
                     if (error) *error = "Sitka terrain static GPU upload failed";
                     Release(); restore(); return false;
                 }
+                ++upload_count_;
             }
         } catch (const std::exception& e) {
             if (error) *error = e.what();
@@ -133,6 +136,7 @@ public:
             if (batch.element) glDeleteBuffers(1, &batch.element);
         }
         batches_.clear();
+        upload_count_ = 0u;
         if (program_) glDeleteProgram(program_);
         program_ = 0u;
         matrix_ = -1;
@@ -142,6 +146,7 @@ private:
     GLuint program_ = 0u;
     GLint matrix_ = -1;
     std::vector<GpuBatch> batches_;
+    size_t upload_count_ = 0u;
 };
 }} // namespace reverie::sitka
 #endif
