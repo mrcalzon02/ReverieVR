@@ -3,7 +3,7 @@
 // Symmetric 45-degree 3D wings. Same transform governs geometry and hit testing.
 #include <cmath>
 namespace reverie { namespace chesspanel {
-constexpr float kCenterX=2.03f;
+constexpr float kCenterX=2.22f;
 constexpr float kCos45=0.7071067811865476f;
 constexpr float kSin45=0.7071067811865476f;
 constexpr float kTowardPlayer=.28f;
