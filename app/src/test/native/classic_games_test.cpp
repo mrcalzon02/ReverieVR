@@ -58,6 +58,21 @@ static void TestChessSpriteAtlas(){
         assert(TileForPiece(-kind)==kind+5);
     }
     assert(TileForPiece(0)==-1&&TileForPiece(7)==-1);
+    // Queen and king must be different actual atlas silhouettes in BOTH
+    // colors, not just adjacent tile numbers with duplicate glyphs.
+    for(const int base:{0,6}){
+        const int queenTile=base+4,kingTile=base+5;
+        int differentPixels=0;
+        for(int y=0;y<64;++y)for(int x=0;x<64;++x){
+            const std::size_t q=static_cast<std::size_t>(
+                ((queenTile/6)*64+y)*kWidth+(queenTile%6)*64+x)*2;
+            const std::size_t k=static_cast<std::size_t>(
+                ((kingTile/6)*64+y)*kWidth+(kingTile%6)*64+x)*2;
+            if(image[q]!=image[k]||image[q+1]!=image[k+1])
+                ++differentPixels;
+        }
+        assert(differentPixels>200);
+    }
     for(int tile=0;tile<12;++tile){
         int lit=0,black=0,solid=0;
         for(int y=0;y<64;++y)for(int x=0;x<64;++x){
