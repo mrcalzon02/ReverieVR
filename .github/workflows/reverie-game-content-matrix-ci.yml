@@ -49,13 +49,21 @@ permissions:
 jobs:
   verify-sitka-ndk-source-only:
     name: Sitka source-only GLES2 Android NDK ABI link gate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Link Sitka prototype with Android NDK for Galaxy S9 ARM ABIs
+      - name: Link Sitka prototype with pinned Android NDK for ARMv7 and ARM64
         shell: bash
         run: bash scripts/sitka/verify-ndk-terrain.sh
+      - name: Retain source-only ELF ABI proof binaries
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitka-source-only-ndk-abi-${{ github.run_id }}
+          path: ${{ runner.temp }}/sitka-ndk-terrain/*.so
+          retention-days: 7
+          if-no-files-found: error
 
   verify-gumball-map-input:
     name: Gumball real chart selection functional gate
