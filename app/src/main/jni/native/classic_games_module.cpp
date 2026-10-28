@@ -166,7 +166,7 @@ void ChessPanelRect(Module *m,float x,float y,float w,float h,float z,
     ChessPanelTransform(v,start,6,x<0?-1:1);
 }
 void ChessPanelText(Module *m,const char *s,float x,float y,float scale,
-                    float r,float g,float b,float width=1.06f){
+                    float r,float g,float b,float width=1.43f){
     auto &v=m->staticPass?m->fontStaticVertices:m->fontVertices;
     const size_t start=v.size();
     reverie::breakwater::font::AppendText(v,s,x,y,
@@ -175,14 +175,14 @@ void ChessPanelText(Module *m,const char *s,float x,float y,float scale,
     ChessPanelTransform(v,start,8,x<0?-1:1);
 }
 void ChessPanelLine(Module *m,const std::string &msg,float x,float y,
-                    size_t maxChars=14){
+                    size_t maxChars=21){
     const std::string line=msg.substr(0,maxChars);
     ChessPanelText(m,line.c_str(),x,y,.027f,.94f,.96f,.85f);
 }
 void ChessPanelExample(Module *m,const std::string &name,float x,float y){
-    ChessPanelLine(m,name,x,y,14);
-    if(name.size()>14)
-        ChessPanelLine(m,name.substr(14),x,y-.19f,14);
+    ChessPanelLine(m,name,x,y,21);
+    if(name.size()>21)
+        ChessPanelLine(m,name.substr(21),x,y-.19f,21);
 }
 
 void ChessWikiText(Module *m,const std::string &line,float x,float y,
@@ -407,10 +407,10 @@ void RebuildBoard(Module *m,bool fixed){
         Rect(m,0,0,3.08f,3.08f,-3.045f,.34f,.24f,.15f);
 #if CLASSIC_GAME_KIND == 5
         Text(m,kTitle,0,1.65f,.051f,.91f,.94f,.94f);
-        ChessPanelRect(m,-2.03f,.02f,1.25f,3.14f,-3.040f,.085f,.122f,.158f);
-        ChessPanelRect(m, 2.03f,.02f,1.25f,3.14f,-3.040f,.085f,.122f,.158f);
-        ChessPanelText(m,"CPU LAST",-2.03f,1.24f,.031f,.73f,.91f,.98f);
-        ChessPanelText(m,"MOVE BOOK",2.03f,1.24f,.031f,.73f,.91f,.98f);
+        ChessPanelRect(m,-2.22f,.02f,1.65f,3.14f,-3.040f,.085f,.122f,.158f);
+        ChessPanelRect(m, 2.22f,.02f,1.65f,3.14f,-3.040f,.085f,.122f,.158f);
+        ChessPanelText(m,"CPU / OPEN",-2.22f,1.24f,.031f,.73f,.91f,.98f);
+        ChessPanelText(m,"OPEN REFERENCE",2.22f,1.24f,.031f,.73f,.91f,.98f);
 #else
         Text(m,kTitle,0,1.58f,.082f,.91f,.94f,.94f);
 #endif
@@ -555,7 +555,7 @@ void RebuildBoard(Module *m,bool fixed){
             Text(m,scored,0,1.15f,.044f,.95f,.96f,.85f);
         }
 #if CLASSIC_GAME_KIND == 5
-        ChessPanelText(m,"RESTART",2.03f,-1.35f,.031f,
+        ChessPanelText(m,"RESTART",2.22f,-1.35f,.031f,
                        1.f,.95f,.78f);
 #else
         Text(m,"PRESS TO RESTART",1.91f,.66f,.043f,1.f,.95f,.78f);
@@ -596,22 +596,22 @@ void RebuildBoard(Module *m,bool fixed){
         }
         if(s.kind==reverie::boardgames::Kind::Chess&&s.side==1){
 #if CLASSIC_GAME_KIND == 5
-            ChessPanelRect(m,2.03f,-.98f,.98f,.32f,-3.026f,
+            ChessPanelRect(m,2.22f,-.98f,.98f,.32f,-3.026f,
                            m->boardControlHover==1?.38f:.23f,.36f,.42f);
             ChessPanelText(m,s.chessDifficulty==0?"AI EASY":
                            s.chessDifficulty==2?"AI HARD":"AI NORMAL",
-                           2.03f,-.98f,.027f,1.f,1.f,.89f,.91f);
+                           2.22f,-.98f,.027f,1.f,1.f,.89f,.91f);
             if(s.selected>=0&&s.selected<64&&
                s.cells[s.selected]==1&&s.selected/8==1){
                 const char *promo=s.promotionChoice==4?"PROMO ROOK":
                     s.promotionChoice==3?"PROMO BISHOP":
                     s.promotionChoice==2?"PROMO KNIGHT":"PROMO QUEEN";
-                ChessPanelText(m,promo,2.03f,.66f,.025f,.91f,.92f,.75f);
+                ChessPanelText(m,promo,2.22f,.66f,.025f,.91f,.92f,.75f);
             }
             if(s.ChessDrawClaimable()){
-                ChessPanelRect(m,2.03f,-1.36f,.98f,.30f,-3.026f,
+                ChessPanelRect(m,2.22f,-1.36f,.98f,.30f,-3.026f,
                                .23f,.36f,.42f);
-                ChessPanelText(m,"CLAIM DRAW",2.03f,-1.36f,.024f,
+                ChessPanelText(m,"CLAIM DRAW",2.22f,-1.36f,.024f,
                                1.f,1.f,.89f,.91f);
             }
 #endif
@@ -634,27 +634,27 @@ void RebuildBoard(Module *m,bool fixed){
     }
     if(!fixed){
         const auto &book=m->chessAnalysis;
-        ChessPanelLine(m,"LAST: "+book.previousCpuMove,-2.01f,.84f);
-        ChessPanelLine(m,book.cpuComparison,-2.01f,.55f);
-        ChessPanelLine(m,"OPENING "+book.eco,-2.01f,.18f);
-        ChessPanelExample(m,book.opening,-2.01f,-.12f);
-        ChessPanelLine(m,"CC0 ECO INDEX",-2.01f,-.84f);
-        ChessPanelRect(m,2.03f,.88f,1.05f,.36f,-3.026f,
+        ChessPanelLine(m,"LAST: "+book.previousCpuMove,-2.20f,.84f);
+        ChessPanelLine(m,book.cpuComparison,-2.20f,.55f);
+        ChessPanelLine(m,"OPENING "+book.eco,-2.20f,.18f);
+        ChessPanelExample(m,book.opening,-2.20f,-.12f);
+        ChessPanelLine(m,"CLICK WING TO READ",-2.20f,-.84f);
+        ChessPanelRect(m,2.22f,.88f,1.05f,.36f,-3.026f,
              m->chessPanelHover?.32f:.21f,
              m->chessPanelHover?.45f:.34f,.48f);
         ChessPanelLine(m,m->chessPanelTab==0?"NEXT: EXAMPLE":
-                        "EXAMPLE: NEXT",2.01f,.87f);
+                        "EXAMPLE: NEXT",2.20f,.87f);
         if(m->chessPanelTab==0){
-            ChessPanelLine(m,"PLAY "+book.recommended,2.01f,.47f);
+            ChessPanelLine(m,"PLAY "+book.recommended,2.20f,.47f);
             ChessPanelLine(m,book.recommendationOrigin.substr(0,14),
-                           2.01f,.13f);
-            ChessPanelLine(m,"REFERENCE:",2.01f,-.24f);
-            ChessPanelExample(m,book.example,2.01f,-.48f);
+                           2.20f,.13f);
+            ChessPanelLine(m,"REFERENCE:",2.20f,-.24f);
+            ChessPanelExample(m,book.example,2.20f,-.48f);
         }else{
-            ChessPanelLine(m,"CLASSICAL LINE",2.01f,.49f);
-            ChessPanelExample(m,book.example,2.01f,.19f);
-            ChessPanelLine(m,book.eco,2.01f,-.44f);
-            ChessPanelLine(m,"NOT ENGINE EVAL",2.01f,-.83f);
+            ChessPanelLine(m,"CLASSICAL LINE",2.20f,.49f);
+            ChessPanelExample(m,book.example,2.20f,.19f);
+            ChessPanelLine(m,book.eco,2.20f,-.44f);
+            ChessPanelLine(m,"NOT ENGINE EVAL",2.20f,-.83f);
         }
     }
     if(!fixed && m->chessWikiOpen)ChessWikiDraw(m);
@@ -675,10 +675,10 @@ void Rebuild(Module *m,bool fixed){
     if(fixed){
         Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
         Text(m,kTitle,0,1.57f,.092f,.78f,.94f,.96f);
-        Rect(m,0,0,2.07f,2.03f,-3.04f,.08f,.13f,.20f);
+        Rect(m,0,0,2.07f,2.22f,-3.04f,.08f,.13f,.20f);
         // Court edges and rules are static; bricks and ball are dynamic.
-        Rect(m,-1.015f,0,.025f,2.03f,-3.01f,.28f,.45f,.49f);
-        Rect(m,1.015f,0,.025f,2.03f,-3.01f,.28f,.45f,.49f);
+        Rect(m,-1.015f,0,.025f,2.22f,-3.01f,.28f,.45f,.49f);
+        Rect(m,1.015f,0,.025f,2.22f,-3.01f,.28f,.45f,.49f);
         Text(m,"MOVE PAD SELECT SERVE",0,-1.50f,.042f,.75f,.90f,.83f);
     }else{
         for(int i=0;i<Breakout::kBricks;i++)if(s.bricks[i]){
