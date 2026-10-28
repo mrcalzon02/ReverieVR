@@ -278,7 +278,14 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 runtime.getLastError(),runtime.start("omega-front"));
             assertTrue("Omega Front GLES2 initialization failed",
                 runtime.onSurfaceCreated());
+            long title=omegaFrame(runtime,null);
+            // Real initial screen is now a title, then campaign dossier.
+            omegaTap(runtime,bus,0.f,.42f); // CAMPAIGN
+            long dossier=omegaFrame(runtime,null);
+            assertNotEquals("Campaign menu did not open",title,dossier);
+            omegaTap(runtime,bus,0.f,.42f); // BEGIN CAMPAIGN
             long sector=omegaFrame(runtime,null);
+            assertNotEquals("Begin campaign did not enter strategy view",dossier,sector);
             // Sector 11 (x=2,y=2) is the first real deployment mission.
             long travelSound=omegaTap(runtime,bus,.1975f,-.1775f);
             long traveled=omegaFrame(runtime,null);
@@ -313,8 +320,13 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 runtime.start("omega-front"));
             assertTrue("Cannot restore Omega Front GLES2 after relaunch",
                 runtime.onSurfaceCreated());
+            long reloadTitle=omegaFrame(runtime,null);
+            assertNotEquals("Relaunch should show title, not dispatch old battle input",
+                moved,reloadTitle);
+            omegaTap(runtime,bus,0.f,.42f); // CAMPAIGN
+            omegaTap(runtime,bus,0.f,.42f); // CONTINUE CAMPAIGN
             long restored=omegaFrame(runtime,null);
-            assertEquals("Native reload changed the saved 2D battle view",
+            assertEquals("Continuing native checkpoint changed saved battle view",
                 moved,restored);
             runtime.releaseSurface();
             runtime.stop();
