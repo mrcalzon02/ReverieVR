@@ -12,7 +12,7 @@ Legacy independent-game content/companion code and CI experiments remain in the 
 
 ReverieVR is an independent, offline-first **cross-platform VR and desktop environment**. The existing Android Daydream APK restores useful life to Daydream-era hardware without discontinued Google services; the expanded product target is a **complete native desktop ReverieVR hub** for Windows, Linux and macOS, with optional OpenXR/SteamVR operation on supported Windows/Linux headsets.
 
-**Current implementation status:** the repository is Android-first; the native desktop applications and OpenXR/SteamVR desktop mode are **planned, not shipped or hardware-validated**. The Samsung Galaxy S9 with Daydream View/controller remains the original and protected reference configuration.
+**Current implementation status:** the repository remains Android-first; a **desktop development workbench** is now source-integrated at [tools/desktop](tools/desktop/README.md). It can browse the real registered games and Home environments, edit scene layouts, import OBJ geometry and save validated authoring scenes on Windows/Linux/macOS using Java 17. This is **not** a desktop game launcher, a mirror of the Android GLES renderer, or a finished desktop VR application. The complete native desktop hub and OpenXR/SteamVR modes remain planned and unvalidated. The Samsung Galaxy S9 with Daydream View/controller remains the original and protected reference configuration.
 
 | Target | Intended delivery | Required functionality |
 | --- | --- | --- |
