@@ -1,5 +1,8 @@
 # Sitka
 
+> **Expanded whole-city specification (2026-10-28):** [Sitka — Complete City, Coast, World, and Gameplay Specification](SITKA_CITY_WORLD_DESIGN_SPEC.md) is the current authority for entire-city exploration, buildings, georeferenced roads, Malefic Veil city/terrain reuse, the actual Beckenburg shared water and weather modules, town/boat upgrades and unified ReverieVR APK delivery. This document retains the original coastal gameplay scope and evidence history. Earlier independent game-package or content-pack statements are superseded by the unified main APK policy.
+
+
 **Official title:** Sitka (no subtitle).  
 **Proposed project ID:** RV-GAME-SITKA; tentative module ID `sitka`.  
 **Category:** ReverieVR > Native Apps / Projects, once functional.  
