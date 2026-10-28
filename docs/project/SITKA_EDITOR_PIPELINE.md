@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-26  
 **Project:** [Sitka](SITKA.md), the original peaceful Sitka Sound fishing/beachcombing game hosted by ReverieVR.  
-**Status:** Authoring tools and a game-private GLES2 terrain renderer proof are in source, with synthetic CPU and fake-GL host checks. No real Sitka DEM/coastline tile, displayed terrain, compiled desktop editor run, NDK/APK acceptance, launcher entry, or Galaxy S9 acceptance is claimed.
+**Status:** Authoring tools and a game-private GLES2 terrain renderer proof are in source, with synthetic CPU, fake-GL and now **real Mesa EGL/GLES2 pbuffer** checks. No real Sitka DEM/coastline tile, displayed *geographic* terrain, compiled desktop editor run, playable APK, launcher entry, or Galaxy S9 acceptance is claimed.
 
 ## Native terrain proof — 2026-10-27
 
@@ -27,9 +27,37 @@
 - `app/src/test/native/sitka_terrain_mesh_test.cpp` exercises the
   synthetic exporter-compatible fixture, malformed bytes and a 70,002
   vertex remapping split. Local GCC C++17 and Clang ASan/UBSan passed.
-  A local fake-GLES2 smoke exercised two indexed eye draws, unchanged
-  static upload count and release/rebuild; it does **not** prove driver
-  rendering, NDK compilation, stereo optics or frame pacing.
+  A local fake-GLES2 smoke exercised two indexed eye draws and release/rebuild;
+  a separate 2026-10-28 **real Mesa driver** gate now verifies rasterized
+  pixels, static uploads and context recreation. Neither proves headset
+  optics or frame pacing.
+
+## Real EGL/GLES2 terrain driver acceptance — 2026-10-28
+
+The unregistered Sitka terrain proof now has a separate **mandatory real-driver**
+test, `app/src/test/native/sitka_terrain_egl_test.cpp`, in the existing
+all-game content matrix. On Ubuntu 24.04, the test installs Mesa EGL/GLES2
+development libraries, requests an ES2 pbuffer context, forces surfaceless
+llvmpipe, compiles the actual `TerrainGl` class, uploads a synthetic triangle,
+and reads back rasterized **red pixels in both separate eye viewports**. It
+compares caller program/buffer/texture bindings, vertex attributes,
+depth/blend/cull enablement and viewport before/after each draw; it checks the
+successful static VBO/EBO batch upload count remains unchanged across eyes,
+releases GPU objects, destroys the context, recreates a **new unshared**
+context and repeats the complete test. Missing EGL or draw/readback failure
+is a test failure, never a skip.
+
+**Verified:** [exact-code commit `42ba8ea7`](https://github.com/mrcalzon02/ReverieVR/commit/42ba8ea769e2ad8c447ad25d620d58cde925b8cb)
+passed [content-matrix run 40763852143](https://github.com/mrcalzon02/ReverieVR/actions/runs/40763852143)
+with **all six jobs successful**, including the real EGL/GLES2 regression,
+ARMv7+ARM64 NDK source-only link, and existing content checks. Independent
+job-log readback records `OpenGL ES 3.2 Mesa 25.2.8` for both contexts
+(the test **requested ES2** and uses only GLES2 calls), with two stereo
+pixel/state/lifecycle PASS lines. This is genuine software-driver rendering,
+**not** a physical Galaxy S9, a strictly version-2.0 driver, a displayed
+geographic tile, an APK, a licensed dataset, or proof of headset frame pacing.
+The prototype remains deliberately absent from `Android.mk` and the
+playable catalog.
 
 ## Reuse of the actual shared toolchain
 
@@ -114,6 +142,6 @@ fishing gameplay or S9 performance was validated by this link-only gate.
 
 **Passed locally:** `python3 scripts/sitka/test_build_coast.py` (one synthetic fixture suite, deterministic export and provenance/input rejection); strict GCC C++17 host build and execution of `app/src/test/native/sitka_environment_test.cpp`, plus Clang AddressSanitizer/UndefinedBehaviorSanitizer execution of the same C++ adapter regression.
 
-**Not executed/accepted:** editor `javac` with full Beckenburg source present; displayed Swing water/sky interaction; USGS/NOAA Sitka source acquisition and triangulation; real coordinate/datum check; actual GL driver terrain render; full Android NDK/Gradle APK build, headset frame-pacing and comfort, module admission/packaging/update acquisition; gameplay rod/crab/shell/boat progression. The source-only NDK link is verified separately above.
+**Not executed/accepted:** editor `javac` with full Beckenburg source present; displayed Swing water/sky interaction; USGS/NOAA Sitka source acquisition and triangulation; real coordinate/datum check; real *geographic* terrain display; full Android NDK/Gradle playable APK build, headset frame-pacing and comfort, module admission/packaging/update acquisition; gameplay rod/crab/shell/boat progression. The source-only NDK link is verified separately above.
 
-**Next concrete milestone:** exercise the source-only terrain renderer in a real GLES2 context and verify buffer/state restoration across two eye renders and context loss; then acquire approved, legally distributable Sitka DEM and shoreline vectors, bake a genuine cove, integrate authored water/weather, measure actual S9 stereo frame pacing, and only register Sitka after real fishing/shore activities work. Do not ship the synthetic fixture as geographic content or duplicate Beckenburg/Malefic assets.
+**Next concrete milestone:** acquire approved, legally distributable Sitka DEM and shoreline vectors with verified datum/rights, bake a genuine cove, integrate authored water/weather, measure actual S9 stereo frame pacing, and only register Sitka after real fishing/shore activities work. Do not ship the synthetic fixture as geographic content or duplicate Beckenburg/Malefic assets.
