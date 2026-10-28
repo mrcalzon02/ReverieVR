@@ -1,5 +1,7 @@
 package io.github.mrcalzon02.reverievr;
 
+import java.nio.FloatBuffer;
+
 /**
  * Exact per-eye planar projection of the shell headset and handset proxies.
  * The vanity panel is perpendicular to +X in the white home room. Geometry
@@ -18,6 +20,9 @@ final class HeadsetMirrorProjection {
     private final float[] eyes = new float[6];
     private final float[] projected = new float[4];
     private final float[] clip = new float[2];
+    // Reused polygon workspaces for projected avatar triangles (no per-eye GC).
+    private final float[] avatarClipA = new float[20];
+    private final float[] avatarClipB = new float[20];
     private float eyeX, eyeY, eyeZ;
     private boolean ready;
 
@@ -99,6 +104,99 @@ final class HeadsetMirrorProjection {
             tipY - ny * 0.07f - ty * 0.04f,
             tipZ - nz * 0.07f - tz * 0.04f);
         return written / 3;
+    }
+
+
+    /**
+     * Convert the authored avatar's local portrait triangles into the
+     * physically located reflection of the player's body. The authored
+     * mesh X coordinates are offsets from the legacy MIRROR_X origin;
+     * they are NOT themselves mirror coordinates. Body/head position
+     * comes from the same world-space head rig as the headset reflection.
+     *
+     * Projects into this eye's mirror plane and clips every triangle to
+     * the four edges of the glass. The destination contains GL_TRIANGLES
+     * (three floats per vertex); at most five triangles per source triangle.
+     * The source buffer's position/limit are never changed.
+     */
+    int writeAvatarTriangles(FloatBuffer source, int vertexCount,
+        float bodyX, float headY, float bodyZ, float scale, float[] out) {
+        if (!ready || source == null || out == null
+            || vertexCount < 0 || vertexCount % 3 != 0
+            || vertexCount > source.limit() / 3
+            || out.length / 15 < vertexCount
+            || !Float.isFinite(bodyX) || !Float.isFinite(headY)
+            || !Float.isFinite(bodyZ) || !Float.isFinite(scale)
+            || scale <= 0f) return 0;
+        int written = 0;
+        for (int i = 0; i < vertexCount; i += 3) {
+            boolean valid = true;
+            for (int v = 0; v < 3; v++) {
+                int at = (i + v) * 3;
+                float x = bodyX + (source.get(at)
+                    - HomeAvatarWardrobeGeometry.MIRROR_X) * scale;
+                float y = headY + (source.get(at + 1) - 0.65f) * scale;
+                float z = bodyZ + source.get(at + 2) * scale;
+                if (!project(x, y, z, v == 0 ? 0 : v == 1 ? 2 : 0)) {
+                    // The ordinary line projection scratch has four floats.
+                    // For the third vertex, use a separate pair below.
+                    valid = false;
+                    break;
+                }
+                if (v == 0 || v == 1) {
+                    avatarClipA[v * 2] = projected[v * 2];
+                    avatarClipA[v * 2 + 1] = projected[v * 2 + 1];
+                } else {
+                    avatarClipA[4] = projected[0];
+                    avatarClipA[5] = projected[1];
+                }
+            }
+            if (!valid) continue;
+
+            float[] input = avatarClipA;
+            float[] output = avatarClipB;
+            int count = 3;
+            for (int edge = 0; edge < 4 && count > 0; edge++) {
+                int next = 0;
+                int previous = (count - 1) * 2;
+                float py = input[previous], pz = input[previous + 1];
+                float pd = edgeDistance(edge, py, pz);
+                for (int v = 0; v < count; v++) {
+                    float y = input[v * 2], z = input[v * 2 + 1];
+                    float d = edgeDistance(edge, y, z);
+                    if ((pd >= 0f) != (d >= 0f)) {
+                        float t = pd / (pd - d);
+                        output[next++] = py + t * (y - py);
+                        output[next++] = pz + t * (z - pz);
+                    }
+                    if (d >= 0f) {
+                        output[next++] = y;
+                        output[next++] = z;
+                    }
+                    py = y; pz = z; pd = d;
+                }
+                count = next / 2;
+                float[] swap = input; input = output; output = swap;
+            }
+            for (int v = 1; v + 1 < count; v++) {
+                for (int fan = 0; fan < 3; fan++) {
+                    int k = (fan == 0 ? 0 : fan == 1 ? v : v + 1) * 2;
+                    out[written++] = LINE_X;
+                    out[written++] = input[k];
+                    out[written++] = input[k + 1];
+                }
+            }
+        }
+        return written / 3;
+    }
+
+    private static float edgeDistance(int edge, float y, float z) {
+        switch (edge) {
+            case 0: return y + HALF_HEIGHT;
+            case 1: return HALF_HEIGHT - y;
+            case 2: return z + HALF_WIDTH;
+            default: return HALF_WIDTH - z;
+        }
     }
 
     private int segment(float[] out, int offset,
