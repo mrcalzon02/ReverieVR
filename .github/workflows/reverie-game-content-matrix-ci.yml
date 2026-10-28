@@ -38,6 +38,7 @@ on:
       - 'app/src/main/jni/native/sitka_terrain_*.h'
       - 'app/src/main/jni/native/sitka_terrain_module.cpp'
       - 'app/src/test/native/sitka_terrain_mesh_test.cpp'
+      - 'app/src/test/native/sitka_terrain_egl_test.cpp'
       - 'scripts/sitka/verify-ndk-terrain.sh'
       - 'scripts/verify-omega-front-playability.sh'
       - 'scripts/modules/verify-omega-front-cc0.py'
@@ -64,6 +65,32 @@ jobs:
           path: ${{ runner.temp }}/sitka-ndk-terrain/*.so
           retention-days: 7
           if-no-files-found: error
+
+  verify-sitka-real-gles2:
+    name: Sitka real Mesa EGL/GLES2 terrain and stereo lifecycle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install real EGL/GLES2 headers and Mesa software driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libegl1-mesa-dev libgles2-mesa-dev libgl1-mesa-dri
+      - name: Compile and exercise two real EGL contexts and both eye viewports
+        shell: bash
+        env:
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -Wall -Wextra -Werror -Wpedantic \
+            -Iapp/src/main/jni/native \
+            app/src/test/native/sitka_terrain_egl_test.cpp \
+            -o "${RUNNER_TEMP}/sitka-real-egl" -lEGL -lGLESv2
+          "${RUNNER_TEMP}/sitka-real-egl"
 
   verify-gumball-map-input:
     name: Gumball real chart selection functional gate
