@@ -51,7 +51,8 @@ static inline int ReverieNativeWriteAvatarWardrobeV1(
         ||!(fabsf(feet_y)<10000.0f)
         ||!(fabsf(center_z)<10000.0f))
         return 0;
-    ReverieNativeBodyEllipsoidV1 parts[REVERIE_NATIVE_WARDROBE_SLOTS_V1]={0};
+    ReverieNativeBodyEllipsoidV1 parts[REVERIE_NATIVE_WARDROBE_SLOTS_V1];
+    memset(parts,0,sizeof(parts));
     const uint32_t outfit=avatar->fields[REVERIE_NATIVE_AVATAR_OUTFIT];
     const uint32_t hairstyle=avatar->fields[REVERIE_NATIVE_AVATAR_HAIR];
     const uint32_t hat=avatar->fields[REVERIE_NATIVE_AVATAR_HAT];
@@ -228,9 +229,13 @@ static inline void ReverieNativeAvatarWardrobeTintV1(
     else if(group==2u) {
         float r=0.f,g=0.f,b=0.f;
         ReverieNativeAvatarColorV1(accent,&r,&g,&b);
-        if(red)*red=r*.42f;if(green)*green=g*.42f;if(blue)*blue=b*.42f;
+        if(red)*red=r*.42f;
+        if(green)*green=g*.42f;
+        if(blue)*blue=b*.42f;
     } else if(group==3u) {
-        if(red)*red=.89f;if(green)*green=.72f;if(blue)*blue=.31f;
+        if(red)*red=.89f;
+        if(green)*green=.72f;
+        if(blue)*blue=.31f;
     } else { // eyes: cyan cyber style, otherwise darker irises
         const int cyber=avatar->fields[REVERIE_NATIVE_AVATAR_EYES]==2u;
         if(red)*red=cyber?.04f:.17f;
