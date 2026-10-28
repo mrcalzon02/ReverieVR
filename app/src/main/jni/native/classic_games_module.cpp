@@ -340,6 +340,14 @@ void ChessWikiDraw(Module *m) {
             page=std::clamp(m->chessWikiPage,0,total-1);
             entry=m->chessWikiMatches.empty()?-1:m->chessWikiMatches[page];
             add("BOOK LINES MATCHING YOUR CURRENT MOVE HISTORY");
+            const auto counts=NextMoveCounts(state);
+            if(!counts.empty()){
+                add("INDEXED NEXT MOVE COUNTS (NOT ODDS):");
+                const size_t count=std::min<size_t>(4,counts.size());
+                for(size_t i=0;i<count;++i)
+                    add(counts[i].first+" : "+
+                        std::to_string(counts[i].second)+" SOURCE LINES");
+            }else add("NO MATCHING NEXT MOVE IN THE INDEX.");
         } else {
             total=kEntries;
             entry=std::clamp(entry,0,kEntries-1);
