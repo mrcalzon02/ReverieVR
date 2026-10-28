@@ -29,8 +29,8 @@ int main(){
     assert(CampaignSave::Decode(&restored,bytes.data(),bytes.size()));
     assert(restored.Checksum()==campaign.Checksum());
     assert(restored.frontier.sector(8)->food==0);
-    // Move into a real operation, issue a tactical move while paused,
-    // persist fractional logical turns, and continue deterministically.
+    // Move into a real operation, queue a tactical move, and preserve
+    // it across saves without any frame-time-driven battle advancement.
     for(int i=0;i<8;++i)Tap(campaign,false,true);
     assert(campaign.action==FieldAction::Wait); // full cycle
     for(int i=0;i<4;++i)Tap(campaign,false,true);
@@ -41,7 +41,8 @@ int main(){
     assert(campaign.tactical.selected==0);
     campaign.Input({0,0,0,false,false,6,11});Tap(campaign,true);
     assert(campaign.tactical.battle.queued(0)==1);
-    campaign.Input({.10f,0,0,false,false,-1,-1});
+    for(int i=0;i<100;++i)campaign.Input({.10f,0,0,false,false,-1,-1});
+    assert(campaign.tactical.battle.ticks()==0);
     assert(CampaignSave::Encode(campaign,&bytes));
     assert(CampaignSave::Decode(&restored,bytes.data(),bytes.size()));
     assert(restored.Checksum()==campaign.Checksum());
@@ -50,12 +51,17 @@ int main(){
         campaign.Input(in);restored.Input(in);
         assert(campaign.Checksum()==restored.Checksum());
     }
+    assert(campaign.Input({0,0,0,false,false,-1,-1,true}));
+    assert(restored.Input({0,0,0,false,false,-1,-1,true}));
+    assert(campaign.tactical.battle.ticks()==1);
+    assert(restored.Checksum()==campaign.Checksum());
     // A completed battle has one stored after-action consequence; resume
     // in map mode must not repeat casualties, claims, or salvage awards.
     Session after(414);
     after.Input({0,0,0,false,false,2,2});Tap(after,true);Tap(after,true);
     for(int i=0;i<160 && after.tactical.battle.result()==Result::Active;++i)
-        after.Input({.1f,0,0,false,false,-1,-1});
+        { after.Input({0,0,0,false,false,-1,-1,true});
+          after.Input({0,0,0,false,false,-1,-1,false}); }
     assert(after.tactical.battle.result()!=Result::Active);
     Tap(after,true);
     assert(after.view==FrontMode::SectorMap);

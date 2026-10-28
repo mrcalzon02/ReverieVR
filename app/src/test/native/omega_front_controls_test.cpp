@@ -21,10 +21,16 @@ int main(){
     c.Input({0,0,0,false,false,7,11});
     Tap(c,true);
     assert(c.battle.queued(0)==1);
-    c.Input({.1f,0,0,false,false,-1,-1});
-    c.Input({.1f,0,0,false,false,-1,-1});
-    c.Input({.1f,0,0,false,false,-1,-1});
+    for(int i=0;i<300;++i)c.Input({.1f,0,0,false,false,-1,-1});
+    // Neither the player nor AI may move on frame-time alone.
+    assert(c.battle.ticks()==0);
+    assert(c.battle.unit(0)->x==4);
+    assert(c.Input({0,0,0,false,false,-1,-1,true}));
     assert(c.battle.ticks()==1);
+    // A held "end turn" signal cannot resolve a second round.
+    assert(!c.Input({.5f,0,0,false,false,-1,-1,true}));
+    assert(c.battle.ticks()==1);
+    c.Input({0,0,0,false,false,-1,-1});
     assert(c.battle.unit(0)->x==5);
     // Axis moves cursor without a held select/mouse button.
     const int original=c.cursor_y;
@@ -45,6 +51,10 @@ int main(){
     auto frozen=c.battle.Checksum();
     for(int i=0;i<30;++i)c.Input({.1f,0,0,false,false,-1,-1});
     assert(c.battle.Checksum()==frozen);
+    assert(c.Input({0,0,0,false,false,-1,-1,true}));
+    assert(c.rejected);
+    assert(c.battle.Checksum()==frozen);
+    c.Input({0,0,0,false,false,-1,-1});
     c.selected=-1;
     Tap(c,false,true);assert(!c.paused);
     c.selected=-1;c.cursor_x=11;c.cursor_y=11;
@@ -59,5 +69,10 @@ int main(){
         d.Input({.05f,0,0,false,false,-1,-1});
         assert(b.battle.Checksum()==d.battle.Checksum());
     }
-    std::cout << "Omega Front controller-to-tactics regressions passed\n";
+    assert(b.battle.ticks()==0 && d.battle.ticks()==0);
+    assert(b.Input({0,0,0,false,false,-1,-1,true}));
+    assert(d.Input({0,0,0,false,false,-1,-1,true}));
+    assert(b.battle.Checksum()==d.battle.Checksum());
+    assert(b.battle.ticks()==1);
+    std::cout << "Omega Front explicit-turn tactical controls passed\n";
 }

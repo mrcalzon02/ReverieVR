@@ -25,8 +25,8 @@ int main() {
     assert(game.view==FrontMode::Tactical);
     assert(game.frontier.deployed());
     assert(game.tactical.battle.unit_count()==7);
-    // No battle advancement is permitted during VR stereo eye rendering;
-    // simulation advances only on input update time.
+    // Nothing advances on VR frames. Only a deliberate END TURN command
+    // resolves the queued orders and enemy response.
     assert(game.tactical.battle.ticks()==0);
     const Unit *soldier=game.tactical.battle.unit(0);
     assert(soldier && soldier->x==3 && soldier->y==11);
@@ -36,7 +36,9 @@ int main() {
     game.Input({0,0,0,false,false,7,11});
     Tap(game);
     assert(game.tactical.battle.queued(0)==1);
-    for(int i=0;i<3;++i)game.Input({.10f,0,0,false,false,-1,-1});
+    for(int i=0;i<300;++i)game.Input({.10f,0,0,false,false,-1,-1});
+    assert(game.tactical.battle.ticks()==0);
+    assert(game.Input({0,0,0,false,false,-1,-1,true}));
     assert(game.tactical.battle.ticks()==1);
     assert(game.tactical.battle.unit(0)->x==4);
     const auto checkpoint=game.tactical.battle.Checksum();
@@ -49,7 +51,9 @@ int main() {
     assert(resumed.tactical.battle.Checksum()==checkpoint);
     assert(resumed.tactical.battle.unit(0)->x==4);
     assert(resumed.tactical.battle.queued(0)==1);
-    for(int i=0;i<3;++i)resumed.Input({.10f,0,0,false,false,-1,-1});
-    assert(resumed.tactical.battle.ticks()>=2);
+    for(int i=0;i<300;++i)resumed.Input({.10f,0,0,false,false,-1,-1});
+    assert(resumed.tactical.battle.ticks()==1);
+    assert(resumed.Input({0,0,0,false,false,-1,-1,true}));
+    assert(resumed.tactical.battle.ticks()==2);
     std::cout<<"PASS Omega Front: sector map -> travel -> deploy -> unit order -> update -> save/load -> gameplay\n";
 }

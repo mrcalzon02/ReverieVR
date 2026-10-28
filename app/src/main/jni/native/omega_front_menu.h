@@ -10,7 +10,7 @@ namespace reverie { namespace omega {
 // Menus are deliberately not part of the campaign checkpoint: reopening the
 // module must reach a safe title screen, never fire an order on load.
 enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, FieldOrders, TacticalOrders, Playing };
-enum class MenuCommand : uint8_t { None, Resume, StartNew, SetFieldAction, SetCommandMode };
+enum class MenuCommand : uint8_t { None, Resume, StartNew, SetFieldAction, SetCommandMode, CommitTurn };
 
 class Menu {
 public:
@@ -42,7 +42,7 @@ public:
         case MenuScreen::ConfirmNew: return 2;
         case MenuScreen::Pause: return 4;
         case MenuScreen::FieldOrders: return 8;
-        case MenuScreen::TacticalOrders: return 4;
+        case MenuScreen::TacticalOrders: return 5;
         case MenuScreen::Playing: return 0;
         }
         return 0;
@@ -72,8 +72,9 @@ public:
             return index>=0&&index<8?v[index]:"";
         }
         case MenuScreen::TacticalOrders: {
-            const char *v[]={"MOVE","ATTACK","REPAIR SELF","RESUPPLY SELF"};
-            return index>=0&&index<4?v[index]:"";
+            const char *v[]={"MOVE","ATTACK","REPAIR SELF","RESUPPLY SELF",
+                             "END TURN / RESOLVE"};
+            return index>=0&&index<5?v[index]:"";
         }
         case MenuScreen::Playing: return "";
         }
@@ -150,6 +151,10 @@ public:
             Enter(MenuScreen::Playing);
             return MenuCommand::SetFieldAction;
         case MenuScreen::TacticalOrders:
+            if(selected==4){
+                Enter(MenuScreen::Playing);
+                return MenuCommand::CommitTurn;
+            }
             mode_choice=selected;
             Enter(MenuScreen::Playing);
             return MenuCommand::SetCommandMode;

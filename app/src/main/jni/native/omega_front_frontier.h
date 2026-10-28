@@ -2,6 +2,7 @@
 #define REVERIE_OMEGA_FRONT_FRONTIER_H
 
 #include "omega_front_tactics.h"
+#include "omega_front_continent.h"
 #include "omega_front_faction_encounters.h"
 #include "omega_front_intelligence.h"
 #include "omega_front_accord.h"
@@ -169,6 +170,14 @@ public:
         if(sectors_[destination].ecology==Ecology::Barren)return false;
         return true; // Unsupplied retreat remains reachable, but trust pays the cost.
     }
+    // Continental terrain is not just wallpaper: severe rock/badlands
+    // require a second ration. Existing transit rights still waive the cost.
+    // This value is calculated from seed + sector and requires no save-field.
+    int march_rations(int destination) const {
+        if(!can_travel(destination))return 0;
+        if(has_transit_right(destination))return 0;
+        return Continent(seed_).MarchRations(destination);
+    }
     bool Travel(int destination) {
         if(!can_travel(destination))return false;
         const int from=location_;
@@ -176,9 +185,12 @@ public:
         // valid Meridian/Ninth passes waive the movement ration on entry.
         // A default instantly revokes that waiver. All existing terrain and
         // border-inspection rules continue to apply.
-        if(!has_transit_right(destination)){
-            if(rations_>0)--rations_;
-            else trust_=trust_>=2?trust_-2:0;
+        const int march_cost=march_rations(destination);
+        if(rations_>=march_cost)rations_-=march_cost;
+        else {
+            const int missing=march_cost-rations_;
+            rations_=0;
+            trust_=trust_>=2*missing?trust_-2*missing:0;
         }
         // A broken accord prompts one local border inspection on actual
         // entry. Never permanently block a retreat or counterfeit supply.

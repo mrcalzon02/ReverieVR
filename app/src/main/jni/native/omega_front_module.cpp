@@ -1,4 +1,5 @@
 #include "omega_front_campaign_save.h"
+#include "omega_front_continent.h"
 #include "omega_front_menu.h"
 #include "omega_front_texture_renderer.h"
 #include "omega_front_cc0_palette.h"
@@ -32,6 +33,8 @@ struct State {
     bool has_campaign=false,block_primary=false,block_secondary=false,pointer_primary_down=false;
     bool secondary_consumed=false;
     float secondary_hold=0;
+    // Unserialized presentation mode: all campaign state stays in v9 saves.
+    bool continent_view=true;
     GLuint program=0,vbo=0;
     GLint pos=-1,color=-1,mvp=-1;
     bool upload=true,save_failed=false,load_failed=false;
@@ -108,18 +111,18 @@ void DrawMenu(State *s) {
         Text(s,"STRATEGY  LOGISTICS  DIPLOMACY  TACTICAL BATTLES",
              -.855f,.010f,.68f,.77f,.80f);
     }else if(screen==game::MenuScreen::Controls){
-        Text(s,"SECTOR MAP: TOUCHPAD TO FOCUS A SECTOR",.08f,.010f,.86f,.92f,.84f);
-        Text(s,"CLICK: EXECUTE CURRENT SECTOR ACTION",-.065f,.010f,.86f,.92f,.84f);
+        Text(s,"WORLD: CLICK REGION TO ENTER LOCAL CAMPAIGN",.08f,.010f,.86f,.92f,.84f);
+        Text(s,"REGION: TOUCHPAD SELECT  CLICK EXECUTES",-.065f,.010f,.86f,.92f,.84f);
         Text(s,"MINUS TAP: CYCLE 8 FIELD ACTIONS",-.21f,.010f,.86f,.92f,.84f);
-        Text(s,"BATTLE: CLICK UNIT THEN CLICK TARGET",-.355f,.010f,.86f,.92f,.84f);
-        Text(s,"MINUS TAP: MODE / PAUSE / REPORT RESET",-.50f,.009f,.86f,.92f,.84f);
+        Text(s,"BATTLE: SELECT UNIT AND QUEUE ORDERS",-.355f,.010f,.86f,.92f,.84f);
+        Text(s,"END TURN: TOP CENTER OR MODES MENU",-.50f,.009f,.86f,.92f,.84f);
         Text(s,"HOLD MINUS: OPEN COMMAND MENU",-.645f,.010f,1.f,.82f,.50f);
         Text(s,"POINT AT MENU TAB AND CLICK  /  MINUS TO BACK",-.79f,.009f,.65f,.78f,.84f);
     }else if(screen==game::MenuScreen::FieldOrders){
         Text(s,"CHOOSE AN ACTION  THEN CLICK A SECTOR TO EXECUTE",
              -.865f,.010f,.80f,.92f,.74f);
     }else if(screen==game::MenuScreen::TacticalOrders){
-        Text(s,"SELECT AN ORDER MODE  THEN CLICK A BOARD TILE",
+        Text(s,"CHOOSE MODE OR END TURN TO RESOLVE ONE ROUND",
              -.69f,.010f,.80f,.92f,.74f);
         Text(s,"REPAIR AND RESUPPLY APPLY TO THE SELECTED UNIT",
              -.82f,.009f,.65f,.80f,.88f);
@@ -157,7 +160,115 @@ void DrawMenuTab(State *s){
     TextAt(s,s->session.view==game::FrontMode::SectorMap?"ORDERS":"MODES",
            -.89f,1.065f,.010f,.97f,.91f,.72f);
 }
+
+void DrawWorldTab(State *s){
+    Rect(s,0.f,1.065f,.32f,.145f,kBoardZ-.035f,.22f,.32f,.38f);
+    TextAt(s,s->continent_view?"REGION":"WORLD",0.f,1.065f,.009f,.96f,.92f,.70f);
+}
+// The continental map is a strategic geographical surface, not a larger
+// fake 4x4 tactical board. The 16 actual campaign sites remain located in
+// a fixed, continuous section of the 600-cell mainland.
+void DrawContinent(State *s){
+    const game::Frontier &f=s->session.frontier;
+    const game::Continent map(f.seed());
+    s->mesh.clear();s->mesh.reserve(6000);
+    s->font.Clear();s->sprites.Clear();
+    s->base_vertices=s->unit_vertices=0;
+    Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
+    Text(s,"OMEGA FRONT  CONTINENTAL COMMAND",1.070f,.013f,.92f,.94f,.81f);
+    Text(s,"CONTINENT  /  REGION TO ISSUE FIELD ORDERS",.997f,.009f,.71f,.84f,.85f);
+    DrawMenuTab(s);
+    DrawWorldTab(s);
+    char line[128];
+    std::snprintf(line,sizeof(line),"DAY %d  RATIONS %d  SALVAGE %d  HEARTHFALL 16/600",
+                  f.day(),f.rations(),f.salvage());
+    Text(s,line,.914f,.010f,.77f,.85f,.88f);
+    constexpr float step=.062f,cy=-.045f;
+    // Solid ocean base ensures still meaningful coastlines if optional PNGs
+    // are unavailable, while approved preloaded tile sheets carry land detail.
+    Rect(s,0,cy,game::kContinentWidth*step+.018f,
+         game::kContinentHeight*step+.018f,kBoardZ-.012f,.040f,.11f,.16f);
+    s->base_vertices=s->mesh.size()/6u;
+    s->unit_vertices=s->base_vertices;
+    for(int y=0;y<game::kContinentHeight;++y){
+        for(int x=0;x<game::kContinentWidth;++x){
+            const auto t=map.At(x,y).terrain;
+            const float px=(x-(game::kContinentWidth-1)*.5f)*step;
+            const float py=cy+((game::kContinentHeight-1)*.5f-y)*step;
+            int texture=-1;
+            float r=.18f,g=.34f,b=.30f;
+            switch(t){
+            case game::ContinentTerrain::Sea:
+                r=.035f;g=.13f;b=.20f;break;
+            case game::ContinentTerrain::Shoal:
+                texture=omega_art::MapRiverbank;r=.12f;g=.30f;b=.34f;break;
+            case game::ContinentTerrain::River:
+                texture=omega_art::MapRiverbank;r=.13f;g=.31f;b=.43f;break;
+            case game::ContinentTerrain::Marsh:
+                texture=omega_art::Water;r=.22f;g=.36f;b=.28f;break;
+            case game::ContinentTerrain::Forest:
+                texture=omega_art::MapPines;r=.14f;g=.32f;b=.20f;break;
+            case game::ContinentTerrain::Meadow:
+                texture=omega_art::EdenMeadow;r=.26f;g=.45f;b=.29f;break;
+            case game::ContinentTerrain::Farm:
+                texture=omega_art::MapOrchard;r=.35f;g=.49f;b=.23f;break;
+            case game::ContinentTerrain::Dryland:
+                texture=omega_art::MapSteppe;r=.55f;g=.43f;b=.26f;break;
+            case game::ContinentTerrain::Badlands:
+                texture=omega_art::MapRusted;r=.42f;g=.29f;b=.24f;break;
+            case game::ContinentTerrain::Highland:
+                texture=omega_art::MapScree;r=.38f;g=.42f;b=.44f;break;
+            case game::ContinentTerrain::Snow:
+                texture=omega_art::MapTundra;r=.70f;g=.75f;b=.80f;break;
+            case game::ContinentTerrain::Ruins:
+                texture=omega_art::MapRubble;r=.41f;g=.37f;b=.33f;break;
+            case game::ContinentTerrain::Road:
+                texture=omega_art::MapGravelRoad;r=.51f;g=.45f;b=.37f;break;
+            case game::ContinentTerrain::Ford:
+                texture=omega_art::MapFord;r=.51f;g=.55f;b=.48f;break;
+            }
+            // Place once per map rebuild, not during individual eye renders.
+            if(texture<0 || !s->sprites.Place(texture,px,py,
+                        step*1.005f,step*1.005f,kBoardZ+.001f))
+                Rect(s,px,py,step*1.005f,step*1.005f,kBoardZ,r,g,b);
+        }
+    }
+    // Highlight the real 16-sector playable district. No speculative
+    // territory, enemy ownership or secret resources beyond intel.
+    const float left=(game::kHearthfallMinX-15.f)*step;
+    const float right=(game::kHearthfallMinX+4.f-15.f)*step;
+    const float top=cy+(10.f-game::kHearthfallMinY)*step;
+    const float bottom=cy+(10.f-game::kHearthfallMinY-4.f)*step;
+    Line(s,left,top,right,top,.012f,kBoardZ+.009f,.98f,.80f,.30f);
+    Line(s,right,top,right,bottom,.012f,kBoardZ+.009f,.98f,.80f,.30f);
+    Line(s,right,bottom,left,bottom,.012f,kBoardZ+.009f,.98f,.80f,.30f);
+    Line(s,left,bottom,left,top,.012f,kBoardZ+.009f,.98f,.80f,.30f);
+    for(int site=0;site<game::kFrontierSectors;++site){
+        if(site!=f.location() && site!=s->session.focused)continue;
+        const float px=(game::Continent::SectorX(site)-14.5f)*step;
+        const float py=cy+(9.5f-game::Continent::SectorY(site))*step;
+        const bool current=site==f.location();
+        Rect(s,px,py,.039f,.039f,kBoardZ+.015f,
+             current?.97f:.99f,current?.96f:.72f,current?.84f:.17f);
+    }
+    Text(s,"NORTHERN HEIGHTS      HEARTHFALL      EASTERN MARCH",-.786f,.009f,
+         .70f,.86f,.81f);
+    const auto *site=f.sector(s->session.focused);
+    if(site){
+        const bool known=f.intelligence(s->session.focused)==game::Intelligence::Surveyed;
+        std::snprintf(line,sizeof(line),"HEARTHFALL S%03d  %s",
+            s->session.focused+1,known?site->name:"UNSURVEYED");
+        Text(s,line,-.910f,.012f,.94f,.92f,.72f);
+    }
+    Text(s,"REGION FOR ACTIONS  /  REST OF CONTINENT NOT YET EXPLOITABLE",
+         -1.035f,.0085f,.82f,.85f,.76f);
+    Text(s,"COASTS  RIVERS  RIDGES  FARMS  ROADS  WASTES",
+         -1.145f,.009f,.72f,.86f,.83f);
+    s->upload=true;
+}
+
 void DrawMap(State *s){
+    if(s->continent_view){DrawContinent(s);return;}
     const game::Session &session=s->session;
     const game::Frontier &f=session.frontier;
     s->mesh.clear();s->mesh.reserve(14000);
@@ -167,6 +278,7 @@ void DrawMap(State *s){
     Text(s,"TOUCHPAD FOCUS  CLICK ORDER  ORDERS TAB  HOLD MINUS MENU",
          .997f,.008f,.71f,.84f,.85f);
     DrawMenuTab(s);
+    DrawWorldTab(s);
     char line[110];
     std::snprintf(line,sizeof(line),"DAY %d  GUARDS %d  RATIONS %d  SALVAGE %d",f.day(),f.guards(),f.rations(),f.salvage());
     Text(s,line,.916f,.009f,.77f,.85f,.88f);
@@ -291,9 +403,12 @@ void DrawMap(State *s){
         }else{
             const bool possible=f.can_travel(session.focused);
             const bool licensed=possible && f.has_transit_right(session.focused);
+            const int price=f.march_rations(session.focused);
             Text(s,!possible?"ROUTE BLOCKED":
-                   licensed?"PAID PASS  FREE ENTRY":"CLICK TO MARCH",
-                 -1.098f,.013f,possible?.71f:.96f,
+                   licensed?"PAID PASS  FREE ENTRY":
+                   price==2?"DIFFICULT TERRAIN  2 RATIONS":
+                   "CLICK TO MARCH  1 RATION",
+                 -1.098f,.011f,possible?.71f:.96f,
                  possible?.98f:.43f,.49f);
         }
     }else {
@@ -653,7 +768,7 @@ void Draw(State *s){
     }
     // Visualize the *actual resolved* last combat shot, not a fabricated
     // animation or a continuous raycast. One deterministic 2D tracer per
-    // 250-ms simulation tick, with a small impact cross on the real cell.
+    // Last resolved tactical turn, with an impact cross on the real cell.
     // These are colored UI triangles rendered AFTER actors and PSX props.
     if(!s->session.tactical.paused && battle.ticks()>0u){
         const game::Event event=battle.last_event();
@@ -690,9 +805,11 @@ void Draw(State *s){
     }
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
-    Text(s,"TOUCHPAD CURSOR  CLICK UNIT / TARGET  MODES TAB  HOLD MINUS MENU",
+    Text(s,"TURN BASED  QUEUE ORDERS  THEN END TURN  /  MODES TAB",
          .983f,.008f,.71f,.84f,.85f);
     DrawMenuTab(s);
+    Rect(s,0.f,1.065f,.35f,.145f,kBoardZ-.035f,.26f,.40f,.33f);
+    TextAt(s,"END TURN",0.f,1.065f,.009f,.98f,.93f,.69f);
     char status[96];
     if(defendingConvoy)
         std::snprintf(status,sizeof(status),"ESCORT WAGON HP %d  AMMO %d  TICK %u",
@@ -746,8 +863,9 @@ void Draw(State *s){
                       "OUTPOST LOST  CLICK REPORT":frontlineBattle?
                       "ASSAULT LOST  CLICK REPORT":"OVERRUN  CLICK REPORT");
     else if(s->session.tactical.paused)std::snprintf(action,sizeof(action),"%s",
-        s->session.tactical.selected<0?"PAUSED  MENU RESUME":"PAUSED  CLICK UNIT TO CLEAR");
-    else if(s->session.tactical.selected<0)std::snprintf(action,sizeof(action),"PICK A GREEN UNIT  CLICK");
+        "HOLD ACTIVE  MINUS WITH NO SELECTION TO RESUME");
+    else if(s->session.tactical.selected<0)std::snprintf(action,sizeof(action),
+        "SELECT UNIT  /  ORDERS RESOLVE ON END TURN");
     else std::snprintf(action,sizeof(action),"UNIT %d  %s  CLICK ORDER",s->session.tactical.selected,
                        mode_names[static_cast<int>(s->session.tactical.mode)]);
     Text(s,action,-1.061f,.012f,s->session.tactical.rejected?1.f:.91f,
@@ -854,7 +972,7 @@ void Pause(void *p){
         if(previous!=s->save_failed)Draw(s);
     }
 }
-// UI and 250-ms simulation advance only here, never once per rendered eye.
+// UI and deliberate tactical turn commands only here, never per-eye or per-frame simulation.
 void Update(void *p,const ReverieNativeInputV1 *in){
     State *s=static_cast<State *>(p);
     if(!s||!ReverieNativeInputHasBaseV1(in))return;
@@ -873,7 +991,8 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             pointer_y=in->pointer_origin[1]+t*in->pointer_direction[1];
             pointing=true;
             if(s->menu.screen==game::MenuScreen::Playing){
-                if(s->session.view==game::FrontMode::SectorMap){
+                if(s->session.view==game::FrontMode::SectorMap &&
+                   !s->continent_view){
                     constexpr float span=.395f;
                     const int gx=static_cast<int>(std::floor((pointer_x+2.f*span)/span));
                     const int gy=static_cast<int>(std::floor((kCenterY+2.f*span-pointer_y)/span));
@@ -903,6 +1022,22 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             s->session.action=static_cast<game::FieldAction>(s->menu.field_choice);
         if(command==game::MenuCommand::SetCommandMode)
             s->session.tactical.mode=static_cast<game::CommandMode>(s->menu.mode_choice);
+        if(command==game::MenuCommand::CommitTurn &&
+           s->session.view==game::FrontMode::Tactical){
+            const uint32_t before=s->session.tactical.battle.ticks();
+            const game::Result previous=s->session.tactical.battle.result();
+            game::ControlsInput turn{};
+            turn.commit_turn=true;
+            if(s->session.Input(turn)){
+                const auto &battle=s->session.tactical.battle;
+                const uint32_t shot=reverie::omega_audio::TickFireCue(battle,before);
+                if(shot)ReverieNativeRequestSoundV1(s->host,shot);
+                const uint32_t outcome=reverie::omega_audio::OutcomeCue(
+                    previous,battle.result());
+                if(outcome)ReverieNativeRequestSoundV1(s->host,outcome);
+                SaveState(s);
+            }
+        }
         if(command==game::MenuCommand::StartNew ||
            (command==game::MenuCommand::Resume && !had_campaign)){
             s->session=game::Session(414u);
@@ -931,6 +1066,40 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         Draw(s);
         ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         return;
+    }
+    // World scale is a true continent overview. Clicking its main body
+    // enters the existing fully interactive Hearthfall region, not a fake
+    // expedition into provinces without campaign state.
+    if(s->session.view==game::FrontMode::SectorMap &&
+       pointing && click && pointer_x>-.17f && pointer_x<.17f &&
+       pointer_y>.98f && pointer_y<1.14f){
+        s->continent_view=!s->continent_view;
+        s->block_primary=true;
+        Draw(s);
+        ReverieNativeRequestFeedbackV1(s->host,
+            REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        return;
+    }
+    if(s->session.view==game::FrontMode::SectorMap &&
+       s->continent_view && pointing && click &&
+       pointer_x>-.95f && pointer_x<.95f &&
+       pointer_y>-.70f && pointer_y<.60f){
+        s->continent_view=false;
+        s->block_primary=true;
+        Draw(s);
+        ReverieNativeRequestFeedbackV1(s->host,
+            REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        return;
+    }
+    // A deliberate command, not a timer. The main update path handles
+    // turn sounds, checkpoint persistence and stereo-consistent redraw.
+    if(s->session.view==game::FrontMode::Tactical &&
+       pointing && click && std::fabs(pointer_x)<.19f &&
+       pointer_y>.98f && pointer_y<1.14f){
+        action.commit_turn=true;
+        // Keep the physical click visible to the existing release gate;
+        // only the logical Select action is suppressed downstream.
+        s->block_primary=true;
     }
     if(pointing && game::Menu::OrderShortcut(pointer_x,pointer_y) && click){
         if(s->session.view==game::FrontMode::SectorMap){
@@ -977,6 +1146,19 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         if(!action.primary)s->block_primary=false;
         action.primary=false;
     }
+    // Continental overview is navigation, never an order surface.
+    // A click (or controller select with no tracked pointer) opens the
+    // operational 16-sector map; it must not deploy, march or spend rations.
+    if(s->session.view==game::FrontMode::SectorMap && s->continent_view){
+        if(action.primary){
+            s->continent_view=false;
+            s->block_primary=true;
+            Draw(s);
+            ReverieNativeRequestFeedbackV1(s->host,
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }
+        return;
+    }
     const uint32_t old_orders=s->session.orders+s->session.tactical.issued;
     const uint32_t old_tick=s->session.tactical.battle.ticks();
     const auto old_view=s->session.view;
@@ -1006,8 +1188,7 @@ void Update(void *p,const ReverieNativeInputV1 *in){
            (new_orders!=s->saved_orders || s->session.view!=s->saved_view ||
             s->session.tactical.paused!=s->saved_pause ||
             s->session.tactical.battle.result()!=s->saved_result ||
-            (s->session.view==game::FrontMode::Tactical && tick>=s->saved_tick &&
-             tick-s->saved_tick>=16u))) SaveState(s);
+            (s->session.view==game::FrontMode::Tactical && tick!=s->saved_tick))) SaveState(s);
         Draw(s);
         if(new_orders!=old_orders || old_view!=s->session.view)
             ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);

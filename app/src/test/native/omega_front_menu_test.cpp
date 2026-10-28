@@ -43,8 +43,12 @@ int main(){
 
     menu.OpenOrders(true,0,false,false);
     assert(menu.screen==MenuScreen::TacticalOrders);
+    assert(menu.Count(true)==5);
     assert(Tap(menu,true,3)==MenuCommand::SetCommandMode);
     assert(menu.mode_choice==3);
+    assert(menu.screen==MenuScreen::Playing);
+    menu.OpenOrders(true,0,false,false);
+    assert(Tap(menu,true,4)==MenuCommand::CommitTurn);
     assert(menu.screen==MenuScreen::Playing);
 
     // Pause suspends game advancement in the native update loop; selecting

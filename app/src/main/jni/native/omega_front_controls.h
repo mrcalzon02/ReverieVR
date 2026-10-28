@@ -12,6 +12,8 @@ struct ControlsInput {
     float x=0, y=0;
     bool primary=false, secondary=false;
     int pointer_x=-1, pointer_y=-1;
+    // Deliberate single tactical turn resolution; never tied to frame dt.
+    bool commit_turn=false;
 };
 
 // UI commands are a separate deterministic consumer of the headless battle.
@@ -70,13 +72,17 @@ public:
         }
         primary_down_=in.primary;
         secondary_down_=in.secondary;
-        if(!paused && battle.result()==Result::Active) {
-            clock_+=std::max(0.f,std::min(in.dt,.1f));
-            while(clock_>=.25f && battle.result()==Result::Active) {
-                clock_-=.25f;
-                battle.Step();changed=true;
+        // Player commands are queued while time is completely stopped.
+        // An explicit edge advances one logical turn (friendly queued actions,
+        // then enemy AI, then objectives). No frame time can ever advance it.
+        if(in.commit_turn && !turn_down_) {
+            if(!paused && battle.result()==Result::Active) {
+                battle.Step();rejected=false;changed=true;
+            }else{
+                rejected=true;changed=true;
             }
         }
+        turn_down_=in.commit_turn;
         return changed;
     }
     void Reset() {
@@ -86,6 +92,7 @@ public:
         paused=false;rejected=false;
         mode=CommandMode::Move;
         clock_=0;repeat_=0;axis_x_=axis_y_=0;
+        turn_down_=false;
     }
     int CursorUnit() const {
         for(int j=0;j<battle.unit_count();++j) {
@@ -127,7 +134,7 @@ private:
     uint32_t seed_;
     float clock_=0,repeat_=0;
     int axis_x_=0,axis_y_=0,last_pointer_x_=-1,last_pointer_y_=-1;
-    bool primary_down_=false,secondary_down_=false;
+    bool primary_down_=false,secondary_down_=false,turn_down_=false;
 };
 }} // namespace reverie::omega
 #endif
