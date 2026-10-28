@@ -25,8 +25,14 @@ licensed Sitka mesh has been staged, and no fishing/shore gameplay exists.
 The four-vertex synthetic `.sitkam` fixture and >65,535-vertex chunk test
 passed GCC C++17 and Clang ASan/UBSan host execution; a fake-GLES2
 lifecycle test exercised static uploads, two eye draws and context rebuild.
-Those are CPU/mock checks, **not** Android NDK, real GL driver, APK, S9,
-geographic or playable-game acceptance. See [terrain pipeline](SITKA_EDITOR_PIPELINE.md).
+The subsequent [exact-commit NDK CI run](https://github.com/mrcalzon02/ReverieVR/actions/runs/40644268181)
+**passed ARMv7 and ARM64 API 21 GLES2 shared-library link, ELF identity,
+exported-entry and dynamic-dependency checks** with pinned NDK
+`27.3.13750724`. The source-only libraries are retained as
+[CI proof artifacts](https://github.com/mrcalzon02/ReverieVR/actions/runs/40644268181/artifacts/12796477836).
+This is **not** a real GL driver, APK, S9, geographic or playable-game
+acceptance. See [terrain pipeline](SITKA_EDITOR_PIPELINE.md) for exact
+checksums, the earlier failed run and remaining acceptance gates.
 
 ## Identity
 
