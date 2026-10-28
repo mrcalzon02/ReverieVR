@@ -84,6 +84,7 @@ struct Module {
     bool chessPulseLit=true;
     bool chessWikiOpen=false;
     int chessWikiSection=0,chessWikiPage=0,chessWikiIndex=0;
+    int chessWikiArticlePage=0;
     std::vector<int> chessWikiMatches;
     GLuint chessProgram=0,chessVbo=0,chessTexture=0;
     GLuint chessBoardVbo=0,chessBoardTexture=0;
@@ -197,6 +198,7 @@ void ChessWikiOpen(Module *m,int section){
     m->chessWikiOpen=true;
     m->chessWikiSection=section;
     m->chessWikiPage=0;
+    m->chessWikiArticlePage=0;
     m->chessWikiIndex=std::max(0,reverie::chessref::Current(m->board));
     m->chessWikiMatches=reverie::chessref::Matching(m->board);
     m->dirty=true;
@@ -208,12 +210,39 @@ void ChessWikiClick(Module *m,float x,float y) {
             (x+2.675f)/1.07f)),0,4);
         m->chessWikiSection=tab;
         m->chessWikiPage=0;
+        m->chessWikiArticlePage=0;
         if(tab==0)m->chessWikiIndex=std::max(0,
             reverie::chessref::Current(m->board));
         m->dirty=true;
         return;
     }
+
+    // Actual article pages, independent of which source entry is selected.
+    if(y< -1.02f&&y> -1.24f){
+        m->chessWikiArticlePage=std::max(0,m->chessWikiArticlePage+
+            (x>0.f?1:-1));
+        m->dirty=true;
+        return;
+    }
+    // Jump to the first entry of any ECO volume; manual +10 is not enough
+    // to explore a 3,865-entry catalog comfortably in a headset.
+    if(m->chessWikiSection==4&&y>.55f&&y<.91f){
+        const int volume=std::clamp(
+            static_cast<int>(std::floor((x+2.675f)/1.07f)),0,4);
+        const char letter=static_cast<char>('A'+volume);
+        for(int i=0;i<reverie::chessref::kEntries;++i){
+            const auto ref=reverie::chessref::Read(i);
+            if(!ref.eco.empty()&&ref.eco[0]==letter){
+                m->chessWikiIndex=i;
+                m->chessWikiArticlePage=0;
+                m->dirty=true;
+                break;
+            }
+        }
+        return;
+    }
     if(y< -1.22f&&y> -1.64f){
+        m->chessWikiArticlePage=0;
         const int change=x< -1.47f?-10:x<0.f?-1:x<1.47f?1:10;
         int maxPage=0;
         if(m->chessWikiSection==1)
@@ -334,10 +363,28 @@ void ChessWikiDraw(Module *m) {
             add("Use INDEX to browse all 3,865 source entries.");
         }
     }
-    constexpr int kVisible=12;
-    for(int i=0;i<kVisible && i<static_cast<int>(lines.size());++i){
-        if(lines[i].empty())continue;
-        ChessWikiText(m,lines[i],0.f,.77f-static_cast<float>(i)*.151f);
+    const bool indexTab=m->chessWikiSection==4;
+    if(indexTab){
+        ChessWikiText(m,"JUMP TO ECO VOLUME:",-1.88f,.75f,.038f);
+        for(int i=0;i<5;++i){
+            const float x=(i-2)*1.07f;
+            Rect(m,x,.58f,.92f,.26f,-2.761f,.22f,.34f,.40f);
+            ChessWikiText(m,std::string(1,static_cast<char>('A'+i)),
+                          x,.56f,.046f);
+        }
+    }
+    const int kVisible=indexTab?9:12;
+    const int articles=std::max(1,static_cast<int>(
+        (lines.size()+static_cast<size_t>(kVisible)-1)/
+        static_cast<size_t>(kVisible)));
+    m->chessWikiArticlePage=std::clamp(m->chessWikiArticlePage,0,articles-1);
+    const size_t start=static_cast<size_t>(m->chessWikiArticlePage)*
+        static_cast<size_t>(kVisible);
+    for(int i=0;i<kVisible && start+static_cast<size_t>(i)<lines.size();++i){
+        const std::string &line=lines[start+static_cast<size_t>(i)];
+        if(line.empty())continue;
+        ChessWikiText(m,line,0.f,
+            (indexTab?.39f:.77f)-static_cast<float>(i)*.151f);
     }
     Rect(m,-2.07f,-1.40f,1.16f,.30f,-2.765f,.19f,.29f,.35f);
     Rect(m,-.80f,-1.40f,1.16f,.30f,-2.765f,.19f,.29f,.35f);
@@ -349,6 +396,12 @@ void ChessWikiDraw(Module *m) {
     ChessWikiText(m,"+10",2.07f,-1.415f,.045f);
     ChessWikiText(m,"PAGE "+std::to_string(page+1)+" / "+
         std::to_string(total),0.f,-1.13f,.044f);
+    if(articles>1){
+        ChessWikiText(m,"< ARTICLE",-2.02f,-1.13f,.034f);
+        ChessWikiText(m,"ARTICLE "+std::to_string(m->chessWikiArticlePage+1)+
+            "/"+std::to_string(articles),1.38f,-1.13f,.032f);
+        ChessWikiText(m,"ARTICLE >",2.30f,-1.13f,.032f);
+    }
 }
 #endif
 
