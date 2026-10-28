@@ -3,13 +3,13 @@
 **Official title:** Sitka (no subtitle).  
 **Proposed project ID:** RV-GAME-SITKA; tentative module ID `sitka`.  
 **Category:** ReverieVR > Native Apps / Projects, once functional.  
-**Stage:** Source-only native terrain rendering proof integrated; no real Sitka geographic content or playable VR game.  
+**Stage:** Source-only native terrain rendering proof, now tested with real Mesa EGL/GLES2 stereo pixel readback and context recreation; no real Sitka geographic content or playable VR game.  
 **Platforms:** Inherits the full ReverieVR host targets (Android Daydream, native Windows/Linux/macOS desktop, and provisional OpenXR on Windows/Linux); Daydream Galaxy S9 remains the 30 FPS reference.  
 **Reference:** Owner-supplied overview image of Sitka Sound, 2026-10-26.
 
 ## Current authoring milestone — 2026-10-26
 
-**Source integrated on ReverieVR `main`, not a playable game:** A separate desktop [Sitka editor and terrain pipeline](SITKA_EDITOR_PIPELINE.md) has been added. The editor uses the genuine Beckenburg Java 17 editor palette/water controls and the same independent weather module consumed by Malefic Veil. A deterministic offline DEM+shoreline-to-low-poly terrain baker requires independently supplied, appropriately licensed geographic datasets; the Python synthetic-fixture regression passed. A game-private C++17 water/weather data adapter and host regression passed GCC/Clang sanitizer checks. Real Sitka geographic tiles, desktop GUI compile/preview, GLES2 terrain/water rendering, native game registration, APK and S9 headset execution remain **unverified and unimplemented**. Do not equate authored profiles with visual rendering, or expose an inert app icon.
+**Source integrated on ReverieVR `main`, not a playable game:** A separate desktop [Sitka editor and terrain pipeline](SITKA_EDITOR_PIPELINE.md) has been added. The editor uses the genuine Beckenburg Java 17 editor palette/water controls and the same independent weather module consumed by Malefic Veil. A deterministic offline DEM+shoreline-to-low-poly terrain baker requires independently supplied, appropriately licensed geographic datasets; the Python synthetic-fixture regression passed. A game-private C++17 water/weather data adapter and host regression passed GCC/Clang sanitizer checks. Real Sitka geographic tiles, desktop GUI compile/preview, *geographic* terrain/water rendering, native game registration, playable APK and S9 headset execution remain **unverified and unimplemented**. Do not equate authored profiles with visual rendering, or expose an inert app icon.
 
 ## Terrain rendering source proof — 2026-10-27
 
@@ -25,6 +25,8 @@ licensed Sitka mesh has been staged, and no fishing/shore gameplay exists.
 The four-vertex synthetic `.sitkam` fixture and >65,535-vertex chunk test
 passed GCC C++17 and Clang ASan/UBSan host execution; a fake-GLES2
 lifecycle test exercised static uploads, two eye draws and context rebuild.
+A separate real Mesa driver regression now also passes actual stereo pixel
+readback, host state restoration and context recreation.
 The subsequent [exact-commit NDK CI run](https://github.com/mrcalzon02/ReverieVR/actions/runs/40644268181)
 **passed ARMv7 and ARM64 API 21 GLES2 shared-library link, ELF identity,
 exported-entry and dynamic-dependency checks** with pinned NDK
@@ -33,6 +35,19 @@ exported-entry and dynamic-dependency checks** with pinned NDK
 This is **not** a real GL driver, APK, S9, geographic or playable-game
 acceptance. See [terrain pipeline](SITKA_EDITOR_PIPELINE.md) for exact
 checksums, the earlier failed run and remaining acceptance gates.
+
+## Verified real-driver rendering gate — 2026-10-28
+
+The source-only `TerrainGl` now passes a real Mesa surfaceless EGL pbuffer
+regression: an ES2-requested context rasterizes a synthetic red terrain
+triangle into two separate eye viewports, preserves the host's GL state,
+uploads the static VBO/EBO batch once per context, and survives release and
+recreation of a second unshared context. Mesa reported an **OpenGL ES 3.2**
+software driver, so this does not claim a strictly ES2-only device or headset
+acceptance. The [exact-code six-job CI run](https://github.com/mrcalzon02/ReverieVR/actions/runs/40763852143)
+passed, including both Android NDK source-only ABI links. See
+[terrain pipeline](SITKA_EDITOR_PIPELINE.md) for the detailed verification
+and remaining geographical, Android, comfort and gameplay gates.
 
 ## Identity
 
