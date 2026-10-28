@@ -1,3 +1,15 @@
+## 2026-10-28 — Home avatar mirror position / stereo projection repair
+
+**INTENT:** User's Galaxy S9 stereo screenshot shows the avatar drawn as a decal on mirror glass, not attached to its positional frame. Source inspection confirmed the avatar was drawn with unchanged mirror plane MVP while headset/controller used `HeadsetMirrorProjection`. Starting remote `main` was `9520438081a2fb0a060dc594280f7179a73ada66`.
+
+**EXECUTE:** Added per-eye projected/clipped avatar triangle path using `PlayerHeadRig.copyHeadCenter()`, each eye's existing mirror ray geometry, the selected avatar body dimensions and procedural IK legs. The emitted triangles are bounded to the physical mirror face and held in reused direct buffers; no headset optical matrix, save schema or native-game ABI change. Added JUnit regression source for avatar translation, binocular separation, clipping and invalid/missing buffers. Updated the wardrobe design contract and acceptance ledger. Preserved planar low-poly authored character components; this is positional reflection, **not** an entire-room render or completed volumetric skeletal art.
+
+**OBSERVE:** GitHub connector returned source commits `c2c29f45f8632fc16bee550c53477ffb5814d93d`, `3bfe37513bd6b83ed5009326b1b69d66eaab68d1`, regression `a4e2a1253d56665d1daa765e81db87537dc5926e`, wardrobe doc `1839487c180b547eb3ef10309b6a2c901e1b3d47` and ledger `675e7e549bdcf23eab40be382c02a5cdb335a0e3`. Independent remote file readbacks matched resulting blobs. **No Java/JUnit/Android compile, signed APK build, GitHub Actions workflow, or S9 optical runtime test was executed.** Static check found balanced braces and expected symbol wiring; this is not a substitute for compilation.
+
+**NEXT:** Run existing JUnit/Android build in the approved toolchain; inspect actual stereoscopic mirror while walking laterally and changing body/wardrobe scales; verify reflection respects glass edges and achieves reference-device frame-time budget. Then package only via the established main release process. Acceptance remains **draft** until runtime evidence.
+
+---
+
 ## 2026-10-16 — Omega Front faction counteroffensive gameplay
 
 **INTENT:** Continue concrete native Omega Front game development on `main` without creating test runners, repeated compiler workflows, menu bloat or unrelated changes. Based on previously committed field assaults and convoy interception.
