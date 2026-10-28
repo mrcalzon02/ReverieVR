@@ -948,6 +948,11 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         return;
     }
+    // A menu-back press must not become a gameplay short tap or long hold.
+    if(s->block_secondary){
+        if(!action.secondary)s->block_secondary=false;
+        action.secondary=false;
+    }
     // A short MINUS tap cycles actions as before. Holding it opens the
     // command menu instead; only the release of a short tap is forwarded
     // so a long press never silently changes the chosen field action.
@@ -971,11 +976,6 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     if(s->block_primary){
         if(!action.primary)s->block_primary=false;
         action.primary=false;
-    }
-    // Closing the pause menu with MINUS must not also cycle a field command.
-    if(s->block_secondary){
-        if(!action.secondary)s->block_secondary=false;
-        action.secondary=false;
     }
     const uint32_t old_orders=s->session.orders+s->session.tactical.issued;
     const uint32_t old_tick=s->session.tactical.battle.ticks();
