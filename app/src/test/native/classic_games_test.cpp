@@ -101,6 +101,33 @@ static void TestChessSpriteAtlas(){
 }
 
 
+static void TestChessCpuTransitionGate() {
+    using reverie::boardgames::Kind;
+    using reverie::boardgames::State;
+    using reverie::boardgames::ValidChessCpuTransition;
+    State before;before.Reset(Kind::Chess);
+    assert(before.ChessMove(52,36)); // White e4: Black is now on move.
+    State legal=before;
+    assert(legal.PlayChessCpuTurn());
+    assert(ValidChessCpuTransition(before,legal));
+    State tampered=legal;
+    tampered.cells[3]=0; // tamper with Black's queen off move origin
+    assert(!ValidChessCpuTransition(before,tampered));
+    tampered=before;
+    tampered.cells[3]=0;
+    tampered.cells[31]=-5; // blocked d8 to h4 teleport
+    tampered.lastFrom=3;tampered.lastTo=31;
+    tampered.side=1;++tampered.ply;
+    assert(!ValidChessCpuTransition(before,tampered));
+    tampered=legal;tampered.castles^=1;
+    assert(!ValidChessCpuTransition(before,tampered));
+    State draw=before;draw.halfMoves=100;
+    State claiming=draw;
+    assert(claiming.ClaimChessDraw(-1));
+    assert(ValidChessCpuTransition(draw,claiming));
+    assert(!ValidChessCpuTransition(draw,before));
+}
+
 static void TestChessIdentityHoverAndReference() {
     using reverie::boardgames::Kind;
     using reverie::boardgames::State;
@@ -997,6 +1024,7 @@ int main() {
     TestChessWoodAtlas();
     TestChessSpriteAtlas();
     TestChessIdentityHoverAndReference();
+    TestChessCpuTransitionGate();
     TestClassicArtworkAndOpeningIndex();
     TestFlatGeometry();
     TestBreakout();
