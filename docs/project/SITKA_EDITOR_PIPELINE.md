@@ -86,17 +86,34 @@ changes. It uses the build host's installed NDK, or installs pinned
 NDK `27.2.12479018` through Android SDK Manager.
 
 The script builds **ARMv7 API 21** and **ARM64 API 21** shared libraries
-with GLES2, rejects undefined link symbols, verifies the ELF machine
-type and requires the public `reverie_native_module_entry_v1` symbol.
+with GLES2, rejects undefined link symbols, verifies ELF32/ARM and
+ELF64/AArch64 shared-object headers, checks the Android `libGLESv2.so`
+dependency and requires the public `reverie_native_module_entry_v1`
+symbol. It uses the **installed, exact NDK 27.3.13750724** on the pinned
+Ubuntu 24.04 runner, not a network-installed or arbitrary NDK revision.
+
+**Verified 2026-10-27 22:31–22:32 Sitka time:** exact source/CI commit
+[`cca0f18aa5418c35e7c542bae277955e8d64a54c`](https://github.com/mrcalzon02/ReverieVR/commit/cca0f18aa5418c35e7c542bae277955e8d64a54c)
+passed [all five content-matrix jobs](https://github.com/mrcalzon02/ReverieVR/actions/runs/40644268181),
+including the real NDK job. The ARMv7 proof library SHA-256 was
+`82eebb4c046de0f1a32bce1c91136a9c81b1a83bc794bdcda08cd9f08c6d98ff`;
+ARM64 was
+`f426d3cfdd5622d432aa064be6ec9abad3eb80ffe7da10187f0af4c13f4217f6`.
+Both ELF files were uploaded as the explicitly
+[source-only ABI artifact](https://github.com/mrcalzon02/ReverieVR/actions/runs/40644268181/artifacts/12796477836).
+This repairs the earlier failing NDK gate at
+[run 40563472230](https://github.com/mrcalzon02/ReverieVR/actions/runs/40563472230),
+which exited 74 without diagnostic output.
+
 These are temporary CI proof binaries only: **not** `Android.mk` targets,
-not uploaded APK assets, not a new game identity, and not a real display or
-headset test. NDK link acceptance depends on the exact workflow run passing;
-a committed build gate alone is not passing evidence.
+not APK assets, not a new game identity, and not a real GLES2 display or
+headset test. No Sitka geography, real GL driver, native module admission,
+fishing gameplay or S9 performance was validated by this link-only gate.
 
 ## Verified gates and outstanding work
 
 **Passed locally:** `python3 scripts/sitka/test_build_coast.py` (one synthetic fixture suite, deterministic export and provenance/input rejection); strict GCC C++17 host build and execution of `app/src/test/native/sitka_environment_test.cpp`, plus Clang AddressSanitizer/UndefinedBehaviorSanitizer execution of the same C++ adapter regression.
 
-**Not executed/accepted:** editor `javac` with full Beckenburg source present; displayed Swing water/sky interaction; USGS/NOAA Sitka source acquisition and triangulation; real coordinate/datum check; actual GL driver terrain render; Android NDK/Gradle build, headset frame-pacing and comfort, module admission/packaging/update acquisition; gameplay rod/crab/shell/boat progression.
+**Not executed/accepted:** editor `javac` with full Beckenburg source present; displayed Swing water/sky interaction; USGS/NOAA Sitka source acquisition and triangulation; real coordinate/datum check; actual GL driver terrain render; full Android NDK/Gradle APK build, headset frame-pacing and comfort, module admission/packaging/update acquisition; gameplay rod/crab/shell/boat progression. The source-only NDK link is verified separately above.
 
-**Next concrete milestone:** verify this exact source target with the real Android NDK and a real GLES2 context, then acquire approved, legally distributable Sitka DEM and shoreline vectors, bake a genuine cove, integrate authored water/weather, measure actual S9 stereo frame pacing, and only register Sitka after real fishing/shore activities work. Do not ship the synthetic fixture as geographic content or duplicate Beckenburg/Malefic assets.
+**Next concrete milestone:** exercise the source-only terrain renderer in a real GLES2 context and verify buffer/state restoration across two eye renders and context loss; then acquire approved, legally distributable Sitka DEM and shoreline vectors, bake a genuine cove, integrate authored water/weather, measure actual S9 stereo frame pacing, and only register Sitka after real fishing/shore activities work. Do not ship the synthetic fixture as geographic content or duplicate Beckenburg/Malefic assets.
