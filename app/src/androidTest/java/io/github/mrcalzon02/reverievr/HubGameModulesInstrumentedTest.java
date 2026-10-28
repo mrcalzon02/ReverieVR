@@ -310,8 +310,8 @@ public final class HubGameModulesInstrumentedTest {
         return null;
     }
 
-    @Test public void actualHubGameManagerDisplaysAndChecksAvailableReleases()
-        throws Exception{
+    @Test public void actualHubGameManagerShowsBundledLibraryWithoutIndependentDownloads()
+        throws Exception {
         Instrumentation instrument=InstrumentationRegistry.getInstrumentation();
         Intent intent=new Intent(context(),MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -320,51 +320,47 @@ public final class HubGameModulesInstrumentedTest {
         Instrumentation.ActivityMonitor monitor=instrument.addMonitor(
             GameModulesActivity.class.getName(),null,false);
         Activity manager=null;
-        try{
+        try {
             View manage=hub.findViewById(R.id.manage_game_modules_button);
-            assertNotNull("Hub main menu cannot acquire games",manage);
+            assertNotNull("Hub has no bundled game library",manage);
             instrument.runOnMainSync(manage::performClick);
             manager=instrument.waitForMonitorWithTimeout(monitor,15000);
-            assertNotNull("Hub main-menu button did not open Game Modules",manager);
+            assertNotNull("Hub main-menu button did not open bundled library",manager);
             final Activity activity=manager;
             instrument.waitForIdleSync();
-            final View[] control=new View[1];
-            instrument.runOnMainSync(()->control[0]=
-                findText(activity.getWindow().getDecorView(),"Check releases"));
-            assertNotNull("Hub has no signed game release action",control[0]);
-            assertTrue("Hub game releases control not clickable",
-                control[0] instanceof Button && control[0].isEnabled());
-            assertNotNull("Hub has no acquisition/import control",
-                findText(activity.getWindow().getDecorView(),"Import .rvpack"));
-            for(GameModuleRegistry.Entry item:GameModuleRegistry.GAMES)
-                assertNotNull("Game absent from hub module management UI: "+item.id,
-                    findText(activity.getWindow().getDecorView(),
-                        item.displayName+"\nBuilt-in"+
-                            (CompanionGameRegistry.installedVersion(context(),item.id)>0
-                                ?" | Game APK r"+CompanionGameRegistry.installedVersion(
-                                    context(),item.id)
-                                :"")));
-            // REAL user interaction: this invokes the app's remote catalog
-            // acquisition/update code, with its embedded ECDSA trust root.
-            instrument.runOnMainSync(control[0]::performClick);
-            long deadline=System.currentTimeMillis()+35000L;
-            String current="";
-            while(System.currentTimeMillis()<deadline){
-                final String[] visible=new String[1];
-                instrument.runOnMainSync(()->{
-                    android.view.ViewGroup screen=(android.view.ViewGroup)
-                        activity.getWindow().getDecorView();
-                    visible[0]=findStatus(screen);
-                });
-                current=visible[0];
-                if(current.startsWith("Authenticated catalog r") ||
-                   current.startsWith("Release check:"))break;
-                Thread.sleep(300L);
+            final View root=activity.getWindow().getDecorView();
+            final java.util.List<NativeModuleRuntime.Descriptor> games=
+                NativeModuleRuntime.listBuiltIns(true);
+            assertEquals("Missing compiled native game modules",
+                GameModuleRegistry.GAMES.length,games.size());
+            assertNotNull("Bundled inventory count absent",findText(root,
+                games.size()+" native games included in this APK."));
+            for(NativeModuleRuntime.Descriptor module:games){
+                GameModuleRegistry.Entry info=GameModuleRegistry.find(module.id);
+                assertNotNull("Unknown compiled native game "+module.id,info);
+                boolean development=new ReveriePreferences(activity)
+                    .getLoggingMode()==LoggingMode.DEVELOPMENT;
+                String label=module.displayName+" — Included";
+                if(info.developmentOnly&&!development)
+                    label+=" (enable Development logging mode to launch)";
+                assertNotNull("Bundled game missing from library: "+module.id,
+                    findText(root,label));
             }
-            assertTrue("Hub UI cannot verify release catalog: "+current,
-                current.startsWith("Authenticated catalog r"));
-            assertTrue("Unexpected release inventory: "+current,
-                current.contains("0 game releases"));
+            assertNull("Retired remote catalog button still visible",
+                findText(root,"Check releases"));
+            assertNull("Retired content package importer still visible",
+                findText(root,"Import .rvpack"));
+            assertNull("Independent game APK action still visible",
+                findText(root,"Install game APK"));
+            View update=findText(root,"Check ReverieVR updates");
+            assertNotNull("Bundled library cannot request whole-app update",update);
+            assertTrue("Whole-app update control not usable",
+                update instanceof Button && update.isEnabled());
+            // Real UI click: return to Stage A and request the whole signed
+            // hub updater, never the retired per-game catalog/installer.
+            instrument.runOnMainSync(update::performClick);
+            assertTrue("Bundled library did not return to Stage A",
+                activity.isFinishing());
         } finally {
             instrument.removeMonitor(monitor);
             final Activity ownedManager=manager;
@@ -375,21 +371,4 @@ public final class HubGameModulesInstrumentedTest {
         }
     }
 
-    private static String findStatus(View root){
-        if(root instanceof TextView){
-            String label=((TextView)root).getText().toString();
-            if(label.startsWith("Checking signed game") ||
-               label.startsWith("Authenticated catalog") ||
-               label.startsWith("Release check:") ||
-               label.startsWith("Game content:"))return label;
-        }
-        if(root instanceof ViewGroup){
-            ViewGroup group=(ViewGroup)root;
-            for(int i=0;i<group.getChildCount();i++){
-                String v=findStatus(group.getChildAt(i));
-                if(!v.isEmpty())return v;
-            }
-        }
-        return "";
-    }
 }
