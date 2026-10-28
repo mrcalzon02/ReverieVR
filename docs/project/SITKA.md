@@ -4,6 +4,7 @@
 
 
 **Official title:** Sitka (no subtitle).  
+**Architecture:** Real irregular Sitka buildings and roads, geographic P0 placeholders upgraded to unique P2 architecture; [normative custom-building specification](SITKA_IRREGULAR_CITY_AND_CUSTOM_BUILDINGS.md).  
 **Proposed project ID:** RV-GAME-SITKA; tentative module ID `sitka`.  
 **Category:** ReverieVR > Native Apps / Projects, once functional.  
 **Stage:** Source-only native terrain rendering proof, now tested with real Mesa EGL/GLES2 stereo pixel readback and context recreation; no real Sitka geographic content or playable VR game.  

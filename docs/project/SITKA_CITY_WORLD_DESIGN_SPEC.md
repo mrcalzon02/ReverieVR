@@ -1,6 +1,6 @@
 # Sitka — Complete City, Coast, World, and Gameplay Specification
 
-**Authority:** Game design specification, revision 1, 2026-10-28.  
+**Authority:** Game design specification, revision 2, 2026-10-28. The [Irregular City, Placeholder and Bespoke Building Specification](SITKA_IRREGULAR_CITY_AND_CUSTOM_BUILDINGS.md) is normative for non-grid street geometry, P0–P3 building fidelity, custom models and stable identity.  
 **Canonical game name:** **Sitka**. Never add a subtitle.  
 **Project:** ReverieVR native-game family, prospective game identifier `sitka`.  
 **Related documents:** [Sitka canonical brief](SITKA.md), [Sitka environment and editor pipeline](SITKA_EDITOR_PIPELINE.md), [ReverieVR platform expansion](DESKTOP_PLATFORM_EXPANSION.md).  
@@ -9,7 +9,7 @@
 
 ## 1. Product vision and non-negotiable boundaries
 
-**Sitka is both a peaceful coastal fishing game and a geographically recognizable, explorable 3D interpretation of Sitka, Alaska.** The entire developed city should eventually be traversable at human scale, with its real street network, shorelines, terrain slopes, harbor basins, public waterfront, bridges, trails, recognizable landmarks and buildings in defensible approximate positions. The city and surrounding Sitka Sound form a continuous geographic identity. Water activities are not an isolated minigame, and land activities are not a decorative dock menu.
+**Sitka is both a peaceful coastal fishing game and a geographically recognizable, explorable 3D interpretation of Sitka, Alaska.** **Definitive architectural rule:** model source-grounded irregular building polygons and curved streets; P0 georeferenced placeholders give city coverage and progressively become P1 synthesized and P2 bespoke exteriors. **Malefic tile-set buildings and square city streets are prohibited as final city geometry.** See [normative geometry/placeholder specification](SITKA_IRREGULAR_CITY_AND_CUSTOM_BUILDINGS.md). The entire developed city should eventually be traversable at human scale, with its real street network, shorelines, terrain slopes, harbor basins, public waterfront, bridges, trails, recognizable landmarks and buildings in defensible approximate positions. The city and surrounding Sitka Sound form a continuous geographic identity. Water activities are not an isolated minigame, and land activities are not a decorative dock menu.
 
 Two equally legitimate ways to play:
 
@@ -67,8 +67,8 @@ Each zone declares a polygon boundary, road length represented, buildings matche
 
 | Source system | What it actually contributes | Required Sitka adaptation |
 | --- | --- | --- |
-| Malefic `CityLayout` | Connected road graph, parcel footprints, doorway and collision identity | Replace fictional seeded road creation with imported real street/footpath graph, surveyed footprints and special grade/bridge/harbor nodes; reuse integrity tests |
-| Malefic `UrbanTileAssembler` | Actual modular road, paving, wall, doorway, roof and prop placements | Drive instances from Sitka road classifications and actual building polygons/terrain grades; derive façade/roof from surveyed attributes and local style archetypes |
+| Malefic `CityLayout` | Connectivity, occupancy, entrance and collision validation techniques | Reuse the graph/integrity principles; **do not reuse its seeded rectangular road grid or standardized rectangular parcel geometry**. Use irregular real-world vector roads and independently sourced building polygons. |
+| Malefic `UrbanTileAssembler` | Reusable source-part transform/material/caching principles | Modules may provide **small details**, but may NOT determine whole Sitka buildings or dictate right-angle streets. Generate city roads by polyline sweeps and facades/roofs from unique building footprint polygons. |
 | Malefic `UrbanInstanceBatches` | One immutable source mesh per model, packed transforms for repeated geometry | Bake arrays per loaded Sitka chunk; use verified GLES2-friendly static mesh batches on S9; no unsupported GLES3 instanced-draw assumption |
 | Malefic `CityPlateTerrain` | City foundations, smooth outer terrain transitions, road-aligned exits | Fit surveyed road height profiles and building pads into USGS topography without artificial flat city islands or retaining-wall seams |
 | Malefic `ContinentLayout`/`ContinentZones` and performance docs | Sector indexing, preloading, deterministic generation/cache keys and visibility budgets | Replace invented geography with region/quadtree tile IDs, source hashes and near-camera streaming; reserve outskirts for lower LOD |
@@ -101,8 +101,8 @@ A deterministic desktop build pipeline produces **small offline playable scene c
 2. **Normalize:** Reproject to the selected meter CRS, reconcile sea-level/vertical datums, clip study area polygons, align bridge and road spans to measured ground, detect water/land overlaps, invalidate broken geometries.
 3. **Topology:** Build walkable graph of roads, sidewalks, trail approaches, approved waterfront access, bridge deck and stairs/ramp connections. Maintain separate vehicle, pedestrian, boat and inaccessible/restricted networks. Support cul-de-sac, T and cross intersections without changing the real graph.
 4. **Terrain:** Bake multi-resolution DEM terrain with shared edge vertices, road benches and limited graded pads; anchor shoreline to data, add beaches/tidal zone masks, detect unrealistic road cliffs and foundation penetrations. Never fill missing DEM coverage with random cliffs presented as real.
-5. **Buildings:** Match vector footprint geometry to class and available measured height/storey/roof tags; compute foundation elevation from nearby terrain and real roads; extrude walls; roof from parametric gable/hip/shed/flat/mixed archetypes; pick credible materials and local Alaska facades. Stable building ID and exterior door orientation face an actual reachable approach.
-6. **Landmarks:** Override archetype with individually authored, accurate recognizable silhouette + correct source attribution for notable public landmarks, harbor warehouses, boat facilities, bridge, civic buildings, historical sites and select shopfronts. Preserve building footprint/roof positions.
+5. **Buildings:** Use independent irregular source footprint polygons (concave, rotated, multiwing and polygons with holes where valid), each with immutable georeferenced building ID/terrain/entrance anchors. Build genuine P0 polygon-mass placeholders for citywide coverage; refine individual structures into P1 procedural architectural variety, bespoke P2 unique real-world silhouettes, and selected P3 functional interiors. Preserve placement, access IDs and saves as the meshes evolve. See [precise custom building contract](SITKA_IRREGULAR_CITY_AND_CUSTOM_BUILDINGS.md).
+6. **Landmarks:** Author true **bespoke 3D structures** with distinctive individual roofs, facades, entrances and independently approved source/provenance. Replace the P0/P1 visual mesh without relocating the underlying building identity or disrupting public access. Repeating a single tile-kit facade does not qualify as finished landmark art.
 7. **Details:** Instances of approved facade parts, porches, rain gutters, piles, piers, bollards, moored vessels, fences, benches, vegetation, signage and streetlights, selected by semantic context. Docks require real vertical access and water depth; avoid disconnected or floating props.
 8. **Interiors:** Where chosen, generate or author rooms from building footprint, functional entry, accessibility, collision and activity layout. Link exterior and interior as a seamless cell or low-latency portal; keep windows and doorways aligned. Private dwellings: exterior only unless distinctly fictionalized and authorized.
 9. **Water/weather:** Bake shore polygons, docks, harbors, current/depth classes and tide masks into native runtime-readable files; emit shared weather profiles with explicit version numbers. Do not rasterize the water surface into static terrain.
@@ -110,7 +110,9 @@ A deterministic desktop build pipeline produces **small offline playable scene c
 11. **Validate/export:** Write a versioned regional manifest of tiles, scene objects, roads/boat lanes, collision, shore/water masks, textures, ecological tags, interior links and copyright/source records, plus hashes. Reject source gaps, unsupported formats and unlicensed export.
 12. **Package:** Deliver source-derived binaries in the **single ReverieVR host APK** with fixed game ID, save schema and optional on-device selective asset load. No network fetching required during play.
 
-### 4.1 Structure grammar and building classes
+### 4.1 Non-grid building footprint grammar and building classes
+
+The governing algorithm is the [Irregular City, Placeholder and Bespoke Building Specification](SITKA_IRREGULAR_CITY_AND_CUSTOM_BUILDINGS.md). The semantic categories below do not authorize regular city plots or whole-building tilesets. Every source-identified building begins as correct P0 polygon massing and may become P1, P2 and optionally P3.
 
 | Archetype | Required exterior features | Interaction level |
 | --- | --- | --- |
@@ -124,7 +126,7 @@ A deterministic desktop build pipeline produces **small offline playable scene c
 | Marinas, sheds, fishing floats | Timber/metal modules, walkable ramps, mooring cleats, buoyancy/height behavior | Functional dock/boat transition |
 | Forest outbuildings and cabins | Lightweight procedural wood construction, safe trail approach | Selected exploration shelters |
 
-Variations must be deterministic with source-preserving seeds. A flat generic “building box” is acceptable only as a **far LOD** and must not count as a finished near-field building. Never use pseudo-text or warped letter meshes: use approved actual glyph atlases for street and storefront signs.
+Variations must be deterministic with source-preserving seeds. **P0 polygon-shaped placeholders are expected even at near range during unfinished city coverage**, but must remain explicitly classified as placeholders and never counted as completed P2 landmarks. A bounding-box cube that disregards an irregular source footprint is never a valid P0 asset. After a building is bespoke P2, its simple massing may serve as a far LOD. Never use pseudo-text or warped letter meshes: use approved actual glyph atlases.
 
 ### 4.2 Collision, pathfinding and elevation
 
@@ -311,7 +313,7 @@ Actual desktop Java editor visual compile, real geo preview and integration test
 | --- | --- | --- |
 | S0 — Source contract | Register pinned upstream source revisions, licenses, working module imports and geo schema; no city yet | License/source ledger; Java editor+native adapter tests; unchanged Malefic/Beckenburg |
 | S1 — First geographic city cell | One genuine downtown elevation/shore/road/footprint tile with correct anchor locations | Independent data receipts and terrain vs road/footprint checks; manual spatial review |
-| S2 — Downtown procedural building proof | Actual surveyed footprints become varied 3D exteriors, roof types, reachable front doors and grade-correct roads | C++/GPU draw test, collision test, real-world alignment comparison using lawful references |
+| S2 — Non-grid footprint/placeholder proof | Correct individual P0 extruded meshes for all approved irregular downtown building footprints, curved source streets, grade contact, then selected P1/P2 overrides | Concave/rotated/hole tests, real-source alignment, walkable road connections, collision, model swap identity and actual render proof |
 | S3 — Native environment | Ocean, pier, shoreline, weather sky/fog/rain and tide actually render with matching runtime simulation | Clear/rain/fog/tide screenshots; same source profiles; stereo/context restore; physical S9 performance |
 | S4 — Walking city slice | Continuous street/sidewalk route, selected shop interior, landmark and player dock accessible | S9 head/controller/keyboard path, recenter, safe exit, correct collision and stable saves |
 | S5 — Fishing/boat | Functional rod/bite/reel/land, boat launch/return, two distinguishable destinations, inventory and upgrades | Playable user interactions, observable purchased change, persistent save and offline replay |
@@ -326,7 +328,7 @@ Functional tests are release gates. Art/composition review and geospatial accura
 
 1. Pin/verify shared weather, water, editor, Malefic city-template/instance algorithms and exact source licenses.
 2. Obtain a lawful first Sitka downtown DEM/coastline/roads/footprints set with provenance; fix projection/vertical datum.
-3. Extend the existing terrain baker with a real georeferenced road/footprint and navgraph city cell; test the first actual grade/door.
+3. Implement the [irregular-city geometry contract](SITKA_IRREGULAR_CITY_AND_CUSTOM_BUILDINGS.md) with real licensed geographic road/footprint sources: one curved street, polygon-conforming P0 buildings including irregular concave tests, slope-foundation and door/nav binding, and the first P2 custom mesh swap with ID/save stability.
 4. Integrate water masks and weather presets into actual native scene drawing using the already-present C++ environment adapter, with two-eye parity.
 5. Put a functional walkable harbor and first fishing point into the native Sitka module *before* adding a hub menu item. Deliver only within the one signed ReverieVR APK.
 6. Expand by coherent city blocks, harbor corridors and coastline until the complete mapped Sitka coverage contract is met.
