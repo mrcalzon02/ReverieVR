@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import java.nio.FloatBuffer;
 
 public final class HeadsetMirrorProjectionTest {
     private static float[] at(float x,float y,float z) {
@@ -97,5 +98,66 @@ public final class HeadsetMirrorProjectionTest {
         assertFalse(projection.prepare(rig,0));
         assertEquals(0,projection.writeHeadset(
             new float[HeadsetMirrorProjection.MAX_VERTICES*3]));
+    }
+
+    @Test public void avatarReflectionTracksWorldPositionForBothEyes() {
+        PlayerHeadRig rig = new PlayerHeadRig();
+        assertTrue(rig.update(at(0f, 0f, 0f), 0.064f));
+        HeadsetMirrorProjection projection = new HeadsetMirrorProjection();
+        FloatBuffer body = FloatBuffer.wrap(new float[] {
+            HomeAvatarWardrobeGeometry.MIRROR_X, 0.95f, -0.25f,
+            HomeAvatarWardrobeGeometry.MIRROR_X, 0.65f,  0.25f,
+            HomeAvatarWardrobeGeometry.MIRROR_X, 0.35f, -0.25f
+        });
+        float[] left = new float[45], right = new float[45];
+        float[] moved = new float[45];
+        assertTrue(projection.prepare(rig, 0));
+        assertEquals(3, projection.writeAvatarTriangles(body, 3,
+            0f, 0f, 0f, 1f, left));
+        assertEquals(3, projection.writeAvatarTriangles(body, 3,
+            0f, 0f, 0.5f, 1f, moved));
+        // The figure follows the player in WORLD space, rather than
+        // staying at an immutable offset on the mirror.
+        assertTrue(Math.abs(left[2] - moved[2]) > 0.15f);
+        assertEquals(0, body.position());
+        assertTrue(projection.prepare(rig, 1));
+        assertEquals(3, projection.writeAvatarTriangles(body, 3,
+            0f, 0f, 0f, 1f, right));
+        assertTrue(Math.abs(left[2] - right[2]) > 0.0001f);
+    }
+
+    @Test public void avatarTrianglesAreClippedToPhysicalGlass() {
+        PlayerHeadRig rig = new PlayerHeadRig();
+        assertTrue(rig.update(at(0f, 0f, 0f), 0.064f));
+        HeadsetMirrorProjection projection = new HeadsetMirrorProjection();
+        assertTrue(projection.prepare(rig, 0));
+        FloatBuffer wideBody = FloatBuffer.wrap(new float[] {
+            HomeAvatarWardrobeGeometry.MIRROR_X, 0.0f, -5.0f,
+            HomeAvatarWardrobeGeometry.MIRROR_X, 1.8f,  0.0f,
+            HomeAvatarWardrobeGeometry.MIRROR_X, 0.0f,  5.0f
+        });
+        float[] triangles = new float[45];
+        int count = projection.writeAvatarTriangles(wideBody, 3,
+            0f, 0f, 0f, 1f, triangles);
+        assertTrue(count >= 3);
+        assertTrue(count <= 15);
+        for (int i = 0; i < count * 3; i += 3) {
+            assertEquals(HeadsetMirrorProjection.LINE_X,
+                triangles[i], 0.00001f);
+            assertTrue(Float.isFinite(triangles[i + 1]));
+            assertTrue(Float.isFinite(triangles[i + 2]));
+            assertTrue(Math.abs(triangles[i + 1])
+                <= HeadsetMirrorProjection.HALF_HEIGHT + 0.00001f);
+            assertTrue(Math.abs(triangles[i + 2])
+                <= HeadsetMirrorProjection.HALF_WIDTH + 0.00001f);
+        }
+        assertEquals(0, projection.writeAvatarTriangles(wideBody, 3,
+            Float.NaN, 0f, 0f, 1f, triangles));
+        assertEquals(0, projection.writeAvatarTriangles(wideBody, 3,
+            0f, 0f, 0f, 1f, new float[10]));
+        assertTrue(rig.update(at(3f, 0f, 0f), 0.064f));
+        assertFalse(projection.prepare(rig, 0));
+        assertEquals(0, projection.writeAvatarTriangles(wideBody, 3,
+            0f, 0f, 0f, 1f, triangles));
     }
 }
