@@ -935,12 +935,11 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         if(s->session.view==game::FrontMode::SectorMap){
             s->menu.OpenOrders(false,static_cast<int>(s->session.action),
                                action.primary,action.secondary);
-        }else if(s->session.tactical.selected>=0){
+        }else{
+            // Mode selection is allowed before selecting a soldier. The
+            // controller preserves the chosen mode when the unit is picked.
             s->menu.OpenOrders(true,static_cast<int>(s->session.tactical.mode),
                                action.primary,action.secondary);
-        }else{
-            ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
-            return;
         }
         s->block_primary=true;
         s->secondary_hold=0;
