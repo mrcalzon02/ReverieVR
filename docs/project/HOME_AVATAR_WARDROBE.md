@@ -43,7 +43,7 @@ The existing white-room mirror gets a neighboring low-poly wooden wardrobe with 
 
 Twelve initial identities: Everyday Dreamer, Astral Ranger, Forest Warden, Deep-Sea Diver, Clockwork Robot, Candy Admiral, Moon Witch, Pixel Paladin, Noir Sleuth, Friendly Phantom, Retro Racer, Cozy Critter. Player customization independently adjusts palette (8), headwear (8), accessory (8) and eyes (4). Each identity initializes a different themed ensemble. Randomize previews a draft; Apply/Save commits the choice to a versioned local SharedPreferences profile, and Back/Discard cancels changes. Invalid/newer save formats fall back to default.
 
-The existing planar mirror still renders headset/controller diagnostics. Its additional low-triangle avatar figure is a **stylistic preview**, not simulated full-body tracked motion or a full optical reflection. Preview changes live in the editor: a small 2D thumbnail is always available in the editor, including forest/beach scenes, while the birch-room mirror shows the larger silhouette. Committed state is used afterward. These starter assets are authored in first-party code, not unrelated stock sprites, and require no network service, Google dependencies or additional native game module.
+The existing planar mirror still renders headset/controller diagnostics. Its additional low-triangle avatar figure is a **stylistic preview**, not simulated full-body tracked motion or a full optical reflection of the entire room. As of 28 October 2026, the avatar preview itself is projected from the player's *world-space head/body anchor* into the mirror separately for each eye: it follows actual player translation, changes apparent position with viewing angle, and is clipped to the glass rather than glued at fixed mirror coordinates. Preview changes live in the editor: a small 2D thumbnail is always available in the editor, including forest/beach scenes, while the birch-room mirror shows the larger silhouette. Committed state is used afterward. These starter assets are authored in first-party code, not unrelated stock sprites, and require no network service, Google dependencies or additional native game module.
 
 ## Expansion contract
 Future owned/licensed 3D models may replace the starter silhouettes. Normalize rig scale, skeleton and named attachment slots for body, outfit, hat, accessory and face. Use S9-friendly geometry/material budgets with LODs; never ingest a whole purchased source pack. A future versioned read-only cosmetic descriptor can be exposed through the native module SDK after its compatibility and ownership contract is defined. Cosmetic preferences must not alter a game's economy, combat or saves.
@@ -144,3 +144,36 @@ choose inspected owned model sources, implement actual shared skeletons,
 fit/retarget costumes across extreme proportions, add clothing slots,
 sustained device-performance gates, and validate full-body appearance
 in the headset. Do not treat named data entries as imported 3D art.
+
+## 28 October 2026 — positional mirror-avatar repair
+
+The headset/controller diagnostic reflection already transformed physical
+world-space proxy points through each eye and clipped them to the glass. The
+avatar did not: `drawAvatarInMirror()` drew its character triangle meshes
+directly in front of the glass at the fixed authoring X coordinate. This
+made the figure look like a decal, independent of player location.
+
+The Home mirror now uses the same prepared eye/head rig for all three sources.
+Each authored avatar vertex is treated as a **body-local vertex**: remove the
+legacy mirror-X authoring offset, scale the body with the selected height,
+anchor its head at the world-space head rig (with a cosmetic vertical body
+offset), reflect its X position across the physical mirror, intersect the
+eye-to-virtual-body ray with the mirror plane, then clip its triangles to
+the finite glass bounds. A reusable triangle buffer prevents per-eye GC.
+Avatar meshes are still rebuilt only on wardrobe geometry changes.
+No FOV, Cardboard eye projection, IPD, controller, save schema, wardrobe
+control or native-module ABI has changed.
+
+This corrects mirror **placement and stereo parallax**. It is not an
+environment-reflecting render-to-texture mirror and not real full-body
+tracking. Most authored avatar garments remain low-poly planar geometry,
+while IK legs retain small depth variation. A complete volumetric,
+skinned character mesh and head/body motion rig are separate acceptance
+work, not silently claimed by this repair.
+
+Added regression source checks for moving-body projected displacement,
+independent left/right eye projection, a bounded physical mirror clip,
+source-buffer immutability, invalid pose handling and zero-size
+destination protection. Android/JUnit execution, signed APK construction,
+S9 binocular viewing, mirror occlusion, locomotion alignment, and sustained
+thermal/fps performance remain **pending** until independently observed.
