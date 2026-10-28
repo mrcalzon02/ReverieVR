@@ -10,7 +10,7 @@ SOURCE = ROOT / "app/src/main/jni/native/reverie_native_host.cpp"
 ACTIVITY = ROOT / "app/src/main/java/io/github/mrcalzon02/reverievr/GameModulesActivity.java"
 def verify(apk):
     host = SOURCE.read_text(encoding="utf-8")
-    names = re.findall(r'"(libreverie_module_[a-z0-9_]+\\.so)"', host)
+    names = re.findall(r'"(libreverie_module_[a-z0-9_]+\.so)"', host)
     if len(names) < 15 or len(set(names)) != len(names):
         raise ValueError("Incomplete or duplicate compiled game registry")
     menu = ACTIVITY.read_text(encoding="utf-8")
