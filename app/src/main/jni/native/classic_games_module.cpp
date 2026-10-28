@@ -21,6 +21,7 @@
 #endif
 #if CLASSIC_GAME_KIND == 5
 #include "classic_chess_book.h"
+#include "classic_chess_reference.h"
 #include "classic_chess_sprite_atlas.h"
 #include "classic_chess_wood_atlas.h"
 #include "classic_chess_panel_layout.h"
@@ -77,6 +78,13 @@ struct Module {
     int chessAnalyzedPly=-1;
     int chessPanelTab=0; // 0 = legal next move; 1 = indexed classical line
     bool chessPanelHover=false;
+    int chessHoverSquare=-1,chessPreviewSquare=-1,chessPreviewPly=-1;
+    std::vector<int> chessLegalDestinations;
+    float chessPulseClock=0.f;
+    bool chessPulseLit=true;
+    bool chessWikiOpen=false;
+    int chessWikiSection=0,chessWikiPage=0,chessWikiIndex=0;
+    std::vector<int> chessWikiMatches;
     GLuint chessProgram=0,chessVbo=0,chessTexture=0;
     GLuint chessBoardVbo=0,chessBoardTexture=0;
     GLint chessPos=-1,chessUv=-1,chessMvp=-1,chessSampler=-1;
@@ -175,6 +183,134 @@ void ChessPanelExample(Module *m,const std::string &name,float x,float y){
     ChessPanelLine(m,name,x,y,14);
     if(name.size()>14)
         ChessPanelLine(m,name.substr(14),x,y-.19f,14);
+}
+
+void ChessWikiText(Module *m,const std::string &line,float x,float y,
+                   float scale=.045f){
+    auto &v=m->fontVertices;
+    reverie::breakwater::font::AppendText(v,line.c_str(),x,y,
+        reverie::breakwater::font::FittedScale(line.c_str(),5.05f,scale),
+        .91f,.95f,.85f,-2.725f);
+}
+void ChessWikiDraw(Module *m) {
+    const auto &state=m->board;
+    using namespace reverie::chessref;
+    Rect(m,0.f,0.f,5.62f,3.53f,-2.79f,.047f,.073f,.11f);
+    Rect(m,0.f,1.52f,5.44f,.38f,-2.775f,.12f,.20f,.26f);
+    ChessWikiText(m,"CHESS REFERENCE LIBRARY",-.08f,1.49f,.057f);
+    Rect(m,2.42f,1.51f,.61f,.29f,-2.768f,.46f,.17f,.15f);
+    ChessWikiText(m,"CLOSE",2.42f,1.49f,.040f);
+    static const char *const tabs[]={"OPENING","VARIANTS","MOVES","RULES","INDEX"};
+    for(int i=0;i<5;++i){
+        const float x=(i-2)*1.07f;
+        Rect(m,x,1.09f,1.015f,.31f,-2.768f,
+            i==m->chessWikiSection?.28f:.12f,
+            i==m->chessWikiSection?.39f:.23f,
+            i==m->chessWikiSection?.43f:.29f);
+        ChessWikiText(m,tabs[i],x,1.065f,.041f);
+    }
+    std::vector<std::string> lines;
+    auto add=[&](const std::string &message){
+        const auto wrapped=Wrap(message,58);
+        lines.insert(lines.end(),wrapped.begin(),wrapped.end());
+    };
+    int total=1,page=0;
+    if(m->chessWikiSection==2) {
+        const auto &hist=state.chessSanHistory;
+        total=std::max(1,static_cast<int>((hist.size()+19)/20));
+        page=std::clamp(m->chessWikiPage,0,total-1);
+        add("PLAYED MOVES - VERIFIED SAN FROM CURRENT BOARD");
+        if(hist.empty())add("No moves played yet.");
+        const size_t begin=static_cast<size_t>(page)*20;
+        for(size_t i=begin;i<hist.size()&&i<begin+20;i+=2){
+            const std::string black=i+1<hist.size()?"   "+hist[i+1]:"";
+            add(std::to_string(i/2+1)+". "+hist[i]+black);
+        }
+        add("WHITE IS THE PLAYER. BLACK IS THE CPU.");
+    } else if(m->chessWikiSection==3) {
+        static const char *const title[]={
+            "PIECES AND COORDINATES","KING SAFETY","CASTLING",
+            "EN PASSANT","PAWN PROMOTION","CHECKMATE AND STALEMATE",
+            "DRAWS AND REPETITION","OPENING BOOK VS CPU ANALYSIS",
+            "CONTROLS AND LEGAL PREVIEWS"};
+        static const char *const paragraph[][3]={
+            {"Files are a through h left to right. Ranks are 1 to 8 from White to Black.",
+             "King: one square. Queen: diagonals and ranks/files. Rook: ranks/files. Bishop: diagonals. Knight: L shape and can jump. Pawns: advance one or two from start, capture diagonally.",
+             "The highlighted destinations come from the same legality function used to execute both players' moves."},
+            {"No move can leave your own king in check. You cannot capture a king.",
+             "When checking a piece during the opponent's turn, the displayed destinations are a hypothetical next-turn preview, not permission to move out of turn.",
+             "A pinned piece cannot move if that would expose its king."},
+            {"To castle, king and the chosen rook must not have moved. The path must be clear, and the king cannot start, cross, or finish on an attacked square.",
+             "Kingside: king goes two squares right and rook lands beside it. Queenside: king goes two left and rook lands beside it.",
+             "Castling is unavailable when in check."},
+            {"A pawn that has just advanced two squares may be captured by an adjacent enemy pawn as though it moved only one.",
+             "En passant is allowed only on the immediately following turn; the captured pawn is removed from its original square.",
+             "The king must remain safe after this capture."},
+            {"On reaching the opposite back rank, a pawn becomes a queen, rook, bishop, or knight.",
+             "Use the promotion control while a pawn is selected before moving to the final rank. Default is queen.",
+             "The CPU can also choose all four promotion pieces."},
+            {"Checkmate: the side to move is in check and has no legal response. Stalemate: no legal move, but the king is not in check.",
+             "The game prevents moves exposing the mover's king. A check can be answered by escape, block, or capture when legal.",
+             "Kings are never removed as captured pieces."},
+            {"Draws can result from stalemate, a dead position, fivefold repetition, or 75 moves by each side without pawn movement or capture.",
+             "Threefold repetition and the 50-move rule can be claimed when eligible.",
+             "This game's move history records both sides, including captures and check."},
+            {"The offline ECO library contains 3,865 indexed opening lines from lichess-org/chess-openings (CC0 snapshot, October 2026). Each entry has its full name, ECO code and SAN move sequence.",
+             "Book suggestions are continuations appearing in indexed lines, not win predictions, engine evaluations or master game statistics.",
+             "Outside the book the CPU advice is material-only, explicitly labeled. Never interpret book frequency as a probability of a good move."},
+            {"Hover over any piece to see color, type, board coordinate, and flashing legal destinations. Click a White piece then click a highlighted square to play.",
+             "The left and right wings open this full offline reference. Use the tabs above and PAGE controls below to explore.",
+             "Opponent pieces are inspectable, but only the current side can actually play."}
+        };
+        total=static_cast<int>(sizeof(title)/sizeof(title[0]));
+        page=std::clamp(m->chessWikiPage,0,total-1);
+        add(title[page]);
+        for(const char *text:paragraph[page]){add("");add(text);}
+    } else {
+        int entry=m->chessWikiIndex;
+        if(m->chessWikiSection==1){
+            total=std::max(1,static_cast<int>(m->chessWikiMatches.size()));
+            page=std::clamp(m->chessWikiPage,0,total-1);
+            entry=m->chessWikiMatches.empty()?-1:m->chessWikiMatches[page];
+            add("BOOK LINES MATCHING YOUR CURRENT MOVE HISTORY");
+        } else {
+            total=kEntries;
+            entry=std::clamp(entry,0,kEntries-1);
+            page=entry;
+            add(m->chessWikiSection==4?
+                "COMPLETE OFFLINE OPENING INDEX":"CURRENT OPENING AND NEARBY INDEX ENTRIES");
+        }
+        if(entry>=0){
+            const Entry ref=Read(entry);
+            add("ECO "+ref.eco+"  |  ENTRY "+std::to_string(entry+1)+
+                " OF "+std::to_string(kEntries));
+            add(ref.name);
+            add("");
+            add("COMPLETE INDEXED SAN MOVE LINE:");
+            add(ref.san);
+            add("");
+            add("SOURCE: LICHESS OPENINGS CC0 (OCT 2026)");
+            add("INDEXED LINE, NOT AN ENGINE PREDICTION.");
+        }else{
+            add("No opening catalog line follows this exact position.");
+            add("Use INDEX to browse all 3,865 source entries.");
+        }
+    }
+    constexpr int kVisible=12;
+    for(int i=0;i<kVisible && i<static_cast<int>(lines.size());++i){
+        if(lines[i].empty())continue;
+        ChessWikiText(m,lines[i],0.f,.77f-static_cast<float>(i)*.151f);
+    }
+    Rect(m,-2.07f,-1.40f,1.16f,.30f,-2.765f,.19f,.29f,.35f);
+    Rect(m,-.80f,-1.40f,1.16f,.30f,-2.765f,.19f,.29f,.35f);
+    Rect(m,.80f,-1.40f,1.16f,.30f,-2.765f,.19f,.29f,.35f);
+    Rect(m,2.07f,-1.40f,1.16f,.30f,-2.765f,.19f,.29f,.35f);
+    ChessWikiText(m,"-10",-2.07f,-1.415f,.045f);
+    ChessWikiText(m,"PREV",-.80f,-1.415f,.045f);
+    ChessWikiText(m,"NEXT",.80f,-1.415f,.045f);
+    ChessWikiText(m,"+10",2.07f,-1.415f,.045f);
+    ChessWikiText(m,"PAGE "+std::to_string(page+1)+" / "+
+        std::to_string(total),0.f,-1.13f,.044f);
 }
 #endif
 
@@ -318,6 +454,19 @@ void RebuildBoard(Module *m,bool fixed){
         }
         if(s.selected==cell)
             BoardOutline(m,px,py,gap*.96f,1.f,.99f,.20f);
+#if CLASSIC_GAME_KIND == 5
+        if(s.kind==reverie::boardgames::Kind::Chess &&
+           m->chessPulseLit &&
+           std::find(m->chessLegalDestinations.begin(),
+                     m->chessLegalDestinations.end(),cell)
+                !=m->chessLegalDestinations.end()){
+            BoardOutline(m,px,py,gap*.86f,.19f,.97f,.58f);
+            if(piece==0)Disc(m,px,py,.046f,-2.930f,.19f,.97f,.58f);
+        }
+        if(s.kind==reverie::boardgames::Kind::Chess &&
+           m->chessHoverSquare==cell)
+            BoardOutline(m,px,py,gap*.95f,.97f,.83f,.27f);
+#endif
         if(s.kind==reverie::boardgames::Kind::Go && s.goReview &&
            s.goDead[cell])
             BoardOutline(m,px,py,gap*.92f,.98f,.30f,.24f);
@@ -431,6 +580,20 @@ void RebuildBoard(Module *m,bool fixed){
         }
     }
 #if CLASSIC_GAME_KIND == 5
+    if(!fixed && s.kind==reverie::boardgames::Kind::Chess){
+        const int focus=m->chessHoverSquare>=0?m->chessHoverSquare:s.selected;
+        if(focus>=0&&focus<64){
+            const int piece=s.cells[focus];
+            const std::string identity=reverie::chessref::PieceName(piece)+
+                " "+reverie::chessref::Square(focus);
+            Text(m,identity.c_str(),0.f,1.14f,.030f,.96f,.94f,.68f);
+            if(piece){
+                const std::string count="VALID DESTINATIONS: "+
+                    std::to_string(reverie::chessref::Destinations(s,focus).size());
+                Text(m,count.c_str(),0.f,-1.36f,.024f,.74f,.98f,.77f);
+            }
+        }
+    }
     if(!fixed){
         const auto &book=m->chessAnalysis;
         ChessPanelLine(m,"LAST: "+book.previousCpuMove,-2.01f,.84f);
@@ -456,6 +619,7 @@ void RebuildBoard(Module *m,bool fixed){
             ChessPanelLine(m,"NOT ENGINE EVAL",2.01f,-.83f);
         }
     }
+    if(!fixed && m->chessWikiOpen)ChessWikiDraw(m);
 #endif
     if(fixed){
         m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
