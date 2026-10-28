@@ -76,16 +76,20 @@ void DrawMenu(State *s) {
         screen==game::MenuScreen::Campaign?"CAMPAIGN  /  HEARTHFALL THEATER":
         screen==game::MenuScreen::Controls?"FIELD MANUAL  /  CONTROLS":
         screen==game::MenuScreen::ConfirmNew?"CAMPAIGN  /  CONFIRM RESET":
+        screen==game::MenuScreen::FieldOrders?"FIELD ORDERS  /  CHOOSE ACTION":
+        screen==game::MenuScreen::TacticalOrders?"TACTICAL ORDERS  /  CHOOSE MODE":
         "COMMAND PAUSED  /  OPTIONS";
     Text(s,caption,.837f,.011f,.62f,.80f,.86f);
-    Rect(s,0,-.015f,1.72f,1.38f,kBoardZ-.064f,.034f,.061f,.087f);
     const int count=s->menu.Count(s->has_campaign);
+    const bool compact=count>4;
+    Rect(s,0,-.015f,1.72f,compact?1.74f:1.38f,kBoardZ-.064f,
+         .034f,.061f,.087f);
     for(int i=0;i<count;++i){
-        const float y=game::Menu::ButtonY(i);
+        const float y=game::Menu::ButtonY(i,compact);
         const bool focus=i==s->menu.selected;
-        Rect(s,0,y,1.55f,.19f,kBoardZ-.042f,
+        Rect(s,0,y,1.55f,compact?.155f:.19f,kBoardZ-.042f,
              focus?.20f:.074f,focus?.31f:.125f,focus?.38f:.17f);
-        Rect(s,-.745f,y,.035f,.152f,kBoardZ-.039f,
+        Rect(s,-.745f,y,.035f,compact?.13f:.152f,kBoardZ-.039f,
              focus?.94f:.26f,focus?.75f:.43f,focus?.37f:.51f);
         Text(s,s->menu.Label(i,s->has_campaign),y,.012f,
              focus?1.f:.80f,focus?.92f:.88f,focus?.73f:.88f);
@@ -111,6 +115,14 @@ void DrawMenu(State *s) {
         Text(s,"MINUS TAP: MODE / PAUSE / REPORT RESET",-.50f,.009f,.86f,.92f,.84f);
         Text(s,"HOLD MINUS: OPEN COMMAND MENU",-.645f,.010f,1.f,.82f,.50f);
         Text(s,"POINT AT MENU TAB AND CLICK  /  MINUS TO BACK",-.79f,.009f,.65f,.78f,.84f);
+    }else if(screen==game::MenuScreen::FieldOrders){
+        Text(s,"CHOOSE AN ACTION  THEN CLICK A SECTOR TO EXECUTE",
+             -.865f,.010f,.80f,.92f,.74f);
+    }else if(screen==game::MenuScreen::TacticalOrders){
+        Text(s,"SELECT AN ORDER MODE  THEN CLICK A BOARD TILE",
+             -.69f,.010f,.80f,.92f,.74f);
+        Text(s,"REPAIR AND RESUPPLY APPLY TO THE SELECTED UNIT",
+             -.82f,.009f,.65f,.80f,.88f);
     }else if(screen==game::MenuScreen::ConfirmNew){
         Text(s,"EXISTING CAMPAIGN PROGRESS WILL BE REPLACED",
              -.59f,.011f,1.f,.67f,.46f);
@@ -141,6 +153,9 @@ void DrawMenu(State *s) {
 void DrawMenuTab(State *s){
     Rect(s,.89f,1.065f,.33f,.145f,kBoardZ-.035f,.22f,.32f,.38f);
     TextAt(s,"MENU",.89f,1.065f,.011f,.96f,.92f,.70f);
+    Rect(s,-.89f,1.065f,.33f,.145f,kBoardZ-.035f,.16f,.34f,.35f);
+    TextAt(s,s->session.view==game::FrontMode::SectorMap?"ORDERS":"MODES",
+           -.89f,1.065f,.010f,.97f,.91f,.72f);
 }
 void DrawMap(State *s){
     const game::Session &session=s->session;
@@ -149,7 +164,7 @@ void DrawMap(State *s){
     s->font.Clear();s->sprites.Clear();
     Rect(s,0,0,2.15f,2.3f,kBoardZ-.09f,.018f,.036f,.049f);
     Text(s,"OMEGA FRONT  HEARTHFALL",1.070f,.014f,.92f,.94f,.81f);
-    Text(s,"TOUCHPAD FOCUS  CLICK ORDER  MINUS NEXT  HOLD MINUS MENU",
+    Text(s,"TOUCHPAD FOCUS  CLICK ORDER  ORDERS TAB  HOLD MINUS MENU",
          .997f,.008f,.71f,.84f,.85f);
     DrawMenuTab(s);
     char line[110];
@@ -675,7 +690,7 @@ void Draw(State *s){
     }
     Rect(s,0,1.054f,2.05f,.30f,-1.92f,.07f,.13f,.19f);
     Text(s,"OMEGA FRONT  HEARTHWELL",1.076f,.013f,.91f,.93f,.78f);
-    Text(s,"TOUCHPAD CURSOR  CLICK UNIT / ORDER  MINUS MODE  HOLD MINUS MENU",
+    Text(s,"TOUCHPAD CURSOR  CLICK UNIT / TARGET  MODES TAB  HOLD MINUS MENU",
          .983f,.008f,.71f,.84f,.85f);
     DrawMenuTab(s);
     char status[96];
@@ -884,6 +899,10 @@ void Update(void *p,const ReverieNativeInputV1 *in){
         const game::MenuCommand command=s->menu.Input(action.dt,action.y,
             action.primary,action.secondary,pointing,pointer_x,pointer_y,
             s->has_campaign);
+        if(command==game::MenuCommand::SetFieldAction)
+            s->session.action=static_cast<game::FieldAction>(s->menu.field_choice);
+        if(command==game::MenuCommand::SetCommandMode)
+            s->session.tactical.mode=static_cast<game::CommandMode>(s->menu.mode_choice);
         if(command==game::MenuCommand::StartNew ||
            (command==game::MenuCommand::Resume && !had_campaign)){
             s->session=game::Session(414u);
@@ -906,6 +925,23 @@ void Update(void *p,const ReverieNativeInputV1 *in){
     }
     if(pointing && game::Menu::MenuShortcut(pointer_x,pointer_y) && click){
         s->menu.OpenPause(action.primary,action.secondary);
+        s->block_primary=true;
+        s->secondary_hold=0;
+        Draw(s);
+        ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        return;
+    }
+    if(pointing && game::Menu::OrderShortcut(pointer_x,pointer_y) && click){
+        if(s->session.view==game::FrontMode::SectorMap){
+            s->menu.OpenOrders(false,static_cast<int>(s->session.action),
+                               action.primary,action.secondary);
+        }else if(s->session.tactical.selected>=0){
+            s->menu.OpenOrders(true,static_cast<int>(s->session.tactical.mode),
+                               action.primary,action.secondary);
+        }else{
+            ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+            return;
+        }
         s->block_primary=true;
         s->secondary_hold=0;
         Draw(s);
