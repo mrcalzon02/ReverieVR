@@ -70,13 +70,14 @@ inline std::vector<int> Matching(const boardgames::State &board) {
 inline int Current(const boardgames::State &board) {
     if(board.kind!=boardgames::Kind::Chess)return -1;
     const auto &history=board.chessSanHistory;
+    if(history.empty())return -1;
     for(size_t prefix=history.size();;--prefix){
-        int best=-1;size_t bestDepth=0;
+        int best=-1;size_t bestDepth=static_cast<size_t>(-1);
         for(int i=0;i<kEntries;++i){
             size_t depth=0,nextSize=0;const char *next=nullptr;
             if(chessbook::BookLineMatches(chessbook::kOpeningLines[i],
                 history,prefix,&depth,&next,&nextSize)&&
-                depth>=bestDepth){best=i;bestDepth=depth;}
+                depth<bestDepth){best=i;bestDepth=depth;}
         }
         if(best>=0)return best;
         if(prefix==0)break;
