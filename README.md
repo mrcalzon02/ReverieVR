@@ -4,6 +4,12 @@
 
 # ReverieVR
 
+## Unified Android game delivery
+
+ReverieVR distributes one signed, self-updating **main Android headset APK** containing the registered native-game libraries and their approved bundled assets. VR Home launches these games locally. There is no separate game download, companion-game APK install, or downloadable game-content update requirement. The 2D Bundled Game Library is a read-only inventory; its update button uses the existing full ReverieVR APK updater. The optional phone-as-controller application remains a separate controller utility, **not** an independently updated native game.
+
+Legacy independent-game content/companion code and CI experiments remain in the source tree for archival verification only; they are not the distribution policy. Existing local player saves are preserved. Android release tags and source development both derive from the `main` branch; release tags are not separate development branches. A signed release must pass the actual game ELF and asset-package checks before publication.
+
 ReverieVR is an independent, offline-first **cross-platform VR and desktop environment**. The existing Android Daydream APK restores useful life to Daydream-era hardware without discontinued Google services; the expanded product target is a **complete native desktop ReverieVR hub** for Windows, Linux and macOS, with optional OpenXR/SteamVR operation on supported Windows/Linux headsets.
 
 **Current implementation status:** the repository is Android-first; the native desktop applications and OpenXR/SteamVR desktop mode are **planned, not shipped or hardware-validated**. The Samsung Galaxy S9 with Daydream View/controller remains the original and protected reference configuration.

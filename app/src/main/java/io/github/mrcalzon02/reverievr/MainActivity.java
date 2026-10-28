@@ -45,6 +45,8 @@ public final class MainActivity extends Activity
     implements ControllerManager.Listener,
         InputManager.InputDeviceListener,
         VrInputRouter.Listener {
+    public static final String EXTRA_CHECK_BUNDLED_UPDATE = "io.github.mrcalzon02.reverievr.CHECK_BUNDLED_UPDATE";
+
 
     private static final int CONTROLLER_PERMISSION_REQUEST = 1201;
     private static final int MEDIA_PICK_REQUEST = 1202;
@@ -190,8 +192,25 @@ public final class MainActivity extends Activity
         );
 
         if (BuildConfig.UPDATE_CHANNEL_ENABLED
+            && getIntent() != null
+            && getIntent().getBooleanExtra(EXTRA_CHECK_BUNDLED_UPDATE, false)) {
+            getIntent().removeExtra(EXTRA_CHECK_BUNDLED_UPDATE);
+            checkForUpdates(true);
+        } else if (BuildConfig.UPDATE_CHANNEL_ENABLED
             && preferences.isAutoUpdateCheckEnabled()) {
             checkForUpdates(false);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (BuildConfig.UPDATE_CHANNEL_ENABLED
+            && intent != null
+            && intent.getBooleanExtra(EXTRA_CHECK_BUNDLED_UPDATE, false)) {
+            intent.removeExtra(EXTRA_CHECK_BUNDLED_UPDATE);
+            checkForUpdates(true);
         }
     }
 
@@ -433,7 +452,7 @@ public final class MainActivity extends Activity
             this::openBluetoothSettings
         );
 
-        // Game releases are independent of the ReverieVR APK updater.
+        // Every bundled game is updated by the single ReverieVR APK updater.
         Button gameModules=findViewById(R.id.manage_game_modules_button);
         uiFeedback.bind(gameModules,()->startActivity(
             new Intent(this,GameModulesActivity.class)));

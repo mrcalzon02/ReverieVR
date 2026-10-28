@@ -1,3 +1,5 @@
+> **Superseded as a distribution channel (2026-10-28).** Native games are now included in the signed ReverieVR main APK and update only with the main app. No individual game releases or .rvpack downloads are offered to users. This empty signed catalog is retained as legacy protocol/test material and must not be advertised as an active update feed.
+
 # Signed game-update catalog — testing bootstrap
 
 This file describes the **testing** trust root, not a completed independent native game release.

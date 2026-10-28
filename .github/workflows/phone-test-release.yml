@@ -333,6 +333,9 @@ jobs:
           # Confirm the actual loadable ELF symbols, Android CPU class and
           # private dependencies. Merely finding a .so in the APK is not enough.
           python3 scripts/verify-native-module-exports.py "$APK"
+          # A single headset APK contains every registered native game.
+          # Block release rather than ask users to download game modules.
+          python3 scripts/ci/verify-unified-game-apk.py "$APK"
 
           # The Omega Front runtime must actually ship the unit/terrain PNGs.
           # Check APK payload bytes, not merely Git blob presence or a manifest.
