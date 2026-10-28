@@ -100,8 +100,15 @@ public:
         if(selected<0) {
             const Unit* u=battle.unit(occupant);
             if(!u || u->side!=Side::Hearthwell) return false;
-            selected=occupant;mode=CommandMode::Move;return true;
+            // Preserve a mode chosen from the visible tactical palette.
+            // A new battle still defaults to Move; selecting a unit does not
+            // quietly discard a deliberately chosen Repair/Attack order.
+            selected=occupant;return true;
         }
+        // Clicking the selected soldier must activate a self-targeted
+        // repair/resupply order, not silently deselect the unit.
+        if(mode==CommandMode::Repair)return battle.QueueRepair(selected);
+        if(mode==CommandMode::Resupply)return battle.QueueResupply(selected);
         if(occupant==selected) { selected=-1;return true; }
         const Unit* actor=battle.unit(selected);
         if(!actor || !actor->alive()) {selected=-1;return false;}
@@ -113,8 +120,6 @@ public:
             return battle.QueueMove(selected,cursor_x,cursor_y);
         }
         if(mode==CommandMode::Attack) return battle.QueueAttack(selected,occupant);
-        if(mode==CommandMode::Repair) return battle.QueueRepair(selected);
-        if(mode==CommandMode::Resupply) return battle.QueueResupply(selected);
         return false;
     }
 private:
