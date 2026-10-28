@@ -146,6 +146,16 @@ static void TestChessIdentityHoverAndReference() {
     }
     assert(grob);
     assert(!Matching(game).empty());
+    const auto candidates=NextMoveCounts(game);
+    assert(!candidates.empty());
+    int previousCount=candidates.front().second;
+    int totalSourceLines=0;
+    for(const auto &candidate:candidates){
+        assert(candidate.second>0&&candidate.second<=previousCount);
+        previousCount=candidate.second;
+        totalSourceLines+=candidate.second;
+    }
+    assert(totalSourceLines<=static_cast<int>(Matching(game).size()));
     const int current=Current(game);
     assert(current>=0&&current<kEntries);
     assert(Read(current).san.find("e4")!=std::string::npos);
