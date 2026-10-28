@@ -271,15 +271,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     // while the panel is visible.
     private static final int[][] PHONE_PANEL_BUTTONS = new int[29][4];
 
-    private static final int[][] WARDROBE_BUTTONS = new int[][] {
-        {120,235,485,283},{539,235,904,283},
-        {120,313,485,361},{539,313,904,361},
-        {120,391,485,439},{539,391,904,439},
-        {120,469,485,517},{539,469,904,517},
-        {120,547,485,595},{539,547,904,595},
-        {120,635,350,695},{370,635,650,695},{670,635,904,695},
-        {120,182,430,228},{452,182,754,228}
-    };
+    private static final int[][] WARDROBE_BUTTONS = WardrobePanelLayout.BUTTONS;
 
     private static final int[][] MUSIC_BUTTONS = new int[][] {
         {140, 235, 884, 300},
@@ -6497,12 +6489,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint.setColor(Color.rgb(56, 214, 200));
             paint.setTextSize(46.0f * uiScale);
             paint.setFakeBoldText(true);
-            canvas.drawText(
-                "REVERIE VR",
-                90,
-                120,
-                paint
-            );
+            // Wardrobe has a screen-specific title in this same region.
+            // Do not paint the generic brand over its header.
+            if (mode != MODE_WARDROBE) {
+                canvas.drawText(
+                    "REVERIE VR",
+                    90,
+                    120,
+                    paint
+                );
+            }
 
             paint.setFakeBoldText(false);
             paint.setTextSize(24.0f * uiScale);
@@ -8300,33 +8296,58 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void drawWardrobeMenu(Canvas canvas, Paint paint) {
-        HomeAvatarProfile p=wardrobeDraft;
+        HomeAvatarProfile profile=wardrobeDraft;
         paint.setFakeBoldText(true);
         paint.setColor(Color.rgb(89,228,217));
-        paint.setTextSize(32f*uiScale);
-        canvas.drawText("THE REVERIE WARDROBE",90,98,paint);
+        drawWardrobeFittedText(canvas,paint,"THE REVERIE WARDROBE",
+            90f,100f,675f,32f*uiScale,36f);
         paint.setFakeBoldText(false);
         paint.setColor(Color.rgb(176,196,211));
-        paint.setTextSize(18f*uiScale);
-        canvas.drawText("48 identities / 24 outfit families / all body types",90,129,paint);
-        canvas.drawText("SELECT • Preview in mirror • SAVE commits / BACK discards",90,155,paint);
-        canvas.drawText("Page "+(wardrobePage+1)+"/"+HomeAvatarProfile.PAGE_NAMES.length+
-            " - "+HomeAvatarProfile.PAGE_NAMES[wardrobePage],90,177,paint);
-        drawWardrobeThumbnail(canvas,paint,p);
+        drawWardrobeFittedText(canvas,paint,
+            HomeAvatarProfile.THEMES.length+" identities / "
+                +HomeAvatarProfile.OUTFITS.length+" outfit families / all body types",
+            90f,132f,675f,18f*uiScale,18f);
+        drawWardrobeFittedText(canvas,paint,
+            "SELECT • Preview in mirror • SAVE commits / BACK discards",
+            90f,157f,675f,18f*uiScale,17f);
+        drawWardrobeFittedText(canvas,paint,
+            "Page "+(wardrobePage+1)+"/"+HomeAvatarProfile.PAGE_NAMES.length
+                +" - "+HomeAvatarProfile.PAGE_NAMES[wardrobePage],
+            90f,WardrobePanelLayout.PAGE_LABEL_BASELINE,675f,18f*uiScale,17f);
+        drawWardrobeThumbnail(canvas,paint,profile);
+
         String[] labels=new String[WARDROBE_BUTTONS.length];
         for(int i=0;i<5;i++) {
             int field=HomeAvatarProfile.PAGE_FIELDS[wardrobePage][i];
-            String name=HomeAvatarProfile.FIELD_NAMES[field];
+            String value=HomeAvatarProfile.FIELD_NAMES[field]+": "+profile.fieldLabel(field);
             paint.setColor(Color.rgb(238,225,191));
-            paint.setTextSize(18f*uiScale);
-            canvas.drawText(name+": "+p.fieldLabel(field),125,229+i*78,paint);
+            paint.setFakeBoldText(false);
+            paint.setTextSize(Math.min(22f*uiScale,24f));
+            float labelY=WardrobePanelLayout.fieldLabelBaseline(
+                i,paint.ascent(),paint.descent());
+            drawWardrobeFittedText(canvas,paint,value,
+                WardrobePanelLayout.FIELD_LABEL_LEFT,labelY,
+                WardrobePanelLayout.FIELD_LABEL_RIGHT-WardrobePanelLayout.FIELD_LABEL_LEFT,
+                22f*uiScale,24f);
             labels[i*2]="PREVIOUS";
             labels[i*2+1]="NEXT";
         }
-        labels[10]="APPLY + SAVE";labels[11]="BACK / DISCARD";
+        labels[10]="APPLY + SAVE";
+        labels[11]="BACK / DISCARD";
         labels[12]="SURPRISE ME";
-        labels[13]="PREVIOUS PAGE";labels[14]="NEXT PAGE";
+        labels[13]="PREVIOUS PAGE";
+        labels[14]="NEXT PAGE";
         drawButtons(canvas,paint,labels,WARDROBE_BUTTONS);
+    }
+
+    /** Keep headings and long selections inside their allotted visual columns. */
+    private static void drawWardrobeFittedText(Canvas canvas,Paint paint,
+        String value,float x,float y,float maxWidth,float preferred,float limit) {
+        paint.setTextSize(Math.min(preferred,limit));
+        float width=paint.measureText(value);
+        if(width>maxWidth && width>0f)
+            paint.setTextSize(paint.getTextSize()*maxWidth/width);
+        canvas.drawText(value,x,y,paint);
     }
 
     private void drawWardrobeThumbnail(Canvas canvas,Paint paint,HomeAvatarProfile p) {
@@ -9235,9 +9256,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
             paint.setColor(highContrast
                 ? ShellContrastPalette.foreground(enabled, focused)
                 : enabled ? Color.WHITE : Color.rgb(178, 188, 200));
-            paint.setTextSize(24.0f * uiScale);
+            float buttonFontSize=24.0f*uiScale;
+            if (mode == MODE_WARDROBE) {
+                // Large UI scales must not clip the compact two-column rows.
+                buttonFontSize=Math.min(buttonFontSize,
+                    Math.min(28f,(rect[3]-rect[1])*.66f));
+            }
+            paint.setTextSize(buttonFontSize);
             paint.setFakeBoldText(focused);
             float textWidth = paint.measureText(labels[index]);
+            if (mode == MODE_WARDROBE && textWidth>rect[2]-rect[0]-26f) {
+                paint.setTextSize(buttonFontSize*
+                    (rect[2]-rect[0]-26f)/textWidth);
+                textWidth=paint.measureText(labels[index]);
+            }
             float x = rect[0] + ((rect[2] - rect[0]) - textWidth) * 0.5f;
             float y = rect[1] + ((rect[3] - rect[1]) * 0.5f)
                 - ((paint.ascent() + paint.descent()) * 0.5f);
