@@ -2,7 +2,7 @@
 
 **Authority:** Game design specification, revision 1, 2026-10-28.  
 **Canonical game name:** **Sitka**. Never add a subtitle.  
-**Project:** ReverieVR native-game family, prospective game identifier \`sitka\`.  
+**Project:** ReverieVR native-game family, prospective game identifier `sitka`.  
 **Related documents:** [Sitka canonical brief](SITKA.md), [Sitka environment and editor pipeline](SITKA_EDITOR_PIPELINE.md), [ReverieVR platform expansion](DESKTOP_PLATFORM_EXPANSION.md).  
 **Delivery policy:** **One main ReverieVR Android APK**, with the finished native Sitka game and its licensed runtime data bundled into the host. Do not resurrect independently downloadable native-game APKs or mandatory content packs. Later desktop platforms ship their own complete platform-native packages.  
 **Implementation state:** This document is a **design specification**, not a declaration that a city simulation or playable Sitka game exists. The existing editor imports Beckenburg's Java 17 weather/water/editor sources; the C++ source-only terrain, native environment adapter, and Mesa/NDK tests exist. Real surveyed city geometry, runtime weather/water rendering, geography, walks, boats, fisheries and reference-device acceptance remain pending.
@@ -49,7 +49,7 @@ Authoritative source entry must record provider, dataset name, retrieval timesta
 
 Use double-precision geodetic (lat/lon in WGS84) as retained metadata. Choose an appropriate **projected meter CRS** for each build and normalize vertical datum prior to mixing elevations/tides. Document the projection in build metadata; never hard-code guessed Sitka asset coordinates. Convert to right-handed local scene meters: **+X east, +Y up, +Z north**, using a stable origin per regional world cell. CPU stores global projected positions in doubles; GPU uses floating **origin-rebased** local coordinates to avoid jitter. Preserve exact boundary edge samples on shared tiles. The world and chart must round-trip an anchor within the source's documented survey tolerance.
 
-Data uncertainty is a first-class field: \`surveyed\`, \`community_mapped\`, \`field_authored\`, \`procedural_infill\`, or \`estimated\`. A landmark should never appear as a confirmed surveyed reconstruction when it is a generic approximation. Buildings, piers and road centerlines keep immutable geographic anchor IDs and source references. Procedural seeds may affect paint, vegetation and small props; **they must not move streets, bridges, shoreline or building footprints from their anchored locations**.
+Data uncertainty is a first-class field: `surveyed`, `community_mapped`, `field_authored`, `procedural_infill`, or `estimated`. A landmark should never appear as a confirmed surveyed reconstruction when it is a generic approximation. Buildings, piers and road centerlines keep immutable geographic anchor IDs and source references. Procedural seeds may affect paint, vegetation and small props; **they must not move streets, bridges, shoreline or building footprints from their anchored locations**.
 
 ### 2.2 Coverage tiers
 
@@ -67,24 +67,24 @@ Each zone declares a polygon boundary, road length represented, buildings matche
 
 | Source system | What it actually contributes | Required Sitka adaptation |
 | --- | --- | --- |
-| Malefic \`CityLayout\` | Connected road graph, parcel footprints, doorway and collision identity | Replace fictional seeded road creation with imported real street/footpath graph, surveyed footprints and special grade/bridge/harbor nodes; reuse integrity tests |
-| Malefic \`UrbanTileAssembler\` | Actual modular road, paving, wall, doorway, roof and prop placements | Drive instances from Sitka road classifications and actual building polygons/terrain grades; derive façade/roof from surveyed attributes and local style archetypes |
-| Malefic \`UrbanInstanceBatches\` | One immutable source mesh per model, packed transforms for repeated geometry | Bake arrays per loaded Sitka chunk; use verified GLES2-friendly static mesh batches on S9; no unsupported GLES3 instanced-draw assumption |
-| Malefic \`CityPlateTerrain\` | City foundations, smooth outer terrain transitions, road-aligned exits | Fit surveyed road height profiles and building pads into USGS topography without artificial flat city islands or retaining-wall seams |
-| Malefic \`ContinentLayout\`/\`ContinentZones\` and performance docs | Sector indexing, preloading, deterministic generation/cache keys and visibility budgets | Replace invented geography with region/quadtree tile IDs, source hashes and near-camera streaming; reserve outskirts for lower LOD |
-| Malefic \`KenneyCityAssemblyTest\`, \`UrbanInstanceBatchesTest\`, city visual gates | Geometry/collision coherence and source-instance repeatability | Add Sitka-specific road-connection, frontage, coastal, height, entrance, collision, GPU and readability tests |
-| Beckenburg \`EditorProject\` and \`EditorPalettePanel\` | Java 17 editor hierarchy/palette and authoring tools | Add authentic georeferenced city, building, road, water and weather tabs rather than duplicating/rewriting editor systems |
-| Beckenburg \`dev.mrcalzon.water\` | \`WaterDocument\`, \`WaterEditorModel\`, \`WaterCanvas\`, \`WaterEditorPanel\`, independent \`WaterModule\` | Keep genuine .water authoring, extend export to coastal polygons/sea fields and use a bounded native visual/simulation adapter |
-| Beckenburg shared \`dev.mrcalzon.weather.WeatherModule\` | Weather state machine/presets, wind, sky, wetness/audio semantics | Keep the Java editor behavior; export deterministic wind/precipitation/fog/time presets to the native C++ runtime and reconcile with tides |
-| Malefic \`VeilWeather\` | Demonstrates same shared Java 17 weather library in another game | Follow compatibility boundary, not game-specific host/reflection/JAR mechanics |
+| Malefic `CityLayout` | Connected road graph, parcel footprints, doorway and collision identity | Replace fictional seeded road creation with imported real street/footpath graph, surveyed footprints and special grade/bridge/harbor nodes; reuse integrity tests |
+| Malefic `UrbanTileAssembler` | Actual modular road, paving, wall, doorway, roof and prop placements | Drive instances from Sitka road classifications and actual building polygons/terrain grades; derive façade/roof from surveyed attributes and local style archetypes |
+| Malefic `UrbanInstanceBatches` | One immutable source mesh per model, packed transforms for repeated geometry | Bake arrays per loaded Sitka chunk; use verified GLES2-friendly static mesh batches on S9; no unsupported GLES3 instanced-draw assumption |
+| Malefic `CityPlateTerrain` | City foundations, smooth outer terrain transitions, road-aligned exits | Fit surveyed road height profiles and building pads into USGS topography without artificial flat city islands or retaining-wall seams |
+| Malefic `ContinentLayout`/`ContinentZones` and performance docs | Sector indexing, preloading, deterministic generation/cache keys and visibility budgets | Replace invented geography with region/quadtree tile IDs, source hashes and near-camera streaming; reserve outskirts for lower LOD |
+| Malefic `KenneyCityAssemblyTest`, `UrbanInstanceBatchesTest`, city visual gates | Geometry/collision coherence and source-instance repeatability | Add Sitka-specific road-connection, frontage, coastal, height, entrance, collision, GPU and readability tests |
+| Beckenburg `EditorProject` and `EditorPalettePanel` | Java 17 editor hierarchy/palette and authoring tools | Add authentic georeferenced city, building, road, water and weather tabs rather than duplicating/rewriting editor systems |
+| Beckenburg `dev.mrcalzon.water` | `WaterDocument`, `WaterEditorModel`, `WaterCanvas`, `WaterEditorPanel`, independent `WaterModule` | Keep genuine .water authoring, extend export to coastal polygons/sea fields and use a bounded native visual/simulation adapter |
+| Beckenburg shared `dev.mrcalzon.weather.WeatherModule` | Weather state machine/presets, wind, sky, wetness/audio semantics | Keep the Java editor behavior; export deterministic wind/precipitation/fog/time presets to the native C++ runtime and reconcile with tides |
+| Malefic `VeilWeather` | Demonstrates same shared Java 17 weather library in another game | Follow compatibility boundary, not game-specific host/reflection/JAR mechanics |
 
 **Important transfer correction:** Malefic's Java2D city renderer is **not** proof of hardware GPU instancing. The original 1×1/1×2 Kenney mesh scale must be respected: do not stretch source roof or road modules 6× just to cover a macroplot. Keep geometry unique/cached and per-chunk transforms immutable; choose **premerged static meshes and VBO/EBO batches on GLES2**, and evaluate true instancing only on renderers/API versions where supported. Do not copy Malefic's bleak post-apocalyptic hazard/resource/safe plots into modern Sitka: reuse the shape/occupancy/road tools, define new civic/coastal archetypes.
 
 ### 3.1 Verified existing Sitka integration and unimplemented gap
 
-- **Existing editor, in source:** \`tools/sitka/SitkaEditor.java\` imports \`WaterCanvas\`, \`WaterDocument\`, \`WaterEditorModel\`, \`WaterEditorPanel\`, \`WaterPlacement\`, \`WeatherModule\`, \`WeatherType\`, \`WeatherView\`, \`EditorPalettePanel\` and \`EditorProject\`. \`tools/sitka/launch-editor.sh\` compiles against real, checked-out Beckenburg Java 17 sources; no forked fake editor.
-- **Existing native adapter, in source:** \`app/src/main/jni/native/sitka_environment.h\` parses Beckenburg v1 Sitka \`.water\` settings and editor \`weather/sitka.properties\`, computes deterministic wave heights and mapped weather parameters. It **does not yet render complete ocean optics or a live weather scene**.
-- **Existing native terrain source proof:** \`sitka_terrain_mesh.h\`, \`sitka_terrain_gl.h\`, \`sitka_terrain_module.cpp\` and \`scripts/sitka/build_coast.py\`. The .sitkam reader and real Mesa stereo test exist; the module is **not registered as playable** and licensed Sitka tiles are not included.
+- **Existing editor, in source:** `tools/sitka/SitkaEditor.java` imports `WaterCanvas`, `WaterDocument`, `WaterEditorModel`, `WaterEditorPanel`, `WaterPlacement`, `WeatherModule`, `WeatherType`, `WeatherView`, `EditorPalettePanel` and `EditorProject`. `tools/sitka/launch-editor.sh` compiles against real, checked-out Beckenburg Java 17 sources; no forked fake editor.
+- **Existing native adapter, in source:** `app/src/main/jni/native/sitka_environment.h` parses Beckenburg v1 Sitka `.water` settings and editor `weather/sitka.properties`, computes deterministic wave heights and mapped weather parameters. It **does not yet render complete ocean optics or a live weather scene**.
+- **Existing native terrain source proof:** `sitka_terrain_mesh.h`, `sitka_terrain_gl.h`, `sitka_terrain_module.cpp` and `scripts/sitka/build_coast.py`. The .sitkam reader and real Mesa stereo test exist; the module is **not registered as playable** and licensed Sitka tiles are not included.
 - **Next real integration:** Add city-footprint and road source ingest; layer roads/buildings/terrain co-registration; compile shared water/weather presets and coastal data into runtime manifests; implement actual GPU water, rain/fog/sky, wet ground, fishing and city walk; validate on S9. An editor control or a serialized parameter by itself does not count as rendered behavior.
 
 ### 3.2 Module procurement / upgrade strategy
@@ -151,11 +151,11 @@ Variations must be deterministic with source-preserving seeds. A flat generic �
 
 ## 6. Weather module: actual state affecting every city and marine subsystem
 
-**Canonical authoring owner:** Beckenburg Java17 \`dev.mrcalzon.weather.WeatherModule\`, the shared weather stack also consumed by Malefic Veil. **Current editor:** SitkaEditor already imports the real module and serializes \`weather/sitka.properties\`. **Current runtime:** C++ \`sitka_environment.h\` recognizes nine named conditions and derives rain/snow/fog/wind parameters; this is presently data interpretation, not a finished GPU weather system.
+**Canonical authoring owner:** Beckenburg Java17 `dev.mrcalzon.weather.WeatherModule`, the shared weather stack also consumed by Malefic Veil. **Current editor:** SitkaEditor already imports the real module and serializes `weather/sitka.properties`. **Current runtime:** C++ `sitka_environment.h` recognizes nine named conditions and derives rain/snow/fog/wind parameters; this is presently data interpretation, not a finished GPU weather system.
 
 ### 6.1 Required weather adapter
 
-Create and version an offline \`SitkaEnvironmentSnapshot\` / native \`WeatherState\` with simulated time/day/season, clear/overcast/drizzle/rain/heavy-rain/fog/dense-fog/snow/storm, wind speed/heading/gust, precipitation, temperature, humidity/wetness and visibility bands. Native C++ advances a deterministic simulation **once** per tick and feeds consistent immutable frame-state to sky, atmosphere, audio, surface wetness, foliage and ocean. Keep per-zone microclimate options limited and deterministic.
+Create and version an offline `SitkaEnvironmentSnapshot` / native `WeatherState` with simulated time/day/season, clear/overcast/drizzle/rain/heavy-rain/fog/dense-fog/snow/storm, wind speed/heading/gust, precipitation, temperature, humidity/wetness and visibility bands. Native C++ advances a deterministic simulation **once** per tick and feeds consistent immutable frame-state to sky, atmosphere, audio, surface wetness, foliage and ocean. Keep per-zone microclimate options limited and deterministic.
 
 **Functional effects:** soft rain and rooftop/drain drips; wet pier reflections simulated cheaply; intermittent canopy drops; fog that occludes distant buildings while preserving local safe navigation; wind-driven conifer movement and flags; weather-readable sky/overcast lighting; gull/ambient sound adjustments; rain intensity dampens some footstep/boat cues; storms produce safe warning and optional shelter/return. Time-of-day changes practical signage/window lights, but no forced curfew.
 
@@ -167,7 +167,7 @@ Validate editor profile round-trip, supported modes, wind heading radians/degree
 
 ## 7. Water module, tide, bathymetry and two-sided shore gameplay
 
-**Canonical authoring owner:** Beckenburg \`water-module/\`, its genuine \`WaterDocument\`/editor and \`WaterModule\` behavior. Its principles include independently scrolling/pixelated layers, bounded triangular waves, underwater color absorption, shoreline foam/run-up, optional refraction/Fresnel approximation and dry hull/shore overlap. **Current Sitka native adapter** parses .water placement/wave parameters and computes bounded sample heights; it must become real visual/simulation water rather than a static plane.
+**Canonical authoring owner:** Beckenburg `water-module/`, its genuine `WaterDocument`/editor and `WaterModule` behavior. Its principles include independently scrolling/pixelated layers, bounded triangular waves, underwater color absorption, shoreline foam/run-up, optional refraction/Fresnel approximation and dry hull/shore overlap. **Current Sitka native adapter** parses .water placement/wave parameters and computes bounded sample heights; it must become real visual/simulation water rather than a static plane.
 
 ### 7.1 Functional ocean surfaces
 
@@ -249,29 +249,29 @@ Start with a functional rod, legal-to-play starter skiff, a basic room and abili
 
 ## 11. Saving, world state and content authority
 
-Per-game save includes \`save_schema\`, world data revision, seed/clock/weather/tide state, player chart position, last safe grounded position, visited zones, known waypoints, unlocked journal pages, collections, avatar customization reference, fishing gear, currency, vessel components, home/dock interior changes and optional quests. All persisted game coordinate values are stable world anchors, not transient origin-rebased GPU floats.
+Per-game save includes `save_schema`, world data revision, seed/clock/weather/tide state, player chart position, last safe grounded position, visited zones, known waypoints, unlocked journal pages, collections, avatar customization reference, fishing gear, currency, vessel components, home/dock interior changes and optional quests. All persisted game coordinate values are stable world anchors, not transient origin-rebased GPU floats.
 
 Migrations preserve saves across geographic revisions: remap moved waypoint/building ID via an explicit table; if a building has changed, return player to nearest safe public path and retain collection/equipment. Never wipe saves on hub APK update. Offline play, map journal and all purchased features must be functional without the Internet. Diagnose incomplete geo tiles explicitly; no map that silently changes coastline because a network request failed.
 
-**Module integration:** one native \`sitka\` library registered in the existing ReverieVR in-process host **only after** a functioning playable slice; native game code, geo-derived mesh chunks, audio, readable font atlas and permitted models packaged in one signed ReverieVR main APK. No per-game self-updater, installer or independent Android APK release. Keep test-only authoring tools/dependencies out of runtime APK.
+**Module integration:** one native `sitka` library registered in the existing ReverieVR in-process host **only after** a functioning playable slice; native game code, geo-derived mesh chunks, audio, readable font atlas and permitted models packaged in one signed ReverieVR main APK. No per-game self-updater, installer or independent Android APK release. Keep test-only authoring tools/dependencies out of runtime APK.
 
 ## 12. Exact technical package proposal (not yet implemented)
 
-Authoring layout should remain under \`scripts/sitka/\`, \`tools/sitka/\`, and \`docs/project/\`. Proposed later files:
+Authoring layout should remain under `scripts/sitka/`, `tools/sitka/`, and `docs/project/`. Proposed later files:
 
-- \`scripts/sitka/import_city.py\`: authorized GIS/OSM vector import, CRS/footprint/road validation, source ledger.
-- \`scripts/sitka/bake_city.py\`: road and city-height alignment, parcel/roof/door generation, chunking, deterministic props and accessible navgraph.
-- \`scripts/sitka/bake_ocean.py\`: native coastal polygon/bathymetry/tide masks and small authoring overrides from genuine .water documents.
-- \`scripts/sitka/export_weather.py\`: shared WeatherModule profile-to-native stable state contract and conformance fixtures.
-- \`scripts/sitka/verify_city.py\`: cross-layer identity, topology, clearance, license, LOD and deterministic binary validators.
-- \`app/src/main/jni/native/sitka_city_*.h/.cpp\`: runtime city layers, visibility, batching, walk/collision and landmark/interaction geometry.
-- \`app/src/main/jni/native/sitka_water_*.h/.cpp\`: native water surface renderer, tide, shore mask, fishing intersections and debug counters.
-- \`app/src/main/jni/native/sitka_weather_*.h/.cpp\`: native weather tick/sky/precipitation/fog/audio signals, derived from same authored presets.
-- \`app/src/main/jni/native/sitka_fishing_*.h/.cpp\`, \`sitka_town_*.h/.cpp\`, \`sitka_*.save\`: deterministic gameplay and schema/versioned save system.
+- `scripts/sitka/import_city.py`: authorized GIS/OSM vector import, CRS/footprint/road validation, source ledger.
+- `scripts/sitka/bake_city.py`: road and city-height alignment, parcel/roof/door generation, chunking, deterministic props and accessible navgraph.
+- `scripts/sitka/bake_ocean.py`: native coastal polygon/bathymetry/tide masks and small authoring overrides from genuine .water documents.
+- `scripts/sitka/export_weather.py`: shared WeatherModule profile-to-native stable state contract and conformance fixtures.
+- `scripts/sitka/verify_city.py`: cross-layer identity, topology, clearance, license, LOD and deterministic binary validators.
+- `app/src/main/jni/native/sitka_city_*.h/.cpp`: runtime city layers, visibility, batching, walk/collision and landmark/interaction geometry.
+- `app/src/main/jni/native/sitka_water_*.h/.cpp`: native water surface renderer, tide, shore mask, fishing intersections and debug counters.
+- `app/src/main/jni/native/sitka_weather_*.h/.cpp`: native weather tick/sky/precipitation/fog/audio signals, derived from same authored presets.
+- `app/src/main/jni/native/sitka_fishing_*.h/.cpp`, `sitka_town_*.h/.cpp`, `sitka_*.save`: deterministic gameplay and schema/versioned save system.
 
 **Example dataset structures (illustrative schema, not implementation):**
 
-\`\`\`json
+```json
 {
   "schema": 1,
   "world": "sitka",
@@ -286,7 +286,7 @@ Authoring layout should remain under \`scripts/sitka/\`, \`tools/sitka/\`, and \
   "lod": ["near", "middle", "far"],
   "access": "public-path-graph-v1"
 }
-\`\`\`
+```
 
 Production schema must replace fake zero origin and placeholders with data-derived values and checksum-verified references; no dummy city asset can ship as geography.
 
@@ -298,8 +298,8 @@ Expand the **existing** Beckenburg-based SitkaEditor rather than creating a seco
 2. **City assembler:** plot/roof archetype inspector, source mesh selection, facade variation, documented measured/estimated attributes, entrances/stairs, real slope/foundation placement.
 3. **Interior builder:** floor/door/interaction nodes linked to generated exterior, walkable collision tests and private-space exclusion.
 4. **Terrain tool:** height-field seam inspection, road grade heatmap, foundation clipping and erosion/shore transitions; keep original DEM in provenance.
-5. **Water tool:** **actual imported** \`WaterCanvas/WaterEditorModel/WaterEditorPanel/WaterDocument\`; augment with coastal masks, tide/bathymetry and dock contact, rather than replacing the authentic controls with dummy UI.
-6. **Weather tool:** **actual imported** \`WeatherModule/WeatherType/WeatherView\`; validate native snapshots, sea/weather coupling, preset and day/night preview with honest renderer distinctions.
+5. **Water tool:** **actual imported** `WaterCanvas/WaterEditorModel/WaterEditorPanel/WaterDocument`; augment with coastal masks, tide/bathymetry and dock contact, rather than replacing the authentic controls with dummy UI.
+6. **Weather tool:** **actual imported** `WeatherModule/WeatherType/WeatherView`; validate native snapshots, sea/weather coupling, preset and day/night preview with honest renderer distinctions.
 7. **Asset source library:** approved Kenney and project-generated components, per-asset license/hash, selected city-specific authoring overrides, readable fonts.
 8. **Validation/export:** coverage dashboard, missing sources, visual proxy vs real mesh, unreachable doors, broken road graph, water-through-land, duplicate surfaces, naming/content tests and reproducible Android exports.
 
