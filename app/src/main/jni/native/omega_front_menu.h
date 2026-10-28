@@ -9,23 +9,29 @@ namespace reverie { namespace omega {
 
 // Menus are deliberately not part of the campaign checkpoint: reopening the
 // module must reach a safe title screen, never fire an order on load.
-enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, Playing };
-enum class MenuCommand : uint8_t { None, Resume, StartNew };
+enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, FieldOrders, TacticalOrders, Playing };
+enum class MenuCommand : uint8_t { None, Resume, StartNew, SetFieldAction, SetCommandMode };
 
 class Menu {
 public:
     MenuScreen screen=MenuScreen::Title;
     int selected=0;
+    int field_choice=0,mode_choice=0;
     MenuScreen return_to=MenuScreen::Title;
 
-    static float ButtonY(int index) { return .42f-.225f*index; }
+    static float ButtonY(int index,bool compact=false) {
+        return compact?.585f-.187f*index:.42f-.225f*index;
+    }
     static bool MenuShortcut(float x,float y) {
         return x>=.72f && x<=1.07f && y>=.965f && y<=1.13f;
+    }
+    static bool OrderShortcut(float x,float y) {
+        return x>=-1.07f && x<=-.72f && y>=.965f && y<=1.13f;
     }
     static int ButtonAt(float x,float y,int count) {
         if(std::fabs(x)>.775f)return -1;
         for(int i=0;i<count;++i)
-            if(std::fabs(y-ButtonY(i))<=.095f)return i;
+            if(std::fabs(y-ButtonY(i,count>4))<=(count>4?.072f:.095f))return i;
         return -1;
     }
     int Count(bool has_campaign) const {
@@ -35,6 +41,8 @@ public:
         case MenuScreen::Controls: return 1;
         case MenuScreen::ConfirmNew: return 2;
         case MenuScreen::Pause: return 4;
+        case MenuScreen::FieldOrders: return 8;
+        case MenuScreen::TacticalOrders: return 4;
         case MenuScreen::Playing: return 0;
         }
         return 0;
@@ -58,6 +66,15 @@ public:
             const char *v[]={"RESUME","CAMPAIGN BRIEFING","CONTROLS","MAIN MENU"};
             return index>=0&&index<4?v[index]:"";
         }
+        case MenuScreen::FieldOrders: {
+            const char *v[]={"DEPLOY","FORAGE / CONVOY","RECRUIT","REPAIR / SECURE",
+                             "WAIT ONE DAY","SCOUT","PARLEY","ACCORD"};
+            return index>=0&&index<8?v[index]:"";
+        }
+        case MenuScreen::TacticalOrders: {
+            const char *v[]={"MOVE","ATTACK","REPAIR SELF","RESUPPLY SELF"};
+            return index>=0&&index<4?v[index]:"";
+        }
         case MenuScreen::Playing: return "";
         }
         return "";
@@ -65,6 +82,12 @@ public:
     void OpenPause(bool primary,bool secondary) {
         if(screen!=MenuScreen::Playing)return;
         Enter(MenuScreen::Pause);
+        primary_down_=primary;secondary_down_=secondary;
+    }
+    void OpenOrders(bool tactical,int current,bool primary,bool secondary) {
+        if(screen!=MenuScreen::Playing)return;
+        Enter(tactical?MenuScreen::TacticalOrders:MenuScreen::FieldOrders);
+        selected=std::max(0,std::min(tactical?3:7,current));
         primary_down_=primary;secondary_down_=secondary;
     }
     void SyncButtons(bool primary,bool secondary) {
@@ -122,6 +145,14 @@ public:
             if(selected==0){Enter(MenuScreen::Playing);return MenuCommand::StartNew;}
             Enter(MenuScreen::Campaign);
             break;
+        case MenuScreen::FieldOrders:
+            field_choice=selected;
+            Enter(MenuScreen::Playing);
+            return MenuCommand::SetFieldAction;
+        case MenuScreen::TacticalOrders:
+            mode_choice=selected;
+            Enter(MenuScreen::Playing);
+            return MenuCommand::SetCommandMode;
         case MenuScreen::Pause:
             if(selected==0){Enter(MenuScreen::Playing);return MenuCommand::Resume;}
             if(selected==1)Enter(MenuScreen::Campaign);
@@ -143,6 +174,8 @@ private:
         case MenuScreen::Controls:Enter(return_to);break;
         case MenuScreen::ConfirmNew:Enter(MenuScreen::Campaign);break;
         case MenuScreen::Pause:Enter(MenuScreen::Playing);break;
+        case MenuScreen::FieldOrders:Enter(MenuScreen::Playing);break;
+        case MenuScreen::TacticalOrders:Enter(MenuScreen::Playing);break;
         case MenuScreen::Playing:break;
         }
     }
