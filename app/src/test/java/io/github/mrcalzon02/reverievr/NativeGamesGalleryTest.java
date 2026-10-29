@@ -49,10 +49,17 @@ public class NativeGamesGalleryTest {
     }
     @Test public void picturedMenusHaveOneUniqueCorrectlyMappedAtlasCell() {
         java.util.Set<String> seen=new java.util.HashSet<>();
-        for(int i=0;i<7;i++) {
-            GameModuleRegistry.Entry game=GameModuleRegistry.GAMES[i];
-            int[] c=NativeGamesGallery.atlasCell(game.id);
-            assertNotNull(game.id,c);
+        String[] pictured={
+            "breakwater-battery","between-deliveries-red-ledger",
+            "gumball-armada","iron-sight-forward-detachment",
+            "ministry-lantern-desk","omega-front",
+            "procedural-test-chamber"
+        };
+        for(int i=0;i<pictured.length;i++) {
+            String id=pictured[i];
+            assertNotNull(GameModuleRegistry.find(id));
+            int[] c=NativeGamesGallery.atlasCell(id);
+            assertNotNull(id,c);
             assertTrue(c[0]>=0 && c[0]+NativeGamesGallery.ATLAS_CELL_WIDTH<=336);
             assertTrue(c[1]>=0 && c[1]+NativeGamesGallery.ATLAS_CELL_HEIGHT<=230);
             assertTrue(seen.add(c[0]+":"+c[1]));
