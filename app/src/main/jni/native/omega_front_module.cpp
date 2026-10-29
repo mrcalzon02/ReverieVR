@@ -217,7 +217,7 @@ void DrawContinent(State *s){
             case game::ContinentTerrain::Badlands:
                 texture=omega_art::MapRusted;r=.42f;g=.29f;b=.24f;break;
             case game::ContinentTerrain::Highland:
-                texture=omega_art::MapScree;r=.38f;g=.42f;b=.44f;break;
+                texture=omega_art::Wall;r=.38f;g=.42f;b=.44f;break;
             case game::ContinentTerrain::Snow:
                 texture=omega_art::MapTundra;r=.70f;g=.75f;b=.80f;break;
             case game::ContinentTerrain::Ruins:

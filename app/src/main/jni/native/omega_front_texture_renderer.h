@@ -32,7 +32,7 @@ enum TextureId { Soil=0, Road, Rubble, Wall, Water,
                  MapSalt=RpgCc0First+64, MapGravel, MapSteppe,
                  MapMud, MapRusted, MapEmbers, MapTundra, MapPines,
                  MapFord, MapRiverbank, MapGravelRoad, MapRubble,
-                 MapOrchard, MapScree, Count };
+                 MapOrchard, Count };
 // Ground then environmental props then combat units. Flat 2D sprite planes.
 constexpr int kGroundCount=13;
 constexpr int kTerrainCount=19;
@@ -160,8 +160,7 @@ static const char *const kPaths[Count]={
     "native/omega-front/terrain/riverbank_diagonal.png",
     "native/omega-front/terrain/gravel_road_ns.png",
     "native/omega-front/terrain/rubble_lot.png",
-    "native/omega-front/terrain/orchard_rows.png",
-    "native/omega-front/terrain/rocky_scree.png",
+    "native/omega-front/terrain/orchard_rows.png"
 };
 class SpriteRenderer {
 public:
