@@ -32,12 +32,12 @@ def main():
         paths.add(path)
         factions[faction] = factions.get(faction, 0) + 1
         check_png(path, (256, 256), icon["sha256"])
-    if factions != {"f06": 20, "f07": 20, "f08": 20, "f09": 20}:
+    if factions != {"f06": 20, "f07": 20, "f08": 20, "f09": 20, "f10": 20}:
         raise ValueError(f"Incomplete faction icons: {factions}")
     for atlas in c["atlases"]:
         check_png(atlas["path"], (1280, 1024))
     check_png(c["style_guide"], (1536, 1024))
-    print("Omega Front artwork OK: 80 square PNGs; 4 atlases; 1 style guide")
+    print("Omega Front artwork OK: 100 square PNGs; 5 atlases; 1 style guide")
 
 if __name__ == "__main__":
     main()

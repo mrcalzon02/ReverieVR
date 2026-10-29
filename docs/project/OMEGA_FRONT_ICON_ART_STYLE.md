@@ -23,6 +23,8 @@ F07 Ashen Crown: feudal levy soldiers, knights, banner marshals, trebuchet carts
 F08 Copper Steppe Confederation: mounted scouts, chariots, bronze shields, slingers, herders and mobile camps.
 F09 Brassline Republic: early-industrial trench riflemen, barrage crews, riveted armored railcars, sappers and gas-mask corps.
 
+F10 The Farwake: pearl-white/cyan distant-future refugee precision infantry, narrow triangular drones, compact specialist and medical equipment; 20 square painted portraits staged for menu use.
+
 ## Acceptance check
 1. Confirm every exported gameplay asset satisfies `width == height == 256`.
 2. Confirm each source has consistent framing and no in-image caption strips.

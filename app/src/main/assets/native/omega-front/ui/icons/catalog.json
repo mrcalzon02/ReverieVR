@@ -3,7 +3,7 @@
   "app": "ReverieVR",
   "game": "Omega Front",
   "role": "menu portrait art, NOT 64px map sprites",
-  "texture_policy": "load-on-demand; do not eagerly upload all 80 256px textures",
+  "texture_policy": "Menu portraits loaded on demand; never preload all 100 icons as battle sprites",
   "icons": [
     {
       "faction_id": "F06",
@@ -484,6 +484,126 @@
       "role": "munition_wagon",
       "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_20_munition_wagon.png",
       "sha256": "baa04ae0b81970a57c43a331333e079594cf165e5d4353fa90b97bb7c8c8abd5"
+    },
+    {
+      "faction_id": "F10",
+      "role": "ghostline_sharpshooter",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_01_ghostline_sharpshooter.png",
+      "sha256": "dbc68f5f9ca6164ae5acaf54b862ae0387fb4c1696a91e608d611e66dd3d594b"
+    },
+    {
+      "faction_id": "F10",
+      "role": "mote_drone",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_02_mote_drone.png",
+      "sha256": "da9278f3a2c1fe6955bf5f8913d2d9a2e77d89af32601d62db8dcd23c4b011e7"
+    },
+    {
+      "faction_id": "F10",
+      "role": "vector_rifle_team",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_03_vector_rifle_team.png",
+      "sha256": "13754af12d676f9dbddb23ed00c4aadd12fd8c4d2b89bce59a043ed5f5956066"
+    },
+    {
+      "faction_id": "F10",
+      "role": "quiet_carrier",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_04_quiet_carrier.png",
+      "sha256": "a08c124da9a6a62c45180a40ea2df7e938032f865060a69fa91f6554aef488d1"
+    },
+    {
+      "faction_id": "F10",
+      "role": "archive_medic",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_05_archive_medic.png",
+      "sha256": "604d9a2723d9df7e3b56cd5212a8fcf630ee48d0d3edef7c0cd40cdd859aa18a"
+    },
+    {
+      "faction_id": "F10",
+      "role": "ghostline_observer",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_06_ghostline_observer.png",
+      "sha256": "62efa394c707c45be8623e2e9bd5ced35e4733cd8b7f6447c101be6f871f43bf"
+    },
+    {
+      "faction_id": "F10",
+      "role": "nanoweave_shield",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_07_nanoweave_shield.png",
+      "sha256": "caa5de9cfff8c53bd95c2f7ee1bcfeaa62577ef96cba51b7a618aa39c437e75e"
+    },
+    {
+      "faction_id": "F10",
+      "role": "silence_infiltrator",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_08_silence_infiltrator.png",
+      "sha256": "4e2176899aedfe3e5fc794ff53a0bd329f61789ca9c3252e9597b09801e7e4ab"
+    },
+    {
+      "faction_id": "F10",
+      "role": "adaptive_lancer",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_09_adaptive_lancer.png",
+      "sha256": "b92585c6ea78920f47058f24bd458193c52068546dbfbcb80067981564734ca7"
+    },
+    {
+      "faction_id": "F10",
+      "role": "signal_cartographer",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_10_signal_cartographer.png",
+      "sha256": "96830dcd29e3fd084ca22a3348c2d46132a3340ef1ff48857c865f4f3c4dfe15"
+    },
+    {
+      "faction_id": "F10",
+      "role": "prism_sentry",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_11_prism_sentry.png",
+      "sha256": "ea9ed4462526d4e3726d18b3c3275f9035661bc2d3c53dbc4b83705222ffc0f2"
+    },
+    {
+      "faction_id": "F10",
+      "role": "field_calibrator",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_12_field_calibrator.png",
+      "sha256": "e75674df8fffeacedc6d6f17e1c40a5c79a34101ee5dc98531e041fe96896872"
+    },
+    {
+      "faction_id": "F10",
+      "role": "power_cell_custodian",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_13_power_cell_custodian.png",
+      "sha256": "5437694b7ca7d6d09dd462651ab3dc4c074df6a2be552f07b0d4c028f934e650"
+    },
+    {
+      "faction_id": "F10",
+      "role": "nanorepair_unit",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_14_nanorepair_unit.png",
+      "sha256": "3e33590c8ddae9987f8bb493d1907eadc12f04379dc8669a2f661a7011a232f5"
+    },
+    {
+      "faction_id": "F10",
+      "role": "whisper_relay",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_15_whisper_relay.png",
+      "sha256": "c0f09dc7c6be2d1c3cadb84f83c0d04427cff3a6a75deed6c7f25e26228fa424"
+    },
+    {
+      "faction_id": "F10",
+      "role": "extraction_pilot",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_16_extraction_pilot.png",
+      "sha256": "7d7c1832bea75d15de523876b71c4702f3296fd7904617fd01a36582670b2e1d"
+    },
+    {
+      "faction_id": "F10",
+      "role": "phase_waypoint",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_17_phase_waypoint.png",
+      "sha256": "566a40e4bb738538cc6155318ddf25c9e6054b3ec495b8fdf9a9be2149757eb7"
+    },
+    {
+      "faction_id": "F10",
+      "role": "power_cell_cache",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_18_power_cell_cache.png",
+      "sha256": "1156ef0a51d45b73ae81d975fd0ba6ab07a254be988c38e29df69fa2016c2854"
+    },
+    {
+      "faction_id": "F10",
+      "role": "refuge_barrier",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_19_refuge_barrier.png",
+      "sha256": "2e2f705865d972d202906ee1d3f767e81680a4f199e11b1e5e9357d0ea3eb5ab"
+    },
+    {
+      "faction_id": "F10",
+      "role": "farwake_command",
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f10/f10_20_farwake_command.png",
+      "sha256": "187190befc907317635bfef6806911f69f318d2a68f41b034aad28ff3cd0cddd"
     }
   ],
   "atlases": [
@@ -511,6 +631,13 @@
     {
       "faction_id": "F09",
       "path": "art/omega-front/accepted/f09/atlas_5x4.png",
+      "columns": 5,
+      "rows": 4,
+      "tile_size": 256
+    },
+    {
+      "faction_id": "F10",
+      "path": "art/omega-front/accepted/f10/atlas_5x4.png",
       "columns": 5,
       "rows": 4,
       "tile_size": 256

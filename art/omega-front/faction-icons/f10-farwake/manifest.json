@@ -3,9 +3,9 @@
   "name": "The Farwake",
   "maturity": "proposed faction",
   "icon_count": 20,
-  "asset_type": "source-svg-concept",
-  "runtime_png_status": "not uploaded",
-  "note": "Repository SVG source pack is an independent vector rendition; the locally downloadable PNG bundle is not yet present in GitHub. Neither is a successful painterly AI image run.",
+  "asset_type": "source-svg-concept (separate from painterly menu PNG)",
+  "runtime_png_status": "committed: 20 square 256px painted PNGs plus a 5x4 atlas",
+  "note": "The original procedural SVG icon sources are retained as alternate vector prototypes. Painted portrait icons now live in app/src/main/assets/native/omega-front/ui/icons/f10; consult its PNG manifest for authoritative checksums. Gameplay tactical map sprites remain independent.",
   "icons": [
     {
       "slot": 1,
