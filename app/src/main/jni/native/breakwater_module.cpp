@@ -4,6 +4,7 @@
 #include "breakwater_armor.h"
 #include "breakwater_sprite_atlas.h"
 #include "breakwater_terrain.h"
+#include "breakwater_emplacement.h"
 #include "breakwater_cover.h"
 #include "breakwater_sky.h"
 #include "breakwater_environment.h"
@@ -694,6 +695,10 @@ void BuildScene(State *s) {
     EmitCoastalTerrain(game.location(),night,
         [s](auto... arguments) { Box(s,arguments...); },
         [s](auto... arguments) { Triangle(s,arguments...); });
+    if(game.phase()==Phase::Combat)
+        EmitBatteryEmplacement(game.location(),night,
+            [s](auto... arguments){Box(s,arguments...);},
+            [s](auto... arguments){Triangle(s,arguments...);});
     for(const ShoreCover &barrier:game.shore_cover())
         EmitShoreCover(game.location(),barrier,night,
             [s](auto... arguments) { Box(s,arguments...); });
@@ -707,12 +712,13 @@ void BuildScene(State *s) {
     if(game.phase()==Phase::Combat) {
         // The shore platform, breech, collars, recessed muzzle and wheel
         // meshes are one deterministic XYZRGB triangle batch per scene.
-        Box(s,0,-1.24f,-.95f,7.8f,.55f,.7f,.37f,.38f,.36f);
+        // The old 7.8-wide shore-facing slab is removed. The bunker apron,
+        // revetments and approach are continuous in actual 3D.
         // The gun cradle is below/behind the seated player. The long barrel
         // now projects seawards from this mount without overshooting the
         // soldiers/armored vehicles' landward target positions.
-        Box(s,0,-1.23f,.14f,1.26f,.22f,1.56f,.35f,.37f,.34f);
-        Box(s,0,-1.06f,.65f,.62f,.22f,.47f,.29f,.30f,.30f);
+        Box(s,0,-1.05f,.26f,1.28f,.16f,1.16f,.35f,.37f,.34f);
+        Box(s,0,-.98f,.65f,.66f,.14f,.52f,.29f,.30f,.30f);
         const float *aim=s->gun_direction;
         const WeaponKind equipped=game.selected_weapon();
         gunmesh::Build([s](auto... vertices){Triangle(s,vertices...);},
@@ -720,8 +726,8 @@ void BuildScene(State *s) {
         if(s->flash>0.0f)
             gunmesh::Flash([s](auto... vertices){Triangle(s,vertices...);},
                            equipped,aim,s->flash);
-        // Always-left cabinet: five visible mounting shelves, with a true
-        // miniature 3D mesh for each gun actually owned by this campaign.
+        // Operator-facing cabinet on the left inside the bunker, behind
+        // the front approach. Five real purchased miniature mesh previews.
         const float rackMiddle=gunmesh::kRackTop-2.f*gunmesh::kRackStep;
         Box(s,gunmesh::kRackX-.54f,rackMiddle,gunmesh::kRackZ-.35f,
             .065f,1.93f,.12f,.31f,.33f,.30f);
@@ -746,7 +752,7 @@ void BuildScene(State *s) {
                  active?1.f:owned?.93f:.61f,
                  active?.68f:owned?.78f:.60f);
         }
-        Text(s,"LEFT RACK",gunmesh::kRackX,gunmesh::kRackTop+.28f,
+        Text(s,"LEFT ARMORY",gunmesh::kRackX,gunmesh::kRackTop+.28f,
              gunmesh::kRackZ+.20f,.026f,.82f,.93f,.75f);
     }
     if(s->flash>0.0f) {
@@ -880,9 +886,22 @@ void BuildScene(State *s) {
                 [s](auto... values){Triangle(s,values...);});
             continue;
         }
-        // Ship ramp/oars, gunboat flashes and bank-aware aircraft art are
-        // selected purely from the live simulation pose, with no new
-        // animation clocks or per-eye scene changes.
+        // Real 3D hulls and ramps replace billboard boats; aircraft keep
+        // their banked atlas until a mesh animation pass is accepted.
+        if(e.type!=UnitType::Aircraft) {
+            EmitVesselSilhouette(e,
+                [s](auto... values){Box(s,values...);},
+                [s](auto... values){Triangle(s,values...);});
+            if(e.type==UnitType::LandingCraft && e.carries_armor) {
+                Box(s,e.x,-.43f,e.z-.08f,.50f,.21f,.45f,
+                    .34f,.39f,.31f);
+                Box(s,e.x,-.29f,e.z-.12f,.26f,.11f,.27f,
+                    .26f,.32f,.27f);
+                Box(s,e.x,-.28f,e.z+.11f,.065f,.064f,.37f,
+                    .21f,.24f,.20f);
+            }
+            continue;
+        }
         const SpriteId sprite=EnemySprite(e);
         const bool aircraft=e.type==UnitType::Aircraft;
         float width=.99f,height=.71f,y=-.66f,bank=0.0f;
@@ -898,14 +917,6 @@ void BuildScene(State *s) {
             bank=std::isfinite(e.bank)?e.bank:0.0f;
         }
         AppendSprite(s->sprite_mesh,sprite,e.x,y,e.z,width,height,bank);
-        if(e.type==UnitType::LandingCraft && e.carries_armor) {
-            // Vessel atlas is the active boat render path; show the real
-            // armored cargo here, rather than relying on the unused older
-            // procedural EmitVesselSilhouette recipe.
-            Box(s,e.x,-.43f,e.z-.08f,.50f,.21f,.45f,.34f,.39f,.31f);
-            Box(s,e.x,-.29f,e.z-.12f,.26f,.11f,.27f,.26f,.32f,.27f);
-            Box(s,e.x,-.28f,e.z+.11f,.065f,.064f,.37f,.21f,.24f,.20f);
-        }
     }
     for(const ArmoredVehicle &vehicle:game.armored_vehicles()) {
         if(!vehicle.active)continue;
@@ -1043,13 +1054,17 @@ void BuildScene(State *s) {
     for(size_t slot=0;slot<game.infantry_units().size();++slot) {
         const Infantry &trooper=game.infantry_units()[slot];
         if(!trooper.active)continue;
-        // The snapshot identifies actual ready shooters from a confirmed
-        // volley. Only their existing 2D cards change to fire frames.
+        // World-space 3D soldier model using existing combat positions.
+        EmitInfantrySilhouette(trooper,
+            [s](auto... values){Box(s,values...);},
+            [s](auto... values){Triangle(s,values...);});
         const bool firing=s->infantry_flash>0.0f &&
             InfantryFiringPose(trooper,s->infantry_firing_mask,slot);
-        const SpriteId pose=InfantrySprite(trooper,firing);
-        AppendSprite(s->sprite_mesh,pose,trooper.x,-.67f,trooper.z,
-                     .40f,.70f);
+        if(firing) {
+            const float x=trooper.x,z=trooper.z+.44f;
+            Triangle(s,x-.055f,-.52f,z,x+.055f,-.52f,z,
+                     x,-.48f,z+.15f,.97f,.73f,.32f);
+        }
     }
     if(s->gunboat_salvo_flash>0.0f) {
         // A brief world-space tracer starts at the vessel that actually fired.
@@ -1067,8 +1082,7 @@ void BuildScene(State *s) {
         Triangle(s,x,-.25f,z,tipX,-.37f,tipZ,
                  x,-.36f,z,.95f,.57f,.22f);
     }
-    // Infantry muzzle flashes live in the firing sprite tiles above;
-    // do not draw a duplicate generic 3D flash at one arbitrary shooter.
+    // World-space muzzle flashes follow actual soldiers, not billboards.
     if(s->slot_picker) {
         const menu::Rect frame=menu::kDifficultyPanel;
         Panel(s,frame.x,frame.y,-3.06f,frame.width,frame.height,
@@ -1683,11 +1697,14 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     }
     // All mounted guns, including the missile pod, follow permitted
     // aim. Ghost sights are independent only when outside the mount arc.
+    float converged_gun[3]={};
     if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
        s->rack_focus<0 &&
-       GunWithinTraverse(copy.pointer_direction,
-                         s->campaign.selected_weapon())) {
-        for(int k=0;k<3;k++)s->gun_direction[k]=copy.pointer_direction[k];
+       trajectory::BarrelAim(s->campaign.selected_weapon(),
+                             copy.pointer_direction,converged_gun)) {
+        // Model follows the same physical muzzle direction as fired shots,
+        // including close beach targets below the headset sight.
+        for(int k=0;k<3;k++)s->gun_direction[k]=converged_gun[k];
     }
     s->elapsed+=copy.delta_seconds;
     s->flash=std::max(0.0f,s->flash-copy.delta_seconds);
@@ -1865,9 +1882,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->ghost_on=false;
     if(s->campaign.phase()==Phase::Combat &&
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
+        float physical[3]={};
         s->ghost_on=(s->sam_armed ||
-            !GunWithinTraverse(copy.pointer_direction,
-                               s->campaign.selected_weapon())) &&
+            !trajectory::BarrelAim(s->campaign.selected_weapon(),
+                                   copy.pointer_direction,physical)) &&
             GhostAimPoint(copy.pointer_origin,copy.pointer_direction,
                           s->ghost_position);
     }

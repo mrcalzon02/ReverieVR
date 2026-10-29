@@ -2,6 +2,7 @@
 #define REVERIE_BREAKWATER_TERRAIN_H
 
 #include "breakwater_campaign.h"
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <initializer_list>
@@ -31,24 +32,66 @@ inline CoastPalette CoastColors(uint8_t location, bool night) {
     return c;
 }
 
+// Deterministic heightfield. The combat lane remains close to the real
+// infantry feet; outer dunes and rear berm carry substantial 3D relief.
+inline float BeachHeight(uint8_t location,float x,float z) {
+    if(location>=Campaign::kLocations || !std::isfinite(x) ||
+       !std::isfinite(z))return -1.037f;
+    const float side=std::clamp((std::abs(x)-2.70f)/1.16f,0.f,1.f);
+    const float rear=std::clamp((z+1.02f)/.76f,0.f,1.f);
+    const float ripple=.008f*std::sin(x*2.9f+z*4.3f+location*1.4f)
+                      *std::sin(z*5.1f);
+    return -1.037f+ripple+.13f*side*side+.09f*rear*rear;
+}
+constexpr int kBeachCrossSections=24;
+constexpr int kBeachLengthSections=20;
+
 template <typename BoxFn, typename TriangleFn>
 void EmitCoastalTerrain(uint8_t location, bool night,
                         BoxFn box, TriangleFn triangle) {
     if (location >= Campaign::kLocations) return;
     const CoastPalette c = CoastColors(location, night);
-    constexpr float y = -1.037f; // Above sea, below soldiers' feet.
-    // Six shallow beach strips, with stable slight tonal variation.
-    // Water ends at z=-2.20, the authoritative transport landing line.
-    for (int strip=0; strip<6; ++strip) {
-        const float nearZ = -2.20f + strip*.20f;
-        const float farZ = nearZ + .20f;
-        const float shade = strip%2==0 ? .97f : 1.03f;
-        triangle(-3.86f,y,nearZ, 3.86f,y,nearZ,
-                 3.86f,y,farZ,
-                 c.sand_r*shade,c.sand_g*shade,c.sand_b*shade);
-        triangle(-3.86f,y,nearZ, 3.86f,y,farZ,
-                 -3.86f,y,farZ,
-                 c.sand_r*shade,c.sand_g*shade,c.sand_b*shade);
+    constexpr float y=-1.037f; // decorative prop baseline
+    // Connected 3D mesh from surf to bunker; two triangles per grid cell.
+    // Shared height samples avoid cracks, and combat hitboxes do not change.
+    constexpr float minX=-3.86f,maxX=3.86f;
+    constexpr float surfZ=-2.20f,rearZ=-.26f;
+    for(int iz=0;iz<kBeachLengthSections;++iz) {
+        const float z0=surfZ+(rearZ-surfZ)*iz/kBeachLengthSections;
+        const float z1=surfZ+(rearZ-surfZ)*(iz+1)/kBeachLengthSections;
+        for(int ix=0;ix<kBeachCrossSections;++ix) {
+            const float x0=minX+(maxX-minX)*ix/kBeachCrossSections;
+            const float x1=minX+(maxX-minX)*(ix+1)/kBeachCrossSections;
+            const float y00=BeachHeight(location,x0,z0);
+            const float y10=BeachHeight(location,x1,z0);
+            const float y01=BeachHeight(location,x0,z1);
+            const float y11=BeachHeight(location,x1,z1);
+            const float shade=(ix*7+iz*11+location*3)%5==0?.92f:
+                              (ix+iz)%3==0?1.045f:1.f;
+            triangle(x0,y00,z0,x1,y10,z0,x1,y11,z1,
+                c.sand_r*shade,c.sand_g*shade,c.sand_b*shade);
+            triangle(x0,y00,z0,x1,y11,z1,x0,y01,z1,
+                c.sand_r*shade*.96f,c.sand_g*shade*.96f,
+                c.sand_b*shade*.96f);
+        }
+    }
+    // A banked 3D beach shoulder on either side, outside the firing path.
+    for(int side : {-1,1}) {
+        const float sign=static_cast<float>(side);
+        for(int n=0;n<9;++n) {
+            const float z0=-2.18f+n*.22f,z1=z0+.22f;
+            const float near=BeachHeight(location,sign*3.86f,z0);
+            const float far=BeachHeight(location,sign*3.86f,z1);
+            const float crestX=sign*(4.30f+.14f*((n+location)%3));
+            const float rise=(location==2?.47f:location==1?.24f:.34f)
+                *(n<3?.70f:n>6?.82f:1.f);
+            triangle(sign*3.86f,near,z0,crestX,y+rise,z0-.05f,
+                     crestX,y+rise*.92f,z1,
+                     c.detail_r*.78f,c.detail_g*.81f,c.detail_b*.77f);
+            triangle(sign*3.86f,near,z0,crestX,y+rise*.92f,z1,
+                     sign*3.86f,far,z1,
+                     c.sand_r*.79f,c.sand_g*.79f,c.sand_b*.78f);
+        }
     }
     // A segmented foamy surf edge visually identifies where boats unload.
     // The foam remains static so no separate eye can animate it differently.

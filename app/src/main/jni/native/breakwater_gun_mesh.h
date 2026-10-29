@@ -90,6 +90,28 @@ inline void Tube(Emit &emit,Vec rear,Vec forward,Vec right,Vec up,
         }
     }
 }
+// Fully enclosed 3D mechanical housings, oriented with the gun elevation.
+// Unlike decorative single triangles these expose six shaded faces.
+template<typename Emit>
+inline void Housing(Emit &emit,Vec center,Vec right,Vec up,Vec forward,
+                    float halfW,float halfH,float halfD,
+                    float r,float g,float b) {
+    const auto corner=[&](float x,float y,float z) {
+        return Add(center,Add(Scale(right,x*halfW),
+                   Add(Scale(up,y*halfH),Scale(forward,z*halfD))));
+    };
+    const Vec a=corner(-1,-1,-1),c=corner(1,-1,-1);
+    const Vec d=corner(-1,1,-1),e=corner(1,1,-1);
+    const Vec f=corner(-1,-1,1),h=corner(1,-1,1);
+    const Vec i=corner(-1,1,1),j=corner(1,1,1);
+    Tri(emit,a,c,e,r*.74f,g*.76f,b*.76f);Tri(emit,a,e,d,r*.74f,g*.76f,b*.76f);
+    Tri(emit,f,j,h,r*.93f,g*.94f,b*.95f);Tri(emit,f,i,j,r*.93f,g*.94f,b*.95f);
+    Tri(emit,d,e,j,r*1.12f,g*1.11f,b*1.08f);
+    Tri(emit,d,j,i,r*1.12f,g*1.11f,b*1.08f);
+    Tri(emit,a,h,c,r*.51f,g*.55f,b*.57f);Tri(emit,a,f,h,r*.51f,g*.55f,b*.57f);
+    Tri(emit,a,d,i,r*.63f,g*.64f,b*.69f);Tri(emit,a,i,f,r*.63f,g*.64f,b*.69f);
+    Tri(emit,c,h,j,r*.83f,g*.85f,b*.86f);Tri(emit,c,j,e,r*.83f,g*.85f,b*.86f);
+}
 template<typename Emit>
 inline void Wheel(Emit &emit,float x,float y,float z,float radius,
                   float r,float g,float b) {
@@ -149,6 +171,25 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
     // Keep the central tube's moving tip aligned with Muzzle()/ballistics.
     switch(kind) {
         case WeaponKind::MachineGun: {
+            // Cooling jacket, hard receiver and actual ammunition feed
+            // replace the former spindly four-pipe-only appearance.
+            Housing(emit,Add(rear,Scale(aim,.50f)),right,up,aim,
+                    .22f,.19f,.25f,.28f,.33f,.31f);
+            Housing(emit,Add(rear,Add(Scale(aim,.17f),Scale(right,.29f))),
+                    right,up,aim,.18f,.19f,.18f,.31f,.30f,.23f);
+            for(int band=0;band<4;++band) {
+                const Vec pos=Add(rear,Scale(aim,.88f+band*.13f));
+                Tube(emit,pos,Add(pos,Scale(aim,.028f)),right,up,
+                     .133f,.133f,.36f,.41f,.37f,false);
+            }
+            for(int link=0;link<4;++link) {
+                const Vec pos=Add(rear,Add(Scale(aim,.19f+link*.065f),
+                                 Scale(right,.28f-link*.035f)));
+                Housing(emit,pos,right,up,aim,.062f,.075f,.043f,
+                        .57f,.49f,.30f);
+            }
+            Housing(emit,Add(rear,Add(Scale(aim,.38f),Scale(up,-.23f))),
+                    right,up,aim,.11f,.09f,.18f,.20f,.24f,.23f);
             // Rotary machine gun: five exposed slender barrels and binding
             // collars surrounding the primary, correctly aimed muzzle.
             for(int side : {-1,1})for(int tier : {-1,1}) {
@@ -170,6 +211,19 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
             break;
         }
         case WeaponKind::HeavyGun: {
+            // Chunky breech with slab receiver, dorsal recoil guide
+            // and seated feed tray read as a heavy automatic weapon.
+            Housing(emit,Add(rear,Scale(aim,.30f)),right,up,aim,
+                    .30f,.245f,.32f,.30f,.34f,.30f);
+            Housing(emit,Add(rear,Add(Scale(aim,.57f),Scale(up,.23f))),
+                    right,up,aim,.19f,.095f,.33f,.40f,.43f,.36f);
+            Housing(emit,Add(rear,Add(Scale(aim,.17f),Scale(right,.38f))),
+                    right,up,aim,.18f,.17f,.23f,.34f,.31f,.24f);
+            for(int band=0;band<3;++band) {
+                const Vec pos=Add(rear,Scale(aim,.60f+band*.15f));
+                Tube(emit,pos,Add(pos,Scale(aim,.040f)),right,up,
+                    .229f,.229f,.43f,.44f,.36f,false);
+            }
             // A single massive jacketed barrel, two external recoil
             // cylinders and a thick rear sleeve; no antiair pipe array.
             Tube(emit,Add(rear,Scale(aim,.43f)),
@@ -187,6 +241,20 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
             break;
         }
         case WeaponKind::Flak: {
+            // A central traverse gearbox and twin outboard recoil
+            // blocks put actual mass behind the long AA barrels.
+            Housing(emit,Add(rear,Scale(aim,.28f)),right,up,aim,
+                    .25f,.23f,.31f,.32f,.38f,.33f);
+            for(int side : {-1,1}) {
+                const Vec offset=Scale(right,.34f*side);
+                Housing(emit,Add(rear,Add(Scale(aim,.31f),offset)),
+                        right,up,aim,.155f,.16f,.26f,.32f,.38f,.33f);
+                Tube(emit,Add(rear,Add(Scale(aim,.64f),offset)),
+                     Add(rear,Add(Scale(aim,.86f),offset)),
+                     right,up,.117f,.117f,.44f,.49f,.41f,false);
+            }
+            Housing(emit,Add(rear,Add(Scale(aim,.16f),Scale(up,.27f))),
+                    right,up,aim,.12f,.10f,.17f,.49f,.47f,.34f);
             // Twin extra-long outboard AA barrels and separate flash
             // suppressors form a recognizable triple-barrel flak mounting.
             for(int side : {-1,1}) {
@@ -201,6 +269,19 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
             break;
         }
         case WeaponKind::MissileBattery: {
+            // Weather-sealed launcher cradle, guide rails and
+            // constricting bands make these recognizable rocket pods.
+            Housing(emit,Add(rear,Scale(aim,.43f)),right,up,aim,
+                    .42f,.33f,.18f,.27f,.34f,.29f);
+            for(int row : {-1,1})for(int col : {-1,1}) {
+                const Vec offset=Add(Scale(right,.255f*row),
+                                     Scale(up,.205f*col));
+                Tube(emit,Add(rear,Add(Scale(aim,.82f),offset)),
+                     Add(rear,Add(Scale(aim,.88f),offset)),right,up,
+                     .130f,.130f,.51f,.50f,.38f,false);
+            }
+            Housing(emit,Add(rear,Add(Scale(aim,.16f),Scale(up,-.38f))),
+                    right,up,aim,.25f,.13f,.30f,.34f,.36f,.32f);
             // Four unmistakable rocket canisters in a 2x2 array. Their
             // actual open, dark muzzle bores face the aircraft. The small
             // central aiming tube still aligns with the launch ray.
@@ -222,6 +303,17 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
             break;
         }
         case WeaponKind::DirectCannon: {
+            // Giant rectangular breech ring and curved ammunition
+            // slide make the direct cannon a gun, not a thick pipe.
+            Housing(emit,Add(rear,Scale(aim,.28f)),right,up,aim,
+                    .34f,.31f,.36f,.29f,.34f,.33f);
+            Housing(emit,Add(rear,Add(Scale(aim,.52f),Scale(up,-.26f))),
+                    right,up,aim,.29f,.075f,.31f,.43f,.42f,.34f);
+            Housing(emit,Add(rear,Add(Scale(aim,.05f),Scale(up,.26f))),
+                    right,up,aim,.21f,.07f,.15f,.48f,.46f,.36f);
+            Tube(emit,Add(rear,Scale(aim,.54f)),
+                 Add(rear,Scale(aim,.59f)),right,up,.23f,.23f,
+                 .55f,.52f,.40f,false);
             // Enormous bore, paired hydropneumatic recoil tubes, and two
             // distinct enlarged muzzle-brake chambers; not a missile pod.
             for(int station=0;station<2;++station) {
@@ -238,6 +330,18 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
             }
             break;
         }
+    }
+    // Independent trunnion blocks, lower turntable and rear recoil bed.
+    Housing(emit,{0.f,-.93f,mount.z+.08f},{1.f,0.f,0.f},
+            {0.f,1.f,0.f},{0.f,0.f,-1.f},
+            .38f,.17f,.45f,.26f,.30f,.29f);
+    Housing(emit,{0.f,-.67f,mount.z-.08f},{1.f,0.f,0.f},
+            {0.f,1.f,0.f},{0.f,0.f,-1.f},
+            .56f,.10f,.22f,.36f,.40f,.34f);
+    for(int side : {-1,1}) {
+        const Vec offset={.42f*side,-.76f,mount.z-.14f};
+        Housing(emit,offset,{1.f,0.f,0.f},{0.f,1.f,0.f},
+                {0.f,0.f,-1.f},.10f,.27f,.37f,.31f,.35f,.31f);
     }
     // Every fixed carriage piece follows the relocated gun breech as a
     // solid assembly; only barrel/breech tube retracts on confirmed fire.
@@ -260,7 +364,8 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
 }
 // Selectable real miniature artillery models mounted in a cabinet left of
 // the seated player. This does not change the combat gun, ammunition or saves.
-constexpr float kRackX=-2.10f,kRackZ=-1.72f,kRackTop=.55f;
+// Player's LEFT bunker wall, behind the firing slit and inland of beach.
+constexpr float kRackX=-1.85f,kRackZ=.48f,kRackTop=.55f;
 constexpr float kRackStep=.35f,kRackHalfX=.49f,kRackHalfY=.151f,
                 kRackHalfZ=.32f;
 struct RackSlot {float x,y,z;};
@@ -307,9 +412,11 @@ inline void RackModel(Emit emit,WeaponKind kind) {
     if(!WeaponValid(id))return;
     const RackSlot slot=RackLocation(id);
     const auto transform=[&](float &x,float &y,float &z) {
-        x=slot.x-.22f+x*.21f;
+        const float originalX=x,originalZ=z;
+        // Rotate previews toward the seated operator (+X), not out to sea.
+        x=slot.x+(-originalZ-.06f)*.21f;
         y=slot.y+(y+.84f)*.21f;
-        z=slot.z+(z+.06f)*.21f;
+        z=slot.z+originalX*.21f;
     };
     constexpr float forward[]={0.f,0.f,-1.f};
     // Same five physical gunmeshes as the player's cannon, scaled only.

@@ -1130,19 +1130,21 @@ int main() {
             assert(std::isfinite(x0)&&std::isfinite(y0)&&std::isfinite(z0));
             assert(std::isfinite(x1)&&std::isfinite(y1)&&std::isfinite(z1));
             assert(std::isfinite(x2)&&std::isfinite(y2)&&std::isfinite(z2));
-            // The first 20 triangles are the gameplay beach and surf.
-            // The following four intentionally widen into each location's
-            // scenic shoulders, outside the traversable infantry lane.
-            const bool scenicShoulder=triangles>20&&triangles<=24;
+            // First 960 faces: continuous 24x20 3D combat heightfield.
+            // Next 36: explicit volumetric flanking dunes. Then 8 foam.
+            // Existing scenic shoulders and off-lane flanks retain bounds.
+            const bool beachMesh=triangles<=960;
+            const bool bank=triangles>960 && triangles<=996;
+            const bool scenicShoulder=triangles>1004 && triangles<=1008;
             const bool flankExtension=location!=1u &&
-                triangles>24&&triangles<=28;
+                triangles>1008 && triangles<=1012;
             const float reach=flankExtension?20.01f:
                 scenicShoulder?(location==0?5.35f:
-                    location==1?4.85f:5.80f):4.0f;
+                    location==1?4.85f:5.80f):
+                bank?4.65f:4.0f;
             const float zNear=flankExtension?1.451f:
-                scenicShoulder?-.71f:-.80f;
-            // Lateral slopes begin 5 cm farther seaward than the former
-            // center-only beach; no other triangle may exceed that bound.
+                scenicShoulder?-.71f:
+                bank?-.18f:beachMesh?-.259f:-.80f;
             const float zFar=flankExtension?-2.301f:-2.25f;
             assert(x0>=-reach-.001f&&x0<=reach+.001f);
             assert(x1>=-reach-.001f&&x1<=reach+.001f);
@@ -1154,10 +1156,13 @@ int main() {
             assert(r>=0&&g>=0&&b>=0&&r<=1&&g<=1&&b<=1);
         };
         EmitCoastalTerrain(location,false,box,triangle);
-        const int expectedTriangles[]={46,29,36};
+        const int expectedTriangles[]={1030,1013,1020};
         const int expectedBoxes[]={20,46,26};
         assert(triangles==expectedTriangles[location]);
         assert(boxes==expectedBoxes[location]);
+        assert(std::abs(BeachHeight(location,0.f,-1.3f)+1.037f)<.02f);
+        assert(BeachHeight(location,3.8f,-.4f)>
+               BeachHeight(location,0.f,-1.3f)+.08f);
         const CoastPalette day=CoastColors(location,false);
         const CoastPalette night=CoastColors(location,true);
         assert(day.sand_r>night.sand_r);

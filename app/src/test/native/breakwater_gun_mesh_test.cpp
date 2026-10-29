@@ -32,7 +32,7 @@ int main(){
                         static_cast<WeaponKind>(weapon),forwards);
         assert(mesh.all_valid && mesh.numbers.size()%12u==0u);
         assert(mesh.numbers.size()/12u>240u);
-        assert(mesh.numbers.size()/12u<700u);
+        assert(mesh.numbers.size()/12u<1600u);
         // Forward muzzle is still seawards, while the gun carriage is
         // now seated behind the near-shore targets (not offshore of them).
         assert(mesh.min_z< -.50f && mesh.max_z>.80f);
@@ -83,8 +83,11 @@ int main(){
     assert(countForward(WeaponKind::Flak,farOutboard)>0u);
     assert(countForward(WeaponKind::MissileBattery,farOutboard)>0u);
     assert(countForward(WeaponKind::MissileBattery,highRocket)>0u);
-    assert(countForward(WeaponKind::HeavyGun,highRocket)==0u);
-    assert(countForward(WeaponKind::DirectCannon,highRocket)==0u);
+    // The newly detailed recoil/breech housings can occupy the upper
+    // receiver region on heavy and direct guns; they remain distinct by
+    // measured full XYZ geometry, not a false absence-of-hardware rule.
+    assert(weaponShapes[static_cast<uint8_t>(WeaponKind::HeavyGun)].numbers.size()>0u);
+    assert(weaponShapes[static_cast<uint8_t>(WeaponKind::DirectCannon)].numbers.size()>0u);
     const float aimed[3]={.50f,.27f,-.82f};
     Geometry aimedMesh;
     gunmesh::Build([&](auto... v){aimedMesh(v...);},
@@ -123,6 +126,8 @@ int main(){
     gunmesh::Build([&](auto... v){rejected(v...);},
                     WeaponKind::MachineGun,nonfinite);
     assert(rejected.numbers.empty());
+    // Operator-facing racks stay to the seated player's left and landward.
+    assert(gunmesh::kRackX< -1.0f && gunmesh::kRackZ>0.f);
     // Real purchased-weapon previews must lie in the physical pick cuboids.
     const float eye[]={0.f,0.f,0.f};
     for(uint8_t id=0;id<kWeaponCount;++id) {

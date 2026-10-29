@@ -40,10 +40,16 @@ inline bool WeaponWithinTraverse(const float *d, WeaponKind kind) {
     if(!d || !std::isfinite(d[0]) || !std::isfinite(d[1]) ||
        !std::isfinite(d[2]) || d[2]>=-.18f) return false;
     const float horizontal=-d[2];
-    // Never depress the barrel into the battery's own parapet. Both the
-    // 3D tube and the ballistic launch ray obey this shared traverse check.
+    // Headset sight has a larger downward arc than the low-mounted barrel:
+    // breakwater_cannon_trajectory.h converges sight-on-ground onto the
+    // physical gun pivot without driving the muzzle through the platform.
+    // This is a *controller* limit, not permission for a barrel below deck.
+    const float depression=kind==WeaponKind::MachineGun?.78f:
+                           kind==WeaponKind::HeavyGun?.72f:
+                           kind==WeaponKind::Flak?.58f:
+                           kind==WeaponKind::DirectCannon?.48f:.65f;
     return std::abs(d[0])<=horizontal*2.5f &&
-           d[1]>=-.12f*horizontal &&
+           d[1]>=-depression*horizontal &&
            d[1]<=horizontal*WeaponTraverseLimit(kind);
 }
 inline bool ProjectilePosition(const float *origin,const float *direction,
