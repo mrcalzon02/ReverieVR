@@ -106,6 +106,20 @@ public final class HeadsetMirrorProjectionTest {
         return new float[] {0,0,-1,0, 0,1,0,0, 1,0,0,0, 0,0,0,1};
     }
 
+    @Test public void facialFeaturesRespectActualHeadsetFacing() {
+        PlayerHeadRig rig = new PlayerHeadRig();
+        HeadsetMirrorProjection mirror = new HeadsetMirrorProjection();
+        assertTrue(rig.update(facingMirror(),.064f));
+        assertTrue(mirror.prepare(rig,0));
+        assertTrue(mirror.avatarFaceVisible());
+        assertTrue(rig.update(at(0f,0f,0f),.064f));
+        assertTrue(mirror.prepare(rig,0));
+        assertFalse(mirror.avatarFaceVisible());
+        rig.reset();
+        assertFalse(mirror.prepare(rig,0));
+        assertFalse(mirror.avatarFaceVisible());
+    }
+
     @Test public void headsetCageIsInFrontOfVolumetricReflection() {
         assertTrue(HeadsetMirrorProjection.LINE_X
             < HeadsetMirrorProjection.AVATAR_X);
