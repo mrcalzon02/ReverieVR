@@ -13,6 +13,7 @@ on:
       - 'scripts/ci/verify-integrated-game-functional-coverage.py'
       - 'scripts/verify-gumball-armada.sh'
       - 'scripts/verify-omega-front-playability.sh'
+      - 'scripts/perf/**'
       - 'app/src/main/jni/native/**'
       - 'app/src/test/native/**'
       - 'app/src/main/assets/native/breakwater/**'
@@ -173,3 +174,13 @@ jobs:
             done
           done
           echo 'PASS: native game entry ABI and scoped asset reads'
+
+  vr-endurance-sampler:
+    name: Offline S9 endurance sampler regression (no physical phone)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run battery/thermal parsing and non-invasive capture regressions
+        run: python3 scripts/perf/test_s9_session_sampler.py
+

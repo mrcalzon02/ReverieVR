@@ -36,6 +36,11 @@ class BatteryTests(unittest.TestCase):
         self.assertIsNone(value["battery_temp_c"])
         self.assertIsNone(value["battery_pct"])
 
+    def test_thousand_battery_temperatures_parse_without_drift(self):
+        for tenths in range(-500, 501):
+            actual = sampler.parse_battery(f"temperature: {tenths}")["battery_temp_c"]
+            self.assertEqual(actual, round(tenths / 10.0, 1))
+
     def test_invalid_temperature_does_not_crash(self):
         self.assertIsNone(sampler.parse_battery("temperature: unavailable")["battery_temp_c"])
 
@@ -90,6 +95,16 @@ class EndToEndTests(unittest.TestCase):
             self.assertEqual(len(rows), 2)
             self.assertIn('"samples": 1', list(Path(tmp).glob("*.json"))[0].read_text())
             self.assertEqual(len(commands), 4)
+
+    def test_repeated_same_label_does_not_overwrite_results(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(sampler.shutil, "which", return_value="/mock/adb"), \
+             patch.object(sampler, "command", side_effect=lambda adb, *a: "List of devices attached\nS9\tdevice\n" if a == ("devices",) else BATTERY), \
+             patch.object(sampler, "optional", return_value=""):
+            sampler.run("adb", Path(tmp), "repeat", 0, 60)
+            sampler.run("adb", Path(tmp), "repeat", 0, 60)
+            self.assertEqual(len(list(Path(tmp).glob("*.csv"))), 2)
+            self.assertEqual(len(list(Path(tmp).glob("*.json"))), 2)
 
     def test_rejects_no_android_device(self):
         with tempfile.TemporaryDirectory() as tmp, \

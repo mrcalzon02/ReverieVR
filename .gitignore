@@ -43,3 +43,6 @@ app/src/main/assets/steam_controller_2015/
 # until explicitly reviewed/imported with scripts/import-suno-downloads.py.
 .local/suno-downloads/
 .local/suno-entitlements/
+
+# Non-private VR endurance captures stay local, not in source control.
+validation/vr-perf/

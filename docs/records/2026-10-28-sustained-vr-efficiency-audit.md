@@ -68,7 +68,7 @@ Output: local CSV time series and JSON summary under \`validation/vr-perf/\`. Do
 - Existing latest-source integrated-game GitHub CI run 40795941586: **8/8 jobs passed** at the baseline commit. This is C++ source functional coverage, not VR temperature evidence.
 - Existing signed phone-test workflow run 40795941309 completed successfully; it does **not** establish new efficiency work or physical headset acceptance.
 - Existing Android emulator hub runs 40795250325 and 40795941148 each had **3/12 tests fail**, recurring Test Chamber module creation/menu capture and Omega Front battle-start sound-cue assertion. These require separate root-cause repair before advertising full hub integration acceptance. Re-running unchanged emulator workflow without a fix is not useful thermal evidence.
-- A locally executed host-side sampler suite passed **10/10 offline tests**: battery values/units, missing/invalid/negative temperature, non-interference with phone settings, thermal status/unavailability, one-sample CSV/JSON smoke, and missing/multiple-device rejection. A real Galaxy S9 run, production APK build and thermal savings measurement were **not** performed in this audit.
+- A locally executed host-side sampler suite passed **12/12 offline tests**: battery values/units, missing/invalid/negative temperature, non-interference with phone settings, thermal status/unavailability, one-sample CSV/JSON smoke, and missing/multiple-device rejection. A real Galaxy S9 run, production APK build and thermal savings measurement were **not** performed in this audit.
 
 ## Preferred implementation order
 

@@ -69,7 +69,7 @@ def run(adb, out, label, minutes, interval):
     if len(active) != 1:
         raise RuntimeError("Exactly one authorized connected Android device is required; found " + str(len(active)))
     out.mkdir(parents=True, exist_ok=True)
-    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     safe = re.sub(r"[^a-z0-9_-]+", "-", label.lower()).strip("-")[:48] or "vr"
     csv_path = out / (stamp + "_" + safe + ".csv")
     summary_path = out / (stamp + "_" + safe + ".json")
@@ -122,8 +122,8 @@ def main():
     parser.add_argument("--interval", type=float, default=60, help="Sample interval in seconds, default 60")
     parser.add_argument("--output", type=Path, default=Path("validation/vr-perf"))
     args = parser.parse_args()
-    if not 0 <= args.minutes <= 240 or not 0 < args.interval <= 600:
-        parser.error("minutes must be 0..240, interval must be >0..600")
+    if not 0 <= args.minutes <= 240 or not 10 <= args.interval <= 600:
+        parser.error("minutes must be 0..240, interval must be 10..600")
     try:
         run(os.environ.get("ADB_BIN", "adb"), args.output, args.label, args.minutes, args.interval)
     except (RuntimeError, subprocess.TimeoutExpired, OSError) as exc:
