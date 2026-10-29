@@ -27,14 +27,14 @@ public class NativeGamesGalleryTest {
         assertEquals(8,classics);
     }
     @Test public void homeRoomGalleryKeepsAllGamesAndPhysicalPanelBounds() {
-        assertEquals(4,NativeGamesGallery.homePageCount(15));
+        assertEquals(3,NativeGamesGallery.homePageCount(15));
         for(int i=0;i<15;i++)
-            assertEquals(i,NativeGamesGallery.homeModuleIndex(i/4,i%4,15));
-        assertEquals(-1,NativeGamesGallery.homeModuleIndex(3,3,15));
-        assertEquals(-1,NativeGamesGallery.homeModuleIndex(4,0,15));
-        assertTrue(NativeGamesGallery.homeButtonEnabled(6,3,15));
-        assertTrue(NativeGamesGallery.homeButtonEnabled(7,3,15));
-        assertFalse(NativeGamesGallery.homeButtonEnabled(3,3,15));
+            assertEquals(i,NativeGamesGallery.homeModuleIndex(i/7,i%7,15));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(2,1,15));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(3,0,15));
+        assertTrue(NativeGamesGallery.homeButtonEnabled(9,2,15));
+        assertTrue(NativeGamesGallery.homeButtonEnabled(10,2,15));
+        assertFalse(NativeGamesGallery.homeButtonEnabled(1,2,15));
         for(int i=0;i<NativeGamesGallery.HOME_BUTTONS.length;i++) {
             int[] a=NativeGamesGallery.HOME_BUTTONS[i];
             assertTrue(a[0]>=266 && a[2]<=744 && a[1]>=60 && a[3]<=710);
@@ -46,6 +46,20 @@ public class NativeGamesGalleryTest {
             }
         }
         assertEquals(-1,NativeGamesGallery.homeButtonAtPixel(100,300));
+    }
+    @Test public void picturedMenusHaveOneUniqueCorrectlyMappedAtlasCell() {
+        java.util.Set<String> seen=new java.util.HashSet<>();
+        for(int i=0;i<7;i++) {
+            GameModuleRegistry.Entry game=GameModuleRegistry.GAMES[i];
+            int[] c=NativeGamesGallery.atlasCell(game.id);
+            assertNotNull(game.id,c);
+            assertTrue(c[0]>=0 && c[0]+NativeGamesGallery.ATLAS_CELL_WIDTH<=336);
+            assertTrue(c[1]>=0 && c[1]+NativeGamesGallery.ATLAS_CELL_HEIGHT<=230);
+            assertTrue(seen.add(c[0]+":"+c[1]));
+            assertEquals(i,NativeGamesGallery.homeModuleIndex(0,i,15));
+        }
+        assertNull(NativeGamesGallery.atlasCell("classic-pong"));
+        assertNull(NativeGamesGallery.atlasCell("unlisted"));
     }
     @Test public void cardAndNavigationTargetsNeverOverlap() {
         assertEquals(10,NativeGamesGallery.BUTTONS.length);

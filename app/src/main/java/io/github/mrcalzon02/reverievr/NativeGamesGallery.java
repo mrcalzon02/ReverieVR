@@ -1,6 +1,8 @@
 package io.github.mrcalzon02.reverievr;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.Color;
 import android.graphics.Paint;
 import java.util.List;
@@ -14,14 +16,17 @@ final class NativeGamesGallery {
         {61,650,257,704},{268,650,464,704},{475,650,765,704},
         {776,650,963,704}
     };
-    // Four large cards live in the existing Home center-wall texture region.
-    static final int HOME_PAGE_SIZE=4, HOME_PREVIOUS=4, HOME_NEXT=5,
-        HOME_TOOLS=6, HOME_CLOSE=7;
+    // The reference's actual seven-card 4+3 arrangement is drawn on the
+    // physical Home wall. Other registered games follow on later pages.
+    static final int HOME_PAGE_SIZE=7, HOME_PREVIOUS=7, HOME_NEXT=8,
+        HOME_TOOLS=9, HOME_CLOSE=10;
+    static final int ATLAS_CELL_WIDTH=84, ATLAS_CELL_HEIGHT=115;
     static final int[][] HOME_BUTTONS={
-        {278,164,498,373},{510,164,730,373},
-        {278,383,498,592},{510,383,730,592},
-        {279,627,382,693},{393,627,496,693},
-        {508,627,618,693},{629,627,730,693}
+        {278,152,384,353},{393,152,499,353},
+        {508,152,614,353},{623,152,730,353},
+        {332,371,446,574},{453,371,567,574},{574,371,688,574},
+        {278,617,384,693},{393,617,499,693},
+        {508,617,614,693},{623,617,730,693}
     };
     static int homePageCount(int count) {
         return Math.max(1,(Math.max(0,count)+HOME_PAGE_SIZE-1)/HOME_PAGE_SIZE);
@@ -48,7 +53,7 @@ final class NativeGamesGallery {
     }
     static void drawInHomeRoom(Canvas c,Paint p,
             List<NativeModuleRuntime.Descriptor> games,
-            int requestedPage,int hover,float scale,String error) {
+            int requestedPage,int hover,float scale,String error,Bitmap atlas) {
         int pages=homePageCount(games.size());
         int page=Math.max(0,Math.min(requestedPage,pages-1));
         p.setStyle(Paint.Style.FILL);
@@ -59,17 +64,17 @@ final class NativeGamesGallery {
         c.drawRoundRect(269,62,741,706,8,8,p);
         p.setStyle(Paint.Style.FILL);
         p.setColor(Color.rgb(216,238,247));
-        fit(c,p,"NATIVE GAMES",278,107,445,
-            29f*Math.min(scale,1.1f),false);
+        fit(c,p,"REVERIEVR  /  NATIVE GAMES",278,100,445,
+            26f*Math.min(scale,1.1f),false);
         p.setColor(error!=null&&!error.isEmpty()?Color.rgb(252,187,124)
             :Color.rgb(156,198,213));
         fit(c,p,error!=null&&!error.isEmpty()?"FAILED: "+error
             :games.size()+" INSTALLED / PAGE "+(page+1)+" OF "+pages,
-            278,143,445,17f*Math.min(scale,1.1f),false);
+            278,132,445,16f*Math.min(scale,1.1f),false);
         for(int slot=0;slot<HOME_PAGE_SIZE;slot++) {
             int index=homeModuleIndex(page,slot,games.size());
             if(index>=0)drawCard(c,p,HOME_BUTTONS[slot],games.get(index),
-                hover==slot,scale);
+                hover==slot,scale,atlas);
             else empty(c,p,HOME_BUTTONS[slot]);
         }
         navAt(c,p,HOME_BUTTONS,HOME_PREVIOUS,"PREV",pages>1,hover,scale);
@@ -97,7 +102,7 @@ final class NativeGamesGallery {
         return index<count?index:-1;
     }
     static void draw(Canvas c,Paint p,List<NativeModuleRuntime.Descriptor> games,
-                     int currentPage,int hover,float scale,boolean dev,String error) {
+                     int currentPage,int hover,float scale,boolean dev,String error,Bitmap atlas) {
         int pages=pageCount(games.size());
         int page=Math.max(0,Math.min(currentPage,pages-1));
         p.setStyle(Paint.Style.FILL);
@@ -118,7 +123,7 @@ final class NativeGamesGallery {
             61,146,900,17f*Math.min(scale,1.1f),false);
         for(int i=0;i<PAGE_SIZE;i++) {
             int index=moduleIndex(page,i,games.size());
-            if(index>=0)drawCard(c,p,BUTTONS[i],games.get(index),hover==i,scale);
+            if(index>=0)drawCard(c,p,BUTTONS[i],games.get(index),hover==i,scale,atlas);
             else empty(c,p,BUTTONS[i]);
         }
         nav(c,p,PREVIOUS,"PREVIOUS",pages>1,hover,scale);
@@ -138,31 +143,58 @@ final class NativeGamesGallery {
         p.setStyle(Paint.Style.FILL);
     }
     private static void drawCard(Canvas c,Paint p,int[] r,
-             NativeModuleRuntime.Descriptor game,boolean hover,float scale) {
+             NativeModuleRuntime.Descriptor game,boolean hover,float scale,Bitmap atlas) {
         float x=r[0],y=r[1],right=r[2],bottom=r[3];
         p.setStyle(Paint.Style.FILL);
         p.setColor(Color.rgb(6,13,23));
         c.drawRoundRect(x,y,right,bottom,8,8,p);
         c.save();
         c.clipRect(x+7,y+7,right-7,bottom-60);
-        preview(c,p,game.id,x+7,y+7,right-7,bottom-60);
+        preview(c,p,game.id,x+7,y+7,right-7,bottom-60,atlas);
         c.restore();
         p.setColor(Color.rgb(13,23,36));
         c.drawRect(x+5,bottom-59,right-5,bottom-4,p);
         p.setColor(Color.rgb(225,239,248));
-        fit(c,p,title(game),(x+right)/2f,bottom-31,right-x-20,
-            19f*Math.min(scale,1.12f),true);
+        String[] lines=titleLines(game);
+        if(lines.length==1) {
+            fit(c,p,lines[0],(x+right)/2f,bottom-29,right-x-14,
+                15f*Math.min(scale,1.12f),true);
+        } else {
+            fit(c,p,lines[0],(x+right)/2f,bottom-39,right-x-14,
+                13f*Math.min(scale,1.12f),true);
+            fit(c,p,lines[1],(x+right)/2f,bottom-24,right-x-14,
+                13f*Math.min(scale,1.12f),true);
+        }
         p.setColor(Color.rgb(137,190,201));
-        fit(c,p,game.id.startsWith("classic-")?"CLASSIC  /  SELECT TO PLAY"
-            :NativeModuleRuntime.isDevelopmentOnly(game.id)
-                ?"IN DEVELOPMENT  /  PLAY"
-                :"NATIVE GAME  /  SELECT TO PLAY",
-            (x+right)/2f,bottom-11,right-x-20,12f,true);
+        fit(c,p,NativeModuleRuntime.isDevelopmentOnly(game.id)
+            ?"DEV / PLAY":"SELECT TO PLAY",
+            (x+right)/2f,bottom-9,right-x-14,10f,true);
         p.setColor(hover?Color.rgb(251,214,103):Color.rgb(65,131,183));
         p.setStyle(Paint.Style.STROKE);
         p.setStrokeWidth(hover?4f:2f);
         c.drawRoundRect(x,y,right,bottom,8,8,p);
         p.setStyle(Paint.Style.FILL);
+    }
+    private static String[] titleLines(NativeModuleRuntime.Descriptor d) {
+        switch(d.id) {
+            case "between-deliveries-red-ledger":
+                return new String[]{"Between Deliveries","Red Ledger"};
+            case "iron-sight-forward-detachment":
+                return new String[]{"Iron Sight","Forward Detachment"};
+            case "ministry-lantern-desk":
+                return new String[]{"Ministry","Lantern Desk"};
+            case "procedural-test-chamber":
+                return new String[]{"Procedural","Test Chamber"};
+            default:return new String[]{title(d)};
+        }
+    }
+    /** Atlas cells retain the seven separate game-menu pictures in the supplied
+     * reference. Unlike a painted mockup, each cell is attached to a real id. */
+    static int[] atlasCell(String id) {
+        int index=order(id);
+        if(index<0||index>=FEATURED.length)return null;
+        return new int[]{(index%4)*ATLAS_CELL_WIDTH,
+            (index/4)*ATLAS_CELL_HEIGHT};
     }
     private static String title(NativeModuleRuntime.Descriptor d) {
         switch(d.id) {
@@ -212,7 +244,22 @@ final class NativeGamesGallery {
     }
     /** Tiny original vector scenes: UI repaint only, shared by both stereo eyes. */
     private static void preview(Canvas c,Paint p,String id,
-                                float x,float y,float r,float b) {
+                                float x,float y,float r,float b,Bitmap atlas) {
+        int[] cell=atlasCell(id);
+        if(atlas!=null && !atlas.isRecycled() && cell!=null
+            && atlas.getWidth()>=4*ATLAS_CELL_WIDTH
+            && atlas.getHeight()>=2*ATLAS_CELL_HEIGHT) {
+            p.setStyle(Paint.Style.FILL);
+            p.setColor(Color.WHITE);
+            p.setAlpha(255);
+            p.setFilterBitmap(true);
+            c.drawBitmap(atlas,
+                new Rect(cell[0],cell[1],cell[0]+ATLAS_CELL_WIDTH,
+                    cell[1]+ATLAS_CELL_HEIGHT),
+                new Rect(Math.round(x),Math.round(y),Math.round(r),Math.round(b)),p);
+            p.setFilterBitmap(false);
+            return;
+        }
         float w=r-x,h=b-y;
         p.setStyle(Paint.Style.FILL);
         int sky=Color.rgb(18,36,54),floor=Color.rgb(24,56,76);

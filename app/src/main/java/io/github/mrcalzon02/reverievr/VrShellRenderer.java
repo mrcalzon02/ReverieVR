@@ -2,6 +2,7 @@ package io.github.mrcalzon02.reverievr;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -15,6 +16,8 @@ import com.google.cardboard.sdk.CardboardView;
 import com.google.cardboard.sdk.HeadTransform;
 import com.google.cardboard.sdk.Viewport;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -433,6 +436,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final List<NativeModuleRuntime.Descriptor> nativeModules;
     private final List<NativeModuleRuntime.Descriptor> nativeApps;
     private final List<NativeModuleRuntime.Descriptor> nativeGames;
+    private final Bitmap nativeGamesPreviewAtlas;
     private final VrKeyboardEditor keyboardEditor = new VrKeyboardEditor();
     private final VrKeyboardEditor dosLibrarySearchEditor = new VrKeyboardEditor();
     private final VrKeyboardEditor dosGuestKeyboardEditor = new VrKeyboardEditor();
@@ -749,6 +753,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private float previousBindingYaw;
     private float previousBindingPitch;
 
+    private static Bitmap loadNativeGamesPreviewAtlas(Context context) {
+        // Small packaged atlas. Decode once; never allocate per stereo eye/frame.
+        try(InputStream source=context.getAssets().open(
+            "native/gallery/menu-preview-atlas.jpg")) {
+            return BitmapFactory.decodeStream(source);
+        } catch(IOException error) {
+            return null; // Keep playable gallery and vector fallbacks.
+        }
+    }
+
     VrShellRenderer(
         Context context,
         ReveriePreferences preferences,
@@ -758,6 +772,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         Host host
     ) {
         this.preferences = preferences;
+        nativeGamesPreviewAtlas = loadNativeGamesPreviewAtlas(context);
         this.viewerInterLensMeters = clamp(viewerInterLensMeters, 0.050f, 0.080f);
         this.host = host;
         this.dosSession = dosSession;
@@ -6630,7 +6645,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     nativeLibraryPage,
                     hoveredButton >= HOME_GALLERY_HIT_OFFSET
                         ? hoveredButton - HOME_GALLERY_HIT_OFFSET : -1,
-                    uiScale,lastNativeFailureReason);
+                    uiScale,lastNativeFailureReason,nativeGamesPreviewAtlas);
         } else if (mode == MODE_CONTROLLER_SOURCE) {
             drawControllerSourcePanel(canvas, paint);
         } else if (mode == MODE_CONTROLLER) {
@@ -8075,7 +8090,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             NativeGamesGallery.draw(canvas, paint, nativeGames,
                 nativeLibraryPage, hoveredButton, uiScale,
                 preferences.getLoggingMode() == LoggingMode.DEVELOPMENT,
-                lastNativeFailureReason);
+                lastNativeFailureReason,nativeGamesPreviewAtlas);
             return;
         }
         List<NativeModuleRuntime.Descriptor> shelf = currentNativeShelf();
