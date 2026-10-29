@@ -1,0 +1,110 @@
+{
+  "faction_id": "F08",
+  "faction_name": "Copper Steppe Confederation",
+  "asset_type": "painted square PNG icons",
+  "status": "artwork candidate, faction name proposed",
+  "grid": "5x4 256px",
+  "source": "nomadic_warriors_a_bronze_age_roster.png",
+  "roles": [
+    {
+      "index": 1,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_01_steppe_runner.png",
+      "sha256": "d037736c35fd7264abd852e8bd1005cf49284e48dd75b3473a0ba6432a1501a0"
+    },
+    {
+      "index": 2,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_02_chariot_harrier.png",
+      "sha256": "ab51ef2a6fd253bfd1218e50380bfe9b451a9efbbb814f08e7a755647be43aed"
+    },
+    {
+      "index": 3,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_03_hearth_guard.png",
+      "sha256": "0adcca3091090cbed5559abca606fcc3be1367f5ba56a176c711d843126c3c75"
+    },
+    {
+      "index": 4,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_04_sling_skirmisher.png",
+      "sha256": "654222fdd43ff5fadfcd2e954169523bf964b9646aa461b0e04ef6adc29f01ef"
+    },
+    {
+      "index": 5,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_05_herd_warden.png",
+      "sha256": "fb798f0dd66b97ddb17be0d4028fb19ddd9c7dda9d19983579a26495f4f626f1"
+    },
+    {
+      "index": 6,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_06_bronze_shield_spearmen.png",
+      "sha256": "a4ac65f0a2697d0d766c693b1c24c583d9ea655494811a46094e9dac2def54c5"
+    },
+    {
+      "index": 7,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_07_mounted_bow_scout.png",
+      "sha256": "1229e37ebc17e658b7356d37e889573234e749e98747fd4b95971e9e93cc8601"
+    },
+    {
+      "index": 8,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_08_copper_axe_warrior.png",
+      "sha256": "b7650428f957df754cf31126b9ec11a01e31ca27a0b4736b366d4932dfdb3e3e"
+    },
+    {
+      "index": 9,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_09_roundshield_veteran.png",
+      "sha256": "d7839807d5caa4101951574ef53cad1f0f736e6884b012962d23d308f6953d77"
+    },
+    {
+      "index": 10,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_10_clan_standard.png",
+      "sha256": "580f966b0f4e74440e11c9ad300f8ca07a97b2d3c7e6c04fca9a6bfbb79492ca"
+    },
+    {
+      "index": 11,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_11_council_chieftain.png",
+      "sha256": "1db2defb9f6fa0ae8b483e1a9926bcb8b7a0598972ccae211834c5d5ebaeef34"
+    },
+    {
+      "index": 12,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_12_riding_scout.png",
+      "sha256": "fe0371b7a6a7ca24d05460b622bda57c142b660a37a462efe8e5d24d06f3a566"
+    },
+    {
+      "index": 13,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_13_chariot_archer.png",
+      "sha256": "7683d6f74a589bacd62b4e2bfed0fb251d6dd1fb7f1baa563c9a7f4e5ab292cc"
+    },
+    {
+      "index": 14,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_14_caravan_supply_wagon.png",
+      "sha256": "b60819e1e68ece1a68a2688025de0cc3a9e46fa4f63e72d50a705a5938af64ad"
+    },
+    {
+      "index": 15,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_15_herd_train.png",
+      "sha256": "99e2a3170a65402b0287a74dd25c77d7535729f1fc3273c88cfe7f89c52509c9"
+    },
+    {
+      "index": 16,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_16_ritual_elder.png",
+      "sha256": "6a60b12a6dd9500d1c8febfa0f0a738480f892bd9ba2451969be710a57ec0047"
+    },
+    {
+      "index": 17,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_17_horse_handler.png",
+      "sha256": "218f570b8da903028d5a2266eb8bbfcdcbca6a49ab8ee9ae332cc5a7e4ad8011"
+    },
+    {
+      "index": 18,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_18_water_finder.png",
+      "sha256": "14b7be8983f6831779bb01c5fdddaac745c26d7e7463a9be396a28c576ef2a61"
+    },
+    {
+      "index": 19,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_19_pasture_camp.png",
+      "sha256": "78035fa9800fa52396e0749e8685e455a94569de2a5637c87910d8c3862c504f"
+    },
+    {
+      "index": 20,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f08/f08_20_war_chariot_guard.png",
+      "sha256": "e8a4cca92c7cb5908891c45efa4ed53790dd3ad818191f10fcf2c2b4aebb1116"
+    }
+  ]
+}
