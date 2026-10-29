@@ -54,18 +54,20 @@ final class HomeEnvironmentRenderer {
     // IK triangles are generated once per world frame and drawn per eye.
     private final HomeAvatarLegIk legIk=new HomeAvatarLegIk();
     private final float[] legTriangles=new float[HomeAvatarLegIk.MESH_FLOATS];
+    private final float[] legVolumeTriangles=new float[
+        HomeAvatarLegIk.MESH_FLOATS * HomeAvatarVolumeGeometry.FLOATS_PER_INPUT_FLOAT];
     private final FloatBuffer legBuffer=ByteBuffer.allocateDirect(
-        HomeAvatarLegIk.MESH_FLOATS*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        legVolumeTriangles.length*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
 
     // Dynamic meshes are created ONLY when the body/garment selection changes,
     // once per onNewFrame, and shared unchanged between the stereo eye passes.
     private HomeAvatarProfile builtAvatar;
-    private Mesh avatarArms=mesh(HomeAvatarBodyGeometry.arms(HomeAvatarProfile.DEFAULT));
-    private Mesh avatarTorso=mesh(HomeAvatarBodyGeometry.torso(HomeAvatarProfile.DEFAULT));
-    private Mesh avatarOutfit=mesh(HomeAvatarBodyGeometry.outfit(HomeAvatarProfile.DEFAULT));
-    private Mesh avatarHair=mesh(HomeAvatarBodyGeometry.hair(HomeAvatarProfile.DEFAULT));
-    private final Mesh avatarHead=mesh(HomeAvatarWardrobeGeometry.head());
-    private Mesh avatarFace=mesh(HomeAvatarBodyGeometry.face(HomeAvatarProfile.DEFAULT));
+    private Mesh avatarArms=avatarVolume(HomeAvatarBodyGeometry.arms(HomeAvatarProfile.DEFAULT),.055f);
+    private Mesh avatarTorso=avatarVolume(HomeAvatarBodyGeometry.torso(HomeAvatarProfile.DEFAULT),.105f);
+    private Mesh avatarOutfit=avatarVolume(HomeAvatarBodyGeometry.outfit(HomeAvatarProfile.DEFAULT),.118f);
+    private Mesh avatarHair=avatarVolume(HomeAvatarBodyGeometry.hair(HomeAvatarProfile.DEFAULT),.112f);
+    private final Mesh avatarHead=avatarVolume(HomeAvatarWardrobeGeometry.head(),.14f);
+    private Mesh avatarFace=avatarVolume(HomeAvatarBodyGeometry.face(HomeAvatarProfile.DEFAULT),.145f);
     // The mirror draws projected, clipped triangles into one reused per-eye buffer.
     // Portrait meshes remain immutable and are only rebuilt for wardrobe changes.
     private final float[] avatarHeadCenter = new float[3];
@@ -76,18 +78,19 @@ final class HomeEnvironmentRenderer {
         boolean walkingEnabled,HomeAvatarProfile profile) {
         HomeAvatarProfile p=profile==null?HomeAvatarProfile.DEFAULT:profile;
         if(builtAvatar==null || !builtAvatar.sameGeometry(p)) {
-            avatarArms=mesh(HomeAvatarBodyGeometry.arms(p));
-            avatarTorso=mesh(HomeAvatarBodyGeometry.torso(p));
-            avatarOutfit=mesh(HomeAvatarBodyGeometry.outfit(p));
-            avatarHair=mesh(HomeAvatarBodyGeometry.hair(p));
-            avatarFace=mesh(HomeAvatarBodyGeometry.face(p));
+            avatarArms=avatarVolume(HomeAvatarBodyGeometry.arms(p),.055f);
+            avatarTorso=avatarVolume(HomeAvatarBodyGeometry.torso(p),.105f);
+            avatarOutfit=avatarVolume(HomeAvatarBodyGeometry.outfit(p),.118f);
+            avatarHair=avatarVolume(HomeAvatarBodyGeometry.hair(p),.112f);
+            avatarFace=avatarVolume(HomeAvatarBodyGeometry.face(p),.145f);
             legIk.setBodyShape(p);
             builtAvatar=p;
         }
         legIk.update(x,z,frameNanos,walkingEnabled);
         legIk.writeMesh(legTriangles);
+        HomeAvatarVolumeGeometry.write(legTriangles,legVolumeTriangles,.046f);
         legBuffer.clear();
-        legBuffer.put(legTriangles);
+        legBuffer.put(legVolumeTriangles);
         legBuffer.position(0);
     }
     private final Mesh[] avatarEyes=makeAvatarParts(0);
@@ -99,10 +102,11 @@ final class HomeEnvironmentRenderer {
         Mesh[] meshes=new Mesh[count];
         // Geometry beyond the legacy eight hats/props receives a real
         // author-created mesh from its matching identity family.
-        for(int i=0;i<count;i++)meshes[i]=mesh(type==0
+        for(int i=0;i<count;i++)meshes[i]=avatarVolume(type==0
             ?HomeAvatarWardrobeGeometry.eyes(i):type==1
                 ?HomeAvatarWardrobeGeometry.headwear(i)
-                :HomeAvatarWardrobeGeometry.accessory(i));
+                :HomeAvatarWardrobeGeometry.accessory(i),
+                type==0?.035f:type==1?.092f:.062f);
         return meshes;
     }
     private final HeadsetMirrorProjection mirrorProjection =
@@ -645,7 +649,12 @@ final class HomeEnvironmentRenderer {
         draw(mirrorFrame, 0.13f, 0.19f, 0.23f, 1.0f);
         draw(mirrorGlass, 0.08f, 0.14f, 0.18f, 1.0f);
         if (rig.copyHeadCenter(avatarHeadCenter)) {
+            // Keep real scene occlusion, but don't let the first silhouette
+            // layer erase later costume/face layers in the projected mirror.
+            // The headset cage is rendered at a separate foreground depth.
+            GLES20.glDepthMask(false);
             drawAvatarInMirror(profile);
+            GLES20.glDepthMask(true);
         }
         int headsetCount = mirrorProjection.writeHeadset(mirrorLineScratch);
         drawMirrorLines(headsetCount, 0.35f, 0.91f, 1.0f);
@@ -669,7 +678,7 @@ final class HomeEnvironmentRenderer {
         boolean armor = p.outfit == 4 || p.outfit == 17 || p.outfit == 20;
         boolean ghost = p.theme == 9;
         float scale = p.heightScale();
-        drawProjectedAvatarPart(legBuffer, HomeAvatarLegIk.MESH_FLOATS / 3,
+        drawProjectedAvatarPart(legBuffer, legVolumeTriangles.length / 3,
             scale, armor ? .32f : c[0] * .57f,
             armor ? .36f : c[1] * .57f, armor ? .44f : c[2] * .57f);
         drawProjectedAvatarPart(avatarArms, scale,
@@ -1239,6 +1248,10 @@ final class HomeEnvironmentRenderer {
             }
         }
         return vertices;
+    }
+
+    private static Mesh avatarVolume(float[] silhouettes,float halfDepth) {
+        return mesh(HomeAvatarVolumeGeometry.extrude(silhouettes,halfDepth));
     }
 
     private static Mesh mesh(float[] values) {
