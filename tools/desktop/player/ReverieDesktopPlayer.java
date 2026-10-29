@@ -231,7 +231,7 @@ public final class ReverieDesktopPlayer {
         text(g,"CONTROLS / HELP",275,108,27,PAPER);
         String[] lines={"WASD / arrows - Move within the Home room",
             "Q / E - Turn; Shift+drag to look around",
-            "Mouse click - Select real wall controls",
+            "Mouse click - Select wall controls or desk keys",
             "Native Games opens IN Home, not a new room",
             "Press / to search the game catalog",
             "Esc - Close panel / return from gameplay",
@@ -345,6 +345,12 @@ public final class ReverieDesktopPlayer {
                         }
                         return;
                     }
+                    DesktopDeskKeyboard.Key deskKey=DesktopDeskKeyboard.hit(state,getWidth(),getHeight(),
+                        e.getX(),e.getY());
+                    if(deskKey!=null){
+                        searchFocused=DesktopDeskKeyboard.press(state,searchFocused,deskKey);
+                        return;
+                    }
                     if(!wallVisible)return;
                     try{
                         Point2D source=wallTransform.createInverse().transform(e.getPoint(),null);
@@ -416,13 +422,8 @@ public final class ReverieDesktopPlayer {
                 {-1.5,-.30,-2.6},{1.5,-.30,-2.6},{1.5,-.30,-1.6},{-1.5,-.30,-1.6}});
             poly(g,new Color(42,60,72),new double[][]{
                 {-1.33,-.28,-2.48},{1.33,-.28,-2.48},{1.33,-.28,-1.78},{-1.33,-.28,-1.78}});
-            for(int row=0;row<3;row++)for(int col=0;col<14;col++){
-                double x=-1.25+col*.18,z=-2.41+row*.19;
-                poly(g,(row+col)%2==0?new Color(111,134,150)
-                    :new Color(77,100,118),new double[][]{
-                    {x,-.265,z},{x+.15,-.265,z},{x+.15,-.265,z+.14},{x,-.265,z+.14}});
-            }
-            if(state.showHelp)text(g,"WASD move | Q/E turn | Shift+drag look | Click wall | F1 Quick Menu",
+            DesktopDeskKeyboard.draw(g,state,getWidth(),getHeight(),searchFocused);
+            if(state.showHelp)text(g,"WASD move | Q/E turn | Shift+drag look | Click wall/desk | F1 Quick Menu",
                 22,getHeight()-23,Math.max(12,Math.min(17,getWidth()/75)),PAPER);
         }
         private void drawQuick(Graphics2D g){
