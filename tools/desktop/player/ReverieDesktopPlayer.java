@@ -184,11 +184,12 @@ public final class ReverieDesktopPlayer {
             int x=275+(slot%2)*238,y=197+(slot/2)*166;
             drawGameCard(g,ready.get(index),x,y);
         }
-        text(g,"Only playable desktop ports are selectable.",280,545,15,new Color(167,199,213));
-        drawButton(g,"PREV",275,563,110,62);
-        drawButton(g,"NEXT",398,563,110,62);
-        drawButton(g,"CLOSE",520,563,225,62);
-        text(g,"The Android app and other unported games are unchanged.",275,643,13,new Color(143,179,197));
+        if(state.pageCount()>1){
+            drawButton(g,"PREV",275,532,110,52);
+            drawButton(g,"NEXT",398,532,110,52);
+        }
+        drawButton(g,"CLOSE",520,532,225,52);
+        text(g,"The Android app and other unported games are unchanged.",275,607,13,new Color(143,179,197));
     }
     private void drawGameCard(Graphics2D g,GameModuleRegistry.Entry entry,int x,int y){
         box(g,x,y,226,155,new Color(11,27,42));
@@ -275,9 +276,9 @@ public final class ReverieDesktopPlayer {
                     if(index<entries.size() && x>=275+(slot%2)*238
                         && x<501+(slot%2)*238 && y<352+(slot/2)*166)openGame(entries.get(index).id);
                 }
-            }else if(y>=563&&y<625){
-                if(x>=275&&x<385)state.nextPage(-1);
-                else if(x>=398&&x<508)state.nextPage(1);
+            }else if(y>=532&&y<584){
+                if(state.pageCount()>1 && x>=275&&x<385)state.nextPage(-1);
+                else if(state.pageCount()>1 && x>=398&&x<508)state.nextPage(1);
                 else if(x>=520&&x<745){state.close();searchFocused=false;}
             }
         }else if(state.panel==DesktopHubState.Panel.WARDROBE){
@@ -395,17 +396,6 @@ public final class ReverieDesktopPlayer {
             poly(g,wallColor.darker(),new double[][]{{5,2.8,-3.14},{5,-1,-3.14},{5,-1,4},{5,2.8,4}});
             for(int i=-4;i<=4;i++)poly(g,new Color(63,70,69,100),new double[][]{
                 {i-.018,-.99,-3.13},{i+.018,-.99,-3.13},{i+.018,-.99,4},{i-.018,-.99,4}});
-            // Desk / low physical keyboard is rendered independently of panels.
-            poly(g,new Color(96,77,62),new double[][]{
-                {-1.5,-.45,-1.48},{1.5,-.45,-1.48},{1.5,-.45,-.35},{-1.5,-.45,-.35}});
-            poly(g,new Color(46,55,63),new double[][]{
-                {-1.34,-.43,-1.23},{1.34,-.43,-1.23},{1.34,-.43,-.56},{-1.34,-.43,-.56}});
-            // Keycap geometry remains visible while catalog is open.
-            for(int row=0;row<3;row++)for(int col=0;col<14;col++){
-                double x=-1.25+col*.18,z=-1.14+row*.19;
-                poly(g,(row+col)%2==0?new Color(108,124,134):new Color(79,100,114),new double[][]{
-                    {x,-.422,z},{x+.15,-.422,z},{x+.15,-.422,z+.14},{x,-.422,z+.14}});
-            }
             paintWall();
             // The wall texture is on a fixed world plane; locomotion and
             // head-turning do NOT replace the room or discard the keyboard.
@@ -419,6 +409,18 @@ public final class ReverieDesktopPlayer {
                     (p2.getY()-p0.getY())/WALL_HEIGHT,
                     p0.getX(),p0.getY());
                 g.drawImage(wall,wallTransform,null);
+            }
+            // The desk is in front of the fixed Home wall. Draw it AFTER the
+            // wall texture so game browsing never hides physical keyboard keys.
+            poly(g,new Color(99,78,61),new double[][]{
+                {-1.5,-.30,-2.6},{1.5,-.30,-2.6},{1.5,-.30,-1.6},{-1.5,-.30,-1.6}});
+            poly(g,new Color(42,60,72),new double[][]{
+                {-1.33,-.28,-2.48},{1.33,-.28,-2.48},{1.33,-.28,-1.78},{-1.33,-.28,-1.78}});
+            for(int row=0;row<3;row++)for(int col=0;col<14;col++){
+                double x=-1.25+col*.18,z=-2.41+row*.19;
+                poly(g,(row+col)%2==0?new Color(111,134,150)
+                    :new Color(77,100,118),new double[][]{
+                    {x,-.265,z},{x+.15,-.265,z},{x+.15,-.265,z+.14},{x,-.265,z+.14}});
             }
             if(state.showHelp)text(g,"WASD move | Q/E turn | Shift+drag look | Click wall | F1 Quick Menu",
                 22,getHeight()-23,Math.max(12,Math.min(17,getWidth()/75)),PAPER);
