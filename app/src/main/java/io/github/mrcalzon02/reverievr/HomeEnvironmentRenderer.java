@@ -689,11 +689,13 @@ final class HomeEnvironmentRenderer {
             fabric[0], fabric[1], fabric[2]);
         drawProjectedAvatarPart(avatarHead, scale,
             ghost ? .73f : .72f, ghost ? .89f : .65f, ghost ? .95f : .56f);
-        drawProjectedAvatarPart(avatarFace, scale,
-            ghost ? .55f : .85f, ghost ? .74f : .73f, ghost ? .88f : .67f);
-        drawProjectedAvatarPart(avatarEyes[p.eyes], scale,
-            p.eyes == 2 ? .10f : .08f,
-            p.eyes == 2 ? .91f : .22f, p.eyes == 2 ? 1f : .30f);
+        if (mirrorProjection.avatarFaceVisible()) {
+            drawProjectedAvatarPart(avatarFace, scale,
+                ghost ? .55f : .85f, ghost ? .74f : .73f, ghost ? .88f : .67f);
+            drawProjectedAvatarPart(avatarEyes[p.eyes], scale,
+                p.eyes == 2 ? .10f : .08f,
+                p.eyes == 2 ? .91f : .22f, p.eyes == 2 ? 1f : .30f);
+        }
         drawProjectedAvatarPart(avatarHair, scale,
             c[0] * .45f, c[1] * .43f, c[2] * .40f);
         drawProjectedAvatarPart(avatarHats[p.hat], scale,
