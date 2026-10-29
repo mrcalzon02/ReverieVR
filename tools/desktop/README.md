@@ -1,4 +1,11 @@
-# ReverieVR desktop development workbench — initial functional slice
+# ReverieVR desktop tooling
+
+**Two separate executable desktop tools now exist:**
+
+- **Playable Home prototype:** `tools/desktop/player/run.sh` or `tools\\desktop\\player\\run.cmd`. Offline Java 17 Swing Home room, in-room Native Games panel, movement and keyboard, and working Pong/Snake/Breakout. See `player/README.md`. Other games and full parity remain unported.
+- **Scene-authoring workbench:** `tools/desktop/run.sh` or `tools\\desktop\\run.cmd`. The existing mesh/scene editor and Test Chamber staging pipeline described below.
+
+## Existing scene-authoring workbench — functional slice
 
 **This is a real standalone desktop scene-authoring program**, not yet the full desktop ReverieVR player or a mirror of its Android renderer. It uses Swing/Java 17, has no external editor dependencies, does not run Android, and compiles against **the authoritative** existing `HomeEnvironment`, `GameModuleRegistry` and `ObjMeshReader` from the ReverieVR source tree. No duplicate game catalog is maintained.
 
