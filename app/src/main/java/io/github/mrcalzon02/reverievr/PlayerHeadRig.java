@@ -80,6 +80,20 @@ final class PlayerHeadRig {
         return true;
     }
 
+    /** Horizontal headset-forward orientation for an upright avatar reflection.
+     * Pitch/roll do not rotate the player's entire body; no 6DoF body
+     * tracking is inferred from a Daydream 3DoF headset.
+     */
+    boolean copyHorizontalForward(float[] out) {
+        if (!valid || out == null || out.length < 2) return false;
+        float x = -axisZ[0], z = -axisZ[2];
+        float length = (float) Math.hypot(x, z);
+        if (!Float.isFinite(length) || length < 0.10f) return false;
+        out[0] = x / length;
+        out[1] = z / length;
+        return true;
+    }
+
     boolean copyEyeCenters(float[] out) {
         if (!valid || out == null || out.length < 6) return false;
         for (int eye=0; eye<2; eye++) {
