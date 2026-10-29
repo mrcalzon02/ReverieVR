@@ -145,3 +145,31 @@ fishing gameplay or S9 performance was validated by this link-only gate.
 **Not executed/accepted:** editor `javac` with full Beckenburg source present; displayed Swing water/sky interaction; USGS/NOAA Sitka source acquisition and triangulation; real coordinate/datum check; real *geographic* terrain display; full Android NDK/Gradle playable APK build, headset frame-pacing and comfort, module admission/packaging/update acquisition; gameplay rod/crab/shell/boat progression. The source-only NDK link is verified separately above.
 
 **Next concrete milestone:** acquire approved, legally distributable Sitka DEM and shoreline vectors with verified datum/rights, bake a genuine cove, integrate authored water/weather, measure actual S9 stereo frame pacing, and only register Sitka after real fishing/shore activities work. Do not ship the synthetic fixture as geographic content or duplicate Beckenburg/Malefic assets.
+
+
+## Source-only GLES2 authored water preview — 2026-10-29
+
+The unregistered Sitka prototype now requires actual bounded Beckenburg v1
+water and Sitka weather assets through the host read_asset interface at
+sitka/water/sitka.water and sitka/weather/sitka.properties. Missing or
+malformed assets fail closed; no synthetic ocean is bundled. The prototype
+remains absent from Android.mk, the playable registry and asset allowlist.
+
+Game-private sitka_water_gl.h creates convex polygon water footprints for
+SQUARE, OCTAGON, CIRCLE, OBLONG and PILL. One immutable VBO per footprint
+is uploaded per context. A GLES2 vertex shader implements the two existing
+deterministic WaveHeight layers with bounded wind amplitude; rain, fog and
+time-of-day affect provisional opaque blue tint. Simulation time advances
+once per Update, not per eye. The renderer preserves the caller's GL state,
+uses depth testing after terrain, and releases buffers/program on context
+loss. It does NOT yet implement true shoreline/dry-land clipping, optical
+depth, refraction, surveyed tides, bathymetry, boat collision or real Sitka
+coastal data.
+
+The existing real Mesa EGL test now includes synthetic blue-water pixel
+assertions in both eye viewports, state isolation, no per-eye static upload,
+deterministic weather/wave sampling and fresh unshared context recreation.
+The existing content-matrix also source-links ARMv7 and ARM64 via NDK.
+These are new tests, NOT a passing-CI claim until an exact-commit run is
+observed. The synthetic square is test-only. Galaxy S9 FPS, licensed
+geography, editor display, fishing gameplay and game admission remain open.

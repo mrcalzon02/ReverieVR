@@ -1,6 +1,7 @@
 // Real Mesa/EGL GLES2 driver regression for the unregistered Sitka terrain module.
 // Synthetic triangle is a test fixture, NEVER approved Sitka geography.
 #include "../../main/jni/native/sitka_terrain_gl.h"
+#include "../../main/jni/native/sitka_water_gl.h"
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 #include <array>
@@ -176,6 +177,58 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
     Check(right[0] > 120 && right[1] < 80 && right[2] < 80, "right eye did not rasterize terrain");
     Check(background[0] < 20 && background[1] < 20 && background[2] < 20,
           "unexpected background pixel");
+    // Test-only synthetic water, not approved geographic data.
+    const auto waters=reverie::sitka::ParseWater(
+        "version=1\nlevel=sitka\ncount=1\n"
+        "water.0.id=test-sea\nwater.0.shape=SQUARE\n"
+        "water.0.x=0\nwater.0.y=0\nwater.0.z=0\n"
+        "water.0.width=1.5\nwater.0.depth=1.5\nwater.0.yaw=0\n"
+        "water.0.setting.wave.height=0.16\nwater.0.setting.wave.grid=0.75\n"
+        "water.0.setting.wave.speed=0.8\nwater.0.setting.layer2.speed=0.12\n");
+    const auto weather=reverie::sitka::ParseWeather(
+        "version=1\ncondition=RAIN\nhour=13\nwind_mps=6\nwind_heading_deg=90\n");
+    const auto clear=reverie::sitka::ParseWeather(
+        "version=1\ncondition=CLEAR\nhour=13\nwind_mps=0\nwind_heading_deg=90\n");
+    const float sample=reverie::sitka::WeatherWaveHeight(waters[0],weather,.3f,.4f,3.f);
+    Check(std::abs(sample-reverie::sitka::WeatherWaveHeight(
+        waters[0],weather,.3f,.4f,3.f))<1.e-6f,"wave nondeterministic");
+    Check(std::abs(sample-reverie::sitka::WeatherWaveHeight(
+        waters[0],clear,.3f,.4f,3.f))>1.e-4f,"wind does not affect wave");
+    Check(std::abs(sample-reverie::sitka::WeatherWaveHeight(
+        waters[0],weather,.3f,.4f,3.5f))>1.e-4f,"wave time static");
+    Check(reverie::sitka::WaterTint(weather)!=reverie::sitka::WaterTint(clear),
+          "weather tint static");
+    Check(reverie::sitka::WaterSurfaceVertices(waters[0]).size()==12u,
+          "water polygon vertex count wrong");
+    reverie::sitka::WaterGl water;
+    const Snapshot before_water=Capture();
+    Check(water.Create(waters,weather,&error),"water GL create failed");
+    Check(water.ready()&&water.upload_count()==1u,"water static VBO missing");
+    Same(before_water,Capture());
+    water.Update(.08f);
+    Check(std::abs(water.time_seconds()-.08f)<1.e-5f,"wave update failed");
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot before_eye=Capture();
+        auto eye=Eye(index);
+        eye.view[5]=0.f;eye.view[9]=1.f;
+        eye.view[6]=-1.f;eye.view[10]=0.f; // Overhead: world X/Z to screen X/Y.
+        Check(water.RenderEye(&eye),"real GLES2 water eye failed");
+        Same(before_eye,Capture());
+        Check(water.upload_count()==1u,"per-eye water static reupload");
+        Check(std::abs(water.time_seconds()-.08f)<1.e-5f,"per-eye time advanced");
+    }
+    glFinish();
+    const auto wl=Pixel(32,32),wr=Pixel(96,32),bg=Pixel(4,4);
+    Check(wl[2]>75&&wl[2]>wl[0]*2u&&wl[1]>wl[0],
+          "left eye did not rasterize blue water");
+    Check(wr[2]>75&&wr[2]>wr[0]*2u&&wr[1]>wr[0],
+          "right eye did not rasterize blue water");
+    Check(bg[0]<20&&bg[1]<20&&bg[2]<20,"water outside footprint");
+    water.Release();
+    Check(!water.ready()&&water.upload_count()==0u,"water GL release failed");
+    NoGlError("water release");
     terrain.Release();
     Check(!terrain.ready() && terrain.upload_count() == 0u, "context release retained buffers");
     glDeleteBuffers(2, buffers);

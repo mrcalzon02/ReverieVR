@@ -36,6 +36,8 @@ on:
       - 'scripts/verify-gumball-armada.sh'
       - 'app/src/test/native/omega_front_*_test.cpp'
       - 'app/src/main/jni/native/sitka_terrain_*.h'
+      - 'app/src/main/jni/native/sitka_water_gl.h'
+      - 'app/src/main/jni/native/sitka_environment.h'
       - 'app/src/main/jni/native/sitka_terrain_module.cpp'
       - 'app/src/test/native/sitka_terrain_mesh_test.cpp'
       - 'app/src/test/native/sitka_terrain_egl_test.cpp'
@@ -67,7 +69,7 @@ jobs:
           if-no-files-found: error
 
   verify-sitka-real-gles2:
-    name: Sitka real Mesa EGL/GLES2 terrain and stereo lifecycle
+    name: Sitka real Mesa EGL/GLES2 terrain, water and stereo lifecycle
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
