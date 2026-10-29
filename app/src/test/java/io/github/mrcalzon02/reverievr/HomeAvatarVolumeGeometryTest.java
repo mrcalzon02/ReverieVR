@@ -29,7 +29,7 @@ public final class HomeAvatarVolumeGeometryTest {
     @Test public void morphologiesRemainVolumetricAndReusable() {
         for(int shape=0;shape<7;shape++) {
             HomeAvatarProfile p=HomeAvatarProfile.DEFAULT
-                .step(HomeAvatarProfile.FIELD_SHOULDERS,shape);
+                .step(8,shape);
             float[] torso=HomeAvatarVolumeGeometry.extrude(
                 HomeAvatarBodyGeometry.torso(p),.11f);
             assertTrue(torso.length>=72);
