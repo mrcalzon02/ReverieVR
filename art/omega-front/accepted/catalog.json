@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "project": "Omega Front",
+  "style_guide": "art/omega-front/style-guide/omega_primary_symbols.png",
+  "faction_identities": "proposed; exactly 17 factions defined in the setting",
+  "sets": [
+    {
+      "faction_id": "F06",
+      "icons_path": "app/src/main/assets/native/omega-front/ui/icons/f06/",
+      "atlas_path": "art/omega-front/accepted/f06/atlas_5x4.png",
+      "manifest": "art/omega-front/accepted/f06/manifest.json",
+      "expected_count": 20
+    },
+    {
+      "faction_id": "F07",
+      "icons_path": "app/src/main/assets/native/omega-front/ui/icons/f07/",
+      "atlas_path": "art/omega-front/accepted/f07/atlas_5x4.png",
+      "manifest": "art/omega-front/accepted/f07/manifest.json",
+      "expected_count": 20
+    },
+    {
+      "faction_id": "F08",
+      "icons_path": "app/src/main/assets/native/omega-front/ui/icons/f08/",
+      "atlas_path": "art/omega-front/accepted/f08/atlas_5x4.png",
+      "manifest": "art/omega-front/accepted/f08/manifest.json",
+      "expected_count": 20
+    },
+    {
+      "faction_id": "F09",
+      "icons_path": "app/src/main/assets/native/omega-front/ui/icons/f09/",
+      "atlas_path": "art/omega-front/accepted/f09/atlas_5x4.png",
+      "manifest": "art/omega-front/accepted/f09/manifest.json",
+      "expected_count": 20
+    }
+  ],
+  "artwork_accepted": "painted role icons as user-selected interim assets",
+  "runtime_wiring": "assets included in APK by Android asset packaging; texture selector still requires verification",
+  "excluded": [
+    "Iron Syndicate",
+    "Skyward Dominion",
+    "Northern Alliance",
+    "wrongly labeled faction sheets",
+    "rectangular promo cards"
+  ]
+}
