@@ -5,6 +5,58 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 public final class DesktopHubTest {
  static void require(boolean ok,String message){if(!ok)throw new AssertionError(message);}
+
+ static void deskKeyboard(Path root) {
+  DesktopHubState desk=new DesktopHubState(root);
+  require(DesktopDeskKeyboard.KEYS.size()==42,"all visible desk keys have targets");
+  for(DesktopDeskKeyboard.Key key:DesktopDeskKeyboard.KEYS){
+   java.awt.geom.Point2D[] points=DesktopDeskKeyboard.corners(desk,1260,800,key);
+   require(points!=null,"desk key projects into Home: "+key.label);
+   double x=0,y=0;
+   for(java.awt.geom.Point2D p:points){x+=p.getX()/4;y+=p.getY()/4;}
+   require(DesktopDeskKeyboard.hit(desk,1260,800,x,y)==key,
+       "visible key must match its click target: "+key.label);
+  }
+  require(DesktopDeskKeyboard.hit(desk,1260,800,0,0)==null,"desk miss is not a key");
+  java.awt.image.BufferedImage keyboardImage=new java.awt.image.BufferedImage(1260,800,
+      java.awt.image.BufferedImage.TYPE_INT_ARGB);
+  java.awt.Graphics2D keyboardGraphics=keyboardImage.createGraphics();
+  DesktopDeskKeyboard.draw(keyboardGraphics,desk,1260,800,false);
+  keyboardGraphics.dispose();
+  java.awt.geom.Point2D[] a=DesktopDeskKeyboard.corners(desk,1260,800,
+      DesktopDeskKeyboard.key("A"));
+  int px=(int)((a[0].getX()+a[2].getX())/2);
+  int py=(int)((a[0].getY()+a[2].getY())/2);
+  require(keyboardImage.getRGB(px,py)!=0,"desk keys render on projected surface");
+  boolean focus=DesktopDeskKeyboard.press(desk,false,DesktopDeskKeyboard.key("P"));
+  require(focus&&desk.panel==DesktopHubState.Panel.GAMES&&desk.query.equals("p"),
+      "clicking a character opens live Games search");
+  focus=DesktopDeskKeyboard.press(desk,focus,DesktopDeskKeyboard.key("O"));
+  require(focus&&desk.query.equals("po"),"desk types into actual catalog filter");
+  focus=DesktopDeskKeyboard.press(desk,focus,DesktopDeskKeyboard.key("BKSP"));
+  require(focus&&desk.query.equals("p"),"desk backspace edits filter");
+  focus=DesktopDeskKeyboard.press(desk,focus,DesktopDeskKeyboard.key("ENTER"));
+  require(!focus&&desk.query.equals("p"),"desk Enter exits text focus without losing query");
+  desk.open(DesktopHubState.Panel.SETTINGS);
+  focus=DesktopDeskKeyboard.press(desk,false,DesktopDeskKeyboard.key("A"));
+  require(!focus&&desk.panel==DesktopHubState.Panel.SETTINGS&&desk.query.equals("p"),
+      "non-Games panel must not consume virtual typing");
+  focus=DesktopDeskKeyboard.press(desk,false,DesktopDeskKeyboard.key("SEARCH"));
+  require(focus&&desk.panel==DesktopHubState.Panel.GAMES,"desk Search opens Games");
+  desk.runningGame=DesktopHubState.PONG;
+  focus=DesktopDeskKeyboard.press(desk,false,DesktopDeskKeyboard.key("X"));
+  require(!focus&&desk.query.equals("p"),"desk cannot type into running game");
+  desk.runningGame="";
+  desk.x=.25;desk.yaw=.12;
+  for(DesktopDeskKeyboard.Key key:DesktopDeskKeyboard.KEYS){
+   java.awt.geom.Point2D[] points=DesktopDeskKeyboard.corners(desk,1260,800,key);
+   require(points!=null,"moved Home camera keeps key in front: "+key.label);
+   double x=0,y=0;
+   for(java.awt.geom.Point2D p:points){x+=p.getX()/4;y+=p.getY()/4;}
+   require(DesktopDeskKeyboard.hit(desk,1260,800,x,y)==key,
+       "moved camera hit follows rendered key: "+key.label);
+  }
+ }
  public static void main(String[] args) throws Exception {
   Path root=Files.createTempDirectory("reverie-desktop-home-");
   try {
@@ -44,7 +96,8 @@ public final class DesktopHubTest {
    pong.update(.1);
    require(pong.aiScore>0,"pong scoring must be real");
    require(!DesktopHubState.ported("classic-chess"),"missing desktop chess correctly unavailable");
-   System.out.println("DesktopHub: PASS state, keyboard search, live Home movement, game lifecycle, save, 3 games rendering, snake boundaries, pong scoring");
+   deskKeyboard(root);
+   System.out.println("DesktopHub: PASS state, 42 projected desk key hits, focus/text/backspace/Enter, live Home movement, game lifecycle, save, 3 games rendering, snake boundaries, pong scoring");
   }finally{
    try(var paths=Files.walk(root)) {paths.sorted(java.util.Comparator.reverseOrder()).forEach(p->{try{Files.delete(p);}catch(Exception ex){throw new RuntimeException(ex);}});}
   }
