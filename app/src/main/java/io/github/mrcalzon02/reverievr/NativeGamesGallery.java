@@ -14,6 +14,71 @@ final class NativeGamesGallery {
         {61,650,257,704},{268,650,464,704},{475,650,765,704},
         {776,650,963,704}
     };
+    // Four large cards live in the existing Home center-wall texture region.
+    static final int HOME_PAGE_SIZE=4, HOME_PREVIOUS=4, HOME_NEXT=5,
+        HOME_TOOLS=6, HOME_CLOSE=7;
+    static final int[][] HOME_BUTTONS={
+        {278,164,498,373},{510,164,730,373},
+        {278,383,498,592},{510,383,730,592},
+        {279,627,382,693},{393,627,496,693},
+        {508,627,618,693},{629,627,730,693}
+    };
+    static int homePageCount(int count) {
+        return Math.max(1,(Math.max(0,count)+HOME_PAGE_SIZE-1)/HOME_PAGE_SIZE);
+    }
+    static int homeModuleIndex(int page,int slot,int count) {
+        if(page<0||page>=homePageCount(count)||slot<0||slot>=HOME_PAGE_SIZE)
+            return -1;
+        int index=page*HOME_PAGE_SIZE+slot;
+        return index<count?index:-1;
+    }
+    static boolean homeButtonEnabled(int slot,int page,int count) {
+        if(slot>=0&&slot<HOME_PAGE_SIZE)
+            return homeModuleIndex(page,slot,count)>=0;
+        if(slot==HOME_PREVIOUS||slot==HOME_NEXT)
+            return homePageCount(count)>1;
+        return slot==HOME_TOOLS||slot==HOME_CLOSE;
+    }
+    static int homeButtonAtPixel(float x,float y) {
+        for(int i=0;i<HOME_BUTTONS.length;i++) {
+            int[] r=HOME_BUTTONS[i];
+            if(x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3])return i;
+        }
+        return -1;
+    }
+    static void drawInHomeRoom(Canvas c,Paint p,
+            List<NativeModuleRuntime.Descriptor> games,
+            int requestedPage,int hover,float scale,String error) {
+        int pages=homePageCount(games.size());
+        int page=Math.max(0,Math.min(requestedPage,pages-1));
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(Color.rgb(8,17,28));
+        c.drawRoundRect(268,61,742,708,10,10,p);
+        p.setColor(Color.rgb(71,137,184));
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2f);
+        c.drawRoundRect(269,62,741,706,8,8,p);
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(Color.rgb(216,238,247));
+        fit(c,p,"NATIVE GAMES",278,107,445,
+            29f*Math.min(scale,1.1f),false);
+        p.setColor(error!=null&&!error.isEmpty()?Color.rgb(252,187,124)
+            :Color.rgb(156,198,213));
+        fit(c,p,error!=null&&!error.isEmpty()?"FAILED: "+error
+            :games.size()+" INSTALLED / PAGE "+(page+1)+" OF "+pages,
+            278,143,445,17f*Math.min(scale,1.1f),false);
+        for(int slot=0;slot<HOME_PAGE_SIZE;slot++) {
+            int index=homeModuleIndex(page,slot,games.size());
+            if(index>=0)drawCard(c,p,HOME_BUTTONS[slot],games.get(index),
+                hover==slot,scale);
+            else empty(c,p,HOME_BUTTONS[slot]);
+        }
+        navAt(c,p,HOME_BUTTONS,HOME_PREVIOUS,"PREV",pages>1,hover,scale);
+        navAt(c,p,HOME_BUTTONS,HOME_NEXT,"NEXT",pages>1,hover,scale);
+        navAt(c,p,HOME_BUTTONS,HOME_TOOLS,"TOOLS",true,hover,scale);
+        navAt(c,p,HOME_BUTTONS,HOME_CLOSE,"CLOSE",true,hover,scale);
+        p.setTextAlign(Paint.Align.LEFT);p.setStyle(Paint.Style.FILL);
+        p.setFakeBoldText(false);
+    }
     private static final String[] FEATURED={
         "breakwater-battery","between-deliveries-red-ledger",
         "gumball-armada","iron-sight-forward-detachment",
@@ -113,7 +178,11 @@ final class NativeGamesGallery {
     }
     private static void nav(Canvas c,Paint p,int index,String label,
                             boolean enabled,int hovered,float scale) {
-        int[] r=BUTTONS[index];
+        navAt(c,p,BUTTONS,index,label,enabled,hovered,scale);
+    }
+    private static void navAt(Canvas c,Paint p,int[][] rectangles,
+            int index,String label,boolean enabled,int hovered,float scale) {
+        int[] r=rectangles[index];
         p.setStyle(Paint.Style.FILL);
         p.setColor(!enabled?Color.rgb(25,34,44)
             :index==hovered?Color.rgb(39,86,106):Color.rgb(23,48,68));

@@ -1,3 +1,7 @@
+## In-Home Native Games gallery correction — 2026-10-28
+
+The Native Games Home launcher now opens content on the **real Home center-wall panel**, not `MODE_NATIVE_GAMES` or a second VR room. The renderer remains in `MODE_HOME` so the ordinary Home draw, ambient, bounded locomotion, physical keycaps/legend texture, external keyboard entry, controller/gaze ray, Quick Menu and side-panel interactions persist. Four game cards per page use the exact existing center-wall pixels and ray mapping. Card targets have their own namespace distinct from desk-key IDs. Back and Close dismiss the window without leaving Home; only launching a genuine module or explicitly switching to a tool changes modes. Source-only until Android/headset checks.
+
 ## Shared wardrobe profile in native games — 2026-10-24
 
 On every hub-hosted native module launch, the shell reads the persisted

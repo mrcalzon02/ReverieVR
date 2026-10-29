@@ -634,6 +634,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int uiFocusDosListOffset = -1;
     private volatile int dosListRevision;
     private int uiFocusDosListRevision = -1;
+    // Content on the real Home center panel, never a separate room or mode.
+    private boolean nativeGamesPanelVisible;
+    private static final int HOME_GALLERY_HIT_OFFSET = 2000;
     private int nativeLibraryPage;
     private int emulatorCatalogPage;
     private HomeEnvironment lastAmbientEnvironment;
@@ -2534,9 +2537,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             }
             if ((mode == MODE_HOME || mode == MODE_DOS_LIBRARY
                 || mode == MODE_DOS)
-                && (newHover >= HOME_KEYBOARD_HIT_OFFSET
-                    || hoveredButton >= HOME_KEYBOARD_HIT_OFFSET)) {
+                && ((newHover >= HOME_KEYBOARD_HIT_OFFSET
+                    && newHover < HOME_KEYBOARD_HIT_OFFSET + KEYBOARD_BUTTONS.length)
+                    || (hoveredButton >= HOME_KEYBOARD_HIT_OFFSET
+                    && hoveredButton < HOME_KEYBOARD_HIT_OFFSET + KEYBOARD_BUTTONS.length))) {
                 homeKeyboardHoveredKey = newHover >= HOME_KEYBOARD_HIT_OFFSET
+                    && newHover < HOME_KEYBOARD_HIT_OFFSET + KEYBOARD_BUTTONS.length
                     ? newHover - HOME_KEYBOARD_HIT_OFFSET : -1;
                 keyboardTextureDirty = true;
             }
@@ -2555,7 +2561,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         final int dwellContext = mode
             | (orientationMenuVisible ? 1 << 8 : 0)
             | (quickMenuSettingsVisible ? 1 << 9 : 0)
-            | (phonePanelVisible ? 1 << 10 : 0);
+            | (phonePanelVisible ? 1 << 10 : 0)
+            | (nativeGamesPanelVisible ? 1 << 11 : 0);
         boolean dwellSelect = gazeDwell.update(
             usingGazePointer && !selecting, dwellContext,
             validDwellTarget, frameNanos);
@@ -2565,7 +2572,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             textureDirty = true;
             if ((mode == MODE_HOME || mode == MODE_DOS_LIBRARY
                 || mode == MODE_DOS)
-                && gazeDwell.target()>=HOME_KEYBOARD_HIT_OFFSET)
+                && gazeDwell.target()>=HOME_KEYBOARD_HIT_OFFSET
+                && gazeDwell.target()<HOME_KEYBOARD_HIT_OFFSET + KEYBOARD_BUTTONS.length)
                 keyboardTextureDirty=true;
         }
         if (backRequested.getAndSet(false)) {
@@ -4803,6 +4811,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
         float px,
         float py
     ) {
+        // The gallery inhabits the physical Home center wall. Its pixels
+        // never fall through to dashboard controls painted behind it.
+        if (mode == MODE_HOME && nativeGamesPanelVisible
+            && px >= HOME_CENTER_PIXEL_LEFT && px <= HOME_CENTER_PIXEL_RIGHT
+            && py >= HOME_PIXEL_TOP && py <= HOME_PIXEL_BOTTOM) {
+            int slot = NativeGamesGallery.homeButtonAtPixel(px,py);
+            return slot >= 0 && NativeGamesGallery.homeButtonEnabled(
+                slot,nativeLibraryPage,nativeGames.size())
+                ? HOME_GALLERY_HIT_OFFSET + slot : -1;
+        }
         int[][] buttons = activeButtons();
         for (int index = 0;
              index < buttons.length;
@@ -4844,6 +4862,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             && index >= HOME_KEYBOARD_HIT_OFFSET)
             return index - HOME_KEYBOARD_HIT_OFFSET < KEYBOARD_BUTTONS.length;
         if (mode == MODE_HOME) {
+            if (nativeGamesPanelVisible && index >= HOME_GALLERY_HIT_OFFSET
+                && index < HOME_GALLERY_HIT_OFFSET + NativeGamesGallery.HOME_BUTTONS.length)
+                return NativeGamesGallery.homeButtonEnabled(
+                    index - HOME_GALLERY_HIT_OFFSET,nativeLibraryPage,nativeGames.size());
             if (index >= HOME_KEYBOARD_HIT_OFFSET)
                 return index - HOME_KEYBOARD_HIT_OFFSET < KEYBOARD_BUTTONS.length;
             if (index == 2) {
@@ -5105,6 +5127,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             return;
         }
         if (mode == MODE_HOME) {
+            if (nativeGamesPanelVisible
+                && hoveredButton >= HOME_GALLERY_HIT_OFFSET
+                && hoveredButton < HOME_GALLERY_HIT_OFFSET + NativeGamesGallery.HOME_BUTTONS.length) {
+                handleHomeNativeGamesSelection(hoveredButton - HOME_GALLERY_HIT_OFFSET);
+                return;
+            }
             if (phonePanelVisible && hoveredButton >= 25
                 && hoveredButton < 19 + PhonePanelControlGeometry.COUNT) {
                 float previous;
@@ -5143,6 +5171,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 keyboardTextureDirty = true;
                 return;
             }
+            // All other Home controls stay usable; leaving the Home
+            // dashboard also closes the temporary center-wall gallery.
+            if (nativeGamesPanelVisible) nativeGamesPanelVisible = false;
             switch (hoveredButton) {
                 case 0:
                     mode = MODE_MEDIA_LIBRARY;
@@ -5155,7 +5186,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 case 2:
                     if (NativeModuleRuntime.isAvailable() && !nativeGames.isEmpty()) {
                         nativeLibraryPage = 0;
-                        mode = MODE_NATIVE_GAMES;
+                        nativeGamesPanelVisible = true;
+                        uiTargetStabilizer.reset();
+                        gazeDwell.reset();
                     } else {
                         host.onUiActionRejected();
                     }
@@ -5650,24 +5683,55 @@ final class VrShellRenderer implements CardboardView.Renderer {
         return mode == MODE_NATIVE_GAMES ? nativeGames : nativeApps;
     }
 
+    private void handleHomeNativeGamesSelection(int button) {
+        int pages = NativeGamesGallery.homePageCount(nativeGames.size());
+        int index = NativeGamesGallery.homeModuleIndex(
+            nativeLibraryPage,button,nativeGames.size());
+        if (index >= 0) {
+            launchNativeGame(nativeGames.get(index));
+            return;
+        }
+        if (button == NativeGamesGallery.HOME_PREVIOUS && pages > 1)
+            nativeLibraryPage = (nativeLibraryPage + pages - 1) % pages;
+        else if (button == NativeGamesGallery.HOME_NEXT && pages > 1)
+            nativeLibraryPage = (nativeLibraryPage + 1) % pages;
+        else if (button == NativeGamesGallery.HOME_TOOLS) {
+            nativeGamesPanelVisible = false;
+            nativeLibraryPage = 0;
+            mode = MODE_NATIVE_LIBRARY;
+        } else if (button == NativeGamesGallery.HOME_CLOSE) {
+            nativeGamesPanelVisible = false;
+            nativeLibraryPage = 0;
+        } else host.onUiActionRejected();
+        hoveredButton = -1;
+        uiTargetStabilizer.reset();
+        gazeDwell.reset();
+        textureDirty = true;
+    }
+
+    private void launchNativeGame(NativeModuleRuntime.Descriptor selected) {
+        if (host.onNativeModulePlaybackRequested(selected.id)) {
+            clearNativeModuleFailure();
+            preferences.markLastActivityNative(
+                selected.id,selected.displayName);
+            nativeSurfaceReady = false;
+            nativeGamesPanelVisible = false;
+            mode = MODE_NATIVE;
+        } else {
+            noteNativeModuleFailure(selected.id);
+            host.onUiActionRejected();
+        }
+        hoveredButton = -1;
+        textureDirty = true;
+    }
+
     private void handleNativeGamesSelection(int button) {
         int count = nativeGames.size();
         int pages = NativeGamesGallery.pageCount(count);
         int index = NativeGamesGallery.moduleIndex(nativeLibraryPage, button, count);
         if (index >= 0) {
-            NativeModuleRuntime.Descriptor selected = nativeGames.get(index);
-            if (host.onNativeModulePlaybackRequested(selected.id)) {
-                clearNativeModuleFailure();
-                preferences.markLastActivityNative(
-                    selected.id, selected.displayName);
-                nativeSurfaceReady = false;
-                mode = MODE_NATIVE;
-                hoveredButton = -1;
-                textureDirty = true;
-                return;
-            }
-            noteNativeModuleFailure(selected.id);
-            host.onUiActionRejected();
+            launchNativeGame(nativeGames.get(index));
+            return;
         } else if (button == NativeGamesGallery.PREVIOUS && pages > 1) {
             nativeLibraryPage = (nativeLibraryPage + pages - 1) % pages;
         } else if (button == NativeGamesGallery.NEXT && pages > 1) {
@@ -6290,6 +6354,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         }
 
         if (mode == MODE_HOME) {
+            if (nativeGamesPanelVisible) {
+                nativeGamesPanelVisible = false;
+                nativeLibraryPage = 0;
+                hoveredButton = -1;
+                uiTargetStabilizer.reset();
+                gazeDwell.reset();
+                textureDirty = true;
+                return;
+            }
             if (phonePanelVisible) {
                 dismissPhonePanel();
                 return;
@@ -6552,6 +6625,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         } else if (mode == MODE_HOME) {
             drawHome(canvas, paint);
+            if (nativeGamesPanelVisible)
+                NativeGamesGallery.drawInHomeRoom(canvas,paint,nativeGames,
+                    nativeLibraryPage,
+                    hoveredButton >= HOME_GALLERY_HIT_OFFSET
+                        ? hoveredButton - HOME_GALLERY_HIT_OFFSET : -1,
+                    uiScale,lastNativeFailureReason);
         } else if (mode == MODE_CONTROLLER_SOURCE) {
             drawControllerSourcePanel(canvas, paint);
         } else if (mode == MODE_CONTROLLER) {

@@ -26,6 +26,27 @@ public class NativeGamesGalleryTest {
         assertEquals(7,featured);
         assertEquals(8,classics);
     }
+    @Test public void homeRoomGalleryKeepsAllGamesAndPhysicalPanelBounds() {
+        assertEquals(4,NativeGamesGallery.homePageCount(15));
+        for(int i=0;i<15;i++)
+            assertEquals(i,NativeGamesGallery.homeModuleIndex(i/4,i%4,15));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(3,3,15));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(4,0,15));
+        assertTrue(NativeGamesGallery.homeButtonEnabled(6,3,15));
+        assertTrue(NativeGamesGallery.homeButtonEnabled(7,3,15));
+        assertFalse(NativeGamesGallery.homeButtonEnabled(3,3,15));
+        for(int i=0;i<NativeGamesGallery.HOME_BUTTONS.length;i++) {
+            int[] a=NativeGamesGallery.HOME_BUTTONS[i];
+            assertTrue(a[0]>=266 && a[2]<=744 && a[1]>=60 && a[3]<=710);
+            assertEquals(i,NativeGamesGallery.homeButtonAtPixel(
+                (a[0]+a[2])/2f,(a[1]+a[3])/2f));
+            for(int j=i+1;j<NativeGamesGallery.HOME_BUTTONS.length;j++){
+                int[] b=NativeGamesGallery.HOME_BUTTONS[j];
+                assertFalse(a[0]<b[2]&&b[0]<a[2]&&a[1]<b[3]&&b[1]<a[3]);
+            }
+        }
+        assertEquals(-1,NativeGamesGallery.homeButtonAtPixel(100,300));
+    }
     @Test public void cardAndNavigationTargetsNeverOverlap() {
         assertEquals(10,NativeGamesGallery.BUTTONS.length);
         assertEquals(8,NativeGamesGallery.TOOLS);
