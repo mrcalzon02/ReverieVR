@@ -100,6 +100,57 @@ public final class HeadsetMirrorProjectionTest {
             new float[HeadsetMirrorProjection.MAX_VERTICES*3]));
     }
 
+    private static float[] facingMirror() {
+        // Camera forward is +X: its rigid world-to-head view is a 90-degree
+        // yaw from the default -Z heading.
+        return new float[] {0,0,-1,0, 0,1,0,0, 1,0,0,0, 0,0,0,1};
+    }
+
+    @Test public void headsetCageIsInFrontOfVolumetricReflection() {
+        assertTrue(HeadsetMirrorProjection.LINE_X
+            < HeadsetMirrorProjection.AVATAR_X);
+        assertTrue(HeadsetMirrorProjection.AVATAR_X
+            < HeadsetMirrorProjection.PLANE_X);
+        PlayerHeadRig rig = new PlayerHeadRig();
+        assertTrue(rig.update(facingMirror(),0.064f));
+        HeadsetMirrorProjection projection = new HeadsetMirrorProjection();
+        assertTrue(projection.prepare(rig,0));
+        float[] cage = new float[HeadsetMirrorProjection.MAX_VERTICES*3];
+        assertEquals(36,projection.writeHeadset(cage));
+        float[] avatar = new float[45];
+        FloatBuffer portrait = FloatBuffer.wrap(new float[]{
+            HomeAvatarWardrobeGeometry.MIRROR_X, .95f, -.30f,
+            HomeAvatarWardrobeGeometry.MIRROR_X, .65f, .30f,
+            HomeAvatarWardrobeGeometry.MIRROR_X, .35f, -.30f
+        });
+        assertEquals(3,projection.writeAvatarTriangles(portrait,3,
+            0f,0f,0f,1f,avatar));
+        for(int i=0;i<9;i+=3)
+            assertTrue(cage[0]<avatar[i]);
+    }
+
+    @Test public void avatarFacingTracksHeadsetYawRatherThanBillboarding() {
+        PlayerHeadRig rig = new PlayerHeadRig();
+        HeadsetMirrorProjection projection = new HeadsetMirrorProjection();
+        FloatBuffer volumeFace = FloatBuffer.wrap(new float[]{
+            HomeAvatarWardrobeGeometry.MIRROR_X+.07f, .94f, -.33f,
+            HomeAvatarWardrobeGeometry.MIRROR_X+.07f, .66f, .33f,
+            HomeAvatarWardrobeGeometry.MIRROR_X-.07f, .33f, -.33f
+        });
+        float[] front = new float[45], side = new float[45];
+        assertTrue(rig.update(facingMirror(),.064f));
+        assertTrue(projection.prepare(rig,0));
+        assertEquals(3,projection.writeAvatarTriangles(volumeFace,3,
+            0f,0f,0f,1f,front));
+        assertTrue(rig.update(at(0f,0f,0f),.064f));
+        assertTrue(projection.prepare(rig,0));
+        assertEquals(3,projection.writeAvatarTriangles(volumeFace,3,
+            0f,0f,0f,1f,side));
+        // Distinct observed silhouette in reflection when the headset turns.
+        assertTrue(Math.abs(front[2]-side[2])>.02f
+            ||Math.abs(front[5]-side[5])>.02f);
+    }
+
     @Test public void avatarReflectionTracksWorldPositionForBothEyes() {
         PlayerHeadRig rig = new PlayerHeadRig();
         assertTrue(rig.update(at(0f, 0f, 0f), 0.064f));
@@ -128,7 +179,7 @@ public final class HeadsetMirrorProjectionTest {
 
     @Test public void avatarTrianglesAreClippedToPhysicalGlass() {
         PlayerHeadRig rig = new PlayerHeadRig();
-        assertTrue(rig.update(at(0f, 0f, 0f), 0.064f));
+        assertTrue(rig.update(facingMirror(), 0.064f));
         HeadsetMirrorProjection projection = new HeadsetMirrorProjection();
         assertTrue(projection.prepare(rig, 0));
         FloatBuffer wideBody = FloatBuffer.wrap(new float[] {
@@ -142,7 +193,7 @@ public final class HeadsetMirrorProjectionTest {
         assertTrue(count >= 3);
         assertTrue(count <= 15);
         for (int i = 0; i < count * 3; i += 3) {
-            assertEquals(HeadsetMirrorProjection.LINE_X,
+            assertEquals(HeadsetMirrorProjection.AVATAR_X,
                 triangles[i], 0.00001f);
             assertTrue(Float.isFinite(triangles[i + 1]));
             assertTrue(Float.isFinite(triangles[i + 2]));
