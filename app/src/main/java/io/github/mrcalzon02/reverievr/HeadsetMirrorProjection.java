@@ -52,6 +52,13 @@ final class HeadsetMirrorProjection {
         return ready;
     }
 
+    /** Front-only features are hidden when the avatar is side-on or turned
+     * away from the mirror; otherwise its face looks painted on its back.
+     */
+    boolean avatarFaceVisible() {
+        return ready && forward[0] > 0.10f;
+    }
+
     int writeHeadset(float[] out) {
         if (!ready || out == null || out.length < MAX_VERTICES * 3) return 0;
         int written = 0;
