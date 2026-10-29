@@ -1,0 +1,110 @@
+{
+  "faction_id": "F06",
+  "faction_name": "The Lost Ninth",
+  "asset_type": "painted square PNG icons",
+  "status": "artwork candidate, faction name proposed",
+  "grid": "5x4 256px",
+  "source": "omega_front_f06_lost_ninth_01/atlas.png",
+  "roles": [
+    {
+      "index": 1,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_01_legionary_shield.png",
+      "sha256": "127a15400e9b8ca11178053920ee18cb34171810e70b8adf8fc9a1d1ef4b84d5"
+    },
+    {
+      "index": 2,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_02_shield_wall_legionaries.png",
+      "sha256": "a96fd4c217c15ed7a8fbad1175f143afddad33ac773978219f317c16f9460ff4"
+    },
+    {
+      "index": 3,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_03_velite_javelin.png",
+      "sha256": "577a099ef8f8ca677d07a471cd9072bfa29f4d3b6dab087e903eebca999c60da"
+    },
+    {
+      "index": 4,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_04_light_skirmisher.png",
+      "sha256": "7f71b26e77c9268532537b373fc4dac020c040dfe3b6ee9681f96daa40042d7b"
+    },
+    {
+      "index": 5,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_05_slinger.png",
+      "sha256": "bfd8e62c0aaf8e516e4556088c26f26eb02c4d4fb431b52fc3406b38566e85b0"
+    },
+    {
+      "index": 6,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_06_auxiliary_archer.png",
+      "sha256": "940568f7761fe4575175495642a15f7573909909b20907a8fbe081f9d800e97a"
+    },
+    {
+      "index": 7,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_07_optio_officer.png",
+      "sha256": "f46d6916e6a950304e4d97cddbd74dd652db9ae45e12bf5a8b190d3f5e5f7f52"
+    },
+    {
+      "index": 8,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_08_centurion.png",
+      "sha256": "8a256ff2d04c74ae4c1a3746b9527bc9a78733729857a552af14844ac06cc801"
+    },
+    {
+      "index": 9,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_09_aquilifer_eagle_standard.png",
+      "sha256": "5a53d5b8cb428037508f3a5fef86d8416982102e0fff611754d0a8b76cf7106b"
+    },
+    {
+      "index": 10,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_10_signifer_legion_standard.png",
+      "sha256": "a7d9bac4b83dc5d886bbe7e1d8eaef38e35d5f113d3646afc023e6d5f2907818"
+    },
+    {
+      "index": 11,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_11_cavalry_scout.png",
+      "sha256": "251a7a31dd7d9399ed306a1959a7d979ed24437a09cb8bc069c7a89ee8061286"
+    },
+    {
+      "index": 12,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_12_mounted_lancer.png",
+      "sha256": "c3eccd9f1f676cdea72ddabf5f44b7f52fd5ea21506b7d09b8d7f3a51047b8d4"
+    },
+    {
+      "index": 13,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_13_scorpio_bolt_engine.png",
+      "sha256": "a12ebe916f83e02e46833a9f48591101597ae5e4c047e36fdb88a591e9083070"
+    },
+    {
+      "index": 14,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_14_siege_engine_crew.png",
+      "sha256": "0f5b03e71af9aac57a115c8157c509bcb64dc29cc716a61d4c8500eee40e7ae3"
+    },
+    {
+      "index": 15,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_15_castrum_engineer.png",
+      "sha256": "adf159be15370ae2366252434c03f46f1b0a513770bc48128449ffb9904e931e"
+    },
+    {
+      "index": 16,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_16_road_pioneer.png",
+      "sha256": "55b2c6b714844624b58959960882ede3e6b6bb98068e87527706b3a20de4ee58"
+    },
+    {
+      "index": 17,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_17_barricade_bearer.png",
+      "sha256": "dca0c2b892a0bf29f5a90ad07a515d84be71848725c3cb7475f7910f963f5253"
+    },
+    {
+      "index": 18,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_18_field_medic.png",
+      "sha256": "0dbf441eebe44d4ee88067243bbaf599d68b27303e0f879a32c64f8234acd9e4"
+    },
+    {
+      "index": 19,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_19_logistics_pack_train.png",
+      "sha256": "1a35d0fdc25160581cc169fd06a498cfa6e61f995bd281672dc6dc3e87b56b31"
+    },
+    {
+      "index": 20,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f06/f06_20_legion_commander.png",
+      "sha256": "7dee458e40d6ddbae6386233176c4f7c52bbaab697ef3ede1ef48df2f1dc62b9"
+    }
+  ]
+}
