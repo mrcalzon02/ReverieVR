@@ -1,0 +1,151 @@
+{
+  "faction_id": "F10",
+  "name": "The Farwake",
+  "maturity": "proposed faction",
+  "icon_count": 20,
+  "asset_type": "source-svg-concept",
+  "runtime_png_status": "not uploaded",
+  "note": "Repository SVG source pack is an independent vector rendition; the locally downloadable PNG bundle is not yet present in GitHub. Neither is a successful painterly AI image run.",
+  "icons": [
+    {
+      "slot": 1,
+      "role": "ghostline_sharpshooter",
+      "type": "sniper",
+      "status": "dossier_core",
+      "svg": "f10_01_ghostline_sharpshooter.svg"
+    },
+    {
+      "slot": 2,
+      "role": "mote_drone",
+      "type": "drone",
+      "status": "dossier_core",
+      "svg": "f10_02_mote_drone.svg"
+    },
+    {
+      "slot": 3,
+      "role": "vector_rifle_team",
+      "type": "rifle",
+      "status": "dossier_core",
+      "svg": "f10_03_vector_rifle_team.svg"
+    },
+    {
+      "slot": 4,
+      "role": "quiet_carrier",
+      "type": "carrier",
+      "status": "dossier_core",
+      "svg": "f10_04_quiet_carrier.svg"
+    },
+    {
+      "slot": 5,
+      "role": "archive_medic",
+      "type": "medic",
+      "status": "dossier_core",
+      "svg": "f10_05_archive_medic.svg"
+    },
+    {
+      "slot": 6,
+      "role": "ghostline_observer",
+      "type": "sniper",
+      "status": "proposed_extension",
+      "svg": "f10_06_ghostline_observer.svg"
+    },
+    {
+      "slot": 7,
+      "role": "nanoweave_shield",
+      "type": "shield",
+      "status": "proposed_extension",
+      "svg": "f10_07_nanoweave_shield.svg"
+    },
+    {
+      "slot": 8,
+      "role": "silence_infiltrator",
+      "type": "infiltrator",
+      "status": "proposed_extension",
+      "svg": "f10_08_silence_infiltrator.svg"
+    },
+    {
+      "slot": 9,
+      "role": "adaptive_lancer",
+      "type": "rifle",
+      "status": "proposed_extension",
+      "svg": "f10_09_adaptive_lancer.svg"
+    },
+    {
+      "slot": 10,
+      "role": "signal_cartographer",
+      "type": "tablet",
+      "status": "proposed_extension",
+      "svg": "f10_10_signal_cartographer.svg"
+    },
+    {
+      "slot": 11,
+      "role": "prism_sentry",
+      "type": "turret",
+      "status": "proposed_extension",
+      "svg": "f10_11_prism_sentry.svg"
+    },
+    {
+      "slot": 12,
+      "role": "field_calibrator",
+      "type": "engineer",
+      "status": "proposed_extension",
+      "svg": "f10_12_field_calibrator.svg"
+    },
+    {
+      "slot": 13,
+      "role": "power_cell_custodian",
+      "type": "cacheholder",
+      "status": "proposed_extension",
+      "svg": "f10_13_power_cell_custodian.svg"
+    },
+    {
+      "slot": 14,
+      "role": "nanorepair_unit",
+      "type": "drone",
+      "status": "proposed_extension",
+      "svg": "f10_14_nanorepair_unit.svg"
+    },
+    {
+      "slot": 15,
+      "role": "whisper_relay",
+      "type": "relay",
+      "status": "proposed_extension",
+      "svg": "f10_15_whisper_relay.svg"
+    },
+    {
+      "slot": 16,
+      "role": "extraction_pilot",
+      "type": "pilot",
+      "status": "proposed_extension",
+      "svg": "f10_16_extraction_pilot.svg"
+    },
+    {
+      "slot": 17,
+      "role": "phase_waypoint",
+      "type": "beacon",
+      "status": "proposed_extension",
+      "svg": "f10_17_phase_waypoint.svg"
+    },
+    {
+      "slot": 18,
+      "role": "power_cell_cache",
+      "type": "cache",
+      "status": "proposed_extension",
+      "svg": "f10_18_power_cell_cache.svg"
+    },
+    {
+      "slot": 19,
+      "role": "refuge_barrier",
+      "type": "barrier",
+      "status": "proposed_extension",
+      "svg": "f10_19_refuge_barrier.svg"
+    },
+    {
+      "slot": 20,
+      "role": "farwake_command",
+      "type": "commander",
+      "status": "proposed_extension",
+      "svg": "f10_20_farwake_command.svg"
+    }
+  ]
+}
