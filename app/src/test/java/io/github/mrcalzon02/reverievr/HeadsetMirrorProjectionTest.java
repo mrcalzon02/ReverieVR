@@ -153,7 +153,7 @@ public final class HeadsetMirrorProjectionTest {
 
     @Test public void avatarReflectionTracksWorldPositionForBothEyes() {
         PlayerHeadRig rig = new PlayerHeadRig();
-        assertTrue(rig.update(at(0f, 0f, 0f), 0.064f));
+        assertTrue(rig.update(facingMirror(), 0.064f));
         HeadsetMirrorProjection projection = new HeadsetMirrorProjection();
         FloatBuffer body = FloatBuffer.wrap(new float[] {
             HomeAvatarWardrobeGeometry.MIRROR_X, 0.95f, -0.25f,
