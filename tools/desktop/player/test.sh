@@ -6,5 +6,5 @@ SRC="$ROOT/tools/desktop/player"
 OUT="$ROOT/build/desktop-player/tests"
 mkdir -p "$OUT"
 javac --release 17 -encoding UTF-8 -d "$OUT" "$BASE/HomeEnvironment.java" "$BASE/GameModuleRegistry.java" \
- "$SRC/DesktopHubState.java" "$SRC/DesktopArcade.java" "$SRC/ReverieDesktopPlayer.java" "$SRC/DesktopHubTest.java"
+ "$SRC/DesktopHubState.java" "$SRC/DesktopDeskKeyboard.java" "$SRC/DesktopArcade.java" "$SRC/ReverieDesktopPlayer.java" "$SRC/DesktopHubTest.java"
 java -Djava.awt.headless=true -cp "$OUT" io.github.mrcalzon02.reverievr.DesktopHubTest
