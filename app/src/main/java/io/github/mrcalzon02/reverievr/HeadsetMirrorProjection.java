@@ -10,7 +10,10 @@ import java.nio.FloatBuffer;
  */
 final class HeadsetMirrorProjection {
     static final float PLANE_X = 2.14f;
-    static final float LINE_X = 2.11f;
+    // Different depths: the cage ALWAYS sits in front of the projected body.
+    // Equal mirror-plane depths previously made the flat portrait occlude it.
+    static final float LINE_X = 2.074f;
+    static final float AVATAR_X = 2.105f;
     static final float HALF_HEIGHT = 0.85f;
     static final float HALF_WIDTH = 0.95f;
     static final int MAX_VERTICES = PlayerHeadRig.WIREFRAME_VERTICES;
@@ -24,6 +27,7 @@ final class HeadsetMirrorProjection {
     private final float[] avatarClipA = new float[20];
     private final float[] avatarClipB = new float[20];
     private float eyeX, eyeY, eyeZ;
+    private final float[] forward = new float[2];
     private boolean ready;
 
     boolean prepare(PlayerHeadRig rig, int eyeIndex) {
@@ -35,6 +39,13 @@ final class HeadsetMirrorProjection {
         eyeX = eyes[eyeIndex * 3];
         eyeY = eyes[eyeIndex * 3 + 1];
         eyeZ = eyes[eyeIndex * 3 + 2];
+        // Keep the avatar upright, but rotate it with the user's actual
+        // headset heading. A forward-facing constant-X billboard cannot do
+        // this, and shows the same profile regardless of head motion.
+        if (!rig.copyHorizontalForward(forward)) {
+            forward[0] = 1f;
+            forward[1] = 0f;
+        }
         // A mirror is visible only from its front, with a nonzero eye gap.
         ready = Float.isFinite(eyeX)
             && eyeX < PLANE_X - 0.05f;
@@ -111,8 +122,9 @@ final class HeadsetMirrorProjection {
      * Convert the authored avatar's local portrait triangles into the
      * physically located reflection of the player's body. The authored
      * mesh X coordinates are offsets from the legacy MIRROR_X origin;
-     * they are NOT themselves mirror coordinates. Body/head position
-     * comes from the same world-space head rig as the headset reflection.
+     * they are NOT themselves mirror coordinates. Rotate actual low-poly
+     * X-depth volumes with the horizontal headset heading, then reflect
+     * their WORLD coordinates into each eye's mirror pane.
      *
      * Projects into this eye's mirror plane and clips every triangle to
      * the four edges of the glass. The destination contains GL_TRIANGLES
@@ -133,10 +145,14 @@ final class HeadsetMirrorProjection {
             boolean valid = true;
             for (int v = 0; v < 3; v++) {
                 int at = (i + v) * 3;
-                float x = bodyX + (source.get(at)
+                float localX = (source.get(at)
                     - HomeAvatarWardrobeGeometry.MIRROR_X) * scale;
+                float localZ = source.get(at + 2) * scale;
+                float x = bodyX + forward[0] * localX
+                    - forward[1] * localZ;
                 float y = headY + (source.get(at + 1) - 0.65f) * scale;
-                float z = bodyZ + source.get(at + 2) * scale;
+                float z = bodyZ + forward[1] * localX
+                    + forward[0] * localZ;
                 if (!project(x, y, z, v == 0 ? 0 : v == 1 ? 2 : 0)) {
                     // The ordinary line projection scratch has four floats.
                     // For the third vertex, use a separate pair below.
@@ -181,7 +197,7 @@ final class HeadsetMirrorProjection {
             for (int v = 1; v + 1 < count; v++) {
                 for (int fan = 0; fan < 3; fan++) {
                     int k = (fan == 0 ? 0 : fan == 1 ? v : v + 1) * 2;
-                    out[written++] = LINE_X;
+                    out[written++] = AVATAR_X;
                     out[written++] = input[k];
                     out[written++] = input[k + 1];
                 }
