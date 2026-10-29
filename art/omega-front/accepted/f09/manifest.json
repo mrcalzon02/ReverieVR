@@ -1,0 +1,116 @@
+{
+  "faction_id": "F09",
+  "faction_name": "Brassline Republic",
+  "asset_format": "PNG",
+  "asset_role": "visual inventory, not proven runtime UI routing",
+  "source": "omega_front_brassline_war_atlas.png",
+  "grid": {
+    "columns": 5,
+    "rows": 4,
+    "tile_width": 256,
+    "tile_height": 256
+  },
+  "roles": [
+    {
+      "index": 1,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_01_trench_riflemen.png",
+      "sha256": "0a5c3367fefb68587c02ee8b307aa49f16076d494f64f3ddf66c59883ff00aa4"
+    },
+    {
+      "index": 2,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_02_barrage_crew.png",
+      "sha256": "c7094638c2245294e126e23d1b9dc345499309ae9bb2e9db44fa6dd4c2e6c04f"
+    },
+    {
+      "index": 3,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_03_armored_railcar.png",
+      "sha256": "de1205fcbd91ce7bfae5cb6911e98b2f28961ddf7672e67f703328f076c733d0"
+    },
+    {
+      "index": 4,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_04_sapper_platoon.png",
+      "sha256": "739df6fcbaf955c65d0fe762ef6323edc3d864dcefd848d8cd650d0ba80dbc14"
+    },
+    {
+      "index": 5,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_05_gas_mask_corps.png",
+      "sha256": "e5be4f2b305d0c000911b8bf3f80607d3396c71c862e0662198646bde7ab73e2"
+    },
+    {
+      "index": 6,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_06_line_rifleman.png",
+      "sha256": "64aecb27b3334032d2710a618c176785baad408bbb41b84231fc4faf7ef180df"
+    },
+    {
+      "index": 7,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_07_machine_gun_section.png",
+      "sha256": "65375baf444297f12d3f36a88a722c02f228641d61b06df26c769f8f76ee2368"
+    },
+    {
+      "index": 8,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_08_trench_mortar.png",
+      "sha256": "2810156778f20d2fad50d592b49dcc014ec3861478db8ddc2797bc36aa589067"
+    },
+    {
+      "index": 9,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_09_signal_officer.png",
+      "sha256": "d41ea19cd8e9dfa086c52031e1c26aadcde51f0846815d952cbe78ad92ce5a88"
+    },
+    {
+      "index": 10,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_10_rail_guard.png",
+      "sha256": "02f85773a9f6ead5c786f27497d0acaeac3968c6af49a56468720fabfbbef56a"
+    },
+    {
+      "index": 11,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_11_rail_engineer.png",
+      "sha256": "4ac5a61d741482330d59626657faee9020744f5442440c8b9ad3f34c56c0be4e"
+    },
+    {
+      "index": 12,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_12_assault_pioneer.png",
+      "sha256": "bb40d5f3e953af204e09342234502ee27ad618a9f71c7904f879ff62b2f6f031"
+    },
+    {
+      "index": 13,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_13_railway_gun.png",
+      "sha256": "add03d25322589cfde2169b590e0acd85e799cb4dbad364d9c744cd055012a44"
+    },
+    {
+      "index": 14,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_14_supply_locomotive.png",
+      "sha256": "8df425177c737aec9697940a0684974c7fb80ef0cefd22e7dad77c1dccbf65c5"
+    },
+    {
+      "index": 15,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_15_field_hospital.png",
+      "sha256": "ecedd95ee5f3a21740b373d8035f7d4c4e4e7c36a78a18b59c71e1d60f580d0b"
+    },
+    {
+      "index": 16,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_16_trench_blockhouse.png",
+      "sha256": "f20a0e1620888fe753305b8cc6a642b3dc3fe2218dc103fdc3118c4c8e6edb4c"
+    },
+    {
+      "index": 17,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_17_rail_junction.png",
+      "sha256": "c0ae229cc2213916f6db1435b9fe5efc206b3aad2b002d159de39698cb204b84"
+    },
+    {
+      "index": 18,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_18_coal_foundry.png",
+      "sha256": "c9c9fce46f51edae6ac13a3884e0a39f37144ab321fa1c8bfe0c3ac7c242e577"
+    },
+    {
+      "index": 19,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_19_command_carriage.png",
+      "sha256": "7152bd201d03e18559c166a92430b6d76d19a56dc68907c4d7cc7d6fadc4d5ff"
+    },
+    {
+      "index": 20,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f09/f09_20_munition_wagon.png",
+      "sha256": "baa04ae0b81970a57c43a331333e079594cf165e5d4353fa90b97bb7c8c8abd5"
+    }
+  ],
+  "art_status": "user-accepted interim art; faction labels proposed"
+}
