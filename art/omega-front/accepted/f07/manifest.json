@@ -1,0 +1,110 @@
+{
+  "faction_id": "F07",
+  "faction_name": "Ashen Crown",
+  "asset_type": "painted square PNG icons",
+  "status": "artwork candidate, faction name proposed",
+  "grid": "5x4 256px",
+  "source": "ashen_crown_fortress_arsenal.png",
+  "roles": [
+    {
+      "index": 1,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_01_levy_spearman.png",
+      "sha256": "8e13e15ad6cc23604618211f2ec86104be96fc52c07f41685a286fe4513e6df8"
+    },
+    {
+      "index": 2,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_02_hearth_knight.png",
+      "sha256": "e60a320f5d4aa85970b51f9a56a3e3df28c9eb4c10acc06bd610020aa09173ab"
+    },
+    {
+      "index": 3,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_03_banner_marshal.png",
+      "sha256": "100202ef749af845d393384320f15c96e48129c02beabc907f71f3af44b00947"
+    },
+    {
+      "index": 4,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_04_trebuchet_cart.png",
+      "sha256": "8a4b80a36493ba6424b3a8db3e955e9b4d72f2fca0c98ef5aed5a6e16b8d6aa8"
+    },
+    {
+      "index": 5,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_05_wall_mason.png",
+      "sha256": "120af64de68d189311856722e029940fb9f91df6802fd41dea9f88dd6f53032e"
+    },
+    {
+      "index": 6,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_06_bow_levy.png",
+      "sha256": "9fcaf86d42fdf1507b677795f873417eda632e57612e6bac81ea826f1b97d6a2"
+    },
+    {
+      "index": 7,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_07_crossbow_retainer.png",
+      "sha256": "df9d3946f4f770072e687f0afd5911fe3c9b78101d16b1ba3c12a9ad97b63d4b"
+    },
+    {
+      "index": 8,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_08_halberd_guard.png",
+      "sha256": "9c568428b48cd73e1f46539b6186b4bfbe034e796cef7c641e6f7be877826cc7"
+    },
+    {
+      "index": 9,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_09_hearth_swordsman.png",
+      "sha256": "d223d8024f6d1b6c64a6d49fba5d60d9bf0e239611afabc77a4597b4fb1850ca"
+    },
+    {
+      "index": 10,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_10_shield_sergeant.png",
+      "sha256": "5c4d722f4aa3b2882397b99b06a8b99727cb1d6e7bc7ea51c9c4af03d93d5ec8"
+    },
+    {
+      "index": 11,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_11_mounted_scout.png",
+      "sha256": "3e46c550d2c59d7197c01bcaf1423955ab58e309bbb5610e8b209fcec2f72bff"
+    },
+    {
+      "index": 12,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_12_mounted_knight.png",
+      "sha256": "2558953f2715ff1af2c8f24d7f2ea36baad052ec72452cb2404d898a63bd2a76"
+    },
+    {
+      "index": 13,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_13_crowned_warlord.png",
+      "sha256": "a36f0c67f40fdd083db8c7043077a20385f468440381894557dc27fdd63fdc7e"
+    },
+    {
+      "index": 14,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_14_court_castellan.png",
+      "sha256": "96290230a1ce54dcb0ec48ada670a153c9e8668d252e43a2cdf64a1d42044684"
+    },
+    {
+      "index": 15,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_15_court_chaplain.png",
+      "sha256": "23babad1e1ecc11e0a892f0da6e8f8a21fcc3b780b5c225969fa973fbe736f77"
+    },
+    {
+      "index": 16,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_16_castle_observer.png",
+      "sha256": "3258fd1116f3c60e88188be60d7a674563d8d6c36da67f9f5271c898582e998a"
+    },
+    {
+      "index": 17,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_17_fortification_planner.png",
+      "sha256": "1f6608d5c215496e139d338ab14dc46e8cd1bee6a745f65330deddc0e078ce76"
+    },
+    {
+      "index": 18,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_18_stone_hauling_crew.png",
+      "sha256": "f2e16c142af0f034eefb0ce173d8d860a5e0eb42776c24b8bf87a18adda4236e"
+    },
+    {
+      "index": 19,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_19_ox_supply_wagon.png",
+      "sha256": "bf7325194769778ac79429d579060c7146b1e32e9cb9b5a558c5e6be619e8afe"
+    },
+    {
+      "index": 20,
+      "path": "app/src/main/assets/native/omega-front/ui/icons/f07/f07_20_fortress_gatehouse.png",
+      "sha256": "3248acd0c35a279a5303f71031af40ba347c3d4385055bf449923c68e746a9f8"
+    }
+  ]
+}
