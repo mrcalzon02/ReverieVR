@@ -8353,7 +8353,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
             "Page "+(wardrobePage+1)+"/"+HomeAvatarProfile.PAGE_NAMES.length
                 +" - "+HomeAvatarProfile.PAGE_NAMES[wardrobePage],
             90f,WardrobePanelLayout.PAGE_LABEL_BASELINE,675f,18f*uiScale,17f);
-        drawWardrobeThumbnail(canvas,paint,profile);
+        if (preferences.getHomeEnvironment() != HomeEnvironment.WHITE_ROOM) {
+            // Forest and Beach lack a physical vanity mirror; retain their
+            // compact 2D fallback. In the White Room the full-size flat
+            // figure competes with the actual stereoscopic 3D avatar and
+            // headset cage, so the mirror is the ONLY character preview.
+            drawWardrobeThumbnail(canvas,paint,profile);
+        } else {
+            paint.setColor(Color.rgb(119,220,205));
+            drawWardrobeFittedText(canvas,paint,"LIVE 3D MIRROR",
+                794f,86f,178f,20f*uiScale,18f);
+            paint.setColor(Color.rgb(183,197,211));
+            drawWardrobeFittedText(canvas,paint,"TURN RIGHT TO VIEW",
+                794f,112f,178f,16f*uiScale,16f);
+        }
 
         String[] labels=new String[WARDROBE_BUTTONS.length];
         for(int i=0;i<5;i++) {
