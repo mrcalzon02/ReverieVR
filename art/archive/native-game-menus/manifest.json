@@ -50,9 +50,9 @@
         3,
         1
       ],
-      "bytes": 137835,
-      "eye_frame_crc32": 1536641566,
-      "sha256": "64b7c5be28af458a5eab286436232df435b1bc2544f8bc70aaba2cd037c71f07"
+      "bytes": 137834,
+      "eye_frame_crc32": 1957098570,
+      "sha256": "7e3045c7362db1caa5c9148ba190f2e213be42e74a4032d697d5c5d561c08020"
     },
     "classic-chutes-ladders": {
       "atlas_cell": [
@@ -114,35 +114,35 @@
         0
       ],
       "bytes": 38241,
-      "eye_frame_crc32": 1870680243,
-      "sha256": "a1025515b57c77865b9a55dfdbf9a9221d2e62cd1c313a173e4ec4afa0cf812d"
+      "eye_frame_crc32": 4180096521,
+      "sha256": "45070a175509bcf68fa996283b10e0542183988866e90d02cc18826f713b576e"
     },
     "ministry-lantern-desk": {
       "atlas_cell": [
         0,
         1
       ],
-      "bytes": 34391,
-      "eye_frame_crc32": 4216558690,
-      "sha256": "c21ddcd628e8f48656b29309a54bf77dae2f6bc7ad53faef42bea45fd21dce9e"
+      "bytes": 34380,
+      "eye_frame_crc32": 801421466,
+      "sha256": "e69df0b18a6cf0cc1f5ea56ab3c6046ee4ea57d79ecaeebee438bbeb6b2a6452"
     },
     "omega-front": {
       "atlas_cell": [
         1,
         1
       ],
-      "bytes": 20161,
-      "eye_frame_crc32": 3139351392,
-      "sha256": "cdd5183a00cfea2c99f3d0cc688a30364a29b512602da912f8f3006f9fb9cdd9"
+      "bytes": 20167,
+      "eye_frame_crc32": 3330151028,
+      "sha256": "3cedfe9ae8f631f7bd16a3be06d31d5b839d322075be9d5bbdc9ded7d0a13835"
     },
     "procedural-test-chamber": {
       "atlas_cell": [
         2,
         1
       ],
-      "bytes": 330206,
-      "eye_frame_crc32": 2603860900,
-      "sha256": "5592b813ea0abc804da9240b48031642dcf1c0e49672f579fe1436e9e144fd4c"
+      "bytes": 365702,
+      "eye_frame_crc32": 2830425929,
+      "sha256": "eba817fd1694bfd85ac4eead35234320cec91162d00df0a912ad49eb6e95d3e3"
     }
   },
   "ordered_ids": [
