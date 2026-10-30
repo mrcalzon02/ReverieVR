@@ -9,6 +9,7 @@ import java.util.List;
 
 /** Data-driven PSX gallery for actual loaded native modules, not static menu art. */
 final class NativeGamesGallery {
+    static final String SITKA_PROJECT_ID="sitka";
     static final int PAGE_SIZE=6, PREVIOUS=6, NEXT=7, TOOLS=8, HOME=9;
     static final int[][] BUTTONS={
         {60,177,343,397},{370,177,653,397},{680,177,963,397},
@@ -92,6 +93,7 @@ final class NativeGamesGallery {
         "ministry-lantern-desk","omega-front","procedural-test-chamber"
     };
     static int order(String id) {
+        if(SITKA_PROJECT_ID.equals(id))return FEATURED.length;
         for(int i=0;i<FEATURED.length;i++)if(FEATURED[i].equals(id))return i;
         return 100; // Stable host registry order for remaining playable classics.
     }
@@ -149,6 +151,8 @@ final class NativeGamesGallery {
     }
     static String[] descriptionLines(String id) {
         switch(id) {
+            case "sitka":
+                return new String[]{"Sitka Sound fishing and beachcombing.","Terrain and coastal editor are in work.","Playable geographic world not ready."};
             case "breakwater-battery":
                 return new String[]{"Defend your coastal bunker against","beach landings, aircraft and ships.","Upgrade weapons between waves."};
             case "between-deliveries-red-ledger":
@@ -212,7 +216,8 @@ final class NativeGamesGallery {
         float tx=imageRight+15;
         float available=r[2]-tx-12;
         p.setColor(Color.rgb(124,197,222));
-        fit(c,p,game.id.startsWith("classic-")?"CLASSIC GAME":"NATIVE GAME",
+        fit(c,p,SITKA_PROJECT_ID.equals(game.id)?"PROJECT / IN DEVELOPMENT":
+            game.id.startsWith("classic-")?"CLASSIC GAME":"NATIVE GAME",
             tx,r[1]+35,available,14f*Math.min(scale,1.10f),false);
         p.setColor(Color.rgb(249,231,178));
         fit(c,p,title(game),tx,r[1]+60,available,
@@ -230,13 +235,49 @@ final class NativeGamesGallery {
             c.drawText(lines[i],tx,r[1]+92+i*23,p);
         }
         p.setColor(Color.rgb(248,206,116));
-        fit(c,p,"CLICK TO LAUNCH",tx,r[3]-17,available,14f,false);
+        fit(c,p,SITKA_PROJECT_ID.equals(game.id)?"CLICK FOR PROJECT DETAILS":
+            "CLICK TO LAUNCH",tx,r[3]-17,available,14f,false);
         c.restore();
         p.setStyle(Paint.Style.FILL);
         p.setTextAlign(Paint.Align.LEFT);
         p.setFakeBoldText(false);
     }
 
+    /** Explicit non-playable project details: never pretend to launch a game. */
+    static void drawSitkaProjectDetails(Canvas c,Paint p,boolean home) {
+        final int left=home?285:189,top=home?202:181;
+        final int right=home?725:834,bottom=home?605:613;
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(Color.rgb(9,26,41));
+        c.drawRoundRect(left,top,right,bottom,12,12,p);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(3f);
+        p.setColor(Color.rgb(103,183,196));
+        c.drawRoundRect(left+2,top+2,right-2,bottom-2,11,11,p);
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(Color.rgb(244,224,167));
+        fit(c,p,"SITKA",left+23,top+42,right-left-48,28f,false);
+        p.setColor(Color.rgb(110,210,205));
+        fit(c,p,"COASTAL GAME / IN DEVELOPMENT",left+23,top+72,
+            right-left-48,15f,false);
+        final String[] details={
+            "Peaceful fishing, beachcombing and coastal exploration.",
+            "Sitka Sound geography, terrain, water and weather.",
+            "Town buildings, boats, tackle and upgrades are planned.",
+            "The terrain renderer and desktop editor are implemented.",
+            "Geographic assets and playable activities are NOT ready.",
+            "No false 'Play' action is offered for this project.",
+            "Use the project documents to follow development."
+        };
+        p.setTextAlign(Paint.Align.LEFT);
+        p.setFakeBoldText(false);
+        p.setTextSize(home?14f:18f);
+        p.setColor(Color.rgb(215,236,245));
+        int start=top+113,step=home?32:38;
+        for(int i=0;i<details.length;i++)c.drawText(details[i],left+23,start+i*step,p);
+        p.setColor(Color.rgb(250,209,120));
+        fit(c,p,"CLOSE TO RETURN TO THE GALLERY",left+23,bottom-21,
+            right-left-46,15f,false);
+    }
     private static void empty(Canvas c,Paint p,int[] r) {
         p.setStyle(Paint.Style.FILL);p.setColor(Color.rgb(16,24,32));
         c.drawRoundRect(r[0],r[1],r[2],r[3],8,8,p);
@@ -269,7 +310,8 @@ final class NativeGamesGallery {
                 13f*Math.min(scale,1.12f),true);
         }
         p.setColor(Color.rgb(137,190,201));
-        fit(c,p,NativeModuleRuntime.isDevelopmentOnly(game.id)
+        fit(c,p,SITKA_PROJECT_ID.equals(game.id)?"PROJECT / INSPECT":
+            NativeModuleRuntime.isDevelopmentOnly(game.id)
             ?"DEV / PLAY":"SELECT TO PLAY",
             (x+right)/2f,bottom-9,right-x-14,10f,true);
         p.setColor(hover?Color.rgb(251,214,103):Color.rgb(65,131,183));
@@ -310,6 +352,7 @@ final class NativeGamesGallery {
     }
     private static String title(NativeModuleRuntime.Descriptor d) {
         switch(d.id) {
+            case "sitka":return "Sitka";
             case "breakwater-battery":return "Breakwater Battery";
             case "between-deliveries-red-ledger":return "Between Deliveries / Red Ledger";
             case "gumball-armada":return "Gumball Armada";
@@ -383,6 +426,42 @@ final class NativeGamesGallery {
             }
         }
         float w=r-x,h=b-y;
+        if(SITKA_PROJECT_ID.equals(id)) {
+            // Clearly a procedural project-identity drawing, not a captured
+            // Sitka landscape or a derivative of restricted map imagery.
+            p.setStyle(Paint.Style.FILL);
+            p.setColor(Color.rgb(65,132,161));c.drawRect(x,y,r,b,p);
+            p.setColor(Color.rgb(108,164,184));c.drawRect(x,y+h*.57f,r,b,p);
+            p.setColor(Color.rgb(35,87,83));
+            android.graphics.Path shore=new android.graphics.Path();
+            shore.moveTo(x,y+h*.52f);
+            shore.lineTo(x+w*.19f,y+h*.44f);
+            shore.lineTo(x+w*.32f,y+h*.56f);
+            shore.lineTo(x+w*.49f,y+h*.35f);
+            shore.lineTo(x+w*.64f,y+h*.47f);
+            shore.lineTo(r,y+h*.26f);
+            shore.lineTo(r,y);
+            shore.lineTo(x,y);
+            shore.close();
+            c.drawPath(shore,p);
+            p.setColor(Color.rgb(20,61,66));
+            for(int i=0;i<7;i++){
+                float xx=x+w*(.08f+i*.135f);
+                float yy=y+h*(.16f+(i%3)*.07f);
+                c.drawRect(xx-3,yy,xx+3,yy+h*.26f,p);
+                android.graphics.Path pine=new android.graphics.Path();
+                pine.moveTo(xx,yy-h*.11f);
+                pine.lineTo(xx-12,yy+h*.12f);
+                pine.lineTo(xx+12,yy+h*.12f);
+                pine.close();c.drawPath(pine,p);
+            }
+            p.setColor(Color.rgb(230,241,224));
+            p.setTextAlign(Paint.Align.CENTER);p.setTextSize(14f);
+            p.setFakeBoldText(true);
+            c.drawText("SITKA / PROJECT",x+w*.5f,b-13,p);
+            p.setFakeBoldText(false);p.setTextAlign(Paint.Align.LEFT);
+            return;
+        }
         p.setStyle(Paint.Style.FILL);
         int sky=Color.rgb(18,36,54),floor=Color.rgb(24,56,76);
         if(id.contains("red-ledger")){sky=Color.rgb(54,34,28);floor=Color.rgb(93,58,36);}
