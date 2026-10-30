@@ -6,35 +6,11 @@
 #include <cstdio>
 #include "red_ledger_stock_layout.h"
 
-// Game-private, context-lifetime baked, real letter geometry. Each glyph is
-// rasterized to horizontal runs (two triangles/run), not one draw per letter.
-// Same 10-float position/UV/color/tile format as the room's static batch.
+// Physical plaques only. All interactive game text now uses actual licensed
+// Lato glyphs from red_ledger_module.cpp, not bit-pattern rectangles.
 namespace reverie { namespace redledger { namespace signage {
 constexpr size_t kVertexStride = 10u;
-struct Glyph { char letter; uint8_t rows[7]; };
 struct Sign { const char *text; float x,y,z,pixel; int room=0; };
-static const Glyph kGlyphs[] = {
- {'A',{14,17,17,31,17,17,17}}, {'B',{30,17,17,30,17,17,30}},
- {'C',{14,17,16,16,16,17,14}}, {'D',{30,17,17,17,17,17,30}},
- {'E',{31,16,16,30,16,16,31}}, {'F',{31,16,16,30,16,16,16}},
- {'G',{14,17,16,23,17,17,15}}, {'H',{17,17,17,31,17,17,17}},
- {'I',{14,4,4,4,4,4,14}}, {'J',{7,2,2,2,18,18,12}},
- {'K',{17,18,20,24,20,18,17}}, {'L',{16,16,16,16,16,16,31}},
- {'M',{17,27,21,21,17,17,17}}, {'N',{17,25,21,19,17,17,17}},
- {'O',{14,17,17,17,17,17,14}}, {'P',{30,17,17,30,16,16,16}},
- {'Q',{14,17,17,17,21,18,13}}, {'R',{30,17,17,30,20,18,17}},
- {'S',{15,16,16,14,1,1,30}}, {'T',{31,4,4,4,4,4,4}},
- {'U',{17,17,17,17,17,17,14}}, {'V',{17,17,17,17,17,10,4}},
- {'W',{17,17,17,21,21,21,10}}, {'X',{17,17,10,4,10,17,17}},
- {'Y',{17,17,10,4,4,4,4}}, {'Z',{31,1,2,4,8,16,31}},
- {'0',{14,17,19,21,25,17,14}}, {'1',{4,12,4,4,4,4,14}},
- {'2',{14,17,1,2,4,8,31}}, {'3',{30,1,1,14,1,1,30}},
- {'4',{2,6,10,18,31,2,2}}, {'5',{31,16,16,30,1,1,30}},
- {'6',{14,16,16,30,17,17,14}}, {'7',{31,1,2,4,8,8,8}},
- {'8',{14,17,17,14,17,17,14}}, {'9',{14,17,17,15,1,1,14}},
- {'-',{0,0,0,31,0,0,0}}, {':',{0,4,4,0,4,4,0}},
- {'/',{1,1,2,4,8,16,16}}, {'?',{14,17,1,2,4,0,4}}
-};
 // Signs sit in front of the lowered bar fascia, not under props or inside
 // interactive hitboxes. The counter labels are grouped into two short rows.
 static const Sign kSigns[] = {
@@ -62,13 +38,6 @@ static const Sign kSigns[] = {
  {"LEDGER",0.85f,-0.20f,-0.64f,0.021f,2},
  {"SLEEP",1.35f,-0.62f,-1.07f,0.026f,2}
 };
-inline const uint8_t *Rows(char c) {
-    for (const Glyph &glyph : kGlyphs)
-        if (glyph.letter == c) return glyph.rows;
-    for (const Glyph &glyph : kGlyphs)
-        if (glyph.letter == '?') return glyph.rows;
-    return nullptr;
-}
 inline void Quad(float *buffer, size_t &vertices,
                  float left,float bottom,float right,float top,float z,
                  float red,float green,float blue) {
@@ -101,28 +70,7 @@ inline size_t Emit(float *buffer,int room=0) {
         Quad(buffer,vertices,left-2.0f*px,bottom-2.0f*px,
              left+width+2.0f*px,bottom+9.0f*px,sign.z-0.003f,
              0.055f,0.075f,0.085f);
-        for (size_t index=0;index<len;++index) {
-            if (sign.text[index]==' ') continue;
-            const uint8_t *rows=Rows(sign.text[index]);
-            if (rows==nullptr) continue;
-            const float gx=left+static_cast<float>(index*6u)*px;
-            for (size_t row=0;row<7u;++row) {
-                unsigned col=0;
-                while(col<5u) {
-                    if ((rows[row] & (1u << (4u-col)))==0u) {
-                        ++col; continue;
-                    }
-                    const unsigned start=col;
-                    while(col<5u && (rows[row] & (1u << (4u-col)))!=0u)
-                        ++col;
-                    const float y=bottom+static_cast<float>(6u-row)*px;
-                    Quad(buffer,vertices,
-                         gx+static_cast<float>(start)*px,y,
-                         gx+static_cast<float>(col)*px,y+px,
-                         sign.z+0.003f,0.97f,0.92f,0.75f);
-                }
-            }
-        }
+
     }
     if(room==1) {
         // Baked, one-draw stockroom catalog: six faction columns, four real
@@ -171,27 +119,10 @@ inline size_t EmitLine(float *out,size_t at,const char *label,
     if(len>64u)len=64u;
     const float width=len?static_cast<float>(len*6u-1u)*px:0.0f;
     const float left=cx-width*0.5f, bottom=cy-4.0f*px;
+    // World-space plaque only. Player-facing letters use LatoLayer.
     Quad(out,at,left-2.0f*px,bottom-2.0f*px,
          left+width+2.0f*px,bottom+9.0f*px,z-0.004f,
          0.055f,0.075f,0.085f);
-    for(size_t index=0;index<len;++index) {
-        if(label[index]==' ')continue;
-        const uint8_t *rows=Rows(label[index]);
-        if(!rows)continue;
-        const float gx=left+static_cast<float>(index*6u)*px;
-        for(size_t row=0;row<7u;++row){
-            unsigned col=0;
-            while(col<5u){
-                if((rows[row]&(1u<<(4u-col)))==0u){++col;continue;}
-                const unsigned start=col;
-                while(col<5u&&(rows[row]&(1u<<(4u-col)))!=0u)++col;
-                const float y=bottom+static_cast<float>(6u-row)*px;
-                Quad(out,at,gx+static_cast<float>(start)*px,y,
-                    gx+static_cast<float>(col)*px,y+px,z+0.003f,
-                    0.97f,0.92f,0.75f);
-            }
-        }
-    }
     return at;
 }
 }}}
