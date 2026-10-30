@@ -35,8 +35,24 @@ PY
     coords="$(python3 - "$ARTIFACTS/vr-screenshot.png" <<'PY'
 from PIL import Image
 import sys
-picture=Image.open(sys.argv[1])
-print(picture.width*55//100,picture.height*42//100)
+picture=Image.open(sys.argv[1]).convert("RGB")
+# The 'Got it' control is in the LOWER-RIGHT of Android's blue
+# first-immersive-mode panel, NOT at the screenshot center. Derive the
+# panel bounds from blue pixels so alternate emulator resolutions work.
+small=picture.resize((140,100))
+blue=[]
+for y in range(small.height):
+    for x in range(small.width):
+        r,g,b=small.getpixel((x,y))
+        if b>160 and g>70 and b>r*2 and b>g*1.25:
+            blue.append((x,y))
+if len(blue)<100:
+    raise SystemExit("No blue immersive tutorial panel found for dismissal")
+xmin=min(x for x,y in blue);xmax=max(x for x,y in blue)
+ymin=min(y for x,y in blue);ymax=max(y for x,y in blue)
+x=xmin+int((xmax-xmin)*.78)
+y=ymin+int((ymax-ymin)*.80)
+print(x*picture.width//small.width,y*picture.height//small.height)
 PY
 )"
     read -r x y <<< "$coords"
