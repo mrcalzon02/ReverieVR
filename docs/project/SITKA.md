@@ -140,3 +140,10 @@ For every ingested source record download source, version/date, attribution/lice
 Sitka is an **independent native game concept** beside Breakwater Battery, Gumball Armada, Red Ledger, Omega Front and the other ReverieVR native modules—not a Breakwater mode, Classic Game or ROM. It inherits platform runtime/render/input/delivery and optional PC XR capabilities from the **ReverieVR hub as a whole**; it is not a separately scoped desktop product or SteamVR integration. Sitka requires its own module ID, state, assets, packaging and update manifest when operational. The project name remains **Sitka**.
 
 This record specifies the Sitka game and documents its **source-integrated authoring pipeline only**. It does not claim an independent GitHub repository, a surveyed Sitka mesh, a working GLES2 renderer, an executable Sitka module, installed game, published APK or headset validation. Continue implementation only within the user-authorized environment milestone and explicit next work.
+
+## Fishing mechanics foundation — 2026-10-30 (source only)
+
+- Added game-private CPU fishing rules in `app/src/main/jni/native/sitka_fishing.h` and a deterministic host test in `app/src/test/native/sitka_fishing_test.cpp`. Local GCC/Clang C++17 and Clang ASan/UBSan tests passed. This is not headset or playable-runtime acceptance.
+- Seeded waiting/bite/reel/land with Dolly Varden, coho, pink salmon and flounder; bounded updates, forgiving tension, catch journal, three tackle tiers and strict versioned journal parser. It is not surveyed species distribution or real-world harvest guidance.
+- These rules require independently confirmed-water/depth inputs. A water rectangle alone cannot establish safe/correct fishing geography; casting must later be gated by verified shoreline/bathymetry/land masks.
+- There is no native controller/pointer/visual or host-save integration yet. Terrain/water rendering remains an unregistered source-only module. Next: approved real Sitka geography, safe cast targeting, font-based UI feedback, host-scoped persistence, and Android/desktop playtests.
