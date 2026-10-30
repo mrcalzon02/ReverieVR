@@ -636,8 +636,12 @@ void RebuildBoard(Module *m,bool fixed){
         }else if(m->cpuFailed){
             Text(m,"CPU ERROR",1.94f,1.09f,.034f,1.f,.56f,.46f);
             Text(m,"RESTART",1.94f,.88f,.034f,1.f,.56f,.46f);
+        }else if(s.side==1){
+            Text(m,"YOUR",1.94f,1.11f,.033f,.95f,.95f,.78f);
+            Text(m,"TURN",1.94f,.90f,.033f,.95f,.95f,.78f);
         }else{
-            Text(m,turnLabel,1.94f,1.08f,.033f,.95f,.95f,.78f);
+            Text(m,"CPU",1.94f,1.11f,.033f,.95f,.95f,.78f);
+            Text(m,"THINKING",1.94f,.90f,.029f,.95f,.95f,.78f);
         }
 #endif
         if(s.kind==reverie::boardgames::Kind::Reversi){
@@ -850,7 +854,9 @@ void Rebuild(Module *m,bool fixed){
         }
         }else{
         std::snprintf(status,sizeof(status),"FOOD %d",s.score);
-        Text(m,status,2.03f,1.12f,.046f,.86f,.91f,.68f);
+        Text(m,status,1.87f,1.12f,
+             reverie::breakwater::font::FittedScale(status,.58f,.034f),
+             .86f,.91f,.68f);
         Text(m,s.finished?"PRESS TO RESTART":
              s.moving?"POINT TO TURN":"PRESS TO START",
              0,-1.48f,.043f,.78f,.90f,.83f);
