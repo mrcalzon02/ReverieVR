@@ -29,6 +29,14 @@ final class NativeGamesGallery {
         {278,617,384,693},{393,617,499,693},
         {508,617,614,693},{623,617,730,693}
     };
+    private static String galleryCount(List<NativeModuleRuntime.Descriptor> games) {
+        int installed=0,projects=0;
+        for(NativeModuleRuntime.Descriptor item:games){
+            if(SITKA_PROJECT_ID.equals(item.id))projects++;
+            else installed++;
+        }
+        return installed+" GAMES"+(projects>0?" + "+projects+" PROJECT":"");
+    }
     static int homePageCount(int count) {
         return Math.max(1,(Math.max(0,count)+HOME_PAGE_SIZE-1)/HOME_PAGE_SIZE);
     }
@@ -70,7 +78,7 @@ final class NativeGamesGallery {
         p.setColor(error!=null&&!error.isEmpty()?Color.rgb(252,187,124)
             :Color.rgb(156,198,213));
         fit(c,p,error!=null&&!error.isEmpty()?"FAILED: "+error
-            :games.size()+" INSTALLED / PAGE "+(page+1)+" OF "+pages,
+            :galleryCount(games)+" / PAGE "+(page+1)+" OF "+pages,
             278,132,445,16f*Math.min(scale,1.1f),false);
         for(int slot=0;slot<HOME_PAGE_SIZE;slot++) {
             int index=homeModuleIndex(page,slot,games.size());
@@ -122,7 +130,7 @@ final class NativeGamesGallery {
         p.setColor(error!=null&&!error.isEmpty()?Color.rgb(245,184,118)
             :Color.rgb(160,192,206));
         fit(c,p,error!=null&&!error.isEmpty()?"LAUNCH FAILED: "+error
-            :games.size()+" AVAILABLE  /  PAGE "+(page+1)+" OF "+pages
+            :galleryCount(games)+"  /  PAGE "+(page+1)+" OF "+pages
                 +(dev?"  /  DEVELOPMENT MODE":""),
             61,146,900,17f*Math.min(scale,1.1f),false);
         for(int i=0;i<PAGE_SIZE;i++) {
@@ -458,7 +466,7 @@ final class NativeGamesGallery {
             p.setColor(Color.rgb(230,241,224));
             p.setTextAlign(Paint.Align.CENTER);p.setTextSize(14f);
             p.setFakeBoldText(true);
-            c.drawText("SITKA / PROJECT",x+w*.5f,b-13,p);
+            if(w>=140.f)c.drawText("SITKA / PROJECT",x+w*.5f,b-13,p);
             p.setFakeBoldText(false);p.setTextAlign(Paint.Align.LEFT);
             return;
         }
