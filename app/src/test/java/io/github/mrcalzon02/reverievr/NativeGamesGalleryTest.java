@@ -76,6 +76,47 @@ public class NativeGamesGalleryTest {
         assertEquals(15,seen.size());
         assertNull(NativeGamesGallery.atlasCell("unlisted"));
     }
+    @Test public void hoverPreviewProvidesGameImageAndDescriptionWithoutCoveringFocus() {
+        assertNull(NativeGamesGallery.hoverPopupRect(true,-1));
+        assertNull(NativeGamesGallery.hoverPopupRect(false,6));
+        assertNull(NativeGamesGallery.hoverPopupRect(true,7));
+        assertEquals(15,NativeGamesGallery.CAPTURED_IDS.length);
+        for(String id:NativeGamesGallery.CAPTURED_IDS){
+            assertNotNull("Captured game must be registered: "+id,
+                GameModuleRegistry.find(id));
+            String[] description=NativeGamesGallery.descriptionLines(id);
+            assertNotNull("Missing description "+id,description);
+            assertEquals(3,description.length);
+            for(String line:description){
+                assertTrue(line.length()>10);
+                assertTrue("Popup line too long: "+line,line.length()<=39);
+            }
+            assertNotNull(NativeGamesGallery.atlasCell(id));
+        }
+        assertNull(NativeGamesGallery.descriptionLines("not-a-game"));
+        for(boolean home:new boolean[]{true,false}){
+            int[][] cards=home?NativeGamesGallery.HOME_BUTTONS:
+                NativeGamesGallery.BUTTONS;
+            int cardCount=home?NativeGamesGallery.HOME_PAGE_SIZE:
+                NativeGamesGallery.PAGE_SIZE;
+            for(int i=0;i<cardCount;i++){
+                int[] popup=NativeGamesGallery.hoverPopupRect(home,i);
+                int[] focus=cards[i];
+                assertNotNull(popup);
+                assertTrue(popup[0]>=0&&popup[2]<=1024);
+                assertTrue(popup[1]>=0&&popup[3]<=768);
+                assertFalse("Popup must not hide selected game "+i,
+                    popup[0]<focus[2]&&focus[0]<popup[2]&&
+                    popup[1]<focus[3]&&focus[1]<popup[3]);
+                for(int nav=cardCount;nav<cards.length;nav++){
+                    int[] target=cards[nav];
+                    assertFalse("Popup must leave nav controls visible",
+                        popup[0]<target[2]&&target[0]<popup[2]&&
+                        popup[1]<target[3]&&target[1]<popup[3]);
+                }
+            }
+        }
+    }
     @Test public void cardAndNavigationTargetsNeverOverlap() {
         assertEquals(10,NativeGamesGallery.BUTTONS.length);
         assertEquals(8,NativeGamesGallery.TOOLS);
