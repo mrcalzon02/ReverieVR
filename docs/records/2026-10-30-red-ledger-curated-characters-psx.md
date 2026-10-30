@@ -18,7 +18,7 @@ Only six source pairs are selected. The selected meshes use the existing Red Led
 | Mechanic | Character_Male_34 | 1,306 | 287,808 |
 | DirectorateCourier | Character_45_Female | 1,382 | 296,928 |
 | SalihorskHauler | Character_Male_50 | 1,616 | 325,008 |
-| **Total** | **six selected actors, no unused source files** | **8,948** | **1,861,288** |
+| **Total** | **six selected actors, no unused source files** | **8,948** | **1,860,288** |
 
 The Directorate courier was visually selected as \`Character_45_Female\` after rejecting \`Character_42_Female\` (unsuitable clothing) during the actual mesh preview. Do not revive the older \`patron_gopnick\` or \`patron_pink_dress\` rejected static meshes.
 
