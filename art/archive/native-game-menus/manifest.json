@@ -41,18 +41,18 @@
         1,
         2
       ],
-      "bytes": 28093,
-      "eye_frame_crc32": 53960443,
-      "sha256": "32fe3bdf217c4d314ff6766565eb74b30b2af624155a1efa0287a1d20dd1f8d9"
+      "bytes": 28450,
+      "eye_frame_crc32": 768513209,
+      "sha256": "4b94c0e7b21731e2b393ae487899b9330a4c20e27fbfbee9adfc77ffd76616ea"
     },
     "classic-chess": {
       "atlas_cell": [
         3,
         1
       ],
-      "bytes": 137834,
-      "eye_frame_crc32": 1957098570,
-      "sha256": "7e3045c7362db1caa5c9148ba190f2e213be42e74a4032d697d5c5d561c08020"
+      "bytes": 137835,
+      "eye_frame_crc32": 1536641566,
+      "sha256": "64b7c5be28af458a5eab286436232df435b1bc2544f8bc70aaba2cd037c71f07"
     },
     "classic-chutes-ladders": {
       "atlas_cell": [
@@ -68,9 +68,9 @@
         0,
         2
       ],
-      "bytes": 32351,
-      "eye_frame_crc32": 1969084169,
-      "sha256": "3871b95deed4492eadc289bc251edf753787edaa89afd51c937fd1a4da7d396f"
+      "bytes": 32644,
+      "eye_frame_crc32": 1537482059,
+      "sha256": "82516a5f6d17c3ce5c7f953212c073b3f18d3787f1950510a8d9c068212cef00"
     },
     "classic-pong": {
       "atlas_cell": [
@@ -86,18 +86,18 @@
         0,
         3
       ],
-      "bytes": 30663,
-      "eye_frame_crc32": 108844665,
-      "sha256": "f25a6d8bb88c6ab5eb59a8fda456879b61d3c488f158e6ec23b65b105ffb4c9b"
+      "bytes": 30957,
+      "eye_frame_crc32": 679812155,
+      "sha256": "421fa5c95a87d5ccb609dc6fd016f414a24602ae8004c97de1b0e0633776c958"
     },
     "classic-snake": {
       "atlas_cell": [
         3,
         2
       ],
-      "bytes": 21963,
-      "eye_frame_crc32": 2122226975,
-      "sha256": "bae621afc7a2ef659373497500c488be4083e7732d2c2a79cc981d63079c2810"
+      "bytes": 20313,
+      "eye_frame_crc32": 136625018,
+      "sha256": "8c76c2aa311878e4af83dc0abd4a8370560b90130bbb980f7e4a180f66aa92b6"
     },
     "gumball-armada": {
       "atlas_cell": [
@@ -114,35 +114,35 @@
         0
       ],
       "bytes": 38241,
-      "eye_frame_crc32": 4180096521,
-      "sha256": "45070a175509bcf68fa996283b10e0542183988866e90d02cc18826f713b576e"
+      "eye_frame_crc32": 1870680243,
+      "sha256": "a1025515b57c77865b9a55dfdbf9a9221d2e62cd1c313a173e4ec4afa0cf812d"
     },
     "ministry-lantern-desk": {
       "atlas_cell": [
         0,
         1
       ],
-      "bytes": 34380,
-      "eye_frame_crc32": 801421466,
-      "sha256": "e69df0b18a6cf0cc1f5ea56ab3c6046ee4ea57d79ecaeebee438bbeb6b2a6452"
+      "bytes": 34391,
+      "eye_frame_crc32": 4216558690,
+      "sha256": "c21ddcd628e8f48656b29309a54bf77dae2f6bc7ad53faef42bea45fd21dce9e"
     },
     "omega-front": {
       "atlas_cell": [
         1,
         1
       ],
-      "bytes": 20167,
-      "eye_frame_crc32": 3330151028,
-      "sha256": "3cedfe9ae8f631f7bd16a3be06d31d5b839d322075be9d5bbdc9ded7d0a13835"
+      "bytes": 20161,
+      "eye_frame_crc32": 3139351392,
+      "sha256": "cdd5183a00cfea2c99f3d0cc688a30364a29b512602da912f8f3006f9fb9cdd9"
     },
     "procedural-test-chamber": {
       "atlas_cell": [
         2,
         1
       ],
-      "bytes": 326511,
-      "eye_frame_crc32": 2532484094,
-      "sha256": "f9eb36dbd2c40554f7b5ee4b9a149772ae22f90e1b4910b372d6b0ec28545e56"
+      "bytes": 326518,
+      "eye_frame_crc32": 3711291420,
+      "sha256": "0a1e4910d6f425f3d1a014be52035590dadd5f2aa5d37a5d4f1de8db6f3d6dfe"
     }
   },
   "ordered_ids": [
