@@ -1,3 +1,5 @@
+> **2026-10-30 desktop game authoring update:** The internal games workbench now integrates Beckenburg's portable Java17 editor, plus the actual authoring water/weather modules for Sitka, sourced from a pinned upstream revision. Sitka projects can author independent regions, and other game scenes use the same palette, history and safe codec. No player-facing in-headset editor or runtime WYSIWYG bridge is claimed. [Editor implementation and verification](INTERNAL_GAME_EDITOR_BECKENBURG.md).
+
 # ReverieVR — complete desktop platform expansion
 
 **Decision date:** 2026-10-26. **Status:** product-wide target accepted; Java17 desktop scene-authoring workbench source integrated October 28, 2026; playable desktop hub and OpenXR still unimplemented/unvalidated.  
