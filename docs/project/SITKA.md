@@ -1,3 +1,5 @@
+> **2026-10-30:** The internal desktop games manager now has a Sitka project selector, separate named region files, shared Beckenburg editor palette and transaction history, and direct access to the actual Sitka water/weather authoring application. The portable editor, water and weather source is bundled and version-pinned; it does **not** turn Sitka into a playable native game. See [internal game editor integration](INTERNAL_GAME_EDITOR_BECKENBURG.md).
+
 # Sitka
 
 > **Expanded whole-city specification (2026-10-28):** [Sitka — Complete City, Coast, World, and Gameplay Specification](SITKA_CITY_WORLD_DESIGN_SPEC.md) is the current authority for entire-city exploration, buildings, georeferenced roads, Malefic Veil city/terrain reuse, the actual Beckenburg shared water and weather modules, town/boat upgrades and unified ReverieVR APK delivery. This document retains the original coastal gameplay scope and evidence history. Earlier independent game-package or content-pack statements are superseded by the unified main APK policy.
