@@ -1,0 +1,58 @@
+name: Recover verified ReverieVR Classic and Native game menu archive
+
+# One-time promotion of the already validated Android 10 capture evidence.
+# Keep this distinct from the normal capture/build workflow so recovery
+# cannot silently turn a screenshot into generated concept art.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/promote-native-game-menu-archive.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  promote-verified-captures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve actual screenshots from verified Android emulator run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p validation/gallery
+          gh run download 41018660526 --repo "$GITHUB_REPOSITORY" \
+            --name reverie-native-game-menu-captures-41018660526 \
+            --dir validation/gallery
+          test -s validation/gallery/native-menu-capture.csv
+      - name: Revalidate all fifteen real game screenshots and build archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/verify-installed-native-game-captures.py validation/gallery
+          python3 -m pip install --quiet Pillow
+          python3 scripts/ci/promote_native_game_gallery.py validation/gallery
+      - name: Commit and push only the captured pictures and gallery atlas
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- app/src/main/assets/native/gallery/menu-preview-atlas.jpg art/archive/native-game-menus/
+          if git diff --cached --quiet; then
+            echo 'No screenshot changes to publish'
+            exit 0
+          fi
+          git commit -m 'Archive verified real menus of all 15 ReverieVR games'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          echo "VERIFIED pushed archive commit: $(git rev-parse HEAD)"
