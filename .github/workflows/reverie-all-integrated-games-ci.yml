@@ -11,6 +11,8 @@ on:
       - '.github/workflows/reverie-all-integrated-games-ci.yml'
       - 'modules/game-identity-matrix.json'
       - 'scripts/ci/verify-integrated-game-functional-coverage.py'
+      - 'scripts/verify-native-vector-font.py'
+      - 'app/src/main/jni/Android.mk'
       - 'scripts/verify-gumball-armada.sh'
       - 'scripts/verify-omega-front-playability.sh'
       - 'scripts/perf/**'
@@ -34,6 +36,7 @@ jobs:
           set -euo pipefail
           python3 scripts/modules/verify-game-identity-matrix.py
           python3 scripts/ci/verify-integrated-game-functional-coverage.py
+          python3 scripts/verify-native-vector-font.py
 
   breakwater-combat:
     name: Breakwater Battery combat, campaign, waves, purchases and aiming
