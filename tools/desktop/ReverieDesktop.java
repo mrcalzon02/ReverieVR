@@ -20,6 +20,7 @@ public final class ReverieDesktop {
     private final JComboBox<String> project=new JComboBox<>();
     private final JComboBox<String> environment=new JComboBox<>();
     private final JTextField sitkaRegion=new JTextField("harbor",10);
+    private final JComboBox<Double> snapStep=new JComboBox<>(new Double[]{.25, .5, 1., 2., 5., 10.});
     private final JPanel sitkaControls=new JPanel(new FlowLayout(FlowLayout.LEFT,8,2));
     private final JPanel paletteHost=new JPanel(new BorderLayout());
     private ReverieSceneProject editorProject;
@@ -67,6 +68,7 @@ public final class ReverieDesktop {
         sitkaControls.add(new JLabel("Region blockout / authoring only"));
         sitkaControls.setVisible(false);
         JButton save=button("Save scene",this::save); upper.add(save);
+        upper.add(new JLabel("Snap (m)"));upper.add(snapStep);
         publishTest=button("Stage Test Chamber for APK",this::publishTestChamber);
         publishTest.setToolTipText("Copies only box/cylinder layout into the Test Chamber APK assets; rebuild the Android app to see changes");
         publishTest.setEnabled(false);upper.add(publishTest);
@@ -80,11 +82,13 @@ public final class ReverieDesktop {
         environment.addActionListener(e->{if(updating)return;editHistory.execute(()->{scene.environment=(String)environment.getSelectedItem();changed();});});
         JPanel right=new JPanel(new BorderLayout(4,4));
         right.setPreferredSize(new Dimension(312,740));
-        JPanel add=new JPanel(new GridLayout(2,2,4,4));
+        JPanel add=new JPanel(new GridLayout(3,2,4,4));
         add.add(button("Add box",()->add("box","-")));
         add.add(button("Add cylinder",()->add("cylinder","-")));
         add.add(button("Import OBJ",this::importObj));
         add.add(button("Delete selected",this::delete));
+        add.add(button("Duplicate selected",this::duplicate));
+        add.add(button("Snap selected",this::snapSelected));
         right.add(add,BorderLayout.NORTH);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.addListSelectionListener((ListSelectionEvent e)->{if(!e.getValueIsAdjusting())refreshFields();});
@@ -118,6 +122,10 @@ public final class ReverieDesktop {
         frame.setLocationRelativeTo(null);
         frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"),"save");
         frame.getRootPane().getActionMap().put("save",new AbstractAction(){@Override public void actionPerformed(ActionEvent e){save();}});
+        frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Z"),"undo");
+        frame.getRootPane().getActionMap().put("undo",new AbstractAction(){@Override public void actionPerformed(ActionEvent e){if(editHistory!=null)editHistory.undo();}});
+        frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Y"),"redo");
+        frame.getRootPane().getActionMap().put("redo",new AbstractAction(){@Override public void actionPerformed(ActionEvent e){if(editHistory!=null)editHistory.redo();}});
     }
     private JButton button(String title,Runnable action){JButton b=new JButton(title);b.addActionListener(e->action.run());return b;}
     static Path sceneFile(Path workspace,String id,String region){
@@ -238,7 +246,7 @@ public final class ReverieDesktop {
     }
     private void error(String message,Exception ex){status.setText(message+": "+ex.getMessage());JOptionPane.showMessageDialog(frame,ex.toString(),message,JOptionPane.ERROR_MESSAGE);}
     private void changed(){dirty=true;status.setText("Unsaved edits: "+activeId+
-        " | "+file(activeId)+" (authoring only)");view.repaint();}
+        " | "+editorProject.documentPath()+" (authoring only)");view.repaint();}
     private void refreshObjects(int selected){updating=true;objects.clear();for(EditorProject.Node p:editorProject.hierarchy())objects.addElement(p.id()+" ["+p.kind()+"]");
         list.setSelectedIndex(selected);updating=false;refreshFields();view.repaint();}
     private SceneDocument.Piece selected(){int i=list.getSelectedIndex();return i<0||i>=scene.pieces.size()?null:scene.pieces.get(i);}
@@ -266,6 +274,31 @@ public final class ReverieDesktop {
     }
     private boolean hasId(String id){return scene.pieces.stream().anyMatch(p->p.id.equals(id));}
     private void delete(){int i=list.getSelectedIndex();if(i<0)return;editHistory.execute(()->{scene.pieces.remove(i);refreshObjects(Math.min(i,scene.pieces.size()-1));changed();});}
+    private void duplicate(){
+        SceneDocument.Piece origin=selected();
+        if(origin==null||scene.pieces.size()>=SceneDocument.MAX_OBJECTS)return;
+        editHistory.execute(()->{
+            String id;do{id="object-"+(nextId++);}while(hasId(id));
+            SceneDocument.Piece copy=new SceneDocument.Piece(
+                id,origin.kind,origin.asset,origin.x+1,origin.y,origin.z+1,
+                origin.yaw,origin.scale);
+            scene.pieces.add(copy);
+            refreshObjects(scene.pieces.size()-1);
+            changed();
+        });
+    }
+    private void snapSelected(){
+        SceneDocument.Piece p=selected();if(p==null)return;
+        double step=((Number)snapStep.getSelectedItem()).doubleValue();
+        editHistory.execute(()->{
+            p.x=Math.rint(p.x/step)*step;
+            p.y=Math.rint(p.y/step)*step;
+            p.z=Math.rint(p.z/step)*step;
+            p.validate();
+            refreshFields();
+            changed();
+        });
+    }
     private void importObj(){
         JFileChooser chooser=new JFileChooser(repo.resolve("app/src/main/assets").toFile());
         chooser.setDialogTitle("Choose an OBJ inside the ReverieVR source checkout");
