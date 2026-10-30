@@ -1,3 +1,5 @@
+> **2026-10-30 integrated authoring milestone:** Sitka is now in ReverieVR's desktop **internal games workbench** as a non-playable game project with safe per-region blockout documents, actual Beckenburg portable editor palette/transaction history, and a launch action for the genuine water/weather editor. Exact 33 owner-source Java 17 files are pinned in `tools/editor-kit/upstream-lock.json`, so `tools/sitka/launch-editor.sh` or `tools/sitka/launch-editor.cmd` works without an adjacent Beckenburg checkout. The water/weather GUI still writes real authoring data rather than the playable game's assets; actual Sitka geography, cross-tile streaming, environment-runtime linkage, building/road collision, and fishing remain pending. [Integration contract](INTERNAL_GAME_EDITOR_BECKENBURG.md).
+
 # Sitka coastal editor, geodata and native environment adapter
 
 **Date:** 2026-10-26  
