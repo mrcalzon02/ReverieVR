@@ -26,8 +26,8 @@
 #include "classic_chess_wood_atlas.h"
 #include "classic_chess_panel_layout.h"
 #endif
-// Phase one: Checkers uses the existing Lato glyph atlas; others unchanged.
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+// All eight Classic games now share the existing licensed Lato glyph atlas.
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
 #include "breakwater_font_atlas.h"
 #endif
 namespace {
@@ -93,7 +93,7 @@ struct Module {
     std::vector<float> chessSprites;
     std::vector<float> chessBoardSprites;
 #endif
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
     GLuint fontProgram=0,fontVbo=0,fontStaticVbo=0,fontTexture=0;
     GLint fontPos=-1,fontUv=-1,fontCol=-1,fontMvp=-1,fontSampler=-1;
     GLsizei fontStaticCount=0;
@@ -116,15 +116,13 @@ void Triangle(Module *m,float ax,float ay,float bx,float by,float cx,float cy,
 void Rect(Module *m,float x,float y,float w,float h,float z,float r,float g,float b){
     reverie::flatmesh::Rect(Emit(m),x,y,w,h,z,r,g,b);
 }
-// Checkers and Chess use the actual proportional Lato atlas, not 3D stroke glyphs.
+// Every Classic menu/HUD uses actual proportional Lato atlas glyphs.
 void Text(Module *m,const char *s,float x,float y,float scale,
           float r,float g,float b){
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
     auto &v=m->staticPass?m->fontStaticVertices:m->fontVertices;
-    reverie::breakwater::font::AppendText(v,s,x,y,scale,r,g,b,-2.885f);
-#else
-    reverie::classicart::StrokeText(Emit(m),s,x,y,scale,r,g,b);
-#endif
+    reverie::breakwater::font::AppendText(v,s,x,y,
+        reverie::breakwater::font::FittedScale(s,5.35f,scale),
+        r,g,b,-2.885f);
 }
 void Segment(Module *m,float x,float y,float xx,float yy,float width,
              float r,float g,float b){
@@ -452,7 +450,7 @@ void RebuildBoard(Module *m,bool fixed){
     if(fixed)m->chessBoardSprites.clear();
     else m->chessSprites.clear();
 #endif
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
     if(fixed)m->fontStaticVertices.clear();
     else m->fontVertices.clear();
 #endif
@@ -722,7 +720,7 @@ void RebuildBoard(Module *m,bool fixed){
 #endif
     if(fixed){
         m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
         m->fontStaticCount=static_cast<GLsizei>(m->fontStaticVertices.size()/8);
 #endif
     }else {m->dirty=false;m->upload=true;}
@@ -882,7 +880,7 @@ void DestroyGl(Module *m){
     m->chessBoardTexture=m->chessBoardVbo=0;
     m->chessReady=false;
 #endif
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
     if(m->fontTexture)glDeleteTextures(1,&m->fontTexture);
     if(m->fontVbo)glDeleteBuffers(1,&m->fontVbo);
     if(m->fontStaticVbo)glDeleteBuffers(1,&m->fontStaticVbo);
@@ -980,7 +978,7 @@ bool CreateChessSprites(Module *m){
 }
 #endif
 
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
 bool CreateNativeFont(Module *m){
     const char *vs="uniform mat4 u_Mvp;attribute vec3 a_Pos;"
         "attribute vec2 a_Uv;attribute vec3 a_Col;"
@@ -1085,7 +1083,7 @@ int32_t GlCreate(void *ptr){
 #if CLASSIC_GAME_KIND == 5
     if(ok)ok=CreateChessSprites(m);
 #endif
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
     if(ok)ok=CreateNativeFont(m);
 #endif
     if(ok){
@@ -1101,7 +1099,7 @@ int32_t GlCreate(void *ptr){
             m->chessBoardSprites.size()*sizeof(float)),
             m->chessBoardSprites.data(),GL_STATIC_DRAW);
 #endif
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
         glBindBuffer(GL_ARRAY_BUFFER,m->fontStaticVbo);
         glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(
             m->fontStaticVertices.size()*sizeof(float)),
@@ -1119,7 +1117,7 @@ int32_t GlCreate(void *ptr){
         }
         // Deterministic recipe stays in source; release expanded CPU copy.
         std::vector<float>().swap(m->staticVertices);
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
         std::vector<float>().swap(m->fontStaticVertices);
 #endif
     }
@@ -1442,7 +1440,7 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
     ReverieNativeGlStateCaptureV1(&prior);
     ReverieNativeGlAttribCaptureV1(&a,static_cast<GLuint>(m->pos));
     ReverieNativeGlAttribCaptureV1(&b,static_cast<GLuint>(m->col));
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
     ReverieNativeGlAttribStateV1 fontAttrib={};
     if(m->fontReady)ReverieNativeGlAttribCaptureV1(
         &fontAttrib,static_cast<GLuint>(m->fontCol));
@@ -1459,7 +1457,7 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
             static_cast<GLsizeiptr>(m->chessSprites.size()*sizeof(float)),
             m->chessSprites.data(),GL_DYNAMIC_DRAW);
 #endif
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
         glBindBuffer(GL_ARRAY_BUFFER,m->fontVbo);
         glBufferData(GL_ARRAY_BUFFER,
             static_cast<GLsizeiptr>(m->fontVertices.size()*sizeof(float)),
@@ -1536,7 +1534,7 @@ int32_t Draw(void *ptr,const ReverieNativeEyeV1 *eye){
     }
 #endif
 
-#if CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5
+#if CLASSIC_GAME_KIND >= 0 && CLASSIC_GAME_KIND <= 7
     if(m->fontReady){
         GLint srcRgb=GL_ONE,dstRgb=GL_ZERO,srcAlpha=GL_ONE,dstAlpha=GL_ZERO;
         GLboolean depthWrite=GL_TRUE;
