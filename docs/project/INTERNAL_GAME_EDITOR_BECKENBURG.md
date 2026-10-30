@@ -4,7 +4,7 @@
 [`mrcalzon02/The-Beckenburg-Project`](https://github.com/mrcalzon02/The-Beckenburg-Project)
 and its editor source was imported from commit
 `4637cce0a570c6c4d1b64c655ad610155618046a`.
-The exact 33 Java 17 files and their Git blob hashes are pinned in
+The exact 36 Java 17 files and their Git blob hashes are pinned in
 `tools/editor-kit/upstream-lock.json`.
 
 ## What is integrated today
@@ -20,6 +20,24 @@ strict `REVSCENE\t1` source. The source adapter is
 `tools/desktop/ReverieSceneProject.java`, which implements Beckenburg's
 unmodified `EditorProject<String>` against ReverieVR's live document and
 `EditorHistory`; there is no competing preview-only save model.
+
+**Lighting is now included.** The additional three original Beckenburg
+`dev.mrcalzon.lighting` classes (`LightModel`, `LightingModule`,
+`LightingFrameProfiler`) are pinned and compiled alongside the editor, water
+and weather modules. The internal games manager exposes a functioning Lighting
+dock for each native/project scene; Sitka's separate environment editor also
+includes that same dock. It offers presets, direction/beam shape, ambient,
+source strength, reach, diffusion, flicker, cell size, cache/LOD flags and a
+live preview calculated with the actual Beckenburg light falloff functions.
+The editor saves an independently validated, atomic `.properties` file
+under `build/desktop-workspace/lighting/<game-id>.properties`; Sitka's
+lighting profile is shared between both editors under
+`build/desktop-workspace/sitka-environment/lighting/sitka.properties`.
+It intentionally does *not* change Beckenburg's global Java Preferences or
+silently modify an Android game. These settings and the preview are
+**desktop authoring only**, not authored light fixtures, occlusion, dynamic
+shadows or renderer parity. Native light runtime adaptation is still a
+separate verified milestone.
 
 The Sitka project is available in the editor project selector even though it is
 **not yet a playable game**. Sitka's region field creates separate safe,
@@ -65,9 +83,9 @@ and must not be locally patched. ReverieVR game-specific adapters live outside
 that subtree. The script `tools/editor-kit/sync-upstream.py` supports:
 
 - `python3 tools/editor-kit/sync-upstream.py`: offline integrity verification
-  of the pinned 33 Git blobs (no network, no mutation);
+  of the pinned 36 Git blobs (no network, no mutation);
 - `--check-upstream`: query the current upstream `main` and list changed,
-  new or removed portable/water/weather Java source files;
+  new or removed portable/water/weather/lighting Java source files;
 - `--apply`: **explicitly** fetch and SHA-verify changed/new files before
   atomically replacing *pristine* copies and advancing the pinned revision.
   It refuses local modifications, path conflicts, deleted upstream classes,
@@ -104,8 +122,12 @@ contract beyond the 512-part guide files before full-city production.
 `org.beckenburg.editor` classes and ReverieVR adapter and exercises scene
 save/undo/redo/rollback, Sitka region isolation/path safety and Red Ledger
 palette isolation, all without a GUI. `bash tools/sitka/test-editor.sh`
-compiles the imported water/weather/editor classes and the actual Sitka GUI
+compiles the imported water/weather/lighting/editor classes and the actual Sitka GUI
 source, then runs headless water placement persistence and weather snapshot
 recovery. `bash scripts/verify-desktop-scene-bridge.sh` additionally tests
 the existing Java/C++ REVSCENE exchange and bundled Test Chamber authoring
 file. Passing Java compilation is not headset/graphics acceptance.
+
+### Lighting verification notes
+
+`tools/desktop/LightingAuthoringPanelTest.java` checks the real shared light beam and falloff math, performance preset visibility invariants, bounded frame profiler and the authoring panel’s atomic file save/reload/invalid-input rejection. Both the desktop Java 17 test scripts and the Sitka test scripts compile the actual imported lighting module and its shared Swing authoring panel. These are source/compiler checks, not Android lighting acceptance. The existing Test Chamber point-light shader is still separate until a native `LightModel` parity adapter is implemented and tested.
