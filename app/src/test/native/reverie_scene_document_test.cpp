@@ -37,8 +37,24 @@ int main(int argc,char**argv){
     if(argc==3){
       FILE *f=std::fopen(argv[2],"rb");assert(f);char buf[150002];size_t n=std::fread(buf,1,sizeof(buf),f);std::fclose(f);
       auto installed=ParseScene(buf,n);assert(installed.environment=="white_room");
-      assert(installed.pieces.size()==2);
-      assert(PrimitiveTriangles(installed).size()==mesh.size());
+      assert(installed.pieces.size()==30);
+      bool hasChair=false,hasBeacon=false,hasRotor=false,hasOrb=false;
+      bool hasMaterial=false,hasDoor=false;
+      size_t expected=0;
+      for(const auto &piece:installed.pieces){
+          assert(piece.kind=="box"||piece.kind=="cylinder");
+          expected+=(piece.kind=="box"?36u:16u*12u)*5u;
+          hasChair|=piece.id=="chair-seat";
+          hasBeacon|=piece.id=="beacon-light";
+          hasRotor|=piece.id=="spinner-arm";
+          hasOrb|=piece.id=="moving-orb";
+          hasMaterial|=piece.id=="sample-glass";
+          hasDoor|=piece.id=="door-crossbar";
+      }
+      assert(hasChair&&hasBeacon&&hasRotor&&hasOrb&&hasMaterial&&hasDoor);
+      const auto installedMesh=PrimitiveTriangles(installed);
+      assert(installedMesh.size()==expected);
+      for(float value:installedMesh)assert(std::isfinite(value));
     }
     std::cout<<"REVSCENE native: PASS strict parse, safety, GLES2 mesh, native/Java fixture\n";
 }
