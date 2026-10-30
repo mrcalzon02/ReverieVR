@@ -770,9 +770,12 @@ void Rebuild(Module *m,bool fixed){
              .28f,.91f,.73f);
         Disc(m,s.ballX,s.ballY,.049f,-2.92f,.95f,.96f,.77f);
         char status[48];
-        std::snprintf(status,sizeof(status),"SCORE %d LIVES %d WALL %d",
-                      s.score,s.lives,s.wall);
-        Text(m,status,1.93f,1.06f,.034f,.90f,.95f,.81f);
+        std::snprintf(status,sizeof(status),"SCORE %d",s.score);
+        Text(m,status,1.94f,1.16f,.031f,.90f,.95f,.81f);
+        std::snprintf(status,sizeof(status),"LIVES %d",s.lives);
+        Text(m,status,1.94f,.93f,.031f,.90f,.95f,.81f);
+        std::snprintf(status,sizeof(status),"WALL %d",s.wall);
+        Text(m,status,1.94f,.70f,.031f,.90f,.95f,.81f);
         Text(m,s.finished
              ? (s.won?"YOU WIN PRESS":"GAME OVER PRESS")
              : (s.moving?"CLEAR ALL BRICKS":"PRESS TO SERVE"),
@@ -878,9 +881,14 @@ void Rebuild(Module *m,bool fixed){
         else
             std::snprintf(status,sizeof(status),"YOU %d CPU %d",
                           s.position,s.rival);
-        Text(m,status,2.04f,1.00f,
-            reverie::breakwater::font::FittedScale(status,1.44f,.038f),
-            .94f,.89f,.68f);
+        std::snprintf(status,sizeof(status),"YOU %d",s.position);
+        Text(m,status,1.94f,1.14f,.033f,.94f,.89f,.68f);
+        std::snprintf(status,sizeof(status),"CPU %d",s.rival);
+        Text(m,status,1.94f,.91f,.033f,.94f,.89f,.68f);
+        if(s.die>0) {
+            std::snprintf(status,sizeof(status),"SPIN %d",s.die);
+            Text(m,status,1.94f,.68f,.033f,.94f,.89f,.68f);
+        }
         Text(m,s.finished?(s.position==100?"YOU WIN PRESS":"CPU WINS PRESS"):
              s.player_turn?"SELECT TO ROLL":"CPU ROLLING",
              0,-1.56f,.045f,1,.96f,.78f);
