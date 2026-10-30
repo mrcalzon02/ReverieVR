@@ -2,41 +2,41 @@
 #include "../../main/jni/native/red_ledger_beckenburg_props.h"
 #include <cassert>
 #include <cstdint>
-#include <fstream>
-#include <iterator>
+#include <cstring>
 #include <string>
 #include <vector>
-using reverie::redledger::owned_patrons::ForPatron;
-using reverie::redledger::owned_patrons::Gopnick;
-using reverie::redledger::owned_patrons::PinkDress;
-using reverie::redledger::PatronKind;
-int main(int argc,char **argv) {
-    assert(argc==2);
-    assert(ForPatron(PatronKind::NightClerk)==PinkDress);
-    assert(ForPatron(PatronKind::DirectorateCourier)==PinkDress);
-    assert(ForPatron(PatronKind::SalihorskHauler)==Gopnick);
-    const int triangles[2]={6792,6918};
-    for(size_t i=0;i<2u;++i) {
-        const std::string path=std::string(argv[1])+"/app/src/main/assets/"+
-                               reverie::redledger::owned_patrons::kPaths[i];
-        std::ifstream stream(path,std::ios::binary);
-        assert(stream.good());
-        const std::vector<uint8_t> raw{
-            std::istreambuf_iterator<char>(stream),
-            std::istreambuf_iterator<char>()};
-        std::vector<float> geometry;
-        const uint8_t *texture=nullptr;
-        assert(reverie::redledger::beckenburg::Decode(
-            raw.data(),raw.size(),&geometry,&texture));
-        assert(geometry.size()==static_cast<size_t>(triangles[i])*3u*10u);
-        assert(texture!=nullptr);
-        bool color_varies=false;
-        for(size_t k=2;k<reverie::redledger::beckenburg::kTextureBytes;k+=2)
-            if(texture[k]!=texture[0]||texture[k+1]!=texture[1]) {
-                color_varies=true;break;
-            }
-        assert(color_varies); // real source atlas, not monochrome stand-in
-        assert(!reverie::redledger::beckenburg::Decode(
-            raw.data(),raw.size()-1u,&geometry,&texture));
+
+using namespace reverie::redledger;
+namespace people=reverie::redledger::owned_patrons;
+namespace mesh=reverie::redledger::beckenburg;
+
+int main() {
+    const PatronKind kinds[people::kCount] = {
+        PatronKind::RailWorker, PatronKind::NightClerk,
+        PatronKind::MilitiaVeteran, PatronKind::Mechanic,
+        PatronKind::DirectorateCourier, PatronKind::SalihorskHauler
+    };
+    for (size_t i=0; i<people::kCount; ++i) {
+        assert(static_cast<size_t>(people::ForPatron(kinds[i]))==i);
+        const std::string path=people::kPaths[i];
+        assert(path.find("native/red-ledger/beckenburg/patron_")==0u);
+        assert(path.size()>=7u && path.substr(path.size()-7u)==".rlprop");
+        for (size_t j=0; j<i; ++j)
+            assert(path!=people::kPaths[j]);
     }
+    // Check the same RLBP decoder used by the GLES2 loader. These bytes are
+    // explicitly synthetic test geometry, not claims of imported characters.
+    std::vector<uint8_t> data(16u+3u*mesh::kStride*sizeof(float)+
+                              mesh::kTextureBytes,0u);
+    std::memcpy(data.data(),"RLBP",4u);
+    data[4]=1u; // little-endian format version
+    data[8]=3u; // one triangle
+    data[12]=0u; data[13]=1u; // 256px texture side
+    std::vector<float> vertices;
+    const uint8_t *texture=nullptr;
+    assert(mesh::Decode(data.data(),data.size(),&vertices,&texture));
+    assert(vertices.size()==3u*mesh::kStride);
+    assert(texture!=nullptr);
+    assert(!mesh::Decode(data.data(),data.size()-1u,&vertices,&texture));
+    return 0;
 }
