@@ -147,3 +147,11 @@ This record specifies the Sitka game and documents its **source-integrated autho
 - Seeded waiting/bite/reel/land with Dolly Varden, coho, pink salmon and flounder; bounded updates, forgiving tension, catch journal, three tackle tiers and strict versioned journal parser. It is not surveyed species distribution or real-world harvest guidance.
 - These rules require independently confirmed-water/depth inputs. A water rectangle alone cannot establish safe/correct fishing geography; casting must later be gated by verified shoreline/bathymetry/land masks.
 - There is no native controller/pointer/visual or host-save integration yet. Terrain/water rendering remains an unregistered source-only module. Next: approved real Sitka geography, safe cast targeting, font-based UI feedback, host-scoped persistence, and Android/desktop playtests.
+
+## Fishing host adapter and fishing-site targeting — 2026-10-30 (source only)
+
+- Added game-private FishingSession for normalized input edges, bite/reel state, versioned durable journal read/write, guarded corruption handling and pause/exit retry. The existing host owns save slots; the prototype uses sitka-fishing-v1.sav. Invalid saves block creation instead of silently overwriting progress.
+- Added the SITKA-FISH-SITES-1 authored-site parser and ray target gate. Each row names a site, existing water id, east/north centre, radius in metres and surveyed depth. Maximum 32 sites; bounded ray distances; invalid, unknown-water and out-of-water cases fail closed. The prototype now loads sitka/fishing/sites.txt through host scoped asset reading.
+- This does NOT establish a certified marine bathymetry or shoreline mask. Survey provenance, dry-ground collision, and fish-site validity need geographic acceptance before any actual Play entry. No synthetic sites or map tiles are packaged.
+- The source-only terrain module now executes fishing updates once per frame, provides host-owned activation/failure feedback, and saves the journal on meaningful changes. It remains absent from Android.mk and the playable gallery. Visual rod, line, fish, journal UI, audio, and purchases are not integrated.
+- Local strict GCC/Clang C++17 and Clang sanitizer tests passed for both new CPU components. The existing content CI has objective functionality tests for them. Exact-commit CI and physical Galaxy S9 evidence remain separate.

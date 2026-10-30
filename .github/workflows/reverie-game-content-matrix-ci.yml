@@ -38,6 +38,8 @@ on:
       - 'app/src/main/jni/native/sitka_terrain_*.h'
       - 'app/src/main/jni/native/sitka_water_gl.h'
       - 'app/src/main/jni/native/sitka_environment.h'
+      - 'app/src/main/jni/native/sitka_fishing_*.h'
+      - 'app/src/test/native/sitka_fishing_*_test.cpp'
       - 'app/src/main/jni/native/sitka_terrain_module.cpp'
       - 'app/src/test/native/sitka_terrain_mesh_test.cpp'
       - 'app/src/test/native/sitka_terrain_egl_test.cpp'
@@ -156,6 +158,19 @@ jobs:
             app/src/test/native/sitka_terrain_mesh_test.cpp \
             -o "${RUNNER_TEMP}/sitka-terrain-mesh-test"
           "${RUNNER_TEMP}/sitka-terrain-mesh-test"
+      - name: Test Sitka fishing input, saves and surveyed-site cast gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_name in sitka_fishing_session_test sitka_fishing_spots_test; do
+            for compiler in g++ clang++; do
+              "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
+                -Iapp/src/main/jni/native \
+                "app/src/test/native/${test_name}.cpp" \
+                -o "${RUNNER_TEMP}/${test_name}-${compiler}"
+              "${RUNNER_TEMP}/${test_name}-${compiler}"
+            done
+          done
       - name: Test independent game content builds, namespaces and pack integrity
         run: python3 -m unittest discover -s scripts/modules -p 'test_all_game_content_packages.py' -v
       - name: Verify native game-owned asset resolver and forbidden cross-game paths
