@@ -1,0 +1,118 @@
+name: ReverieVR real native and classic menu archive
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/native-game-menu-archive.yml'
+      - 'scripts/ci/promote_native_game_gallery.py'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/NativeGamesGallery.java'
+      - 'app/src/main/assets/native/test-chamber/**'
+      - 'app/src/main/jni/native/test_chamber_module.cpp'
+      - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/DownloadedNativeGameAssetsInstrumentedTest.java'
+      - 'modules/game-identity-matrix.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: native-game-menu-archive-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture-and-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable KVM and install Android build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+          SDKMANAGER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then SDKMANAGER="$(command -v sdkmanager || true)"; fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865' 'cmake;3.22.1'
+      - name: Bootstrap hub game build inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew scripts/fetch-dosbox-pure.sh scripts/fetch-doom-shareware.sh scripts/fetch-kens-labyrinth.sh scripts/fetch-jetpack.sh scripts/verify-build-bootstrap.sh
+          ./scripts/fetch-dosbox-pure.sh
+          ./scripts/fetch-doom-shareware.sh
+          ./scripts/fetch-kens-labyrinth.sh
+          ./scripts/fetch-jetpack.sh
+          ./scripts/verify-build-bootstrap.sh
+      - name: Build installed hub and real menu-capture instrumentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --stacktrace -PcompanionEmulatorAbi=true :app:assembleDebug :app:assembleDebugAndroidTest
+          mkdir -p validation/gallery
+          cp "$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f -print -quit)" validation/gallery/hub.apk
+          cp "$(find app/build/outputs/apk/androidTest/debug -maxdepth 1 -name '*.apk' -type f -print -quit)" validation/gallery/tests.apk
+      - name: Capture all registered native and classic game initial menu frames
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          cores: 2
+          ram-size: 3072M
+          heap-size: 512M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            mkdir -p validation/gallery
+            adb logcat -c
+            adb install -r validation/gallery/hub.apk
+            adb install -r validation/gallery/tests.apk
+            adb shell am instrument -w -r -e class io.github.mrcalzon02.reverievr.DownloadedNativeGameAssetsInstrumentedTest#captureAllNativeMainMenus io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner > validation/gallery/instrumentation-output.txt || true
+            adb exec-out run-as io.github.mrcalzon02.reverievr cat files/native-menu-capture.csv > validation/gallery/native-menu-capture.csv
+            for GAME in $(python3 -c 'import json; print(" ".join(g["id"] for g in json.load(open("modules/game-identity-matrix.json"))["games"]))'); do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/native-menu-${GAME}.png" > "validation/gallery/native-menu-${GAME}.png" || rm -f "validation/gallery/native-menu-${GAME}.png"; done
+            adb logcat -d -v time > validation/gallery/logcat.txt
+      - name: Validate all captured pixels and generate archive cards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/verify-installed-native-game-captures.py validation/gallery
+          grep -F 'OK (1 test)' validation/gallery/instrumentation-output.txt
+          python3 -m pip install --quiet Pillow
+          python3 scripts/ci/promote_native_game_gallery.py validation/gallery
+      - name: Push only genuine screenshot-derived image assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- app/src/main/assets/native/gallery/menu-preview-atlas.jpg art/archive/native-game-menus/
+          if git diff --cached --quiet; then echo 'Verified image archive unchanged'; exit 0; fi
+          git commit -m 'Archive real native and classic game menu frames'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
+          echo "Verified push to main: $(git rev-parse HEAD)"
+      - name: Preserve captured frame evidence and emulator logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reverie-native-game-menu-captures-${{ github.run_id }}
+          path: |
+            validation/gallery/native-menu-capture.csv
+            validation/gallery/native-menu-*.png
+            validation/gallery/instrumentation-output.txt
+            validation/gallery/logcat.txt
+          retention-days: 14
+          if-no-files-found: warn
