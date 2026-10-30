@@ -6,6 +6,7 @@ import dev.mrcalzon.water.WaterPlacement;
 import dev.mrcalzon.weather.WeatherModule;
 import dev.mrcalzon.weather.WeatherType;
 import dev.mrcalzon.weather.WeatherView;
+import io.github.mrcalzon02.reverievr.LightingAuthoringPanel;
 import org.beckenburg.editor.EditorPalettePanel;
 import org.beckenburg.editor.EditorProject;
 
@@ -27,6 +28,7 @@ public final class SitkaEditor {
     private final Path root;
     private final Path waterFile, weatherFile;
     private final WaterEditorModel water;
+    private final LightingAuthoringPanel lighting;
     private final WeatherModule weather = new WeatherModule(0x517CA1L);
     private final JFrame frame = new JFrame("Sitka - Coastal Environment Editor");
     private final JLabel status = new JLabel();
@@ -54,6 +56,7 @@ public final class SitkaEditor {
             original = new WaterDocument("sitka", List.of());
         }
         water = new WaterEditorModel(original);
+        lighting = new LightingAuthoringPanel(this.root.resolve("lighting/sitka.properties"));
         loadWeather();
         weather.setTimeOfDay(number(hour)/24.0);
         weather.setWeather((WeatherType)mode.getSelectedItem(), 0);
@@ -92,6 +95,7 @@ public final class SitkaEditor {
         JTabbedPane controls = new JTabbedPane();
         controls.addTab("Water inspector", inspector);
         controls.addTab("Weather", weatherPanel);
+        controls.addTab("Lighting", lighting);
         controls.addTab("PSX palette", palette);
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, canvas, controls);
         split.setResizeWeight(.68);
@@ -100,7 +104,7 @@ public final class SitkaEditor {
         JButton save = new JButton("Save water + weather");
         save.addActionListener(e -> saveWithDialog());
         toolbar.add(save);
-        toolbar.add(new JLabel("Authoring tools: Beckenburg water/editor + shared weather"));
+        toolbar.add(new JLabel("Beckenburg water / weather / lighting authoring"));
         full.add(toolbar, BorderLayout.NORTH);
         full.add(split, BorderLayout.CENTER);
         full.add(status, BorderLayout.SOUTH);
@@ -193,12 +197,12 @@ public final class SitkaEditor {
         }
     }
     private void close() {
-        if (water.dirty() || weatherDirty) {
-            int value = JOptionPane.showConfirmDialog(frame,"Save Sitka water and weather edits?",
+        if (water.dirty() || weatherDirty || lighting.dirty()) {
+            int value = JOptionPane.showConfirmDialog(frame,"Save Sitka water, weather and lighting edits?",
                 "Unsaved environment",JOptionPane.YES_NO_CANCEL_OPTION);
             if (value == JOptionPane.CANCEL_OPTION || value == JOptionPane.CLOSED_OPTION) return;
             if (value == JOptionPane.YES_OPTION) {
-                try { save(); } catch (IOException e) { status.setText(e.getMessage()); return; }
+                try { save(); lighting.save(); } catch (IOException e) { status.setText(e.getMessage()); return; }
             }
         }
         timer.stop();
