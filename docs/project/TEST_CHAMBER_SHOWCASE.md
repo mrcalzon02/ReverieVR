@@ -22,3 +22,7 @@ A controller primary press cycles six observable lighting/material/audio modes, 
 ## Sitka distinction
 
 Sitka is visible in the same gallery as an **inspectable development project**, not a broken faux native game. The existing Sitka terrain proof has no licensed actual Sitka coastline assets or implemented fishing loop yet. Its procedural identity illustration is clearly marked as project artwork rather than a captured playable game.
+
+## Emulator-informed exhibition layout refinement
+
+The first real 512×512 Android-eye capture proved the Lato glyphs, shader creation and all authored meshes rendered, but foreground props blocked the view of the showcase. The subsequent layout revision moved the thirty exhibits farther from the default camera, expanded the room in horizontal/depth dimensions, shifted the avatar and revised the procedural noise palette from cyan-dominated to neutral for accurate visual distinction of wood, metal, gold and glass tints. The rotor pivot and light falloff center were updated with the scene positions. The native parser test now checks that all specimens remain inside the revised room and clear of the initial near view. A fresh installed emulator capture, not only the signed APK, is still the final visual evidence gate for these revised placements.
