@@ -64,8 +64,8 @@ final class NativeGamesGallery {
         c.drawRoundRect(269,62,741,706,8,8,p);
         p.setStyle(Paint.Style.FILL);
         p.setColor(Color.rgb(216,238,247));
-        fit(c,p,"REVERIEVR  /  NATIVE GAMES",278,100,445,
-            26f*Math.min(scale,1.1f),false);
+        fit(c,p,"REVERIEVR / CLASSIC + NATIVE",278,100,445,
+            22f*Math.min(scale,1.1f),false);
         p.setColor(error!=null&&!error.isEmpty()?Color.rgb(252,187,124)
             :Color.rgb(156,198,213));
         fit(c,p,error!=null&&!error.isEmpty()?"FAILED: "+error
@@ -112,7 +112,7 @@ final class NativeGamesGallery {
         p.setColor(Color.rgb(215,236,249));
         p.setFakeBoldText(true);
         p.setTextSize(35f*Math.min(scale,1.10f));
-        c.drawText("REVERIEVR  NATIVE GAMES",61,104,p);
+        c.drawText("REVERIEVR  /  CLASSIC + NATIVE GAMES",61,104,p);
         p.setFakeBoldText(false);
         p.setColor(Color.rgb(79,143,183));
         p.setStrokeWidth(2f);
@@ -220,9 +220,15 @@ final class NativeGamesGallery {
         p.setColor(Color.rgb(210,228,239));
         p.setFakeBoldText(false);
         p.setTextAlign(Paint.Align.LEFT);
-        p.setTextSize(16f*Math.min(scale,1.07f));
-        for(int i=0;i<lines.length;i++)
+        for(int i=0;i<lines.length;i++){
+            float textSize=16f*Math.min(scale,1.07f);
+            p.setTextSize(textSize);
+            while(p.measureText(lines[i])>available&&textSize>12f){
+                textSize-=.5f;
+                p.setTextSize(textSize);
+            }
             c.drawText(lines[i],tx,r[1]+92+i*23,p);
+        }
         p.setColor(Color.rgb(248,206,116));
         fit(c,p,"CLICK TO LAUNCH",tx,r[3]-17,available,14f,false);
         c.restore();
