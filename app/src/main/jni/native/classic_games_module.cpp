@@ -603,25 +603,24 @@ void RebuildBoard(Module *m,bool fixed){
         Text(m,msg,2.02f,1.07f,.038f,1.f,.91f,.58f);
 #endif
         if(s.kind==reverie::boardgames::Kind::Go){
-            char scored[64];
-            std::snprintf(scored,sizeof(scored),"BLACK %.1f  WHITE %.1f",
-                          s.goBlackScore,s.goWhiteScore);
-            Text(m,scored,2.04f,.63f,
-                reverie::breakwater::font::FittedScale(scored,1.50f,.034f),
-                .95f,.96f,.85f);
+            char black[32],white[32];
+            std::snprintf(black,sizeof(black),"BLACK %.1f",s.goBlackScore);
+            std::snprintf(white,sizeof(white),"WHITE %.1f",s.goWhiteScore);
+            Text(m,black,1.94f,.75f,.032f,.95f,.96f,.85f);
+            Text(m,white,1.94f,.52f,.032f,.95f,.96f,.85f);
         }else if(s.kind==reverie::boardgames::Kind::Reversi){
-            char scored[64];
-            std::snprintf(scored,sizeof(scored),"BLACK %d  WHITE %d",
-                          s.ReversiCount(1),s.ReversiCount(-1));
-            Text(m,scored,2.04f,.63f,
-                reverie::breakwater::font::FittedScale(scored,1.50f,.034f),
-                .95f,.96f,.85f);
+            char black[32],white[32];
+            std::snprintf(black,sizeof(black),"BLACK %d",s.ReversiCount(1));
+            std::snprintf(white,sizeof(white),"WHITE %d",s.ReversiCount(-1));
+            Text(m,black,1.94f,.75f,.032f,.95f,.96f,.85f);
+            Text(m,white,1.94f,.52f,.032f,.95f,.96f,.85f);
         }
 #if CLASSIC_GAME_KIND == 5
         ChessPanelText(m,"RESTART",2.22f,-1.35f,.031f,
                        1.f,.95f,.78f);
 #else
-        Text(m,"PRESS TO RESTART",1.98f,-.39f,.034f,1.f,.95f,.78f);
+        Text(m,"PRESS TO",1.94f,-.39f,.034f,1.f,.95f,.78f);
+        Text(m,"RESTART",1.94f,-.60f,.034f,1.f,.95f,.78f);
 #endif
     }else if(!fixed){
         const char *turnLabel=
@@ -631,20 +630,25 @@ void RebuildBoard(Module *m,bool fixed){
 #if CLASSIC_GAME_KIND == 5
         Text(m,turnLabel,0,1.40f,.032f,.95f,.95f,.78f);
 #else
-        Text(m,turnLabel,2.04f,1.08f,
-             reverie::breakwater::font::FittedScale(turnLabel,1.55f,.035f),
-             .95f,.95f,.78f);
+        if(s.kind==reverie::boardgames::Kind::Go&&s.goReview){
+            Text(m,"MARK DEAD",1.94f,1.09f,.034f,.95f,.95f,.78f);
+            Text(m,"GROUPS",1.94f,.88f,.034f,.95f,.95f,.78f);
+        }else if(m->cpuFailed){
+            Text(m,"CPU ERROR",1.94f,1.09f,.034f,1.f,.56f,.46f);
+            Text(m,"RESTART",1.94f,.88f,.034f,1.f,.56f,.46f);
+        }else{
+            Text(m,turnLabel,1.94f,1.08f,.033f,.95f,.95f,.78f);
+        }
 #endif
         if(s.kind==reverie::boardgames::Kind::Reversi){
-            char scored[64];
-            std::snprintf(scored,sizeof(scored),"BLACK %d  WHITE %d",
-                          s.ReversiCount(1),s.ReversiCount(-1));
-            Text(m,scored,2.04f,.63f,
-                reverie::breakwater::font::FittedScale(scored,1.50f,.034f),
-                .95f,.96f,.85f);
+            char black[32],white[32];
+            std::snprintf(black,sizeof(black),"BLACK %d",s.ReversiCount(1));
+            std::snprintf(white,sizeof(white),"WHITE %d",s.ReversiCount(-1));
+            Text(m,black,1.94f,.75f,.032f,.95f,.96f,.85f);
+            Text(m,white,1.94f,.52f,.032f,.95f,.96f,.85f);
             if(s.passes==1)
-                Text(m,"OPPONENT PASSED",2.01f,-.72f,.033f,
-                     .97f,.91f,.48f);
+                {Text(m,"OPPONENT",1.94f,-.68f,.033f,.97f,.91f,.48f);
+                 Text(m,"PASSED",1.94f,-.88f,.033f,.97f,.91f,.48f);}
         }
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
             Text(m,"CONTINUE JUMP",1.88f,.63f,.044f,1.f,.90f,.56f);
