@@ -43,6 +43,11 @@ int main(int argc,char**argv){
       size_t expected=0;
       for(const auto &piece:installed.pieces){
           assert(piece.kind=="box"||piece.kind=="cylinder");
+          // The authored exhibits must remain within the enlarged room
+          // and outside the headset's initial near-view obstruction.
+          assert(std::abs(piece.x)<3.5);
+          assert(piece.z<=-2.0 && piece.z>-4.8);
+          assert(piece.scale>0 && piece.scale<=0.5);
           expected+=(piece.kind=="box"?36u:16u*12u)*5u;
           hasChair|=piece.id=="chair-seat";
           hasBeacon|=piece.id=="beacon-light";
