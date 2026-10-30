@@ -7,7 +7,6 @@ VENDOR="$ROOT/tools/editor-kit/upstream"
 WORKSPACE="${1:-$ROOT/build/sitka/authoring}"
 OUT="$ROOT/build/sitka/editor-classes"
 command -v javac >/dev/null || { echo "JDK 17+ required" >&2; exit 2; }
-python3 "$ROOT/tools/editor-kit/sync-upstream.py"
 mkdir -p "$OUT"
 javac --release 17 -encoding UTF-8 -d "$OUT" \
   "$VENDOR"/src/main/java/org/beckenburg/editor/*.java \
