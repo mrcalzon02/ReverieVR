@@ -5708,12 +5708,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
         int index = NativeGamesGallery.homeModuleIndex(
             nativeLibraryPage,button,nativeGames.size());
         if (sitkaProjectDetailsVisible) {
+            // Project inspector consumes the next click rather than allowing
+            // a concealed launch target behind its non-playable detail pane.
             sitkaProjectDetailsVisible=false;
-            if(button==NativeGamesGallery.HOME_CLOSE) {
-                hoveredButton=-1;
-                textureDirty=true;
-                return;
-            }
+            hoveredButton=-1;
+            textureDirty=true;
+            return;
         }
         if (index >= 0) {
             launchNativeGame(nativeGames.get(index));
