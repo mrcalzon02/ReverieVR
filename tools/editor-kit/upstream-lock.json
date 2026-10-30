@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "repository": "mrcalzon02/The-Beckenburg-Project",
+  "revision": "4637cce0a570c6c4d1b64c655ad610155618046a",
+  "prefix": "tools/editor-kit/upstream/",
+  "includes": [
+    "src/main/java/org/beckenburg/editor/",
+    "water-module/src/main/java/dev/mrcalzon/water/",
+    "src/main/java/dev/mrcalzon/weather/"
+  ],
+  "files": [
+    {
+      "path": "src/main/java/dev/mrcalzon/weather/WeatherAudio.java",
+      "blob": "11f620ab34b575e8d9901003e7c2ebcdec065f42"
+    },
+    {
+      "path": "src/main/java/dev/mrcalzon/weather/WeatherMeshes.java",
+      "blob": "97c820d5e0632f7c55af1ec8647568ea5384db67"
+    },
+    {
+      "path": "src/main/java/dev/mrcalzon/weather/WeatherModule.java",
+      "blob": "dd4e5fd29e7bc0d47db10b899d27df739fa67805"
+    },
+    {
+      "path": "src/main/java/dev/mrcalzon/weather/WeatherSky.java",
+      "blob": "35d99897da2db1ae878981c2705097181d50880d"
+    },
+    {
+      "path": "src/main/java/dev/mrcalzon/weather/WeatherSurfaceGrid.java",
+      "blob": "349499e64f12de5c13f1b756daf856068970eacf"
+    },
+    {
+      "path": "src/main/java/dev/mrcalzon/weather/WeatherSystem.java",
+      "blob": "079b49aa687f07598b1f02c309fbe6be43a5df40"
+    },
+    {
+      "path": "src/main/java/dev/mrcalzon/weather/WeatherType.java",
+      "blob": "1de72a1fc90abd55e8f6660ff4a027b5f9cb4f32"
+    },
+    {
+      "path": "src/main/java/dev/mrcalzon/weather/WeatherView.java",
+      "blob": "a139c95624d21b10345e18ac24ebb717d47976f3"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorAssets.java",
+      "blob": "da55f3fdf919db3c1a18095e3e3fb10677d5ae83"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorHistory.java",
+      "blob": "530d60866f808479db7a15387e08ba371fdb8edf"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorPalettePanel.java",
+      "blob": "236a50ee6f4d77ea000778914dde3a415f73e860"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorProject.java",
+      "blob": "5dbbe951e9678918e22074f2b4c103b8875e0b8f"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorTool.java",
+      "blob": "e5b277799eb6f1ad2deed98e9433c7e4a022c663"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EnvironmentModule.java",
+      "blob": "70a86e4870a8c0131e87fe686359860d56dd755a"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EnvironmentModules.java",
+      "blob": "e54599ca0ffda0bafa02d25a0ae73b2f3a55a75b"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/InMemoryRuntimeScene.java",
+      "blob": "e434c273a07e7f498d5e20235f1936d9b5bcb02b"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/RuntimeScene.java",
+      "blob": "ce57b835417a49ca6c607030f601caab70901bbe"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/RuntimeSceneDiagnostics.java",
+      "blob": "3bd584f8ac4944437743abf0194fa1e5c5c7165a"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/GridBed.java",
+      "blob": "215045e2dc3da6e7ba30b7c1da2415b940a12a09"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/HullSections.java",
+      "blob": "7da040938c5aeb1aa186645a424ff4c36468c446"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterCanvas.java",
+      "blob": "c073e4ab84aac48b0e4e663cd4b9cb0d40e97fee"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterContact.java",
+      "blob": "a3943ca68939c1e26ea83e63cfbbe3898e393cde"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterDocument.java",
+      "blob": "c7c75afd8daab5e920c7455747a2f995ed225bfd"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterEditorModel.java",
+      "blob": "381a7b6645076595928f6ec628c0ceba2f951bf4"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterEditorPanel.java",
+      "blob": "d8afd8499423a34f884f575bc0f76ad8560abcbd"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterEffects.java",
+      "blob": "73fdd8150f528ec054f362b1b58e273fb88e1b8e"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterIcon.java",
+      "blob": "0d77e6236e7c51ddb78b3c5dc2491bafcee46486"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterModule.java",
+      "blob": "836a0f48397aecc4bbed85327965580ee088d4f5"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterPlacement.java",
+      "blob": "47b7fdd547e72e35f50cb6a2b3a0b3302dc31d8a"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterSettings.java",
+      "blob": "bd626be07f2fa58e31e162acc62ab5b6aa32d4b9"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterSnap.java",
+      "blob": "0eb49c562dedeb22923723b0bf88b3719b72eb90"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterSpray.java",
+      "blob": "651b7fa3a9a929e6c4682b76da0a64ef7be8f966"
+    },
+    {
+      "path": "water-module/src/main/java/dev/mrcalzon/water/WaterTextures.java",
+      "blob": "4abab1abb09e3db5e68777a2bd3c46a929d4e735"
+    }
+  ]
+}
