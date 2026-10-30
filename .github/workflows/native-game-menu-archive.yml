@@ -11,6 +11,8 @@ on:
       - 'app/src/main/assets/native/test-chamber/**'
       - 'app/src/main/jni/native/test_chamber_module.cpp'
       - 'app/src/main/jni/native/classic_games_module.cpp'
+      - 'app/src/main/jni/native/red_ledger_module.cpp'
+      - 'app/src/main/jni/native/red_ledger_signage.h'
       - 'app/src/main/jni/Android.mk'
       - 'scripts/verify-native-vector-font.py'
       - 'app/src/androidTest/java/io/github/mrcalzon02/reverievr/DownloadedNativeGameAssetsInstrumentedTest.java'
