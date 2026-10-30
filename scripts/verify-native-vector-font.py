@@ -19,6 +19,7 @@ REAL_FONT_FILES={
     "omega_front_module.cpp":"reverie::nativetext::LatoLayer",
     "gumball_armada_module.cpp":"reverie::nativetext::LatoLayer",
     "recon_projects_module.cpp":"reverie::nativetext::LatoLayer",
+    "red_ledger_module.cpp":"reverie::nativetext::LatoLayer",
 }
 for name,marker in REAL_FONT_FILES.items():
     source=(NATIVE/name).read_text(encoding="utf-8")
@@ -32,6 +33,12 @@ assert "CLASSIC_GAME_KIND == 3 || CLASSIC_GAME_KIND == 5" not in classic, (
 assert "reverie::breakwater::font::FittedScale" in classic
 assert "CreateNativeFont(m)" in classic and "m->fontReady" in classic
 assert '#include "breakwater_font_atlas.h"' in classic
+signs=(NATIVE/"red_ledger_signage.h").read_text(encoding="utf-8")
+assert "struct Glyph" not in signs and "kGlyphs" not in signs
+assert "Rows(" not in signs, "Red Ledger still contains hand-built 5x7 text"
+ledger=(NATIVE/"red_ledger_module.cpp").read_text(encoding="utf-8")
+assert "uiFont.Create()" in ledger and "uiFont.Draw(view_projection)" in ledger
+assert "uiFont.Fit(rows[i]" in ledger and "uiFont.Fit(sign.text" in ledger
 mk=(ROOT/"app/src/main/jni/Android.mk").read_text(encoding="utf-8")
 for module in CLASSES:
     name="LOCAL_MODULE := reverie_module_"+module
