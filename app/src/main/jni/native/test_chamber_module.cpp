@@ -134,15 +134,15 @@ void GenerateProceduralTexture(
 
         uint8_t r =
             static_cast<uint8_t>(
-                24.0f + t * 78.0f
+                80.0f + t * 146.0f
             );
         uint8_t g =
             static_cast<uint8_t>(
-                64.0f + t * 136.0f
+                83.0f + t * 140.0f
             );
         uint8_t b =
             static_cast<uint8_t>(
-                78.0f + t * 106.0f
+                87.0f + t * 136.0f
             );
 
         gradient.Data[index].Init(
@@ -201,52 +201,52 @@ void GenerateProceduralTexture(
 
 static const float kRoomVertices[] = {
     // Floor
-    -3.0f,-1.5f,-3.0f, 0.0f,0.0f,
-     3.0f,-1.5f,-3.0f, 4.0f,0.0f,
-     3.0f,-1.5f, 3.0f, 4.0f,4.0f,
-    -3.0f,-1.5f,-3.0f, 0.0f,0.0f,
-     3.0f,-1.5f, 3.0f, 4.0f,4.0f,
-    -3.0f,-1.5f, 3.0f, 0.0f,4.0f,
+    -4.0f,-1.5f,-5.0f, 0.0f,0.0f,
+     4.0f,-1.5f,-5.0f, 4.0f,0.0f,
+     4.0f,-1.5f,4.5f, 4.0f,4.0f,
+    -4.0f,-1.5f,-5.0f, 0.0f,0.0f,
+     4.0f,-1.5f,4.5f, 4.0f,4.0f,
+    -4.0f,-1.5f,4.5f, 0.0f,4.0f,
 
     // Ceiling
-    -3.0f, 1.5f, 3.0f, 0.0f,0.0f,
-     3.0f, 1.5f, 3.0f, 4.0f,0.0f,
-     3.0f, 1.5f,-3.0f, 4.0f,4.0f,
-    -3.0f, 1.5f, 3.0f, 0.0f,0.0f,
-     3.0f, 1.5f,-3.0f, 4.0f,4.0f,
-    -3.0f, 1.5f,-3.0f, 0.0f,4.0f,
+    -4.0f,2.25f,4.5f, 0.0f,0.0f,
+     4.0f,2.25f,4.5f, 4.0f,0.0f,
+     4.0f,2.25f,-5.0f, 4.0f,4.0f,
+    -4.0f,2.25f,4.5f, 0.0f,0.0f,
+     4.0f,2.25f,-5.0f, 4.0f,4.0f,
+    -4.0f,2.25f,-5.0f, 0.0f,4.0f,
 
     // Back wall
-    -3.0f,-1.5f,-3.0f, 0.0f,0.0f,
-    -3.0f, 1.5f,-3.0f, 0.0f,2.0f,
-     3.0f, 1.5f,-3.0f, 4.0f,2.0f,
-    -3.0f,-1.5f,-3.0f, 0.0f,0.0f,
-     3.0f, 1.5f,-3.0f, 4.0f,2.0f,
-     3.0f,-1.5f,-3.0f, 4.0f,0.0f,
+    -4.0f,-1.5f,-5.0f, 0.0f,0.0f,
+    -4.0f,2.25f,-5.0f, 0.0f,2.0f,
+     4.0f,2.25f,-5.0f, 4.0f,2.0f,
+    -4.0f,-1.5f,-5.0f, 0.0f,0.0f,
+     4.0f,2.25f,-5.0f, 4.0f,2.0f,
+     4.0f,-1.5f,-5.0f, 4.0f,0.0f,
 
     // Front wall
-     3.0f,-1.5f, 3.0f, 0.0f,0.0f,
-     3.0f, 1.5f, 3.0f, 0.0f,2.0f,
-    -3.0f, 1.5f, 3.0f, 4.0f,2.0f,
-     3.0f,-1.5f, 3.0f, 0.0f,0.0f,
-    -3.0f, 1.5f, 3.0f, 4.0f,2.0f,
-    -3.0f,-1.5f, 3.0f, 4.0f,0.0f,
+     4.0f,-1.5f,4.5f, 0.0f,0.0f,
+     4.0f,2.25f,4.5f, 0.0f,2.0f,
+    -4.0f,2.25f,4.5f, 4.0f,2.0f,
+     4.0f,-1.5f,4.5f, 0.0f,0.0f,
+    -4.0f,2.25f,4.5f, 4.0f,2.0f,
+    -4.0f,-1.5f,4.5f, 4.0f,0.0f,
 
     // Left wall
-    -3.0f,-1.5f, 3.0f, 0.0f,0.0f,
-    -3.0f, 1.5f, 3.0f, 0.0f,2.0f,
-    -3.0f, 1.5f,-3.0f, 4.0f,2.0f,
-    -3.0f,-1.5f, 3.0f, 0.0f,0.0f,
-    -3.0f, 1.5f,-3.0f, 4.0f,2.0f,
-    -3.0f,-1.5f,-3.0f, 4.0f,0.0f,
+    -4.0f,-1.5f,4.5f, 0.0f,0.0f,
+    -4.0f,2.25f,4.5f, 0.0f,2.0f,
+    -4.0f,2.25f,-5.0f, 4.0f,2.0f,
+    -4.0f,-1.5f,4.5f, 0.0f,0.0f,
+    -4.0f,2.25f,-5.0f, 4.0f,2.0f,
+    -4.0f,-1.5f,-5.0f, 4.0f,0.0f,
 
     // Right wall
-     3.0f,-1.5f,-3.0f, 0.0f,0.0f,
-     3.0f, 1.5f,-3.0f, 0.0f,2.0f,
-     3.0f, 1.5f, 3.0f, 4.0f,2.0f,
-     3.0f,-1.5f,-3.0f, 0.0f,0.0f,
-     3.0f, 1.5f, 3.0f, 4.0f,2.0f,
-     3.0f,-1.5f, 3.0f, 4.0f,0.0f
+     4.0f,-1.5f,-5.0f, 0.0f,0.0f,
+     4.0f,2.25f,-5.0f, 0.0f,2.0f,
+     4.0f,2.25f,4.5f, 4.0f,2.0f,
+     4.0f,-1.5f,-5.0f, 0.0f,0.0f,
+     4.0f,2.25f,4.5f, 4.0f,2.0f,
+     4.0f,-1.5f,4.5f, 4.0f,0.0f
 };
 
 void DestroyGl(ModuleState *state) {
@@ -395,7 +395,7 @@ int32_t InitializeGl(ModuleState *state) {
     // Assemble seven stretched spheres once per GL creation, never per eye.
     std::vector<float> figure(REVERIE_NATIVE_AVATAR_FIGURE_FLOATS_V1);
     const bool figure_ok=ReverieNativeWriteAvatarFigureV1(
-        &state->avatar,1.05f,-1.5f,-1.3f,
+        &state->avatar,2.45f,-1.5f,-3.85f,
         figure.data(),figure.size())!=0;
     std::vector<float> room_and_avatar(
         kRoomVertices,kRoomVertices+
@@ -418,7 +418,7 @@ int32_t InitializeGl(ModuleState *state) {
     std::vector<float> wearables(REVERIE_NATIVE_WARDROBE_FLOATS_V1);
     uint32_t visible=0u;
     const bool wardrobe_ok=figure_ok && ReverieNativeWriteAvatarWardrobeV1(
-        &state->avatar,1.05f,-1.5f,-1.3f,
+        &state->avatar,2.45f,-1.5f,-3.85f,
         wearables.data(),wearables.size(),&visible)!=0;
     state->wardrobe_vertex_count=wardrobe_ok
         ?static_cast<GLsizei>(REVERIE_NATIVE_WARDROBE_VERTICES_V1):0;
@@ -840,7 +840,7 @@ int32_t RenderEye(
         ?1.7f*std::sin(elapsed*.7f):.25f;
     const float yLight=(state->demo_mode==4)
         ?.15f+.65f*std::cos(elapsed*.6f):.70f;
-    glUniform3f(state->light_location,xLight,yLight,-1.25f);
+    glUniform3f(state->light_location,xLight,yLight,-3.15f);
     const float ambient=state->demo_mode==1?.18f:
         state->demo_mode==2?1.05f:
         state->demo_mode==3?.18f+.35f*pulse:
@@ -961,7 +961,7 @@ int32_t RenderEye(
                     .25f+.19f*std::sin(elapsed*1.7f),
                     .16f*std::cos(elapsed));
             } else if(id=="spinner-arm" || id=="rotor-tip") {
-                glUniform3f(state->pivot_location,.35f,-.78f,-1.11f);
+                glUniform3f(state->pivot_location,.35f,-.78f,-2.71f);
                 glUniform1f(state->spin_location,elapsed*.8f);
             } else if(id=="beacon-light") {
                 glUniform1f(state->emissive_location,.40f+.65f*pulse);
