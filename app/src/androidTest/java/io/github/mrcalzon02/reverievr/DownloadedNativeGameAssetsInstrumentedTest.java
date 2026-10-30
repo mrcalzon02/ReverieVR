@@ -3,6 +3,10 @@ package io.github.mrcalzon02.reverievr;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Color;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
@@ -429,6 +433,50 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
     private static float reverieRouteX(){
         // Same x as kChartRouteX[2]; no hidden Android-only hitbox expansion.
         return 1.55f;
+    }
+
+    @Test public void captureHomeGalleryHoverInfoFromActualAtlas() throws Exception {
+        Context app=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Bitmap atlas;
+        try(InputStream in=app.getAssets().open("native/gallery/menu-preview-atlas.jpg")){
+            atlas=BitmapFactory.decodeStream(in);
+        }
+        assertNotNull("Bundled game screenshot atlas absent",atlas);
+        assertEquals("Unexpected gallery width",672,atlas.getWidth());
+        assertEquals("Unexpected gallery height",920,atlas.getHeight());
+        java.util.List<NativeModuleRuntime.Descriptor> games=
+            new java.util.ArrayList<>();
+        for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES)
+            games.add(new NativeModuleRuntime.Descriptor(game.id,game.displayName));
+        java.util.Collections.sort(games,(a,b)->Integer.compare(
+            NativeGamesGallery.order(a.id),NativeGamesGallery.order(b.id)));
+        assertEquals(15,games.size());
+        final String[] names={"gallery-hover-native.png","gallery-hover-classic.png"};
+        final int[] pages={0,1};
+        for(int i=0;i<2;i++){
+            Bitmap screen=Bitmap.createBitmap(1024,768,Bitmap.Config.ARGB_8888);
+            Canvas canvas=new Canvas(screen);
+            Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
+            canvas.drawColor(Color.rgb(9,18,31));
+            NativeGamesGallery.drawInHomeRoom(
+                canvas,paint,games,pages[i],0,1.0f,"",atlas);
+            int[] popup=NativeGamesGallery.hoverPopupRect(true,0);
+            assertNotNull(popup);
+            // Evidence proves both actual in-room hover renders are nonblank.
+            assertNotEquals("Hover pane missing",
+                Color.rgb(9,18,31),screen.getPixel(popup[0]+5,popup[1]+7));
+            File evidence=new File(app.getFilesDir(),names[i]);
+            try(FileOutputStream out=new FileOutputStream(evidence)){
+                assertTrue("Could not save hover screenshot",
+                    screen.compress(Bitmap.CompressFormat.PNG,100,out));
+                out.getFD().sync();
+            }
+            assertTrue(evidence.isFile()&&evidence.length()>5000);
+            Log.i(TAG,"PASS real Home gallery hover screenshot "+names[i]+
+                " bytes="+evidence.length());
+            screen.recycle();
+        }
+        atlas.recycle();
     }
 
     @Test public void captureAllNativeMainMenus() throws Exception {
