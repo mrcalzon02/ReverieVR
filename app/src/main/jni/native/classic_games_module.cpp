@@ -726,6 +726,10 @@ void RebuildBoard(Module *m,bool fixed){
     }else {m->dirty=false;m->upload=true;}
 }
 void Rebuild(Module *m,bool fixed){
+    // Reset glyph batches for ALL Classic kinds, not just Chess/Checkers.
+    // Otherwise HUD glyphs accumulate every frame and titles never upload.
+    if(fixed)m->fontStaticVertices.clear();
+    else m->fontVertices.clear();
 #if CLASSIC_GAME_KIND == 6
     m->staticPass=fixed;
     if(fixed)m->staticVertices.clear();
@@ -759,9 +763,10 @@ void Rebuild(Module *m,bool fixed){
              : (s.moving?"CLEAR ALL BRICKS":"PRESS TO SERVE"),
              0,-1.37f,.043f,.90f,.89f,.74f);
     }
-    if(fixed)m->staticCount=static_cast<GLsizei>(
-        m->staticVertices.size()/6);
-    else {m->dirty=false;m->upload=true;}
+    if(fixed){
+        m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
+        m->fontStaticCount=static_cast<GLsizei>(m->fontStaticVertices.size()/8);
+    }else {m->dirty=false;m->upload=true;}
 #else
 #if CLASSIC_GAME_KIND >= 3
     RebuildBoard(m,fixed);
@@ -864,8 +869,10 @@ void Rebuild(Module *m,bool fixed){
              0,-1.56f,.045f,1,.96f,.78f);
         }
     }
-    if(fixed)m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
-    else {m->dirty=false;m->upload=true;}
+    if(fixed){
+        m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
+        m->fontStaticCount=static_cast<GLsizei>(m->fontStaticVertices.size()/8);
+    }else {m->dirty=false;m->upload=true;}
 #endif // CLASSIC_GAME_KIND == 6
 }
 void DestroyGl(Module *m){
