@@ -6,9 +6,22 @@
   "includes": [
     "src/main/java/org/beckenburg/editor/",
     "water-module/src/main/java/dev/mrcalzon/water/",
-    "src/main/java/dev/mrcalzon/weather/"
+    "src/main/java/dev/mrcalzon/weather/",
+    "lighting-module/src/main/java/dev/mrcalzon/lighting/"
   ],
   "files": [
+    {
+      "path": "lighting-module/src/main/java/dev/mrcalzon/lighting/LightingFrameProfiler.java",
+      "blob": "9549792f410fa944d2ed2cb835dd615e0fee5b0f"
+    },
+    {
+      "path": "lighting-module/src/main/java/dev/mrcalzon/lighting/LightingModule.java",
+      "blob": "1328431e99e308ebd4429d8fbd119df24e2e8389"
+    },
+    {
+      "path": "lighting-module/src/main/java/dev/mrcalzon/lighting/LightModel.java",
+      "blob": "29893ac1dfa652f723697cd898153617d369f4fb"
+    },
     {
       "path": "src/main/java/dev/mrcalzon/weather/WeatherAudio.java",
       "blob": "11f620ab34b575e8d9901003e7c2ebcdec065f42"
