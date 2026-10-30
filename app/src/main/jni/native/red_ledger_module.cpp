@@ -6,6 +6,7 @@
 #include "procedural_material_atlas.h"
 #include "red_ledger_static_geometry.h"
 #include "red_ledger_signage.h"
+#include "reverie_native_lato_text.h"
 #include "red_ledger_mug_mesh.h"
 #include "red_ledger_trade.h"
 #include "red_ledger_wholesale.h"
@@ -178,6 +179,7 @@ struct ModuleState {
     GLuint status_vbo = 0;
     GLsizei status_count = 0;
     bool status_dirty = true;
+    reverie::nativetext::LatoLayer uiFont;
     GLuint atlas_texture = 0;
     GLuint original_icons[24] = {};
     GLuint original_icon_vbo = 0;
@@ -909,6 +911,7 @@ void BuildCubeVertices(float *out) {
 void DestroyGl(
     ModuleState *state
 ) {
+    state->uiFont.Release();
     glDeleteTextures(24,state->original_icons);
     for(GLuint &icon:state->original_icons)icon=0;
     state->original_icon_count=0;
@@ -1003,6 +1006,12 @@ void AbandonGl(
     state->status_vbo = 0;
     state->status_count = 0;
     state->status_dirty = true;
+    // A lost GL context invalidates handles without calling glDelete.
+    state->uiFont.program=0;
+    state->uiFont.texture=0;
+    state->uiFont.vbo=0;
+    state->uiFont.upload=true;
+    state->uiFont.vertices.clear();
     for (int i=0;i<3;++i){
         state->signage_start[i]=0;
         state->signage_count[i]=0;
@@ -1566,11 +1575,15 @@ int32_t InitializeGl(
         imported_patrons,owned_people::kCount);
     Log(state,imported_patrons==static_cast<int>(owned_people::kCount)?
         REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,patron_report);
-    Log(
-        state,
-        REVERIE_NATIVE_LOG_INFO,
-        "Red Ledger GL: 32 KiB RGB565 atlas and one static room VBO."
-    );
+    if(!state->uiFont.Create()){
+        Log(state,REVERIE_NATIVE_LOG_ERROR,
+            "Licensed Lato font atlas unavailable for Red Ledger.");
+        DestroyGl(state);
+        return finish(0);
+    }
+    state->status_dirty=true;
+    Log(state,REVERIE_NATIVE_LOG_INFO,
+        "Red Ledger real Lato font and static room geometry created.");
     return finish(1);
 }
 
@@ -1702,8 +1715,8 @@ void DrawCup(
     }
 }
 
-// Build a room's current economic information as REAL glyph geometry.
-// Called on an actual state change, never for every frame or both eyes.
+// Format the real state-dependent economy and room-sign text once per
+// change. Geometry supplies physical backplates; Lato supplies true glyphs.
 void RefreshStatusBoard(ModuleState *state) {
     if(!state->status_dirty || state->status_vbo==0) return;
     char rows[6][96]={};
@@ -1800,6 +1813,31 @@ void RefreshStatusBoard(ModuleState *state) {
     glBufferData(GL_ARRAY_BUFFER,count*signs::kVertexStride*sizeof(float),
         vertices.get(),GL_DYNAMIC_DRAW);
     state->status_count=static_cast<GLsizei>(count);
+    state->uiFont.Clear();
+    const int activeRoom=static_cast<int>(room);
+    for(const signs::Sign &sign:signs::kSigns){
+        if(sign.room!=activeRoom)continue;
+        const float width=std::strlen(sign.text)*6.f*sign.pixel;
+        state->uiFont.Fit(sign.text,sign.x,sign.y,width,
+            sign.pixel*1.65f,.97f,.93f,.76f,sign.z+0.008f);
+    }
+    if(activeRoom==1){
+        // Stockroom physical catalog labels belong to the same font batch.
+        for(int slot=0;slot<stock::kCells;++slot){
+            const stock::Cell cell=stock::At(slot);
+            char item[24]={};
+            std::snprintf(item,sizeof(item),"%d %s",
+                stock::SupplierCode(cell.faction),
+                stock::GroupLabel(cell.group));
+            state->uiFont.Fit(item,cell.x,cell.y-.096f,.21f,
+                .017f,.97f,.94f,.83f,cell.z+.018f);
+        }
+    }
+    for(size_t i=0;i<6u;++i)
+        if(rows[i][0]!=0)
+            state->uiFont.Fit(rows[i],0.f,
+                1.09f-static_cast<float>(i)*.22f,5.45f,.036f,
+                .98f,.94f,.82f,-2.785f);
     state->status_dirty=false;
 }
 
@@ -2960,6 +2998,9 @@ int32_t RenderEye(
         view_projection,
         flicker
     );
+    // True proportional antialiased font, one glyph batch per changed room.
+    // The helper restores its own GL state and never advances simulation.
+    const bool fontDrawn=state->uiFont.Draw(view_projection);
 
     ReverieNativeGlAttribRestoreV1(
         &tile_state
@@ -2977,10 +3018,7 @@ int32_t RenderEye(
         &gl_state
     );
 
-    return glGetError()
-            == GL_NO_ERROR
-        ? 1
-        : 0;
+    return fontDrawn && glGetError() == GL_NO_ERROR ? 1 : 0;
 }
 
 const ReverieNativeModuleCapabilitiesV1 kCapabilities = {
