@@ -35,7 +35,7 @@ LOCAL_C_INCLUDES := \
     $(OPENKTG_ROOT)
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -llog -lGLESv2
+LOCAL_LDLIBS += -llog -lGLESv2 -lz
 
 include $(BUILD_SHARED_LIBRARY)
 
