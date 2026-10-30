@@ -24,6 +24,7 @@ public final class ReverieDesktop {
     private final JPanel sitkaControls=new JPanel(new FlowLayout(FlowLayout.LEFT,8,2));
     private final JPanel paletteHost=new JPanel(new BorderLayout());
     private ReverieSceneProject editorProject;
+    private LightingAuthoringPanel lightingPanel;
     private EditorHistory<String> editHistory;
     private final DefaultListModel<String> objects=new DefaultListModel<>();
     private final JList<String> list=new JList<>(objects);
@@ -141,6 +142,11 @@ public final class ReverieDesktop {
         return workspace.resolve("scenes").resolve(id+".rvscene");
     }
     private Path file(String id){return sceneFile(workspace,id,sitkaRegion.getText().trim());}
+    private Path lightingFile(String id){
+        if("sitka".equals(id))
+            return workspace.resolve("sitka-environment/lighting/sitka.properties");
+        return workspace.resolve("lighting").resolve(id+".properties");
+    }
     private void openSitkaRegion(){
         if(!"sitka".equals(activeId)||!confirmDiscard())return;
         try{file("sitka");load("sitka");}
@@ -190,7 +196,11 @@ public final class ReverieDesktop {
                 this::choosePalette);
             paletteHost.setBorder(BorderFactory.createTitledBorder(
                 "Beckenburg shared asset palette"));
-            paletteHost.add(palette,BorderLayout.CENTER);
+            lightingPanel=new LightingAuthoringPanel(lightingFile(id));
+            JTabbedPane authoringDocks=new JTabbedPane();
+            authoringDocks.addTab("Objects",palette);
+            authoringDocks.addTab("Lighting",lightingPanel);
+            paletteHost.add(authoringDocks,BorderLayout.CENTER);
             paletteHost.revalidate();paletteHost.repaint();
             refreshObjects(-1);
             publishTest.setEnabled("procedural-test-chamber".equals(activeId));
@@ -240,8 +250,8 @@ public final class ReverieDesktop {
             status.setText("Staged "+scene.pieces.size()+" objects: "+repo.relativize(dest)+" — rebuild APK to test in VR");
         }catch(IOException|IllegalArgumentException ex){error("Test Chamber scene staging failed",ex);}
     }
-    private boolean confirmDiscard(){if(!dirty)return true;
-        int choice=JOptionPane.showConfirmDialog(frame,"Discard unsaved edits to "+activeId+"?","Unsaved scene",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+    private boolean confirmDiscard(){if(!dirty && (lightingPanel==null || !lightingPanel.dirty()))return true;
+        int choice=JOptionPane.showConfirmDialog(frame,"Discard unsaved scene or lighting edits to "+activeId+"?","Unsaved scene",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
         return choice==JOptionPane.YES_OPTION;
     }
     private void error(String message,Exception ex){status.setText(message+": "+ex.getMessage());JOptionPane.showMessageDialog(frame,ex.toString(),message,JOptionPane.ERROR_MESSAGE);}
