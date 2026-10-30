@@ -1,3 +1,5 @@
+> **Beckenburg shared editor integrated (2026-10-30):** The internal games workbench now builds against a pinned, locally bundled Java 17 Beckenburg portable editor kit. Its actual search/category palette, transactional undo/redo with rollback, object duplication, snap-to-grid and safe per-project scene files are wired into the workbench. Sitka has a named-region authoring selector and a launcher for the real bundled water/weather editor; Red Ledger has game-aware primitive blockout palette entries. No neighboring Beckenburg checkout is required. This remains a desktop authoring preview, not an in-headset editor or automatic native game renderer. Complete implementation/limitations: [internal games manager integration](../../docs/project/INTERNAL_GAME_EDITOR_BECKENBURG.md). Windows: `tools\\desktop\\run.cmd`, Linux/macOS: `bash tools/desktop/run.sh`.
+
 # ReverieVR desktop tooling
 
 **Two separate executable desktop tools now exist:**
