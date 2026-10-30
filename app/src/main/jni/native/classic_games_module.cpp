@@ -752,12 +752,12 @@ void Rebuild(Module *m,bool fixed){
     const Breakout &s=m->breakout;
     if(fixed){
         Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
-        Text(m,kTitle,0,1.57f,.092f,.78f,.94f,.96f);
+        Text(m,kTitle,0,1.57f,.070f,.78f,.94f,.96f);
         Rect(m,0,0,2.07f,2.22f,-3.04f,.08f,.13f,.20f);
         // Court edges and rules are static; bricks and ball are dynamic.
         Rect(m,-1.015f,0,.025f,2.22f,-3.01f,.28f,.45f,.49f);
         Rect(m,1.015f,0,.025f,2.22f,-3.01f,.28f,.45f,.49f);
-        Text(m,"MOVE PAD SELECT SERVE",0,-1.50f,.042f,.75f,.90f,.83f);
+        Text(m,"MOVE PAD SELECT SERVE",0,-1.59f,.034f,.75f,.90f,.83f);
     }else{
         for(int i=0;i<Breakout::kBricks;i++)if(s.bricks[i]){
             const int row=i/Breakout::kColumns;
@@ -779,7 +779,7 @@ void Rebuild(Module *m,bool fixed){
         Text(m,s.finished
              ? (s.won?"YOU WIN PRESS":"GAME OVER PRESS")
              : (s.moving?"CLEAR ALL BRICKS":"PRESS TO SERVE"),
-             0,-1.37f,.043f,.90f,.89f,.74f);
+             0,-1.25f,.036f,.90f,.89f,.74f);
     }
     if(fixed){
         m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
@@ -796,7 +796,11 @@ void Rebuild(Module *m,bool fixed){
     const State &s=m->game;
     if(fixed){
         Rect(m,0,0,5.5f,3.55f,-3.10f,.032f,.058f,.092f);
-        Text(m,kTitle,0,1.57f,.092f,.78f,.94f,.96f);
+#if CLASSIC_GAME_KIND == 2
+        Text(m,kTitle,0,1.57f,.050f,.78f,.94f,.96f);
+#else
+        Text(m,kTitle,0,1.57f,.070f,.78f,.94f,.96f);
+#endif
     }
     char status[48];
     if(s.game==Game::Pong){
@@ -809,7 +813,7 @@ void Rebuild(Module *m,bool fixed){
         Rect(m,1.40f,s.ai*1.19f,.075f,.56f,-2.96f,.98f,.60f,.44f);
         Rect(m,s.ball_x*1.55f,s.ball_y*1.22f,.11f,.11f,-2.93f,.94f,.95f,.70f);
         std::snprintf(status,sizeof(status),"%d : %d",s.score,s.opponent);
-        Text(m,status,2.18f,1.11f,.060f,1,1,.79f);
+        Text(m,status,1.94f,1.04f,.041f,1,1,.79f);
         Text(m,s.finished?"PRESS TO RESTART":
              s.moving?"MOVE PADDLE TO BLOCK":"PRESS TO SERVE",
              0,-1.46f,.040f,.70f,.83f,.83f);
@@ -837,12 +841,12 @@ void Rebuild(Module *m,bool fixed){
         }
         if(fixed){
         const char *dirs[]={"UP","RIGHT","DOWN","LEFT"};
-        const float x[]={0,2.02f,0,-2.02f};
+        const float x[]={0,1.70f,0,-1.70f};
         const float y[]={1.02f,0,-1.02f,0};
         for(int i=0;i<4;i++){
             Rect(m,x[i],y[i],i%2?.79f:.89f,.36f,
                  -2.97f,.20f,.33f,.39f);
-            Text(m,dirs[i],x[i],y[i],.052f,.85f,.93f,.88f);
+            Text(m,dirs[i],x[i],y[i],.041f,.85f,.93f,.88f);
         }
         }else{
         std::snprintf(status,sizeof(status),"FOOD %d",s.score);
