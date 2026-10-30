@@ -701,23 +701,44 @@ void Update(
         return;
     }
 
-    bool primary =
-        input->primary_down != 0u;
-    if (primary
-        && !state->primary_was_down) {
-        state->alternate_tint =
-            !state->alternate_tint;
-        Log(
-            state,
-            REVERIE_NATIVE_LOG_DEBUG,
-            "Primary action toggled chamber tint."
-        );
-        ReverieNativeRequestFeedbackV1(
-            state->host,
-            REVERIE_NATIVE_FEEDBACK_ACTIVATION
-        );
+    const float delta=std::max(0.f,std::min(input->delta_seconds,.05f));
+    state->clock=std::fmod(state->clock+delta,3600.f);
+    const bool primary=input->primary_down!=0u;
+    if(primary && !state->primary_was_down) {
+        state->demo_mode=(state->demo_mode+1)%6;
+        state->alternate_tint=(state->demo_mode%2)!=0;
+        static const uint32_t kCues[6]={
+            REVERIE_NATIVE_SOUND_RED_LEDGER_CLICK,
+            REVERIE_NATIVE_SOUND_RED_LEDGER_METAL,
+            REVERIE_NATIVE_SOUND_RED_LEDGER_COINS,
+            REVERIE_NATIVE_SOUND_RED_LEDGER_BOOK,
+            REVERIE_NATIVE_SOUND_RED_LEDGER_DOOR,
+            REVERIE_NATIVE_SOUND_RED_LEDGER_DRAWER
+        };
+        static const char* kNames[6]={
+            "POINT LIGHT / UI CLICK",
+            "DUSK LIGHT / METAL",
+            "BRIGHT STUDIO / COINS",
+            "PULSING BEACON / BOOK",
+            "MOVING SPOT / DOOR",
+            "WARM LIGHT / MECHANISM"
+        };
+        state->font.Clear();
+        state->font.Fit("PROCEDURAL TEST CHAMBER",0.f,1.31f,5.15f,
+            .044f,.90f,.97f,.97f,-2.62f);
+        state->font.Fit(kNames[state->demo_mode],0.f,-1.12f,4.96f,
+            .036f,1.f,.86f,.49f,-2.62f);
+        state->font.Fit("PRESS: NEXT LIGHT / ANIMATION / AUDIO",0.f,-1.36f,
+            5.15f,.028f,.82f,.95f,.88f,-2.62f);
+        if(!ReverieNativeRequestSoundV1(state->host,
+            kCues[state->demo_mode])) {
+            ReverieNativeRequestFeedbackV1(state->host,
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }
+        Log(state,REVERIE_NATIVE_LOG_INFO,
+            "Showcase lighting/material/sound selection advanced.");
     }
-    state->primary_was_down = primary;
+    state->primary_was_down=primary;
 }
 
 int32_t RenderEye(
@@ -810,11 +831,25 @@ int32_t RenderEye(
     );
 
     glUniformMatrix4fv(
-        state->matrix_location,
-        1,
-        GL_FALSE,
-        view_projection
+        state->matrix_location,1,GL_FALSE,view_projection
     );
+    // Cheap real vertex-light falloff; one animated light for both stereo eyes.
+    const float elapsed=state->clock;
+    const float pulse=.5f+.5f*std::sin(elapsed*2.2f);
+    const float xLight=(state->demo_mode==4)
+        ?1.7f*std::sin(elapsed*.7f):.25f;
+    const float yLight=(state->demo_mode==4)
+        ?.15f+.65f*std::cos(elapsed*.6f):.70f;
+    glUniform3f(state->light_location,xLight,yLight,-1.25f);
+    const float ambient=state->demo_mode==1?.18f:
+        state->demo_mode==2?1.05f:
+        state->demo_mode==3?.18f+.35f*pulse:
+        state->demo_mode==5?.62f:.39f;
+    glUniform1f(state->ambient_location,ambient);
+    glUniform3f(state->pivot_location,0.f,0.f,0.f);
+    glUniform3f(state->offset_location,0.f,0.f,0.f);
+    glUniform1f(state->spin_location,0.f);
+    glUniform1f(state->emissive_location,0.f);
 
     if (state->alternate_tint) {
         glUniform3f(
@@ -885,8 +920,58 @@ int32_t RenderEye(
     if(state->editor_vertex_count>0) {
         const GLint editor_start=36+state->avatar_vertex_count
             +state->wardrobe_vertex_count;
-        glUniform3f(state->tint_location,.65f,.88f,1.0f);
-        glDrawArrays(GL_TRIANGLES,editor_start,state->editor_vertex_count);
+        // Actual authored compound objects, each retained in one immutable
+        // VBO. Changing illumination and animation touches uniforms only.
+        for(size_t i=0;i<state->pieces.size();++i) {
+            const auto &part=state->pieces[i];
+            const std::string &id=part.id;
+            float r=.72f,g=.81f,b=.79f,emissive=0.f;
+            if(id.find("wood")!=std::string::npos ||
+               id.find("crate")!=std::string::npos ||
+               id.find("chair")!=std::string::npos ||
+               id.find("table")!=std::string::npos) {
+                r=.81f;g=.60f;b=.39f;
+            } else if(id.find("metal")!=std::string::npos ||
+                      id.find("rotor")!=std::string::npos ||
+                      id.find("spinner")!=std::string::npos) {
+                r=.57f;g=.78f;b=.88f;
+            } else if(id.find("beacon")!=std::string::npos ||
+                      id.find("light-test")!=std::string::npos) {
+                r=.95f;g=.73f;b=.30f;emissive=.22f+.55f*pulse;
+            } else if(id.find("glass")!=std::string::npos ||
+                      id.find("moving-orb")!=std::string::npos) {
+                r=.46f;g=.92f;b=.92f;emissive=.19f+.20f*pulse;
+            } else if(id.find("gold")!=std::string::npos) {
+                r=1.f;g=.80f;b=.29f;
+            } else if(id.find("stone")!=std::string::npos ||
+                      id.find("door")!=std::string::npos) {
+                r=.54f;g=.59f;b=.65f;
+            }
+            glUniform3f(state->tint_location,r,g,b);
+            glUniform1f(state->emissive_location,emissive);
+            glUniform3f(state->offset_location,0.f,0.f,0.f);
+            glUniform3f(state->pivot_location,
+                static_cast<float>(part.x),
+                static_cast<float>(part.y),
+                static_cast<float>(part.z));
+            glUniform1f(state->spin_location,0.f);
+            if(id=="moving-orb") {
+                glUniform3f(state->offset_location,
+                    .27f*std::sin(elapsed),
+                    .25f+.19f*std::sin(elapsed*1.7f),
+                    .16f*std::cos(elapsed));
+            } else if(id=="spinner-arm" || id=="rotor-tip") {
+                glUniform3f(state->pivot_location,.35f,-.78f,-1.11f);
+                glUniform1f(state->spin_location,elapsed*.8f);
+            } else if(id=="beacon-light") {
+                glUniform1f(state->emissive_location,.40f+.65f*pulse);
+            }
+            glDrawArrays(GL_TRIANGLES,
+                editor_start+state->piece_first[i],state->piece_count[i]);
+        }
+        glUniform3f(state->offset_location,0.f,0.f,0.f);
+        glUniform1f(state->spin_location,0.f);
+        glUniform1f(state->emissive_location,0.f);
     }
 
     ReverieNativeGlAttribRestoreV1(
@@ -895,13 +980,9 @@ int32_t RenderEye(
     ReverieNativeGlAttribRestoreV1(
         &position_state
     );
-    ReverieNativeGlStateRestoreV1(
-        &gl_state
-    );
-
-    return glGetError() == GL_NO_ERROR
-        ? 1
-        : 0;
+    ReverieNativeGlStateRestoreV1(&gl_state);
+    const bool fontOk=state->font.Draw(view_projection);
+    return fontOk && glGetError()==GL_NO_ERROR ? 1 : 0;
 }
 
 const ReverieNativeModuleCapabilitiesV1 kCapabilities = {
