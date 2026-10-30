@@ -623,11 +623,9 @@ void RebuildBoard(Module *m,bool fixed){
         Text(m,"RESTART",1.94f,-.60f,.034f,1.f,.95f,.78f);
 #endif
     }else if(!fixed){
-        const char *turnLabel=
-            s.kind==reverie::boardgames::Kind::Go&&s.goReview
-             ?"MARK DEAD GROUPS":m->cpuFailed?"CPU ERROR RESTART":
-             s.side==1?"YOUR TURN":"CPU THINKING";
 #if CLASSIC_GAME_KIND == 5
+        const char *turnLabel=m->cpuFailed?"CPU ERROR RESTART":
+            s.side==1?"YOUR TURN":"CPU THINKING";
         Text(m,turnLabel,0,1.40f,.032f,.95f,.95f,.78f);
 #else
         if(s.kind==reverie::boardgames::Kind::Go&&s.goReview){
