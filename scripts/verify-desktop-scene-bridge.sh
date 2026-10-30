@@ -13,6 +13,7 @@ javac --release 17 -d "$TMP/java" \
  "$ROOT/tools/editor-kit/upstream"/src/main/java/org/beckenburg/editor/*.java \
  "$ROOT/tools/editor-kit/upstream"/lighting-module/src/main/java/dev/mrcalzon/lighting/*.java \
  "$ROOT/tools/desktop/LightingAuthoringPanel.java" \
+ "$ROOT/tools/desktop/LightingAuthoringPanelTest.java" \
  "$ROOT/tools/desktop/SceneDocument.java" \
  "$ROOT/tools/desktop/SceneDocumentTest.java" \
  "$ROOT/tools/desktop/ReverieSceneProject.java" \
@@ -20,6 +21,7 @@ javac --release 17 -d "$TMP/java" \
  "$ROOT/tools/desktop/ReverieDesktop.java"
 java -cp "$TMP/java" io.github.mrcalzon02.reverievr.SceneDocumentTest "$TMP/from-java.rvscene"
 java -cp "$TMP/java" io.github.mrcalzon02.reverievr.ReverieSceneProjectTest
+java -Djava.awt.headless=true -cp "$TMP/java" io.github.mrcalzon02.reverievr.LightingAuthoringPanelTest
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Wpedantic -Werror -O2 \
  "$ROOT/app/src/test/native/reverie_scene_document_test.cpp" -o "$TMP/scene-test"
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Wpedantic -Werror -O2 \
