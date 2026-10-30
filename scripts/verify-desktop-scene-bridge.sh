@@ -11,6 +11,8 @@ javac --release 17 -d "$TMP/java" \
  "$PACKAGE/GameModuleRegistry.java" \
  "$PACKAGE/ObjMeshReader.java" \
  "$ROOT/tools/editor-kit/upstream"/src/main/java/org/beckenburg/editor/*.java \
+ "$ROOT/tools/editor-kit/upstream"/lighting-module/src/main/java/dev/mrcalzon/lighting/*.java \
+ "$ROOT/tools/desktop/LightingAuthoringPanel.java" \
  "$ROOT/tools/desktop/SceneDocument.java" \
  "$ROOT/tools/desktop/SceneDocumentTest.java" \
  "$ROOT/tools/desktop/ReverieSceneProject.java" \
