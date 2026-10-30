@@ -117,7 +117,7 @@ LOCAL_SRC_FILES := native/classic_games_module.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=0
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 # Original low-allocation GLES2 classic game module
@@ -128,7 +128,7 @@ LOCAL_SRC_FILES := native/classic_games_module.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=1
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 # Original low-allocation GLES2 classic game module
@@ -139,7 +139,7 @@ LOCAL_SRC_FILES := native/classic_games_module.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=2
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 
@@ -164,7 +164,7 @@ LOCAL_SRC_FILES := native/classic_games_module.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=4
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 
@@ -187,7 +187,7 @@ LOCAL_SRC_FILES := native/classic_games_module.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=6
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 # Full 8x8 native Reversi with legal flips and bounded CPU search.
@@ -198,7 +198,7 @@ LOCAL_SRC_FILES := native/classic_games_module.cpp
 LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden -DCLASSIC_GAME_KIND=7
 LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
-LOCAL_LDLIBS += -lGLESv2 -lm
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 ifdef REVERIE_HAS_DOSBOX_PURE
