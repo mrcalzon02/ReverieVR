@@ -1,22 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Compiles against actual, unmodified Beckenburg portable source-not copied forks.
-REVERIE_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-BECKENBURG_ROOT="${BECKENBURG_ROOT:-$(cd "$REVERIE_ROOT/.." && pwd)/The-Beckenburg-Project}"
-WORKSPACE="${1:-$REVERIE_ROOT/build/sitka/authoring}"
-OUT="$REVERIE_ROOT/build/sitka/editor-classes"
-if [[ ! -f "$BECKENBURG_ROOT/src/main/java/org/beckenburg/editor/EditorProject.java" ]] || \
-   [[ ! -f "$BECKENBURG_ROOT/water-module/src/main/java/dev/mrcalzon/water/WaterDocument.java" ]] || \
-   [[ ! -f "$BECKENBURG_ROOT/src/main/java/dev/mrcalzon/weather/WeatherModule.java" ]]; then
-  echo "Missing Beckenburg source. Set BECKENBURG_ROOT to a checkout of mrcalzon02/The-Beckenburg-Project." >&2
-  exit 2
-fi
+# Offline Java 17 Sitka editor: the pinned Beckenburg portable editor, water
+# and weather source are integrated directly into ReverieVR (desktop only).
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+VENDOR="$ROOT/tools/editor-kit/upstream"
+WORKSPACE="${1:-$ROOT/build/sitka/authoring}"
+OUT="$ROOT/build/sitka/editor-classes"
+command -v javac >/dev/null || { echo "JDK 17+ required" >&2; exit 2; }
+python3 "$ROOT/tools/editor-kit/sync-upstream.py"
 mkdir -p "$OUT"
-# Sources are the editor-kit, water-module, and shared weather classes used in
-# Beckenburg/Malefic; no Beckenburg game or Malefic rendering engine is copied.
 javac --release 17 -encoding UTF-8 -d "$OUT" \
-  "$BECKENBURG_ROOT"/src/main/java/org/beckenburg/editor/*.java \
-  "$BECKENBURG_ROOT"/water-module/src/main/java/dev/mrcalzon/water/*.java \
-  "$BECKENBURG_ROOT"/src/main/java/dev/mrcalzon/weather/*.java \
-  "$REVERIE_ROOT"/tools/sitka/SitkaEditor.java
+  "$VENDOR"/src/main/java/org/beckenburg/editor/*.java \
+  "$VENDOR"/water-module/src/main/java/dev/mrcalzon/water/*.java \
+  "$VENDOR"/src/main/java/dev/mrcalzon/weather/*.java \
+  "$ROOT"/tools/sitka/SitkaEditor.java
 exec java -cp "$OUT" SitkaEditor "$WORKSPACE"
