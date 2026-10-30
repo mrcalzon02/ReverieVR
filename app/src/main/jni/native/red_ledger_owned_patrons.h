@@ -1,37 +1,41 @@
 #ifndef REVERIE_RED_LEDGER_OWNED_PATRONS_H
 #define REVERIE_RED_LEDGER_OWNED_PATRONS_H
-// REJECTED: previous character LODs failed visual inspection; none load.
-// decimated with UV seam preservation and 64px derived source JPEG palettes.
-// These RLBP *static poses* have no skin, no joints and NO animation.
-// Compatible with the existing optional patron interaction/hitbox.
+// Six game-specific PSX patron skins. The mesh/UV atlas binaries are curated
+// privately from the author's model library; never publish raw third-party
+// assets to this source repository. A missing optional skin uses the existing
+// fallback without changing the customer's simulation identity or hitbox.
+// RLBP is a static evaluated pose; full skeletal animation is a separate task.
 #include "red_ledger_simulation.h"
 #include <cstddef>
+
 namespace reverie { namespace redledger { namespace owned_patrons {
-constexpr size_t kCount=2u;
-enum Model : size_t {Gopnick=0u,PinkDress=1u};
-constexpr const char *kPaths[kCount]={
-    "native/red-ledger/rejected-assets/never-shipped-gopnick.rlprop",
-    "native/red-ledger/rejected-assets/never-shipped-pink-dress.rlprop"
+constexpr size_t kCount=6u;
+enum Model : size_t {
+    RailWorker=0u, NightClerk=1u, MilitiaVeteran=2u,
+    Mechanic=3u, DirectorateCourier=4u, SalihorskHauler=5u
 };
-inline Model ForPatron(PatronKind kind) {
-    // Consistent, deterministic variants; never infer actual NPC gender
-    // from faction, and never let the choice change the simulation identity.
+constexpr const char *kPaths[kCount]={
+    "native/red-ledger/beckenburg/patron_rail_worker.rlprop",
+    "native/red-ledger/beckenburg/patron_night_clerk.rlprop",
+    "native/red-ledger/beckenburg/patron_militia_veteran.rlprop",
+    "native/red-ledger/beckenburg/patron_mechanic.rlprop",
+    "native/red-ledger/beckenburg/patron_directorate_courier.rlprop",
+    "native/red-ledger/beckenburg/patron_salihorsk_hauler.rlprop"
+};
+constexpr Model ForPatron(PatronKind kind) {
     switch(kind) {
-        case PatronKind::NightClerk:
-        case PatronKind::DirectorateCourier:
-        case PatronKind::RailWorker:
-            return PinkDress;
-        default:
-            return Gopnick;
+        case PatronKind::RailWorker: return RailWorker;
+        case PatronKind::NightClerk: return NightClerk;
+        case PatronKind::MilitiaVeteran: return MilitiaVeteran;
+        case PatronKind::Mechanic: return Mechanic;
+        case PatronKind::DirectorateCourier: return DirectorateCourier;
+        case PatronKind::SalihorskHauler: return SalihorskHauler;
     }
+    return RailWorker;
 }
 constexpr float kPatronX=-1.30f;
-constexpr float kPatronY=-.47f;
+constexpr float kPatronY=-0.47f;
 constexpr float kPatronZ=-2.05f;
-constexpr int kSourceGopnickTriangles=746654;
-constexpr int kSourcePinkTriangles=784444;
-constexpr int kDerivedGopnickTriangles=6792;
-constexpr int kDerivedPinkTriangles=6918;
-static_assert(kCount==2u,"Owner character manifest mismatch");
+static_assert(kCount==6u,"A PSX variant must exist for each patron archetype");
 }}}
 #endif
