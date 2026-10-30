@@ -100,9 +100,16 @@ jobs:
           git add -- app/src/main/assets/native/gallery/menu-preview-atlas.jpg art/archive/native-game-menus/
           if git diff --cached --quiet; then echo 'Verified image archive unchanged'; exit 0; fi
           git commit -m 'Archive real native and classic game menu frames'
+          # This is an ephemeral CI checkout. Android bootstrap/build scripts
+          # may dirty tracked files outside the image commit. Discard only
+          # those uncommitted runner-local changes before reconciling main.
+          git submodule foreach --recursive 'git reset --hard HEAD'
+          git reset --hard HEAD
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
           echo "Verified push to main: $(git rev-parse HEAD)"
       - name: Preserve captured frame evidence and emulator logs
         if: always()
