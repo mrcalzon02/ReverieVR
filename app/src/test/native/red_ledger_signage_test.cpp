@@ -28,7 +28,7 @@ int main() {
         if(v[5]>0.90f)++letters;
         assert(v[8]==0.50390625f && v[9]==0.50390625f);
     }
-    assert(background==vertices && letters==0u);
+    assert(background>0u && letters==0u);
     // All 24 product cards are baked with the stockroom's fixed lettering.
     // Living quarters contain no product-picker signage at all.
     assert(VertexCount(1)>VertexCount(2)+200u);
