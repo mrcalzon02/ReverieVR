@@ -1,6 +1,9 @@
 package io.github.mrcalzon02.reverievr;
 
 import javax.swing.*;
+import org.beckenburg.editor.EditorHistory;
+import org.beckenburg.editor.EditorPalettePanel;
+import org.beckenburg.editor.EditorProject;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.awt.event.*;
@@ -16,6 +19,11 @@ public final class ReverieDesktop {
     private final JFrame frame=new JFrame("ReverieVR - Desktop Development Workbench");
     private final JComboBox<String> project=new JComboBox<>();
     private final JComboBox<String> environment=new JComboBox<>();
+    private final JTextField sitkaRegion=new JTextField("harbor",10);
+    private final JPanel sitkaControls=new JPanel(new FlowLayout(FlowLayout.LEFT,8,2));
+    private final JPanel paletteHost=new JPanel(new BorderLayout());
+    private ReverieSceneProject editorProject;
+    private EditorHistory<String> editHistory;
     private final DefaultListModel<String> objects=new DefaultListModel<>();
     private final JList<String> list=new JList<>(objects);
     private final JLabel status=new JLabel("Ready");
@@ -29,7 +37,6 @@ public final class ReverieDesktop {
     private final View view=new View();
     private JButton publishTest;
     private final Map<String,ObjMeshReader.Mesh> meshes=new HashMap<>();
-    private final Deque<String> undo=new ArrayDeque<>(), redo=new ArrayDeque<>();
     private SceneDocument scene=new SceneDocument();
     private String activeId="home";
     private boolean updating=false, dirty=false;
@@ -42,6 +49,7 @@ public final class ReverieDesktop {
         Files.createDirectories(this.workspace.resolve("scenes"));
         project.addItem("home");
         for(GameModuleRegistry.Entry e:GameModuleRegistry.GAMES) project.addItem(e.id);
+        project.addItem("sitka"); // Authoring only, not a native playable entry.
         for(HomeEnvironment e:HomeEnvironment.values()) environment.addItem(e.preferenceValue);
         configureWindow();
         load("home");
@@ -52,6 +60,12 @@ public final class ReverieDesktop {
         JPanel upper=new JPanel(new FlowLayout(FlowLayout.LEFT,8,6));
         upper.add(new JLabel("Project")); upper.add(project);
         upper.add(new JLabel("Home biome")); upper.add(environment);
+        sitkaControls.add(new JLabel("Sitka editing region"));
+        sitkaControls.add(sitkaRegion);
+        sitkaControls.add(button("Open / create region",this::openSitkaRegion));
+        sitkaControls.add(button("Water and weather editor",this::launchSitkaEnvironment));
+        sitkaControls.add(new JLabel("Region blockout / authoring only"));
+        sitkaControls.setVisible(false);
         JButton save=button("Save scene",this::save); upper.add(save);
         publishTest=button("Stage Test Chamber for APK",this::publishTestChamber);
         publishTest.setToolTipText("Copies only box/cylinder layout into the Test Chamber APK assets; rebuild the Android app to see changes");
@@ -63,7 +77,7 @@ public final class ReverieDesktop {
             if(!confirmDiscard()){updating=true;project.setSelectedItem(activeId);updating=false;return;}
             load(target);
         });
-        environment.addActionListener(e->{if(updating)return;checkpoint();scene.environment=(String)environment.getSelectedItem();changed();});
+        environment.addActionListener(e->{if(updating)return;editHistory.execute(()->{scene.environment=(String)environment.getSelectedItem();changed();});});
         JPanel right=new JPanel(new BorderLayout(4,4));
         right.setPreferredSize(new Dimension(312,740));
         JPanel add=new JPanel(new GridLayout(2,2,4,4));
@@ -75,7 +89,10 @@ public final class ReverieDesktop {
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.addListSelectionListener((ListSelectionEvent e)->{if(!e.getValueIsAdjusting())refreshFields();});
         JScrollPane items=new JScrollPane(list);items.setBorder(BorderFactory.createTitledBorder("Scene objects (real editable transforms)"));
-        right.add(items,BorderLayout.CENTER);
+        JSplitPane hierarchyAndAssets=new JSplitPane(JSplitPane.VERTICAL_SPLIT,items,paletteHost);
+        hierarchyAndAssets.setResizeWeight(.6);
+        hierarchyAndAssets.setDividerLocation(.6);
+        right.add(hierarchyAndAssets,BorderLayout.CENTER);
         JPanel transforms=new JPanel(new GridLayout(0,2,5,5));
         String[] labels={"X","Y (height)","Z","Yaw degrees","Scale"};
         for(int i=0;i<fields.length;i++){
@@ -87,11 +104,13 @@ public final class ReverieDesktop {
         lower.setBorder(BorderFactory.createTitledBorder("Selected transform"));
         lower.add(transforms,BorderLayout.CENTER);
         JPanel history=new JPanel(new GridLayout(1,2,4,4));
-        history.add(button("Undo",()->history(undo,redo)));
-        history.add(button("Redo",()->history(redo,undo)));
+        history.add(button("Undo",()->{if(editHistory!=null)editHistory.undo();}));
+        history.add(button("Redo",()->{if(editHistory!=null)editHistory.redo();}));
         lower.add(history,BorderLayout.SOUTH);
         right.add(lower,BorderLayout.SOUTH);
-        JPanel main=new JPanel(new BorderLayout(5,5));main.add(upper,BorderLayout.NORTH);
+        JPanel main=new JPanel(new BorderLayout(5,5));
+        JPanel header=new JPanel(new BorderLayout());header.add(upper,BorderLayout.NORTH);
+        header.add(sitkaControls,BorderLayout.SOUTH);main.add(header,BorderLayout.NORTH);
         JSplitPane split=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,view,right);
         split.setResizeWeight(.74);main.add(split,BorderLayout.CENTER);
         status.setBorder(BorderFactory.createEmptyBorder(4,8,4,8));main.add(status,BorderLayout.SOUTH);
@@ -101,19 +120,97 @@ public final class ReverieDesktop {
         frame.getRootPane().getActionMap().put("save",new AbstractAction(){@Override public void actionPerformed(ActionEvent e){save();}});
     }
     private JButton button(String title,Runnable action){JButton b=new JButton(title);b.addActionListener(e->action.run());return b;}
-    private Path file(String id){return workspace.resolve("scenes").resolve(id+".rvscene");}
+    static Path sceneFile(Path workspace,String id,String region){
+        if("sitka".equals(id)) {
+            if(region==null || !region.matches("[a-z0-9][a-z0-9-]{0,47}"))
+                throw new IllegalArgumentException(
+                    "Region must be 1-48 lowercase letters, numbers or dashes");
+            return workspace.resolve("scenes").resolve("sitka")
+                .resolve(region+".rvscene");
+        }
+        if(id==null || !id.matches("[a-z0-9-]{3,80}"))
+            throw new IllegalArgumentException("Invalid editor project");
+        return workspace.resolve("scenes").resolve(id+".rvscene");
+    }
+    private Path file(String id){return sceneFile(workspace,id,sitkaRegion.getText().trim());}
+    private void openSitkaRegion(){
+        if(!"sitka".equals(activeId)||!confirmDiscard())return;
+        try{file("sitka");load("sitka");}
+        catch(IllegalArgumentException error){this.error("Invalid Sitka region",error);}
+    }
+    private void launchSitkaEnvironment(){
+        if(!"sitka".equals(activeId))return;
+        // Start the ACTUAL water/weather authoring program, not an inert
+        // simulation button. Its independent documents never fake terrain.
+        String win=System.getProperty("os.name","").toLowerCase(Locale.ROOT);
+        Path launcher=repo.resolve("tools/sitka/")
+            .resolve(win.contains("win")?"launch-editor.cmd":"launch-editor.sh");
+        Path folder=workspace.resolve("sitka-environment");
+        try{
+            Files.createDirectories(folder);
+            ProcessBuilder start=win.contains("win")
+                ? new ProcessBuilder("cmd","/c",launcher.toString(),folder.toString())
+                : new ProcessBuilder("bash",launcher.toString(),folder.toString());
+            start.directory(repo.toFile());
+            start.redirectErrorStream(true);
+            start.redirectOutput(ProcessBuilder.Redirect.appendTo(
+                workspace.resolve("sitka-editor-launch.log").toFile()));
+            Process child=start.start();
+            status.setText("Started Sitka water/weather editor process "+
+                child.pid()+" | log: "+workspace.resolve("sitka-editor-launch.log"));
+        }catch(IOException failure){error("Could not launch Sitka environment editor",failure);}
+    }
+    private void restoreSnapshot(SceneDocument restored){
+        scene=restored;
+        updating=true;environment.setSelectedItem(scene.environment);updating=false;
+        refreshObjects(Math.min(list.getSelectedIndex(),scene.pieces.size()-1));
+        changed();
+    }
     private void load(String id){
         try{
-            SceneDocument found=SceneDocument.load(file(id));
-            scene=found;activeId=id;nextId=1;meshes.clear();undo.clear();redo.clear();dirty=false;
-            updating=true;project.setSelectedItem(id);environment.setSelectedItem(scene.environment);updating=false;
+            Path target=file(id);
+            SceneDocument found=SceneDocument.load(target);
+            scene=found;activeId=id;nextId=1;meshes.clear();dirty=false;
+            editorProject=new ReverieSceneProject(
+                id,target,()->scene,this::restoreSnapshot);
+            editHistory=new EditorHistory<>(editorProject,64);
+            updating=true;project.setSelectedItem(id);
+            environment.setSelectedItem(scene.environment);updating=false;
+            sitkaControls.setVisible("sitka".equals(id));
+            paletteHost.removeAll();
+            EditorPalettePanel palette=new EditorPalettePanel(editorProject,
+                this::choosePalette);
+            paletteHost.setBorder(BorderFactory.createTitledBorder(
+                "Beckenburg shared asset palette"));
+            paletteHost.add(palette,BorderLayout.CENTER);
+            paletteHost.revalidate();paletteHost.repaint();
             refreshObjects(-1);
             publishTest.setEnabled("procedural-test-chamber".equals(activeId));
-            status.setText("Authoring only - "+id+" | "+file(id));view.repaint();
-        }catch(IOException ex){updating=true;project.setSelectedItem(activeId);updating=false;error("Scene load failed",ex);}
+            status.setText("Editor source / non-playable preview: "+target);view.repaint();
+        }catch(IOException|IllegalArgumentException ex){
+            updating=true;project.setSelectedItem(activeId);updating=false;
+            error("Scene load failed",ex);
+        }
     }
-    private void save(){try{scene.save(file(activeId));dirty=false;status.setText("Saved "+file(activeId)+" (desktop scene document)");}
-        catch(IOException|IllegalArgumentException ex){error("Scene save failed",ex);}}
+    private void choosePalette(EditorProject.Asset asset){
+        String uri=asset.uri();
+        switch(uri){
+            case "reverie://primitive/box":
+            case "reverie://sitka/building":
+            case "reverie://sitka/shore":
+            case "reverie://ledger/counter":add("box","-");return;
+            case "reverie://primitive/cylinder":
+            case "reverie://sitka/piling":
+            case "reverie://ledger/stool":add("cylinder","-");return;
+            case "reverie://asset/import-obj":importObj();return;
+            default: throw new IllegalArgumentException("Unknown palette command: "+uri);
+        }
+    }
+    private void save(){try{
+            editorProject.save();dirty=false;
+            status.setText("Saved "+editorProject.documentPath()+
+                " (authoring scene, not yet deployed to its game)");
+        }catch(IOException|IllegalArgumentException ex){error("Scene save failed",ex);}}
     private void publishTestChamber(){
         if(!"procedural-test-chamber".equals(activeId))return;
         Path dest=repo.resolve("app/src/main/assets/native/test-chamber/scene.rvscene");
@@ -140,13 +237,9 @@ public final class ReverieDesktop {
         return choice==JOptionPane.YES_OPTION;
     }
     private void error(String message,Exception ex){status.setText(message+": "+ex.getMessage());JOptionPane.showMessageDialog(frame,ex.toString(),message,JOptionPane.ERROR_MESSAGE);}
-    private void checkpoint(){undo.push(scene.encode());if(undo.size()>64)undo.removeLast();redo.clear();}
-    private void changed(){dirty=true;status.setText("Unsaved edits: "+activeId+" (desktop authoring preview, not running VR game)");view.repaint();}
-    private void history(Deque<String> from,Deque<String> to){if(from.isEmpty())return;
-        try{to.push(scene.encode());scene=SceneDocument.decode(from.pop());updating=true;environment.setSelectedItem(scene.environment);updating=false;
-            refreshObjects(Math.min(list.getSelectedIndex(),scene.pieces.size()-1));changed();}
-        catch(IOException error){this.error("History invalid",error);}}
-    private void refreshObjects(int selected){updating=true;objects.clear();for(SceneDocument.Piece p:scene.pieces)objects.addElement(p.id+" ["+p.kind+"]");
+    private void changed(){dirty=true;status.setText("Unsaved edits: "+activeId+
+        " | "+file(activeId)+" (authoring only)");view.repaint();}
+    private void refreshObjects(int selected){updating=true;objects.clear();for(EditorProject.Node p:editorProject.hierarchy())objects.addElement(p.id()+" ["+p.kind()+"]");
         list.setSelectedIndex(selected);updating=false;refreshFields();view.repaint();}
     private SceneDocument.Piece selected(){int i=list.getSelectedIndex();return i<0||i>=scene.pieces.size()?null:scene.pieces.get(i);}
     private void refreshFields(){SceneDocument.Piece p=selected();updating=true;
@@ -157,17 +250,22 @@ public final class ReverieDesktop {
     private void editTransform(int index){SceneDocument.Piece p=selected();if(p==null)return;
         double value=((Number)fields[index].getValue()).doubleValue();
         if(Double.compare(value,new double[]{p.x,p.y,p.z,p.yaw,p.scale}[index])==0)return;
-        checkpoint();switch(index){case 0:p.x=value;break;case 1:p.y=value;break;case 2:p.z=value;break;case 3:p.yaw=value;break;case 4:p.scale=value;break;}
-        changed();
+        try{editHistory.execute(()->{
+            switch(index){case 0:p.x=value;break;case 1:p.y=value;break;
+                case 2:p.z=value;break;case 3:p.yaw=value;break;case 4:p.scale=value;break;}
+            p.validate();changed();
+        });}catch(IllegalArgumentException error){this.error("Invalid transform",error);}
     }
     private void add(String kind,String asset){if(scene.pieces.size()>=SceneDocument.MAX_OBJECTS){status.setText("Scene limit reached");return;}
-        try{checkpoint();String id;do{id="object-"+(nextId++);}while(hasId(id));
+        try{editHistory.execute(()->{
+            String id;do{id="object-"+(nextId++);}while(hasId(id));
             SceneDocument.Piece p=new SceneDocument.Piece(id,kind,asset,0,0,0,0,1);
-            scene.pieces.add(p);refreshObjects(scene.pieces.size()-1);changed();}
+            scene.pieces.add(p);refreshObjects(scene.pieces.size()-1);changed();
+        });}
         catch(IllegalArgumentException ex){error("Unable to add object",ex);}
     }
     private boolean hasId(String id){return scene.pieces.stream().anyMatch(p->p.id.equals(id));}
-    private void delete(){int i=list.getSelectedIndex();if(i<0)return;checkpoint();scene.pieces.remove(i);refreshObjects(Math.min(i,scene.pieces.size()-1));changed();}
+    private void delete(){int i=list.getSelectedIndex();if(i<0)return;editHistory.execute(()->{scene.pieces.remove(i);refreshObjects(Math.min(i,scene.pieces.size()-1));changed();});}
     private void importObj(){
         JFileChooser chooser=new JFileChooser(repo.resolve("app/src/main/assets").toFile());
         chooser.setDialogTitle("Choose an OBJ inside the ReverieVR source checkout");
