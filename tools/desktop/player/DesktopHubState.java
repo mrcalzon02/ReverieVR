@@ -17,7 +17,8 @@ final class DesktopHubState {
     static final String PONG = "classic-pong";
     static final String SNAKE = "classic-snake";
     static final String BREAKOUT = "classic-breakout";
-    static final List<String> PORTED_IDS = List.of(PONG, SNAKE, BREAKOUT);
+    static final String REVERSI = "classic-reversi";
+    static final List<String> PORTED_IDS = List.of(PONG, SNAKE, BREAKOUT, REVERSI);
     enum Panel { NONE, GAMES, SETTINGS, WARDROBE, HELP }
     HomeEnvironment environment = HomeEnvironment.WHITE_ROOM;
     Panel panel = Panel.NONE;

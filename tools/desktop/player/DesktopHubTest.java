@@ -61,20 +61,30 @@ public final class DesktopHubTest {
   Path root=Files.createTempDirectory("reverie-desktop-home-");
   try {
    DesktopHubState s=new DesktopHubState(root);
-   require(s.availableGames().size()==3,"only actually ported games selectable");
-   require(s.pageCount()==1,"three current ports are one page");
+   require(s.availableGames().size()==4,"only actually ported games selectable");
+   require(s.pageCount()==1,"four current ports are one page");
    s.open(DesktopHubState.Panel.GAMES);
    double priorZ=s.z;
    s.move(0,1,.1);
    require(s.panel==DesktopHubState.Panel.GAMES && s.z<priorZ,"in-room browser must preserve locomotion");
    s.search('p');require(s.availableGames().size()==1,"search actual registry");
-   s.search('\b');require(s.availableGames().size()==3,"delete search");
+   s.search('\b');require(s.availableGames().size()==4,"delete search");
    require(!s.launch("breakwater-battery"),"unported game must not expose fake launch");
    require(s.launch(DesktopHubState.PONG),"desktop pong launches");
    require(s.panel==DesktopHubState.Panel.NONE,"game hides catalog for game focus");
    require(!s.launch(DesktopHubState.SNAKE),"no nested games");
    s.back();require(s.runningGame.isEmpty() && s.panel==DesktopHubState.Panel.GAMES,"exit restores Home browser");
    require(s.z<priorZ,"same Home position after game");
+   require(s.launch(DesktopHubState.REVERSI),"real Reversi is admitted");
+   DesktopArcade reversi=new DesktopArcade(DesktopHubState.REVERSI,5);
+   require(reversi.click(DesktopReversi.ORIGIN_X+2*DesktopReversi.CELL+4,
+       DesktopReversi.ORIGIN_Y+3*DesktopReversi.CELL+4),"mouse move plays Reversi");
+   require(reversi.reversi.count(DesktopReversi.BLACK)+reversi.reversi.count(DesktopReversi.WHITE)==6,
+       "computer responds in actual arcade lifecycle");
+   s.back();
+   require(s.runningGame.isEmpty()&&s.panel==DesktopHubState.Panel.GAMES,
+       "Esc/back returns Reversi to Home gallery");
+   require(s.z<priorZ,"Reversi exit preserves Home camera");
    s.back();require(s.panel==DesktopHubState.Panel.NONE,"Back dismisses in-room browser");
    s.environment=HomeEnvironment.DUNE_BEACH;s.outfit=4;s.showHelp=false;s.save();
    DesktopHubState loaded=new DesktopHubState(root);loaded.load();
@@ -97,7 +107,7 @@ public final class DesktopHubTest {
    require(pong.aiScore>0,"pong scoring must be real");
    require(!DesktopHubState.ported("classic-chess"),"missing desktop chess correctly unavailable");
    deskKeyboard(root);
-   System.out.println("DesktopHub: PASS state, 42 projected desk key hits, focus/text/backspace/Enter, live Home movement, game lifecycle, save, 3 games rendering, snake boundaries, pong scoring");
+   System.out.println("DesktopHub: PASS state, 42 projected desk key hits, focus/text/backspace/Enter, live Home movement, game lifecycle, save, 4 games rendering, Reversi mouse and Home return, snake boundaries, pong scoring");
   }finally{
    try(var paths=Files.walk(root)) {paths.sorted(java.util.Comparator.reverseOrder()).forEach(p->{try{Files.delete(p);}catch(Exception ex){throw new RuntimeException(ex);}});}
   }

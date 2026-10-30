@@ -8,5 +8,5 @@ command -v javac >/dev/null || { echo 'JDK 17+ required' >&2; exit 2; }
 mkdir -p "$OUT"
 javac --release 17 -encoding UTF-8 -d "$OUT" \
  "$BASE/HomeEnvironment.java" "$BASE/GameModuleRegistry.java" \
- "$SRC/DesktopHubState.java" "$SRC/DesktopDeskKeyboard.java" "$SRC/DesktopArcade.java" "$SRC/ReverieDesktopPlayer.java"
+ "$SRC/DesktopHubState.java" "$SRC/DesktopDeskKeyboard.java" "$SRC/DesktopReversi.java" "$SRC/DesktopArcade.java" "$SRC/ReverieDesktopPlayer.java"
 exec java -cp "$OUT" io.github.mrcalzon02.reverievr.ReverieDesktopPlayer "${1:-$ROOT/build/desktop-workspace}"

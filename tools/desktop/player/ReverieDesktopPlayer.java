@@ -333,7 +333,16 @@ public final class ReverieDesktopPlayer {
                     lastMouseX=e.getX();lastMouseY=e.getY();mouseDragging=true;
                 }
                 @Override public void mouseReleased(MouseEvent e){
-                    if(mouseDragging||game!=null)return;
+                    if(mouseDragging)return;
+                    if(game!=null){
+                        double scale=Math.min(getWidth()/(double)DesktopArcade.WIDTH,
+                            getHeight()/(double)DesktopArcade.HEIGHT);
+                        double ox=(getWidth()-DesktopArcade.WIDTH*scale)/2.0;
+                        double oy=(getHeight()-DesktopArcade.HEIGHT*scale)/2.0;
+                        game.click((int)Math.floor((e.getX()-ox)/scale),
+                            (int)Math.floor((e.getY()-oy)/scale));
+                        return;
+                    }
                     if(quick){
                         int cx=getWidth()/2,cy=getHeight()/2;
                         int x=e.getX(),y=e.getY();

@@ -21,6 +21,7 @@ final class DesktopArcade {
         breakoutBallY, breakoutVx, breakoutVy;
     int playerScore, aiScore, lives=3, brickCount, snakeScore;
     boolean[][] bricks;
+    DesktopReversi reversi;
     Deque<Integer> snake;
     int snakeDirection=1, requestedDirection=1, food, snakeTicks;
     boolean ended;
@@ -49,6 +50,7 @@ final class DesktopArcade {
         snake.add(8*30+6);snake.add(8*30+5);snake.add(8*30+4);
         snakeDirection=1;requestedDirection=1;snakeTicks=0;
         spawnFood();
+        reversi=id.equals(DesktopHubState.REVERSI)?new DesktopReversi():null;
     }
 
     void key(int code, boolean pressed) {
@@ -60,6 +62,14 @@ final class DesktopArcade {
         if(id.equals(DesktopHubState.SNAKE) && pressed && dir>=0) {
             int target=dir==0?0:dir==3?1:dir==1?2:3;
             if((target+2)%4 != snakeDirection) requestedDirection=target;
+        }
+        if(reversi!=null && pressed) {
+            if(dir==0)reversi.moveCursor(0,-1);
+            else if(dir==1)reversi.moveCursor(0,1);
+            else if(dir==2)reversi.moveCursor(-1,0);
+            else if(dir==3)reversi.moveCursor(1,0);
+            else if(code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE)
+                reversi.play(reversi.cursorX,reversi.cursorY);
         }
         if(pressed&&code==KeyEvent.VK_R) reset();
     }
@@ -73,6 +83,9 @@ final class DesktopArcade {
             while(accumulator>=.11 && !ended) {accumulator-=.11; stepSnake();}
         } else if(id.equals(DesktopHubState.BREAKOUT)) breakout(seconds);
     }
+
+    /** Pixel coordinates are in the same 920x570 logical canvas used by draw(). */
+    boolean click(int x,int y) { return reversi!=null && reversi.click(x,y); }
 
     private void pong(double dt) {
         if(down[0])paddle-=330*dt;
@@ -189,6 +202,40 @@ final class DesktopArcade {
             g.setColor(GOLD);g.fillOval((int)breakoutBallX-9,(int)breakoutBallY-9,18,18);
             text(g,"POINTS "+playerScore+"    LIVES "+lives,30,36,23,PAPER);
             text(g,"LEFT/RIGHT or A/D to move. Clear the board.",30,HEIGHT-17,16,BLUE);
+        }
+        if(reversi!=null) {
+            final int ox=DesktopReversi.ORIGIN_X, oy=DesktopReversi.ORIGIN_Y,
+                cell=DesktopReversi.CELL;
+            g.setColor(new Color(19,72,68));
+            g.fillRoundRect(ox-8,oy-8,cell*8+16,cell*8+16,10,10);
+            for(int y=0;y<8;y++)for(int x=0;x<8;x++){
+                int px=ox+x*cell,py=oy+y*cell;
+                g.setColor((x+y)%2==0?new Color(30,108,91):new Color(25,92,81));
+                g.fillRect(px,py,cell-1,cell-1);
+                int disc=reversi.board[y][x];
+                if(disc!=DesktopReversi.EMPTY){
+                    g.setColor(disc==DesktopReversi.BLACK?new Color(12,20,29):PAPER);
+                    g.fillOval(px+6,py+6,cell-12,cell-12);
+                    g.setColor(disc==DesktopReversi.BLACK?new Color(92,120,136):new Color(140,174,180));
+                    g.drawOval(px+6,py+6,cell-12,cell-12);
+                }else if(!reversi.ended && reversi.flips(x,y,DesktopReversi.BLACK)>0){
+                    g.setColor(GOLD);g.fillOval(px+cell/2-4,py+cell/2-4,8,8);
+                }
+                if(x==reversi.cursorX && y==reversi.cursorY){
+                    g.setColor(GOLD);g.setStroke(new BasicStroke(3));
+                    g.drawRect(px+2,py+2,cell-5,cell-5);
+                }
+            }
+            text(g,"REVERSI",25,53,30,GOLD);
+            text(g,"YOU / BLACK",687,118,17,PAPER);
+            text(g,Integer.toString(reversi.count(DesktopReversi.BLACK)),725,154,32,GOLD);
+            text(g,"CPU / WHITE",687,219,17,PAPER);
+            text(g,Integer.toString(reversi.count(DesktopReversi.WHITE)),725,255,32,GOLD);
+            text(g,"Arrows / WASD",680,339,16,BLUE);
+            text(g,"Enter / Space",680,368,16,BLUE);
+            text(g,"or click a cell",680,397,16,BLUE);
+            text(g,"R: new game",680,439,16,PAPER);
+            text(g,reversi.message,24,HEIGHT-24,16,reversi.ended?GOLD:PAPER);
         }
         if(ended){
             g.setColor(new Color(5,14,23,228));g.fillRoundRect(190,206,WIDTH-380,145,15,15);
