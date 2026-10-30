@@ -47,25 +47,33 @@ public class NativeGamesGalleryTest {
         }
         assertEquals(-1,NativeGamesGallery.homeButtonAtPixel(100,300));
     }
-    @Test public void picturedMenusHaveOneUniqueCorrectlyMappedAtlasCell() {
+    @Test public void everyNativeAndClassicGameHasItsOwnMenuScreenshotCell() {
         java.util.Set<String> seen=new java.util.HashSet<>();
-        String[] pictured={
+        String[] ids={
             "breakwater-battery","between-deliveries-red-ledger",
             "gumball-armada","iron-sight-forward-detachment",
-            "ministry-lantern-desk","omega-front",
-            "procedural-test-chamber"
+            "ministry-lantern-desk","omega-front","procedural-test-chamber",
+            "classic-chess","classic-go","classic-checkers","classic-pong",
+            "classic-snake","classic-reversi","classic-breakout",
+            "classic-chutes-ladders"
         };
-        for(int i=0;i<pictured.length;i++) {
-            String id=pictured[i];
+        assertEquals(GameModuleRegistry.GAMES.length,ids.length);
+        assertEquals(15,NativeGamesGallery.CAPTURED_IDS.length);
+        assertEquals(168,NativeGamesGallery.ATLAS_CELL_WIDTH);
+        assertEquals(230,NativeGamesGallery.ATLAS_CELL_HEIGHT);
+        for(int i=0;i<ids.length;i++) {
+            String id=ids[i];
             assertNotNull(GameModuleRegistry.find(id));
-            int[] c=NativeGamesGallery.atlasCell(id);
-            assertNotNull(id,c);
-            assertTrue(c[0]>=0 && c[0]+NativeGamesGallery.ATLAS_CELL_WIDTH<=336);
-            assertTrue(c[1]>=0 && c[1]+NativeGamesGallery.ATLAS_CELL_HEIGHT<=230);
-            assertTrue(seen.add(c[0]+":"+c[1]));
-            assertEquals(i,NativeGamesGallery.homeModuleIndex(0,i,15));
+            assertEquals(id,NativeGamesGallery.CAPTURED_IDS[i]);
+            int[] cell=NativeGamesGallery.atlasCell(id);
+            assertNotNull(id,cell);
+            assertEquals(i%4*168,cell[0]);
+            assertEquals(i/4*230,cell[1]);
+            assertTrue(cell[0]+168<=672);
+            assertTrue(cell[1]+230<=920);
+            assertTrue(seen.add(cell[0]+":"+cell[1]));
         }
-        assertNull(NativeGamesGallery.atlasCell("classic-pong"));
+        assertEquals(15,seen.size());
         assertNull(NativeGamesGallery.atlasCell("unlisted"));
     }
     @Test public void cardAndNavigationTargetsNeverOverlap() {
