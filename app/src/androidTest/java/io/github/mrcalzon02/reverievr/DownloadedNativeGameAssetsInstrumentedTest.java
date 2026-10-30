@@ -448,23 +448,35 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             new java.util.ArrayList<>();
         for(GameModuleRegistry.Entry game:GameModuleRegistry.GAMES)
             games.add(new NativeModuleRuntime.Descriptor(game.id,game.displayName));
+        games.add(new NativeModuleRuntime.Descriptor(
+            NativeGamesGallery.SITKA_PROJECT_ID,"Sitka"));
         java.util.Collections.sort(games,(a,b)->Integer.compare(
             NativeGamesGallery.order(a.id),NativeGamesGallery.order(b.id)));
-        assertEquals(15,games.size());
-        final String[] names={"gallery-hover-native.png","gallery-hover-classic.png"};
-        final int[] pages={0,1};
-        for(int i=0;i<2;i++){
+        assertEquals(16,games.size());
+        final String[] names={
+            "gallery-hover-native.png","gallery-hover-classic.png",
+            "gallery-hover-sitka.png","gallery-sitka-project.png"
+        };
+        final int[] pages={0,1,1,1};
+        final int[] slots={0,1,0,-1};
+        for(int i=0;i<names.length;i++){
             Bitmap screen=Bitmap.createBitmap(1024,768,Bitmap.Config.ARGB_8888);
             Canvas canvas=new Canvas(screen);
             Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
             canvas.drawColor(Color.rgb(9,18,31));
             NativeGamesGallery.drawInHomeRoom(
-                canvas,paint,games,pages[i],0,1.0f,"",atlas);
-            int[] popup=NativeGamesGallery.hoverPopupRect(true,0);
-            assertNotNull(popup);
-            // Evidence proves both actual in-room hover renders are nonblank.
-            assertNotEquals("Hover pane missing",
-                Color.rgb(9,18,31),screen.getPixel(popup[0]+5,popup[1]+7));
+                canvas,paint,games,pages[i],slots[i],1.0f,"",atlas);
+            if(i==3) {
+                NativeGamesGallery.drawSitkaProjectDetails(canvas,paint,true);
+                assertNotEquals("Sitka inspector missing",
+                    Color.rgb(9,18,31),screen.getPixel(330,250));
+            } else {
+                int[] popup=NativeGamesGallery.hoverPopupRect(true,slots[i]);
+                assertNotNull(popup);
+                assertNotEquals("Hover pane missing",
+                    Color.rgb(9,18,31),
+                    screen.getPixel(popup[0]+5,popup[1]+7));
+            }
             File evidence=new File(app.getFilesDir(),names[i]);
             try(FileOutputStream out=new FileOutputStream(evidence)){
                 assertTrue("Could not save hover screenshot",
