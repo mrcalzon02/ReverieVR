@@ -20,7 +20,7 @@ final class NativeGamesGallery {
     // physical Home wall. Other registered games follow on later pages.
     static final int HOME_PAGE_SIZE=7, HOME_PREVIOUS=7, HOME_NEXT=8,
         HOME_TOOLS=9, HOME_CLOSE=10;
-    static final int ATLAS_CELL_WIDTH=84, ATLAS_CELL_HEIGHT=115;
+    static final int ATLAS_CELL_WIDTH=168, ATLAS_CELL_HEIGHT=230;
     static final int[][] HOME_BUTTONS={
         {278,152,384,353},{393,152,499,353},
         {508,152,614,353},{623,152,730,353},
@@ -188,13 +188,22 @@ final class NativeGamesGallery {
             default:return new String[]{title(d)};
         }
     }
-    /** Atlas cells retain the seven separate game-menu pictures in the supplied
-     * reference. Unlike a painted mockup, each cell is attached to a real id. */
+    // Atlas is rebuilt exclusively from verified game JNI/GLES2 screenshot
+    // evidence, ordered featured-first then the canonical eight classics.
+    static final String[] CAPTURED_IDS={
+        "breakwater-battery","between-deliveries-red-ledger",
+        "gumball-armada","iron-sight-forward-detachment",
+        "ministry-lantern-desk","omega-front","procedural-test-chamber",
+        "classic-chess","classic-go","classic-checkers","classic-pong",
+        "classic-snake","classic-reversi","classic-breakout",
+        "classic-chutes-ladders"
+    };
     static int[] atlasCell(String id) {
-        int index=order(id);
-        if(index<0||index>=FEATURED.length)return null;
-        return new int[]{(index%4)*ATLAS_CELL_WIDTH,
-            (index/4)*ATLAS_CELL_HEIGHT};
+        for(int i=0;i<CAPTURED_IDS.length;i++)
+            if(CAPTURED_IDS[i].equals(id))
+                return new int[]{(i%4)*ATLAS_CELL_WIDTH,
+                    (i/4)*ATLAS_CELL_HEIGHT};
+        return null;
     }
     private static String title(NativeModuleRuntime.Descriptor d) {
         switch(d.id) {
@@ -246,19 +255,29 @@ final class NativeGamesGallery {
     private static void preview(Canvas c,Paint p,String id,
                                 float x,float y,float r,float b,Bitmap atlas) {
         int[] cell=atlasCell(id);
-        if(atlas!=null && !atlas.isRecycled() && cell!=null
-            && atlas.getWidth()>=4*ATLAS_CELL_WIDTH
-            && atlas.getHeight()>=2*ATLAS_CELL_HEIGHT) {
-            p.setStyle(Paint.Style.FILL);
-            p.setColor(Color.WHITE);
-            p.setAlpha(255);
-            p.setFilterBitmap(true);
-            c.drawBitmap(atlas,
-                new Rect(cell[0],cell[1],cell[0]+ATLAS_CELL_WIDTH,
-                    cell[1]+ATLAS_CELL_HEIGHT),
-                new Rect(Math.round(x),Math.round(y),Math.round(r),Math.round(b)),p);
-            p.setFilterBitmap(false);
-            return;
+        if(atlas!=null && !atlas.isRecycled() && cell!=null) {
+            int sx=cell[0],sy=cell[1],cw=ATLAS_CELL_WIDTH,ch=ATLAS_CELL_HEIGHT;
+            boolean captured=atlas.getWidth()>=4*ATLAS_CELL_WIDTH
+                && atlas.getHeight()>=4*ATLAS_CELL_HEIGHT;
+            // Compatibility until the first all-15 verified capture run:
+            // reference art only ever covered the seven featured titles.
+            boolean oldReference=!captured
+                && atlas.getWidth()==4*84 && atlas.getHeight()==2*115
+                && order(id)<FEATURED.length;
+            if(oldReference) {
+                int i=order(id);sx=(i%4)*84;sy=(i/4)*115;cw=84;ch=115;
+            }
+            if(captured||oldReference) {
+                p.setStyle(Paint.Style.FILL);
+                p.setColor(Color.WHITE);
+                p.setAlpha(255);
+                p.setFilterBitmap(true);
+                c.drawBitmap(atlas,
+                    new Rect(sx,sy,sx+cw,sy+ch),
+                    new Rect(Math.round(x),Math.round(y),Math.round(r),Math.round(b)),p);
+                p.setFilterBitmap(false);
+                return;
+            }
         }
         float w=r-x,h=b-y;
         p.setStyle(Paint.Style.FILL);
