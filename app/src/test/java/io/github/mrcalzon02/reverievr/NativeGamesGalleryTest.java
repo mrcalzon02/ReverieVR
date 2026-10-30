@@ -117,6 +117,22 @@ public class NativeGamesGalleryTest {
             }
         }
     }
+    @Test public void sitkaAppearsAsInspectableUnpackagedProject() {
+        assertEquals(7,NativeGamesGallery.order("sitka"));
+        assertEquals(16,GameModuleRegistry.GAMES.length+1);
+        assertEquals(3,NativeGamesGallery.homePageCount(16));
+        assertEquals(7,NativeGamesGallery.homeModuleIndex(1,0,16));
+        assertEquals(15,NativeGamesGallery.homeModuleIndex(2,1,16));
+        assertFalse(NativeGamesGallery.homeButtonEnabled(2,2,16));
+        assertNull("No fake playable Sitka native module yet",
+            GameModuleRegistry.find("sitka"));
+        assertNull("No fabricated georeferenced Sitka screenshot",
+            NativeGamesGallery.atlasCell("sitka"));
+        String[] details=NativeGamesGallery.descriptionLines("sitka");
+        assertNotNull(details);
+        assertEquals(3,details.length);
+        assertTrue(details[2].contains("not ready"));
+    }
     @Test public void cardAndNavigationTargetsNeverOverlap() {
         assertEquals(10,NativeGamesGallery.BUTTONS.length);
         assertEquals(8,NativeGamesGallery.TOOLS);
