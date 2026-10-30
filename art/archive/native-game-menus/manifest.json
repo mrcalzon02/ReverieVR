@@ -1,0 +1,167 @@
+{
+  "atlas_columns": 4,
+  "capture_size": [
+    512,
+    512
+  ],
+  "card_size": [
+    168,
+    230
+  ],
+  "games": {
+    "between-deliveries-red-ledger": {
+      "atlas_cell": [
+        1,
+        0
+      ],
+      "bytes": 71035,
+      "eye_frame_crc32": 1931858550,
+      "sha256": "35e608cc1812123278b9645c027ce411f4605dd3f94c6380d4a5b4b95ec668f0"
+    },
+    "breakwater-battery": {
+      "atlas_cell": [
+        0,
+        0
+      ],
+      "bytes": 44267,
+      "eye_frame_crc32": 2228255500,
+      "sha256": "e7c04249c45198815c32d4a202b305fd0745ca3b4f93b7ab0f7d0199b6676e4c"
+    },
+    "classic-breakout": {
+      "atlas_cell": [
+        1,
+        3
+      ],
+      "bytes": 6684,
+      "eye_frame_crc32": 3651651288,
+      "sha256": "37f7d6e54e193269643d0da0e5b35d46d3021ee5cebab826a83775a13e6f8309"
+    },
+    "classic-checkers": {
+      "atlas_cell": [
+        1,
+        2
+      ],
+      "bytes": 33258,
+      "eye_frame_crc32": 5894351,
+      "sha256": "c29c7d7d10212e1f300c46f341de2828ff8a0ff090e7c7fd456f0bf85fc47458"
+    },
+    "classic-chess": {
+      "atlas_cell": [
+        3,
+        1
+      ],
+      "bytes": 137834,
+      "eye_frame_crc32": 1957098570,
+      "sha256": "7e3045c7362db1caa5c9148ba190f2e213be42e74a4032d697d5c5d561c08020"
+    },
+    "classic-chutes-ladders": {
+      "atlas_cell": [
+        2,
+        3
+      ],
+      "bytes": 14397,
+      "eye_frame_crc32": 3502022807,
+      "sha256": "331079281797c61a028daca61e92d53cb8e6c0ad28578c0af5e0477939ded264"
+    },
+    "classic-go": {
+      "atlas_cell": [
+        0,
+        2
+      ],
+      "bytes": 7652,
+      "eye_frame_crc32": 782515139,
+      "sha256": "b867ac480a2d02d6b8e7c6a79d6d2cbec3d087f3aa6efee3546fb1c8f1a579ab"
+    },
+    "classic-pong": {
+      "atlas_cell": [
+        2,
+        2
+      ],
+      "bytes": 4486,
+      "eye_frame_crc32": 2227132137,
+      "sha256": "3f2e905613421b4b43e6059dcc8a481da6944cf6d544ec88984eedf15b67b3bf"
+    },
+    "classic-reversi": {
+      "atlas_cell": [
+        0,
+        3
+      ],
+      "bytes": 8027,
+      "eye_frame_crc32": 2069963120,
+      "sha256": "d007454d03d4cfc0d953313c1753bfb1c471728dd07dd1f97c617bc007e9bdf3"
+    },
+    "classic-snake": {
+      "atlas_cell": [
+        3,
+        2
+      ],
+      "bytes": 6326,
+      "eye_frame_crc32": 2235895554,
+      "sha256": "46d8d4800ea475e161360e83f49fe889cafa8c5443ea4121d0997fb9331eee2e"
+    },
+    "gumball-armada": {
+      "atlas_cell": [
+        2,
+        0
+      ],
+      "bytes": 89930,
+      "eye_frame_crc32": 1202659329,
+      "sha256": "01a54e40bea93180b2b5bc9ae016b9d016852bace647e88822f121ec764636fd"
+    },
+    "iron-sight-forward-detachment": {
+      "atlas_cell": [
+        3,
+        0
+      ],
+      "bytes": 38241,
+      "eye_frame_crc32": 4180096521,
+      "sha256": "45070a175509bcf68fa996283b10e0542183988866e90d02cc18826f713b576e"
+    },
+    "ministry-lantern-desk": {
+      "atlas_cell": [
+        0,
+        1
+      ],
+      "bytes": 34380,
+      "eye_frame_crc32": 801421466,
+      "sha256": "e69df0b18a6cf0cc1f5ea56ab3c6046ee4ea57d79ecaeebee438bbeb6b2a6452"
+    },
+    "omega-front": {
+      "atlas_cell": [
+        1,
+        1
+      ],
+      "bytes": 20167,
+      "eye_frame_crc32": 3330151028,
+      "sha256": "3cedfe9ae8f631f7bd16a3be06d31d5b839d322075be9d5bbdc9ded7d0a13835"
+    },
+    "procedural-test-chamber": {
+      "atlas_cell": [
+        2,
+        1
+      ],
+      "bytes": 326511,
+      "eye_frame_crc32": 2532484094,
+      "sha256": "f9eb36dbd2c40554f7b5ee4b9a149772ae22f90e1b4910b372d6b0ec28545e56"
+    }
+  },
+  "ordered_ids": [
+    "breakwater-battery",
+    "between-deliveries-red-ledger",
+    "gumball-armada",
+    "iron-sight-forward-detachment",
+    "ministry-lantern-desk",
+    "omega-front",
+    "procedural-test-chamber",
+    "classic-chess",
+    "classic-go",
+    "classic-checkers",
+    "classic-pong",
+    "classic-snake",
+    "classic-reversi",
+    "classic-breakout",
+    "classic-chutes-ladders"
+  ],
+  "schema": 1,
+  "source": "installed Android 10 emulator; real JNI/GLES2 initial-eye frame"
+}
