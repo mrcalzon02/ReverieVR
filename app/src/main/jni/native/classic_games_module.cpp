@@ -624,13 +624,16 @@ void RebuildBoard(Module *m,bool fixed){
         Text(m,"PRESS TO RESTART",1.98f,-.39f,.034f,1.f,.95f,.78f);
 #endif
     }else if(!fixed){
-        Text(m,s.kind==reverie::boardgames::Kind::Go&&s.goReview
+        const char *turnLabel=
+            s.kind==reverie::boardgames::Kind::Go&&s.goReview
              ?"MARK DEAD GROUPS":m->cpuFailed?"CPU ERROR RESTART":
-             s.side==1?"YOUR TURN":"CPU THINKING",
+             s.side==1?"YOUR TURN":"CPU THINKING";
 #if CLASSIC_GAME_KIND == 5
-             0,1.40f,.032f,.95f,.95f,.78f);
+        Text(m,turnLabel,0,1.40f,.032f,.95f,.95f,.78f);
 #else
-             2.04f,1.08f,.035f,.95f,.95f,.78f);
+        Text(m,turnLabel,2.04f,1.08f,
+             reverie::breakwater::font::FittedScale(turnLabel,1.55f,.035f),
+             .95f,.95f,.78f);
 #endif
         if(s.kind==reverie::boardgames::Kind::Reversi){
             char scored[64];
@@ -649,9 +652,11 @@ void RebuildBoard(Module *m,bool fixed){
            s.side==1){
             Rect(m,1.94f,-.65f,.96f,.39f,-2.98f,
                  m->boardControlHover==1?.38f:.23f,.36f,.42f);
-            Text(m,s.checkerDifficulty==0?"AI EASY":
-                   s.checkerDifficulty==2?"AI HARD":"AI NORMAL",
-                 1.94f,-.65f,.042f,1.f,1.f,.89f);
+            const char *aiLabel=s.checkerDifficulty==0?"AI EASY":
+                s.checkerDifficulty==2?"AI HARD":"AI NORMAL";
+            Text(m,aiLabel,1.94f,-.65f,
+                 reverie::breakwater::font::FittedScale(aiLabel,.90f,.042f),
+                 1.f,1.f,.89f);
         }
         if(s.kind==reverie::boardgames::Kind::Checkers &&
            s.CheckerDrawClaimable()){
