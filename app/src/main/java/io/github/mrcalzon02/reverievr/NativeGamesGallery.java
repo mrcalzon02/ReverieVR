@@ -81,6 +81,8 @@ final class NativeGamesGallery {
         navAt(c,p,HOME_BUTTONS,HOME_NEXT,"NEXT",pages>1,hover,scale);
         navAt(c,p,HOME_BUTTONS,HOME_TOOLS,"TOOLS",true,hover,scale);
         navAt(c,p,HOME_BUTTONS,HOME_CLOSE,"CLOSE",true,hover,scale);
+        drawHoverInfo(c,p,games,homeModuleIndex(page,hover,games.size()),
+            hover,scale,atlas,true);
         p.setTextAlign(Paint.Align.LEFT);p.setStyle(Paint.Style.FILL);
         p.setFakeBoldText(false);
     }
@@ -130,10 +132,105 @@ final class NativeGamesGallery {
         nav(c,p,NEXT,"NEXT",pages>1,hover,scale);
         nav(c,p,TOOLS,"NATIVE TOOLS",true,hover,scale);
         nav(c,p,HOME,"HOME",true,hover,scale);
+        drawHoverInfo(c,p,games,moduleIndex(page,hover,games.size()),
+            hover,scale,atlas,false);
         p.setTextAlign(Paint.Align.LEFT);
         p.setStyle(Paint.Style.FILL);
         p.setFakeBoldText(false);
     }
+
+    // The floating preview is an overlay, not a modal: the underlying
+    // card/controller hit rectangles remain unchanged. Put it in the
+    // opposite row so the currently hovered card stays visible and clickable.
+    static int[] hoverPopupRect(boolean home,int hover) {
+        if(hover<0 || hover>=(home?HOME_PAGE_SIZE:PAGE_SIZE))return null;
+        if(home)return new int[]{288,hover<4?377:163,721,hover<4?598:361};
+        return new int[]{299,hover<3?406:183,727,hover<3?632:399};
+    }
+    static String[] descriptionLines(String id) {
+        switch(id) {
+            case "breakwater-battery":
+                return new String[]{"Defend your coastal bunker against","beach landings, aircraft and ships.","Upgrade weapons between waves."};
+            case "between-deliveries-red-ledger":
+                return new String[]{"Run a frontier bar, serve patrons","and balance stock, trade and faction","relationships between deliveries."};
+            case "gumball-armada":
+                return new String[]{"Pilot a candy-powered starship","through the Sour generals' routes.","Refit your vessel in the shipyard."};
+            case "iron-sight-forward-detachment":
+                return new String[]{"Choose patrol routes, investigate","contacts and file a debrief in","this tactical reconnaissance game."};
+            case "ministry-lantern-desk":
+                return new String[]{"Dispatch reconnaissance sorties,","interpret photographic evidence","and file intelligence assessments."};
+            case "omega-front":
+                return new String[]{"Campaign strategy, regional travel","and tactical battles with unit","orders, supplies and diplomacy."};
+            case "procedural-test-chamber":
+                return new String[]{"Explore the experimental VR room,","procedural materials and scene","tools used by the native engine."};
+            case "classic-chess":
+                return new String[]{"Play chess against the computer","with legal-move highlights and an","interactive opening reference."};
+            case "classic-go":
+                return new String[]{"Claim territory on a 19x19 Go","board, pass your turn, and review","dead stones during scoring."};
+            case "classic-checkers":
+                return new String[]{"Challenge the computer to checkers.","Capture diagonally, chain jumps","and crown kings as you advance."};
+            case "classic-pong":
+                return new String[]{"The original paddle duel, remade","for the Home arcade. Track the ball","and outscore the computer."};
+            case "classic-snake":
+                return new String[]{"Steer the growing snake to food","without hitting the walls or","colliding with your own tail."};
+            case "classic-reversi":
+                return new String[]{"Flip your rival's discs by","surrounding them. Control the","board before the final count."};
+            case "classic-breakout":
+                return new String[]{"Bounce the ball off your paddle","to clear the brick wall while","protecting your remaining lives."};
+            case "classic-chutes-ladders":
+                return new String[]{"Race the computer along the board.","Climb ladders, slide down chutes,","and reach the final square first."};
+            default: return null;
+        }
+    }
+    private static void drawHoverInfo(Canvas c,Paint p,
+            List<NativeModuleRuntime.Descriptor> games,int gameIndex,
+            int hover,float scale,Bitmap atlas,boolean home) {
+        int[] r=hoverPopupRect(home,hover);
+        if(r==null||gameIndex<0||gameIndex>=games.size())return;
+        NativeModuleRuntime.Descriptor game=games.get(gameIndex);
+        String[] lines=descriptionLines(game.id);
+        if(lines==null)return;
+        c.save();
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(Color.argb(210,0,0,0));
+        c.drawRoundRect(r[0]+5,r[1]+6,r[2]+5,r[3]+6,10,10,p);
+        p.setColor(Color.rgb(10,23,38));
+        c.drawRoundRect(r[0],r[1],r[2],r[3],9,9,p);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(2.5f);
+        p.setColor(Color.rgb(233,189,94));
+        c.drawRoundRect(r[0]+1,r[1]+1,r[2]-1,r[3]-1,9,9,p);
+        p.setStyle(Paint.Style.FILL);
+        float imageX=r[0]+14,imageY=r[1]+17;
+        float imageBottom=r[3]-17;
+        float imageRight=imageX+(imageBottom-imageY)*ATLAS_CELL_WIDTH
+            /ATLAS_CELL_HEIGHT;
+        c.save();
+        c.clipRect(imageX,imageY,imageRight,imageBottom);
+        preview(c,p,game.id,imageX,imageY,imageRight,imageBottom,atlas);
+        c.restore();
+        float tx=imageRight+15;
+        float available=r[2]-tx-12;
+        p.setColor(Color.rgb(124,197,222));
+        fit(c,p,game.id.startsWith("classic-")?"CLASSIC GAME":"NATIVE GAME",
+            tx,r[1]+35,available,14f*Math.min(scale,1.10f),false);
+        p.setColor(Color.rgb(249,231,178));
+        fit(c,p,title(game),tx,r[1]+60,available,
+            20f*Math.min(scale,1.12f),false);
+        p.setColor(Color.rgb(210,228,239));
+        p.setFakeBoldText(false);
+        p.setTextAlign(Paint.Align.LEFT);
+        p.setTextSize(16f*Math.min(scale,1.07f));
+        for(int i=0;i<lines.length;i++)
+            c.drawText(lines[i],tx,r[1]+92+i*23,p);
+        p.setColor(Color.rgb(248,206,116));
+        fit(c,p,"CLICK TO LAUNCH",tx,r[3]-17,available,14f,false);
+        c.restore();
+        p.setStyle(Paint.Style.FILL);
+        p.setTextAlign(Paint.Align.LEFT);
+        p.setFakeBoldText(false);
+    }
+
     private static void empty(Canvas c,Paint p,int[] r) {
         p.setStyle(Paint.Style.FILL);p.setColor(Color.rgb(16,24,32));
         c.drawRoundRect(r[0],r[1],r[2],r[3],8,8,p);
