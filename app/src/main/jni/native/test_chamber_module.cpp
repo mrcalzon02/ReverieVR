@@ -1,5 +1,6 @@
 #include "reverie_native_sdk.h"
 #include "reverie_scene_document.h"
+#include "reverie_native_lato_text.h"
 #include "reverie_native_avatar_geometry.h"
 #include "reverie_native_avatar_wardrobe.h"
 #include "reverie_native_gl_state.h"
@@ -37,9 +38,21 @@ struct ModuleState {
     GLint matrix_location = -1;
     GLint tint_location = -1;
     GLint texture_location = -1;
+    GLint offset_location = -1;
+    GLint pivot_location = -1;
+    GLint spin_location = -1;
+    GLint light_location = -1;
+    GLint ambient_location = -1;
+    GLint emissive_location = -1;
 
     bool primary_was_down = false;
     bool alternate_tint = false;
+    int demo_mode=0;
+    float clock=0.f;
+    reverie::nativetext::LatoLayer font;
+    std::vector<reverie::authoring::Piece> pieces;
+    std::vector<GLint> piece_first;
+    std::vector<GLsizei> piece_count;
 
     std::vector<uint8_t> rgba;
     // Optional editor-authored primitives, identical across eye renders.
@@ -67,22 +80,29 @@ void Log(
 GLuint BuildProgram() {
     static const char *kVertexShader =
         "uniform mat4 u_ViewProjection;\n"
-        "attribute vec3 a_Position;\n"
-        "attribute vec2 a_Uv;\n"
-        "varying vec2 v_Uv;\n"
-        "void main() {\n"
-        "  gl_Position = u_ViewProjection * vec4(a_Position, 1.0);\n"
-        "  v_Uv = a_Uv;\n"
+        "uniform vec3 u_Offset; uniform vec3 u_Pivot;\n"
+        "uniform vec3 u_LightPosition; uniform float u_Spin;\n"
+        "uniform float u_Ambient;\n"
+        "attribute vec3 a_Position; attribute vec2 a_Uv;\n"
+        "varying vec2 v_Uv; varying float v_Light;\n"
+        "void main(){\n"
+        "  float c=cos(u_Spin); float s=sin(u_Spin);\n"
+        "  vec3 d=a_Position-u_Pivot;\n"
+        "  vec3 p=u_Pivot+vec3(c*d.x-s*d.z,d.y,s*d.x+c*d.z)+u_Offset;\n"
+        "  float dist=distance(p,u_LightPosition);\n"
+        "  v_Light=clamp(u_Ambient+0.85/(1.0+0.65*dist*dist),0.0,1.6);\n"
+        "  gl_Position=u_ViewProjection*vec4(p,1.0);\n"
+        "  v_Uv=a_Uv;\n"
         "}\n";
 
     static const char *kFragmentShader =
         "precision mediump float;\n"
-        "uniform sampler2D u_Texture;\n"
-        "uniform vec3 u_Tint;\n"
-        "varying vec2 v_Uv;\n"
-        "void main() {\n"
-        "  vec4 texel = texture2D(u_Texture, v_Uv);\n"
-        "  gl_FragColor = vec4(texel.rgb * u_Tint, 1.0);\n"
+        "uniform sampler2D u_Texture; uniform vec3 u_Tint;\n"
+        "uniform float u_Emissive;\n"
+        "varying vec2 v_Uv; varying float v_Light;\n"
+        "void main(){\n"
+        "  vec4 texel=texture2D(u_Texture,v_Uv);\n"
+        "  gl_FragColor=vec4(texel.rgb*u_Tint*(v_Light+u_Emissive),1.0);\n"
         "}\n";
 
     static const ReverieNativeGlAttributeBindingV1 kBindings[] = {
@@ -230,6 +250,7 @@ static const float kRoomVertices[] = {
 };
 
 void DestroyGl(ModuleState *state) {
+    state->font.Release();
     if (state->texture != 0) {
         glDeleteTextures(
             1,
@@ -256,9 +277,17 @@ void DestroyGl(ModuleState *state) {
     state->matrix_location = -1;
     state->tint_location = -1;
     state->texture_location = -1;
+    state->offset_location = -1;
+    state->pivot_location = -1;
+    state->spin_location = -1;
+    state->light_location = -1;
+    state->ambient_location = -1;
+    state->emissive_location = -1;
 }
 
 void AbandonGl(ModuleState *state) {
+    state->font.program=state->font.texture=state->font.vbo=0;
+    state->font.upload=true;
     state->program = 0;
     state->vbo = 0;
     state->texture = 0;
@@ -320,12 +349,24 @@ int32_t InitializeGl(ModuleState *state) {
             state->program,
             "u_Texture"
         );
+    state->offset_location=glGetUniformLocation(state->program,"u_Offset");
+    state->pivot_location=glGetUniformLocation(state->program,"u_Pivot");
+    state->spin_location=glGetUniformLocation(state->program,"u_Spin");
+    state->light_location=glGetUniformLocation(state->program,"u_LightPosition");
+    state->ambient_location=glGetUniformLocation(state->program,"u_Ambient");
+    state->emissive_location=glGetUniformLocation(state->program,"u_Emissive");
 
     if (state->position_location < 0
         || state->uv_location < 0
         || state->matrix_location < 0
         || state->tint_location < 0
-        || state->texture_location < 0) {
+        || state->texture_location < 0
+        || state->offset_location < 0
+        || state->pivot_location < 0
+        || state->spin_location < 0
+        || state->light_location < 0
+        || state->ambient_location < 0
+        || state->emissive_location < 0) {
         Log(
             state,
             REVERIE_NATIVE_LOG_ERROR,
@@ -461,11 +502,18 @@ int32_t InitializeGl(ModuleState *state) {
         return finish(0);
     }
 
-    Log(
-        state,
-        REVERIE_NATIVE_LOG_INFO,
-        "GL resources created from OpenKTG procedural texture."
-    );
+    if(!state->font.Create()) {
+        Log(state,REVERIE_NATIVE_LOG_ERROR,"Test chamber Lato font unavailable.");
+        DestroyGl(state);
+        return finish(0);
+    }
+    state->font.Clear();
+    state->font.Fit("PROCEDURAL TEST CHAMBER",0.f,1.31f,5.15f,.044f,
+        .90f,.97f,.97f,-2.62f);
+    state->font.Fit("PRESS TO CYCLE LIGHTS / MODELS / SOUNDS",
+        0.f,-1.33f,5.0f,.028f,.86f,.96f,.85f,-2.63f);
+    Log(state,REVERIE_NATIVE_LOG_INFO,
+        "Test chamber showcase GL, real Lato glyphs and procedural materials ready.");
     return finish(1);
 }
 
@@ -516,7 +564,23 @@ void *Create(
             try {
                 const auto authored=reverie::authoring::ParseScene(
                     scene_bytes.data(),scene_bytes.size());
-                state->editor_mesh=reverie::authoring::PrimitiveTriangles(authored);
+                state->pieces=authored.pieces;
+                state->editor_mesh.clear();
+                state->piece_first.clear();
+                state->piece_count.clear();
+                for(const auto &piece:state->pieces){
+                    reverie::authoring::Scene single;
+                    single.environment=authored.environment;
+                    single.pieces.push_back(piece);
+                    std::vector<float> mesh=
+                        reverie::authoring::PrimitiveTriangles(single);
+                    state->piece_first.push_back(
+                        static_cast<GLint>(state->editor_mesh.size()/5u));
+                    state->piece_count.push_back(
+                        static_cast<GLsizei>(mesh.size()/5u));
+                    state->editor_mesh.insert(state->editor_mesh.end(),
+                        mesh.begin(),mesh.end());
+                }
                 state->editor_vertex_count=static_cast<GLsizei>(
                     state->editor_mesh.size()/5u);
                 Log(state,REVERIE_NATIVE_LOG_INFO,
