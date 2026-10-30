@@ -1798,7 +1798,7 @@ void RefreshStatusBoard(ModuleState *state) {
     for(size_t i=0;i<6u;++i)
         if(rows[i][0]!=0)
             count=signs::EmitLine(nullptr,count,rows[i],0.0f,
-                1.09f-static_cast<float>(i)*0.22f,-2.80f,0.014f);
+                0.83f-static_cast<float>(i)*0.22f,-2.80f,0.014f);
     if(count==0u || count>20000u)return;
     std::unique_ptr<float[]> vertices(
         new (std::nothrow) float[count*signs::kVertexStride]);
@@ -1807,7 +1807,7 @@ void RefreshStatusBoard(ModuleState *state) {
     for(size_t i=0;i<6u;++i)
         if(rows[i][0]!=0)
             made=signs::EmitLine(vertices.get(),made,rows[i],0.0f,
-                1.09f-static_cast<float>(i)*0.22f,-2.80f,0.014f);
+                0.83f-static_cast<float>(i)*0.22f,-2.80f,0.014f);
     if(made!=count)return;
     glBindBuffer(GL_ARRAY_BUFFER,state->status_vbo);
     glBufferData(GL_ARRAY_BUFFER,count*signs::kVertexStride*sizeof(float),
@@ -1836,7 +1836,7 @@ void RefreshStatusBoard(ModuleState *state) {
     for(size_t i=0;i<6u;++i)
         if(rows[i][0]!=0)
             state->uiFont.Fit(rows[i],0.f,
-                1.09f-static_cast<float>(i)*.22f,5.45f,.036f,
+                0.83f-static_cast<float>(i)*.22f,3.55f,.031f,
                 .98f,.94f,.82f,-2.785f);
     state->status_dirty=false;
 }
