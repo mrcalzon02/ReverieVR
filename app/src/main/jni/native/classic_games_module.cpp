@@ -600,24 +600,28 @@ void RebuildBoard(Module *m,bool fixed){
 #if CLASSIC_GAME_KIND == 5
         Text(m,msg,0,1.40f,.032f,1.f,.91f,.58f);
 #else
-        Text(m,msg,0,1.34f,.074f,1.f,.91f,.58f);
+        Text(m,msg,2.02f,1.07f,.038f,1.f,.91f,.58f);
 #endif
         if(s.kind==reverie::boardgames::Kind::Go){
             char scored[64];
             std::snprintf(scored,sizeof(scored),"BLACK %.1f  WHITE %.1f",
                           s.goBlackScore,s.goWhiteScore);
-            Text(m,scored,0,1.15f,.044f,.95f,.96f,.85f);
+            Text(m,scored,2.04f,.63f,
+                reverie::breakwater::font::FittedScale(scored,1.50f,.034f),
+                .95f,.96f,.85f);
         }else if(s.kind==reverie::boardgames::Kind::Reversi){
             char scored[64];
             std::snprintf(scored,sizeof(scored),"BLACK %d  WHITE %d",
                           s.ReversiCount(1),s.ReversiCount(-1));
-            Text(m,scored,0,1.15f,.044f,.95f,.96f,.85f);
+            Text(m,scored,2.04f,.63f,
+                reverie::breakwater::font::FittedScale(scored,1.50f,.034f),
+                .95f,.96f,.85f);
         }
 #if CLASSIC_GAME_KIND == 5
         ChessPanelText(m,"RESTART",2.22f,-1.35f,.031f,
                        1.f,.95f,.78f);
 #else
-        Text(m,"PRESS TO RESTART",1.91f,.66f,.043f,1.f,.95f,.78f);
+        Text(m,"PRESS TO RESTART",1.98f,-.39f,.034f,1.f,.95f,.78f);
 #endif
     }else if(!fixed){
         Text(m,s.kind==reverie::boardgames::Kind::Go&&s.goReview
@@ -626,15 +630,17 @@ void RebuildBoard(Module *m,bool fixed){
 #if CLASSIC_GAME_KIND == 5
              0,1.40f,.032f,.95f,.95f,.78f);
 #else
-             0,1.34f,.064f,.95f,.95f,.78f);
+             2.04f,1.08f,.035f,.95f,.95f,.78f);
 #endif
         if(s.kind==reverie::boardgames::Kind::Reversi){
             char scored[64];
             std::snprintf(scored,sizeof(scored),"BLACK %d  WHITE %d",
                           s.ReversiCount(1),s.ReversiCount(-1));
-            Text(m,scored,0,1.15f,.044f,.95f,.96f,.85f);
+            Text(m,scored,2.04f,.63f,
+                reverie::breakwater::font::FittedScale(scored,1.50f,.034f),
+                .95f,.96f,.85f);
             if(s.passes==1)
-                Text(m,"OPPONENT PASSED",0,-1.39f,.042f,
+                Text(m,"OPPONENT PASSED",2.01f,-.72f,.033f,
                      .97f,.91f,.48f);
         }
         if(s.kind==reverie::boardgames::Kind::Checkers && s.forced>=0)
@@ -757,7 +763,7 @@ void Rebuild(Module *m,bool fixed){
         char status[48];
         std::snprintf(status,sizeof(status),"SCORE %d LIVES %d WALL %d",
                       s.score,s.lives,s.wall);
-        Text(m,status,0,1.35f,.055f,.90f,.95f,.81f);
+        Text(m,status,1.93f,1.06f,.034f,.90f,.95f,.81f);
         Text(m,s.finished
              ? (s.won?"YOU WIN PRESS":"GAME OVER PRESS")
              : (s.moving?"CLEAR ALL BRICKS":"PRESS TO SERVE"),
@@ -791,7 +797,7 @@ void Rebuild(Module *m,bool fixed){
         Rect(m,1.40f,s.ai*1.19f,.075f,.56f,-2.96f,.98f,.60f,.44f);
         Rect(m,s.ball_x*1.55f,s.ball_y*1.22f,.11f,.11f,-2.93f,.94f,.95f,.70f);
         std::snprintf(status,sizeof(status),"%d : %d",s.score,s.opponent);
-        Text(m,status,0,1.31f,.07f,1,1,.79f);
+        Text(m,status,2.18f,1.11f,.060f,1,1,.79f);
         Text(m,s.finished?"PRESS TO RESTART":
              s.moving?"MOVE PADDLE TO BLOCK":"PRESS TO SERVE",
              0,-1.46f,.040f,.70f,.83f,.83f);
@@ -828,7 +834,7 @@ void Rebuild(Module *m,bool fixed){
         }
         }else{
         std::snprintf(status,sizeof(status),"FOOD %d",s.score);
-        Text(m,status,0,1.34f,.06f,.86f,.91f,.68f);
+        Text(m,status,2.03f,1.12f,.046f,.86f,.91f,.68f);
         Text(m,s.finished?"PRESS TO RESTART":
              s.moving?"POINT TO TURN":"PRESS TO START",
              0,-1.48f,.043f,.78f,.90f,.83f);
@@ -863,7 +869,9 @@ void Rebuild(Module *m,bool fixed){
         else
             std::snprintf(status,sizeof(status),"YOU %d CPU %d",
                           s.position,s.rival);
-        Text(m,status,0,1.36f,.047f,.94f,.89f,.68f);
+        Text(m,status,2.04f,1.00f,
+            reverie::breakwater::font::FittedScale(status,1.44f,.038f),
+            .94f,.89f,.68f);
         Text(m,s.finished?(s.position==100?"YOU WIN PRESS":"CPU WINS PRESS"):
              s.player_turn?"SELECT TO ROLL":"CPU ROLLING",
              0,-1.56f,.045f,1,.96f,.78f);
