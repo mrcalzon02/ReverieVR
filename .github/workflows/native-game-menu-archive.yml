@@ -87,7 +87,7 @@ jobs:
             adb shell am instrument -w -r -e class io.github.mrcalzon02.reverievr.DownloadedNativeGameAssetsInstrumentedTest#captureAllNativeMainMenus,io.github.mrcalzon02.reverievr.DownloadedNativeGameAssetsInstrumentedTest#captureHomeGalleryHoverInfoFromActualAtlas io.github.mrcalzon02.reverievr.test/androidx.test.runner.AndroidJUnitRunner > validation/gallery/instrumentation-output.txt || true
             adb exec-out run-as io.github.mrcalzon02.reverievr cat files/native-menu-capture.csv > validation/gallery/native-menu-capture.csv
             for GAME in $(python3 -c 'import json; print(" ".join(g["id"] for g in json.load(open("modules/game-identity-matrix.json"))["games"]))'); do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/native-menu-${GAME}.png" > "validation/gallery/native-menu-${GAME}.png" || rm -f "validation/gallery/native-menu-${GAME}.png"; done
-            for FILE in gallery-hover-native.png gallery-hover-classic.png; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${FILE}" > "validation/gallery/${FILE}"; test -s "validation/gallery/${FILE}"; done
+            for FILE in gallery-hover-native.png gallery-hover-classic.png gallery-hover-sitka.png gallery-sitka-project.png; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${FILE}" > "validation/gallery/${FILE}"; test -s "validation/gallery/${FILE}"; done
             adb logcat -d -v time > validation/gallery/logcat.txt
       - name: Validate all captured pixels and generate archive cards
         shell: bash
@@ -126,6 +126,7 @@ jobs:
             validation/gallery/native-menu-capture.csv
             validation/gallery/native-menu-*.png
             validation/gallery/gallery-hover-*.png
+            validation/gallery/gallery-sitka-project.png
             validation/gallery/instrumentation-output.txt
             validation/gallery/logcat.txt
           retention-days: 14
