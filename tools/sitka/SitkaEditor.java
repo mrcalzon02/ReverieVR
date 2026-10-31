@@ -7,6 +7,7 @@ import dev.mrcalzon.weather.WeatherModule;
 import dev.mrcalzon.weather.WeatherType;
 import dev.mrcalzon.weather.WeatherView;
 import io.github.mrcalzon02.reverievr.LightingAuthoringPanel;
+import io.github.mrcalzon02.reverievr.EditorToolLauncher;
 import org.beckenburg.editor.EditorPalettePanel;
 import org.beckenburg.editor.EditorProject;
 
@@ -109,6 +110,7 @@ public final class SitkaEditor {
         full.add(split, BorderLayout.CENTER);
         full.add(status, BorderLayout.SOUTH);
         frame.setContentPane(full);
+        EditorToolLauncher.install(frame);
         frame.setSize(1360, 840);
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {

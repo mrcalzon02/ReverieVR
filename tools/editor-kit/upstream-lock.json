@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "repository": "mrcalzon02/The-Beckenburg-Project",
-  "revision": "4637cce0a570c6c4d1b64c655ad610155618046a",
+  "revision": "2a16001ca76d47fdaaed6d927e5c02f81e11ef49",
   "prefix": "tools/editor-kit/upstream/",
   "includes": [
     "src/main/java/org/beckenburg/editor/",
@@ -11,16 +11,16 @@
   ],
   "files": [
     {
+      "path": "lighting-module/src/main/java/dev/mrcalzon/lighting/LightModel.java",
+      "blob": "29893ac1dfa652f723697cd898153617d369f4fb"
+    },
+    {
       "path": "lighting-module/src/main/java/dev/mrcalzon/lighting/LightingFrameProfiler.java",
       "blob": "9549792f410fa944d2ed2cb835dd615e0fee5b0f"
     },
     {
       "path": "lighting-module/src/main/java/dev/mrcalzon/lighting/LightingModule.java",
       "blob": "1328431e99e308ebd4429d8fbd119df24e2e8389"
-    },
-    {
-      "path": "lighting-module/src/main/java/dev/mrcalzon/lighting/LightModel.java",
-      "blob": "29893ac1dfa652f723697cd898153617d369f4fb"
     },
     {
       "path": "src/main/java/dev/mrcalzon/weather/WeatherAudio.java",
@@ -55,20 +55,64 @@
       "blob": "a139c95624d21b10345e18ac24ebb717d47976f3"
     },
     {
+      "path": "src/main/java/org/beckenburg/editor/EditorAnimationClip.java",
+      "blob": "52bf18475f4f79e0901c6e7a5ea9f4a9ea110e86"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorAnimationLab.java",
+      "blob": "2d5f3d826d36d40101506d0e93ff0f1841a03098"
+    },
+    {
       "path": "src/main/java/org/beckenburg/editor/EditorAssets.java",
       "blob": "da55f3fdf919db3c1a18095e3e3fb10677d5ae83"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorAuthoringReference.java",
+      "blob": "6e329b9b0ec198db088d8685cb559cf34b793dc4"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorBillboardLab.java",
+      "blob": "3cf76928cf0cb2b4ee8752649a8090e673243b8c"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorBillboardProfile.java",
+      "blob": "eb9965b78304fc08f6c39c5bf8387c73de0b42db"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorCampaignFlow.java",
+      "blob": "e6b99f726b030ca34a4df4dad26d228e6d34cdd6"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorCampaignLab.java",
+      "blob": "84a0226b2c763d9369fb1c364b716b40dc367dc9"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorGlbWriter.java",
+      "blob": "c887e1b2cff75d08c647ee25e0f55dae9d27fe1f"
     },
     {
       "path": "src/main/java/org/beckenburg/editor/EditorHistory.java",
       "blob": "530d60866f808479db7a15387e08ba371fdb8edf"
     },
     {
+      "path": "src/main/java/org/beckenburg/editor/EditorMeshPipeline.java",
+      "blob": "4ad541753b5b2bcb84dc6c3718cf0b9ec1e8fe04"
+    },
+    {
       "path": "src/main/java/org/beckenburg/editor/EditorPalettePanel.java",
-      "blob": "236a50ee6f4d77ea000778914dde3a415f73e860"
+      "blob": "cfcd36d356c0581b44ce84345fe83bbad55eff0c"
     },
     {
       "path": "src/main/java/org/beckenburg/editor/EditorProject.java",
       "blob": "5dbbe951e9678918e22074f2b4c103b8875e0b8f"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorSoundLab.java",
+      "blob": "757880a7fc1fb64c67be2bbe4a11937f756f9cb2"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/EditorSoundProfile.java",
+      "blob": "dc5dc1445e559d8434f0e2ec98068df00a489403"
     },
     {
       "path": "src/main/java/org/beckenburg/editor/EditorTool.java",
@@ -93,6 +137,26 @@
     {
       "path": "src/main/java/org/beckenburg/editor/RuntimeSceneDiagnostics.java",
       "blob": "3bd584f8ac4944437743abf0194fa1e5c5c7165a"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/ai/NpcAiTelemetry.java",
+      "blob": "fe449915290c16e8892dfc0c5f01c1bdd8277bdf"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/ai/NpcAiTelemetryReport.java",
+      "blob": "3f126cb15bd09925d3ed4298743d6f954a27ece2"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/ai/NpcDecisionWorkbench.java",
+      "blob": "b8fb5bfb8093aa93a37a87b649cc573107c7426c"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/ai/NpcRuleBook.java",
+      "blob": "6f75d952591a4f4b123db12f1537a830c1ed77c3"
+    },
+    {
+      "path": "src/main/java/org/beckenburg/editor/ai/NpcRuleExport.java",
+      "blob": "f5412417487059ff0f4805ee9c71843c5f750691"
     },
     {
       "path": "water-module/src/main/java/dev/mrcalzon/water/GridBed.java",

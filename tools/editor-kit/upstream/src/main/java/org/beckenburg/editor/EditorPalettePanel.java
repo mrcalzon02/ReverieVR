@@ -11,7 +11,7 @@ public final class EditorPalettePanel extends JPanel {
     private final JTextField filter=new JTextField(12);
     private final DefaultListModel<EditorProject.Asset> items=new DefaultListModel<>();
     private final JList<EditorProject.Asset> list=new JList<>(items);
-    private final List<EditorProject.Asset> assets;
+    private List<EditorProject.Asset> assets;
     public EditorPalettePanel(EditorProject<?> project,Consumer<EditorProject.Asset> select){
         super(new BorderLayout(3,3));
         assets=List.copyOf(project.assets());
@@ -39,6 +39,19 @@ public final class EditorPalettePanel extends JPanel {
         });
         refresh();
     }
+    /** Refresh the actual game/project catalog after an import, preserving filtering. */
+    public void reload(EditorProject<?> project){
+        assets=List.copyOf(project.assets());
+        String previous=(String)category.getSelectedItem();
+        category.removeAllItems();
+        category.addItem("All");
+        assets.stream().map(EditorProject.Asset::category).distinct().sorted()
+            .forEach(category::addItem);
+        category.setSelectedItem(previous!=null&&
+            assets.stream().anyMatch(asset->asset.category().equals(previous))?previous:"All");
+        refresh();
+    }
+
     private void refresh(){
         String q=filter.getText().strip().toLowerCase(java.util.Locale.ROOT);
         String group=(String)category.getSelectedItem();

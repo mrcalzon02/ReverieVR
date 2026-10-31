@@ -9,10 +9,10 @@ OUT="$ROOT/build/sitka/editor-classes"
 command -v javac >/dev/null || { echo "JDK 17+ required" >&2; exit 2; }
 mkdir -p "$OUT"
 javac --release 17 -encoding UTF-8 -d "$OUT" \
-  "$VENDOR"/src/main/java/org/beckenburg/editor/*.java \
+  "$VENDOR"/src/main/java/org/beckenburg/editor/*.java "$VENDOR"/src/main/java/org/beckenburg/editor/ai/*.java \
   "$VENDOR"/water-module/src/main/java/dev/mrcalzon/water/*.java \
   "$VENDOR"/src/main/java/dev/mrcalzon/weather/*.java \
  "$VENDOR"/lighting-module/src/main/java/dev/mrcalzon/lighting/*.java \
- "$ROOT"/tools/desktop/LightingAuthoringPanel.java \
+ "$ROOT"/tools/desktop/LightingAuthoringPanel.java "$ROOT"/tools/desktop/EditorToolLauncher.java \
   "$ROOT"/tools/sitka/SitkaEditor.java
 exec java -cp "$OUT" SitkaEditor "$WORKSPACE"

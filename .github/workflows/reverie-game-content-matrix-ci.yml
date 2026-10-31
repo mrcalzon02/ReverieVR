@@ -44,6 +44,9 @@ on:
       - 'app/src/test/native/sitka_terrain_mesh_test.cpp'
       - 'app/src/test/native/sitka_terrain_egl_test.cpp'
       - 'scripts/sitka/verify-ndk-terrain.sh'
+      - 'tools/editor-kit/**'
+      - 'tools/desktop/**'
+      - 'tools/sitka/**'
       - 'scripts/verify-omega-front-playability.sh'
       - 'scripts/modules/verify-omega-front-cc0.py'
       - 'app/src/main/assets/native/omega-front/rpg_cc0/**'
@@ -171,6 +174,13 @@ jobs:
               "${RUNNER_TEMP}/${test_name}-${compiler}"
             done
           done
+      - name: Validate Beckenburg portable editor suite and exact upstream source behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tools/editor-kit/test-ported-tools.sh
+          bash tools/desktop/test.sh
+          bash tools/sitka/test-editor.sh
       - name: Test independent game content builds, namespaces and pack integrity
         run: python3 -m unittest discover -s scripts/modules -p 'test_all_game_content_packages.py' -v
       - name: Verify native game-owned asset resolver and forbidden cross-game paths

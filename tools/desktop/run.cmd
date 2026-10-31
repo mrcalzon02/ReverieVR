@@ -14,9 +14,11 @@ set "SOURCES=%OUT%\editor-sources.txt"
  echo "%ROOT%\tools\desktop\SceneDocument.java"
  echo "%ROOT%\tools\desktop\ReverieSceneProject.java"
  echo "%ROOT%\tools\desktop\LightingAuthoringPanel.java"
+ echo "%ROOT%\tools\desktop\EditorToolLauncher.java"
  echo "%ROOT%\tools\desktop\ReverieDesktop.java"
 )
 for %%F in ("%ROOT%\tools\editor-kit\upstream\src\main\java\org\beckenburg\editor\*.java") do >>"%SOURCES%" echo "%%~fF"
+for %%F in ("%ROOT%\tools\editor-kit\upstream\src\main\java\org\beckenburg\editor\ai\*.java") do >>"%SOURCES%" echo "%%~fF"
 for %%F in ("%ROOT%\tools\editor-kit\upstream\lighting-module\src\main\java\dev\mrcalzon\lighting\*.java") do >>"%SOURCES%" echo "%%~fF"
 javac --release 17 -encoding UTF-8 -d "%OUT%" @"%SOURCES%"
 if errorlevel 1 exit /b 1

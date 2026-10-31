@@ -58,6 +58,7 @@ public final class ReverieDesktop {
     }
     private void configureWindow(){
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        EditorToolLauncher.install(frame);
         frame.addWindowListener(new WindowAdapter(){@Override public void windowClosing(WindowEvent e){if(confirmDiscard())frame.dispose();}});
         JPanel upper=new JPanel(new FlowLayout(FlowLayout.LEFT,8,6));
         upper.add(new JLabel("Project")); upper.add(project);

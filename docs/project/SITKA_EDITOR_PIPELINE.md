@@ -177,3 +177,9 @@ The existing content-matrix also source-links ARMv7 and ARM64 via NDK.
 These are new tests, NOT a passing-CI claim until an exact-commit run is
 observed. The synthetic square is test-only. Galaxy S9 FPS, licensed
 geography, editor display, fishing gameplay and game admission remain open.
+
+## Beckenburg portable authoring suite refresh — 2026-10-30
+
+Sitka's desktop environment editor now opens the shared **PSX authoring** menu with real upstream animation clips, WAV sound derivatives, bitmap billboard bakes, campaign flow authoring, OBJ/STL mesh reduction and GLB export, and the PSX reference viewer. Each is implemented through the pinned Java 17 editor source at `tools/editor-kit/upstream/` and a ReverieVR-specific `EditorToolLauncher` adapter, not a new parallel editor. The shared lighting/water/weather modules remain exactly the upstream implementations already imported.
+
+Source revision and individual SHA locks: `tools/editor-kit/upstream-lock.json`, upstream `2a16001ca76d47fdaaed6d927e5c02f81e11ef49`. The seven source regression fixtures live in `tools/editor-kit/upstream-tests/` and compile headlessly. Neither these tools nor their output files are bound yet to Sitka's Android native fishing, weather audio, lighting shaders, or animation playback; new artifacts must be reviewed and staged through a future validated runtime contract. No synthetic geographic data or licensed game media were added.

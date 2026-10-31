@@ -131,3 +131,23 @@ file. Passing Java compilation is not headset/graphics acceptance.
 ### Lighting verification notes
 
 `tools/desktop/LightingAuthoringPanelTest.java` checks the real shared light beam and falloff math, performance preset visibility invariants, bounded frame profiler and the authoring panel’s atomic file save/reload/invalid-input rejection. Both the desktop Java 17 test scripts and the Sitka test scripts compile the actual imported lighting module and its shared Swing authoring panel. These are source/compiler checks, not Android lighting acceptance. The existing Test Chamber point-light shader is still separate until a native `LightModel` parity adapter is implemented and tested.
+
+## Latest portable editor suite sync — 2026-10-30
+
+**Upstream:** `mrcalzon02/The-Beckenburg-Project@2a16001ca76d47fdaaed6d927e5c02f81e11ef49` (`main` at intake).
+ReverieVR now vendors **52 verbatim portable Java 17 sources** under `tools/editor-kit/upstream/`, pinned by individual Git blob hashes in `tools/editor-kit/upstream-lock.json`.
+The refresh changed/added 17 files, including the revised palette; 35 previous source files were byte-identical. No upstream deletions were found.
+
+The desktop workbench and the separate Sitka editor expose a shared **PSX authoring** menu:
+- **Animation clips:** real keyframe/root-motion authoring, stepped/linear sampling, timing, preview and versioned save/load. No native game actor currently consumes clips.
+- **Sound conversion:** local WAV PCM import and bounded mono 11,025/22,050-Hz 8/16-bit derivative export. It is not spatial sound emitter placement or an in-game mixer.
+- **Billboard art:** source-preserving sprite/PNG conversion, palette/dither/size choices and compressed PNG output; no runtime billboards are automatically staged.
+- **Campaign flow:** actual state/flag/dependency authoring and versioned save/load, without connecting to native mission state.
+- **Mesh pipeline:** standalone OBJ/STL import, adjustable part-aware triangle reduction, warnings and explicit GLB export, not an automatic runtime asset installation.
+- **PSX reference:** upstream offline authoring guide with optional links to the upstream wiki.
+
+Five new `org.beckenburg.editor.ai` files are also imported as **game-agnostic, source-only AI rule inspection, decision replay and bounded aggregate telemetry**, but no ghost AI or Sitka NPC behaviors are wired to ReverieVR. The three previously imported lighting classes and existing water/weather classes remain unchanged; this refresh is not a new lighting renderer, spatial audio system or animation runtime.
+
+Seven **unmodified upstream functional test programs** are copied into `tools/editor-kit/upstream-tests/` and executed by `bash tools/editor-kit/test-ported-tools.sh` with offline lock integrity checking. The workbench and Sitka Java builds compile the new source and menu adapters. The existing game-content workflow runs these objective source/behavior checks; GUI display and real headset parity still require direct runtime acceptance.
+
+**Boundaries:** this is desktop Java 17 authoring infrastructure, not packaged into the Galaxy S9 APK. Existing `.rvscene`, water, weather and lighting files are not auto-migrated. Exporting a WAV, GLB or animation does not imply the native Android/desktop engines consume it, and the editor viewport is not the live GLES2 renderer. Nothing from Castle maps, Beckenburg audio recordings, gameplay network logic or ghost assets was copied into Sitka. Actual Sitka terrain, lighting occlusion, authored spatial sound emitters, character animation clips, collision and runtime staging remain integration tasks.
