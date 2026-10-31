@@ -81,6 +81,23 @@ public final class DesktopHubTest {
        DesktopReversi.ORIGIN_Y+3*DesktopReversi.CELL+4),"mouse move plays Reversi");
    require(reversi.reversi.count(DesktopReversi.BLACK)+reversi.reversi.count(DesktopReversi.WHITE)==6,
        "computer responds in actual arcade lifecycle");
+   // Exercise the actual arcade keyboard routing, not just the isolated rules model.
+   DesktopArcade keyboardReversi=new DesktopArcade(DesktopHubState.REVERSI,5);
+   require(keyboardReversi.reversi.cursorX==2 && keyboardReversi.reversi.cursorY==3,
+       "keyboard starts on a legal board cell");
+   keyboardReversi.key(java.awt.event.KeyEvent.VK_LEFT,true);
+   require(keyboardReversi.reversi.cursorX==1 && keyboardReversi.reversi.cursorY==3,
+       "left arrow reaches the game cursor");
+   keyboardReversi.key(java.awt.event.KeyEvent.VK_RIGHT,true);
+   keyboardReversi.key(java.awt.event.KeyEvent.VK_ENTER,true);
+   require(keyboardReversi.reversi.count(DesktopReversi.BLACK)
+       +keyboardReversi.reversi.count(DesktopReversi.WHITE)==6,
+       "Enter places the legal cursor move and computer responds");
+   keyboardReversi.key(java.awt.event.KeyEvent.VK_R,true);
+   require(keyboardReversi.reversi.count(DesktopReversi.BLACK)
+       +keyboardReversi.reversi.count(DesktopReversi.WHITE)==4,
+       "R restarts keyboard-played Reversi");
+   require(!keyboardReversi.click(-1,-1),"outside arcade board click rejected");
    s.back();
    require(s.runningGame.isEmpty()&&s.panel==DesktopHubState.Panel.GAMES,
        "Esc/back returns Reversi to Home gallery");
