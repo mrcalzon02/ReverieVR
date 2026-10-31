@@ -40,6 +40,11 @@ on:
       - 'app/src/main/jni/native/sitka_environment.h'
       - 'app/src/main/jni/native/sitka_fishing_*.h'
       - 'app/src/test/native/sitka_fishing_*_test.cpp'
+      - 'app/src/main/jni/native/reverie_vr_workshop.h'
+      - 'app/src/test/native/reverie_vr_workshop_test.cpp'
+      - 'app/src/main/jni/native/test_chamber_module.cpp'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/NativeGamesGallery.java'
       - 'app/src/main/jni/native/sitka_terrain_module.cpp'
       - 'app/src/test/native/sitka_terrain_mesh_test.cpp'
       - 'app/src/test/native/sitka_terrain_egl_test.cpp'
@@ -173,6 +178,16 @@ jobs:
                 -o "${RUNNER_TEMP}/${test_name}-${compiler}"
               "${RUNNER_TEMP}/${test_name}-${compiler}"
             done
+          done
+      - name: Test headset VR Workshop edit/play and project storage contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
+              app/src/test/native/reverie_vr_workshop_test.cpp \
+              -o "${RUNNER_TEMP}/vr-workshop-${compiler}"
+            "${RUNNER_TEMP}/vr-workshop-${compiler}"
           done
       - name: Validate Beckenburg portable editor suite and exact upstream source behavior
         shell: bash

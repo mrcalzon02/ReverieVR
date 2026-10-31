@@ -180,6 +180,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private static final String INTERNAL_MUSIC_PLAYER_ID = "reverie-music-player";
     private static final String INTERNAL_TEXT_EDITOR_ID = "reverie-text-editor";
     private static final String INTERNAL_CONTROLLER_LAB_ID = "reverie-controller-lab";
+    private static final String INTERNAL_VR_WORKSHOP_ID = "reverie-vr-workshop";
     private static final String INTERNAL_GAME_MODULE_MANAGER_ID = "reverie-game-module-manager";
 
     private static final int HOME_LEFT_PIXEL_LEFT = 24;
@@ -814,6 +815,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             INTERNAL_TEXT_EDITOR_ID, "VR Text Pad / Keyboard"));
         apps.add(new NativeModuleRuntime.Descriptor(
             INTERNAL_CONTROLLER_LAB_ID, "Controller Lab / Bindings"));
+        apps.add(0,new NativeModuleRuntime.Descriptor(
+            INTERNAL_VR_WORKSHOP_ID,"VR Workshop / Editor"));
         // Keep each module in exactly one shelf: native apps/projects
         // never re-list packaged classics.
         nativeApps = Collections.unmodifiableList(apps);
@@ -5857,6 +5860,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     return;
                 }
 
+                if(module!=null&&INTERNAL_VR_WORKSHOP_ID.equals(module.id)){
+                    // System-tools entry reuses the existing trusted Test Chamber
+                    // native module; no second native identity or executable loader.
+                    NativeModuleRuntime.Descriptor workshop=
+                        findNativeModule("procedural-test-chamber");
+                    if(workshop!=null)launchNativeGame(workshop);
+                    else {
+                        noteNativeModuleFailure("procedural-test-chamber");
+                        host.onUiActionRejected();
+                    }
+                    return;
+                }
                 if(module!=null&&INTERNAL_GAME_MODULE_MANAGER_ID.equals(module.id)){
                     host.onGameModuleManagerRequested();
                     hoveredButton=-1;

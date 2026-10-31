@@ -108,3 +108,20 @@ Use the repository's **INTENT -> EXECUTE -> OBSERVE -> VERIFY -> CLAIM** contrac
 8. Project packaging/signing/provenance for local user-shared content.
 
 **Governance:** This is the suite's design/specification document, not a competing execution backlog or acceptance ledger. Implementation work must be decomposed into the authoritative `docs/project/BACKLOG.md` and its incremental development plan before scheduling individual engineering slices.
+
+## CS-01 VR Workshop first runnable slice — 2026-10-30
+
+Project editing is now integrated into the packaged native Test Chamber
+as a Home **TOOLS** entry reusing the same trusted module. C++17
+`reverie_vr_workshop.h` provides native scene actions and three protected
+project save slots; `test_chamber_module.cpp` supplies actual GLES2
+scene rendering and the Lato tool menu. The desktop Java editor remains
+the more expansive Beckenburg-based companion and does not ship as an
+Android Java 17/Swing dependency. Scope, interaction and limitations are
+recorded in `docs/native/SCENE_BRIDGE.md`.
+
+Next: validate handset button/pointer behavior, add collision-assisted
+transforms, a versioned bundle export/import seam, editor-authored
+lighting/audio/animation scene components, and finally a constrained
+interpreted project execution format. Neither arbitrary `.so` imports
+nor desktop file paths are exposed by this initial headset editor.

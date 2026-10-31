@@ -1,5 +1,6 @@
 #include "reverie_native_sdk.h"
 #include "reverie_scene_document.h"
+#include "reverie_vr_workshop.h"
 #include "reverie_native_lato_text.h"
 #include "reverie_native_avatar_geometry.h"
 #include "reverie_native_avatar_wardrobe.h"
@@ -53,12 +54,100 @@ struct ModuleState {
     std::vector<reverie::authoring::Piece> pieces;
     std::vector<GLint> piece_first;
     std::vector<GLsizei> piece_count;
+    reverie::authoring::VrWorkshop workshop;
+    std::vector<float> room_avatar_prefix;
+    bool workshop_hud_dirty = true;
 
     std::vector<uint8_t> rgba;
     // Optional editor-authored primitives, identical across eye renders.
     std::vector<float> editor_mesh;
     GLsizei editor_vertex_count = 0;
 };
+
+
+int ReadWorkshop(void* user,size_t slot,std::string& output){
+    auto* state=static_cast<ModuleState*>(user);
+    if(slot>=reverie::authoring::kVrProjectSlots)return -1;
+    const std::string filename="vr-workshop-project-"+std::to_string(slot)+".rvscene";
+    uint32_t size=0u;
+    const int32_t probe=state->host->read_save(filename.c_str(),nullptr,0u,&size);
+    if(probe==REVERIE_NATIVE_SAVE_NOT_FOUND)return 0;
+    if(probe!=REVERIE_NATIVE_SAVE_OK||size==0u||
+       size>reverie::authoring::kVrSlotMaxBytes)return -1;
+    std::vector<char> bytes(size);
+    uint32_t actual=0u;
+    if(state->host->read_save(filename.c_str(),bytes.data(),size,&actual)
+       !=REVERIE_NATIVE_SAVE_OK||actual!=size)return -1;
+    output.assign(bytes.begin(),bytes.end());
+    return 1;
+}
+bool WriteWorkshop(void* user,size_t slot,const std::string& data){
+    auto* state=static_cast<ModuleState*>(user);
+    if(slot>=reverie::authoring::kVrProjectSlots||
+       data.size()>reverie::authoring::kVrSlotMaxBytes)return false;
+    const std::string filename="vr-workshop-project-"+std::to_string(slot)+".rvscene";
+    return state->host->write_save(filename.c_str(),data.data(),
+        static_cast<uint32_t>(data.size()))==REVERIE_NATIVE_SAVE_OK;
+}
+reverie::authoring::VrStore WorkshopStore(ModuleState* state){
+    return {state,ReadWorkshop,WriteWorkshop};
+}
+void BakeWorkshopGeometry(ModuleState* state){
+    state->pieces=state->workshop.scene.pieces;
+    state->editor_mesh.clear();
+    state->piece_first.clear();
+    state->piece_count.clear();
+    for(const auto& piece:state->pieces){
+        reverie::authoring::Scene one{state->workshop.scene.environment,{piece}};
+        const std::vector<float> mesh=reverie::authoring::PrimitiveTriangles(one);
+        state->piece_first.push_back(static_cast<GLint>(state->editor_mesh.size()/5u));
+        state->piece_count.push_back(static_cast<GLsizei>(mesh.size()/5u));
+        state->editor_mesh.insert(state->editor_mesh.end(),mesh.begin(),mesh.end());
+    }
+    state->editor_vertex_count=static_cast<GLsizei>(state->editor_mesh.size()/5u);
+    state->workshop.mesh_dirty=false;
+}
+void UpdateWorkshopHud(ModuleState* state){
+    state->font.Clear();
+    if(!state->workshop.editing){
+        state->font.Text("PROCEDURAL TEST CHAMBER",-.98f,1.30f,.045f,
+            .90f,.97f,.97f,-2.62f);
+        state->font.Text("PRIMARY: NEXT LIGHT / AUDIO",-.97f,-1.24f,.033f,
+            .82f,.94f,.84f,-2.63f);
+        state->font.Text("SECONDARY: VR WORKSHOP",-.97f,-1.45f,.033f,
+            .94f,.85f,.53f,-2.63f);
+        return;
+    }
+    static const char* actions[10]={
+        "ADD BOX","ADD CYLINDER","MOVE X/Z","ROTATE","SCALE",
+        "DELETE","UNDO","SAVE","PLAY TEST","NEXT PROJECT"};
+    state->font.Text("VR WORKSHOP", -3.2f,1.43f,.052f,.93f,.96f,.99f,-2.62f);
+    for(int i=0;i<10;++i) {
+        const bool active=(i==2&&state->workshop.tool==reverie::authoring::VrTool::Move)
+            ||(i==3&&state->workshop.tool==reverie::authoring::VrTool::Rotate)
+            ||(i==4&&state->workshop.tool==reverie::authoring::VrTool::Scale);
+        state->font.Text(actions[i],-3.16f,1.09f-i*.235f,.038f,
+            active?1.f:.77f,active?.79f:.9f,active?.37f:1.f,-2.62f);
+    }
+    const std::string project="PROJECT "+std::to_string(state->workshop.slot+1)+
+        " / "+std::to_string(reverie::authoring::kVrProjectSlots);
+    state->font.Text(project.c_str(),-.69f,1.32f,.039f,.82f,.94f,.99f,-2.62f);
+    const std::string object=state->workshop.scene.pieces.empty()?
+        "NO OBJECT SELECTED" : ("SELECTED: "+
+        state->workshop.scene.pieces[state->workshop.selected].id);
+    state->font.Text(object.c_str(),-.69f,1.08f,.035f,.92f,.89f,.64f,-2.62f);
+    const std::string count="OBJECTS "+std::to_string(state->workshop.scene.pieces.size())+
+        " / "+std::to_string(reverie::authoring::kVrEditMaxPieces);
+    state->font.Text(count.c_str(),-.69f,.85f,.034f,.8f,.93f,.89f,-2.62f);
+    state->font.Text("POINT AND CLICK TOOL",-.69f,.53f,.029f,.85f,.94f,.98f,-2.62f);
+    state->font.Text("DRAG OBJECT TO ADJUST",-.69f,.32f,.029f,.85f,.94f,.98f,-2.62f);
+    state->font.Text("SECONDARY: SAVE + TEST",-.69f,-.88f,.028f,.95f,.88f,.53f,-2.62f);
+    if(state->workshop.dirty)
+        state->font.Text("UNSAVED EDITS",-.69f,-1.09f,.034f,1.f,.71f,.36f,-2.62f);
+    if(!state->workshop.last_error.empty())
+        state->font.Fit(state->workshop.last_error.c_str(),-.69f,-1.31f,3.8f,
+            .033f,1.f,.57f,.45f,-2.62f);
+}
 
 void Log(
     const ModuleState *state,
@@ -435,6 +524,7 @@ int32_t InitializeGl(ModuleState *state) {
         }
     }
     // Authored geometry follows room/avatar/wardrobe in this single VBO.
+    state->room_avatar_prefix=room_and_avatar;
     room_and_avatar.insert(room_and_avatar.end(),
         state->editor_mesh.begin(),state->editor_mesh.end());
     glBufferData(GL_ARRAY_BUFFER,
@@ -507,11 +597,7 @@ int32_t InitializeGl(ModuleState *state) {
         DestroyGl(state);
         return finish(0);
     }
-    state->font.Clear();
-    state->font.Fit("PROCEDURAL TEST CHAMBER",0.f,1.31f,5.15f,.044f,
-        .90f,.97f,.97f,-2.62f);
-    state->font.Fit("PRESS TO CYCLE LIGHTS / MODELS / SOUNDS",
-        0.f,-1.33f,5.0f,.028f,.86f,.96f,.85f,-2.63f);
+    UpdateWorkshopHud(state);
     Log(state,REVERIE_NATIVE_LOG_INFO,
         "Test chamber showcase GL, real Lato glyphs and procedural materials ready.");
     return finish(1);
@@ -520,9 +606,8 @@ int32_t InitializeGl(ModuleState *state) {
 void *Create(
     const ReverieNativeHostV1 *host
 ) {
-    if (!ReverieNativeHostSupportsLogV1(
-            host
-        )) {
+    if (!ReverieNativeHostSupportsLogV1(host) ||
+        !ReverieNativeHostSupportsSaveV1(host)) {
         return nullptr;
     }
 
@@ -543,6 +628,7 @@ void *Create(
     if(ReverieNativeReadAvatarV1(host,&selected))
         state->avatar=selected;
 
+    reverie::authoring::Scene seed{"white_room",{}};
     // One exact allowlisted bundled asset. Unavailable keeps original room;
     // present invalid content fails loudly instead of rendering fake props.
     if(host->struct_size>=REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE
@@ -564,25 +650,7 @@ void *Create(
             try {
                 const auto authored=reverie::authoring::ParseScene(
                     scene_bytes.data(),scene_bytes.size());
-                state->pieces=authored.pieces;
-                state->editor_mesh.clear();
-                state->piece_first.clear();
-                state->piece_count.clear();
-                for(const auto &piece:state->pieces){
-                    reverie::authoring::Scene single;
-                    single.environment=authored.environment;
-                    single.pieces.push_back(piece);
-                    std::vector<float> mesh=
-                        reverie::authoring::PrimitiveTriangles(single);
-                    state->piece_first.push_back(
-                        static_cast<GLint>(state->editor_mesh.size()/5u));
-                    state->piece_count.push_back(
-                        static_cast<GLsizei>(mesh.size()/5u));
-                    state->editor_mesh.insert(state->editor_mesh.end(),
-                        mesh.begin(),mesh.end());
-                }
-                state->editor_vertex_count=static_cast<GLsizei>(
-                    state->editor_mesh.size()/5u);
+                seed=authored;
                 Log(state,REVERIE_NATIVE_LOG_INFO,
                     "Verified editor-authored primitives loaded for both eyes.");
             } catch(const std::exception &error) {
@@ -598,7 +666,13 @@ void *Create(
         }
     }
 
+    if(!state->workshop.Open(seed,WorkshopStore(state))){
+        Log(state,REVERIE_NATIVE_LOG_ERROR,
+            "VR workshop project save unreadable or exceeds safe limits.");
+        delete state;return nullptr;
+    }
     try {
+        BakeWorkshopGeometry(state);
         GenerateProceduralTexture(state);
     } catch (...) {
         Log(
@@ -636,11 +710,9 @@ void Destroy(void *instance) {
         AbandonGl(state);
     }
 
-    Log(
-        state,
-        REVERIE_NATIVE_LOG_INFO,
-        "Module destroyed."
-    );
+    if(state->workshop.dirty && !state->workshop.Save(WorkshopStore(state)))
+        Log(state,REVERIE_NATIVE_LOG_ERROR,"Workshop save failed on exit.");
+    Log(state,REVERIE_NATIVE_LOG_INFO,"Module destroyed.");
     delete state;
 }
 
@@ -681,6 +753,8 @@ void Resume(void *instance) {
 void Pause(void *instance) {
     ModuleState *state =
         static_cast<ModuleState *>(instance);
+    if(state&&state->workshop.dirty&&!state->workshop.Save(WorkshopStore(state)))
+        Log(state,REVERIE_NATIVE_LOG_ERROR,"Workshop save failed on pause.");
     Log(
         state,
         REVERIE_NATIVE_LOG_INFO,
@@ -704,6 +778,27 @@ void Update(
     const float delta=std::max(0.f,std::min(input->delta_seconds,.05f));
     state->clock=std::fmod(state->clock+delta,3600.f);
     const bool primary=input->primary_down!=0u;
+    const bool wasEditing=state->workshop.editing;
+    reverie::authoring::VrRay ray;
+    if(ReverieNativeInputHasPointerV1(input)&&
+       input->pointer_kind!=REVERIE_NATIVE_POINTER_NONE){
+        ray={input->pointer_origin[0],input->pointer_origin[1],
+             input->pointer_origin[2],input->pointer_direction[0],
+             input->pointer_direction[1],input->pointer_direction[2],true};
+    }
+    const auto event=state->workshop.Step(primary,input->secondary_down!=0u,
+                                         ray,WorkshopStore(state));
+    if(event!=reverie::authoring::VrEvent::None ||
+       wasEditing!=state->workshop.editing)
+        UpdateWorkshopHud(state);
+    if(event==reverie::authoring::VrEvent::Rejected)
+        ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+    else if(event!=reverie::authoring::VrEvent::None)
+        ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+    if(wasEditing||state->workshop.editing){
+        state->primary_was_down=primary;
+        return; // Never advance the demo while editing or on a play transition.
+    }
     if(primary && !state->primary_was_down) {
         state->demo_mode=(state->demo_mode+1)%6;
         state->alternate_tint=(state->demo_mode%2)!=0;
@@ -795,6 +890,23 @@ int32_t RenderEye(
         GL_ARRAY_BUFFER,
         state->vbo
     );
+    if(state->workshop.mesh_dirty) {
+        // One bounded VBO rebuild for a genuine edit, never one per eye.
+        // Persistent room/figure prefix remains byte-identical.
+        try {
+            BakeWorkshopGeometry(state);
+            std::vector<float> complete=state->room_avatar_prefix;
+            complete.insert(complete.end(),state->editor_mesh.begin(),
+                            state->editor_mesh.end());
+            glBufferData(GL_ARRAY_BUFFER,
+                static_cast<GLsizeiptr>(complete.size()*sizeof(float)),
+                complete.data(),GL_DYNAMIC_DRAW);
+        }catch(const std::exception& error){
+            Log(state,REVERIE_NATIVE_LOG_ERROR,error.what());
+            ReverieNativeGlStateRestoreV1(&gl_state);
+            return 0;
+        }
+    }
 
     glEnableVertexAttribArray(
         static_cast<GLuint>(
@@ -946,6 +1058,9 @@ int32_t RenderEye(
             } else if(id.find("stone")!=std::string::npos ||
                       id.find("door")!=std::string::npos) {
                 r=.54f;g=.59f;b=.65f;
+            }
+            if(state->workshop.editing&&i==state->workshop.selected){
+                r=1.f;g=.84f;b=.27f;emissive=.12f;
             }
             glUniform3f(state->tint_location,r,g,b);
             glUniform1f(state->emissive_location,emissive);

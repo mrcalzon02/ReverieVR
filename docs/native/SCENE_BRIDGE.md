@@ -22,3 +22,48 @@
 Run `bash scripts/verify-desktop-scene-bridge.sh`. It compiles real repository Java classes and the workbench with JDK 17, runs Java codec tests and writes a fixture, compiles native tests with a C++17 compiler, tests that the exact Java output parses and tessellates natively, rejects bad input, reads the bundled sample, and checks host asset isolation.
 
 Still open: Android NDK compile/link, physically render authoring edits on Galaxy S9, ensure actual GLES2 frame pacing/GL-state preservation, desktop player runtime, and full library/editor integration. Native-module ABI layout is unchanged.
+
+## Integrated headset Workshop — 2026-10-30 implementation slice
+
+The existing `procedural-test-chamber` hosted native module now owns a bounded
+in-headset **VR Workshop** editing mode, accessible from Home's **TOOLS** shelf
+as **VR Workshop / Editor** (and its existing Test Chamber entry). This
+preserves the 15-game identity contract and uses the existing trusted JNI
+host instead of introducing downloaded native execution or Java Swing on
+Android. The `SECONDARY` action toggles editing and live native scene
+preview; the shell retains Quick Menu, recenter, exit and recovery ownership.
+
+The headset editor and desktop authoring share the real `REVSCENE\t1`
+`reverie_scene_document.h` parser/primitive tessellator. The editor is
+limited to 48 primitive boxes/cylinders per project, three isolated
+native host save slots, 16 undo snapshots, live pointer-selected objects,
+gaze/controller ray menu hits, and snapped pointer-drag Move X/Z, Rotate
+and Scale operations. A changed scene is rebuilt in one VBO on edit
+rather than being regenerated in each eye. Real Lato glyphs label the
+tools, selection, project ID and unsaved state. The same scene is
+rendered in both edit and playtest modes; playtest is a visual/runtime
+scene preview, not general user-code execution or a full physics game.
+
+Save and project switching use the existing host-scoped, atomically
+written `read_save`/`write_save` services; malformed existing saves
+refuse to load and never silently overwrite the previous project.
+The first slot seeds from the allowlisted Test Chamber authored scene
+when it has no save; later slots begin empty and can be edited in VR.
+Pausing/exiting retries dirty saves; failed saves retain dirty state
+and block project switches or leaving edit mode.
+
+Input: `SECONDARY` enters Workshop from the chamber and saves/returns to
+preview; click in-world menu entries to add box/cylinder, choose move,
+rotate, scale, delete, undo, save, test and switch project; click an
+existing object to select, then drag with the held primary action.
+The shell locomotion and Quick Menu remain shell-owned; edit transforms
+use the normalized pointer ray, not movement axes.
+
+**Not yet delivered:** running arbitrary downloaded game scripts, full
+Beckenburg desktop Swing UI within the headset, mesh/animation/sound
+import into the on-device scene, generic cross-game asset sharing,
+physics-backed playtest, Sitka terrain/world editing, multi-layer
+prefabs, full game manager, export bundles, or a completed WYSIWYG
+scene/renderer parity across other games. These require explicit
+validated native adapters and content provenance. Actual S9
+stereo/controller/thermal acceptance remains open until tested on device.

@@ -174,7 +174,7 @@ final class NativeGamesGallery {
             case "omega-front":
                 return new String[]{"Campaign strategy, regional travel","and tactical battles with unit","orders, supplies and diplomacy."};
             case "procedural-test-chamber":
-                return new String[]{"Explore the experimental VR room,","procedural materials and scene","tools used by the native engine."};
+                return new String[]{"Build, move and save primitive scenes","inside VR; use SECONDARY to toggle","edit and live playtest modes."};
             case "classic-chess":
                 return new String[]{"Play chess against the computer","with legal-move highlights and an","interactive opening reference."};
             case "classic-go":
@@ -337,7 +337,7 @@ final class NativeGamesGallery {
             case "ministry-lantern-desk":
                 return new String[]{"Ministry","Lantern Desk"};
             case "procedural-test-chamber":
-                return new String[]{"Procedural","Test Chamber"};
+                return new String[]{"VR Workshop","Test Chamber"};
             default:return new String[]{title(d)};
         }
     }
@@ -367,7 +367,7 @@ final class NativeGamesGallery {
             case "iron-sight-forward-detachment":return "Iron Sight: Forward Detachment";
             case "ministry-lantern-desk":return "Ministry: Lantern Desk";
             case "omega-front":return "Omega Front";
-            case "procedural-test-chamber":return "Procedural Test Chamber";
+            case "procedural-test-chamber":return "VR Workshop / Test Chamber";
             default:return d.displayName.replace("[DEV]","").trim();
         }
     }
