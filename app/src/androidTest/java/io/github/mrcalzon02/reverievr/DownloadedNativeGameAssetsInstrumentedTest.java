@@ -290,11 +290,18 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             omegaTap(runtime,bus,0.f,.42f); // BEGIN CAMPAIGN
             long sector=omegaFrame(runtime,null);
             assertNotEquals("Begin campaign did not enter strategy view",dossier,sector);
+            // A new campaign starts on the continent overview. Opening the
+            // Hearthfall region is navigation only: it must not silently
+            // march to S011 or deploy a battle on the same controller click.
+            omegaTap(runtime,bus,0.f,0.f);
+            long region=omegaFrame(runtime,null);
+            assertNotEquals("Continent selection did not open the sector map",
+                sector,region);
             // Sector 11 (x=2,y=2) is the first real deployment mission.
-            long travelSound=omegaTap(runtime,bus,.1975f,-.1775f);
+            omegaTap(runtime,bus,.1975f,-.1775f);
             long traveled=omegaFrame(runtime,null);
             assertNotEquals("Strategic travel did not update real 2D pixels",
-                sector,traveled);
+                region,traveled);
             long deploySound=omegaTap(runtime,bus,.1975f,-.1775f);
             long tactical=omegaFrame(runtime,null);
             assertNotEquals("Deploy did not enter visible tactical battle",
