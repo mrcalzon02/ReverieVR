@@ -1,0 +1,26 @@
+name: Desktop Home Java 17 functional
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/desktop/player/**'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/HomeEnvironment.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java'
+      - '.github/workflows/desktop-home-java17.yml'
+  workflow_dispatch:
+
+jobs:
+  desktop-home-java17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@v4
+      - name: Install Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile entire desktop player and test Home, desk keyboard and Reversi
+        run: bash tools/desktop/player/test.sh
