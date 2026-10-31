@@ -39,7 +39,7 @@ public final class NpcAiTelemetryTest {
                     "CSV export atomically persists the aggregate only");
             }finally{
                 try(var files=java.nio.file.Files.list(temp)){
-                    files.forEach(x->{try{java.nio.file.Files.deleteIfExists(x);}catch(Exception ignored){}});
+                    files.forEach(x->{try{java.nio.file.Files.deleteIfExists(x);}catch(Exception ignoredCleanup){}});
                 }
                 java.nio.file.Files.deleteIfExists(temp);
             }
