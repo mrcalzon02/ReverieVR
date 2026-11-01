@@ -14,6 +14,7 @@ namespace {
 struct State {
     const ReverieNativeHostV1* host = nullptr;
     reverie::sitka::TerrainMesh terrain;
+    reverie::sitka::Lighting lighting;
     reverie::sitka::TerrainGl gl;
     std::vector<reverie::sitka::Water> waters;
     reverie::sitka::Weather weather;
@@ -90,6 +91,8 @@ void* Create(const ReverieNativeHostV1* host) {
         state->host = host;
         try {
             state->terrain=reverie::sitka::ParseTerrainMesh(bytes.data(),bytes.size());
+            state->lighting=reverie::sitka::ParseLighting(ReadText(
+                host,"sitka/lighting/sitka.properties",4096u));
             state->waters=reverie::sitka::ParseWater(ReadText(
                 host,"sitka/water/sitka.water",2000000u));
             state->weather=reverie::sitka::ParseWeather(ReadText(
@@ -129,7 +132,7 @@ int32_t OnGlCreated(void* instance) {
     State* state = static_cast<State*>(instance);
     if (!state) return 0;
     std::string error;
-    if(!state->gl.Create(state->terrain,&error)){
+    if(!state->gl.Create(state->terrain,state->lighting,&error)){
         Log(state->host,error.c_str());return 0;
     }
     if(state->water_gl.Create(state->waters,state->weather,&error))return 1;

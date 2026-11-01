@@ -183,3 +183,34 @@ geography, editor display, fishing gameplay and game admission remain open.
 Sitka's desktop environment editor now opens the shared **PSX authoring** menu with real upstream animation clips, WAV sound derivatives, bitmap billboard bakes, campaign flow authoring, OBJ/STL mesh reduction and GLB export, and the PSX reference viewer. Each is implemented through the pinned Java 17 editor source at `tools/editor-kit/upstream/` and a ReverieVR-specific `EditorToolLauncher` adapter, not a new parallel editor. The shared lighting/water/weather modules remain exactly the upstream implementations already imported.
 
 Source revision and individual SHA locks: `tools/editor-kit/upstream-lock.json`, upstream `2a16001ca76d47fdaaed6d927e5c02f81e11ef49`. The seven source regression fixtures live in `tools/editor-kit/upstream-tests/` and compile headlessly. Neither these tools nor their output files are bound yet to Sitka's Android native fishing, weather audio, lighting shaders, or animation playback; new artifacts must be reviewed and staged through a future validated runtime contract. No synthetic geographic data or licensed game media were added.
+
+## Authored ambient intensity → source-only GLES2 terrain — 2026-10-31
+
+The genuine desktop `LightingAuthoringPanel` writes `lighting/sitka.properties`
+using Java `Properties.store` (`schema=1`, `preset`, `beam`, `ambient`,
+`source`, `reach`, `diffusion`, `flicker`, `cache`, `cell`,
+`outdoor`, `changed`, `reuse`). The game-private
+`sitka_lighting.h` validates the **complete version-1 profile**, including
+Beckenburg's exact numeric ranges and canonical named presets. Missing,
+duplicate, out-of-range, noninteger, unknown-beam, or malformed settings are
+rejected. The source-only native module now requires the authored file at
+`sitka/lighting/sitka.properties` through its bounded host asset reader;
+it does not invent a runtime default when the required asset is missing.
+
+**Only the authored `ambient` percentage is applied**: 50–150 maps to a
+0.5–1.5 fragment-shader multiplier on the existing vertex-color terrain.
+It is uniform across both eyes, clamped to valid display color, and has no
+per-eye upload or simulation work. The other validated settings remain
+**unimplemented in native terrain lighting**: there are no authored
+directional sources, beam cones, attenuation/falloff, occlusion, shadows,
+flicker, or cache scheduling. The desktop Java lighting preview remains
+distinct from the Android renderer.
+
+`sitka_lighting_test.cpp` is the deterministic CPU parser/negative-input
+contract. The existing real Mesa `sitka_terrain_egl_test.cpp` now renders
+100% and 50% ambient profiles and compares actual stereo framebuffer
+pixels, host GL-state restoration, static buffer uploads and a second
+unshared context. These are **synthetic test triangles**, not licensed Sitka
+geography. CI status must be checked at the exact commit before claiming
+the tests pass. Sitka remains unregistered and unplayable; no Galaxy S9,
+geographic, real source-light or fishing-loop acceptance is implied.

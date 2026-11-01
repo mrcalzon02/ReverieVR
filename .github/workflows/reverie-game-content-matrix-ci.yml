@@ -38,6 +38,8 @@ on:
       - 'app/src/main/jni/native/sitka_terrain_*.h'
       - 'app/src/main/jni/native/sitka_water_gl.h'
       - 'app/src/main/jni/native/sitka_environment.h'
+      - 'app/src/main/jni/native/sitka_lighting.h'
+      - 'app/src/test/native/sitka_lighting_test.cpp'
       - 'app/src/main/jni/native/sitka_fishing_*.h'
       - 'app/src/test/native/sitka_fishing_*_test.cpp'
       - 'app/src/main/jni/native/reverie_vr_workshop.h'
@@ -166,6 +168,17 @@ jobs:
             app/src/test/native/sitka_terrain_mesh_test.cpp \
             -o "${RUNNER_TEMP}/sitka-terrain-mesh-test"
           "${RUNNER_TEMP}/sitka-terrain-mesh-test"
+      - name: Validate real Java-authored Sitka lighting schema and ambient bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/sitka_lighting_test.cpp \
+              -o "${RUNNER_TEMP}/sitka-lighting-${compiler}"
+            "${RUNNER_TEMP}/sitka-lighting-${compiler}"
+          done
       - name: Test Sitka fishing input, saves and surveyed-site cast gate
         shell: bash
         run: |

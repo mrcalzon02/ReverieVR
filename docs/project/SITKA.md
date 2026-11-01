@@ -155,3 +155,6 @@ This record specifies the Sitka game and documents its **source-integrated autho
 - This does NOT establish a certified marine bathymetry or shoreline mask. Survey provenance, dry-ground collision, and fish-site validity need geographic acceptance before any actual Play entry. No synthetic sites or map tiles are packaged.
 - The source-only terrain module now executes fishing updates once per frame, provides host-owned activation/failure feedback, and saves the journal on meaningful changes. It remains absent from Android.mk and the playable gallery. Visual rod, line, fish, journal UI, audio, and purchases are not integrated.
 - Local strict GCC/Clang C++17 and Clang sanitizer tests passed for both new CPU components. The existing content CI has objective functionality tests for them. Exact-commit CI and physical Galaxy S9 evidence remain separate.
+
+
+**2026-10-31 source-only lighting bridge:** The editor's real `lighting/sitka.properties` schema now has a bounded native reader. Only validated authored **ambient intensity** modulates synthetic GLES2 terrain vertex colors; dynamic light beams, falloff and shadows are not implemented. See [terrain pipeline](SITKA_EDITOR_PIPELINE.md). This does not admit Sitka to the playable module catalog or establish geographic/S9 acceptance.

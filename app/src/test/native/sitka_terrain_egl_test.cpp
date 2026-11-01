@@ -127,6 +127,12 @@ static std::array<GLubyte,4> Pixel(int x, int y) {
     NoGlError("pixel readback");
     return pixel;
 }
+static std::string LightingProfile(int ambient) {
+    return "schema=1\npreset=CUSTOM\nbeam=OMNIDIRECTIONAL\n"
+           "ambient="+std::to_string(ambient)+"\nsource=100\nreach=100\n"
+           "diffusion=100\nflicker=100\ncache=100\ncell=4\n"
+           "outdoor=true\nchanged=true\nreuse=true\n";
+}
 static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
     GLuint buffers[2] = {};
     GLuint textures[2] = {};
@@ -157,7 +163,8 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
                      { 0.0f, 0.7f,0.0f,220,25,25}};
     mesh.indices = {0,1,2};
     std::string error;
-    Check(terrain.Create(mesh, &error), "real-driver terrain Create failed");
+    Check(terrain.Create(mesh, reverie::sitka::ParseLighting(LightingProfile(100)), &error),
+          "real-driver terrain Create failed");
     Check(terrain.batch_count() == 1u && terrain.upload_count() == 1u,
           "static VBO/EBO batch not uploaded once");
     Same(before, Capture());
@@ -177,6 +184,31 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
     Check(right[0] > 120 && right[1] < 80 && right[2] < 80, "right eye did not rasterize terrain");
     Check(background[0] < 20 && background[1] < 20 && background[2] < 20,
           "unexpected background pixel");
+    // The same real Java-authoring schema now controls actual terrain pixels.
+    // Recreate GPU state only when the authored profile changes, never per eye.
+    terrain.Release();
+    const Snapshot before_dim=Capture();
+    Check(terrain.Create(mesh,reverie::sitka::ParseLighting(LightingProfile(50)),&error),
+          "real-driver authored dim lighting Create failed");
+    Same(before_dim,Capture());
+    Check(terrain.upload_count()==1u,"dim lighting did not upload one static batch");
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot before_eye=Capture();
+        const auto eye=Eye(index);
+        Check(terrain.RenderEye(&eye),"authored dim lighting stereo draw failed");
+        Same(before_eye,Capture());
+        Check(terrain.upload_count()==1u,"per-eye authored lighting reuploaded terrain");
+    }
+    glFinish();
+    const auto dim_left=Pixel(32,32),dim_right=Pixel(96,32);
+    Check(dim_left[0]>80&&dim_left[0]<140&&dim_left[0]+50<left[0],
+          "authored 50% ambient did not dim real GLES terrain pixels");
+    Check(dim_right[0]>80&&dim_right[0]<140&&dim_right[0]+50<right[0],
+          "right-eye authored ambient not applied");
+    Check(std::abs(int(dim_left[0])-int(dim_right[0]))<=2,
+          "authored lighting differs between stereo eyes");
     // Test-only synthetic water, not approved geographic data.
     const auto waters=reverie::sitka::ParseWater(
         "version=1\nlevel=sitka\ncount=1\n"

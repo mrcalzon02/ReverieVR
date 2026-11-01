@@ -4,12 +4,14 @@
 // Game-private GLES2 terrain proof: immutable indexed VBO/EBO per context,
 // shared buffers for both eyes, no uint32 index extension or per-eye upload.
 #include "sitka_terrain_mesh.h"
+#include "sitka_lighting.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_state.h"
 #include "reverie_native_gl_utils.h"
 #include "reverie_native_math.h"
 #include <GLES2/gl2.h>
 #include <cstddef>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -25,7 +27,13 @@ public:
     size_t upload_count() const { return upload_count_; }
 
     // Must run on the active shell GL context. Release before context loss.
-    bool Create(const TerrainMesh& mesh, std::string* error = nullptr) {
+    bool Create(const TerrainMesh& mesh, const Lighting& lighting,
+                std::string* error = nullptr) {
+        if(!std::isfinite(lighting.ambient_scale) ||
+           lighting.ambient_scale < .5f || lighting.ambient_scale > 1.5f) {
+            if(error)*error = "Invalid authored Sitka ambient intensity";
+            return false;
+        }
         Release();
         ReverieNativeGlStateV1 state = {};
         ReverieNativeGlStateCaptureV1(&state);
@@ -44,7 +52,8 @@ public:
         static const char *fs =
             "precision mediump float;\n"
             "varying vec3 v_Color;\n"
-            "void main(){ gl_FragColor=vec4(v_Color,1.0); }\n";
+            "uniform float u_AmbientScale;\n"
+            "void main(){ gl_FragColor=vec4(min(v_Color*u_AmbientScale,vec3(1.0)),1.0); }\n";
         const ReverieNativeGlAttributeBindingV1 attributes[] = {
             {0u,"a_Position"}, {1u,"a_Color"}
         };
@@ -57,7 +66,8 @@ public:
             return false;
         }
         matrix_ = glGetUniformLocation(program_, "u_ViewProjection");
-        if (matrix_ < 0) {
+        ambient_ = glGetUniformLocation(program_, "u_AmbientScale");
+        if (matrix_ < 0 || ambient_ < 0) {
             if (error) *error = "Sitka terrain matrix uniform unavailable";
             Release(); restore(); return false;
         }
@@ -94,6 +104,7 @@ public:
             if (error) *error = e.what();
             Release(); restore(); return false;
         }
+        ambient_scale_ = lighting.ambient_scale;
         restore();
         return ready();
     }
@@ -113,6 +124,7 @@ public:
         glDisable(GL_CULL_FACE); // Exporter land triangles have no winding guarantee yet.
         glUseProgram(program_);
         glUniformMatrix4fv(matrix_, 1, GL_FALSE, vp);
+        glUniform1f(ambient_, ambient_scale_);
         glEnableVertexAttribArray(0u);
         glEnableVertexAttribArray(1u);
         for (const auto& gpu : batches_) {
@@ -140,11 +152,15 @@ public:
         if (program_) glDeleteProgram(program_);
         program_ = 0u;
         matrix_ = -1;
+        ambient_ = -1;
+        ambient_scale_ = 1.0f;
     }
 private:
     struct GpuBatch { GLuint vertex = 0u, element = 0u; GLsizei count = 0; };
     GLuint program_ = 0u;
     GLint matrix_ = -1;
+    GLint ambient_ = -1;
+    float ambient_scale_ = 1.0f;
     std::vector<GpuBatch> batches_;
     size_t upload_count_ = 0u;
 };
