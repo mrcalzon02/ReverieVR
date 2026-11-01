@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -271,7 +273,9 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         assertTrue(base.mkdirs());
         File home=new File(base,"native-modules");
         assertTrue(home.mkdirs());
+        File saved=new File(home,"omega-front/frontier.v1");
         File screenshot=new File(app.getFilesDir(),"omega-front-ci-tactical.png");
+        File restoredScreenshot=new File(app.getFilesDir(),"omega-front-ci-restored.png");
         VirtualInputBus bus=new VirtualInputBus();
         try(Pbuffer egl=new Pbuffer();
             NativeModuleRuntime runtime=new NativeModuleRuntime(
@@ -290,6 +294,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             omegaTap(runtime,bus,0.f,.42f); // BEGIN CAMPAIGN
             long sector=omegaFrame(runtime,null);
             assertNotEquals("Begin campaign did not enter strategy view",dossier,sector);
+            assertTrue("New campaign did not write its initial checkpoint",saved.isFile());
+            byte[] initialCheckpoint=Files.readAllBytes(saved.toPath());
             // A new campaign starts on the continent overview. Opening the
             // Hearthfall region is navigation only: it must not silently
             // march to S011 or deploy a battle on the same controller click.
@@ -322,9 +328,13 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             assertNotEquals("Tactical input/step produced no visible change",
                 tactical,moved);
             runtime.pauseForLifecycle();
-            File saved=new File(home,"omega-front/frontier.v1");
             assertTrue("No actual native campaign checkpoint",saved.isFile());
             assertEquals("Native campaign checkpoint size",2048L,saved.length());
+            byte[] savedCheckpoint=Files.readAllBytes(saved.toPath());
+            assertFalse("Tactical movement/order never reached the actual save",
+                Arrays.equals(initialCheckpoint,savedCheckpoint));
+            Files.write(new File(app.getFilesDir(),"omega-front-ci-checkpoint-before.bin").toPath(),
+                savedCheckpoint);
             runtime.releaseSurface();
             runtime.stop();
             assertTrue("Cannot relaunch saved native Omega Front",
@@ -336,7 +346,14 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 moved,reloadTitle);
             omegaTap(runtime,bus,0.f,.42f); // CAMPAIGN
             omegaTap(runtime,bus,0.f,.42f); // CONTINUE CAMPAIGN
-            long restored=omegaFrame(runtime,null);
+            byte[] resumedCheckpoint=Files.readAllBytes(saved.toPath());
+            Files.write(new File(app.getFilesDir(),"omega-front-ci-checkpoint-after.bin").toPath(),
+                resumedCheckpoint);
+            assertArrayEquals("Continuing campaign unexpectedly rewrote the checkpoint",
+                savedCheckpoint,resumedCheckpoint);
+            long restored=omegaFrame(runtime,restoredScreenshot);
+            Log.i(TAG,"Omega checkpoint comparison movedCRC="+moved+
+                " restoredCRC="+restored+" saveBytes="+savedCheckpoint.length);
             assertEquals("Continuing native checkpoint changed saved battle view",
                 moved,restored);
             runtime.releaseSurface();
