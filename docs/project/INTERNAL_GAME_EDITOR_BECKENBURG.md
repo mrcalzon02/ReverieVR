@@ -45,6 +45,26 @@ area-named `build/desktop-workspace/scenes/sitka/<area>.rvscene` files. This
 allows multiple local scene partitions instead of pretending 512 boxes equal
 the entire city: **512 primitives per REVSCENE file** remain the bounded legacy
 format. Each file is an authoring blockout, not assembled georeferenced terrain.
+**Named-region environment links (2026-11-01):** The desktop workbench now
+records a strict `scenes/sitka/<region>.rvlinks` sidecar on scene save when
+the existing shared `sitka-environment/water/sitka.water`,
+`weather/sitka.properties` and `lighting/sitka.properties` documents
+are all present and valid. The sidecar references those *same* genuine
+Beckenburg-backed authoring documents; it does not duplicate their contents
+or alter `REVSCENE\t1`. Opening a linked region validates its three
+references and their source formats **before** changing the live scene;
+missing, malformed or workspace-escaping links fail visibly rather than
+resetting the region to defaults. Saving with only a partial environment
+fails instead of silently dropping references. Pre-existing scenes with
+no environment documents remain explicitly unlinked and continue to load.
+Multiple named regions intentionally share the same environment profile
+until separate geographic per-region environment authority is implemented.
+The Java 17 headless `SitkaRegionLinksTest` exercises actual named-region
+edit/save/reopen, real water/weather/lighting readback and broken-reference
+rejection via `bash tools/desktop/test.sh`. This is **desktop authoring
+persistence only**; it does not bind the Android Sitka runtime, bake a
+geographic tile, or create playable fishing.
+
 Choosing **Water and weather editor** for Sitka starts the existing real
 `tools/sitka/SitkaEditor.java` (a desktop GUI) from inside the manager. That
 editor now compiles *offline using the imported water and weather modules*
