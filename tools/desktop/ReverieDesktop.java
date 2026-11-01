@@ -184,6 +184,8 @@ public final class ReverieDesktop {
     private void load(String id){
         try{
             Path target=file(id);
+            // Reject broken linked environment before changing the live region.
+            if("sitka".equals(id)) SitkaRegionLinks.validateOnOpen(target);
             SceneDocument found=SceneDocument.load(target);
             scene=found;activeId=id;nextId=1;meshes.clear();dirty=false;
             editorProject=new ReverieSceneProject(
@@ -228,6 +230,8 @@ public final class ReverieDesktop {
     private void save(){try{
             editorProject.save();dirty=false;
             status.setText("Saved "+editorProject.documentPath()+
+                ("sitka".equals(activeId) && SitkaRegionLinks.linked(editorProject.documentPath())
+                    ? " with validated water/weather/lighting links" : "")+
                 " (authoring scene, not yet deployed to its game)");
         }catch(IOException|IllegalArgumentException ex){error("Scene save failed",ex);}}
     private void publishTestChamber(){
