@@ -280,7 +280,9 @@ private:
         // one logical combat tile (never blur/interpolate source art).
         std::array<uint8_t,64u*64u*4u> cell{};
         // Center the visible art consistently at the same logical cell.
-        if(slot>=kCc0First) {
+        // Only the 64 CC0 tiles are 16x16. Appended continental map art
+        // uses the authored 64x64 format and must not be rejected here.
+        if(slot>=kCc0First && slot<kMapFirst) {
             if(image.width!=16u || image.height!=16u)return false;
             for(unsigned y=0;y<64u;++y)
                 for(unsigned x=0;x<64u;++x)

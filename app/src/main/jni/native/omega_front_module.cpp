@@ -30,6 +30,7 @@ struct State {
     const ReverieNativeHostV1 *host=nullptr;
     game::Session session{414u};
     game::Menu menu;
+    game::PointerResumeGate pointer_resume;
     bool has_campaign=false,block_primary=false,block_secondary=false,pointer_primary_down=false;
     bool secondary_consumed=false;
     float secondary_hold=0;
@@ -1050,6 +1051,7 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             // Do not let the same physical click both enter the game and
             // order a move. This remains true if a menu is closed by Back.
             if(s->menu.screen==game::MenuScreen::Playing){
+                s->pointer_resume.Arm(pointing,pointer_x,pointer_y);
                 s->block_primary=true;
                 s->block_secondary=true;
                 s->session.ResetEdges();
@@ -1058,6 +1060,12 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             ReverieNativeRequestFeedbackV1(s->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         }
         return;
+    }
+    // Closing a menu must not turn its last hover/release into a tactical
+    // cursor move. The saved cursor survives until a new intentional aim.
+    if(!s->pointer_resume.Allow(pointing,pointer_x,pointer_y,
+                                click && !s->block_primary)){
+        action.pointer_x=action.pointer_y=-1;
     }
     if(pointing && game::Menu::MenuShortcut(pointer_x,pointer_y) && click){
         s->menu.OpenPause(action.primary,action.secondary);

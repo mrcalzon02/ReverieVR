@@ -12,6 +12,24 @@ namespace reverie { namespace omega {
 enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, FieldOrders, TacticalOrders, Playing };
 enum class MenuCommand : uint8_t { None, Resume, StartNew, SetFieldAction, SetCommandMode, CommitTurn };
 
+// A menu's release/idle ray must not overwrite the restored tactical cursor.
+// A fresh click, deliberate pointer movement, or pointer loss re-arms aiming.
+class PointerResumeGate {
+public:
+    void Arm(bool pointing,float x,float y){
+        active_=pointing;anchor_x_=x;anchor_y_=y;
+    }
+    bool Allow(bool pointing,float x,float y,bool fresh_click){
+        if(!active_)return true;
+        if(!pointing||fresh_click||std::fabs(x-anchor_x_)>.025f||
+           std::fabs(y-anchor_y_)>.025f){active_=false;return true;}
+        return false;
+    }
+private:
+    bool active_=false;
+    float anchor_x_=0,anchor_y_=0;
+};
+
 class Menu {
 public:
     MenuScreen screen=MenuScreen::Title;

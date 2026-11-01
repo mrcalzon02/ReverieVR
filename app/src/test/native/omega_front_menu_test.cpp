@@ -5,6 +5,7 @@
 using reverie::omega::Menu;
 using reverie::omega::MenuCommand;
 using reverie::omega::MenuScreen;
+using reverie::omega::PointerResumeGate;
 
 static MenuCommand Tap(Menu &menu,bool saved,int button=0){
     const MenuCommand result=menu.Input(.016f,0,true,false,true,
@@ -88,6 +89,21 @@ int main(){
     assert(axis.screen==MenuScreen::Controls);
     Back(axis,false);
     assert(axis.screen==MenuScreen::Title);
+    // Resume with a held menu ray: release and idle updates must preserve
+    // the restored cursor, while a fresh click or aim movement is accepted.
+    PointerResumeGate gate;
+    assert(gate.Allow(true,0.f,.42f,false));
+    gate.Arm(true,0.f,.42f);
+    assert(!gate.Allow(true,0.f,.42f,false));
+    assert(!gate.Allow(true,.01f,.43f,false));
+    assert(gate.Allow(true,.04f,.42f,false));
+    assert(gate.Allow(true,0.f,.42f,false));
+    gate.Arm(true,0.f,.42f);
+    assert(gate.Allow(true,0.f,.42f,true));
+    gate.Arm(true,0.f,.42f);
+    assert(gate.Allow(false,0.f,0.f,false));
+    gate.Arm(false,0.f,0.f);
+    assert(gate.Allow(true,0.f,.42f,false));
     std::cout << "Omega Front full menu-chain navigation OK\n";
     return 0;
 }
