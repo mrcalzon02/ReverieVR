@@ -93,9 +93,9 @@ final class SitkaRegionLinks {
     }
 
     private static String expected(Path scene) {
-        return "SITKA-REGION-LINKS\\t1\\nregion\\t" + region(scene)
-            + "\\nwater\\t" + WATER + "\\nweather\\t" + WEATHER
-            + "\\nlighting\\t" + LIGHTING + "\\n";
+        return "SITKA-REGION-LINKS\t1\nregion\t" + region(scene)
+            + "\nwater\t" + WATER + "\nweather\t" + WEATHER
+            + "\nlighting\t" + LIGHTING + "\n";
     }
 
     static boolean linked(Path scene) { return Files.exists(sidecar(scene)); }
