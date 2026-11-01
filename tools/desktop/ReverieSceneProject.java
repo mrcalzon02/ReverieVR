@@ -67,5 +67,12 @@ final class ReverieSceneProject implements EditorProject<String> {
             throw new IllegalArgumentException("Cannot restore invalid editor snapshot",error);
         }
     }
-    @Override public void save() throws IOException{\n        // Validate the actual REVSCENE before creating its linked sidecar.\n        if("sitka".equals(gameId)){\n            current.get().encode();\n            SitkaRegionLinks.bindOnSave(scenePath);\n        }\n        current.get().save(scenePath);\n    }
+    @Override public void save() throws IOException{
+        // Validate the actual REVSCENE before creating its linked sidecar.
+        if("sitka".equals(gameId)){
+            current.get().encode();
+            SitkaRegionLinks.bindOnSave(scenePath);
+        }
+        current.get().save(scenePath);
+    }
 }
