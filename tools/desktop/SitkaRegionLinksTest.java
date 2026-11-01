@@ -37,7 +37,7 @@ public final class SitkaRegionLinksTest {
         water.document().save(waterFile);
         Path weatherFile = root.resolve("sitka-environment/weather/sitka.properties");
         Files.createDirectories(weatherFile.getParent());
-        String weather = "version=1\\ncondition=RAIN\\nhour=14.5\\nwind_mps=3.0\\nwind_heading_deg=85.0\\n";
+        String weather = "version=1\ncondition=RAIN\nhour=14.5\nwind_mps=3.0\nwind_heading_deg=85.0\n";
         Files.writeString(weatherFile, weather);
         Path lightFile = root.resolve("sitka-environment/lighting/sitka.properties");
         new LightingAuthoringPanel(lightFile).save();
@@ -46,8 +46,8 @@ public final class SitkaRegionLinksTest {
             throw new AssertionError("Existing environment was not linked to region");
         SitkaRegionLinks.validateOnOpen(harbor);
         String originalLink = Files.readString(SitkaRegionLinks.sidecar(harbor));
-        if (!originalLink.contains("region\\tharbor\\n")
-            || !originalLink.contains("water\\tsitka-environment/water/sitka.water"))
+        if (!originalLink.contains("region\tharbor\n")
+            || !originalLink.contains("water\tsitka-environment/water/sitka.water"))
             throw new AssertionError("Wrong saved region or profile references");
 
         // Simulate close, reopen, edit, save and reopen the REAL scene document.
