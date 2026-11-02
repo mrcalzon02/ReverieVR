@@ -64,11 +64,13 @@ final class SitkaRegionLinks {
             + "\nlighting\t" + prefix + LIGHTING + "\n";
     }
 
-    static boolean linked(Path scene) { return Files.exists(sidecar(scene)); }
+    static boolean linked(Path scene) {
+        return Files.exists(sidecar(scene), LinkOption.NOFOLLOW_LINKS);
+    }
 
     private static int linkVersion(Path scene) throws IOException {
         Path link = sidecar(scene);
-        if (!Files.exists(link)) return 0;
+        if (!Files.exists(link, LinkOption.NOFOLLOW_LINKS)) return 0;
         if (!Files.isRegularFile(link) || Files.isSymbolicLink(link)
             || Files.size(link) > 1024)
             throw new IOException("Invalid Sitka region profile links: " + link);
