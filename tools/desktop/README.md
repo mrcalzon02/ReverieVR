@@ -33,6 +33,10 @@ All builds and documents are inside `build/`, which is already excluded from ver
 - Import repository-local **Wavefront OBJ** files into the scene and preview their triangles with the repository's bounded `ObjMeshReader`. External files must be placed in the source checkout first; path traversal, symlink escapes and oversized meshes are rejected. Importing is not a license grant and doesn't automatically redistribute the mesh.
 - Per-project scene files are atomically saved as `build/desktop-workspace/scenes/<module-id>.rvscene` by default. A strict, bounded `REVSCENE\t1` text codec gives deterministic serialization and rejects malformed/object-count/path/transform input. Changes are not silently applied to APK content.
 
+## Sitka region selection and environment authoring
+
+The **Sitka editing region** field is a pending name until **Open / create region** succeeds. **Water and weather editor** always opens the environment of the currently loaded region, not an uncommitted name in that field. **Save scene** likewise uses the loaded scene's bound path. A failed linked-profile validation leaves the previously loaded region active. Existing V1 links keep their shared environment; V2 region files remain independent. Use the lighting dock's **Save lighting** action for lighting edits; scene saving does not silently overwrite that separate document.
+
 ## What it cannot do yet
 
 The preview draws original OBJ triangles using a lightweight Java2D wireframe viewer, **not** the Android GLES renderer or the actual native game visuals. Saved scene authoring data are **staging assets**, not loaded by the Android native modules yet; playable desktop games, emulator/DOS runtime, Home visual parity, packaged installers, OpenXR and SteamVR are later milestones. No misleading Play buttons or false availability indicators are exposed.

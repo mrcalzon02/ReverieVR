@@ -88,6 +88,20 @@ public final class SitkaRegionLinksTest {
         if (harborEnv.equals(bayEnv) || !Files.isRegularFile(bayEnv.resolve("water/sitka.water")))
             throw new AssertionError("Regions still share environment files");
 
+        // Actual desktop Water and weather button delegates to this resolver.
+        // Editing a pending region name must not retarget the loaded project.
+        if (!ReverieDesktop.openRegionEnvironment("sitka", project).equals(harborEnv)
+            || !ReverieDesktop.openRegionEnvironment("sitka", bayProject).equals(bayEnv))
+            throw new AssertionError("Desktop environment launch ignored its open region");
+        Path pendingRegion = ReverieDesktop.sceneFile(root, "sitka", "crescent-bay");
+        if (!pendingRegion.equals(bay)
+            || !ReverieDesktop.openRegionEnvironment("sitka", project).equals(harborEnv))
+            throw new AssertionError("Typing a pending region redirected the open harbor editor");
+        try {
+            ReverieDesktop.openRegionEnvironment("home", project);
+            throw new AssertionError("Non-Sitka project could launch a Sitka environment");
+        } catch (IOException expected) { }
+
         // Author deliberately different real documents in both regions.
         WaterEditorModel harborWater;
         try (var input = Files.newInputStream(harborEnv.resolve("water/sitka.water"))) {
@@ -142,6 +156,10 @@ public final class SitkaRegionLinksTest {
         SitkaRegionLinks.validateOnOpen(legacy);
         if (!SitkaRegionLinks.editorEnvironment(legacy).equals(shared))
             throw new AssertionError("Legacy V1 editor no longer resolves its shared profiles");
+        ReverieSceneProject legacyProject = new ReverieSceneProject(
+            "sitka", legacy, () -> new SceneDocument(), ignored -> {});
+        if (!ReverieDesktop.openRegionEnvironment("sitka", legacyProject).equals(shared))
+            throw new AssertionError("Desktop editor launch lost V1 shared-profile compatibility");
         SitkaRegionLinks.bindOnSave(legacy);
         if (!legacyLinks.equals(Files.readString(SitkaRegionLinks.sidecar(legacy))))
             throw new AssertionError("Legacy link was silently migrated");
@@ -156,6 +174,10 @@ public final class SitkaRegionLinksTest {
         weather(harborEnv.resolve("weather/sitka.properties"), "FOG", 6.5);
         weather(bayEnv.resolve("weather/sitka.properties"), "SNOW", Double.NaN);
         rejected(bay);
+        try {
+            ReverieDesktop.openRegionEnvironment("sitka", bayProject);
+            throw new AssertionError("Desktop launched an invalid linked weather profile");
+        } catch (IOException expected) { }
         weather(bayEnv.resolve("weather/sitka.properties"), "SNOW", 19.0);
         String validLink = Files.readString(SitkaRegionLinks.sidecar(harbor));
         Files.writeString(SitkaRegionLinks.sidecar(harbor),
@@ -177,6 +199,6 @@ public final class SitkaRegionLinksTest {
         if (Files.exists(incomplete) || SitkaRegionLinks.linked(incomplete))
             throw new AssertionError("Failed save mutated an incomplete scene");
 
-        System.out.println("Sitka independent regions: PASS two-region real water/weather/lighting edit-save-reopen, V1 readback, missing/corrupt/unsafe/partial refusal");
+        System.out.println("Sitka independent regions: PASS desktop open-region environment selection, two-region real water/weather/lighting edit-save-reopen, V1 readback, missing/corrupt/unsafe/partial refusal");
     }
 }
