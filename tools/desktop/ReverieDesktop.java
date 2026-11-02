@@ -143,9 +143,9 @@ public final class ReverieDesktop {
         return workspace.resolve("scenes").resolve(id+".rvscene");
     }
     private Path file(String id){return sceneFile(workspace,id,sitkaRegion.getText().trim());}
-    private Path lightingFile(String id){
+    private Path lightingFile(String id) throws IOException {
         if("sitka".equals(id))
-            return workspace.resolve("sitka-environment/lighting/sitka.properties");
+            return SitkaRegionLinks.editorEnvironment(file(id)).resolve("lighting/sitka.properties");
         return workspace.resolve("lighting").resolve(id+".properties");
     }
     private void openSitkaRegion(){
@@ -160,8 +160,10 @@ public final class ReverieDesktop {
         String win=System.getProperty("os.name","").toLowerCase(Locale.ROOT);
         Path launcher=repo.resolve("tools/sitka/")
             .resolve(win.contains("win")?"launch-editor.cmd":"launch-editor.sh");
-        Path folder=workspace.resolve("sitka-environment");
         try{
+            // V2 regions launch the genuine editor in their own profile folder;
+            // historical V1 sidecars keep their explicit shared workspace.
+            Path folder=SitkaRegionLinks.editorEnvironment(file("sitka"));
             Files.createDirectories(folder);
             ProcessBuilder start=win.contains("win")
                 ? new ProcessBuilder("cmd","/c",launcher.toString(),folder.toString())
