@@ -58,10 +58,10 @@ final class SitkaRegionLinks {
 
     private static String links(Path scene, int version) {
         String prefix = version == 1 ? LEGACY_ROOT + "/" : REGION_ROOT + region(scene) + "/";
-        return "SITKA-REGION-LINKS\\t" + version + "\\nregion\\t" + region(scene)
-            + "\\nwater\\t" + prefix + WATER
-            + "\\nweather\\t" + prefix + WEATHER
-            + "\\nlighting\\t" + prefix + LIGHTING + "\\n";
+        return "SITKA-REGION-LINKS\t" + version + "\nregion\t" + region(scene)
+            + "\nwater\t" + prefix + WATER
+            + "\nweather\t" + prefix + WEATHER
+            + "\nlighting\t" + prefix + LIGHTING + "\n";
     }
 
     static boolean linked(Path scene) { return Files.exists(sidecar(scene)); }
