@@ -45,33 +45,44 @@ area-named `build/desktop-workspace/scenes/sitka/<area>.rvscene` files. This
 allows multiple local scene partitions instead of pretending 512 boxes equal
 the entire city: **512 primitives per REVSCENE file** remain the bounded legacy
 format. Each file is an authoring blockout, not assembled georeferenced terrain.
-**Named-region environment links (2026-11-01):** The desktop workbench now
-records a strict `scenes/sitka/<region>.rvlinks` sidecar on scene save when
-the existing shared `sitka-environment/water/sitka.water`,
-`weather/sitka.properties` and `lighting/sitka.properties` documents
-are all present and valid. The sidecar references those *same* genuine
-Beckenburg-backed authoring documents; it does not duplicate their contents
-or alter `REVSCENE\t1`. Opening a linked region validates its three
-references and their source formats **before** changing the live scene;
-missing, malformed or workspace-escaping links fail visibly rather than
-resetting the region to defaults. Saving with only a partial environment
-fails instead of silently dropping references. Pre-existing scenes with
-no environment documents remain explicitly unlinked and continue to load.
-Multiple named regions intentionally share the same environment profile
-until separate geographic per-region environment authority is implemented.
-The Java 17 headless `SitkaRegionLinksTest` exercises actual named-region
-edit/save/reopen, real water/weather/lighting readback and broken-reference
-rejection via `bash tools/desktop/test.sh`. This is **desktop authoring
-persistence only**; it does not bind the Android Sitka runtime, bake a
-geographic tile, or create playable fishing.
+**Named-region environment links (2026-11-02):** New Sitka region
+saves now bind a strict `SITKA-REGION-LINKS\\t2` sidecar to three **independent**
+profiles under `sitka-environment/regions/<region>/{water,weather,lighting}/`.
+The real pinned water, weather and lighting document formats are unchanged.
+If the historical shared profiles exist and the new region has no profiles,
+the first scene save validates and **copies** them into that region; subsequent
+edits cannot change another region or the shared originals. If a region
+already has some profiles, save fails until all three are valid; there is no
+fallback that could erase partial work. Opening linked scenes validates
+the exact bounded sidecar and all three real profiles before changing the
+live scene. Unsafe links, missing files, invalid weather/lighting or
+symlinked profile paths fail closed. The scene remains `REVSCENE\\t1`.
+
+Historical `SITKA-REGION-LINKS\\t1` sidecars remain readable **without
+silent migration** and continue explicitly referencing the original shared
+`sitka-environment/{water,weather,lighting}/sitka.*` documents. Their
+water/weather and lighting editor controls continue using that legacy shared
+location. New V2/unlinked regions launch the actual Sitka water/weather editor
+and the workbench lighting dock in their **region-owned** folders. For an
+existing V1 scene, making its profiles independent still requires a deliberate
+migration (not supplied by this slice); saving that legacy scene does not
+rewrite its sidecar. Pre-existing scenes without any profiles remain unlinked.
+`SitkaRegionLinksTest` exercises two differently authored water/weather/
+lighting profiles across real scene edit/save/reopen, verifies no leakage to
+the shared seed, and checks V1, corrupt, missing and unsafe input rejection.
+These are desktop authoring tests only: there is no native Android environment
+binding, playable Sitka terrain, S9/device proof or automatic geographic
+streaming.
 
 Choosing **Water and weather editor** for Sitka starts the existing real
 `tools/sitka/SitkaEditor.java` (a desktop GUI) from inside the manager. That
 editor now compiles *offline using the imported water and weather modules*
 instead of depending on an adjacent Beckenburg checkout. Windows and Unix
-launchers are supplied. Water/weather documents are authored under
-`build/desktop-workspace/sitka-environment/`, independent of each region's
-REVSCENE until the runtime-world georeferencing and authority bridge exists.
+launchers are supplied. New V2 region water/weather documents are authored under
+`build/desktop-workspace/sitka-environment/regions/<region>/`, while explicit
+legacy V1 regions continue using the shared `sitka-environment/` folder.
+All remain separate from native runtime until georeferencing and authority
+binding are implemented.
 
 Red Ledger's editor profile includes bar/counter and stool *blockout* entries
 using the same validated scene and history. Other native/classic game entries
