@@ -162,9 +162,9 @@ final class SitkaRegionLinks {
     }
 
     private static boolean any(Path root, String prefix) {
-        return Files.exists(root.resolve(prefix + WATER))
-            || Files.exists(root.resolve(prefix + WEATHER))
-            || Files.exists(root.resolve(prefix + LIGHTING));
+        return Files.exists(root.resolve(prefix + WATER), LinkOption.NOFOLLOW_LINKS)
+            || Files.exists(root.resolve(prefix + WEATHER), LinkOption.NOFOLLOW_LINKS)
+            || Files.exists(root.resolve(prefix + LIGHTING), LinkOption.NOFOLLOW_LINKS);
     }
 
     private static void seedFromLegacy(Path root, String prefix) throws IOException {
@@ -182,7 +182,7 @@ final class SitkaRegionLinks {
                 Files.createDirectories(parent);
                 if (!parent.toRealPath().startsWith(root.toRealPath()))
                     throw new IOException("Regional profile escapes workspace");
-                if (Files.exists(destination))
+                if (Files.exists(destination, LinkOption.NOFOLLOW_LINKS))
                     throw new IOException("Regional profile already exists: " + destination);
                 Path pending = Files.createTempFile(parent, ".sitka-profile-", ".tmp");
                 try {
