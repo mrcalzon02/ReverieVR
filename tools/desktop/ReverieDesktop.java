@@ -231,6 +231,11 @@ public final class ReverieDesktop {
     }
     private void save(){try{
             editorProject.save();dirty=false;
+            // A newly seeded V2 region must display the actual inherited
+            // lighting settings, not the pre-seed unsaved default preview.
+            if("sitka".equals(activeId) && lightingPanel!=null
+                && !lightingPanel.dirty() && SitkaRegionLinks.linked(editorProject.documentPath()))
+                lightingPanel.load();
             status.setText("Saved "+editorProject.documentPath()+
                 ("sitka".equals(activeId) && SitkaRegionLinks.linked(editorProject.documentPath())
                     ? " with validated water/weather/lighting links" : "")+
