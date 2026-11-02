@@ -173,9 +173,13 @@ final class SitkaRegionLinks {
             for (String name : List.of(WATER, WEATHER, LIGHTING)) {
                 Path destination = root.resolve(prefix + name);
                 Path parent = destination.getParent();
-                if (Files.isSymbolicLink(parent) || Files.isSymbolicLink(parent.getParent()))
-                    throw new IOException("Unsafe regional profile directory");
+                for (Path item = parent; !item.equals(root); item = item.getParent()) {
+                    if (Files.isSymbolicLink(item))
+                        throw new IOException("Unsafe regional profile directory");
+                }
                 Files.createDirectories(parent);
+                if (!parent.toRealPath().startsWith(root.toRealPath()))
+                    throw new IOException("Regional profile escapes workspace");
                 if (Files.exists(destination))
                     throw new IOException("Regional profile already exists: " + destination);
                 Path pending = Files.createTempFile(parent, ".sitka-profile-", ".tmp");
