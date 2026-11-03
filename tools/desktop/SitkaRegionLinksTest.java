@@ -45,6 +45,13 @@ public final class SitkaRegionLinksTest {
         }
     }
 
+    private static void unchanged(Path[] files, byte[][] originals) throws IOException {
+        for (int i=0; i<files.length; i++) {
+            if (!java.util.Arrays.equals(originals[i], Files.readAllBytes(files[i])))
+                throw new AssertionError("Failed region switch modified " + files[i]);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         System.setProperty("java.awt.headless", "true");
         Path root = Files.createTempDirectory("sitka-independent-regions-");
@@ -145,6 +152,84 @@ public final class SitkaRegionLinksTest {
             || "80".equals(properties(lightFile).getProperty("ambient")))
             throw new AssertionError("Lighting leaked between regions or shared seed");
 
+        // The workbench uses prepareScene before changing its live selection.
+        // Exercise that exact preparation path with two genuinely distinct
+        // authored regions; a failed switch must leave the open harbor editor
+        // and every authoritative profile untouched, not silently repair data.
+        ReverieDesktop.PreparedScene selected=ReverieDesktop.prepareScene(root,"sitka","harbor");
+        Path harborLight=harborEnv.resolve("lighting/sitka.properties");
+        Path bayLight=bayEnv.resolve("lighting/sitka.properties");
+        Path bayWeather=bayEnv.resolve("weather/sitka.properties");
+        if (!selected.path().equals(harbor)
+            || !selected.lighting().documentPath().equals(harborLight))
+            throw new AssertionError("Initial workbench selection is not harbor");
+        Path[] guarded={
+            harbor, harborEnv.resolve("water/sitka.water"),
+            harborEnv.resolve("weather/sitka.properties"), harborLight,
+            bay, bayEnv.resolve("water/sitka.water"), bayWeather, bayLight,
+            waterFile, weatherFile, lightFile
+        };
+        byte[][] original=new byte[guarded.length][];
+        for(int i=0;i<guarded.length;i++) original[i]=Files.readAllBytes(guarded[i]);
+        String validBayLighting=Files.readString(bayLight);
+
+        // A malformed destination lighting profile must fail during actual
+        // lighting-dock construction, before any live region is rebound.
+        Files.writeString(bayLight,"schema=invalid\\npreset=CUSTOM\\n");
+        try {
+            selected=ReverieDesktop.prepareScene(root,"sitka","crescent-bay");
+            throw new AssertionError("Malformed destination lighting opened");
+        } catch (IOException expected) { }
+        Files.writeString(bayLight,validBayLighting);
+        unchanged(guarded,original);
+
+        // A missing destination lighting profile is not an invitation to
+        // substitute the unsaved BALANCED default or to modify harbor.
+        Files.delete(bayLight);
+        try {
+            selected=ReverieDesktop.prepareScene(root,"sitka","crescent-bay");
+            throw new AssertionError("Missing destination lighting opened");
+        } catch (IOException expected) { }
+        Files.writeString(bayLight,validBayLighting);
+        unchanged(guarded,original);
+
+        // The weather parser must reject a non-finite destination value;
+        // the previously opened harbor retains both its dock and scene.
+        weather(bayWeather,"SNOW",Double.NaN);
+        try {
+            selected=ReverieDesktop.prepareScene(root,"sitka","crescent-bay");
+            throw new AssertionError("Malformed destination weather opened");
+        } catch (IOException expected) { }
+        weather(bayWeather,"SNOW",19.0);
+        unchanged(guarded,original);
+        if (!selected.path().equals(harbor)
+            || !selected.lighting().documentPath().equals(harborLight)
+            || !ReverieDesktop.openRegionEnvironment("sitka",project).equals(harborEnv))
+            throw new AssertionError("Failed destination switch rebound harbor authoring");
+        project.save();
+        unchanged(guarded,original);
+
+        // Repair the destination, then complete the same switch, save, and
+        // reopen both real scene documents without cross-region profile writes.
+        selected=ReverieDesktop.prepareScene(root,"sitka","crescent-bay");
+        if (!selected.path().equals(bay)
+            || !selected.lighting().documentPath().equals(bayLight))
+            throw new AssertionError("Repaired destination did not become selectable");
+        second[0].pieces.get(0).x=-9;
+        bayProject.save();
+        if (SceneDocument.load(bay).pieces.get(0).x!=-9
+            || SceneDocument.load(harbor).pieces.get(0).x!=17
+            || waterCount(bayEnv.resolve("water/sitka.water"))!=3
+            || waterCount(harborEnv.resolve("water/sitka.water"))!=2
+            || !"SNOW".equals(properties(bayWeather).getProperty("condition"))
+            || !"FOG".equals(properties(harborEnv.resolve("weather/sitka.properties")).getProperty("condition"))
+            || !"120".equals(properties(bayLight).getProperty("ambient"))
+            || !"80".equals(properties(harborLight).getProperty("ambient")))
+            throw new AssertionError("Successful switch/save/reopen mixed region state");
+        for(int i=1;i<guarded.length;i++)
+            if(i!=4 && !java.util.Arrays.equals(original[i],Files.readAllBytes(guarded[i])))
+                throw new AssertionError("Successful scene save overwrote environment profile: "+guarded[i]);
+
         // V1 sidecars continue to open exactly as written, without silent migration.
         Path legacy = ReverieDesktop.sceneFile(root, "sitka", "legacy-dock");
         String legacyLinks = "SITKA-REGION-LINKS\t1\nregion\tlegacy-dock\n"
@@ -199,6 +284,6 @@ public final class SitkaRegionLinksTest {
         if (Files.exists(incomplete) || SitkaRegionLinks.linked(incomplete))
             throw new AssertionError("Failed save mutated an incomplete scene");
 
-        System.out.println("Sitka independent regions: PASS desktop open-region environment selection, two-region real water/weather/lighting edit-save-reopen, V1 readback, missing/corrupt/unsafe/partial refusal");
+        System.out.println("Sitka independent regions: PASS atomic failed lighting/weather switch, restored successful save/reopen, independent water/weather/lighting, V1, unsafe/partial refusal");
     }
 }
