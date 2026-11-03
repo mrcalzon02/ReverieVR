@@ -51,6 +51,14 @@ public final class SitkaRegionLinksTest {
                 throw new AssertionError("Failed region switch modified " + files[i]);
         }
     }
+    private static void unchangedExcept(Path[] files, byte[][] originals, Path injected)
+            throws IOException {
+        for (int i=0; i<files.length; i++) {
+            if (!files[i].equals(injected)
+                && !java.util.Arrays.equals(originals[i], Files.readAllBytes(files[i])))
+                throw new AssertionError("Rejected region switch modified " + files[i]);
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         System.setProperty("java.awt.headless", "true");
@@ -175,11 +183,15 @@ public final class SitkaRegionLinksTest {
 
         // A malformed destination lighting profile must fail during actual
         // lighting-dock construction, before any live region is rebound.
-        Files.writeString(bayLight,"schema=invalid\\npreset=CUSTOM\\n");
+        String invalidLighting="schema=invalid\npreset=CUSTOM\n";
+        Files.writeString(bayLight,invalidLighting);
         try {
             selected=ReverieDesktop.prepareScene(root,"sitka","crescent-bay");
             throw new AssertionError("Malformed destination lighting opened");
         } catch (IOException expected) { }
+        if (!invalidLighting.equals(Files.readString(bayLight)))
+            throw new AssertionError("Rejected lighting open rewrote invalid destination");
+        unchangedExcept(guarded,original,bayLight);
         Files.writeString(bayLight,validBayLighting);
         unchanged(guarded,original);
 
@@ -190,16 +202,23 @@ public final class SitkaRegionLinksTest {
             selected=ReverieDesktop.prepareScene(root,"sitka","crescent-bay");
             throw new AssertionError("Missing destination lighting opened");
         } catch (IOException expected) { }
+        if (Files.exists(bayLight))
+            throw new AssertionError("Rejected missing lighting open created a default profile");
+        unchangedExcept(guarded,original,bayLight);
         Files.writeString(bayLight,validBayLighting);
         unchanged(guarded,original);
 
         // The weather parser must reject a non-finite destination value;
         // the previously opened harbor retains both its dock and scene.
         weather(bayWeather,"SNOW",Double.NaN);
+        String invalidWeather=Files.readString(bayWeather);
         try {
             selected=ReverieDesktop.prepareScene(root,"sitka","crescent-bay");
             throw new AssertionError("Malformed destination weather opened");
         } catch (IOException expected) { }
+        if (!invalidWeather.equals(Files.readString(bayWeather)))
+            throw new AssertionError("Rejected weather open rewrote invalid destination");
+        unchangedExcept(guarded,original,bayWeather);
         weather(bayWeather,"SNOW",19.0);
         unchanged(guarded,original);
         if (!selected.path().equals(harbor)
