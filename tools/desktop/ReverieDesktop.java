@@ -143,10 +143,22 @@ public final class ReverieDesktop {
         return workspace.resolve("scenes").resolve(id+".rvscene");
     }
     private Path file(String id){return sceneFile(workspace,id,sitkaRegion.getText().trim());}
-    private Path lightingFile(String id, Path scenePath) throws IOException {
+    private static Path lightingFile(Path workspace, String id, Path scenePath) throws IOException {
         if("sitka".equals(id))
             return SitkaRegionLinks.editorEnvironment(scenePath).resolve("lighting/sitka.properties");
         return workspace.resolve("lighting").resolve(id+".properties");
+    }
+    // Validate the destination scene and all linked profiles, including the real
+    // lighting dock, before the live workbench commits a region selection.
+    // The same preparation path is exercised by the headless regression.
+    static record PreparedScene(Path path, SceneDocument document,
+                                LightingAuthoringPanel lighting) {}
+    static PreparedScene prepareScene(Path workspace, String id, String region) throws IOException {
+        Path target=sceneFile(workspace,id,region);
+        if("sitka".equals(id)) SitkaRegionLinks.validateOnOpen(target);
+        SceneDocument found=SceneDocument.load(target);
+        LightingAuthoringPanel dock=new LightingAuthoringPanel(lightingFile(workspace,id,target));
+        return new PreparedScene(target,found,dock);
     }
     // The text field is a pending region name, not the active editor selection.
     // Every environment launch must follow the loaded scene's bound project.
@@ -194,14 +206,11 @@ public final class ReverieDesktop {
     }
     private void load(String id){
         try{
-            Path target=file(id);
-            // Reject broken linked environment before changing the live region.
-            if("sitka".equals(id)) SitkaRegionLinks.validateOnOpen(target);
-            SceneDocument found=SceneDocument.load(target);
-            // Prepare the linked lighting dock before replacing the live region:
-            // a corrupt profile must not strand the workbench in a half-switch.
-            LightingAuthoringPanel loadedLighting=new LightingAuthoringPanel(lightingFile(id,target));
-            scene=found;activeId=id;nextId=1;meshes.clear();dirty=false;
+            PreparedScene prepared=prepareScene(workspace,id,sitkaRegion.getText().trim());
+            Path target=prepared.path();
+            // Only commit the region after scene, water, weather and lighting
+            // preparation all succeeded; failed opens retain the prior editor.
+            scene=prepared.document();activeId=id;nextId=1;meshes.clear();dirty=false;
             editorProject=new ReverieSceneProject(
                 id,target,()->scene,this::restoreSnapshot);
             editHistory=new EditorHistory<>(editorProject,64);
@@ -213,7 +222,7 @@ public final class ReverieDesktop {
                 this::choosePalette);
             paletteHost.setBorder(BorderFactory.createTitledBorder(
                 "Beckenburg shared asset palette"));
-            lightingPanel=loadedLighting;
+            lightingPanel=prepared.lighting();
             JTabbedPane authoringDocks=new JTabbedPane();
             authoringDocks.addTab("Objects",palette);
             authoringDocks.addTab("Lighting",lightingPanel);
