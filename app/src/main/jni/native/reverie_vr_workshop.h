@@ -363,7 +363,8 @@ public:
                    double rx,double rz,uint32_t& cue,VrStereoCue& spatial){
         if(editing||!sound.enabled||!std::isfinite(dt)||dt<0||dt>.1)return false;
         sound_elapsed_=std::min(sound.interval,sound_elapsed_+dt);
-        if(sound_elapsed_<sound.interval)return false;
+        // Allow sub-microsecond accumulation error without firing early by a frame.
+        if(sound_elapsed_+1e-7<sound.interval)return false;
         for(const auto& p:scene.pieces)if(p.id==sound.anchor_id){
             const VrMotionSample motion=SampleFor(p,time);
             spatial=SpatializeVrSound(p.x,p.y+p.scale+motion.offset_y,p.z,
