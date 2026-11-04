@@ -1,6 +1,6 @@
 {
   "schema": "reverie.shared-asset-catalog/1",
-  "revision": "coastal-and-psx-props-v1",
+  "revision": "coastal-sixteen-materials-and-psx-props-v1",
   "authority": {
     "repository": "mrcalzon02/ReverieVR",
     "branch": "main",
@@ -155,6 +155,276 @@
       ],
       "rights": "owner-directed generated artwork; internal reuse approved",
       "source_original": "app/src/main/assets/native/breakwater/materials/olive_enamel.png",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.dock_planks",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/dock_planks.png",
+      "logical_path": "native/shared/v1/materials/coastal/dock_planks.png",
+      "git_blob_sha1": "00571c519d5ece872da7a342d775b6e975e88181",
+      "sha256": "a44c5fd4a431557fb63cad819d2ac3cf224566c35fa9e2c0c6876e1b62b9331a",
+      "size_bytes": 3299,
+      "description": "weathered coastal dock decking",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/dock_planks.png",
+      "generated_image_source": "weathered_pixel_art_dock_planks.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.mossy_seawall",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/mossy_seawall.png",
+      "logical_path": "native/shared/v1/materials/coastal/mossy_seawall.png",
+      "git_blob_sha1": "e3abcdeb3be11ae7f82a6e4fba9b68010815693e",
+      "sha256": "522acf9e38c4faf8196e24cebabf151b6984518a5cb26858c04d728fc0877a73",
+      "size_bytes": 3325,
+      "description": "damp blockwork and algae growth",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/mossy_seawall.png",
+      "generated_image_source": "mossy_pixel_art_seawall_texture.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.corrugated_roof",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/corrugated_roof.png",
+      "logical_path": "native/shared/v1/materials/coastal/corrugated_roof.png",
+      "git_blob_sha1": "1a01c30b7b1e68d1f5c2a27d5aed8b244055a446",
+      "sha256": "19b08cdac1940e2381cdc38a3a063ed4ad8b816c9756630c1d76c4f753aafc0c",
+      "size_bytes": 3307,
+      "description": "military corrugated steel roofing",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/corrugated_roof.png",
+      "generated_image_source": "seamless_rusty_bunker_roof_metal.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.camo_netting",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/camo_netting.png",
+      "logical_path": "native/shared/v1/materials/coastal/camo_netting.png",
+      "git_blob_sha1": "9360dc3a7cd0630150386eac94cb1190559f1f87",
+      "sha256": "7d8abaad801915a0dc6c328d17290e1aab9c38aa62cd7381b5e86e9eecd95706",
+      "size_bytes": 3403,
+      "description": "olive camouflage canvas/net",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/camo_netting.png",
+      "generated_image_source": "pixel_art_olive_drab_camo_netting.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.diamond_plate",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/diamond_plate.png",
+      "logical_path": "native/shared/v1/materials/coastal/diamond_plate.png",
+      "git_blob_sha1": "d500c6ebdb5fa2051648af17f8a07b8110b4a67a",
+      "sha256": "39f209f4d73018aad877b41303a636019d9107c472f0281bed3cf186744d1ba2",
+      "size_bytes": 3386,
+      "description": "nonslip fortified gun-deck plating",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/diamond_plate.png",
+      "generated_image_source": "worn_rusted_steel_diamond_plate.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.trench_soil",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/trench_soil.png",
+      "logical_path": "native/shared/v1/materials/coastal/trench_soil.png",
+      "git_blob_sha1": "b2cd0a4421215ac38fba8748e3539c25780c7e2f",
+      "sha256": "70813361a0bec73353710b452737974175326be80e62234db0dd359613f3efd6",
+      "size_bytes": 3322,
+      "description": "trodden trench dirt and gravel",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/trench_soil.png",
+      "generated_image_source": "damp_trench_soil_texture_tile.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.reinforced_concrete",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/reinforced_concrete.png",
+      "logical_path": "native/shared/v1/materials/coastal/reinforced_concrete.png",
+      "git_blob_sha1": "2da58a515b2c5adfe7e01dd07cfd4f076c771632",
+      "sha256": "085921570803decdee0e9884705284985ca4465485c72081eb89ce15a81377f9",
+      "size_bytes": 3355,
+      "description": "salt-worn reinforced bunker concrete",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/reinforced_concrete.png",
+      "generated_image_source": "weathered_bunker_concrete_texture.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.crate_planks",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/crate_planks.png",
+      "logical_path": "native/shared/v1/materials/coastal/crate_planks.png",
+      "git_blob_sha1": "1704d6e300f943bd167370f9778737f1af1f7e44",
+      "sha256": "1d7c7f8a2584a8b773492703209d8979f2774d757036220facb08bc035fa5f07",
+      "size_bytes": 3306,
+      "description": "storage ammunition-crate boards",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/crate_planks.png",
+      "generated_image_source": "weathered_coastal_crate_planks.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.riveted_bulkhead",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/riveted_bulkhead.png",
+      "logical_path": "native/shared/v1/materials/coastal/riveted_bulkhead.png",
+      "git_blob_sha1": "7213c7bc1c0808915d631ce6f6efe9067e421063",
+      "sha256": "6d8a0278f5ec18cffdf2bd7901b6d8579b86fd6a507f08ea09610e6cde82a6e0",
+      "size_bytes": 3291,
+      "description": "weathered riveted steel fortification door",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/riveted_bulkhead.png",
+      "generated_image_source": "riveted_rusted_bunker_bulkhead_texture.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.pebble_ground",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/pebble_ground.png",
+      "logical_path": "native/shared/v1/materials/coastal/pebble_ground.png",
+      "git_blob_sha1": "02296ec2868b2aa757f7bb3149d5b38dbcc9dd89",
+      "sha256": "95f2d4bf502d1635f3f2aae0c4199de86cdeda2435cadab9a214f361ed050d04",
+      "size_bytes": 3402,
+      "description": "gravelly coastal shore ground",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; approved for reuse in owner's internal games",
+      "source_original": "app/src/main/assets/native/breakwater/materials/pebble_ground.png",
+      "generated_image_source": "seamless_gritty_coastal_pebble_ground.png",
+      "source_archive": "Google Drive/ReverieVR - Breakwater Shared Material Sources 2026-11-04",
       "allowed_consumers": [
         "breakwater-battery",
         "omega-front",

@@ -11,8 +11,9 @@
 #include "breakwater_materials.h"
 
 namespace reverie { namespace breakwater {
-// Game-private original RGBA sprites. One tiny atlas, no imported/licensed art,
-// runtime image decoder, network lookup or per-eye sprite animation state.
+// Game-private procedural combat sprites share one GLES2 atlas with 16
+// owner-generated coastal material PNG tiles. No per-eye PNG decoding, new
+// texture binding, network lookup or animation texture copy.
 enum class SpriteId : uint8_t {
     InfantryStrideA, InfantryStrideB, Rowboat, LandingCraft,
     Gunboat, Strafer, Bomber, MachineGun, HeavyGun, FlakGun,

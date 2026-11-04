@@ -1,7 +1,7 @@
 #ifndef REVERIE_BREAKWATER_AUTHORED_MATERIALS_H
 #define REVERIE_BREAKWATER_AUTHORED_MATERIALS_H
 
-// Six owner-generated 64x64 PNG material tiles. Decode exactly once on
+// Six existing + ten expanded owner-generated 64x64 PNG material tiles. Decode exactly once on
 // module creation using the already-shipped bounded PNG/zlib decoder.
 // Missing or damaged art leaves the deterministic procedural tiles intact.
 #include "breakwater_materials.h"
@@ -14,7 +14,7 @@
 #include <vector>
 
 namespace reverie { namespace breakwater { namespace authored {
-constexpr size_t kTiles=6u;
+constexpr size_t kTiles=materials::kMaterialCount;
 constexpr size_t kMaxPngBytes=16384u;
 constexpr std::array<const char*,kTiles> kPaths={{
     "native/shared/v1/materials/coastal/shingle.png",
@@ -22,10 +22,20 @@ constexpr std::array<const char*,kTiles> kPaths={{
     "native/shared/v1/materials/coastal/black_basalt.png",
     "native/shared/v1/materials/coastal/oxidized_steel.png",
     "native/shared/v1/materials/coastal/sandbag_burlap.png",
-    "native/shared/v1/materials/coastal/olive_enamel.png"
+    "native/shared/v1/materials/coastal/olive_enamel.png",
+    "native/shared/v1/materials/coastal/dock_planks.png",
+    "native/shared/v1/materials/coastal/mossy_seawall.png",
+    "native/shared/v1/materials/coastal/corrugated_roof.png",
+    "native/shared/v1/materials/coastal/camo_netting.png",
+    "native/shared/v1/materials/coastal/diamond_plate.png",
+    "native/shared/v1/materials/coastal/trench_soil.png",
+    "native/shared/v1/materials/coastal/reinforced_concrete.png",
+    "native/shared/v1/materials/coastal/crate_planks.png",
+    "native/shared/v1/materials/coastal/riveted_bulkhead.png",
+    "native/shared/v1/materials/coastal/pebble_ground.png"
 }};
 // Migration fallback for previously installed private content packs.
-constexpr std::array<const char*,kTiles> kLegacyPaths={{
+constexpr std::array<const char*,6u> kLegacyPaths={{
     "native/breakwater/materials/shingle.png",
     "native/breakwater/materials/quay_concrete.png",
     "native/breakwater/materials/black_basalt.png",
@@ -51,6 +61,7 @@ inline size_t Load(Atlas &atlas,ReadAsset read) {
         if(!read(chosen,nullptr,0u,&length) || length<45u ||
            length>kMaxPngBytes) {
             // The old path is read only for an older verified module pack.
+            if(tile>=kLegacyPaths.size())continue;
             chosen=kLegacyPaths[tile];
             if(!read(chosen,nullptr,0u,&length) || length<45u ||
                length>kMaxPngBytes)continue;

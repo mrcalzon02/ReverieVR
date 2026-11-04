@@ -12,11 +12,14 @@ namespace reverie { namespace breakwater { namespace materials {
 // Original low-resolution coastal materials, appended below the existing
 // 32x32 combat sprites in their single GLES2 RGBA atlas. The fourth tile is
 // reserved for battered battery steel; no external art/license dependency.
-enum class Surface : uint8_t { Shingle, Quay, Basalt, Steel, Sandbag, OlivePaint };
+enum class Surface : uint8_t { Shingle, Quay, Basalt, Steel, Sandbag, OlivePaint,
+    DockPlanks, MossySeawall, CorrugatedRoof, CamoNetting, DiamondPlate,
+    TrenchSoil, ReinforcedConcrete, CratePlanks, RivetedBulkhead, PebbleGround };
 constexpr int kTile=64;
 constexpr int kAtlasWidth=128;
 constexpr int kBaseY=256;
-constexpr int kAtlasHeight=kBaseY+3*kTile;
+constexpr int kMaterialCount=16;
+constexpr int kAtlasHeight=kBaseY+(kMaterialCount/2)*kTile;
 constexpr int kSectionsX=24,kSectionsZ=20;
 
 struct Rgb { uint8_t r,g,b; };
@@ -79,13 +82,27 @@ inline Rgb Sample(Surface surface,int x,int y) {
             return {Channel((rust?145:92)+c),Channel((rust?81:107)+c),
                     Channel((rust?53:111)+c)};
         }
+        default: {
+            // Last ten imported textures have a color-coherent deterministic
+            // procedural fallback for corrupt or absent optional source art.
+            static constexpr Rgb base[10]={
+                {111,89,72},{110,111,98},{88,92,78},{93,100,67},
+                {92,92,93},{97,79,64},{128,127,111},{112,90,72},
+                {91,86,82},{124,108,94}
+            };
+            const int id=static_cast<int>(surface)-6;
+            if(id<0 || id>=10)return {255,0,255};
+            const int noise=grit/2+shade/2+(x%7)*10;
+            return {Channel(int(base[id].r)+noise),
+                    Channel(int(base[id].g)+noise),
+                    Channel(int(base[id].b)+noise)};
+        }
     }
-    return {255,0,255};
 }
 
 template<class WritePixel>
 inline void Rasterize(WritePixel write) {
-    for(int t=0;t<6;++t)for(int y=0;y<kTile;++y)
+    for(int t=0;t<kMaterialCount;++t)for(int y=0;y<kTile;++y)
         for(int x=0;x<kTile;++x) {
             const Rgb c=Sample(static_cast<Surface>(t),x,y);
             write((t%2)*kTile+x,kBaseY+(t/2)*kTile+y,c);
@@ -121,7 +138,7 @@ inline void Face(std::vector<float>&mesh,Surface surface,
 }
 inline bool AppendBoxCladding(std::vector<float>&mesh,Surface material,
                               float x,float y,float z,float w,float h,float d) {
-    if(material>Surface::OlivePaint || !std::isfinite(x) || !std::isfinite(y) ||
+    if(material>Surface::PebbleGround || !std::isfinite(x) || !std::isfinite(y) ||
        !std::isfinite(z) || !std::isfinite(w) || !std::isfinite(h) ||
        !std::isfinite(d) || w<=0.f || h<=0.f || d<=0.f)return false;
     constexpr float pad=.003f;
@@ -141,20 +158,33 @@ inline Surface CoastSurface(uint8_t location) {
            location==2?Surface::Basalt:Surface::Shingle;
 }
 
+// Select a surface by beach section rather than allocating duplicate terrain
+// meshes: the same 24x20 contour gets locally varied military shoreline art.
+inline Surface CoastSurfaceAt(uint8_t location,int ix,int iz) {
+    if(location==0) {
+        if(iz>=kSectionsZ-3)return Surface::TrenchSoil;
+        if((ix+iz*2)%7==0)return Surface::PebbleGround;
+    }
+    if(location==1 && iz>=kSectionsZ/2 && (ix<4 || ix>=kSectionsX-4))
+        return Surface::DockPlanks;
+    if(location==2 && iz>=kSectionsZ-4 && (ix%4)==0)
+        return Surface::TrenchSoil;
+    return CoastSurface(location);
+}
 template<class HeightAt>
 inline void AppendCoast(std::vector<float>&mesh,uint8_t location,HeightAt height) {
     if(location>=3)return;
-    const int tile=static_cast<int>(CoastSurface(location));
-    const float u0=((tile%2)*kTile+.5f)/kAtlasWidth;
-    const float u1=((tile%2+1)*kTile-.5f)/kAtlasWidth;
-    const float v0=(kBaseY+(tile/2)*kTile+.5f)/kAtlasHeight;
-    const float v1=(kBaseY+(tile/2+1)*kTile-.5f)/kAtlasHeight;
     constexpr float minX=-3.86f,maxX=3.86f;
     constexpr float surfZ=-2.20f,rearZ=-.26f;
     for(int iz=0;iz<kSectionsZ;++iz) {
         const float z0=surfZ+(rearZ-surfZ)*iz/kSectionsZ;
         const float z1=surfZ+(rearZ-surfZ)*(iz+1)/kSectionsZ;
         for(int ix=0;ix<kSectionsX;++ix) {
+            const int tile=static_cast<int>(CoastSurfaceAt(location,ix,iz));
+            const float u0=((tile%2)*kTile+.5f)/kAtlasWidth;
+            const float u1=((tile%2+1)*kTile-.5f)/kAtlasWidth;
+            const float v0=(kBaseY+(tile/2)*kTile+.5f)/kAtlasHeight;
+            const float v1=(kBaseY+(tile/2+1)*kTile-.5f)/kAtlasHeight;
             const float x0=minX+(maxX-minX)*ix/kSectionsX;
             const float x1=minX+(maxX-minX)*(ix+1)/kSectionsX;
             const float y00=height(location,x0,z0);

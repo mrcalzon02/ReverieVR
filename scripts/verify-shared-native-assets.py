@@ -8,7 +8,7 @@ import struct
 ROOT=Path(__file__).resolve().parents[1]
 manifest=json.loads((ROOT/"shared-assets/catalog-v1.json").read_text())
 assert manifest["schema"]=="reverie.shared-asset-catalog/1"
-assert len(manifest["entries"])==9
+assert len(manifest["entries"])==19
 paths=set()
 for entry in manifest["entries"]:
     relative=entry["path"]
@@ -64,4 +64,4 @@ for name in ("concrete_block_1.bwm","wooden_crate_1.bwm","ammo_box_mp_1.bwm"):
 assert "python3 scripts/verify-shared-native-assets.py" in workflow
 assert "assets/native/shared/v1/materials/coastal/" in workflow
 assert "assets/native/shared/v1/models/psx/" in workflow
-print("PASS: nine shared assets, source hashes, exact native/Java allowlists and all packaging consumers")
+print("PASS: nineteen shared assets (sixteen materials), source hashes, exact native/Java allowlists and all packaging consumers")

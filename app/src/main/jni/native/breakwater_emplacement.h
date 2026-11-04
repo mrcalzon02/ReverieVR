@@ -19,12 +19,13 @@ inline void EmitBatteryEmplacement(uint8_t location,bool night,
     const float stone=concrete*tint;
     const float metal=(location==2?.29f:.36f)*tint;
     const materials::Surface masonry=location==2?
-        materials::Surface::Basalt:materials::Surface::Quay;
+        materials::Surface::Basalt:location==1?
+        materials::Surface::MossySeawall:materials::Surface::ReinforcedConcrete;
     // Solid bunker apron, high enough to join the actual beach rear
     // slope, behind the simulated seaward soldier contact line.
     box(0.f,-1.155f,.83f,8.20f,.37f,3.03f,
         stone,stone*1.035f,stone*.94f);
-    clad(masonry,0.f,-1.155f,.83f,8.20f,.37f,3.03f);
+    clad(materials::Surface::DiamondPlate,0.f,-1.155f,.83f,8.20f,.37f,3.03f);
     // Shoreward tapered ramp from height-meshed beach to gun deck.
     triangle(-1.90f,-.94f,-.28f,1.90f,-.94f,-.28f,
               1.83f,-.97f,.24f,stone*.91f,stone*.92f,stone*.88f);
@@ -37,7 +38,8 @@ inline void EmitBatteryEmplacement(uint8_t location,bool night,
         const float x=sign*2.70f;
         box(x,-.69f,-.35f,2.20f,.63f,.64f,
             stone*.98f,stone,stone*.97f);
-        clad(masonry,x,-.69f,-.35f,2.20f,.63f,.64f);
+        clad(materials::Surface::ReinforcedConcrete,x,-.69f,-.35f,
+             2.20f,.63f,.64f);
         // Slanted cheek armor rather than a pair of bare rectangular posts.
         triangle(sign*1.58f,-.92f,-.76f,
                  sign*1.58f,-.14f,-.34f,
@@ -54,6 +56,8 @@ inline void EmitBatteryEmplacement(uint8_t location,bool night,
         clad(masonry,sign*3.72f,-.39f,1.18f,.58f,1.29f,3.1f);
         box(sign*3.72f,.305f,1.18f,.71f,.13f,3.28f,
             stone*1.11f,stone*1.10f,stone*1.03f);
+        clad(materials::Surface::CorrugatedRoof,sign*3.72f,.305f,1.18f,
+             .71f,.13f,3.28f);
         box(sign*3.58f,-.95f,.12f,.24f,.16f,1.2f,
             metal*.80f,metal*.83f,metal*.81f);
         // Layered irregular sandbags around slit, but never in it.
@@ -74,6 +78,16 @@ inline void EmitBatteryEmplacement(uint8_t location,bool night,
             metal*1.08f,metal*1.04f,metal*.98f);
         clad(materials::Surface::Steel,sign*3.04f,-.62f,.76f,
              .55f,.10f,.69f);
+        // Side-wall ammunition crate and draped camouflage tarp: modeled
+        // as genuine 3D boxes, outside the 3.2 m open gun traverse.
+        box(sign*3.02f,-.75f,1.64f,.65f,.42f,.54f,
+            .42f*tint,.33f*tint,.25f*tint);
+        clad(materials::Surface::CratePlanks,sign*3.02f,-.75f,1.64f,
+             .65f,.42f,.54f);
+        box(sign*3.02f,-.48f,1.64f,.70f,.12f,.59f,
+            .27f*tint,.33f*tint,.24f*tint);
+        clad(materials::Surface::CamoNetting,sign*3.02f,-.48f,1.64f,
+             .70f,.12f,.59f);
         // Pillboxes are placed outside the 7.72-wide playable beach.
         const float pillX=sign*(5.35f+location*.34f);
         box(pillX,-.65f,1.04f,1.72f,1.0f,2.12f,
@@ -81,7 +95,8 @@ inline void EmitBatteryEmplacement(uint8_t location,bool night,
         clad(masonry,pillX,-.65f,1.04f,1.72f,1.0f,2.12f);
         box(pillX,-.08f,1.04f,1.93f,.16f,2.34f,
             stone*.95f,stone*.96f,stone*.89f);
-        clad(masonry,pillX,-.08f,1.04f,1.93f,.16f,2.34f);
+        clad(materials::Surface::CorrugatedRoof,pillX,-.08f,1.04f,
+             1.93f,.16f,2.34f);
         box(pillX,-.48f,-.035f,1.12f,.13f,.13f,
             .11f*tint,.15f*tint,.14f*tint);
         for(int post=0;post<3;++post) {
@@ -103,7 +118,8 @@ inline void EmitBatteryEmplacement(uint8_t location,bool night,
         stone*.98f,stone*1.03f,stone*.95f);
     box(0.f,-.29f,2.26f,.98f,1.60f,.08f,
         metal*.60f,metal*.66f,metal*.65f);
-    clad(materials::Surface::Steel,0.f,-.29f,2.26f,.98f,1.60f,.08f);
+    clad(materials::Surface::RivetedBulkhead,0.f,-.29f,2.26f,
+         .98f,1.60f,.08f);
     box(.33f,-.34f,2.18f,.07f,.07f,.07f,
         .60f*tint,.59f*tint,.49f*tint);
     // Overhead sight rail and service equipment; no overhead roof crossing

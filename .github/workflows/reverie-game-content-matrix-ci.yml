@@ -21,6 +21,10 @@ on:
       - 'scripts/modules/test-native-asset-scope.cpp'
       - 'app/src/main/jni/native/reverie_native_asset_scope.h'
       - 'app/src/main/assets/native/breakwater/**'
+      - 'app/src/main/assets/native/shared/v1/**'
+      - 'shared-assets/catalog-v1.json'
+      - 'app/src/main/jni/native/breakwater_materials.h'
+      - 'app/src/main/jni/native/breakwater_authored_materials.h'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/GameModuleRegistry.java'
       - 'app/src/main/jni/Android.mk'
       - 'app/src/main/jni/native/reverie_native_host.cpp'
@@ -381,15 +385,23 @@ jobs:
           renderer=pathlib.Path(
               "app/src/main/jni/native/omega_front_texture_renderer.h").read_text()
           referenced=re.findall(r'"(native/omega-front/[^"]+\.png)"',renderer)
+          common=re.findall(r'"(native/shared/v1/materials/coastal/[^"]+\.png)"',renderer)
           with zipfile.ZipFile("validation/omega-front-art-r1.rvpack") as z:
               members=set(z.namelist())
               missing=sorted("assets/"+p for p in referenced
                              if "assets/"+p not in members)
-              # 108 preexisting sprite paths + 13 unique regional terrain sheets.
-              assert len(referenced)==121,(len(referenced),missing)
+              # 119 game-private PNGs plus two shared APK-baseline textures.
+              assert len(referenced)==119,(len(referenced),missing)
               assert not missing,missing
+              expected={
+                  "native/shared/v1/materials/coastal/quay_concrete.png",
+                  "native/shared/v1/materials/coastal/oxidized_steel.png"}
+              assert set(common)==expected,(len(common),common)
+              for p in expected:
+                  assert pathlib.Path("app/src/main/assets",p).is_file(),p
+                  assert "assets/"+p not in members,"duplicate common PNG in Omega pack: "+p
           print("PASS:",len(referenced),
-                "actual native Omega Front sprite paths match signed-format pack")
+                "private Omega PNG paths in verified-format pack + two reused APK-baseline textures")
           PY
       - name: Validate real 16x16 CC0 RPG tile sources and all renderer selections
         run: python3 scripts/modules/verify-omega-front-cc0.py

@@ -10,7 +10,7 @@
 using namespace reverie::breakwater;
 
 int main(){
-    static_assert(authored::kTiles==6u);
+    static_assert(authored::kTiles==16u);
     authored::Atlas atlas;
     const auto reader=[](const char* path,void* dest,uint32_t cap,
                          uint32_t* received)->bool{
@@ -33,7 +33,7 @@ int main(){
         pixels[pos]=c.r;pixels[pos+1]=c.g;pixels[pos+2]=c.b;pixels[pos+3]=255;
     });
     const auto fallback=pixels;
-    assert(authored::Apply(atlas,pixels)==6u);
+    assert(authored::Apply(atlas,pixels)==authored::kTiles);
     for(size_t i=0;i<authored::kTiles;++i) {
         const size_t at=((materials::kBaseY+(i/2u)*64u+17u)*
                          materials::kAtlasWidth+(i%2u)*64u+19u)*4u;
@@ -46,12 +46,21 @@ int main(){
     authored::Atlas incomplete=atlas;
     incomplete.rgba[4u].clear();
     auto recovered=fallback;
-    assert(authored::Apply(incomplete,recovered)==5u);
+    assert(authored::Apply(incomplete,recovered)==authored::kTiles-1u);
     const size_t missing=((materials::kBaseY+2u*64u+17u)*
                           materials::kAtlasWidth+19u)*4u;
     for(size_t k=0;k<4u;++k)assert(recovered[missing+k]==fallback[missing+k]);
+    // A missing v2 tile must keep the deterministic fallback without
+    // corrupting the other 15 slots or the 32x32 combat sprites.
+    incomplete=atlas;
+    incomplete.rgba[15u].clear();
+    recovered=fallback;
+    assert(authored::Apply(incomplete,recovered)==authored::kTiles-1u);
+    const size_t newer=((materials::kBaseY+7u*64u+17u)*
+                        materials::kAtlasWidth+64u+19u)*4u;
+    for(size_t k=0;k<4u;++k)assert(recovered[newer+k]==fallback[newer+k]);
     authored::Atlas empty;
     assert(authored::Load(empty,[](auto...){return false;})==0u);
     assert(authored::Apply(empty,recovered)==0u);
-    std::puts("PASS: six actual authored Breakwater PNGs, atlas copy and fallback");
+    std::puts("PASS: sixteen actual authored Breakwater PNGs, atlas copy and fallback");
 }

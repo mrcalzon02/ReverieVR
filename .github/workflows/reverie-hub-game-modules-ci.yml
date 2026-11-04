@@ -89,6 +89,14 @@ jobs:
             -o "${RUNNER_TEMP}/reverie-native-asset-scope-test"
           "${RUNNER_TEMP}/reverie-native-asset-scope-test"
           python3 scripts/verify-shared-native-assets.py
+          # Strict source/material parser/UV tests operate on real 16 PNGs.
+          # This is build/run correctness, not a cosmetic screenshot gate.
+          for cc in g++ clang++; do
+            for check in breakwater_materials breakwater_authored_materials breakwater_emplacement; do
+              "$cc" -std=c++17 -O1 -Wall -Wextra -Wpedantic -Werror                 -Iapp/src/main/jni/native                 "app/src/test/native/${check}_test.cpp" -lz                 -o "${RUNNER_TEMP}/${cc}-${check}"
+              "${RUNNER_TEMP}/${cc}-${check}"
+            done
+          done
           python3 scripts/modules/verify-omega-front-cc0.py
           python3 scripts/ci/verify-integrated-game-functional-coverage.py
           c++ -std=c++17 -Wall -Wextra -Werror \
@@ -130,7 +138,7 @@ jobs:
             unzip -Z -1 "$BREAKWATER" |
               grep -Fx "assets/native/breakwater/beckenburg/${MODEL}.bwm"
           done
-          for TILE in shingle quay_concrete black_basalt oxidized_steel sandbag_burlap olive_enamel; do
+          for TILE in shingle quay_concrete black_basalt oxidized_steel sandbag_burlap olive_enamel dock_planks mossy_seawall corrugated_roof camo_netting diamond_plate trench_soil reinforced_concrete crate_planks riveted_bulkhead pebble_ground; do
             unzip -Z -1 "$BREAKWATER" |
               grep -Fx "assets/native/shared/v1/materials/coastal/${TILE}.png"
           done

@@ -9,7 +9,17 @@ final class SharedNativeAssetPaths {
     private static final String MODELS="assets/native/shared/v1/models/psx/";
     private static final String[] TILES={
         "shingle.png","quay_concrete.png","black_basalt.png",
-        "oxidized_steel.png","sandbag_burlap.png","olive_enamel.png"
+        "oxidized_steel.png","sandbag_burlap.png","olive_enamel.png",
+        "dock_planks.png",
+        "mossy_seawall.png",
+        "corrugated_roof.png",
+        "camo_netting.png",
+        "diamond_plate.png",
+        "trench_soil.png",
+        "reinforced_concrete.png",
+        "crate_planks.png",
+        "riveted_bulkhead.png",
+        "pebble_ground.png"
     };
     private static final String[] PROPS={
         "concrete_block_1.bwm","wooden_crate_1.bwm","ammo_box_mp_1.bwm"

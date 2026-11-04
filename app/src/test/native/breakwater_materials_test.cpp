@@ -5,20 +5,24 @@
 #include <iostream>
 using namespace reverie::breakwater::materials;
 int main() {
-    static_assert(kAtlasWidth==128 && kAtlasHeight==448);
-    std::array<int,6> counts{};
+    static_assert(kAtlasWidth==128 && kAtlasHeight==768);
+    std::array<int,kMaterialCount> counts{};
     Rasterize([&](int x,int y,Rgb rgb) {
         assert(x>=0 && x<kAtlasWidth && y>=kBaseY && y<kAtlasHeight);
         assert(rgb.r!=255 || rgb.g!=0 || rgb.b!=255);
         ++counts[((y-kBaseY)/kTile)*2+x/kTile];
     });
     for(int v:counts) assert(v==kTile*kTile);
-    for(int id=0;id<6;++id) {
+    for(int id=0;id<kMaterialCount;++id) {
         auto m=static_cast<Surface>(id);
         const Rgb a=Sample(m,4,7), b=Sample(m,4,7),c=Sample(m,29,37);
         assert(a.r==b.r && a.g==b.g && a.b==b.b);
         assert(a.r!=c.r || a.g!=c.g || a.b!=c.b);
     }
+    assert(CoastSurfaceAt(0,0,0)==Surface::PebbleGround);
+    assert(CoastSurfaceAt(0,6,18)==Surface::TrenchSoil);
+    assert(CoastSurfaceAt(1,1,12)==Surface::DockPlanks);
+    assert(CoastSurfaceAt(2,9,2)==Surface::Basalt);
     for(int id=0;id<3;++id) {
         std::vector<float> a;
         auto terrain=[](uint8_t,float x,float z){return -1.037f+.008f*std::sin(x+z);};
@@ -32,7 +36,7 @@ int main() {
             assert(a[i+4]>=0.0f && a[i+4]<=1.0f);
         }
     }
-    for(int id=0;id<6;++id) {
+    for(int id=0;id<kMaterialCount;++id) {
         std::vector<float> shell;
         assert(AppendBoxCladding(shell,static_cast<Surface>(id),
                                  3.f,-.5f,-1.4f,.7f,.4f,.9f));
