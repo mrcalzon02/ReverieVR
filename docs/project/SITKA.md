@@ -171,3 +171,12 @@ This record specifies the Sitka game and documents its **source-integrated autho
 
 
 **2026-10-31 source-only lighting bridge:** The editor's real `lighting/sitka.properties` schema now has a bounded native reader. Only validated authored **ambient intensity** modulates synthetic GLES2 terrain vertex colors; dynamic light beams, falloff and shadows are not implemented. See [terrain pipeline](SITKA_EDITOR_PIPELINE.md). This does not admit Sitka to the playable module catalog or establish geographic/S9 acceptance.
+
+## Lazy seafloor sample tile cache (2026-11-04)
+
+The [bathymetry specification](SITKA_BATHYMETRY_AND_BOAT_SPEC.md)
+now covers a V2 geographic tile directory, a two-resident-tile CPU
+cache and predictive boundary loading. Read-only sonar samples never
+trigger disk IO, and missing data remains unknown. This is a
+source-only precursor to multi-mile rendered land and underwater
+streaming and an actual launchable boat, not proof of finished gameplay.

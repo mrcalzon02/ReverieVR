@@ -217,7 +217,8 @@ struct DepthReading {
     double water_depth_m=0.,under_keel_m=0.;
     BedQuality quality=BedQuality::Missing;
 };
-inline DepthReading FindBoatDepth(const BathyAtlas& atlas,double east,
+template<class BathySampler>
+inline DepthReading FindBoatDepth(const BathySampler& atlas,double east,
         double north,double sea_surface_elevation_m,double boat_draft_m,
         bool verified_water){
     if(!verified_water)return {DepthStatus::OutsideWater,0.,0.,BedQuality::Missing};
@@ -239,7 +240,8 @@ inline DepthReading FindBoatDepth(const BathyAtlas& atlas,double east,
 class BoatDepthFinder {
 public:
     void Reset(){elapsed_=0.;reading_={};}
-    bool Update(double dt,const BathyAtlas& atlas,double east,double north,
+    template<class BathySampler>
+    bool Update(double dt,const BathySampler& atlas,double east,double north,
                 double sea_surface_elevation_m,double boat_draft_m,
                 bool verified_water){
         if(!std::isfinite(dt)||dt<0.||dt>.1)return false;

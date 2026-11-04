@@ -16,7 +16,7 @@ HEADER = struct.Struct("<8sIIddddII")
 PIXEL = struct.Struct("<fB")
 MAGIC = b"SITKAB01"
 MAX_TILE_INTERVALS = 512
-MAX_TILES = 16
+MAX_TILES = 2048
 REQUIRED = ("provider", "dataset", "license", "retrieved", "url",
             "vertical_datum", "terrain_vertical_datum", "encoding", "quality")
 
@@ -82,8 +82,8 @@ def bake(raster, provenance, output_dir, intervals=256):
             raise ValueError("source raster too large; crop into regional inputs")
         nx = (ds.width - 2) // intervals + 1
         ny = (ds.height - 2) // intervals + 1
-        if nx * ny > MAX_TILES:
-            raise ValueError("raster exceeds 16 resident tiles; crop/stream region cells")
+        if nx * ny > MAX_TILES or nx > 100 or ny > 100:
+            raise ValueError("raster exceeds bounded streaming directory; crop region")
         pixel_quality = 1 if source["quality"] == "surveyed" else 2
         # A missing NOAA coverage pixel is never filled by interpolation.
         band = ds.read(1, masked=True)
@@ -125,7 +125,9 @@ def bake(raster, provenance, output_dir, intervals=256):
                                    t.a, -t.e, datum, 0) + raw
                 candidate.append((name, bytes(blob), {
                     "file": name, "first_east_m": e, "first_north_m": n,
-                    "width": cols, "height": rows, "valid_samples": known,
+                    "width": cols, "height": rows,
+                    "east_step_m": t.a, "south_step_m": -t.e,
+                    "valid_samples": known,
                     "quality": source["quality"],
                 }))
         if not candidate:
@@ -147,13 +149,22 @@ def bake(raster, provenance, output_dir, intervals=256):
             "provenance_sha256": sha256(provenance),
             "tile_intervals": intervals,
             "tile_count": len(tiles),
+            "index_schema": 2, "resident_tile_target": 2,
             "tiles": tiles,
             "source": source,
         }
-        tile_index = ("SITKA-BATHY-INDEX-1\n"
+        tile_lines = []
+        for item in tiles:
+            values = (item["first_east_m"], item["first_north_m"],
+                      item["east_step_m"], item["south_step_m"])
+            fields = " ".join(format(value, ".17g") for value in values)
+            tile_lines.append(
+                f'{item["file"]} {fields} {item["width"]} {item["height"]}\n'
+            )
+        tile_index = ("SITKA-BATHY-INDEX-2\n"
                       + "datum " + source["vertical_datum"] + "\n"
                       + "tiles " + str(len(tiles)) + "\n"
-                      + "".join(item["file"] + "\n" for item in tiles))
+                      + "".join(tile_lines))
         (output_dir / "index.txt").write_text(tile_index, encoding="ascii")
         (output_dir / "manifest.json").write_text(
             json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")

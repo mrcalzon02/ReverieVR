@@ -261,3 +261,14 @@ and unshared context recreation. This is synthetic-only GL proof,
 not a full coastal runtime: the provisional water shader stays opaque,
 true coastline clipping/LOD streaming and visible boat gauge remain
 open. No real Sitka geography or bathymetric dataset is distributed.
+
+## Lazy bathymetry V2 tile directory (2026-11-04)
+
+The source-only bathymetric converter now writes a coordinate-bearing V2
+tile index. A bounded native CPU cache reads only the current geographic
+seabed tile and one predicted neighbor, with explicit NoData behavior.
+The unregistered native editor preview uses headset focus until a real
+boat model is available. A 40-tile simulated route and CSV trace are
+tested in GitHub Actions. The current shader still needs explicit
+GL-safe in-motion tile switching, land/city streaming and actual verified
+USGS/NOAA input; runtime mobile frame-time evidence does not yet exist.

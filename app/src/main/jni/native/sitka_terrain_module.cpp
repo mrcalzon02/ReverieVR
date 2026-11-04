@@ -5,10 +5,13 @@
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
 #include "sitka_bathymetry.h"
+#include "sitka_bathymetry_stream.h"
 #include "sitka_seafloor_mesh.h"
 #include <array>
 #include <cstdint>
 #include <new>
+#include <memory>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -23,7 +26,10 @@ struct State {
     reverie::sitka::WaterGl water_gl;
     std::vector<reverie::sitka::FishingSpot> fishing_spots;
     reverie::sitka::FishingSession fishing;
-    reverie::sitka::BathyAtlas bathymetry;
+    reverie::sitka::BathyAtlas bathymetry; // V1 source compatibility.
+    std::unique_ptr<reverie::sitka::BathyStreamCache> stream;
+    double last_focus_east=0.,last_focus_north=0.;
+    bool has_focus=false;
 };
 void Log(const ReverieNativeHostV1* host, const char* message) {
     ReverieNativeLogV1(host, REVERIE_NATIVE_LOG_ERROR, "SitkaTerrain", message);
@@ -103,21 +109,39 @@ void* Create(const ReverieNativeHostV1* host) {
             // Source-only adapter: no synthetic seabed or global interpolation.
             // A renderer cannot advertise a depth until vetted native tiles
             // have been staged under this host-private asset prefix.
-            const auto index=reverie::sitka::ParseBathyIndex(ReadText(
-                host,"sitka/bathymetry/index.txt",2048u));
+            const auto index_bytes=ReadText(host,"sitka/bathymetry/index.txt",
+                static_cast<uint32_t>(reverie::sitka::kBathyStreamMaxIndexBytes));
             const uint32_t max_bathy_bytes=static_cast<uint32_t>(
                 reverie::sitka::kBathyHeaderBytes+
                 size_t(reverie::sitka::kBathyMaxAxis)*
                 size_t(reverie::sitka::kBathyMaxAxis)*5u);
-            for(const auto& tile_name:index.filenames){
-                const auto filename="sitka/bathymetry/"+tile_name;
-                const auto payload=ReadText(host,filename.c_str(),max_bathy_bytes);
-                auto tile=reverie::sitka::ParseBathymetry(
-                    reinterpret_cast<const uint8_t*>(payload.data()),
-                    payload.size(),index.datum_id);
-                if(!state->bathymetry.Add(std::move(tile)))
-                    throw std::invalid_argument(
-                        "Sitka bathymetry tile overlap or atlas limit");
+            if(index_bytes.compare(0,20,"SITKA-BATHY-INDEX-2\n")==0){
+                state->stream.reset(new reverie::sitka::BathyStreamCache(
+                    reverie::sitka::ParseBathyStreamIndex(index_bytes)));
+                // One initial cell at the available terrain origin, if covered;
+                // never decode all source tiles at launch. Later updates follow
+                // the editor/listener; real boat binding is a separate milestone.
+                const double first_east=state->terrain.origin_east;
+                const double first_north=state->terrain.origin_north;
+                state->stream->Pump(first_east,first_north,0.,0.,
+                    [&](const std::string& name,std::string& out){
+                        out=ReadText(host,("sitka/bathymetry/"+name).c_str(),
+                                     max_bathy_bytes);
+                        return true;
+                    });
+            }else{
+                // V1 compatibility: previously authored small, eager atlases.
+                // New exported worlds use V2 and bounded lazy loading instead.
+                const auto index=reverie::sitka::ParseBathyIndex(index_bytes);
+                for(const auto& tile_name:index.filenames){
+                    const auto filename="sitka/bathymetry/"+tile_name;
+                    const auto payload=ReadText(host,filename.c_str(),max_bathy_bytes);
+                    auto tile=reverie::sitka::ParseBathymetry(
+                        reinterpret_cast<const uint8_t*>(payload.data()),
+                        payload.size(),index.datum_id);
+                    if(!state->bathymetry.Add(std::move(tile)))
+                        throw std::invalid_argument("Sitka legacy tile overlap");
+                }
             }
             if(state->waters.empty())throw std::invalid_argument("No authored Sitka water");
             state->fishing_spots=reverie::sitka::ParseFishingSpots(ReadText(
@@ -160,18 +184,21 @@ int32_t OnGlCreated(void* instance) {
     std::vector<reverie::sitka::TerrainMesh> sea_floor;
     try {
         size_t count=0u;
-        for(const auto& bathy:state->bathymetry.Tiles()){
+        const auto append=[&](const reverie::sitka::BathyTile& bathy){
             auto mesh=reverie::sitka::BuildSeafloorTerrain(bathy,
                 state->terrain.origin_east,state->terrain.origin_north);
-            if(mesh.indices.empty())continue;
+            if(mesh.indices.empty())return;
             count+=mesh.vertices.size();
             if(count>300000u)
                 throw std::invalid_argument(
-                    "Sitka seabed needs streaming LOD beyond 300k vertices");
+                    "Sitka visual seabed needs additional world-cell LOD");
             sea_floor.push_back(std::move(mesh));
-        }
-        if(sea_floor.empty())
-            throw std::invalid_argument("No valid Sitka seabed triangles");
+        };
+        if(state->stream)state->stream->VisitResident(append);
+        else for(const auto& bathy:state->bathymetry.Tiles())append(bathy);
+        // A boat's current region can be outside survey coverage. Render land
+        // and water only, never fabricate a fallback seafloor. Dynamic GPU
+        // tile swap requires a separate GL-bound frame-preparation callback.
     }catch(const std::exception& e){
         Log(state->host,e.what());return 0;
     }
@@ -200,6 +227,34 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     auto* state=static_cast<State*>(instance);
     if(!state||!ReverieNativeInputHasBaseV1(input))return;
     state->water_gl.Update(input->delta_seconds);
+    if(state->stream &&
+       input->struct_size>=REVERIE_NATIVE_INPUT_V1_LISTENER_MIN_SIZE &&
+       input->listener_valid){
+        // This source-only preview follows the headset/editor world focus.
+        // Actual boat mode will instead provide SkiffNavigation's world pose.
+        // The host-scoped reader is synchronous: cap at ONE tile per update,
+        // never touch a GL buffer and never read data from an eye render.
+        const double east=state->terrain.origin_east+input->listener_position[0];
+        const double north=state->terrain.origin_north+input->listener_position[2];
+        double vx=0.,vn=0.;
+        const double dt=input->delta_seconds;
+        if(state->has_focus&&std::isfinite(dt)&&dt>.001&&dt<=.1){
+            vx=(east-state->last_focus_east)/dt;
+            vn=(north-state->last_focus_north)/dt;
+            if(std::hypot(vx,vn)>8.)vx=vn=0.;
+        }
+        state->stream->Pump(east,north,vx,vn,
+            [&](const std::string& name,std::string& out){
+                out=ReadText(state->host,("sitka/bathymetry/"+name).c_str(),
+                             static_cast<uint32_t>(
+                                reverie::sitka::kBathyHeaderBytes+
+                                size_t(reverie::sitka::kBathyMaxAxis)*
+                                size_t(reverie::sitka::kBathyMaxAxis)*5u));
+                return true;
+            });
+        state->last_focus_east=east;state->last_focus_north=north;
+        state->has_focus=true;
+    }
     reverie::sitka::FishingCastTarget target;
     if(input->primary_down && ReverieNativeInputHasPointerV1(input)){
         ReverieNativeInputV1 normalized=*input;

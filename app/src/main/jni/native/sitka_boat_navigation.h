@@ -53,8 +53,9 @@ class SkiffNavigation {
 public:
     BoatPose boat;
     BoatDepthFinder sounder;
+    template<class BathySampler>
     bool Launch(double east,double north,double heading,
-                double draft_m,const BathyAtlas& atlas,
+                double draft_m,const BathySampler& atlas,
                 double surface_elevation_m,bool approved_water){
         if(!std::isfinite(east)||!std::isfinite(north)||
            !std::isfinite(heading)||!std::isfinite(draft_m)||
@@ -71,9 +72,9 @@ public:
                 pending_seconds_=0.;sounder.Reset();}
     // Caller runs update once per simulation tick; never from render_eye.
     // CheckWater must be a geographic water-mask test at the candidate pose.
-    template<class CheckWater>
+    template<class BathySampler,class CheckWater>
     BoatEvent Update(double dt,double throttle,double rudder,
-                     double sea_surface_elevation_m,const BathyAtlas& atlas,
+                     double sea_surface_elevation_m,const BathySampler& atlas,
                      CheckWater&& check_water){
         if(!boat.launched)return BoatEvent::None;
         if(!std::isfinite(dt)||dt<=0.||dt>.1||

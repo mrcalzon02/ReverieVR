@@ -73,8 +73,12 @@ class BathymetryBakerTest(unittest.TestCase):
             self.assertEqual(PIXEL.unpack_from(first,missing),(0.,0))
             self.assertEqual(PIXEL.unpack_from(first,HEADER.size),
                              (-8.,1))
-            self.assertIn("SITKA-BATHY-INDEX-1\n", (output/"index.txt").read_text())
+            self.assertIn("SITKA-BATHY-INDEX-2\n", (output/"index.txt").read_text())
             self.assertIn("tiles 4\n", (output/"index.txt").read_text())
+            self.assertIn("bathymetry-r00-c00.sitkab 480005 6299995 10 10 4 4\n",
+                          (output/"index.txt").read_text())
+            self.assertEqual(result["index_schema"],2)
+            self.assertEqual(result["resident_tile_target"],2)
             self.assertEqual(result["tiles"][0]["valid_samples"],15)
             checksum=result["tiles"][0]["sha256"]
             self.assertEqual(bake(raster,provenance,output,3)["tiles"][0]["sha256"],
@@ -84,7 +88,7 @@ class BathymetryBakerTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"datum mismatch"):
                 bake(raster,provenance,output,3)
 
-    def test_max_atlas_tile_count_before_output(self):
+    def test_many_tiles_are_exportable_but_directory_limit_is_bounded(self):
         import numpy as np
         import rasterio
         from rasterio.transform import from_origin
@@ -97,8 +101,20 @@ class BathymetryBakerTest(unittest.TestCase):
                                 crs="EPSG:32608",transform=from_origin(
                                     480000,6300000,10,10)) as ds:
                 ds.write(np.full((20,20),10.,dtype=np.float32),1)
-            with self.assertRaisesRegex(ValueError,"16 resident tiles"):
-                bake(raster,meta,base/"not-created",2)
+            output=base/"streamed"
+            result=bake(raster,meta,output,2)
+            self.assertEqual(result["tile_count"],100)
+            self.assertIn("tiles 100\n",(output/"index.txt").read_text())
+            # The 81 files are packaged, but NOT resident until the boat
+            # requests them; no per-tile load occurs in this Python exporter.
+            huge=base/"huge.tif"
+            with rasterio.open(huge,"w",driver="GTiff",height=100,width=100,
+                                count=1,dtype="float32",nodata=-9999.,
+                                crs="EPSG:32608",transform=from_origin(
+                                    480000,6300000,10,10)) as ds:
+                ds.write(np.full((100,100),10.,dtype=np.float32),1)
+            with self.assertRaisesRegex(ValueError,"streaming directory"):
+                bake(huge,meta,base/"not-created",2)
             self.assertFalse((base/"not-created").exists())
 
 if __name__=="__main__":

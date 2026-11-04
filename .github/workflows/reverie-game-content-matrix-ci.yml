@@ -40,6 +40,8 @@ on:
       - 'app/src/main/jni/native/sitka_environment.h'
       - 'app/src/main/jni/native/sitka_lighting.h'
       - 'app/src/main/jni/native/sitka_bathymetry.h'
+      - 'app/src/main/jni/native/sitka_bathymetry_stream.h'
+      - 'app/src/test/native/sitka_bathymetry_stream_test.cpp'
       - 'app/src/main/jni/native/sitka_boat_navigation.h'
       - 'app/src/main/jni/native/sitka_seafloor_mesh.h'
       - 'app/src/test/native/sitka_seafloor_mesh_test.cpp'
@@ -113,6 +115,33 @@ jobs:
           source "${RUNNER_TEMP}/sitka-bathymetry-py/bin/activate"
           python -m pip install --disable-pip-version-check --no-input             'numpy==2.3.5' 'pyproj==3.7.2' 'rasterio==1.5.0'
           python -m unittest discover -s scripts/sitka -p 'test_build_bathymetry.py' -v
+
+  verify-sitka-streaming:
+    name: Sitka 8 km boat seabed lazy-load, LOD and transition stress
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check 8km route, bounded two-tile resident memory, boundary jitter and corrupt data
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/sitka_bathymetry_stream_test.cpp \
+              -o "${RUNNER_TEMP}/sitka-stream-${compiler}"
+            "${RUNNER_TEMP}/sitka-stream-${compiler}" \
+              "${RUNNER_TEMP}/sitka-stream-trace-${compiler}.csv"
+          done
+      - name: Retain exact-commit streaming transition diagnostics
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitka-streaming-traces-${{ github.run_id }}
+          path: ${{ runner.temp }}/sitka-stream-trace-*.csv
+          retention-days: 7
+          if-no-files-found: error
 
   verify-sitka-real-gles2:
     name: Sitka real Mesa EGL/GLES2 terrain, water and stereo lifecycle
@@ -206,7 +235,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_name in sitka_bathymetry_test sitka_boat_navigation_test sitka_seafloor_mesh_test; do
+          for test_name in sitka_bathymetry_test sitka_bathymetry_stream_test sitka_boat_navigation_test sitka_seafloor_mesh_test; do
             for compiler in g++ clang++; do
               "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic                 -Iapp/src/main/jni/native                 "app/src/test/native/${test_name}.cpp"                 -o "${RUNNER_TEMP}/${test_name}-${compiler}"
               "${RUNNER_TEMP}/${test_name}-${compiler}"

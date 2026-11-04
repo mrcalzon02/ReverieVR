@@ -99,3 +99,45 @@ The existing water shader is provisionally **opaque**; the seabed will
 therefore generally not be visible through the surface from above until
 the water renderer gains appropriate depth/opacity treatment. Real
 Mesa stereo/context-loss validation and on-device profiling are required.
+
+
+## Geographic tile streaming and region transitions — 2026-11-04
+
+**Source implemented (no S9 device acceptance):**
+
+- The baker exports `SITKA-BATHY-INDEX-2`, a geographic directory carrying
+  projected-metre bounds, grid resolution and tile filename without eagerly
+  reading seabed samples. Up to 2,048 indexed source regions are supported
+  per authored input. The old 16-tile V1 index is still readable for legacy
+  authored source-only projects.
+- `sitka_bathymetry_stream.h` loads at most **two CPU seabed tiles**:
+  the tile beneath the boat/focus, plus one ahead when five seconds of
+  bounded velocity predicts a known crossing. Read-only depth samples do
+  not initiate I/O. Unknown cells return NoData and boat rules block passage.
+- Tile headers are checked against actual indexed grid coordinates,
+  dimensions, datum and spacing; mismatches fail closed. The loader issues
+  at most one local read on each `Pump` update, with a 15-update failure
+  retry gap. It tracks reads, loads, failures, evictions, resident tiles
+  and **sample payload bytes**, not whole-process resident memory.
+- The unregistered native Sitka prototype now recognizes V2 and uses the
+  headset/editor position as a provisional focus for CPU streaming;
+  a real skiff's projected position/velocity must replace that during
+  full boat integration. A loaded tile may appear on GL context creation,
+  but **in-motion GPU swapping is not implemented yet**. The host's
+  `read_asset` is synchronous; no async or hitch-free boat IO is claimed.
+
+**CI regression targets:** Synthetic 8 km / 40 tile continuous travel,
+predictive prefetch, seam crossing, 120-frame boundary jitter, no redundant
+IO, at-most-two resident cells, eviction, corrupted origin/datum, auto-retry
+and boat sounder sampling directly from the same cache. Python GIS tests
+exercise V2 directory export and more than 16 source tiles. The Action
+workflow retains transition CSV evidence. These are test-only numeric grids.
+
+**Further requirements:** Implement verified async data loading before
+shipping a moving boat; keep GPU uploads in an explicit GL-safe
+once-per-frame preparation stage outside either eye. Add distance-and
+hysteresis-based LOD for actual terrain/seabed/roads/buildings; test
+multi-mile adjacent tile seams and stable building IDs. Measure host
+IO/decode p95/p99, dropped stereo frames, true RSS/GPU bytes and sustained
+Galaxy S9 30 FPS before accepting performance. Never reuse stale seabed
+depth as a current sonar reading across an unloaded region.
