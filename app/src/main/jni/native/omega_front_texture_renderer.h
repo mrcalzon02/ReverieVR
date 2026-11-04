@@ -245,6 +245,15 @@ public:
                 return false;
             }
             portrait_uploaded_id_=portrait_id_;
+            // One info line per successfully uploaded portrait (not per eye).
+            // This lets Android logcat confirm real art was shown, not a fallback.
+            char message[96];
+            std::snprintf(message,sizeof(message),
+                "Gallery portrait GPU upload: %s slot %02d",
+                kPortraitFactionIds[portrait_id_/kPortraitsPerFaction],
+                portrait_id_%kPortraitsPerFaction+1);
+            ReverieNativeLogV1(host_,REVERIE_NATIVE_LOG_INFO,
+                               "omega-front",message);
         }
         glUseProgram(program_);
         glUniformMatrix4fv(mvp_,1,GL_FALSE,matrix);

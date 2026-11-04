@@ -14,6 +14,11 @@ for source in "$root"/app/src/test/native/omega_front_*_test.cpp; do
     count=$((count + 1))
     libraries=()
     arguments=()
+    if [[ "$name" == omega_front_portrait_catalog_test ]]; then
+        # Use the actual native PNG decoder on all 100 accepted 256px assets.
+        libraries=(-lz)
+        arguments=("$root/app/src/main/assets")
+    fi
     if [[ "$name" == omega_front_png_test ]]; then
         # The decoder uses zlib; exercise the real 64 unmodified PNG files
         # under the same full-suite runner, not only in hub CI.
