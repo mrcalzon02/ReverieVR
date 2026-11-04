@@ -14,6 +14,18 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
     // Actual Breakwater imports are BWM1 meshes, already shipped in the
     // bundled APK. Previously the host rejected ALL Breakwater reads.
     if(std::strcmp(id,"breakwater-battery")==0){
+        // Only the six approved 64px Breakwater materials, never arbitrary
+        // downloaded images or paths from another native-game namespace.
+        constexpr const char* tiles[]={
+            "native/breakwater/materials/shingle.png",
+            "native/breakwater/materials/quay_concrete.png",
+            "native/breakwater/materials/black_basalt.png",
+            "native/breakwater/materials/oxidized_steel.png",
+            "native/breakwater/materials/sandbag_burlap.png",
+            "native/breakwater/materials/olive_enamel.png"
+        };
+        for(const char* approved:tiles)
+            if(std::strcmp(path,approved)==0)return 16384u;
         constexpr const char *root="native/breakwater/beckenburg/";
         const size_t r=std::strlen(root),n=strnlen(path,128u);
         if(n>=128u||n<=r+4u||std::strncmp(path,root,r)!=0||

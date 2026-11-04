@@ -41,5 +41,5 @@
       "sourceImage": "chipped_olive_military_metal_texture.png"
     }
   ],
-  "runtimeStatus": "art only; loader implementation requires independent integration/verification"
+  "runtimeStatus": "native runtime PNG loading source-integrated; Android GLES2/Daydream acceptance pending"
 }

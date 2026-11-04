@@ -595,3 +595,7 @@ hidden PC runtime or startup network dependency. The
 owner-rights attestations and hashes, and does not download tracks itself.
 Galaxy S9 decoder/frame pacing, full-catalog size and on-device UI
 acceptance remain outstanding.
+
+## Breakwater owner-authored material PNG admission — 2026-11-04
+
+The native `breakwater-battery` game now admits **only** six named 64×64 PNGs below `native/breakwater/materials/`, at a hard 16 KiB per-file read cap, independent of its prior flat `beckenburg/*.bwm` allowance. The game reuses the existing bounded, CRC-checked `omega_front_png.h` PNG decoder outside the render loop, keeping the owner's full-resolution sources outside the APK and the earlier deterministic procedural material tiles as individual-file fallback. Its existing GLES2 sprite/material atlas receives those six decoded textures at GL context creation; no per-eye decoding, independent texture binding, new native ABI or change to ammunition/targeting/collision occurs. The standalone material test reads each actual packaged PNG and tests fallback; Android NDK and S9 stereo/thermal validation remain pending.

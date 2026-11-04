@@ -3,6 +3,7 @@
 #include "breakwater_silhouettes.h"
 #include "breakwater_armor.h"
 #include "breakwater_sprite_atlas.h"
+#include "breakwater_authored_materials.h"
 #include "breakwater_materials.h"
 #include "breakwater_terrain.h"
 #include "breakwater_emplacement.h"
@@ -75,6 +76,7 @@ struct State {
     WreckEffects wrecks;
     // Loaded once from packaged, owner-approved Beckenburg source conversions.
     std::array<imported::Model,imported::kAssetPaths.size()> beckenburg_models{};
+    authored::Atlas authored_materials{};
     BatteryDamageFeedback battery_damage;
     AircraftAimFeedback aircraft_aim;
     SurfaceAimFeedback surface_aim;
@@ -1506,6 +1508,14 @@ void *Create(const ReverieNativeHostV1 *host) {
         for(size_t i=0;i<imported::kAssetPaths.size();++i)
             if(imported::Load(&s->beckenburg_models[i],
                               imported::kAssetPaths[i],reader))++admitted;
+        const size_t loaded=authored::Load(s->authored_materials,reader);
+        char art_report[96];
+        std::snprintf(art_report,sizeof(art_report),
+                      "Authored Breakwater materials loaded %zu/%zu",
+                      loaded,authored::kTiles);
+        host->log(loaded==authored::kTiles?
+                  REVERIE_NATIVE_LOG_INFO:REVERIE_NATIVE_LOG_WARN,
+                  "BreakwaterArt",art_report);
         char report[96];
         std::snprintf(report,sizeof(report),"Authentic BWM1 models loaded %zu/%zu",
                       admitted,imported::kAssetPaths.size());
@@ -1573,7 +1583,10 @@ int32_t GlCreate(void *instance) {
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-            const SpritePixels atlas=BuildSpriteAtlas();
+            SpritePixels atlas=BuildSpriteAtlas();
+            // Atlas is prepared once per restored GL context, never per
+            // stereo eye. Unreadable tiles retain their procedural colors.
+            authored::Apply(s->authored_materials,atlas);
             glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,kSpriteAtlasWidth,
                 kSpriteAtlasHeight,0,GL_RGBA,GL_UNSIGNED_BYTE,atlas.data());
         }

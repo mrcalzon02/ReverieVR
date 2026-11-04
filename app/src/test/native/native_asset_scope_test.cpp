@@ -31,6 +31,26 @@ int main(){
     assert(MaximumBytes(gumball,"native/gumball/nodes/sub/gummy_world.rgb565")==0u);
     assert(MaximumBytes(gumball,"native/gumball/nodes/gummy_world.rgb565.bak")==0u);
     assert(MaximumBytes(gumball,"native/omega-front/terrain/ground.png")==0u);
+    // Game-private authored material paths must not expand other module
+    // capabilities or allow traversal/alternate extensions.
+    const char* const breakwaterMaterials[]={
+        "shingle.png","quay_concrete.png","black_basalt.png",
+        "oxidized_steel.png","sandbag_burlap.png","olive_enamel.png"
+    };
+    for(const char* tile:breakwaterMaterials) {
+        const std::string path=std::string("native/breakwater/materials/")+tile;
+        assert(MaximumBytes("breakwater-battery",path.c_str())==16384u);
+        assert(MaximumBytes(red,path.c_str())==0u);
+        assert(MaximumBytes(omega,path.c_str())==0u);
+    }
+    assert(MaximumBytes("breakwater-battery",
+                        "native/breakwater/materials/../shingle.png")==0u);
+    assert(MaximumBytes("breakwater-battery",
+                        "native/breakwater/materials/shingle.png.bak")==0u);
+    assert(MaximumBytes("breakwater-battery",
+                        "native/breakwater/materials/not_approved.png")==0u);
+    assert(MaximumBytes("breakwater-battery",
+                        "native/breakwater/materials/subdir/shingle.png")==0u);
     assert(MaximumBytes(red,"native/red-ledger/beckenburg/wall.rlprop")==3145728u);
     assert(MaximumBytes(red,"native/red-ledger/beckenburg/light_on.rlprop")>0u);
     assert(MaximumBytes(red,"native/red-ledger/icons/source.png")==1048576u);
