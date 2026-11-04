@@ -4,6 +4,7 @@
 #include "sitka_water_gl.h"
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
+#include "sitka_bathymetry.h"
 #include <array>
 #include <cstdint>
 #include <new>
@@ -21,6 +22,7 @@ struct State {
     reverie::sitka::WaterGl water_gl;
     std::vector<reverie::sitka::FishingSpot> fishing_spots;
     reverie::sitka::FishingSession fishing;
+    reverie::sitka::BathyAtlas bathymetry;
 };
 void Log(const ReverieNativeHostV1* host, const char* message) {
     ReverieNativeLogV1(host, REVERIE_NATIVE_LOG_ERROR, "SitkaTerrain", message);
@@ -97,6 +99,25 @@ void* Create(const ReverieNativeHostV1* host) {
                 host,"sitka/water/sitka.water",2000000u));
             state->weather=reverie::sitka::ParseWeather(ReadText(
                 host,"sitka/weather/sitka.properties",4096u));
+            // Source-only adapter: no synthetic seabed or global interpolation.
+            // A renderer cannot advertise a depth until vetted native tiles
+            // have been staged under this host-private asset prefix.
+            const auto index=reverie::sitka::ParseBathyIndex(ReadText(
+                host,"sitka/bathymetry/index.txt",2048u));
+            const uint32_t max_bathy_bytes=static_cast<uint32_t>(
+                reverie::sitka::kBathyHeaderBytes+
+                size_t(reverie::sitka::kBathyMaxAxis)*
+                size_t(reverie::sitka::kBathyMaxAxis)*5u);
+            for(const auto& tile_name:index.filenames){
+                const auto filename="sitka/bathymetry/"+tile_name;
+                const auto payload=ReadText(host,filename.c_str(),max_bathy_bytes);
+                auto tile=reverie::sitka::ParseBathymetry(
+                    reinterpret_cast<const uint8_t*>(payload.data()),
+                    payload.size(),index.datum_id);
+                if(!state->bathymetry.Add(std::move(tile)))
+                    throw std::invalid_argument(
+                        "Sitka bathymetry tile overlap or atlas limit");
+            }
             if(state->waters.empty())throw std::invalid_argument("No authored Sitka water");
             state->fishing_spots=reverie::sitka::ParseFishingSpots(ReadText(
                 host,"sitka/fishing/sites.txt",8192u));

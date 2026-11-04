@@ -39,6 +39,12 @@ on:
       - 'app/src/main/jni/native/sitka_water_gl.h'
       - 'app/src/main/jni/native/sitka_environment.h'
       - 'app/src/main/jni/native/sitka_lighting.h'
+      - 'app/src/main/jni/native/sitka_bathymetry.h'
+      - 'app/src/main/jni/native/sitka_boat_navigation.h'
+      - 'app/src/test/native/sitka_bathymetry_test.cpp'
+      - 'app/src/test/native/sitka_boat_navigation_test.cpp'
+      - 'scripts/sitka/build_bathymetry.py'
+      - 'scripts/sitka/test_build_bathymetry.py'
       - 'app/src/test/native/sitka_lighting_test.cpp'
       - 'app/src/main/jni/native/sitka_fishing_*.h'
       - 'app/src/test/native/sitka_fishing_*_test.cpp'
@@ -90,6 +96,21 @@ jobs:
           path: ${{ runner.temp }}/sitka-ndk-terrain/*.so
           retention-days: 7
           if-no-files-found: error
+
+  verify-sitka-bathymetry-bake:
+    name: Sitka source-only licensed bathymetry tile format and NoData regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned desktop-only GIS test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "${RUNNER_TEMP}/sitka-bathymetry-py"
+          source "${RUNNER_TEMP}/sitka-bathymetry-py/bin/activate"
+          python -m pip install --disable-pip-version-check --no-input             'numpy==2.3.5' 'pyproj==3.7.2' 'rasterio==1.5.0'
+          python -m unittest discover -s scripts/sitka -p 'test_build_bathymetry.py' -v
 
   verify-sitka-real-gles2:
     name: Sitka real Mesa EGL/GLES2 terrain, water and stereo lifecycle
@@ -179,6 +200,16 @@ jobs:
             app/src/test/native/sitka_terrain_mesh_test.cpp \
             -o "${RUNNER_TEMP}/sitka-terrain-mesh-test"
           "${RUNNER_TEMP}/sitka-terrain-mesh-test"
+      - name: Validate Sitka surveyed/composite seabed tiles, boat draft and sonar readout
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_name in sitka_bathymetry_test sitka_boat_navigation_test; do
+            for compiler in g++ clang++; do
+              "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic                 -Iapp/src/main/jni/native                 "app/src/test/native/${test_name}.cpp"                 -o "${RUNNER_TEMP}/${test_name}-${compiler}"
+              "${RUNNER_TEMP}/${test_name}-${compiler}"
+            done
+          done
       - name: Validate real Java-authored Sitka lighting schema and ambient bridge
         shell: bash
         run: |

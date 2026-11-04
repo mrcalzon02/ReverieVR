@@ -214,3 +214,30 @@ unshared context. These are **synthetic test triangles**, not licensed Sitka
 geography. CI status must be checked at the exact commit before claiming
 the tests pass. Sitka remains unregistered and unplayable; no Galaxy S9,
 geographic, real source-light or fishing-loop acceptance is implied.
+
+## Bathymetric source-to-boat adapter — 2026-11-04
+
+The offline `scripts/sitka/build_bathymetry.py` converter creates checked
+SITKAB01 projected-metre bottom-elevation tiles, an index of host-scoped
+filenames, and a detailed source SHA-256 manifest from an *already vetted*
+GeoTIFF. It does not download NOAA data, fix an unknown vertical datum,
+auto-fill missing coverage or create simulated Sitka geographic assets.
+Signed depth rasters need explicit positive-down or elevation-up metadata;
+the source and terrain vertical datums must already agree before export.
+
+The C++17 `sitka_bathymetry.h` parser rejects corrupt/oversized tiles,
+unreconciled datum IDs, NoData interpolation and overlapping tiles. The
+source-only, unregistered `sitka_terrain_module.cpp` now requires an
+authored index and all referenced bathymetry tiles in addition to terrain,
+water, weather, lighting and fishing-site sources. This enforces fail-closed
+content loading; there are still **no licensed Sitka files** in the package.
+
+The CPU-only `sitka_boat_navigation.h` computes actual game-water-to-bed
+depth, virtual keel clearance, source quality and quarter-second ping state.
+Fixed 30 Hz skiff rules stop at unapproved water, shallow draft clearance
+or bathymetry gaps, without moving the seated head camera. These are tested
+simulation components, **not yet a boat object, underwater GL renderer,
+Lato depth display, playable launcher or real on-device sonar**.
+
+Follow the [bathymetry/boat milestone](SITKA_BATHYMETRY_AND_BOAT_SPEC.md)
+before installing assets or calling this geographically accepted.

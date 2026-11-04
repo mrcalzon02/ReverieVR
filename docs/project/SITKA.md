@@ -2,6 +2,19 @@
 
 # Sitka
 
+## Source-only seafloor and boat instrument milestone — 2026-11-04
+
+Sitka now has a **source-only, deterministic bathymetric tile converter and native
+depth-finder/skiff model**, in addition to its existing terrain, water/weather,
+lighting and fishing building blocks. NOAA/USGS-derived real world cells still
+have to be acquired and checked for horizontal/vertical datum, source rights
+and coverage; no real Sitka depth reading is displayed yet. The prototype
+requires an approved bathymetry index and native tile assets, but remains
+**unregistered and unplayable**. See [Sitka bathymetry and skiff specification]
+(SITKA_BATHYMETRY_AND_BOAT_SPEC.md) for binary schema, surveyed/composite
+quality, explicit NoData, source provenance and the next on-boat HUD milestone.
+
+
 > **Expanded whole-city specification (2026-10-28):** [Sitka — Complete City, Coast, World, and Gameplay Specification](SITKA_CITY_WORLD_DESIGN_SPEC.md) is the current authority for entire-city exploration, buildings, georeferenced roads, Malefic Veil city/terrain reuse, the actual Beckenburg shared water and weather modules, town/boat upgrades and unified ReverieVR APK delivery. This document retains the original coastal gameplay scope and evidence history. Earlier independent game-package or content-pack statements are superseded by the unified main APK policy.
 
 
