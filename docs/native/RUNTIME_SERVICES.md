@@ -603,3 +603,17 @@ The native `breakwater-battery` game reads six exact 64×64 authored PNGs under 
 ## Explicit common paths in legacy verified-content recovery — 2026-11-04
 
 The source-standard Java `RvPackInstaller` accepts only nine explicitly enumerated `assets/native/shared/v1/` entries when a permitted game includes them in an otherwise trusted, immutable `.rvpack`. `SharedNativeAssetPaths` mirrors the native module's exact material/model scope. Other games, arbitrary shared directories, unknown names and path traversal remain rejected. Breakwater's and Omega Front's emulator fixtures have been updated to mount the real shared paths; the production single-APK packaging remains authoritative. This is **not** an OS-wide reusable asset store or install-once download cache, and does not make separate native APKs share private Android storage.
+
+## Sitka-scoped authored asset admission (source stage)
+
+The host-owned read-only `MaximumBytes` classifier now recognizes
+the **future** `sitka` module id for eight exact authored source
+paths (terrain, water, lighting, weather, fishing, boat launch,
+bathymetry V2 index and sparse procedural guides), plus only
+strictly formatted `sitka/bathymetry/bathymetry-rNN-cNN.sitkab`
+files capped at `56 + 513*513*5 = 1,315,901` bytes.
+Other module IDs have no access to these paths; Sitka
+cannot read foreign game paths, arbitrary user saves, URLs,
+traversal, nested paths or alternate extensions.
+These are path/size permissions, **not** registration of the Sitka
+module or evidence that any real NOAA data ships in an APK.

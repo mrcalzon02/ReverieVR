@@ -34,6 +34,14 @@ int main(){
         "native/omega-front/terrain/ash_waste.png")>0);
     assert(MaximumBytes("classic-chess",
         "native/breakwater/beckenburg/wooden_crate_1.bwm")==0);
+    assert(MaximumBytes("sitka","sitka/boat/launch.txt")==4096u);
+    assert(MaximumBytes("sitka",
+        "sitka/bathymetry/bathymetry-r01-c02.sitkab")==
+        56u+513u*513u*5u);
+    assert(MaximumBytes("sitka",
+        "sitka/bathymetry/../fishing/sites.txt")==0u);
+    assert(MaximumBytes("omega-front",
+        "sitka/bathymetry/bathymetry-r01-c02.sitkab")==0u);
     std::puts("PASS: Breakwater BWM1 scoped reads plus Red Ledger/Omega compatibility");
     return 0;
 }

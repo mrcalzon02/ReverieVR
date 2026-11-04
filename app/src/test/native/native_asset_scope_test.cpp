@@ -7,6 +7,47 @@ int main(){
     const char *red="between-deliveries-red-ledger";
     const char *omega="omega-front";
     const char *gumball="gumball-armada";
+    const char *sitka="sitka";
+    constexpr uint32_t bathy_cap=56u+513u*513u*5u;
+    const char* exact_sitka[]={
+        "sitka/coast/terrain.sitkam",
+        "sitka/lighting/sitka.properties",
+        "sitka/weather/sitka.properties",
+        "sitka/water/sitka.water",
+        "sitka/fishing/sites.txt",
+        "sitka/boat/launch.txt",
+        "sitka/bathymetry/index.txt",
+        "sitka/bathymetry/procedural-guides.txt"
+    };
+    for(const char* path:exact_sitka){
+        assert(MaximumBytes(sitka,path)>0u);
+        assert(MaximumBytes("omega-front",path)==0u);
+        assert(MaximumBytes("breakwater-battery",path)==0u);
+        assert(MaximumBytes("classic-chess",path)==0u);
+    }
+    assert(MaximumBytes(sitka,"sitka/bathymetry/bathymetry-r00-c00.sitkab")==bathy_cap);
+    assert(MaximumBytes(sitka,"sitka/bathymetry/bathymetry-r99-c99.sitkab")==bathy_cap);
+    const char* invalid_sitka[]={
+        "sitka/bathymetry/bathymetry-r0-c00.sitkab",
+        "sitka/bathymetry/bathymetry-rXX-c00.sitkab",
+        "sitka/bathymetry/bathymetry-r00-c0X.sitkab",
+        "sitka/bathymetry/bathymetry-r00-c00.sitkab.bak",
+        "sitka/bathymetry/../boat/launch.txt",
+        "sitka/bathymetry/bathymetry-r00-c00.sitkab/../other",
+        "sitka/bathymetry/sub/bathymetry-r00-c00.sitkab",
+        "sitka/boat/../../native/omega-front/units/tank.png",
+        "sitka/boat/boat.sav",
+        "sitka/coast/terrain.sitkam.bak",
+        "sitka/water/other.water",
+        "sitka/boat/launch.txt/",
+        "native/omega-front/terrain/ground.png",
+        "file:///etc/passwd",
+        "../sitka/bathymetry/index.txt"
+    };
+    for(const char* path:invalid_sitka)
+        assert(MaximumBytes(sitka,path)==0u);
+    assert(MaximumBytes(sitka,nullptr)==0u);
+
     const char *candyRoot="native/gumball/nodes/";
     const char* const candyTiles[]={
         "gummy_world.rgb565","chocolate_world.rgb565",

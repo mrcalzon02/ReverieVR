@@ -5,11 +5,43 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <initializer_list>
 namespace reverie { namespace native { namespace assets {
 inline uint32_t MaximumBytes(const char *id,const char *path){
     if(!id||!path)return 0u;
     const uint32_t common=shared_assets::MaximumBytes(id,path);
     if(common!=0u)return common;
+    // Future Sitka module: allow ONLY explicitly named authored data,
+    // and strictly bounded geographic depth tile names. This does not
+    // register Sitka as playable or permit reading arbitrary filesystem
+    // files, private saves, data from other game namespaces or URLs.
+    if(std::strcmp(id,"sitka")==0){
+        const struct Entry {const char* path;uint32_t limit;} exact[]={
+            {"sitka/coast/terrain.sitkam",10000000u},
+            {"sitka/lighting/sitka.properties",4096u},
+            {"sitka/weather/sitka.properties",4096u},
+            {"sitka/water/sitka.water",2000000u},
+            {"sitka/fishing/sites.txt",8192u},
+            {"sitka/boat/launch.txt",4096u},
+            {"sitka/bathymetry/index.txt",262144u},
+            {"sitka/bathymetry/procedural-guides.txt",32000u}
+        };
+        for(const auto& item:exact)
+            if(std::strcmp(path,item.path)==0)return item.limit;
+        constexpr const char* root="sitka/bathymetry/";
+        const size_t prefix=std::strlen(root);
+        const size_t n=strnlen(path,128u);
+        if(n!=prefix+25u||std::strncmp(path,root,prefix)!=0)
+            return 0u;
+        const char* name=path+prefix;
+        if(std::strncmp(name,"bathymetry-r",12u)!=0||
+           name[14]!='-'||name[15]!='c'||
+           std::strcmp(name+18u,".sitkab")!=0)
+            return 0u;
+        for(unsigned i:{12u,13u,16u,17u})
+            if(name[i]<'0'||name[i]>'9')return 0u;
+        return 56u+513u*513u*5u; // exact source-only .sitkab max
+    }
     // Exactly one authored scene; no arbitrary file access for modules.
     if(std::strcmp(id,"procedural-test-chamber")==0)
         return std::strcmp(path,"native/test-chamber/scene.rvscene")==0

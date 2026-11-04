@@ -290,3 +290,17 @@ controller onboarding, asynchronously preloaded local asset
 reading, installed Galaxy S9 gameplay and thermal/frametime
 verification are **not** completed by this source-stage hook.
 Boat mode is not exposed as a fake shell gallery launch.
+
+## Sitka-scoped authored asset admission (source stage)
+
+The host-owned read-only `MaximumBytes` classifier now recognizes
+the **future** `sitka` module id for eight exact authored source
+paths (terrain, water, lighting, weather, fishing, boat launch,
+bathymetry V2 index and sparse procedural guides), plus only
+strictly formatted `sitka/bathymetry/bathymetry-rNN-cNN.sitkab`
+files capped at `56 + 513*513*5 = 1,315,901` bytes.
+Other module IDs have no access to these paths; Sitka
+cannot read foreign game paths, arbitrary user saves, URLs,
+traversal, nested paths or alternate extensions.
+These are path/size permissions, **not** registration of the Sitka
+module or evidence that any real NOAA data ships in an APK.
