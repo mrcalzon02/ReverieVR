@@ -1,3 +1,56 @@
+## 2026-11-04 — Sitka deterministic proximal marine infill + transactional GPU terrain transitions
+
+**INTENT:** Honor revised gameplay authority: real NOAA elevations where
+available, **seeded and proximity-guided procedural seafloor** outside
+survey coverage. Preserve 8 km tile-streaming, two-eye integrity, and
+the option to explore unsurveyed ocean without treating fake depths
+as nautical charts.
+
+**SOURCE DELIVERED:**
+- GitHub main [14f3c45](https://github.com/mrcalzon02/ReverieVR/commit/14f3c45dff65f191bb9f1500fd3bd16c35dd94eb):
+  coordinate-seeded coherent-noise seafloor, bounded fixed real-source
+  guidepoints baked from the authored GeoTIFF, survey/composite precedence,
+  procedural quality-tagged soundings, generated 256 m coast tiles,
+  water-mask-restricted hole filling and native source-only Sitka integration.
+- [8e43c00](https://github.com/mrcalzon02/ReverieVR/commit/8e43c005f1518f75bef8acba3fe4c2afa708daaa):
+  fix the regression fixture to respect four-corner NoData interpolation;
+  no weakening of actual survey-sampling validation.
+- [87a1865](https://github.com/mrcalzon02/ReverieVR/commit/87a1865dbcd7094c81d7a23d6a66e97a0e6ec935):
+  transactional GLES2 seafloor VBO/EBO replacement, retaining land
+  buffers and prior visual seabed on failed replacement; real driver
+  test covers valid swaps, invalid data rollback and both-eye parity.
+
+**EXACT CI EVIDENCE:** [ReverieVR all-game content contracts #41926733209]
+(https://github.com/mrcalzon02/ReverieVR/actions/runs/41926733209)
+at 87a1865: four Sitka-specific jobs **SUCCESS** — GCC/Clang
+8 km / 40-tile lazy-load route, pinned GIS exporter tests, Android
+NDK ARMv7 and ARM64 source-only module link, and real Mesa stereo
+rendering / safe swapped seafloor / context recreation. The new
+procedural regression passed inside the `verify-all-games` job.
+Action artifacts: `sitka-streaming-traces-41926733209`
+(artifact 13368149335), and `sitka-source-only-ndk-abi-41926733209`
+(artifact 13370630201). Earlier route diagnostics reported 40
+tile loads / 38 evictions; generated terrain depends on global
+coordinates and seed, not resident tile order.
+
+**UNRELATED WORKFLOW RED:** The all-game verify job still fails an
+Omega Front native art-package assertion (`AssertionError (119, [])`
+on the 41923897146 run). Sitka-specific successful job results must
+not be described as an entirely green all-game workflow. This Omega
+issue was not modified in this focused Sitka commit.
+
+**NOT YET IMPLEMENTED/VERIFIED:** Actual NOAA/USGS Sitka source tiles,
+datum-aligned authoring content, registered playable game, boat console,
+automatic runtime GPU swap callback from authoritative boat movement,
+real mobile async loader, GPS/real sonar, Android installed Sitka
+experience or sustained Galaxy S9 30 FPS/thermal evidence.
+
+**NEXT:** Bind generated/source hybrid to actual boat mode, add an
+explicit GL-safe between-eye-frame preparation callback, integrate
+LOD hysteresis/cell transitions and record per-cell CPU/GPU timings.
+Then source licensed harbor geometry, water mask and actual artwork.
+
+---
 ## 2026-11-04 — Sitka licensed-bathymetry contract, deterministic skiff depth model and real GLES2 seabed source proof
 
 **INTENT:** Expand Sitka's actual anchored terrain system into surveyed/composite

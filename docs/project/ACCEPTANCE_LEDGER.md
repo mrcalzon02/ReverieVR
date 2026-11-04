@@ -1,3 +1,30 @@
+## 2026-11-04 — Sitka survey-first procedural ocean and safe seafloor GPU primitive
+
+**Source-stage accepted with tests, not playable Sitka:**
+Deterministic global-seed+proximal-guidepoint ocean floor,
+source-authoritative survey/composite cells, procedural 256 m
+water-only infill and distinct `PROCEDURAL` boat depth text.
+Generated heights and seam coordinates do not depend on traversal
+or resident cache order; explicit source datum, water mask and
+source-manifest SHA audit remain mandatory.
+
+Native terrain now has a separately tested transactional
+`ReplaceSeafloor` GLES2 VBO/EBO swap primitive. This is **not**
+wired into an actual boat-frame loop; only source/render-driver
+behavior is accepted. Real NOAA Sitka tiles, visible ship console,
+native game registration, future worker I/O, device perf and
+binocular thermal headset checks remain open.
+
+**Evidence:**
+[source generation](https://github.com/mrcalzon02/ReverieVR/commit/14f3c45dff65f191bb9f1500fd3bd16c35dd94eb),
+[fixed fixture](https://github.com/mrcalzon02/ReverieVR/commit/8e43c005f1518f75bef8acba3fe4c2afa708daaa),
+[staged GPU swap](https://github.com/mrcalzon02/ReverieVR/commit/87a1865dbcd7094c81d7a23d6a66e97a0e6ec935),
+[exact CI run](https://github.com/mrcalzon02/ReverieVR/actions/runs/41926733209).
+Four Sitka-specific jobs succeeded and procedural tests passed.
+Entire all-game matrix remains red on a different Omega Front
+sprite-art package assertion; do not report global release acceptance.
+
+---
 ## 2026-11-04 — Sitka seabed data/boat depth-finder source acceptance
 
 **Source-only static accepted (not device-accepted):**
