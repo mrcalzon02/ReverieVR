@@ -218,3 +218,33 @@ real phone might hitch; asynchronous worker dispatch, real
 model boat controls and GPU timing telemetry remain open.
 No approved NOAA/USGS geography has been bundled. This
 is a source-stage integration, not a playable release.
+
+## LOD-first hybrid seafloor geometry: source tile CPU budget
+
+The native source-only terrain renderer now uses
+`BuildHybridSeafloorLod` for resident NOAA-derived source tiles.
+Rather than filling potentially 513×513 unknown samples at
+full resolution and immediately decimating, it evaluates the
+16/32/64k or fewer displayed LOD vertices only, retaining
+original surveyed cell elevations and procedural infill tags.
+Every underlying cell in a coarse quad is still checked
+against the authored water footprint, so a tiny island or
+shoreline hole cannot be filled by a large underwater
+triangle. An invalid source datum is rejected.
+
+The synthetic 513×513, stride-4 CI fixture expects a
+129×129 mesh (16,641 vertices; 32,768 triangles) and a
+compact approximately 463 KiB GPU vertex/index payload.
+That is a **calculated/CI-test budget**, not measured
+Android VR memory or frame time. GCC/Clang optimized test
+runs retain CSV-style metrics and CPU build microseconds
+as an artifact; CI timing is diagnostic only and not a
+30-FPS-device acceptance threshold.
+
+The frame-preparation callback still builds a complete
+new LOD mesh and uploads it during one GL-owned frame
+boundary. Although bounded, that operation and the
+CPU cache's synchronous source asset reads still require
+an async/staged work budget and actual Galaxy S9 p95/p99
+frame-time instrumentation before the feature is accepted
+as hitch-free gameplay. Sitka remains unregistered.

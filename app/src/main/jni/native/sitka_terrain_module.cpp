@@ -9,6 +9,7 @@
 #include "sitka_procedural_seabed.h"
 #include "sitka_seafloor_mesh.h"
 #include "sitka_seafloor_frame_plan.h"
+#include "sitka_seafloor_sparse_mesh.h"
 #include <array>
 #include <cstdint>
 #include <new>
@@ -318,33 +319,28 @@ int32_t PrepareFrame(void* instance){
     std::vector<reverie::sitka::TerrainMesh> seafloor;
     try{
         if(key.valid){
-            reverie::sitka::BathyTile tile;
             const auto mask=[&](double x,double z){
                 return WaterAt(state,x,z);
             };
+            reverie::sitka::TerrainMesh mesh;
             if(key.sourced){
                 const auto* source=state->stream->ResidentAt(east,north);
-                if(!source)return 1; // Changed between decisions; retry.
-                tile=reverie::sitka::FillSeabedGaps(
-                    *source,*state->generated,mask);
-                // Mask out surveyed cells that lie outside authored water,
-                // only for rendering (never change the source in the cache).
-                for(unsigned row=0;row<tile.rows;++row)
-                    for(unsigned col=0;col<tile.columns;++col){
-                        const size_t i=size_t(row)*tile.columns+col;
-                        const double x=tile.first_east+col*tile.east_step;
-                        const double z=tile.first_north-row*tile.north_step;
-                        if(!mask(x,z)){
-                            tile.qualities[i]=reverie::sitka::BedQuality::Missing;
-                            tile.elevations_m[i]=0.f;
-                        }
-                    }
+                if(!source)return 1; // Retry when a cache tile is replaced.
+                // Build only the selected LOD samples: do not generate
+                // ~263k full-resolution pixels to discard 15/16 of them.
+                // Check every underlying authored water-mask cell before
+                // accepting each coarse quad, including tiny land islands.
+                mesh=reverie::sitka::BuildHybridSeafloorLod(
+                    *source,*state->generated,
+                    state->terrain.origin_east,state->terrain.origin_north,
+                    key.stride,mask);
             }else{
-                tile=state->generated->GenerateTile(east,north,mask);
+                const auto tile=state->generated->GenerateTile(
+                    east,north,mask);
+                mesh=reverie::sitka::BuildSeafloorTerrain(
+                    tile,state->terrain.origin_east,state->terrain.origin_north,
+                    key.stride);
             }
-            auto mesh=reverie::sitka::BuildSeafloorTerrain(
-                tile,state->terrain.origin_east,state->terrain.origin_north,
-                key.stride);
             if(!mesh.indices.empty())seafloor.push_back(std::move(mesh));
         }
     }catch(const std::exception& e){

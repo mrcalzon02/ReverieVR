@@ -47,6 +47,8 @@ on:
       - 'app/src/main/jni/native/sitka_boat_navigation.h'
       - 'app/src/main/jni/native/sitka_seafloor_mesh.h'
       - 'app/src/main/jni/native/sitka_seafloor_frame_plan.h'
+      - 'app/src/main/jni/native/sitka_seafloor_sparse_mesh.h'
+      - 'app/src/test/native/sitka_seafloor_sparse_mesh_test.cpp'
       - 'app/src/test/native/sitka_seafloor_frame_plan_test.cpp'
       - 'app/src/main/jni/native/reverie_native_module.h'
       - 'app/src/main/jni/native/reverie_native_sdk.h'
@@ -151,12 +153,26 @@ jobs:
               -o "${RUNNER_TEMP}/sitka-frame-plan-${compiler}"
             "${RUNNER_TEMP}/sitka-frame-plan-${compiler}"
           done
+      - name: Probe 513-sample source-tile LOD geometry and CPU-only payload budgets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/sitka_seafloor_sparse_mesh_test.cpp \
+              -o "${RUNNER_TEMP}/sitka-sparse-mesh-${compiler}"
+            "${RUNNER_TEMP}/sitka-sparse-mesh-${compiler}" \
+              | tee "${RUNNER_TEMP}/sitka-sparse-mesh-${compiler}.log"
+          done
       - name: Retain exact-commit streaming transition diagnostics
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: sitka-streaming-traces-${{ github.run_id }}
-          path: ${{ runner.temp }}/sitka-stream-trace-*.csv
+          path: |
+            ${{ runner.temp }}/sitka-stream-trace-*.csv
+            ${{ runner.temp }}/sitka-sparse-mesh-*.log
           retention-days: 7
           if-no-files-found: error
 
@@ -252,7 +268,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_name in sitka_bathymetry_test sitka_bathymetry_stream_test sitka_seafloor_frame_plan_test sitka_procedural_seabed_test sitka_boat_navigation_test sitka_seafloor_mesh_test; do
+          for test_name in sitka_bathymetry_test sitka_bathymetry_stream_test sitka_seafloor_frame_plan_test sitka_seafloor_sparse_mesh_test sitka_procedural_seabed_test sitka_boat_navigation_test sitka_seafloor_mesh_test; do
             for compiler in g++ clang++; do
               "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic                 -Iapp/src/main/jni/native                 "app/src/test/native/${test_name}.cpp"                 -o "${RUNNER_TEMP}/${test_name}-${compiler}"
               "${RUNNER_TEMP}/${test_name}-${compiler}"
