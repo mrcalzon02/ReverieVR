@@ -3,6 +3,7 @@
 #include "../../main/jni/native/sitka_terrain_gl.h"
 #include "../../main/jni/native/sitka_water_gl.h"
 #include "../../main/jni/native/sitka_seafloor_mesh.h"
+#include "../../main/jni/native/sitka_boat_mesh.h"
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 #include <array>
@@ -341,6 +342,34 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
     Check(bg[0]<20&&bg[1]<20&&bg[2]<20,"water outside footprint");
     water.Release();
     Check(!water.ready()&&water.upload_count()==0u,"water GL release failed");
+    // A genuinely authored CPU boat mesh is uploaded once to GLES and drawn
+    // with a position/orientation matrix, never baked per headset eye.
+    reverie::sitka::HelmProgress progress;
+    progress.owned=reverie::sitka::HelmMask(reverie::sitka::HelmItem::Battery)|
+                   reverie::sitka::HelmMask(reverie::sitka::HelmItem::Sonar);
+    reverie::sitka::TerrainGl boat_gl;
+    const Snapshot before_boat=Capture();
+    Check(boat_gl.Create(reverie::sitka::BuildBoatMesh(progress),
+        reverie::sitka::ParseLighting(LightingProfile(100)),&error),
+        "boat GPU mesh create failed");
+    Check(boat_gl.ready()&&boat_gl.upload_count()==1u,
+          "boat uploads not bounded to static single GLES2 batch");
+    Same(before_boat,Capture());
+    reverie::sitka::BoatPose pose;
+    pose.launched=true;pose.east=.1;pose.north=.0;pose.heading=0.;
+    const auto boat_model=reverie::sitka::BoatModelMatrix(pose,0.,0.,0.);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot before_eye=Capture();
+        const auto eye=Eye(index);
+        Check(boat_gl.RenderEye(&eye,boat_model.data()),
+              "boat physically transformed stereo draw failed");
+        Same(before_eye,Capture());
+        Check(boat_gl.upload_count()==1u,"boat mesh reuploaded during eye draw");
+    }
+    boat_gl.Release();
+    Check(!boat_gl.ready(),"boat context release retained GPU resources");
     NoGlError("water release");
     terrain.Release();
     Check(!terrain.ready() && terrain.upload_count() == 0u, "context release retained buffers");

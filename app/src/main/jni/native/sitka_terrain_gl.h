@@ -208,7 +208,10 @@ public:
     size_t land_batch_count()const{return land_batches_;}
     size_t seabed_swap_count()const{return seabed_swaps_;}
 
-    bool RenderEye(const ReverieNativeEyeV1* eye) const {
+    // Optional boat-local transform; ordinary terrain remains untransformed.
+    bool RenderEye(const ReverieNativeEyeV1* eye,const float* model=nullptr) const {
+        if(model)for(int k=0;k<16;++k)
+            if(!std::isfinite(model[k]))return false;
         if (!ready() || !ReverieNativeEyeRenderableV1(eye)) return false;
         ReverieNativeGlStateV1 state = {};
         ReverieNativeGlAttribStateV1 position = {}, color = {};
@@ -219,11 +222,13 @@ public:
         glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &old_elements);
         float vp[16];
         ReverieNativeMat4Multiply(vp, eye->projection, eye->view);
+        float mvp[16];
+        if(model)ReverieNativeMat4Multiply(mvp,vp,model);
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
         glDisable(GL_CULL_FACE); // Exporter land triangles have no winding guarantee yet.
         glUseProgram(program_);
-        glUniformMatrix4fv(matrix_, 1, GL_FALSE, vp);
+        glUniformMatrix4fv(matrix_, 1, GL_FALSE, model?mvp:vp);
         glUniform1f(ambient_, ambient_scale_);
         glEnableVertexAttribArray(0u);
         glEnableVertexAttribArray(1u);

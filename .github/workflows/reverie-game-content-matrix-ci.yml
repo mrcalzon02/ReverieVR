@@ -46,6 +46,8 @@ on:
       - 'app/src/test/native/sitka_bathymetry_stream_test.cpp'
       - 'app/src/main/jni/native/sitka_boat_navigation.h'
       - 'app/src/main/jni/native/sitka_helm.h'
+      - 'app/src/main/jni/native/sitka_boat_mesh.h'
+      - 'app/src/test/native/sitka_boat_mesh_test.cpp'
       - 'app/src/test/native/sitka_helm_test.cpp'
       - 'app/src/main/jni/native/sitka_boat_session.h'
       - 'app/src/test/native/sitka_boat_session_test.cpp'
@@ -272,7 +274,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_name in sitka_bathymetry_test sitka_bathymetry_stream_test sitka_seafloor_frame_plan_test sitka_seafloor_sparse_mesh_test sitka_procedural_seabed_test sitka_boat_navigation_test sitka_boat_session_test sitka_helm_test sitka_seafloor_mesh_test; do
+          for test_name in sitka_bathymetry_test sitka_bathymetry_stream_test sitka_seafloor_frame_plan_test sitka_seafloor_sparse_mesh_test sitka_procedural_seabed_test sitka_boat_navigation_test sitka_boat_session_test sitka_helm_test sitka_boat_mesh_test sitka_seafloor_mesh_test; do
             for compiler in g++ clang++; do
               "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic                 -Iapp/src/main/jni/native                 "app/src/test/native/${test_name}.cpp"                 -o "${RUNNER_TEMP}/${test_name}-${compiler}"
               "${RUNNER_TEMP}/${test_name}-${compiler}"

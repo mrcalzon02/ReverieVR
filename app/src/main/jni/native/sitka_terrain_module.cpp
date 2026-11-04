@@ -12,6 +12,7 @@
 #include "sitka_seafloor_sparse_mesh.h"
 #include "sitka_boat_session.h"
 #include "sitka_helm.h"
+#include "sitka_boat_mesh.h"
 #include <array>
 #include <cstdint>
 #include <new>
@@ -27,6 +28,7 @@ struct State {
     reverie::sitka::TerrainMesh terrain;
     reverie::sitka::Lighting lighting;
     reverie::sitka::TerrainGl gl;
+    reverie::sitka::TerrainGl boat_gl; // isolated static boat VBO, shared across both eyes
     std::vector<reverie::sitka::Water> waters;
     reverie::sitka::Weather weather;
     reverie::sitka::WaterGl water_gl;
@@ -244,13 +246,30 @@ int32_t OnGlCreated(void* instance) {
                                    state->lighting,&error)){
         Log(state->host,error.c_str());return 0;
     }
-    if(state->water_gl.Create(state->waters,state->weather,&error))return 1;
-    state->gl.Release();
-    Log(state->host,error.c_str());
-    return 0;
+    if(!state->water_gl.Create(state->waters,state->weather,&error)){
+        state->gl.Release();
+        Log(state->host,error.c_str());
+        return 0;
+    }
+    if(state->skiff){
+        try{
+            if(!state->boat_gl.Create(
+                reverie::sitka::BuildBoatMesh(state->helm),
+                state->lighting,&error))
+                throw std::runtime_error(error);
+        }catch(const std::exception& e){
+            state->boat_gl.Release();
+            state->water_gl.Release();
+            state->gl.Release();
+            Log(state->host,e.what());
+            return 0;
+        }
+    }
+    return 1;
 }
 void ReleaseGl(void* instance) {
     if(instance){
+        static_cast<State*>(instance)->boat_gl.Release();
         static_cast<State*>(instance)->water_gl.Release();
         static_cast<State*>(instance)->gl.Release();
         static_cast<State*>(instance)->seafloor_plan.Reset();
@@ -441,7 +460,19 @@ int32_t PrepareFrame(void* instance){
 int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(!instance)return 0;
     State* state=static_cast<State*>(instance);
-    return state->gl.RenderEye(eye)&&state->water_gl.RenderEye(eye)?1:0;
+    if(!state->gl.RenderEye(eye)||!state->water_gl.RenderEye(eye))return 0;
+    if(!state->skiff||!state->skiff->Active())return 1;
+    const auto& pose=state->skiff->Pose();
+    const reverie::sitka::Water* water=reverie::sitka::SitkaWorldWater(
+        state->waters,state->terrain.origin_east,state->terrain.origin_north,
+        pose.east,pose.north);
+    if(!water)return 1; // never invent a surface for an unapproved footprint
+    try{
+        const auto model=reverie::sitka::BoatModelMatrix(
+            pose,state->terrain.origin_east,state->terrain.origin_north,
+            water->y);
+        return state->boat_gl.RenderEye(eye,model.data())?1:0;
+    }catch(const std::exception&){return 0;}
 }
 const ReverieNativeModuleApiV1 kApi = {
     sizeof(ReverieNativeModuleApiV1), REVERIE_NATIVE_MODULE_ABI_VERSION,
