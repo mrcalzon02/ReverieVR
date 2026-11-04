@@ -8,6 +8,7 @@
 #include <vector>
 #include "breakwater_weapons.h"
 #include "breakwater_silhouettes.h"
+#include "breakwater_materials.h"
 
 namespace reverie { namespace breakwater {
 // Game-private original RGBA sprites. One tiny atlas, no imported/licensed art,
@@ -25,7 +26,8 @@ enum class SpriteId : uint8_t {
 };
 constexpr int kSpriteTile = 32;
 constexpr int kSpriteAtlasWidth = 128;
-constexpr int kSpriteAtlasHeight = 256;
+constexpr int kSpriteAtlasHeight = materials::kAtlasHeight;
+static_assert(kSpriteAtlasWidth == materials::kAtlasWidth, "Atlas width drift");
 using SpritePixels = std::array<uint8_t,
     kSpriteAtlasWidth * kSpriteAtlasHeight * 4>;
 
@@ -360,6 +362,13 @@ inline SpritePixels BuildSpriteAtlas() {
     Rect(pixels,pinned,16,16,21,20,olive);
     Rect(pixels,pinned,18,21,29,23,dark);
     Rect(pixels,pinned,25,22,28,23,metal);
+    // Four authored pixel-material recipes fill the extension below the
+    // original 32 battle sprites, without a new GL texture or decoder.
+    materials::Rasterize([&](int x,int y,materials::Rgb c) {
+        const size_t offset=static_cast<size_t>((y*kSpriteAtlasWidth+x)*4);
+        pixels[offset]=c.r;pixels[offset+1]=c.g;
+        pixels[offset+2]=c.b;pixels[offset+3]=255;
+    });
     return pixels;
 }
 

@@ -11,7 +11,8 @@ namespace reverie { namespace breakwater {
 
 // Each campaign location has its own deterministic, low-budget coast.
 // This is game-private render geometry: enemies, shell collisions and
-// targeting remain entirely governed by Campaign. No texture or RNG.
+// targeting remain entirely governed by Campaign. The central floor can
+// be omitted when the matching textured beach is batched in the sprite pass.
 struct CoastPalette {
     float sand_r, sand_g, sand_b;
     float detail_r, detail_g, detail_b;
@@ -48,7 +49,8 @@ constexpr int kBeachLengthSections=20;
 
 template <typename BoxFn, typename TriangleFn>
 void EmitCoastalTerrain(uint8_t location, bool night,
-                        BoxFn box, TriangleFn triangle) {
+                        BoxFn box, TriangleFn triangle,
+                        bool emitFlatFloor=true) {
     if (location >= Campaign::kLocations) return;
     const CoastPalette c = CoastColors(location, night);
     constexpr float y=-1.037f; // decorative prop baseline
@@ -56,7 +58,7 @@ void EmitCoastalTerrain(uint8_t location, bool night,
     // Shared height samples avoid cracks, and combat hitboxes do not change.
     constexpr float minX=-3.86f,maxX=3.86f;
     constexpr float surfZ=-2.20f,rearZ=-.26f;
-    for(int iz=0;iz<kBeachLengthSections;++iz) {
+    if(emitFlatFloor)for(int iz=0;iz<kBeachLengthSections;++iz) {
         const float z0=surfZ+(rearZ-surfZ)*iz/kBeachLengthSections;
         const float z1=surfZ+(rearZ-surfZ)*(iz+1)/kBeachLengthSections;
         for(int ix=0;ix<kBeachCrossSections;++ix) {

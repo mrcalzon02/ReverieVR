@@ -3,6 +3,7 @@
 #include "breakwater_silhouettes.h"
 #include "breakwater_armor.h"
 #include "breakwater_sprite_atlas.h"
+#include "breakwater_materials.h"
 #include "breakwater_terrain.h"
 #include "breakwater_emplacement.h"
 #include "breakwater_cover.h"
@@ -692,9 +693,19 @@ void BuildScene(State *s) {
     // World-space shore geometry is generated alongside the existing
     // simulation mesh. The beach ends at the real transport landing line;
     // only Campaign owns targets, collision and landfall behavior.
+    // The center floor uses the same exact height samples as the old mesh;
+    // the material is now genuinely textured, not a colored 2D backdrop.
+    // It joins the existing sprite atlas/batch and retains all battle targets.
+    static_assert(materials::kSectionsX==kBeachCrossSections &&
+                  materials::kSectionsZ==kBeachLengthSections,
+                  "Textured and collision-independent coast grids drifted");
     EmitCoastalTerrain(game.location(),night,
         [s](auto... arguments) { Box(s,arguments...); },
-        [s](auto... arguments) { Triangle(s,arguments...); });
+        [s](auto... arguments) { Triangle(s,arguments...); },false);
+    materials::AppendCoast(s->sprite_mesh,game.location(),
+        [](uint8_t location,float x,float z) {
+            return BeachHeight(location,x,z);
+        });
     if(game.phase()==Phase::Combat)
         EmitBatteryEmplacement(game.location(),night,
             [s](auto... arguments){Box(s,arguments...);},
@@ -1498,7 +1509,7 @@ void *Create(const ReverieNativeHostV1 *host) {
                   "BreakwaterAssets",report);
     }
     s->mesh.reserve(81920);
-    s->sprite_mesh.reserve(3000);
+    s->sprite_mesh.reserve(20000);
     s->font_mesh.reserve(12000);
     // All launches choose a slot explicitly. Pre-v2 saves are ignored.
     for(uint8_t slot=0;slot<3u;++slot) {
@@ -1529,8 +1540,8 @@ int32_t GlCreate(void *instance) {
         s->matrix=glGetUniformLocation(s->program,"u_Mvp");
         glGenBuffers(1,&s->vbo);
     }
-    // A single opaque-alpha atlas keeps textured enemies to one draw call
-    // per eye; the old untextured world remains a separate shared mesh.
+    // One sprite/material atlas keeps infantry, HUD and coastal surfaces
+    // batched into a single texture binding and draw per eye.
     const char *svs="uniform mat4 u_Mvp;attribute vec3 a_Pos;"
         "attribute vec2 a_Uv;varying vec2 v_Uv;"
         "void main(){gl_Position=u_Mvp*vec4(a_Pos,1.0);v_Uv=a_Uv;}";
