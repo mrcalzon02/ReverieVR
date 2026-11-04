@@ -19,6 +19,11 @@ for source in "$root"/app/src/test/native/omega_front_*_test.cpp; do
         # under the same full-suite runner, not only in hub CI.
         libraries=(-lz)
         arguments=("$root"/app/src/main/assets/native/omega-front/rpg_cc0/*.png)
+    elif [[ "$name" == omega_front_portrait_assets_test ]]; then
+        # Read/CRC/decode every actual 256x256 menu PNG through the runtime
+        # decoder, including its 512KiB compressed-file bound.
+        libraries=(-lz)
+        arguments=("$root/app/src/main/assets")
     fi
     if ! "${CXX:-c++}" -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
        -I "$root/app/src/main/jni/native" "$source" -o "$tmp/$name" "${libraries[@]}"; then
