@@ -67,3 +67,40 @@ prefabs, full game manager, export bundles, or a completed WYSIWYG
 scene/renderer parity across other games. These require explicit
 validated native adapters and content provenance. Actual S9
 stereo/controller/thermal acceptance remains open until tested on device.
+
+## Restricted in-VR object animation and single-slot project bundles (2026-11-04)
+
+`app/src/main/jni/native/reverie_vr_project_motion.h` adds a versioned,
+data-only `RVMOTION\t1` component codec. VR Workshop objects can be assigned
+one **Spin**, **Bob**, or **Pulse** behavior with bounded speed and amplitude.
+The native Test Chamber playback evaluates each binding on the existing
+simulation clock and feeds the already-present GLES2 spin/offset/emissive
+uniforms once per object per stereo eye. Editing shows unanimated transforms;
+Play Test runs the composed scene with animation. This is real native motion,
+not Java Swing or an uploaded scripting engine, and it does not yet import
+Beckenburg's arbitrary keyframe animation clip format.
+
+The second authoring menu page has the concrete controls **BOB, SPIN, PULSE,
+CLEAR MOTION, SPEED +/-, AMPLITUDE +/-, NEXT PROJECT, SCENE TOOLS**.
+The first menu page's tenth entry opens the second page; save and play-test
+remain on the first page. The selected object HUD reports its actual binding.
+Removing an object removes its binding in the same undoable transaction.
+Undo restores both geometry and motion metadata; a completed drag is still
+a single transform transaction, not one undo entry per frame.
+
+Project saves are now a single, bounded `RVPROJECT\t1` envelope containing
+the unchanged `REVSCENE\t1` document and a `RVMOTION\t1` document,
+with strict byte-length sections, count limits and referential integrity.
+Each slot is atomically written under its own `vr-workshop-project-N.rvproj`
+host-scoped native save name (up to 65,536 bytes), never via arbitrary phone
+storage paths. For compatibility, when an `.rvproj` is missing, the original
+scene-only `.rvscene` slot is read as-is; a subsequent save writes `.rvproj`
+without modifying or removing the legacy file. Present corrupt new-format
+files fail closed rather than silently reverting to older files.
+
+**Important limits:** the desktop `REVSCENE` parser cannot open an `.rvproj`
+envelope directly; the embedded scene remains `REVSCENE\t1`. Export/import
+bridges, fully authored keyframes, spatial audio, multi-light placement,
+physics and general project scripts remain separate explicit integration
+steps. Validate real controller bindings, text layout, performance and
+two-eye parity on the Galaxy S9 before declaring headset usability complete.

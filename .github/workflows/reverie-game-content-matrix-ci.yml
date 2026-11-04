@@ -44,6 +44,8 @@ on:
       - 'app/src/test/native/sitka_fishing_*_test.cpp'
       - 'app/src/main/jni/native/reverie_vr_workshop.h'
       - 'app/src/test/native/reverie_vr_workshop_test.cpp'
+      - 'app/src/main/jni/native/reverie_vr_project_motion.h'
+      - 'app/src/test/native/reverie_vr_project_motion_test.cpp'
       - 'app/src/main/jni/native/test_chamber_module.cpp'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java'
       - 'app/src/main/java/io/github/mrcalzon02/reverievr/NativeGamesGallery.java'
@@ -196,11 +198,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for compiler in g++ clang++; do
-            "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
-              app/src/test/native/reverie_vr_workshop_test.cpp \
-              -o "${RUNNER_TEMP}/vr-workshop-${compiler}"
-            "${RUNNER_TEMP}/vr-workshop-${compiler}"
+          for test_name in reverie_vr_workshop_test reverie_vr_project_motion_test; do
+            for compiler in g++ clang++; do
+              "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
+                "app/src/test/native/${test_name}.cpp" \
+                -o "${RUNNER_TEMP}/${test_name}-${compiler}"
+              "${RUNNER_TEMP}/${test_name}-${compiler}"
+            done
           done
       - name: Validate Beckenburg portable editor suite and exact upstream source behavior
         shell: bash

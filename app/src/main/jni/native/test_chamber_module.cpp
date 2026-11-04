@@ -68,9 +68,15 @@ struct ModuleState {
 int ReadWorkshop(void* user,size_t slot,std::string& output){
     auto* state=static_cast<ModuleState*>(user);
     if(slot>=reverie::authoring::kVrProjectSlots)return -1;
-    const std::string filename="vr-workshop-project-"+std::to_string(slot)+".rvscene";
+    const std::string stem="vr-workshop-project-"+std::to_string(slot);
+    std::string filename=stem+".rvproj";
     uint32_t size=0u;
-    const int32_t probe=state->host->read_save(filename.c_str(),nullptr,0u,&size);
+    int32_t probe=state->host->read_save(filename.c_str(),nullptr,0u,&size);
+    if(probe==REVERIE_NATIVE_SAVE_NOT_FOUND){
+        // Read the original October REVSCENE-only workshop saves unchanged.
+        filename=stem+".rvscene";
+        probe=state->host->read_save(filename.c_str(),nullptr,0u,&size);
+    }
     if(probe==REVERIE_NATIVE_SAVE_NOT_FOUND)return 0;
     if(probe!=REVERIE_NATIVE_SAVE_OK||size==0u||
        size>reverie::authoring::kVrSlotMaxBytes)return -1;
@@ -85,7 +91,7 @@ bool WriteWorkshop(void* user,size_t slot,const std::string& data){
     auto* state=static_cast<ModuleState*>(user);
     if(slot>=reverie::authoring::kVrProjectSlots||
        data.size()>reverie::authoring::kVrSlotMaxBytes)return false;
-    const std::string filename="vr-workshop-project-"+std::to_string(slot)+".rvscene";
+    const std::string filename="vr-workshop-project-"+std::to_string(slot)+".rvproj";
     return state->host->write_save(filename.c_str(),data.data(),
         static_cast<uint32_t>(data.size()))==REVERIE_NATIVE_SAVE_OK;
 }
@@ -118,14 +124,24 @@ void UpdateWorkshopHud(ModuleState* state){
             .94f,.85f,.53f,-2.63f);
         return;
     }
-    static const char* actions[10]={
+    static const char* sceneActions[10]={
         "ADD BOX","ADD CYLINDER","MOVE X/Z","ROTATE","SCALE",
-        "DELETE","UNDO","SAVE","PLAY TEST","NEXT PROJECT"};
-    state->font.Text("VR WORKSHOP", -3.2f,1.43f,.052f,.93f,.96f,.99f,-2.62f);
+        "DELETE","UNDO","SAVE","PLAY TEST","MOTION TOOLS >"};
+    static const char* motionActions[10]={
+        "BOB","SPIN","PULSE","CLEAR MOTION","SPEED +",
+        "SPEED -","AMPLITUDE +","AMPLITUDE -","NEXT PROJECT","< SCENE TOOLS"};
+    const char* const* actions=state->workshop.motion_page?motionActions:sceneActions;
+    state->font.Text(state->workshop.motion_page?
+        "VR WORKSHOP / MOTION":"VR WORKSHOP / SCENE",
+        -3.2f,1.43f,.044f,.93f,.96f,.99f,-2.62f);
     for(int i=0;i<10;++i) {
-        const bool active=(i==2&&state->workshop.tool==reverie::authoring::VrTool::Move)
+        const auto* binding=state->workshop.SelectedMotion();
+        const bool active=state->workshop.motion_page
+            ?(binding!=nullptr&&i<=2&&
+              static_cast<int>(binding->kind)==(i==0?1:i==1?0:2))
+            :((i==2&&state->workshop.tool==reverie::authoring::VrTool::Move)
             ||(i==3&&state->workshop.tool==reverie::authoring::VrTool::Rotate)
-            ||(i==4&&state->workshop.tool==reverie::authoring::VrTool::Scale);
+            ||(i==4&&state->workshop.tool==reverie::authoring::VrTool::Scale));
         state->font.Text(actions[i],-3.16f,1.09f-i*.235f,.038f,
             active?1.f:.77f,active?.79f:.9f,active?.37f:1.f,-2.62f);
     }
@@ -139,6 +155,14 @@ void UpdateWorkshopHud(ModuleState* state){
     const std::string count="OBJECTS "+std::to_string(state->workshop.scene.pieces.size())+
         " / "+std::to_string(reverie::authoring::kVrEditMaxPieces);
     state->font.Text(count.c_str(),-.69f,.85f,.034f,.8f,.93f,.89f,-2.62f);
+    if(const auto* motion=state->workshop.SelectedMotion()){
+        const std::string line=std::string("MOTION: ")+
+            reverie::authoring::MotionKindName(motion->kind)+
+            " SPEED "+std::to_string(motion->speed).substr(0,4)+
+            " AMP "+std::to_string(motion->amount).substr(0,4);
+        state->font.Fit(line.c_str(),-.69f,.70f,3.25f,.029f,
+            .95f,.83f,.50f,-2.62f);
+    }
     state->font.Text("POINT AND CLICK TOOL",-.69f,.53f,.029f,.85f,.94f,.98f,-2.62f);
     state->font.Text("DRAG OBJECT TO ADJUST",-.69f,.32f,.029f,.85f,.94f,.98f,-2.62f);
     state->font.Text("SECONDARY: SAVE + TEST",-.69f,-.88f,.028f,.95f,.88f,.53f,-2.62f);
@@ -1081,6 +1105,15 @@ int32_t RenderEye(
             } else if(id=="beacon-light") {
                 glUniform1f(state->emissive_location,.40f+.65f*pulse);
             }
+            // Author-defined, bounded, data-only motion playback. Evaluation
+            // uses the shared simulation clock, identical for left/right eyes.
+            const auto motion=state->workshop.SampleFor(part,elapsed);
+            if(motion.offset_y!=0.f)
+                glUniform3f(state->offset_location,0.f,motion.offset_y,0.f);
+            if(motion.spin!=0.f)
+                glUniform1f(state->spin_location,motion.spin);
+            if(motion.emissive!=0.f)
+                glUniform1f(state->emissive_location,motion.emissive);
             glDrawArrays(GL_TRIANGLES,
                 editor_start+state->piece_first[i],state->piece_count[i]);
         }

@@ -125,3 +125,13 @@ transforms, a versioned bundle export/import seam, editor-authored
 lighting/audio/animation scene components, and finally a constrained
 interpreted project execution format. Neither arbitrary `.so` imports
 nor desktop file paths are exposed by this initial headset editor.
+
+## CS-01.1 Authorable motion component (2026-11-04)
+
+Three bounded deterministic motion modes (Spin, Bob and emissive Pulse)
+are now editable inside VR, serialized with the original scene as a
+single host-owned `RVPROJECT` payload, and evaluated by the packaged
+native Test Chamber preview with no runtime compilation or arbitrary
+user-provided executable code. Backward-compatible reads preserve existing
+native `REVSCENE` save slots. See `docs/native/SCENE_BRIDGE.md` for
+the exact format, menu, security boundaries and remaining work.
