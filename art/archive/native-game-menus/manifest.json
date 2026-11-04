@@ -23,9 +23,9 @@
         0,
         0
       ],
-      "bytes": 44267,
-      "eye_frame_crc32": 2228255500,
-      "sha256": "e7c04249c45198815c32d4a202b305fd0745ca3b4f93b7ab0f7d0199b6676e4c"
+      "bytes": 94214,
+      "eye_frame_crc32": 2968231001,
+      "sha256": "76e8d02934b9f0c94f58a336cc39fe0f6d4b8b60c24b8815497683bb895bd531"
     },
     "classic-breakout": {
       "atlas_cell": [
@@ -131,18 +131,18 @@
         1,
         1
       ],
-      "bytes": 20167,
-      "eye_frame_crc32": 3330151028,
-      "sha256": "3cedfe9ae8f631f7bd16a3be06d31d5b839d322075be9d5bbdc9ded7d0a13835"
+      "bytes": 21671,
+      "eye_frame_crc32": 3852338494,
+      "sha256": "1d14024ca95f95d2512bf385f0330835992a081d19881ccba91c984d0783942a"
     },
     "procedural-test-chamber": {
       "atlas_cell": [
         2,
         1
       ],
-      "bytes": 366336,
-      "eye_frame_crc32": 654464054,
-      "sha256": "494a4b375cb453760535a431e41141e0f33f356a81e5739af2f31eea2053e8e0"
+      "bytes": 366391,
+      "eye_frame_crc32": 770394799,
+      "sha256": "e8d86d70ea8ed6b26f223e8f125aa30f4c169433bdf4ed391dd770c916a7e7ee"
     }
   },
   "ordered_ids": [
