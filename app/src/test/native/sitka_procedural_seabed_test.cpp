@@ -91,8 +91,15 @@ int main(){
     const BathyTile original=Survey();
     BathyAtlas atlas;assert(atlas.Add(original));
     MixedSeabed<BathyAtlas> mixed(atlas,ground);
-    assert(mixed.Sample(1.,19.).quality==BedQuality::Survey);
+    assert(mixed.Sample(1.,19.).quality==BedQuality::Procedural);
     assert(mixed.Sample(5.,15.).quality==BedQuality::Procedural);
+    BathyTile covered=original;
+    covered.qualities[4]=BedQuality::Survey;
+    covered.elevations_m[4]=-10.f;
+    BathyAtlas all_survey;assert(all_survey.Add(std::move(covered)));
+    MixedSeabed<BathyAtlas> surveyed(all_survey,ground);
+    assert(surveyed.Sample(1.,19.).quality==BedQuality::Survey);
+    assert(near(surveyed.Sample(1.,19.).elevation_m,-10.));
     assert(mixed.Sample(100000.,100000.).known); // playable without NOAA tile
     const auto filled=FillSeabedGaps(original,ground,all);
     assert(filled.qualities[4]==BedQuality::Procedural);
