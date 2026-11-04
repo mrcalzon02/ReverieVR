@@ -304,3 +304,10 @@ cannot read foreign game paths, arbitrary user saves, URLs,
 traversal, nested paths or alternate extensions.
 These are path/size permissions, **not** registration of the Sitka
 module or evidence that any real NOAA data ships in an APK.
+
+
+## Modular physical helm foundation — 2026-11-04
+
+An owner-provided 17-page boat bridge and upgrade design is being implemented in the existing Sitka native source. The first CPU-only implementation (sitka_helm.h) provides 16 physically anchored equipment sockets, four increasingly large walkable hull footprints, a steering-column origin that never shifts, a bare dinghy wheel and compass, gated depth/GPS/radar/overhead readouts, a reach-limited one- or two-hand wheel gesture with 10-degree haptic ticks, a separate fixed-30Hz rudder actuator, and boat-relative passenger coordinates that do not force the headset's orientation. Purchases accept the existing fishing-credit amount by reference. Equipment prices are provisional gameplay balances, not values supplied by the document.
+
+Verification: sitka_helm_test.cpp is added to the existing GCC/Clang native gate. This is a CPU model and layout contract, not yet a finished physical model, marine screen GL texture, saving implementation or playable VR boat. Save integration, launch/interaction bindings, bought-part meshes, deck collision, readable physical screens, and comfort-tested camera transitions remain pending. Sitka remains source-only/unregistered pending approved geodata and headset evidence.
