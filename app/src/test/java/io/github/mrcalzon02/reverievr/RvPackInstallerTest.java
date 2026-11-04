@@ -84,6 +84,40 @@ public class RvPackInstallerTest {
             fail("Cross game asset accepted");
         }catch(IOException expected){assertTrue(expected.getMessage().contains("Rejected ZIP"));}
     }
+    @Test public void sharedContentHasAnExactPerGameAllowlist() {
+        String root="assets/native/shared/v1/";
+        for(String name:new String[]{"shingle.png","quay_concrete.png",
+                "black_basalt.png","oxidized_steel.png","sandbag_burlap.png",
+                "olive_enamel.png"}) {
+            String path=root+"materials/coastal/"+name;
+            for(String id:new String[]{"breakwater-battery","omega-front",
+                    ID,"procedural-test-chamber"})
+                assertTrue(id+" cannot read shared tile "+name,
+                    RvPackInstaller.allowedEntry(id,path,false));
+            assertFalse(RvPackInstaller.allowedEntry("gumball-armada",path,false));
+            assertFalse(RvPackInstaller.allowedEntry("classic-chess",path,false));
+            assertFalse(RvPackInstaller.allowedEntry("omega-front",path,true));
+        }
+        for(String name:new String[]{"concrete_block_1.bwm",
+                "wooden_crate_1.bwm","ammo_box_mp_1.bwm"}) {
+            String path=root+"models/psx/"+name;
+            for(String id:new String[]{"breakwater-battery",ID,
+                    "procedural-test-chamber"})
+                assertTrue(RvPackInstaller.allowedEntry(id,path,false));
+            assertFalse(RvPackInstaller.allowedEntry("omega-front",path,false));
+        }
+        assertFalse(RvPackInstaller.allowedEntry("omega-front",
+            root+"materials/coastal/nope.png",false));
+        assertFalse(RvPackInstaller.allowedEntry("breakwater-battery",
+            root+"materials/coastal/shingle.png.bak",false));
+        assertFalse(RvPackInstaller.allowedEntry("breakwater-battery",
+            root+"materials/coastal/../shingle.png",false));
+        assertFalse(RvPackInstaller.allowedEntry("breakwater-battery",
+            root+"models/psx/owner_apc_armor.bwm",false));
+        assertFalse(RvPackInstaller.allowedEntry("breakwater-battery",
+            root+"materials/coastal/",true));
+    }
+
     @Test public void refusesManifestAndLicenseOnlyPack() throws Exception {
         File dir=Files.createTempDirectory("rvpack-empty-content").toFile();
         File pack=new File(dir,"metadata-only.rvpack");

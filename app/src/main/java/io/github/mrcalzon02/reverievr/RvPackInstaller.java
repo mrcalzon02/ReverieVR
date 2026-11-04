@@ -49,6 +49,10 @@ final class RvPackInstaller {
         if("module.json".equals(name))return !directory;
         if(name.startsWith("licenses/"))
             return (directory || name.endsWith(".json") || name.endsWith(".txt"));
+        // Legacy content-pack recovery can select only reviewed shared files.
+        // The one-APK distribution still packages them just once.
+        if(name.startsWith("assets/native/shared/"))
+            return SharedNativeAssetPaths.allowed(id,name,directory);
         String p="assets/native/"+ns+"/";
         if (!name.startsWith(p)) return false;
         if(directory)return true;

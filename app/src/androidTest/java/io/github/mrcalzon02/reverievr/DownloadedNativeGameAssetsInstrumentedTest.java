@@ -107,6 +107,15 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         }
     }
 
+    private static void packageOne(ZipOutputStream output,AssetManager assets,
+                                   String path)throws IOException {
+        byte[] data=sourceAsset(assets,path);
+        assertTrue("Empty game asset "+path,data.length>0);
+        output.putNextEntry(new ZipEntry("assets/"+path));
+        output.write(data);
+        output.closeEntry();
+    }
+
     private static int packageFolder(ZipOutputStream output,AssetManager assets,
                                      String folder)throws IOException {
         int files=0;
@@ -116,12 +125,7 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             if(!name.matches("[A-Za-z0-9_.-]+") ||
                !(name.endsWith(".png")||name.endsWith(".json")))
                 throw new IOException("Invalid fixture path "+name);
-            String path=folder+"/"+name;
-            byte[] data=sourceAsset(assets,path);
-            assertTrue("Empty game asset "+path,data.length>0);
-            output.putNextEntry(new ZipEntry("assets/"+path));
-            output.write(data);
-            output.closeEntry();
+            packageOne(output,assets,folder+"/"+name);
             files++;
         }
         return files;
@@ -142,6 +146,13 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             }else if("omega-front".equals(id)){
                 count+=packageFolder(output,assets,"native/omega-front/terrain");
                 count+=packageFolder(output,assets,"native/omega-front/shared");
+                // The original Omega private concrete and steel copies were
+                // retired. Include only the two common materials it consumes.
+                packageOne(output,assets,
+                    "native/shared/v1/materials/coastal/quay_concrete.png");
+                packageOne(output,assets,
+                    "native/shared/v1/materials/coastal/oxidized_steel.png");
+                count+=2;
                 count+=packageFolder(output,assets,"native/omega-front/units/kenney");
                 count+=packageFolder(output,assets,"native/omega-front/rpg_cc0");
                 assertEquals("Real Omega Front CC0 source + sprite inventory",141,count);
@@ -615,8 +626,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
         runInstalledAssets("between-deliveries-red-ledger",24);
     }
     @Test public void omegaFrontDownloadedTexturesRenderThroughNativeGles(){
-        // 76 original files plus 64 genuinely CC0 16px art files and
-        // one licensing manifest, all loaded through the native asset scope.
+        // The 141-file fixture selects exactly two shared concrete/steel
+        // textures in place of deleted Omega-private copies.
         runInstalledAssets("omega-front",141);
     }
 }

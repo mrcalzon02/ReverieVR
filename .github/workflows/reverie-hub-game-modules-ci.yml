@@ -25,6 +25,12 @@ on:
       - 'app/src/main/jni/native/reverie_native_host.cpp'
       - 'app/src/main/jni/native/breakwater_module.cpp'
       - 'app/src/main/jni/native/reverie_native_asset_scope.h'
+      - 'app/src/main/jni/native/reverie_native_shared_asset_catalog.h'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/RvPackInstaller.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/SharedNativeAssetPaths.java'
+      - 'app/src/main/assets/native/shared/v1/**'
+      - 'shared-assets/catalog-v1.json'
+      - 'scripts/verify-shared-native-assets.py'
       - 'app/src/test/native/native_asset_scope_test.cpp'
       - 'app/build.gradle'
       - 'game-apps/test-chamber/build.gradle'
@@ -82,6 +88,7 @@ jobs:
             app/src/test/native/native_asset_scope_test.cpp \
             -o "${RUNNER_TEMP}/reverie-native-asset-scope-test"
           "${RUNNER_TEMP}/reverie-native-asset-scope-test"
+          python3 scripts/verify-shared-native-assets.py
           python3 scripts/modules/verify-omega-front-cc0.py
           python3 scripts/ci/verify-integrated-game-functional-coverage.py
           c++ -std=c++17 -Wall -Wextra -Werror \
@@ -117,8 +124,21 @@ jobs:
           unzip -Z -1 "$BREAKWATER" | grep -Fx 'lib/x86_64/libreverie_companion_breakwater.so'
           for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1; do
             unzip -Z -1 "$BREAKWATER" |
+              grep -Fx "assets/native/shared/v1/models/psx/${MODEL}.bwm"
+          done
+          for MODEL in owner_boat_rowboat owner_apc_armor; do
+            unzip -Z -1 "$BREAKWATER" |
               grep -Fx "assets/native/breakwater/beckenburg/${MODEL}.bwm"
           done
+          for TILE in shingle quay_concrete black_basalt oxidized_steel sandbag_burlap olive_enamel; do
+            unzip -Z -1 "$BREAKWATER" |
+              grep -Fx "assets/native/shared/v1/materials/coastal/${TILE}.png"
+          done
+          if unzip -Z -1 "$BREAKWATER" |
+             grep -Eq '^assets/native/breakwater/beckenburg/(concrete_block_1|wooden_crate_1|ammo_box_mp_1)\.bwm$'; then
+              echo "FAIL: legacy duplicated Breakwater BWM1 present" >&2
+              exit 1
+          fi
           python3 scripts/modules/verify-companion-contract.py
           cp "$HUB" validation/hub/ReverieVR-hub-emulator.apk
           cp "$CHAMBER" validation/hub/TestChamber-companion-emulator.apk
@@ -181,7 +201,8 @@ jobs:
             grep -F 'Authentic BWM1 models loaded 5/5' validation/hub/logcat.txt
             # Emulator action executes each script line as its own sh -c call.
             # Keep the five independent verified-pack assertions on ONE line.
-            for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1 owner_boat_rowboat owner_apc_armor; do grep -F "Breakwater verified-pack asset native/breakwater/beckenburg/${MODEL}.bwm" validation/hub/logcat.txt; done
+            for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1; do grep -F "Breakwater verified-pack asset native/shared/v1/models/psx/${MODEL}.bwm" validation/hub/logcat.txt; done
+          for MODEL in owner_boat_rowboat owner_apc_armor; do grep -F "Breakwater verified-pack asset native/breakwater/beckenburg/${MODEL}.bwm" validation/hub/logcat.txt; done
             adb exec-out screencap -p > validation/hub/hub-screen.png
       - name: Enforce real GLES2 boot and framebuffer evidence for every registered game
         shell: bash

@@ -43,4 +43,25 @@ for entry in manifest["entries"]:
 for name in ("quay_concrete.png","oxidized_steel.png"):
     assert ("native/shared/v1/materials/coastal/"+name) in omega
     assert not (ROOT/"app/src/main/assets/native/omega-front/shared"/name).exists()
-print("PASS: 9 common assets, exact content hashes, scope and two live native consumers")
+# Guard every importer/package boundary as the common library evolves.
+companion=(ROOT/"game-apps/breakwater/build.gradle").read_text()
+java=(ROOT/"app/src/main/java/io/github/mrcalzon02/reverievr/SharedNativeAssetPaths.java").read_text()
+installer=(ROOT/"app/src/main/java/io/github/mrcalzon02/reverievr/RvPackInstaller.java").read_text()
+test=(ROOT/"app/src/androidTest/java/io/github/mrcalzon02/reverievr/DownloadedNativeGameAssetsInstrumentedTest.java").read_text()
+hub=(ROOT/"app/src/androidTest/java/io/github/mrcalzon02/reverievr/HubGameModulesInstrumentedTest.java").read_text()
+workflow=(ROOT/".github/workflows/reverie-hub-game-modules-ci.yml").read_text()
+assert "SharedNativeAssetPaths.allowed(id,name,directory)" in installer
+assert 'stageBreakwaterAssets",Sync' in companion
+for entry in manifest["entries"]:
+    leaf=Path(entry["logical_path"]).name
+    suffix=entry["logical_path"].removeprefix("native/shared/v1/")
+    assert ('include "'+suffix+'"') in companion, entry["id"]
+    assert ('"'+leaf+'"') in java, entry["id"]
+for name in ("quay_concrete.png","oxidized_steel.png"):
+    assert ("native/shared/v1/materials/coastal/"+name) in test
+for name in ("concrete_block_1.bwm","wooden_crate_1.bwm","ammo_box_mp_1.bwm"):
+    assert ("native/shared/v1/models/psx/"+name) in hub
+assert "python3 scripts/verify-shared-native-assets.py" in workflow
+assert "assets/native/shared/v1/materials/coastal/" in workflow
+assert "assets/native/shared/v1/models/psx/" in workflow
+print("PASS: nine shared assets, source hashes, exact native/Java allowlists and all packaging consumers")

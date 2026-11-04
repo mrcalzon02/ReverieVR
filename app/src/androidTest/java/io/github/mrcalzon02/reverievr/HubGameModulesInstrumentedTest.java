@@ -157,10 +157,12 @@ public final class HubGameModulesInstrumentedTest {
             "verified-breakwater-"+System.nanoTime());
         assertTrue(root.mkdirs());
         // Require every authentic model from the activated downloaded pack.
-        final String[] names={
-            "concrete_block_1.bwm","wooden_crate_1.bwm",
-            "ammo_box_mp_1.bwm","owner_boat_rowboat.bwm",
-            "owner_apc_armor.bwm"
+        final String[] paths={
+            "native/shared/v1/models/psx/concrete_block_1.bwm",
+            "native/shared/v1/models/psx/wooden_crate_1.bwm",
+            "native/shared/v1/models/psx/ammo_box_mp_1.bwm",
+            "native/breakwater/beckenburg/owner_boat_rowboat.bwm",
+            "native/breakwater/beckenburg/owner_apc_armor.bwm"
         };
         try {
             File pack=new File(root,"breakwater-real-models.rvpack");
@@ -170,8 +172,7 @@ public final class HubGameModulesInstrumentedTest {
                     "\"id\":\"breakwater-battery\",\"revision\":1,"+
                     "\"version\":\"0.1.0\"}").getBytes(StandardCharsets.UTF_8));
                 out.closeEntry();
-                for(String name:names){
-                    String path="native/breakwater/beckenburg/"+name;
+                for(String path:paths){
                     byte[] data;
                     try(java.io.InputStream stream=context().getAssets().open(path);
                         java.io.ByteArrayOutputStream bytes=
@@ -193,9 +194,9 @@ public final class HubGameModulesInstrumentedTest {
                 RvPackInstaller.digest(pack));
             assertEquals(assets.getCanonicalPath(),
                 installer.activeAssets("breakwater-battery").getCanonicalPath());
-            for(String name:names)
-                assertTrue("Actual imported model missing "+name,new File(
-                    assets,"native/breakwater/beckenburg/"+name).isFile());
+            for(String path:paths)
+                assertTrue("Actual imported model missing "+path,new File(
+                    assets,path).isFile());
             File home=new File(root,"native-modules");
             assertTrue(home.isDirectory()||home.mkdirs());
             try(NativeModuleRuntime runtime=new NativeModuleRuntime(

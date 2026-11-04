@@ -49,8 +49,8 @@ android {
             if(signerReady)signingConfig=signingConfigs.publisher
         }
     }
-    // Only the three selected, already packaged Breakwater BWM1 meshes.
-    // Never drag the entire main hub asset library into a companion APK.
+    // Stage only the nine reviewed shared resources plus the two
+    // owner-specific vehicles for the legacy companion test package.
     sourceSets {
         main { assets.srcDirs += ["$buildDir/generated/breakwater-assets"] }
     }
@@ -66,10 +66,26 @@ dependencies {
     implementation project(":cardboard")
     implementation "com.google.protobuf:protobuf-javalite:3.19.4"
 }
-tasks.register("stageBreakwaterAssets",Copy){
-    from(rootProject.file("app/src/main/assets/native/breakwater"))
-    into("$buildDir/generated/breakwater-assets/native/breakwater")
-    include "**/*.bwm"
+tasks.register("stageBreakwaterAssets",Sync){
+    // Clears obsolete duplicated files in incremental companion builds.
+    into("$buildDir/generated/breakwater-assets")
+    from(rootProject.file("app/src/main/assets/native/shared/v1")){
+        into("native/shared/v1")
+        include "materials/coastal/shingle.png"
+        include "materials/coastal/quay_concrete.png"
+        include "materials/coastal/black_basalt.png"
+        include "materials/coastal/oxidized_steel.png"
+        include "materials/coastal/sandbag_burlap.png"
+        include "materials/coastal/olive_enamel.png"
+        include "models/psx/concrete_block_1.bwm"
+        include "models/psx/wooden_crate_1.bwm"
+        include "models/psx/ammo_box_mp_1.bwm"
+    }
+    from(rootProject.file("app/src/main/assets/native/breakwater/beckenburg")){
+        into("native/breakwater/beckenburg")
+        include "owner_boat_rowboat.bwm"
+        include "owner_apc_armor.bwm"
+    }
 }
 tasks.matching {it.name=="preBuild"}.configureEach{
     dependsOn("stageBreakwaterAssets")
