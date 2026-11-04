@@ -10,10 +10,12 @@
 #include "sitka_seafloor_mesh.h"
 #include "sitka_seafloor_frame_plan.h"
 #include "sitka_seafloor_sparse_mesh.h"
+#include "sitka_boat_session.h"
 #include <array>
 #include <cstdint>
 #include <new>
 #include <memory>
+#include <limits>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -32,6 +34,7 @@ struct State {
     reverie::sitka::BathyAtlas bathymetry; // V1 source compatibility.
     std::unique_ptr<reverie::sitka::BathyStreamCache> stream;
     std::unique_ptr<reverie::sitka::ProceduralSeabed> generated;
+    std::unique_ptr<reverie::sitka::SitkaSkiffSession> skiff;
     reverie::sitka::SeafloorFramePlanner seafloor_plan;
     double last_focus_east=0.,last_focus_north=0.;
     bool has_focus=false;
@@ -173,6 +176,28 @@ void* Create(const ReverieNativeHostV1* host) {
                loaded!=reverie::sitka::FishingLoad::Restored)
                 throw std::invalid_argument(
                     "Sitka fishing save unavailable or invalid: preserve existing data");
+            // A skiff berth must be explicitly authored in projected metres.
+            // Its absence is a supported editor/fishing-only preview. A
+            // malformed PRESENT berth fails closed rather than inventing a
+            // launch point or a named water region.
+            if(state->stream && state->generated){
+                const char* boat_path="sitka/boat/launch.txt";
+                uint32_t boat_bytes=0u;
+                const int32_t code=host->read_asset(
+                    boat_path,nullptr,0u,&boat_bytes);
+                if(code!=REVERIE_NATIVE_SAVE_NOT_FOUND){
+                    const auto spec=reverie::sitka::ParseSkiffLaunch(
+                        ReadText(host,boat_path,4096u),
+                        state->stream->directory().datum_id);
+                    if(!reverie::sitka::SitkaNamedWorldWater(
+                           state->waters,spec.water_id,
+                           state->terrain.origin_east,state->terrain.origin_north,
+                           spec.east,spec.north))
+                        throw std::invalid_argument(
+                            "Sitka skiff berth outside its named water footprint");
+                    state->skiff.reset(new reverie::sitka::SitkaSkiffSession(spec));
+                }
+            }
         }
         catch (...) { delete state; throw; }
         return state;
@@ -233,36 +258,74 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     auto* state=static_cast<State*>(instance);
     if(!state||!ReverieNativeInputHasBaseV1(input))return;
     state->water_gl.Update(input->delta_seconds);
-    if(state->stream &&
-       input->struct_size>=REVERIE_NATIVE_INPUT_V1_LISTENER_MIN_SIZE &&
-       input->listener_valid){
-        // This source-only preview follows the headset/editor world focus.
-        // Actual boat mode will instead provide SkiffNavigation's world pose.
-        // The host-scoped reader is synchronous: cap at ONE tile per update,
-        // never touch a GL buffer and never read data from an eye render.
-        const double east=state->terrain.origin_east+input->listener_position[0];
-        const double north=state->terrain.origin_north+input->listener_position[2];
+    const bool listener=input->struct_size>=
+        REVERIE_NATIVE_INPUT_V1_LISTENER_MIN_SIZE&&input->listener_valid;
+    const double listener_east=listener?
+        state->terrain.origin_east+input->listener_position[0]:
+        std::numeric_limits<double>::quiet_NaN();
+    const double listener_north=listener?
+        state->terrain.origin_north+input->listener_position[2]:
+        std::numeric_limits<double>::quiet_NaN();
+    const bool boat_chord=state->skiff &&
+        input->primary_down!=0u&&input->secondary_down!=0u;
+    // Boat simulation advances first. This is the AUTHORITATIVE world pose
+    // once launched, not a camera projection or the headset's temporary
+    // editor focus. The same bathymetry cache backs movement, sounder and
+    // subsequent GL visual tile selection.
+    if(state->skiff&&state->stream&&state->generated){
+        const auto event=state->skiff->Update(
+            input->delta_seconds,input->move_y,input->move_x,
+            boat_chord,listener_east,listener_north,
+            *state->stream,*state->generated,state->waters,
+            state->terrain.origin_east,state->terrain.origin_north);
+        if(event==reverie::sitka::SkiffSessionEvent::Launched||
+           event==reverie::sitka::SkiffSessionEvent::Docked)
+            ReverieNativeRequestFeedbackV1(state->host,
+                                            REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        else if(event==reverie::sitka::SkiffSessionEvent::Rejected||
+                event==reverie::sitka::SkiffSessionEvent::BlockedLand||
+                event==reverie::sitka::SkiffSessionEvent::BlockedShallow||
+                event==reverie::sitka::SkiffSessionEvent::BlockedNoData)
+            ReverieNativeRequestFeedbackV1(state->host,
+                                            REVERIE_NATIVE_FEEDBACK_FAILURE);
+    }
+    if(state->stream){
+        double east=listener_east,north=listener_north;
         double vx=0.,vn=0.;
-        const double dt=input->delta_seconds;
-        if(state->has_focus&&std::isfinite(dt)&&dt>.001&&dt<=.1){
-            vx=(east-state->last_focus_east)/dt;
-            vn=(north-state->last_focus_north)/dt;
-            if(std::hypot(vx,vn)>8.)vx=vn=0.;
+        if(state->skiff&&state->skiff->Active()){
+            east=state->skiff->Pose().east;
+            north=state->skiff->Pose().north;
+            vx=state->skiff->EastVelocity();
+            vn=state->skiff->NorthVelocity();
+        }else if(listener){
+            const double dt=input->delta_seconds;
+            if(state->has_focus&&std::isfinite(dt)&&dt>.001&&dt<=.1){
+                vx=(east-state->last_focus_east)/dt;
+                vn=(north-state->last_focus_north)/dt;
+                if(std::hypot(vx,vn)>8.)vx=vn=0.;
+            }
         }
-        state->stream->Pump(east,north,vx,vn,
-            [&](const std::string& name,std::string& out){
-                out=ReadText(state->host,("sitka/bathymetry/"+name).c_str(),
-                             static_cast<uint32_t>(
-                                reverie::sitka::kBathyHeaderBytes+
-                                size_t(reverie::sitka::kBathyMaxAxis)*
-                                size_t(reverie::sitka::kBathyMaxAxis)*5u));
-                return true;
-            });
-        state->last_focus_east=east;state->last_focus_north=north;
-        state->has_focus=true;
+        if(std::isfinite(east)&&std::isfinite(north)){
+            // One source request per update; the larger bulk-read operation
+            // remains synchronous until the host gains a safe worker API.
+            state->stream->Pump(east,north,vx,vn,
+                [&](const std::string& name,std::string& out){
+                    out=ReadText(state->host,
+                        ("sitka/bathymetry/"+name).c_str(),
+                        static_cast<uint32_t>(
+                            reverie::sitka::kBathyHeaderBytes+
+                            size_t(reverie::sitka::kBathyMaxAxis)*
+                            size_t(reverie::sitka::kBathyMaxAxis)*5u));
+                    return true;
+                });
+            state->last_focus_east=east;
+            state->last_focus_north=north;
+            state->has_focus=true;
+        }
     }
     reverie::sitka::FishingCastTarget target;
-    if(input->primary_down && ReverieNativeInputHasPointerV1(input)){
+    if(!boat_chord&&!(state->skiff&&state->skiff->Active())&&
+       input->primary_down&&ReverieNativeInputHasPointerV1(input)){
         ReverieNativeInputV1 normalized=*input;
         if(ReverieNativeSanitizePointerV1(&normalized)){
             const float* p=normalized.pointer_origin;
@@ -272,8 +335,11 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->fishing_spots,state->waters);
         }
     }
+    const bool fishing_control=!boat_chord&&
+        !(state->skiff&&state->skiff->Active());
     const auto event=state->fishing.Update(input->delta_seconds,
-        input->primary_down!=0u,input->secondary_down!=0u,
+        fishing_control&&input->primary_down!=0u,
+        fishing_control&&input->secondary_down!=0u,
         target.valid,target.depth_metres);
     if(event.journal_changed&&!state->fishing.Flush(Store(state)))
         Log(state->host,"Sitka journal write failed; pending pause/exit retry");
@@ -288,12 +354,9 @@ void Update(void* instance,const ReverieNativeInputV1* input){
 bool WaterAt(const State* state,double east,double north){
     if(!state||!std::isfinite(east)||!std::isfinite(north)||
        std::abs(east)>1.e8||std::abs(north)>1.e8)return false;
-    for(const auto& water:state->waters){
-        if(reverie::sitka::FootprintContains(
-               water,static_cast<float>(east),static_cast<float>(north)))
-            return true;
-    }
-    return false;
+    return reverie::sitka::SitkaWorldWater(
+        state->waters,state->terrain.origin_east,state->terrain.origin_north,
+        east,north)!=nullptr;
 }
 
 // The host invokes this optional ABI callback ONCE after update and before

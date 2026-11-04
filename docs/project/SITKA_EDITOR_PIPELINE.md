@@ -361,3 +361,45 @@ CPU cache's synchronous source asset reads still require
 an async/staged work budget and actual Galaxy S9 p95/p99
 frame-time instrumentation before the feature is accepted
 as hitch-free gameplay. Sitka remains unregistered.
+
+## Boat-position authority, authored skiff berth and depth source (2026-11-04)
+
+Sitka's unregistered native terrain module now supports an **optional**
+projected-metre `sitka/boat/launch.txt` authored berth. The parser
+`SITKA-SKIFF-LAUNCH-1` validates the vertical datum against the
+active bathymetry directory, named water footprint, geographic
+coordinate, heading, draft and allowed embark radius. A malformed
+present berth refuses source-only module creation; an absent berth
+leaves the existing fishing/editor preview intact. **No fictional
+boat berth is silently inserted into the installed APK.**
+
+At an authorized berth, a new provisional two-button chord
+(primary + secondary, edge triggered) launches the deterministic
+skiff. After launch, `SkiffNavigation` owns the world position:
+joystick X controls rudder, joystick Y controls positive throttle,
+30 Hz fixed movement is water-mask/keel-clearance limited, and
+the native two-tile stream prefetch now follows the boat's actual
+east/north and velocity rather than the user's headset transform.
+Docking requires a return near the berth at low speed. Held chords
+do not repeat an action, and boat mode suppresses simultaneous
+fishing input instead of passing one trigger to two systems.
+
+The **same survey-first/procedural fallback** supplies boat safety,
+4 Hz sounder and render tile choice. Launch primes a valid initial
+reading; labels retain `SURVEY`, `COMPOSITE` or `PROCEDURAL`
+and the simulated-navigation disclaimer. A newly loaded shallow
+survey overrides procedural depths and rejects unsafe launches.
+
+**Coordinate correction:** Authored Beckenburg `.water` footprints
+are LOCAL to the terrain origin, while NOAA tiles, boat poses
+and source directories use projected world metres. The shared
+`SitkaWorldWater` helper rebases before collision/water tests;
+the earlier direct comparison of projected metres with local
+float footprints could incorrectly report 'not water'.
+
+**Remaining:** Boat model, physical head/camera seating, visible
+gauge built from the licensed glyph atlas, real launch content,
+controller onboarding, asynchronously preloaded local asset
+reading, installed Galaxy S9 gameplay and thermal/frametime
+verification are **not** completed by this source-stage hook.
+Boat mode is not exposed as a fake shell gallery launch.

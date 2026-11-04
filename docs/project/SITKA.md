@@ -188,3 +188,13 @@ measurements exist they are retained, but unmeasured ocean is
 generated deterministically with proximal source guidance. Depth
 readings identify PROCEDURAL terrain. See the
 [bathymetry specification](SITKA_BATHYMETRY_AND_BOAT_SPEC.md).
+
+## Skiff-authoritative bathymetry source stage
+
+An optional, strictly-authored projected-world skiff berth now
+allows a deterministic launch/dock prototype. When launched,
+the skiff (not the headset) drives seabed tile selection and
+four-hertz survey-first/procedural depth pings. Geographic
+coordinates are correctly rebased for existing local water
+footprints. This is integrated source code and regression tests,
+not a playable game or a displayed boat HUD.

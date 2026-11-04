@@ -240,6 +240,9 @@ inline DepthReading FindBoatDepth(const BathySampler& atlas,double east,
 class BoatDepthFinder {
 public:
     void Reset(){elapsed_=0.;reading_={};}
+    // Known launch reading immediately on the instrument; normal pings
+    // retain the existing quarter-second deterministic cadence.
+    void Prime(const DepthReading& depth){elapsed_=0.;reading_=depth;}
     template<class BathySampler>
     bool Update(double dt,const BathySampler& atlas,double east,double north,
                 double sea_surface_elevation_m,double boat_draft_m,
