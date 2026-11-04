@@ -46,6 +46,10 @@ on:
       - 'app/src/test/native/sitka_bathymetry_stream_test.cpp'
       - 'app/src/main/jni/native/sitka_boat_navigation.h'
       - 'app/src/main/jni/native/sitka_seafloor_mesh.h'
+      - 'app/src/main/jni/native/sitka_seafloor_frame_plan.h'
+      - 'app/src/test/native/sitka_seafloor_frame_plan_test.cpp'
+      - 'app/src/main/jni/native/reverie_native_module.h'
+      - 'app/src/main/jni/native/reverie_native_sdk.h'
       - 'app/src/test/native/sitka_seafloor_mesh_test.cpp'
       - 'app/src/test/native/sitka_bathymetry_test.cpp'
       - 'app/src/test/native/sitka_boat_navigation_test.cpp'
@@ -135,6 +139,17 @@ jobs:
               -o "${RUNNER_TEMP}/sitka-stream-${compiler}"
             "${RUNNER_TEMP}/sitka-stream-${compiler}" \
               "${RUNNER_TEMP}/sitka-stream-trace-${compiler}.csv"
+          done
+      - name: Validate frame-boundary ABI, LOD bands, repeated geographic seams
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/sitka_seafloor_frame_plan_test.cpp \
+              -o "${RUNNER_TEMP}/sitka-frame-plan-${compiler}"
+            "${RUNNER_TEMP}/sitka-frame-plan-${compiler}"
           done
       - name: Retain exact-commit streaming transition diagnostics
         if: success()
@@ -237,7 +252,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_name in sitka_bathymetry_test sitka_bathymetry_stream_test sitka_procedural_seabed_test sitka_boat_navigation_test sitka_seafloor_mesh_test; do
+          for test_name in sitka_bathymetry_test sitka_bathymetry_stream_test sitka_seafloor_frame_plan_test sitka_procedural_seabed_test sitka_boat_navigation_test sitka_seafloor_mesh_test; do
             for compiler in g++ clang++; do
               "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic                 -Iapp/src/main/jni/native                 "app/src/test/native/${test_name}.cpp"                 -o "${RUNNER_TEMP}/${test_name}-${compiler}"
               "${RUNNER_TEMP}/${test_name}-${compiler}"

@@ -8,6 +8,7 @@
 #include "sitka_bathymetry_stream.h"
 #include "sitka_procedural_seabed.h"
 #include "sitka_seafloor_mesh.h"
+#include "sitka_seafloor_frame_plan.h"
 #include <array>
 #include <cstdint>
 #include <new>
@@ -30,6 +31,7 @@ struct State {
     reverie::sitka::BathyAtlas bathymetry; // V1 source compatibility.
     std::unique_ptr<reverie::sitka::BathyStreamCache> stream;
     std::unique_ptr<reverie::sitka::ProceduralSeabed> generated;
+    reverie::sitka::SeafloorFramePlanner seafloor_plan;
     double last_focus_east=0.,last_focus_north=0.;
     bool has_focus=false;
 };
@@ -188,56 +190,21 @@ int32_t OnGlCreated(void* instance) {
     State* state = static_cast<State*>(instance);
     if (!state) return 0;
     std::string error;
-    // Bake real-data seabed vertices once on context creation, not per eye.
-    // Until streaming/visibility culling is implemented, reject an oversized
-    // visual world instead of silently rendering only part of the coastline.
+    // Keep legacy source-only V1 terrain compatibility. V2 streaming
+    // worlds start with land and water; the optional GL frame callback
+    // commits only the active seafloor after CPU cache update.
+    state->seafloor_plan.Reset();
     std::vector<reverie::sitka::TerrainMesh> sea_floor;
-    try {
-        size_t count=0u;
-        const auto water_at=[&](double east,double north){
-            for(const auto& water:state->waters)
-                if(reverie::sitka::FootprintContains(water,
-                    static_cast<float>(east),static_cast<float>(north)))
-                    return true;
-            return false;
-        };
-        const auto append=[&](const reverie::sitka::BathyTile& bathy){
-            // Real cells remain authoritative. The only procedural samples
-            // substituted are missing cells inside a known water footprint.
-            const auto mixed=state->generated?
-                reverie::sitka::FillSeabedGaps(bathy,*state->generated,water_at):
-                bathy;
-            auto mesh=reverie::sitka::BuildSeafloorTerrain(mixed,
-                state->terrain.origin_east,state->terrain.origin_north);
-            if(mesh.indices.empty())return;
-            count+=mesh.vertices.size();
-            if(count>300000u)
-                throw std::invalid_argument(
-                    "Sitka visual seabed needs additional world-cell LOD");
-            sea_floor.push_back(std::move(mesh));
-        };
-        if(state->stream)state->stream->VisitResident(append);
-        else for(const auto& bathy:state->bathymetry.Tiles())append(bathy);
-        if(state->stream&&state->generated){
-            const double east=state->terrain.origin_east;
-            const double north=state->terrain.origin_north;
-            // Outside NOAA coverage, generate an explicitly fictional
-            // source-independent 256m world tile, clipped to authored water.
-            // This also works when a coast has miles without observations.
-            if(state->stream->directory().Locate(east,north)<0){
-                const auto procedural=state->generated->GenerateTile(
-                    east,north,[&](double x,double z){
-                        return water_at(x,z)&&
-                            state->stream->directory().Locate(x,z)<0;
-                    });
-                append(procedural);
+    if(!state->stream){
+        try{
+            for(const auto& tile:state->bathymetry.Tiles()){
+                auto mesh=reverie::sitka::BuildSeafloorTerrain(
+                    tile,state->terrain.origin_east,state->terrain.origin_north);
+                if(!mesh.indices.empty())sea_floor.push_back(std::move(mesh));
             }
+        }catch(const std::exception& e){
+            Log(state->host,e.what());return 0;
         }
-        // A boat's current region can be outside survey coverage. Render land
-        // and water only, never fabricate a fallback seafloor. Dynamic GPU
-        // tile swap requires a separate GL-bound frame-preparation callback.
-    }catch(const std::exception& e){
-        Log(state->host,e.what());return 0;
     }
     if(!state->gl.CreateWithExtras(state->terrain,sea_floor,
                                    state->lighting,&error)){
@@ -252,6 +219,7 @@ void ReleaseGl(void* instance) {
     if(instance){
         static_cast<State*>(instance)->water_gl.Release();
         static_cast<State*>(instance)->gl.Release();
+        static_cast<State*>(instance)->seafloor_plan.Reset();
     }
 }
 void Resume(void*) {}
@@ -316,6 +284,84 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             event.event==reverie::sitka::FishingEvent::Landed)
         ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
 }
+bool WaterAt(const State* state,double east,double north){
+    if(!state||!std::isfinite(east)||!std::isfinite(north)||
+       std::abs(east)>1.e8||std::abs(north)>1.e8)return false;
+    for(const auto& water:state->waters){
+        if(reverie::sitka::FootprintContains(
+               water,static_cast<float>(east),static_cast<float>(north)))
+            return true;
+    }
+    return false;
+}
+
+// The host invokes this optional ABI callback ONCE after update and before
+// drawing either eye, from the owning GLES context. No synchronous asset
+// read occurs here; only resident source tiles or seeded infill are used.
+int32_t PrepareFrame(void* instance){
+    State* state=static_cast<State*>(instance);
+    if(!state||!state->gl.ready())return 0;
+    if(!state->stream||!state->generated||!state->has_focus)return 1;
+    const double east=state->last_focus_east;
+    const double north=state->last_focus_north;
+    const bool water=WaterAt(state,east,north);
+    const auto bed=state->stream->Sample(east,north);
+    const auto fallback=water?state->generated->Sample(east,north):
+                         reverie::sitka::BedSample{};
+    const auto sample=bed.known?bed:fallback;
+    const double reference=state->generated->settings().water_reference_m;
+    const double distance=sample.known?
+        std::abs(reference-sample.elevation_m):80.;
+    if(!state->seafloor_plan.Update(east,north,distance,
+                                    state->stream.get(),water))return 1;
+    const auto key=state->seafloor_plan.desired();
+    std::vector<reverie::sitka::TerrainMesh> seafloor;
+    try{
+        if(key.valid){
+            reverie::sitka::BathyTile tile;
+            const auto mask=[&](double x,double z){
+                return WaterAt(state,x,z);
+            };
+            if(key.sourced){
+                const auto* source=state->stream->ResidentAt(east,north);
+                if(!source)return 1; // Changed between decisions; retry.
+                tile=reverie::sitka::FillSeabedGaps(
+                    *source,*state->generated,mask);
+                // Mask out surveyed cells that lie outside authored water,
+                // only for rendering (never change the source in the cache).
+                for(unsigned row=0;row<tile.rows;++row)
+                    for(unsigned col=0;col<tile.columns;++col){
+                        const size_t i=size_t(row)*tile.columns+col;
+                        const double x=tile.first_east+col*tile.east_step;
+                        const double z=tile.first_north-row*tile.north_step;
+                        if(!mask(x,z)){
+                            tile.qualities[i]=reverie::sitka::BedQuality::Missing;
+                            tile.elevations_m[i]=0.f;
+                        }
+                    }
+            }else{
+                tile=state->generated->GenerateTile(east,north,mask);
+            }
+            auto mesh=reverie::sitka::BuildSeafloorTerrain(
+                tile,state->terrain.origin_east,state->terrain.origin_north,
+                key.stride);
+            if(!mesh.indices.empty())seafloor.push_back(std::move(mesh));
+        }
+    }catch(const std::exception& e){
+        Log(state->host,e.what());
+        state->seafloor_plan.Reject();
+        return 1; // Never take down the headset for bad optional geography.
+    }
+    std::string error;
+    if(!state->gl.ReplaceSeafloor(seafloor,&error)){
+        Log(state->host,error.c_str());
+        state->seafloor_plan.Reject();
+        return 1; // Retain old GPU floor, retry with bounded backoff.
+    }
+    state->seafloor_plan.Commit();
+    return 1;
+}
+
 int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(!instance)return 0;
     State* state=static_cast<State*>(instance);
@@ -325,7 +371,8 @@ const ReverieNativeModuleApiV1 kApi = {
     sizeof(ReverieNativeModuleApiV1), REVERIE_NATIVE_MODULE_ABI_VERSION,
     {sizeof(ReverieNativeModuleDescriptorV1), REVERIE_NATIVE_MODULE_ABI_VERSION,
      "sitka", "Sitka [TERRAIN PROOF]", 2u, 0u},
-    Create, Destroy, OnGlCreated, ReleaseGl, Resume, Pause, Update, RenderEye, nullptr
+    Create, Destroy, OnGlCreated, ReleaseGl, Resume, Pause, Update, RenderEye,
+    nullptr, PrepareFrame
 };
 } // namespace
 extern "C" __attribute__((visibility("default")))

@@ -440,3 +440,25 @@ The allowlisted ABI-v1 host now recognizes `classic-checkers`,
 `classic-go` and `classic-chess`. All use unchanged descriptor, host
 callbacks and normalized input, not a new ABI. The rules/rendering
 implementation is game-private; see `docs/project/CLASSIC_NATIVE_GAMES.md`.
+
+### Optional frame preparation callback (ABI-v1 append-only tail)
+
+The native module API now appends `prepare_frame(void* instance)` **after**
+the existing capabilities pointer. The host checks
+`REVERIE_NATIVE_MODULE_API_V1_PREPARE_FRAME_MIN_SIZE` and the optional
+function pointer before dispatch. A module compiled against the
+original v1 prefix, or a module with no callback, remains supported.
+
+`VrShellRenderer.onNewFrame()` calls `nativeUpdate` once and then
+`nativePrepareFrame` once on the rendering thread, after the guest
+GL context is live and **before** drawing left or right eye. That is
+the only supported place for game-originated staged mesh/texture
+uploads, such as Sitka's seafloor-tile transition. Neither
+`render_eye` should allocate, upload, mutate simulation, read game
+assets, or independently select a tile. A failed optional callback
+propagates the usual guest failure; an unsupported callback is a no-op.
+
+Sitka remains a source-only unregistered prototype: this API hook
+does not by itself make the boat launchable or guarantee Android
+frame pacing. The current scoped asset reader is synchronous in
+`update`; worker-based async I/O remains a separate feature.

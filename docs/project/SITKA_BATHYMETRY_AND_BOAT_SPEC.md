@@ -186,3 +186,35 @@ once-per-frame GL preparation callback from the native shell. This
 safe swap method is a tested primitive, not yet proof that boat travel
 invokes it or that 30 FPS is sustainable. Never call it from either
 `render_eye` callback or the non-render simulation update thread.
+
+## Frame-boundary terrain streaming, LOD hysteresis (2026-11-04)
+
+An optional append-only v1 module callback, `prepare_frame`, now
+runs **once per headset frame**, after native simulation update
+and before left/right stereo eye rendering. Old native modules
+ignore the capability. The Sitka source-only native prototype
+uses that stage to examine its CPU two-tile bathymetry cache,
+select the region under the current development headset focus,
+fill missing source cells with flagged deterministic seabed
+only within authored water, generate a new 256 m region if
+needed, and atomically replace seafloor-only GPU batches.
+
+`SeafloorFramePlanner` prevents repeated uploads at the same
+coordinates, treats real data arrival as an explicit source
+upgrade, holds the old rendered tile until 8 metres inside
+an adjacent same-quality region, and changes model detail
+between stride 1/2/4 using 44/64 and 140/180 m hysteresis
+bands. Large source tiles enforce a coarser minimum stride
+to keep the one-frame upload around 17k vertices or less.
+Failed GL stages keep the last committed floor and retry only
+after 30 update frames. Stereo eye functions never open
+assets or upload geometry.
+
+**Scope and limits:** The current input focus is the headset
+position because a Sitka skiff is not yet instanced in the
+registered game registry. Initial source tiles still load
+via the synchronous read_asset host API on update, so a
+real phone might hitch; asynchronous worker dispatch, real
+model boat controls and GPU timing telemetry remain open.
+No approved NOAA/USGS geography has been bundled. This
+is a source-stage integration, not a playable release.
