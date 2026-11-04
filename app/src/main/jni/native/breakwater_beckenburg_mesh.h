@@ -17,11 +17,17 @@ namespace reverie { namespace breakwater { namespace imported {
 // plus its three corresponding sampled RGB texels. There are no pointers,
 // GPU resources, animations or endianness-sensitive structure casts.
 constexpr std::array<const char*,5> kAssetPaths={{
-    "native/breakwater/beckenburg/concrete_block_1.bwm",
-    "native/breakwater/beckenburg/wooden_crate_1.bwm",
-    "native/breakwater/beckenburg/ammo_box_mp_1.bwm",
+    "native/shared/v1/models/psx/concrete_block_1.bwm",
+    "native/shared/v1/models/psx/wooden_crate_1.bwm",
+    "native/shared/v1/models/psx/ammo_box_mp_1.bwm",
     "native/breakwater/beckenburg/owner_boat_rowboat.bwm",
     "native/breakwater/beckenburg/owner_apc_armor.bwm"
+}};
+// Old verified content revisions can still be read by Breakwater only.
+constexpr std::array<const char*,3> kLegacySharedPaths={{
+    "native/breakwater/beckenburg/concrete_block_1.bwm",
+    "native/breakwater/beckenburg/wooden_crate_1.bwm",
+    "native/breakwater/beckenburg/ammo_box_mp_1.bwm"
 }};
 constexpr size_t kTriangleBytes=27u;
 constexpr uint32_t kMaxTriangles=2048u;

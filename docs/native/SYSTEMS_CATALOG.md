@@ -252,3 +252,7 @@ When an implementation is removed, renamed, promoted, or downgraded, update its 
 ## Native font standardization — 2026-10-26
 
 `app/src/main/jni/native/reverie_native_lato_text.h` is the **implemented provisional shared GLES2 UI glyph layer** using the same licensed Lato Semibold atlas already proven in Breakwater and Classic Chess. Ministry: Lantern Desk and Iron Sight: Forward Detachment source now consume its alpha-glyph batches; Android emulator and S9 acceptance remain distinct. The legacy `reverie_native_vector_text.h` remains as a separately classified geometry-stroke legacy method, **not genuine font rasterization**. Normative behavior and per-screen scope: [NATIVE_VECTOR_TEXT_STANDARD.md](NATIVE_VECTOR_TEXT_STANDARD.md). 
+
+## Cross-game shared authored assets — 2026-11-04
+
+**Implemented (source integration; device proof pending):** `reverie_native_shared_asset_catalog.h` provides host-scoped exact grants for nine `native/shared/v1/` assets, six 64×64 coastal textures and three BWM1 compiled prop models. Breakwater reads them through existing PNG and BWM parsers; Omega Front reuses shared concrete and steel in its existing texture renderer, eliminating the old duplicate packaged files. `shared-assets/catalog-v1.json` and `scripts/verify-shared-native-assets.py` provide a versioned cross-repository source manifest and source-byte regression. See [shared assets](SHARED_ASSETS.md) (source: `docs/native/SHARED_ASSETS.md`). This is *not* a networked/shared-package cache and does not grant arbitrary native games reads.

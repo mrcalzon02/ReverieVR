@@ -17,6 +17,15 @@ namespace reverie { namespace breakwater { namespace authored {
 constexpr size_t kTiles=6u;
 constexpr size_t kMaxPngBytes=16384u;
 constexpr std::array<const char*,kTiles> kPaths={{
+    "native/shared/v1/materials/coastal/shingle.png",
+    "native/shared/v1/materials/coastal/quay_concrete.png",
+    "native/shared/v1/materials/coastal/black_basalt.png",
+    "native/shared/v1/materials/coastal/oxidized_steel.png",
+    "native/shared/v1/materials/coastal/sandbag_burlap.png",
+    "native/shared/v1/materials/coastal/olive_enamel.png"
+}};
+// Migration fallback for previously installed private content packs.
+constexpr std::array<const char*,kTiles> kLegacyPaths={{
     "native/breakwater/materials/shingle.png",
     "native/breakwater/materials/quay_concrete.png",
     "native/breakwater/materials/black_basalt.png",
@@ -38,11 +47,17 @@ inline size_t Load(Atlas &atlas,ReadAsset read) {
     atlas=Atlas{};
     for(size_t tile=0;tile<kTiles;++tile) {
         uint32_t length=0u;
-        if(!read(kPaths[tile],nullptr,0u,&length) || length<45u ||
-           length>kMaxPngBytes)continue;
+        const char* chosen=kPaths[tile];
+        if(!read(chosen,nullptr,0u,&length) || length<45u ||
+           length>kMaxPngBytes) {
+            // The old path is read only for an older verified module pack.
+            chosen=kLegacyPaths[tile];
+            if(!read(chosen,nullptr,0u,&length) || length<45u ||
+               length>kMaxPngBytes)continue;
+        }
         std::vector<uint8_t> bytes(length);
         uint32_t received=0u;
-        if(!read(kPaths[tile],bytes.data(),length,&received) ||
+        if(!read(chosen,bytes.data(),length,&received) ||
            received!=length)continue;
         omega_art::Image decoded;
         if(!omega_art::DecodePng(bytes.data(),bytes.size(),decoded) ||

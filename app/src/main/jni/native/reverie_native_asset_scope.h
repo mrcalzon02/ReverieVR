@@ -1,12 +1,15 @@
 #ifndef REVERIE_NATIVE_ASSET_SCOPE_H
 #define REVERIE_NATIVE_ASSET_SCOPE_H
 // Pure host-owned path classifier; never accepts filesystem paths/URLs.
+#include "reverie_native_shared_asset_catalog.h"
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 namespace reverie { namespace native { namespace assets {
 inline uint32_t MaximumBytes(const char *id,const char *path){
     if(!id||!path)return 0u;
+    const uint32_t common=shared_assets::MaximumBytes(id,path);
+    if(common!=0u)return common;
     // Exactly one authored scene; no arbitrary file access for modules.
     if(std::strcmp(id,"procedural-test-chamber")==0)
         return std::strcmp(path,"native/test-chamber/scene.rvscene")==0

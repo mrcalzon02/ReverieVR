@@ -31,6 +31,27 @@ int main(){
     assert(MaximumBytes(gumball,"native/gumball/nodes/sub/gummy_world.rgb565")==0u);
     assert(MaximumBytes(gumball,"native/gumball/nodes/gummy_world.rgb565.bak")==0u);
     assert(MaximumBytes(gumball,"native/omega-front/terrain/ground.png")==0u);
+    // Shared assets are immutable exact paths with explicit opt-in modules.
+    // They cannot authorize arbitrary foreign game-folder reads.
+    const char* const accepted[]={"breakwater-battery","omega-front",
+        "between-deliveries-red-ledger","procedural-test-chamber"};
+    for(const auto& item:reverie::native::shared_assets::kEntries){
+        for(const char* consumer:accepted) {
+            const auto mask=reverie::native::shared_assets::ConsumerMask(consumer);
+            const uint32_t expected=(item.consumers & mask)!=0u?
+                item.max_bytes:0u;
+            assert(MaximumBytes(consumer,item.path)==expected);
+        }
+        assert(MaximumBytes("gumball-armada",item.path)==0u);
+        assert(MaximumBytes("classic-chess",item.path)==0u);
+        const std::string traversal=std::string(item.path)+"/../evil.png";
+        assert(MaximumBytes("breakwater-battery",traversal.c_str())==0u);
+    }
+    assert(MaximumBytes("omega-front",
+        "native/shared/v1/materials/coastal/unknown.png")==0u);
+    assert(MaximumBytes("breakwater-battery",
+        "native/shared/v1/models/psx/owner_apc_armor.bwm")==0u);
+    // Legacy read permissions are retained solely for old Breakwater packs.
     // Game-private authored material paths must not expand other module
     // capabilities or allow traversal/alternate extensions.
     const char* const breakwaterMaterials[]={

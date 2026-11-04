@@ -1,0 +1,229 @@
+{
+  "schema": "reverie.shared-asset-catalog/1",
+  "revision": "coastal-and-psx-props-v1",
+  "authority": {
+    "repository": "mrcalzon02/ReverieVR",
+    "branch": "main",
+    "content_root": "app/src/main/assets/",
+    "source_ownership": "public repository Git blobs; producer rights must be checked before external redistribution"
+  },
+  "delivery": {
+    "current": "single ReverieVR APK; files only once at native/shared/v1/",
+    "cross_repository": "pin blob Git SHA and approved license; import only required files at build time",
+    "separate_install_cache": "not implemented"
+  },
+  "entries": [
+    {
+      "id": "coastal.shingle",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/shingle.png",
+      "logical_path": "native/shared/v1/materials/coastal/shingle.png",
+      "git_blob_sha1": "60041692c2e00dce39f5a9a2250a06ee2819493b",
+      "sha256": "4fd1a1d2a517f25f12ae8e2f433b868e27b72742936d09dd50df33a12ef1a7b0",
+      "size_bytes": 5982,
+      "description": "shingle",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; internal reuse approved",
+      "source_original": "app/src/main/assets/native/breakwater/materials/shingle.png",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.quay_concrete",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/quay_concrete.png",
+      "logical_path": "native/shared/v1/materials/coastal/quay_concrete.png",
+      "git_blob_sha1": "c78cff46423421c31f642c8e8ce35cd60d99d968",
+      "sha256": "31f1d7d495764ac4cdc169145da17dc57ffb79b02bdad196a4b113eb5007ae8a",
+      "size_bytes": 4270,
+      "description": "coastal bunker concrete",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; internal reuse approved",
+      "source_original": "app/src/main/assets/native/breakwater/materials/quay_concrete.png",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery",
+        "omega-front"
+      ]
+    },
+    {
+      "id": "coastal.black_basalt",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/black_basalt.png",
+      "logical_path": "native/shared/v1/materials/coastal/black_basalt.png",
+      "git_blob_sha1": "c9c3b6b57044871bc812688f1b39a786953afd45",
+      "sha256": "21e33d5a4fc09055006428cdfe6066e6688fbf3bfd07d73195da0ae524cecd08",
+      "size_bytes": 5399,
+      "description": "dark volcanic rock",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; internal reuse approved",
+      "source_original": "app/src/main/assets/native/breakwater/materials/black_basalt.png",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.oxidized_steel",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/oxidized_steel.png",
+      "logical_path": "native/shared/v1/materials/coastal/oxidized_steel.png",
+      "git_blob_sha1": "7176e61d0f1cd9d226ccc737394ffc564000b3a1",
+      "sha256": "3f35e69761a2e706b6b60c52a8ccfc6922e91de6ae1c461a4d0422b50ea6ae31",
+      "size_bytes": 5644,
+      "description": "rusting steel",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; internal reuse approved",
+      "source_original": "app/src/main/assets/native/breakwater/materials/oxidized_steel.png",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery",
+        "omega-front"
+      ]
+    },
+    {
+      "id": "coastal.sandbag_burlap",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/sandbag_burlap.png",
+      "logical_path": "native/shared/v1/materials/coastal/sandbag_burlap.png",
+      "git_blob_sha1": "5596955b23dd32644eb642fcb53f176cfaa477ec",
+      "sha256": "cb3f9621e1ccfa8995c99f3729619316475eafaaebbbb4596de3b6689bf23ebb",
+      "size_bytes": 5125,
+      "description": "woven sandbags",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; internal reuse approved",
+      "source_original": "app/src/main/assets/native/breakwater/materials/sandbag_burlap.png",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "coastal.olive_enamel",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/materials/coastal/olive_enamel.png",
+      "logical_path": "native/shared/v1/materials/coastal/olive_enamel.png",
+      "git_blob_sha1": "a1a7167e32ee9230fd6ce804b208f2f4c4f28225",
+      "sha256": "9975fa1e0902c5043e2a1ec8de2827464f8e1576abf172c21dcb0a2a59a6e4a3",
+      "size_bytes": 3502,
+      "description": "olive military paint",
+      "dimensions": [
+        64,
+        64
+      ],
+      "rights": "owner-directed generated artwork; internal reuse approved",
+      "source_original": "app/src/main/assets/native/breakwater/materials/olive_enamel.png",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "psx.concrete_block_1",
+      "kind": "application/x-breakwater-bwm1",
+      "path": "app/src/main/assets/native/shared/v1/models/psx/concrete_block_1.bwm",
+      "logical_path": "native/shared/v1/models/psx/concrete_block_1.bwm",
+      "git_blob_sha1": "d4c689a9de820698d29fbc2cb4189788c67b1e93",
+      "sha256": null,
+      "size_bytes": 2708,
+      "description": "low-poly concrete block",
+      "rights": "PSX Mega Pack owner-authorized BWM1 conversion; external/public relicense not established",
+      "source_original": "app/src/main/assets/native/breakwater/beckenburg/concrete_block_1.bwm",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "psx.wooden_crate_1",
+      "kind": "application/x-breakwater-bwm1",
+      "path": "app/src/main/assets/native/shared/v1/models/psx/wooden_crate_1.bwm",
+      "logical_path": "native/shared/v1/models/psx/wooden_crate_1.bwm",
+      "git_blob_sha1": "2c7e79a71ab856f09dff09f9eb5bea90f2d59a4d",
+      "sha256": null,
+      "size_bytes": 4976,
+      "description": "low-poly wooden crate",
+      "rights": "PSX Mega Pack owner-authorized BWM1 conversion; external/public relicense not established",
+      "source_original": "app/src/main/assets/native/breakwater/beckenburg/wooden_crate_1.bwm",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    },
+    {
+      "id": "psx.ammo_box_mp_1",
+      "kind": "application/x-breakwater-bwm1",
+      "path": "app/src/main/assets/native/shared/v1/models/psx/ammo_box_mp_1.bwm",
+      "logical_path": "native/shared/v1/models/psx/ammo_box_mp_1.bwm",
+      "git_blob_sha1": "06f34332b7c28f3dcf3e8018eba1d5d911900cee",
+      "sha256": null,
+      "size_bytes": 2600,
+      "description": "low-poly ammunition box",
+      "rights": "PSX Mega Pack owner-authorized BWM1 conversion; external/public relicense not established",
+      "source_original": "app/src/main/assets/native/breakwater/beckenburg/ammo_box_mp_1.bwm",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ]
+    }
+  ]
+}

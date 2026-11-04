@@ -15,6 +15,14 @@ int main(){
     assert(MaximumBytes("omega-front",
         "native/breakwater/beckenburg/wooden_crate_1.bwm")==0);
     assert(MaximumBytes("breakwater-battery",
+        "native/shared/v1/models/psx/wooden_crate_1.bwm")==bwmMax);
+    assert(MaximumBytes("between-deliveries-red-ledger",
+        "native/shared/v1/models/psx/wooden_crate_1.bwm")==bwmMax);
+    assert(MaximumBytes("omega-front",
+        "native/shared/v1/materials/coastal/quay_concrete.png")==16384u);
+    assert(MaximumBytes("classic-chess",
+        "native/shared/v1/materials/coastal/quay_concrete.png")==0u);
+    assert(MaximumBytes("breakwater-battery",
         "native/breakwater/beckenburg/../../bad.bwm")==0);
     assert(MaximumBytes("breakwater-battery",
         "native/breakwater/beckenburg/foo/bar.bwm")==0);

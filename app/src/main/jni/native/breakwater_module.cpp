@@ -1505,9 +1505,14 @@ void *Create(const ReverieNativeHostV1 *host) {
                         code==REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL;
         };
         size_t admitted=0u;
-        for(size_t i=0;i<imported::kAssetPaths.size();++i)
+        for(size_t i=0;i<imported::kAssetPaths.size();++i) {
             if(imported::Load(&s->beckenburg_models[i],
-                              imported::kAssetPaths[i],reader))++admitted;
+                              imported::kAssetPaths[i],reader) ||
+               (i<imported::kLegacySharedPaths.size() &&
+                imported::Load(&s->beckenburg_models[i],
+                               imported::kLegacySharedPaths[i],reader)))
+                ++admitted;
+        }
         const size_t loaded=authored::Load(s->authored_materials,reader);
         char art_report[96];
         std::snprintf(art_report,sizeof(art_report),

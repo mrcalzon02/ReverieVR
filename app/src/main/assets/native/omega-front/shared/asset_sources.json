@@ -2,9 +2,9 @@
   "format_version": 2,
   "master_index": "https://docs.google.com/document/d/18G144Qd0-L5rL7NdqxMykqkXaBHtu8-ytr_yYPol6rI/edit",
   "logical_cell": "one 64×64 PNG texture per 24×24 tactical-grid cell",
-  "production": "Six existing shared 64x64 terrain materials and six independently baked 64x64 overhead projections of real PSX/Retro Tree GLBs. The original 3D sources remain in the shared asset library; tactics is 2D.",
+  "production": "Six material textures and six low-poly prop projections. Concrete and steel now resolve to one shared runtime copy reused with Breakwater; other Omega textures remain scoped.",
   "rights": "Shared-owner license claims and purchase cover in-game use. Purchased full GLB source archives remain in Google Drive and are not replicated here; material transfer upstream pack identity has not been independently classified. No assertion that all sources are CC0.",
-  "scope": "All 12 PNGs are loaded in the GLES2 SpriteRenderer and selected by omega_front_module.cpp for strategic terrain, surveyed sector resources, tactical ground, physical objectives, ammo supply, and rubble vegetation.",
+  "scope": "All 12 catalog material/prop identities are loaded by Omega's renderer; 10 under its existing shared folder and two from immutable native/shared/v1.",
   "verification": "Original 64x64 dimensions and SHA-256 checked for new PSX-derived PNGs; Git PNG blobs and references verified on main after commit. Device APK/gameplay verification remains outstanding.",
   "assets": [
     {
@@ -61,29 +61,29 @@
     },
     {
       "name": "concrete",
-      "sha": "2517c6925bd8c3fdc136c4c02cdacfc274c5e052",
-      "sha256": "76ee9e6b06aeb7a2280ee1fe8a737711c579d7413e89be9da36673c13de17c3a",
+      "sha": "c78cff46423421c31f642c8e8ce35cd60d99d968",
+      "sha256": "31f1d7d495764ac4cdc169145da17dc57ffb79b02bdad196a4b113eb5007ae8a",
       "mime": "image/png",
       "kind": "material",
-      "use": "Wall cells and infrastructure",
-      "source": "Beckenburg shared 64px material transfer",
-      "url": "https://drive.google.com/file/d/1m12iMWLQHgmNhG1mrlzwYXcDybpK08gT/view",
-      "runtime_path": "app/src/main/assets/native/omega-front/shared/concrete.png",
+      "use": "Wall cells and infrastructure; shared with Breakwater",
+      "source": "Shared owner-generated Breakwater/ReverieVR coastal material v1",
+      "runtime_path": "app/src/main/assets/native/shared/v1/materials/coastal/quay_concrete.png",
       "width": 64,
-      "height": 64
+      "height": 64,
+      "provenance": "OpenAI-generated with owner direction; shared in-game texture derivative"
     },
     {
       "name": "steel",
-      "sha": "ad7ab72fb9c90a0f81f2d363ead8427d1db15a8a",
-      "sha256": "9567186f4e77e4ddee328c1ff97d3eab3ff64a3a24da9b2968eafbf556c6b7fd",
+      "sha": "7176e61d0f1cd9d226ccc737394ffc564000b3a1",
+      "sha256": "3f35e69761a2e706b6b60c52a8ccfc6922e91de6ae1c461a4d0422b50ea6ae31",
       "mime": "image/png",
       "kind": "material",
-      "use": "Industrial wall variations",
-      "source": "Beckenburg shared 64px material transfer",
-      "url": "https://drive.google.com/file/d/1B9-hOqW1Abvbb_5ktdbSxcPHGIe7ckuR/view",
-      "runtime_path": "app/src/main/assets/native/omega-front/shared/steel.png",
+      "use": "Industrial wall variations; shared with Breakwater",
+      "source": "Shared owner-generated Breakwater/ReverieVR coastal material v1",
+      "runtime_path": "app/src/main/assets/native/shared/v1/materials/coastal/oxidized_steel.png",
       "width": 64,
-      "height": 64
+      "height": 64,
+      "provenance": "OpenAI-generated with owner direction; shared in-game texture derivative"
     },
     {
       "name": "supply_crate",
