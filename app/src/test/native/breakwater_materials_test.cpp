@@ -5,15 +5,15 @@
 #include <iostream>
 using namespace reverie::breakwater::materials;
 int main() {
-    static_assert(kAtlasWidth==128 && kAtlasHeight==384);
-    std::array<int,4> counts{};
+    static_assert(kAtlasWidth==128 && kAtlasHeight==448);
+    std::array<int,6> counts{};
     Rasterize([&](int x,int y,Rgb rgb) {
         assert(x>=0 && x<kAtlasWidth && y>=kBaseY && y<kAtlasHeight);
         assert(rgb.r!=255 || rgb.g!=0 || rgb.b!=255);
         ++counts[((y-kBaseY)/kTile)*2+x/kTile];
     });
     for(int v:counts) assert(v==kTile*kTile);
-    for(int id=0;id<4;++id) {
+    for(int id=0;id<6;++id) {
         auto m=static_cast<Surface>(id);
         const Rgb a=Sample(m,4,7), b=Sample(m,4,7),c=Sample(m,29,37);
         assert(a.r==b.r && a.g==b.g && a.b==b.b);
@@ -31,6 +31,21 @@ int main() {
             assert(a[i+3]>=0.0f && a[i+3]<=1.0f);
             assert(a[i+4]>=0.0f && a[i+4]<=1.0f);
         }
+    }
+    for(int id=0;id<6;++id) {
+        std::vector<float> shell;
+        assert(AppendBoxCladding(shell,static_cast<Surface>(id),
+                                 3.f,-.5f,-1.4f,.7f,.4f,.9f));
+        assert(shell.size()==12u*3u*5u);
+        for(size_t i=0;i<shell.size();i+=5) {
+            for(size_t j=0;j<5;++j)assert(std::isfinite(shell[i+j]));
+            assert(shell[i+3]>=0 && shell[i+3]<=1);
+            assert(shell[i+4]>=0 && shell[i+4]<=1);
+        }
+        const size_t before=shell.size();
+        assert(!AppendBoxCladding(shell,static_cast<Surface>(id),
+                                  0.f,0.f,0.f,0.f,1.f,1.f));
+        assert(shell.size()==before);
     }
     std::vector<float> invalid;
     AppendCoast(invalid,3u,[](uint8_t,float,float){return 0.f;});

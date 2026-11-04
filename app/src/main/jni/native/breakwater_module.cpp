@@ -709,7 +709,12 @@ void BuildScene(State *s) {
     if(game.phase()==Phase::Combat)
         EmitBatteryEmplacement(game.location(),night,
             [s](auto... arguments){Box(s,arguments...);},
-            [s](auto... arguments){Triangle(s,arguments...);});
+            [s](auto... arguments){Triangle(s,arguments...);},
+            [s](materials::Surface surface,float x,float y,float z,
+                float w,float h,float d) {
+                materials::AppendBoxCladding(s->sprite_mesh,surface,
+                                              x,y,z,w,h,d);
+            });
     for(const ShoreCover &barrier:game.shore_cover())
         EmitShoreCover(game.location(),barrier,night,
             [s](auto... arguments) { Box(s,arguments...); });
@@ -1509,7 +1514,7 @@ void *Create(const ReverieNativeHostV1 *host) {
                   "BreakwaterAssets",report);
     }
     s->mesh.reserve(81920);
-    s->sprite_mesh.reserve(20000);
+    s->sprite_mesh.reserve(28000);
     s->font_mesh.reserve(12000);
     // All launches choose a slot explicitly. Pre-v2 saves are ignored.
     for(uint8_t slot=0;slot<3u;++slot) {
