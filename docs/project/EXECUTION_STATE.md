@@ -1,3 +1,55 @@
+## 2026-11-04 — Sitka: real between-frame tile swaps, 8 m seam hysteresis and LOD-first source meshes
+
+**INTENT:** Complete the previous two-tile CPU cache's graphics transition
+without modifying any released native game render-eye logic or treating
+procedural heights as hydrographic facts. Keep legacy ABI-v1 binaries
+compatible and preserve source-backed depth precedence.
+
+**REMOTE IMPLEMENTATION:**
+- [8bd3102](https://github.com/mrcalzon02/ReverieVR/commit/8bd3102fa78b3ce8cfbab5b6a9be0671889780fd):
+  source-only Sitka frame planner with world-region keys, a held 8m border
+  margin, 44/64 and 140/180m LOD 1/2/4 bands, max ~17k source vertex
+  selection and 30-frame failed-upload retry backoff. Sitka module
+  prepares one GL seafloor swap after its CPU cache update, ahead of both
+  stereo eye draws, and leaves land and water batches alone.
+- [08af427](https://github.com/mrcalzon02/ReverieVR/commit/08af427bfdd2dda51f97e8609ba92dbf767905ee):
+  repaired a first-staging omission. The exact app-wide optional ABI tail
+  `prepare_frame`/size gate, JNI bridge, Java runtime dispatch, and shell
+  onNewFrame call are now actually present; old V1 modules no-op safely.
+- [00b3e87](https://github.com/mrcalzon02/ReverieVR/commit/00b3e874acabcd9498e7cfe414d435eb20ae2269):
+  replaces full-grid-generated-and-decimated seabed in Sitka's source
+  rendering path with sparse survey-first, procedural-on-missing LOD vertex
+  production. Every underlying water-mask cell is still checked to
+  reject submerged polygons crossing an authored island.
+
+**ACTION EVIDENCE:** [exact-commit all-game content workflow 41933369365]
+(https://github.com/mrcalzon02/ReverieVR/actions/runs/41933369365) reports **SUCCESS** for all four dedicated Sitka jobs:
+  optimized GCC/Clang 8km/40-cell cache, seam/hysteresis and sparse
+  source-mesh tests; rasterio/pyproj exporter tests; real Mesa GLES2
+  two-eye context-loss and staged swap test; Android ARMv7+ARM64 source
+  module link. Retained artifacts `sitka-streaming-traces-41933369365`
+  (13371858899) and `sitka-source-only-ndk-abi-41933369365` (13373300668).
+  Synthetic 513x513 survey grid => 16,641 vertices, 32,768 triangles,
+  462,864 estimated GPU vertex/index bytes; CI code build time was
+  773 us GCC / 708 us Clang (diagnostic, NOT S9 frame time).
+  [Signed phone-test APK run 41933369254]
+(https://github.com/mrcalzon02/ReverieVR/actions/runs/41933369254)
+  succeeded for the host but **Sitka is not included as a playable module**.
+
+**SEPARATE FAILURE:** The parent all-game verify path remains red on
+  Omega Front art packaging, and all-integrated functional diagnostics
+  contain a Breakwater combat gate failure. These were not altered by
+  this Sitka-only performance iteration and are not grounds to mislabel
+  the four successful Sitka checks as a green entire repository.
+
+**NOT DONE:** approved Sitka survey/DEM assets, actual skiff instance,
+  on-boat depth finder display, boat-position authority, threaded or
+  other verified non-blocking game asset loading, true multi-mile
+  land/building streaming, real Daydream S9 frame/thermal measurements.
+  The cache's local host reads remain synchronous in `update` and a
+  new GL mesh still stages in one frame; no hitch-free assurance is made.
+
+---
 ## 2026-11-04 — Sitka deterministic proximal marine infill + transactional GPU terrain transitions
 
 **INTENT:** Honor revised gameplay authority: real NOAA elevations where

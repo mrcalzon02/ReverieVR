@@ -1,3 +1,42 @@
+## 2026-11-04 — Sitka frame-boundary LOD streaming (source-only accepted)
+
+**Accepted in tested source:** V1 append-only optional prepare_frame
+  callback once per logical VR frame, following simulation update and
+  preceding both eyes; old native modules use a no-op. Sitka's
+  two-tile CPU cache now drives a one-region active GPU floor with
+  8m seam hysteresis, stable world-coordinate source/procedural IDs,
+  near/mid/far LOD selection, large-source-grid vertex budgeting and
+  retry throttling. A failed GL buffer upload retains the previous
+  rendered tile and GL caller state.
+
+**Accepted CPU optimization:** Surveyed elevations always take precedence;
+  only LOD-selected missing underwater vertices are generated using
+  the deterministic procedural layer. Conservative water-mask checks
+  exclude coarse mesh quads spanning tiny islands. Optimized CI
+  513x513 -> 16,641 vertices, 32,768 triangles, 462,864 estimated
+  vertex/index payload bytes. Measured desktop CI 773/708 microseconds
+  is diagnostic, not an observed VR frame time or memory use.
+
+**Evidence:** [native-source change 8bd3102]
+(https://github.com/mrcalzon02/ReverieVR/commit/8bd3102fa78b3ce8cfbab5b6a9be0671889780fd),
+  [ABI wiring fix 08af427]
+(https://github.com/mrcalzon02/ReverieVR/commit/08af427bfdd2dda51f97e8609ba92dbf767905ee),
+  [sparse-grid source optimizer 00b3e87]
+(https://github.com/mrcalzon02/ReverieVR/commit/00b3e874acabcd9498e7cfe414d435eb20ae2269),
+  [Sitka Action jobs at head 00b3e87]
+(https://github.com/mrcalzon02/ReverieVR/actions/runs/41933369365). Four Sitka jobs success, including real GLES2 Mesa
+  and Android NDK source link, exact-commit CSV/ELF evidence retained.
+
+**Open and unaccepted:** This is still the unregistered source-only Sitka
+  prototype using headset/editor focus, not a moving skiff. No licensed
+  NOAA/USGS coastal data is in the APK; no actual boat instrument exists;
+  source asset reads are synchronous; between-frame GL updates are
+  not measured or rate-limited on Galaxy S9 hardware. The signed
+  host APK built but does not ship a functional Sitka module.
+  Independent Omega Front/Breakwater workflow problems remain tracked
+  separately, not silently counted as Sitka failures or cleared.
+
+---
 ## 2026-11-04 — Sitka survey-first procedural ocean and safe seafloor GPU primitive
 
 **Source-stage accepted with tests, not playable Sitka:**
