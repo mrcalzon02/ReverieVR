@@ -34,6 +34,28 @@ def main():
         check_png(path, (256, 256), icon["sha256"])
     if factions != {"f06": 20, "f07": 20, "f08": 20, "f09": 20, "f10": 20}:
         raise ValueError(f"Incomplete faction icons: {factions}")
+    accepted = json.loads(
+        (ROOT / "art/omega-front/accepted/catalog.json").read_text())
+    entries = accepted["sets"]
+    if len(entries) != 5 or {entry["faction_id"].lower() for entry in entries} != set(factions):
+        raise ValueError("Archived accepted-faction catalog differs from runtime catalog")
+    for entry in entries:
+        faction = entry["faction_id"].lower()
+        if factions[faction] != entry["expected_count"]:
+            raise ValueError(f"Wrong accepted icon count for {faction}")
+        if not (ROOT / entry["atlas_path"]).is_file() or not (ROOT / entry["manifest"]).is_file():
+            raise ValueError(f"Missing accepted atlas or manifest for {faction}")
+        if not all(path.startswith(entry["icons_path"])
+                   for path in paths if f"/{faction}/" in path):
+            raise ValueError(f"Wrong asset directory for {faction}")
+    runtime_header = (
+        ROOT / "app/src/main/jni/native/omega_front_portrait_catalog.h"
+    ).read_text()
+    for icon in c["icons"]:
+        path = icon["path"].removeprefix("app/src/main/assets/")
+        pair = '{"' + icon["role"] + '","' + path + '"}'
+        if pair not in runtime_header:
+            raise ValueError(f"Runtime portrait mapping drifted: {icon['role']}")
     for atlas in c["atlases"]:
         check_png(atlas["path"], (1280, 1024))
     check_png(c["style_guide"], (1536, 1024))

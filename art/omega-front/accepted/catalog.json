@@ -31,10 +31,17 @@
       "atlas_path": "art/omega-front/accepted/f09/atlas_5x4.png",
       "manifest": "art/omega-front/accepted/f09/manifest.json",
       "expected_count": 20
+    },
+    {
+      "faction_id": "F10",
+      "icons_path": "app/src/main/assets/native/omega-front/ui/icons/f10/",
+      "atlas_path": "art/omega-front/accepted/f10/atlas_5x4.png",
+      "manifest": "app/src/main/assets/native/omega-front/ui/icons/f10/manifest.json",
+      "expected_count": 20
     }
   ],
   "artwork_accepted": "painted role icons as user-selected interim assets",
-  "runtime_wiring": "assets included in APK by Android asset packaging; texture selector still requires verification",
+  "runtime_wiring": "Native Faction Gallery uses all F06–F10 portraits on demand from title and pause menus; tactical map sprites remain separate; device screenshot diagnostic pending.",
   "excluded": [
     "Iron Syndicate",
     "Skyward Dominion",
