@@ -44,6 +44,10 @@ struct ModuleState {
     GLint spin_location = -1;
     GLint light_location = -1;
     GLint ambient_location = -1;
+    GLint authored_light_location = -1;
+    GLint light_power_location = -1;
+    GLint light_radius_location = -1;
+    GLint light_edge_location = -1;
     GLint emissive_location = -1;
 
     bool primary_was_down = false;
@@ -129,19 +133,26 @@ void UpdateWorkshopHud(ModuleState* state){
         "DELETE","UNDO","SAVE","PLAY TEST","MOTION TOOLS >"};
     static const char* motionActions[10]={
         "BOB","SPIN","PULSE","CLEAR MOTION","SPEED +",
-        "SPEED -","AMPLITUDE +","AMPLITUDE -","NEXT PROJECT","< SCENE TOOLS"};
-    const char* const* actions=state->workshop.motion_page?motionActions:sceneActions;
-    state->font.Text(state->workshop.motion_page?
+        "SPEED -","AMPLITUDE +","AMPLITUDE -","LIGHT TOOLS >","< SCENE TOOLS"};
+    static const char* lightActions[10]={
+        "ATTACH LIGHT","REMOVE LIGHT","POWER +","POWER -","REACH +",
+        "REACH -","AMBIENT +","AMBIENT -","NEXT PROJECT","< MOTION TOOLS"};
+    const char* const* actions=state->workshop.lighting_page?lightActions:
+        state->workshop.motion_page?motionActions:sceneActions;
+    state->font.Text(state->workshop.lighting_page?
+        "VR WORKSHOP / LIGHTS":state->workshop.motion_page?
         "VR WORKSHOP / MOTION":"VR WORKSHOP / SCENE",
         -3.2f,1.43f,.044f,.93f,.96f,.99f,-2.62f);
     for(int i=0;i<10;++i) {
         const auto* binding=state->workshop.SelectedMotion();
-        const bool active=state->workshop.motion_page
-            ?(binding!=nullptr&&i<=2&&
-              static_cast<int>(binding->kind)==(i==0?1:i==1?0:2))
-            :((i==2&&state->workshop.tool==reverie::authoring::VrTool::Move)
-            ||(i==3&&state->workshop.tool==reverie::authoring::VrTool::Rotate)
-            ||(i==4&&state->workshop.tool==reverie::authoring::VrTool::Scale));
+        const bool active=state->workshop.lighting_page
+            ?(i==0&&state->workshop.light.enabled)
+            :state->workshop.motion_page
+              ?(binding!=nullptr&&i<=2&&
+                static_cast<int>(binding->kind)==(i==0?1:i==1?0:2))
+              :((i==2&&state->workshop.tool==reverie::authoring::VrTool::Move)
+              ||(i==3&&state->workshop.tool==reverie::authoring::VrTool::Rotate)
+              ||(i==4&&state->workshop.tool==reverie::authoring::VrTool::Scale));
         state->font.Text(actions[i],-3.16f,1.09f-i*.235f,.038f,
             active?1.f:.77f,active?.79f:.9f,active?.37f:1.f,-2.62f);
     }
@@ -163,8 +174,17 @@ void UpdateWorkshopHud(ModuleState* state){
         state->font.Fit(line.c_str(),-.69f,.70f,3.25f,.029f,
             .95f,.83f,.50f,-2.62f);
     }
-    state->font.Text("POINT AND CLICK TOOL",-.69f,.53f,.029f,.85f,.94f,.98f,-2.62f);
-    state->font.Text("DRAG OBJECT TO ADJUST",-.69f,.32f,.029f,.85f,.94f,.98f,-2.62f);
+    if(state->workshop.light.enabled){
+        const auto& light=state->workshop.light;
+        const std::string note="LIGHT "+light.anchor_id+
+            " PWR "+std::to_string(light.power).substr(0,4)+
+            " R "+std::to_string(light.radius).substr(0,4)+
+            " AMB "+std::to_string(light.ambient).substr(0,4);
+        state->font.Fit(note.c_str(),-.69f,.49f,3.25f,.029f,
+            .95f,.89f,.66f,-2.62f);
+    }
+    state->font.Text("POINT AND CLICK TOOL",-.69f,.23f,.029f,.85f,.94f,.98f,-2.62f);
+    state->font.Text("DRAG OBJECT TO ADJUST",-.69f,.02f,.029f,.85f,.94f,.98f,-2.62f);
     state->font.Text("SECONDARY: SAVE + TEST",-.69f,-.88f,.028f,.95f,.88f,.53f,-2.62f);
     if(state->workshop.dirty)
         state->font.Text("UNSAVED EDITS",-.69f,-1.09f,.034f,1.f,.71f,.36f,-2.62f);
@@ -196,6 +216,8 @@ GLuint BuildProgram() {
         "uniform vec3 u_Offset; uniform vec3 u_Pivot;\n"
         "uniform vec3 u_LightPosition; uniform float u_Spin;\n"
         "uniform float u_Ambient;\n"
+        "uniform float u_UseAuthoredLight, u_LightPower;\n"
+        "uniform float u_LightRadius, u_LightEdge;\n"
         "attribute vec3 a_Position; attribute vec2 a_Uv;\n"
         "varying vec2 v_Uv; varying float v_Light;\n"
         "void main(){\n"
@@ -203,7 +225,12 @@ GLuint BuildProgram() {
         "  vec3 d=a_Position-u_Pivot;\n"
         "  vec3 p=u_Pivot+vec3(c*d.x-s*d.z,d.y,s*d.x+c*d.z)+u_Offset;\n"
         "  float dist=distance(p,u_LightPosition);\n"
-        "  v_Light=clamp(u_Ambient+0.85/(1.0+0.65*dist*dist),0.0,1.6);\n"
+        "  float faded=clamp((u_LightRadius-dist)/"
+        "max(0.0001,u_LightRadius*u_LightEdge),0.0,1.0);\n"
+        "  float authored=u_LightPower*faded*(0.45+0.55*faded)/"
+        "(1.0+0.13*dist*dist);\n"
+        "  float legacy=0.85/(1.0+0.65*dist*dist);\n"
+        "  v_Light=clamp(u_Ambient+mix(legacy,authored,u_UseAuthoredLight),0.0,1.6);\n"
         "  gl_Position=u_ViewProjection*vec4(p,1.0);\n"
         "  v_Uv=a_Uv;\n"
         "}\n";
@@ -395,6 +422,10 @@ void DestroyGl(ModuleState *state) {
     state->spin_location = -1;
     state->light_location = -1;
     state->ambient_location = -1;
+    state->authored_light_location = -1;
+    state->light_power_location = -1;
+    state->light_radius_location = -1;
+    state->light_edge_location = -1;
     state->emissive_location = -1;
 }
 
@@ -467,6 +498,10 @@ int32_t InitializeGl(ModuleState *state) {
     state->spin_location=glGetUniformLocation(state->program,"u_Spin");
     state->light_location=glGetUniformLocation(state->program,"u_LightPosition");
     state->ambient_location=glGetUniformLocation(state->program,"u_Ambient");
+    state->authored_light_location=glGetUniformLocation(state->program,"u_UseAuthoredLight");
+    state->light_power_location=glGetUniformLocation(state->program,"u_LightPower");
+    state->light_radius_location=glGetUniformLocation(state->program,"u_LightRadius");
+    state->light_edge_location=glGetUniformLocation(state->program,"u_LightEdge");
     state->emissive_location=glGetUniformLocation(state->program,"u_Emissive");
 
     if (state->position_location < 0
@@ -479,6 +514,10 @@ int32_t InitializeGl(ModuleState *state) {
         || state->spin_location < 0
         || state->light_location < 0
         || state->ambient_location < 0
+        || state->authored_light_location < 0
+        || state->light_power_location < 0
+        || state->light_radius_location < 0
+        || state->light_edge_location < 0
         || state->emissive_location < 0) {
         Log(
             state,
@@ -976,8 +1015,21 @@ int32_t RenderEye(
         ?1.7f*std::sin(elapsed*.7f):.25f;
     const float yLight=(state->demo_mode==4)
         ?.15f+.65f*std::cos(elapsed*.6f):.70f;
-    glUniform3f(state->light_location,xLight,yLight,-3.15f);
-    const float ambient=state->demo_mode==1?.18f:
+    float authoredLightX=0.f,authoredLightY=0.f,authoredLightZ=0.f;
+    const bool authored=state->workshop.LightPosition(elapsed,
+        authoredLightX,authoredLightY,authoredLightZ);
+    glUniform3f(state->light_location,
+        authored?authoredLightX:xLight,authored?authoredLightY:yLight,
+        authored?authoredLightZ:-3.15f);
+    glUniform1f(state->authored_light_location,authored?1.f:0.f);
+    glUniform1f(state->light_power_location,
+        authored?static_cast<float>(state->workshop.light.power):1.f);
+    glUniform1f(state->light_radius_location,
+        authored?static_cast<float>(state->workshop.light.radius):5.f);
+    glUniform1f(state->light_edge_location,
+        authored?static_cast<float>(state->workshop.light.edge):.65f);
+    const float ambient=authored?static_cast<float>(state->workshop.light.ambient):
+        state->demo_mode==1?.18f:
         state->demo_mode==2?1.05f:
         state->demo_mode==3?.18f+.35f*pulse:
         state->demo_mode==5?.62f:.39f;

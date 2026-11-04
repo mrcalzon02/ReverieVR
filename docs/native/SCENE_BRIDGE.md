@@ -104,3 +104,39 @@ bridges, fully authored keyframes, spatial audio, multi-light placement,
 physics and general project scripts remain separate explicit integration
 steps. Validate real controller bindings, text layout, performance and
 two-eye parity on the Galaxy S9 before declaring headset usability complete.
+
+## First authored Beckenburg-parity point light in headset (2026-11-04)
+
+`reverie_vr_project_lighting.h` introduces a bounded, project-owned
+light attached by stable ID to **one existing primitive**. With the
+new **Light Tools** submenu inside VR Workshop, the user can attach
+or remove the light, tune source strength, reach and ambient, and
+move the anchor by editing the original object. The authoring rig is
+visible in both eyes and during playtest; if the anchor bobs, the light
+follows the object's actual animated world-space position. Removing
+the anchor deletes its light as the same undoable scene transaction.
+
+The light contribution mirrors Beckenburg's `LightModel.diffusionFade`
+and `LightModel.attenuation` (omnidirectional angle and diffuse factors
+set to one). A single additional set of GLES2 uniforms selects
+authored lighting and sets power, radius and edge; **no light**
+preserves the previous Test Chamber shader falloff and demo modes.
+The source is not blocked by scene geometry yet: proper line-of-sight
+occlusion, multiple fixture types and shadow maps remain open tasks.
+The native shader remains designed around the Galaxy S9 GLES2 budget.
+
+Project saves now use **`RVPROJECT\t2`**, a single atomic, versioned
+envelope holding unchanged REVSCENE v1, RVMOTION v1 and RVLIGHT v1
+sections with strict size, count and referential integrity checks.
+`RVPROJECT\t1` motion projects and original REVSCENE-only host saves
+remain accepted, without silent deletion or replacement; subsequent
+successful edits migrate to the current version. Malformed light
+components or a missing anchor reject the project rather than drawing
+an invented lamp. Existing test coverage checks lighting math,
+linkage, animation-follow, undo, migration and failed writes.
+
+**Limitations:** one point light per project, no occlusion or directional
+beams, no native audio emitter or authored sound placement, no real
+Beckenburg keyframe clip playback or arbitrary scripting. A valid
+Android package is not proof of headset button, text legibility or
+sustained frame-rate acceptance.

@@ -135,3 +135,14 @@ native Test Chamber preview with no runtime compilation or arbitrary
 user-provided executable code. Backward-compatible reads preserve existing
 native `REVSCENE` save slots. See `docs/native/SCENE_BRIDGE.md` for
 the exact format, menu, security boundaries and remaining work.
+
+## CS-01.2 Beckenburg-parity authored VR point light (2026-11-04)
+
+One object-anchored native point light with source power, reach, edge
+diffusion and ambient controls is now part of the VR authoring model.
+Shader values use Beckenburg LightModel's bounded attenuation/fade
+formulas; the preexisting Test Chamber lighting path stays unchanged
+when no light is authored. Project saves migrate from RVPROJECT v1
+to v2 atomically, with both scene and animation preserved.
+Collision-aware occlusion, fixture arrays and live spatial sound
+will follow after device/performance verification.

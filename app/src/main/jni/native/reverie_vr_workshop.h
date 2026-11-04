@@ -84,7 +84,8 @@ class VrWorkshop {
 public:
     Scene scene;
     std::vector<VrMotion> motions;
-    bool motion_page=false;
+    VrLight light;
+    bool motion_page=false, lighting_page=false;
     bool editing=false, dirty=false, mesh_dirty=false, last_primary=false,
          last_secondary=false;
     size_t slot=0, selected=0;
@@ -101,6 +102,7 @@ public:
         if(rc<0){last_error="PROJECT READ FAILED";return false;}
         Scene loaded;
         std::vector<VrMotion> loadedMotions;
+        VrLight loadedLight;
         if(rc==0){loaded=target==0?seed_:Scene{"white_room",{}};}
         else {
             if(bytes.empty()||bytes.size()>kVrSlotMaxBytes){
@@ -110,15 +112,18 @@ public:
                 auto result=DecodeVrBundle(bytes);
                 loaded=std::move(result.scene);
                 loadedMotions=std::move(result.motions);
+                loadedLight=std::move(result.light);
             }catch(const std::exception&){
                 last_error="CORRUPT PROJECT";return false;
             }
         }
-        if(!ScenePlayable(loaded)||!ValidateMotions(loaded,loadedMotions)){
+        if(!ScenePlayable(loaded)||!ValidateMotions(loaded,loadedMotions)||
+           !ValidLight(loaded,loadedLight)){
             last_error="UNSUPPORTED PROJECT";return false;
         }
         scene=std::move(loaded);motions=std::move(loadedMotions);
-        slot=target;selected=0;motion_page=false;undo_.clear();
+        light=std::move(loadedLight);
+        slot=target;selected=0;motion_page=false;lighting_page=false;undo_.clear();
         dirty=false;mesh_dirty=true;last_error.clear();
         return true;
     }
@@ -126,7 +131,7 @@ public:
         if(!store.write){last_error="SAVE SERVICE ABSENT";return false;}
         try{
             const std::string data=EncodeVrBundle(EncodeVrScene(scene),
-                EncodeMotions(scene,motions));
+                EncodeMotions(scene,motions),EncodeVrLight(scene,light));
             if(!store.write(store.context,slot,data)){
                 last_error="SAVE FAILED - CHANGES RETAINED";return false;
             }
@@ -153,17 +158,20 @@ public:
         if(!editing||scene.pieces.empty())return false;
         Scene old=scene;
         std::vector<VrMotion> before=motions;
+        const VrLight beforeLight=light;
         const std::string removed=scene.pieces[selected].id;
         scene.pieces.erase(scene.pieces.begin()+static_cast<long>(selected));
         motions.erase(std::remove_if(motions.begin(),motions.end(),
             [&](const VrMotion& m){return m.id==removed;}),motions.end());
+        if(light.enabled&&light.anchor_id==removed)light=VrLight{};
         selected=std::min(selected,scene.pieces.empty()?size_t(0):scene.pieces.size()-1);
-        Remember(std::move(old),std::move(before));return true;
+        Remember(std::move(old),std::move(before),true,&beforeLight);return true;
     }
     bool Undo() {
         if(!editing||undo_.empty())return false;
         scene=std::move(undo_.back().scene);
-        motions=std::move(undo_.back().motions);undo_.pop_back();
+        motions=std::move(undo_.back().motions);
+        light=std::move(undo_.back().light);undo_.pop_back();
         selected=std::min(selected,scene.pieces.empty()?size_t(0):scene.pieces.size()-1);
         dirty=mesh_dirty=true;return true;
     }
@@ -217,7 +225,7 @@ public:
         dragging_=false;
         if(scene.pieces.size()==drag_base_.pieces.size() &&
            EncodeVrScene(scene)!=EncodeVrScene(drag_base_))
-            PushUndo({std::move(drag_base_),motions});
+            PushUndo({std::move(drag_base_),motions,light});
     }
 
     const VrMotion* SelectedMotion()const{
@@ -272,6 +280,45 @@ public:
         Remember(scene,std::move(before),false);return true;
     }
 
+
+    bool AttachLight(){
+        if(!editing||scene.pieces.empty())return false;
+        const std::string id=scene.pieces[selected].id;
+        if(light.enabled&&light.anchor_id==id)return false;
+        const VrLight prior=light;
+        light.enabled=true;light.anchor_id=id;
+        Remember(scene,motions,false,&prior);return true;
+    }
+    bool ClearLight(){
+        if(!editing||!light.enabled)return false;
+        const VrLight prior=light;
+        light=VrLight{};
+        Remember(scene,motions,false,&prior);return true;
+    }
+    bool TuneLight(int parameter,bool increase){
+        if(!editing||!light.enabled||parameter<0||parameter>2)return false;
+        const VrLight prior=light;
+        double& value=parameter==0?light.power:
+            parameter==1?light.radius:light.ambient;
+        const double min=parameter==0?.10:parameter==1?1.:0.;
+        const double max=parameter==0?3.:parameter==1?8.:1.05;
+        const double step=parameter==0?.25:parameter==1?.5:.05;
+        const double next=std::max(min,std::min(max,
+            std::round((value+(increase?step:-step))*100.)/100.));
+        if(next==value)return false;
+        value=next;Remember(scene,motions,false,&prior);return true;
+    }
+    bool LightPosition(double time,float& x,float& y,float& z)const{
+        if(!light.enabled)return false;
+        for(const auto& p:scene.pieces)if(p.id==light.anchor_id){
+            x=static_cast<float>(p.x);
+            y=static_cast<float>(p.y+1.5*p.scale+SampleFor(p,time).offset_y);
+            z=static_cast<float>(p.z);
+            return true;
+        }
+        return false;
+    }
+
     VrEvent Step(bool primary,bool secondary,const VrRay& ray,const VrStore& store) {
         const bool pressed=primary&&!last_primary;
         const bool secondary_pressed=secondary&&!last_secondary;
@@ -280,7 +327,7 @@ public:
             EndDrag();
             if(editing&&dirty&&!Save(store))return VrEvent::Rejected;
             editing=!editing;
-            motion_page=false;
+            motion_page=false;lighting_page=false;
             return editing?VrEvent::Edit:VrEvent::Play;
         }
         if(!editing){
@@ -291,6 +338,20 @@ public:
         if(pressed){
             const int menu=VrMenuHit(ray);
             if(menu>=0){
+                if(lighting_page){
+                    switch(menu){
+                        case 0:return AttachLight()?VrEvent::Modified:VrEvent::Rejected;
+                        case 1:return ClearLight()?VrEvent::Modified:VrEvent::Rejected;
+                        case 2:return TuneLight(0,true)?VrEvent::Modified:VrEvent::Rejected;
+                        case 3:return TuneLight(0,false)?VrEvent::Modified:VrEvent::Rejected;
+                        case 4:return TuneLight(1,true)?VrEvent::Modified:VrEvent::Rejected;
+                        case 5:return TuneLight(1,false)?VrEvent::Modified:VrEvent::Rejected;
+                        case 6:return TuneLight(2,true)?VrEvent::Modified:VrEvent::Rejected;
+                        case 7:return TuneLight(2,false)?VrEvent::Modified:VrEvent::Rejected;
+                        case 8:return NextProject(store)?VrEvent::Project:VrEvent::Rejected;
+                        case 9:lighting_page=false;return VrEvent::Selected;
+                    }
+                }
                 if(motion_page){
                     switch(menu){
                         case 0:return SetMotion(VrMotionKind::Bob)?VrEvent::Modified:VrEvent::Rejected;
@@ -301,7 +362,7 @@ public:
                         case 5:return TuneMotion(true,false)?VrEvent::Modified:VrEvent::Rejected;
                         case 6:return TuneMotion(false,true)?VrEvent::Modified:VrEvent::Rejected;
                         case 7:return TuneMotion(false,false)?VrEvent::Modified:VrEvent::Rejected;
-                        case 8:return NextProject(store)?VrEvent::Project:VrEvent::Rejected;
+                        case 8:lighting_page=true;return VrEvent::Selected;
                         case 9:motion_page=false;return VrEvent::Selected;
                     }
                 }
@@ -330,7 +391,7 @@ private:
     Scene seed_,drag_base_;
     bool dragging_=false;
     uint32_t next_id_=1;
-    struct Snapshot {Scene scene;std::vector<VrMotion> motions;};
+    struct Snapshot {Scene scene;std::vector<VrMotion> motions;VrLight light;};
     std::vector<Snapshot> undo_;
     bool HasId(const std::string& id)const{
         for(const auto& p:scene.pieces)if(p.id==id)return true;
@@ -340,8 +401,10 @@ private:
         if(undo_.size()==kVrUndo)undo_.erase(undo_.begin());
         undo_.push_back(std::move(previous));
     }
-    void Remember(Scene previous,std::vector<VrMotion> previousMotions,bool geometry=true){
-        PushUndo({std::move(previous),std::move(previousMotions)});
+    void Remember(Scene previous,std::vector<VrMotion> previousMotions,
+                  bool geometry=true,const VrLight* previousLight=nullptr){
+        PushUndo({std::move(previous),std::move(previousMotions),
+            previousLight?*previousLight:light});
         dirty=true;if(geometry)mesh_dirty=true;
         last_error.clear();
     }
