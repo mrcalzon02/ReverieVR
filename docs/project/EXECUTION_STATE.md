@@ -1,3 +1,63 @@
+## 2026-11-04 — Sitka: skiff-authoritative depth tiles and scoped asset admission
+
+**INTENT:** Advance the source-only Sitka project from editor-headset
+seafloor focus to actual deterministic skiff-position authority,
+and admit only approved Sitka source files in the native host scope.
+
+**REMOTE COMMITS:**
+- [de1f1c6](https://github.com/mrcalzon02/ReverieVR/commit/de1f1c65df42de304c1d008d91c7a0773d4953d6):
+  strict `SITKA-SKIFF-LAUNCH-1` authored berth file, projected-metre
+  world-water helper, temporary primary+secondary mode chord,
+  30Hz skiff motion through safe surveyed/procedural cells,
+  4Hz instrument source label, dock/grounding checks.
+  The skiff's actual world position and velocity now drive the
+  two-cell streamer and pre-eye seafloor region choice when launched;
+  editor/headset position is used only outside skiff mode.
+- [19feb41](https://github.com/mrcalzon02/ReverieVR/commit/19feb41ac1085a02dd7640667194fa200d780ee5):
+  native host `MaximumBytes` permits exactly named Sitka authored
+  terrain/water/weather/lighting/fishing/boat/index/guide files plus
+  two-digit `bathymetry-rNN-cNN.sitkab` only, capped at 1,315,901 bytes.
+  Invalid path traversal, alternate extensions, foreign game assets
+  and unknown paths remain rejected for Sitka and other modules.
+
+**ACTION PROOF:**
+- [Sitka run 41935090648]
+(https://github.com/mrcalzon02/ReverieVR/actions/runs/41935090648):
+  four dedicated Sitka jobs passed (GIS bake, 8km streamed transitions,
+  Mesa EGL2, Android NDK ARMv7/ARM64). The general native test loop
+  passed the new skiff-authority launch/dock/procedural/survey test
+  under BOTH g++ and clang++ before the unrelated Omega Front
+  content-package diagnostic assertion.
+- [asset scope run 41935706749]
+(https://github.com/mrcalzon02/ReverieVR/actions/runs/41935706749):
+  `Shared native ABI, asset-scoping and companion contracts`
+  PASSED. [Sitka source gates 41935706490]
+(https://github.com/mrcalzon02/ReverieVR/actions/runs/41935706490)
+  again all four dedicated Sitka jobs SUCCESS.
+  The [host phone-test APK build 41935706970]
+(https://github.com/mrcalzon02/ReverieVR/actions/runs/41935706970)
+  SUCCESS (but the APK still **does not register Sitka**).
+  The larger diagnostic matrices continue to report Omega Front
+  art-package and Breakwater gameplay test failures, separately
+  from these Sitka results.
+
+**ACCEPTANCE:** Source-stage controller, source/procedural sounder
+and URI-scoped file classification accepted on those exact commits.
+NOT accepted: real NOAA/USGS Sitka inputs, physical model/helm display
+in headset, coastline/city gameplay, source-read worker async (the
+native `read_asset` callback is currently synchronous on the
+render-thread update), true game registration or Galaxy S9 live
+30Hz/thermal timing proof. Current main has additional independently
+written skiff helm/upgrades commits; these need their OWN full-source
+verification before any combined runtime acceptance claim.
+
+**NEXT:** Build a bounded native-host worker asset request/poll
+interface with content-root lifetime safety, make Sitka consume
+it without blocking frame updates, and add exact frame-time budgets.
+Then validate the full boat + helm + native visual UI with real
+licensed harbor data and two-eye on-device screenshots.
+
+---
 ## 2026-11-04 — Sitka: real between-frame tile swaps, 8 m seam hysteresis and LOD-first source meshes
 
 **INTENT:** Complete the previous two-tile CPU cache's graphics transition

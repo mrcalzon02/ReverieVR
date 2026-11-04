@@ -1,3 +1,36 @@
+## 2026-11-04 — Sitka skiff-position source streaming and private asset permissions
+
+**Verified source stage:** At projected-coordinate launch/dock
+points, an optional author-approved `SITKA-SKIFF-LAUNCH-1`
+configuration now drives the actual fixed-step boat pose and
+depth finder; its position/velocity, rather than headset focus,
+selects the active and look-ahead seabed tiles.
+Source-backed elevations override seeded game-generated depths;
+the sounder visibly distinguishable labels are available in
+the native model, but **not yet drawn in the VR headset**.
+The authored water-footprint query correctly subtracts the
+terrain origin before testing local Beckenburg shapes.
+
+**Host privacy gate:** `MaximumBytes` now admits only fixed
+Sitka file paths and tightly named two-digit row/column source
+tiles with a 1,315,901-byte maximum. Other games cannot
+access those paths. Sitka is still not registered as a module.
+
+**Evidence:** [skiff commit](https://github.com/mrcalzon02/ReverieVR/commit/de1f1c65df42de304c1d008d91c7a0773d4953d6),
+[Sitka boat and GLES regression](https://github.com/mrcalzon02/ReverieVR/actions/runs/41935090648),
+[scope commit](https://github.com/mrcalzon02/ReverieVR/commit/19feb41ac1085a02dd7640667194fa200d780ee5),
+[native asset-scope contract run](https://github.com/mrcalzon02/ReverieVR/actions/runs/41935706749),
+[signed host APK run](https://github.com/mrcalzon02/ReverieVR/actions/runs/41935706970).
+All four exact-commit Sitka jobs succeeded; wider
+diagnostic matrices have unrelated errors and were not
+represented as passing.
+
+**Open:** No bundled real harbor geography, installed playable
+Sitka, headset console text, deterministic persisted boat journey,
+async bathymetry worker, S9 physical controls, or thermal acceptance.
+Parallel later helm code remains independently unverified here.
+
+---
 ## 2026-11-04 — Sitka frame-boundary LOD streaming (source-only accepted)
 
 **Accepted in tested source:** V1 append-only optional prepare_frame
