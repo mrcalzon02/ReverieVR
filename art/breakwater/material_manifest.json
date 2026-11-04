@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "source": "2026-11-04 owner-directed image generation",
+  "tileSize": 64,
+  "encoding": "PNG RGB565-compatible colors",
+  "order": [
+    {
+      "surfaceId": 0,
+      "name": "shingle.png",
+      "assetPath": "native/breakwater/materials/shingle.png",
+      "sourceImage": "coarse_shingle_beach_texture.png"
+    },
+    {
+      "surfaceId": 1,
+      "name": "quay_concrete.png",
+      "assetPath": "native/breakwater/materials/quay_concrete.png",
+      "sourceImage": "weathered_coastal_bunker_concrete.png"
+    },
+    {
+      "surfaceId": 2,
+      "name": "black_basalt.png",
+      "assetPath": "native/breakwater/materials/black_basalt.png",
+      "sourceImage": "seamless_pixel_art_basalt_rock_texture.png"
+    },
+    {
+      "surfaceId": 3,
+      "name": "oxidized_steel.png",
+      "assetPath": "native/breakwater/materials/oxidized_steel.png",
+      "sourceImage": "seamless_oxidized_coastal_steel_texture.png"
+    },
+    {
+      "surfaceId": 4,
+      "name": "sandbag_burlap.png",
+      "assetPath": "native/breakwater/materials/sandbag_burlap.png",
+      "sourceImage": "seamless_pixel_art_sandbag_wall.png"
+    },
+    {
+      "surfaceId": 5,
+      "name": "olive_enamel.png",
+      "assetPath": "native/breakwater/materials/olive_enamel.png",
+      "sourceImage": "chipped_olive_military_metal_texture.png"
+    }
+  ],
+  "runtimeStatus": "art only; loader implementation requires independent integration/verification"
+}
