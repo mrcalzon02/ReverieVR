@@ -9,8 +9,8 @@ namespace reverie { namespace omega {
 
 // Menus are deliberately not part of the campaign checkpoint: reopening the
 // module must reach a safe title screen, never fire an order on load.
-enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, FieldOrders, TacticalOrders, Playing };
-enum class MenuCommand : uint8_t { None, Resume, StartNew, SetFieldAction, SetCommandMode, CommitTurn };
+enum class MenuScreen : uint8_t { Title, Campaign, Controls, ConfirmNew, Pause, FieldOrders, TacticalOrders, Gallery, Playing };
+enum class MenuCommand : uint8_t { None, Resume, StartNew, SetFieldAction, SetCommandMode, CommitTurn, GalleryPrevFaction, GalleryNextFaction, GalleryPrevIcon, GalleryNextIcon };
 
 // A menu's release/idle ray must not overwrite the restored tactical cursor.
 // A fresh click, deliberate pointer movement, or pointer loss re-arms aiming.
@@ -46,6 +46,13 @@ public:
     static bool OrderShortcut(float x,float y) {
         return x>=-1.07f && x<=-.72f && y>=.965f && y<=1.13f;
     }
+    static float GalleryButtonY(int index){return .56f-.205f*index;}
+    static int GalleryButtonAt(float x,float y){
+        if(x<-.96f || x>-.12f)return -1;
+        for(int i=0;i<5;++i)
+            if(std::fabs(y-GalleryButtonY(i))<=.085f)return i;
+        return -1;
+    }
     static int ButtonAt(float x,float y,int count) {
         if(std::fabs(x)>.775f)return -1;
         for(int i=0;i<count;++i)
@@ -54,13 +61,14 @@ public:
     }
     int Count(bool has_campaign) const {
         switch(screen) {
-        case MenuScreen::Title: return 2;
+        case MenuScreen::Title: return 3;
         case MenuScreen::Campaign: return has_campaign?4:3;
         case MenuScreen::Controls: return 1;
         case MenuScreen::ConfirmNew: return 2;
-        case MenuScreen::Pause: return 4;
+        case MenuScreen::Pause: return 5;
         case MenuScreen::FieldOrders: return 8;
         case MenuScreen::TacticalOrders: return 5;
+        case MenuScreen::Gallery: return 5;
         case MenuScreen::Playing: return 0;
         }
         return 0;
@@ -68,7 +76,8 @@ public:
     const char *Label(int index,bool has_campaign) const {
         switch(screen) {
         case MenuScreen::Title: {
-            const char *v[]={"CAMPAIGN","CONTROLS"};return index>=0&&index<2?v[index]:"";
+            const char *v[]={"CAMPAIGN","FACTION GALLERY","CONTROLS"};
+            return index>=0&&index<3?v[index]:"";
         }
         case MenuScreen::Campaign: {
             const char *saved[]={"CONTINUE CAMPAIGN","NEW CAMPAIGN","CONTROLS","BACK"};
@@ -81,8 +90,9 @@ public:
             const char *v[]={"ERASE AND START NEW","CANCEL"};return index>=0&&index<2?v[index]:"";
         }
         case MenuScreen::Pause: {
-            const char *v[]={"RESUME","CAMPAIGN BRIEFING","CONTROLS","MAIN MENU"};
-            return index>=0&&index<4?v[index]:"";
+            const char *v[]={"RESUME","CAMPAIGN BRIEFING","FACTION GALLERY",
+                "CONTROLS","MAIN MENU"};
+            return index>=0&&index<5?v[index]:"";
         }
         case MenuScreen::FieldOrders: {
             const char *v[]={"DEPLOY","FORAGE / CONVOY","RECRUIT","REPAIR / SECURE",
@@ -92,6 +102,11 @@ public:
         case MenuScreen::TacticalOrders: {
             const char *v[]={"MOVE","ATTACK","REPAIR SELF","RESUPPLY SELF",
                              "END TURN / RESOLVE"};
+            return index>=0&&index<5?v[index]:"";
+        }
+        case MenuScreen::Gallery: {
+            const char *v[]={"PREVIOUS FACTION","NEXT FACTION",
+                "PREVIOUS ICON","NEXT ICON","BACK"};
             return index>=0&&index<5?v[index]:"";
         }
         case MenuScreen::Playing: return "";
@@ -141,7 +156,9 @@ public:
         if(pointing) {
             if(!pointer_seen_ || std::fabs(pointer_x-last_x_)>.025f ||
                std::fabs(pointer_y-last_y_)>.025f) {
-                const int hit=ButtonAt(pointer_x,pointer_y,count);
+                const int hit=screen==MenuScreen::Gallery?
+                    GalleryButtonAt(pointer_x,pointer_y):
+                    ButtonAt(pointer_x,pointer_y,count);
                 if(hit>=0)selected=hit;
             }
             last_x_=pointer_x;last_y_=pointer_y;pointer_seen_=true;
@@ -150,7 +167,9 @@ public:
         switch(screen) {
         case MenuScreen::Title:
             if(selected==0)Enter(MenuScreen::Campaign);
-            else {return_to=MenuScreen::Title;Enter(MenuScreen::Controls);}
+            else if(selected==1){
+                return_to=MenuScreen::Title;Enter(MenuScreen::Gallery);
+            }else {return_to=MenuScreen::Title;Enter(MenuScreen::Controls);}
             break;
         case MenuScreen::Campaign:
             if(selected==0){Enter(MenuScreen::Playing);return MenuCommand::Resume;}
@@ -179,9 +198,16 @@ public:
         case MenuScreen::Pause:
             if(selected==0){Enter(MenuScreen::Playing);return MenuCommand::Resume;}
             if(selected==1)Enter(MenuScreen::Campaign);
-            else if(selected==2){return_to=MenuScreen::Pause;Enter(MenuScreen::Controls);}
+            else if(selected==2){return_to=MenuScreen::Pause;Enter(MenuScreen::Gallery);}
+            else if(selected==3){return_to=MenuScreen::Pause;Enter(MenuScreen::Controls);}
             else Enter(MenuScreen::Title);
             break;
+        case MenuScreen::Gallery:
+            if(selected==4){Enter(return_to);break;}
+            return selected==0?MenuCommand::GalleryPrevFaction:
+                   selected==1?MenuCommand::GalleryNextFaction:
+                   selected==2?MenuCommand::GalleryPrevIcon:
+                               MenuCommand::GalleryNextIcon;
         case MenuScreen::Playing:break;
         }
         return MenuCommand::None;
@@ -199,6 +225,7 @@ private:
         case MenuScreen::Pause:Enter(MenuScreen::Playing);break;
         case MenuScreen::FieldOrders:Enter(MenuScreen::Playing);break;
         case MenuScreen::TacticalOrders:Enter(MenuScreen::Playing);break;
+        case MenuScreen::Gallery:Enter(return_to);break;
         case MenuScreen::Playing:break;
         }
     }

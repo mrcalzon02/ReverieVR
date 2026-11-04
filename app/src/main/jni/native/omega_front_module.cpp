@@ -46,6 +46,7 @@ struct State {
     std::vector<float> mesh;
     reverie::nativetext::LatoLayer font;
     reverie::omega_art::SpriteRenderer sprites;
+    int gallery_faction=0,gallery_slot=0; // Unserialized UI preview state.
     size_t base_vertices=0,unit_vertices=0;
 };
 void Rect(State *s,float x,float y,float w,float h,float z,float r,float g,float b){
@@ -65,7 +66,50 @@ void TextAt(State *s,const char *msg,float cx,float center_y,float px,
     s->font.Fit(msg,cx,center_y,.34f,px,r,g,b,kNear);
 }
 
+void DrawGallery(State *s){
+    s->mesh.clear();s->mesh.reserve(800);
+    s->font.Clear();s->sprites.Clear();
+    Rect(s,0.f,0.f,2.15f,2.3f,kBoardZ-.09f,.017f,.032f,.047f);
+    Rect(s,0.f,.96f,2.05f,.31f,kBoardZ-.07f,.065f,.125f,.176f);
+    Text(s,"OMEGA FRONT  /  FACTION GALLERY",1.005f,.016f,.94f,.94f,.81f);
+    Text(s,"SOURCE ART PREVIEW  /  NO SIMULATION CHANGES",.865f,.010f,.63f,.81f,.88f);
+    for(int i=0;i<5;++i){
+        const float y=game::Menu::GalleryButtonY(i);
+        const bool focus=i==s->menu.selected;
+        Rect(s,-.54f,y,.81f,.18f,kBoardZ-.046f,
+             focus?.19f:.064f,focus?.30f:.10f,focus?.39f:.15f);
+        Rect(s,-.93f,y,.025f,.15f,kBoardZ-.043f,
+             focus?.95f:.37f,focus?.76f:.56f,focus?.39f:.55f);
+        s->font.Fit(s->menu.Label(i,s->has_campaign),-.54f,y,.74f,.010f,
+                    focus?1.f:.82f,focus?.94f:.88f,focus?.73f:.87f,kNear);
+    }
+    const int faction=s->gallery_faction,slot=s->gallery_slot;
+    const omega_art::PortraitEntry *entry=omega_art::PortraitAt(faction,slot);
+    s->font.Fit(omega_art::kPortraitFactionNames[faction],.46f,.51f,.91f,.012f,
+                .98f,.82f,.51f,kNear);
+    Rect(s,.46f,-.16f,.91f,.91f,kBoardZ-.041f,.12f,.17f,.21f);
+    if(!s->sprites.PlacePortrait(faction,slot,.46f,-.16f,.86f,-1.825f))
+        s->font.Fit("PORTRAIT UNAVAILABLE",.46f,-.16f,.84f,.011f,
+                    1.f,.56f,.42f,kNear);
+    if(entry){
+        char role[64];
+        std::snprintf(role,sizeof(role),"%s",entry->role);
+        for(char *p=role;*p;++p){
+            if(*p=='_')*p=' ';
+            else if(*p>='a'&&*p<='z')*p=static_cast<char>(*p-'a'+'A');
+        }
+        s->font.Fit(role,.46f,-.73f,.93f,.011f,.95f,.93f,.80f,kNear);
+    }
+    char index[48];
+    std::snprintf(index,sizeof(index),"FACTION %d/5   ICON %02d/20",
+                  faction+1,slot+1);
+    s->font.Fit(index,.46f,-.86f,.90f,.011f,.70f,.85f,.93f,kNear);
+    Text(s,"ART DOSSIERS ARE PROPOSED  /  MINUS TO RETURN",
+         -1.06f,.010f,.69f,.80f,.84f);
+    s->upload=true;
+}
 void DrawMenu(State *s) {
+    if(s->menu.screen==game::MenuScreen::Gallery){DrawGallery(s);return;}
     const auto screen=s->menu.screen;
     const game::Frontier &f=s->session.frontier;
     s->mesh.clear();s->mesh.reserve(2000);
@@ -1023,6 +1067,20 @@ void Update(void *p,const ReverieNativeInputV1 *in){
             s->session.action=static_cast<game::FieldAction>(s->menu.field_choice);
         if(command==game::MenuCommand::SetCommandMode)
             s->session.tactical.mode=static_cast<game::CommandMode>(s->menu.mode_choice);
+        // Preview browsing does not issue orders, spend supplies or save.
+        if(command==game::MenuCommand::GalleryPrevFaction){
+            s->gallery_faction=(s->gallery_faction+omega_art::kPortraitFactionCount-1)%
+                               omega_art::kPortraitFactionCount;
+            s->gallery_slot=0;
+        }else if(command==game::MenuCommand::GalleryNextFaction){
+            s->gallery_faction=(s->gallery_faction+1)%omega_art::kPortraitFactionCount;
+            s->gallery_slot=0;
+        }else if(command==game::MenuCommand::GalleryPrevIcon){
+            s->gallery_slot=(s->gallery_slot+omega_art::kPortraitsPerFaction-1)%
+                            omega_art::kPortraitsPerFaction;
+        }else if(command==game::MenuCommand::GalleryNextIcon){
+            s->gallery_slot=(s->gallery_slot+1)%omega_art::kPortraitsPerFaction;
+        }
         if(command==game::MenuCommand::CommitTurn &&
            s->session.view==game::FrontMode::Tactical){
             const uint32_t before=s->session.tactical.battle.ticks();
@@ -1247,7 +1305,11 @@ int32_t Render(void *p,const ReverieNativeEyeV1 *eye){
         s->sprites.DrawRange(matrix,first,last);
     };
     const size_t total=s->mesh.size()/6u;
-    if(s->menu.screen!=game::MenuScreen::Playing){
+    if(s->menu.screen==game::MenuScreen::Gallery){
+        colored(0,total);
+        glEnable(GL_BLEND);glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        s->sprites.DrawPortrait(matrix);
+    }else if(s->menu.screen!=game::MenuScreen::Playing){
         colored(0,total);
     }else if(s->session.view==game::FrontMode::Tactical){
         colored(0,s->base_vertices);

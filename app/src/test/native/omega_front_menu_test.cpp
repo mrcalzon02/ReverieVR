@@ -8,8 +8,11 @@ using reverie::omega::MenuScreen;
 using reverie::omega::PointerResumeGate;
 
 static MenuCommand Tap(Menu &menu,bool saved,int button=0){
+    const bool gallery=menu.screen==MenuScreen::Gallery;
     const MenuCommand result=menu.Input(.016f,0,true,false,true,
-                                        0,Menu::ButtonY(button,menu.Count(saved)>4),saved);
+        gallery?-.54f:0.f,
+        gallery?Menu::GalleryButtonY(button):
+                Menu::ButtonY(button,menu.Count(saved)>4),saved);
     menu.Input(.016f,0,false,false,false,0,0,saved);
     return result;
 }
@@ -20,7 +23,7 @@ static void Back(Menu &menu,bool saved){
 int main(){
     Menu menu;
     assert(menu.screen==MenuScreen::Title);
-    assert(menu.Count(false)==2);
+    assert(menu.Count(false)==3);
     assert(Tap(menu,false,0)==MenuCommand::None);
     assert(menu.screen==MenuScreen::Campaign);
     assert(menu.Count(false)==3);
@@ -58,6 +61,14 @@ int main(){
     assert(menu.screen==MenuScreen::Pause);
     menu.Input(.016f,0,false,false,false,0,0,true);
     assert(Tap(menu,true,2)==MenuCommand::None);
+    assert(menu.screen==MenuScreen::Gallery);
+    assert(menu.Count(true)==5);
+    assert(Tap(menu,true,1)==MenuCommand::GalleryNextFaction);
+    assert(Tap(menu,true,3)==MenuCommand::GalleryNextIcon);
+    assert(Tap(menu,true,2)==MenuCommand::GalleryPrevIcon);
+    Back(menu,true);
+    assert(menu.screen==MenuScreen::Pause);
+    assert(Tap(menu,true,3)==MenuCommand::None);
     assert(menu.screen==MenuScreen::Controls);
     Back(menu,true);
     assert(menu.screen==MenuScreen::Pause);
@@ -73,7 +84,7 @@ int main(){
     assert(menu.screen==MenuScreen::Playing);
 
     menu.OpenPause(false,false);
-    assert(Tap(menu,true,3)==MenuCommand::None);
+    assert(Tap(menu,true,4)==MenuCommand::None);
     assert(menu.screen==MenuScreen::Title);
     assert(Tap(menu,true,0)==MenuCommand::None);
     assert(Tap(menu,true,0)==MenuCommand::Resume);
@@ -86,6 +97,11 @@ int main(){
     Back(axis,false); // Title has no parent; does not leave the screen.
     assert(axis.screen==MenuScreen::Title);
     assert(Tap(axis,false,1)==MenuCommand::None);
+    assert(axis.screen==MenuScreen::Gallery);
+    assert(Tap(axis,false,0)==MenuCommand::GalleryPrevFaction);
+    assert(Tap(axis,false,4)==MenuCommand::None);
+    assert(axis.screen==MenuScreen::Title);
+    assert(Tap(axis,false,2)==MenuCommand::None);
     assert(axis.screen==MenuScreen::Controls);
     Back(axis,false);
     assert(axis.screen==MenuScreen::Title);

@@ -2,6 +2,7 @@
 #define REVERIE_OMEGA_FRONT_TEXTURE_RENDERER_H
 
 #include "omega_front_png.h"
+#include "omega_front_portrait_catalog.h"
 #include "reverie_native_sdk.h"
 #include "reverie_native_gl_utils.h"
 #include <GLES2/gl2.h>
@@ -167,6 +168,7 @@ public:
     bool upload=true;
     void Clear() {
         for(auto &mesh:mesh_)mesh.clear();
+        portrait_mesh_.clear();
         upload=true;
     }
     bool Place(int slot,float x,float y,float w,float h,float z,
@@ -186,8 +188,85 @@ public:
         put(l,b,z,ul,1.f);put(r,t,z,ur,0.f);put(l,t,z,ul,0.f);
         return true;
     }
+
+    // Only one square portrait is cached. Asset reads/decompression happen
+    // during menu updates, never for each eye; GPU upload is on first draw.
+    bool PlacePortrait(int faction,int slot,float x,float y,float side,float z){
+        const PortraitEntry *entry=PortraitAt(faction,slot);
+        if(!entry || !program_ || !portrait_buffer_)return false;
+        const int id=faction*kPortraitsPerFaction+slot;
+        if(portrait_id_!=id){
+            portrait_id_=id;
+            portrait_pixels_.clear();
+            if(host_ && host_->abi_version==REVERIE_NATIVE_MODULE_ABI_VERSION &&
+               host_->struct_size>=REVERIE_NATIVE_HOST_V1_ASSET_MIN_SIZE &&
+               host_->read_asset){
+                std::vector<uint8_t> bytes(512u*1024u);
+                uint32_t length=0;
+                if(host_->read_asset(entry->path,bytes.data(),
+                   static_cast<uint32_t>(bytes.size()),&length)==REVERIE_NATIVE_SAVE_OK &&
+                   length>0u && length<=bytes.size()){
+                    Image decoded;
+                    if(DecodePng(bytes.data(),length,decoded) &&
+                       decoded.width==256u && decoded.height==256u)
+                        portrait_pixels_.swap(decoded.rgba);
+                }
+            }
+            if(portrait_pixels_.empty())
+                ReverieNativeLogV1(host_,REVERIE_NATIVE_LOG_WARN,"omega-front",
+                                   "Gallery portrait unavailable or invalid");
+        }
+        if(portrait_pixels_.empty())return false;
+        const float l=x-side*.5f,r=x+side*.5f,b=y-side*.5f,t=y+side*.5f;
+        const float v[]={l,b,z,0.f,1.f,r,b,z,1.f,1.f,r,t,z,1.f,0.f,
+                         l,b,z,0.f,1.f,r,t,z,1.f,0.f,l,t,z,0.f,0.f};
+        portrait_mesh_.assign(v,v+30);
+        return true;
+    }
+    bool DrawPortrait(const float *matrix){
+        if(!program_ || !portrait_buffer_ || portrait_mesh_.empty() ||
+           portrait_pixels_.size()!=256u*256u*4u)return false;
+        if(!portrait_texture_ || portrait_uploaded_id_!=portrait_id_){
+            if(portrait_texture_)glDeleteTextures(1,&portrait_texture_);
+            portrait_texture_=0;
+            glGenTextures(1,&portrait_texture_);
+            if(!portrait_texture_)return false;
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D,portrait_texture_);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,256,256,0,GL_RGBA,
+                         GL_UNSIGNED_BYTE,portrait_pixels_.data());
+            if(glGetError()!=GL_NO_ERROR){
+                glDeleteTextures(1,&portrait_texture_);
+                portrait_texture_=0;
+                return false;
+            }
+            portrait_uploaded_id_=portrait_id_;
+        }
+        glUseProgram(program_);
+        glUniformMatrix4fv(mvp_,1,GL_FALSE,matrix);
+        glUniform1i(sampler_,0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,portrait_texture_);
+        glEnableVertexAttribArray(static_cast<GLuint>(position_));
+        glEnableVertexAttribArray(static_cast<GLuint>(uv_));
+        glBindBuffer(GL_ARRAY_BUFFER,portrait_buffer_);
+        glBufferData(GL_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(portrait_mesh_.size()*sizeof(float)),
+                     portrait_mesh_.data(),GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(static_cast<GLuint>(position_),3,GL_FLOAT,GL_FALSE,
+                              5*sizeof(float),reinterpret_cast<const void *>(0));
+        glVertexAttribPointer(static_cast<GLuint>(uv_),2,GL_FLOAT,GL_FALSE,
+                              5*sizeof(float),reinterpret_cast<const void *>(3*sizeof(float)));
+        glDrawArrays(GL_TRIANGLES,0,6);
+        return true;
+    }
     void Initialize(const ReverieNativeHostV1 *host) {
         Shutdown();
+        host_=host;
         const char *vs="uniform mat4 u_Mvp;attribute vec3 a_Pos;"
             "attribute vec2 a_Uv;varying vec2 v_Uv;"
             "void main(){v_Uv=a_Uv;gl_Position=u_Mvp*vec4(a_Pos,1.0);}";
@@ -211,6 +290,7 @@ public:
         glActiveTexture(GL_TEXTURE0);
         glGetIntegerv(GL_TEXTURE_BINDING_2D,&old_binding);
         glGenBuffers(Count,buffers_);
+        glGenBuffers(1,&portrait_buffer_);
         int loaded=0;
         for(int slot=0;slot<Count;++slot)
             if(buffers_[slot] && Load(host,slot))++loaded;
@@ -226,6 +306,11 @@ public:
     void Shutdown() {
         glDeleteTextures(Count,textures_);
         glDeleteBuffers(Count,buffers_);
+        if(portrait_texture_)glDeleteTextures(1,&portrait_texture_);
+        if(portrait_buffer_)glDeleteBuffers(1,&portrait_buffer_);
+        portrait_texture_=portrait_buffer_=0;
+        portrait_id_=portrait_uploaded_id_=-1;
+        portrait_pixels_.clear();portrait_mesh_.clear();host_=nullptr;
         if(program_)glDeleteProgram(program_);
         for(int i=0;i<Count;++i)textures_[i]=buffers_[i]=0;
         program_=0;position_=uv_=mvp_=sampler_=-1;
@@ -256,6 +341,11 @@ public:
         }
     }
 private:
+    const ReverieNativeHostV1 *host_=nullptr;
+    GLuint portrait_texture_=0,portrait_buffer_=0;
+    int portrait_id_=-1,portrait_uploaded_id_=-1;
+    std::vector<uint8_t> portrait_pixels_;
+    std::vector<float> portrait_mesh_;
     GLuint program_=0;
     GLuint textures_[Count]{},buffers_[Count]{};
     GLint position_=-1,uv_=-1,mvp_=-1,sampler_=-1;
