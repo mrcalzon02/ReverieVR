@@ -20,6 +20,8 @@ struct Journal {
     uint32_t gear = 0;
     std::array<uint32_t,4> caught = {{0,0,0,0}};
     uint32_t total = 0;
+    uint32_t helm_upgrades = 0; // purchased physical fittings
+    uint32_t hull_tier = 0; // dinghy -> skiff -> pilothouse -> trawler
 };
 struct Fishing {
     Journal journal;
@@ -104,36 +106,42 @@ struct Fishing {
         journal.credits -= cost; ++journal.gear; return true;
     }
 };
-// Deliberately saves durable journal only; active casts never resume mid-fight.
-inline std::string SaveJournal(const Journal& j) {
-    std::string out="SITKA-FISH-1\n";
-    const uint32_t fields[] = {j.seed,j.credits,j.gear,j.total,
-        j.caught[0],j.caught[1],j.caught[2],j.caught[3]};
-    for (uint32_t field : fields) out += std::to_string(field) + "\n";
+// V2 keeps the same game-private save slot, atomically sharing earned fish
+// credits with boat purchases. Legacy V1 journals remain readable.
+inline std::string SaveJournal(const Journal& j){
+    std::string out="SITKA-FISH-2\n";
+    const uint32_t fields[]={j.seed,j.credits,j.gear,j.total,
+       j.caught[0],j.caught[1],j.caught[2],j.caught[3],
+       j.helm_upgrades,j.hull_tier};
+    for(uint32_t field:fields)out+=std::to_string(field)+"\n";
     return out;
 }
-inline bool LoadJournal(std::string_view bytes, Journal& out) {
-    constexpr std::string_view magic="SITKA-FISH-1\n";
-    if (bytes.size() <= magic.size() || bytes.size() > 128u ||
-        bytes.substr(0,magic.size()) != magic) return false;
-    bytes.remove_prefix(magic.size());
-    std::array<uint32_t,8> n{};
-    for (auto& field : n) {
-        const size_t end = bytes.find('\n');
-        if (end == std::string_view::npos || end == 0u || end > 10u) return false;
-        const char* first = bytes.data();
-        const auto parsed = std::from_chars(first, first+end, field);
-        if (parsed.ec != std::errc{} || parsed.ptr != first+end) return false;
+inline bool LoadJournal(std::string_view bytes,Journal& out){
+    constexpr std::string_view v1="SITKA-FISH-1\n";
+    constexpr std::string_view v2="SITKA-FISH-2\n";
+    const bool legacy=bytes.substr(0,v1.size())==v1;
+    if((!legacy&&bytes.substr(0,v2.size())!=v2)||bytes.size()>128u)
+        return false;
+    bytes.remove_prefix(legacy?v1.size():v2.size());
+    std::array<uint32_t,10> n{};
+    for(unsigned i=0;i<(legacy?8u:10u);++i){
+        const size_t end=bytes.find('\n');
+        if(end==std::string_view::npos||end==0u||end>10u)return false;
+        const char* first=bytes.data();
+        const auto parsed=std::from_chars(first,first+end,n[i]);
+        if(parsed.ec!=std::errc{}||parsed.ptr!=first+end)return false;
         bytes.remove_prefix(end+1u);
     }
-    if (!bytes.empty() || n[0]==0u || n[1]>1000000u || n[2]>3u || n[3]>1000000u)
-        return false;
+    if(!bytes.empty()||n[0]==0u||n[1]>1000000u||n[2]>3u||
+       n[3]>1000000u||n[8]>65535u||n[9]>3u)return false;
     uint64_t sum=0u;
-    for (size_t i=4u;i<8u;++i) { if (n[i]>1000000u) return false; sum+=n[i]; }
-    if (sum != n[3]) return false;
+    for(size_t i=4;i<8;++i){if(n[i]>1000000u)return false;sum+=n[i];}
+    if(sum!=n[3])return false;
     Journal candidate;
-    candidate.seed=n[0];candidate.credits=n[1];candidate.gear=n[2];candidate.total=n[3];
-    for (size_t i=0;i<4u;++i)candidate.caught[i]=n[i+4u];
+    candidate.seed=n[0];candidate.credits=n[1];
+    candidate.gear=n[2];candidate.total=n[3];
+    for(size_t i=0;i<4;++i)candidate.caught[i]=n[i+4u];
+    candidate.helm_upgrades=n[8];candidate.hull_tier=n[9];
     out=candidate;return true;
 }
 }} // namespace reverie::sitka

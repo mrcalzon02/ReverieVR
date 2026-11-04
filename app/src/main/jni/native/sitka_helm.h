@@ -3,6 +3,7 @@
 // CPU-only boat-local helm model. Never mutate headset pose or render-eye state.
 #include "sitka_boat_navigation.h"
 #include "sitka_environment.h"
+#include "sitka_fishing_session.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -54,6 +55,26 @@ struct HelmProgress {
         credits-=costs[hull++];return true;
     }
 };
+// Keep the installed equipment and the earned fishing currency in the
+// same host save transaction. No separate wallet or reset on V1 migration.
+inline HelmProgress HelmFromJournal(const Journal& j){
+    HelmProgress out;
+    out.hull=j.hull_tier;
+    out.owned=j.helm_upgrades;
+    return out;
+}
+inline bool PurchaseHelm(FishingSession& session,HelmItem item){
+    HelmProgress progress=HelmFromJournal(session.fishing.journal);
+    if(!progress.Purchase(item,session.fishing.journal.credits))return false;
+    session.fishing.journal.helm_upgrades=progress.owned;
+    session.dirty=true;return true;
+}
+inline bool PurchaseHull(FishingSession& session){
+    HelmProgress progress=HelmFromJournal(session.fishing.journal);
+    if(!progress.UpgradeHull(session.fishing.journal.credits))return false;
+    session.fishing.journal.hull_tier=progress.hull;
+    session.dirty=true;return true;
+}
 struct DeckBounds {
     float half_width,bow,stern,inset;
     bool Contains(double x,double z)const{

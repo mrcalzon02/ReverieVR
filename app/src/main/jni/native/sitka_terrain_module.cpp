@@ -11,6 +11,7 @@
 #include "sitka_seafloor_frame_plan.h"
 #include "sitka_seafloor_sparse_mesh.h"
 #include "sitka_boat_session.h"
+#include "sitka_helm.h"
 #include <array>
 #include <cstdint>
 #include <new>
@@ -35,6 +36,11 @@ struct State {
     std::unique_ptr<reverie::sitka::BathyStreamCache> stream;
     std::unique_ptr<reverie::sitka::ProceduralSeabed> generated;
     std::unique_ptr<reverie::sitka::SitkaSkiffSession> skiff;
+    reverie::sitka::HelmProgress helm;
+    reverie::sitka::HelmLayout helm_layout;
+    reverie::sitka::HelmRudder helm_rudder;
+    reverie::sitka::DeckPassenger passenger;
+    reverie::sitka::HelmInstruments instruments;
     reverie::sitka::SeafloorFramePlanner seafloor_plan;
     double last_focus_east=0.,last_focus_north=0.;
     bool has_focus=false;
@@ -172,6 +178,8 @@ void* Create(const ReverieNativeHostV1* host) {
                     "Sitka fishing site outside named water footprint");
             }
             const auto loaded=state->fishing.Load(Store(state));
+            state->helm=reverie::sitka::HelmFromJournal(state->fishing.fishing.journal);
+            state->helm_layout=reverie::sitka::AssembleHelm(state->helm);
             if(loaded!=reverie::sitka::FishingLoad::Fresh &&
                loaded!=reverie::sitka::FishingLoad::Restored)
                 throw std::invalid_argument(
@@ -274,10 +282,19 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     // subsequent GL visual tile selection.
     if(state->skiff&&state->stream&&state->generated){
         const auto event=state->skiff->Update(
-            input->delta_seconds,input->move_y,input->move_x,
+            input->delta_seconds,input->move_y,
+            state->helm_rudder.Advance(input->delta_seconds,input->move_x),
             boat_chord,listener_east,listener_north,
             *state->stream,*state->generated,state->waters,
             state->terrain.origin_east,state->terrain.origin_north);
+        if(state->skiff->Active()){
+            state->instruments=reverie::sitka::HelmReadouts(
+                state->helm,state->skiff->Pose(),state->weather,
+                state->skiff->Sounder().reading(),
+                state->helm_rudder.degrees,input->move_y,1.);
+        }else if(event==reverie::sitka::SkiffSessionEvent::Docked){
+            state->helm_rudder.Reset();
+        }
         if(event==reverie::sitka::SkiffSessionEvent::Launched||
            event==reverie::sitka::SkiffSessionEvent::Docked)
             ReverieNativeRequestFeedbackV1(state->host,
