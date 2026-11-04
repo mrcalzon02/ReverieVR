@@ -62,7 +62,7 @@ int main(){
     w.editing=true;
     assert(w.Undo()&&w.motions[0].kind==VrMotionKind::Bob);
     assert(w.Save(store)&&!w.dirty);
-    assert(s.data[0].compare(0,12,"RVPROJECT\t2\n")==0);
+    assert(s.data[0].compare(0,12,"RVPROJECT\t3\n")==0);
     auto bundle=DecodeVrBundle(s.data[0]);
     assert(!bundle.legacy);
     assert(bundle.scene.pieces.size()==2&&bundle.motions.size()==1);

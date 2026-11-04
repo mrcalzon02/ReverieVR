@@ -1789,6 +1789,14 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public void onNativeModuleSpatialSoundCueRequested(int cueId,float left,float right){
+        if(uiFeedback==null||cueId<1||cueId>21||
+           !Float.isFinite(left)||!Float.isFinite(right)||
+           left<0f||left>1f||right<0f||right>1f)return;
+        runOnUiThread(()->uiFeedback.nativeSpatialSoundCue(cueId,left,right));
+    }
+
+    @Override
     public void onNativeModuleFeedbackRequested(
         int feedbackFlags
     ) {

@@ -136,17 +136,24 @@ void UpdateWorkshopHud(ModuleState* state){
         "SPEED -","AMPLITUDE +","AMPLITUDE -","LIGHT TOOLS >","< SCENE TOOLS"};
     static const char* lightActions[10]={
         "ATTACH LIGHT","REMOVE LIGHT","POWER +","POWER -","REACH +",
-        "REACH -","AMBIENT +","AMBIENT -","NEXT PROJECT","< MOTION TOOLS"};
-    const char* const* actions=state->workshop.lighting_page?lightActions:
+        "REACH -","AMBIENT +","AMBIENT -","SOUND TOOLS >","< MOTION TOOLS"};
+    static const char* soundActions[10]={
+        "ATTACH SOUND","REMOVE SOUND","NEXT CUE","PREV CUE","INTERVAL +",
+        "INTERVAL -","RANGE +","RANGE -","NEXT PROJECT","< LIGHT TOOLS"};
+    const char* const* actions=state->workshop.audio_page?soundActions:
+        state->workshop.lighting_page?lightActions:
         state->workshop.motion_page?motionActions:sceneActions;
-    state->font.Text(state->workshop.lighting_page?
+    state->font.Text(state->workshop.audio_page?
+        "VR WORKSHOP / SOUND":state->workshop.lighting_page?
         "VR WORKSHOP / LIGHTS":state->workshop.motion_page?
         "VR WORKSHOP / MOTION":"VR WORKSHOP / SCENE",
         -3.2f,1.43f,.044f,.93f,.96f,.99f,-2.62f);
     for(int i=0;i<10;++i) {
         const auto* binding=state->workshop.SelectedMotion();
-        const bool active=state->workshop.lighting_page
-            ?(i==0&&state->workshop.light.enabled)
+        const bool active=state->workshop.audio_page
+            ?(i==0&&state->workshop.sound.enabled)
+            :state->workshop.lighting_page
+              ?(i==0&&state->workshop.light.enabled)
             :state->workshop.motion_page
               ?(binding!=nullptr&&i<=2&&
                 static_cast<int>(binding->kind)==(i==0?1:i==1?0:2))
@@ -183,7 +190,16 @@ void UpdateWorkshopHud(ModuleState* state){
         state->font.Fit(note.c_str(),-.69f,.49f,3.25f,.029f,
             .95f,.89f,.66f,-2.62f);
     }
-    state->font.Text("POINT AND CLICK TOOL",-.69f,.23f,.029f,.85f,.94f,.98f,-2.62f);
+    if(state->workshop.sound.enabled){
+        const auto& snd=state->workshop.sound;
+        const std::string note="SOUND "+snd.anchor_id+
+            " CUE "+std::to_string(snd.cue)+
+            " SEC "+std::to_string(snd.interval).substr(0,4)+
+            " RANGE "+std::to_string(snd.radius).substr(0,4);
+        state->font.Fit(note.c_str(),-.69f,.27f,3.25f,.029f,
+            .93f,.80f,.58f,-2.62f);
+    }
+    state->font.Text("POINT AND CLICK TOOL",-.69f,.08f,.029f,.85f,.94f,.98f,-2.62f);
     state->font.Text("DRAG OBJECT TO ADJUST",-.69f,.02f,.029f,.85f,.94f,.98f,-2.62f);
     state->font.Text("SECONDARY: SAVE + TEST",-.69f,-.88f,.028f,.95f,.88f,.53f,-2.62f);
     if(state->workshop.dirty)
@@ -861,6 +877,19 @@ void Update(
     if(wasEditing||state->workshop.editing){
         state->primary_was_down=primary;
         return; // Never advance the demo while editing or on a play transition.
+    }
+    if(ReverieNativeInputHasBaseV1(input)&&
+       input->struct_size>=REVERIE_NATIVE_INPUT_V1_LISTENER_MIN_SIZE&&
+       input->listener_valid&&
+       ReverieNativeHostSupportsLogV1(state->host)){
+        uint32_t cue=0u;
+        reverie::authoring::VrStereoCue spatial;
+        if(state->workshop.TickSound(delta,state->clock,
+            input->listener_position[0],input->listener_position[1],
+            input->listener_position[2],input->listener_right[0],
+            input->listener_right[2],cue,spatial))
+            ReverieNativeRequestSpatialSoundV1(state->host,cue,
+                spatial.left,spatial.right);
     }
     if(primary && !state->primary_was_down) {
         state->demo_mode=(state->demo_mode+1)%6;

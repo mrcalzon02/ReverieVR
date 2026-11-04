@@ -66,8 +66,15 @@ final class NativeCombatSound implements AutoCloseable {
         final int cue=NativeCombatWaveform.cueForNativeEvent(cueId);
         if(cue>=0)play(cue);
     }
+    void playNativeCueSpatial(int cueId,float left,float right){
+        final int cue=NativeCombatWaveform.cueForNativeEvent(cueId);
+        if(cue>=0&&Float.isFinite(left)&&Float.isFinite(right)&&
+           left>=0f&&left<=1f&&right>=0f&&right<=1f)
+            playStereo(cue,.72f*left,.72f*right);
+    }
 
-    void play(int cue) {
+    void play(int cue) {playStereo(cue,.72f,.72f);}
+    private void playStereo(int cue,float left,float right){
         if (cue < 0 || cue >= tracks.length) return;
         if(closed)return;
         AudioTrack[] voices = tracks[cue];
@@ -87,6 +94,7 @@ final class NativeCombatSound implements AutoCloseable {
                 if (track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) track.stop();
                 track.reloadStaticData();
                 track.setPlaybackHeadPosition(0);
+                track.setStereoVolume(left,right);
                 track.play();
             } catch (RuntimeException unavailable) {
                 // Release the failed static voice; the next bounded retry

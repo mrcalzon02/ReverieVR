@@ -4,6 +4,7 @@
 // arbitrary script, filesystem, GL call, dynamic code or network access.
 #include "reverie_scene_document.h"
 #include "reverie_vr_project_lighting.h"
+#include "reverie_vr_project_sound.h"
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -125,10 +126,26 @@ inline std::string EncodeVrBundle(const std::string& sceneBytes,
     if(out.size()>kVrBundleMaxBytes)throw std::invalid_argument("project save too large");
     return out;
 }
+inline std::string EncodeVrBundle(const std::string& sceneBytes,
+                                  const std::string& motionBytes,
+                                  const std::string& lightBytes,
+                                  const std::string& soundBytes){
+    if(sceneBytes.size()>53000u||motionBytes.size()>8192u||
+       lightBytes.size()>512u||soundBytes.size()>512u)
+        throw std::invalid_argument("project content exceeds budget");
+    const std::string out="RVPROJECT\t3\nscene\t"+
+        std::to_string(sceneBytes.size())+"\n"+sceneBytes+
+        "motions\t"+std::to_string(motionBytes.size())+"\n"+motionBytes+
+        "lighting\t"+std::to_string(lightBytes.size())+"\n"+lightBytes+
+        "audio\t"+std::to_string(soundBytes.size())+"\n"+soundBytes;
+    if(out.size()>kVrBundleMaxBytes)throw std::invalid_argument("project too large");
+    return out;
+}
 struct VrDecodedBundle {
     Scene scene;
     std::vector<VrMotion> motions;
     VrLight light;
+    VrSound sound;
     bool legacy=false;
 };
 inline size_t ReadVrBundleLength(const std::string& text,size_t& cursor,
@@ -157,7 +174,8 @@ inline VrDecodedBundle DecodeVrBundle(const std::string& bytes){
     }
     const bool v1=bytes.compare(0,12,"RVPROJECT\t1\n")==0;
     const bool v2=bytes.compare(0,12,"RVPROJECT\t2\n")==0;
-    if(!v1&&!v2)throw std::invalid_argument("unsupported project schema");
+    const bool v3=bytes.compare(0,12,"RVPROJECT\t3\n")==0;
+    if(!v1&&!v2&&!v3)throw std::invalid_argument("unsupported project schema");
     size_t cursor=12;
     const size_t sceneSize=ReadVrBundleLength(bytes,cursor,"scene\t",55000u);
     if(sceneSize>bytes.size()-cursor)throw std::invalid_argument("truncated scene");
@@ -167,14 +185,21 @@ inline VrDecodedBundle DecodeVrBundle(const std::string& bytes){
     if(motionSize>bytes.size()-cursor)throw std::invalid_argument("truncated motion");
     result.motions=ParseMotions(result.scene,bytes.substr(cursor,motionSize));
     cursor+=motionSize;
-    if(v2){
+    if(v2||v3){
         const size_t lightSize=ReadVrBundleLength(bytes,cursor,"lighting\t",512u);
-        if(lightSize!=bytes.size()-cursor)
+        if(lightSize>bytes.size()-cursor)
             throw std::invalid_argument("truncated light payload");
         result.light=ParseVrLight(result.scene,bytes.substr(cursor,lightSize));
-    }else if(cursor!=bytes.size()){
-        throw std::invalid_argument("trailing bytes in project");
+        cursor+=lightSize;
+        if(v3){
+            const size_t audioSize=ReadVrBundleLength(bytes,cursor,"audio\t",512u);
+            if(audioSize!=bytes.size()-cursor)
+                throw std::invalid_argument("truncated audio payload");
+            result.sound=ParseVrSound(result.scene,bytes.substr(cursor,audioSize));
+            cursor+=audioSize;
+        }
     }
+    if(cursor!=bytes.size())throw std::invalid_argument("trailing project bytes");
     return result;
 }
 

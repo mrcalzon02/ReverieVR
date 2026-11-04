@@ -116,6 +116,14 @@ final class UiFeedback implements AutoCloseable {
         });
     }
 
+    void nativeSpatialSoundCue(int cueId,float left,float right){
+        if(cueId<1||cueId>21||!Float.isFinite(left)||!Float.isFinite(right)||
+           left<0f||left>1f||right<0f||right>1f)return;
+        mainHandler.post(()->{
+            if(lifecycleActive)combatSound.playNativeCueSpatial(cueId,left,right);
+        });
+    }
+
     void reloadStart() {
         mainHandler.post(() -> {
             if (lifecycleActive) combatSound.play(NativeCombatWaveform.RELOAD);

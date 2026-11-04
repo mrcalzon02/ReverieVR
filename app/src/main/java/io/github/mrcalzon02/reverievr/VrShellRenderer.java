@@ -51,6 +51,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             int feedbackFlags
         );
         void onNativeModuleSoundCueRequested(int cueId);
+        void onNativeModuleSpatialSoundCueRequested(int cueId,float left,float right);
         void onControllerSpringRecenterRequested();
         void onHomeAtmosphereChanged(HomeEnvironment environment, boolean active);
         PerformanceEnvironmentSnapshot
@@ -551,6 +552,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final float[] headEuler = new float[3];
     private final float[] headForward = new float[3];
     private final float[] adjustedHeadForward = new float[3];
+    private final float[] nativeListenerPosition = new float[3];
+    private final float[] nativeListenerRight = new float[3];
     private final float[] headMotionWorld = new float[3];
     private final float[] adjustedHeadMotionWorld = new float[3];
     private final BoundedInertialTranslation
@@ -2416,6 +2419,20 @@ final class VrShellRenderer implements CardboardView.Renderer {
             pointerRenderer.hide();
         }
 
+        // True world-space listener uses the headset pose, not controller
+        // or gaze rays. No arrays allocated in the frame loop.
+        nativeListenerPosition[0]=headInertialTranslation.x()+nativeLocomotion.x();
+        nativeListenerPosition[1]=headInertialTranslation.y();
+        nativeListenerPosition[2]=headInertialTranslation.z()+nativeLocomotion.z();
+        final float horizontal=(float)Math.hypot(adjustedHeadForward[0],
+                                                 adjustedHeadForward[2]);
+        final boolean validListener=horizontal>.01f &&
+            Float.isFinite(horizontal);
+        nativeListenerRight[0]=validListener?
+            -adjustedHeadForward[2]/horizontal:0f;
+        nativeListenerRight[1]=0f;
+        nativeListenerRight[2]=validListener?
+            adjustedHeadForward[0]/horizontal:0f;
         int feedbackFlags =
             nativeModuleRuntime.update(
                 usingControllerPointer
@@ -2426,7 +2443,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     : null,
                 usingControllerPointer
                     ? activePointerDirection
-                    : null
+                    : null,
+                validListener?nativeListenerPosition:null,
+                validListener?nativeListenerRight:null
             );
         if (feedbackFlags != 0) {
             host.onNativeModuleFeedbackRequested(
@@ -2442,6 +2461,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
             if(cueId==0)break;
             host.onNativeModuleSoundCueRequested(cueId);
             cues >>>=8;
+        }
+        // Bounded separate positional event stream, never per-eye playback.
+        long positional=nativeModuleRuntime.drainSpatialSoundCues();
+        for(int n=0;n<2 && positional!=0L;n++){
+            int cueId=(int)(positional&255L);
+            if(cueId==0)break;
+            float left=((positional>>>8)&255L)/255f;
+            float right=((positional>>>16)&255L)/255f;
+            host.onNativeModuleSpatialSoundCueRequested(cueId,left,right);
+            positional>>>=24;
         }
     }
 

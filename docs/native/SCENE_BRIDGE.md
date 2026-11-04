@@ -140,3 +140,41 @@ beams, no native audio emitter or authored sound placement, no real
 Beckenburg keyframe clip playback or arbitrary scripting. A valid
 Android package is not proof of headset button, text legibility or
 sustained frame-rate acceptance.
+
+## Bounded positional audio emitters (2026-11-04)
+
+The Workshop gains a fourth **SOUND TOOLS** editor menu, with
+**ATTACH SOUND, REMOVE SOUND, NEXT/PREV CUE, INTERVAL +/-, RANGE +/-**,
+project switching and a return to Light Tools. One emitter can be
+anchored to a scene primitive with a deterministic periodic trigger;
+it follows the primitive's authored Bob motion in live Test mode.
+Only cues **1–21** from the existing original preloaded shell PCM bank
+are selectable. No external files, arbitrary WAV samples, Android file
+paths, downloaded executable code or network fetch is accepted.
+
+The native runtime sends an append-only `request_spatial_sound` callback
+containing a validated cue and bounded left/right gains. A distinct
+two-event `ReverieNativeSpatialSoundQueue` keeps authored sounds separate
+from existing game audio. The shell supplies actual headset/locomotion
+listener position and horizontal right direction independently of the
+controller pointer; the C++ authoring runtime computes distance and stereo
+pan. The shell drains the queue **once after update**, not in either eye
+render, and Android plays existing preloaded `AudioTrack` PCM at the
+quantized stereo gains. No new waveforms are synthesized in the frame loop.
+
+The project envelope becomes `RVPROJECT\t3`: one atomic payload
+containing unchanged `REVSCENE\t1`, `RVMOTION\t1`, `RVLIGHT\t1`,
+and `RVSOUND\t1` components. All previous project V1/V2 and scene-only
+saves remain readable; successful saves upgrade to V3, without touching
+the old original slot. Unknown cues, dangling emitters, invalid numbers,
+oversize files and unexpected trailing bytes fail closed. Object deletion
+removes emitter attachment in the same undoable transaction.
+
+**Scope limits:** one emitter per project; finite authored periodic triggers
+only; shell-generated cues, not imported WAV/MP3 content; basic distance
+and stereo amplitude panning, not HRTF or convolution reverb. No physics
+occlusion, general event graph or Beckenburg sound-lab WAV staging yet.
+The optional append-only host/input tails do not alter existing native ABI
+offsets, and existing modules keep their original sound queue.
+Device speaker/headphone spatialization and controller feel remain
+unverified until a physical headset run.

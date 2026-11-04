@@ -15,6 +15,17 @@ on:
       - 'app/src/test/native/reverie_vr_project_motion_test.cpp'
       - 'app/src/main/jni/native/reverie_vr_project_lighting.h'
       - 'app/src/test/native/reverie_vr_project_lighting_test.cpp'
+      - 'app/src/main/jni/native/reverie_vr_project_sound.h'
+      - 'app/src/test/native/reverie_vr_project_sound_test.cpp'
+      - 'app/src/main/jni/native/reverie_native_module.h'
+      - 'app/src/main/jni/native/reverie_native_sdk.h'
+      - 'app/src/main/jni/native/reverie_native_spatial_sound_queue.h'
+      - 'app/src/main/jni/native/reverie_native_host.cpp'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/NativeModuleRuntime.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/VrShellRenderer.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/VrActivity.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatSound.java'
+      - 'app/src/main/java/io/github/mrcalzon02/reverievr/UiFeedback.java'
       - 'app/src/test/native/reverie_vr_workshop_test.cpp'
       - 'app/src/main/jni/native/reverie_native_*.h'
       - 'app/src/main/AndroidManifest.xml'
@@ -73,7 +84,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_name in reverie_vr_workshop_test reverie_vr_project_motion_test reverie_vr_project_lighting_test; do
+          for test_name in reverie_vr_workshop_test reverie_vr_project_motion_test reverie_vr_project_lighting_test reverie_vr_project_sound_test; do
             for compiler in g++ clang++; do
               "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
                 "app/src/test/native/${test_name}.cpp" \

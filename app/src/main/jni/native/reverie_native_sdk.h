@@ -111,6 +111,16 @@ static inline int ReverieNativeHostSupportsSoundV1(
 
 // Sound cue requests carry exactly one logical event, not coalesced flags.
 // Host-owned fallback must be used when this optional tail is absent.
+static inline int ReverieNativeRequestSpatialSoundV1(
+    const ReverieNativeHostV1* host,uint32_t cue,float left,float right
+) {
+    if(host==NULL||host->struct_size<REVERIE_NATIVE_HOST_V1_SPATIAL_MIN_SIZE||
+       host->request_spatial_sound==NULL||cue<1u||cue>21u||
+       !(left>=0.f&&left<=1.f)||!(right>=0.f&&right<=1.f))return 0;
+    host->request_spatial_sound(cue,left,right);
+    return 1;
+}
+
 static inline int ReverieNativeRequestSoundV1(
     const ReverieNativeHostV1 *host, uint32_t cue_id
 ) {
@@ -321,6 +331,31 @@ static inline int ReverieNativeSanitizePointerV1(
         input->pointer_direction[axis] = 0.0f;
     }
     return 0;
+}
+
+static inline int ReverieNativeSanitizeListenerV1(ReverieNativeInputV1* input){
+    if(input==NULL||input->struct_size<REVERIE_NATIVE_INPUT_V1_LISTENER_MIN_SIZE)
+        return 0;
+    const float x=input->listener_right[0],y=input->listener_right[1],
+                z=input->listener_right[2];
+    const float length2=x*x+y*y+z*z;
+    int valid=input->listener_valid!=0u&&
+        fabsf(input->listener_position[0])<=1000.f&&
+        fabsf(input->listener_position[1])<=1000.f&&
+        fabsf(input->listener_position[2])<=1000.f&&
+        fabsf(length2-1.f)<.05f&&fabsf(y)<.1f;
+    if(!valid){
+        input->listener_valid=0u;
+        for(int i=0;i<3;++i){
+            input->listener_position[i]=0.f;
+            input->listener_right[i]=0.f;
+        }
+        return 0;
+    }
+    const float inv=1.f/sqrtf(length2);
+    for(int i=0;i<3;++i)input->listener_right[i]*=inv;
+    input->listener_valid=1u;
+    return 1;
 }
 
 static inline int ReverieNativeEyeHasMatricesV1(

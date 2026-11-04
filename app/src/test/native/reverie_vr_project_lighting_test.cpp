@@ -56,7 +56,7 @@ int main(){
     assert(y>-.31f&&y<-.21f); // linked light follows authored bobbing object
     workshop.editing=true;
     assert(workshop.Save(save));
-    assert(memory.slots[0].compare(0,12,"RVPROJECT\t2\n")==0);
+    assert(memory.slots[0].compare(0,12,"RVPROJECT\t3\n")==0);
     auto bundle=DecodeVrBundle(memory.slots[0]);
     assert(bundle.light.enabled&&bundle.light.anchor_id=="lamp-base");
     assert(near(bundle.light.power,1.25));
@@ -75,7 +75,7 @@ int main(){
     memory.slots[1]=v1;memory.exists[1]=true;
     assert(opened.NextProject(save)&&opened.slot==1&&!opened.light.enabled);
     assert(opened.Save(save));
-    assert(memory.slots[1].compare(0,12,"RVPROJECT\t2\n")==0);
+    assert(memory.slots[1].compare(0,12,"RVPROJECT\t3\n")==0);
     // Beckenburg LightModel.diffusionFade and attenuation numeric parity.
     assert(near(VrLightFade(2.,5.,.5),1.));
     assert(near(VrLightFade(4.,5.,.5),.4));

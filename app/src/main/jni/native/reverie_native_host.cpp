@@ -1,5 +1,6 @@
 #include "reverie_native_sdk.h"
 #include "reverie_native_sound_queue.h"
+#include "reverie_native_spatial_sound_queue.h"
 #include "reverie_native_asset_scope.h"
 
 #include <android/log.h>
@@ -89,6 +90,7 @@ struct NativeSession {
     // thread. No per-event memory allocation and no per-eye requests.
     std::mutex sound_mutex;
     ReverieNativeSoundQueueV1 pending_sounds;
+    ReverieNativeSpatialSoundQueue pending_spatial_sounds;
 };
 
 std::mutex g_error_mutex;
@@ -423,6 +425,13 @@ void HostRequestFeedback(
     );
 }
 
+void HostRequestSpatialSound(uint32_t cue,float left,float right){
+    NativeSession* session=g_callback_session;
+    if(!session)return;
+    std::lock_guard<std::mutex> guard(session->sound_mutex);
+    session->pending_spatial_sounds.Push(cue,left,right);
+}
+
 void HostRequestSound(uint32_t cue_id) {
     NativeSession *session=g_callback_session;
     if(session==nullptr || cue_id<REVERIE_NATIVE_SOUND_WEAPON_MACHINE ||
@@ -527,7 +536,8 @@ const ReverieNativeHostV1 kHostServices = {
     HostRequestFeedback,
     HostRequestSound,
     HostReadAsset,
-    HostReadAvatar
+    HostReadAvatar,
+    HostRequestSpatialSound
 };
 
 const BuiltInModuleSpec *FindSpec(const char *id) {
@@ -1042,6 +1052,7 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativePause(
         // Never replay combat sounds after a paused native session resumes.
         std::lock_guard<std::mutex> guard(session->sound_mutex);
         session->pending_sounds.Clear();
+        session->pending_spatial_sounds.Clear();
     }
 }
 
@@ -1055,6 +1066,17 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeDrainSoundCues(
     std::lock_guard<std::mutex> guard(session->sound_mutex);
     const uint64_t packet=session->pending_sounds.Drain();
     return static_cast<jlong>(packet);
+}
+
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeDrainSpatialSoundCues(
+    JNIEnv *,jclass,jlong handle
+) {
+    NativeSession* session=FromHandle(handle);
+    if(!session)return 0;
+    std::lock_guard<std::mutex> guard(session->sound_mutex);
+    return static_cast<jlong>(session->pending_spatial_sounds.Drain());
 }
 
 extern "C"
@@ -1074,7 +1096,10 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
     jfloat pointer_origin_z,
     jfloat pointer_direction_x,
     jfloat pointer_direction_y,
-    jfloat pointer_direction_z
+    jfloat pointer_direction_z,
+    jboolean listener_valid,
+    jfloat listener_x,jfloat listener_y,jfloat listener_z,
+    jfloat listener_right_x,jfloat listener_right_z
 ) {
     NativeSession *session =
         FromHandle(handle);
@@ -1111,6 +1136,14 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
     input.pointer_direction[2] = static_cast<float>(pointer_direction_z);
     // Shared fail-closed ray validation at the JNI boundary.
     ReverieNativeSanitizePointerV1(&input);
+    input.listener_valid=listener_valid==JNI_TRUE?1u:0u;
+    input.listener_position[0]=listener_x;
+    input.listener_position[1]=listener_y;
+    input.listener_position[2]=listener_z;
+    input.listener_right[0]=listener_right_x;
+    input.listener_right[1]=0.f;
+    input.listener_right[2]=listener_right_z;
+    ReverieNativeSanitizeListenerV1(&input);
 
     CallbackSessionScope scope(session);
     session->api->update(
@@ -1119,9 +1152,11 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
     );
     // Quick Menu/controller loss yields POINTER_NONE; never carry a
     // previous sound burst forward into resumed gameplay.
-    if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE) {
+    if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE || !input.listener_valid) {
         std::lock_guard<std::mutex> guard(session->sound_mutex);
-        session->pending_sounds.Clear();
+        if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE)
+            session->pending_sounds.Clear();
+        if(!input.listener_valid)session->pending_spatial_sounds.Clear();
     }
 
     return static_cast<jint>(

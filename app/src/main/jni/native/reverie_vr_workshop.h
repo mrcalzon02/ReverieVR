@@ -85,7 +85,8 @@ public:
     Scene scene;
     std::vector<VrMotion> motions;
     VrLight light;
-    bool motion_page=false, lighting_page=false;
+    VrSound sound;
+    bool motion_page=false, lighting_page=false, audio_page=false;
     bool editing=false, dirty=false, mesh_dirty=false, last_primary=false,
          last_secondary=false;
     size_t slot=0, selected=0;
@@ -103,6 +104,7 @@ public:
         Scene loaded;
         std::vector<VrMotion> loadedMotions;
         VrLight loadedLight;
+        VrSound loadedSound;
         if(rc==0){loaded=target==0?seed_:Scene{"white_room",{}};}
         else {
             if(bytes.empty()||bytes.size()>kVrSlotMaxBytes){
@@ -113,17 +115,20 @@ public:
                 loaded=std::move(result.scene);
                 loadedMotions=std::move(result.motions);
                 loadedLight=std::move(result.light);
+                loadedSound=std::move(result.sound);
             }catch(const std::exception&){
                 last_error="CORRUPT PROJECT";return false;
             }
         }
         if(!ScenePlayable(loaded)||!ValidateMotions(loaded,loadedMotions)||
-           !ValidLight(loaded,loadedLight)){
+           !ValidLight(loaded,loadedLight)||!ValidVrSound(loaded,loadedSound)){
             last_error="UNSUPPORTED PROJECT";return false;
         }
         scene=std::move(loaded);motions=std::move(loadedMotions);
         light=std::move(loadedLight);
-        slot=target;selected=0;motion_page=false;lighting_page=false;undo_.clear();
+        sound=std::move(loadedSound);sound_elapsed_=0.;
+        slot=target;selected=0;motion_page=false;lighting_page=false;
+        audio_page=false;undo_.clear();
         dirty=false;mesh_dirty=true;last_error.clear();
         return true;
     }
@@ -131,7 +136,8 @@ public:
         if(!store.write){last_error="SAVE SERVICE ABSENT";return false;}
         try{
             const std::string data=EncodeVrBundle(EncodeVrScene(scene),
-                EncodeMotions(scene,motions),EncodeVrLight(scene,light));
+                EncodeMotions(scene,motions),EncodeVrLight(scene,light),
+                EncodeVrSound(scene,sound));
             if(!store.write(store.context,slot,data)){
                 last_error="SAVE FAILED - CHANGES RETAINED";return false;
             }
@@ -159,19 +165,22 @@ public:
         Scene old=scene;
         std::vector<VrMotion> before=motions;
         const VrLight beforeLight=light;
+        const VrSound beforeSound=sound;
         const std::string removed=scene.pieces[selected].id;
         scene.pieces.erase(scene.pieces.begin()+static_cast<long>(selected));
         motions.erase(std::remove_if(motions.begin(),motions.end(),
             [&](const VrMotion& m){return m.id==removed;}),motions.end());
         if(light.enabled&&light.anchor_id==removed)light=VrLight{};
+        if(sound.enabled&&sound.anchor_id==removed)sound=VrSound{};
         selected=std::min(selected,scene.pieces.empty()?size_t(0):scene.pieces.size()-1);
-        Remember(std::move(old),std::move(before),true,&beforeLight);return true;
+        Remember(std::move(old),std::move(before),true,&beforeLight,&beforeSound);return true;
     }
     bool Undo() {
         if(!editing||undo_.empty())return false;
         scene=std::move(undo_.back().scene);
         motions=std::move(undo_.back().motions);
-        light=std::move(undo_.back().light);undo_.pop_back();
+        light=std::move(undo_.back().light);
+        sound=std::move(undo_.back().sound);undo_.pop_back();
         selected=std::min(selected,scene.pieces.empty()?size_t(0):scene.pieces.size()-1);
         dirty=mesh_dirty=true;return true;
     }
@@ -225,7 +234,7 @@ public:
         dragging_=false;
         if(scene.pieces.size()==drag_base_.pieces.size() &&
            EncodeVrScene(scene)!=EncodeVrScene(drag_base_))
-            PushUndo({std::move(drag_base_),motions,light});
+            PushUndo({std::move(drag_base_),motions,light,sound});
     }
 
     const VrMotion* SelectedMotion()const{
@@ -319,6 +328,52 @@ public:
         return false;
     }
 
+
+    bool AttachSound(){
+        if(!editing||scene.pieces.empty())return false;
+        const std::string id=scene.pieces[selected].id;
+        if(sound.enabled&&sound.anchor_id==id)return false;
+        const VrSound old=sound;
+        sound.enabled=true;sound.anchor_id=id;
+        Remember(scene,motions,false,nullptr,&old);return true;
+    }
+    bool ClearSound(){
+        if(!editing||!sound.enabled)return false;
+        const VrSound old=sound;
+        sound=VrSound{};
+        Remember(scene,motions,false,nullptr,&old);return true;
+    }
+    bool TuneSound(int parameter,bool increase){
+        if(!editing||!sound.enabled||parameter<0||parameter>2)return false;
+        const VrSound old=sound;
+        if(parameter==0){
+            if(increase){if(sound.cue>=21u)return false;++sound.cue;}
+            else{if(sound.cue<=1u)return false;--sound.cue;}
+        }else{
+            double& value=parameter==1?sound.interval:sound.radius;
+            const double lo=parameter==1?.5:1.,hi=parameter==1?10.:12.;
+            const double delta=parameter==1?.5:1.;
+            const double next=std::max(lo,std::min(hi,value+(increase?delta:-delta)));
+            if(next==value)return false;
+            value=next;
+        }
+        Remember(scene,motions,false,nullptr,&old);return true;
+    }
+    bool TickSound(double dt,double time,double lx,double ly,double lz,
+                   double rx,double rz,uint32_t& cue,VrStereoCue& spatial){
+        if(editing||!sound.enabled||!std::isfinite(dt)||dt<0||dt>.1)return false;
+        sound_elapsed_=std::min(sound.interval,sound_elapsed_+dt);
+        if(sound_elapsed_<sound.interval)return false;
+        for(const auto& p:scene.pieces)if(p.id==sound.anchor_id){
+            const VrMotionSample motion=SampleFor(p,time);
+            spatial=SpatializeVrSound(p.x,p.y+p.scale+motion.offset_y,p.z,
+                                      lx,ly,lz,rx,rz,sound.radius);
+            if(!spatial.audible)return false;
+            sound_elapsed_=0.;cue=sound.cue;return true;
+        }
+        return false;
+    }
+
     VrEvent Step(bool primary,bool secondary,const VrRay& ray,const VrStore& store) {
         const bool pressed=primary&&!last_primary;
         const bool secondary_pressed=secondary&&!last_secondary;
@@ -327,7 +382,8 @@ public:
             EndDrag();
             if(editing&&dirty&&!Save(store))return VrEvent::Rejected;
             editing=!editing;
-            motion_page=false;lighting_page=false;
+            motion_page=false;lighting_page=false;audio_page=false;
+            sound_elapsed_=0.;
             return editing?VrEvent::Edit:VrEvent::Play;
         }
         if(!editing){
@@ -338,6 +394,20 @@ public:
         if(pressed){
             const int menu=VrMenuHit(ray);
             if(menu>=0){
+                if(audio_page){
+                    switch(menu){
+                        case 0:return AttachSound()?VrEvent::Modified:VrEvent::Rejected;
+                        case 1:return ClearSound()?VrEvent::Modified:VrEvent::Rejected;
+                        case 2:return TuneSound(0,true)?VrEvent::Modified:VrEvent::Rejected;
+                        case 3:return TuneSound(0,false)?VrEvent::Modified:VrEvent::Rejected;
+                        case 4:return TuneSound(1,true)?VrEvent::Modified:VrEvent::Rejected;
+                        case 5:return TuneSound(1,false)?VrEvent::Modified:VrEvent::Rejected;
+                        case 6:return TuneSound(2,true)?VrEvent::Modified:VrEvent::Rejected;
+                        case 7:return TuneSound(2,false)?VrEvent::Modified:VrEvent::Rejected;
+                        case 8:return NextProject(store)?VrEvent::Project:VrEvent::Rejected;
+                        case 9:audio_page=false;return VrEvent::Selected;
+                    }
+                }
                 if(lighting_page){
                     switch(menu){
                         case 0:return AttachLight()?VrEvent::Modified:VrEvent::Rejected;
@@ -348,7 +418,7 @@ public:
                         case 5:return TuneLight(1,false)?VrEvent::Modified:VrEvent::Rejected;
                         case 6:return TuneLight(2,true)?VrEvent::Modified:VrEvent::Rejected;
                         case 7:return TuneLight(2,false)?VrEvent::Modified:VrEvent::Rejected;
-                        case 8:return NextProject(store)?VrEvent::Project:VrEvent::Rejected;
+                        case 8:audio_page=true;return VrEvent::Selected;
                         case 9:lighting_page=false;return VrEvent::Selected;
                     }
                 }
@@ -391,7 +461,8 @@ private:
     Scene seed_,drag_base_;
     bool dragging_=false;
     uint32_t next_id_=1;
-    struct Snapshot {Scene scene;std::vector<VrMotion> motions;VrLight light;};
+    struct Snapshot {Scene scene;std::vector<VrMotion> motions;VrLight light;VrSound sound;};
+    double sound_elapsed_=0.;
     std::vector<Snapshot> undo_;
     bool HasId(const std::string& id)const{
         for(const auto& p:scene.pieces)if(p.id==id)return true;
@@ -402,9 +473,11 @@ private:
         undo_.push_back(std::move(previous));
     }
     void Remember(Scene previous,std::vector<VrMotion> previousMotions,
-                  bool geometry=true,const VrLight* previousLight=nullptr){
+                  bool geometry=true,const VrLight* previousLight=nullptr,
+                  const VrSound* previousSound=nullptr){
         PushUndo({std::move(previous),std::move(previousMotions),
-            previousLight?*previousLight:light});
+            previousLight?*previousLight:light,
+            previousSound?*previousSound:sound});
         dirty=true;if(geometry)mesh_dirty=true;
         last_error.clear();
     }

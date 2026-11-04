@@ -177,6 +177,10 @@ typedef struct ReverieNativeHostV1 {
         ReverieNativeAvatarV1 *out_avatar,
         uint32_t capacity
     );
+    // Optional append-only positional PCM-bank cue. Existing request_sound
+    // and all pre-existing ABI field offsets remain unchanged. Quantized
+    // left/right gains are shell-owned; modules do not provide audio data.
+    void (*request_spatial_sound)(uint32_t cue_id,float left,float right);
 } ReverieNativeHostV1;
 
 #define REVERIE_NATIVE_HOST_V1_LOG_MIN_SIZE \
@@ -197,6 +201,9 @@ typedef struct ReverieNativeHostV1 {
 #define REVERIE_NATIVE_HOST_V1_AVATAR_MIN_SIZE \
     ((uint32_t)(offsetof(ReverieNativeHostV1, read_avatar) \
         + sizeof(((ReverieNativeHostV1 *)0)->read_avatar)))
+#define REVERIE_NATIVE_HOST_V1_SPATIAL_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeHostV1, request_spatial_sound) \
+        + sizeof(((ReverieNativeHostV1 *)0)->request_spatial_sound)))
 
 typedef struct ReverieNativeModuleDescriptorV1 {
     uint32_t struct_size;
@@ -233,6 +240,11 @@ typedef struct ReverieNativeInputV1 {
     uint32_t pointer_kind;
     float pointer_origin[3];
     float pointer_direction[3];
+    // Optional headset listener transform; separate from controller ray.
+    // Right direction is horizontal and normalized, in module-world space.
+    uint32_t listener_valid;
+    float listener_position[3];
+    float listener_right[3];
 } ReverieNativeInputV1;
 
 #define REVERIE_NATIVE_INPUT_V1_BASE_MIN_SIZE \
@@ -241,6 +253,9 @@ typedef struct ReverieNativeInputV1 {
 #define REVERIE_NATIVE_INPUT_V1_POINTER_MIN_SIZE \
     ((uint32_t)(offsetof(ReverieNativeInputV1, pointer_direction) \
         + sizeof(((ReverieNativeInputV1 *)0)->pointer_direction)))
+#define REVERIE_NATIVE_INPUT_V1_LISTENER_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeInputV1, listener_right) \
+        + sizeof(((ReverieNativeInputV1 *)0)->listener_right)))
 
 typedef struct ReverieNativeEyeV1 {
     uint32_t struct_size;

@@ -352,10 +352,17 @@ final class NativeModuleRuntime implements AutoCloseable {
         }
     }
 
+    synchronized int update(int pointerKind,float[] pointerOrigin,
+                            float[] pointerDirection) {
+        return update(pointerKind,pointerOrigin,pointerDirection,null,null);
+    }
+
     synchronized int update(
         int pointerKind,
         float[] pointerOrigin,
-        float[] pointerDirection
+        float[] pointerDirection,
+        float[] listenerPosition,
+        float[] listenerRight
     ) {
         if (handle == 0L) {
             return 0;
@@ -424,7 +431,14 @@ final class NativeModuleRuntime implements AutoCloseable {
             originZ,
             directionX,
             directionY,
-            directionZ
+            directionZ,
+            listenerPosition!=null&&listenerPosition.length>=3&&
+                listenerRight!=null&&listenerRight.length>=3,
+            listenerPosition!=null&&listenerPosition.length>=3?listenerPosition[0]:0f,
+            listenerPosition!=null&&listenerPosition.length>=3?listenerPosition[1]:0f,
+            listenerPosition!=null&&listenerPosition.length>=3?listenerPosition[2]:0f,
+            listenerRight!=null&&listenerRight.length>=3?listenerRight[0]:0f,
+            listenerRight!=null&&listenerRight.length>=3?listenerRight[2]:0f
         ) & FEEDBACK_ALL;
     }
 
@@ -432,6 +446,9 @@ final class NativeModuleRuntime implements AutoCloseable {
     // This is drained once per authoritative update, not per eye.
     synchronized long drainSoundCues() {
         return handle==0L ? 0L : nativeDrainSoundCues(handle);
+    }
+    synchronized long drainSpatialSoundCues(){
+        return handle==0L ? 0L : nativeDrainSpatialSoundCues(handle);
     }
 
     synchronized boolean renderEye(
@@ -533,6 +550,7 @@ final class NativeModuleRuntime implements AutoCloseable {
     );
 
     private static native long nativeDrainSoundCues(long handle);
+    private static native long nativeDrainSpatialSoundCues(long handle);
 
     private static native int nativeUpdate(
         long handle,
@@ -547,7 +565,10 @@ final class NativeModuleRuntime implements AutoCloseable {
         float pointerOriginZ,
         float pointerDirectionX,
         float pointerDirectionY,
-        float pointerDirectionZ
+        float pointerDirectionZ,
+        boolean listenerValid,
+        float listenerX,float listenerY,float listenerZ,
+        float listenerRightX,float listenerRightZ
     );
 
     private static native boolean nativeRenderEye(

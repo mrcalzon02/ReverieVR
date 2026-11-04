@@ -146,3 +146,14 @@ when no light is authored. Project saves migrate from RVPROJECT v1
 to v2 atomically, with both scene and animation preserved.
 Collision-aware occlusion, fixture arrays and live spatial sound
 will follow after device/performance verification.
+
+## CS-01.3 Native scene-triggered positional sound
+
+One object-anchored periodic cue with editable cue ID, interval and radius
+uses the shell's existing original PCM16 bank. A new optional host request
+and listener input tail enable headset-relative stereo gain without changing
+any prior ABI field offsets, alongside separate bounded sound queue
+transport. Project saves are V3 and preserve V1/V2 on read. The next stage
+is direct sound-lab imported derivatives with reviewed distribution rights,
+multi-emitter blending, event-condition authoring, and measured phone audio
+latency/thermal headroom.
