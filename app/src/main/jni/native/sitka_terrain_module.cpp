@@ -13,6 +13,8 @@
 #include "sitka_boat_session.h"
 #include "sitka_helm.h"
 #include "sitka_boat_mesh.h"
+#include "sitka_boat_panels.h"
+#include "reverie_native_lato_text.h"
 #include <array>
 #include <cstdint>
 #include <new>
@@ -29,6 +31,8 @@ struct State {
     reverie::sitka::Lighting lighting;
     reverie::sitka::TerrainGl gl;
     reverie::sitka::TerrainGl boat_gl; // isolated static boat VBO, shared across both eyes
+    reverie::nativetext::LatoLayer boat_text; // real licensed glyph atlas
+    std::string last_boat_text;
     std::vector<reverie::sitka::Water> waters;
     reverie::sitka::Weather weather;
     reverie::sitka::WaterGl water_gl;
@@ -257,7 +261,10 @@ int32_t OnGlCreated(void* instance) {
                 reverie::sitka::BuildBoatMesh(state->helm),
                 state->lighting,&error))
                 throw std::runtime_error(error);
+            if(!state->boat_text.Create())
+                throw std::runtime_error("Sitka Lato instrument font unavailable");
         }catch(const std::exception& e){
+            state->boat_text.Release();
             state->boat_gl.Release();
             state->water_gl.Release();
             state->gl.Release();
@@ -269,6 +276,8 @@ int32_t OnGlCreated(void* instance) {
 }
 void ReleaseGl(void* instance) {
     if(instance){
+        static_cast<State*>(instance)->boat_text.Release();
+        static_cast<State*>(instance)->last_boat_text.clear();
         static_cast<State*>(instance)->boat_gl.Release();
         static_cast<State*>(instance)->water_gl.Release();
         static_cast<State*>(instance)->gl.Release();
@@ -311,8 +320,26 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->helm,state->skiff->Pose(),state->weather,
                 state->skiff->Sounder().reading(),
                 state->helm_rudder.degrees,input->move_y,1.);
+            // Build real Lato text only when data changes. This executes
+            // once in the simulation tick, never from a stereo-eye callback.
+            const auto panels=reverie::sitka::BuildBoatPanels(
+                state->helm,state->skiff->Pose(),state->weather,
+                state->skiff->Sounder().reading(),input->move_y);
+            const std::string signature=panels.Signature();
+            if(signature!=state->last_boat_text){
+                state->boat_text.Clear();
+                for(size_t i=0;i<panels.count;++i){
+                    const auto& label=panels.labels[i];
+                    state->boat_text.Fit(label.text.c_str(),
+                        label.x,label.y,label.width,label.scale,
+                        label.red,label.green,label.blue,label.z);
+                }
+                state->last_boat_text=signature;
+            }
         }else if(event==reverie::sitka::SkiffSessionEvent::Docked){
             state->helm_rudder.Reset();
+            state->boat_text.Clear();
+            state->last_boat_text.clear();
         }
         if(event==reverie::sitka::SkiffSessionEvent::Launched||
            event==reverie::sitka::SkiffSessionEvent::Docked)
@@ -471,7 +498,11 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
         const auto model=reverie::sitka::BoatModelMatrix(
             pose,state->terrain.origin_east,state->terrain.origin_north,
             water->y);
-        return state->boat_gl.RenderEye(eye,model.data())?1:0;
+        if(!state->boat_gl.RenderEye(eye,model.data()))return 0;
+        float vp[16],mvp[16];
+        ReverieNativeMat4Multiply(vp,eye->projection,eye->view);
+        ReverieNativeMat4Multiply(mvp,vp,model.data());
+        return state->boat_text.Draw(mvp,true)?1:0;
     }catch(const std::exception&){return 0;}
 }
 const ReverieNativeModuleApiV1 kApi = {

@@ -102,7 +102,9 @@ struct LatoLayer {
         upload=true;
         return good;
     }
-    bool Draw(const float* vp){
+    // World-space diegetic screens opt into depth testing. Existing HUDs
+    // keep their prior overlay behavior with the default false argument.
+    bool Draw(const float* vp,bool world_depth=false){
         if(!program||!texture||!vbo||!vp)return false;
         if(vertices.empty())return true;
         // The three reserved attribute slots do not conflict with the game
@@ -118,7 +120,8 @@ struct LatoLayer {
         glGetIntegerv(GL_BLEND_SRC_ALPHA,&srcAlpha);
         glGetIntegerv(GL_BLEND_DST_ALPHA,&dstAlpha);
         glDisable(GL_CULL_FACE);
-        glDisable(GL_DEPTH_TEST);
+        if(world_depth)glEnable(GL_DEPTH_TEST);
+        else glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
         glUseProgram(program);

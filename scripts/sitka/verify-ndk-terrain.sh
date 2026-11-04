@@ -52,7 +52,7 @@ for item in 'armv7a-linux-androideabi21 ARM ELF32' 'aarch64-linux-android21 AArc
     -Wl,--no-undefined -Wl,-z,max-page-size=16384 \
     -I"$root/app/src/main/jni/native" \
     "$root/app/src/main/jni/native/sitka_terrain_module.cpp" \
-    -o "$library" -lGLESv2 -lm
+    -o "$library" -lGLESv2 -lm -lz
   elf_header="$("$bin/llvm-readelf" -h "$library")"
   if ! grep -Eq "Machine: *${arch}($|[[:space:]])" <<<"$elf_header" ||
      ! grep -Eq "Class: *${elf_class}($|[[:space:]])" <<<"$elf_header" ||

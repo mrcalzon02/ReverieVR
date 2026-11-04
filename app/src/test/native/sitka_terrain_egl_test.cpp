@@ -4,6 +4,8 @@
 #include "../../main/jni/native/sitka_water_gl.h"
 #include "../../main/jni/native/sitka_seafloor_mesh.h"
 #include "../../main/jni/native/sitka_boat_mesh.h"
+#include "../../main/jni/native/sitka_boat_panels.h"
+#include "../../main/jni/native/reverie_native_lato_text.h"
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 #include <array>
@@ -368,6 +370,33 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
         Same(before_eye,Capture());
         Check(boat_gl.upload_count()==1u,"boat mesh reuploaded during eye draw");
     }
+    // Licensed Lato glyphs live ON the physical face, with proper depth.
+    reverie::sitka::BoatPose text_pose=pose;
+    const auto readings=reverie::sitka::BuildBoatPanels(
+        progress,text_pose,reverie::sitka::Weather{},
+        {reverie::sitka::DepthStatus::Safe,12.,11.5,
+         reverie::sitka::BedQuality::Procedural},.4);
+    Check(readings.count>0u,"physical sonar text did not unlock");
+    reverie::nativetext::LatoLayer glyphs;
+    Check(glyphs.Create(),"real Sitka Lato font GL initialization failed");
+    for(size_t i=0;i<readings.count;++i){
+        const auto& t=readings.labels[i];
+        glyphs.Fit(t.text.c_str(),t.x,t.y,t.width,t.scale,
+                   t.red,t.green,t.blue,t.z);
+    }
+    Check(!glyphs.vertices.empty(),"no actual proportional glyph triangles");
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot snapshot=Capture();
+        auto eye=Eye(index);
+        float vp[16],mvp[16];
+        ReverieNativeMat4Multiply(vp,eye.projection,eye.view);
+        ReverieNativeMat4Multiply(mvp,vp,boat_model.data());
+        Check(glyphs.Draw(mvp,true),"diegetic glyph draw failed");
+        Same(snapshot,Capture());
+        Check(!glyphs.upload,"glyph VBO was rebuilt in a stereo-eye pass");
+    }
+    glyphs.Release();
     boat_gl.Release();
     Check(!boat_gl.ready(),"boat context release retained GPU resources");
     NoGlError("water release");
