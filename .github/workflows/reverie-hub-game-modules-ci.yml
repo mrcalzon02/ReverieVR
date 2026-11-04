@@ -155,7 +155,7 @@ jobs:
             # Preserve the real tactical/continued frames and isolated test saves
             # BEFORE the success gate, including when the checkpoint assertion fails.
             # These are synthetic test-session files, never a player's saves.
-            for NAME in omega-front-ci-tactical.png omega-front-ci-restored.png omega-front-ci-checkpoint-before.bin omega-front-ci-checkpoint-after.bin; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${NAME}" > "validation/hub/${NAME}" || rm -f "validation/hub/${NAME}"; done
+            for NAME in omega-front-ci-tactical.png omega-front-ci-restored.png omega-front-ci-checkpoint-before.bin omega-front-ci-checkpoint-after.bin omega-front-gallery-f06.png omega-front-gallery-f10.png; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${NAME}" > "validation/hub/${NAME}" || rm -f "validation/hub/${NAME}"; done
             grep -F 'OK (13 tests)' validation/hub/instrumentation-output.txt
             grep -F 'PASS all 15 registered native game initial menus captured from installed Android GLES2 implementation' validation/hub/logcat.txt
             adb exec-out run-as io.github.mrcalzon02.reverievr cat files/native-menu-capture.csv > validation/hub/native-menu-capture.csv
@@ -173,6 +173,9 @@ jobs:
             # Print the native count before retaining the full 108/108 gate.
             # Texture completeness is a visual diagnostic, never a functional
             # release blocker. The catalog now contains 121 PNG slots.
+            # Gallery GPU uploads are diagnostic evidence, never release blockers.
+            grep -F 'Gallery portrait GPU upload:' validation/hub/logcat.txt || true
+            grep -F 'DIAGNOSTIC Omega Front gallery' validation/hub/logcat.txt || true
             grep -F 'Tactical PNG textures loaded:' validation/hub/logcat.txt || true
             if ! grep -Fq 'Tactical PNG textures loaded: 121/121' validation/hub/logcat.txt; then echo 'DIAGNOSTIC: Omega Front optional texture slots incomplete (expected 121/121)'; fi
             grep -F 'Authentic BWM1 models loaded 5/5' validation/hub/logcat.txt

@@ -538,8 +538,10 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                 }
                 File evidence=new File(app.getFilesDir(),
                     "native-menu-"+game.id+".png");
+                VirtualInputBus galleryBus="omega-front".equals(game.id)?
+                    new VirtualInputBus():null;
                 try(NativeModuleRuntime runtime=new NativeModuleRuntime(
-                    home,app.getAssets(),null,true,
+                    home,app.getAssets(),galleryBus,true,
                     new ReveriePreferences(
                         InstrumentationRegistry.getInstrumentation().getContext()))){
                     assertTrue("Native menu launch failed "+game.id+": "+
@@ -557,6 +559,31 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
                         saved++;
                         Log.i(TAG,"PASS REAL native menu capture id="+game.id+
                             " crc32="+crc+" bytes="+evidence.length());
+                        if(galleryBus!=null){
+                            // Visual-only diagnostic: real gallery navigation,
+                            // read_asset + GLES2 texture upload + pixel captures.
+                            // Failures must not block playable game releases.
+                            try{
+                                omegaTap(runtime,galleryBus,0.f,.195f);
+                                File first=new File(app.getFilesDir(),
+                                    "omega-front-gallery-f06.png");
+                                long f06=omegaFrame(runtime,first);
+                                omegaTap(runtime,galleryBus,-.54f,.56f);
+                                File last=new File(app.getFilesDir(),
+                                    "omega-front-gallery-f10.png");
+                                long f10=omegaFrame(runtime,last);
+                                Log.i(TAG,"DIAGNOSTIC Omega Front gallery "+
+                                    "title="+crc+" f06="+f06+" f10="+f10+
+                                    " firstBytes="+first.length()+
+                                    " lastBytes="+last.length());
+                                if(f06==crc || f10==f06)
+                                    Log.w(TAG,"DIAGNOSTIC Omega Front gallery "+
+                                        "portrait frames did not change");
+                            }catch(Exception | AssertionError failure){
+                                Log.w(TAG,"DIAGNOSTIC Omega Front gallery "+
+                                    "capture unavailable (nonblocking)",failure);
+                            }
+                        }
                     }finally{
                         runtime.releaseSurface();
                         runtime.stop();
