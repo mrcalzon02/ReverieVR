@@ -58,7 +58,12 @@ int main(){
     assert(recovered.helm_upgrades==save.fishing.journal.helm_upgrades);
     HelmWheel wheel;
     WheelHand left{.2,0.,0.,true},right{-.2,0.,0.,false};
-    wheel.Update(left,right);left={0.,.2,0.,true};
+    wheel.Update(left,right);
+    // Real controller movement is sampled in smaller arcs; a single 90 degree
+    // teleport is intentionally rejected by the discontinuity guard.
+    left={.1414213562373095,.1414213562373095,0.,true};
+    wheel.Update(left,right);
+    left={0.,.2,0.,true};
     auto fb=wheel.Update(left,right);
     assert(fb.ticks>0u&&wheel.RudderTarget()>0.);
     const double angle=wheel.angle;
