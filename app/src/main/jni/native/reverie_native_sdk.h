@@ -393,6 +393,14 @@ static inline int ReverieNativeApiHasMandatoryV1(
             >= REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE;
 }
 
+static inline int ReverieNativeApiSupportsPrepareFrameV1(
+    const ReverieNativeModuleApiV1 *api
+) {
+    return ReverieNativeApiHasMandatoryV1(api)
+        && api->struct_size >= REVERIE_NATIVE_MODULE_API_V1_PREPARE_FRAME_MIN_SIZE
+        && api->prepare_frame != NULL;
+}
+
 static inline const ReverieNativeModuleCapabilitiesV1 *
 ReverieNativeApiCapabilitiesV1(
     const ReverieNativeModuleApiV1 *api

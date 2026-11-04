@@ -1169,6 +1169,31 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
 
 extern "C"
 JNIEXPORT jboolean JNICALL
+Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativePrepareFrame(
+    JNIEnv *,jclass,jlong handle
+) {
+    NativeSession* session=FromHandle(handle);
+    if(!session || !session->api || !session->instance || !session->gl_ready){
+        SetError("Native prepare-frame called without a live GL context.");
+        return JNI_FALSE;
+    }
+    if(!ReverieNativeApiSupportsPrepareFrameV1(session->api))
+        return JNI_TRUE;
+    DrainInheritedGlErrors(session,"prepare-frame",-1);
+    int32_t ok=0;
+    {
+        CallbackSessionScope scope(session);
+        ok=session->api->prepare_frame(session->instance);
+    }
+    if(ok==0){
+        SetError(std::string("Native prepare-frame failed module=")+session->spec->id);
+        return JNI_FALSE;
+    }
+    return JNI_TRUE;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
 Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeRenderEye(
     JNIEnv *env,
     jclass,

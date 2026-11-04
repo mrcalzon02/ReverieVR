@@ -323,6 +323,9 @@ typedef struct ReverieNativeModuleApiV1 {
      * from struct_size before reading it. NULL means no declared capabilities.
      */
     const ReverieNativeModuleCapabilitiesV1 *capabilities;
+
+    /* Optional GL-owner pre-eye stage, guarded by struct_size. */
+    int32_t (*prepare_frame)(void *instance);
 } ReverieNativeModuleApiV1;
 
 #define REVERIE_NATIVE_MODULE_API_V1_MIN_SIZE \
@@ -331,6 +334,9 @@ typedef struct ReverieNativeModuleApiV1 {
 #define REVERIE_NATIVE_MODULE_API_V1_CAPABILITIES_MIN_SIZE \
     ((uint32_t)(offsetof(ReverieNativeModuleApiV1, capabilities) \
         + sizeof(((ReverieNativeModuleApiV1 *)0)->capabilities)))
+#define REVERIE_NATIVE_MODULE_API_V1_PREPARE_FRAME_MIN_SIZE \
+    ((uint32_t)(offsetof(ReverieNativeModuleApiV1, prepare_frame) \
+        + sizeof(((ReverieNativeModuleApiV1 *)0)->prepare_frame)))
 
 typedef const ReverieNativeModuleApiV1 *
     (*ReverieNativeModuleEntryV1)(void);

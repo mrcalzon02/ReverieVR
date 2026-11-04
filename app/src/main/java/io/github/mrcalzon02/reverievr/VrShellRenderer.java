@@ -2211,6 +2211,18 @@ final class VrShellRenderer implements CardboardView.Renderer {
             updateNativeModuleInteraction(
                 frameNanos
             );
+            // Once per logical frame, never in left/right eye draw callbacks.
+            if(nativeSurfaceReady && nativeModuleRuntime!=null
+                && nativeModuleRuntime.isRunning()
+                && !nativeModuleRuntime.prepareFrame()){
+                noteNativeModuleFailure(nativeModuleRuntime.getActiveModuleId());
+                nativeModuleRuntime.releaseSurface();
+                nativeSurfaceReady=false;
+                host.onNativeModuleStopRequested();
+                mode=MODE_HOME;
+                hoveredButton=-1;
+                textureDirty=true;
+            }
             return;
         }
 

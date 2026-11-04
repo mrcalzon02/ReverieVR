@@ -451,6 +451,15 @@ final class NativeModuleRuntime implements AutoCloseable {
         return handle==0L ? 0L : nativeDrainSpatialSoundCues(handle);
     }
 
+    // Once in GL-owning onNewFrame, between update and both eye draws.
+    synchronized boolean prepareFrame(){
+        if(handle==0L)return false;
+        final boolean ready=nativePrepareFrame(handle);
+        if(!ready)ReverieLog.incident("NATIVE_MODULE",
+            "Native frame preparation failed: "+getLastError());
+        return ready;
+    }
+
     synchronized boolean renderEye(
         int eyeIndex,
         float[] view,
@@ -570,6 +579,8 @@ final class NativeModuleRuntime implements AutoCloseable {
         float listenerX,float listenerY,float listenerZ,
         float listenerRightX,float listenerRightZ
     );
+
+    private static native boolean nativePrepareFrame(long handle);
 
     private static native boolean nativeRenderEye(
         long handle,
