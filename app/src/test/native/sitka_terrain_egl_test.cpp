@@ -2,6 +2,7 @@
 // Synthetic triangle is a test fixture, NEVER approved Sitka geography.
 #include "../../main/jni/native/sitka_terrain_gl.h"
 #include "../../main/jni/native/sitka_water_gl.h"
+#include "../../main/jni/native/sitka_seafloor_mesh.h"
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 #include <array>
@@ -209,6 +210,42 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
           "right-eye authored ambient not applied");
     Check(std::abs(int(dim_left[0])-int(dim_right[0]))<=2,
           "authored lighting differs between stereo eyes");
+    // Test-only bathymetry, not approved Sitka seafloor. Native VBO data is
+    // built once from actual source-cell geometry, then shared by both eyes.
+    reverie::sitka::BathyTile bed;
+    bed.columns=3u;bed.rows=3u;
+    bed.first_east=-.5;bed.first_north=.5;
+    bed.east_step=.5;bed.north_step=.5;
+    bed.datum_id=reverie::sitka::BathyDatumId("NAVD88");
+    bed.elevations_m.assign(9u,-.15f);
+    bed.qualities.assign(9u,reverie::sitka::BedQuality::Survey);
+    const auto floor=reverie::sitka::BuildSeafloorTerrain(bed,0.,0.);
+    Check(floor.indices.size()==24u,"real seabed triangles not created");
+    terrain.Release();
+    const Snapshot before_seafloor=Capture();
+    Check(terrain.CreateWithExtras(mesh,{floor},
+        reverie::sitka::ParseLighting(LightingProfile(100)),&error),
+        "real-driver underwater mesh VBO create failed");
+    Check(terrain.upload_count()==2u,"land and seabed static batches not uploaded");
+    Same(before_seafloor,Capture());
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot eye_state=Capture();
+        auto eye=Eye(index);
+        eye.view[5]=0.f;eye.view[9]=1.f;
+        eye.view[6]=-1.f;eye.view[10]=0.f;
+        Check(terrain.RenderEye(&eye),"seabed real driver eye draw failed");
+        Same(eye_state,Capture());
+        Check(terrain.upload_count()==2u,"seabed reuploaded per eye");
+    }
+    glFinish();
+    const auto seabed_left=Pixel(32,32),seabed_right=Pixel(96,32);
+    Check(seabed_left[1]>85 && seabed_left[1]>seabed_left[0],
+          "left eye did not render actual triangulated seabed");
+    Check(seabed_right[1]>85 && seabed_right[1]>seabed_right[0],
+          "right eye did not render actual triangulated seabed");
+
     // Test-only synthetic water, not approved geographic data.
     const auto waters=reverie::sitka::ParseWater(
         "version=1\nlevel=sitka\ncount=1\n"

@@ -241,3 +241,23 @@ Lato depth display, playable launcher or real on-device sonar**.
 
 Follow the [bathymetry/boat milestone](SITKA_BATHYMETRY_AND_BOAT_SPEC.md)
 before installing assets or calling this geographically accepted.
+
+## NoData-safe low-poly seafloor geometry + GLES2 reuse — 2026-11-04
+
+`sitka_seafloor_mesh.h` turns source-covered bathymetry rasters into
+rebased terrain vertices and conservative low-poly triangles. Its
+optional stride selection checks every underlying cell before emitting
+a decimated quad, so no artificial floor bridges gaps. Existing
+`TerrainGl::CreateWithExtras` uploads the additional indexed buffers
+under the **same** land shader and GL-state guard; per-eye rendering
+does not regenerate geometry or change simulation time. The source-only
+Sitka module loads reviewed bathymetry assets and bakes the sea floor
+once per GL context, with a 300,000-vertex visual cap pending streamer
+and Daydream performance acceptance.
+
+The GLES2 real-driver regression includes artificial seabed pixel
+readbacks in both viewports, static upload counts, state restoration
+and unshared context recreation. This is synthetic-only GL proof,
+not a full coastal runtime: the provisional water shader stays opaque,
+true coastline clipping/LOD streaming and visible boat gauge remain
+open. No real Sitka geography or bathymetric dataset is distributed.

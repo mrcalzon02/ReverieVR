@@ -5,6 +5,7 @@
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
 #include "sitka_bathymetry.h"
+#include "sitka_seafloor_mesh.h"
 #include <array>
 #include <cstdint>
 #include <new>
@@ -153,7 +154,29 @@ int32_t OnGlCreated(void* instance) {
     State* state = static_cast<State*>(instance);
     if (!state) return 0;
     std::string error;
-    if(!state->gl.Create(state->terrain,state->lighting,&error)){
+    // Bake real-data seabed vertices once on context creation, not per eye.
+    // Until streaming/visibility culling is implemented, reject an oversized
+    // visual world instead of silently rendering only part of the coastline.
+    std::vector<reverie::sitka::TerrainMesh> sea_floor;
+    try {
+        size_t count=0u;
+        for(const auto& bathy:state->bathymetry.Tiles()){
+            auto mesh=reverie::sitka::BuildSeafloorTerrain(bathy,
+                state->terrain.origin_east,state->terrain.origin_north);
+            if(mesh.indices.empty())continue;
+            count+=mesh.vertices.size();
+            if(count>300000u)
+                throw std::invalid_argument(
+                    "Sitka seabed needs streaming LOD beyond 300k vertices");
+            sea_floor.push_back(std::move(mesh));
+        }
+        if(sea_floor.empty())
+            throw std::invalid_argument("No valid Sitka seabed triangles");
+    }catch(const std::exception& e){
+        Log(state->host,e.what());return 0;
+    }
+    if(!state->gl.CreateWithExtras(state->terrain,sea_floor,
+                                   state->lighting,&error)){
         Log(state->host,error.c_str());return 0;
     }
     if(state->water_gl.Create(state->waters,state->weather,&error))return 1;

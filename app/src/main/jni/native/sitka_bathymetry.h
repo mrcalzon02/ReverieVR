@@ -205,6 +205,7 @@ public:
         return {};
     }
     size_t tile_count()const{return tiles_.size();}
+    const std::vector<BathyTile>& Tiles()const{return tiles_;}
 private:
     std::vector<BathyTile> tiles_;
 };

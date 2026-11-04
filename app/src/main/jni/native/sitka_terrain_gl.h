@@ -12,7 +12,9 @@
 #include <GLES2/gl2.h>
 #include <cstddef>
 #include <cmath>
+#include <iterator>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace reverie { namespace sitka {
@@ -29,6 +31,14 @@ public:
     // Must run on the active shell GL context. Release before context loss.
     bool Create(const TerrainMesh& mesh, const Lighting& lighting,
                 std::string* error = nullptr) {
+        return CreateWithExtras(mesh,{},lighting,error);
+    }
+    // Optional vetted seafloor batches share the existing terrain program,
+    // ambient shader and indexed draw path; no duplicate per-eye resources.
+    bool CreateWithExtras(const TerrainMesh& mesh,
+                          const std::vector<TerrainMesh>& seafloor,
+                          const Lighting& lighting,
+                          std::string* error = nullptr) {
         if(!std::isfinite(lighting.ambient_scale) ||
            lighting.ambient_scale < .5f || lighting.ambient_scale > 1.5f) {
             if(error)*error = "Invalid authored Sitka ambient intensity";
@@ -73,6 +83,13 @@ public:
         }
         try {
             auto packed = PackTerrainGles2(mesh);
+            for(const auto& floor : seafloor){
+                if(floor.indices.empty())continue;
+                auto extra=PackTerrainGles2(floor);
+                packed.insert(packed.end(),
+                    std::make_move_iterator(extra.begin()),
+                    std::make_move_iterator(extra.end()));
+            }
             for (const auto& batch : packed) {
                 GpuBatch gpu;
                 glGenBuffers(1, &gpu.vertex);

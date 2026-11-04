@@ -3,7 +3,7 @@
 **Game:** Sitka, inside the single main ReverieVR Android APK.
 **Decision (2026-11-04):** Model land and underwater terrain from real, provenance-checked datasets, using the existing deterministic native simulation and GLES2 terrain engine. The seabed and boat depth finder share one geographically anchored world. No fabricated seabed, arbitrary map rectangles, online dependencies or invented soundings may masquerade as sourced Sitka.
 
-**Current state:** CPU-only bathymetry raster exporter, strict native tile parser/sampler, boat depth and skiff movement rules, native prototype asset-loader integration and synthetic-data regression fixtures. This is **source-only**: Sitka remains unregistered, without approved geographic data, a playable boat, a visible depth gauge, underwater GL mesh or physical Galaxy S9 evidence.
+**Current state:** An offline bathymetry raster exporter, native tile parser/sampler, boat depth and skiff movement rules, a NoData-safe low-poly seabed triangulator and optional seafloor VBO rendering in the source-only Sitka terrain module. Synthetic-data native and real-Mesa regression fixtures exist. This remains **source-only**: Sitka is unregistered, without approved geographic data, a launched boat, an on-screen depth gauge, a legally sourced coastal scene or physical Galaxy S9 evidence.
 
 ## 1. Data authority for a multi-mile world
 
@@ -65,7 +65,7 @@ The skiff model is fixed 30 Hz, gently accelerates with a 4 m/s target cap, resp
 
 1. Acquire approved downtown / harbor land DEM and NOAA bathymetric survey/composite files; audit actual coverage and vertical datum; hash source and conversion metadata.
 2. Bake and validate a real harbor chunk, plus an aligned public shoreline, water footprint and small navigable boat launch area. Synthetic CI fixtures cannot be staged as geography.
-3. Create underwater **visual mesh** only from covered seabed cells, with no triangles spanning NoData. Share indexed GLES2 VBOs across both eyes, decimate far tiles, and validate budget under Galaxy S9 sustained rendering.
+3. Validate and optimize the **implemented source-only underwater mesh** against actual licensed seabed/water masks. The C++ geometry baker refuses triangles spanning NoData, the terrain GLES2 renderer uploads shared 16-bit batches once per context, and the unregistered prototype has a conservative 300,000-vertex visual ceiling until streaming/visibility culling exists. Prove water/land clipping and measured Galaxy S9 performance.
 4. Bind a real skiff model, launch/dock, input actions, collision, fixed-step water movement and the 4 Hz depth model in the actual native game, not as an inert launcher item.
 5. Implement depth/clearance HUD using the licensed Lato glyph atlas, with clear missing/estimated labels. Verify water-surface and sea-floor datum, tide changes, and high/low-grounding cases.
 6. Expand to continuous multi-mile coastal cells, ferry/boat corridors and inshore/offshore fishing. Stream adjacent cells with stable projected origins, seamless geographic boundaries, LOD and versioned save identities.
@@ -73,3 +73,29 @@ The skiff model is fixed 30 Hz, gently accelerates with a 4 m/s target cap, resp
 8. Package approved source assets with attribution into the single ReverieVR APK and verify offline launch, two-eye parity, saves, real hardware inputs, comfort and sustained 30 FPS on the Galaxy S9.
 
 Native regression: deterministic C++ parse/sampling/draft/NoData/index/datum/tick/boat tests under GCC and Clang, plus Python GIS fixture for projected GeoTIFF export and source/license rejection. No code-stage pass alone means playable Sitka, actual bathymetric coverage, installed APK or device acceptance.
+
+## Source-only visual seabed renderer milestone — 2026-11-04
+
+The native `sitka_seafloor_mesh.h` baker now converts genuine tile-sample
+elevations into low-poly terrain coordinates rebased against the existing
+land mesh origin. It chooses a bounded LOD stride; a decimated quad is
+emitted only if **all** covered source pixels are valid, so it cannot
+draw a solid fabricated floor across a bathymetry gap. Color is a tiny
+source-derived PSX palette, not a downloaded texture.
+
+Existing `TerrainGl::CreateWithExtras` uploads land and seabed into the
+**same** GLES2 shader and draw-batch path, preserving the old land-only
+`Create` call for compatibility. Static VBO/EBO allocations occur once
+per GL context, not per eye; the native source-only Sitka module now
+loads bathymetry index+tiles and bakes additional meshes at context create.
+Missing survey coverage is never rendered as a triangle. Full-atlas
+visual admission has a conservative 300,000-vertex guard; the proper
+multi-mile streaming/LOD renderer is still a separate integration phase.
+
+This does not implement water transparency, underwater visibility/fog,
+terrain-water shoreline masks, multi-mile continuous rendering, an
+instrument drawn in the boat console or real Sitka geographic assets.
+The existing water shader is provisionally **opaque**; the seabed will
+therefore generally not be visible through the surface from above until
+the water renderer gains appropriate depth/opacity treatment. Real
+Mesa stereo/context-loss validation and on-device profiling are required.

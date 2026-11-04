@@ -5,7 +5,7 @@
 ## Source-only seafloor and boat instrument milestone — 2026-11-04
 
 Sitka now has a **source-only, deterministic bathymetric tile converter and native
-depth-finder/skiff model**, in addition to its existing terrain, water/weather,
+depth-finder/skiff model plus source-only triangulated seabed rendering**, in addition to its existing terrain, water/weather,
 lighting and fishing building blocks. NOAA/USGS-derived real world cells still
 have to be acquired and checked for horizontal/vertical datum, source rights
 and coverage; no real Sitka depth reading is displayed yet. The prototype
