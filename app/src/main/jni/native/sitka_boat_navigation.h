@@ -42,7 +42,8 @@ inline std::array<std::string,3> BoatSounderLabels(const DepthReading& depth){
         <<"KEEL "<<depth.under_keel_m<<" m"
         <<(depth.status==DepthStatus::UnderKeel?" SHALLOW":" SAFE");
     const std::string source=depth.quality==BedQuality::Survey?"SURVEY":
-                             depth.quality==BedQuality::Composite?"COMPOSITE":"UNKNOWN";
+                             depth.quality==BedQuality::Composite?"COMPOSITE":
+                             depth.quality==BedQuality::Procedural?"PROCEDURAL":"UNKNOWN";
     return {{water.str(),clearance.str()+" / "+source,disclaimer}};
 }
 

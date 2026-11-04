@@ -132,6 +132,43 @@ def bake(raster, provenance, output_dir, intervals=256):
                 }))
         if not candidate:
             raise ValueError("raster has no valid bathymetric cells")
+        # Fixed, licensed guidepoints are chosen before lazy tile loading.
+        # A procedural gap is stable regardless of cache eviction history.
+        guides = []
+        row_stride = max(1, math.ceil(ds.height / 16))
+        col_stride = max(1, math.ceil(ds.width / 16))
+        for row in range(0, ds.height, row_stride):
+            for col in range(0, ds.width, col_stride):
+                z = band[row, col]
+                if np.ma.is_masked(z) or not math.isfinite(float(z)):
+                    continue
+                elevation = float(z)
+                if source["encoding"] == "positive_down_depth":
+                    if elevation < 0:
+                        raise ValueError("negative guide in positive-down raster")
+                    elevation = -elevation
+                if not -12000. <= elevation <= 100.:
+                    raise ValueError("guidepoint out of elevation bounds")
+                east, north = ds.xy(row, col)
+                guides.append((east, north, elevation))
+        seed = source.get("procedural_world_seed", 726392041)
+        reference = source.get("procedural_water_reference_m", 0.)
+        radius = source.get("procedural_influence_radius_m", 1500.)
+        if type(seed) is not int or not 0 <= seed <= 18446744073709551615:
+            raise ValueError("invalid procedural world seed")
+        if not isinstance(reference, (int, float)) or not math.isfinite(reference) or abs(reference) > 100:
+            raise ValueError("invalid procedural water datum reference")
+        if not isinstance(radius, (int, float)) or not math.isfinite(radius) or not 10 <= radius <= 5000:
+            raise ValueError("invalid proximal radius")
+        lines = ["SITKA-PROCEDURAL-1", "datum " + source["vertical_datum"],
+                 "seed " + str(seed), "water_ref " + format(reference, ".17g"),
+                 "radius " + format(radius, ".17g"),
+                 "anchors " + str(len(guides))]
+        for east, north, z in guides:
+            lines.append(" ".join(format(value, ".17g")
+                                  for value in (east, north, z)))
+        guides_payload = "\n".join(lines) + "\n"
+
         output_dir.mkdir(parents=True, exist_ok=True)
         for name, payload, desc in candidate:
             target = output_dir / name
@@ -150,6 +187,16 @@ def bake(raster, provenance, output_dir, intervals=256):
             "tile_intervals": intervals,
             "tile_count": len(tiles),
             "index_schema": 2, "resident_tile_target": 2,
+            "procedural_guides": {
+                "file": "procedural-guides.txt",
+                "anchor_count": len(guides),
+                "world_seed": seed,
+                "water_reference_m": reference,
+                "influence_radius_m": radius,
+                "quality_label": "PROCEDURAL - GAME ONLY",
+                "sha256": hashlib.sha256(
+                    guides_payload.encode("ascii")).hexdigest(),
+            },
             "tiles": tiles,
             "source": source,
         }
@@ -166,6 +213,8 @@ def bake(raster, provenance, output_dir, intervals=256):
                       + "tiles " + str(len(tiles)) + "\n"
                       + "".join(tile_lines))
         (output_dir / "index.txt").write_text(tile_index, encoding="ascii")
+        (output_dir / "procedural-guides.txt").write_text(
+            guides_payload, encoding="ascii")
         (output_dir / "manifest.json").write_text(
             json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return manifest

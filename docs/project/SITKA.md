@@ -180,3 +180,11 @@ cache and predictive boundary loading. Read-only sonar samples never
 trigger disk IO, and missing data remains unknown. This is a
 source-only precursor to multi-mile rendered land and underwater
 streaming and an actual launchable boat, not proof of finished gameplay.
+
+## Survey-first / generated-world seabed
+
+The missing-bathymetry policy is now gameplay-oriented: where NOAA
+measurements exist they are retained, but unmeasured ocean is
+generated deterministically with proximal source guidance. Depth
+readings identify PROCEDURAL terrain. See the
+[bathymetry specification](SITKA_BATHYMETRY_AND_BOAT_SPEC.md).

@@ -55,9 +55,10 @@ inline TerrainMesh BuildSeafloorTerrain(const BathyTile& bathy,
         // Distinctive but economical original PSX seabed shades, no textures.
         const bool shallow=height> -25.f;
         const bool composite=bathy.qualities[i]==BedQuality::Composite;
-        const uint8_t red=composite?89u:shallow?92u:63u;
-        const uint8_t green=composite?92u:shallow?123u:88u;
-        const uint8_t blue=composite?94u:shallow?111u:106u;
+        const bool procedural=bathy.qualities[i]==BedQuality::Procedural;
+        const uint8_t red=procedural?69u:composite?89u:shallow?92u:63u;
+        const uint8_t green=procedural?101u:composite?92u:shallow?123u:88u;
+        const uint8_t blue=procedural?117u:composite?94u:shallow?111u:106u;
         mesh.vertices.push_back({static_cast<float>(east),height,
             static_cast<float>(north),red,green,blue});
     }

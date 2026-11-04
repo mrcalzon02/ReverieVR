@@ -16,7 +16,7 @@ namespace reverie { namespace sitka {
 constexpr unsigned kBathyMaxAxis=513u;
 constexpr size_t kBathyHeaderBytes=56u;
 constexpr unsigned kBathyMaxTiles=16u;
-enum class BedQuality : uint8_t { Missing=0, Survey=1, Composite=2 };
+enum class BedQuality : uint8_t { Missing=0, Survey=1, Composite=2, Procedural=3 };
 struct BedSample {
     bool known=false;
     double elevation_m=0.;

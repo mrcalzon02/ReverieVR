@@ -272,3 +272,14 @@ boat model is available. A 40-tile simulated route and CSV trace are
 tested in GitHub Actions. The current shader still needs explicit
 GL-safe in-motion tile switching, land/city streaming and actual verified
 USGS/NOAA input; runtime mobile frame-time evidence does not yet exist.
+
+## Proximal procedural seabed infill
+
+Survey/composite bathymetry retains precedence. A new deterministic
+seeded value-noise layer fills missing source pixels and ocean tiles,
+blended by fixed source-derived guidepoints from the raster exporter.
+Generated tiles use world-anchored 256 m regions and a 16 m sample
+grid, so traversing and reloading them does not change shape.
+Only authored water footprints receive geometry. Generated sonar
+depth quality is shown as PROCEDURAL. Runtime GPU swap during boat
+travel and real licensed Sitka data still remain outstanding.

@@ -1,7 +1,7 @@
 # Sitka — Surveyed Seafloor, Bathymetric World and Boat Depth Finder
 
 **Game:** Sitka, inside the single main ReverieVR Android APK.
-**Decision (2026-11-04):** Model land and underwater terrain from real, provenance-checked datasets, using the existing deterministic native simulation and GLES2 terrain engine. The seabed and boat depth finder share one geographically anchored world. No fabricated seabed, arbitrary map rectangles, online dependencies or invented soundings may masquerade as sourced Sitka.
+**Decision (2026-11-04):** Model land and underwater terrain from real, provenance-checked datasets, using the existing deterministic native simulation and GLES2 terrain engine. The seabed and boat depth finder share one geographically anchored world. Real hydrography remains authoritative where known. Unmeasured ocean floor is filled with deterministic **PROCEDURAL** game geometry, never mislabeled as a surveyed sounding.
 
 **Current state:** An offline bathymetry raster exporter, native tile parser/sampler, boat depth and skiff movement rules, a NoData-safe low-poly seabed triangulator and optional seafloor VBO rendering in the source-only Sitka terrain module. Synthetic-data native and real-Mesa regression fixtures exist. This remains **source-only**: Sitka is unregistered, without approved geographic data, a launched boat, an on-screen depth gauge, a legally sourced coastal scene or physical Galaxy S9 evidence.
 
@@ -9,7 +9,8 @@
 
 - **Land:** USGS Alaska IfSAR / 3DEP bare-earth 5 m DEM for broad coverage, with the higher-resolution Alaska DGGS/NOAA 2018 Sitka DTM where its real license and tile footprint overlap the selected world cells. Do not use the vegetation/building DSM as the bare-earth terrain.
 - **First-choice seafloor:** NOAA NCEI National Ocean Service hydrographic survey grids (validated BAG and multibeam products) for surveyed harbors and coastal channels.
-- **Fallback seafloor:** NOAA NCEI coastal relief/CUDEM products, tagged COMPOSITE with source resolution and uncertainty. Sparse track soundings or broad composite grids cannot become fabricated precise shallows.
+- **Secondary sourced seafloor:** NOAA NCEI coastal relief/CUDEM products, tagged COMPOSITE with source resolution and uncertainty.
+- **Gameplay infill:** Deterministic globally seeded seafloor, influenced by proximal approved guidepoints and tagged PROCEDURAL where actual source data is unavailable.
 - **City:** approved OpenStreetMap/municipal vectors for irregular roads, authentic footprint polygons, grade, trails and public waterfront, with attribution/license reviews.
 
 References:
@@ -21,7 +22,7 @@ References:
 
 Each approved source records provider, dataset/survey ID, download/acquisition date, version, licensed redistribution rights, source and output SHA-256, horizontal/vertical CRS/datum, tile coverage, sampling resolution, vertical-transform method/uncertainty and source-quality classification.
 
-**Coordinates:** +X east, +Y up, +Z north. Original projected/metre anchors remain doubles; GPU positions use local, rebased floats. **Never mix MLLW, NAVD88 or other land/seabed/tide vertical datums silently.** The exporter requires the declared terrain and bathymetry datum to match exactly after independently validated preprocessing (VDatum where actually supported). There is no automatic datum conversion, Google data extraction, network access or fake asset fallback.
+**Coordinates:** +X east, +Y up, +Z north. Original projected/metre anchors remain doubles; GPU positions use local, rebased floats. **Never mix MLLW, NAVD88 or other land/seabed/tide vertical datums silently.** The exporter requires the declared terrain and bathymetry datum to match exactly after independently validated preprocessing (VDatum where actually supported). There is no automatic datum conversion, Google data extraction or network access. Intentional seeded marine terrain is allowed as clearly labeled gameplay infill, not as factual geographic data.
 
 ## 2. Implemented source-only tile and conversion contract
 
@@ -55,7 +56,7 @@ For a valid boat sample within an authored water footprint:
 - status = safe, shallow/under-keel, dry, outside water or NO DATA;
 - source quality = SURVEY or COMPOSITE.
 
-The water-surface level must come from an authored game tide model in the *same vertical datum*, **not a claimed real-time Sitka tide prediction**. The depth finder refreshes every 0.25 seconds on the simulation update, never during either-eye drawing. Missing coverage is clearly reported and never extrapolated.
+The water-surface level must come from an authored game tide model in the *same vertical datum*, **not a claimed real-time Sitka tide prediction**. The depth finder refreshes every 0.25 seconds on the simulation update, never during either-eye drawing. Unmeasured seabed beneath an approved water footprint receives a separately flagged PROCEDURAL depth. Outside water, invalid datum/configuration and unavailable gameplay coverage remain NO DATA.
 
 The skiff model is fixed 30 Hz, gently accelerates with a 4 m/s target cap, responds to bounded throttle/rudder, blocks movement into off-water, unsafe-depth or NoData zones, and never forces head/camera roll or yaw. The vessel draft is a gameplay attribute, not a factual real-boat measurement.
 
@@ -141,3 +142,31 @@ multi-mile adjacent tile seams and stable building IDs. Measure host
 IO/decode p95/p99, dropped stereo frames, true RSS/GPU bytes and sustained
 Galaxy S9 30 FPS before accepting performance. Never reuse stale seabed
 depth as a current sonar reading across an unloaded region.
+
+## Procedural proximal seafloor — gameplay policy (2026-11-04)
+
+The survey-first world no longer ends at a missing NOAA sounding. New
+`sitka_procedural_seabed.h` supplies deterministic world-coordinate noise
+with a fixed world seed and gradual weighting from nearby real bathymetry
+guidepoints, independent of tile load/eviction order. At shared generated
+tile edges, positions and heights match exactly. Ocean coverage is
+restricted to authored water polygons, not arbitrary land generation.
+
+The approved GeoTIFF exporter writes `procedural-guides.txt` with at
+most 256 fixed, source-derived guidepoints, source-datum ID, world seed,
+game reference water level and proximal influence radius. The manifest
+stores a SHA-256 of this guidance and marks it PROCEDURAL - GAME ONLY.
+
+Loaded SOURCE cells always override generation. When one of their
+pixels is missing, the gap-filler can replace it using the same
+procedural height function, without modifying any surveyed cell.
+Outside the source directory the same function generates a 256 m
+world-aligned tile with 16 m samples for water-mask-approved locations.
+Boat soundings must label these heights PROCEDURAL, never SURVEY.
+
+These are video-game depths, not navigation-grade soundings. The
+unregistered native Sitka prototype now has source+generated mesh
+authoring logic but no actual commissioned NOAA tiles, launched
+boat, on-screen depth finder or proven dynamic GL tile swap yet.
+Device runtime latency/thermal and real source-guidance blending
+are still unverified.

@@ -6,6 +6,7 @@
 #include "sitka_fishing_spots.h"
 #include "sitka_bathymetry.h"
 #include "sitka_bathymetry_stream.h"
+#include "sitka_procedural_seabed.h"
 #include "sitka_seafloor_mesh.h"
 #include <array>
 #include <cstdint>
@@ -28,6 +29,7 @@ struct State {
     reverie::sitka::FishingSession fishing;
     reverie::sitka::BathyAtlas bathymetry; // V1 source compatibility.
     std::unique_ptr<reverie::sitka::BathyStreamCache> stream;
+    std::unique_ptr<reverie::sitka::ProceduralSeabed> generated;
     double last_focus_east=0.,last_focus_north=0.;
     bool has_focus=false;
 };
@@ -118,6 +120,14 @@ void* Create(const ReverieNativeHostV1* host) {
             if(index_bytes.compare(0,20,"SITKA-BATHY-INDEX-2\n")==0){
                 state->stream.reset(new reverie::sitka::BathyStreamCache(
                     reverie::sitka::ParseBathyStreamIndex(index_bytes)));
+                // This small guide file is deterministic, derived offline
+                // from the approved raster. No runtime RNG and no tile
+                // load-order influence on generated bathymetric cells.
+                const std::string guide=ReadText(host,
+                    "sitka/bathymetry/procedural-guides.txt",32000u);
+                state->generated.reset(new reverie::sitka::ProceduralSeabed(
+                    reverie::sitka::ParseSeabedGeneration(
+                        guide,state->stream->directory().datum_id)));
                 // One initial cell at the available terrain origin, if covered;
                 // never decode all source tiles at launch. Later updates follow
                 // the editor/listener; real boat binding is a separate milestone.
@@ -184,8 +194,20 @@ int32_t OnGlCreated(void* instance) {
     std::vector<reverie::sitka::TerrainMesh> sea_floor;
     try {
         size_t count=0u;
+        const auto water_at=[&](double east,double north){
+            for(const auto& water:state->waters)
+                if(reverie::sitka::FootprintContains(water,
+                    static_cast<float>(east),static_cast<float>(north)))
+                    return true;
+            return false;
+        };
         const auto append=[&](const reverie::sitka::BathyTile& bathy){
-            auto mesh=reverie::sitka::BuildSeafloorTerrain(bathy,
+            // Real cells remain authoritative. The only procedural samples
+            // substituted are missing cells inside a known water footprint.
+            const auto mixed=state->generated?
+                reverie::sitka::FillSeabedGaps(bathy,*state->generated,water_at):
+                bathy;
+            auto mesh=reverie::sitka::BuildSeafloorTerrain(mixed,
                 state->terrain.origin_east,state->terrain.origin_north);
             if(mesh.indices.empty())return;
             count+=mesh.vertices.size();
@@ -196,6 +218,21 @@ int32_t OnGlCreated(void* instance) {
         };
         if(state->stream)state->stream->VisitResident(append);
         else for(const auto& bathy:state->bathymetry.Tiles())append(bathy);
+        if(state->stream&&state->generated){
+            const double east=state->terrain.origin_east;
+            const double north=state->terrain.origin_north;
+            // Outside NOAA coverage, generate an explicitly fictional
+            // source-independent 256m world tile, clipped to authored water.
+            // This also works when a coast has miles without observations.
+            if(state->stream->directory().Locate(east,north)<0){
+                const auto procedural=state->generated->GenerateTile(
+                    east,north,[&](double x,double z){
+                        return water_at(x,z)&&
+                            state->stream->directory().Locate(x,z)<0;
+                    });
+                append(procedural);
+            }
+        }
         // A boat's current region can be outside survey coverage. Render land
         // and water only, never fabricate a fallback seafloor. Dynamic GPU
         // tile swap requires a separate GL-bound frame-preparation callback.

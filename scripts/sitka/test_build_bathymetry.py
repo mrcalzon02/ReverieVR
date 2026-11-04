@@ -79,6 +79,18 @@ class BathymetryBakerTest(unittest.TestCase):
                           (output/"index.txt").read_text())
             self.assertEqual(result["index_schema"],2)
             self.assertEqual(result["resident_tile_target"],2)
+            guides=(output/"procedural-guides.txt").read_text()
+            self.assertTrue(guides.startswith("SITKA-PROCEDURAL-1\n"
+                                              "datum NAVD88\n"
+                                              "seed 726392041\n"))
+            self.assertIn("anchors 35\n", guides)
+            self.assertIn("480005 6299995 -8\n", guides)
+            self.assertEqual(result["procedural_guides"]["anchor_count"],35)
+            self.assertEqual(result["procedural_guides"]["quality_label"],
+                             "PROCEDURAL - GAME ONLY")
+            guide_sha=result["procedural_guides"]["sha256"]
+            self.assertEqual(bake(raster,provenance,output,3)
+                             ["procedural_guides"]["sha256"],guide_sha)
             self.assertEqual(result["tiles"][0]["valid_samples"],15)
             checksum=result["tiles"][0]["sha256"]
             self.assertEqual(bake(raster,provenance,output,3)["tiles"][0]["sha256"],
