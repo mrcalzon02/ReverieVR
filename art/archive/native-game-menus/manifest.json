@@ -23,9 +23,9 @@
         0,
         0
       ],
-      "bytes": 94214,
-      "eye_frame_crc32": 2968231001,
-      "sha256": "76e8d02934b9f0c94f58a336cc39fe0f6d4b8b60c24b8815497683bb895bd531"
+      "bytes": 94195,
+      "eye_frame_crc32": 3113570767,
+      "sha256": "7a6f54fc3c2bd1b4e1a697fe7636010a06343ce1e98bf4485d1a3708d547aa4a"
     },
     "classic-breakout": {
       "atlas_cell": [
@@ -140,9 +140,9 @@
         2,
         1
       ],
-      "bytes": 366391,
-      "eye_frame_crc32": 770394799,
-      "sha256": "e8d86d70ea8ed6b26f223e8f125aa30f4c169433bdf4ed391dd770c916a7e7ee"
+      "bytes": 366344,
+      "eye_frame_crc32": 1617957995,
+      "sha256": "59509cb481b220df2b027c95f1df7fea38fee98d29a3c6454bdfa7f271e11db6"
     }
   },
   "ordered_ids": [
