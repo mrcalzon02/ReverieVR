@@ -246,6 +246,50 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
     Check(seabed_right[1]>85 && seabed_right[1]>seabed_right[0],
           "right eye did not render actual triangulated seabed");
 
+    // Simulate region replacement BETWEEN stereo frames, not during an eye.
+    // Land remains resident and all staged-GPU failure paths preserve the
+    // previously visible seabed, with restored Cardboard GL bindings.
+    const Snapshot before_swap=Capture();
+    Check(terrain.land_batch_count()==1u,"land batch count lost");
+    Check(terrain.ReplaceSeafloor({floor},&error),
+          "real-driver seabed swap failed");
+    Check(terrain.batch_count()==2u&&terrain.upload_count()==3u&&
+          terrain.seabed_swap_count()==1u,
+          "first sea-floor transition did not replace just the sea");
+    Same(before_swap,Capture());
+    auto corrupt_floor=floor;
+    corrupt_floor.indices[0]=999999u;
+    Check(!terrain.ReplaceSeafloor({corrupt_floor},&error),
+          "invalid seabed transition accepted");
+    Check(terrain.batch_count()==2u&&terrain.upload_count()==3u&&
+          terrain.seabed_swap_count()==1u,
+          "failed terrain replacement damaged the committed GPU state");
+    Same(before_swap,Capture());
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot before_eye=Capture();
+        auto eye=Eye(index);
+        eye.view[5]=0.f;eye.view[9]=1.f;
+        eye.view[6]=-1.f;eye.view[10]=0.f;
+        Check(terrain.RenderEye(&eye),"updated tile stereo draw failed");
+        Same(before_eye,Capture());
+        Check(terrain.upload_count()==3u,
+              "GPU tile transition was repeated for second eye");
+    }
+    glFinish();
+    Check(Pixel(32,32)[1]>85&&Pixel(96,32)[1]>85,
+          "swapped terrain missing in one eye");
+    Check(terrain.ReplaceSeafloor({},&error),
+          "no-coverage seafloor clear failed");
+    Check(terrain.batch_count()==1u&&terrain.seabed_swap_count()==2u,
+          "land did not survive missing seafloor");
+    Check(terrain.ReplaceSeafloor({floor},&error),
+          "reentry to same surveyed seafloor failed");
+    Check(terrain.batch_count()==2u&&terrain.seabed_swap_count()==3u,
+          "return-region seafloor not staged");
+    Same(before_swap,Capture());
+
     // Test-only synthetic water, not approved geographic data.
     const auto waters=reverie::sitka::ParseWater(
         "version=1\nlevel=sitka\ncount=1\n"

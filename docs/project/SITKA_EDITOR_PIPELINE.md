@@ -283,3 +283,19 @@ grid, so traversing and reloading them does not change shape.
 Only authored water footprints receive geometry. Generated sonar
 depth quality is shown as PROCEDURAL. Runtime GPU swap during boat
 travel and real licensed Sitka data still remain outstanding.
+
+## GL-safe underwater tile replacement primitive
+
+`TerrainGl::ReplaceSeafloor` now supports a transactional seafloor-only
+VBO/EBO change on the owning GL thread. It stages validated new
+16-bit batches, verifies GL uploads, preserves immutable land buffers,
+and restores the shell's GL bindings. Failed stages retain the last
+committed seafloor. The Mesa regression tests valid tile swap,
+malformed transition rollback, no-coverage clearing, return travel,
+two-eye readback and unshared context recreation.
+
+**Wiring boundary:** The prototype still lacks a persistent, explicit
+once-per-frame GL preparation callback from the native shell. This
+safe swap method is a tested primitive, not yet proof that boat travel
+invokes it or that 30 FPS is sustainable. Never call it from either
+`render_eye` callback or the non-render simulation update thread.

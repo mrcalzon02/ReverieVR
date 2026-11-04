@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cmath>
 #include <iterator>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -83,6 +84,7 @@ public:
         }
         try {
             auto packed = PackTerrainGles2(mesh);
+            land_batches_=packed.size();
             for(const auto& floor : seafloor){
                 if(floor.indices.empty())continue;
                 auto extra=PackTerrainGles2(floor);
@@ -125,6 +127,87 @@ public:
         restore();
         return ready();
     }
+    // GL-owned transition operation: run between completed stereo frames
+    // on the render context thread, never from render_eye. Old land buffers
+    // are preserved; seabed replacement is fully staged before commit.
+    bool ReplaceSeafloor(const std::vector<TerrainMesh>& extras,
+                         std::string* error=nullptr){
+        if(!ready()||land_batches_==0u||land_batches_>batches_.size()){
+            if(error)*error="Sitka GL context unavailable for seabed swap";
+            return false;
+        }
+        std::vector<TerrainBatch> packed;
+        try{
+            for(const auto& tile:extras){
+                if(tile.indices.empty())continue;
+                auto batches=PackTerrainGles2(tile);
+                packed.insert(packed.end(),
+                    std::make_move_iterator(batches.begin()),
+                    std::make_move_iterator(batches.end()));
+            }
+            batches_.reserve(land_batches_+packed.size());
+        }catch(const std::exception& e){
+            if(error)*error=e.what();
+            return false;
+        }
+        ReverieNativeGlStateV1 state{};
+        ReverieNativeGlStateCaptureV1(&state);
+        GLint old_element=0;
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING,&old_element);
+        const auto restore=[&](){
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,
+                         static_cast<GLuint>(old_element));
+            ReverieNativeGlStateRestoreV1(&state);
+        };
+        std::vector<GpuBatch> prepared;
+        try{
+            prepared.reserve(packed.size());
+            for(const auto& data:packed){
+                GpuBatch gpu{};
+                glGenBuffers(1,&gpu.vertex);
+                glGenBuffers(1,&gpu.element);
+                if(!gpu.vertex||!gpu.element){
+                    if(gpu.vertex)glDeleteBuffers(1,&gpu.vertex);
+                    if(gpu.element)glDeleteBuffers(1,&gpu.element);
+                    throw std::runtime_error("Sitka streamed GPU allocation");
+                }
+                gpu.count=static_cast<GLsizei>(data.indices.size());
+                prepared.push_back(gpu); // Own handles prior to any upload.
+                glBindBuffer(GL_ARRAY_BUFFER,gpu.vertex);
+                glBufferData(GL_ARRAY_BUFFER,
+                    static_cast<GLsizeiptr>(data.vertices.size()*
+                                          sizeof(TerrainBatch::Vertex)),
+                    data.vertices.data(),GL_STATIC_DRAW);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,gpu.element);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                    static_cast<GLsizeiptr>(data.indices.size()*sizeof(uint16_t)),
+                    data.indices.data(),GL_STATIC_DRAW);
+                if(glGetError()!=GL_NO_ERROR)
+                    throw std::runtime_error("Sitka streamed GPU upload");
+            }
+        }catch(const std::exception& e){
+            for(const auto& gpu:prepared){
+                glDeleteBuffers(1,&gpu.vertex);
+                glDeleteBuffers(1,&gpu.element);
+            }
+            if(error)*error=e.what();
+            restore();
+            return false;
+        }
+        for(size_t i=land_batches_;i<batches_.size();++i){
+            if(batches_[i].vertex)glDeleteBuffers(1,&batches_[i].vertex);
+            if(batches_[i].element)glDeleteBuffers(1,&batches_[i].element);
+        }
+        batches_.resize(land_batches_);
+        for(const auto& gpu:prepared)batches_.push_back(gpu);
+        upload_count_+=prepared.size();
+        ++seabed_swaps_;
+        restore();
+        return true;
+    }
+    size_t land_batch_count()const{return land_batches_;}
+    size_t seabed_swap_count()const{return seabed_swaps_;}
+
     bool RenderEye(const ReverieNativeEyeV1* eye) const {
         if (!ready() || !ReverieNativeEyeRenderableV1(eye)) return false;
         ReverieNativeGlStateV1 state = {};
@@ -166,6 +249,7 @@ public:
         }
         batches_.clear();
         upload_count_ = 0u;
+        land_batches_=seabed_swaps_=0u;
         if (program_) glDeleteProgram(program_);
         program_ = 0u;
         matrix_ = -1;
@@ -180,6 +264,7 @@ private:
     float ambient_scale_ = 1.0f;
     std::vector<GpuBatch> batches_;
     size_t upload_count_ = 0u;
+    size_t land_batches_ = 0u,seabed_swaps_ = 0u;
 };
 }} // namespace reverie::sitka
 #endif
