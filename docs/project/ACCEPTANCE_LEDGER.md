@@ -1,3 +1,31 @@
+## 2026-11-04 — Sitka seabed data/boat depth-finder source acceptance
+
+**Source-only static accepted (not device-accepted):**
+Deterministic SITKAB01 bathymetry tiles with separate SURVEY/COMPOSITE/NoData
+quality, matched-datum validation, GeoTIFF provenance/encoding requirements,
+headset-independent 4 Hz boat depth and keel calculation, 30 Hz bounded
+skiff rules, conservative LOD seabed triangulation and shared GLES2
+terrain drawing path. Both [source commit 132db6c]
+(https://github.com/mrcalzon02/ReverieVR/commit/132db6ca0a8f690d82eb425ffd46dd6eaf7d24f8)
+and [render commit b7bed83]
+(https://github.com/mrcalzon02/ReverieVR/commit/b7bed83d7f7201701a495385a60380710dda5d02)
+are pushed. [Exact-commit seven-job content matrix]
+(https://github.com/mrcalzon02/ReverieVR/actions/runs/41917285055)
+**SUCCESS**: strict GCC/Clang CPU tests, pinned GIS Python fixtures,
+real Mesa stereoscopic pixel/state/context regression, ARMv7/ARM64
+source-only NDK link and project suite. All geographic samples in tests
+are explicitly synthetic.
+
+**Open / not accepted:** no real licensed NOAA/USGS bathymetry tile in
+repository, no verified matching vertical datum with USGS source terrain,
+no source-backed city/harbor coastline mask, no installed playable Sitka
+game or live boat/Lato gauge, no reference Galaxy S9 hardware/thermal
+proof. The underwater GLS rendering path is source-integrated but the
+current ocean surface remains opaque; from-above seabed visibility still
+requires depth-aware optical/alpha treatment. See
+[Sitka bathymetry specification](SITKA_BATHYMETRY_AND_BOAT_SPEC.md).
+
+---
 # ReverieVR Acceptance Ledger
 
 **Role:** authoritative admission record

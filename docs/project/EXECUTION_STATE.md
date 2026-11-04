@@ -1,3 +1,46 @@
+## 2026-11-04 — Sitka licensed-bathymetry contract, deterministic skiff depth model and real GLES2 seabed source proof
+
+**INTENT:** Expand Sitka's actual anchored terrain system into surveyed/composite
+seafloor, with a source-derived in-game boat depth finder. Do not claim
+fictional chart geometry, actual boat GPS/sonar, licensed real Sitka samples
+or completed wearable gameplay.
+
+**EXECUTE:** Added source-only GeoTIFF-to-SITKAB01 tile baking with explicit
+datum/encoding/provenance/NoData requirements, an exact bounded runtime
+tile/index reader, 4 Hz typed depth/under-keel gauge and deterministic 30 Hz
+skiff rules. The unregistered native Sitka prototype now requires matching
+host-scoped bathymetric assets and bakes hole-safe LOD low-poly seafloor
+triangles into the existing stereo GLES2 terrain renderer; original terrain
+rendering API remains usable. Extended the canonical whole-city/authoring
+specs and added a dedicated bathymetric development guide.
+
+**OBSERVE / VERIFY:** Remote main commits
+[132db6c](https://github.com/mrcalzon02/ReverieVR/commit/132db6ca0a8f690d82eb425ffd46dd6eaf7d24f8)
+and [b7bed83](https://github.com/mrcalzon02/ReverieVR/commit/b7bed83d7f7201701a495385a60380710dda5d02)
+were pushed through compare-and-swap with unrelated game changes preserved.
+Exact b7bed83 content-matrix workflow
+[41917285055](https://github.com/mrcalzon02/ReverieVR/actions/runs/41917285055)
+completed **success** across seven jobs: GCC/Clang bathymetry/boat/seabed
+tests, rasterio+pyproj synthetic GeoTIFF data export, real Mesa GLES2 stereo
+pixel/context-loss/state testing, ARMv7/ARM64 NDK source-only link, plus
+the prior native editor and other game gates.
+
+**STATUS:** Source-stage / static regression accepted only.
+**NOT ESTABLISHED:** Actual NOAA Sitka survey tile download, terrain-bathymetry
+vertical-datum reconciliation on real assets, source-licensed package staging,
+visible skiff/console, user-verified water access, source coverage across miles,
+real registered Sitka game, Android installed APK, physical Galaxy S9 thermal
+or binocular boat acceptance. Source-only visual renderer uses a conservative
+300k-vertex guard instead of claiming arbitrary terrain streaming.
+
+**NEXT:** Acquire real approved Sitka harbor source datasets/CRS metadata;
+verify datum/coverage, bake a genuine harbor coastal cell with water masks;
+author skiff launch/return and Lato depth-console scene; then instrument
+stereo FPS, NoData fallbacks and real Daydream input. Expand to genuine
+irregular downtown footprint models and road/path geometry once source
+coverage and consent are established.
+
+---
 ## 2026-10-28 — Home avatar mirror position / stereo projection repair
 
 **INTENT:** User's Galaxy S9 stereo screenshot shows the avatar drawn as a decal on mirror glass, not attached to its positional frame. Source inspection confirmed the avatar was drawn with unchanged mirror plane MVP while headset/controller used `HeadsetMirrorProjection`. Starting remote `main` was `9520438081a2fb0a060dc594280f7179a73ada66`.
