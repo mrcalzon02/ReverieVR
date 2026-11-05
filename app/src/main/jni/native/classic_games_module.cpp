@@ -1503,7 +1503,10 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         m->chessHoverSquare=hover;
         m->dirty=true;
     }
-    const int preview=m->board.selected>=0?m->board.selected:hover;
+    // The board is showing the prior legal position during the tween;
+    // do not paint destinations from the already-committed next position.
+    const int preview=m->chessTween.Active()?-1:
+        m->board.selected>=0?m->board.selected:hover;
     if(preview!=m->chessPreviewSquare ||
        m->chessPreviewPly!=m->board.ply){
         m->chessPreviewSquare=preview;
