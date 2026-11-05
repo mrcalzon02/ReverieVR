@@ -16,6 +16,7 @@ int main(){
         "sitka/water/sitka.water",
         "sitka/fishing/sites.txt",
         "sitka/boat/launch.txt",
+        "sitka/shore/waterfront.sitkash",
         "sitka/bathymetry/index.txt",
         "sitka/bathymetry/procedural-guides.txt"
     };
@@ -37,6 +38,9 @@ int main(){
         "sitka/bathymetry/sub/bathymetry-r00-c00.sitkab",
         "sitka/boat/../../native/omega-front/units/tank.png",
         "sitka/boat/boat.sav",
+        "sitka/shore/waterfront.sitkash.bak",
+        "sitka/shore/../boat/launch.txt",
+        "sitka/shore/unknown.sitkash",
         "sitka/coast/terrain.sitkam.bak",
         "sitka/water/other.water",
         "sitka/boat/launch.txt/",

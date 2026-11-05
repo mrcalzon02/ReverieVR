@@ -198,3 +198,8 @@ four-hertz survey-first/procedural depth pings. Geographic
 coordinates are correctly rebased for existing local water
 footprints. This is integrated source code and regression tests,
 not a playable game or a displayed boat HUD.
+
+
+## Shore-side source development — 2026-11-04
+
+The separate shore workstream now has a game-private `SITKA-SHORE-1` geometry importer and static massing baker for individually anchored polygon storefronts/canneries/warehouses, wharves, floating-pontoon proxies, pilings, volcanic shore rocks, forest backdrops, harbor shacks, bridge decks and sloped bridge approaches. This uses the **existing** terrain GLES2 batch renderer and preserves the existing independent seabed replacements, with no boat-system changes. It is **source-only**: the optional `sitka/shore/waterfront.sitkash` input has not been populated with approved real Sitka building polygons, structures, coastal heights or licenses; no new game launcher or APK content is implied. See `docs/native/PROCEDURAL_CONTENT_STANDARD.md` for schema/limits. Next: legally sourced harbor geometry and elevations, terrain/shore clipping, tile-level shore streaming/LOD, unique landmark exteriors, collision/nav, actual filtered or point-sampled approved PSX texture atlas, and in-headset/Daydream regression.

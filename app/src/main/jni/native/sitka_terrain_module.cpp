@@ -1,6 +1,7 @@
 // Source-only native terrain proof. Not registered as a playable game until
 // licensed Sitka geography, shell content scope and real activities exist.
 #include "sitka_terrain_gl.h"
+#include "sitka_shore_geometry.h"
 #include "sitka_water_gl.h"
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
@@ -120,6 +121,24 @@ void* Create(const ReverieNativeHostV1* host) {
         state->host = host;
         try {
             state->terrain=reverie::sitka::ParseTerrainMesh(bytes.data(),bytes.size());
+            // Optional, strictly scoped, source-anchored shore massing.
+            // Missing means no buildings/docks: never fabricate GIS data.
+            const char* shore_path="sitka/shore/waterfront.sitkash";
+            uint32_t shore_bytes=0u;
+            const int32_t shore_probe=host->read_asset(
+                shore_path,nullptr,0u,&shore_bytes);
+            if(shore_probe!=REVERIE_NATIVE_SAVE_NOT_FOUND){
+                if((shore_probe!=REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL &&
+                    shore_probe!=REVERIE_NATIVE_SAVE_OK) ||
+                   shore_bytes<14u ||
+                   shore_bytes>reverie::sitka::kMaxShoreTextBytes)
+                    throw std::invalid_argument("Invalid Sitka shore asset size");
+                const auto shore=reverie::sitka::ParseShoreLayout(
+                    ReadText(host,shore_path,
+                             static_cast<uint32_t>(
+                                reverie::sitka::kMaxShoreTextBytes)));
+                reverie::sitka::AppendShoreGeometry(state->terrain,shore);
+            }
             state->lighting=reverie::sitka::ParseLighting(ReadText(
                 host,"sitka/lighting/sitka.properties",4096u));
             state->waters=reverie::sitka::ParseWater(ReadText(
