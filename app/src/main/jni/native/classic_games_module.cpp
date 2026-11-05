@@ -23,6 +23,7 @@
 #include "classic_chess_book.h"
 #include "classic_chess_reference.h"
 #include "classic_chess_move_tween.h"
+#include "classic_chess_board_ui.h"
 #include "classic_chess_study.h"
 #include "classic_chess_sprite_atlas.h"
 #include "classic_chess_wood_atlas.h"
@@ -78,6 +79,8 @@ struct Module {
 #if CLASSIC_GAME_KIND == 5
     reverie::chessbook::Analysis chessAnalysis;
     reverie::chesstween::Move chessTween;
+    int chessThreatOverlay=reverie::chessui::Off;
+    bool chessNewGameOpen=false;
     int chessAnalyzedPly=-1;
     int chessPanelTab=0; // 0 = legal next move; 1 = indexed classical line
     bool chessPanelHover=false;
@@ -142,9 +145,17 @@ float BoardSpacing(const reverie::boardgames::State &s){
     return s.Size()==reverie::boardgames::State::kGoSize?.128f:.320f;
 }
 float BoardX(const reverie::boardgames::State &s,int x){
+#if CLASSIC_GAME_KIND == 5
+    if(s.kind==reverie::boardgames::Kind::Chess&&s.chessHumanColor==-1)
+        x=7-x;
+#endif
     return (x-(s.Size()-1)*.5f)*BoardSpacing(s);
 }
 float BoardY(const reverie::boardgames::State &s,int y){
+#if CLASSIC_GAME_KIND == 5
+    if(s.kind==reverie::boardgames::Kind::Chess&&s.chessHumanColor==-1)
+        y=7-y;
+#endif
     return ((s.Size()-1)*.5f-y)*BoardSpacing(s);
 }
 void BoardOutline(Module *m,float x,float y,float length,
@@ -533,6 +544,21 @@ void RebuildBoard(Module *m,bool fixed){
 #if CLASSIC_GAME_KIND == 5
         const int piece=s.kind==reverie::boardgames::Kind::Chess?
             m->chessTween.PieceAt(s.cells,cell):s.cells[cell];
+        if(!fixed && s.kind==reverie::boardgames::Kind::Chess &&
+           m->chessThreatOverlay!=reverie::chessui::Off) {
+            const auto &shown=m->chessTween.InFlight()?
+                m->chessTween.before:s.cells;
+            if(reverie::chessui::Highlight(s,shown,cell,
+                                          m->chessThreatOverlay)) {
+                const int mode=m->chessThreatOverlay;
+                BoardOutline(m,px,py,gap*.88f,
+                    mode==reverie::chessui::Opponent?.96f:
+                    mode==reverie::chessui::Neutral?.60f:.20f,
+                    mode==reverie::chessui::Human?.95f:
+                    mode==reverie::chessui::Neutral?.63f:.28f,
+                    mode==reverie::chessui::Human?.90f:.70f);
+            }
+        }
 #else
         const int piece=s.cells[cell];
 #endif
@@ -593,8 +619,8 @@ void RebuildBoard(Module *m,bool fixed){
 #if CLASSIC_GAME_KIND == 5
         // Trace the real committed Black move: amber origin, green arrival.
         // Rendering remains instantaneous, so never imply an invented path.
-        if(s.kind==reverie::boardgames::Kind::Chess && s.ply>=2 &&
-           s.ply%2==0 && s.side==1 && s.lastFrom>=0 &&
+        if(s.kind==reverie::boardgames::Kind::Chess && s.ply>=1 &&
+           s.side==s.chessHumanColor && s.lastFrom>=0 &&
            s.lastFrom<64 && s.lastTo>=0 && s.lastTo<64 &&
            (cell==s.lastFrom || cell==s.lastTo)){
             const bool arrived=cell==s.lastTo;
@@ -634,8 +660,10 @@ void RebuildBoard(Module *m,bool fixed){
         const float gap=BoardSpacing(s);
         const auto drawMoving=[&](int piece,int from,int to){
             if(!piece||from<0||to<0)return;
-            const float x=(anim.FileAt(from,to)-3.5f)*gap;
-            const float y=(3.5f-anim.RankAt(from,to))*gap;
+            const float file=anim.FileAt(from,to);
+            const float rank=anim.RankAt(from,to);
+            const float x=((s.chessHumanColor==-1?7.f-file:file)-3.5f)*gap;
+            const float y=(3.5f-(s.chessHumanColor==-1?7.f-rank:rank))*gap;
             Disc(m,x,y,.148f,-2.949f,.60f,.49f,.29f);
             Disc(m,x,y,.140f,-2.940f,
                  piece>0?.085f:.93f,piece>0?.115f:.90f,
@@ -652,11 +680,14 @@ void RebuildBoard(Module *m,bool fixed){
         Text(m,"TWO PASSES: REVIEW DEAD GROUPS",0,-1.58f,.040f,
              .80f,.90f,.87f);
     }else if(fixed){
+#if CLASSIC_GAME_KIND == 5
+        if(s.kind!=reverie::boardgames::Kind::Chess)
+            Text(m,s.kind==reverie::boardgames::Kind::Reversi
+                 ?"SELECT A MARKED SQUARE":"SELECT PIECE THEN DESTINATION",
+                 0,-1.58f,.040f,.84f,.90f,.87f);
+#else
         Text(m,s.kind==reverie::boardgames::Kind::Reversi
              ?"SELECT A MARKED SQUARE":"SELECT PIECE THEN DESTINATION",
-#if CLASSIC_GAME_KIND == 5
-             0,-1.60f,.025f,.84f,.90f,.87f);
-#else
              0,-1.58f,.040f,.84f,.90f,.87f);
 #endif
     }
