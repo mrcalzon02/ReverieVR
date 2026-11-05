@@ -6,6 +6,7 @@
 #include "sitka_shore_stream.h"
 #include "sitka_bridge_layout.h"
 #include "sitka_bridge_gl.h"
+#include "sitka_bridge_visibility.h"
 #include "sitka_water_gl.h"
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
@@ -38,6 +39,7 @@ struct State {
     reverie::sitka::TerrainGl shore_gl; // changing waterfront overlay, not boat
     std::unique_ptr<reverie::sitka::ShoreStreamPlanner> shore_stream;
     std::unique_ptr<reverie::sitka::BridgePlaneMesh> bridge_mesh;
+    std::unique_ptr<reverie::sitka::BridgeVisibility> bridge_view;
     reverie::sitka::BridgeArt bridge_art;
     reverie::sitka::BridgeGl bridge_gl; // 3 surface textures, one upload per GL context
     reverie::sitka::TerrainGl boat_gl; // isolated static boat VBO, shared across both eyes
@@ -171,6 +173,8 @@ void* Create(const ReverieNativeHostV1* host) {
                 if(reverie::sitka::LoadBridgeArt(host,art)){
                     state->bridge_mesh.reset(
                         new reverie::sitka::BridgePlaneMesh(std::move(geometry)));
+                    state->bridge_view.reset(
+                        new reverie::sitka::BridgeVisibility(*state->bridge_mesh));
                     state->bridge_art=std::move(art);
                 }else{
                     // A missing/bad optional bridge texture must not fabricate
@@ -292,6 +296,7 @@ int32_t OnGlCreated(void* instance) {
     // worlds start with land and water; the optional GL frame callback
     // commits only the active seafloor after CPU cache update.
     state->seafloor_plan.Reset();
+    if(state->bridge_view)state->bridge_view->Reset();
     std::vector<reverie::sitka::TerrainMesh> sea_floor;
     if(!state->stream){
         try{
@@ -354,6 +359,8 @@ void ReleaseGl(void* instance) {
         static_cast<State*>(instance)->last_boat_text.clear();
         static_cast<State*>(instance)->boat_gl.Release();
         static_cast<State*>(instance)->bridge_gl.Release();
+        if(static_cast<State*>(instance)->bridge_view)
+            static_cast<State*>(instance)->bridge_view->Reset();
         static_cast<State*>(instance)->shore_gl.Release();
         if(static_cast<State*>(instance)->shore_stream)
             static_cast<State*>(instance)->shore_stream->Reset();
@@ -517,6 +524,12 @@ bool WaterAt(const State* state,double east,double north){
 int32_t PrepareFrame(void* instance){
     State* state=static_cast<State*>(instance);
     if(!state||!state->gl.ready())return 0;
+    // Source-aligned bridge bounds update once, before BOTH stereo eyes.
+    // The 3 existing GPU material batches are never rebuilt for visibility.
+    if(state->bridge_view && state->has_focus)
+        state->bridge_view->Update(
+            state->last_focus_east,state->last_focus_north,
+            state->terrain.origin_east,state->terrain.origin_north);
     // The shore and seabed retain separate GPU resources. Shore selection
     // uses bounded source-geometry only, never synchronous asset reads.
     if(state->shore_stream && state->shore_gl.ready() && state->has_focus &&
@@ -601,7 +614,9 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(!state->gl.RenderEye(eye)||!state->water_gl.RenderEye(eye))return 0;
     if(state->shore_stream && state->shore_stream->visible_count()>0u &&
        !state->shore_gl.RenderEye(eye))return 0;
-    if(state->bridge_gl.ready() && !state->bridge_gl.RenderEye(eye))return 0;
+    if(state->bridge_gl.ready() && state->bridge_view &&
+       state->bridge_view->visible() &&
+       !state->bridge_gl.RenderEye(eye))return 0;
     if(!state->skiff||!state->skiff->Active())return 1;
     const auto& pose=state->skiff->Pose();
     const reverie::sitka::Water* water=reverie::sitka::SitkaWorldWater(

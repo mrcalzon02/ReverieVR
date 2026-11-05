@@ -113,11 +113,13 @@ inline std::vector<ShoreFeature> ParseShoreLayout(const std::string& text){
         if(fields[0]=="P"){
             if(fields.size()!=6u || (p.material!="storefront"&&
                p.material!="cannery"&&p.material!="heritage"&&
-               p.material!="warehouse"))
+               p.material!="warehouse"&&p.material!="pier"&&
+               p.material!="pontoon"))
                 throw std::invalid_argument("Sitka shore polygon material");
             p.polygon=true;
             p.base=ShoreFloat(fields[3],-2000.f,2000.f);
-            p.height=ShoreFloat(fields[4],.25f,70.f);
+            p.height=ShoreFloat(fields[4],
+                (p.material=="pier"||p.material=="pontoon")?.05f:.25f,70.f);
             for(const auto& point:ShoreSplit(fields[5],';')){
                 const auto pair=ShoreSplit(point,',');
                 if(pair.size()!=2u)throw std::invalid_argument("Sitka shore point");

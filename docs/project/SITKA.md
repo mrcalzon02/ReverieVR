@@ -2,6 +2,36 @@
 
 # Sitka
 
+## Sitka authentic harbor polygons and bridge draw-call culling — 2026-11-04
+
+The optional `SITKA-SHORE-1` authoring now permits **real projected-metre
+polygon outlines for piers and pontoons**, not just guessed rotated rectangles.
+A licensed harbor GeoJSON Polygon goes through the same stable source-ID,
+current existence, CRS, provenance, 32-point and non-self-intersection gates.
+It supplies its own base elevation and deck thickness; neither is inferred
+from a terrain DEM under water. The runtime extrudes the *source polygon*
+with ear-clipped top and flat sides. The `sitka_shore_detail.h` decorator
+never attaches generic building windows and awnings to a polygon float.
+Existing explicit Point structures remain supported for independently
+documented simple rectangular objects, but **Crescent Harbor's seven-float
+arrangement must eventually use the actual official harbor footprints**.
+
+The O'Connell Bridge's already cached, three-material GLES2 renderer now
+uses a tiny CPU-only `BridgeVisibility` gate from the authored world-space
+bridge mesh bounds. It draws when the listener is within 1,250 m of any
+bridge part, retains visibility to 1,450 m to avoid threshold flicker, and
+skips **all three draw calls in both eyes** beyond that band. Source geometry,
+GPU buffers, materials and stereo-eye pose are unchanged by this culling.
+Invalid listener coordinates leave the last validated state untouched.
+The gate resets on GL context loss and recomputes before eye rendering.
+New regressions cover irregular pontoon geometry, no invented float facade
+and boundary hysteresis/coordinate-origin equivalence.
+
+These are source/runtime **capability additions**, not a claim that the
+current Crescent float polygons or O'Connell alignment have been installed:
+the shoreline requires authorized current geographic footprints, calibrated
+water levels and site-reviewed architectural imagery.
+
 ## GIS-to-native O'Connell Bridge alignment baker — 2026-11-04
 
 `scripts/sitka/build_oconnell_bridge.py` now completes the offline

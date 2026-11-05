@@ -37,6 +37,20 @@ int main(){
     // A real source outline remains unchanged: detail only appends vertices.
     assert(features[0].footprint[3].x==11.f);
     assert(features[0].footprint[3].z==4.f);
+    // A verified harbor polygon may be drawn, but cannot inherit storefront
+    // panes/awnings simply because its source outline is available.
+    const auto floats=ParseShoreLayout(
+        "SITKA-SHORE-1\n"
+        "P|float_actual|pontoon|-.4|.15|0,0;20,0;20,3;14,3;14,5;0,5\n");
+    TerrainMesh float_base;
+    AppendShoreGeometry(float_base,floats);
+    const size_t float_vertices=float_base.vertices.size();
+    // Six verified outline corners: six side quads plus four top triangles.
+    assert(float_base.indices.size()/3u==16u);
+    const auto float_detail=AppendShoreDetails(float_base,floats);
+    assert(float_vertices==float_base.vertices.size());
+    assert(float_detail.windows==0u&&float_detail.canopies==0u);
+    assert(float_detail.guardrails==0u&&float_detail.shack_windows==0u);
     // No fabricated facade details on natural rock.
     auto rocks=ParseShoreLayout("SITKA-SHORE-1\nB|rock0|rock|0|0|0|4|4|1|0\n");
     TerrainMesh raw;

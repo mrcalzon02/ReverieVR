@@ -103,6 +103,31 @@ class WaterfrontExportTest(unittest.TestCase):
                         '-I', str(CPP_INCLUDE), str(test_source), '-o', str(exe)], check=True)
         subprocess.run([str(exe), str(self.output)], check=True)
 
+    def test_real_outline_float_polygon_not_generic_rectangular_block(self):
+        self.block_feature['properties']['sitka_kind'] = 'pontoon'
+        self.block_feature['geometry'] = {
+            'type': 'Polygon', 'coordinates': [[
+                [480045,6299960], [480059,6299960],
+                [480059,6299965], [480053,6299965],
+                [480053,6299968], [480045,6299968],
+                [480045,6299960]]]}
+        # No inferred width, yaw or depth; exactly the source ring is used.
+        for name in ('width_m','depth_m','yaw_rad'):
+            self.block_feature['properties'].pop(name)
+        self.emit()
+        report=self.run_bake()
+        self.assertEqual(report['authored_float_polygon_count'],1)
+        text=self.output.read_text()
+        self.assertIn('P|test_pier_001|pontoon|11.500|0.600|40.000,-35.000;',text)
+        self.assertNotIn('B|test_pier_001|',text)
+        self.assertIn('48.000,-27.000;',text)
+        self.block_feature['geometry']['coordinates'].append([
+            [480047,6299961],[480049,6299961],
+            [480049,6299962],[480047,6299961]])
+        self.emit()
+        with self.assertRaisesRegex(ValueError,'without holes'):
+            self.run_bake()
+
     def test_bad_source_and_topology_fail_closed(self):
         self.building_feature['geometry']['coordinates'].append([
             [480015, 6299987], [480018, 6299987], [480018, 6299985],

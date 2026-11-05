@@ -158,6 +158,40 @@ def block_record(feature, transformer, origin):
     return '|'.join(['R' if kind == 'bridge_ramp' else 'B', feature_id(feature), kind] + values)
 
 
+def float_polygon_record(feature, transformer, origin):
+    """Use the real source outline for a pier/float, not a guessed rectangle.
+
+    No terrain sample: floating structures over water do not have a DEM
+    ground elevation. base_m and height_m are independently authored in
+    the *same* scene vertical datum; this does not prove a tidal motion model.
+    """
+    from shapely.geometry import shape, Polygon
+    from shapely.ops import transform as geom_transform
+    props = feature['properties']
+    kind = props['sitka_kind']
+    if kind not in ('pier', 'pontoon'):
+        raise ValueError('sourced float polygon must be pier or pontoon')
+    geom = shape(feature.get('geometry'))
+    if not isinstance(geom, Polygon) or geom.is_empty or geom.interiors or not geom.is_valid:
+        raise ValueError('harbor float must be a solid valid source Polygon without holes')
+    metric = geom_transform(transformer.transform, geom)
+    if not metric.is_valid or metric.area < .02:
+        raise ValueError('harbor float invalid after projection')
+    points = list(metric.exterior.coords)[:-1]
+    if not 3 <= len(points) <= MAX_POINTS:
+        raise ValueError('float outline exceeds 3..32 source vertices')
+    local = [(round(x-origin[0], 3), round(z-origin[1], 3)) for x,z in points]
+    if any(not math.isfinite(v) or abs(v)>100000 for p in local for v in p):
+        raise ValueError('float footprint outside projected terrain region')
+    snapped = Polygon(local)
+    if not snapped.is_valid or snapped.area < .02 or not snapped.exterior.is_simple:
+        raise ValueError('float polygon collapsed under 1 mm quantization')
+    base = number(props.get('base_m'), 'float base_m', -2000, 2000)
+    height = number(props.get('height_m'), 'float height_m', .05, 70)
+    corners = ';'.join(f'{fmt(x)},{fmt(z)}' for x,z in local)
+    return f'P|{feature_id(feature)}|{kind}|{fmt(base)}|{fmt(height)}|{corners}'
+
+
 def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, output, site_catalog):
     from pyproj import CRS, Transformer
     from shapely.geometry import shape
@@ -204,6 +238,7 @@ def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, o
     to_blocks = Transformer.from_crs(blocks_crs, crs, always_xy=True) if blocks_crs else None
     records = []
     height_classes = {}
+    float_polygon_count = 0
     evidence_ids = {}
     site_links = {}
     ids = set()
@@ -233,7 +268,11 @@ def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, o
                 record, height_class = building_record(feature, transform, locations, dem)
                 height_classes[fid] = height_class
             else:
-                record = block_record(feature, transform, locations)
+                if kind in ('pier', 'pontoon') and feature.get('geometry', {}).get('type') == 'Polygon':
+                    record = float_polygon_record(feature, transform, locations)
+                    float_polygon_count += 1
+                else:
+                    record = block_record(feature, transform, locations)
             records.append((fid, record))
     if len(records) > MAX_FEATURES:
         raise ValueError('shore feature count exceeds the native runtime budget')
@@ -255,6 +294,7 @@ def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, o
         'feature_count': len(records),
         'building_count': len(building_features),
         'block_count': len(block_features),
+        'authored_float_polygon_count': float_polygon_count,
         'building_height_quality': height_classes,
         'feature_source_ids': dict(sorted(evidence_ids.items())),
         'named_site_references': dict(sorted(site_links.items())),
@@ -275,7 +315,7 @@ def main():
     p.add_argument('--terrain-manifest', required=True, type=Path)
     p.add_argument('--dem', required=True, type=Path)
     p.add_argument('--buildings', required=True, type=Path, help='source-licensed building Polygon GeoJSON')
-    p.add_argument('--blocks', type=Path, help='optional authored dock/pier/rock/bridge Point GeoJSON')
+    p.add_argument('--blocks', type=Path, help='optional licensed pier/pontoon Polygon or individually authored Point blocks')
     p.add_argument('--provenance', required=True, type=Path)
     p.add_argument('--site-catalog', required=True, type=Path,
                    help='verified site/presence register; no fake historic buildings')

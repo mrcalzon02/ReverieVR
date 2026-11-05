@@ -38,7 +38,11 @@ inline void ShorePolygonDetail(TerrainMesh& mesh,const ShoreFeature& f,
                                 size_t& budget,ShoreDetailCount& counts){
     // Unverified stylized facade detail: never infer a door, accessibility,
     // real window count, public entrance, or building interior from this.
-    if(f.footprint.size()<3u)return;
+    // A real harbor float is not a shop: never invent glass windows,
+    // storefront awnings, or an entrance on its water-facing edges.
+    if(f.footprint.size()<3u ||
+       (f.material!="storefront" && f.material!="cannery" &&
+        f.material!="warehouse" && f.material!="heritage"))return;
     const float orient=ShoreArea(f.footprint)>0.f?1.f:-1.f;
     const size_t floors=std::min<size_t>(3u,std::max<size_t>(1u,
         static_cast<size_t>(f.height/3.2f)));
