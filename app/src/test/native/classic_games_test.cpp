@@ -8,6 +8,7 @@
 #include "classic_chess_book.h"
 #include "classic_chess_reference.h"
 #include "classic_chess_move_tween.h"
+#include "classic_chess_board_ui.h"
 #include "classic_chess_study.h"
 #include "classic_chess_sprite_atlas.h"
 #include "classic_chess_wood_atlas.h"
@@ -16,6 +17,114 @@
 #include <iostream>
 using namespace reverie::classics;
 
+
+
+static void TestChessChooseSideOverlaysAndCaptures() {
+    using reverie::boardgames::Kind;
+    using reverie::boardgames::State;
+    using reverie::boardgames::ValidChessCpuTransition;
+    using namespace reverie::chessui;
+    State white;white.StartChessGame(1);
+    assert(white.chessHumanColor==1 && white.ChessHumanTurn());
+    assert(white.ChessCpuColor()==-1 && white.side==1);
+    assert(ScreenIndex(0,7,1)==56 && ScreenIndex(7,0,1)==7);
+    assert(ScreenSquare(56,1)==std::make_pair(0,7));
+    assert(OverlayButton(-.97f,1.42f)==Neutral);
+    assert(OverlayButton(0.f,1.42f)==Human);
+    assert(OverlayButton(.97f,1.42f)==Opponent);
+    assert(OverlayButton(0.f,1.1f)==Off);
+    assert(Highlight(white,white.cells,36,Neutral)); // e4 unobstructed
+    assert(Highlight(white,white.cells,43,Human));   // e2 attacks d3
+    assert(Highlight(white,white.cells,19,Opponent)); // e7 attacks d6
+    assert(!Highlight(white,white.cells,43,Opponent));
+    assert(!Highlight(white,white.cells,36,Off));
+    assert(CapturedLine(white,1)=="YOU TOOK: P0 N0 B0 R0 Q0");
+    assert(CapturedLine(white,-1)=="CPU TOOK: P0 N0 B0 R0 Q0");
+
+    State black;black.StartChessGame(-1);
+    assert(black.chessHumanColor==-1 && !black.ChessHumanTurn());
+    assert(black.ChessCpuColor()==1 && black.side==1);
+    assert(ScreenIndex(0,7,-1)==7 && ScreenIndex(7,0,-1)==56);
+    assert(ScreenSquare(4,-1)==std::make_pair(3,7));
+    assert(Highlight(black,black.cells,19,Human));
+    assert(Highlight(black,black.cells,43,Opponent));
+    assert(!black.Select(8)); // human Black cannot move before White.
+    // CPU legitimately takes White's first turn from its own snapshot.
+    const State initial=black;
+    assert(black.PlayChessCpuTurn());
+    assert(ValidChessCpuTransition(initial,black));
+    assert(black.ply==1 && black.side==-1 && black.ChessHumanTurn());
+    assert(initial.cells[black.lastFrom]>0);
+    assert(black.cells[black.lastTo]>0);
+    assert(!reverie::chessref::LastCpuMoveTrace(black).empty());
+    assert(black.Select(8)); // human can now select a Black pawn.
+    assert(black.cells[8]==-1);
+
+    // A new match resets captures and lets White start again.
+    const uint32_t oldSerial=black.chessGameSerial;
+    black.StartChessGame(-1);
+    assert(black.chessGameSerial!=oldSerial);
+    assert(!black.ChessHumanTurn() && black.ply==0);
+    assert(black.chessCapturedByWhite[1]==0 &&
+           black.chessCapturedByBlack[1]==0);
+
+    // The actual victim, including en passant, increments its capturer.
+    State game;game.StartChessGame(1);
+    assert(game.ChessMove(52,36)); // White e4
+    assert(game.ChessMove(11,27)); // Black d5
+    assert(game.ChessMove(36,27)); // White exd5
+    assert(game.chessCapturedByWhite[1]==1);
+    assert(game.chessCapturedByBlack[1]==0);
+    assert(game.ChessMove(3,27)); // Black Qxd5
+    assert(game.chessCapturedByBlack[1]==1);
+    assert(CapturedLine(game,1)=="YOU TOOK: P1 N0 B0 R0 Q0");
+    assert(CapturedLine(game,-1)=="CPU TOOK: P1 N0 B0 R0 Q0");
+    State reversed=game;
+    reversed.chessHumanColor=-1;
+    assert(CapturedLine(reversed,-1)=="YOU TOOK: P1 N0 B0 R0 Q0");
+
+    State ep;ep.StartChessGame(1);
+    assert(ep.ChessMove(52,36));
+    assert(ep.ChessMove(8,16));
+    assert(ep.ChessMove(36,28));
+    assert(ep.ChessMove(11,27));
+    assert(ep.ChessMove(28,19));
+    assert(ep.chessCapturedByWhite[1]==1 &&
+           ep.chessCapturedByBlack[1]==0);
+    State promotion;promotion.StartChessGame(1);
+    promotion.cells.fill(0);promotion.cells[60]=6;
+    promotion.cells[4]=-6;promotion.cells[8]=1;
+    promotion.castles=0;
+    assert(promotion.ChessMove(8,0));
+    assert(promotion.chessCapturedByWhite[1]==0 &&
+           promotion.chessCapturedByBlack[1]==0);
+
+    // Black is able to choose an underpromotion, too.
+    State under;under.StartChessGame(-1);
+    under.cells.fill(0);under.cells[60]=6;under.cells[4]=-6;
+    under.cells[48]=-1;under.castles=0;
+    under.side=-1;under.selected=48;
+    under.CyclePromotion(); // queen -> rook
+    assert(under.promotionChoice==4);
+    assert(under.ChessMove(48,56));
+    assert(under.cells[56]==-4);
+
+    // The old async CPU computation is stale after a new match,
+    // even when the newly selected color also makes White play first.
+    State stale;stale.StartChessGame(-1);
+    reverie::boardgames::CpuWorker worker;
+    assert(worker.Start(stale));
+    stale.StartChessGame(1); // abandon White-CPU game
+    const auto deadline=std::chrono::steady_clock::now()+
+                        std::chrono::seconds(10);
+    while(worker.Busy()) {
+        assert(std::chrono::steady_clock::now()<deadline);
+        assert(!worker.Poll(stale));
+        std::this_thread::yield();
+    }
+    assert(stale.chessHumanColor==1 && stale.ply==0);
+    assert(stale.ChessHumanTurn());
+}
 
 static void TestChessStudyLibrary() {
     using namespace reverie::chessstudy;
@@ -1422,6 +1531,7 @@ int main() {
     assert(ladder.finished&&((ladder.position==100)||(ladder.rival==100)));
     ladder.Press();
     assert(!ladder.finished&&ladder.position==0&&ladder.rival==0);
+    TestChessChooseSideOverlaysAndCaptures();
     TestChessStudyLibrary();
     TestBoardGames();
     TestReversi();
