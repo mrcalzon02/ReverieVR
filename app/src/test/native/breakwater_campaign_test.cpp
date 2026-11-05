@@ -1153,7 +1153,9 @@ int main() {
             assert(x0>=-reach-.001f&&x0<=reach+.001f);
             assert(x1>=-reach-.001f&&x1<=reach+.001f);
             assert(x2>=-reach-.001f&&x2<=reach+.001f);
-            assert(y0>=-1.10f&&y1>=-1.10f&&y2>=-1.10f);
+            // The new rear join meets the authored surrounding ground at
+            // ~-1.12 m, slightly below the former floating beach threshold.
+            assert(y0>=-1.13f&&y1>=-1.13f&&y2>=-1.13f);
             assert(z0>=zFar&&z0<=zNear);
             assert(z1>=zFar&&z1<=zNear);
             assert(z2>=zFar&&z2<=zNear);
@@ -1165,8 +1167,13 @@ int main() {
         assert(triangles==expectedTriangles[location]);
         assert(boxes==expectedBoxes[location]);
         assert(std::abs(BeachHeight(location,0.f,-1.3f)+1.037f)<.02f);
-        assert(BeachHeight(location,3.8f,-.4f)>
+        // The raised offshore shoulder is preserved *before* the 44 cm
+        // rear blending strip; behind it the beach must meet real terrain.
+        assert(BeachHeight(location,3.8f,-.7f)>
                BeachHeight(location,0.f,-1.3f)+.08f);
+        const float joined=RearGroundHeight(
+            EnvironmentFor(location,false),3.8f,-.26f);
+        assert(std::abs(BeachHeight(location,3.8f,-.26f)-joined)<.00001f);
         const CoastPalette day=CoastColors(location,false);
         const CoastPalette night=CoastColors(location,true);
         assert(day.sand_r>night.sand_r);
