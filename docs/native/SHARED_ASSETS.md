@@ -34,6 +34,24 @@ Ten new owner-directed diffuse tiles (dock planks, mossy seawall, corrugated roo
 The source high-resolution image generation files are preserved outside the APK (conversation assets and the user's Drive folder [Breakwater Shared Material Sources](https://drive.google.com/drive/folders/1Z_vqO-jRM6KVkEXkqpEAlnmPRhwi51fO)). The reusable Git blobs are verified by exact bytes and SHA. New assets extend v1 additively; existing six PNG blobs and three generic model blobs are unchanged. Cross-repository inclusion still requires a pin, format/read-permission review and actual consuming-game implementation. Android/NDK build, installed 16/16 tile load evidence, stereoscopic S9 rendering and performance acceptance are **not** established merely by this source commit.
 
 
+## Sitka harbor upgrade desk asset boundary (2026-11-05)
+
+The unregistered Sitka native module may additionally read the **single
+exact** private asset `sitka/harbor/shops.txt` (maximum **4,096 bytes**).
+No wildcard harbor directory or external path is permitted. The authored
+record must carry vetted EPSG:32608 provenance, the matching terrain
+origin and up to five individually named Site entries. Each reference
+must resolve to an already-authored shoreline building, shack or pier
+with a dry, accessible interaction position. The actual city Harbor
+Department documents its public office at 617 Katlian Street beside
+Thomsen Harbor; the other municipal harbor points are **optional in-game
+service desks**, not further asserted physical government offices.
+The corresponding CPU native tests reject unknown harbors, duplicate
+IDs, invented feature references, invalid origins and unearned
+purchases. Missing approved geo data produces **no harbor shop**.
+This game-private read grant introduces no shared assets, native ABI
+changes, Android permission, user GPS or network access.
+
 ## Sitka shore-layout asset scope (source-only, 2026-11-04)
 
 The unregistered `sitka` prototype may read exactly `sitka/shore/waterfront.sitkash` (maximum 65,536 bytes). This is **game-private authored geometry**, not a shared asset grant, arbitrary file read, bundled city dataset, or claim of real Sitka footprint coverage. Cross-module reads, alternate extensions, traversal and unknown shore paths remain denied. The file is intentionally optional until approved projected-metre source features and provenance are staged.

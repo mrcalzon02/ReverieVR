@@ -24,6 +24,8 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
             {"sitka/fishing/sites.txt",8192u},
             {"sitka/beach/discoveries.txt",8192u},
             {"sitka/city/discoveries.txt",8192u},
+            // Only one reviewed, exact-path multi-harbor desk list.
+            // Other harbors may use game desks, not invented public offices.
             {"sitka/harbor/shops.txt",4096u},
             {"sitka/boat/launch.txt",4096u},
             {"sitka/shore/waterfront.sitkash",65536u},
