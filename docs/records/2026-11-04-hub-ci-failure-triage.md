@@ -63,18 +63,26 @@ not Galaxy S9/Daydream headset acceptance.
    successfully published with both signed APKs and all required
    supporting assets, so permanent release inability is **not established**.
 
-## Outstanding acceptance
+## Observed Android 10 emulator acceptance and remaining hardware gate
 The hub emulator run
 [41954301895](https://github.com/mrcalzon02/ReverieVR/actions/runs/41954301895)
-advanced through source validation and Android APK construction into
-the real Android 10 emulator stage. Its final status was **not yet
-available at the time of this record**. A newer run
-[41954767199](https://github.com/mrcalzon02/ReverieVR/actions/runs/41954767199)
-was pending against the exact post-repair source. Neither a successful
-source regression nor an emulator alone proves real Galaxy S9 headset
-pointing, optical scene continuity or sustained thermal behavior.
+**PASSED** on source `a26917005cb54c3ed099afc775915cd3c79ea31b`.
+Every step of `verify-installed-hub` completed successfully,
+including actual Android APK construction, installed-app instrumentation
+(`OK (13 tests)`), 15 independent registered games producing verified
+512x512 Android GLES2 captures, native menu capture CSV cross-check,
+Omega Front travel/battle/save-resume and 16/16 Breakwater materials.
+The runtime logs confirmed the five prescribed Breakwater BWM1 models
+were read through verified asset paths. Artifact
+[`reverie-hub-game-acquisition-41954301895`](https://github.com/mrcalzon02/ReverieVR/actions/runs/41954301895/artifacts/13381639775)
+is retained, 157,192,590 bytes.
 
-**Next verification:** inspect the completed hub emulator run's
-instrumentation output, game capture CSV, per-game PNGs and exact
-APK hashes; repair genuine failures without converting build/launch/run
-failures into diagnostics. Then verify current source on reference hardware.
+A newer hub run
+[41954767199](https://github.com/mrcalzon02/ReverieVR/actions/runs/41954767199)
+was queued to verify the later source-only regression changes and
+non-cancelling workflow policy. Recheck its final state before claiming
+the exact latest main revision has Android emulator proof.
+
+**Still unverified:** physical Galaxy S9 + Daydream input/optics,
+controller shake-to-headset-forward behavior, beach visual integration
+and sustained thermal performance. Those gates require device evidence.
