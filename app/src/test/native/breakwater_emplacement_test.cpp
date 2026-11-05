@@ -9,7 +9,13 @@ using namespace reverie::breakwater;
 int main() {
     assert(kBeachCrossSections>=16 && kBeachLengthSections>=12);
     assert(BeachHeight(0,0.f,-1.5f)<-.98f);
-    assert(BeachHeight(0,3.8f,-.30f)>-.86f);
+    // The offshore shoulder still rises, but its rear 44 cm now welds into
+    // the actual surrounding landscape rather than ending as a raised lip.
+    assert(BeachHeight(0,3.8f,-.70f)>-.90f);
+    const float rearEdge=RearGroundHeight(
+        EnvironmentFor(0,false),3.8f,-.26f);
+    assert(std::abs(BeachHeight(0,3.8f,-.30f)-rearEdge)<.02f);
+    assert(std::abs(BeachHeight(0,3.8f,-.26f)-rearEdge)<.00001f);
     for(uint8_t location=0;location<Campaign::kLocations;++location) {
         int boxes=0,faces=0;
         float minDepth=100.f,maxDepth=-100.f;
