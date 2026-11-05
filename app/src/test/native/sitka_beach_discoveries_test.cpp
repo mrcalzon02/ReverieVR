@@ -67,6 +67,7 @@ int main(){
     markers=BeachMarkerMesh(sites,f.journal,roam);
     assert(markers.vertices.size()==24u&&markers.indices.size()==96u);
     for(uint32_t i=10u;i<20u;++i)assert(f.Discover(i,BeachFind::Shell));
+    while(f.journal.gear<4u)assert(f.Purchase(Equipment::Rod));
     assert(!f.Purchase(Equipment::Rod)); // crab required from level five
     assert(f.Discover(3u,BeachFind::Crab));
     assert(f.Discover(4u,BeachFind::Rock));
