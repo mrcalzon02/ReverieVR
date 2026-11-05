@@ -30,8 +30,13 @@ inline EnvironmentProfile EnvironmentFor(uint8_t location,bool night) {
          {.59f,.61f,.60f},{.11f,.33f,.48f},2.0f,5.6f},
         // Blackcap Island: charcoal basalt, steep volcanic mountains.
         {{.30f,.31f,.34f},{.27f,.30f,.38f},{.35f,.35f,.45f},
-         {.49f,.48f,.56f},{.10f,.28f,.47f},3.1f,7.3f}
+         {.49f,.48f,.56f},{.10f,.28f,.47f},3.1f,7.3f},
+        // Stormwatch Point: cold concrete, silver-gray squalls and dark water.
+        {{.32f,.42f,.43f},{.27f,.43f,.46f},{.34f,.44f,.48f},
+         {.48f,.56f,.60f},{.07f,.34f,.44f},2.75f,6.2f}
     };
+    static_assert(sizeof(day)/sizeof(day[0])==
+                  Campaign::kLocations,"Every Breakwater theater needs 360 scenery");
     if(location>=Campaign::kLocations)return {};
     EnvironmentProfile p=day[location];
     if(night) {

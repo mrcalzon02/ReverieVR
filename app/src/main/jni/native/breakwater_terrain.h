@@ -23,8 +23,11 @@ inline CoastPalette CoastColors(uint8_t location, bool night) {
     const CoastPalette daytime[] = {
         {.83f, .75f, .54f, .91f, .85f, .63f}, // Shingle Bay
         {.51f, .54f, .54f, .65f, .63f, .56f}, // Iron Quay
-        {.35f, .34f, .40f, .50f, .45f, .43f}  // Blackcap Island
+        {.35f, .34f, .40f, .50f, .45f, .43f}, // Blackcap Island
+        {.42f, .50f, .47f, .62f, .69f, .64f}  // Stormwatch Point
     };
+    static_assert(sizeof(daytime)/sizeof(daytime[0])==
+                  Campaign::kLocations,"Every Breakwater coast needs a palette");
     if (location >= Campaign::kLocations) return {0,0,0,0,0,0};
     CoastPalette c = daytime[location];
     if (night) {
