@@ -68,3 +68,78 @@ those controls to FIDE.
 Official FIDE reference: https://handbook.fide.com/chapter/e012023.
 The existing classic-games regression also verifies A/E source-volume
 routing and an invalid ECO's safe fallback.
+
+## Staged completion contract — what will make this a complete library
+
+**Stage A — audited reference and cited lessons (implemented in source).**
+Preserve all 3,865 Lichess opening records exactly as historical CC0
+facts, each linked to its ECO TSV. The 34 independently authored lessons
+cover tactical mechanisms and broad positional principles. The content
+is offline and the native chess engine remains authoritative. Gate:
+all indexed pages remain reachable, the 34 articles contain named
+sources, and the existing classic-games suite passes. Emulator/headset
+acceptance is separately required.
+
+**Stage B — annotated opening families (planned, not yet implemented).**
+Start with common families across ECO A through E, not 3,865 shallow
+templates. For each: classify opening and its move-order transpositions,
+show one verified legal main line, explain strategic objectives for
+*both* White and Black, identify pawn breaks and characteristic piece
+placement, note realistic deviations and what each side should avoid.
+Attach a durable URL/license/retrieval date to every claim and example.
+No unsourced book popularity presented as a move probability or
+evaluation. Only after quality checks, expand coverage systematically
+by ECO family and variation. Ensure that continuing from a position
+does not falsely claim a unique opening after transposition.
+
+**Stage C — actual example positions and exercises (planned).**
+Curate a *small* referenced set of source-authorized tactical and
+endgame problems from public licensed chess material, e.g. the
+Lichess CC0 downloadable puzzle database, not Lichess's
+interactive lesson text/art. Store original source ID, its immutable
+URL, source snapshot/hash and exact position (FEN) plus UCI/SAN
+solution. Author a short explanation of why a candidate move works
+and how tempting alternatives fail *after independent verification*.
+Validate source positions for kings, legal side-to-move, promotion,
+castling rights and en passant; replay the full candidate solution
+through the **same native chess legal-move rules** used in live play.
+Do not label puzzles 'verified' on metadata alone.
+
+**Stage D — board-integrated instruction (planned).**
+Render a legal reference position on the existing chess board or a
+small separate study board with Back/Next through verified plies.
+Keep practice-state and actual match/save distinct. Never change the
+live game while reading a strategy article. Map the current position
+to relevant study concepts when reliable, without inferring a tactic
+merely from a matching name. Preserve controller, gaze and keyboard
+navigation and the compact 3D text layout.
+
+**Stage E — authenticity and performance gates (planned).**
+Add content validation to existing classic-game tests: source file
+license and hash; unique IDs; URL provenance; FEN parsing/legality;
+exact multi-ply replay; read-only save/game-state isolation;
+paged index bounds, article-page scroll and browser-less offline
+operation; Android ARMv7/ARM64 inclusion, a real 3D study-page capture
+and physical S9 stereo readability. Target zero broken controls,
+zero silently truncated citations, and no unverified moves. Profile
+memory, native binary growth, allocation behavior and frame pacing
+before increasing dataset size. Do **not** introduce a duplicate CI
+workflow or disguise functional failures as optional visual gates.
+
+**Stage F — maintenance and progress ledger (planned).**
+Snapshot approved input data with upstream commit/hash/date and
+license, while retaining per-entry citation and source volume.
+Keep a machine-readable admission report distinguishing imported CC0
+facts, independently authored instructional summaries and future
+source-derived exercises. Progress counts must distinguish:
+(1) indexed opening lines, (2) annotated opening explanations,
+(3) verified tactical exercises, (4) finished endgame guides.
+Only publish a 'complete library' claim when the committed content,
+installed APK, and real-device reader have all passed these gates.
+
+The immediate next technical unit is Stage B's **one complete,
+source-backed annotated opening-family vertical slice** with a
+real legal sequence, corresponding independently verified
+position, both-player plans and complete references. Only after
+that exact slice compiles and works in the headset should the
+bulk family import proceed.
