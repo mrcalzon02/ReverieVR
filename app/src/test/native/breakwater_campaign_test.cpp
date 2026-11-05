@@ -2850,10 +2850,10 @@ int main() {
     assert(flagship.SerializeShop(late_save,sizeof(late_save)));
     late_save[16]=2u; // Blackcap Island
     late_save[20]=4u; // final day
-    late_save[28]=19u; // final daytime wave on Cadet
+    late_save[28]=24u; // expanded final daytime wave on Casual
     late_save[32]=0x10u;late_save[33]=0x27u; // 10,000 credits
     assert(flagship.DeserializeShop(late_save,sizeof(late_save)));
-    assert(flagship.waves_this_period()==19u);
+    assert(flagship.waves_this_period()==24u);
     assert(flagship.PurchaseWeapon(WeaponKind::DirectCannon));
     assert(flagship.BeginWave());
     flagship.Tick(.05f);
