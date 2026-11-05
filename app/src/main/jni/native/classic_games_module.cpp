@@ -22,6 +22,7 @@
 #if CLASSIC_GAME_KIND == 5
 #include "classic_chess_book.h"
 #include "classic_chess_reference.h"
+#include "classic_chess_study.h"
 #include "classic_chess_sprite_atlas.h"
 #include "classic_chess_wood_atlas.h"
 #include "classic_chess_panel_layout.h"
@@ -205,7 +206,7 @@ void ChessWikiClick(Module *m,float x,float y) {
     if(y>1.30f && x>2.08f){m->chessWikiOpen=false;m->dirty=true;return;}
     if(y>.91f&&y<1.29f){
         const int tab=std::clamp(static_cast<int>(std::floor(
-            (x+2.675f)/1.07f)),0,4);
+            (x+2.67f)/.89f)),0,5);
         m->chessWikiSection=tab;
         m->chessWikiPage=0;
         m->chessWikiArticlePage=0;
@@ -224,7 +225,7 @@ void ChessWikiClick(Module *m,float x,float y) {
     }
     // Jump to the first entry of any ECO volume; manual +10 is not enough
     // to explore a 3,865-entry catalog comfortably in a headset.
-    if(m->chessWikiSection==4&&y>.55f&&y<.91f){
+    if(m->chessWikiSection==5&&y>.55f&&y<.91f){
         const int volume=std::clamp(
             static_cast<int>(std::floor((x+2.675f)/1.07f)),0,4);
         const char letter=static_cast<char>('A'+volume);
@@ -248,9 +249,11 @@ void ChessWikiClick(Module *m,float x,float y) {
         else if(m->chessWikiSection==2)
             maxPage=std::max(0,static_cast<int>(
                 (m->board.chessSanHistory.size()+19)/20)-1);
-        else if(m->chessWikiSection==3)maxPage=8;
+        else if(m->chessWikiSection==3)
+            maxPage=reverie::chessstudy::kCount-1;
+        else if(m->chessWikiSection==4)maxPage=8;
         else maxPage=reverie::chessref::kEntries-1;
-        if(m->chessWikiSection==0||m->chessWikiSection==4)
+        if(m->chessWikiSection==0||m->chessWikiSection==5)
             m->chessWikiIndex=std::clamp(m->chessWikiIndex+change,0,maxPage);
         else
             m->chessWikiPage=std::clamp(m->chessWikiPage+change,0,maxPage);
@@ -265,14 +268,14 @@ void ChessWikiDraw(Module *m) {
     ChessWikiText(m,"CHESS REFERENCE LIBRARY",-.08f,1.49f,.057f);
     Rect(m,2.42f,1.51f,.61f,.29f,-2.768f,.46f,.17f,.15f);
     ChessWikiText(m,"CLOSE",2.42f,1.49f,.040f);
-    static const char *const tabs[]={"OPENING","VARIANTS","MOVES","RULES","INDEX"};
-    for(int i=0;i<5;++i){
-        const float x=(i-2)*1.07f;
-        Rect(m,x,1.09f,1.015f,.31f,-2.768f,
+    static const char *const tabs[]={"OPEN","VARIANTS","MOVES","STUDY","RULES","INDEX"};
+    for(int i=0;i<6;++i){
+        const float x=(static_cast<float>(i)-2.5f)*.89f;
+        Rect(m,x,1.09f,.85f,.31f,-2.768f,
             i==m->chessWikiSection?.28f:.12f,
             i==m->chessWikiSection?.39f:.23f,
             i==m->chessWikiSection?.43f:.29f);
-        ChessWikiText(m,tabs[i],x,1.065f,.041f);
+        ChessWikiText(m,tabs[i],x,1.065f,.038f);
     }
     std::vector<std::string> lines;
     auto add=[&](const std::string &message){
@@ -293,6 +296,23 @@ void ChessWikiDraw(Module *m) {
         }
         add("WHITE IS THE PLAYER. BLACK IS THE CPU.");
     } else if(m->chessWikiSection==3) {
+        // Teaching articles are independently authored, source-cited notes:
+        // never present an opening catalogue frequency as a winning chance.
+        total=reverie::chessstudy::kCount;
+        page=std::clamp(m->chessWikiPage,0,total-1);
+        const auto &topic=reverie::chessstudy::kTopics[page];
+        add(std::string(topic.category)+" / "+topic.title);
+        add("");
+        add("RECOGNIZE:"); add(topic.recognize);
+        add("");
+        add("PLAN:"); add(topic.plan);
+        add("");
+        add("CAUTION:"); add(topic.caution);
+        add("");
+        add(std::string("SOURCE: ")+topic.source);
+        add("FULL URL:"); add(topic.url);
+        add("Original offline explanation; linked material not copied.");
+    } else if(m->chessWikiSection==4) {
         static const char *const title[]={
             "PIECES AND COORDINATES","KING SAFETY","CASTLING",
             "EN PASSANT","PAWN PROMOTION","CHECKMATE AND STALEMATE",
@@ -350,7 +370,7 @@ void ChessWikiDraw(Module *m) {
             total=kEntries;
             entry=std::clamp(entry,0,kEntries-1);
             page=entry;
-            add(m->chessWikiSection==4?
+            add(m->chessWikiSection==5?
                 "COMPLETE OFFLINE OPENING INDEX":"CURRENT OPENING AND NEARBY INDEX ENTRIES");
         }
         if(entry>=0){
@@ -369,7 +389,7 @@ void ChessWikiDraw(Module *m) {
             add("Use INDEX to browse all 3,865 source entries.");
         }
     }
-    const bool indexTab=m->chessWikiSection==4;
+    const bool indexTab=m->chessWikiSection==5;
     if(indexTab){
         ChessWikiText(m,"JUMP TO ECO VOLUME:",-1.88f,.75f,.038f);
         for(int i=0;i<5;++i){

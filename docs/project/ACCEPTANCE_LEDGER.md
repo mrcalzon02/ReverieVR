@@ -1,3 +1,19 @@
+## 2026-11-04 — Native chess source-cited strategic study
+
+**Source integrated; Android and reference S9 validation pending.**
+Previous five-tab chess reference covered 3,865 CC0 ECO/SAN opening
+records, move history and nine rules entries but lacked substantive
+per-article tactics or strategic explanations. New STUDY tab holds
+34 original offline articles (13 positional, 18 tactics, 3 endgames).
+Each has a recognizable cue, an actionable plan, a defensive caution,
+a named source and full source URL with topic/content pagination.
+Existing game moves, browsing and controls remain intact.
+The current classic-games regression checks citation presence,
+meaningful fields, attribution prefixes and category count.
+[Full provenance](../records/2026-11-04-chess-study-library.md).
+Hardware readability, complete Android integration and annotated
+legal FEN/SAN teaching positions remain unverified.
+
 ## 2026-11-04 — Controller shake recalibrates to live headset-forward direction
 
 **Source correction awaiting build/device proof:** The shake-initiated controller

@@ -7,6 +7,7 @@
 #include "classic_vector_art.h"
 #include "classic_chess_book.h"
 #include "classic_chess_reference.h"
+#include "classic_chess_study.h"
 #include "classic_chess_sprite_atlas.h"
 #include "classic_chess_wood_atlas.h"
 #include <cassert>
@@ -14,6 +15,33 @@
 #include <iostream>
 using namespace reverie::classics;
 
+
+static void TestChessStudyLibrary() {
+    using namespace reverie::chessstudy;
+    assert(kCount==34);
+    int positions=0,tactics=0,endgames=0;
+    std::vector<std::string> names;
+    for(const Topic &topic : kTopics) {
+        const std::string category(topic.category),title(topic.title);
+        const std::string cue(topic.recognize),plan(topic.plan);
+        const std::string caution(topic.caution),source(topic.source);
+        const std::string url(topic.url);
+        assert(!title.empty() && title.size()<64u);
+        assert(cue.size()>50u && plan.size()>50u && caution.size()>50u);
+        assert(std::find(names.begin(),names.end(),title)==names.end());
+        names.push_back(title);
+        if(category=="POSITION")++positions;
+        else if(category=="TACTIC")++tactics;
+        else if(category=="ENDGAME")++endgames;
+        else assert(false && "Unexpected chess study category");
+        if(source=="Wikibooks Chess Strategy")
+            assert(url.rfind("https://en.wikibooks.org/wiki/Chess_Strategy/",0)==0);
+        else if(source=="Lichess Practice")
+            assert(url.rfind("https://lichess.org/practice/",0)==0);
+        else assert(false && "Unattributed chess study article");
+    }
+    assert(positions==13 && tactics==18 && endgames==3);
+}
 
 static void TestChessWoodAtlas(){
     using namespace reverie::chesswood;
@@ -1239,6 +1267,7 @@ int main() {
     assert(ladder.finished&&((ladder.position==100)||(ladder.rival==100)));
     ladder.Press();
     assert(!ladder.finished&&ladder.position==0&&ladder.rival==0);
+    TestChessStudyLibrary();
     TestBoardGames();
     TestReversi();
     std::cout<<"Classic games deterministic simulation passed\n";
