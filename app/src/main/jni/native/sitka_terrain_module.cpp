@@ -4,6 +4,8 @@
 #include "sitka_shore_geometry.h"
 #include "sitka_shore_detail.h"
 #include "sitka_shore_stream.h"
+#include "sitka_bridge_layout.h"
+#include "sitka_bridge_gl.h"
 #include "sitka_water_gl.h"
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
@@ -35,6 +37,9 @@ struct State {
     reverie::sitka::TerrainGl gl;
     reverie::sitka::TerrainGl shore_gl; // changing waterfront overlay, not boat
     std::unique_ptr<reverie::sitka::ShoreStreamPlanner> shore_stream;
+    std::unique_ptr<reverie::sitka::BridgePlaneMesh> bridge_mesh;
+    reverie::sitka::BridgeArt bridge_art;
+    reverie::sitka::BridgeGl bridge_gl; // 3 surface textures, one upload per GL context
     reverie::sitka::TerrainGl boat_gl; // isolated static boat VBO, shared across both eyes
     reverie::nativetext::LatoLayer boat_text; // real licensed glyph atlas
     std::string last_boat_text;
@@ -145,6 +150,33 @@ void* Create(const ReverieNativeHostV1* host) {
                 // only nearby P0/P1 shore meshes become resident GPU batches.
                 if(!shore.empty())state->shore_stream.reset(
                     new reverie::sitka::ShoreStreamPlanner(shore));
+            }
+            // Optional sourced O'Connell profile; no guessed GIS coordinates.
+            // All textures are decoded once during Create, not in RenderEye.
+            const char* bridge_path="sitka/structures/oconnell.bridge";
+            uint32_t bridge_size=0u;
+            const int32_t bridge_probe=host->read_asset(
+                bridge_path,nullptr,0u,&bridge_size);
+            if(bridge_probe!=REVERIE_NATIVE_SAVE_NOT_FOUND){
+                if((bridge_probe!=REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL &&
+                    bridge_probe!=REVERIE_NATIVE_SAVE_OK) ||
+                   bridge_size<20u ||
+                   bridge_size>reverie::sitka::kMaxBridgeLayoutBytes)
+                    throw std::invalid_argument("Invalid Sitka bridge layout size");
+                auto geometry=reverie::sitka::ParseBridgeLayout(
+                    ReadText(host,bridge_path,static_cast<uint32_t>(
+                        reverie::sitka::kMaxBridgeLayoutBytes)),
+                    state->terrain.origin_east,state->terrain.origin_north);
+                reverie::sitka::BridgeArt art;
+                if(reverie::sitka::LoadBridgeArt(host,art)){
+                    state->bridge_mesh.reset(
+                        new reverie::sitka::BridgePlaneMesh(std::move(geometry)));
+                    state->bridge_art=std::move(art);
+                }else{
+                    // A missing/bad optional bridge texture must not fabricate
+                    // a solid bridge silhouette or crash the rest of Sitka.
+                    Log(host,"Approved O'Connell bridge textures missing/invalid; bridge omitted");
+                }
             }
             state->lighting=reverie::sitka::ParseLighting(ReadText(
                 host,"sitka/lighting/sitka.properties",4096u));
@@ -288,6 +320,13 @@ int32_t OnGlCreated(void* instance) {
         Log(state->host,error.c_str());
         return 0;
     }
+    // Separate textured geometry: static image atlas and VBOs, shared by eyes.
+    if(state->bridge_mesh &&
+       !state->bridge_gl.Create(*state->bridge_mesh,state->bridge_art,
+                               state->lighting.ambient_scale,&error)){
+        Log(state->host,error.c_str());
+        state->bridge_gl.Release(); // optional landmark fails closed
+    }
     if(state->skiff){
         try{
             if(!state->boat_gl.Create(
@@ -299,6 +338,7 @@ int32_t OnGlCreated(void* instance) {
         }catch(const std::exception& e){
             state->boat_text.Release();
             state->boat_gl.Release();
+            state->bridge_gl.Release();
             state->shore_gl.Release();
             state->water_gl.Release();
             state->gl.Release();
@@ -313,6 +353,7 @@ void ReleaseGl(void* instance) {
         static_cast<State*>(instance)->boat_text.Release();
         static_cast<State*>(instance)->last_boat_text.clear();
         static_cast<State*>(instance)->boat_gl.Release();
+        static_cast<State*>(instance)->bridge_gl.Release();
         static_cast<State*>(instance)->shore_gl.Release();
         if(static_cast<State*>(instance)->shore_stream)
             static_cast<State*>(instance)->shore_stream->Reset();
@@ -560,6 +601,7 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(!state->gl.RenderEye(eye)||!state->water_gl.RenderEye(eye))return 0;
     if(state->shore_stream && state->shore_stream->visible_count()>0u &&
        !state->shore_gl.RenderEye(eye))return 0;
+    if(state->bridge_gl.ready() && !state->bridge_gl.RenderEye(eye))return 0;
     if(!state->skiff||!state->skiff->Active())return 1;
     const auto& pose=state->skiff->Pose();
     const reverie::sitka::Water* water=reverie::sitka::SitkaWorldWater(

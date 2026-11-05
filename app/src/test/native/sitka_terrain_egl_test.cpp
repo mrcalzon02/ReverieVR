@@ -1,6 +1,7 @@
 // Real Mesa/EGL GLES2 driver regression for the unregistered Sitka terrain module.
 // Synthetic triangle is a test fixture, NEVER approved Sitka geography.
 #include "../../main/jni/native/sitka_terrain_gl.h"
+#include "../../main/jni/native/sitka_bridge_gl.h"
 #include "../../main/jni/native/sitka_water_gl.h"
 #include "../../main/jni/native/sitka_seafloor_mesh.h"
 #include "../../main/jni/native/sitka_boat_mesh.h"
@@ -458,6 +459,89 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
     glyphs.Release();
     boat_gl.Release();
     Check(!boat_gl.ready(),"boat context release retained GPU resources");
+
+    // Genuine Mesa/GLES2 proof of THREE distinct textured bridge surfaces,
+    // cutout side art, two-eye shared resources and caller state restoration.
+    // Geometry/art are deliberately synthetic test fixtures, not a claimed
+    // real-world O'Connell alignment or approved landmark photograph.
+    reverie::sitka::BridgeArt art;
+    for(size_t i=0;i<3u;++i){
+        auto& image=art.textures[i];
+        image.width=i==0u?512u:64u;
+        image.height=i==0u?128u:64u;
+        image.rgba.assign(size_t(image.width)*image.height*4u,0u);
+        for(unsigned y=0;y<image.height;++y)
+            for(unsigned x=0;x<image.width;++x){
+                const size_t at=(size_t(y)*image.width+x)*4u;
+                const bool solid=i!=0u || (x>=100u&&x<410u&&y>=25u&&y<103u);
+                image.rgba[at]=i==0u?200u:10u;
+                image.rgba[at+1u]=i==1u?190u:10u;
+                image.rgba[at+2u]=i==2u?190u:10u;
+                image.rgba[at+3u]=solid?255u:0u;
+            }
+    }
+    Check(art.Valid(),"synthetic bridge texture contract invalid");
+    const auto generated=reverie::sitka::OriginalBridgeSideSprite();
+    Check(generated.width==512u&&generated.height==128u &&
+          generated.rgba.size()==512u*128u*4u,
+          "Sitka original low-poly side silhouette dimensions wrong");
+    Check(generated.rgba[3u]==0u &&
+          generated.rgba[(size_t(60)*512u+164u)*4u+3u]==255u,
+          "Sitka source-informed twin tower alpha mask missing");
+    auto authored_side=art;
+    authored_side.textures[0]=generated;
+    Check(authored_side.Valid(),"original source-informed bridge side alpha gate failed");
+    reverie::sitka::BridgePlaneMesh bridge;
+    using reverie::sitka::BridgePlaneMaterial;
+    using reverie::sitka::BridgeVertex;
+    using reverie::sitka::BridgeAddQuad;
+    BridgeAddQuad(bridge,BridgePlaneMaterial::SideSilhouette,
+        BridgeVertex(-.7f,-.7f,0.f,0.f,1.f),
+        BridgeVertex( .7f,-.7f,0.f,1.f,1.f),
+        BridgeVertex( .7f, .7f,0.f,1.f,0.f),
+        BridgeVertex(-.7f, .7f,0.f,0.f,0.f));
+    for(const auto m:{BridgePlaneMaterial::RoadConcrete,
+                       BridgePlaneMaterial::UnderdeckConcrete})
+        BridgeAddQuad(bridge,m,BridgeVertex(2.f,-.2f,0.f,0.f,0.f),
+            BridgeVertex(3.f,-.2f,0.f,1.f,0.f),
+            BridgeVertex(3.f, .2f,0.f,1.f,1.f),
+            BridgeVertex(2.f, .2f,0.f,0.f,1.f));
+    reverie::sitka::BridgeGl bridge_gl;
+    const Snapshot bridge_before=Capture();
+    Check(bridge_gl.Create(bridge,art,1.f,&error),
+          "bridge textured GLES2 creation failed");
+    Check(bridge_gl.ready()&&bridge_gl.quad_count()==3u &&
+          bridge_gl.draw_calls_per_eye()==3u &&
+          bridge_gl.upload_count()==6u,
+          "bridge GLES2 surfaces are not three cached static materials");
+    Same(bridge_before,Capture());
+    glClearColor(0.f,0.f,0.f,1.f);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot before_eye=Capture();
+        const auto eye=Eye(index);
+        Check(bridge_gl.RenderEye(&eye),"bridge textured stereo eye failed");
+        Same(before_eye,Capture());
+        Check(bridge_gl.upload_count()==6u,
+              "bridge textures/VBOs uploaded during an eye render");
+    }
+    glFinish();
+    const auto bridge_left=Pixel(32,32),bridge_right=Pixel(96,32);
+    Check(bridge_left[0]>120u&&bridge_left[1]<80u&&bridge_left[2]<80u,
+          "bridge side texture did not reach left-eye raster");
+    Check(bridge_right[0]>120u&&bridge_right[1]<80u&&bridge_right[2]<80u,
+          "bridge side texture did not reach right-eye raster");
+    Check(Pixel(4,4)[0]<30u,"bridge alpha cutout did not discard background");
+    bridge_gl.Release();
+    Check(!bridge_gl.ready()&&bridge_gl.upload_count()==0u,
+          "bridge GL teardown leaked owned static resources");
+    Same(bridge_before,Capture());
+    // Reject a solid rectangle side as an unacceptable silhouette mask.
+    for(size_t i=3;i<art.textures[0].rgba.size();i+=4u)
+        art.textures[0].rgba[i]=255u;
+    Check(!art.Valid(),"solid bridge side art bypassed cutout gate");
+
     NoGlError("water release");
     terrain.Release();
     Check(!terrain.ready() && terrain.upload_count() == 0u, "context release retained buffers");

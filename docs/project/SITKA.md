@@ -2,6 +2,47 @@
 
 # Sitka
 
+## O'Connell Bridge: native 3-material GLES2 textured rendering — 2026-11-04
+
+The **simple-plane** bridge renderer is now implemented as
+`sitka_bridge_gl.h` and hooked to the source-only `sitka_terrain_module.cpp`.
+`sitka_bridge_layout.h` accepts an **optional**, strictly bounded
+`SITKA-BRIDGE-1` layout under `sitka/structures/oconnell.bridge`. It
+requires a reviewed source feature identifier, 64-hex SHA-256 attribution,
+EPSG:32608 projection, origin agreement with the actual terrain mesh,
+documented deck dimensions, and individually authored road-grade samples.
+It rejects an absent/invalid identity or mismatched origin; it **never
+generates bridge endpoints or pylons** from the LOC point locator.
+
+For N grade segments, the native builder emits exactly **2 side sheets + N
+road-top planes + N underside planes**, with UVs. The GLES2 layer builds
+**three** cached material VBOs and textures (side/road/underside), and
+draws them in the same stereo world coordinates, with alpha cutout on the
+two billboard sides. It reuses the APK's existing 64×64 concrete PNGs
+(`quay_concrete` on road and `reinforced_concrete` underneath) through
+two narrowly scoped Sitka grants in the shared-asset resolver; no second
+texture copies or new model-heavy material system are installed.
+
+A **512×128 original PSX silhouette** can be generated once on the CPU as
+an alpha texture from the publicly documented twin-pylon/harp-stay pattern
+when the optional `sitka/structures/oconnell_side.png` is absent.
+That is an explicitly *stylized approximation*, not a surveyed rendering
+or an extracted/stolen photograph. A source-reviewed 512×128 replacement
+PNG takes precedence later without changing the two-sided geometry.
+Texture decoding occurs at module creation; GLES2 texture/VBO uploads
+occur once per context, **never per eye or frame**. Malformed optional art
+omits the bridge rather than producing opaque boxes or damaging the
+existing terrain/seabed/water/boat.
+
+`sitka_bridge_layout_test.cpp` exercises source/CRS/geometry fail-closed
+admission. `sitka_terrain_egl_test.cpp` exercises the real GLES2 bridge
+program, alpha mask and both eye views, host GL state preservation,
+material slots and context recreation. The NDK cross-link gate compiles
+the actual modified Sitka module for ARMv7 and ARM64. The bridge still
+**does not appear in a playable Sitka game**: licensed/current projected
+alignment, terrain-matched grades and an approved world asset are
+pending. No automatic default bridge placement is permitted.
+
 ## O'Connell Bridge — strict simple-geometry budget (2026-11-04)
 
 **Design authority: SIMPLE.** The real John O'Connell Memorial Bridge must

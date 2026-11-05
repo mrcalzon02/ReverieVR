@@ -6,11 +6,11 @@
 #include <cstdint>
 #include <cstring>
 namespace reverie { namespace native { namespace shared_assets {
-constexpr uint8_t kBreakwater=1u,kOmega=2u,kRedLedger=4u,kWorkshop=8u;
+constexpr uint8_t kBreakwater=1u,kOmega=2u,kRedLedger=4u,kWorkshop=8u,kSitka=16u;
 struct Entry { const char *path; uint32_t max_bytes; uint8_t consumers; };
 constexpr Entry kEntries[]={
     {"native/shared/v1/materials/coastal/shingle.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
-    {"native/shared/v1/materials/coastal/quay_concrete.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
+    {"native/shared/v1/materials/coastal/quay_concrete.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
     {"native/shared/v1/materials/coastal/black_basalt.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/oxidized_steel.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/sandbag_burlap.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
@@ -21,7 +21,7 @@ constexpr Entry kEntries[]={
     {"native/shared/v1/materials/coastal/camo_netting.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/diamond_plate.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/trench_soil.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
-    {"native/shared/v1/materials/coastal/reinforced_concrete.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
+    {"native/shared/v1/materials/coastal/reinforced_concrete.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
     {"native/shared/v1/materials/coastal/crate_planks.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/riveted_bulkhead.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/pebble_ground.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
@@ -34,7 +34,8 @@ inline uint8_t ConsumerMask(const char *id) {
     return std::strcmp(id,"breakwater-battery")==0?kBreakwater:
            std::strcmp(id,"omega-front")==0?kOmega:
            std::strcmp(id,"between-deliveries-red-ledger")==0?kRedLedger:
-           std::strcmp(id,"procedural-test-chamber")==0?kWorkshop:0u;
+           std::strcmp(id,"procedural-test-chamber")==0?kWorkshop:
+           std::strcmp(id,"sitka")==0?kSitka:0u;
 }
 inline uint32_t MaximumBytes(const char *id,const char *path) {
     if(!path)return 0u;

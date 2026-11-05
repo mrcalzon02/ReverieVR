@@ -59,5 +59,14 @@
     "Historic-to-present bridge modifications",
     "Detailed guardrails and foundations"
   ],
-  "model_policy": "May author source-only bridge template from documented measurements; do not instantiate into Sitka world until verified alignment and elevation."
+  "model_policy": "May author source-only bridge template from documented measurements; do not instantiate into Sitka world until verified alignment and elevation.",
+  "rendering_stage": {
+    "geometry": "two alpha-textured side quads plus flat grade-following roadway and underside",
+    "source": "app/src/main/jni/native/sitka_bridge_gl.h",
+    "side_art": "original low-resolution source-informed stylization, not measured or a photograph",
+    "surveyed_alignment": "not_acquired",
+    "actual_game_placement": "not_performed",
+    "shared_png": "native/shared/v1/materials/coastal/{quay_concrete,reinforced_concrete}.png",
+    "benchmark": "source-only GLES2 tests, no S9 frame-time measurement"
+  }
 }

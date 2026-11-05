@@ -35,6 +35,20 @@ int main(){
     assert(MaximumBytes("classic-chess",
         "native/breakwater/beckenburg/wooden_crate_1.bwm")==0);
     assert(MaximumBytes("sitka","sitka/boat/launch.txt")==4096u);
+    assert(MaximumBytes("sitka","sitka/structures/oconnell.bridge")==8192u);
+    assert(MaximumBytes("sitka","sitka/structures/oconnell_side.png")==131072u);
+    assert(MaximumBytes("sitka",
+        "native/shared/v1/materials/coastal/quay_concrete.png")==16384u);
+    assert(MaximumBytes("sitka",
+        "native/shared/v1/materials/coastal/reinforced_concrete.png")==16384u);
+    assert(MaximumBytes("sitka",
+        "native/shared/v1/materials/coastal/dock_planks.png")==0u);
+    assert(MaximumBytes("sitka",
+        "native/shared/v1/models/psx/wooden_crate_1.bwm")==0u);
+    assert(MaximumBytes("breakwater-battery",
+        "sitka/structures/oconnell_side.png")==0u);
+    assert(MaximumBytes("sitka",
+        "sitka/structures/../oconnell_side.png")==0u);
     assert(MaximumBytes("sitka",
         "sitka/bathymetry/bathymetry-r01-c02.sitkab")==
         56u+513u*513u*5u);
