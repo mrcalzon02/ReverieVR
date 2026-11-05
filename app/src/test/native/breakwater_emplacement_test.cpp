@@ -44,7 +44,10 @@ int main() {
                      y0>-.45f && y1>-.45f));
         };
         EmitBatteryEmplacement(location,false,box,triangle);
-        assert(boxes>30&&faces>=10);
+        // The emitter now builds 50 solid 3D elements plus six actual
+        // ramp/cheek faces; the former ten-triangle quota counted surfaces
+        // that were replaced by solid geometry and textured cladding.
+        assert(boxes>=50 && faces>=6);
         assert(minDepth<-.6f && maxDepth>2.0f);
         const int dayBoxes=boxes,dayFaces=faces;
         int cladding=0,sandbags=0,metalwork=0,crates=0,tarps=0,roofs=0,deck=0;
