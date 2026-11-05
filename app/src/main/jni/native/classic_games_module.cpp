@@ -22,6 +22,7 @@
 #if CLASSIC_GAME_KIND == 5
 #include "classic_chess_book.h"
 #include "classic_chess_reference.h"
+#include "classic_chess_move_tween.h"
 #include "classic_chess_study.h"
 #include "classic_chess_sprite_atlas.h"
 #include "classic_chess_wood_atlas.h"
@@ -76,6 +77,7 @@ struct Module {
     bool previousSecondary=false;
 #if CLASSIC_GAME_KIND == 5
     reverie::chessbook::Analysis chessAnalysis;
+    reverie::chesstween::Move chessTween;
     int chessAnalyzedPly=-1;
     int chessPanelTab=0; // 0 = legal next move; 1 = indexed classical line
     bool chessPanelHover=false;
@@ -528,7 +530,12 @@ void RebuildBoard(Module *m,bool fixed){
         }
         if(!fixed){
         int cell=y*size+x;
+#if CLASSIC_GAME_KIND == 5
+        const int piece=s.kind==reverie::boardgames::Kind::Chess?
+            m->chessTween.PieceAt(s.cells,cell):s.cells[cell];
+#else
         const int piece=s.cells[cell];
+#endif
         if(piece!=0){
             if(s.kind==reverie::boardgames::Kind::Go){
                 if(piece>0){
@@ -618,6 +625,29 @@ void RebuildBoard(Module *m,bool fixed){
             BoardOutline(m,px,py,gap*.76f,.93f,.98f,.99f);
         }
     }
+#if CLASSIC_GAME_KIND == 5
+    if(!fixed && s.kind==reverie::boardgames::Kind::Chess &&
+       m->chessTween.InFlight()) {
+        const auto &anim=m->chessTween;
+        // Render a single moving source piece above the old occupancy,
+        // and keep a captured piece at its square until contact.
+        const float gap=BoardSpacing(s);
+        const auto drawMoving=[&](int piece,int from,int to){
+            if(!piece||from<0||to<0)return;
+            const float x=(anim.FileAt(from,to)-3.5f)*gap;
+            const float y=(3.5f-anim.RankAt(from,to))*gap;
+            Disc(m,x,y,.148f,-2.949f,.60f,.49f,.29f);
+            Disc(m,x,y,.140f,-2.940f,
+                 piece>0?.085f:.93f,piece>0?.115f:.90f,
+                 piece>0?.15f:.78f);
+            AppendChessSprite(m,piece,x,y);
+        };
+        drawMoving(anim.moving,anim.from,anim.to);
+        // Kingside and queenside castle are two legal simultaneous
+        // piece movements, not a king magically swapping with a rook.
+        drawMoving(anim.rookPiece,anim.rookw,anim.rookTo);
+    }
+#endif
     if(fixed && s.kind==reverie::boardgames::Kind::Go){
         Text(m,"TWO PASSES: REVIEW DEAD GROUPS",0,-1.58f,.040f,
              .80f,.90f,.87f);
@@ -1259,6 +1289,15 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     const int prevWinner=m->board.winner,prevSide=m->board.side;
     const bool prevFinished=m->board.finished;
     const int prevGoReviewRevision=m->board.goReviewRevision;
+#if CLASSIC_GAME_KIND == 5
+    // Only state advances during Update. The animation is a separate
+    // read-only presentation of the previous and committed boards.
+    const auto previousChessCells=m->board.cells;
+    if(m->chessTween.Active()) {
+        m->chessTween.Advance(copy.delta_seconds);
+        m->dirty=true;
+    }
+#endif
     const bool second=copy.secondary_down!=0;
     const bool secondaryEdge=second&&!m->previousSecondary;
     m->previousSecondary=second;
@@ -1360,6 +1399,11 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             ChessWikiOpen(m,chessLeftPanelAim?0:1);
             ReverieNativeRequestFeedbackV1(m->host,
                 REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        } else if(m->chessTween.Active()) {
+            // Prevent a second move or reset from replacing the in-flight
+            // image. Reference tabs remain browseable during the animation.
+            ReverieNativeRequestFeedbackV1(m->host,
+                REVERIE_NATIVE_FEEDBACK_FAILURE);
         } else
 #endif
         if(m->board.finished||m->cpuFailed) {
@@ -1417,15 +1461,32 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         }
     }
     try {
+#if CLASSIC_GAME_KIND == 5
+        // Keep the player's completed move visible before Black replies.
+        // Polling is also deferred to avoid overlapping two animations.
+        if(!m->chessTween.Active() && m->cpu.Poll(m->board))
+            m->dirty=true;
+        if(!m->chessTween.Active() && !m->cpuFailed &&
+           !m->cpu.Busy() && m->board.side==-1 &&
+           !m->board.finished && m->board.ply==prevPly)
+            m->cpu.Start(m->board);
+#else
         if(m->cpu.Poll(m->board))m->dirty=true;
         if(!m->cpuFailed&&!m->cpu.Busy()&&m->board.side==-1&&
            !m->board.finished)m->cpu.Start(m->board);
+#endif
     }catch(const std::exception &error){
         m->cpuFailed=true;m->dirty=true;
         ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
                             "ClassicCpu",error.what());
     }
 #if CLASSIC_GAME_KIND == 5
+    if(m->board.ply!=prevPly) {
+        if(!m->chessTween.Begin(previousChessCells,m->board,prevPly))
+            ReverieNativeLogV1(m->host,REVERIE_NATIVE_LOG_ERROR,
+                "ClassicChess","Completed chess ply could not animate");
+        m->dirty=true;
+    }
     // Each pointer/cursor hover names the actual board piece and previews
     // exactly those king-safe destinations the chess engine would accept.
     // Opponent inspection uses hypothetical next-turn rules, never executes.
