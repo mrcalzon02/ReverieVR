@@ -1,4 +1,5 @@
 #include "breakwater_campaign.h"
+#include "breakwater_wave_threat.h"
 #include "breakwater_checkpoint.h"
 #include "breakwater_silhouettes.h"
 #include "breakwater_armor.h"
@@ -1202,6 +1203,23 @@ void BuildScene(State *s) {
             game.credits());
         Text(s,header,0,menu::kShopStatusY,-2.97f,
              font::FittedScale(header,5.75f,.040f),.91f,.90f,.77f);
+        // Announce actual next-wave composition before equipment selection.
+        // This remains part of the existing compact Shop, not a new menu.
+        const unsigned progression=game.location()*3u+
+            (game.day()-1u)*2u+(night?1u:0u)+
+            (static_cast<unsigned>(game.difficulty())>0u?1u:0u);
+        const waves::Operation operation=waves::Plan(
+            progression,game.wave_index(),game.waves_this_period());
+        const unsigned incoming=waves::SpawnBudget(
+            game.location(),game.day(),night,
+            static_cast<uint8_t>(game.difficulty()),
+            game.wave_index(),game.waves_this_period());
+        char forecast[80];
+        std::snprintf(forecast,sizeof(forecast),"NEXT %s - %u HOSTILES",
+                      waves::OperationName(operation),incoming);
+        Text(s,forecast,0,.735f,-2.972f,
+             font::FittedScale(forecast,5.75f,.030f),
+             .83f,.91f,.82f);
         // Focus-dependent inspection and purchase eligibility are
         // shown as real vector text; no extra tabs or inert details panel.
         const int focused=s->menu_focus;

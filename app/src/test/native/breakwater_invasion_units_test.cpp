@@ -14,13 +14,23 @@ int main() {
             if(wave<=12)
                 assert(SelectUnit(12,wave,25,roll,0)!=UnitType::ArmoredTransport);
         }
-    // Below the heavy threshold the new selector must delegate exactly
-    // to the existing escalating pressure-band mix, not reset it.
+    // Unannounced waves keep their original seeded composition. Named
+    // operations guarantee recognizable first two arrivals at the correct
+    // campaign threat grades, without altering existing combat entities.
     for(unsigned grade=3u;grade<10u;++grade)
         for(uint8_t wave=1u;wave<=25u;++wave)
             for(uint32_t roll=0;roll<64u;++roll)
-                assert(SelectUnit(grade,wave,25u,roll,0u)==
-                       waves::SelectInvasionUnit(grade,wave,25u,roll));
+                if(waves::Plan(grade,wave,25u)==waves::Operation::Mixed)
+                    assert(SelectUnit(grade,wave,25u,roll,0u)==
+                           waves::SelectInvasionUnit(grade,wave,25u,roll));
+    assert(SelectUnit(3,10,20,7,0)==UnitType::LandingCraft);
+    assert(SelectUnit(3,10,20,7,1)==UnitType::LandingCraft);
+    assert(SelectUnit(5,6,20,7,0)==UnitType::Gunboat);
+    assert(SelectUnit(5,6,20,7,1)==UnitType::LandingCraft);
+    assert(SelectUnit(8,7,20,7,0)==UnitType::Aircraft);
+    assert(SelectUnit(8,7,20,7,1)==UnitType::Aircraft);
+    assert(SelectUnit(8,7,20,7,2)==
+           waves::SelectInvasionUnit(8,7,20,7));
     assert(SelectUnit(13,25,25,7,0)==UnitType::ArmoredTransport);
     assert(SelectUnit(13,25,25,7,1)==UnitType::Gunboat);
     assert(SelectUnit(13,25,25,7,2)!=UnitType::Gunboat);
@@ -50,8 +60,9 @@ int main() {
                 const UnitType base=waves::SelectInvasionUnit(
                     13u,wave,25u,roll);
                 const UnitType chosen=SelectUnit(13,wave,25,roll,1);
-                if(base==UnitType::Gunboat ||
-                   base==UnitType::Aircraft)assert(chosen==base);
+                if(waves::Plan(13u,wave,25u)==waves::Operation::Mixed &&
+                   (base==UnitType::Gunboat ||
+                    base==UnitType::Aircraft))assert(chosen==base);
                 if(chosen==UnitType::ArmoredTransport)saw_heavy=true;
                 if(chosen==UnitType::LandingCraft)saw_regular=true;
             }

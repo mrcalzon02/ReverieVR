@@ -2003,7 +2003,7 @@ int main() {
     encoded[28]=17u; // valid uint8_t, invalid period progress
     assert(!restored.DeserializeShop(encoded,sizeof(encoded)));
     assert(restored.wave_index()==16u);
-    // The nine-day / 244-352-wave campaign previously accepted wave
+    // The nine-day / 286-394-wave campaign previously accepted wave
     // indices up to 32 in simulation but rejected shop saves above eight.
     // Verify the late actual location/period maximum, *not* just uint8_t
     // representability; never silently wrap the serialized 32-bit word.
@@ -2013,23 +2013,23 @@ int main() {
     late[16]=2u; // Blackcap Island (third map)
     late[20]=4u; // day 4
     late[24]=0u; // daylight
-    late[28]=25u; // 12+2*3+3+2*2, final day limit
+    late[28]=30u; // 12+2*3+2*(4-1)+3*2, final day limit
     assert(restored.DeserializeShop(late,sizeof(late)));
     assert(restored.location()==2u && restored.day()==4u);
     assert(restored.difficulty()==Difficulty::Siege);
-    assert(restored.waves_this_period()==25u);
-    assert(restored.wave_index()==25u);
-    late[28]=26u;
+    assert(restored.waves_this_period()==30u);
+    assert(restored.wave_index()==30u);
+    late[28]=31u;
     assert(!restored.DeserializeShop(late,sizeof(late)));
-    assert(restored.wave_index()==25u);
-    late[24]=1u; // night now has only 21 waves
-    late[28]=21u;
+    assert(restored.wave_index()==30u);
+    late[24]=1u; // final night has 26 distinct waves
+    late[28]=26u;
     assert(restored.DeserializeShop(late,sizeof(late)));
     assert(restored.period()==Period::Night);
-    assert(restored.waves_this_period()==21u);
-    late[28]=22u;
+    assert(restored.waves_this_period()==26u);
+    late[28]=27u;
     assert(!restored.DeserializeShop(late,sizeof(late)));
-    assert(restored.wave_index()==21u);
+    assert(restored.wave_index()==26u);
     // Resume the original Veteran fixture for the subsequent corrupted
     // save atomicity checks, which assert original credits/upgrade state.
     encoded[28]=16u;

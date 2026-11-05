@@ -5,7 +5,7 @@
 using reverie::breakwater::waves::ForPeriod;
 int main(){
     const uint8_t days[3]={2,3,4};
-    const unsigned expected[4]={244u,280u,316u,352u};
+    const unsigned expected[4]={286u,322u,358u,394u};
     for(unsigned tier=0;tier<4;++tier){
         unsigned total=0;
         unsigned periods=0;
@@ -44,18 +44,25 @@ int main(){
         assert(ForPeriod(0,1,false,tier)==12u+2u*tier);
         assert(ForPeriod(0,1,true,tier)==8u+2u*tier);
     }
+    // Opening day is unchanged; theater/day progression adds new stages.
+    for(unsigned tier=0;tier<4u;++tier) {
+        assert(ForPeriod(0,2,false,tier)==14u+2u*tier);
+        assert(ForPeriod(1,1,false,tier)==15u+2u*tier);
+        assert(ForPeriod(2,4,false,tier)==24u+2u*tier);
+        assert(ForPeriod(2,4,true,tier)==20u+2u*tier);
+    }
     static_assert(ForPeriod(0,1,false,0)==12u,"Cadet");
     static_assert(ForPeriod(0,1,false,3)==18u,"Siege");
-    static_assert(ForPeriod(2,4,false,3)==25u,"Final daytime");
-    static_assert(ForPeriod(2,4,true,3)==21u,"Final night");
+    static_assert(ForPeriod(2,4,false,3)==30u,"Final daytime");
+    static_assert(ForPeriod(2,4,true,3)==26u,"Final night");
     assert(ForPeriod(255,255,false,255)==32u);
     static_assert(reverie::breakwater::waves::CheckpointAllowed(
-        25u,2u,4u,false,3u),"Siege late daytime save must load");
+        30u,2u,4u,false,3u),"Siege late daytime save must load");
     static_assert(!reverie::breakwater::waves::CheckpointAllowed(
-        26u,2u,4u,false,3u),"Siege beyond-day wave must reject");
+        31u,2u,4u,false,3u),"Siege beyond-day wave must reject");
     static_assert(reverie::breakwater::waves::CheckpointAllowed(
-        21u,2u,4u,true,3u),"Siege final night save must load");
+        26u,2u,4u,true,3u),"Siege final night save must load");
     static_assert(!reverie::breakwater::waves::CheckpointAllowed(
-        22u,2u,4u,true,3u),"Siege night-overflow must reject");
-    std::cout<<"Breakwater 18-period schedule: 244-352 distinct waves passed\n";
+        27u,2u,4u,true,3u),"Siege night-overflow must reject");
+    std::cout<<"Breakwater 18-period schedule: 286-394 distinct waves passed\n";
 }

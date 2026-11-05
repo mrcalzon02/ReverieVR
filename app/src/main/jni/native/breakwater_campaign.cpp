@@ -275,9 +275,9 @@ bool Campaign::DeserializeShop(const uint8_t *source, size_t length) {
 }
 
 uint8_t Campaign::NextCount() const {
-    const unsigned base=2u+Tier(difficulty_)+location_+
-        (day_-1u)+(period_==Period::Night?1u:0u);
-    return static_cast<uint8_t>(std::min<unsigned>(30u,base*3u));
+    return waves::SpawnBudget(location_,day_,period_==Period::Night,
+                              Tier(difficulty_),wave_index_,
+                              waves_this_period());
 }
 bool Campaign::BeginWave() {
     if (phase_ != Phase::Shop) return false;
@@ -671,7 +671,8 @@ void Campaign::TickStep(float dt) {
             }
             --remaining_to_spawn_;
             ++spawned_;
-            spawn_timer_ = 0.65f;
+            spawn_timer_ = waves::SpawnGapSeconds(
+                wave_index_,waves_this_period());
             break;
         }
     }

@@ -14,6 +14,16 @@ inline UnitType SelectUnit(unsigned progression,uint8_t wave_index,
     // in pressure bands using the same divisor.
     const UnitType baseline=waves::SelectInvasionUnit(
         progression,wave_index,waves_in_period,roll);
+    // Real first-arrival compositions make announced operations visible.
+    // All classes still use existing hitboxes, damage and AI logic.
+    const waves::Operation op=waves::Plan(
+        progression,wave_index,waves_in_period);
+    if(spawn_ordinal<2u) {
+        if(op==waves::Operation::AirRaid)return UnitType::Aircraft;
+        if(op==waves::Operation::NavalScreen)
+            return spawn_ordinal==0u?UnitType::Gunboat:UnitType::LandingCraft;
+        if(op==waves::Operation::LandingPush)return UnitType::LandingCraft;
+    }
     if(progression<10u || wave_index<=waves_in_period/2u)return baseline;
     if(wave_index==waves_in_period && spawn_ordinal==0u)
         return UnitType::ArmoredTransport;
