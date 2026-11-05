@@ -20,7 +20,7 @@ int main(){
     assert(production.tier(0)==ShoreStreamPlanner::Massing);
     assert(production.detailed_count()==0u);
     // Explicitly approved illustrative P1 is exercised only in test code.
-    ShoreStreamPlanner plan(features,{"lincoln_real_outline"});
+    ShoreStreamPlanner plan(features,{"lincoln_real_outline","bridge_ramp"});
     assert(!plan.Update(NAN,0,0,0));
     assert(plan.Update(12,5,0,0));
     const auto detailed=plan.BuildPending();
