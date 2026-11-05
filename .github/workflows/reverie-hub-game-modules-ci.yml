@@ -54,9 +54,12 @@ on:
 permissions:
   contents: read
 
+# This emulator/build gate must produce a full acceptance result even
+# when development pushes arrive while Gradle or the emulator is running.
+# GitHub may coalesce pending revisions; never cancel the running evidence.
 concurrency:
   group: reverie-hub-game-acquisition-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   verify-installed-hub:
