@@ -84,7 +84,7 @@ void EmitCoastalTerrain(uint8_t location, bool night,
         for(int n=0;n<9;++n) {
             const float z0=-2.18f+n*.22f,z1=z0+.22f;
             const float near=BeachHeight(location,sign*3.86f,z0);
-            const float far=BeachHeight(location,sign*3.86f,z1);
+            const float farHeight=BeachHeight(location,sign*3.86f,z1);
             const float crestX=sign*(4.30f+.14f*((n+location)%3));
             const float rise=(location==2?.47f:location==1?.24f:.34f)
                 *(n<3?.70f:n>6?.82f:1.f);
@@ -92,7 +92,7 @@ void EmitCoastalTerrain(uint8_t location, bool night,
                      crestX,y+rise*.92f,z1,
                      c.detail_r*.78f,c.detail_g*.81f,c.detail_b*.77f);
             triangle(sign*3.86f,near,z0,crestX,y+rise*.92f,z1,
-                     sign*3.86f,far,z1,
+                     sign*3.86f,farHeight,z1,
                      c.sand_r*.79f,c.sand_g*.79f,c.sand_b*.78f);
         }
     }
