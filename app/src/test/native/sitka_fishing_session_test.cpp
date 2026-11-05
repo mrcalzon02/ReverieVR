@@ -53,6 +53,13 @@ int main(){
     assert(restored.fishing.phase==FishingPhase::Ready);
     assert(restored.fishing.journal.total==1);
     assert(!restored.UpgradeTackle());
+    assert(restored.Discover(4u,BeachFind::Rock));
+    assert(restored.dirty&&restored.Flush(s.Port()));
+    FishingSession replay;
+    assert(replay.Load(s.Port())==FishingLoad::Restored);
+    assert(replay.fishing.journal.beach_sites==(uint64_t(1)<<4u));
+    assert(replay.fishing.journal.discoveries==FindMask(BeachFind::Rock));
+    assert(!replay.Discover(4u,BeachFind::Rock));
     // A press while a landed catch is displayed only acknowledges it.
     f.Update(.1f,false,false,false,0.f);
     assert(f.Update(.1f,true,false,false,0.f).event==FishingEvent::Acknowledged);

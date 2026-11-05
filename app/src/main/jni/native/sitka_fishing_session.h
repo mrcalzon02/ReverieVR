@@ -75,11 +75,17 @@ public:
         if (result.journal_changed) dirty = true;
         return result;
     }
-    bool UpgradeTackle() {
-        if (!fishing.UpgradeTackle()) return false;
+    bool Discover(uint32_t site, BeachFind kind) {
+        if (!fishing.Discover(site,kind)) return false;
         dirty = true;
         return true;
     }
+    bool Purchase(Equipment item) {
+        if (!fishing.Purchase(item)) return false;
+        dirty = true;
+        return true;
+    }
+    bool UpgradeTackle() { return Purchase(Equipment::Rod); }
     bool Flush(const FishingStore& store) {
         if (!dirty) return true;
         if (!store.write || !store.write(store.user, SaveJournal(fishing.journal))) {

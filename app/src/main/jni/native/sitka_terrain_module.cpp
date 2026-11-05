@@ -13,6 +13,7 @@
 #include "sitka_water_gl.h"
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
+#include "sitka_beach_discoveries.h"
 #include "sitka_bathymetry.h"
 #include "sitka_bathymetry_stream.h"
 #include "sitka_procedural_seabed.h"
@@ -64,6 +65,9 @@ struct State {
     reverie::native::horizon::Renderer horizon_gpu;
     std::vector<reverie::sitka::FishingSpot> fishing_spots;
     reverie::sitka::FishingSession fishing;
+    std::vector<reverie::sitka::BeachSite> beach_sites;
+    reverie::sitka::TerrainGl beach_gl;
+    bool beach_dirty=false,beach_primary_latched=false;
     reverie::sitka::BathyAtlas bathymetry; // V1 source compatibility.
     std::unique_ptr<reverie::sitka::BathyStreamCache> stream;
     std::unique_ptr<reverie::sitka::ProceduralSeabed> generated;
@@ -99,8 +103,8 @@ int ReadFishingSave(void* user,std::string& content) {
     uint32_t size=0u;
     const int32_t code=state->host->read_save("sitka-fishing-v1.sav",nullptr,0u,&size);
     if(code==REVERIE_NATIVE_SAVE_NOT_FOUND)return 0;
-    if(code!=REVERIE_NATIVE_SAVE_OK||size==0u||size>128u)return -1;
-    std::array<char,128> bytes{};
+    if(code!=REVERIE_NATIVE_SAVE_OK||size==0u||size>256u)return -1;
+    std::array<char,256> bytes{};
     uint32_t actual=0u;
     if(state->host->read_save("sitka-fishing-v1.sav",bytes.data(),
        static_cast<uint32_t>(bytes.size()),&actual)!=REVERIE_NATIVE_SAVE_OK||
@@ -109,7 +113,7 @@ int ReadFishingSave(void* user,std::string& content) {
 }
 bool WriteFishingSave(void* user,const std::string& text) {
     auto* state=static_cast<State*>(user);
-    return text.size()<=128u &&
+    return text.size()<=256u &&
         state->host->write_save("sitka-fishing-v1.sav",text.data(),
           static_cast<uint32_t>(text.size()))==REVERIE_NATIVE_SAVE_OK;
 }
@@ -319,6 +323,29 @@ void* Create(const ReverieNativeHostV1* host) {
                loaded!=reverie::sitka::FishingLoad::Restored)
                 throw std::invalid_argument(
                     "Sitka fishing save unavailable or invalid: preserve existing data");
+            // The optional authored beach-site anchors are NOT real-world
+            // assertions that a shell/crab/rock exists at that spot.
+            // Their coordinates must be reviewed and on dry source terrain.
+            const char* beach_path="sitka/beach/discoveries.txt";
+            uint32_t beach_size=0u;
+            const int32_t beach_probe=host->read_asset(
+                beach_path,nullptr,0u,&beach_size);
+            if(beach_probe!=REVERIE_NATIVE_SAVE_NOT_FOUND){
+                if((beach_probe!=REVERIE_NATIVE_SAVE_OK &&
+                    beach_probe!=REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL)||
+                   beach_size<100u||
+                   beach_size>reverie::sitka::kMaxBeachAssetBytes)
+                    throw std::invalid_argument("Invalid Sitka beach-site asset size");
+                state->beach_sites=reverie::sitka::ParseBeachSites(
+                    ReadText(host,beach_path,
+                        static_cast<uint32_t>(reverie::sitka::kMaxBeachAssetBytes)),
+                    state->terrain.origin_east,state->terrain.origin_north);
+                for(const auto& site:state->beach_sites)
+                    if(!state->walk_session->GroundAt(site.x,site.z).valid)
+                        throw std::invalid_argument(
+                            "Sitka discovery anchor not on dry source land");
+                state->beach_dirty=true;
+            }
             // A skiff berth must be explicitly authored in projected metres.
             // Its absence is a supported editor/fishing-only preview. A
             // malformed PRESENT berth fails closed rather than inventing a
@@ -394,6 +421,14 @@ int32_t OnGlCreated(void* instance) {
     }
     // Real-source walking segments remain one small static GLES2 layer;
     // this is a visual top surface, not an invented path/collision shortcut.
+    if(!state->beach_sites.empty() &&
+       !state->beach_gl.CreateOverlay(state->lighting,&error)){
+        state->shore_gl.Release();
+        state->water_gl.Release();
+        state->gl.Release();
+        Log(state->host,error.c_str());
+        return 0;
+    }
     if(state->walk_graph &&
        !state->walk_gl.Create(state->walk_mesh,state->lighting,&error)){
         state->shore_deck_gl.Release();
@@ -457,6 +492,8 @@ void ReleaseGl(void* instance) {
         static_cast<State*>(instance)->bridge_gl.Release();
         static_cast<State*>(instance)->shore_deck_gl.Release();
         static_cast<State*>(instance)->walk_gl.Release();
+        static_cast<State*>(instance)->beach_gl.Release();
+        static_cast<State*>(instance)->beach_dirty=true;
         if(static_cast<State*>(instance)->bridge_view)
             static_cast<State*>(instance)->bridge_view->Reset();
         static_cast<State*>(instance)->shore_gl.Release();
@@ -592,8 +629,41 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         state->last_focus_north=listener_north;
         state->has_focus=true;
     }
+    if(!input->primary_down)state->beach_primary_latched=false;
+    // Point at nearby low-poly beach finds to record them. This uses the
+    // same sanitized native controller ray as fishing, but a distinct
+    // one-press latch prevents one pickup from becoming a held cast.
+    if(state->walk_session && listener &&
+       !state->beach_primary_latched &&
+       !(state->skiff&&state->skiff->Active()) &&
+       state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready &&
+       input->primary_down && !state->beach_sites.empty() &&
+       ReverieNativeInputHasPointerV1(input)){
+        ReverieNativeInputV1 ray_input=*input;
+        if(ReverieNativeSanitizePointerV1(&ray_input)){
+            const float source[3]={
+                ray_input.pointer_origin[0]+foot.x,
+                ray_input.pointer_origin[1]+foot.ground_y,
+                ray_input.pointer_origin[2]+foot.z
+            };
+            const auto found=reverie::sitka::FindBeachTarget(
+                source,ray_input.pointer_direction,foot.x,foot.z,
+                *state->walk_session,state->beach_sites,
+                state->fishing.fishing.journal.beach_sites,
+                state->fishing.fishing.journal.shore_kit_level);
+            if(found.valid &&
+               state->fishing.Discover(found.site,found.kind)){
+                state->beach_primary_latched=true;
+                state->beach_dirty=true;
+                if(!state->fishing.Flush(Store(state)))
+                    Log(state->host,"Sitka beach discovery save deferred");
+                ReverieNativeRequestFeedbackV1(
+                    state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            }
+        }
+    }
     reverie::sitka::FishingCastTarget target;
-    if(!boat_chord&&!(state->skiff&&state->skiff->Active())&&
+    if(!state->beach_primary_latched && !boat_chord&&!(state->skiff&&state->skiff->Active())&&
        input->primary_down&&ReverieNativeInputHasPointerV1(input)){
         ReverieNativeInputV1 normalized=*input;
         if(ReverieNativeSanitizePointerV1(&normalized)){
@@ -614,7 +684,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     const bool fishing_control=!boat_chord&&
         !(state->skiff&&state->skiff->Active());
     const auto event=state->fishing.Update(input->delta_seconds,
-        fishing_control&&input->primary_down!=0u,
+        fishing_control&&!state->beach_primary_latched&&
+            input->primary_down!=0u,
         fishing_control&&input->secondary_down!=0u,
         target.valid,target.depth_metres);
     if(event.journal_changed&&!state->fishing.Flush(Store(state)))
@@ -641,6 +712,22 @@ bool WaterAt(const State* state,double east,double north){
 int32_t PrepareFrame(void* instance){
     State* state=static_cast<State*>(instance);
     if(!state||!state->gl.ready())return 0;
+    // Collection changes are rebuilt ONCE between stereo eye frames,
+    // never from RenderEye or during input simulation.
+    if(state->beach_dirty && state->beach_gl.ready() &&
+       state->walk_session){
+        std::string error;
+        const auto marker=reverie::sitka::BeachMarkerMesh(
+            state->beach_sites,state->fishing.fishing.journal,
+            *state->walk_session);
+        const std::vector<reverie::sitka::TerrainMesh> extras={
+            marker.indices.empty()?reverie::sitka::TerrainMesh{}:marker};
+        if(!state->beach_gl.ReplaceSeafloor(extras,&error)){
+            Log(state->host,error.c_str());
+            return 0;
+        }
+        state->beach_dirty=false;
+    }
     // Source-aligned bridge bounds update once, before BOTH stereo eyes.
     // The 3 existing GPU material batches are never rebuilt for visibility.
     if(state->bridge_view && state->has_focus)
@@ -742,6 +829,8 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(state->shore_stream && state->shore_stream->visible_count()>0u &&
        !state->shore_gl.RenderEye(world_eye))return 0;
     if(state->walk_graph && !state->walk_gl.RenderEye(world_eye))return 0;
+    if(state->beach_gl.ready() &&
+       !state->beach_gl.RenderEye(world_eye))return 0;
     // Reuse the very same per-feature LOD outcome for colored sides and
     // textured top. The two eye renders never rebuild the source polygon.
     if(state->shore_deck_gl.ready() && state->shore_stream &&

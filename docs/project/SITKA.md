@@ -2,6 +2,45 @@
 
 # Sitka
 
+## Multi-track fishing economy and authored beach discovery — 2026-11-05
+
+The source-only fishing journal advances to `SITKA-FISH-3` in the **same
+host-scoped save slot**, retaining V1/V2 migration, fish catch totals,
+earned money, helm equipment and hull tier. Catching fish is the only
+implemented source of credits; awards are gameplay values (Dolly
+Varden 45, coho 100, pink salmon 65, flounder 35). Beach discoveries
+**never award money**. The five upgrade tracks now offer **48 purchased
+levels total**: 12 fishing rod, 10 reel, 10 line, 8 lure assortment
+and 8 beach discovery kit levels. The named rod progression runs from
+a starter pole to a master angler rod. Purchases spend earned fish
+credits and require different counts/types of *unique* beach finds;
+credits alone never bypass unlocks. Reel/rod improve reeling, line
+reduces tension growth, lures shorten bite waits, and the beach kit
+modestly broadens the permitted near-hand pickup distance.
+
+An optional `sitka/beach/discoveries.txt` author export supplies up
+to 64 **immutable site numbers** (`D|id|shell/crab/rock/sea_glass/
+driftwood|local_x|local_z`), reviewed source SHA-256 metadata and
+terrain-matching EPSG:32608 origin. Site locations must lie on dry,
+source-derived walkable land. Item appearance and type are
+**procedural game content**, not asserted sightings of an actual crab
+or natural specimen. When this optional file is absent, the game
+inventories NO find locations, and discovery-gated purchases remain
+locked. The native hand pointer can select near low-poly ground
+markers; a held primary is latched so that picking an object cannot
+silently begin a fishing cast. Each site can be recorded once.
+Collection is persisted and a separate GLES2 marker mesh is replaced
+once **between eye frames**, with found markers removed. The existing
+authoritative walking/free-roam and water constraints remain in place.
+
+The current source has a complete CPU economy, author-site parser,
+VR pickup ray integration and GPU marker lifecycle, with native
+GCC/Clang regression coverage. It does **not** yet provide a built
+shop menu to spend the currency, finished realistic collectible
+models, complete geographic content, a playable registered Sitka
+module or physical S9 controller acceptance. Those remain next stages.
+
+
 ## Source-terrain free roam and Home analog controls — 2026-11-05
 
 **Gameplay authority:** The user explicitly rejected movement constrained

@@ -163,6 +163,13 @@ public:
         pose_={static_cast<float>(start_x),start.y,static_cast<float>(start_z)};
     }
     RoamPose pose()const{return pose_;}
+    // Exposed to the author-sourced beach discovery admission path.
+    // Ground samples are georeferenced terrain, not invented collectible land.
+    GroundHit GroundAt(double x,double z)const{
+        const auto sample=ground_.Sample(x,z,pose_.ground_y);
+        if(!sample.valid||!CanStand(x,z,sample.y))return {};
+        return sample;
+    }
     size_t accepted_steps()const{return accepted_;}
     size_t blocked_steps()const{return blocked_;}
     bool Advance(float strafe,float forward,const float right[3],float seconds){

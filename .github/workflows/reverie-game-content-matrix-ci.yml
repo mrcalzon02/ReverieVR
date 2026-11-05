@@ -332,7 +332,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_name in sitka_fishing_session_test sitka_fishing_spots_test; do
+          for test_name in sitka_fishing_session_test sitka_fishing_spots_test sitka_fishing_test sitka_beach_discoveries_test; do
             for compiler in g++ clang++; do
               "$compiler" -std=c++17 -Wall -Wextra -Werror -pedantic \
                 -Iapp/src/main/jni/native \

@@ -25,9 +25,25 @@ int main() {
         for(int j=0;j<1200 && f.phase!=FishingPhase::Landed;++j)f.Step(.1f,j%8<4,false);
         assert(f.AcknowledgeCatch());
     }
-    assert(f.journal.total==4u && f.journal.credits==140u);
-    assert(f.UpgradeTackle() && f.journal.gear==1u && f.journal.credits==70u);
-    assert(!f.UpgradeTackle());
+    assert(f.journal.total==4u);
+    uint32_t expected_credits=0u;
+    for(unsigned k=0;k<4;++k)expected_credits+=
+        f.journal.caught[k]*kFishCreditAwards[k];
+    assert(f.journal.credits==expected_credits);
+    assert(!f.UpgradeTackle()); // fish credits alone never unlock a shop tier
+    assert(f.Discover(0u,BeachFind::Shell));
+    assert(!f.Discover(0u,BeachFind::Shell));
+    const auto offer=NextEquipment(f.journal,Equipment::Rod);
+    assert(offer.available&&offer.unlocked&&offer.required_sites==1u);
+    assert(f.UpgradeTackle()&&f.journal.gear==1u&&
+           f.journal.credits==expected_credits-offer.credits);
+    assert(!f.UpgradeTackle()); // another unique beach discovery needed
+    assert(f.Discover(1u,BeachFind::Crab));
+    const auto line=NextEquipment(f.journal,Equipment::Line);
+    assert(line.unlocked && f.Purchase(Equipment::Line));
+    assert(f.journal.line_level==1u);
+    assert(!f.Discover(64u,BeachFind::Shell));
+    assert(!f.Discover(2u,BeachFind::Count));
     auto saved=SaveJournal(f.journal);
     Journal restored;
     assert(LoadJournal(saved,restored) && SaveJournal(restored)==saved);

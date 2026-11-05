@@ -1,148 +1,257 @@
 #ifndef REVERIE_SITKA_FISHING_H
 #define REVERIE_SITKA_FISHING_H
-// Game-private, CPU-only Sitka fishing rules. No real-world harvest advice.
-// Call Step once per simulation frame, never once per stereo eye.
+// Game-private, CPU-only Sitka fishing economy. This is game currency,
+// never a statement about Alaska harvest rules or actual seafood prices.
+// Exactly one Step() per simulation tick, never once per stereo eye.
 #include <algorithm>
 #include <array>
 #include <charconv>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <string_view>
 
 namespace reverie { namespace sitka {
 enum class FishingPhase : uint8_t { Ready, Waiting, Bite, Reeling, Landed };
 enum class Fish : uint8_t { DollyVarden, Coho, PinkSalmon, Flounder, Count };
-inline constexpr std::array<const char*,4> kFishNames = {{"Dolly Varden", "Coho salmon", "Pink salmon", "Flounder"}};
+inline constexpr std::array<const char*,4> kFishNames={{
+    "Dolly Varden","Coho salmon","Pink salmon","Flounder"
+}};
+inline constexpr std::array<uint32_t,4> kFishCreditAwards={{45u,100u,65u,35u}};
+
+enum class BeachFind : uint8_t { Shell, Crab, Rock, SeaGlass, Driftwood, Count };
+inline constexpr std::array<const char*,5> kBeachFindNames={{
+    "Shell","Crab sighting","Interesting rock","Sea glass","Driftwood"
+}};
+constexpr uint32_t FindMask(BeachFind f){return 1u<<unsigned(f);}
+
+enum class Equipment : uint8_t { Rod, Reel, Line, Lures, ShoreKit, Count };
+inline constexpr std::array<const char*,5> kEquipmentNames={{
+    "Fishing rod","Reel","Fishing line","Lure assortment","Beach discovery kit"
+}};
+inline constexpr std::array<uint32_t,5> kEquipmentMax={{12u,10u,10u,8u,8u}};
+inline constexpr std::array<uint32_t,5> kEquipmentBasePrice={{35u,28u,23u,21u,26u}};
+inline constexpr std::array<const char*,13> kRodNames={{
+    "Starter pole","Bamboo travel rod","Fiberglass caster","Dock spinning rod",
+    "Coastal spinning rod","Carbon composite","Light saltwater",
+    "Surf casting rod","Reinforced surf rod","Coastal graphite",
+    "Precision long cast","Heavy offshore","Master angler rod"
+}};
+
 struct Journal {
-    uint32_t seed = 0x51A7CAu;
-    uint32_t credits = 0;
-    uint32_t gear = 0;
-    std::array<uint32_t,4> caught = {{0,0,0,0}};
-    uint32_t total = 0;
-    uint32_t helm_upgrades = 0; // purchased physical fittings
-    uint32_t hull_tier = 0; // dinghy -> skiff -> pilothouse -> trawler
+    uint32_t seed=0x51A7CAu;
+    uint32_t credits=0;
+    uint32_t gear=0; // fishing rod levels, old V1/V2 field retained
+    std::array<uint32_t,4> caught={{0,0,0,0}};
+    uint32_t total=0;
+    uint32_t helm_upgrades=0;
+    uint32_t hull_tier=0;
+    uint32_t reel_level=0,line_level=0,lure_level=0,shore_kit_level=0;
+    uint32_t discoveries=0; // five observed kinds, never worth credits
+    uint64_t beach_sites=0; // 64 immutable, author-assigned site IDs
 };
+inline uint32_t BeachSiteCount(uint64_t bits){
+    uint32_t count=0;
+    while(bits){bits&=(bits-1u);++count;}
+    return count;
+}
+inline uint32_t EquipmentLevel(const Journal& j,Equipment item){
+    switch(item){
+        case Equipment::Rod:return j.gear;
+        case Equipment::Reel:return j.reel_level;
+        case Equipment::Line:return j.line_level;
+        case Equipment::Lures:return j.lure_level;
+        case Equipment::ShoreKit:return j.shore_kit_level;
+        default:return 0u;
+    }
+}
+inline uint32_t FindPrerequisites(uint32_t next){
+    if(next<3u)return 0u;
+    if(next<5u)return FindMask(BeachFind::Shell);
+    if(next<7u)return FindMask(BeachFind::Shell)|FindMask(BeachFind::Crab);
+    if(next<9u)return FindMask(BeachFind::Shell)|FindMask(BeachFind::Crab)|
+                        FindMask(BeachFind::Rock);
+    if(next<11u)return FindMask(BeachFind::Shell)|FindMask(BeachFind::Crab)|
+                         FindMask(BeachFind::Rock)|FindMask(BeachFind::SeaGlass);
+    return (1u<<unsigned(BeachFind::Count))-1u;
+}
+struct EquipmentOffer {
+    bool available=false,unlocked=false,affordable=false;
+    uint32_t next_level=0,credits=0,required_sites=0,required_kinds=0;
+};
+inline EquipmentOffer NextEquipment(const Journal& j,Equipment item){
+    EquipmentOffer result;
+    const unsigned index=unsigned(item);
+    if(index>=kEquipmentMax.size()||EquipmentLevel(j,item)>=kEquipmentMax[index])
+        return result;
+    const uint32_t next=EquipmentLevel(j,item)+1u;
+    result.available=true;
+    result.next_level=next;
+    result.credits=kEquipmentBasePrice[index]*next*(next+1u)/2u;
+    result.required_sites=next; // unique finds along authentic shoreline
+    result.required_kinds=FindPrerequisites(next);
+    result.unlocked=BeachSiteCount(j.beach_sites)>=result.required_sites &&
+        (j.discoveries&result.required_kinds)==result.required_kinds;
+    result.affordable=j.credits>=result.credits;
+    return result;
+}
+
 struct Fishing {
     Journal journal;
-    FishingPhase phase = FishingPhase::Ready;
-    Fish hooked = Fish::DollyVarden;
-    float time = 0.f, reel = 0.f, tension = 0.f;
-    float depth = 0.f;
-    // Deterministic independent PRNG: no wall clock, global rand or render effects.
-    uint32_t Next() {
-        uint32_t v = journal.seed ? journal.seed : 0x51A7CAu;
-        v ^= v << 13u; v ^= v >> 17u; v ^= v << 5u;
-        journal.seed = v;
-        return v;
+    FishingPhase phase=FishingPhase::Ready;
+    Fish hooked=Fish::DollyVarden;
+    float time=0.f,reel=0.f,tension=0.f,depth=0.f;
+    uint32_t Next(){
+        uint32_t v=journal.seed?journal.seed:0x51A7CAu;
+        v^=v<<13u;v^=v>>17u;v^=v<<5u;
+        journal.seed=v;return v;
     }
-    bool Cast(bool confirmed_water, float depth_metres) {
-        if (phase != FishingPhase::Ready || !confirmed_water ||
-            !std::isfinite(depth_metres) || depth_metres < .3f || depth_metres > 200.f) return false;
-        depth = depth_metres;
-        time = 2.0f + float(Next() % 250u) * .012f;
-        reel = tension = 0.f;
-        phase = FishingPhase::Waiting;
-        return true;
+    bool Cast(bool confirmed_water,float depth_metres){
+        if(phase!=FishingPhase::Ready||!confirmed_water||
+           !std::isfinite(depth_metres)||depth_metres<.3f||
+           depth_metres>200.f)return false;
+        depth=depth_metres;
+        time=std::max(.7f,2.0f+float(Next()%250u)*.012f-
+                           .10f*float(journal.lure_level));
+        reel=tension=0.f;phase=FishingPhase::Waiting;return true;
     }
-    // Primary starts reeling after a bite; holding it reels. Secondary cancels.
-    void Step(float delta, bool primary, bool secondary) {
-        if (!std::isfinite(delta) || delta <= 0.f) return;
-        const float dt = std::min(delta, .1f); // bounded after an app pause
-        if (secondary && phase != FishingPhase::Ready) {
-            phase = FishingPhase::Ready; time = reel = tension = 0.f; return;
+    void Step(float delta,bool primary,bool secondary){
+        if(!std::isfinite(delta)||delta<=0.f)return;
+        const float dt=std::min(delta,.1f);
+        if(secondary&&phase!=FishingPhase::Ready){
+            phase=FishingPhase::Ready;time=reel=tension=0.f;return;
         }
-        switch (phase) {
+        switch(phase){
             case FishingPhase::Waiting:
-                time -= dt;
-                if (time <= 0.f) {
-                    // Shallow water favors flounder; deeper pockets favor salmon.
-                    const uint32_t pick = Next() % 100u;
-                    hooked = depth < 3.f ?
-                        (pick < 40u ? Fish::Flounder : pick < 70u ? Fish::DollyVarden :
-                         pick < 85u ? Fish::PinkSalmon : Fish::Coho) :
-                        (pick < 38u ? Fish::Coho : pick < 67u ? Fish::PinkSalmon :
-                         pick < 90u ? Fish::DollyVarden : Fish::Flounder);
-                    phase = FishingPhase::Bite; time = 8.f;
+                time-=dt;
+                if(time<=0.f){
+                    const uint32_t pick=Next()%100u;
+                    hooked=depth<3.f?
+                      (pick<40u?Fish::Flounder:pick<70u?Fish::DollyVarden:
+                       pick<85u?Fish::PinkSalmon:Fish::Coho):
+                      (pick<38u?Fish::Coho:pick<67u?Fish::PinkSalmon:
+                       pick<90u?Fish::DollyVarden:Fish::Flounder);
+                    phase=FishingPhase::Bite;time=8.f;
                 }
                 break;
             case FishingPhase::Bite:
-                if (primary) { phase = FishingPhase::Reeling; time = 0.f; }
-                else if ((time -= dt) <= 0.f) { phase = FishingPhase::Ready; }
+                if(primary){phase=FishingPhase::Reeling;time=0.f;}
+                else if((time-=dt)<=0.f)phase=FishingPhase::Ready;
                 break;
             case FishingPhase::Reeling:
-                if (primary) {
-                    tension = std::min(1.f, tension + dt * .52f);
-                    // At high tension the line yields rather than snapping: calm fishing.
-                    reel = std::min(1.f, reel + dt * (.18f + .045f*float(journal.gear)) *
-                        (tension > .86f ? .25f : 1.f));
-                } else {
-                    tension = std::max(0.f, tension - dt * .85f);
-                }
-                if (reel >= 1.f) {
-                    const unsigned id = static_cast<unsigned>(hooked);
-                    if (id < journal.caught.size() && journal.total < 1000000u &&
-                        journal.caught[id] < 1000000u) {
-                        ++journal.caught[id]; ++journal.total;
-                        journal.credits = std::min(1000000u, journal.credits + 35u);
+                if(primary){
+                    tension=std::min(1.f,tension+dt*
+                        (.52f-.018f*float(journal.line_level)));
+                    reel=std::min(1.f,reel+dt*
+                        (.18f+.025f*float(journal.gear)+
+                         .013f*float(journal.reel_level))*
+                        (tension>.86f?.25f:1.f));
+                }else tension=std::max(0.f,tension-dt*.85f);
+                if(reel>=1.f){
+                    const unsigned id=unsigned(hooked);
+                    if(id<journal.caught.size()&&journal.total<1000000u&&
+                       journal.caught[id]<1000000u){
+                        ++journal.caught[id];++journal.total;
+                        journal.credits=std::min(1000000u,
+                            journal.credits+kFishCreditAwards[id]);
                     }
-                    phase = FishingPhase::Landed;
+                    phase=FishingPhase::Landed;
                 }
                 break;
-            case FishingPhase::Ready: case FishingPhase::Landed: break;
+            case FishingPhase::Ready:case FishingPhase::Landed:break;
         }
     }
-    bool AcknowledgeCatch() {
-        if (phase != FishingPhase::Landed) return false;
-        phase = FishingPhase::Ready; time = reel = tension = 0.f;
+    bool AcknowledgeCatch(){
+        if(phase!=FishingPhase::Landed)return false;
+        phase=FishingPhase::Ready;time=reel=tension=0.f;return true;
+    }
+    bool Discover(uint32_t site,BeachFind kind){
+        if(phase!=FishingPhase::Ready||site>=64u||
+           unsigned(kind)>=unsigned(BeachFind::Count)||
+           (journal.beach_sites&(uint64_t(1)<<site)))return false;
+        journal.beach_sites|=uint64_t(1)<<site;
+        journal.discoveries|=FindMask(kind);
+        return true; // no money, only equipment-shop permissions
+    }
+    uint32_t UpgradeCost()const{return NextEquipment(journal,Equipment::Rod).credits;}
+    bool Purchase(Equipment item){
+        if(phase!=FishingPhase::Ready)return false;
+        const auto offer=NextEquipment(journal,item);
+        if(!offer.available||!offer.unlocked||!offer.affordable)return false;
+        journal.credits-=offer.credits;
+        switch(item){
+            case Equipment::Rod:++journal.gear;break;
+            case Equipment::Reel:++journal.reel_level;break;
+            case Equipment::Line:++journal.line_level;break;
+            case Equipment::Lures:++journal.lure_level;break;
+            case Equipment::ShoreKit:++journal.shore_kit_level;break;
+            default:return false;
+        }
         return true;
     }
-    uint32_t UpgradeCost() const {
-        return journal.gear >= 3u ? 0u : (journal.gear == 0u ? 70u : journal.gear == 1u ? 160u : 320u);
-    }
-    bool UpgradeTackle() {
-        const uint32_t cost = UpgradeCost();
-        if (phase != FishingPhase::Ready || cost == 0u || journal.credits < cost) return false;
-        journal.credits -= cost; ++journal.gear; return true;
-    }
+    bool UpgradeTackle(){return Purchase(Equipment::Rod);}
 };
-// V2 keeps the same game-private save slot, atomically sharing earned fish
-// credits with boat purchases. Legacy V1 journals remain readable.
+// Version 3 expands the SAME host-scoped save slot without losing hull or
+// credits. V1 and V2 load exactly; records never partially apply on failure.
 inline std::string SaveJournal(const Journal& j){
-    std::string out="SITKA-FISH-2\n";
-    const uint32_t fields[]={j.seed,j.credits,j.gear,j.total,
-       j.caught[0],j.caught[1],j.caught[2],j.caught[3],
-       j.helm_upgrades,j.hull_tier};
-    for(uint32_t field:fields)out+=std::to_string(field)+"\n";
+    std::string out="SITKA-FISH-3\n";
+    const std::array<uint64_t,16> fields={{
+        j.seed,j.credits,j.gear,j.total,j.caught[0],j.caught[1],
+        j.caught[2],j.caught[3],j.helm_upgrades,j.hull_tier,
+        j.reel_level,j.line_level,j.lure_level,j.shore_kit_level,
+        j.discoveries,j.beach_sites
+    }};
+    for(uint64_t n:fields)out+=std::to_string(n)+"\n";
     return out;
 }
 inline bool LoadJournal(std::string_view bytes,Journal& out){
     constexpr std::string_view v1="SITKA-FISH-1\n";
     constexpr std::string_view v2="SITKA-FISH-2\n";
-    const bool legacy=bytes.substr(0,v1.size())==v1;
-    if((!legacy&&bytes.substr(0,v2.size())!=v2)||bytes.size()>128u)
-        return false;
-    bytes.remove_prefix(legacy?v1.size():v2.size());
-    std::array<uint32_t,10> n{};
-    for(unsigned i=0;i<(legacy?8u:10u);++i){
-        const size_t end=bytes.find('\n');
-        if(end==std::string_view::npos||end==0u||end>10u)return false;
-        const char* first=bytes.data();
-        const auto parsed=std::from_chars(first,first+end,n[i]);
-        if(parsed.ec!=std::errc{}||parsed.ptr!=first+end)return false;
+    constexpr std::string_view v3="SITKA-FISH-3\n";
+    unsigned fields=0;
+    if(bytes.substr(0,v1.size())==v1){bytes.remove_prefix(v1.size());fields=8;}
+    else if(bytes.substr(0,v2.size())==v2){bytes.remove_prefix(v2.size());fields=10;}
+    else if(bytes.substr(0,v3.size())==v3){bytes.remove_prefix(v3.size());fields=16;}
+    else return false;
+    if(bytes.size()>256u)return false;
+    std::array<uint64_t,16> n{};
+    for(unsigned i=0;i<fields;++i){
+        const auto end=bytes.find('\n');
+        if(end==std::string_view::npos||end==0u||end>20u)return false;
+        const char* begin=bytes.data();
+        const auto parsed=std::from_chars(begin,begin+end,n[i]);
+        if(parsed.ec!=std::errc{}||parsed.ptr!=begin+end)return false;
         bytes.remove_prefix(end+1u);
     }
-    if(!bytes.empty()||n[0]==0u||n[1]>1000000u||n[2]>3u||
-       n[3]>1000000u||n[8]>65535u||n[9]>3u)return false;
-    uint64_t sum=0u;
-    for(size_t i=4;i<8;++i){if(n[i]>1000000u)return false;sum+=n[i];}
+    if(!bytes.empty()||n[0]==0u||n[0]>UINT32_MAX||
+       n[1]>1000000u||n[2]>kEquipmentMax[0]||n[3]>1000000u||
+       n[8]>65535u||n[9]>3u||n[10]>kEquipmentMax[1]||
+       n[11]>kEquipmentMax[2]||n[12]>kEquipmentMax[3]||
+       n[13]>kEquipmentMax[4]||
+       n[14]>=(uint32_t(1)<<unsigned(BeachFind::Count))||
+       (n[15]!=0u&&n[14]==0u))return false;
+    uint64_t sum=0;
+    for(unsigned i=4;i<8;++i){
+        if(n[i]>1000000u)return false;
+        sum+=n[i];
+    }
     if(sum!=n[3])return false;
-    Journal candidate;
-    candidate.seed=n[0];candidate.credits=n[1];
-    candidate.gear=n[2];candidate.total=n[3];
-    for(size_t i=0;i<4;++i)candidate.caught[i]=n[i+4u];
-    candidate.helm_upgrades=n[8];candidate.hull_tier=n[9];
-    out=candidate;return true;
+    Journal j;
+    j.seed=static_cast<uint32_t>(n[0]);
+    j.credits=static_cast<uint32_t>(n[1]);
+    j.gear=static_cast<uint32_t>(n[2]);
+    j.total=static_cast<uint32_t>(n[3]);
+    for(unsigned i=0;i<4;++i)j.caught[i]=static_cast<uint32_t>(n[i+4u]);
+    j.helm_upgrades=static_cast<uint32_t>(n[8]);
+    j.hull_tier=static_cast<uint32_t>(n[9]);
+    j.reel_level=static_cast<uint32_t>(n[10]);
+    j.line_level=static_cast<uint32_t>(n[11]);
+    j.lure_level=static_cast<uint32_t>(n[12]);
+    j.shore_kit_level=static_cast<uint32_t>(n[13]);
+    j.discoveries=static_cast<uint32_t>(n[14]);
+    j.beach_sites=n[15];
+    out=j;return true;
 }
 }} // namespace reverie::sitka
 #endif
