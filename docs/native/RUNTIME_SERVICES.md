@@ -617,3 +617,17 @@ cannot read foreign game paths, arbitrary user saves, URLs,
 traversal, nested paths or alternate extensions.
 These are path/size permissions, **not** registration of the Sitka
 module or evidence that any real NOAA data ships in an APK.
+
+## Guess the Door module (2026-11-04 source milestone)
+
+`guess-the-door` is an offline seated-memory game registered for
+Development mode in the existing single-APK native host. Twelve rooms
+are independently derived from one shown 64-bit seed; each has two
+levers, a fleeting clue, one safe door, and a wrong-door pit that
+restarts the *same seed*. The lever, door, forward walk, and pit
+timers advance only in native update, never in the two eye passes.
+The shell owns pause, exit, recenter, Home, and recovery. Existing
+Red Ledger metal/door/click/drawer and victory cues are used, not
+new audio IDs or a claimed spoken quote. Mechanist closed/open
+sprite sheets remain an explicit art-import task. APK/Daydream
+runtime and thermal proof pending.

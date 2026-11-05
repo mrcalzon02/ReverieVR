@@ -462,3 +462,14 @@ Sitka remains a source-only unregistered prototype: this API hook
 does not by itself make the boat launchable or guarantee Android
 frame pacing. The current scoped asset reader is synchronous in
 `update`; worker-based async I/O remains a separate feature.
+
+## Guess the Door native game (2026-11-04 source milestone)
+
+The built-in `guess-the-door` module is compiled as
+`libreverie_module_guess_the_door.so` and advertised only when
+Development-mode modules are visible. It uses the existing ABI v1
+create/update/stereo render, read-only pointer, feedback and sound
+services without changing any ABI field or asset-read permissions.
+Native clue/route logic is deterministic; the source prototype has
+only a caption Easter egg, not an audible voice line. Mechanist image
+assets are not yet packaged or drawn.

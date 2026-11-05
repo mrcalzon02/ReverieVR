@@ -34,6 +34,8 @@ final class GameModuleRegistry {
             "io.github.mrcalzon02.reverievr.game.ministry",true),
         new Entry("iron-sight-forward-detachment","Forward Detachment","forward-detachment",
             "io.github.mrcalzon02.reverievr.game.forwarddetachment",true),
+        new Entry("guess-the-door","Guess the Door","guess-the-door",
+            "io.github.mrcalzon02.reverievr.game.guessthedoor",true),
         new Entry("classic-chess","Chess","classic-chess",
             "io.github.mrcalzon02.reverievr.game.classicchess",false),
         new Entry("classic-go","Go","classic-go",

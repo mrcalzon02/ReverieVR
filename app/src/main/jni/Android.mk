@@ -143,6 +143,17 @@ LOCAL_LDLIBS += -lGLESv2 -lm -lz
 include $(BUILD_SHARED_LIBRARY)
 
 
+# Seated procedural memory maze: development-only built-in game.
+LOCAL_PATH := $(REVERIE_JNI_PATH)
+include $(CLEAR_VARS)
+LOCAL_MODULE := reverie_module_guess_the_door
+LOCAL_SRC_FILES := native/guess_the_door_module.cpp
+LOCAL_C_INCLUDES := $(REVERIE_JNI_PATH)/native
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -fexceptions -fvisibility=hidden
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+LOCAL_LDLIBS += -lGLESv2 -lm -lz
+include $(BUILD_SHARED_LIBRARY)
+
 # Classic Checkers board with the existing licensed Lato glyph atlas.
 # The offline compressed atlas needs Android's system zlib, as Chess already does.
 LOCAL_PATH := $(REVERIE_JNI_PATH)

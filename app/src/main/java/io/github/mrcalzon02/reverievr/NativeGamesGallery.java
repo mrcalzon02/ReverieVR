@@ -98,6 +98,7 @@ final class NativeGamesGallery {
     private static final String[] FEATURED={
         "breakwater-battery","between-deliveries-red-ledger",
         "gumball-armada","iron-sight-forward-detachment",
+        "guess-the-door",
         "ministry-lantern-desk","omega-front","procedural-test-chamber"
     };
     static int order(String id) {
@@ -175,6 +176,10 @@ final class NativeGamesGallery {
                 return new String[]{"Campaign strategy, regional travel","and tactical battles with unit","orders, supplies and diplomacy."};
             case "procedural-test-chamber":
                 return new String[]{"Build, move and save primitive scenes","inside VR; use SECONDARY to toggle","edit and live playtest modes."};
+            case "guess-the-door":
+                return new String[]{"Remember the briefly displayed symbol.",
+                    "Pull the lever by a matching door.",
+                    "A wrong door returns you to the start."};
             case "classic-chess":
                 return new String[]{"Play chess against the computer","with legal-move highlights and an","interactive opening reference."};
             case "classic-go":
