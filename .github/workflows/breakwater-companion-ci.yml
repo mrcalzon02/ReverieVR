@@ -12,6 +12,11 @@ on:
       - 'app/src/main/jni/native/breakwater_*.cpp'
       - 'app/src/main/jni/native/breakwater_*.h'
       - 'app/src/main/assets/native/breakwater/**'
+      - 'app/src/main/assets/native/shared/v1/**'
+      - 'shared-assets/catalog-v1.json'
+      - 'scripts/verify-shared-native-assets.py'
+      - 'app/src/main/jni/native/breakwater_aircraft_mesh.h'
+      - 'app/src/test/native/breakwater_aircraft_mesh_test.cpp'
       - 'scripts/modules/verify-game-identity-matrix.py'
       - 'modules/game-identity-matrix.json'
       - 'app/src/main/jni/native/reverie_native_*.h'
@@ -73,7 +78,7 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace :companion-breakwater:assembleDebug
 
-      - name: Validate real standalone code and three packaged BWM1 assets
+      - name: Verify Android executable plus 16 exact shared PNGs and 5 BWM1 models
         shell: bash
         run: |
           set -euo pipefail

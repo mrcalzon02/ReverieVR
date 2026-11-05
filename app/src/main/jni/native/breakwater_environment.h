@@ -212,6 +212,50 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
                  x,RearGroundHeight(p,x,8.2f)+.60f,8.2f,
                  .42f,1.2f,.42f);
         }
+    } else if(location==3) {
+        // Stormwatch Point: two long-range radar/observation towers, heavy
+        // power huts and shielded floodlights. Every prop is real 3D geometry
+        // beyond the firing lane, backed by existing shared texture tiles.
+        for(int side:{-1,1}) {
+            const float sign=static_cast<float>(side);
+            const float x=sign*5.3f,z=7.4f;
+            const float ground=RearGroundHeight(p,x,z);
+            box(x,ground+.75f,z,1.20f,1.50f,1.12f,
+                p.mountain.r,p.mountain.g,p.mountain.b);
+            clad(materials::Surface::ReinforcedConcrete,
+                 x,ground+.75f,z,1.20f,1.50f,1.12f);
+            box(x,ground+1.57f,z,1.64f,.16f,1.42f,
+                p.distant.r,p.distant.g,p.distant.b);
+            clad(materials::Surface::CorrugatedRoof,
+                 x,ground+1.57f,z,1.64f,.16f,1.42f);
+            box(x,ground+2.42f,z,.13f,1.72f,.14f,
+                .34f,.38f,.39f);
+            clad(materials::Surface::Steel,
+                 x,ground+2.42f,z,.13f,1.72f,.14f);
+            box(x,ground+3.19f,z-.10f,1.23f,.12f,.27f,
+                .40f,.44f,.46f);
+            clad(materials::Surface::Steel,
+                 x,ground+3.19f,z-.10f,1.23f,.12f,.27f);
+            // Freestanding generator sheds anchor the radar power feed.
+            const float powerZ=9.4f,powerY=RearGroundHeight(p,x,powerZ);
+            box(x,powerY+.35f,powerZ,1.72f,.70f,1.23f,
+                p.earth.r*.82f,p.earth.g*.83f,p.earth.b*.86f);
+            clad(materials::Surface::OlivePaint,
+                 x,powerY+.35f,powerZ,1.72f,.70f,1.23f);
+            box(x-sign*.40f,ground+1.21f,z-.61f,.24f,.16f,.23f,
+                night?.57f:.84f,night?.65f:.81f,night?.69f:.63f);
+            clad(materials::Surface::RivetedBulkhead,
+                 x-sign*.40f,ground+1.21f,z-.61f,.24f,.16f,.23f);
+            // Two rigid mast braces supply visible depth from side views.
+            triangle(x-.68f,ground+1.62f,z,
+                     x,ground+2.82f,z,
+                     x-.18f,ground+1.62f,z-.06f,
+                     .32f,.36f,.37f);
+            triangle(x+.68f,ground+1.62f,z,
+                     x+.18f,ground+1.62f,z-.06f,
+                     x,ground+2.82f,z,
+                     .27f,.32f,.33f);
+        }
     } else {
         // Blackcap Island: tall, asymmetric basalt fingers behind the fort.
         for(int n=0;n<9;++n) {

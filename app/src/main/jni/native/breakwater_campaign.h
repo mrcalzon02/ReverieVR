@@ -176,7 +176,7 @@ public:
     static constexpr size_t kMaxInfantry = 60; // ten transports x six passengers
     static constexpr size_t kMaxCover = 4;
     static constexpr size_t kMaxArmor = 20; // ten transports x two armored cars each
-    static constexpr uint8_t kLocations = 3;
+    static constexpr uint8_t kLocations = 4;
     static const std::array<Location, kLocations> &Locations();
     explicit Campaign(Difficulty difficulty = Difficulty::Regular,
                       uint32_t seed = 1);

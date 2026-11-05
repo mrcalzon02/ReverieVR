@@ -4,12 +4,12 @@
 #include <cstdint>
 using reverie::breakwater::waves::ForPeriod;
 int main(){
-    const uint8_t days[3]={2,3,4};
-    const unsigned expected[4]={286u,322u,358u,394u};
+    const uint8_t days[4]={2,3,4,2};
+    const unsigned expected[4]={366u,410u,454u,498u};
     for(unsigned tier=0;tier<4;++tier){
         unsigned total=0;
         unsigned periods=0;
-        for(uint8_t location=0;location<3;++location)
+        for(uint8_t location=0;location<4;++location)
             for(uint8_t day=1;day<=days[location];++day) {
                 const uint8_t daytime=ForPeriod(location,day,false,tier);
                 const uint8_t nighttime=ForPeriod(location,day,true,tier);
@@ -40,7 +40,7 @@ int main(){
                 total+=daytime+nighttime;
                 periods+=2u;
             }
-        assert(periods==18u && total==expected[tier]);
+        assert(periods==22u && total==expected[tier]);
         assert(ForPeriod(0,1,false,tier)==12u+2u*tier);
         assert(ForPeriod(0,1,true,tier)==8u+2u*tier);
     }
@@ -51,6 +51,15 @@ int main(){
         assert(ForPeriod(2,4,false,tier)==24u+2u*tier);
         assert(ForPeriod(2,4,true,tier)==20u+2u*tier);
     }
+    static_assert(ForPeriod(3,1,false,3)==27u,"Stormwatch first daylight");
+    static_assert(ForPeriod(3,2,false,3)==29u,"Stormwatch last daylight");
+    static_assert(ForPeriod(3,2,true,3)==25u,"Stormwatch last night");
+    static_assert(reverie::breakwater::waves::CheckpointAllowed(
+        29u,3u,2u,false,3u),"Stormwatch final save valid");
+    static_assert(!reverie::breakwater::waves::CheckpointAllowed(
+        30u,3u,2u,false,3u),"Stormwatch day overflow rejected");
+    static_assert(!reverie::breakwater::waves::CheckpointAllowed(
+        26u,3u,2u,true,3u),"Stormwatch night overflow rejected");
     static_assert(ForPeriod(0,1,false,0)==12u,"Cadet");
     static_assert(ForPeriod(0,1,false,3)==18u,"Siege");
     static_assert(ForPeriod(2,4,false,3)==30u,"Final daytime");
@@ -64,5 +73,5 @@ int main(){
         26u,2u,4u,true,3u),"Siege final night save must load");
     static_assert(!reverie::breakwater::waves::CheckpointAllowed(
         27u,2u,4u,true,3u),"Siege night-overflow must reject");
-    std::cout<<"Breakwater 18-period schedule: 286-394 distinct waves passed\n";
+    std::cout<<"Breakwater 22-period schedule: 366-498 distinct waves passed\n";
 }

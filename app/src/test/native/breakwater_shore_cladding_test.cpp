@@ -66,10 +66,22 @@ int main(){
                 assert(rear.count(materials::Surface::CorrugatedRoof)==2u);
                 assert(rear.count(materials::Surface::RivetedBulkhead)==2u);
                 assert(rear.total()==6u);
-            } else {
+            } else if(location==2u) {
                 assert(coast.count(materials::Surface::Basalt)==26u);
                 assert(coast.total()==26u);
                 assert(rear.total()==0u);
+            } else {
+                assert(location==3u);
+                assert(coast.count(materials::Surface::MossySeawall)==12u);
+                assert(coast.count(materials::Surface::Steel)==8u);
+                assert(coast.count(materials::Surface::ReinforcedConcrete)==6u);
+                assert(coast.total()==26u);
+                assert(rear.count(materials::Surface::ReinforcedConcrete)==2u);
+                assert(rear.count(materials::Surface::CorrugatedRoof)==2u);
+                assert(rear.count(materials::Surface::Steel)==4u);
+                assert(rear.count(materials::Surface::OlivePaint)==2u);
+                assert(rear.count(materials::Surface::RivetedBulkhead)==2u);
+                assert(rear.total()==12u);
             }
             if(!night){referenceCoast=coast;referenceRear=rear;}
             else {
@@ -88,6 +100,6 @@ int main(){
         [](auto...){},[](auto...){},
         [&](auto...v){invalid(v...);});
     assert(invalid.total()==0u);
-    std::cout<<"PASS: 3 Breakwater locations textured across actual outer "
+    std::cout<<"PASS: 4 Breakwater locations textured across actual outer "
                 "shorelines, piers, sheds, service track, and moorings\n";
 }

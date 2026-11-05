@@ -1149,7 +1149,7 @@ int main() {
             const float zNear=flankExtension?1.451f:
                 scenicShoulder?-.71f:
                 bank?-.18f:beachMesh?-.259f:-.80f;
-            const float zFar=flankExtension?-2.301f:-2.25f;
+            const float zFar=flankExtension?(location==3?-2.401f:-2.301f):-2.25f;
             assert(x0>=-reach-.001f&&x0<=reach+.001f);
             assert(x1>=-reach-.001f&&x1<=reach+.001f);
             assert(x2>=-reach-.001f&&x2<=reach+.001f);
@@ -1160,8 +1160,8 @@ int main() {
             assert(r>=0&&g>=0&&b>=0&&r<=1&&g<=1&&b<=1);
         };
         EmitCoastalTerrain(location,false,box,triangle);
-        const int expectedTriangles[]={1030,1013,1020};
-        const int expectedBoxes[]={20,46,26};
+        const int expectedTriangles[]={1030,1013,1020,1012};
+        const int expectedBoxes[]={20,46,26,26};
         assert(triangles==expectedTriangles[location]);
         assert(boxes==expectedBoxes[location]);
         assert(std::abs(BeachHeight(location,0.f,-1.3f)+1.037f)<.02f);
@@ -2943,5 +2943,21 @@ int main() {
     assert(Campaign::Locations()[0].days==2);
     assert(Campaign::Locations()[1].days==3);
     assert(Campaign::Locations()[2].days==4);
+    assert(Campaign::Locations()[3].days==2);
+    assert(std::strcmp(Campaign::Locations()[3].name,"Stormwatch Point")==0);
+    // Existing checkpoints must resume at their old theater indexes while
+    // a new Stormwatch shop checkpoint uses the same 80-byte v2 payload.
+    uint8_t storm_save[Campaign::kSerializedSize]={};
+    assert(clock.SerializeShop(storm_save,sizeof(storm_save)));
+    storm_save[16]=3u;storm_save[20]=2u;storm_save[24]=0u;
+    storm_save[28]=23u; // Casual, final Stormwatch daylight wave.
+    Campaign storm(Difficulty::Casual,4141u);
+    assert(storm.DeserializeShop(storm_save,sizeof(storm_save)));
+    assert(storm.location()==3u && storm.waves_this_period()==23u);
+    assert(storm.wave_index()==23u && storm.BeginWave());
+    storm.Tick(.05f); // Stormwatch's actual first spawned threat
+    assert(storm.enemies()[0].active);
+    assert(storm.enemies()[0].type==UnitType::ArmoredTransport);
+
     std::cout << "Breakwater boat / landing / upgrade smoke passed\n";
 }

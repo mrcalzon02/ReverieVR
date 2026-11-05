@@ -93,8 +93,8 @@ int main() {
             };
             EmitSurroundingLandscape(location,dark,box,tri);
             // Bounded geometry, no unbounded tessellation per stereo eye.
-            assert(triangles==(location==0?250:location==1?240:258));
-            assert(boxes==(location==0?16:location==1?8:0));
+            assert(triangles==(location==0?250:location==1?240:location==2?258:244));
+            assert(boxes==(location==0?16:location==1?8:location==2?0:12));
             assert(anchoredTrees==(location==0?10:0));
             assert(anchoredTrack==(location==0?6:0));
             assert(anchoredSheds==(location==1?2:0));
@@ -103,6 +103,8 @@ int main() {
         }
     }
     assert(EnvironmentFor(4,false).sea.r==0);
+    assert(EnvironmentFor(3,false).sea.b<EnvironmentFor(0,false).sea.b);
+    assert(EnvironmentFor(3,false).peaks!=EnvironmentFor(2,false).peaks);
     assert(EnvironmentFor(0,false).earth.g!=EnvironmentFor(1,false).earth.g);
     assert(EnvironmentFor(1,false).peaks!=EnvironmentFor(2,false).peaks);
     // World lighting must point toward the same celestial discs that

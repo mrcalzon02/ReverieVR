@@ -155,7 +155,8 @@ inline bool AppendBoxCladding(std::vector<float>&mesh,Surface material,
 }
 inline Surface CoastSurface(uint8_t location) {
     return location==1?Surface::Quay:
-           location==2?Surface::Basalt:Surface::Shingle;
+           location==2?Surface::Basalt:
+           location==3?Surface::MossySeawall:Surface::Shingle;
 }
 
 // Select a surface by beach section rather than allocating duplicate terrain
@@ -169,11 +170,19 @@ inline Surface CoastSurfaceAt(uint8_t location,int ix,int iz) {
         return Surface::DockPlanks;
     if(location==2 && iz>=kSectionsZ-4 && (ix%4)==0)
         return Surface::TrenchSoil;
+    if(location==3) {
+        // Stormwatch: mossy caissons and slate shingle between reinforced
+        // tide drains. Same 16 shared materials, never a second atlas.
+        if(iz>=kSectionsZ-4)return Surface::ReinforcedConcrete;
+        if(ix<3 || ix>=kSectionsX-3)return Surface::MossySeawall;
+        if((ix+iz)%9==0)return Surface::PebbleGround;
+        return Surface::Quay;
+    }
     return CoastSurface(location);
 }
 template<class HeightAt>
 inline void AppendCoast(std::vector<float>&mesh,uint8_t location,HeightAt height) {
-    if(location>=3)return;
+    if(location>=4)return;
     constexpr float minX=-3.86f,maxX=3.86f;
     constexpr float surfZ=-2.20f,rearZ=-.26f;
     for(int iz=0;iz<kSectionsZ;++iz) {

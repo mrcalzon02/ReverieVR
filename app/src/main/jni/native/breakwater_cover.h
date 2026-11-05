@@ -46,6 +46,12 @@ inline std::array<ShoreCover,Campaign::kMaxCover> MakeShoreCover(
         walls[1]={-.78f,-1.19f,170,170};
         walls[2]={.78f,-1.19f,170,170};
         walls[3]={2.35f,-1.19f,170,170};
+    } else if(location==3u) {
+        // Four independently destructible reinforced stormbreak revetments.
+        walls[0]={-2.35f,-1.19f,195,195};
+        walls[1]={-.78f,-1.19f,195,195};
+        walls[2]={.78f,-1.19f,195,195};
+        walls[3]={2.35f,-1.19f,195,195};
     }
     return walls;
 }

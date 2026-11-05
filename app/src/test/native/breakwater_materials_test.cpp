@@ -23,7 +23,7 @@ int main() {
     assert(CoastSurfaceAt(0,6,18)==Surface::TrenchSoil);
     assert(CoastSurfaceAt(1,1,12)==Surface::DockPlanks);
     assert(CoastSurfaceAt(2,9,2)==Surface::Basalt);
-    for(int id=0;id<3;++id) {
+    for(int id=0;id<4;++id) {
         std::vector<float> a;
         auto terrain=[](uint8_t,float x,float z){return -1.037f+.008f*std::sin(x+z);};
         AppendCoast(a,static_cast<uint8_t>(id),terrain);
@@ -51,8 +51,12 @@ int main() {
                                   0.f,0.f,0.f,0.f,1.f,1.f));
         assert(shell.size()==before);
     }
+    assert(CoastSurfaceAt(3,0,1)==Surface::MossySeawall);
+    assert(CoastSurfaceAt(3,8,1)==Surface::PebbleGround);
+    assert(CoastSurfaceAt(3,8,2)==Surface::Quay);
+    assert(CoastSurfaceAt(3,8,19)==Surface::ReinforcedConcrete);
     std::vector<float> invalid;
-    AppendCoast(invalid,3u,[](uint8_t,float,float){return 0.f;});
+    AppendCoast(invalid,4u,[](uint8_t,float,float){return 0.f;});
     assert(invalid.empty());
     std::cout<<"Breakwater coastal material atlas and geometry OK\n";
 }

@@ -13,7 +13,8 @@
 namespace reverie { namespace breakwater {
 namespace {
 constexpr std::array<Location, Campaign::kLocations> kPlaces = {{
-    {"Shingle Bay",2}, {"Iron Quay",3}, {"Blackcap Island",4}
+    {"Shingle Bay",2}, {"Iron Quay",3}, {"Blackcap Island",4},
+    {"Stormwatch Point",2}
 }};
 constexpr int kCost[] = {180,200,160,750,260,420,470,140};
 constexpr int kExtra[] = {120,140,100,300,0,0,0,0};

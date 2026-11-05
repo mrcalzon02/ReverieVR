@@ -50,9 +50,9 @@ void EmitSkyPanorama(uint8_t location,bool night,TriangleFn triangle) {
         {.022f,.046f,.13f},{.015f,.032f,.105f},
         {.010f,.022f,.088f},{.006f,.012f,.068f}};
     // Campaign locations have subtly distinct atmospheric casts.
-    const float red=location==1?.94f:location==2?.85f:1.0f;
-    const float green=location==1?.91f:location==2?.94f:1.0f;
-    const float blue=location==1?.87f:location==2?1.09f:1.0f;
+    const float red=location==1?.94f:location==2?.85f:location==3?.81f:1.0f;
+    const float green=location==1?.91f:location==2?.94f:location==3?.88f:1.0f;
+    const float blue=location==1?.87f:location==2?1.09f:location==3?.93f:1.0f;
     for(int sector=0;sector<kSkySegments;++sector) {
         const float angle0=-kSkyPi+2.0f*kSkyPi*sector/kSkySegments;
         const float angle1=-kSkyPi+

@@ -162,6 +162,36 @@ void EmitCoastalTerrain(uint8_t location, bool night,
                 c.detail_r*.83f,c.detail_g*.84f,c.detail_b*.85f);
             box(towerX-sign*2.50f,1.76f,.22f,.055f,1.03f,.055f,
                 .28f,.27f,.25f);
+        } else if(location==3) {
+            // Stormwatch's massive stepped coastal caissons obstruct sea
+            // spray on the FLANKS only. The playable troop center is open.
+            triangle(sign*3.80f,y,-2.15f,
+                     sign*18.0f,y+.28f,-2.40f,
+                     sign*18.0f,y+.42f,1.45f,
+                     c.sand_r*.76f,c.sand_g*.76f,c.sand_b*.76f);
+            triangle(sign*3.80f,y,-2.15f,
+                     sign*18.0f,y+.42f,1.45f,
+                     sign*3.80f,y,1.45f,
+                     c.detail_r*.75f,c.detail_g*.75f,c.detail_b*.74f);
+            for(int n=0;n<6;++n) {
+                const float x=sign*(4.56f+n*1.43f);
+                const float z=-1.62f+.42f*(n%3);
+                const float h=.66f+.12f*(n%2);
+                box(x,y+h*.48f,z,1.24f,h,.92f,
+                    c.detail_r*.79f,c.detail_g*.82f,c.detail_b*.81f);
+                clad(materials::Surface::MossySeawall,x,y+h*.48f,z,
+                     1.24f,h,.92f);
+            }
+            // Steel anti-landing frames are scenery only, outside target
+            // lanes. Never fabricate damage or block a projectile ray.
+            for(int n=0;n<4;++n) {
+                const float x=sign*(4.10f+n*1.90f);
+                const float z=-2.16f+.15f*(n%2);
+                box(x,y+.35f,z,.17f,.70f,.19f,
+                    .27f,.32f,.33f);
+                clad(materials::Surface::Steel,x,y+.35f,z,
+                     .17f,.70f,.19f);
+            }
         } else {
             // Shingle Bay and Blackcap: wide natural side slopes instead of
             // abrupt squared-off terrain beside the battery position.
@@ -229,6 +259,21 @@ void EmitCoastalTerrain(uint8_t location, bool night,
             triangle(-3.84f,y+.008f,z,3.84f,y+.008f,z,
                      3.84f,y+.008f,z+.018f,
                      .19f,.22f,.23f);
+        }
+    } else if(location==3) {
+        // Stormwatch outer approach: weathered pier fragments and concrete
+        // tide pools on both flanks; still no central collision additions.
+        for(int side:{-1,1}) {
+            const float sign=static_cast<float>(side);
+            for(int n=0;n<3;++n) {
+                const float x=sign*(3.42f+n*.65f);
+                const float z=-1.95f+n*.48f;
+                const float h=.24f+.10f*n;
+                box(x,y+h*.5f,z,.52f,h,.43f,
+                    c.detail_r*.83f,c.detail_g*.82f,c.detail_b*.82f);
+                clad(materials::Surface::ReinforcedConcrete,
+                     x,y+h*.5f,z,.52f,h,.43f);
+            }
         }
     } else {
         // Blackcap Island: basalt outcrops frame the beach. Keep the

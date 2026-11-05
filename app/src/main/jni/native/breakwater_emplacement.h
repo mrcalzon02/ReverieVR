@@ -15,9 +15,9 @@ inline void EmitBatteryEmplacement(uint8_t location,bool night,
                                    BoxFn box,TriangleFn triangle,CladFn clad) {
     if(location>=Campaign::kLocations)return;
     const float tint=night?.43f:1.f;
-    const float concrete=location==1?.36f:location==2?.30f:.48f;
+    const float concrete=location==1?.36f:location==2?.30f:location==3?.34f:.48f;
     const float stone=concrete*tint;
-    const float metal=(location==2?.29f:.36f)*tint;
+    const float metal=(location==2?.29f:location==3?.33f:.36f)*tint;
     const materials::Surface masonry=location==2?
         materials::Surface::Basalt:location==1?
         materials::Surface::MossySeawall:materials::Surface::ReinforcedConcrete;
