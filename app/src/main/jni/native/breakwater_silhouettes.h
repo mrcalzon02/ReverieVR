@@ -2,6 +2,7 @@
 #define REVERIE_BREAKWATER_SILHOUETTES_H
 #include "breakwater_infantry_tactics.h"
 #include "breakwater_invasion_units.h"
+#include "breakwater_unit_geometry.h"
 #include <algorithm>
 #include <cmath>
 
@@ -37,63 +38,29 @@ void EmitVesselSilhouette(const Enemy &e, BoxFn box, TriFn triangle) {
          e.type != UnitType::LandingCraft &&
          e.type != UnitType::Gunboat)) return;
     const float x = e.x, z = e.z;
-    if (e.type == UnitType::Rowboat) {
-        // Slender pointed clinker-style hull, open dark well and two thwarts.
-        box(x,-.83f,z,.68f,.20f,1.02f,.46f,.34f,.21f);
-        box(x,-.715f,z,.49f,.045f,.76f,.16f,.18f,.15f);
-        for(int side=-1;side<=1;side+=2) {
-            const float sx=static_cast<float>(side);
-            triangle(x+sx*.34f,-.78f,z+.38f,
-                     x,-.85f,z+.68f,
-                     x+sx*.20f,-.68f,z+.37f,.58f,.44f,.28f);
-        }
-        box(x,-.68f,z-.19f,.50f,.055f,.10f,.59f,.46f,.29f);
-        // The one embarked passenger is not an extra target or infantry slot.
-        if(e.passengers>0) {
-            box(x,-.57f,z+.06f,.17f,.24f,.15f,.41f,.43f,.32f);
-            box(x,-.38f,z+.06f,.14f,.14f,.14f,.66f,.54f,.37f);
-        }
-    } else if (e.type == UnitType::LandingCraft) {
-        // Broad troop well; bow ramp hinges down only during final approach.
-        box(x,-.86f,z,1.10f,.20f,1.10f,.39f,.44f,.40f);
-        box(x-.50f,-.68f,z-.04f,.10f,.24f,.99f,.49f,.52f,.46f);
-        box(x+.50f,-.68f,z-.04f,.10f,.24f,.99f,.49f,.52f,.46f);
-        box(x,-.755f,z-.44f,.91f,.17f,.13f,.31f,.33f,.31f);
-        const float ramp = LandingRampProgress(z);
-        const float rampTipY = -.46f - .57f * ramp;
-        const float rampTipZ = z + .56f + .16f * ramp;
-        triangle(x-.48f,-.76f,z+.48f,x+.48f,-.76f,z+.48f,
-                 x+.40f,rampTipY,rampTipZ,.60f,.62f,.53f);
-        triangle(x-.48f,-.76f,z+.48f,x+.40f,rampTipY,rampTipZ,
-                 x-.40f,rampTipY,rampTipZ,.60f,.62f,.53f);
-        if(e.carries_armor) {
-            // The covered olive cargo shape is visible on the craft until
-            // landfall; then the independently simulated car appears ashore.
-            box(x,-.58f,z-.02f,.53f,.25f,.48f,.35f,.40f,.31f);
-            box(x,-.42f,z-.05f,.24f,.11f,.25f,.28f,.34f,.27f);
-            box(x,-.42f,z+.17f,.055f,.06f,.35f,.22f,.25f,.21f);
-        }
-        const int passengers=std::min(6,static_cast<int>(e.passengers));
-        for(int n=0;n<passengers;n++) {
-            const float px=x+(static_cast<float>(n%3)-1.0f)*.27f;
-            const float pz=z+(n<3?-.17f:.19f);
-            box(px,-.64f,pz,.14f,.19f,.13f,.29f,.36f,.28f);
-            box(px,-.47f,pz,.12f,.12f,.12f,.57f,.53f,.38f);
-        }
-    } else if (e.type == UnitType::Gunboat) {
-        // Long angular patrol hull, raised wheelhouse and a real forward gun.
-        box(x,-.85f,z,1.18f,.24f,1.18f,.30f,.36f,.41f);
-        box(x,-.71f,z-.08f,.96f,.07f,1.06f,.21f,.27f,.31f);
+    if(e.type==UnitType::Rowboat) {
+        unit_geometry::ContouredHull(x,z,unit_geometry::HullKind::Rowboat,triangle);
+        unit_geometry::RowboatFurniture(x,z,e.passengers,box,triangle);
+    } else if(e.type==UnitType::LandingCraft) {
+        unit_geometry::ContouredHull(x,z,unit_geometry::HullKind::LandingCraft,triangle);
+        unit_geometry::LandingDetails(x,z,LandingRampProgress(z),
+                                     e.passengers,e.carries_armor,box,triangle);
+    } else {
+        unit_geometry::ContouredHull(x,z,unit_geometry::HullKind::Gunboat,triangle);
+        // Deck gun and elevated bridge retain the existing real geometry.
+        box(x,-.70f,z-.08f,.90f,.07f,1.04f,.21f,.27f,.31f);
         box(x,-.49f,z-.25f,.54f,.37f,.41f,.45f,.49f,.48f);
         box(x,-.295f,z-.25f,.60f,.06f,.47f,.20f,.24f,.26f);
         box(x,-.48f,z+.28f,.35f,.17f,.34f,.32f,.36f,.33f);
         box(x,-.42f,z+.56f,.095f,.09f,.43f,.22f,.25f,.24f);
-        // Sloped bow and wheelhouse windows survive low-res silhouettes.
-        triangle(x-.58f,-.81f,z+.45f,x,-.82f,z+.72f,
-                 x-.46f,-.70f,z+.43f,.43f,.48f,.49f);
-        triangle(x+.58f,-.81f,z+.45f,x+.46f,-.70f,z+.43f,
-                 x,-.82f,z+.72f,.43f,.48f,.49f);
+        // Observation windows, radome, exhaust and braced bow turret.
         box(x,-.47f,z-.044f,.35f,.12f,.018f,.12f,.18f,.19f);
+        box(x+.21f,-.28f,z-.49f,.06f,.25f,.08f,.24f,.26f,.27f);
+        for(int side:{-1,1}){
+            const float sideX=static_cast<float>(side);
+            triangle(x+sideX*.56f,-.75f,z+.43f,x,-.79f,z+.65f,
+                     x+sideX*.43f,-.64f,z+.41f,.42f,.47f,.48f);
+        }
     }
     // Boat-relative two-wedge foam pattern shifts with actual hull progress.
     // No independent clock, extra triangles or effect-particle allocations.
@@ -115,8 +82,8 @@ void EmitHeavyTransportSilhouette(const Enemy &ship,BoxFn box,TriFn tri) {
        !std::isfinite(ship.x) || !std::isfinite(ship.z))return;
     const float x=ship.x,z=ship.z;
     // Lower sea hull, armored beam and reinforced belt.
-    box(x,-.85f,z,1.82f,.31f,2.40f,.23f,.31f,.28f);
-    box(x,-.62f,z-.04f,1.91f,.22f,2.17f,.34f,.40f,.34f);
+    unit_geometry::ContouredHull(x,z,unit_geometry::HullKind::HeavyTransport,tri);
+    box(x,-.63f,z-.04f,1.64f,.12f,1.94f,.34f,.40f,.34f);
     for(int side=-1;side<=1;side+=2) {
         const float sx=static_cast<float>(side);
         box(x+sx*.87f,-.49f,z-.11f,.16f,.40f,1.92f,
@@ -162,25 +129,8 @@ void EmitArmoredVehicleSilhouette(const ArmoredVehicle &vehicle,
                                  BoxFn box,TriFn triangle) {
     if(!vehicle.active || !std::isfinite(vehicle.x) ||
        !std::isfinite(vehicle.z))return;
-    const float x=vehicle.x,z=vehicle.z;
-    // Recessed black wheels beneath the angular olive chassis.
-    for(int side=-1;side<=1;side+=2) {
-        const float sx=static_cast<float>(side);
-        box(x+sx*.35f,-.88f,z,.15f,.19f,.62f,.12f,.15f,.13f);
-        for(int end=-1;end<=1;end+=2)
-            box(x+sx*.39f,-.83f,z+static_cast<float>(end)*.22f,
-                .11f,.17f,.16f,.23f,.24f,.21f);
-    }
-    box(x,-.76f,z,.63f,.19f,.69f,.35f,.39f,.30f);
-    box(x,-.64f,z-.035f,.51f,.095f,.48f,.48f,.49f,.37f);
-    // Sloped glacis and faceted closed turret; no visible human sprite
-    // masquerades as cargo after unloading.
-    triangle(x-.31f,-.72f,z+.30f,x+.31f,-.72f,z+.30f,
-             x,-.56f,z+.20f,.49f,.48f,.33f);
-    box(x,-.53f,z-.07f,.36f,.17f,.29f,.34f,.39f,.32f);
-    box(x,-.455f,z-.07f,.26f,.025f,.22f,.21f,.24f,.21f);
-    box(x,-.53f,z+.30f,.075f,.074f,.55f,.24f,.29f,.23f);
-    box(x,-.53f,z+.57f,.12f,.10f,.075f,.16f,.18f,.16f);
+    unit_geometry::ShoreArmor(vehicle.x,vehicle.z,
+        vehicle.role==ArmorRole::Tank,box,triangle);
 }
 template <typename BoxFn, typename TriFn>
 void EmitInfantrySilhouette(const Infantry &soldier, BoxFn box, TriFn triangle) {
@@ -205,6 +155,8 @@ void EmitInfantrySilhouette(const Infantry &soldier, BoxFn box, TriFn triangle) 
                  x+sx*.015f,-.915f,z-sx*stride*.45f,
                  .27f,.30f,.24f);
     }
+    unit_geometry::SoldierEquipment(x,z,
+        soldier.tactic==InfantryTactic::Support,box,triangle);
 }
 }} // namespace reverie::breakwater
 #endif

@@ -948,6 +948,11 @@ void BuildScene(State *s) {
             s->beckenburg_models[imported::OwnerRowboat].Emit(
                 e.x,-.77f,e.z,1.18f,1.57079632679f,
                 [s](auto... values){Triangle(s,values...);});
+            // Rowlocks and paired oars add world-space vessel detail
+            // without replacing or changing the authentic imported hull.
+            unit_geometry::RowboatOars(e.x,e.z,
+                [s](auto... values){Box(s,values...);},
+                [s](auto... values){Triangle(s,values...);});
             // Preserve the original simulation-relative wake effect.
             const float wake=VesselWakePhase(e.z);
             for(int side=-1;side<=1;side+=2) {
@@ -985,24 +990,17 @@ void BuildScene(State *s) {
             EmitVesselSilhouette(e,
                 [s](auto... values){Box(s,values...);},
                 [s](auto... values){Triangle(s,values...);});
-            if(e.type==UnitType::LandingCraft && e.carries_armor) {
-                Box(s,e.x,-.43f,e.z-.08f,.50f,.21f,.45f,
-                    .34f,.39f,.31f);
-                Box(s,e.x,-.29f,e.z-.12f,.26f,.11f,.27f,
-                    .26f,.32f,.27f);
-                Box(s,e.x,-.28f,e.z+.11f,.065f,.064f,.37f,
-                    .21f,.24f,.20f);
-            }
             continue;
         }
 
     }
     for(const ArmoredVehicle &vehicle:game.armored_vehicles()) {
         if(!vehicle.active)continue;
-        // Real owner-authored APC geometry replaces the temporary primitive
-        // armor silhouette. Bound the displayed body to the *existing* hit
-        // sphere and retain the existing independent armor simulation.
-        if(s->beckenburg_models[imported::OwnerAPC].valid()) {
+        // Owner APC geometry remains for troop carriers; genuine tanks
+        // require their visibly tracked hull, turret and larger barrel.
+        // Both roles retain the existing independently simulated hit sphere.
+        if(vehicle.role==ArmorRole::APC &&
+           s->beckenburg_models[imported::OwnerAPC].valid()) {
             s->beckenburg_models[imported::OwnerAPC].Emit(
                 vehicle.x,-.74f,vehicle.z,1.f,1.57079632679f,
                 [s](auto... values){Triangle(s,values...);});

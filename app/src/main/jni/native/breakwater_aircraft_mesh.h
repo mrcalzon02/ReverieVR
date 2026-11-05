@@ -124,6 +124,33 @@ void EmitAircraftMesh(const Enemy &e,TriFn triangle) {
                  .23f,.25f,.26f);
         }
     }
+    // Independent wingtip navigation surfaces, twin tail stabilizers and
+    // real under-wing stores. These sit on the same banked local frame as
+    // the actual cockpit, wings, weapon line and hit pose. Both aircraft
+    // are volumetric from spawn to departure (never sprite billboards).
+    for(int side:{-1,1}) {
+        const float sign=static_cast<float>(side);
+        quad(sign*(span*.79f),-.04f,-.17f,
+             sign*(span*.93f),-.04f,-.17f,
+             sign*(span*.93f),-.04f,-.23f,
+             sign*(span*.79f),-.04f,-.23f,
+             bomber?.68f:.74f,bomber?.66f:.70f,.45f);
+        if(bomber) {
+            // Two faceted bombs remain visibly distinct from nacelles.
+            const float px=sign*.85f;
+            quad(px-.055f,-.155f,-.17f,px+.055f,-.155f,-.17f,
+                 px+.035f,-.155f,-.45f,px-.035f,-.155f,-.45f,
+                 .22f,.24f,.21f);
+            face(px-.04f,-.15f,-.45f,px+.04f,-.15f,-.45f,
+                 px,-.155f,-.56f,.33f,.34f,.29f);
+        }else{
+            // Underwing machine-gun fairing and rearward exhaust streak.
+            const float px=sign*.37f;
+            quad(px-.033f,-.11f,.18f,px+.033f,-.11f,.18f,
+                 px+.023f,-.13f,.54f,px-.023f,-.13f,.54f,
+                 .18f,.21f,.21f);
+        }
+    }
 }
 }} // namespace reverie::breakwater
 #endif

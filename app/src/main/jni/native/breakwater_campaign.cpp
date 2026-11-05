@@ -339,7 +339,8 @@ bool Campaign::Land(Enemy &e) {
         ArmoredVehicle &vehicle=armor_[slot];
         const float offset=vehicles==2u?(n==0u?-.43f:.43f):0.0f;
         vehicle={std::max(-3.1f,std::min(3.1f,e.x+offset)),
-                 -2.23f,armor::kVehicleHp,true,1.8f+.45f*n};
+                 -2.23f,armor::kVehicleHp,true,1.8f+.45f*n,
+                 armor::RoleForLanding(e.type,n)};
         ++wave_status_.armor_landed;
     }
     // Reuse only defeated troops' slots for larger waves.

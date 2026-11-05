@@ -27,6 +27,11 @@
 using namespace reverie::breakwater;
 
 int main() {
+    // Cargo gets an unambiguous, persistent visual role without any
+    // independent target, health or save migration.
+    assert(armor::RoleForLanding(UnitType::LandingCraft,0)==ArmorRole::APC);
+    assert(armor::RoleForLanding(UnitType::ArmoredTransport,0)==ArmorRole::Tank);
+    assert(armor::RoleForLanding(UnitType::ArmoredTransport,1)==ArmorRole::APC);
     // Real purchased Beckenburg asset conversions must exist in the APK
     // source tree, remain strict source geometry (no fallback primitives),
     // and emit visible XYZRGB triangles at combat emplacement positions.

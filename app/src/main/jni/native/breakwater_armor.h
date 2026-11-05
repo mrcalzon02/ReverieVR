@@ -17,6 +17,12 @@ constexpr int32_t kArmorShellDamage=4;
 constexpr int32_t kArmorKillCredits=110;
 constexpr float kArmorHitRadius=.43f;
 constexpr float kArmorHitY=-.72f;
+constexpr ArmorRole RoleForLanding(UnitType ship,uint8_t ordinal){
+    // Later heavy transports deliver one main gun tank and one troop APC;
+    // earlier single-vehicle landing craft deliver APCs. Pure campaign state.
+    return ship==UnitType::ArmoredTransport && ordinal==0u?
+        ArmorRole::Tank:ArmorRole::APC;
+}
 inline bool CarriesArmor(UnitType kind,unsigned progression,
                          uint32_t choice,unsigned spawned) {
     return kind==UnitType::LandingCraft && progression>=4u &&

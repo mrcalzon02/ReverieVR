@@ -11,6 +11,9 @@ enum class Phase : uint8_t { Briefing, Shop, Combat, Victory, Defeat };
 enum class Period : uint8_t { Day, Night };
 enum class UnitType : uint8_t { Rowboat, LandingCraft, Gunboat, Aircraft, ArmoredTransport };
 enum class AircraftPattern : uint8_t { None, Strafer, Bomber };
+// Visual-only differentiation for beachhead armor. Damage, armor hit spheres,
+// crew capacity and existing checkpoint bytes are deliberately unchanged.
+enum class ArmorRole : uint8_t { APC, Tank };
 // Shared spawn health also drives damage visualization. Do not duplicate
 // balance values in renderer-only code, HUDs, or saved-state adapters.
 constexpr int16_t EnemyStartingHp(UnitType type) {
@@ -76,6 +79,7 @@ struct ArmoredVehicle {
     int16_t hp = 0;
     bool active = false;
     float attack_timer = 0.0f;
+    ArmorRole role = ArmorRole::APC; // transient, deterministic cargo role
 };
 struct ArmorShotEvent {
     uint32_t sequence = 0;
