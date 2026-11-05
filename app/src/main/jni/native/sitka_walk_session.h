@@ -11,6 +11,7 @@
 #include "reverie_native_math.h"
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <stdexcept>
 
 namespace reverie { namespace sitka {
@@ -27,8 +28,10 @@ public:
             throw std::invalid_argument("No authored pedestrian spawn node");
         const auto& n=graph.nodes[graph.spawn];
         pose_={n.x,n.y,n.z};
-        if(!graph.Surface(n.x,n.z).valid)
+        const WalkSurface start=graph.Surface(n.x,n.z);
+        if(!start.valid)
             throw std::invalid_argument("Pedestrian start is not on a public path");
+        active_edge_=start.edge;
     }
     WalkPose pose()const{return pose_;}
     size_t accepted_steps()const{return accepted_;}
@@ -58,7 +61,7 @@ public:
         if(TryMove(dx,dz))return true;
         // Slide along the authored corridor if the user angles into a
         // seawall or kerb. This cannot cross the edge or invent a junction.
-        const auto original=graph_->Surface(pose_.x,pose_.z);
+        const auto original=ActiveSurface(pose_.x,pose_.z);
         if(original.valid){
             const auto& e=graph_->edges[original.edge];
             const auto& a=graph_->nodes[e.a],&b=graph_->nodes[e.b];
@@ -88,20 +91,62 @@ public:
         return true;
     }
 private:
+    // A sampled point on any nearby graph edge is NOT permission to switch
+    // corridors. Keep the active sourced segment even at an X/Z crossing.
+    WalkSurface ActiveSurface(double x,double z)const{
+        if(active_edge_>=graph_->edges.size()||
+           !std::isfinite(x)||!std::isfinite(z))return {};
+        const auto& e=graph_->edges[active_edge_];
+        const auto& a=graph_->nodes[e.a];
+        const auto& b=graph_->nodes[e.b];
+        const double vx=double(b.x)-a.x,vz=double(b.z)-a.z;
+        const double len2=vx*vx+vz*vz;
+        if(len2<.01)return {};
+        const double t=std::clamp(((x-a.x)*vx+(z-a.z)*vz)/len2,0.,1.);
+        const double dx=x-a.x-t*vx,dz=z-a.z-t*vz;
+        const double distance=std::hypot(dx,dz);
+        if(distance>double(e.width)*.5+.25)return {};
+        return {true,static_cast<float>(a.y+t*(b.y-a.y)),
+                active_edge_,static_cast<float>(distance)};
+    }
+    // A legal turn must pass through a shared, explicitly authored endpoint.
+    // Planar crossings and near-misses are not graph junctions.
+    bool CanEnter(size_t next,double x,double z)const{
+        if(active_edge_>=graph_->edges.size()||
+           next>=graph_->edges.size())return false;
+        const auto& current=graph_->edges[active_edge_];
+        const auto& target=graph_->edges[next];
+        const size_t missing=graph_->nodes.size();
+        size_t junction=missing;
+        if(current.a==target.a||current.a==target.b)junction=current.a;
+        else if(current.b==target.a||current.b==target.b)junction=current.b;
+        if(junction==missing)return false;
+        const auto& node=graph_->nodes[junction];
+        const double radius=std::max(.5,
+            .5*std::max(double(current.width),double(target.width))+.5);
+        return std::hypot(double(pose_.x)-node.x,
+                          double(pose_.z)-node.z)<=radius &&
+               std::hypot(x-node.x,z-node.z)<=radius;
+    }
     bool TryMove(float dx,float dz){
         if(dx==0.f&&dz==0.f)return false;
         const double x=double(pose_.x)+dx,z=double(pose_.z)+dz;
-        const auto hit=graph_->Surface(x,z);
-        if(!hit.valid ||
-           std::abs(hit.y-pose_.ground_y)>kMaxStepHeight)return false;
+        WalkSurface hit=ActiveSurface(x,z);
+        if(!hit.valid){
+            hit=graph_->Surface(x,z);
+            if(!hit.valid||!CanEnter(hit.edge,x,z))return false;
+        }
+        if(std::abs(hit.y-pose_.ground_y)>kMaxStepHeight)return false;
         pose_.x=static_cast<float>(x);
         pose_.ground_y=hit.y;
         pose_.z=static_cast<float>(z);
+        active_edge_=hit.edge;
         ++accepted_;
         return true;
     }
     const WalkGraph* graph_=nullptr;
     WalkPose pose_{};
+    size_t active_edge_=0u;
     size_t accepted_=0u,blocked_=0u;
 };
 }} // namespace reverie::sitka

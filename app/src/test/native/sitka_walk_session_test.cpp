@@ -52,5 +52,43 @@ int main(){
     assert(shifted.eye_index==1);
     eye.eye_index=7;
     assert(!walk.ShiftEye(&eye,shifted));
+    // Visible crossings are NOT pedestrian connections unless survey
+    // source records have the SAME endpoint node. Reachability alone
+    // does not grant a shortcut across a different corridor.
+    const std::string crossing =
+      "SITKA-WALK-1\n"
+      "P|survey_x|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa|EPSG32608|reviewed\n"
+      "O|480000.125|6300000.625\n"
+      "N|start|0|11.5|0\n"
+      "N|east|12|11.5|0\n"
+      "N|north|12|11.5|12\n"
+      "N|upper|6|11.5|12\n"
+      "N|south|6|11.5|-5\n"
+      "E|horizontal|start|east|sidewalk|0.4\n"
+      "E|rise|east|north|sidewalk|0.4\n"
+      "E|top|north|upper|sidewalk|0.4\n"
+      "E|crosses_without_node|upper|south|sidewalk|0.4\n"
+      "S|public_start|start\n";
+    auto crossing_graph=WalkGraph::Parse(crossing,480000.125,6300000.625);
+    WalkSession crossing_walk(crossing_graph);
+    for(int i=0;i<83;++i)
+        assert(crossing_walk.Advance(1.f,0.f,right,.05f));
+    const float cross_x=crossing_walk.pose().x;
+    for(int i=0;i<40;++i)
+        crossing_walk.Advance(0.f,-1.f,right,.05f);
+    assert(crossing_walk.blocked_steps()>0u);
+    assert(crossing_walk.pose().z<.451f);
+    assert(std::abs(crossing_walk.pose().x-cross_x)<.01f);
+    // Walking onward along the original route remains permitted.
+    assert(crossing_walk.Advance(1.f,0.f,right,.05f));
+
+    // Conversely, shared source nodes permit an actual authored right turn.
+    WalkSession junction_walk(g);
+    for(int i=0;i<276;++i)
+        assert(junction_walk.Advance(1.f,0.f,right,.05f));
+    for(int i=0;i<70;++i)
+        junction_walk.Advance(0.f,1.f,right,.05f);
+    assert(junction_walk.pose().z< -3.f);
+    assert(std::abs(junction_walk.pose().x-20.f)<.1f);
     return 0;
 }

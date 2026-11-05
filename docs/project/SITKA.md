@@ -2,6 +2,24 @@
 
 # Sitka
 
+## Corridor-authoritative walking junctions — 2026-11-05
+
+The source-only `WalkSession` now owns its currently occupied authored
+pedestrian edge. It stays on that segment even when another sourced path
+crosses or overlaps in horizontal X/Z coordinates. Stepping onto a different
+segment requires BOTH an actual shared source endpoint node and proximity to
+that node; the existing 0.30 m elevation-step limit still applies. Sideways
+sliding is constrained to the active corridor, not whichever crossed path
+happens to be closest. No road, path, crossing, bridge approach or legal
+public access is inferred by the runtime.
+
+The existing `sitka_walk_session_test.cpp` regression now covers a
+visually crossing but unconnected source corridor and a lawful shared-node
+turn. This is a narrow source-level correctness repair, not installation
+of current municipal footpaths, a playable Sitka map, validated physical
+sidewalk collisions or Galaxy S9 device acceptance.
+
+
 
 ## Daydream touchpad mapped to sourced footpaths — 2026-11-04
 
