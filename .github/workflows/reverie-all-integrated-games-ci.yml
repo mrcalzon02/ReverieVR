@@ -48,6 +48,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p validation/breakwater
+          # Capture exact host compiler/assertion failures as an artifact,
+          # not only ephemeral Actions step text.
+          exec > >(tee validation/breakwater/functional.log) 2>&1
           for cc in g++ clang++; do
             for game_test in breakwater_campaign breakwater_defense_points breakwater_aircraft_mesh breakwater_cannon_trajectory breakwater_wave_schedule breakwater_wave_threat breakwater_armor breakwater_invasion_units breakwater_shop_feedback breakwater_menu_layout; do
               echo "FUNCTIONAL TEST: $game_test via $cc"
@@ -63,6 +67,14 @@ jobs:
             done
           done
           echo 'PASS: Breakwater Battery core gameplay controls/campaign'
+      - name: Preserve failed Breakwater compiler and assertion trace
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakwater-core-diagnostics-${{ github.run_id }}
+          path: validation/breakwater/functional.log
+          if-no-files-found: warn
+          retention-days: 7
 
   red-ledger:
     name: Red Ledger patron, faction, economy and trade simulation
