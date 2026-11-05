@@ -49,12 +49,12 @@ int main() {
         }
     }
     for(unsigned location=0;location<4;++location) {
-        const auto land=EnvironmentFor(static_cast<uint8_t>(location),false);
+        const auto land=reverie::breakwater::EnvironmentFor(static_cast<uint8_t>(location),false);
         for(float x:{-3.86f,-2.7f,0.f,2.7f,3.86f}) {
-            const float joined=BeachHeight(location,x,-.26f);
-            const float rear=RearGroundHeight(land,x,-.26f);
+            const float joined=reverie::breakwater::BeachHeight(location,x,-.26f);
+            const float rear=reverie::breakwater::RearGroundHeight(land,x,-.26f);
             assert(std::abs(joined-rear)<.00001f);
-            assert(std::isfinite(BeachHeight(location,x,-2.20f)));
+            assert(std::isfinite(reverie::breakwater::BeachHeight(location,x,-2.20f)));
         }
     }
     for(int id=0;id<kMaterialCount;++id) {
