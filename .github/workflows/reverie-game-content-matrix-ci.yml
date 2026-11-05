@@ -221,6 +221,18 @@ jobs:
               "${RUNNER_TEMP}/${test_name}-${compiler}"
             done
           done
+      - name: Verify Sitka Tier 2/3 boat geometry and crabbing simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/sitka/test_build_boat_rough_models.py
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/sitka_crab_work_cycle_test.cpp \
+              -o "${RUNNER_TEMP}/sitka-crabbing-${compiler}"
+            "${RUNNER_TEMP}/sitka-crabbing-${compiler}"
+          done
       - name: Retain exact-commit streaming transition diagnostics
         if: success()
         uses: actions/upload-artifact@v4

@@ -2,6 +2,11 @@
 
 # Sitka
 
+## Tier 2/3 boat models and Tier 3 crabbing plan — 2026-11-05
+
+[Reproducible 12-vessel and six-crab-rig rough model sources](sitka/equipment/BOAT_TIER_2_3.md) are now tracked with their archived Drive OBJ/MTL package and independent CPU pot simulation. The boat/crab features remain source-only, not registered game systems.
+
+
 ## Personal progression and grounded city exploration — 2026-11-05
 
 The primary gameplay circuit is to roam Sitka streets and shoreline
