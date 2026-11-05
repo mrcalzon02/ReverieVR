@@ -2,6 +2,29 @@
 
 # Sitka
 
+## Shoreline geographic authenticity correction — 2026-11-04
+
+The source-only shoreline uses **real site identity and GIS footprint data**, not
+an interchangeable coastal village kit. The new source-backed catalog
+`data/sitka/shore-reality.json` records five separate municipal harbors,
+Crescent Harbor's seven numbered floats, the distinctive **cable-stayed**
+John O'Connell Memorial Bridge, surviving Katlian and Japonski heritage
+structures, and historic sites which must **not** reappear as extant buildings.
+Every catalog entry has verified *identity* sources, but no generated geometry:
+all are marked `not_acquired` until legal source geometry and projection are
+confirmed. In particular the original Sitka Cold Storage burned in 1973;
+it must not be placed as a present-day cannery. See
+`scripts/sitka/shore_reality.py` for the fail-closed import checks.
+
+The shore exporter now requires a source feature ID, present-day existence,
+and a site catalog; named structures cannot be exported until matching
+source-checked GIS identifiers and CRS/hash evidence exist. Buildings lacking
+a documented height or source levels are no longer assigned a generic number
+of storeys. The runtime's existing illustrated P1 windows/awnings are now
+**off by default**; without an explicit, audited per-site approval, the
+renderer uses real-footprint P0 massing even nearby. This corrects source
+fidelity without touching skiff, water, bathymetry or headset recovery code.
+
 ## Shore distance-tier rendering — 2026-11-04 (source integrated; device proof pending)
 
 The optional licensed `sitka/shore/waterfront.sitkash` feature set now stays

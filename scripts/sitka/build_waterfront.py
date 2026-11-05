@@ -12,6 +12,7 @@ import math
 import re
 import struct
 from pathlib import Path
+from shore_reality import load_site_catalog, verify_feature_evidence
 
 HEADER = struct.Struct('<8sIIdd')
 MAGIC = b'SITKA01\0'
@@ -126,9 +127,9 @@ def building_record(feature, transformer, origin, dem):
         height = number(levels * 3, 'derived approximate height', .25, 70)
         height_class = 'level_estimate'
     else:
-        # Authoring-only P0 approximation; clearly reported in manifest.
-        height = 5.0 if kind == 'storefront' else 6.0 if kind == 'cannery' else 5.5
-        height_class = 'class_estimate'
+        # Do not synthesize a generic Sitka building height just because
+        # a real polygon happens to have a "storefront" material tag.
+        raise ValueError('building needs sourced height_m or building:levels')
     fields = ';'.join(f'{fmt(x)},{fmt(z)}' for x, z in local)
     return f'P|{feature_id(feature)}|{kind}|{fmt(base)}|{fmt(height)}|{fields}', height_class
 
@@ -157,7 +158,7 @@ def block_record(feature, transformer, origin):
     return '|'.join(['R' if kind == 'bridge_ramp' else 'B', feature_id(feature), kind] + values)
 
 
-def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, output):
+def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, output, site_catalog):
     from pyproj import CRS, Transformer
     from shapely.geometry import shape
     import rasterio
@@ -185,6 +186,7 @@ def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, o
        abs(north0 - manifest.get('north_origin', float('inf'))) > .001:
         raise ValueError('terrain origin/manifest mismatch')
     ledger = json.loads(ledger_path.read_text(encoding='utf-8'))
+    sites = load_site_catalog(site_catalog)
     provenance_record(ledger, 'buildings')
     if blocks_path is not None:
         provenance_record(ledger, 'harbor_structures')
@@ -202,6 +204,8 @@ def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, o
     to_blocks = Transformer.from_crs(blocks_crs, crs, always_xy=True) if blocks_crs else None
     records = []
     height_classes = {}
+    evidence_ids = {}
+    site_links = {}
     ids = set()
     with rasterio.open(dem_path) as dem:
         if str(dem.crs) != str(crs) or dem.count != 1 or dem.nodata is None:
@@ -221,6 +225,10 @@ def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, o
             kind = feature['properties'].get('sitka_kind')
             if kind not in valid_kinds:
                 raise ValueError(f'unsupported or incorrectly categorized shore type: {kind}')
+            site_ref = verify_feature_evidence(feature['properties'], sites, kind)
+            evidence_ids[fid] = feature['properties']['source_feature_id']
+            if site_ref is not None:
+                site_links[fid] = site_ref
             if converter == 'building':
                 record, height_class = building_record(feature, transform, locations, dem)
                 height_classes[fid] = height_class
@@ -248,6 +256,8 @@ def bake(terrain_manifest, dem_path, buildings_path, blocks_path, ledger_path, o
         'building_count': len(building_features),
         'block_count': len(block_features),
         'building_height_quality': height_classes,
+        'feature_source_ids': dict(sorted(evidence_ids.items())),
+        'named_site_references': dict(sorted(site_links.items())),
         'source_attribution': ledger,
         'limitations': ['P0 visualization only', 'No surveyed facade/roof or public entry',
                         'No geographic claim for user-authored block dimensions',
@@ -267,9 +277,12 @@ def main():
     p.add_argument('--buildings', required=True, type=Path, help='source-licensed building Polygon GeoJSON')
     p.add_argument('--blocks', type=Path, help='optional authored dock/pier/rock/bridge Point GeoJSON')
     p.add_argument('--provenance', required=True, type=Path)
+    p.add_argument('--site-catalog', required=True, type=Path,
+                   help='verified site/presence register; no fake historic buildings')
     p.add_argument('--output', required=True, type=Path, help='sitka/shore/waterfront.sitkash')
     a = p.parse_args()
-    m = bake(a.terrain_manifest, a.dem, a.buildings, a.blocks, a.provenance, a.output)
+    m = bake(a.terrain_manifest, a.dem, a.buildings, a.blocks,
+             a.provenance, a.output, a.site_catalog)
     print(f"Baked {m['feature_count']} anchored shoreline features: {a.output}")
 
 

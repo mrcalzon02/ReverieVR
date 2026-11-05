@@ -1,0 +1,177 @@
+{
+  "format": "sitka-shore-reality-1",
+  "snapshot_date": "2026-11-04",
+  "status": "research inventory only: no licensed metric footprints or mesh placement supplied",
+  "policy": "A verified name/location category is not a geometry license. No generated geographic coordinates, retroactive reconstruction of demolished structures, or generic substitutions.",
+  "source_dataset_candidates": [
+    {
+      "provider": "City and Borough of Sitka GIS",
+      "url": "https://www.cityofsitka.com/Government/City-Departments/Planning-Community-Development/GIS-Map-Resources",
+      "status": "verify download terms and authoritative feature layers"
+    },
+    {
+      "provider": "OpenStreetMap",
+      "url": "https://www.openstreetmap.org/copyright",
+      "status": "ODbL attribution, extraction and derived database review required"
+    },
+    {
+      "provider": "USGS 3DEP",
+      "url": "https://www.usgs.gov/3d-elevation-program/about-3dep-products-services",
+      "status": "vertical datum and coverage review required"
+    }
+  ],
+  "sites": [
+    {
+      "id": "crescent_harbor",
+      "name": "Crescent Harbor",
+      "category": "harbor",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "Seven numbered main walk floats; three gangways reported by ADFG; source map resolves slip IDs. Exact projected float geometry not yet obtained.",
+      "references": [
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps",
+        "https://www.cityofsitka.com/media/Harbor/pdf/crescent.pdf",
+        "https://www.adfg.alaska.gov/static-sf/Region1/FishingStoryMap/Print/Harbors/Crescent%20Harbor.pdf"
+      ]
+    },
+    {
+      "id": "anb_harbor",
+      "name": "ANB Harbor",
+      "category": "harbor",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "Public harbor on Katlian waterfront. Do not substitute Crescent float geometry or assume free access to working facilities.",
+      "references": [
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps",
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department"
+      ]
+    },
+    {
+      "id": "thomsen_harbor",
+      "name": "Thomsen Harbor",
+      "category": "harbor",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "Independent northern Katlian harbor; needs its own official float plan.",
+      "references": [
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps",
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department"
+      ]
+    },
+    {
+      "id": "eliason_harbor",
+      "name": "Richard I. Eliason Sr. Harbor",
+      "category": "harbor",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "Separate municipal marina north of Thomsen Harbor; no copying Crescent geometry.",
+      "references": [
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps",
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department"
+      ]
+    },
+    {
+      "id": "sealing_cove_harbor",
+      "name": "Sealing Cove Harbor",
+      "category": "harbor",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "Japonski Island harbor west of O'Connell Bridge; obtain separate mapped floats.",
+      "references": [
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps",
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department"
+      ]
+    },
+    {
+      "id": "oconnell_bridge",
+      "name": "John O'Connell Memorial Bridge",
+      "category": "bridge",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "1972 cable-stayed girder-span structure with stays and pylons, not a generic ramp-only crossing. Library of Congress HAER AK-27 documents its identity.",
+      "references": [
+        "https://www.loc.gov/item/ak0342/"
+      ]
+    },
+    {
+      "id": "fishermans_quay_pyramid",
+      "name": "Fisherman's Quay / former Pyramid Packing Company",
+      "category": "heritage_complex",
+      "presence": "needs_current_verification",
+      "geometry_state": "not_acquired",
+      "notes": "Historic buildings at 475 Katlian Street were built in 1918. Need present-day individual footprints, facades, changes and use verified before modeling.",
+      "references": [
+        "https://www.sitkamaritime.org/uploads/7/2/9/0/7290231/2021_brochure_map.pdf"
+      ]
+    },
+    {
+      "id": "andrew_hope_shop",
+      "name": "Andrew Hope Boat Shop",
+      "category": "heritage_building",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "Historic Katlian shop: 1941 one-storey gable-front, vertical siding, corrugated metal roofing documented in preservation material. Verify condition and measured footprint.",
+      "references": [
+        "https://www.sitkamaritime.org/uploads/7/2/9/0/7290231/2021_brochure_map.pdf",
+        "https://www.cityofsitka.com/media/Clerk/Boards%20and%20Commissions/Historic%20Preservation%20Commission%281%29/Packet%20Materials%20January%2014.pdf"
+      ]
+    },
+    {
+      "id": "japonski_boathouse",
+      "name": "Japonski Island Boathouse",
+      "category": "heritage_building",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "WWII-era Navy boat-repair building across bridge. Restoration plan is not evidence that planned addition exists today.",
+      "references": [
+        "https://www.sitkamaritime.org/uploads/7/2/9/0/7290231/2021_brochure_map.pdf",
+        "https://www.sitkamaritime.org/the-boathouse.html"
+      ]
+    },
+    {
+      "id": "anb_hall",
+      "name": "Alaska Native Brotherhood Hall",
+      "category": "heritage_building",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "Built in 1914 and expanded in 1928. Documented and culturally significant; identity does not grant interior modeling permission.",
+      "references": [
+        "https://www.sitkamaritime.org/uploads/7/2/9/0/7290231/2021_brochure_map.pdf"
+      ]
+    },
+    {
+      "id": "sitka_cold_storage_original",
+      "name": "Original Sitka Cold Storage",
+      "category": "historical_site",
+      "presence": "demolished",
+      "geometry_state": "not_acquired",
+      "notes": "Original plant burned in 1973. NEVER place the historical building as a present-day waterfront structure; model the actual present parcel use separately only after new survey.",
+      "references": [
+        "https://www.sitkamaritime.org/uploads/7/2/9/0/7290231/2021_brochure_map.pdf",
+        "https://www.sitkamaritime.org/uploads/7/2/9/0/7290231/hisotry_handout_2019.pdf"
+      ]
+    },
+    {
+      "id": "herring_rock_original",
+      "name": "Herring Rock original location",
+      "category": "cultural_site",
+      "presence": "relocated",
+      "geometry_state": "not_acquired",
+      "notes": "A preserved portion of the ancient Tlingit landmark was moved. Original and current placements must not be conflated.",
+      "references": [
+        "https://www.sitkamaritime.org/uploads/7/2/9/0/7290231/2021_brochure_map.pdf"
+      ]
+    },
+    {
+      "id": "noow_tlein",
+      "name": "Noow Tlein (Castle Hill)",
+      "category": "cultural_landmark",
+      "presence": "existing",
+      "geometry_state": "not_acquired",
+      "notes": "Tlingit cultural and historic landscape; no invented fort/building reconstruction or assumed public interior.",
+      "references": [
+        "https://www.sitkamaritime.org/uploads/7/2/9/0/7290231/2021_brochure_map.pdf"
+      ]
+    }
+  ]
+}

@@ -30,6 +30,11 @@ class WaterfrontExportTest(unittest.TestCase):
         self.blocks = self.root / 'harbor.geojson'
         self.provenance = self.root / 'sources.json'
         self.output = self.root / 'waterfront.sitkash'
+        self.catalog = self.root / 'catalog.json'
+        self.catalog.write_text(json.dumps({'format': 'sitka-shore-reality-1',
+            'sites': [{'id': 'test_old_building', 'name': 'Historical fixture',
+                       'presence': 'demolished', 'geometry_state': 'not_acquired',
+                       'references': ['https://example.org/test']}]}), encoding='utf-8')
         with rasterio.open(self.dem, 'w', driver='GTiff', height=12, width=12,
                            count=1, dtype='float32', crs='EPSG:32608',
                            transform=from_origin(480000, 6300000, 10, 10),
@@ -50,14 +55,18 @@ class WaterfrontExportTest(unittest.TestCase):
                                                 'harbor_structures': source}), encoding='utf-8')
         self.building_feature = {'type': 'Feature', 'properties': {
             'feature_id': 'test_storefront_001', 'sitka_kind': 'storefront',
-            'building:levels': 2}, 'geometry': {'type': 'Polygon', 'coordinates': [[
+            'building:levels': 2,
+            'source_feature_id': 'fixture:building:1',
+            'physical_status': 'existing'}, 'geometry': {'type': 'Polygon', 'coordinates': [[
                 [480010, 6299990], [480035, 6299990], [480035, 6299970],
                 [480025, 6299970], [480025, 6299980], [480010, 6299980],
                 [480010, 6299990]]]}}
         self.block_feature = {'type': 'Feature', 'properties': {
             'feature_id': 'test_pier_001', 'sitka_kind': 'pier',
             'base_m': 11.5, 'width_m': 3, 'depth_m': 14,
-            'height_m': .6, 'yaw_rad': 0.0},
+            'height_m': .6, 'yaw_rad': 0.0,
+            'source_feature_id': 'fixture:pier:1',
+            'physical_status': 'existing'},
             'geometry': {'type': 'Point', 'coordinates': [480050, 6299960]}}
         self.emit()
 
@@ -70,12 +79,13 @@ class WaterfrontExportTest(unittest.TestCase):
 
     def run_bake(self):
         return bake(self.manifest, self.dem, self.buildings,
-                    self.blocks, self.provenance, self.output)
+                    self.blocks, self.provenance, self.output, self.catalog)
 
     def test_georeferenced_deterministic_source_round_trip(self):
         report = self.run_bake()
         text = self.output.read_text(encoding='utf-8')
         self.assertEqual(report['feature_count'], 2)
+        self.assertEqual(report['feature_source_ids']['test_pier_001'], 'fixture:pier:1')
         self.assertEqual(report['building_height_quality']['test_storefront_001'], 'level_estimate')
         self.assertIn('P|test_storefront_001|storefront|11.500|6.000|', text)
         self.assertIn('B|test_pier_001|pier|45.000|-35.000|', text)
@@ -125,6 +135,17 @@ class WaterfrontExportTest(unittest.TestCase):
         self.provenance.write_text(json.dumps(bad))
         self.terrain.write_bytes(b'broken!')
         with self.assertRaisesRegex(ValueError, 'checksum'):
+            self.run_bake()
+
+    def test_named_historical_site_and_unknown_building_height_rejected(self):
+        self.building_feature['properties']['site_ref'] = 'test_old_building'
+        self.emit()
+        with self.assertRaisesRegex(ValueError, 'Historical'):
+            self.run_bake()
+        self.building_feature['properties'].pop('site_ref')
+        self.building_feature['properties'].pop('building:levels')
+        self.emit()
+        with self.assertRaisesRegex(ValueError, 'sourced height'):
             self.run_bake()
 
     def test_bad_height_or_missing_block_geometry(self):

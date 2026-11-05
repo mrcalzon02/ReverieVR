@@ -12,7 +12,15 @@ int main(){
         "P|lincoln_real_outline|storefront|1|7|0,0;16,0;16,4;11,4;11,9;0,9\n"
         "B|crescent_dock|pier|400|0|0|4|20|1|0\n"
         "R|bridge_ramp|bridge_ramp|1050|0|6|7|22|1|0|4\n");
-    ShoreStreamPlanner plan(features);
+    // Production fallback: real footprints do not authorize fabricated
+    // storefront window layouts or canopy placement.
+    ShoreStreamPlanner production(features);
+    assert(production.Update(12,5,0,0));
+    production.Commit();
+    assert(production.tier(0)==ShoreStreamPlanner::Massing);
+    assert(production.detailed_count()==0u);
+    // Explicitly approved illustrative P1 is exercised only in test code.
+    ShoreStreamPlanner plan(features,{"lincoln_real_outline"});
     assert(!plan.Update(NAN,0,0,0));
     assert(plan.Update(12,5,0,0));
     const auto detailed=plan.BuildPending();

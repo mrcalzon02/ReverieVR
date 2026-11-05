@@ -267,3 +267,19 @@ with 30-frame backoff. Full city asset paging, upload-time budgets, viewport
 culling, collision/navigation, approved real footprint assets and S9 thermal/
 frame-time validation remain **unimplemented/unverified**. The standalone
 C++17 smoke test is `app/src/test/native/sitka_shore_stream_test.cpp`.
+
+## Sitka factual shoreline admission correction (2026-11-04)
+
+The new `data/sitka/shore-reality.json` is an identity/reference ledger, not
+an exportable map or mesh. `scripts/sitka/shore_reality.py` checks dated
+existing-versus-demolished/relocated site identity and requires actual source
+feature IDs and verified geometry evidence for specifically named landmarks.
+`scripts/sitka/build_waterfront.py` rejects arbitrary unnamed origins,
+missing building elevations and unverified existing-status fields. The
+`ShoreStreamPlanner` explicit `approved_details` set defaults to empty;
+source footprint alone cannot activate generic P1 windows/awnings. An
+illustrative P1 renderer remains available for *approved* source IDs and
+synthetic fixture regressions, not as evidence of a site's real appearance.
+There are still no approved installed Sitka shoreline assets, landmark
+models, current-era building photos, citywide navigation/collision or device
+acceptance claims.

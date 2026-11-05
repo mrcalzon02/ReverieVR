@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <set>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -62,12 +63,25 @@ public:
     static constexpr size_t kMaxVisibleVertices=60000u;
     static constexpr size_t kMaxVisibleTriangles=90000u;
 
-    explicit ShoreStreamPlanner(std::vector<ShoreFeature> features)
-        :features_(std::move(features)){
+    // P1 procedural windows are *illustrative*, not independently proven.
+    // Production starts with NO detail approvals. An authored and audited
+    // facade reference must explicitly opt a stable site ID into P1 geometry.
+    explicit ShoreStreamPlanner(std::vector<ShoreFeature> features,
+              std::set<std::string> approved_details = {})
+        :features_(std::move(features)),
+         approved_details_(std::move(approved_details)){
         if(features_.size()>kMaxShoreFeatures)
             throw std::invalid_argument("Shore feature count exceeds file contract");
         bounds_.reserve(features_.size());
-        for(const auto& f:features_)bounds_.push_back(ShoreFeatureBounds(f));
+        for(const auto& f:features_){
+            bounds_.push_back(ShoreFeatureBounds(f));
+        }
+        for(const auto& detail_id:approved_details_){
+            const auto match=std::find_if(features_.begin(),features_.end(),
+                [&](const ShoreFeature& f){return f.id==detail_id;});
+            if(match==features_.end())
+                throw std::invalid_argument("Unknown Sitka approved detail ID");
+        }
         committed_.assign(features_.size(),Hidden);
         pending_=committed_;
     }
@@ -97,6 +111,11 @@ public:
                 tier=d2<=kDetailEnterM*kDetailEnterM?Detailed:
                     d2<=kVisibleEnterM*kVisibleEnterM?Massing:Hidden;
             }
+            // A real footprint alone never proves its windows, awnings,
+            // railings or facade proportions. With no explicit approval,
+            // keep accurate site-anchored P0 massing even at arm's length.
+            if(tier==Detailed && approved_details_.count(features_[i].id)==0u)
+                tier=Massing;
             pending_[i]=tier;
             changed|=(tier!=previous);
         }
@@ -154,6 +173,7 @@ public:
     uint8_t tier(size_t i)const{return committed_.at(i);}
 private:
     std::vector<ShoreFeature> features_;
+    std::set<std::string> approved_details_;
     std::vector<ShoreBounds> bounds_;
     std::vector<uint8_t> committed_,pending_;
     bool initialized_=false,staged_=false;

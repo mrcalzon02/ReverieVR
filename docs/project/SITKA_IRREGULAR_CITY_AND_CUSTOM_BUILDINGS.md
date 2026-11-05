@@ -211,3 +211,24 @@ Numeric geographic tolerance is **source-accuracy-driven**, not a made-up univer
 - the build remains honest about source gaps and does not claim the entire city is finished.
 
 **Core invariant:** *Geography dictates form; P0 placeholders provide occupancy; P1 provides varied architectural synthesis; P2 provides recognizable custom identity; P3 selectively supports real gameplay; shared Beckenburg/Malefic techniques provide tooling and performance without imposing their grids.*
+
+## Reality-source gate and historic-versus-present inventory — 2026-11-04
+
+The source-only reference catalog is `data/sitka/shore-reality.json`.
+It records known Sitka sites, trustworthy identity references, physical
+presence status and the explicit fact that **none currently has approved
+metric geometry in this project**. Crescent Harbor's seven floats must use
+its own city harbor map; the bridge must eventually include its distinctive
+cable-stayed spans/pylons; historic former Sitka Cold Storage is not a
+present-day cannery. References are not licensed mesh data by implication.
+
+`build_waterfront.py` now requires authoritative source feature IDs and
+present-day status, a compiled source-backed site catalog, and measured
+heights or sourced building-level information. Named site references must
+match approved geometry-source IDs and a CRS/checksum before export; old
+unverified historical places fail closed. No default generic building height
+or near-field illustrative P1 facade is allowed into ordinary production
+by merely labeling a footprint as a shop/cannery. Runtime shore P1 details
+remain opt-in with a per-feature approved ID set; the default renders only
+real-shape P0 massing. Surface authenticity and cultural/heritage approvals
+remain separate from collision, enterability and gameplay interaction.
