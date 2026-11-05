@@ -5,11 +5,18 @@ S9/headset runtime, requested spoken line and Mechanist sprite import
 remain pending, not accepted.
 
 ## Gameplay
-Twelve seeded rooms. One of SUN, MOON, KEY, EYE, STAR, WAVE flashes as
-a memory clue for 2.3 seconds. Each room has two visually distinct
-doors with those symbols, and a nearby left/right lever. Pull the
-lever of the matching door (pointer ray + primary); rocker left/right
-+ primary is available without a usable pointer. Slow animations:
+Twelve seeded rooms. A brief 2.3-second clue describes a **visible
+physical feature** of the safe door. The procedural door model exposes
+five independently seeded families with two visible choices each:
+OAK vs IRON surface, plain PANELS vs CROSS BRACES, NO RIVETS vs FOUR
+RIVETS, RING PULL vs BAR HANDLE, and CLEAN vs THREE SCRATCHES.
+The clue is derived from the safe door's actual feature value, then the
+other door's corresponding feature is made different. No arbitrary
+SUN/MOON/KEY labels, invisible answers, or false matches. Staring at a
+door opens an inspection popup describing its observable materials and
+hardware without revealing success. Pull the matching door's lever
+(pointer ray + primary); rocker left/right + primary works without a
+usable pointer. Slow animations:
 lever 0.7s, opening 1.5s, forward traversal 1.6s, pit fall 1.8s.
 Incorrect choices fall into a pit and restart at room one **with the
 same seed** so players can memorize the route. After twelve safe
@@ -47,7 +54,7 @@ sample is included.
 
 ## Acceptance gates
 1. Run `scripts/verify-guess-the-door.sh`; pure C++ regression checks
-   deterministic symbols/traps, double-pull lock, progression, pit,
+   deterministic feature clues and unique matches, double-pull lock, progression, pit,
    seed restart, victory, and Easter trigger.
 2. Build the Android NDK & APK. Confirm registered library and
    Development-only gallery launch; verify legacy games unchanged.

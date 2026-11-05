@@ -7,18 +7,58 @@
 
 namespace reverie { namespace doors {
 constexpr unsigned kRooms=12u;
-constexpr unsigned kSymbols=6u;
-constexpr const char* kSymbolNames[kSymbols]={"SUN","MOON","KEY","EYE","STAR","WAVE"};
-
+constexpr unsigned kFeatures=5u;
+enum Feature: unsigned { Material=0u, Bracing=1u, Rivets=2u, Handle=3u, Wear=4u };
+struct DoorDesign {
+    unsigned material=0,bracing=0,rivets=0,handle=0,wear=0;
+};
+inline unsigned Value(const DoorDesign& d,unsigned feature) {
+    switch(feature){
+    case Material:return d.material;
+    case Bracing:return d.bracing;
+    case Rivets:return d.rivets;
+    case Handle:return d.handle;
+    default:return d.wear;
+    }
+}
+inline void SetValue(DoorDesign& d,unsigned feature,unsigned value) {
+    value=value?1u:0u;
+    switch(feature){
+    case Material:d.material=value;break;
+    case Bracing:d.bracing=value;break;
+    case Rivets:d.rivets=value;break;
+    case Handle:d.handle=value;break;
+    default:d.wear=value;break;
+    }
+}
+inline const char* FeatureClue(unsigned feature,unsigned value) {
+    static const char* const clues[kFeatures][2]={
+        {"FIND THE OAK PLANKS", "FIND THE IRON PLATING"},
+        {"FIND THE PANELED DOOR", "FIND THE CROSS-BRACED DOOR"},
+        {"FIND THE DOOR WITHOUT RIVETS", "FIND THE FOUR METAL RIVETS"},
+        {"FIND THE RING PULL", "FIND THE LONG BAR HANDLE"},
+        {"FIND THE UNDAMAGED DOOR", "FIND THREE DEEP SCRATCHES"}
+    };
+    return clues[feature<kFeatures?feature:Material][value?1u:0u];
+}
 inline uint64_t Mix(uint64_t x) {
     x+=0x9e3779b97f4a7c15ULL;
     x=(x^(x>>30))*0xbf58476d1ce4e5b9ULL;
     x=(x^(x>>27))*0x94d049bb133111ebULL;
     return x^(x>>31);
 }
-// Independent domains prevent new decoration fields changing existing route choices.
 inline uint64_t RoomSeed(uint64_t seed,unsigned room,uint64_t domain) {
     return Mix(seed^Mix(uint64_t(room)+0xd1b54a32d192ed03ULL)^domain);
+}
+inline DoorDesign MakeDoor(uint64_t seed,unsigned room,unsigned side) {
+    DoorDesign d;
+    const uint64_t s=side?0x9a9a9a9a9a9a9a9aULL:0x5151515151515151ULL;
+    d.material=unsigned(RoomSeed(seed,room,s^0x1091ULL)&1ULL);
+    d.bracing=unsigned(RoomSeed(seed,room,s^0x2092ULL)&1ULL);
+    d.rivets=unsigned(RoomSeed(seed,room,s^0x3093ULL)&1ULL);
+    d.handle=unsigned(RoomSeed(seed,room,s^0x4094ULL)&1ULL);
+    d.wear=unsigned(RoomSeed(seed,room,s^0x5095ULL)&1ULL);
+    return d;
 }
 enum class Phase: uint8_t { Ready, Pulling, Opening, Walking, Falling, Victory };
 enum Sound: unsigned {
@@ -26,23 +66,28 @@ enum Sound: unsigned {
     PitSound=8u, VictorySound=16u
 };
 struct Room {
-    unsigned safeSide=0; // 0 = left, 1 = right
-    unsigned clue=0,leftSymbol=0,rightSymbol=0;
-    unsigned leftDoor=0,rightDoor=0,wallVariant=0;
+    unsigned safeSide=0u;
+    unsigned clueFeature=0u,clueValue=0u;
+    DoorDesign doors[2];
+    unsigned wallVariant=0u;
+    const char* Clue() const {return FeatureClue(clueFeature,clueValue);}
+    bool Matches(unsigned side) const {
+        return side<2u&&Value(doors[side],clueFeature)==clueValue;
+    }
 };
 inline Room Generate(uint64_t seed,unsigned room) {
     Room r{};
     r.safeSide=unsigned(RoomSeed(seed,room,0x5a17ULL)&1ULL);
-    r.clue=unsigned(RoomSeed(seed,room,0x6a27ULL)%kSymbols);
-    const unsigned other=(r.clue+1u+
-        unsigned(RoomSeed(seed,room,0x7a37ULL)%(kSymbols-1u)))%kSymbols;
-    r.leftSymbol=r.safeSide==0u?r.clue:other;
-    r.rightSymbol=r.safeSide==1u?r.clue:other;
-    r.leftDoor=unsigned(RoomSeed(seed,room,0x8a47ULL)%16u);
-    r.rightDoor=unsigned(RoomSeed(seed,room,0x9a57ULL)%16u);
+    r.clueFeature=unsigned(RoomSeed(seed,room,0x6a27ULL)%kFeatures);
+    r.doors[0]=MakeDoor(seed,room,0u);
+    r.doors[1]=MakeDoor(seed,room,1u);
+    // The correct door's actual physical feature determines the clue.
+    r.clueValue=Value(r.doors[r.safeSide],r.clueFeature);
+    SetValue(r.doors[1u-r.safeSide],r.clueFeature,1u-r.clueValue);
     r.wallVariant=unsigned(RoomSeed(seed,room,0xaa67ULL)%5u);
     return r;
 }
+
 inline float Ease(float fraction) {
     const float t=fraction<0.f?0.f:(fraction>1.f?1.f:fraction);
     return t*t*(3.f-2.f*t);
@@ -115,7 +160,7 @@ struct Game {
         return Ease(timer/length);
     }
     bool ClueVisible() const {
-        // Give players a fleeting memory cue, then leave the two symbols visible.
+        // Show a fleeting description of actual door features; geometry remains visible.
         return phase==Phase::Ready&&timer<2.30f;
     }
     // Ready clock advances for clue expiry, but never changes the layout.

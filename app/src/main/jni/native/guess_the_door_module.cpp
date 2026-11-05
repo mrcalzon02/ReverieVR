@@ -56,11 +56,6 @@ void Text(State* s,const char* t,float x,float y,float w,float size,
           float r,float g,float b){
     s->font.Fit(t,x,y,w,size,r,g,b,-2.05f);
 }
-float Color(unsigned variant,unsigned offset){
-    static const float k[]={.23f,.37f,.46f,.31f,.43f,.54f,.42f,.33f,
-        .27f,.50f,.30f,.29f,.44f,.42f,.28f,.51f};
-    return k[(variant+offset)%16u];
-}
 float Zoom(const Game& g){
     if(g.phase==Phase::Opening)return .25f*g.Progress();
     if(g.phase==Phase::Walking)return .25f+1.45f*g.Progress();
@@ -69,40 +64,81 @@ float Zoom(const Game& g){
 }
 void Door(State* s,int side,float dx,float dz){
     const auto& game=s->game;
-    const unsigned variant=side==0?game.current.leftDoor:game.current.rightDoor;
-    const unsigned glyph=side==0?game.current.leftSymbol:game.current.rightSymbol;
+    const reverie::doors::DoorDesign& design=game.current.doors[side];
     const float x=(side==0?-1.07f:1.07f)+dx,z=-3.43f+dz;
     const bool chosen=game.side==side&&game.phase!=Phase::Ready;
     const float opening=chosen&&(game.phase==Phase::Opening||
         game.phase==Phase::Walking||game.phase==Phase::Falling)?
         (game.phase==Phase::Opening?game.Progress():1.f):0.f;
-    // Dark portal remains fixed behind the door slab. Wrong doors lead to a
-    // visible black pit, with a reduced-motion fade rather than view rotation.
     Rect(s,x,0.f,1.25f,2.10f,z-.06f,.016f,.019f,.024f);
     Rect(s,x,1.05f,1.43f,.16f,z-.02f,.46f,.37f,.20f);
     Rect(s,x,-1.05f,1.43f,.13f,z-.02f,.31f,.32f,.35f);
     Rect(s,x-.69f,0.f,.13f,2.14f,z-.02f,.42f,.38f,.30f);
     Rect(s,x+.69f,0.f,.13f,2.14f,z-.02f,.42f,.38f,.30f);
-    // Hinged leaf represented by lateral panel movement before art-sprite swap.
     const float width=1.18f*(1.f-opening*.96f);
     const float slide=opening*.54f*(side==0?-1.f:1.f);
-    const float r=Color(variant,0u),g=Color(variant,5u),b=Color(variant,10u);
-    Rect(s,x+slide,0.f,width,2.0f,z,r,g,b);
+    const float center=x+slide;
+    const float r=design.material?.29f:.49f;
+    const float g=design.material?.33f:.34f;
+    const float b=design.material?.38f:.21f;
+    Rect(s,center,0.f,width,2.0f,z,r,g,b);
     if(width>.20f){
-        for(int stripe=0;stripe<3;stripe++){
-            const float h=.62f-.02f*stripe;
-            Rect(s,x+slide, .60f-stripe*.60f,width*.86f,.055f,z+.008f,
-                 r*.63f,g*.63f,b*.63f);
-            if(variant%2u==0u)Line(s,x+slide-width*.32f,h,
-                 x+slide+width*.32f,h,.025f,z+.011f,.60f,.53f,.29f);
+        // Oak has irregular plank grain; iron has clear panel seams.
+        if(design.material==0u){
+            for(int i=-1;i<=1;++i)
+                Line(s,center+i*width*.29f,-.94f,
+                     center+i*width*.29f,.94f,
+                     .026f,z+.009f,.24f,.15f,.09f);
+            for(int i=0;i<3;++i)
+                Line(s,center-width*.37f+i*width*.25f,-.74f,
+                     center-width*.34f+i*width*.25f,.64f,
+                     .012f,z+.012f,.64f,.47f,.29f);
+        }else{
+            Line(s,center-width*.38f,.02f,center+width*.38f,.02f,
+                 .030f,z+.009f,.14f,.18f,.20f);
+            Rect(s,center,.86f,width*.88f,.06f,z+.010f,.50f,.55f,.58f);
+            Rect(s,center,-.85f,width*.88f,.06f,z+.010f,.50f,.55f,.58f);
         }
-        Rect(s,x+slide+(side==0?.36f:-.36f)*(1.f-opening),
-             -.10f,.10f,.10f,z+.015f,.84f,.76f,.40f);
+        if(design.bracing!=0u){
+            Line(s,center-width*.35f,-.66f,center+width*.35f,.66f,
+                 .083f,z+.020f,.63f,.56f,.39f);
+            Line(s,center+width*.35f,-.66f,center-width*.35f,.66f,
+                 .083f,z+.020f,.63f,.56f,.39f);
+        }else{
+            Rect(s,center,.56f,width*.72f,.055f,z+.021f,.68f,.60f,.43f);
+            Rect(s,center,-.55f,width*.72f,.055f,z+.021f,.68f,.60f,.43f);
+        }
+        if(design.rivets!=0u){
+            for(int row=-1;row<=1;row+=2)
+                for(int col=-1;col<=1;col+=2)
+                    reverie::flatmesh::Disc(s->mesh,
+                        center+col*width*.40f,row*.83f,.068f,z+.029f,
+                        .95f,.79f,.44f);
+        }
+        const float hx=center+(side==0?.29f:-.29f)*width;
+        if(design.handle==0u){
+            constexpr float pi=3.14159265358979323846f;
+            for(int i=0;i<8;++i){
+                const float angle=2.f*pi*float(i)/8.f;
+                const float next=2.f*pi*float(i+1)/8.f;
+                Line(s,hx+.095f*std::cos(angle),-.14f+.095f*std::sin(angle),
+                     hx+.095f*std::cos(next),-.14f+.095f*std::sin(next),
+                     .037f,z+.039f,.96f,.82f,.48f);
+            }
+        }else{
+            Rect(s,hx,-.13f,.085f,.42f,z+.039f,.96f,.82f,.48f);
+        }
+        if(design.wear!=0u){
+            for(int i=0;i<3;++i){
+                const float sx=center-width*.24f+i*width*.17f;
+                Line(s,sx,.37f,sx+width*.13f,.08f,
+                     .034f,z+.047f,.07f,.06f,.06f);
+                Line(s,sx+.021f,.38f,sx+width*.13f+.021f,.09f,
+                     .012f,z+.049f,.89f,.78f,.63f);
+            }
+        }
     }
-    // Symbols are stable visual information, not color-only correctness clues.
-    Rect(s,x,.83f,.72f,.34f,z+.021f,.10f,.12f,.13f);
-    const char* symbol=reverie::doors::kSymbolNames[glyph];
-    Text(s,symbol,x-.27f,.78f,.56f,.027f,.97f,.87f,.61f);
+    // Interactive lever stays next to its respective door.
     const float lx=x+(side==0?-.93f:.93f),ly=-.39f;
     reverie::flatmesh::Disc(s->mesh,lx,ly,.18f,z+.035f,.19f,.21f,.24f);
     const float lever=chosen&&game.phase!=Phase::Ready?
@@ -158,20 +194,30 @@ void Scene(State* s) {
     Text(s,seedLine,-2.48f,-1.46f,5.0f,.034f,.81f,.85f,.92f);
     if(g.phase==Phase::Ready){
         if(g.ClueVisible()){
-            Rect(s,0.f,.20f,2.42f,.53f,-2.12f,.05f,.12f,.13f);
-            char hint[80]={};
-            std::snprintf(hint,sizeof(hint),"REMEMBER: %s",
-                          reverie::doors::kSymbolNames[g.current.clue]);
-            Text(s,hint,-1.02f,.12f,2.05f,.043f,1.f,.88f,.49f);
+            Rect(s,0.f,.20f,4.68f,.53f,-2.12f,.05f,.12f,.13f);
+            Text(s,g.current.Clue(),-2.16f,.12f,4.32f,.042f,
+                 1.f,.88f,.49f);
         }else{
-            Text(s,"CHOOSE THE SYMBOL YOU SAW",-1.62f,.12f,3.48f,
-                 .041f,1.f,.82f,.51f);
+            Text(s,"REMEMBER WHICH DOOR FITS THE CLUE",-2.14f,.12f,
+                 4.28f,.038f,1.f,.82f,.51f);
         }
         if(s->doorGaze>=0&&s->gazeSeconds>.45f){
-            Rect(s,0.f,-.99f,3.75f,.35f,-2.11f,.045f,.065f,.080f);
-            Text(s,s->doorGaze==0?"LEFT DOOR. A LEVER WAITS BESIDE IT.":
-                 "RIGHT DOOR. A LEVER WAITS BESIDE IT.",
-                 -1.74f,-1.06f,3.46f,.029f,.89f,.91f,.83f);
+            const reverie::doors::DoorDesign& d=
+                g.current.doors[unsigned(s->doorGaze)];
+            Rect(s,0.f,-.91f,5.08f,.70f,-2.11f,
+                 .045f,.065f,.080f);
+            char summary[110]={};
+            std::snprintf(summary,sizeof(summary),"%s: %s / %s / %s",
+                s->doorGaze==0?"LEFT":"RIGHT",
+                d.material?"IRON":"OAK",
+                d.bracing?"CROSS BRACE":"PANELS",
+                d.rivets?"FOUR RIVETS":"NO RIVETS");
+            Text(s,summary,-2.36f,-.83f,4.75f,.029f,.89f,.91f,.83f);
+            std::snprintf(summary,sizeof(summary),"%s / %s",
+                d.handle?"BAR HANDLE":"RING PULL",
+                d.wear?"THREE SCRATCHES":"NO SCRATCHES");
+            Text(s,summary,-2.36f,-1.08f,4.75f,.029f,
+                 .85f,.88f,.80f);
         }
         Text(s,"AIM AT A LEVER AND SELECT; OR ROCKER LEFT / RIGHT",
              -2.27f,-1.74f,4.54f,.029f,.83f,.92f,.89f);

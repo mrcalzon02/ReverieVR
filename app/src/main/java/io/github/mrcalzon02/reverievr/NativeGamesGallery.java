@@ -177,9 +177,9 @@ final class NativeGamesGallery {
             case "procedural-test-chamber":
                 return new String[]{"Build, move and save primitive scenes","inside VR; use SECONDARY to toggle","edit and live playtest modes."};
             case "guess-the-door":
-                return new String[]{"Remember the briefly displayed symbol.",
-                    "Pull the lever by a matching door.",
-                    "A wrong door returns you to the start."};
+                return new String[]{"Remember a clue about door features.",
+                    "Inspect door materials, rivets and handles.",
+                    "Pull the right lever or face a pit."};
             case "classic-chess":
                 return new String[]{"Play chess against the computer","with legal-move highlights and an","interactive opening reference."};
             case "classic-go":
