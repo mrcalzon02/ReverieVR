@@ -199,7 +199,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_name in sitka_shore_geometry_test sitka_shore_detail_test sitka_shore_stream_test sitka_shore_deck_planes_test sitka_walk_graph_test sitka_walk_session_test sitka_bridge_planes_test sitka_bridge_layout_test sitka_bridge_visibility_test; do
+          for test_name in sitka_shore_geometry_test sitka_shore_detail_test sitka_shore_stream_test sitka_shore_deck_planes_test sitka_walk_graph_test sitka_walk_session_test sitka_free_roam_test sitka_bridge_planes_test sitka_bridge_layout_test sitka_bridge_visibility_test; do
             for compiler in g++ clang++; do
               "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
                 -Iapp/src/main/jni/native \

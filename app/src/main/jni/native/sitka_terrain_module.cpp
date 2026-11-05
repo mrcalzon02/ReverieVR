@@ -5,7 +5,7 @@
 #include "sitka_shore_detail.h"
 #include "sitka_shore_stream.h"
 #include "sitka_walk_graph.h"
-#include "sitka_walk_session.h"
+#include "sitka_free_roam.h"
 #include "sitka_shore_deck_gl.h"
 #include "sitka_bridge_layout.h"
 #include "sitka_bridge_gl.h"
@@ -43,7 +43,8 @@ struct State {
     reverie::sitka::TerrainGl shore_gl; // changing waterfront overlay, not boat
     std::unique_ptr<reverie::sitka::ShoreStreamPlanner> shore_stream;
     std::unique_ptr<reverie::sitka::WalkGraph> walk_graph;
-    std::unique_ptr<reverie::sitka::WalkSession> walk_session;
+    std::unique_ptr<reverie::sitka::FreeRoamSession> walk_session;
+    std::vector<reverie::sitka::ShoreFeature> shore_colliders;
     reverie::sitka::TerrainMesh walk_mesh;
     reverie::sitka::TerrainGl walk_gl; // static sourced walking corridors
     std::unique_ptr<reverie::sitka::ShoreDeckMesh> shore_deck_mesh;
@@ -167,6 +168,8 @@ void* Create(const ReverieNativeHostV1* host) {
                 // Keep immutable source features separate from the terrain:
                 // only nearby P0/P1 shore meshes become resident GPU batches.
                 if(!shore.empty()){
+                    // Keep exact authored buildings for free-roam collision.
+                    state->shore_colliders=shore;
                     state->shore_stream.reset(
                         new reverie::sitka::ShoreStreamPlanner(shore));
                     // Build flat textured float tops once from the SAME
@@ -203,8 +206,6 @@ void* Create(const ReverieNativeHostV1* host) {
                 state->walk_mesh=graph.BuildPathMesh();
                 state->walk_graph.reset(
                     new reverie::sitka::WalkGraph(std::move(graph)));
-                state->walk_session.reset(
-                    new reverie::sitka::WalkSession(*state->walk_graph));
             }
             // Optional sourced O'Connell profile; no guessed GIS coordinates.
             // All textures are decoded once during Create, not in RenderEye.
@@ -239,6 +240,19 @@ void* Create(const ReverieNativeHostV1* host) {
                 host,"sitka/lighting/sitka.properties",4096u));
             state->waters=reverie::sitka::ParseWater(ReadText(
                 host,"sitka/water/sitka.water",2000000u));
+            // Grounded free roam uses the same surveyed land and structures
+            // as rendering, even when no authored footpath network exists.
+            // A reviewed path spawn is preferred when one is installed.
+            const bool has_walk_spawn=bool(state->walk_graph);
+            double start_x=0.,start_z=0.;
+            if(has_walk_spawn){
+                const auto& spawn=state->walk_graph->nodes[
+                    state->walk_graph->spawn];
+                start_x=spawn.x;start_z=spawn.z;
+            }
+            state->walk_session.reset(new reverie::sitka::FreeRoamSession(
+                state->terrain,state->waters,state->shore_colliders,
+                has_walk_spawn,start_x,start_z));
             state->weather=reverie::sitka::ParseWeather(ReadText(
                 host,"sitka/weather/sitka.properties",4096u));
             // Source-only adapter: no synthetic seabed or global interpolation.
@@ -465,8 +479,9 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     state->water_gl.Update(input->delta_seconds);
     const bool listener=input->struct_size>=
         REVERIE_NATIVE_INPUT_V1_LISTENER_MIN_SIZE&&input->listener_valid;
-    // Walk along REAL public paths using gamepad movement without relying
-    // on the shell's 100 m room-bounded travel. No graph = no free noclip.
+    // Home-style analog strength over actual terrain triangles. Footpath
+    // lines are for navigation only, NEVER locomotion permissions. Water
+    // and source building footprints still block unsafe movement.
     // Suspend stepping while actively angling or controlling the boat.
     if(state->walk_session && listener &&
        !(state->skiff&&state->skiff->Active()) &&
@@ -475,7 +490,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             input->move_x,-input->move_y,input->listener_right,
             input->delta_seconds);
     const auto foot=state->walk_session?
-        state->walk_session->pose():reverie::sitka::WalkPose{};
+        state->walk_session->pose():reverie::sitka::RoamPose{};
     const double listener_east=listener?
         state->terrain.origin_east+foot.x+input->listener_position[0]:
         std::numeric_limits<double>::quiet_NaN();
@@ -591,15 +606,10 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->fishing_spots,state->waters);
         }
     }
-    // A ray into surveyed water is not sufficient proof the player has
-    // access from shore. Require a *reachable*, individually authored
-    // bank/pier stance and a matching surveyed fishing spot.
-    if(target.valid &&
-       (!state->walk_graph || !listener ||
-        !state->walk_graph->CanCastFrom(
-            listener_east-state->terrain.origin_east,
-            listener_north-state->terrain.origin_north,
-            target.east,target.north,state->fishing_spots)))
+    // The player can fish from ANY grounded accessible shore, not just
+    // a prescribed pedestrian or fishing-stance node. Cast still requires
+    // a valid sourced water target; broader spot coverage is forthcoming.
+    if(target.valid && (!state->walk_session || !listener))
         target.valid=false;
     const bool fishing_control=!boat_chord&&
         !(state->skiff&&state->skiff->Active());

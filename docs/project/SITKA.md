@@ -2,6 +2,48 @@
 
 # Sitka
 
+## Source-terrain free roam and Home analog controls — 2026-11-05
+
+**Gameplay authority:** The user explicitly rejected movement constrained
+to surveyed pedestrian-path graphs. Sitka is an open-world VR city,
+forest-edge and shoreline exploration/fishing game. Path files identify real
+public routes and optional starting positions; they no longer control where
+the player is allowed to move. The prior November 5 corridor-only walking
+commit and its restrictions are superseded for Sitka runtime movement.
+
+New `sitka_free_roam.h` implements terrain-surface foot movement over
+actual source triangles, using a bounded spatial triangle index created at
+content initialization. The walking pose is source-grounded: no sampled
+triangle, excessive incline/step, submerged ground or source building
+footprint means no step. Steps are bounded, with axis sliding around
+obstructions, and render-time eye matrices are only copied/translated.
+The optional sourced walking graph continues to render for wayfinding,
+but is no longer required for travel or fishing-cast eligibility.
+Fishing still requires the separately loaded approved water target;
+this does NOT yet enable unconstrained fishing anywhere in the ocean.
+
+**Exact Home input curve:** deadzone 0.28, analog strength
+`clamp((hypot(stick_x,stick_y)-0.28)/0.72,0,1)`, normalized direction,
+2.8 m/s full-deflection (Home's 0.70 m/s x4), and 0.05s frame-duration cap.
+Sitka uses the same existing headset-right and host-normalized axes,
+without a second shell camera translation, movement inertia or auto yaw.
+Releasing the control stops immediately. The Daydream gate still requires
+fresh contact after interruption and leaves click available as Select.
+
+New `sitka_free_roam_test.cpp` covers partial/full/diagonal deflection,
+deadzone and release, water, sourced building collision and beach travel,
+missing geography and copied stereo eye views; the existing Sitka CI
+test loop runs it with GCC and Clang.
+
+**Known limits:** Real city/harbor datasets have not been staged in the
+playable APK. The existing single static land-mesh session still needs
+district-scale tile streaming, dock and bridge walking-height surfaces,
+actual shore object discovery, spot-wide fishing and S9 comfort/collision
+testing. Do not label Sitka released or fully walkable from this source
+implementation. The existing optional pedestrian path parsing, exporter
+and historical tests are retained solely for sourced reference content.
+
+
 ## Corridor-authoritative walking junctions — 2026-11-05
 
 The source-only `WalkSession` now owns its currently occupied authored
