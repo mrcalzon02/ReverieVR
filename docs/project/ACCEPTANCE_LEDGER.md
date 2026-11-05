@@ -1,3 +1,21 @@
+## 2026-11-04 — Native chess overlays, sides and captured pieces
+
+**Source implemented; installed Android/device gate pending.**
+The chess engine now supports either player color without altering
+White-first chess rules or shared Checkers/Go/Reversi behavior.
+Selectable top overlays show neutral squares, human-controlled squares
+or CPU-controlled squares, based on native attack geometry.
+New Game offers White, Black and Cancel; playing Black rotates the
+board/controller coordinates and makes White CPU play first.
+Both captured-piece tallies are in the bottom board area and
+record actual captures, including en passant, with display at
+the capture tween impact rather than prematurely. Promotion
+is never counted as a capture. Stale asynchronous AI results are
+rejected by a new match serial. The existing classic-games
+functional regression checks these source-level contracts.
+Android stereo UI and real Galaxy S9 visual/controls proof remain
+required. [Audit](../records/2026-11-04-chess-threat-overlays-color-selection-captures.md).
+
 ## 2026-11-04 — Native chess queen legality and visual capture sequencing
 
 **Source integrated and host classical rules PASS; Android/Daydream
