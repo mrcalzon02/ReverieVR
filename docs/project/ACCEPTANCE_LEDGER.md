@@ -1,3 +1,20 @@
+## 2026-11-04 — Native chess queen legality and visual capture sequencing
+
+**Source integrated and host classical rules PASS; Android/Daydream
+visual proof pending.** Black CPU remains constrained by authoritative
+`ChessLegal` / `ChessMove`, with exact one-ply worker transition
+validation. Additional independent queen-ray/blocker/pin regression
+and deterministic capture-tween tests passed on GCC and Clang in
+[existing classic suite](https://github.com/mrcalzon02/ReverieVR/actions/runs/41959840342).
+The renderer now smoothly interpolates moves on the original board
+until arrival, keeps captured pieces visible until impact, handles
+en passant, castle and promotion correctly, and sequences CPU turns
+rather than overlaying moves. Black from/to coordinates are visible
+in the existing reference panel. The reported original gameplay
+position was not available, so no claim of exact reproduction or
+S9 device acceptance is made.
+[Evidence and acceptance checklist](../records/2026-11-04-chess-queen-legality-and-capture-animation.md).
+
 ## 2026-11-04 — Native chess source-cited strategic study
 
 **Source integrated; Android and reference S9 validation pending.**
