@@ -7,6 +7,7 @@
 #include "classic_vector_art.h"
 #include "classic_chess_book.h"
 #include "classic_chess_reference.h"
+#include "classic_chess_move_tween.h"
 #include "classic_chess_study.h"
 #include "classic_chess_sprite_atlas.h"
 #include "classic_chess_wood_atlas.h"
@@ -140,6 +141,146 @@ static void TestChessSpriteAtlas(){
     }
 }
 
+
+
+static bool BlackQueenRayOracle(const reverie::boardgames::State &s,
+                                int from,int to) {
+    // Independent of ChessLegal and search: check ray, blockers and target.
+    if(from<0||from>=64||to<0||to>=64||from==to||
+       s.cells[from]!=-5||s.cells[to]<0||s.cells[to]==6)return false;
+    const int dx=to%8-from%8,dy=to/8-from/8;
+    if(!(dx==0||dy==0||std::abs(dx)==std::abs(dy)))return false;
+    const int sx=dx>0?1:dx<0?-1:0,sy=dy>0?1:dy<0?-1:0;
+    for(int x=from%8+sx,y=from/8+sy;
+        x!=to%8||y!=to/8;x+=sx,y+=sy) {
+        assert(x>=0&&x<8&&y>=0&&y<8);
+        if(s.cells[y*8+x])return false;
+    }
+    return true;
+}
+static void TestBlackQueenMovesAndTween() {
+    using reverie::boardgames::State;
+    using reverie::boardgames::Kind;
+    using reverie::boardgames::ValidChessCpuTransition;
+    using reverie::chesstween::Move;
+    State start;start.Reset(Kind::Chess);start.side=-1;
+    const auto initial=start.cells;
+    for(int to=0;to<64;++to)assert(!start.ChessLegal(3,to));
+    assert(!start.ChessMove(3,39)); // d8-h4 illegally jumps e7 pawn.
+    assert(start.cells==initial&&start.ply==0);
+    int compared=0;
+    for(int blocker=-1;blocker<64;++blocker) {
+        State state;state.Reset(Kind::Chess);state.cells.fill(0);
+        state.cells[0]=-6;state.cells[63]=6;
+        state.cells[35]=-5; // Black queen d4
+        state.castles=0;state.enPassant=-1;state.side=-1;
+        if(blocker>=0) {
+            if(blocker==35||blocker/8<1||blocker/8>6)continue;
+            state.cells[blocker]=blocker%2?-1:1;
+        }
+        if(state.KingInCheck(state.cells,-1))continue;
+        for(int to=0;to<64;++to) {
+            const bool geometric=BlackQueenRayOracle(state,35,to);
+            assert(state.ChessLegal(35,to)==geometric);
+            for(const auto &turn:state.ChessTurns())
+                if(turn.from==35&&turn.to==to)
+                    assert(geometric&&turn.promotion==5);
+            ++compared;
+        }
+    }
+    assert(compared>2000);
+    State pin;pin.Reset(Kind::Chess);pin.cells.fill(0);
+    pin.cells[4]=-6;pin.cells[12]=-5;pin.cells[60]=4;pin.cells[56]=6;
+    pin.castles=0;pin.side=-1;
+    assert(BlackQueenRayOracle(pin,12,13));
+    assert(!pin.ChessLegal(12,13)); // Pinned queen cannot expose e8.
+    assert(pin.ChessLegal(12,20)); // Sliding e7-e6 preserves king shield.
+    for(const auto &turn:pin.ChessTurns())
+        assert(!(turn.from==12&&turn.to==13));
+    // Queen d8-h4 checkmate is legal only once e7 pawn moves aside.
+    State mate;mate.Reset(Kind::Chess);
+    assert(mate.ChessMove(53,45)); // f2-f3
+    assert(mate.ChessMove(12,28)); // ...e7-e5
+    assert(mate.ChessMove(54,38)); // g2-g4
+    const auto beforeMate=mate,previous=mate.cells;
+    assert(mate.ChessLegal(3,39));
+    assert(mate.ChessMove(3,39));
+    assert(ValidChessCpuTransition(beforeMate,mate));
+    assert(reverie::chessref::LastBlackMoveTrace(mate)=="CPU Q d8-h4");
+    Move queen;
+    assert(queen.Begin(previous,mate,beforeMate.ply));
+    assert(queen.moving==-5&&queen.from==3&&queen.to==39);
+    assert(queen.PieceAt(mate.cells,3)==0);
+    assert(queen.PieceAt(mate.cells,39)==0);
+    assert(queen.Fraction()==0.f);
+    const float travel=queen.travel;
+    queen.Advance(.1f);
+    assert(queen.Fraction()>0.f&&queen.Fraction()<1.f);
+    assert(queen.InFlight());
+    for(int n=0;n<30&&queen.InFlight();++n)queen.Advance(.1f);
+    assert(queen.Impacted() && queen.PieceAt(mate.cells,39)==-5);
+    for(int n=0;n<10&&queen.Active();++n)queen.Advance(.1f);
+    assert(!queen.Active()&&mate.cells[39]==-5&&mate.cells[3]==0);
+    assert(travel>=.64f);
+    // Capture: source queen moves while the captured rook remains visible
+    // until impact, then the committed piece replaces it.
+    State cap;cap.Reset(Kind::Chess);cap.cells.fill(0);
+    cap.cells[0]=-6;cap.cells[63]=6;cap.cells[35]=-5;cap.cells[51]=4;
+    cap.castles=0;cap.side=-1;const auto capBefore=cap.cells;
+    const int capPly=cap.ply;
+    assert(cap.ChessMove(35,51));
+    Move capture;assert(capture.Begin(capBefore,cap,capPly));
+    assert(capture.capturedSquare==51&&capture.captured==4);
+    assert(capture.PieceAt(cap.cells,51)==4);
+    assert(capture.PieceAt(cap.cells,35)==0);
+    assert(capture.moving==-5&&capture.travel>queen.travel*.6f);
+    for(int n=0;n<30&&capture.InFlight();++n)capture.Advance(.1f);
+    assert(capture.Impacted());
+    assert(capture.PieceAt(cap.cells,51)==-5);
+    assert(cap.cells[51]==-5&&cap.cells[35]==0);
+    // En passant: removal occurs at the old adjacent pawn square.
+    State ep;ep.Reset(Kind::Chess);
+    assert(ep.ChessMove(52,36)); // e2-e4
+    assert(ep.ChessMove(8,16));  // ...a7-a6
+    assert(ep.ChessMove(36,28)); // e4-e5
+    assert(ep.ChessMove(11,27)); // ...d7-d5
+    const auto epBoard=ep.cells;const int epPly=ep.ply;
+    assert(ep.ChessMove(28,19)); // e5xd6 e.p.
+    Move epTween;assert(epTween.Begin(epBoard,ep,epPly));
+    assert(epTween.capturedSquare==27&&epTween.captured==-1);
+    assert(epTween.PieceAt(ep.cells,27)==-1);
+    assert(epTween.PieceAt(ep.cells,19)==0);
+    for(int n=0;n<30&&epTween.InFlight();++n)epTween.Advance(.1f);
+    assert(epTween.PieceAt(ep.cells,27)==0&&epTween.PieceAt(ep.cells,19)==1);
+    // King and rook must animate together during castling.
+    State castle;castle.Reset(Kind::Chess);castle.cells.fill(0);
+    castle.cells[60]=6;castle.cells[63]=4;castle.cells[4]=-6;
+    castle.castles=1;castle.side=1;
+    const auto castleBefore=castle.cells;const int castlePly=castle.ply;
+    assert(castle.ChessMove(60,62));
+    Move castleTween;assert(castleTween.Begin(castleBefore,castle,castlePly));
+    assert(castleTween.rookw==63&&castleTween.rookTo==61);
+    assert(castleTween.rookPiece==4);
+    assert(castleTween.PieceAt(castle.cells,63)==0);
+    assert(castleTween.PieceAt(castle.cells,61)==0);
+    for(int n=0;n<30&&castleTween.InFlight();++n)castleTween.Advance(.1f);
+    assert(castleTween.PieceAt(castle.cells,61)==4);
+    // Promotion: keep pawn sprite in flight; replace it on arrival.
+    State promote;promote.Reset(Kind::Chess);promote.cells.fill(0);
+    promote.cells[60]=6;promote.cells[4]=-6;promote.cells[8]=1;
+    promote.castles=0;promote.promotionChoice=2;
+    const auto promoteBefore=promote.cells;const int promotePly=promote.ply;
+    assert(promote.ChessMove(8,0));
+    Move promotion;assert(promotion.Begin(promoteBefore,promote,promotePly));
+    assert(promotion.moving==1&&promotion.PieceAt(promote.cells,0)==0);
+    for(int n=0;n<30&&promotion.InFlight();++n)promotion.Advance(.1f);
+    assert(promotion.PieceAt(promote.cells,0)==2);
+    // Non-finite or backwards frame time cannot move the animation.
+    Move stalled;assert(stalled.Begin(capBefore,cap,capPly));
+    stalled.Advance(-1.f);stalled.Advance(NAN);
+    assert(stalled.Fraction()==0.f);
+    assert(!stalled.Begin(capBefore,cap,capPly+1));
+}
 
 static void TestChessCpuTransitionGate() {
     using reverie::boardgames::Kind;
@@ -1064,6 +1205,7 @@ int main() {
     TestChessWoodAtlas();
     TestChessSpriteAtlas();
     TestChessIdentityHoverAndReference();
+    TestBlackQueenMovesAndTween();
     TestChessCpuTransitionGate();
     TestClassicArtworkAndOpeningIndex();
     TestFlatGeometry();
