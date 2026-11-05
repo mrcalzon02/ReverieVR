@@ -369,3 +369,63 @@ no claimed 2026 Crescent Harbor source polygon, float elevation,
 photographic layout or installed playable scene is substituted by
 the synthetic regression fixture. The boat workstream is untouched.
 
+
+## Full-city pedestrian graph and legal shore-fishing admission — 2026-11-04
+
+**Objective:** eventually walk *all* accessible Sitka streets, paths and
+shorelines at believable real-world scale; transition into shore fishing
+without floating through working docks, private land or harbor water.
+This milestone establishes the **native walking-network contract**,
+**source-to-network geographic exporter**, and **shore-fishing access gate**.
+It does **not** claim that a current complete Sitka city map has been
+installed or that headset locomotion/collision follows the streets yet.
+
+`sitka_walk_graph.h` accepts optional
+`sitka/walk/paths.sitkaw` (maximum 256 KiB) with reviewed provenance
+SHA-256, exact EPSG:32608 terrain origin, real georeferenced N nodes,
+source-authored E pedestrian corridors, one public S start and individually
+reviewed F fishing stances linked to actual fishing-spot IDs. Edge types
+cover sidewalks, Sea Walk, crossing, trail, shore path, steps, pedestrian
+bridge and approved public pier. Connectivity comes **only** from shared
+surveyed endpoints: lines passing nearby or crossing in plan do not magically
+connect, and isolated fishing access is rejected. The CPU graph provides
+reachable-node checks, physical-length Dijkstra routing, local path-height
+sampling and one **flat quad strip** per authored segment, rendered in a
+separate static GLES2 terrain layer. Routes are simplified source lines,
+not invented grid blocks.
+
+`build_walkways.py` transforms separately licensed/currently reviewed
+pedestrian GeoJSON LineStrings into the native graph in the **exact same
+projection and terrain-origin frame** used for buildings/terrain. It samples
+the source-matched DEM only for ground paths; bridge and public-pier routes
+require independently authored per-vertex surface elevations. Public access
+and present existence must be expressly approved per feature. A walk
+start and each fishing stance must coincide with an **actual authored
+route vertex** and each fishing stance must reference a surveyed fishing
+site. The exporter writes a separate checksum/provenance manifest and
+refuses invented widths, coordinates, implicit road intersections, broken
+sources, private routes and unmeasured bridge grades.
+
+`sitka_terrain_module.cpp` optionally loads this graph once. A walking
+cast now needs both the original surveyed target-and-water ray hit **and**
+a reachable, sourced, public bank/pier stance matching the target spot.
+No walk graph or invalid listener pose means no arbitrary shore casting;
+the boat's existing separate simulation is unchanged. Walking corridors
+render from the same terrain-local coordinates. Once source data exists,
+this avoids the old ability to cast from arbitrary water proximity.
+
+`data/sitka/research/pedestrian-districts.json` lists eight genuine
+areas/corridor families to acquire and verify, from the Lincoln Street
+core and Sea Walk/Crescent Harbor through Katlian, Japonski, eastern
+streets, Indian River and the Cross Trail. Its source links reference the
+City and Borough of Sitka GIS and pedestrian traffic study and Visit
+Sitka's pedestrian map, **not** a fictional city layout.
+
+**Remaining blockers before playable full-city walking:** the Sitka
+prototype is not yet registered as a playable native module, there is
+no licensed current citywide pedestrian source package staged, the VR
+shell uses a bounded movement rig rather than city-path collision /
+continuous height-following and larger region-streaming, and actual legal
+shore-access/angling sites require review. Don't label the eight research
+districts or synthetic test routes as completed game geography.
+

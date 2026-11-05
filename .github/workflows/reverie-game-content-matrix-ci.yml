@@ -143,6 +143,7 @@ jobs:
           python -m pip install --disable-pip-version-check --no-input             'numpy==2.3.5' 'pyproj==3.7.2' 'rasterio==1.5.0' 'shapely==2.1.2'
           python -m unittest discover -s scripts/sitka -p 'test_build_bathymetry.py' -v
           python -m unittest discover -s scripts/sitka -p 'test_build_waterfront.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_build_walkways.py' -v
           python -m unittest discover -s scripts/sitka -p 'test_build_oconnell_bridge.py' -v
           python -m unittest discover -s scripts/sitka -p 'test_shore_reality.py' -v
           python -m unittest discover -s scripts/sitka -p 'test_shore_catalog.py' -v

@@ -4,6 +4,7 @@
 #include "sitka_shore_geometry.h"
 #include "sitka_shore_detail.h"
 #include "sitka_shore_stream.h"
+#include "sitka_walk_graph.h"
 #include "sitka_shore_deck_gl.h"
 #include "sitka_bridge_layout.h"
 #include "sitka_bridge_gl.h"
@@ -39,6 +40,9 @@ struct State {
     reverie::sitka::TerrainGl gl;
     reverie::sitka::TerrainGl shore_gl; // changing waterfront overlay, not boat
     std::unique_ptr<reverie::sitka::ShoreStreamPlanner> shore_stream;
+    std::unique_ptr<reverie::sitka::WalkGraph> walk_graph;
+    reverie::sitka::TerrainMesh walk_mesh;
+    reverie::sitka::TerrainGl walk_gl; // static sourced walking corridors
     std::unique_ptr<reverie::sitka::ShoreDeckMesh> shore_deck_mesh;
     reverie::omega_art::Image shore_deck_art;
     reverie::sitka::ShoreDeckGl shore_deck_gl;
@@ -171,6 +175,26 @@ void* Create(const ReverieNativeHostV1* host) {
                         }
                     }
                 }
+            }
+            // Optional sourced pedestrian graph. Missing means NO verified
+            // walk corridors or public shore-fishing stance, not an invented
+            // rectangular/citywide navigation fallback.
+            const char* walk_path="sitka/walk/paths.sitkaw";
+            uint32_t walk_size=0u;
+            const int32_t walk_probe=host->read_asset(
+                walk_path,nullptr,0u,&walk_size);
+            if(walk_probe!=REVERIE_NATIVE_SAVE_NOT_FOUND){
+                if((walk_probe!=REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL &&
+                    walk_probe!=REVERIE_NATIVE_SAVE_OK)||
+                   walk_size<80u||walk_size>reverie::sitka::kMaxWalkBytes)
+                    throw std::invalid_argument("Invalid sourced Sitka walking graph size");
+                auto graph=reverie::sitka::WalkGraph::Parse(
+                    ReadText(host,walk_path,static_cast<uint32_t>(
+                        reverie::sitka::kMaxWalkBytes)),
+                    state->terrain.origin_east,state->terrain.origin_north);
+                state->walk_mesh=graph.BuildPathMesh();
+                state->walk_graph.reset(
+                    new reverie::sitka::WalkGraph(std::move(graph)));
             }
             // Optional sourced O'Connell profile; no guessed GIS coordinates.
             // All textures are decoded once during Create, not in RenderEye.
@@ -344,6 +368,17 @@ int32_t OnGlCreated(void* instance) {
         Log(state->host,error.c_str());
         return 0;
     }
+    // Real-source walking segments remain one small static GLES2 layer;
+    // this is a visual top surface, not an invented path/collision shortcut.
+    if(state->walk_graph &&
+       !state->walk_gl.Create(state->walk_mesh,state->lighting,&error)){
+        state->shore_deck_gl.Release();
+        state->shore_gl.Release();
+        state->water_gl.Release();
+        state->gl.Release();
+        Log(state->host,error.c_str());
+        return 0;
+    }
     // A SINGLE retained shared plank texture + VBO, with draw ranges for
     // actual authored float polygons. A missing optional material cannot
     // take down approved land, water or the boat workstream.
@@ -374,6 +409,7 @@ int32_t OnGlCreated(void* instance) {
             state->boat_gl.Release();
             state->bridge_gl.Release();
             state->shore_deck_gl.Release();
+            state->walk_gl.Release();
             state->shore_gl.Release();
             state->water_gl.Release();
             state->gl.Release();
@@ -390,6 +426,7 @@ void ReleaseGl(void* instance) {
         static_cast<State*>(instance)->boat_gl.Release();
         static_cast<State*>(instance)->bridge_gl.Release();
         static_cast<State*>(instance)->shore_deck_gl.Release();
+        static_cast<State*>(instance)->walk_gl.Release();
         if(static_cast<State*>(instance)->bridge_view)
             static_cast<State*>(instance)->bridge_view->Reset();
         static_cast<State*>(instance)->shore_gl.Release();
@@ -525,6 +562,16 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->fishing_spots,state->waters);
         }
     }
+    // A ray into surveyed water is not sufficient proof the player has
+    // access from shore. Require a *reachable*, individually authored
+    // bank/pier stance and a matching surveyed fishing spot.
+    if(target.valid &&
+       (!state->walk_graph || !listener ||
+        !state->walk_graph->CanCastFrom(
+            listener_east-state->terrain.origin_east,
+            listener_north-state->terrain.origin_north,
+            target.east,target.north,state->fishing_spots)))
+        target.valid=false;
     const bool fishing_control=!boat_chord&&
         !(state->skiff&&state->skiff->Active());
     const auto event=state->fishing.Update(input->delta_seconds,
@@ -645,6 +692,7 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(!state->gl.RenderEye(eye)||!state->water_gl.RenderEye(eye))return 0;
     if(state->shore_stream && state->shore_stream->visible_count()>0u &&
        !state->shore_gl.RenderEye(eye))return 0;
+    if(state->walk_graph && !state->walk_gl.RenderEye(eye))return 0;
     // Reuse the very same per-feature LOD outcome for colored sides and
     // textured top. The two eye renders never rebuild the source polygon.
     if(state->shore_deck_gl.ready() && state->shore_stream &&

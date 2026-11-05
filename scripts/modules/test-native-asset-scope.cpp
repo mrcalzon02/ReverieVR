@@ -35,6 +35,9 @@ int main(){
     assert(MaximumBytes("classic-chess",
         "native/breakwater/beckenburg/wooden_crate_1.bwm")==0);
     assert(MaximumBytes("sitka","sitka/boat/launch.txt")==4096u);
+    assert(MaximumBytes("sitka","sitka/walk/paths.sitkaw")==262144u);
+    assert(MaximumBytes("breakwater-battery","sitka/walk/paths.sitkaw")==0u);
+    assert(MaximumBytes("sitka","sitka/walk/../boat/launch.txt")==0u);
     assert(MaximumBytes("sitka","sitka/structures/oconnell.bridge")==8192u);
     assert(MaximumBytes("sitka","sitka/structures/oconnell_side.png")==131072u);
     assert(MaximumBytes("sitka",

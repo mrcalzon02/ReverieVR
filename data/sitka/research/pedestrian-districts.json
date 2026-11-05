@@ -1,0 +1,175 @@
+{
+  "format": "sitka-pedestrian-coverage-plan-1",
+  "revision": "2026-11-04",
+  "scope": "identity/corridor research, NOT installed geometry or permission to enter private property",
+  "rule": "Actual pedestrian access comes from reviewed geo-referenced segments only; public maps and photography alone cannot grant walkable status or fishing rights",
+  "coordinate_system": "EPSG:32608",
+  "authoring_path": "scripts/sitka/build_walkways.py",
+  "districts": [
+    {
+      "id": "lincoln_core",
+      "name": "Lincoln Street and downtown core",
+      "corridors": [
+        "Lincoln Street",
+        "Katlian Street",
+        "Lake Street",
+        "Cathedral crossings"
+      ],
+      "focus": [
+        "sidewalks both sides where verified",
+        "documented crossings",
+        "actual building frontage"
+      ],
+      "status": "requires current route geometry",
+      "evidence": [
+        "https://www.cityofsitka.com/files/assets/sitka/v/1/clerk/documents/board-amp-commission/tourism/documents/2022-downtown-traffic-study.pdf"
+      ]
+    },
+    {
+      "id": "sea_walk_crescent",
+      "name": "Crescent Harbor and Sea Walk",
+      "corridors": [
+        "Sea Walk",
+        "Harbor Drive",
+        "Crescent Harbor approaches"
+      ],
+      "focus": [
+        "actual continuous waterfront footpath",
+        "public harbor access limits",
+        "verified legal shore-fishing stances"
+      ],
+      "status": "requires current route geometry and harbor plan review",
+      "evidence": [
+        "https://visitsitka.org/wp-content/uploads/2025/05/2025-Pocket-Guide-Final-Digital.pdf",
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps"
+      ]
+    },
+    {
+      "id": "anb_katlian",
+      "name": "ANB and Katlian working waterfront",
+      "corridors": [
+        "Katlian Street",
+        "ANB Harbor public approaches"
+      ],
+      "focus": [
+        "public sidewalk vs private working pier distinction",
+        "foot fishing only where explicitly allowed"
+      ],
+      "status": "requires access review",
+      "evidence": [
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps"
+      ]
+    },
+    {
+      "id": "thomsen_eliason",
+      "name": "Thomsen and Eliason harbors",
+      "corridors": [
+        "north Katlian waterfront",
+        "Thomsen Harbor",
+        "Richard I. Eliason Harbor"
+      ],
+      "focus": [
+        "official individual harbor plans",
+        "public sidewalks not assumed across operating floats"
+      ],
+      "status": "requires GIS and access review",
+      "evidence": [
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps"
+      ]
+    },
+    {
+      "id": "japonski",
+      "name": "Japonski Island",
+      "corridors": [
+        "John O'Connell Memorial Bridge",
+        "Sealing Cove Harbor public approaches"
+      ],
+      "focus": [
+        "pedestrian bridge path must have reviewed deck elevations",
+        "road/sidewalk connections",
+        "no trespass through airport or Navy facilities"
+      ],
+      "status": "requires current bridge walkway and public access review",
+      "evidence": [
+        "https://www.loc.gov/item/ak0342/",
+        "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps"
+      ]
+    },
+    {
+      "id": "eastern_streets",
+      "name": "East downtown streets",
+      "corridors": [
+        "Seward Street",
+        "Monastery Street",
+        "Lake Street"
+      ],
+      "focus": [
+        "existing mapped sidewalk network",
+        "street grade and intersections"
+      ],
+      "status": "requires current GIS mapping",
+      "evidence": [
+        "https://visitsitka.org/wp-content/uploads/2024/04/Attractions-Map-Final.pdf"
+      ]
+    },
+    {
+      "id": "indian_river",
+      "name": "Indian River and National Historical Park approach",
+      "corridors": [
+        "Indian River Road",
+        "Sitka National Historical Park approaches"
+      ],
+      "focus": [
+        "actual walking and shoreline access",
+        "park permissions",
+        "fishing only if authorized"
+      ],
+      "status": "requires trail boundaries and access review",
+      "evidence": [
+        "https://visitsitka.org/wp-content/uploads/2017/10/Visit-Sitka-WalkingMap.pdf"
+      ]
+    },
+    {
+      "id": "cross_trail",
+      "name": "Sitka Cross Trail and outlying connections",
+      "corridors": [
+        "Sitka Cross Trail",
+        "Halibut Point Road approaches",
+        "Sawmill Creek Road approaches"
+      ],
+      "focus": [
+        "separate pedestrian path vs road shoulder",
+        "terrain slopes",
+        "coastline trail links when surveyed"
+      ],
+      "status": "requires route data and regional tile streaming",
+      "evidence": [
+        "https://visitsitka.org/wp-content/uploads/2024/04/Attractions-Map-Final.pdf"
+      ]
+    }
+  ],
+  "source_priority": [
+    {
+      "provider": "City and Borough of Sitka GIS",
+      "url": "https://www.cityofsitka.com/Government/City-Departments/Planning-Community-Development/GIS-Map-Resources",
+      "use": "authoritative land, road, access and shoreline verification; independently check reuse terms"
+    },
+    {
+      "provider": "OpenStreetMap",
+      "url": "https://www.openstreetmap.org/copyright",
+      "use": "licensed ODbL pedestrian LineStrings and tags; independently verify actual public access"
+    },
+    {
+      "provider": "City of Sitka traffic study",
+      "url": "https://www.cityofsitka.com/files/assets/sitka/v/1/clerk/documents/board-amp-commission/tourism/documents/2022-downtown-traffic-study.pdf",
+      "use": "real downtown sidewalks/crosswalks; narrative reference, not precise planimetric tracing"
+    }
+  ],
+  "not_yet_done": [
+    "No completed geographic district",
+    "No public walking route file installed in APK",
+    "Shell collision and grade-following locomotion not yet integrated",
+    "No legal shore fishing stances field-verified",
+    "No citywide region streaming or measured Android performance"
+  ]
+}
