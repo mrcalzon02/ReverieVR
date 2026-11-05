@@ -23,9 +23,9 @@
         0,
         0
       ],
-      "bytes": 82886,
-      "eye_frame_crc32": 3223231207,
-      "sha256": "16ae8a9e8bffd6747cbdfda25f80f91875728662aed337612d94ee196048be82"
+      "bytes": 151345,
+      "eye_frame_crc32": 1061683719,
+      "sha256": "1086a57aafe517aff4d0e5c3bc04bf3393e37af6d102cb6ea017f389210954e2"
     },
     "classic-breakout": {
       "atlas_cell": [
@@ -50,9 +50,9 @@
         3,
         1
       ],
-      "bytes": 137834,
-      "eye_frame_crc32": 1957098570,
-      "sha256": "7e3045c7362db1caa5c9148ba190f2e213be42e74a4032d697d5c5d561c08020"
+      "bytes": 148509,
+      "eye_frame_crc32": 2998206745,
+      "sha256": "48e1bbe1cd3b5d03bcc37ee178056cab10494986f597baabccf0eb9b4f0ff265"
     },
     "classic-chutes-ladders": {
       "atlas_cell": [
@@ -140,9 +140,9 @@
         2,
         1
       ],
-      "bytes": 366474,
-      "eye_frame_crc32": 2983813147,
-      "sha256": "3a3dac44b5f6cef50f698224f66cc2b198211ebb9628fa97405d8c70baac49a6"
+      "bytes": 366116,
+      "eye_frame_crc32": 519838907,
+      "sha256": "87729409bce5b4577adebd98d2f7c7c36527066b89cd14415015f3d26580d280"
     }
   },
   "ordered_ids": [
