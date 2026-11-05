@@ -749,7 +749,7 @@ int main() {
         assert(SurfaceHullFraction(SurfaceAimFeedback{})==0.0f);
     }
 
-    // All three coastlines have a closed 360-degree layered sky in both
+    // All four coastlines have a closed 360-degree layered sky in both
     // day/night modes. The renderer consumes these triangles only once per
     // shared stereo scene build; the recipe does not own gameplay state.
     {
@@ -769,8 +769,8 @@ int main() {
         };
         const SkyPoint front=SkyAt(0,kSkyRadius,0,0);
         const SkyPoint back=SkyAt(kSkyPi,kSkyRadius,0,0);
-        assert(std::abs(front.x)<.0001f && front.z< -25.5f);
-        assert(std::abs(back.x)<.0001f && back.z>25.5f);
+        assert(std::abs(front.x)<.0001f && front.z<-kSkyRadius+.01f);
+        assert(std::abs(back.x)<.0001f && back.z>kSkyRadius-.01f);
         for(uint8_t location=0;location<Campaign::kLocations;++location) {
             for(bool night : {false,true}) {
                 const auto mesh=sky(location,night);
@@ -787,19 +787,21 @@ int main() {
                     const float x=mesh[i],y=mesh[i+1],z=mesh[i+2];
                     assert(std::isfinite(x) && std::isfinite(y) &&
                            std::isfinite(z));
-                    assert(y>=-4.001f && y<=40.001f);
+                    assert(y>=-20.001f && y<=kSkyApexY+.001f);
                     const float radius=std::sqrt(x*x+z*z);
-                    if(std::abs(y-40.0f)<.001f) {
-                        // The closed zenith cone uses one exact center
-                        // vertex per sky sector, above the prior 17m ring.
+                    if(std::abs(y-kSkyApexY)<.001f) {
+                        // One exact world-space zenith vertex per sky
+                        // sector, above the full extended skyline.
                         assert(radius<.001f);
                         ++apexVertices;
                     } else {
-                        assert(y<=17.001f);
-                        assert(radius>24.0f && radius<27.5f);
+                        assert(y<=kSkyTopY+.001f);
+                        assert(radius>120.0f&&radius<132.0f);
                     }
-                    left|=x< -20.0f;right|=x>20.0f;
-                    frontSeen|=z< -20.0f;backSeen|=z>20.0f;
+                    left|=x<-kSkyRadius*.75f;
+                    right|=x>kSkyRadius*.75f;
+                    frontSeen|=z<-kSkyRadius*.75f;
+                    backSeen|=z>kSkyRadius*.75f;
                 }
                 assert(apexVertices==static_cast<size_t>(kSkySegments));
                 assert(left && right && frontSeen && backSeen);
