@@ -20,7 +20,10 @@ inline constexpr std::array<const char*,4> kFishNames={{
 }};
 inline constexpr std::array<uint32_t,4> kFishCreditAwards={{45u,100u,65u,35u}};
 
-enum class BeachFind : uint8_t { Shell, Crab, Rock, SeaGlass, Driftwood, Count };
+// First five bits are existing save IDs; append without renumbering.
+enum class BeachFind : uint8_t {
+    Shell, Crab, Rock, SeaGlass, Driftwood, MarineLife, Heritage, Count
+};
 enum class CityFind : uint8_t {Harbor,Heritage,PublicArt,Trailhead,Civic,Count};
 constexpr uint32_t CityFindMask(CityFind kind){return 1u<<unsigned(kind);}
 enum class CharacterSkill : uint8_t {Stride,RodHandling,Endurance,Observation,Deckhand,Count};
@@ -30,8 +33,9 @@ inline constexpr std::array<const char*,5> kCharacterSkillNames={{
 }};
 inline constexpr std::array<uint32_t,5> kCharacterSkillMax={{8u,8u,8u,8u,8u}};
 inline constexpr std::array<uint32_t,5> kCharacterSkillBaseCosts={{40u,50u,50u,45u,65u}};
-inline constexpr std::array<const char*,5> kBeachFindNames={{
-    "Shell","Crab sighting","Interesting rock","Sea glass","Driftwood"
+inline constexpr std::array<const char*,7> kBeachFindNames={{
+    "Shell","Crab sighting","Interesting rock","Sea glass","Driftwood",
+    "Marine life observation","Cultural trace recorded"
 }};
 constexpr uint32_t FindMask(BeachFind f){return 1u<<unsigned(f);}
 
@@ -57,7 +61,7 @@ struct Journal {
     uint32_t helm_upgrades=0;
     uint32_t hull_tier=0;
     uint32_t reel_level=0,line_level=0,lure_level=0,shore_kit_level=0;
-    uint32_t discoveries=0; // five observed kinds, never worth credits
+    uint32_t discoveries=0; // seven stable groups, no discovery credits
     uint64_t beach_sites=0; // 64 immutable, author-assigned site IDs
     uint32_t stride_level=0,rod_handling_level=0,endurance_level=0;
     uint32_t observation_level=0,deckhand_level=0;
@@ -87,7 +91,8 @@ inline uint32_t FindPrerequisites(uint32_t next){
                         FindMask(BeachFind::Rock);
     if(next<11u)return FindMask(BeachFind::Shell)|FindMask(BeachFind::Crab)|
                          FindMask(BeachFind::Rock)|FindMask(BeachFind::SeaGlass);
-    return (1u<<unsigned(BeachFind::Count))-1u;
+    // Respectful wildlife/cultural documentation is never mandatory for a rod.
+    return (1u<<(unsigned(BeachFind::Driftwood)+1u))-1u;
 }
 struct EquipmentOffer {
     bool available=false,unlocked=false,affordable=false;

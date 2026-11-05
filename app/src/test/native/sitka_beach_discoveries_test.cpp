@@ -42,8 +42,11 @@ int main(){
     const auto land=Land();
     FreeRoamSession roam(land,water,buildings,true,0.,0.);
     Journal journal;
-    auto markers=BeachMarkerMesh(sites,journal,roam);
-    assert(markers.vertices.size()==30u&&markers.indices.size()==120u);
+    auto near=BeachVisibleMask(sites,journal,roam);
+    assert(near==uint64_t(1)); // no far markers
+    auto markers=BeachMarkerMesh(sites,journal,roam,near);
+    assert(!markers.vertices.empty()&&!markers.indices.empty());
+    assert(markers.vertices.size()<360u);
     const float source[3]={0.f,2.f,0.f};
     const float ray[3]={1.f,0.f,0.f};
     auto found=FindBeachTarget(source,ray,0.,0.,roam,sites,0u,0u);
@@ -64,8 +67,10 @@ int main(){
     found=FindBeachTarget(source,toward_shell,0.,0.,roam,sites,
                           f.journal.beach_sites,0u);
     assert(!found.valid);
-    markers=BeachMarkerMesh(sites,f.journal,roam);
-    assert(markers.vertices.size()==24u&&markers.indices.size()==96u);
+    near=BeachVisibleMask(sites,f.journal,roam);
+    assert(near==0u); // collected shell leaves shoreline
+    markers=BeachMarkerMesh(sites,f.journal,roam,near);
+    assert(markers.vertices.empty()&&markers.indices.empty());
     for(uint32_t i=10u;i<20u;++i)assert(f.Discover(i,BeachFind::Shell));
     while(f.journal.gear<4u)assert(f.Purchase(Equipment::Rod));
     assert(!f.Purchase(Equipment::Rod)); // crab required from level five

@@ -2,6 +2,29 @@
 
 # Sitka
 
+## Five-foot shoreline wildlife and historical micro-finds — 2026-11-05
+
+Sitka's [25 physical intertidal specimens](sitka/INTERTIDAL_SPECIMENS.md)
+are now shaped as tiny triangles with muted palette colors. **No models
+appear farther than 1.524 metres (five feet)** from the grounded player.
+The tiny near-only pixel-style shimmer is colored low-poly geometry;
+the GLES2 shader does not yet support UV textures, real emissive
+materials or bloom. The overlay is rebuilt only on proximity/collection
+changes between stereo eyes, not per-eye or per-draw-call.
+
+Observe living crabs, sea stars, mollusks and other wildlife; collect
+only inert shells, molts, driftwood, stones, and sea glass. Possible
+cultural finds are rare, explicit-source-only **document and leave**
+objects, never money or inventory items. The recorded living/cultural
+geometry remains in the world but loses its tiny sparkle. New specimen
+authoring requires habitat in D|id|token|x|z|zone form; preserved
+five-column legacy beach records retain their persistent IDs.
+MarineLife and Heritage categories are appended to old enum values,
+so V1–V4 save masks remain valid. No real cultural find coordinates
+or specimen locations have been invented. High-tier gear never
+requires cultural/heritage finds.
+
+
 ## Tier 2/3 boat models and Tier 3 crabbing plan — 2026-11-05
 
 [Reproducible 12-vessel and six-crab-rig rough model sources](sitka/equipment/BOAT_TIER_2_3.md) are now tracked with their archived Drive OBJ/MTL package and independent CPU pot simulation. The boat/crab features remain source-only, not registered game systems.

@@ -5,6 +5,7 @@
 // A source file is optional; zero file means zero fabricated items.
 #include "sitka_free_roam.h"
 #include "sitka_fishing.h"
+#include "sitka_intertidal_models.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -20,11 +21,15 @@ struct BeachSite {
     uint32_t id=0u;
     BeachFind kind=BeachFind::Shell;
     float x=0.f,z=0.f;
+    ShoreSpecimen specimen=ShoreSpecimen::EmptyClamShell;
+    unsigned zone=unsigned(ShoreZone::Gravel);
 };
 struct BeachTarget {
     bool valid=false;
     uint32_t site=0u;
     BeachFind kind=BeachFind::Shell;
+    ShoreSpecimen specimen=ShoreSpecimen::EmptyClamShell;
+    ShoreAction action=ShoreAction::Collect;
 };
 inline constexpr size_t kMaxBeachAssetBytes=8192u;
 inline bool BeachId(const std::string& id){
@@ -82,7 +87,7 @@ inline std::vector<BeachSite> ParseBeachSites(
                 throw std::invalid_argument("Sitka beach origin mismatch");
             origin=true;
         }else if(f[0]=="D"){
-            if(f.size()!=5u||result.size()>=64u)
+            if((f.size()!=5u&&f.size()!=6u)||result.size()>=64u)
                 throw std::invalid_argument("Sitka beach site fields");
             const double raw=BeachNumber(f[1],0.,63.);
             if(raw!=std::floor(raw))
@@ -90,55 +95,69 @@ inline std::vector<BeachSite> ParseBeachSites(
             const uint32_t id=static_cast<uint32_t>(raw);
             if(!used.insert(id).second)
                 throw std::invalid_argument("Sitka beach duplicate ID");
-            BeachFind kind;
-            if(f[2]=="shell")kind=BeachFind::Shell;
-            else if(f[2]=="crab")kind=BeachFind::Crab;
-            else if(f[2]=="rock")kind=BeachFind::Rock;
-            else if(f[2]=="sea_glass")kind=BeachFind::SeaGlass;
-            else if(f[2]=="driftwood")kind=BeachFind::Driftwood;
-            else throw std::invalid_argument("Sitka unknown beach find");
-            result.push_back({id,kind,
+            ShoreSpecimen type=ShoreSpecimen::EmptyClamShell;
+            bool old_tag=true;
+            if(f[2]=="shell")type=ShoreSpecimen::EmptyClamShell;
+            else if(f[2]=="crab")type=ShoreSpecimen::PurpleShoreCrab;
+            else if(f[2]=="rock")type=ShoreSpecimen::BeachPebble;
+            else if(f[2]=="sea_glass")type=ShoreSpecimen::SeaGlass;
+            else if(f[2]=="driftwood")type=ShoreSpecimen::DriftwoodChip;
+            else{
+                old_tag=false;
+                if(!ShoreSpecimenByToken(f[2],type))
+                    throw std::invalid_argument("Sitka unknown shore species");
+            }
+            const auto& def=Specimen(type);
+            unsigned zone=0u;
+            if(f.size()==6u){
+                if(!ShoreZoneByToken(f[5],zone)||!(def.zones&zone))
+                    throw std::invalid_argument("Sitka shore habitat mismatch");
+            }else if(!old_tag)
+                throw std::invalid_argument("Specific species need reviewed habitat");
+            else zone=def.zones&(~def.zones+1u); // legacy record without substrate
+            result.push_back({id,def.category,
                 static_cast<float>(BeachNumber(f[3],-100000.,100000.)),
-                static_cast<float>(BeachNumber(f[4],-100000.,100000.))});
+                static_cast<float>(BeachNumber(f[4],-100000.,100000.)),
+                type,zone});
         }else throw std::invalid_argument("Sitka beach unsupported record");
     }
     if(!provenance||!origin||result.empty())
         throw std::invalid_argument("Missing reviewed Sitka beach sites");
     return result;
 }
-// Colored geometry is an explicitly temporary low-poly gameplay marker,
-// NOT a geologic specimen model or a fabricated city/shore structure.
+// Only models within exactly five feet of the grounded player are sent to
+// GLES2. A creature or protected archaeological trace remains in the world
+// after observation; only inert collectables are removed.
+inline uint64_t BeachVisibleMask(const std::vector<BeachSite>& sites,
+    const Journal& journal,const FreeRoamSession& roam){
+    uint64_t mask=0u;
+    const auto player=roam.pose();
+    for(const auto& s:sites){
+        if(s.id>=64u)continue;
+        const bool found=(journal.beach_sites&(uint64_t(1)<<s.id))!=0u;
+        if(found&&Specimen(s.specimen).action==ShoreAction::Collect)continue;
+        if(std::hypot(double(s.x)-player.x,double(s.z)-player.z)>
+           kShoreRevealRadiusM)continue;
+        const auto ground=roam.GroundAt(s.x,s.z);
+        if(!ground.valid||std::abs(ground.y-player.ground_y)>1.25f)continue;
+        mask|=uint64_t(1)<<s.id;
+    }
+    return mask;
+}
 inline TerrainMesh BeachMarkerMesh(const std::vector<BeachSite>& sites,
-    const Journal& j,const FreeRoamSession& roam){
+    const Journal& journal,const FreeRoamSession& roam,uint64_t visible){
     TerrainMesh mesh;
-    constexpr std::array<std::array<uint8_t,3>,5> colors={{
-        {{219,207,176}},{{196,73,53}},{{80,104,113}},
-        {{58,194,174}},{{153,107,70}}
-    }};
-    for(const auto& site:sites){
-        if((j.beach_sites&(uint64_t(1)<<site.id))!=0u)continue;
-        const GroundHit ground=roam.GroundAt(site.x,site.z);
-        if(!ground.valid)continue;
-        const auto color=colors[unsigned(site.kind)];
-        const uint32_t base=static_cast<uint32_t>(mesh.vertices.size());
-        const float x=site.x,z=site.z,y=ground.y+.08f;
-        const float width=site.kind==BeachFind::Crab?.20f:.14f;
-        const float height=site.kind==BeachFind::Rock?.28f:.22f;
-        mesh.vertices.insert(mesh.vertices.end(),{
-            {x-width,y,z,color[0],color[1],color[2]},
-            {x+width,y,z,color[0],color[1],color[2]},
-            {x,y,z-width,color[0],color[1],color[2]},
-            {x,y,z+width,color[0],color[1],color[2]},
-            {x,y+height,z,color[0],color[1],color[2]},
-            {x,y-.035f,z,color[0],color[1],color[2]}
-        });
-        for(unsigned t=0;t<4u;++t){
-            constexpr uint32_t perimeter[]={0u,2u,1u,3u,0u};
-            mesh.indices.insert(mesh.indices.end(),{
-                base+perimeter[t],base+perimeter[t+1u],base+4u,
-                base+perimeter[t+1u],base+perimeter[t],base+5u
-            });
-        }
+    const auto player=roam.pose();
+    for(const auto& s:sites){
+        if(s.id>=64u||(visible&(uint64_t(1)<<s.id))==0u)continue;
+        const bool found=(journal.beach_sites&(uint64_t(1)<<s.id))!=0u;
+        if(found&&Specimen(s.specimen).action==ShoreAction::Collect)continue;
+        // Do not trust a stale visibility mask supplied by the caller.
+        if(std::hypot(double(s.x)-player.x,double(s.z)-player.z)>
+           kShoreRevealRadiusM)continue;
+        const auto ground=roam.GroundAt(s.x,s.z);
+        if(!ground.valid||std::abs(ground.y-player.ground_y)>1.25f)continue;
+        AppendShoreSpecimen(mesh,s.specimen,s.x,ground.y,s.z,!found);
     }
     return mesh;
 }
@@ -162,16 +181,18 @@ inline BeachTarget FindBeachTarget(const float origin[3],
         const GroundHit ground=roam.GroundAt(site.x,site.z);
         if(!ground.valid)continue;
         const double dx=double(site.x)-origin[0];
-        const double dy=double(ground.y)+.23-origin[1];
+        const double dy=double(ground.y)+.04-origin[1];
         const double dz=double(site.z)-origin[2];
         const double near_player=std::hypot(double(site.x)-player_x,
                                             double(site.z)-player_z);
-        if(near_player>max_reach)continue;
+        if(near_player>kShoreRevealRadiusM)continue;
         const double along=dx*ray[0]+dy*ray[1]+dz*ray[2];
         if(along<.20||along>max_reach||along>=nearest)continue;
         const double off2=dx*dx+dy*dy+dz*dz-along*along;
-        if(off2>.14)continue; // narrow pointer-select, not proximity auto-loot
-        nearest=along;best={true,site.id,site.kind};
+        if(off2>.038)continue; // deliberate, fine VR pointer precision
+        nearest=along;
+        const auto& spec=Specimen(site.specimen);
+        best={true,site.id,site.kind,site.specimen,spec.action};
     }
     return best;
 }

@@ -70,6 +70,7 @@ struct State {
     std::vector<reverie::sitka::CitySite> city_sites;
     reverie::sitka::TerrainGl beach_gl;
     bool beach_dirty=false,beach_primary_latched=false;
+    uint64_t beach_visible_mask=0u;
     reverie::sitka::BathyAtlas bathymetry; // V1 source compatibility.
     std::unique_ptr<reverie::sitka::BathyStreamCache> stream;
     std::unique_ptr<reverie::sitka::ProceduralSeabed> generated;
@@ -551,6 +552,17 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->fishing.fishing.journal));
     const auto foot=state->walk_session?
         state->walk_session->pose():reverie::sitka::RoamPose{};
+    // Compute five-foot reveal transitions ONCE per update. No per-eye
+    // visibility mutation, no rebuild for stationary frames.
+    if(state->walk_session && !state->beach_sites.empty()){
+        const uint64_t visible=reverie::sitka::BeachVisibleMask(
+            state->beach_sites,state->fishing.fishing.journal,
+            *state->walk_session);
+        if(visible!=state->beach_visible_mask){
+            state->beach_visible_mask=visible;
+            state->beach_dirty=true;
+        }
+    }
     const double listener_east=listener?
         state->terrain.origin_east+foot.x+input->listener_position[0]:
         std::numeric_limits<double>::quiet_NaN();
@@ -758,7 +770,7 @@ int32_t PrepareFrame(void* instance){
         std::string error;
         const auto marker=reverie::sitka::BeachMarkerMesh(
             state->beach_sites,state->fishing.fishing.journal,
-            *state->walk_session);
+            *state->walk_session,state->beach_visible_mask);
         const std::vector<reverie::sitka::TerrainMesh> extras={
             marker.indices.empty()?reverie::sitka::TerrainMesh{}:marker};
         if(!state->beach_gl.ReplaceSeafloor(extras,&error)){
