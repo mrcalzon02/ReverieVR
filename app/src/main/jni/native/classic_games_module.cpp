@@ -1400,7 +1400,7 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         reverie::chesspanel::Hit(1,copy.pointer_origin,
                                 copy.pointer_direction,&panelX,&panelY);
     const int controlHover=chessPanelAim&&!m->board.finished&&
-        m->board.side==1&&std::abs(panelX)<.49f&&
+        m->board.ChessHumanTurn()&&std::abs(panelX)<.49f&&
         panelY<-.82f&&panelY>-1.14f?1:0;
     const bool chessPanelHover=chessPanelAim &&
         std::abs(panelX)<.525f&&panelY>.70f&&panelY<1.06f;
@@ -1437,7 +1437,12 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             m->dirty=true;
         }
     }else m->cursorRepeat=.17f;
-    if(secondaryEdge && m->board.side==1){
+    if(secondaryEdge &&
+#if CLASSIC_GAME_KIND == 5
+       !m->chessNewGameOpen &&
+#endif
+       (m->board.kind==reverie::boardgames::Kind::Chess?
+        m->board.ChessHumanTurn():m->board.side==1)){
         if(m->board.kind==reverie::boardgames::Kind::Go){
             if(m->board.goReview)m->board.AcceptGoScore();
             else m->board.Pass();
@@ -1463,6 +1468,47 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             if(wikiAim)ChessWikiClick(m,wikiX,wikiY);
             ReverieNativeRequestFeedbackV1(m->host,
                 REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        } else if(m->chessNewGameOpen) {
+            if(wikiAim && wikiY>-.10f && wikiY<.29f &&
+               ((wikiX> -1.22f&&wikiX<-.10f) ||
+                (wikiX>.10f&&wikiX<1.22f))) {
+                const int color=wikiX<0.f?1:-1;
+                m->board.StartChessGame(color);
+                m->chessTween.Clear();
+                m->chessThreatOverlay=reverie::chessui::Off;
+                m->chessAnalyzedPly=-1;
+                m->chessPreviewPly=-1;
+                m->chessPreviewSquare=-1;
+                m->chessHoverSquare=-1;
+                m->chessLegalDestinations.clear();
+                m->chessNewGameOpen=false;
+                m->cpuFailed=false;
+                m->boardCursorActive=false;
+                m->boardCursorX=m->boardCursorY=0;
+                m->dirty=true;
+                ReverieNativeRequestFeedbackV1(m->host,
+                    REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            } else if(wikiAim && wikiY<-.23f && wikiY>-.57f &&
+                      std::abs(wikiX)<.58f) {
+                m->chessNewGameOpen=false;
+                m->dirty=true;
+                ReverieNativeRequestFeedbackV1(m->host,
+                    REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            } else ReverieNativeRequestFeedbackV1(m->host,
+                    REVERIE_NATIVE_FEEDBACK_FAILURE);
+        } else if(chessPanelAim && std::abs(panelX)<.49f &&
+                  panelY>1.29f && panelY<1.56f) {
+            m->chessNewGameOpen=true;
+            m->dirty=true;
+            ReverieNativeRequestFeedbackV1(m->host,
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        } else if(aim && reverie::chessui::OverlayButton(hx,hy)!=0) {
+            const int picked=reverie::chessui::OverlayButton(hx,hy);
+            m->chessThreatOverlay=m->chessThreatOverlay==picked?
+                reverie::chessui::Off:picked;
+            m->dirty=true;
+            ReverieNativeRequestFeedbackV1(m->host,
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         } else if(
             (chessLeftPanelAim && std::abs(leftPanelX)<.82f &&
                 std::abs(leftPanelY)<1.57f) ||
@@ -1486,7 +1532,8 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             m->board.Reset(m->board.kind);
             m->boardCursorActive=false;
             m->boardCursorX=m->boardCursorY=0;
-        }else if(m->board.side==1) {
+        }else if(m->board.kind==reverie::boardgames::Kind::Chess?
+                  m->board.ChessHumanTurn():m->board.side==1) {
             if(aim && m->board.kind==reverie::boardgames::Kind::Go &&
                hx>1.49f&&hx<2.42f&&hy<-.99f&&hy> -1.50f){
                 if(m->board.goReview)m->board.AcceptGoScore();
@@ -1530,8 +1577,15 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
                     x=static_cast<int>(std::floor((hx+n*.5f*gap)/gap));
                     y=static_cast<int>(std::floor((n*.5f*gap-hy)/gap));
                 }
-                if(x>=0&&x<n&&y>=0&&y<n)
-                    m->board.Select(y*n+x);
+                if(x>=0&&x<n&&y>=0&&y<n){
+#if CLASSIC_GAME_KIND == 5
+                    if(m->board.kind==reverie::boardgames::Kind::Chess)
+                        m->board.Select(reverie::chessui::ScreenIndex(
+                            x,y,m->board.chessHumanColor));
+                    else
+#endif
+                        m->board.Select(y*n+x);
+                }
             }
         }
     }
@@ -1542,7 +1596,9 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         if(!m->chessTween.Active() && m->cpu.Poll(m->board))
             m->dirty=true;
         if(!m->chessTween.Active() && !m->cpuFailed &&
-           !m->cpu.Busy() && m->board.side==-1 &&
+           !m->cpu.Busy() &&
+           m->board.side==m->board.ChessCpuColor() &&
+           !m->chessNewGameOpen &&
            !m->board.finished && m->board.ply==prevPly)
             m->cpu.Start(m->board);
 #else
@@ -1569,11 +1625,14 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
     if(aim){
         const int x=static_cast<int>(std::floor((hx+4.f*gap)/gap));
         const int y=static_cast<int>(std::floor((4.f*gap-hy)/gap));
-        if(x>=0&&x<8&&y>=0&&y<8)hover=y*8+x;
+        if(x>=0&&x<8&&y>=0&&y<8)
+            hover=reverie::chessui::ScreenIndex(
+                x,y,m->board.chessHumanColor);
     }else if(m->boardCursorActive){
-        hover=m->boardCursorY*8+m->boardCursorX;
+        hover=reverie::chessui::ScreenIndex(
+            m->boardCursorX,m->boardCursorY,m->board.chessHumanColor);
     }
-    if(m->chessWikiOpen)hover=-1;
+    if(m->chessWikiOpen||m->chessNewGameOpen)hover=-1;
     if(hover!=m->chessHoverSquare){
         m->chessHoverSquare=hover;
         m->dirty=true;
