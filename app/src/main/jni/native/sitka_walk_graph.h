@@ -36,7 +36,9 @@ inline std::vector<std::string> WalkFields(const std::string& line){
     std::vector<std::string> f; size_t pos=0;
     while(true){const size_t end=line.find('|',pos);
         f.push_back(line.substr(pos,end==std::string::npos?end:end-pos));
-        if(end==std::string::npos)break;pos=end+1;}
+        if(end==std::string::npos)break;
+        pos=end+1;
+    }
     return f;
 }
 inline bool WalkId(const std::string& id){
