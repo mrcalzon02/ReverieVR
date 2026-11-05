@@ -79,6 +79,11 @@ static void TestChessChooseSideOverlaysAndCaptures() {
     assert(game.chessCapturedByBlack[1]==1);
     assert(CapturedLine(game,1)=="YOU TOOK: P1 N0 B0 R0 Q0");
     assert(CapturedLine(game,-1)=="CPU TOOK: P1 N0 B0 R0 Q0");
+    // During capture travel, the moving side's committed victim is still
+    // on the visible board: defer precisely that one piece in the HUD.
+    assert(CapturedLine(game,-1,1)=="CPU TOOK: P0 N0 B0 R0 Q0");
+    assert(CapturedLine(game,1,1)=="YOU TOOK: P0 N0 B0 R0 Q0");
+    assert(CapturedLine(game,-1,5)=="CPU TOOK: P1 N0 B0 R0 Q0");
     State reversed=game;
     reversed.chessHumanColor=-1;
     assert(CapturedLine(reversed,-1)=="YOU TOOK: P1 N0 B0 R0 Q0");
