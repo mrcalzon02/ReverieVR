@@ -4,6 +4,39 @@
 
 # Sitka coastal editor, geodata and native environment adapter
 
+## Sitka path-constrained grounded walking session — 2026-11-04
+
+`sitka_walk_session.h` now implements an actual source-graph-bound foot
+position: native joystick movement takes up to 0.05 s of travel per
+simulation frame at an authored real-world walking pace (1.45 m/s),
+rejects walking off connected source sidewalk/shore path surfaces,
+slides gently along existing corridors, follows the individually
+authored footpath Y elevation (including measured bridge decks), and
+never adds fake traversable shore. The session starts **only** at the
+public source-authored S spawn; an absent walking graph does not create
+a fictional player or fallback town.
+
+The native Sitka module now applies the resulting 3D foot position to
+a **copy** of the world-view matrix before rendering either Cardboard
+eye (terrain, water, paths, shore, bridge, boat): no IPD or headset view
+mutation, and no stereo-specific simulation advance. The controller's
+fishing ray is offset by this same world position before the existing
+surveyed-water target test; shore fishing still requires the separate
+reachable, reviewed public stance tied to a real target. The walking
+session is idle while the skiff is active or the fishing interaction is
+under way. A GL-context rebuild retains the approved world foot pose,
+with no second texture upload introduced.
+
+This stage is accessible through the native module's *joystick axis*
+input. The Daydream-only touchpad locomotion adapter, real world
+collision against city objects and shore edges, district/page streaming
+beyond one loaded network, height-matched camera comfort on slopes and
+full playable Sitka registration still require completion and real
+headset testing. The existing shell movement cap is 100 m for unrelated
+native games and has not been relaxed globally. Do **not** claim a
+finished city walking/fishing game based on these source-only tests.
+
+
 ## Full-city pedestrian graph and legal shore-fishing admission — 2026-11-04
 
 **Objective:** eventually walk *all* accessible Sitka streets, paths and

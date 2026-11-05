@@ -5,6 +5,7 @@
 #include "sitka_shore_detail.h"
 #include "sitka_shore_stream.h"
 #include "sitka_walk_graph.h"
+#include "sitka_walk_session.h"
 #include "sitka_shore_deck_gl.h"
 #include "sitka_bridge_layout.h"
 #include "sitka_bridge_gl.h"
@@ -41,6 +42,7 @@ struct State {
     reverie::sitka::TerrainGl shore_gl; // changing waterfront overlay, not boat
     std::unique_ptr<reverie::sitka::ShoreStreamPlanner> shore_stream;
     std::unique_ptr<reverie::sitka::WalkGraph> walk_graph;
+    std::unique_ptr<reverie::sitka::WalkSession> walk_session;
     reverie::sitka::TerrainMesh walk_mesh;
     reverie::sitka::TerrainGl walk_gl; // static sourced walking corridors
     std::unique_ptr<reverie::sitka::ShoreDeckMesh> shore_deck_mesh;
@@ -195,6 +197,8 @@ void* Create(const ReverieNativeHostV1* host) {
                 state->walk_mesh=graph.BuildPathMesh();
                 state->walk_graph.reset(
                     new reverie::sitka::WalkGraph(std::move(graph)));
+                state->walk_session.reset(
+                    new reverie::sitka::WalkSession(*state->walk_graph));
             }
             // Optional sourced O'Connell profile; no guessed GIS coordinates.
             // All textures are decoded once during Create, not in RenderEye.
@@ -449,11 +453,22 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     state->water_gl.Update(input->delta_seconds);
     const bool listener=input->struct_size>=
         REVERIE_NATIVE_INPUT_V1_LISTENER_MIN_SIZE&&input->listener_valid;
+    // Walk along REAL public paths using gamepad movement without relying
+    // on the shell's 100 m room-bounded travel. No graph = no free noclip.
+    // Suspend stepping while actively angling or controlling the boat.
+    if(state->walk_session && listener &&
+       !(state->skiff&&state->skiff->Active()) &&
+       state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready)
+        state->walk_session->Advance(
+            input->move_x,-input->move_y,input->listener_right,
+            input->delta_seconds);
+    const auto foot=state->walk_session?
+        state->walk_session->pose():reverie::sitka::WalkPose{};
     const double listener_east=listener?
-        state->terrain.origin_east+input->listener_position[0]:
+        state->terrain.origin_east+foot.x+input->listener_position[0]:
         std::numeric_limits<double>::quiet_NaN();
     const double listener_north=listener?
-        state->terrain.origin_north+input->listener_position[2]:
+        state->terrain.origin_north+foot.z+input->listener_position[2]:
         std::numeric_limits<double>::quiet_NaN();
     const bool boat_chord=state->skiff &&
         input->primary_down!=0u&&input->secondary_down!=0u;
@@ -558,7 +573,9 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             const float* p=normalized.pointer_origin;
             const float* d=normalized.pointer_direction;
             target=reverie::sitka::FindFishingTarget(
-                reverie::sitka::FishingRay{p[0],p[1],p[2],d[0],d[1],d[2]},
+                reverie::sitka::FishingRay{
+                    p[0]+foot.x,p[1]+foot.ground_y,p[2]+foot.z,
+                    d[0],d[1],d[2]},
                 state->fishing_spots,state->waters);
         }
     }
@@ -689,21 +706,28 @@ int32_t PrepareFrame(void* instance){
 int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(!instance)return 0;
     State* state=static_cast<State*>(instance);
-    if(!state->gl.RenderEye(eye)||!state->water_gl.RenderEye(eye))return 0;
+    ReverieNativeEyeV1 shifted{};
+    const ReverieNativeEyeV1* world_eye=eye;
+    if(state->walk_session){
+        if(!state->walk_session->ShiftEye(eye,shifted))return 0;
+        world_eye=&shifted;
+    }
+    if(!state->gl.RenderEye(world_eye)||
+       !state->water_gl.RenderEye(world_eye))return 0;
     if(state->shore_stream && state->shore_stream->visible_count()>0u &&
-       !state->shore_gl.RenderEye(eye))return 0;
-    if(state->walk_graph && !state->walk_gl.RenderEye(eye))return 0;
+       !state->shore_gl.RenderEye(world_eye))return 0;
+    if(state->walk_graph && !state->walk_gl.RenderEye(world_eye))return 0;
     // Reuse the very same per-feature LOD outcome for colored sides and
     // textured top. The two eye renders never rebuild the source polygon.
     if(state->shore_deck_gl.ready() && state->shore_stream &&
        state->shore_stream->visible_count()>0u &&
-       !state->shore_deck_gl.RenderEye(eye,[&](size_t index){
+       !state->shore_deck_gl.RenderEye(world_eye,[&](size_t index){
            return state->shore_stream->tier(index)!=
                reverie::sitka::ShoreStreamPlanner::Hidden;
        }))return 0;
     if(state->bridge_gl.ready() && state->bridge_view &&
        state->bridge_view->visible() &&
-       !state->bridge_gl.RenderEye(eye))return 0;
+       !state->bridge_gl.RenderEye(world_eye))return 0;
     if(!state->skiff||!state->skiff->Active())return 1;
     const auto& pose=state->skiff->Pose();
     const reverie::sitka::Water* water=reverie::sitka::SitkaWorldWater(
@@ -714,9 +738,9 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
         const auto model=reverie::sitka::BoatModelMatrix(
             pose,state->terrain.origin_east,state->terrain.origin_north,
             water->y);
-        if(!state->boat_gl.RenderEye(eye,model.data()))return 0;
+        if(!state->boat_gl.RenderEye(world_eye,model.data()))return 0;
         float vp[16],mvp[16];
-        ReverieNativeMat4Multiply(vp,eye->projection,eye->view);
+        ReverieNativeMat4Multiply(vp,world_eye->projection,world_eye->view);
         ReverieNativeMat4Multiply(mvp,vp,model.data());
         return state->boat_text.Draw(mvp,true)?1:0;
     }catch(const std::exception&){return 0;}
