@@ -1220,11 +1220,17 @@ int main() {
             });
         return std::array<int,2>{{boxes,triangles}};
     };
-    assert((vesselShape(UnitType::Rowboat,1,true)==std::array<int,2>{{5,4}}));
-    assert((vesselShape(UnitType::LandingCraft,3,true)==std::array<int,2>{{10,4}}));
-    assert((vesselShape(UnitType::LandingCraft,6,true)==std::array<int,2>{{16,4}}));
-    assert((vesselShape(UnitType::LandingCraft,255,true)==std::array<int,2>{{16,4}}));
-    assert((vesselShape(UnitType::Gunboat,0,true)==std::array<int,2>{{7,4}}));
+    const auto rowing=vesselShape(UnitType::Rowboat,1,true);
+    const auto lander3=vesselShape(UnitType::LandingCraft,3,true);
+    const auto lander6=vesselShape(UnitType::LandingCraft,6,true);
+    const auto gunboat=vesselShape(UnitType::Gunboat,0,true);
+    // Actual contoured five-station geometry, no old four-triangle
+    // billboards; remain finite and bounded even for invalid cargo sizes.
+    assert(rowing[0]>=7&&rowing[1]>=52&&rowing[1]<100);
+    assert(lander3[0]>=14&&lander3[1]>=55&&lander3[1]<100);
+    assert(lander6[0]>lander3[0]&&lander6[1]==lander3[1]);
+    assert(lander6==vesselShape(UnitType::LandingCraft,255,true));
+    assert(gunboat[0]>=7&&gunboat[1]>=52&&gunboat[1]<100);
     assert((vesselShape(UnitType::Aircraft,0,true)==std::array<int,2>{{0,0}}));
     assert((vesselShape(UnitType::Rowboat,1,false)==std::array<int,2>{{0,0}}));
     const Infantry activeInfantry{.3f,-2.0f,true};
@@ -1234,8 +1240,10 @@ int main() {
             float, float, float) {
             ++soldierBoxes;
             assert(std::abs(x-activeInfantry.x)<.15f);
-            assert(std::abs(z-activeInfantry.z)<.15f);
-            assert(w<=.20f&&h<=.36f&&d<=.16f&&y>-.94f);
+            assert(std::abs(z-activeInfantry.z)<.42f);
+            // A visible rifle, backpack and helmet extend past the
+            // earlier two-block mannequin while remaining finite/bounded.
+            assert(w<=.20f&&h<=.36f&&d<=.40f&&y>-.94f);
         },
         [&](float x0,float y0,float z0,float x1,float y1,float z1,
             float x2,float y2,float z2,float, float, float) {
@@ -1247,7 +1255,8 @@ int main() {
             assert(std::abs(x1-activeInfantry.x)<.15f);
             assert(std::abs(x2-activeInfantry.x)<.15f);
         });
-    assert(soldierBoxes==2&&soldierTriangles==5);
+    assert(soldierBoxes>=10&&soldierBoxes<24);
+    assert(soldierTriangles>=6&&soldierTriangles<18);
     int inactiveGeometry=0;
     EmitInfantrySilhouette(Infantry{},
         [&](auto...){++inactiveGeometry;},[&](auto...){++inactiveGeometry;});
@@ -1285,29 +1294,42 @@ int main() {
     rampCraft.z=-4.0f;
     const auto rampTip = [](const Enemy &craft) {
         float tip=100.0f;
-        int triangleCount=0;
+        int rampFaces=0,allTriangles=0;
         EmitVesselSilhouette(craft,[](auto...){},
-            [&](float,float,float,float,float,float,
+            [&](float x0,float,float z0,float x1,float,float z1,
                 float,float y2,float,float,float,float) {
-                if (triangleCount++==0) tip=y2;
+                ++allTriangles;
+                // Match the authored bow hinge, not a fixed triangle
+                // ordinal: the contiguous hull now comes first.
+                if(std::abs(x0-(craft.x-.44f))<.0001f &&
+                   std::abs(x1-(craft.x+.44f))<.0001f &&
+                   std::abs(z0-(craft.z+.42f))<.0001f &&
+                   std::abs(z1-(craft.z+.42f))<.0001f){
+                    tip=y2;++rampFaces;
+                }
             });
-        assert(triangleCount==4);
+        assert(rampFaces==1&&allTriangles>=55);
         return tip;
     };
     const float upright=rampTip(rampCraft);
     rampCraft.z=-2.2f;
     const float lowered=rampTip(rampCraft);
-    assert(upright>-.47f && lowered< -1.02f);
+    assert(upright>-.61f&&upright<-.59f&&lowered< -1.06f);
     assert(rampTip(rampCraft)==lowered);
     const auto movingWake = [](const Enemy &craft) {
         float zRelative=0.0f;
-        int triangles=0;
+        int wakeTriangles=0;
         EmitVesselSilhouette(craft,[](auto...){},
-            [&](float,float,float,float,float,float z1,
-                float,float,float,float,float,float) {
-                if(triangles++==2)zRelative=z1-craft.z;
+            [&](float,float y0,float,float y1,float z1,
+                float,float y2,float,float,float,float) {
+                if(std::abs(y0+1.095f)<.0001f &&
+                   std::abs(y1+1.095f)<.0001f &&
+                   std::abs(y2+1.095f)<.0001f){
+                    if(wakeTriangles==0)zRelative=z1-craft.z;
+                    ++wakeTriangles;
+                }
             });
-        assert(triangles==4);
+        assert(wakeTriangles==2);
         return zRelative;
     };
     rampCraft.type=UnitType::Rowboat;
@@ -1325,7 +1347,7 @@ int main() {
                 float,float,float,float,float,float) {
                 if(triangles++==2)relativeZ=z1-trooper.z;
             });
-        assert(triangles==5);
+        assert(triangles>=6);
         return relativeZ;
     };
     const float firstStride=InfantryMarchStride(marching);
