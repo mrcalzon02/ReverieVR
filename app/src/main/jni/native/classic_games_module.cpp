@@ -691,6 +691,29 @@ void RebuildBoard(Module *m,bool fixed){
              0,-1.58f,.040f,.84f,.90f,.87f);
 #endif
     }
+#if CLASSIC_GAME_KIND == 5
+    if(!fixed && s.kind==reverie::boardgames::Kind::Chess) {
+        static const char *const names[]={
+            "NEUTRAL","MY THREATS","CPU THREATS"
+        };
+        for(int i=0;i<3;++i) {
+            const float x=static_cast<float>(i-1)*.97f;
+            const bool chosen=m->chessThreatOverlay==i+1;
+            Rect(m,x,1.415f,.92f,.26f,-2.976f,
+                 chosen?.24f:.13f,chosen?.38f:.22f,
+                 chosen?.42f:.28f);
+            Text(m,names[i],x,1.407f,.023f,
+                 chosen?1.f:.85f,chosen?1.f:.91f,
+                 chosen?.80f:.86f);
+        }
+        const std::string mine=reverie::chessui::CapturedLine(
+            s,s.chessHumanColor);
+        const std::string cpu=reverie::chessui::CapturedLine(
+            s,s.ChessCpuColor());
+        Text(m,mine.c_str(),0.f,-1.46f,.026f,.73f,.96f,.90f);
+        Text(m,cpu.c_str(),0.f,-1.64f,.026f,.98f,.77f,.66f);
+    }
+#endif
     if(!fixed && s.kind==reverie::boardgames::Kind::Go &&
        !s.finished){
         Rect(m,1.94f,-1.25f,.89f,.41f,-2.98f,.23f,.36f,.42f);
@@ -702,10 +725,12 @@ void RebuildBoard(Module *m,bool fixed){
         }
     }
     if(!fixed && s.finished){
-        const char *msg=s.winner==1?"YOU WIN":s.winner==-1?
+        const int human=s.kind==reverie::boardgames::Kind::Chess?
+            s.chessHumanColor:1;
+        const char *msg=s.winner==human?"YOU WIN":s.winner==-human?
             "CPU WINS":"DRAW";
 #if CLASSIC_GAME_KIND == 5
-        Text(m,msg,0,1.40f,.032f,1.f,.91f,.58f);
+        Text(m,msg,-2.22f,1.07f,.026f,1.f,.91f,.58f);
 #else
         Text(m,msg,2.02f,1.07f,.038f,1.f,.91f,.58f);
 #endif
@@ -732,8 +757,9 @@ void RebuildBoard(Module *m,bool fixed){
     }else if(!fixed){
 #if CLASSIC_GAME_KIND == 5
         const char *turnLabel=m->cpuFailed?"CPU ERROR RESTART":
-            s.side==1?"YOUR TURN":"CPU THINKING";
-        Text(m,turnLabel,0,1.40f,.032f,.95f,.95f,.78f);
+            s.side==s.chessHumanColor?"YOUR TURN":"CPU THINKING";
+        ChessPanelText(m,turnLabel,-2.22f,1.07f,.030f,
+                       .95f,.95f,.78f);
 #else
         if(s.kind==reverie::boardgames::Kind::Go&&s.goReview){
             Text(m,"MARK DEAD",1.94f,1.09f,.034f,.95f,.95f,.78f);
