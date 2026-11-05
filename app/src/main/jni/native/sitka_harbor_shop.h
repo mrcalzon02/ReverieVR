@@ -184,6 +184,15 @@ inline TerrainMesh HarborShopSigns(const std::vector<HarborShopSite>& shops,
     }
     return m;
 }
+inline TerrainMesh HarborShopPanelMesh(){
+    // A small reusable dark world-space clipboard, not another real office.
+    TerrainMesh m;
+    m.vertices={
+        {-.78f,-.50f,-.024f,17,32,38},{.78f,-.50f,-.024f,17,32,38},
+        {.78f,.50f,-.024f,17,32,38},{-.78f,.50f,-.024f,17,32,38}};
+    m.indices={0,1,2,0,2,3};
+    return m;
+}
 enum class ShopEvent : uint8_t {
     None,Open,Close,Next,Previous,Purchased,Denied
 };

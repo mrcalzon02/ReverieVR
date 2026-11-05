@@ -2,6 +2,37 @@
 
 # Sitka
 
+## Harbor Department boat-upgrade shop — 2026-11-05
+
+Five Sitka municipal harbors are Crescent, Sealing Cove, ANB, Thomsen
+and Eliason. The **one** documented municipal Harbormaster office is at
+**617 Katlian Street beside Thomsen Harbor**; a separate staffed office
+at each marina is not established by official sources:
+https://www.cityofsitka.com/Government/City-Departments/Harbor-Department
+
+Sitka's optional `sitka/harbor/shops.txt` contains an immutable
+reviewed EPSG:32608 origin and author-sourced docking/office
+interactions. Grammar: `SITKA-HARBOR-SHOPS-1`, provenance `P` and
+origin `O`, followed by
+`H|harbor_id|office/game_desk|sourced_shore_feature_id|local_x|local_z`.
+Only Thomsen may use `office`, and extra `game_desk` stations are
+explicitly gameplay convenience desks anchored to already verified
+waterfront infrastructure—not fabricated real harbor offices.
+With no approved geometry there is NO phantom shop.
+
+Point/select at a real sourced entrance/desk within 2.6 metres to
+open a small diegetic Lato-text upgrade clipboard. Vertical stick
+browse, primary purchase, secondary back. Purchases use existing
+`PurchaseHull`, `PurchaseHelm`, `NextEquipment` and
+`NextCharacter` with the **one persistent fish-earned wallet**.
+Lock checks retain earned discovery prerequisites; ship fittings
+require the already-purchased hull and prerequisites. Reassembly of
+the purchased physical boat is deferred until *between stereo eyes*.
+Distinct haptic feedback indicates successful vs refused purchases.
+No extra real-world Sitka building coordinates have been invented.
+The game's native Sitka module is still not registered/playable.
+
+
 ## Five-foot shoreline wildlife and historical micro-finds — 2026-11-05
 
 Sitka's [25 physical intertidal specimens](sitka/INTERTIDAL_SPECIMENS.md)

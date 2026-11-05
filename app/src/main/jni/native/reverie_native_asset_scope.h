@@ -24,6 +24,7 @@ inline uint32_t MaximumBytes(const char *id,const char *path){
             {"sitka/fishing/sites.txt",8192u},
             {"sitka/beach/discoveries.txt",8192u},
             {"sitka/city/discoveries.txt",8192u},
+            {"sitka/harbor/shops.txt",4096u},
             {"sitka/boat/launch.txt",4096u},
             {"sitka/shore/waterfront.sitkash",65536u},
             {"sitka/walk/paths.sitkaw",262144u},

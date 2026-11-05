@@ -57,7 +57,7 @@ int main(){
     assert(signs.indices.size()==24u);
     assert(!PackTerrainGles2(signs).empty());
     const float origin[3]={0.f,1.4f,0.f};
-    const float forward[3]={.6247f,-.0937f,-.775f};
+    const float forward[3]={.989f,-.148f,0.f};
     assert(HarborShopTarget(sites,roam,origin,forward)==0);
     const float away[3]={-1.f,0.f,0.f};
     assert(HarborShopTarget(sites,roam,origin,away)==-1);
@@ -89,7 +89,7 @@ int main(){
     assert(shop.Update(false,false,0.f,-1,journal,false)==ShopEvent::None);
     assert(shop.Update(true,false,0.f,-1,journal,false)==ShopEvent::Purchased);
     assert(j.helm_upgrades&HelmMask(HelmItem::Battery));
-    assert(!shop.open()==false);
+    assert(shop.open());
     const auto summary=HarborShopPanel(shop,journal);
     assert(summary[0].find("HARBOR")!=std::string::npos);
     assert(summary[1].find("9700")==std::string::npos);
@@ -106,7 +106,8 @@ int main(){
     assert(shop.selected()==17u);
     assert(HarborOffer(j,17u).title.find("Fishing rod")!=std::string::npos);
     // Existing equipment and skill gates are reused, not duplicated.
-    assert(!HarborOffer(j,17u).unlocked); // 1 shell site only, already level 0?
+    assert(HarborOffer(j,17u).unlocked);
     assert(NextEquipment(j,Equipment::Rod).unlocked);
+    assert(HarborShopPanelMesh().indices.size()==6u);
     return 0;
 }

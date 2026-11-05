@@ -23,6 +23,7 @@
 #include "sitka_seafloor_sparse_mesh.h"
 #include "sitka_boat_session.h"
 #include "sitka_helm.h"
+#include "sitka_harbor_shop.h"
 #include "sitka_boat_mesh.h"
 #include "sitka_boat_panels.h"
 #include "reverie_native_lato_text.h"
@@ -57,6 +58,14 @@ struct State {
     reverie::sitka::BridgeArt bridge_art;
     reverie::sitka::BridgeGl bridge_gl; // 3 surface textures, one upload per GL context
     reverie::sitka::TerrainGl boat_gl; // isolated static boat VBO, shared across both eyes
+    reverie::sitka::TerrainGl harbor_gl;
+    reverie::sitka::TerrainGl harbor_panel_gl;
+    reverie::nativetext::LatoLayer harbor_text;
+    std::vector<reverie::sitka::HarborShopSite> harbor_sites;
+    reverie::sitka::HarborShopSession harbor_shop;
+    std::string harbor_last_text;
+    float shop_rx=1.f,shop_rz=0.f,shop_y=1.5f;
+    bool boat_dirty=false;
     reverie::nativetext::LatoLayer boat_text; // real licensed glyph atlas
     std::string last_boat_text;
     std::vector<reverie::sitka::Water> waters;
@@ -368,6 +377,28 @@ void* Create(const ReverieNativeHostV1* host) {
                         throw std::invalid_argument(
                             "Sitka city anchor outside dry source terrain");
             }
+            // Only the Thomsen real office is verified; other sites are
+            // gameplay desks requiring exact, sourced harbor structures.
+            const char* shop_path="sitka/harbor/shops.txt";
+            uint32_t shop_bytes=0u;
+            const int32_t shop_probe=host->read_asset(
+                shop_path,nullptr,0u,&shop_bytes);
+            if(shop_probe!=REVERIE_NATIVE_SAVE_NOT_FOUND){
+                if((shop_probe!=REVERIE_NATIVE_SAVE_OK &&
+                    shop_probe!=REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL)||
+                   shop_bytes<110u||
+                   shop_bytes>reverie::sitka::kMaxHarborShopBytes)
+                    throw std::invalid_argument("Invalid Sitka harbor shop asset");
+                state->harbor_sites=reverie::sitka::ParseHarborShops(
+                    ReadText(host,shop_path,
+                        static_cast<uint32_t>(reverie::sitka::kMaxHarborShopBytes)),
+                    state->terrain.origin_east,state->terrain.origin_north);
+                for(const auto& site:state->harbor_sites)
+                    if(!reverie::sitka::VerifiedHarborSite(
+                        site,*state->walk_session,state->shore_colliders))
+                        throw std::invalid_argument(
+                            "Sitka shop not at reviewed land/shore feature");
+            }
             // A skiff berth must be explicitly authored in projected metres.
             // Its absence is a supported editor/fishing-only preview. A
             // malformed PRESENT berth fails closed rather than inventing a
@@ -451,6 +482,26 @@ int32_t OnGlCreated(void* instance) {
         Log(state->host,error.c_str());
         return 0;
     }
+    if(!state->harbor_sites.empty()){
+        const auto signs=reverie::sitka::HarborShopSigns(
+            state->harbor_sites,*state->walk_session);
+        if(!state->harbor_gl.Create(signs,state->lighting,&error)||
+           !state->harbor_panel_gl.Create(
+                reverie::sitka::HarborShopPanelMesh(),
+                state->lighting,&error)||
+           !state->harbor_text.Create()){
+            state->harbor_text.Release();
+            state->harbor_panel_gl.Release();
+            state->harbor_gl.Release();
+            state->beach_gl.Release();
+            state->shore_gl.Release();
+            state->water_gl.Release();
+            state->gl.Release();
+            Log(state->host,error.empty()?
+                "Sitka harbor shop GL/font initialization failed":error.c_str());
+            return 0;
+        }
+    }
     if(state->walk_graph &&
        !state->walk_gl.Create(state->walk_mesh,state->lighting,&error)){
         state->shore_deck_gl.Release();
@@ -510,6 +561,10 @@ void ReleaseGl(void* instance) {
         static_cast<State*>(instance)->horizon_gpu.Release();
         static_cast<State*>(instance)->boat_text.Release();
         static_cast<State*>(instance)->last_boat_text.clear();
+        static_cast<State*>(instance)->harbor_text.Release();
+        static_cast<State*>(instance)->harbor_last_text.clear();
+        static_cast<State*>(instance)->harbor_panel_gl.Release();
+        static_cast<State*>(instance)->harbor_gl.Release();
         static_cast<State*>(instance)->boat_gl.Release();
         static_cast<State*>(instance)->bridge_gl.Release();
         static_cast<State*>(instance)->shore_deck_gl.Release();
@@ -544,6 +599,7 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     // Suspend stepping while actively angling or controlling the boat.
     if(state->walk_session && listener &&
        !(state->skiff&&state->skiff->Active()) &&
+       !state->harbor_shop.open() &&
        state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready)
         state->walk_session->Advance(
             input->move_x,-input->move_y,input->listener_right,
@@ -584,7 +640,69 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         }
     }
+    // Source-vetted office sign interaction, once per native simulation update.
+    int aimed_shop=-1;
+    if(state->walk_session&&listener&&!state->harbor_sites.empty()&&
+       ReverieNativeInputHasPointerV1(input)){
+        ReverieNativeInputV1 ray=*input;
+        if(ReverieNativeSanitizePointerV1(&ray)){
+            const float source[3]={
+                ray.pointer_origin[0]+foot.x,
+                ray.pointer_origin[1]+foot.ground_y,
+                ray.pointer_origin[2]+foot.z};
+            aimed_shop=reverie::sitka::HarborShopTarget(
+                state->harbor_sites,*state->walk_session,
+                source,ray.pointer_direction);
+        }
+    }
+    const auto shop_event=state->harbor_shop.Update(
+        input->primary_down!=0u,input->secondary_down!=0u,
+        input->move_y,aimed_shop,state->fishing,
+        state->skiff&&state->skiff->Active());
+    if(shop_event==reverie::sitka::ShopEvent::Purchased){
+        const auto old=state->helm;
+        state->helm=reverie::sitka::HelmFromJournal(
+            state->fishing.fishing.journal);
+        state->helm_layout=reverie::sitka::AssembleHelm(state->helm);
+        if(old.hull!=state->helm.hull||old.owned!=state->helm.owned)
+            state->boat_dirty=true;
+        if(!state->fishing.Flush(Store(state)))
+            Log(state->host,"Sitka harbor purchase save pending retry");
+    }
+    if(shop_event==reverie::sitka::ShopEvent::Denied)
+        ReverieNativeRequestFeedbackV1(
+            state->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+    else if(shop_event==reverie::sitka::ShopEvent::Purchased||
+            shop_event==reverie::sitka::ShopEvent::Open||
+            shop_event==reverie::sitka::ShopEvent::Close)
+        ReverieNativeRequestFeedbackV1(
+            state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+    if(state->harbor_shop.open()){
+        state->shop_rx=input->listener_right[0];
+        state->shop_rz=input->listener_right[2];
+        state->shop_y=foot.ground_y+
+            std::clamp(input->listener_position[1],.8f,2.f);
+        const auto lines=reverie::sitka::HarborShopPanel(
+            state->harbor_shop,state->fishing);
+        std::string signature;
+        for(const auto& line:lines){signature+=line;signature+='\n';}
+        if(signature!=state->harbor_last_text){
+            state->harbor_text.Clear();
+            for(size_t i=0;i<lines.size();++i)
+                state->harbor_text.Fit(
+                    lines[i].c_str(),-.69f,.37f-float(i)*.135f,
+                    1.40f,.019f,
+                    i==3u?1.f:.84f,
+                    i==4u?.90f:.94f,
+                    i==4u?.58f:.91f,.015f);
+            state->harbor_last_text=signature;
+        }
+    }else if(!state->harbor_last_text.empty()){
+        state->harbor_text.Clear();state->harbor_last_text.clear();
+    }
     const bool boat_chord=state->skiff &&
+        !state->harbor_shop.open()&&
+        !state->harbor_shop.consumes_primary()&&
         input->primary_down!=0u&&input->secondary_down!=0u;
     // Boat simulation advances first. This is the AUTHORITATIVE world pose
     // once launched, not a camera projection or the headset's temporary
@@ -680,11 +798,14 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         state->has_focus=true;
     }
     if(!input->primary_down)state->beach_primary_latched=false;
+    if(state->harbor_shop.consumes_primary())
+        state->beach_primary_latched=true;
     // Point at nearby low-poly beach finds to record them. This uses the
     // same sanitized native controller ray as fishing, but a distinct
     // one-press latch prevents one pickup from becoming a held cast.
     if(state->walk_session && listener &&
        !state->beach_primary_latched &&
+       !state->harbor_shop.open() &&
        !(state->skiff&&state->skiff->Active()) &&
        state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready &&
        input->primary_down && !state->beach_sites.empty() &&
@@ -733,6 +854,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     if(target.valid && (!state->walk_session || !listener))
         target.valid=false;
     const bool fishing_control=!boat_chord&&
+        !state->harbor_shop.open()&&
+        !state->harbor_shop.consumes_primary()&&
         !(state->skiff&&state->skiff->Active());
     const auto event=state->fishing.Update(input->delta_seconds,
         fishing_control&&!state->beach_primary_latched&&
@@ -765,6 +888,15 @@ int32_t PrepareFrame(void* instance){
     if(!state||!state->gl.ready())return 0;
     // Collection changes are rebuilt ONCE between stereo eye frames,
     // never from RenderEye or during input simulation.
+    if(state->boat_dirty&&state->skiff&&state->boat_gl.ready()){
+        std::string error;
+        if(!state->boat_gl.Create(
+            reverie::sitka::BuildBoatMesh(state->helm),
+            state->lighting,&error)){
+            Log(state->host,error.c_str());return 0;
+        }
+        state->boat_dirty=false;
+    }
     if(state->beach_dirty && state->beach_gl.ready() &&
        state->walk_session){
         std::string error;
@@ -882,6 +1014,8 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(state->walk_graph && !state->walk_gl.RenderEye(world_eye))return 0;
     if(state->beach_gl.ready() &&
        !state->beach_gl.RenderEye(world_eye))return 0;
+    if(state->harbor_gl.ready() &&
+       !state->harbor_gl.RenderEye(world_eye))return 0;
     // Reuse the very same per-feature LOD outcome for colored sides and
     // textured top. The two eye renders never rebuild the source polygon.
     if(state->shore_deck_gl.ready() && state->shore_stream &&
@@ -893,6 +1027,24 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(state->bridge_gl.ready() && state->bridge_view &&
        state->bridge_view->visible() &&
        !state->bridge_gl.RenderEye(world_eye))return 0;
+    if(state->harbor_shop.open()&&state->harbor_panel_gl.ready()){
+        const float length=std::hypot(state->shop_rx,state->shop_rz);
+        if(length>.01f){
+            const float x=state->shop_rx/length,z=state->shop_rz/length;
+            const auto body=state->walk_session->pose();
+            const float mat[16]={
+                x,0.f,z,0.f, 0.f,1.f,0.f,0.f,
+                -z,0.f,x,0.f,
+                body.x+z*1.55f,state->shop_y,
+                body.z-x*1.55f,1.f
+            };
+            if(!state->harbor_panel_gl.RenderEye(world_eye,mat))return 0;
+            float vp[16],mvp[16];
+            ReverieNativeMat4Multiply(vp,world_eye->projection,world_eye->view);
+            ReverieNativeMat4Multiply(mvp,vp,mat);
+            if(!state->harbor_text.Draw(mvp,true))return 0;
+        }
+    }
     if(!state->skiff||!state->skiff->Active())return 1;
     const auto& pose=state->skiff->Pose();
     const reverie::sitka::Water* water=reverie::sitka::SitkaWorldWater(
