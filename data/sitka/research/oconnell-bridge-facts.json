@@ -1,0 +1,63 @@
+{
+  "format": "sitka-oconnell-bridge-source-facts-1",
+  "record_date": "2026-11-04",
+  "identity": "John O'Connell Memorial Bridge",
+  "status": "SOURCE_MEASUREMENTS_ONLY_NO_APPROVED_GEODETIC_ALIGNMENT",
+  "anchor_haer_wgs84": {
+    "lat": 57.047899,
+    "lon": -135.340627,
+    "note": "LOC survey locator; NOT a surveyed pylon or bridge-endpoint coordinate",
+    "source": "https://www.loc.gov/item/ak0342/"
+  },
+  "measurements": {
+    "total_length": {
+      "feet": 1255,
+      "meters": 382.524
+    },
+    "main_span": {
+      "feet": 450,
+      "meters": 137.16
+    },
+    "reported_deck_width": {
+      "feet": 38,
+      "meters": 11.5824
+    },
+    "tower_height": {
+      "feet": 100,
+      "meters": 30.48
+    },
+    "tower_configuration": {
+      "sets": 2,
+      "towers_per_set": 2
+    },
+    "stay_cables": {
+      "pattern": "harp",
+      "reported_each_direction": 3
+    }
+  },
+  "sources": [
+    {
+      "url": "https://www.akbizmag.com/industry/engineering/oconnell-bridge/",
+      "role": "engineering bridge dimensions, tower/cable configuration",
+      "published": "2023-02-20"
+    },
+    {
+      "url": "https://www.loc.gov/item/ak0342/",
+      "role": "historical source identity and geographic survey locator",
+      "collection": "HAER AK-27"
+    },
+    {
+      "url": "https://seismic.alaska.gov/download/ashsc_meetings_minutes/2006_12_05_Yang_MonitoringPortAccessViaductAnc.pdf",
+      "role": "engineering main span cross-check"
+    }
+  ],
+  "unresolved": [
+    "Surveyed bridge axis and endpoints",
+    "Precise pylon footprints/pier positions",
+    "Terrain and tide vertical datum",
+    "Deck rise profile",
+    "Historic-to-present bridge modifications",
+    "Detailed guardrails and foundations"
+  ],
+  "model_policy": "May author source-only bridge template from documented measurements; do not instantiate into Sitka world until verified alignment and elevation."
+}

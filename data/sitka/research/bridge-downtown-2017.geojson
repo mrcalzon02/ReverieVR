@@ -1,0 +1,5418 @@
+{
+  "type": "FeatureCollection",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "metadata": {
+    "format": "sitka-2017-building-source-candidate-1",
+    "state": "ARCHIVE_ONLY_NOT_INSTALLED",
+    "source_repository": "https://github.com/joshuahouston/sitka-buildings",
+    "source_path": "buildings/buildings_raw.geojson",
+    "exact_upstream_git_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85",
+    "source_readme_status": "2017-01-09: retired; OSM is the current source",
+    "original_dataset_rights": "Original Sitka footprint import described as public domain by OSM wiki; verify rights per source before distribution",
+    "source_rights_reference": "https://wiki.openstreetmap.org/wiki/Sitka,_AK/Buildings_Import",
+    "selection_anchor": {
+      "description": "Library of Congress HAER AK-27 O'Connell Bridge point; research selection center ONLY",
+      "lat": 57.047899,
+      "lon": -135.340627,
+      "source_url": "https://www.loc.gov/item/ak0342/"
+    },
+    "selection": "nearest 96 original polygons in 650 metre research radius; source coordinates unchanged",
+    "feature_count": 96,
+    "note": "2017 reference geometry is not proof a structure exists in 2026; no automatic runtime load"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1659",
+      "properties": {
+        "feature_id": "sitka2017_l1659",
+        "source_feature_id": "archive:joshuahouston:line:1659",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.343505,
+              57.046685
+            ],
+            [
+              -135.343422,
+              57.046755
+            ],
+            [
+              -135.343238,
+              57.046689
+            ],
+            [
+              -135.343322,
+              57.04662
+            ],
+            [
+              -135.343505,
+              57.046685
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1678",
+      "properties": {
+        "feature_id": "sitka2017_l1678",
+        "source_feature_id": "archive:joshuahouston:line:1678",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.343169,
+              57.046784
+            ],
+            [
+              -135.343058,
+              57.04685
+            ],
+            [
+              -135.342916,
+              57.046779
+            ],
+            [
+              -135.343027,
+              57.046713
+            ],
+            [
+              -135.343169,
+              57.046784
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1761",
+      "properties": {
+        "feature_id": "sitka2017_l1761",
+        "source_feature_id": "archive:joshuahouston:line:1761",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.341905,
+              57.051064
+            ],
+            [
+              -135.341685,
+              57.051137
+            ],
+            [
+              -135.341594,
+              57.051055
+            ],
+            [
+              -135.341639,
+              57.05104
+            ],
+            [
+              -135.341544,
+              57.050954
+            ],
+            [
+              -135.341664,
+              57.050914
+            ],
+            [
+              -135.341725,
+              57.050969
+            ],
+            [
+              -135.341779,
+              57.050952
+            ],
+            [
+              -135.341905,
+              57.051064
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1764",
+      "properties": {
+        "feature_id": "sitka2017_l1764",
+        "source_feature_id": "archive:joshuahouston:line:1764",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.341872,
+              57.051255
+            ],
+            [
+              -135.341667,
+              57.051319
+            ],
+            [
+              -135.341583,
+              57.051242
+            ],
+            [
+              -135.34172,
+              57.051198
+            ],
+            [
+              -135.341741,
+              57.051218
+            ],
+            [
+              -135.34181,
+              57.051197
+            ],
+            [
+              -135.341872,
+              57.051255
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1776",
+      "properties": {
+        "feature_id": "sitka2017_l1776",
+        "source_feature_id": "archive:joshuahouston:line:1776",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.341509,
+              57.05065
+            ],
+            [
+              -135.341131,
+              57.05085
+            ],
+            [
+              -135.340955,
+              57.050751
+            ],
+            [
+              -135.341332,
+              57.050551
+            ],
+            [
+              -135.341509,
+              57.05065
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1777",
+      "properties": {
+        "feature_id": "sitka2017_l1777",
+        "source_feature_id": "archive:joshuahouston:line:1777",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.341489,
+              57.05137
+            ],
+            [
+              -135.341314,
+              57.05142
+            ],
+            [
+              -135.341216,
+              57.05132
+            ],
+            [
+              -135.341391,
+              57.051269
+            ],
+            [
+              -135.341489,
+              57.05137
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1784",
+      "properties": {
+        "feature_id": "sitka2017_l1784",
+        "source_feature_id": "archive:joshuahouston:line:1784",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.341366,
+              57.051268
+            ],
+            [
+              -135.341217,
+              57.051309
+            ],
+            [
+              -135.341162,
+              57.051251
+            ],
+            [
+              -135.341311,
+              57.051209
+            ],
+            [
+              -135.341366,
+              57.051268
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1793",
+      "properties": {
+        "feature_id": "sitka2017_l1793",
+        "source_feature_id": "archive:joshuahouston:line:1793",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.341265,
+              57.051206
+            ],
+            [
+              -135.341065,
+              57.051254
+            ],
+            [
+              -135.340956,
+              57.051118
+            ],
+            [
+              -135.341156,
+              57.05107
+            ],
+            [
+              -135.341265,
+              57.051206
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1805",
+      "properties": {
+        "feature_id": "sitka2017_l1805",
+        "source_feature_id": "archive:joshuahouston:line:1805",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.341016,
+              57.051439
+            ],
+            [
+              -135.340911,
+              57.051475
+            ],
+            [
+              -135.340843,
+              57.051415
+            ],
+            [
+              -135.340948,
+              57.051379
+            ],
+            [
+              -135.341016,
+              57.051439
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1806",
+      "properties": {
+        "feature_id": "sitka2017_l1806",
+        "source_feature_id": "archive:joshuahouston:line:1806",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340995,
+              57.050627
+            ],
+            [
+              -135.340936,
+              57.050668
+            ],
+            [
+              -135.340849,
+              57.050631
+            ],
+            [
+              -135.340908,
+              57.05059
+            ],
+            [
+              -135.340995,
+              57.050627
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1808",
+      "properties": {
+        "feature_id": "sitka2017_l1808",
+        "source_feature_id": "archive:joshuahouston:line:1808",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340982,
+              57.050921
+            ],
+            [
+              -135.340862,
+              57.050967
+            ],
+            [
+              -135.340754,
+              57.050885
+            ],
+            [
+              -135.340874,
+              57.050838
+            ],
+            [
+              -135.340982,
+              57.050921
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1816",
+      "properties": {
+        "feature_id": "sitka2017_l1816",
+        "source_feature_id": "archive:joshuahouston:line:1816",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.34085,
+              57.049932
+            ],
+            [
+              -135.340719,
+              57.050021
+            ],
+            [
+              -135.340764,
+              57.050045
+            ],
+            [
+              -135.340727,
+              57.050061
+            ],
+            [
+              -135.340658,
+              57.050029
+            ],
+            [
+              -135.340622,
+              57.050053
+            ],
+            [
+              -135.3406,
+              57.050039
+            ],
+            [
+              -135.340424,
+              57.050164
+            ],
+            [
+              -135.340315,
+              57.050121
+            ],
+            [
+              -135.340072,
+              57.050292
+            ],
+            [
+              -135.33973,
+              57.050153
+            ],
+            [
+              -135.339859,
+              57.050061
+            ],
+            [
+              -135.339828,
+              57.050047
+            ],
+            [
+              -135.340038,
+              57.049903
+            ],
+            [
+              -135.340064,
+              57.049913
+            ],
+            [
+              -135.340151,
+              57.049848
+            ],
+            [
+              -135.339897,
+              57.049751
+            ],
+            [
+              -135.340041,
+              57.049652
+            ],
+            [
+              -135.340239,
+              57.049731
+            ],
+            [
+              -135.340154,
+              57.049787
+            ],
+            [
+              -135.340198,
+              57.049802
+            ],
+            [
+              -135.340459,
+              57.049687
+            ],
+            [
+              -135.340575,
+              57.049771
+            ],
+            [
+              -135.340635,
+              57.049751
+            ],
+            [
+              -135.340765,
+              57.049844
+            ],
+            [
+              -135.340739,
+              57.049853
+            ],
+            [
+              -135.34085,
+              57.049932
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1817",
+      "properties": {
+        "feature_id": "sitka2017_l1817",
+        "source_feature_id": "archive:joshuahouston:line:1817",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340852,
+              57.050824
+            ],
+            [
+              -135.340651,
+              57.050923
+            ],
+            [
+              -135.340539,
+              57.050856
+            ],
+            [
+              -135.340739,
+              57.050757
+            ],
+            [
+              -135.340852,
+              57.050824
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1819",
+      "properties": {
+        "feature_id": "sitka2017_l1819",
+        "source_feature_id": "archive:joshuahouston:line:1819",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340829,
+              57.051263
+            ],
+            [
+              -135.340647,
+              57.05133
+            ],
+            [
+              -135.340555,
+              57.051255
+            ],
+            [
+              -135.340736,
+              57.051188
+            ],
+            [
+              -135.340829,
+              57.051263
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1820",
+      "properties": {
+        "feature_id": "sitka2017_l1820",
+        "source_feature_id": "archive:joshuahouston:line:1820",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340826,
+              57.048634
+            ],
+            [
+              -135.340693,
+              57.048685
+            ],
+            [
+              -135.340538,
+              57.048564
+            ],
+            [
+              -135.340671,
+              57.048513
+            ],
+            [
+              -135.340826,
+              57.048634
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1826",
+      "properties": {
+        "feature_id": "sitka2017_l1826",
+        "source_feature_id": "archive:joshuahouston:line:1826",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340721,
+              57.051172
+            ],
+            [
+              -135.340577,
+              57.051227
+            ],
+            [
+              -135.340496,
+              57.051164
+            ],
+            [
+              -135.340639,
+              57.051109
+            ],
+            [
+              -135.340721,
+              57.051172
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1835",
+      "properties": {
+        "feature_id": "sitka2017_l1835",
+        "source_feature_id": "archive:joshuahouston:line:1835",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340564,
+              57.050685
+            ],
+            [
+              -135.340478,
+              57.050748
+            ],
+            [
+              -135.340403,
+              57.050718
+            ],
+            [
+              -135.340489,
+              57.050654
+            ],
+            [
+              -135.340564,
+              57.050685
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1838",
+      "properties": {
+        "feature_id": "sitka2017_l1838",
+        "source_feature_id": "archive:joshuahouston:line:1838",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340486,
+              57.050644
+            ],
+            [
+              -135.340372,
+              57.050728
+            ],
+            [
+              -135.340034,
+              57.050593
+            ],
+            [
+              -135.340148,
+              57.050509
+            ],
+            [
+              -135.340486,
+              57.050644
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1841",
+      "properties": {
+        "feature_id": "sitka2017_l1841",
+        "source_feature_id": "archive:joshuahouston:line:1841",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340437,
+              57.05119
+            ],
+            [
+              -135.340314,
+              57.051244
+            ],
+            [
+              -135.340208,
+              57.051171
+            ],
+            [
+              -135.340331,
+              57.051118
+            ],
+            [
+              -135.340437,
+              57.05119
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1847",
+      "properties": {
+        "feature_id": "sitka2017_l1847",
+        "source_feature_id": "archive:joshuahouston:line:1847",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340377,
+              57.051395
+            ],
+            [
+              -135.340157,
+              57.051488
+            ],
+            [
+              -135.340099,
+              57.051447
+            ],
+            [
+              -135.340319,
+              57.051354
+            ],
+            [
+              -135.340377,
+              57.051395
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1853",
+      "properties": {
+        "feature_id": "sitka2017_l1853",
+        "source_feature_id": "archive:joshuahouston:line:1853",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340308,
+              57.051086
+            ],
+            [
+              -135.340183,
+              57.051142
+            ],
+            [
+              -135.340091,
+              57.051082
+            ],
+            [
+              -135.340216,
+              57.051025
+            ],
+            [
+              -135.340308,
+              57.051086
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1854",
+      "properties": {
+        "feature_id": "sitka2017_l1854",
+        "source_feature_id": "archive:joshuahouston:line:1854",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340303,
+              57.050936
+            ],
+            [
+              -135.340195,
+              57.051
+            ],
+            [
+              -135.340106,
+              57.050957
+            ],
+            [
+              -135.340213,
+              57.050892
+            ],
+            [
+              -135.340303,
+              57.050936
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1855",
+      "properties": {
+        "feature_id": "sitka2017_l1855",
+        "source_feature_id": "archive:joshuahouston:line:1855",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340277,
+              57.048744
+            ],
+            [
+              -135.340049,
+              57.048824
+            ],
+            [
+              -135.339941,
+              57.048732
+            ],
+            [
+              -135.340168,
+              57.048653
+            ],
+            [
+              -135.340277,
+              57.048744
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1858",
+      "properties": {
+        "feature_id": "sitka2017_l1858",
+        "source_feature_id": "archive:joshuahouston:line:1858",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340237,
+              57.05128
+            ],
+            [
+              -135.340134,
+              57.051331
+            ],
+            [
+              -135.340026,
+              57.051265
+            ],
+            [
+              -135.340129,
+              57.051215
+            ],
+            [
+              -135.340237,
+              57.05128
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1864",
+      "properties": {
+        "feature_id": "sitka2017_l1864",
+        "source_feature_id": "archive:joshuahouston:line:1864",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340132,
+              57.051165
+            ],
+            [
+              -135.340013,
+              57.051226
+            ],
+            [
+              -135.339912,
+              57.051168
+            ],
+            [
+              -135.340031,
+              57.051107
+            ],
+            [
+              -135.340132,
+              57.051165
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1865",
+      "properties": {
+        "feature_id": "sitka2017_l1865",
+        "source_feature_id": "archive:joshuahouston:line:1865",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340124,
+              57.050511
+            ],
+            [
+              -135.340032,
+              57.050578
+            ],
+            [
+              -135.339938,
+              57.05054
+            ],
+            [
+              -135.340029,
+              57.050473
+            ],
+            [
+              -135.340124,
+              57.050511
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1869",
+      "properties": {
+        "feature_id": "sitka2017_l1869",
+        "source_feature_id": "archive:joshuahouston:line:1869",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340077,
+              57.050895
+            ],
+            [
+              -135.339977,
+              57.050959
+            ],
+            [
+              -135.339895,
+              57.050921
+            ],
+            [
+              -135.339994,
+              57.050857
+            ],
+            [
+              -135.340077,
+              57.050895
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1872",
+      "properties": {
+        "feature_id": "sitka2017_l1872",
+        "source_feature_id": "archive:joshuahouston:line:1872",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340034,
+              57.050624
+            ],
+            [
+              -135.339937,
+              57.050698
+            ],
+            [
+              -135.339732,
+              57.050618
+            ],
+            [
+              -135.339829,
+              57.050544
+            ],
+            [
+              -135.340034,
+              57.050624
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1873",
+      "properties": {
+        "feature_id": "sitka2017_l1873",
+        "source_feature_id": "archive:joshuahouston:line:1873",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340026,
+              57.048523
+            ],
+            [
+              -135.340025,
+              57.048529
+            ],
+            [
+              -135.340023,
+              57.048535
+            ],
+            [
+              -135.340018,
+              57.048541
+            ],
+            [
+              -135.340012,
+              57.048546
+            ],
+            [
+              -135.340004,
+              57.048551
+            ],
+            [
+              -135.339995,
+              57.048554
+            ],
+            [
+              -135.339985,
+              57.048557
+            ],
+            [
+              -135.339974,
+              57.048559
+            ],
+            [
+              -135.339963,
+              57.048559
+            ],
+            [
+              -135.339951,
+              57.048559
+            ],
+            [
+              -135.33994,
+              57.048558
+            ],
+            [
+              -135.33993,
+              57.048555
+            ],
+            [
+              -135.33992,
+              57.048552
+            ],
+            [
+              -135.339912,
+              57.048547
+            ],
+            [
+              -135.339905,
+              57.048543
+            ],
+            [
+              -135.3399,
+              57.048537
+            ],
+            [
+              -135.339897,
+              57.048531
+            ],
+            [
+              -135.339896,
+              57.048525
+            ],
+            [
+              -135.339897,
+              57.048519
+            ],
+            [
+              -135.339899,
+              57.048513
+            ],
+            [
+              -135.339904,
+              57.048507
+            ],
+            [
+              -135.33991,
+              57.048502
+            ],
+            [
+              -135.339918,
+              57.048497
+            ],
+            [
+              -135.339927,
+              57.048494
+            ],
+            [
+              -135.339937,
+              57.048491
+            ],
+            [
+              -135.339948,
+              57.048489
+            ],
+            [
+              -135.339959,
+              57.048488
+            ],
+            [
+              -135.339971,
+              57.048489
+            ],
+            [
+              -135.339982,
+              57.04849
+            ],
+            [
+              -135.339992,
+              57.048493
+            ],
+            [
+              -135.340001,
+              57.048496
+            ],
+            [
+              -135.34001,
+              57.0485
+            ],
+            [
+              -135.340016,
+              57.048505
+            ],
+            [
+              -135.340021,
+              57.048511
+            ],
+            [
+              -135.340025,
+              57.048517
+            ],
+            [
+              -135.340026,
+              57.048523
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1875",
+      "properties": {
+        "feature_id": "sitka2017_l1875",
+        "source_feature_id": "archive:joshuahouston:line:1875",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.340001,
+              57.050469
+            ],
+            [
+              -135.339904,
+              57.05054
+            ],
+            [
+              -135.339766,
+              57.050485
+            ],
+            [
+              -135.339863,
+              57.050414
+            ],
+            [
+              -135.340001,
+              57.050469
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1876",
+      "properties": {
+        "feature_id": "sitka2017_l1876",
+        "source_feature_id": "archive:joshuahouston:line:1876",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339971,
+              57.048884
+            ],
+            [
+              -135.339796,
+              57.048945
+            ],
+            [
+              -135.339681,
+              57.048846
+            ],
+            [
+              -135.339856,
+              57.048786
+            ],
+            [
+              -135.339971,
+              57.048884
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1877",
+      "properties": {
+        "feature_id": "sitka2017_l1877",
+        "source_feature_id": "archive:joshuahouston:line:1877",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339972,
+              57.051262
+            ],
+            [
+              -135.339845,
+              57.051304
+            ],
+            [
+              -135.339779,
+              57.051245
+            ],
+            [
+              -135.339906,
+              57.051203
+            ],
+            [
+              -135.339972,
+              57.051262
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1880",
+      "properties": {
+        "feature_id": "sitka2017_l1880",
+        "source_feature_id": "archive:joshuahouston:line:1880",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339951,
+              57.048419
+            ],
+            [
+              -135.33995,
+              57.048422
+            ],
+            [
+              -135.339949,
+              57.048424
+            ],
+            [
+              -135.339947,
+              57.048427
+            ],
+            [
+              -135.339944,
+              57.048429
+            ],
+            [
+              -135.339941,
+              57.048431
+            ],
+            [
+              -135.339937,
+              57.048433
+            ],
+            [
+              -135.339932,
+              57.048434
+            ],
+            [
+              -135.339927,
+              57.048435
+            ],
+            [
+              -135.339923,
+              57.048435
+            ],
+            [
+              -135.339917,
+              57.048435
+            ],
+            [
+              -135.339912,
+              57.048434
+            ],
+            [
+              -135.339908,
+              57.048433
+            ],
+            [
+              -135.339904,
+              57.048432
+            ],
+            [
+              -135.3399,
+              57.04843
+            ],
+            [
+              -135.339897,
+              57.048428
+            ],
+            [
+              -135.339895,
+              57.048425
+            ],
+            [
+              -135.339893,
+              57.048423
+            ],
+            [
+              -135.339893,
+              57.04842
+            ],
+            [
+              -135.339893,
+              57.048417
+            ],
+            [
+              -135.339894,
+              57.048414
+            ],
+            [
+              -135.339896,
+              57.048412
+            ],
+            [
+              -135.339899,
+              57.04841
+            ],
+            [
+              -135.339903,
+              57.048408
+            ],
+            [
+              -135.339907,
+              57.048406
+            ],
+            [
+              -135.339911,
+              57.048405
+            ],
+            [
+              -135.339916,
+              57.048404
+            ],
+            [
+              -135.339921,
+              57.048404
+            ],
+            [
+              -135.339926,
+              57.048404
+            ],
+            [
+              -135.339931,
+              57.048404
+            ],
+            [
+              -135.339936,
+              57.048406
+            ],
+            [
+              -135.33994,
+              57.048407
+            ],
+            [
+              -135.339943,
+              57.048409
+            ],
+            [
+              -135.339946,
+              57.048411
+            ],
+            [
+              -135.339949,
+              57.048414
+            ],
+            [
+              -135.33995,
+              57.048416
+            ],
+            [
+              -135.339951,
+              57.048419
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1881",
+      "properties": {
+        "feature_id": "sitka2017_l1881",
+        "source_feature_id": "archive:joshuahouston:line:1881",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.33995,
+              57.048661
+            ],
+            [
+              -135.339865,
+              57.048692
+            ],
+            [
+              -135.339802,
+              57.04864
+            ],
+            [
+              -135.339887,
+              57.048609
+            ],
+            [
+              -135.33995,
+              57.048661
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1883",
+      "properties": {
+        "feature_id": "sitka2017_l1883",
+        "source_feature_id": "archive:joshuahouston:line:1883",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339935,
+              57.048466
+            ],
+            [
+              -135.339934,
+              57.04847
+            ],
+            [
+              -135.339933,
+              57.048473
+            ],
+            [
+              -135.33993,
+              57.048477
+            ],
+            [
+              -135.339926,
+              57.04848
+            ],
+            [
+              -135.339921,
+              57.048483
+            ],
+            [
+              -135.339916,
+              57.048485
+            ],
+            [
+              -135.33991,
+              57.048486
+            ],
+            [
+              -135.339903,
+              57.048488
+            ],
+            [
+              -135.339896,
+              57.048488
+            ],
+            [
+              -135.339889,
+              57.048488
+            ],
+            [
+              -135.339883,
+              57.048487
+            ],
+            [
+              -135.339876,
+              57.048485
+            ],
+            [
+              -135.339871,
+              57.048483
+            ],
+            [
+              -135.339866,
+              57.048481
+            ],
+            [
+              -135.339862,
+              57.048478
+            ],
+            [
+              -135.339859,
+              57.048474
+            ],
+            [
+              -135.339857,
+              57.048471
+            ],
+            [
+              -135.339856,
+              57.048467
+            ],
+            [
+              -135.339856,
+              57.048463
+            ],
+            [
+              -135.339858,
+              57.04846
+            ],
+            [
+              -135.339861,
+              57.048456
+            ],
+            [
+              -135.339864,
+              57.048453
+            ],
+            [
+              -135.339869,
+              57.048451
+            ],
+            [
+              -135.339875,
+              57.048448
+            ],
+            [
+              -135.339881,
+              57.048447
+            ],
+            [
+              -135.339887,
+              57.048445
+            ],
+            [
+              -135.339894,
+              57.048445
+            ],
+            [
+              -135.339901,
+              57.048445
+            ],
+            [
+              -135.339908,
+              57.048446
+            ],
+            [
+              -135.339914,
+              57.048448
+            ],
+            [
+              -135.33992,
+              57.04845
+            ],
+            [
+              -135.339925,
+              57.048452
+            ],
+            [
+              -135.339929,
+              57.048455
+            ],
+            [
+              -135.339932,
+              57.048459
+            ],
+            [
+              -135.339934,
+              57.048462
+            ],
+            [
+              -135.339935,
+              57.048466
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1884",
+      "properties": {
+        "feature_id": "sitka2017_l1884",
+        "source_feature_id": "archive:joshuahouston:line:1884",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339901,
+              57.051093
+            ],
+            [
+              -135.339734,
+              57.0512
+            ],
+            [
+              -135.339663,
+              57.051167
+            ],
+            [
+              -135.339831,
+              57.05106
+            ],
+            [
+              -135.339901,
+              57.051093
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1885",
+      "properties": {
+        "feature_id": "sitka2017_l1885",
+        "source_feature_id": "archive:joshuahouston:line:1885",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339866,
+              57.04842
+            ],
+            [
+              -135.339866,
+              57.048425
+            ],
+            [
+              -135.339864,
+              57.048429
+            ],
+            [
+              -135.339861,
+              57.048434
+            ],
+            [
+              -135.339856,
+              57.048438
+            ],
+            [
+              -135.33985,
+              57.048441
+            ],
+            [
+              -135.339843,
+              57.048444
+            ],
+            [
+              -135.339835,
+              57.048446
+            ],
+            [
+              -135.339827,
+              57.048447
+            ],
+            [
+              -135.339818,
+              57.048448
+            ],
+            [
+              -135.339809,
+              57.048448
+            ],
+            [
+              -135.339801,
+              57.048447
+            ],
+            [
+              -135.339793,
+              57.048445
+            ],
+            [
+              -135.339786,
+              57.048442
+            ],
+            [
+              -135.339779,
+              57.048439
+            ],
+            [
+              -135.339774,
+              57.048435
+            ],
+            [
+              -135.33977,
+              57.048431
+            ],
+            [
+              -135.339768,
+              57.048426
+            ],
+            [
+              -135.339767,
+              57.048421
+            ],
+            [
+              -135.339767,
+              57.048417
+            ],
+            [
+              -135.33977,
+              57.048412
+            ],
+            [
+              -135.339773,
+              57.048408
+            ],
+            [
+              -135.339778,
+              57.048404
+            ],
+            [
+              -135.339784,
+              57.0484
+            ],
+            [
+              -135.339791,
+              57.048398
+            ],
+            [
+              -135.339799,
+              57.048395
+            ],
+            [
+              -135.339807,
+              57.048394
+            ],
+            [
+              -135.339816,
+              57.048394
+            ],
+            [
+              -135.339824,
+              57.048394
+            ],
+            [
+              -135.339833,
+              57.048395
+            ],
+            [
+              -135.339841,
+              57.048397
+            ],
+            [
+              -135.339848,
+              57.048399
+            ],
+            [
+              -135.339854,
+              57.048403
+            ],
+            [
+              -135.339859,
+              57.048407
+            ],
+            [
+              -135.339863,
+              57.048411
+            ],
+            [
+              -135.339866,
+              57.048415
+            ],
+            [
+              -135.339866,
+              57.04842
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1886",
+      "properties": {
+        "feature_id": "sitka2017_l1886",
+        "source_feature_id": "archive:joshuahouston:line:1886",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.33985,
+              57.04858
+            ],
+            [
+              -135.339849,
+              57.048589
+            ],
+            [
+              -135.339845,
+              57.048598
+            ],
+            [
+              -135.339838,
+              57.048607
+            ],
+            [
+              -135.339828,
+              57.048614
+            ],
+            [
+              -135.339816,
+              57.048621
+            ],
+            [
+              -135.339803,
+              57.048627
+            ],
+            [
+              -135.339787,
+              57.048631
+            ],
+            [
+              -135.339771,
+              57.048633
+            ],
+            [
+              -135.339754,
+              57.048634
+            ],
+            [
+              -135.339737,
+              57.048634
+            ],
+            [
+              -135.33972,
+              57.048632
+            ],
+            [
+              -135.339704,
+              57.048628
+            ],
+            [
+              -135.33969,
+              57.048623
+            ],
+            [
+              -135.339678,
+              57.048616
+            ],
+            [
+              -135.339667,
+              57.048609
+            ],
+            [
+              -135.33966,
+              57.048601
+            ],
+            [
+              -135.339655,
+              57.048591
+            ],
+            [
+              -135.339653,
+              57.048582
+            ],
+            [
+              -135.339654,
+              57.048573
+            ],
+            [
+              -135.339658,
+              57.048564
+            ],
+            [
+              -135.339665,
+              57.048555
+            ],
+            [
+              -135.339675,
+              57.048547
+            ],
+            [
+              -135.339686,
+              57.048541
+            ],
+            [
+              -135.3397,
+              57.048535
+            ],
+            [
+              -135.339715,
+              57.048531
+            ],
+            [
+              -135.339732,
+              57.048528
+            ],
+            [
+              -135.339749,
+              57.048527
+            ],
+            [
+              -135.339766,
+              57.048528
+            ],
+            [
+              -135.339783,
+              57.04853
+            ],
+            [
+              -135.339798,
+              57.048534
+            ],
+            [
+              -135.339813,
+              57.048539
+            ],
+            [
+              -135.339825,
+              57.048545
+            ],
+            [
+              -135.339835,
+              57.048553
+            ],
+            [
+              -135.339843,
+              57.048561
+            ],
+            [
+              -135.339848,
+              57.04857
+            ],
+            [
+              -135.33985,
+              57.04858
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1887",
+      "properties": {
+        "feature_id": "sitka2017_l1887",
+        "source_feature_id": "archive:joshuahouston:line:1887",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339847,
+              57.050895
+            ],
+            [
+              -135.339786,
+              57.050923
+            ],
+            [
+              -135.339816,
+              57.050939
+            ],
+            [
+              -135.339702,
+              57.051004
+            ],
+            [
+              -135.339657,
+              57.05098
+            ],
+            [
+              -135.339631,
+              57.050993
+            ],
+            [
+              -135.339518,
+              57.050938
+            ],
+            [
+              -135.339548,
+              57.050923
+            ],
+            [
+              -135.339514,
+              57.050905
+            ],
+            [
+              -135.339629,
+              57.05084
+            ],
+            [
+              -135.339683,
+              57.050869
+            ],
+            [
+              -135.339751,
+              57.050839
+            ],
+            [
+              -135.339847,
+              57.050895
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1889",
+      "properties": {
+        "feature_id": "sitka2017_l1889",
+        "source_feature_id": "archive:joshuahouston:line:1889",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339817,
+              57.048477
+            ],
+            [
+              -135.339817,
+              57.04848
+            ],
+            [
+              -135.339816,
+              57.048482
+            ],
+            [
+              -135.339814,
+              57.048485
+            ],
+            [
+              -135.339811,
+              57.048487
+            ],
+            [
+              -135.339808,
+              57.048489
+            ],
+            [
+              -135.339804,
+              57.048491
+            ],
+            [
+              -135.339799,
+              57.048492
+            ],
+            [
+              -135.339794,
+              57.048493
+            ],
+            [
+              -135.339789,
+              57.048493
+            ],
+            [
+              -135.339784,
+              57.048493
+            ],
+            [
+              -135.33978,
+              57.048492
+            ],
+            [
+              -135.339775,
+              57.048491
+            ],
+            [
+              -135.339771,
+              57.04849
+            ],
+            [
+              -135.339767,
+              57.048488
+            ],
+            [
+              -135.339764,
+              57.048485
+            ],
+            [
+              -135.339762,
+              57.048483
+            ],
+            [
+              -135.339761,
+              57.04848
+            ],
+            [
+              -135.33976,
+              57.048478
+            ],
+            [
+              -135.33976,
+              57.048475
+            ],
+            [
+              -135.339762,
+              57.048472
+            ],
+            [
+              -135.339764,
+              57.04847
+            ],
+            [
+              -135.339766,
+              57.048468
+            ],
+            [
+              -135.33977,
+              57.048466
+            ],
+            [
+              -135.339774,
+              57.048464
+            ],
+            [
+              -135.339778,
+              57.048463
+            ],
+            [
+              -135.339783,
+              57.048462
+            ],
+            [
+              -135.339788,
+              57.048462
+            ],
+            [
+              -135.339793,
+              57.048462
+            ],
+            [
+              -135.339798,
+              57.048463
+            ],
+            [
+              -135.339802,
+              57.048464
+            ],
+            [
+              -135.339807,
+              57.048465
+            ],
+            [
+              -135.33981,
+              57.048467
+            ],
+            [
+              -135.339813,
+              57.048469
+            ],
+            [
+              -135.339815,
+              57.048472
+            ],
+            [
+              -135.339817,
+              57.048474
+            ],
+            [
+              -135.339817,
+              57.048477
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1891",
+      "properties": {
+        "feature_id": "sitka2017_l1891",
+        "source_feature_id": "archive:joshuahouston:line:1891",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339808,
+              57.050417
+            ],
+            [
+              -135.339699,
+              57.050484
+            ],
+            [
+              -135.339656,
+              57.050464
+            ],
+            [
+              -135.339555,
+              57.050526
+            ],
+            [
+              -135.339436,
+              57.050469
+            ],
+            [
+              -135.339646,
+              57.050339
+            ],
+            [
+              -135.339808,
+              57.050417
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1892",
+      "properties": {
+        "feature_id": "sitka2017_l1892",
+        "source_feature_id": "archive:joshuahouston:line:1892",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339809,
+              57.051008
+            ],
+            [
+              -135.339759,
+              57.051031
+            ],
+            [
+              -135.339719,
+              57.051006
+            ],
+            [
+              -135.339768,
+              57.050983
+            ],
+            [
+              -135.339809,
+              57.051008
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1895",
+      "properties": {
+        "feature_id": "sitka2017_l1895",
+        "source_feature_id": "archive:joshuahouston:line:1895",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339777,
+              57.048381
+            ],
+            [
+              -135.339777,
+              57.048387
+            ],
+            [
+              -135.339774,
+              57.048393
+            ],
+            [
+              -135.339769,
+              57.048399
+            ],
+            [
+              -135.339763,
+              57.048404
+            ],
+            [
+              -135.339755,
+              57.048408
+            ],
+            [
+              -135.339746,
+              57.048412
+            ],
+            [
+              -135.339736,
+              57.048415
+            ],
+            [
+              -135.339725,
+              57.048416
+            ],
+            [
+              -135.339713,
+              57.048417
+            ],
+            [
+              -135.339702,
+              57.048417
+            ],
+            [
+              -135.339691,
+              57.048415
+            ],
+            [
+              -135.339681,
+              57.048413
+            ],
+            [
+              -135.339671,
+              57.048409
+            ],
+            [
+              -135.339663,
+              57.048405
+            ],
+            [
+              -135.339656,
+              57.0484
+            ],
+            [
+              -135.339651,
+              57.048395
+            ],
+            [
+              -135.339648,
+              57.048389
+            ],
+            [
+              -135.339646,
+              57.048382
+            ],
+            [
+              -135.339647,
+              57.048376
+            ],
+            [
+              -135.33965,
+              57.04837
+            ],
+            [
+              -135.339654,
+              57.048365
+            ],
+            [
+              -135.339661,
+              57.048359
+            ],
+            [
+              -135.339669,
+              57.048355
+            ],
+            [
+              -135.339678,
+              57.048351
+            ],
+            [
+              -135.339688,
+              57.048348
+            ],
+            [
+              -135.339699,
+              57.048347
+            ],
+            [
+              -135.33971,
+              57.048346
+            ],
+            [
+              -135.339722,
+              57.048346
+            ],
+            [
+              -135.339733,
+              57.048348
+            ],
+            [
+              -135.339743,
+              57.04835
+            ],
+            [
+              -135.339753,
+              57.048354
+            ],
+            [
+              -135.339761,
+              57.048358
+            ],
+            [
+              -135.339768,
+              57.048363
+            ],
+            [
+              -135.339773,
+              57.048368
+            ],
+            [
+              -135.339776,
+              57.048374
+            ],
+            [
+              -135.339777,
+              57.048381
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1897",
+      "properties": {
+        "feature_id": "sitka2017_l1897",
+        "source_feature_id": "archive:joshuahouston:line:1897",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339737,
+              57.050588
+            ],
+            [
+              -135.339661,
+              57.050638
+            ],
+            [
+              -135.339521,
+              57.050574
+            ],
+            [
+              -135.339597,
+              57.050524
+            ],
+            [
+              -135.339737,
+              57.050588
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1899",
+      "properties": {
+        "feature_id": "sitka2017_l1899",
+        "source_feature_id": "archive:joshuahouston:line:1899",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339719,
+              57.048455
+            ],
+            [
+              -135.339718,
+              57.048461
+            ],
+            [
+              -135.339716,
+              57.048467
+            ],
+            [
+              -135.339711,
+              57.048473
+            ],
+            [
+              -135.339705,
+              57.048478
+            ],
+            [
+              -135.339698,
+              57.048482
+            ],
+            [
+              -135.339689,
+              57.048485
+            ],
+            [
+              -135.339679,
+              57.048488
+            ],
+            [
+              -135.339668,
+              57.04849
+            ],
+            [
+              -135.339658,
+              57.048491
+            ],
+            [
+              -135.339646,
+              57.04849
+            ],
+            [
+              -135.339636,
+              57.048489
+            ],
+            [
+              -135.339626,
+              57.048486
+            ],
+            [
+              -135.339617,
+              57.048483
+            ],
+            [
+              -135.339609,
+              57.048479
+            ],
+            [
+              -135.339602,
+              57.048474
+            ],
+            [
+              -135.339597,
+              57.048469
+            ],
+            [
+              -135.339594,
+              57.048463
+            ],
+            [
+              -135.339593,
+              57.048457
+            ],
+            [
+              -135.339594,
+              57.048451
+            ],
+            [
+              -135.339596,
+              57.048445
+            ],
+            [
+              -135.339601,
+              57.04844
+            ],
+            [
+              -135.339607,
+              57.048435
+            ],
+            [
+              -135.339614,
+              57.04843
+            ],
+            [
+              -135.339623,
+              57.048427
+            ],
+            [
+              -135.339633,
+              57.048424
+            ],
+            [
+              -135.339644,
+              57.048423
+            ],
+            [
+              -135.339654,
+              57.048422
+            ],
+            [
+              -135.339665,
+              57.048422
+            ],
+            [
+              -135.339676,
+              57.048424
+            ],
+            [
+              -135.339686,
+              57.048426
+            ],
+            [
+              -135.339695,
+              57.048429
+            ],
+            [
+              -135.339703,
+              57.048434
+            ],
+            [
+              -135.33971,
+              57.048438
+            ],
+            [
+              -135.339715,
+              57.048444
+            ],
+            [
+              -135.339718,
+              57.048449
+            ],
+            [
+              -135.339719,
+              57.048455
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1908",
+      "properties": {
+        "feature_id": "sitka2017_l1908",
+        "source_feature_id": "archive:joshuahouston:line:1908",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339507,
+              57.05126
+            ],
+            [
+              -135.339082,
+              57.05142
+            ],
+            [
+              -135.338973,
+              57.051334
+            ],
+            [
+              -135.339398,
+              57.051174
+            ],
+            [
+              -135.339507,
+              57.05126
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1910",
+      "properties": {
+        "feature_id": "sitka2017_l1910",
+        "source_feature_id": "archive:joshuahouston:line:1910",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339489,
+              57.048643
+            ],
+            [
+              -135.33944,
+              57.04866
+            ],
+            [
+              -135.339459,
+              57.048677
+            ],
+            [
+              -135.33938,
+              57.048702
+            ],
+            [
+              -135.339361,
+              57.048685
+            ],
+            [
+              -135.339301,
+              57.048705
+            ],
+            [
+              -135.339151,
+              57.048569
+            ],
+            [
+              -135.339339,
+              57.048508
+            ],
+            [
+              -135.339489,
+              57.048643
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1911",
+      "properties": {
+        "feature_id": "sitka2017_l1911",
+        "source_feature_id": "archive:joshuahouston:line:1911",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339484,
+              57.050677
+            ],
+            [
+              -135.339457,
+              57.050744
+            ],
+            [
+              -135.339312,
+              57.050726
+            ],
+            [
+              -135.339339,
+              57.05066
+            ],
+            [
+              -135.339484,
+              57.050677
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1915",
+      "properties": {
+        "feature_id": "sitka2017_l1915",
+        "source_feature_id": "archive:joshuahouston:line:1915",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339418,
+              57.0509
+            ],
+            [
+              -135.339365,
+              57.050924
+            ],
+            [
+              -135.339326,
+              57.050899
+            ],
+            [
+              -135.33938,
+              57.050875
+            ],
+            [
+              -135.339418,
+              57.0509
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1916",
+      "properties": {
+        "feature_id": "sitka2017_l1916",
+        "source_feature_id": "archive:joshuahouston:line:1916",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339409,
+              57.050465
+            ],
+            [
+              -135.339361,
+              57.050496
+            ],
+            [
+              -135.3392,
+              57.05042
+            ],
+            [
+              -135.339292,
+              57.050363
+            ],
+            [
+              -135.339397,
+              57.050412
+            ],
+            [
+              -135.339354,
+              57.050439
+            ],
+            [
+              -135.339409,
+              57.050465
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1921",
+      "properties": {
+        "feature_id": "sitka2017_l1921",
+        "source_feature_id": "archive:joshuahouston:line:1921",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339344,
+              57.048458
+            ],
+            [
+              -135.339155,
+              57.048518
+            ],
+            [
+              -135.339096,
+              57.048462
+            ],
+            [
+              -135.339284,
+              57.048402
+            ],
+            [
+              -135.339344,
+              57.048458
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1923",
+      "properties": {
+        "feature_id": "sitka2017_l1923",
+        "source_feature_id": "archive:joshuahouston:line:1923",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339284,
+              57.050613
+            ],
+            [
+              -135.339206,
+              57.050665
+            ],
+            [
+              -135.339066,
+              57.050602
+            ],
+            [
+              -135.339144,
+              57.05055
+            ],
+            [
+              -135.339284,
+              57.050613
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1925",
+      "properties": {
+        "feature_id": "sitka2017_l1925",
+        "source_feature_id": "archive:joshuahouston:line:1925",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.339247,
+              57.050315
+            ],
+            [
+              -135.338969,
+              57.050333
+            ],
+            [
+              -135.338964,
+              57.050312
+            ],
+            [
+              -135.338912,
+              57.050314
+            ],
+            [
+              -135.33875,
+              57.050164
+            ],
+            [
+              -135.338852,
+              57.050157
+            ],
+            [
+              -135.338923,
+              57.050152
+            ],
+            [
+              -135.338918,
+              57.050128
+            ],
+            [
+              -135.339061,
+              57.050119
+            ],
+            [
+              -135.339202,
+              57.05011
+            ],
+            [
+              -135.339247,
+              57.050315
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1928",
+      "properties": {
+        "feature_id": "sitka2017_l1928",
+        "source_feature_id": "archive:joshuahouston:line:1928",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.33914,
+              57.04897
+            ],
+            [
+              -135.338946,
+              57.049027
+            ],
+            [
+              -135.33892,
+              57.049001
+            ],
+            [
+              -135.338856,
+              57.04902
+            ],
+            [
+              -135.338787,
+              57.04904
+            ],
+            [
+              -135.338816,
+              57.049069
+            ],
+            [
+              -135.338625,
+              57.049125
+            ],
+            [
+              -135.338449,
+              57.048947
+            ],
+            [
+              -135.338644,
+              57.04889
+            ],
+            [
+              -135.338563,
+              57.048808
+            ],
+            [
+              -135.338663,
+              57.048779
+            ],
+            [
+              -135.33872,
+              57.048837
+            ],
+            [
+              -135.338742,
+              57.048859
+            ],
+            [
+              -135.338966,
+              57.048794
+            ],
+            [
+              -135.33914,
+              57.04897
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1941",
+      "properties": {
+        "feature_id": "sitka2017_l1941",
+        "source_feature_id": "archive:joshuahouston:line:1941",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338901,
+              57.050655
+            ],
+            [
+              -135.338895,
+              57.050667
+            ],
+            [
+              -135.338881,
+              57.050677
+            ],
+            [
+              -135.338862,
+              57.050683
+            ],
+            [
+              -135.33884,
+              57.050684
+            ],
+            [
+              -135.338818,
+              57.050681
+            ],
+            [
+              -135.3388,
+              57.050674
+            ],
+            [
+              -135.338789,
+              57.050663
+            ],
+            [
+              -135.338786,
+              57.050651
+            ],
+            [
+              -135.338792,
+              57.05064
+            ],
+            [
+              -135.338805,
+              57.05063
+            ],
+            [
+              -135.338825,
+              57.050624
+            ],
+            [
+              -135.338847,
+              57.050622
+            ],
+            [
+              -135.338868,
+              57.050625
+            ],
+            [
+              -135.338886,
+              57.050632
+            ],
+            [
+              -135.338898,
+              57.050643
+            ],
+            [
+              -135.338901,
+              57.050655
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1951",
+      "properties": {
+        "feature_id": "sitka2017_l1951",
+        "source_feature_id": "archive:joshuahouston:line:1951",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338616,
+              57.050018
+            ],
+            [
+              -135.338566,
+              57.0501
+            ],
+            [
+              -135.338384,
+              57.050067
+            ],
+            [
+              -135.338434,
+              57.049985
+            ],
+            [
+              -135.338616,
+              57.050018
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1956",
+      "properties": {
+        "feature_id": "sitka2017_l1956",
+        "source_feature_id": "archive:joshuahouston:line:1956",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338564,
+              57.050228
+            ],
+            [
+              -135.338444,
+              57.050274
+            ],
+            [
+              -135.338394,
+              57.050234
+            ],
+            [
+              -135.338514,
+              57.050189
+            ],
+            [
+              -135.338564,
+              57.050228
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1957",
+      "properties": {
+        "feature_id": "sitka2017_l1957",
+        "source_feature_id": "archive:joshuahouston:line:1957",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338559,
+              57.049162
+            ],
+            [
+              -135.338101,
+              57.049298
+            ],
+            [
+              -135.337869,
+              57.049067
+            ],
+            [
+              -135.338101,
+              57.048998
+            ],
+            [
+              -135.338196,
+              57.049092
+            ],
+            [
+              -135.338421,
+              57.049025
+            ],
+            [
+              -135.338559,
+              57.049162
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1961",
+      "properties": {
+        "feature_id": "sitka2017_l1961",
+        "source_feature_id": "archive:joshuahouston:line:1961",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338486,
+              57.050733
+            ],
+            [
+              -135.338431,
+              57.050751
+            ],
+            [
+              -135.338401,
+              57.050723
+            ],
+            [
+              -135.338456,
+              57.050705
+            ],
+            [
+              -135.338486,
+              57.050733
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1962",
+      "properties": {
+        "feature_id": "sitka2017_l1962",
+        "source_feature_id": "archive:joshuahouston:line:1962",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338457,
+              57.051287
+            ],
+            [
+              -135.338324,
+              57.051323
+            ],
+            [
+              -135.338105,
+              57.051082
+            ],
+            [
+              -135.338238,
+              57.051046
+            ],
+            [
+              -135.338336,
+              57.051154
+            ],
+            [
+              -135.338303,
+              57.05116
+            ],
+            [
+              -135.338329,
+              57.051191
+            ],
+            [
+              -135.338363,
+              57.051183
+            ],
+            [
+              -135.338457,
+              57.051287
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1967",
+      "properties": {
+        "feature_id": "sitka2017_l1967",
+        "source_feature_id": "archive:joshuahouston:line:1967",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338325,
+              57.05055
+            ],
+            [
+              -135.338161,
+              57.050592
+            ],
+            [
+              -135.338087,
+              57.050505
+            ],
+            [
+              -135.338251,
+              57.050463
+            ],
+            [
+              -135.338325,
+              57.05055
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1969",
+      "properties": {
+        "feature_id": "sitka2017_l1969",
+        "source_feature_id": "archive:joshuahouston:line:1969",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338271,
+              57.051014
+            ],
+            [
+              -135.338081,
+              57.05107
+            ],
+            [
+              -135.33802,
+              57.05101
+            ],
+            [
+              -135.338211,
+              57.050953
+            ],
+            [
+              -135.338271,
+              57.051014
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1972",
+      "properties": {
+        "feature_id": "sitka2017_l1972",
+        "source_feature_id": "archive:joshuahouston:line:1972",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338217,
+              57.050285
+            ],
+            [
+              -135.338169,
+              57.050382
+            ],
+            [
+              -135.337959,
+              57.050351
+            ],
+            [
+              -135.337997,
+              57.050275
+            ],
+            [
+              -135.338066,
+              57.050285
+            ],
+            [
+              -135.338076,
+              57.050264
+            ],
+            [
+              -135.338217,
+              57.050285
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1974",
+      "properties": {
+        "feature_id": "sitka2017_l1974",
+        "source_feature_id": "archive:joshuahouston:line:1974",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338194,
+              57.050935
+            ],
+            [
+              -135.33801,
+              57.050982
+            ],
+            [
+              -135.337968,
+              57.050932
+            ],
+            [
+              -135.338151,
+              57.050885
+            ],
+            [
+              -135.338194,
+              57.050935
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1977",
+      "properties": {
+        "feature_id": "sitka2017_l1977",
+        "source_feature_id": "archive:joshuahouston:line:1977",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338151,
+              57.050063
+            ],
+            [
+              -135.338088,
+              57.050177
+            ],
+            [
+              -135.337994,
+              57.050164
+            ],
+            [
+              -135.337706,
+              57.050122
+            ],
+            [
+              -135.337681,
+              57.050128
+            ],
+            [
+              -135.337652,
+              57.050138
+            ],
+            [
+              -135.337886,
+              57.050375
+            ],
+            [
+              -135.337698,
+              57.050425
+            ],
+            [
+              -135.337478,
+              57.050215
+            ],
+            [
+              -135.337298,
+              57.050036
+            ],
+            [
+              -135.337272,
+              57.050041
+            ],
+            [
+              -135.337223,
+              57.049969
+            ],
+            [
+              -135.337482,
+              57.049888
+            ],
+            [
+              -135.337584,
+              57.049689
+            ],
+            [
+              -135.337797,
+              57.049716
+            ],
+            [
+              -135.337708,
+              57.049867
+            ],
+            [
+              -135.33779,
+              57.049947
+            ],
+            [
+              -135.337863,
+              57.050018
+            ],
+            [
+              -135.338151,
+              57.050063
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1980",
+      "properties": {
+        "feature_id": "sitka2017_l1980",
+        "source_feature_id": "archive:joshuahouston:line:1980",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.338115,
+              57.050872
+            ],
+            [
+              -135.337973,
+              57.050913
+            ],
+            [
+              -135.337914,
+              57.050851
+            ],
+            [
+              -135.338056,
+              57.05081
+            ],
+            [
+              -135.338115,
+              57.050872
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1981",
+      "properties": {
+        "feature_id": "sitka2017_l1981",
+        "source_feature_id": "archive:joshuahouston:line:1981",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.33808,
+              57.049299
+            ],
+            [
+              -135.337886,
+              57.049352
+            ],
+            [
+              -135.337706,
+              57.049158
+            ],
+            [
+              -135.337843,
+              57.04912
+            ],
+            [
+              -135.337905,
+              57.049186
+            ],
+            [
+              -135.337961,
+              57.049171
+            ],
+            [
+              -135.33808,
+              57.049299
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1984",
+      "properties": {
+        "feature_id": "sitka2017_l1984",
+        "source_feature_id": "archive:joshuahouston:line:1984",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.33798,
+              57.050991
+            ],
+            [
+              -135.337901,
+              57.051005
+            ],
+            [
+              -135.337859,
+              57.050936
+            ],
+            [
+              -135.337937,
+              57.050921
+            ],
+            [
+              -135.33798,
+              57.050991
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1987",
+      "properties": {
+        "feature_id": "sitka2017_l1987",
+        "source_feature_id": "archive:joshuahouston:line:1987",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337944,
+              57.050793
+            ],
+            [
+              -135.337892,
+              57.050806
+            ],
+            [
+              -135.337856,
+              57.050762
+            ],
+            [
+              -135.337908,
+              57.050749
+            ],
+            [
+              -135.337944,
+              57.050793
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1989",
+      "properties": {
+        "feature_id": "sitka2017_l1989",
+        "source_feature_id": "archive:joshuahouston:line:1989",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337873,
+              57.049357
+            ],
+            [
+              -135.337659,
+              57.049417
+            ],
+            [
+              -135.337419,
+              57.049161
+            ],
+            [
+              -135.337378,
+              57.049173
+            ],
+            [
+              -135.337279,
+              57.049067
+            ],
+            [
+              -135.337522,
+              57.049
+            ],
+            [
+              -135.337643,
+              57.049129
+            ],
+            [
+              -135.337615,
+              57.049136
+            ],
+            [
+              -135.33776,
+              57.049291
+            ],
+            [
+              -135.3378,
+              57.04928
+            ],
+            [
+              -135.337873,
+              57.049357
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1990",
+      "properties": {
+        "feature_id": "sitka2017_l1990",
+        "source_feature_id": "archive:joshuahouston:line:1990",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337879,
+              57.050914
+            ],
+            [
+              -135.337808,
+              57.050926
+            ],
+            [
+              -135.33775,
+              57.050825
+            ],
+            [
+              -135.337822,
+              57.050813
+            ],
+            [
+              -135.337879,
+              57.050914
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l1998",
+      "properties": {
+        "feature_id": "sitka2017_l1998",
+        "source_feature_id": "archive:joshuahouston:line:1998",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337625,
+              57.049429
+            ],
+            [
+              -135.33747,
+              57.049472
+            ],
+            [
+              -135.337423,
+              57.049423
+            ],
+            [
+              -135.337393,
+              57.049432
+            ],
+            [
+              -135.337346,
+              57.049382
+            ],
+            [
+              -135.337379,
+              57.049372
+            ],
+            [
+              -135.337344,
+              57.049335
+            ],
+            [
+              -135.337316,
+              57.049343
+            ],
+            [
+              -135.337211,
+              57.049232
+            ],
+            [
+              -135.337391,
+              57.049182
+            ],
+            [
+              -135.337625,
+              57.049429
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2004",
+      "properties": {
+        "feature_id": "sitka2017_l2004",
+        "source_feature_id": "archive:joshuahouston:line:2004",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337513,
+              57.050986
+            ],
+            [
+              -135.337345,
+              57.051021
+            ],
+            [
+              -135.337283,
+              57.050932
+            ],
+            [
+              -135.337451,
+              57.050897
+            ],
+            [
+              -135.337513,
+              57.050986
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2007",
+      "properties": {
+        "feature_id": "sitka2017_l2007",
+        "source_feature_id": "archive:joshuahouston:line:2007",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337447,
+              57.050516
+            ],
+            [
+              -135.337317,
+              57.050542
+            ],
+            [
+              -135.337238,
+              57.050428
+            ],
+            [
+              -135.337367,
+              57.050401
+            ],
+            [
+              -135.337447,
+              57.050516
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2009",
+      "properties": {
+        "feature_id": "sitka2017_l2009",
+        "source_feature_id": "archive:joshuahouston:line:2009",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337417,
+              57.050825
+            ],
+            [
+              -135.337313,
+              57.05085
+            ],
+            [
+              -135.337233,
+              57.050749
+            ],
+            [
+              -135.337336,
+              57.050724
+            ],
+            [
+              -135.337417,
+              57.050825
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2012",
+      "properties": {
+        "feature_id": "sitka2017_l2012",
+        "source_feature_id": "archive:joshuahouston:line:2012",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337388,
+              57.049502
+            ],
+            [
+              -135.337329,
+              57.049515
+            ],
+            [
+              -135.337339,
+              57.049528
+            ],
+            [
+              -135.336776,
+              57.049656
+            ],
+            [
+              -135.336628,
+              57.049464
+            ],
+            [
+              -135.336599,
+              57.049471
+            ],
+            [
+              -135.336419,
+              57.049236
+            ],
+            [
+              -135.336675,
+              57.049177
+            ],
+            [
+              -135.33672,
+              57.049236
+            ],
+            [
+              -135.336889,
+              57.049197
+            ],
+            [
+              -135.336928,
+              57.049249
+            ],
+            [
+              -135.337067,
+              57.049217
+            ],
+            [
+              -135.337156,
+              57.049331
+            ],
+            [
+              -135.337242,
+              57.049312
+            ],
+            [
+              -135.337388,
+              57.049502
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2017",
+      "properties": {
+        "feature_id": "sitka2017_l2017",
+        "source_feature_id": "archive:joshuahouston:line:2017",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337299,
+              57.050373
+            ],
+            [
+              -135.336922,
+              57.050448
+            ],
+            [
+              -135.336856,
+              57.050349
+            ],
+            [
+              -135.337232,
+              57.050274
+            ],
+            [
+              -135.337299,
+              57.050373
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2019",
+      "properties": {
+        "feature_id": "sitka2017_l2019",
+        "source_feature_id": "archive:joshuahouston:line:2019",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337263,
+              57.050551
+            ],
+            [
+              -135.337121,
+              57.050585
+            ],
+            [
+              -135.337017,
+              57.050456
+            ],
+            [
+              -135.337159,
+              57.050422
+            ],
+            [
+              -135.337263,
+              57.050551
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2025",
+      "properties": {
+        "feature_id": "sitka2017_l2025",
+        "source_feature_id": "archive:joshuahouston:line:2025",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337147,
+              57.049971
+            ],
+            [
+              -135.336988,
+              57.050002
+            ],
+            [
+              -135.337019,
+              57.050049
+            ],
+            [
+              -135.336876,
+              57.050077
+            ],
+            [
+              -135.336776,
+              57.050096
+            ],
+            [
+              -135.336781,
+              57.050104
+            ],
+            [
+              -135.336618,
+              57.050136
+            ],
+            [
+              -135.336587,
+              57.050088
+            ],
+            [
+              -135.336486,
+              57.050107
+            ],
+            [
+              -135.336421,
+              57.050007
+            ],
+            [
+              -135.336371,
+              57.050017
+            ],
+            [
+              -135.336281,
+              57.049879
+            ],
+            [
+              -135.336997,
+              57.049741
+            ],
+            [
+              -135.337147,
+              57.049971
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2030",
+      "properties": {
+        "feature_id": "sitka2017_l2030",
+        "source_feature_id": "archive:joshuahouston:line:2030",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.337056,
+              57.050612
+            ],
+            [
+              -135.336855,
+              57.050654
+            ],
+            [
+              -135.336758,
+              57.050518
+            ],
+            [
+              -135.336958,
+              57.050475
+            ],
+            [
+              -135.337056,
+              57.050612
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2044",
+      "properties": {
+        "feature_id": "sitka2017_l2044",
+        "source_feature_id": "archive:joshuahouston:line:2044",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.336732,
+              57.049661
+            ],
+            [
+              -135.336447,
+              57.049718
+            ],
+            [
+              -135.336376,
+              57.049612
+            ],
+            [
+              -135.336487,
+              57.04959
+            ],
+            [
+              -135.336443,
+              57.049525
+            ],
+            [
+              -135.336617,
+              57.04949
+            ],
+            [
+              -135.336732,
+              57.049661
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2057",
+      "properties": {
+        "feature_id": "sitka2017_l2057",
+        "source_feature_id": "archive:joshuahouston:line:2057",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.336527,
+              57.049457
+            ],
+            [
+              -135.336292,
+              57.049458
+            ],
+            [
+              -135.336182,
+              57.049313
+            ],
+            [
+              -135.336394,
+              57.049262
+            ],
+            [
+              -135.336527,
+              57.049457
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2059",
+      "properties": {
+        "feature_id": "sitka2017_l2059",
+        "source_feature_id": "archive:joshuahouston:line:2059",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.336516,
+              57.050384
+            ],
+            [
+              -135.336395,
+              57.050415
+            ],
+            [
+              -135.336264,
+              57.050268
+            ],
+            [
+              -135.336385,
+              57.050237
+            ],
+            [
+              -135.336516,
+              57.050384
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2066",
+      "properties": {
+        "feature_id": "sitka2017_l2066",
+        "source_feature_id": "archive:joshuahouston:line:2066",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.336395,
+              57.049719
+            ],
+            [
+              -135.336227,
+              57.049753
+            ],
+            [
+              -135.336066,
+              57.049518
+            ],
+            [
+              -135.33627,
+              57.049477
+            ],
+            [
+              -135.336365,
+              57.049614
+            ],
+            [
+              -135.336329,
+              57.049622
+            ],
+            [
+              -135.336395,
+              57.049719
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2069",
+      "properties": {
+        "feature_id": "sitka2017_l2069",
+        "source_feature_id": "archive:joshuahouston:line:2069",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.336342,
+              57.050227
+            ],
+            [
+              -135.33593,
+              57.050336
+            ],
+            [
+              -135.335817,
+              57.050209
+            ],
+            [
+              -135.33623,
+              57.0501
+            ],
+            [
+              -135.336342,
+              57.050227
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2074",
+      "properties": {
+        "feature_id": "sitka2017_l2074",
+        "source_feature_id": "archive:joshuahouston:line:2074",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.336241,
+              57.049451
+            ],
+            [
+              -135.336053,
+              57.049491
+            ],
+            [
+              -135.335949,
+              57.04935
+            ],
+            [
+              -135.336137,
+              57.049309
+            ],
+            [
+              -135.336241,
+              57.049451
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2076",
+      "properties": {
+        "feature_id": "sitka2017_l2076",
+        "source_feature_id": "archive:joshuahouston:line:2076",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.336228,
+              57.050094
+            ],
+            [
+              -135.335942,
+              57.050172
+            ],
+            [
+              -135.335806,
+              57.050022
+            ],
+            [
+              -135.336092,
+              57.049945
+            ],
+            [
+              -135.336228,
+              57.050094
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2077",
+      "properties": {
+        "feature_id": "sitka2017_l2077",
+        "source_feature_id": "archive:joshuahouston:line:2077",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.336217,
+              57.049754
+            ],
+            [
+              -135.335902,
+              57.049818
+            ],
+            [
+              -135.335727,
+              57.049562
+            ],
+            [
+              -135.336042,
+              57.049498
+            ],
+            [
+              -135.336217,
+              57.049754
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2095",
+      "properties": {
+        "feature_id": "sitka2017_l2095",
+        "source_feature_id": "archive:joshuahouston:line:2095",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.3359,
+              57.050135
+            ],
+            [
+              -135.335775,
+              57.05017
+            ],
+            [
+              -135.335697,
+              57.050088
+            ],
+            [
+              -135.335801,
+              57.050035
+            ],
+            [
+              -135.3359,
+              57.050135
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2096",
+      "properties": {
+        "feature_id": "sitka2017_l2096",
+        "source_feature_id": "archive:joshuahouston:line:2096",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.335863,
+              57.049785
+            ],
+            [
+              -135.335608,
+              57.049838
+            ],
+            [
+              -135.335457,
+              57.04962
+            ],
+            [
+              -135.335712,
+              57.049568
+            ],
+            [
+              -135.335863,
+              57.049785
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2115",
+      "properties": {
+        "feature_id": "sitka2017_l2115",
+        "source_feature_id": "archive:joshuahouston:line:2115",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.335579,
+              57.049459
+            ],
+            [
+              -135.335366,
+              57.049507
+            ],
+            [
+              -135.335287,
+              57.049405
+            ],
+            [
+              -135.335479,
+              57.049324
+            ],
+            [
+              -135.335579,
+              57.049459
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2116",
+      "properties": {
+        "feature_id": "sitka2017_l2116",
+        "source_feature_id": "archive:joshuahouston:line:2116",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.335565,
+              57.049795
+            ],
+            [
+              -135.335207,
+              57.049873
+            ],
+            [
+              -135.334969,
+              57.049549
+            ],
+            [
+              -135.335328,
+              57.049471
+            ],
+            [
+              -135.335565,
+              57.049795
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2149",
+      "properties": {
+        "feature_id": "sitka2017_l2149",
+        "source_feature_id": "archive:joshuahouston:line:2149",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.335014,
+              57.04932
+            ],
+            [
+              -135.334805,
+              57.04938
+            ],
+            [
+              -135.334688,
+              57.049251
+            ],
+            [
+              -135.334885,
+              57.049162
+            ],
+            [
+              -135.335014,
+              57.04932
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2167",
+      "properties": {
+        "feature_id": "sitka2017_l2167",
+        "source_feature_id": "archive:joshuahouston:line:2167",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.334806,
+              57.049187
+            ],
+            [
+              -135.334661,
+              57.049233
+            ],
+            [
+              -135.334582,
+              57.049159
+            ],
+            [
+              -135.334727,
+              57.049112
+            ],
+            [
+              -135.334806,
+              57.049187
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2175",
+      "properties": {
+        "feature_id": "sitka2017_l2175",
+        "source_feature_id": "archive:joshuahouston:line:2175",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.334701,
+              57.049106
+            ],
+            [
+              -135.334529,
+              57.049163
+            ],
+            [
+              -135.334434,
+              57.049079
+            ],
+            [
+              -135.334605,
+              57.049021
+            ],
+            [
+              -135.334701,
+              57.049106
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sitka2017_l2185",
+      "properties": {
+        "feature_id": "sitka2017_l2185",
+        "source_feature_id": "archive:joshuahouston:line:2185",
+        "snapshot_status": "HISTORICAL_GEOMETRY_NOT_CURRENT",
+        "physical_status": "needs_verification",
+        "sitka_kind": "unclassified",
+        "building_height_quality": "unknown",
+        "source_blob_sha": "b4f33e1758fe1596e7eb9964bc3809147af81b85"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -135.334565,
+              57.04902
+            ],
+            [
+              -135.334425,
+              57.049062
+            ],
+            [
+              -135.334358,
+              57.048996
+            ],
+            [
+              -135.334497,
+              57.048954
+            ],
+            [
+              -135.334565,
+              57.04902
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

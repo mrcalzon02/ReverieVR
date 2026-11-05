@@ -2,6 +2,48 @@
 
 # Sitka
 
+## Actual Sitka geographic source ingestion and photo comparison — 2026-11-04
+
+The source-only authoring inventory now includes 96 **real, archived**
+building polygons selected deterministically from the original public-domain
+Sitka building-footprint import, within about 393 metres of the Library of
+Congress HAER AK-27 bridge reference point. The original Git blob is pinned
+in `data/sitka/research/bridge-downtown-2017.geojson` and its exact WGS84
+vertices are preserved. **The archived dataset is dated; these polygons are
+not accepted as the current 2026 city or automatically installed in the APK.**
+The upstream import's README explicitly directs users to newer OpenStreetMap
+data for up-to-date building footprints.
+
+`scripts/sitka/prepare_osm_waterfront.py` now accepts a separately downloaded
+OpenStreetMap XML source and a bounded WGS84 study area, and emits a
+review-only GeoJSON with original source way IDs, sourced heights/levels when
+present, exact input checksum, ODbL attribution, and unresolved presence/
+appearance status. It ignores demolition-tagged buildings and does not crop
+partly visible polygons or turn an unclassified building into a fictional
+storefront. This feeds the existing stricter `build_waterfront.py`
+source/license/height/DEM/active-status review gate; **no automatic promotion**
+occurs.
+
+A source-only measured landmark record
+`data/sitka/research/oconnell-bridge-facts.json` preserves the real
+John O'Connell Bridge length, main span, width, twin-tower sets and
+harp-cable pattern from cited engineering sources, without pretending to
+know surveyed endpoints, pylon XY or deck gradients. Photo/plan references
+(including Sitka's five individual city harbor plans and Google Maps as
+**visual-only**, non-extractable context) are linked rather than repackaged
+at `data/sitka/research/photo-source-audit.json`. The Harbor Department's
+seven-float Crescent map and the historic Sitka waterfront walking-tour map
+remain separately identifiable factual references, not a generic harbor kit.
+
+This milestone remains **nonplayable source-stage research and tooling**.
+No archival 2017 footprint becomes verified 2026 building geometry, no
+photo is copied into the APK, and no Google imagery or proprietary GIS
+geometry is traced or rebaked. The source-content CI now exercises
+the OSM converter and photos/archive source assertions alongside the
+authoritative exporter regression and shoreline C++ LOD gates.
+Geographic placement and device acceptance still depend on current
+licensed data, real elevation/datum matching and photographed site review.
+
 ## Shoreline geographic authenticity correction — 2026-11-04
 
 The source-only shoreline uses **real site identity and GIS footprint data**, not

@@ -70,6 +70,10 @@ on:
       - 'app/src/test/native/sitka_boat_navigation_test.cpp'
       - 'scripts/sitka/build_bathymetry.py'
       - 'scripts/sitka/test_build_bathymetry.py'
+      - 'scripts/sitka/*.py'
+      - 'data/sitka/research/**'
+      - 'app/src/main/jni/native/sitka_shore_*.h'
+      - 'app/src/test/native/sitka_shore_*_test.cpp'
       - 'app/src/test/native/sitka_lighting_test.cpp'
       - 'app/src/main/jni/native/sitka_fishing_*.h'
       - 'app/src/test/native/sitka_fishing_*_test.cpp'
@@ -134,8 +138,13 @@ jobs:
           set -euo pipefail
           python3 -m venv "${RUNNER_TEMP}/sitka-bathymetry-py"
           source "${RUNNER_TEMP}/sitka-bathymetry-py/bin/activate"
-          python -m pip install --disable-pip-version-check --no-input             'numpy==2.3.5' 'pyproj==3.7.2' 'rasterio==1.5.0'
+          python -m pip install --disable-pip-version-check --no-input             'numpy==2.3.5' 'pyproj==3.7.2' 'rasterio==1.5.0' 'shapely==2.1.2'
           python -m unittest discover -s scripts/sitka -p 'test_build_bathymetry.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_build_waterfront.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_shore_reality.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_shore_catalog.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_prepare_osm_waterfront.py' -v
+          python -m unittest discover -s scripts/sitka -p 'test_sitka_source_photography.py' -v
 
   verify-sitka-streaming:
     name: Sitka 8 km boat seabed lazy-load, LOD and transition stress
@@ -177,6 +186,19 @@ jobs:
               -o "${RUNNER_TEMP}/sitka-sparse-mesh-${compiler}"
             "${RUNNER_TEMP}/sitka-sparse-mesh-${compiler}" \
               | tee "${RUNNER_TEMP}/sitka-sparse-mesh-${compiler}.log"
+          done
+      - name: Validate Sitka real-footprint shoreline massing and visibility tiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_name in sitka_shore_geometry_test sitka_shore_detail_test sitka_shore_stream_test; do
+            for compiler in g++ clang++; do
+              "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+                -Iapp/src/main/jni/native \
+                "app/src/test/native/${test_name}.cpp" \
+                -o "${RUNNER_TEMP}/${test_name}-${compiler}"
+              "${RUNNER_TEMP}/${test_name}-${compiler}"
+            done
           done
       - name: Retain exact-commit streaming transition diagnostics
         if: success()

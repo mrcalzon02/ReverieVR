@@ -1,0 +1,56 @@
+{
+  "format": "sitka-waterfront-photo-audit-1",
+  "snapshot_date": "2026-11-04",
+  "policy": "Photographs/Google Maps are visual reference only, not permission to redistribute imagery or extract protected mapping geometry.",
+  "sources": [
+    {
+      "id": "official_harbors",
+      "subject": "five actual city harbors, individual 4K reference photographs and slip maps",
+      "url": "https://www.cityofsitka.com/Government/City-Departments/Harbor-Department/Harbor-Maps",
+      "role": "harbor-specific float arrangements",
+      "usage": "link_only_research"
+    },
+    {
+      "id": "oconnell_haer",
+      "subject": "John O'Connell Memorial Bridge",
+      "url": "https://www.loc.gov/item/ak0342/",
+      "role": "visible structure architecture; federal historic survey",
+      "usage": "reference_only_until_rights_checked"
+    },
+    {
+      "id": "oconnell_engineering",
+      "subject": "John O'Connell Memorial Bridge dimensions/twin towers/harp stays",
+      "url": "https://www.akbizmag.com/industry/engineering/oconnell-bridge/",
+      "role": "dimension and morphology crosscheck",
+      "usage": "factual_notes_only"
+    },
+    {
+      "id": "sitka_history",
+      "subject": "Lincoln/Katlian, Andrew Hope, ANB Hall, Japonski Boathouse, former cold storage site",
+      "url": "https://www.sitkamaritime.org/uploads/7/2/9/0/7290231/2021_brochure_map.pdf",
+      "role": "historical-versus-current building identification",
+      "usage": "link_only_research"
+    },
+    {
+      "id": "city_gis",
+      "subject": "Sitka City GIS and public records",
+      "url": "https://www.cityofsitka.com/Government/City-Departments/Planning-Community-Development/GIS-Map-Resources",
+      "role": "primary geography/source leads",
+      "usage": "geometry_requires_source_license_review"
+    },
+    {
+      "id": "osm",
+      "subject": "current OSM geometry",
+      "url": "https://www.openstreetmap.org/copyright",
+      "role": "building and road source under ODbL, not architectural photo evidence",
+      "usage": "ODbL attribution and database rights"
+    },
+    {
+      "id": "google_maps",
+      "subject": "Sitka visual orientation and qualitative comparison",
+      "url": "https://www.google.com/maps/search/?api=1&query=Sitka%2C+Alaska",
+      "role": "visual-only structural review; no tracing or copying Google tiles/Street View/models into game",
+      "usage": "visual_only_no_offline_extraction"
+    }
+  ]
+}
