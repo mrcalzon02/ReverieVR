@@ -202,7 +202,8 @@ static void TestBlackQueenMovesAndTween() {
     assert(mate.ChessMove(53,45)); // f2-f3
     assert(mate.ChessMove(12,28)); // ...e7-e5
     assert(mate.ChessMove(54,38)); // g2-g4
-    const auto beforeMate=mate,previous=mate.cells;
+    const auto beforeMate=mate;
+    const auto previous=mate.cells;
     assert(mate.ChessLegal(3,39));
     assert(mate.ChessMove(3,39));
     assert(ValidChessCpuTransition(beforeMate,mate));
