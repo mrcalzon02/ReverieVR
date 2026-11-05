@@ -46,3 +46,11 @@ Authoring dependencies: `rasterio`, `pyproj`, `shapely`, and a local C++17 compi
 4. Upgrade individually sourced buildings to P1 facades and P2 bespoke structures; use P0 massing only as placeholder or far-LOD. Perform real stereo, device thermal and APK integration gates separately.
 
 Reference: `docs/project/SITKA_IRREGULAR_CITY_AND_CUSTOM_BUILDINGS.md`, `docs/project/SITKA_CITY_WORLD_DESIGN_SPEC.md`, and the owner-provided waterfront blueprint. This authoring pass deliberately does not alter skiff, bathymetry, fishing, or helm state.
+
+## Source-integrated P1 shoreline detail pass
+
+`sitka_shore_detail.h` adds deterministic vertex-colored geometry **only for source-provided shore features**. It does not alter geographic footprints or invent city blocks. Building exteriors receive limited dark windows on existing source polygon edges; suitable storefronts receive a single low-poly rain canopy; piers/pontoons receive sparse top plank seams; bridge deck/ramp blocks receive light guardrails; authored harbor shacks receive a dark seaward-facing marker. These are **stylized visual estimates**, not surveyed architectural facts, functional doors, collision surfaces, or inferred public access.
+
+The main `sitka_terrain_module.cpp` source-stage reader calls this once after `AppendShoreGeometry` and before GPU allocation. Its generated triangles enter the existing immutable terrain VBO batches; nothing is rebuilt per eye or per frame. `AppendShoreDetails` is transactional (failure leaves its input mesh unchanged) and caps details at 1,800 quads alongside the inherited native terrain vertex/triangle ceilings. Existing missing `waterfront.sitkash` still means **no** invented buildings.
+
+Run: `g++ -std=c++17 -Wall -Wextra -Werror -Iapp/src/main/jni/native app/src/test/native/sitka_shore_detail_test.cpp -o /tmp/sitka-shore-detail-test && /tmp/sitka-shore-detail-test`. The regression checks reproducibility, facade and bridge/dock elements, authored polygon retention, packing and the absence of detail on natural rock. Real GLES2/S9 visuals and source building surveys remain unverified. No gameplay or boat code is introduced.

@@ -2,6 +2,7 @@
 // licensed Sitka geography, shell content scope and real activities exist.
 #include "sitka_terrain_gl.h"
 #include "sitka_shore_geometry.h"
+#include "sitka_shore_detail.h"
 #include "sitka_water_gl.h"
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
@@ -138,6 +139,9 @@ void* Create(const ReverieNativeHostV1* host) {
                              static_cast<uint32_t>(
                                 reverie::sitka::kMaxShoreTextBytes)));
                 reverie::sitka::AppendShoreGeometry(state->terrain,shore);
+                // Optional stylized P1 surfaces: static, deterministic and
+                // noninteractive; source footprint stays authoritative.
+                reverie::sitka::AppendShoreDetails(state->terrain,shore);
             }
             state->lighting=reverie::sitka::ParseLighting(ReadText(
                 host,"sitka/lighting/sitka.properties",4096u));
