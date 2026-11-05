@@ -307,7 +307,9 @@ void ChessWikiDraw(Module *m) {
             const std::string black=i+1<hist.size()?"   "+hist[i+1]:"";
             add(std::to_string(i/2+1)+". "+hist[i]+black);
         }
-        add("WHITE IS THE PLAYER. BLACK IS THE CPU.");
+        add(std::string("YOU ARE ")+
+            (state.chessHumanColor==1?"WHITE":"BLACK")+
+            ". THE CPU IS "+(state.chessHumanColor==1?"BLACK.":"WHITE."));
     } else if(m->chessWikiSection==3) {
         // Teaching articles are independently authored, source-cited notes:
         // never present an opening catalogue frequency as a winning chance.
@@ -356,7 +358,7 @@ void ChessWikiDraw(Module *m) {
             {"The offline ECO library contains 3,865 indexed opening lines from lichess-org/chess-openings (CC0 snapshot, October 2026). Each entry has its full name, ECO code and SAN move sequence.",
              "Book suggestions are continuations appearing in indexed lines, not win predictions, engine evaluations or master game statistics.",
              "Outside the book the CPU advice is material-only, explicitly labeled. Never interpret book frequency as a probability of a good move."},
-            {"Hover over any piece to see color, type, board coordinate, and flashing legal destinations. Click a White piece then click a highlighted square to play.",
+            {"Hover over any piece to see color, type, board coordinate, and flashing legal destinations. Click your piece then click a highlighted square to play.",
              "The left and right wings open this full offline reference. Use the tabs above and PAGE controls below to explore.",
              "Opponent pieces are inspectable, but only the current side can actually play."}
         };
@@ -803,7 +805,7 @@ void RebuildBoard(Module *m,bool fixed){
                  .23f,.36f,.42f);
             Text(m,"CLAIM DRAW",1.94f,-1.25f,.042f,1.f,1.f,.89f);
         }
-        if(s.kind==reverie::boardgames::Kind::Chess&&s.side==1){
+        if(s.kind==reverie::boardgames::Kind::Chess&&s.ChessHumanTurn()){
 #if CLASSIC_GAME_KIND == 5
             ChessPanelRect(m,2.22f,-.98f,.98f,.32f,-3.026f,
                            m->boardControlHover==1?.38f:.23f,.36f,.42f);
@@ -811,7 +813,8 @@ void RebuildBoard(Module *m,bool fixed){
                            s.chessDifficulty==2?"AI HARD":"AI NORMAL",
                            2.22f,-.98f,.027f,1.f,1.f,.89f,.91f);
             if(s.selected>=0&&s.selected<64&&
-               s.cells[s.selected]==1&&s.selected/8==1){
+               s.cells[s.selected]==s.chessHumanColor&&
+               s.selected/8==(s.chessHumanColor==1?1:6)){
                 const char *promo=s.promotionChoice==4?"PROMO ROOK":
                     s.promotionChoice==3?"PROMO BISHOP":
                     s.promotionChoice==2?"PROMO KNIGHT":"PROMO QUEEN";
@@ -848,8 +851,12 @@ void RebuildBoard(Module *m,bool fixed){
         ChessPanelLine(m,"OPENING "+book.eco,-2.20f,.18f);
         ChessPanelExample(m,book.opening,-2.20f,-.12f);
         ChessPanelLine(m,"CLICK WING TO READ",-2.20f,-.84f);
-        const std::string cpuTrace=reverie::chessref::LastBlackMoveTrace(s);
+        const std::string cpuTrace=reverie::chessref::LastCpuMoveTrace(s);
         if(!cpuTrace.empty())ChessPanelLine(m,cpuTrace,-2.20f,-1.18f);
+        ChessPanelRect(m,2.22f,1.43f,.94f,.25f,-3.026f,
+                       .25f,.42f,.34f);
+        ChessPanelText(m,"NEW GAME",2.22f,1.423f,.027f,
+                       .94f,1.f,.85f);
         ChessPanelRect(m,2.22f,.88f,1.05f,.36f,-3.026f,
              m->chessPanelHover?.32f:.21f,
              m->chessPanelHover?.45f:.34f,.48f);
@@ -869,6 +876,17 @@ void RebuildBoard(Module *m,bool fixed){
         }
     }
     if(!fixed && m->chessWikiOpen)ChessWikiDraw(m);
+    if(!fixed && m->chessNewGameOpen) {
+        Rect(m,0.f,.04f,2.86f,1.29f,-2.725f,
+             .075f,.12f,.18f);
+        Text(m,"START A NEW GAME",0.f,.49f,.041f,.95f,.97f,.87f);
+        Rect(m,-.66f,.08f,1.08f,.34f,-2.717f,.27f,.39f,.43f);
+        Rect(m,.66f,.08f,1.08f,.34f,-2.717f,.27f,.39f,.43f);
+        Text(m,"PLAY WHITE",-.66f,.073f,.028f,.98f,.98f,.93f);
+        Text(m,"PLAY BLACK", .66f,.073f,.028f,.98f,.98f,.93f);
+        Rect(m,0.f,-.40f,1.08f,.26f,-2.717f,.19f,.24f,.29f);
+        Text(m,"CANCEL",0.f,-.407f,.027f,.95f,.95f,.87f);
+    }
 #endif
     if(fixed){
         m->staticCount=static_cast<GLsizei>(m->staticVertices.size()/6);
