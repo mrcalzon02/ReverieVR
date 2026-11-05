@@ -224,10 +224,10 @@ jobs:
             # Emulator action executes each script line as its own sh -c call.
             # Keep the five independent verified-pack assertions on ONE line.
             # Confirm the *actual installed JNI module* decoded all sixteen
-          # PNGs through host read_asset, not only that the APK ZIP lists them.
-          grep -F 'Authored Breakwater materials loaded 16/16' validation/hub/logcat.txt
-          for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1; do grep -F "Breakwater verified-pack asset native/shared/v1/models/psx/${MODEL}.bwm" validation/hub/logcat.txt; done
-          for MODEL in owner_boat_rowboat owner_apc_armor; do grep -F "Breakwater verified-pack asset native/breakwater/beckenburg/${MODEL}.bwm" validation/hub/logcat.txt; done
+            # PNGs through host read_asset, not only that the APK ZIP lists them.
+            grep -F 'Authored Breakwater materials loaded 16/16' validation/hub/logcat.txt
+            for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1; do grep -F "Breakwater verified-pack asset native/shared/v1/models/psx/${MODEL}.bwm" validation/hub/logcat.txt; done
+            for MODEL in owner_boat_rowboat owner_apc_armor; do grep -F "Breakwater verified-pack asset native/breakwater/beckenburg/${MODEL}.bwm" validation/hub/logcat.txt; done
             adb exec-out screencap -p > validation/hub/hub-screen.png
       - name: Enforce real GLES2 boot and framebuffer evidence for every registered game
         shell: bash
