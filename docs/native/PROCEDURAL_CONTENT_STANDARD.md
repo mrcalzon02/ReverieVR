@@ -251,3 +251,19 @@ For cross-*repository* development, consumers should pin an exact Git commit and
 ## Sitka game-private waterfront massing (source-only, 2026-11-04)
 
 `sitka_shore_geometry.h` parses bounded `SITKA-SHORE-1` records and appends a one-time static shore mesh to the existing `.sitkam` terrain before the existing GLES2 batches upload. `P` records extrude each independently authored, simple polygon (including concave footprints) with stable feature IDs; they do not substitute a bounding-box lot for an irregular building. `B` records are restricted to rock/forest shore blocks, wharf/pontoon/pile, small harbor shack and bridge deck, while `R` is a sloped bridge-approach prism. Fixed three-tone vertex colors are an early PSX-style proxy, not a claim of textures, completed landmarks, public access, collision, tidal adjustment or geographic verification. Per-file limits: 65,536 UTF-8 bytes, 256 features, 32 exterior vertices per building; malformed/duplicate/self-intersecting records fail instead of producing plausible-looking fictional city blocks. No runtime random placement, per-eye mesh construction, or seafloor cache mutation occurs. The real-city source/provenance, chunked LOD and texture atlas remain separate pending work, documented in `docs/project/SITKA_IRREGULAR_CITY_AND_CUSTOM_BUILDINGS.md`.
+
+## Sitka resident shoreline LOD overlay (source-only, 2026-11-04)
+
+The game-private `sitka_shore_stream.h` maintains bounded `SITKA-SHORE-1`
+feature metadata while selecting near P1 detail (80/112 m hysteresis), distant
+P0 massing (440/490 m), or hidden by footprint-aware distance. Source building
+IDs and irregular polygons are unchanged. The optional Sitka shore GPU layer
+uses `TerrainGl::CreateOverlay` with no permanent base geometry and the same
+transactional replacement used by the independent seafloor, rather than
+reuploading terrain/boat geometry or compiling shaders in each eye. The host's
+once-before-both-eyes `prepare_frame` callback commits visual tiers only
+after successful upload; source failures retain previous visual shore batches
+with 30-frame backoff. Full city asset paging, upload-time budgets, viewport
+culling, collision/navigation, approved real footprint assets and S9 thermal/
+frame-time validation remain **unimplemented/unverified**. The standalone
+C++17 smoke test is `app/src/test/native/sitka_shore_stream_test.cpp`.

@@ -293,6 +293,63 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
           "return-region seafloor not staged");
     Same(before_swap,Capture());
 
+    // Synthetic source-only shoreline GPU overlay: no fake permanent base
+    // triangle and no terrain/seabed/boat buffer reallocation at LOD swaps.
+    reverie::sitka::TerrainGl shore_overlay;
+    const Snapshot shore_before=Capture();
+    Check(shore_overlay.CreateOverlay(
+        reverie::sitka::ParseLighting(LightingProfile(100)),&error),
+        "shore-only GLES2 overlay shader creation failed");
+    Check(shore_overlay.ready()&&shore_overlay.batch_count()==0u &&
+          shore_overlay.land_batch_count()==0u,
+          "shore overlay allocated an unwanted permanent terrain base");
+    Same(shore_before,Capture());
+    Check(shore_overlay.ReplaceSeafloor({mesh},&error),
+          "shore overlay first GPU batch failed");
+    Check(shore_overlay.batch_count()==1u &&
+          shore_overlay.upload_count()==1u &&
+          shore_overlay.seabed_swap_count()==1u,
+          "shore overlay upload not isolated");
+    Same(shore_before,Capture());
+    auto invalid_shore=mesh;
+    invalid_shore.indices[0]=999999u;
+    Check(!shore_overlay.ReplaceSeafloor({invalid_shore},&error),
+          "shore overlay accepted invalid staged indices");
+    Check(shore_overlay.batch_count()==1u &&
+          shore_overlay.upload_count()==1u,
+          "shore overlay destroyed previous batch after invalid replacement");
+    Same(shore_before,Capture());
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot saved=Capture();
+        const auto eye=Eye(index);
+        Check(shore_overlay.RenderEye(&eye),
+              "shore overlay two-eye draw failed");
+        Same(saved,Capture());
+        Check(shore_overlay.upload_count()==1u,
+              "shore overlay reuploaded from stereo-eye callback");
+    }
+    glFinish();
+    Check(Pixel(32,32)[0]>120u&&Pixel(96,32)[0]>120u,
+          "shore overlay failed stereo pixel readback");
+    Check(shore_overlay.ReplaceSeafloor({},&error),
+          "shore overlay could not evict all distant geometry");
+    Check(shore_overlay.ready()&&shore_overlay.batch_count()==0u,
+          "empty shore overlay incorrectly lost its rendering context");
+    Same(shore_before,Capture());
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot saved=Capture();
+        const auto eye=Eye(index);
+        Check(shore_overlay.RenderEye(&eye),"empty shore overlay eye pass failed");
+        Same(saved,Capture());
+    }
+    shore_overlay.Release();
+    Check(!shore_overlay.ready()&&shore_overlay.batch_count()==0u,
+          "shore overlay GL release leaked a context resource");
+    Same(shore_before,Capture());
+
     // Test-only synthetic water, not approved geographic data.
     const auto waters=reverie::sitka::ParseWater(
         "version=1\nlevel=sitka\ncount=1\n"

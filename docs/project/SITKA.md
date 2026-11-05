@@ -2,6 +2,25 @@
 
 # Sitka
 
+## Shore distance-tier rendering — 2026-11-04 (source integrated; device proof pending)
+
+The optional licensed `sitka/shore/waterfront.sitkash` feature set now stays
+separate from the base land mesh. `sitka_shore_stream.h` keeps only approved
+shore metadata resident and builds geometry when a feature crosses a world-space
+visibility threshold: near P1 stylized facades at 80 m entering / 112 m leaving;
+P0 silhouette massing to 440 m entering / 490 m leaving; fully hidden outside.
+Distance is to the actual irregular polygon or rotated block *bounds*, not an
+invented town grid or the object's centre. A shore-only GLES2 overlay reuses
+the existing transactional static VBO/EBO replacement, protecting terrain,
+seabed and boat buffers. The optional `prepare_frame` hook commits an entire
+new shore selection before either stereo eye renders, with 30-frame retry
+backoff after invalid geometry or upload failure; GL-context restoration resets
+LOD state. This is **in-memory source-geometry selection**, not geographic
+asset paging, completed P2 landmarks, survey data installation, or measured
+Galaxy S9 performance. A synthetic C++17 shore planner regression checks
+near/far transitions, hysteresis, rollback, rotated bounds and deterministic
+context rebuild. Full source/NDK/Mesa/real-device gates remain open.
+
 ## Source-only seafloor and boat instrument milestone — 2026-11-04
 
 Sitka now has a **source-only, deterministic bathymetric tile converter and native

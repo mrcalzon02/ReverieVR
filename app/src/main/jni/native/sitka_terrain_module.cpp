@@ -3,6 +3,7 @@
 #include "sitka_terrain_gl.h"
 #include "sitka_shore_geometry.h"
 #include "sitka_shore_detail.h"
+#include "sitka_shore_stream.h"
 #include "sitka_water_gl.h"
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
@@ -32,6 +33,8 @@ struct State {
     reverie::sitka::TerrainMesh terrain;
     reverie::sitka::Lighting lighting;
     reverie::sitka::TerrainGl gl;
+    reverie::sitka::TerrainGl shore_gl; // changing waterfront overlay, not boat
+    std::unique_ptr<reverie::sitka::ShoreStreamPlanner> shore_stream;
     reverie::sitka::TerrainGl boat_gl; // isolated static boat VBO, shared across both eyes
     reverie::nativetext::LatoLayer boat_text; // real licensed glyph atlas
     std::string last_boat_text;
@@ -138,10 +141,10 @@ void* Create(const ReverieNativeHostV1* host) {
                     ReadText(host,shore_path,
                              static_cast<uint32_t>(
                                 reverie::sitka::kMaxShoreTextBytes)));
-                reverie::sitka::AppendShoreGeometry(state->terrain,shore);
-                // Optional stylized P1 surfaces: static, deterministic and
-                // noninteractive; source footprint stays authoritative.
-                reverie::sitka::AppendShoreDetails(state->terrain,shore);
+                // Keep immutable source features separate from the terrain:
+                // only nearby P0/P1 shore meshes become resident GPU batches.
+                if(!shore.empty())state->shore_stream.reset(
+                    new reverie::sitka::ShoreStreamPlanner(shore));
             }
             state->lighting=reverie::sitka::ParseLighting(ReadText(
                 host,"sitka/lighting/sitka.properties",4096u));
@@ -278,6 +281,13 @@ int32_t OnGlCreated(void* instance) {
         Log(state->host,error.c_str());
         return 0;
     }
+    if(state->shore_stream &&
+       !state->shore_gl.CreateOverlay(state->lighting,&error)){
+        state->water_gl.Release();
+        state->gl.Release();
+        Log(state->host,error.c_str());
+        return 0;
+    }
     if(state->skiff){
         try{
             if(!state->boat_gl.Create(
@@ -289,6 +299,7 @@ int32_t OnGlCreated(void* instance) {
         }catch(const std::exception& e){
             state->boat_text.Release();
             state->boat_gl.Release();
+            state->shore_gl.Release();
             state->water_gl.Release();
             state->gl.Release();
             Log(state->host,e.what());
@@ -302,6 +313,9 @@ void ReleaseGl(void* instance) {
         static_cast<State*>(instance)->boat_text.Release();
         static_cast<State*>(instance)->last_boat_text.clear();
         static_cast<State*>(instance)->boat_gl.Release();
+        static_cast<State*>(instance)->shore_gl.Release();
+        if(static_cast<State*>(instance)->shore_stream)
+            static_cast<State*>(instance)->shore_stream->Reset();
         static_cast<State*>(instance)->water_gl.Release();
         static_cast<State*>(instance)->gl.Release();
         static_cast<State*>(instance)->seafloor_plan.Reset();
@@ -412,6 +426,14 @@ void Update(void* instance,const ReverieNativeInputV1* input){
             state->has_focus=true;
         }
     }
+    // The shore can remain visible in an editor preview without an authored
+    // bathymetry cache; this never substitutes for the skiff's world pose.
+    if(!state->stream && listener && std::isfinite(listener_east) &&
+       std::isfinite(listener_north)){
+        state->last_focus_east=listener_east;
+        state->last_focus_north=listener_north;
+        state->has_focus=true;
+    }
     reverie::sitka::FishingCastTarget target;
     if(!boat_chord&&!(state->skiff&&state->skiff->Active())&&
        input->primary_down&&ReverieNativeInputHasPointerV1(input)){
@@ -454,6 +476,28 @@ bool WaterAt(const State* state,double east,double north){
 int32_t PrepareFrame(void* instance){
     State* state=static_cast<State*>(instance);
     if(!state||!state->gl.ready())return 0;
+    // The shore and seabed retain separate GPU resources. Shore selection
+    // uses bounded source-geometry only, never synchronous asset reads.
+    if(state->shore_stream && state->shore_gl.ready() && state->has_focus &&
+       state->shore_stream->Update(
+           state->last_focus_east,state->last_focus_north,
+           state->terrain.origin_east,state->terrain.origin_north)){
+        try{
+            auto mesh=state->shore_stream->BuildPending();
+            std::vector<reverie::sitka::TerrainMesh> replacement;
+            if(!mesh.indices.empty())replacement.push_back(std::move(mesh));
+            std::string error;
+            if(state->shore_gl.ReplaceSeafloor(replacement,&error))
+                state->shore_stream->Commit();
+            else{
+                Log(state->host,error.c_str());
+                state->shore_stream->Reject();
+            }
+        }catch(const std::exception& e){
+            Log(state->host,e.what());
+            state->shore_stream->Reject();
+        }
+    }
     if(!state->stream||!state->generated||!state->has_focus)return 1;
     const double east=state->last_focus_east;
     const double north=state->last_focus_north;
@@ -514,6 +558,8 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(!instance)return 0;
     State* state=static_cast<State*>(instance);
     if(!state->gl.RenderEye(eye)||!state->water_gl.RenderEye(eye))return 0;
+    if(state->shore_stream && state->shore_stream->visible_count()>0u &&
+       !state->shore_gl.RenderEye(eye))return 0;
     if(!state->skiff||!state->skiff->Active())return 1;
     const auto& pose=state->skiff->Pose();
     const reverie::sitka::Water* water=reverie::sitka::SitkaWorldWater(

@@ -24,7 +24,7 @@ public:
     TerrainGl() = default;
     TerrainGl(const TerrainGl&) = delete;
     TerrainGl& operator=(const TerrainGl&) = delete;
-    bool ready() const { return program_ != 0u && !batches_.empty(); }
+    bool ready() const { return program_ != 0u && (overlay_mode_ || !batches_.empty()); }
     size_t batch_count() const { return batches_.size(); }
     // Number of successful static VBO/EBO batch uploads in this GL context.
     size_t upload_count() const { return upload_count_; }
@@ -34,12 +34,18 @@ public:
                 std::string* error = nullptr) {
         return CreateWithExtras(mesh,{},lighting,error);
     }
+    // A dedicated shore layer has no permanent base mesh. Keep the GLES2
+    // program alive while its dynamic batches are swapped between eye pairs.
+    bool CreateOverlay(const Lighting& lighting,std::string* error=nullptr){
+        return CreateWithExtras(TerrainMesh{},{},lighting,error,true);
+    }
     // Optional vetted seafloor batches share the existing terrain program,
     // ambient shader and indexed draw path; no duplicate per-eye resources.
     bool CreateWithExtras(const TerrainMesh& mesh,
                           const std::vector<TerrainMesh>& seafloor,
                           const Lighting& lighting,
-                          std::string* error = nullptr) {
+                          std::string* error = nullptr,
+                          bool allow_empty_base = false) {
         if(!std::isfinite(lighting.ambient_scale) ||
            lighting.ambient_scale < .5f || lighting.ambient_scale > 1.5f) {
             if(error)*error = "Invalid authored Sitka ambient intensity";
@@ -83,7 +89,8 @@ public:
             Release(); restore(); return false;
         }
         try {
-            auto packed = PackTerrainGles2(mesh);
+            auto packed = allow_empty_base && mesh.indices.empty()
+                ? std::vector<TerrainBatch>{} : PackTerrainGles2(mesh);
             land_batches_=packed.size();
             for(const auto& floor : seafloor){
                 if(floor.indices.empty())continue;
@@ -124,6 +131,7 @@ public:
             Release(); restore(); return false;
         }
         ambient_scale_ = lighting.ambient_scale;
+        overlay_mode_=allow_empty_base;
         restore();
         return ready();
     }
@@ -132,7 +140,8 @@ public:
     // are preserved; seabed replacement is fully staged before commit.
     bool ReplaceSeafloor(const std::vector<TerrainMesh>& extras,
                          std::string* error=nullptr){
-        if(!ready()||land_batches_==0u||land_batches_>batches_.size()){
+        if(!ready()||(!overlay_mode_&&land_batches_==0u)||
+           land_batches_>batches_.size()){
             if(error)*error="Sitka GL context unavailable for seabed swap";
             return false;
         }
@@ -255,6 +264,7 @@ public:
         batches_.clear();
         upload_count_ = 0u;
         land_batches_=seabed_swaps_=0u;
+        overlay_mode_=false;
         if (program_) glDeleteProgram(program_);
         program_ = 0u;
         matrix_ = -1;
@@ -270,6 +280,7 @@ private:
     std::vector<GpuBatch> batches_;
     size_t upload_count_ = 0u;
     size_t land_batches_ = 0u,seabed_swaps_ = 0u;
+    bool overlay_mode_=false;
 };
 }} // namespace reverie::sitka
 #endif
