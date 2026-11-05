@@ -11,6 +11,7 @@
 #include "breakwater_emplacement.h"
 #include "breakwater_cover.h"
 #include "breakwater_sky.h"
+#include "reverie_native_horizon_gl.h"
 #include "breakwater_ocean.h"
 #include "breakwater_environment.h"
 #include "breakwater_damage_feedback.h"
@@ -81,6 +82,8 @@ struct State {
     // Loaded once from packaged, owner-approved Beckenburg source conversions.
     std::array<imported::Model,imported::kAssetPaths.size()> beckenburg_models{};
     authored::Atlas authored_materials{};
+    std::array<reverie::omega_art::Image,reverie::native::horizon::kTheaters> horizon_art{};
+    reverie::native::horizon::Renderer horizon_gpu;
     BatteryDamageFeedback battery_damage;
     AircraftAimFeedback aircraft_aim;
     SurfaceAimFeedback surface_aim;
@@ -724,8 +727,9 @@ void BuildScene(State *s) {
     // 360-degree layered horizon: no frontal backdrop edges when head turns.
     // Fixed panorama, clouds, sun/moon and distant smoke are shared by both
     // eyes and stay farther away than every gameplay target and sea strip.
-    EmitSkyPanorama(game.location(),night,
-        [s](auto... arguments) { Triangle(s,arguments...); });
+    if(!s->horizon_gpu.ready(game.location()))
+        EmitSkyPanorama(game.location(),night,
+            [s](auto... arguments) { Triangle(s,arguments...); });
     // One low-poly 3D water mesh extends beyond the battle boats.
     // BuildScene emits it once for the pair of stereo eyes.
     EmitOpenSea(game.location(),night,s->elapsed,
@@ -1557,6 +1561,7 @@ void BuildScene(State *s) {
 void DestroyGl(State *s) {
     if(s->vbo)glDeleteBuffers(1,&s->vbo);
     if(s->program)glDeleteProgram(s->program);
+    s->horizon_gpu.Release();
     if(s->sprite_vbo)glDeleteBuffers(1,&s->sprite_vbo);
     if(s->sprite_program)glDeleteProgram(s->sprite_program);
     if(s->sprite_texture)glDeleteTextures(1,&s->sprite_texture);
@@ -1592,6 +1597,14 @@ void *Create(const ReverieNativeHostV1 *host) {
                 ++admitted;
         }
         const size_t loaded=authored::Load(s->authored_materials,reader);
+        unsigned skies=0u;
+        for(unsigned i=0;i<reverie::native::horizon::kTheaters;++i)
+            skies+=reverie::native::horizon::Load(host,i,s->horizon_art[i]);
+        char sky_report[96];
+        std::snprintf(sky_report,sizeof(sky_report),
+                      "Approved shared horizons loaded %u/4",skies);
+        ReverieNativeLogV1(host,skies==4u?REVERIE_NATIVE_LOG_INFO:
+                          REVERIE_NATIVE_LOG_WARN,"BreakwaterSky",sky_report);
         char art_report[96];
         std::snprintf(art_report,sizeof(art_report),
                       "Authored Breakwater materials loaded %zu/%zu",
@@ -1711,6 +1724,13 @@ int32_t GlCreate(void *instance) {
             glPixelStorei(GL_UNPACK_ALIGNMENT,4);
         }
     }
+    // Optional predecoded 360 backgrounds; never make the game dependent
+    // on a missing asset or on a second sky texture upload per stereo eye.
+    std::string sky_error;
+    if(!s->horizon_gpu.Create(s->horizon_art,&sky_error) &&
+       !sky_error.empty())
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,
+                           "BreakwaterSky",sky_error.c_str());
     const bool okay=font_decoded && s->font_program && s->font_vbo &&
         s->font_texture && s->font_position>=0 && s->font_uv>=0 &&
         s->font_color>=0 && s->font_matrix>=0 && s->font_sampler>=0 &&
@@ -2094,6 +2114,12 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
         s->scene_dirty=false;s->gpu_dirty=true;s->sprite_gpu_dirty=true;
         s->font_gpu_dirty=true;
     }
+    // The panorama is always infinitely far in both headset eyes, while
+    // real 3D ships, water, cliffs and bunker keep their own depth.
+    if(s->horizon_gpu.ready(s->campaign.location()) &&
+       !s->horizon_gpu.RenderEye(eye,s->campaign.location(),
+                                 s->campaign.period()==Period::Night))
+        return 0;
     ReverieNativeGlStateV1 prior={};
     ReverieNativeGlAttribStateV1 pa={},ca={},fa={};
     ReverieNativeGlStateCaptureV1(&prior);

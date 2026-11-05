@@ -24,6 +24,7 @@
 #include "sitka_boat_mesh.h"
 #include "sitka_boat_panels.h"
 #include "reverie_native_lato_text.h"
+#include "reverie_native_horizon_gl.h"
 #include <array>
 #include <cstdint>
 #include <new>
@@ -58,6 +59,8 @@ struct State {
     std::vector<reverie::sitka::Water> waters;
     reverie::sitka::Weather weather;
     reverie::sitka::WaterGl water_gl;
+    std::array<reverie::omega_art::Image,reverie::native::horizon::kTheaters> horizon_art{};
+    reverie::native::horizon::Renderer horizon_gpu;
     std::vector<reverie::sitka::FishingSpot> fishing_spots;
     reverie::sitka::FishingSession fishing;
     reverie::sitka::BathyAtlas bathymetry; // V1 source compatibility.
@@ -140,6 +143,9 @@ void* Create(const ReverieNativeHostV1* host) {
     try {
         State* state = new State;
         state->host = host;
+        // Optional *sky-only* generated atmosphere. A painted coastline
+        // is not Sitka geography; the lower hemisphere is never drawn.
+        reverie::native::horizon::Load(host,0u,state->horizon_art[0]);
         try {
             state->terrain=reverie::sitka::ParseTerrainMesh(bytes.data(),bytes.size());
             // Optional, strictly scoped, source-anchored shore massing.
@@ -421,10 +427,16 @@ int32_t OnGlCreated(void* instance) {
             return 0;
         }
     }
+    // Optional background only. Real Sitka water/terrain remains authoritative.
+    std::string horizon_error;
+    if(!state->horizon_gpu.Create(state->horizon_art,&horizon_error) &&
+       !horizon_error.empty())
+        Log(state->host,horizon_error.c_str());
     return 1;
 }
 void ReleaseGl(void* instance) {
     if(instance){
+        static_cast<State*>(instance)->horizon_gpu.Release();
         static_cast<State*>(instance)->boat_text.Release();
         static_cast<State*>(instance)->last_boat_text.clear();
         static_cast<State*>(instance)->boat_gl.Release();
@@ -712,6 +724,9 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
         if(!state->walk_session->ShiftEye(eye,shifted))return 0;
         world_eye=&shifted;
     }
+    // Draw only the atmospheric upper hemisphere. Never paint fictional
+    // Shingle Bay coastlines over survey-backed Sitka shoreline/harbor data.
+    if(!state->horizon_gpu.RenderEye(world_eye,0u,false,true))return 0;
     if(!state->gl.RenderEye(world_eye)||
        !state->water_gl.RenderEye(world_eye))return 0;
     if(state->shore_stream && state->shore_stream->visible_count()>0u &&

@@ -1,6 +1,6 @@
 {
   "schema": "reverie.shared-asset-catalog/1",
-  "revision": "coastal-sixteen-materials-and-psx-props-v1",
+  "revision": "coastal-sixteen-materials-psx-props-four-panoramas-v1",
   "authority": {
     "repository": "mrcalzon02/ReverieVR",
     "branch": "main",
@@ -494,6 +494,123 @@
       "active_consumers": [
         "breakwater-battery"
       ]
+    },
+    {
+      "id": "horizon.shingle_bay",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/horizons/shingle_bay_skybox_512x256.png",
+      "logical_path": "native/shared/v1/horizons/shingle_bay_skybox_512x256.png",
+      "git_blob_sha1": "120e5344cc5574f878ddf6fea5676a438f244758",
+      "sha256": "2ec89df0696b0905ac78c75a68ec129591fe249eea5516b819dcfc5409032aad",
+      "size_bytes": 16906,
+      "description": "Seam-corrected owner-directed PSX-inspired panoramic horizon, shingle bay",
+      "dimensions": [
+        512,
+        256
+      ],
+      "rights": "owner-directed generated artwork; internal cross-game reuse approved",
+      "source_original": "art/non-packaged/horizon-sources/shingle_bay_original_1774x887.png",
+      "source_archive": "https://drive.google.com/drive/folders/14eKJ4EY-h3HOIL4gzokFRg6hUWueAAt0",
+      "drive_runtime_file_id": "1wTKoVtSEX0ZbZ1N_EvCYo73Iz_AWSOj7",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "sitka",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery",
+        "sitka"
+      ],
+      "usage_note": "Sitka uses upper sky hemisphere only; generated shoreline is NOT factual Sitka geography"
+    },
+    {
+      "id": "horizon.iron_quay",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/horizons/iron_quay_skybox_512x256.png",
+      "logical_path": "native/shared/v1/horizons/iron_quay_skybox_512x256.png",
+      "git_blob_sha1": "609f592b09ed2b28778c3eda72570c02e0991383",
+      "sha256": "ac2abd6c99fa22679093b93a4f15727e885315eec306067e52243a5d5cc05139",
+      "size_bytes": 25754,
+      "description": "Seam-corrected owner-directed PSX-inspired panoramic horizon, iron quay",
+      "dimensions": [
+        512,
+        256
+      ],
+      "rights": "owner-directed generated artwork; internal cross-game reuse approved",
+      "source_original": "art/non-packaged/horizon-sources/iron_quay_original_1774x887.png",
+      "source_archive": "https://drive.google.com/drive/folders/14eKJ4EY-h3HOIL4gzokFRg6hUWueAAt0",
+      "drive_runtime_file_id": "17nDpsKWzwNQ7iPlIQNH4uumSH0oB32fN",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "sitka",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ],
+      "usage_note": "Breakwater full panoramic background, always behind actual 3D level geometry"
+    },
+    {
+      "id": "horizon.blackcap_island",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/horizons/blackcap_island_skybox_512x256.png",
+      "logical_path": "native/shared/v1/horizons/blackcap_island_skybox_512x256.png",
+      "git_blob_sha1": "ab65f6841318f9ad5171f30ab8dc331fd0cb93cd",
+      "sha256": "db04b24c148ff44dcecdd8926d45fa07959e1435fc9a5442c3ef8251a79af672",
+      "size_bytes": 17870,
+      "description": "Seam-corrected owner-directed PSX-inspired panoramic horizon, blackcap island",
+      "dimensions": [
+        512,
+        256
+      ],
+      "rights": "owner-directed generated artwork; internal cross-game reuse approved",
+      "source_original": "art/non-packaged/horizon-sources/blackcap_island_original_1774x887.png",
+      "source_archive": "https://drive.google.com/drive/folders/14eKJ4EY-h3HOIL4gzokFRg6hUWueAAt0",
+      "drive_runtime_file_id": "1SilQywGbSTxqShQvBvPleJCg7PCRHkfZ",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "sitka",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ],
+      "usage_note": "Breakwater full panoramic background, always behind actual 3D level geometry"
+    },
+    {
+      "id": "horizon.stormwatch_point",
+      "kind": "image/png",
+      "path": "app/src/main/assets/native/shared/v1/horizons/stormwatch_point_skybox_512x256.png",
+      "logical_path": "native/shared/v1/horizons/stormwatch_point_skybox_512x256.png",
+      "git_blob_sha1": "6630226476f83d61d3e20f522f8d3d8ee8940d4c",
+      "sha256": "f3ba3ff905f6b726b3390c5e3a3d0db725768a0bdc83c1e7758df020b85965a5",
+      "size_bytes": 28345,
+      "description": "Seam-corrected owner-directed PSX-inspired panoramic horizon, stormwatch point",
+      "dimensions": [
+        512,
+        256
+      ],
+      "rights": "owner-directed generated artwork; internal cross-game reuse approved",
+      "source_original": "art/non-packaged/horizon-sources/stormwatch_point_original_1774x887.png",
+      "source_archive": "https://drive.google.com/drive/folders/14eKJ4EY-h3HOIL4gzokFRg6hUWueAAt0",
+      "drive_runtime_file_id": "174rbZ6880TvW3C2wPl13eidB1BEcNnzu",
+      "allowed_consumers": [
+        "breakwater-battery",
+        "sitka",
+        "omega-front",
+        "between-deliveries-red-ledger",
+        "procedural-test-chamber"
+      ],
+      "active_consumers": [
+        "breakwater-battery"
+      ],
+      "usage_note": "Breakwater full panoramic background, always behind actual 3D level geometry"
     }
   ]
 }

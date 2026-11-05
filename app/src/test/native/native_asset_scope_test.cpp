@@ -79,7 +79,7 @@ int main(){
     // Shared assets are immutable exact paths with explicit opt-in modules.
     // They cannot authorize arbitrary foreign game-folder reads.
     const char* const accepted[]={"breakwater-battery","omega-front",
-        "between-deliveries-red-ledger","procedural-test-chamber"};
+        "between-deliveries-red-ledger","procedural-test-chamber","sitka"};
     for(const auto& item:reverie::native::shared_assets::kEntries){
         for(const char* consumer:accepted) {
             const auto mask=reverie::native::shared_assets::ConsumerMask(consumer);
@@ -92,6 +92,18 @@ int main(){
         const std::string traversal=std::string(item.path)+"/../evil.png";
         assert(MaximumBytes("breakwater-battery",traversal.c_str())==0u);
     }
+    for(const char* theater:{"shingle_bay","iron_quay",
+                             "blackcap_island","stormwatch_point"}){
+        const std::string path=std::string("native/shared/v1/horizons/")+
+            theater+"_skybox_512x256.png";
+        assert(MaximumBytes("breakwater-battery",path.c_str())==32768u);
+        assert(MaximumBytes("sitka",path.c_str())==32768u);
+        assert(MaximumBytes("gumball-armada",path.c_str())==0u);
+    }
+    assert(MaximumBytes("sitka",
+        "native/shared/v1/horizons/shingle_bay_skybox_512x256.png.bak")==0u);
+    assert(MaximumBytes("sitka",
+        "native/shared/v1/horizons/../shingle_bay_skybox_512x256.png")==0u);
     assert(MaximumBytes("omega-front",
         "native/shared/v1/materials/coastal/unknown.png")==0u);
     assert(MaximumBytes("breakwater-battery",

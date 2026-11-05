@@ -8,7 +8,7 @@ import struct
 ROOT=Path(__file__).resolve().parents[1]
 manifest=json.loads((ROOT/"shared-assets/catalog-v1.json").read_text())
 assert manifest["schema"]=="reverie.shared-asset-catalog/1"
-assert len(manifest["entries"])==19
+assert len(manifest["entries"])==23
 paths=set()
 for entry in manifest["entries"]:
     relative=entry["path"]
@@ -33,10 +33,16 @@ for entry in manifest["entries"]:
 authored=(ROOT/"app/src/main/jni/native/breakwater_authored_materials.h").read_text()
 beckenburg=(ROOT/"app/src/main/jni/native/breakwater_beckenburg_mesh.h").read_text()
 omega=(ROOT/"app/src/main/jni/native/omega_front_texture_renderer.h").read_text()
+horizon=(ROOT/"app/src/main/jni/native/reverie_native_horizon_gl.h").read_text()
 scope=(ROOT/"app/src/main/jni/native/reverie_native_shared_asset_catalog.h").read_text()
 for entry in manifest["entries"]:
     assert entry["logical_path"] in scope, entry["id"]
-    if entry["kind"]=="image/png":
+    if entry["id"].startswith("horizon."):
+        assert entry["kind"]=="image/png"
+        assert entry["logical_path"] in horizon, entry["id"]
+        assert tuple(entry["dimensions"])==(512,256)
+        assert entry["size_bytes"]<=32768
+    elif entry["kind"]=="image/png":
         assert entry["logical_path"] in authored, entry["id"]
     else:
         assert entry["logical_path"] in beckenburg, entry["id"]
@@ -64,4 +70,4 @@ for name in ("concrete_block_1.bwm","wooden_crate_1.bwm","ammo_box_mp_1.bwm"):
 assert "python3 scripts/verify-shared-native-assets.py" in workflow
 assert "assets/native/shared/v1/materials/coastal/" in workflow
 assert "assets/native/shared/v1/models/psx/" in workflow
-print("PASS: nineteen shared assets (sixteen materials), source hashes, exact native/Java allowlists and all packaging consumers")
+print("PASS: 23 shared assets (16 materials, 3 BWM1 models, 4 horizons), source hashes, native/Java scopes and packaging")

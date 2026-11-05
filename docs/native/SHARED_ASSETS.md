@@ -1,6 +1,6 @@
 # Shared native asset library (version 1)
 
-**Implemented in source; APK/headset acceptance pending.** ReverieVR's common `native/shared/v1/` contains sixteen compact owner-generated textures and three curated BWM1 models. These are actual reusable *asset bytes*, not an imaginary common GPU texture memory across different native applications. The source-authoritative manifest `shared-assets/catalog-v1.json` gives each asset a stable logical ID, exact relative path, Git blob hash and license/consumer metadata.
+**Implemented in source; APK/headset acceptance pending.** ReverieVR's common `native/shared/v1/` contains sixteen compact owner-generated surface textures, three curated BWM1 models, and four PSX-style panoramic horizon textures. These are actual reusable *asset bytes*, not an imaginary common GPU texture memory across different native applications. The source-authoritative manifest `shared-assets/catalog-v1.json` gives each asset a stable logical ID, exact relative path, Git blob hash and license/consumer metadata.
 
 ## Current runtime contract
 
@@ -17,7 +17,7 @@ A future install-once cross-game **runtime** cache would require verified signed
 
 ## Acceptance
 
-`python3 scripts/verify-shared-native-assets.py` checks nineteen exact source files, Git object hashes, available SHA-256, PNG/BWM signatures, bounds, no old duplicate package paths, and reference wiring. `bash scripts/verify-breakwater-visuals.sh` adds the shared verifier to existing Breakwater host tests. Run native asset-scope source regressions, Omega texture asset checks, the existing Android/NDK build and installed headset tests. The two removed Omega PNGs total **14,834 uncompressed source bytes**; compressed APK/network savings are not measured and may differ. No extra draw pass or runtime texture upload is introduced by the shared namespace itself.
+`python3 scripts/verify-shared-native-assets.py` checks twenty-three exact source files, Git object hashes, available SHA-256, PNG/BWM signatures, bounds, no old duplicate package paths, and reference wiring. `bash scripts/verify-breakwater-visuals.sh` adds the shared verifier to existing Breakwater host tests. Run native asset-scope source regressions, Omega texture asset checks, the existing Android/NDK build and installed headset tests. The two removed Omega PNGs total **14,834 uncompressed source bytes**; compressed APK/network savings are not measured and may differ. No extra draw pass or runtime texture upload is introduced by the shared namespace itself.
 
 The native-doc drift guard now maps both `reverie_native_shared_asset_catalog.h` and `reverie_native_asset_scope.h` to this standard for same-commit source changes, keeping per-game permission expansion reviewable.
 
@@ -37,3 +37,13 @@ The source high-resolution image generation files are preserved outside the APK 
 ## Sitka shore-layout asset scope (source-only, 2026-11-04)
 
 The unregistered `sitka` prototype may read exactly `sitka/shore/waterfront.sitkash` (maximum 65,536 bytes). This is **game-private authored geometry**, not a shared asset grant, arbitrary file read, bundled city dataset, or claim of real Sitka footprint coverage. Cross-module reads, alternate extensions, traversal and unknown shore paths remain denied. The file is intentionally optional until approved projected-metre source features and provenance are staged.
+
+## Shared 360° horizon panoramas — 2026-11-04
+
+Four user-directed original 1774×887 generated panoramas (Shingle Bay, Iron Quay, Blackcap Island, Stormwatch Point) and archival 1024×512 variants are retained in [Shared VR Horizon Panoramas v1](https://drive.google.com/drive/folders/14eKJ4EY-h3HOIL4gzokFRg6hUWueAAt0). The **actual runtime PNG bytes** live once in the common APK under `native/shared/v1/horizons/` as 512×256 indexed PNGs (total 88,875 bytes); the Git SHA-1, content SHA-256, format, dimensions and consumers are pinned in `shared-assets/catalog-v1.json`. Left/right edges of the runtime panoramas meet for continuous 360° sampling. These are authored artistic panoramas, **not** real photogrammetry, geolocated Sitka mountains, surveyed shoreline polygons, or legally reusable public-domain images.
+
+The reusable, module-independent `reverie_native_horizon_geometry.h` constructs a fixed 32×12, 2,304-vertex unit sphere once per GLES context, with the top 1,152 vertices contiguous for a sky-only option. `reverie_native_horizon_gl.h` loads only these four exact source-approved paths through the host's existing bounded read_asset service and the existing compact PNG decoder. A single small GLES2 texture draw per eye uses camera rotation without camera translation, far-depth sky output, no depth writes, and GL state restore. Missing/invalid optional panorama files retain the older procedural sky in Breakwater rather than stopping gameplay. There is no per-eye PNG decoding or generation, no new native ABI, and no network at runtime.
+
+**Breakwater** now chooses its matching panorama for all four theater IDs and draws 3D mountains, coast, boats, waves, combat and HUD over it; the previous procedurally colored sky remains an offline fallback. **Sitka's unregistered source-only terrain proof** reads only the Shingle Bay atmosphere and draws its *upper hemisphere only*: generic generated mountains/water are never substitutes for source-derived Sitka city terrain or named water polygons. The other named games receive exact-path permission for future approved consumers, **not** a claim that their renderers have been migrated.
+
+Verification: `native_horizon_geometry_test.cpp` covers finite sphere positions, full 360 wrap, UV bounds and 1,152-vertex sky-only hemisphere with host GCC/Clang; `scripts/verify-shared-native-assets.py` checks four additional exact PNG blobs and size/path/consumer rules. Headset stereo, GLES2 shader, decode, screenshot readback, thermal and Android APK build acceptance remain pending until actually executed and observed.
