@@ -45,6 +45,18 @@ inline std::string Square(int square) {
     result[1]=static_cast<char>('8'-square/8);
     return result;
 }
+// Inspect the actual committed Black turn; no animation or inferred route.
+inline std::string LastBlackMoveTrace(const boardgames::State &board) {
+    if(board.kind!=boardgames::Kind::Chess || board.ply<2 ||
+       board.ply%2!=0 || board.side!=1 ||
+       board.lastFrom<0 || board.lastFrom>=64 ||
+       board.lastTo<0 || board.lastTo>=64)return {};
+    const int piece=board.cells[board.lastTo];
+    if(piece>=0 || piece< -6)return {};
+    constexpr char symbols[]="?PNBRQK";
+    return std::string("CPU ")+symbols[-piece]+" "+
+        Square(board.lastFrom)+"-"+Square(board.lastTo);
+}
 inline std::string PieceName(int piece) {
     const char *kind[]={"EMPTY","PAWN","KNIGHT","BISHOP","ROOK","QUEEN","KING"};
     const int absPiece=piece<0?-piece:piece;
