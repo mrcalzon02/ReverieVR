@@ -56,3 +56,15 @@ Next stages: carefully authored ECO-specific strategic descriptions
 linked by opening index; verified legal FEN/SAN examples and per-position
 puzzle explanations with explicit rights/attribution; then S9
 binocular reader, text pagination and performance acceptance.
+
+## Follow-up: citation completeness
+Each of the 3,865 existing opening-index records now resolves to its
+specific, inspectable source TSV (`a.tsv` to `e.tsv`) in the Lichess
+CC0 repository. The original SAN sequences are unchanged. The RULES
+tab displays a FIDE 2023 chess-law URL on the standard-rule pages,
+cites the CC0 opening dataset on the catalogue/analysis page and
+separately labels ReverieVR-specific controls without misattributing
+those controls to FIDE.
+Official FIDE reference: https://handbook.fide.com/chapter/e012023.
+The existing classic-games regression also verifies A/E source-volume
+routing and an invalid ECO's safe fallback.

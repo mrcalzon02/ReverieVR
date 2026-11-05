@@ -351,6 +351,18 @@ void ChessWikiDraw(Module *m) {
         page=std::clamp(m->chessWikiPage,0,total-1);
         add(title[page]);
         for(const char *text:paragraph[page]){add("");add(text);}
+        if(page<=6) {
+            add("");
+            add("STANDARD RULES: FIDE LAWS OF CHESS (2023)");
+            add("https://handbook.fide.com/chapter/e012023");
+        } else if(page==7) {
+            add("");
+            add("OPENING DATA: LICHESS CHESS-OPENINGS (CC0)");
+            add("https://github.com/lichess-org/chess-openings");
+        } else {
+            add("");
+            add("GAME CONTROLS: REVERIEVR NATIVE CHESS");
+        }
     } else {
         int entry=m->chessWikiIndex;
         if(m->chessWikiSection==1){
@@ -382,7 +394,9 @@ void ChessWikiDraw(Module *m) {
             add("COMPLETE INDEXED SAN MOVE LINE:");
             add(ref.san);
             add("");
-            add("SOURCE: LICHESS OPENINGS CC0 (OCT 2026)");
+            add("SOURCE: LICHESS CHESS-OPENINGS (CC0)");
+            add("SOURCE VOLUME URL:");
+            add(SourceUrl(ref));
             add("INDEXED LINE, NOT AN ENGINE PREDICTION.");
         }else{
             add("No opening catalog line follows this exact position.");

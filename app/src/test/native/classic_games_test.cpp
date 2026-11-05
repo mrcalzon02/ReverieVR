@@ -41,6 +41,18 @@ static void TestChessStudyLibrary() {
         else assert(false && "Unattributed chess study article");
     }
     assert(positions==13 && tactics==18 && endgames==3);
+    // Real opening records must resolve to their individual public-domain
+    // ECO volume, not just a generic source name.
+    const auto first=reverie::chessref::Read(0);
+    assert(first.eco=="A00");
+    assert(reverie::chessref::SourceUrl(first)==
+        "https://github.com/lichess-org/chess-openings/blob/master/a.tsv");
+    const auto last=reverie::chessref::Read(reverie::chessref::kEntries-1);
+    assert(last.eco[0]=='E');
+    assert(reverie::chessref::SourceUrl(last)==
+        "https://github.com/lichess-org/chess-openings/blob/master/e.tsv");
+    assert(reverie::chessref::SourceUrl({}).find("chess-openings")!=
+        std::string::npos);
 }
 
 static void TestChessWoodAtlas(){

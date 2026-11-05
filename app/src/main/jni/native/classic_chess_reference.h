@@ -29,6 +29,15 @@ inline Entry Read(int index) {
             std::string(first+1,second-first-1),
             std::string(second+1)};
 }
+// Every ECO row links to the actual CC0 source TSV volume A-E, not
+// merely an untraceable display label or an unrelated opening guide.
+inline std::string SourceUrl(const Entry &entry) {
+    if(entry.eco.size()==3 && entry.eco[0]>='A' && entry.eco[0]<='E')
+        return std::string(
+            "https://github.com/lichess-org/chess-openings/blob/master/")+
+            static_cast<char>(entry.eco[0]-'A'+'a')+".tsv";
+    return "https://github.com/lichess-org/chess-openings";
+}
 inline std::string Square(int square) {
     if(square<0||square>=64)return "--";
     std::string result="a8";
