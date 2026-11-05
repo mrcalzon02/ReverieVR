@@ -77,6 +77,53 @@ public class ControllerOrientationCalibrationTest {
         assertEquals(-1f,corrected[2],0.0003f);
     }
 
+
+    @Test public void shakeTargetsLiveHeadsetYawInsteadOfStaticHud() {
+        float yaw=(float)Math.toRadians(60.0);
+        float cosine=(float)Math.cos(yaw), sine=(float)Math.sin(yaw);
+        // The same world-to-view matrix the renderer passes after shell yaw.
+        float[] view=identity();
+        view[0]=cosine; view[2]=sine;
+        view[8]=-sine; view[10]=cosine;
+        float[] originalView=view.clone();
+        float[] correction=new float[16];
+        float half=(float)Math.toRadians(45.0);
+        float qy=(float)Math.sin(half), qw=(float)Math.cos(half);
+        assertTrue(ControllerOrientationCalibration.compute(
+            view,0f,qy,0f,qw,correction));
+        // A +90-degree-yaw controller initially aims to world -X.
+        float[] ray={-1f,0f,0f};
+        float[] aligned=new float[3];
+        ControllerOrientationCalibration.rotate(correction,true,ray,aligned);
+        // The correction follows headset gaze, not hard-coded world -Z.
+        assertEquals(-sine,aligned[0],0.0003f);
+        assertEquals(0f,aligned[1],0.0003f);
+        assertEquals(-cosine,aligned[2],0.0003f);
+        // Transform into the actual headset view: centered forward = -Z.
+        assertEquals(0f,view[0]*aligned[0]+view[8]*aligned[2],0.0003f);
+        assertEquals(-1f,view[2]*aligned[0]+view[10]*aligned[2],0.0003f);
+        assertArrayEquals(originalView,view,0f);
+    }
+
+    @Test public void shakeIncludesCurrentHeadsetPitchWithoutChangingView() {
+        float pitch=(float)Math.toRadians(30.0);
+        float cosine=(float)Math.cos(pitch), sine=(float)Math.sin(pitch);
+        float[] view=identity();
+        view[5]=cosine; view[6]=-sine;
+        view[9]=sine; view[10]=cosine;
+        float[] correction=new float[16];
+        assertTrue(ControllerOrientationCalibration.compute(
+            view,0f,0f,0f,1f,correction));
+        float[] aligned=new float[3];
+        ControllerOrientationCalibration.rotate(
+            correction,true,new float[] {0f,0f,-1f},aligned);
+        assertEquals(0f,aligned[0],0.0003f);
+        assertEquals(sine,aligned[1],0.0003f);
+        assertEquals(-cosine,aligned[2],0.0003f);
+        assertEquals(0f,view[5]*aligned[1]+view[9]*aligned[2],0.0003f);
+        assertEquals(-1f,view[6]*aligned[1]+view[10]*aligned[2],0.0003f);
+    }
+
     @Test public void invalidRecenterDoesNotOverwritePreviousHudCorrection() {
         float[] correction=identity();
         assertFalse(ControllerOrientationCalibration.computeToHud(

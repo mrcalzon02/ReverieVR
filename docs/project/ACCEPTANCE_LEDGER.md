@@ -1,3 +1,16 @@
+## 2026-11-04 — Controller shake recalibrates to live headset-forward direction
+
+**Source correction awaiting build/device proof:** The shake-initiated controller
+recenter in `VrShellRenderer` now uses that frame's `adjustedHeadView`
+(headset view plus shell yaw) to calibrate the tracked controller's 3D
+aim/model after the existing 160 ms recoil settle. Its positional spring
+return is unchanged, and it does not rotate the headset, HUD or room.
+Manual Reset Hand Position retains the separate fixed-HUD target.
+Two JVM regression cases cover nonzero headset yaw and pitch; the Android
+build and Galaxy S9/Daydream in-headset alignment and gesture thresholds
+remain unverified. See
+[scoped decision](../records/2026-11-04-controller-shake-headset-forward.md).
+
 ## 2026-11-04 — Sitka skiff-position source streaming and private asset permissions
 
 **Verified source stage:** At projected-coordinate launch/dock

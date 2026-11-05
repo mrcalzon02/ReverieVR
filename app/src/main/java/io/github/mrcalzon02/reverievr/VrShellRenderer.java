@@ -2031,7 +2031,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         if (controllerPositionRecenterRequested.get()
             && frameNanos - shakeDetectedAtNanos >= SHAKE_SETTLE_NANOS
             && controllerPositionRecenterRequested.getAndSet(false)) {
-            requestSoftControllerRecenter();
+            // Align tracked controller aim with the live headset-forward ray,
+            // not the fixed -Z Home/HUD plane. The room stays unchanged.
+            requestSoftControllerRecenter(true);
         }
         updateControllerInertialTranslation(frameNanos);
         if (controllerRecenterFeedbackActive
@@ -3974,16 +3976,33 @@ final class VrShellRenderer implements CardboardView.Renderer {
     }
 
     private void requestSoftControllerRecenter() {
+        // The manual hand-reset control retains its established HUD target.
+        requestSoftControllerRecenter(false);
+    }
+
+    private void requestSoftControllerRecenter(boolean matchHeadsetForward) {
         // An orientation reset must work even during the previous 3-second
         // positional spring return; only the detector owns gesture cooldown.
         long now = System.nanoTime();
         if (hasFreshControllerPose(now)) {
-            if (!ControllerOrientationCalibration.computeToHud(
+            // adjustedHeadView contains the live, rendered camera orientation
+            // (headset rotation plus the shell's world-yaw recenter).
+            // Sampling it after the shake settle avoids recoil calibration.
+            boolean calibrated = matchHeadsetForward
+                ? ControllerOrientationCalibration.compute(
+                    adjustedHeadView,
                     controllerOrientationX,
                     controllerOrientationY,
                     controllerOrientationZ,
                     controllerOrientationW,
-                    controllerOrientationCorrection)) {
+                    controllerOrientationCorrection)
+                : ControllerOrientationCalibration.computeToHud(
+                    controllerOrientationX,
+                    controllerOrientationY,
+                    controllerOrientationZ,
+                    controllerOrientationW,
+                    controllerOrientationCorrection);
+            if (!calibrated) {
                 ReverieLog.incident("VR_CONTROLLER",
                     "Recenter rejected: invalid tracked orientation.");
                 return;
@@ -3994,7 +4013,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controllerModelRenderer.setOrientationCorrection(
                 controllerOrientationCorrection
             );
-        } else if (gamepadPointerAvailable) {
+        } else if (gamepadPointerAvailable && !matchHeadsetForward) {
             // HID pads may not expose motion telemetry, but their explicit
             // menu recenter must still reset the virtual 3D aim to the HUD.
             virtualPointerYaw = 0.0f;
@@ -4010,7 +4029,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         host.onControllerSpringRecenterRequested();
         ReverieLog.milestone(
             "VR_CONTROLLER",
-            "Controller reoriented to HUD; positional return restarted."
+            (matchHeadsetForward
+                ? "Controller reoriented to current headset forward; positional return restarted."
+                : "Controller reoriented to HUD; positional return restarted.")
                 + " offset meters=" + controllerRecenterOffsetLength()
         );
     }
