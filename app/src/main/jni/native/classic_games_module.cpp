@@ -738,7 +738,7 @@ void RebuildBoard(Module *m,bool fixed){
         const char *msg=s.winner==human?"YOU WIN":s.winner==-human?
             "CPU WINS":"DRAW";
 #if CLASSIC_GAME_KIND == 5
-        Text(m,msg,-2.22f,1.07f,.026f,1.f,.91f,.58f);
+        ChessPanelText(m,msg,-2.22f,1.07f,.026f,1.f,.91f,.58f);
 #else
         Text(m,msg,2.02f,1.07f,.038f,1.f,.91f,.58f);
 #endif
