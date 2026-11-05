@@ -103,8 +103,8 @@ int ReadFishingSave(void* user,std::string& content) {
     uint32_t size=0u;
     const int32_t code=state->host->read_save("sitka-fishing-v1.sav",nullptr,0u,&size);
     if(code==REVERIE_NATIVE_SAVE_NOT_FOUND)return 0;
-    if(code!=REVERIE_NATIVE_SAVE_OK||size==0u||size>256u)return -1;
-    std::array<char,256> bytes{};
+    if(code!=REVERIE_NATIVE_SAVE_OK||size==0u||size>384u)return -1;
+    std::array<char,384> bytes{};
     uint32_t actual=0u;
     if(state->host->read_save("sitka-fishing-v1.sav",bytes.data(),
        static_cast<uint32_t>(bytes.size()),&actual)!=REVERIE_NATIVE_SAVE_OK||
@@ -113,7 +113,7 @@ int ReadFishingSave(void* user,std::string& content) {
 }
 bool WriteFishingSave(void* user,const std::string& text) {
     auto* state=static_cast<State*>(user);
-    return text.size()<=256u &&
+    return text.size()<=384u &&
         state->host->write_save("sitka-fishing-v1.sav",text.data(),
           static_cast<uint32_t>(text.size()))==REVERIE_NATIVE_SAVE_OK;
 }
@@ -525,7 +525,9 @@ void Update(void* instance,const ReverieNativeInputV1* input){
        state->fishing.fishing.phase==reverie::sitka::FishingPhase::Ready)
         state->walk_session->Advance(
             input->move_x,-input->move_y,input->listener_right,
-            input->delta_seconds);
+            input->delta_seconds,
+            reverie::sitka::CharacterWalkScale(
+                state->fishing.fishing.journal));
     const auto foot=state->walk_session?
         state->walk_session->pose():reverie::sitka::RoamPose{};
     const double listener_east=listener?
@@ -650,7 +652,8 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 source,ray_input.pointer_direction,foot.x,foot.z,
                 *state->walk_session,state->beach_sites,
                 state->fishing.fishing.journal.beach_sites,
-                state->fishing.fishing.journal.shore_kit_level);
+                state->fishing.fishing.journal.shore_kit_level,
+                state->fishing.fishing.journal.observation_level);
             if(found.valid &&
                state->fishing.Discover(found.site,found.kind)){
                 state->beach_primary_latched=true;

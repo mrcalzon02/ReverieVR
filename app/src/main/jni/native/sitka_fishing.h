@@ -21,6 +21,15 @@ inline constexpr std::array<const char*,4> kFishNames={{
 inline constexpr std::array<uint32_t,4> kFishCreditAwards={{45u,100u,65u,35u}};
 
 enum class BeachFind : uint8_t { Shell, Crab, Rock, SeaGlass, Driftwood, Count };
+enum class CityFind : uint8_t {Harbor,Heritage,PublicArt,Trailhead,Civic,Count};
+constexpr uint32_t CityFindMask(CityFind kind){return 1u<<unsigned(kind);}
+enum class CharacterSkill : uint8_t {Stride,RodHandling,Endurance,Observation,Deckhand,Count};
+inline constexpr std::array<const char*,5> kCharacterSkillNames={{
+    "Walking pace","Rod handling","Angler endurance",
+    "Explorer awareness","Deckwork"
+}};
+inline constexpr std::array<uint32_t,5> kCharacterSkillMax={{8u,8u,8u,8u,8u}};
+inline constexpr std::array<uint32_t,5> kCharacterSkillBaseCosts={{40u,50u,50u,45u,65u}};
 inline constexpr std::array<const char*,5> kBeachFindNames={{
     "Shell","Crab sighting","Interesting rock","Sea glass","Driftwood"
 }};
@@ -50,6 +59,10 @@ struct Journal {
     uint32_t reel_level=0,line_level=0,lure_level=0,shore_kit_level=0;
     uint32_t discoveries=0; // five observed kinds, never worth credits
     uint64_t beach_sites=0; // 64 immutable, author-assigned site IDs
+    uint32_t stride_level=0,rod_handling_level=0,endurance_level=0;
+    uint32_t observation_level=0,deckhand_level=0;
+    uint64_t city_sites=0; // author-assigned, public, sourced landmarks
+    uint32_t city_discoveries=0; // categories encountered, no credits
 };
 inline uint32_t BeachSiteCount(uint64_t bits){
     uint32_t count=0;
@@ -97,6 +110,44 @@ inline EquipmentOffer NextEquipment(const Journal& j,Equipment item){
     return result;
 }
 
+inline uint32_t CharacterLevel(const Journal& j,CharacterSkill skill){
+    switch(skill){
+        case CharacterSkill::Stride:return j.stride_level;
+        case CharacterSkill::RodHandling:return j.rod_handling_level;
+        case CharacterSkill::Endurance:return j.endurance_level;
+        case CharacterSkill::Observation:return j.observation_level;
+        case CharacterSkill::Deckhand:return j.deckhand_level;
+        default:return 0u;
+    }
+}
+inline float CharacterWalkScale(const Journal& j){
+    return 1.f+.05f*float(j.stride_level);
+}
+struct CharacterOffer{
+    bool available=false,unlocked=false,affordable=false;
+    uint32_t next_level=0,credits=0,required_beach=0,required_city=0;
+    uint32_t required_beach_kinds=0;
+};
+inline CharacterOffer NextCharacter(const Journal& j,CharacterSkill skill){
+    CharacterOffer o;
+    const unsigned id=unsigned(skill);
+    if(id>=kCharacterSkillMax.size()||
+       CharacterLevel(j,skill)>=kCharacterSkillMax[id])return o;
+    o.available=true;
+    o.next_level=CharacterLevel(j,skill)+1u;
+    o.credits=kCharacterSkillBaseCosts[id]*
+              o.next_level*(o.next_level+1u)/2u;
+    o.required_beach=o.next_level;
+    // Return to the city for advanced training, not every character level.
+    o.required_city=o.next_level>2u?o.next_level-2u:0u;
+    o.required_beach_kinds=FindPrerequisites(o.next_level);
+    o.unlocked=BeachSiteCount(j.beach_sites)>=o.required_beach &&
+       BeachSiteCount(j.city_sites)>=o.required_city &&
+       (j.discoveries&o.required_beach_kinds)==o.required_beach_kinds;
+    o.affordable=j.credits>=o.credits;
+    return o;
+}
+
 struct Fishing {
     Journal journal;
     FishingPhase phase=FishingPhase::Ready;
@@ -132,7 +183,8 @@ struct Fishing {
                        pick<85u?Fish::PinkSalmon:Fish::Coho):
                       (pick<38u?Fish::Coho:pick<67u?Fish::PinkSalmon:
                        pick<90u?Fish::DollyVarden:Fish::Flounder);
-                    phase=FishingPhase::Bite;time=8.f;
+                    phase=FishingPhase::Bite;
+                    time=8.f+.25f*float(journal.rod_handling_level);
                 }
                 break;
             case FishingPhase::Bite:
@@ -142,10 +194,12 @@ struct Fishing {
             case FishingPhase::Reeling:
                 if(primary){
                     tension=std::min(1.f,tension+dt*
-                        (.52f-.018f*float(journal.line_level)));
+                        std::max(.20f,.52f-.018f*float(journal.line_level)-
+                                          .014f*float(journal.endurance_level)));
                     reel=std::min(1.f,reel+dt*
                         (.18f+.025f*float(journal.gear)+
-                         .013f*float(journal.reel_level))*
+                         .013f*float(journal.reel_level)+
+                         .016f*float(journal.rod_handling_level))*
                         (tension>.86f?.25f:1.f));
                 }else tension=std::max(0.f,tension-dt*.85f);
                 if(reel>=1.f){
@@ -174,6 +228,28 @@ struct Fishing {
         journal.discoveries|=FindMask(kind);
         return true; // no money, only equipment-shop permissions
     }
+    bool DiscoverCity(uint32_t site,CityFind kind){
+        if(site>=64u||unsigned(kind)>=unsigned(CityFind::Count)||
+           (journal.city_sites&(uint64_t(1)<<site)))return false;
+        journal.city_sites|=uint64_t(1)<<site;
+        journal.city_discoveries|=CityFindMask(kind);
+        return true;
+    }
+    bool PurchaseCharacter(CharacterSkill skill){
+        if(phase!=FishingPhase::Ready)return false;
+        const auto offer=NextCharacter(journal,skill);
+        if(!offer.available||!offer.unlocked||!offer.affordable)return false;
+        journal.credits-=offer.credits;
+        switch(skill){
+            case CharacterSkill::Stride:++journal.stride_level;break;
+            case CharacterSkill::RodHandling:++journal.rod_handling_level;break;
+            case CharacterSkill::Endurance:++journal.endurance_level;break;
+            case CharacterSkill::Observation:++journal.observation_level;break;
+            case CharacterSkill::Deckhand:++journal.deckhand_level;break;
+            default:return false;
+        }
+        return true;
+    }
     uint32_t UpgradeCost()const{return NextEquipment(journal,Equipment::Rod).credits;}
     bool Purchase(Equipment item){
         if(phase!=FishingPhase::Ready)return false;
@@ -192,15 +268,17 @@ struct Fishing {
     }
     bool UpgradeTackle(){return Purchase(Equipment::Rod);}
 };
-// Version 3 expands the SAME host-scoped save slot without losing hull or
-// credits. V1 and V2 load exactly; records never partially apply on failure.
+// V4 extends the SAME save slot with five character skills and city visits.
+// V1/V2/V3 records migrate without losing money, hulls or equipment.
 inline std::string SaveJournal(const Journal& j){
-    std::string out="SITKA-FISH-3\n";
-    const std::array<uint64_t,16> fields={{
+    std::string out="SITKA-FISH-4\n";
+    const std::array<uint64_t,23> fields={{
         j.seed,j.credits,j.gear,j.total,j.caught[0],j.caught[1],
         j.caught[2],j.caught[3],j.helm_upgrades,j.hull_tier,
         j.reel_level,j.line_level,j.lure_level,j.shore_kit_level,
-        j.discoveries,j.beach_sites
+        j.discoveries,j.beach_sites,j.stride_level,
+        j.rod_handling_level,j.endurance_level,j.observation_level,
+        j.deckhand_level,j.city_sites,j.city_discoveries
     }};
     for(uint64_t n:fields)out+=std::to_string(n)+"\n";
     return out;
@@ -209,13 +287,15 @@ inline bool LoadJournal(std::string_view bytes,Journal& out){
     constexpr std::string_view v1="SITKA-FISH-1\n";
     constexpr std::string_view v2="SITKA-FISH-2\n";
     constexpr std::string_view v3="SITKA-FISH-3\n";
+    constexpr std::string_view v4="SITKA-FISH-4\n";
     unsigned fields=0;
     if(bytes.substr(0,v1.size())==v1){bytes.remove_prefix(v1.size());fields=8;}
     else if(bytes.substr(0,v2.size())==v2){bytes.remove_prefix(v2.size());fields=10;}
     else if(bytes.substr(0,v3.size())==v3){bytes.remove_prefix(v3.size());fields=16;}
+    else if(bytes.substr(0,v4.size())==v4){bytes.remove_prefix(v4.size());fields=23;}
     else return false;
-    if(bytes.size()>256u)return false;
-    std::array<uint64_t,16> n{};
+    if(bytes.size()>384u)return false;
+    std::array<uint64_t,23> n{};
     for(unsigned i=0;i<fields;++i){
         const auto end=bytes.find('\n');
         if(end==std::string_view::npos||end==0u||end>20u)return false;
@@ -230,7 +310,12 @@ inline bool LoadJournal(std::string_view bytes,Journal& out){
        n[11]>kEquipmentMax[2]||n[12]>kEquipmentMax[3]||
        n[13]>kEquipmentMax[4]||
        n[14]>=(uint32_t(1)<<unsigned(BeachFind::Count))||
-       (n[15]!=0u&&n[14]==0u))return false;
+       (n[15]!=0u&&n[14]==0u)||
+       n[16]>kCharacterSkillMax[0]||n[17]>kCharacterSkillMax[1]||
+       n[18]>kCharacterSkillMax[2]||n[19]>kCharacterSkillMax[3]||
+       n[20]>kCharacterSkillMax[4]||
+       n[22]>=(uint32_t(1)<<unsigned(CityFind::Count))||
+       (n[21]!=0u&&n[22]==0u))return false;
     uint64_t sum=0;
     for(unsigned i=4;i<8;++i){
         if(n[i]>1000000u)return false;
@@ -251,6 +336,13 @@ inline bool LoadJournal(std::string_view bytes,Journal& out){
     j.shore_kit_level=static_cast<uint32_t>(n[13]);
     j.discoveries=static_cast<uint32_t>(n[14]);
     j.beach_sites=n[15];
+    j.stride_level=static_cast<uint32_t>(n[16]);
+    j.rod_handling_level=static_cast<uint32_t>(n[17]);
+    j.endurance_level=static_cast<uint32_t>(n[18]);
+    j.observation_level=static_cast<uint32_t>(n[19]);
+    j.deckhand_level=static_cast<uint32_t>(n[20]);
+    j.city_sites=n[21];
+    j.city_discoveries=static_cast<uint32_t>(n[22]);
     out=j;return true;
 }
 }} // namespace reverie::sitka

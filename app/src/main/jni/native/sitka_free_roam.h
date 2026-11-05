@@ -172,10 +172,13 @@ public:
     }
     size_t accepted_steps()const{return accepted_;}
     size_t blocked_steps()const{return blocked_;}
-    bool Advance(float strafe,float forward,const float right[3],float seconds){
+    bool Advance(float strafe,float forward,const float right[3],float seconds,
+                 float speed_scale=1.f){
         if(!right||!std::isfinite(strafe)||!std::isfinite(forward)||
            !std::isfinite(right[0])||!std::isfinite(right[2])||
-           !std::isfinite(seconds)||seconds<=0.)return false;
+           !std::isfinite(seconds)||seconds<=0.||
+           !std::isfinite(speed_scale)||speed_scale<1.f||speed_scale>1.4f)
+            return false;
         const double right_length=std::hypot(right[0],right[2]);
         if(right_length<.5||right_length>1.5)return false;
         const float x=std::clamp(strafe,-1.f,1.f);
@@ -184,7 +187,8 @@ public:
         if(magnitude<=kDeadzone)return false;
         const double strength=std::clamp(
             (double(magnitude)-kDeadzone)/(1.-kDeadzone),0.,1.);
-        const double d=kSpeedMps*std::min(seconds,kMaxFrameSeconds)*strength;
+        const double d=kSpeedMps*speed_scale*
+                       std::min(seconds,kMaxFrameSeconds)*strength;
         const double strafe_unit=x/magnitude,forward_unit=y/magnitude;
         const double rx=right[0]/right_length,rz=right[2]/right_length;
         const double dx=d*(strafe_unit*rx+forward_unit*rz);

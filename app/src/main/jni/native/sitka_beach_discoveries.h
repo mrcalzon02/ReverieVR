@@ -145,7 +145,8 @@ inline TerrainMesh BeachMarkerMesh(const std::vector<BeachSite>& sites,
 inline BeachTarget FindBeachTarget(const float origin[3],
     const float ray[3],double player_x,double player_z,
     const FreeRoamSession& roam,const std::vector<BeachSite>& sites,
-    uint64_t collected,uint32_t kit_level){
+    uint64_t collected,uint32_t kit_level,
+    uint32_t observation_level=0u){
     BeachTarget best;
     if(!origin||!ray||!std::isfinite(player_x)||!std::isfinite(player_z))
         return best;
@@ -153,7 +154,8 @@ inline BeachTarget FindBeachTarget(const float origin[3],
         if(!std::isfinite(origin[i])||!std::isfinite(ray[i]))return best;
     const double dirlen=std::hypot(std::hypot(ray[0],ray[1]),ray[2]);
     if(dirlen<.8||dirlen>1.2)return best;
-    const double max_reach=2.75+.08*std::min(8u,kit_level);
+    const double max_reach=2.75+.08*std::min(8u,kit_level)+
+                           .08*std::min(8u,observation_level);
     double nearest=max_reach+1.;
     for(const auto& site:sites){
         if((collected&(uint64_t(1)<<site.id))!=0u)continue;

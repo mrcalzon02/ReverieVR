@@ -85,6 +85,14 @@ public:
         dirty = true;
         return true;
     }
+    bool DiscoverCity(uint32_t site,CityFind kind){
+        if(!fishing.DiscoverCity(site,kind))return false;
+        dirty=true;return true;
+    }
+    bool PurchaseCharacter(CharacterSkill skill){
+        if(!fishing.PurchaseCharacter(skill))return false;
+        dirty=true;return true;
+    }
     bool UpgradeTackle() { return Purchase(Equipment::Rod); }
     bool Flush(const FishingStore& store) {
         if (!dirty) return true;
