@@ -1,0 +1,1030 @@
+{
+  "schema": "sitka-physical-equipment-concepts/v1",
+  "project": "ReverieVR — Sitka native VR game",
+  "created": "2026-11-05",
+  "role": "Visual design source of truth for future physical 3D items, inventory icons, store catalogue text, interactables, and variant styling; NOT proof of finished meshes or live gameplay.",
+  "source_kind": "User-approved AI-generated rough model sheets, not GIS, licensed real product drawings, or manufacturer specifications.",
+  "drive_folder": "https://drive.google.com/drive/folders/1V5-OnZ8im7j7u9o1w9DQk3ZnHCyb8Loi",
+  "coordinate_contract": "authored source geometry for city; local equipment model convention +Y up, +Z forward, +X right",
+  "conventions": {
+    "sheet_tier_number": "1-based; sheet tier 1 is starter/base equipment (gameplay level 0)",
+    "asset_id": "sitka.<group>.<two-digit zero-based level>",
+    "world_mesh": "must be an actual physical mesh, not a billboard or image-derived icon masquerading as geometry",
+    "icon": "render from approved physical mesh using inventory icon camera; separately polish legibility",
+    "source_images": "Original PNGs archived in linked Google Drive; local ZIP for self-contained handoff. GitHub stores reference catalog and stable links rather than binary PNG objects.",
+    "release_status": "planning/reference: all actual 3D source mesh files, shop UI and model integration remain future work",
+    "image_dimensions": [
+      1448,
+      1086
+    ]
+  },
+  "groups": [
+    {
+      "id": "rod",
+      "title": "Fishing rods",
+      "source_image": {
+        "filename": "sitka_fishing_rod_progression_model_sheet.png",
+        "google_drive_id": "1kxc9g2lLsJVNmlENzzQlurIDFaqZlV8F",
+        "google_drive_url": "https://drive.google.com/file/d/1kxc9g2lLsJVNmlENzzQlurIDFaqZlV8F/view?usp=drivesdk",
+        "sha256": "743bfaf2fa2658275f2a39288c80af85c176c874421dd2024282116962f5d3db",
+        "bytes": 2211374,
+        "width": 1448,
+        "height": 1086
+      },
+      "gameplay_alignment": "Journal.gear; levels 0–12 (12 purchased upgrades)",
+      "shop_implementation": "rules_present; UI_pending",
+      "render_placements": "player held / inventory rack / store display",
+      "primary_icon_direction": "horizontal rod silhouette with tier-specific handle, guide, material colors",
+      "model_component_brief": [
+        "tapered rod blank",
+        "handle and butt",
+        "line guides",
+        "ferrules",
+        "reel seat"
+      ],
+      "tiers": [
+        {
+          "asset_id": "sitka.rod.00",
+          "sheet_tier": 1,
+          "gameplay_level_if_linear": 0,
+          "display_name": "Starter Pole",
+          "physical_model_cue": "single simple wood shaft; minimal wraps",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.01",
+          "sheet_tier": 2,
+          "gameplay_level_if_linear": 1,
+          "display_name": "Bamboo Travel Rod",
+          "physical_model_cue": "warm bamboo sections and travel joints",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.02",
+          "sheet_tier": 3,
+          "gameplay_level_if_linear": 2,
+          "display_name": "Fiberglass Caster",
+          "physical_model_cue": "cream fiberglass blank, red bands, cork grip",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.03",
+          "sheet_tier": 4,
+          "gameplay_level_if_linear": 3,
+          "display_name": "Dock Spinning Rod",
+          "physical_model_cue": "blue blank, black handle, reel mounting",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.04",
+          "sheet_tier": 5,
+          "gameplay_level_if_linear": 4,
+          "display_name": "Coastal Spinning Rod",
+          "physical_model_cue": "saltwater finish, larger guides, robust grip",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.05",
+          "sheet_tier": 6,
+          "gameplay_level_if_linear": 5,
+          "display_name": "Carbon Composite",
+          "physical_model_cue": "dark composite blank, red wraps",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.06",
+          "sheet_tier": 7,
+          "gameplay_level_if_linear": 6,
+          "display_name": "Light Saltwater",
+          "physical_model_cue": "blue/teal blank, corrosion-resistant guides",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.07",
+          "sheet_tier": 8,
+          "gameplay_level_if_linear": 7,
+          "display_name": "Surf Casting Rod",
+          "physical_model_cue": "longer heavy surf blank, broad guides",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.08",
+          "sheet_tier": 9,
+          "gameplay_level_if_linear": 8,
+          "display_name": "Reinforced Surf Rod",
+          "physical_model_cue": "reinforced lower blank and cushioned grip",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.09",
+          "sheet_tier": 10,
+          "gameplay_level_if_linear": 9,
+          "display_name": "Coastal Graphite",
+          "physical_model_cue": "sleek graphite and red feature rings",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.10",
+          "sheet_tier": 11,
+          "gameplay_level_if_linear": 10,
+          "display_name": "Precision Long Cast",
+          "physical_model_cue": "narrow purple precision line wraps",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.11",
+          "sheet_tier": 12,
+          "gameplay_level_if_linear": 11,
+          "display_name": "Heavy Offshore",
+          "physical_model_cue": "heavy offshore grip, reinforced butt",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.rod.12",
+          "sheet_tier": 13,
+          "gameplay_level_if_linear": 12,
+          "display_name": "Master Angler Rod",
+          "physical_model_cue": "premium black/gold blank and distinctive fittings",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        }
+      ]
+    },
+    {
+      "id": "reel",
+      "title": "Reels",
+      "source_image": {
+        "filename": "sitka_fishing_reel_progression_sheet.png",
+        "google_drive_id": "1kaVrQ8KQCj-j1pFos3s31QXAt7AiH5kd",
+        "google_drive_url": "https://drive.google.com/file/d/1kaVrQ8KQCj-j1pFos3s31QXAt7AiH5kd/view?usp=drivesdk",
+        "sha256": "ca4fb41b1160c54142fada0f447eb2f7777430297d247a562ceade6e10db63c2",
+        "bytes": 2353012,
+        "width": 1448,
+        "height": 1086
+      },
+      "gameplay_alignment": "Journal.reel_level; levels 0–10 (10 purchased upgrades)",
+      "shop_implementation": "rules_present; UI_pending",
+      "render_placements": "rod attachment / tackle bench / store display",
+      "primary_icon_direction": "3/4 reel side silhouette; preserve spool, crank and reel-class distinction",
+      "model_component_brief": [
+        "reel foot",
+        "housing",
+        "spool",
+        "crank and handle",
+        "bail or frame",
+        "drag knob"
+      ],
+      "tiers": [
+        {
+          "asset_id": "sitka.reel.00",
+          "sheet_tier": 1,
+          "gameplay_level_if_linear": 0,
+          "display_name": "Starter Reel",
+          "physical_model_cue": "rough metal housing and white mono spool",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.01",
+          "sheet_tier": 2,
+          "gameplay_level_if_linear": 1,
+          "display_name": "Harbor Spin Reel",
+          "physical_model_cue": "gray blue housing and basic bail",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.02",
+          "sheet_tier": 3,
+          "gameplay_level_if_linear": 2,
+          "display_name": "Improved Spin Reel",
+          "physical_model_cue": "gold spool ring, sturdier body",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.03",
+          "sheet_tier": 4,
+          "gameplay_level_if_linear": 3,
+          "display_name": "Dock Reel",
+          "physical_model_cue": "dark olive industrial shell, red spool ring",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.04",
+          "sheet_tier": 5,
+          "gameplay_level_if_linear": 4,
+          "display_name": "Coastal Reel",
+          "physical_model_cue": "marine blue cutout rotor and blue line",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.05",
+          "sheet_tier": 6,
+          "gameplay_level_if_linear": 5,
+          "display_name": "Smooth-Drag Reel",
+          "physical_model_cue": "smoother dark drag housing, purple spool",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.06",
+          "sheet_tier": 7,
+          "gameplay_level_if_linear": 6,
+          "display_name": "Light Saltwater Reel",
+          "physical_model_cue": "blue salt-safe vented rotor",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.07",
+          "sheet_tier": 8,
+          "gameplay_level_if_linear": 7,
+          "display_name": "Reinforced Surf Reel",
+          "physical_model_cue": "heavy metal struts and gold spool",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.08",
+          "sheet_tier": 9,
+          "gameplay_level_if_linear": 8,
+          "display_name": "Precision Cast Reel",
+          "physical_model_cue": "low-profile baitcaster housing and twin crank",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.09",
+          "sheet_tier": 10,
+          "gameplay_level_if_linear": 9,
+          "display_name": "Heavy Offshore Reel",
+          "physical_model_cue": "large conventional overhead drum and frame",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.reel.10",
+          "sheet_tier": 11,
+          "gameplay_level_if_linear": 10,
+          "display_name": "Master Angler Reel",
+          "physical_model_cue": "premium vented rotor, green line and gold trim",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        }
+      ]
+    },
+    {
+      "id": "line",
+      "title": "Fishing line",
+      "source_image": {
+        "filename": "sitka_fishing_line_progression_sheet.png",
+        "google_drive_id": "1lKgwTTx7-eXOKNsnNdfc9UqXEs_3ZQId",
+        "google_drive_url": "https://drive.google.com/file/d/1lKgwTTx7-eXOKNsnNdfc9UqXEs_3ZQId/view?usp=drivesdk",
+        "sha256": "514145d07954399d36f69ae9cd0e6b0f00b4e47cb7c2a7fe23a8155cc885ad6e",
+        "bytes": 2708085,
+        "width": 1448,
+        "height": 1086
+      },
+      "gameplay_alignment": "Journal.line_level; levels 0–10 (10 purchased upgrades)",
+      "shop_implementation": "rules_present; UI_pending",
+      "render_placements": "shop shelf / hand-held spool / reel line material",
+      "primary_icon_direction": "spool cross-section and distinct line color / kit-case silhouette",
+      "model_component_brief": [
+        "spool or case",
+        "line wrap surface",
+        "product band or badge",
+        "optional bundled leader and fasteners"
+      ],
+      "tiers": [
+        {
+          "asset_id": "sitka.line.00",
+          "sheet_tier": 1,
+          "gameplay_level_if_linear": 0,
+          "display_name": "Starter Monofilament",
+          "physical_model_cue": "clear mono on dark spool",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.01",
+          "sheet_tier": 2,
+          "gameplay_level_if_linear": 1,
+          "display_name": "Harbor Mono",
+          "physical_model_cue": "icy-blue mono and blue label",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.02",
+          "sheet_tier": 3,
+          "gameplay_level_if_linear": 2,
+          "display_name": "Strong Mono",
+          "physical_model_cue": "pale stronger mono, green label",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.03",
+          "sheet_tier": 4,
+          "gameplay_level_if_linear": 3,
+          "display_name": "Coastal Mono",
+          "physical_model_cue": "coastal pale-blue mono and teal label",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.04",
+          "sheet_tier": 5,
+          "gameplay_level_if_linear": 4,
+          "display_name": "Mixed Line Kit",
+          "physical_model_cue": "transparent multi-spool compartment case",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.05",
+          "sheet_tier": 6,
+          "gameplay_level_if_linear": 5,
+          "display_name": "Braided Starter",
+          "physical_model_cue": "olive braided spool",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.06",
+          "sheet_tier": 7,
+          "gameplay_level_if_linear": 6,
+          "display_name": "Salt Line Spool",
+          "physical_model_cue": "bright cyan salt line spool",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.07",
+          "sheet_tier": 8,
+          "gameplay_level_if_linear": 7,
+          "display_name": "Reinforced Braid",
+          "physical_model_cue": "black-yellow braided spool",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.08",
+          "sheet_tier": 9,
+          "gameplay_level_if_linear": 8,
+          "display_name": "Precision Cast Line",
+          "physical_model_cue": "thin purple precision spool",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.09",
+          "sheet_tier": 10,
+          "gameplay_level_if_linear": 9,
+          "display_name": "Offshore Line Pack",
+          "physical_model_cue": "soft case with multiple line grades and leaders",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.line.10",
+          "sheet_tier": 11,
+          "gameplay_level_if_linear": 10,
+          "display_name": "Master Angler Line Set",
+          "physical_model_cue": "long hard case with five spool types and hand tools",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        }
+      ]
+    },
+    {
+      "id": "lure",
+      "title": "Lures and tackle",
+      "source_image": {
+        "filename": "sitka_lure_assortment_progression_sheet.png",
+        "google_drive_id": "1QovmG4qm8iUS1fBir7yqc0ndTM3baHWv",
+        "google_drive_url": "https://drive.google.com/file/d/1QovmG4qm8iUS1fBir7yqc0ndTM3baHWv/view?usp=drivesdk",
+        "sha256": "5f8feab6e8b2ebd7e07b5f1164eda4925f57f7f054f5be61d1883d05cdaa76fe",
+        "bytes": 2551045,
+        "width": 1448,
+        "height": 1086
+      },
+      "gameplay_alignment": "Journal.lure_level; levels 0–8 (8 purchased upgrades)",
+      "shop_implementation": "rules_present; UI_pending",
+      "render_placements": "lure attachment / tackle shelf / open equipment case",
+      "primary_icon_direction": "tackle box or pouch silhouette with readable lure color accents",
+      "model_component_brief": [
+        "pouch or case shell",
+        "lid hinge or clasp",
+        "compartment dividers",
+        "distinct lure bodies",
+        "hooks floats and weights"
+      ],
+      "tiers": [
+        {
+          "asset_id": "sitka.lure.00",
+          "sheet_tier": 1,
+          "gameplay_level_if_linear": 0,
+          "display_name": "Starter Hooks",
+          "physical_model_cue": "paper card with J-hooks and float",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.lure.01",
+          "sheet_tier": 2,
+          "gameplay_level_if_linear": 1,
+          "display_name": "Basic Lure Pouch",
+          "physical_model_cue": "canvas drawstring pouch with simple spoons",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.lure.02",
+          "sheet_tier": 3,
+          "gameplay_level_if_linear": 2,
+          "display_name": "Dock Tackle Tray",
+          "physical_model_cue": "small clear compartment tray",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.lure.03",
+          "sheet_tier": 4,
+          "gameplay_level_if_linear": 3,
+          "display_name": "Coastal Lure Set",
+          "physical_model_cue": "box with minnow plugs and soft baits",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.lure.04",
+          "sheet_tier": 5,
+          "gameplay_level_if_linear": 4,
+          "display_name": "Spinner Kit",
+          "physical_model_cue": "olive tray with copper, gold and silver spinners",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.lure.05",
+          "sheet_tier": 6,
+          "gameplay_level_if_linear": 5,
+          "display_name": "Salmon Trolling Set",
+          "physical_model_cue": "tray with salmon trolling flashers and leaders",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.lure.06",
+          "sheet_tier": 7,
+          "gameplay_level_if_linear": 6,
+          "display_name": "Surf Casting Tackle",
+          "physical_model_cue": "long tray with surf weights and casting jigs",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.lure.07",
+          "sheet_tier": 8,
+          "gameplay_level_if_linear": 7,
+          "display_name": "Premium Mixed Tackle",
+          "physical_model_cue": "dense organized hard box of mixed lure families",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.lure.08",
+          "sheet_tier": 9,
+          "gameplay_level_if_linear": 8,
+          "display_name": "Master Angler Lure Kit",
+          "physical_model_cue": "orange-latch premium tackle case with broad kit",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        }
+      ]
+    },
+    {
+      "id": "beach_kit",
+      "title": "Beach discovery kits",
+      "source_image": {
+        "filename": "sitka_beach_discovery_kit_progression.png",
+        "google_drive_id": "14oqAZmYcWA0UCIBzC4LGvp6Tql-kCC_p",
+        "google_drive_url": "https://drive.google.com/file/d/14oqAZmYcWA0UCIBzC4LGvp6Tql-kCC_p/view?usp=drivesdk",
+        "sha256": "97343e9f04338e1f490204b9171b9c1ce18b8b3ab54463ee10e20a121c6c0505",
+        "bytes": 2775132,
+        "width": 1448,
+        "height": 1086
+      },
+      "gameplay_alignment": "Journal.shore_kit_level; levels 0–8 (8 purchased upgrades)",
+      "shop_implementation": "rules_present; UI_pending",
+      "render_placements": "worn player kit / hand-held tools / shore discovery props",
+      "primary_icon_direction": "silhouette of increasing bag size and associated tool",
+      "model_component_brief": [
+        "bag, pouch or pack",
+        "carry strap",
+        "work glove",
+        "sifter or net",
+        "notebook",
+        "sample jar or hand lens"
+      ],
+      "tiers": [
+        {
+          "asset_id": "sitka.beach_kit.00",
+          "sheet_tier": 1,
+          "gameplay_level_if_linear": 0,
+          "display_name": "Starter Shell Pouch",
+          "physical_model_cue": "small canvas pouch and finds notebook",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.beach_kit.01",
+          "sheet_tier": 2,
+          "gameplay_level_if_linear": 1,
+          "display_name": "Beach Bag",
+          "physical_model_cue": "beach tote, bucket and simple sifter",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.beach_kit.02",
+          "sheet_tier": 3,
+          "gameplay_level_if_linear": 2,
+          "display_name": "Crab Spotter Kit",
+          "physical_model_cue": "transparent observation case, net and lamp",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.beach_kit.03",
+          "sheet_tier": 4,
+          "gameplay_level_if_linear": 3,
+          "display_name": "Rock Finder Kit",
+          "physical_model_cue": "rock pouch, field lens, brush and rock hammer",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.beach_kit.04",
+          "sheet_tier": 5,
+          "gameplay_level_if_linear": 4,
+          "display_name": "Sea Glass Satchel",
+          "physical_model_cue": "teal satchel, sea-glass jar and loupe",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.beach_kit.05",
+          "sheet_tier": 6,
+          "gameplay_level_if_linear": 5,
+          "display_name": "Shore Survey Kit",
+          "physical_model_cue": "organizer tote, notebooks, jars, calipers",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.beach_kit.06",
+          "sheet_tier": 7,
+          "gameplay_level_if_linear": 6,
+          "display_name": "Collector's Pack",
+          "physical_model_cue": "large collector pack, hand tools and sample jars",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.beach_kit.07",
+          "sheet_tier": 8,
+          "gameplay_level_if_linear": 7,
+          "display_name": "Advanced Beach Field Kit",
+          "physical_model_cue": "blue pack with case, net and organized equipment",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.beach_kit.08",
+          "sheet_tier": 9,
+          "gameplay_level_if_linear": 8,
+          "display_name": "Master Shoreline Explorer Kit",
+          "physical_model_cue": "large orange pack with field case and research gear",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        }
+      ]
+    },
+    {
+      "id": "skiff_hull",
+      "title": "Skiff hulls",
+      "source_image": {
+        "filename": "sitka_skiff_hull_progression_model_sheet.png",
+        "google_drive_id": "1dnwedmFGE4gJakr5E4TM8Id1L0qM4A4j",
+        "google_drive_url": "https://drive.google.com/file/d/1dnwedmFGE4gJakr5E4TM8Id1L0qM4A4j/view?usp=drivesdk",
+        "sha256": "6efda918ad06b732c66a20d7a13e9552e70fb76b734921806a0f7f8a130db454",
+        "bytes": 2353133,
+        "width": 1448,
+        "height": 1086
+      },
+      "gameplay_alignment": "Journal.hull_tier currently levels 0–3; six pictured concepts require separate design/balance integration",
+      "shop_implementation": "concept_extra_tiers; UI_pending",
+      "render_placements": "drivable boat / harbor berth / upgrade preview",
+      "primary_icon_direction": "top-down hull silhouette; lengths and T-top structure distinguish variants",
+      "model_component_brief": [
+        "hull shell and collision",
+        "benches and deck",
+        "transom",
+        "cleats and railings",
+        "storage compartments",
+        "rod holders",
+        "mounts for helm and outboard"
+      ],
+      "tiers": [
+        {
+          "asset_id": "sitka.skiff_hull.00",
+          "sheet_tier": 1,
+          "gameplay_level_if_linear": 0,
+          "display_name": "Shore Dinghy",
+          "physical_model_cue": "open 2.4m weathered dinghy and wooden benches",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.skiff_hull.01",
+          "sheet_tier": 2,
+          "gameplay_level_if_linear": 1,
+          "display_name": "Utility Skiff",
+          "physical_model_cue": "3.6m work skiff with small storage box",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.skiff_hull.02",
+          "sheet_tier": 3,
+          "gameplay_level_if_linear": 2,
+          "display_name": "Reinforced Harbor Skiff",
+          "physical_model_cue": "4.2m reinforced hull and small outboard",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.skiff_hull.03",
+          "sheet_tier": 4,
+          "gameplay_level_if_linear": 3,
+          "display_name": "Coastal Fishing Skiff",
+          "physical_model_cue": "5.2m coastal console skiff and rod holders",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.skiff_hull.04",
+          "sheet_tier": 5,
+          "gameplay_level_if_linear": 4,
+          "display_name": "Deepwater Aluminum Skiff",
+          "physical_model_cue": "6.1m larger aluminium fishing layout with railings",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.skiff_hull.05",
+          "sheet_tier": 6,
+          "gameplay_level_if_linear": 5,
+          "display_name": "Master Angler Skiff",
+          "physical_model_cue": "6.8m master skiff with T-top, lockers and deck fittings",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        }
+      ]
+    },
+    {
+      "id": "helm_outboard",
+      "title": "Helm and outboards",
+      "source_image": {
+        "filename": "sitka_helm_and_outboard_progression_sheet.png",
+        "google_drive_id": "1kXvJvppuGGDu2N2t7AZ8uhlLZiQeodRM",
+        "google_drive_url": "https://drive.google.com/file/d/1kXvJvppuGGDu2N2t7AZ8uhlLZiQeodRM/view?usp=drivesdk",
+        "sha256": "781c9c76a8304b244dd27db301874416ecc3cd3e1d2d98e4323b7afdfbbe0cf5",
+        "bytes": 2508512,
+        "width": 1448,
+        "height": 1086
+      },
+      "gameplay_alignment": "Journal.helm_upgrades is a fitting bitmask, NOT 9 linear upgrades; concepts need slot mapping",
+      "shop_implementation": "concept_slot_mapping_pending",
+      "render_placements": "installed boat fitting / helm console / upgrade display",
+      "primary_icon_direction": "motor/helm control assembly silhouette; avoid fake functional screens",
+      "model_component_brief": [
+        "physical mount brackets",
+        "tiller or steering wheel",
+        "instrument cluster",
+        "throttle lever",
+        "motor shaft and propeller",
+        "display cutout",
+        "cable channel"
+      ],
+      "tiers": [
+        {
+          "asset_id": "sitka.helm_outboard.00",
+          "sheet_tier": 1,
+          "gameplay_level_if_linear": 0,
+          "display_name": "Hand Tiller Starter",
+          "physical_model_cue": "manual tiller bar and bolted bracket",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.helm_outboard.01",
+          "sheet_tier": 2,
+          "gameplay_level_if_linear": 1,
+          "display_name": "Compact Outboard",
+          "physical_model_cue": "small 6hp outboard housing and prop",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.helm_outboard.02",
+          "sheet_tier": 3,
+          "gameplay_level_if_linear": 2,
+          "display_name": "Harbor Outboard",
+          "physical_model_cue": "heavier 15hp outboard and marine cowling",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.helm_outboard.03",
+          "sheet_tier": 4,
+          "gameplay_level_if_linear": 3,
+          "display_name": "Trim Gauge Helm",
+          "physical_model_cue": "small gauge helm with steering and throttle",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.helm_outboard.04",
+          "sheet_tier": 5,
+          "gameplay_level_if_linear": 4,
+          "display_name": "Dual Instrument Console",
+          "physical_model_cue": "two analog gauges, switches and control box",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.helm_outboard.05",
+          "sheet_tier": 6,
+          "gameplay_level_if_linear": 5,
+          "display_name": "Reinforced Steering Helm",
+          "physical_model_cue": "reinforced helm with protection bar and gauges",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.helm_outboard.06",
+          "sheet_tier": 7,
+          "gameplay_level_if_linear": 6,
+          "display_name": "Coastal Sonar Helm",
+          "physical_model_cue": "sonar display and instrumented helm",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.helm_outboard.07",
+          "sheet_tier": 8,
+          "gameplay_level_if_linear": 7,
+          "display_name": "Advanced Navigation Console",
+          "physical_model_cue": "two-display navigation console with mounts",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.helm_outboard.08",
+          "sheet_tier": 9,
+          "gameplay_level_if_linear": 8,
+          "display_name": "Master Angler Command Helm",
+          "physical_model_cue": "command station with sonar, chartplotter and VHF",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        }
+      ]
+    },
+    {
+      "id": "catch_storage",
+      "title": "Catch storage",
+      "source_image": {
+        "filename": "sitka_catch_storage_progression_sheet.png",
+        "google_drive_id": "1jum3DRzh6lc8dbtx_qRoIb6Q8pBMn6gz",
+        "google_drive_url": "https://drive.google.com/file/d/1jum3DRzh6lc8dbtx_qRoIb6Q8pBMn6gz/view?usp=drivesdk",
+        "sha256": "4eb2b415daa6f8d97a734237b0b483a159cbea85319f595cdfee3eefee932f51",
+        "bytes": 2645240,
+        "width": 1448,
+        "height": 1086
+      },
+      "gameplay_alignment": "concept-only track; no implemented persistent storage-tier purchase",
+      "shop_implementation": "design_pending",
+      "render_placements": "inventory tool / dock crate / boat deck mounted storage",
+      "primary_icon_direction": "container outline and lid/handle silhouette at rising size",
+      "model_component_brief": [
+        "carry container body",
+        "handle or straps",
+        "lid and latch",
+        "ice or drainage cavity",
+        "dividers",
+        "tool or measuring tray"
+      ],
+      "tiers": [
+        {
+          "asset_id": "sitka.catch_storage.00",
+          "sheet_tier": 1,
+          "gameplay_level_if_linear": 0,
+          "display_name": "Stringer Kit",
+          "physical_model_cue": "rope stringer and metal clips",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.catch_storage.01",
+          "sheet_tier": 2,
+          "gameplay_level_if_linear": 1,
+          "display_name": "Bucket & Lid",
+          "physical_model_cue": "white bucket and fitted lid",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.catch_storage.02",
+          "sheet_tier": 3,
+          "gameplay_level_if_linear": 2,
+          "display_name": "Canvas Creel Bag",
+          "physical_model_cue": "olive canvas shoulder creel",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.catch_storage.03",
+          "sheet_tier": 4,
+          "gameplay_level_if_linear": 3,
+          "display_name": "Catch Crate",
+          "physical_model_cue": "stackable grey ventilated crate",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.catch_storage.04",
+          "sheet_tier": 5,
+          "gameplay_level_if_linear": 4,
+          "display_name": "Ice Chest",
+          "physical_model_cue": "rigid blue-gray cooler with drain",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.catch_storage.05",
+          "sheet_tier": 6,
+          "gameplay_level_if_linear": 5,
+          "display_name": "Insulated Fish Tote",
+          "physical_model_cue": "soft insulated tote with liner",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.catch_storage.06",
+          "sheet_tier": 7,
+          "gameplay_level_if_linear": 6,
+          "display_name": "Deck Cooler Station",
+          "physical_model_cue": "deck-mounted cooler with storage underneath",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.catch_storage.07",
+          "sheet_tier": 8,
+          "gameplay_level_if_linear": 7,
+          "display_name": "Sorting & Prep Chest",
+          "physical_model_cue": "chest with measuring surface and tool slots",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.catch_storage.08",
+          "sheet_tier": 9,
+          "gameplay_level_if_linear": 8,
+          "display_name": "Master Catch Preservation Kit",
+          "physical_model_cue": "modular fishing station with ice and dividers",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        }
+      ]
+    },
+    {
+      "id": "fishfinder_nav",
+      "title": "Fish finders and navigation",
+      "source_image": {
+        "filename": "sitka_fish_finder_progression_sheet.png",
+        "google_drive_id": "1p1QDW6jHq6Xz6PIJmVqR43558XhLeDHS",
+        "google_drive_url": "https://drive.google.com/file/d/1p1QDW6jHq6Xz6PIJmVqR43558XhLeDHS/view?usp=drivesdk",
+        "sha256": "e71bba1ac1b6ee6f2b9925585c8628a06a5f1e65181cd65656801dacf54151b6",
+        "bytes": 2434492,
+        "width": 1448,
+        "height": 1086
+      },
+      "gameplay_alignment": "concept-only upgrade sequence; existing sonar and sourced bathymetry code must be reused",
+      "shop_implementation": "design_pending",
+      "render_placements": "handheld instrument / boat console / mountable accessory",
+      "primary_icon_direction": "front three-quarter screen unit and attachable transducer/antenna",
+      "model_component_brief": [
+        "display housing",
+        "mount or clamp",
+        "buttons or bezel",
+        "cable loom",
+        "transducer puck",
+        "GPS antenna",
+        "sensor modules"
+      ],
+      "tiers": [
+        {
+          "asset_id": "sitka.fishfinder_nav.00",
+          "sheet_tier": 1,
+          "gameplay_level_if_linear": 0,
+          "display_name": "Tide Chart & Compass",
+          "physical_model_cue": "paper tide chart and brass compass",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.fishfinder_nav.01",
+          "sheet_tier": 2,
+          "gameplay_level_if_linear": 1,
+          "display_name": "Handheld Depth Meter",
+          "physical_model_cue": "rugged handheld depth meter with puck sensor",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.fishfinder_nav.02",
+          "sheet_tier": 3,
+          "gameplay_level_if_linear": 2,
+          "display_name": "Portable Sonar Kit",
+          "physical_model_cue": "case containing sonar, puck and battery",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.fishfinder_nav.03",
+          "sheet_tier": 4,
+          "gameplay_level_if_linear": 3,
+          "display_name": "Clamp-On Fish Finder",
+          "physical_model_cue": "single clamp-on fishfinder screen and transducer",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.fishfinder_nav.04",
+          "sheet_tier": 5,
+          "gameplay_level_if_linear": 4,
+          "display_name": "Basic Dash Sonar",
+          "physical_model_cue": "small dash sonar with gimbal bracket",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.fishfinder_nav.05",
+          "sheet_tier": 6,
+          "gameplay_level_if_linear": 5,
+          "display_name": "Coastal GPS Sonar Combo",
+          "physical_model_cue": "split GPS chart and sonar display",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.fishfinder_nav.06",
+          "sheet_tier": 7,
+          "gameplay_level_if_linear": 6,
+          "display_name": "Advanced Chartplotter Suite",
+          "physical_model_cue": "larger chartplotter with GPS module",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        },
+        {
+          "asset_id": "sitka.fishfinder_nav.07",
+          "sheet_tier": 8,
+          "gameplay_level_if_linear": 7,
+          "display_name": "Master Angler Electronics Suite",
+          "physical_model_cue": "large display with twin transducers and electronics brain",
+          "mesh_status": "not_yet_modeled",
+          "icon_status": "not_yet_rendered"
+        }
+      ]
+    }
+  ]
+}
