@@ -80,7 +80,8 @@ struct Module {
     reverie::chessbook::Analysis chessAnalysis;
     reverie::chesstween::Move chessTween;
     int chessThreatOverlay=reverie::chessui::Off;
-    bool chessNewGameOpen=false;
+    int chessThreatHover=0,chessColorHover=0;
+    bool chessNewGameOpen=false,chessNewGameHover=false;
     int chessAnalyzedPly=-1;
     int chessPanelTab=0; // 0 = legal next move; 1 = indexed classical line
     bool chessPanelHover=false;
@@ -701,9 +702,11 @@ void RebuildBoard(Module *m,bool fixed){
         for(int i=0;i<3;++i) {
             const float x=static_cast<float>(i-1)*.97f;
             const bool chosen=m->chessThreatOverlay==i+1;
+            const bool focus=m->chessThreatHover==i+1;
             Rect(m,x,1.415f,.92f,.26f,-2.976f,
-                 chosen?.24f:.13f,chosen?.38f:.22f,
-                 chosen?.42f:.28f);
+                 chosen?.24f:focus?.22f:.13f,
+                 chosen?.38f:focus?.32f:.22f,
+                 chosen?.42f:focus?.39f:.28f);
             Text(m,names[i],x,1.407f,.023f,
                  chosen?1.f:.85f,chosen?1.f:.91f,
                  chosen?.80f:.86f);
@@ -861,7 +864,8 @@ void RebuildBoard(Module *m,bool fixed){
         const std::string cpuTrace=reverie::chessref::LastCpuMoveTrace(s);
         if(!cpuTrace.empty())ChessPanelLine(m,cpuTrace,-2.20f,-1.18f);
         ChessPanelRect(m,2.22f,1.43f,.94f,.25f,-3.026f,
-                       .25f,.42f,.34f);
+                       m->chessNewGameHover?.34f:.25f,
+                       m->chessNewGameHover?.53f:.42f,.34f);
         ChessPanelText(m,"NEW GAME",2.22f,1.423f,.027f,
                        .94f,1.f,.85f);
         ChessPanelText(m,s.chessHumanColor==1?"YOU: WHITE":"YOU: BLACK",
@@ -889,8 +893,12 @@ void RebuildBoard(Module *m,bool fixed){
         Rect(m,0.f,.04f,2.86f,1.29f,-2.910f,
              .075f,.12f,.18f);
         Text(m,"START A NEW GAME",0.f,.49f,.041f,.95f,.97f,.87f);
-        Rect(m,-.66f,.08f,1.08f,.34f,-2.900f,.27f,.39f,.43f);
-        Rect(m,.66f,.08f,1.08f,.34f,-2.900f,.27f,.39f,.43f);
+        Rect(m,-.66f,.08f,1.08f,.34f,-2.900f,
+             m->chessColorHover==1?.38f:.27f,
+             m->chessColorHover==1?.52f:.39f,.43f);
+        Rect(m,.66f,.08f,1.08f,.34f,-2.900f,
+             m->chessColorHover==2?.38f:.27f,
+             m->chessColorHover==2?.52f:.39f,.43f);
         Text(m,"PLAY WHITE",-.66f,.073f,.028f,.98f,.98f,.93f);
         Text(m,"PLAY BLACK", .66f,.073f,.028f,.98f,.98f,.93f);
         Rect(m,0.f,-.40f,1.08f,.26f,-2.900f,.19f,.24f,.29f);
@@ -1413,6 +1421,28 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
         panelY<-.82f&&panelY>-1.14f?1:0;
     const bool chessPanelHover=chessPanelAim &&
         std::abs(panelX)<.525f&&panelY>.70f&&panelY<1.06f;
+    const int threatHover=!m->chessWikiOpen&&!m->chessNewGameOpen&&aim?
+        reverie::chessui::OverlayButton(hx,hy):0;
+    const bool newHover=!m->chessWikiOpen&&!m->chessNewGameOpen &&
+        chessPanelAim&&std::abs(panelX)<.49f&&
+        panelY>1.29f&&panelY<1.56f;
+    const int colorHover=m->chessNewGameOpen&&wikiAim&&
+        wikiY>-.10f&&wikiY<.29f?
+        (wikiX> -1.22f&&wikiX<-.10f?1:
+         wikiX>.10f&&wikiX<1.22f?2:0):0;
+    if(threatHover!=m->chessThreatHover ||
+       newHover!=m->chessNewGameHover ||
+       colorHover!=m->chessColorHover) {
+        const bool focused=(threatHover&&!m->chessThreatHover)||
+            (newHover&&!m->chessNewGameHover)||
+            (colorHover&&!m->chessColorHover);
+        m->chessThreatHover=threatHover;
+        m->chessNewGameHover=newHover;
+        m->chessColorHover=colorHover;
+        m->dirty=true;
+        if(focused)ReverieNativeRequestFeedbackV1(m->host,
+                    REVERIE_NATIVE_FEEDBACK_FOCUS);
+    }
 #else
     const int controlHover=aim&&!m->board.finished&&m->board.side==1&&
         m->board.kind==reverie::boardgames::Kind::Checkers&&
@@ -1446,6 +1476,13 @@ void Update(void *ptr,const ReverieNativeInputV1 *input){
             m->dirty=true;
         }
     }else m->cursorRepeat=.17f;
+#if CLASSIC_GAME_KIND == 5
+    if(secondaryEdge&&m->chessNewGameOpen) {
+        m->chessNewGameOpen=false;m->dirty=true;
+        ReverieNativeRequestFeedbackV1(m->host,
+            REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+    }else
+#endif
     if(secondaryEdge &&
 #if CLASSIC_GAME_KIND == 5
        !m->chessNewGameOpen &&
