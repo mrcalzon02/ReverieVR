@@ -37,9 +37,13 @@ inline bool Highlight(const boardgames::State &state,
     return false;
 }
 inline std::string CapturedLine(const boardgames::State &state,
-                                int capturer) {
-    const auto &counts=capturer==1?state.chessCapturedByWhite:
-                                     state.chessCapturedByBlack;
+                                int capturer,int pendingVictim=0) {
+    auto counts=capturer==1?state.chessCapturedByWhite:
+                             state.chessCapturedByBlack;
+    // The logical move has committed, but the victim remains visible
+    // during travel. Show the tally only after contact, not before.
+    if(pendingVictim>=1&&pendingVictim<=5 &&
+       counts[pendingVictim]>0)--counts[pendingVictim];
     std::string line=capturer==state.chessHumanColor?"YOU TOOK: ":"CPU TOOK: ";
     constexpr char piece[]={'?','P','N','B','R','Q'};
     for(int i=1;i<=5;++i) {
