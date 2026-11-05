@@ -2,6 +2,7 @@
 #include "breakwater_wave_threat.h"
 #include "breakwater_checkpoint.h"
 #include "breakwater_silhouettes.h"
+#include "breakwater_aircraft_mesh.h"
 #include "breakwater_armor.h"
 #include "breakwater_sprite_atlas.h"
 #include "breakwater_authored_materials.h"
@@ -905,8 +906,13 @@ void BuildScene(State *s) {
                 [s](auto... values){Triangle(s,values...);});
             continue;
         }
-        // Real 3D hulls and ramps replace billboard boats; aircraft keep
-        // their banked atlas until a mesh animation pass is accepted.
+        // The bomber and strafer now have actual banked low-poly fuselages,
+        // wings, propellers and tails, still sharing one XYZRGB draw batch.
+        if(e.type==UnitType::Aircraft) {
+            EmitAircraftMesh(e,
+                [s](auto... values){Triangle(s,values...);});
+            continue;
+        }
         if(e.type!=UnitType::Aircraft) {
             EmitVesselSilhouette(e,
                 [s](auto... values){Box(s,values...);},
@@ -921,21 +927,7 @@ void BuildScene(State *s) {
             }
             continue;
         }
-        const SpriteId sprite=EnemySprite(e);
-        const bool aircraft=e.type==UnitType::Aircraft;
-        float width=.99f,height=.71f,y=-.66f,bank=0.0f;
-        if(e.type==UnitType::LandingCraft) {
-            width=1.24f;height=.86f;y=-.70f;
-        } else if(e.type==UnitType::Gunboat) {
-            width=1.37f;height=.96f;y=-.68f;
-        } else if(aircraft) {
-            const bool bomber=e.aircraft_pattern==AircraftPattern::Bomber;
-            width=bomber?2.55f:2.02f;
-            height=bomber?1.35f:1.08f;
-            y=1.6f;
-            bank=std::isfinite(e.bank)?e.bank:0.0f;
-        }
-        AppendSprite(s->sprite_mesh,sprite,e.x,y,e.z,width,height,bank);
+
     }
     for(const ArmoredVehicle &vehicle:game.armored_vehicles()) {
         if(!vehicle.active)continue;
