@@ -481,9 +481,11 @@ int main() {
         assert(InfantrySecondsToReady(malformed)<0.0f);
         assert(!InfantryReady(malformed));
 
-        // The extra support silhouette occupies one already-empty cell;
-        // no atlas expansion or new GL texture.
-        assert(sizeof(SpritePixels)==128u*1024u);
+        // The extra support silhouette occupies one already-empty combat
+        // sprite cell. The material rows grow independently below the
+        // stable sprite region; still only one GLES2 atlas texture.
+        assert(sizeof(SpritePixels)==static_cast<size_t>(
+            kSpriteAtlasWidth*kSpriteAtlasHeight*4));
         const SpritePixels art=BuildSpriteAtlas();
         const int supportCell=static_cast<int>(SpriteId::InfantrySupport);
         const int col=supportCell%4,row=supportCell/4;
@@ -540,7 +542,8 @@ int main() {
         for(size_t a=0;a<hashes.size();++a)
             for(size_t b=a+1;b<hashes.size();++b)
                 assert(hashes[a]!=hashes[b]);
-        assert(sizeof(SpritePixels)==128u*1024u);
+        assert(sizeof(SpritePixels)==static_cast<size_t>(
+            kSpriteAtlasWidth*kSpriteAtlasHeight*4));
     }
 
     // A wreck is produced only by an authoritative death transition.
@@ -878,7 +881,8 @@ int main() {
             SpriteId::ArtillerySupport,SpriteId::AirstrikeSupport,
             SpriteId::SamSupport,SpriteId::RepairSupport}};
         assert(static_cast<int>(SpriteId::Count)==31);
-        assert(sizeof(SpritePixels)==128u*1024u);
+        assert(sizeof(SpritePixels)==static_cast<size_t>(
+            kSpriteAtlasWidth*kSpriteAtlasHeight*4));
         std::array<uint64_t,4> supportHashes{};
         for(size_t id=0;id<supportIds.size();++id) {
             const int slot=static_cast<int>(supportIds[id]);

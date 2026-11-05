@@ -15,11 +15,29 @@ renderer = (root / "app/src/main/jni/native/omega_front_texture_renderer.h").rea
 palette = (root / "app/src/main/jni/native/omega_front_cc0_palette.h").read_text()
 if catalog["license"] != "CC0-1.0" or len(catalog["tiles"]) != 64 or catalog["count"] != 64:
     raise SystemExit("Omega Front CC0 manifest must declare all 64 licensed sources")
+# The original game-private layout and its 64 CC0 slots have not moved.
+# Two later material slots reuse common *packaged APK* textures rather than
+# redundant private Omega copies; 119 private + 2 shared is still 121.
 png_paths = re.findall(r'"(native/omega-front/[^"]+\.png)"', renderer)
-# The original 108 slots remain ordered identically. New approved land
-# materials are append-only at slots 108..120; CC0 source slots stay 44..107.
-if len(png_paths) != 121 or len(set(png_paths)) != 121:
-    raise SystemExit(f"Expected 121 distinct runtime sprite paths; got {len(png_paths)}")
+shared_paths = re.findall(
+    r'"(native/shared/v1/materials/coastal/[^"]+\.png)"', renderer)
+expected_shared = {
+    "native/shared/v1/materials/coastal/quay_concrete.png",
+    "native/shared/v1/materials/coastal/oxidized_steel.png",
+}
+all_paths = png_paths + shared_paths
+if (len(png_paths) != 119 or len(set(png_paths)) != 119
+        or len(shared_paths) != 2 or set(shared_paths) != expected_shared
+        or len(all_paths) != 121 or len(set(all_paths)) != 121):
+    raise SystemExit(
+        f"Expected 119 private + 2 distinct shared runtime sprites, "
+        f"got {len(png_paths)} private + {len(shared_paths)} shared")
+for path in expected_shared:
+    art = (assets / path).read_bytes()
+    if art[:8] != bytes((137, 80, 78, 71, 13, 10, 26, 10)):
+        raise SystemExit(f"Shared Omega Front source is not a PNG: {path}")
+    if int.from_bytes(art[16:20], "big") != 64 or int.from_bytes(art[20:24], "big") != 64:
+        raise SystemExit(f"Shared Omega Front art must be 64x64: {path}")
 seen = set()
 for i, item in enumerate(catalog["tiles"]):
     path = item["runtime_path"]
