@@ -16,7 +16,8 @@ namespace reverie { namespace boardgames {
 
 enum class Kind : uint8_t { Checkers=3, Go=4, Chess=5, Reversi=7 };
 struct State {
-    // Chess: White human (+1) at ranks 1-2, Black CPU (-1) at 7-8.
+    // Chess: White (+1) on ranks 1-2; Black (-1) on ranks 7-8.
+    // The human may choose either side; White always has the first turn.
     // Go: Black human (+1), White CPU (-1). The sign is game-specific.
     // Go is full 19x19, chess and checkers retain standard 8x8.
     static constexpr int kGoSize=19,kCapacity=kGoSize*kGoSize;
@@ -60,6 +61,10 @@ struct State {
     int checkerQuietPlies=0;
     int halfMoves=0,promotionChoice=5;
     int chessDifficulty=1,chessSearchNodes=0;
+    int chessHumanColor=1;
+    uint32_t chessGameSerial=0; // invalidates stale CPU results on new game
+    // Captures count actual victims, never promoted-away pawns.
+    std::array<uint8_t,7> chessCapturedByWhite{},chessCapturedByBlack{};
     int checkerDifficulty=1,checkerSearchNodes=0;
     int reversiSearchNodes=0;
     Kind kind=Kind::Checkers;
@@ -82,12 +87,23 @@ struct State {
     bool Inside(int x,int y) const {return x>=0 && y>=0 && x<Size() && y<Size();}
     uint32_t Random(){seed^=seed<<13;seed^=seed>>17;seed^=seed<<5;return seed;}
     static int Sign(int n){return n>0?1:(n<0?-1:0);}
+    int ChessCpuColor() const {return -chessHumanColor;}
+    bool ChessHumanTurn() const {
+        return kind==Kind::Chess && side==chessHumanColor;
+    }
+    void StartChessGame(int humanColor) {
+        chessHumanColor=humanColor==-1?-1:1;
+        Reset(Kind::Chess);
+    }
     void Reset(Kind type) {
         kind=type;cells.fill(0);goHistory.clear();goDead.fill(0);
         goReview=false;goResumeSide=1;goReviewRevision=0;
         goBlackScore=goWhiteScore=0.f;chessHistory.clear();chessSanHistory.clear();
         checkerHistory.clear();checkerQuietPlies=0;
         halfMoves=0;promotionChoice=5;side=1;winner=0;
+        chessCapturedByWhite.fill(0);chessCapturedByBlack.fill(0);
+        if(type==Kind::Chess)++chessGameSerial;
+        else chessHumanColor=1;
         selected=forced=-1;ply=passes=0;enPassant=-1;castles=15;
         lastFrom=lastTo=-1;clock=0;finished=false;
         if(type==Kind::Checkers){
@@ -781,17 +797,21 @@ struct State {
         }
         return false;
     }
-    bool ChessDrawClaimable() const {return ChessDrawAvailable(1);}
-    bool ClaimChessDraw(int player=1) {
+    bool ChessDrawClaimable() const {
+        return ChessDrawAvailable(chessHumanColor);
+    }
+    bool ClaimChessDraw(int player=0) {
+        if(player==0)player=chessHumanColor;
         int from=-1,to=-1;
         if(!ChessDrawAvailable(player,&from,&to))return false;
         if(from>=0){lastFrom=from;lastTo=to;}
         finished=true;winner=0;selected=-1;return true;
     }
     void CyclePromotion(){
-        if(kind!=Kind::Chess||finished||side!=1||
-           selected<0||selected>=64||cells[selected]!=1||
-           selected/8!=1)return;
+        if(kind!=Kind::Chess||finished||side!=chessHumanColor||
+           selected<0||selected>=64||
+           cells[selected]!=chessHumanColor||
+           selected/8!=(chessHumanColor==1?1:6))return;
         promotionChoice=promotionChoice==5?4:
             promotionChoice==4?3:promotionChoice==3?2:5;
     }
@@ -944,13 +964,18 @@ struct State {
         if(kind!=Kind::Chess||finished||!ChessLegal(from,to))return false;
         const int piece=cells[from],taken=cells[to];
         std::string notation=ChessMoveNotation(from,to,
-            side==1?promotionChoice:cpuPromotion);
+            side==chessHumanColor?promotionChoice:cpuPromotion);
         const bool enPassantCapture=std::abs(piece)==1&&
             to==enPassant&&taken==0&&from%8!=to%8;
         halfMoves=(std::abs(piece)==1||taken!=0||enPassantCapture)
             ?0:halfMoves+1;
+        const int victim=enPassantCapture?-side:taken;
+        if(victim && std::abs(victim)<=5) {
+            auto &counts=side==1?chessCapturedByWhite:chessCapturedByBlack;
+            if(counts[std::abs(victim)]<255)++counts[std::abs(victim)];
+        }
         ApplyChess(cells,from,to,enPassant,castles,
-                   side==1?promotionChoice:cpuPromotion);
+                   side==chessHumanColor?promotionChoice:cpuPromotion);
         promotionChoice=5;
         selected=-1;lastFrom=from;lastTo=to;side=-side;++ply;
         const int repeats=++chessHistory[CurrentChessPosition()];
@@ -968,7 +993,7 @@ struct State {
 
     bool Select(int square) {
         if(finished){Reset(kind);return true;}
-        if(side!=1)return false;
+        if(side!=(kind==Kind::Chess?chessHumanColor:1))return false;
         if(kind==Kind::Go)
             return goReview?ToggleGoDead(square):GoMove(square);
         if(kind==Kind::Reversi)return ReversiMove(square);
@@ -980,12 +1005,15 @@ struct State {
             if(selected>=0&&CheckerMove(selected,square))return true;
             return false;
         }
-        if(cells[square]>0){selected=square;return true;}
+        if(Sign(cells[square])==chessHumanColor){
+            selected=square;return true;
+        }
         return selected>=0&&ChessMove(selected,square);
     }
 
     // Light, bounded adversarial chess opponent. Material evaluations are
-    // from the CPU (negative pieces) perspective, and both players search
+    // from the Black perspective, then mapped to the chosen CPU color;
+    // both players search
     // *legal king-safe replies*, not only destination-square captures.
     static int ChessBoardValue(const Board &board){
         static const int values[7]={0,100,320,330,500,900,0};
@@ -1004,6 +1032,10 @@ struct State {
     State ChessAfter(int from,int to,int promotion=5) const {
         State result;
         result.kind=Kind::Chess;
+        result.chessHumanColor=chessHumanColor;
+        result.chessGameSerial=chessGameSerial;
+        result.chessCapturedByWhite=chessCapturedByWhite;
+        result.chessCapturedByBlack=chessCapturedByBlack;
         result.cells=cells;
         result.side=side;
         result.enPassant=enPassant;
@@ -1032,18 +1064,22 @@ struct State {
             [](const ChessTurn &a,const ChessTurn &b){return a.order>b.order;});
         return moves;
     }
+    int ChessCpuValue() const {
+        return chessHumanColor==1?ChessBoardValue(cells):
+                                   -ChessBoardValue(cells);
+    }
     int SearchChessBounded(int depth,int alpha,int beta,int &nodes,
                            int budget,bool &exhausted) const {
-        if(nodes>=budget){exhausted=true;return ChessBoardValue(cells);}
+        if(nodes>=budget){exhausted=true;return ChessCpuValue();}
         ++nodes;
         const auto moves=ChessTurns();
         // Stalemate is a draw even at the material-evaluation horizon.
         // Mate takes priority over the automatic move-count draw.
         if(moves.empty())return KingInCheck(cells,side)
-            ?(side==-1?-50000-depth:50000+depth):0;
+            ?(side==ChessCpuColor()?-50000-depth:50000+depth):0;
         if(ChessDeadPosition()||halfMoves>=150)return 0;
-        if(depth<=0)return ChessBoardValue(cells);
-        const bool maximizing=side==-1;
+        if(depth<=0)return ChessCpuValue();
+        const bool maximizing=side==ChessCpuColor();
         int best=maximizing?-300000:300000;
         for(const auto &move:moves){
             State next=ChessAfter(move.from,move.to,move.promotion);
@@ -1061,9 +1097,11 @@ struct State {
         return SearchChessBounded(depth,alpha,beta,nodes,12000,exhausted);
     }
     bool PlayChessCpuTurn(){
-        if(kind!=Kind::Chess||finished||side!=-1)return false;
+        if(kind!=Kind::Chess||finished||side!=ChessCpuColor())
+            return false;
         chessSearchNodes=0;
-        if(ChessBoardValue(cells)<0&&ClaimChessDraw(-1))return true;
+        if(ChessCpuValue()<0&&ClaimChessDraw(ChessCpuColor()))
+            return true;
         const auto moves=ChessTurns();
         if(moves.empty()){
             finished=true;winner=KingInCheck(cells,side)?1:0;
@@ -1095,7 +1133,8 @@ struct State {
 
     // One bounded deterministic response per CPU turn, evaluated on Update.
     void Step(float delta) {
-        if(side!=-1||finished||!std::isfinite(delta)||delta<=0)return;
+        if(side!=(kind==Kind::Chess?ChessCpuColor():-1)||
+           finished||!std::isfinite(delta)||delta<=0)return;
         clock+=std::min(delta,.1f);
         if(clock<.28f)return;
         clock=0;

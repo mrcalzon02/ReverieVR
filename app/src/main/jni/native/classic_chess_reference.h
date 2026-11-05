@@ -45,17 +45,23 @@ inline std::string Square(int square) {
     result[1]=static_cast<char>('8'-square/8);
     return result;
 }
-// Inspect the actual committed Black turn; no animation or inferred route.
-inline std::string LastBlackMoveTrace(const boardgames::State &board) {
-    if(board.kind!=boardgames::Kind::Chess || board.ply<2 ||
-       board.ply%2!=0 || board.side!=1 ||
+// Inspect the actual committed CPU move, regardless of assigned color.
+inline std::string LastCpuMoveTrace(const boardgames::State &board) {
+    if(board.kind!=boardgames::Kind::Chess || board.ply<1 ||
+       board.side!=board.chessHumanColor ||
        board.lastFrom<0 || board.lastFrom>=64 ||
        board.lastTo<0 || board.lastTo>=64)return {};
     const int piece=board.cells[board.lastTo];
-    if(piece>=0 || piece< -6)return {};
+    if(boardgames::State::Sign(piece)!=board.ChessCpuColor() ||
+       std::abs(piece)>6)return {};
     constexpr char symbols[]="?PNBRQK";
-    return std::string("CPU ")+symbols[-piece]+" "+
+    return std::string("CPU ")+symbols[std::abs(piece)]+" "+
         Square(board.lastFrom)+"-"+Square(board.lastTo);
+}
+// Compatibility for stored classic test cases that explicitly play
+// Black as CPU; the generalized trace is now the authoritative helper.
+inline std::string LastBlackMoveTrace(const boardgames::State &board) {
+    return LastCpuMoveTrace(board);
 }
 inline std::string PieceName(int piece) {
     const char *kind[]={"EMPTY","PAWN","KNIGHT","BISHOP","ROOK","QUEEN","KING"};

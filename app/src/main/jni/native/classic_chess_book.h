@@ -3979,8 +3979,11 @@ inline Analysis Analyze(const boardgames::State &board){
     if(board.kind!=boardgames::Kind::Chess)return analysis;
     const auto &history=board.chessSanHistory;
     const size_t n=history.size();
-    const size_t cpuPrefix=n-(n&1u); // Human white plays first.
-    if(cpuPrefix>=2){
+    // Black CPU occupies odd SAN half-plies, White CPU even half-plies.
+    const bool cpuWhite=board.ChessCpuColor()==1;
+    const size_t cpuPrefix=cpuWhite?(n%2==1?n:n==0?0:n-1):
+                                    n-(n&1u);
+    if(cpuPrefix>0){
         analysis.previousCpuMove=history[cpuPrefix-1];
         analysis.cpuComparison="OUTSIDE INDEX";
     }
@@ -3998,7 +4001,7 @@ inline Analysis Analyze(const boardgames::State &board){
                 bestKnownDepth=depth;
                 bestBookLine=static_cast<int>(i);
             }
-            if(next&&nextSize&&board.side==1&&!board.finished){
+            if(next&&nextSize&&board.ChessHumanTurn()&&!board.finished){
                 const std::string token(next,nextSize);
                 Candidate &c=options[token];
                 ++c.frequency;
@@ -4007,7 +4010,7 @@ inline Analysis Analyze(const boardgames::State &board){
         }
         // The left rail compares the last CPU move to a real indexed line,
         // even if the human has already made the following move.
-        if(cpuPrefix>=2 && BookLineMatches(kOpeningLines[i],history,
+        if(cpuPrefix>0 && BookLineMatches(kOpeningLines[i],history,
                  cpuPrefix,&depth,&next,&nextSize)){
             bestLastLine=static_cast<int>(i);
         }
@@ -4027,7 +4030,7 @@ inline Analysis Analyze(const boardgames::State &board){
     }
     if(bestLastLine>=0)
         analysis.cpuComparison="IN BOOK";
-    else if(cpuPrefix>=2)
+    else if(cpuPrefix>0)
         analysis.cpuComparison="OFF BOOK LINE";
 
     std::vector<std::pair<std::string,Candidate>> ranked(options.begin(),
@@ -4048,14 +4051,16 @@ inline Analysis Analyze(const boardgames::State &board){
             return analysis;
         }
     }
-    if(board.side==1&&!board.finished){
+    if(board.ChessHumanTurn()&&!board.finished){
         // After a genuine book departure give an explicitly labeled,
         // legal, material-only fallback. Never claim a master-game move.
         const auto turns=board.ChessTurns();
         int bestScore=-1000000;
         for(const auto &turn:turns){
             auto next=board.ChessAfter(turn.from,turn.to,turn.promotion);
-            const int score=-boardgames::State::ChessBoardValue(next.cells);
+            const int score=board.chessHumanColor==1?
+                -boardgames::State::ChessBoardValue(next.cells):
+                 boardgames::State::ChessBoardValue(next.cells);
             if(score>bestScore){
                 bestScore=score;
                 analysis.from=turn.from;analysis.to=turn.to;

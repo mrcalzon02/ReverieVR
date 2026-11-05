@@ -12,17 +12,22 @@ namespace reverie { namespace boardgames {
 // independently of the CPU search. A corrupt or stale worker result must
 // never teleport a queen, skip a turn, or alter castling/EP rights on screen.
 inline bool ValidChessCpuTransition(const State &before,const State &after) {
-    if(before.kind!=Kind::Chess||before.side!=-1||before.finished||
-       after.kind!=Kind::Chess)return false;
+    if(before.kind!=Kind::Chess||
+       before.side!=before.ChessCpuColor()||before.finished||
+       after.kind!=Kind::Chess||
+       before.chessHumanColor!=after.chessHumanColor||
+       before.chessGameSerial!=after.chessGameSerial)return false;
     if(after.ply==before.ply){
         // A valid non-move is only a genuinely claimable CPU draw.
-        return before.ChessDrawAvailable(-1)&&after.finished&&
-            after.winner==0&&after.side==-1&&
+        return before.ChessDrawAvailable(before.ChessCpuColor())&&
+            after.finished&&after.winner==0&&
+            after.side==before.ChessCpuColor()&&
             after.cells==before.cells&&
             after.chessSanHistory==before.chessSanHistory&&
             after.chessHistory==before.chessHistory;
     }
-    if(after.ply!=before.ply+1||after.side!=1||
+    if(after.ply!=before.ply+1||
+       after.side!=before.chessHumanColor||
        after.lastFrom<0||after.lastFrom>=64||
        after.lastTo<0||after.lastTo>=64||
        !before.ChessLegal(after.lastFrom,after.lastTo))return false;
@@ -45,6 +50,8 @@ inline bool ValidChessCpuTransition(const State &before,const State &after) {
         expected.finished==after.finished&&
         expected.lastFrom==after.lastFrom&&
         expected.lastTo==after.lastTo&&
+        expected.chessCapturedByWhite==after.chessCapturedByWhite&&
+        expected.chessCapturedByBlack==after.chessCapturedByBlack&&
         expected.chessSanHistory==after.chessSanHistory&&
         expected.chessHistory==after.chessHistory;
 }
@@ -58,7 +65,10 @@ class CpuWorker {
 public:
     bool Busy() const {return pending.valid();}
     bool Start(const State &board) {
-        if(Busy()||board.side!=-1||board.finished)return false;
+        if(Busy()||
+           board.side!=(board.kind==Kind::Chess?
+                       board.ChessCpuColor():-1)||
+           board.finished)return false;
         pending=std::async(std::launch::async,[snapshot=board]() mutable {
             snapshot.clock=0.f;
             for(int i=0;i<3;i++)snapshot.Step(.1f);
@@ -70,6 +80,11 @@ public:
         if(!Busy()||pending.wait_for(std::chrono::seconds(0))!=
                     std::future_status::ready)return false;
         State produced=pending.get();
+        // A New Game/color switch can happen while the worker is running.
+        // Discard the old game's valid result, never reject the fresh
+        // match as if its opponent had teleported a piece.
+        if(board.kind==Kind::Chess&&produced.kind==Kind::Chess &&
+           board.chessGameSerial!=produced.chessGameSerial)return false;
         if(board.kind==Kind::Chess &&
            !ValidChessCpuTransition(board,produced))
             throw std::runtime_error(
