@@ -2,6 +2,7 @@
 #define REVERIE_BREAKWATER_ENVIRONMENT_H
 
 #include "breakwater_sky.h"
+#include "breakwater_materials.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -139,9 +140,9 @@ inline float RearGroundHeight(const EnvironmentProfile& p,float x,float z) {
     return (1.0f-v)*y0+u*flank1+(v-u)*y1;
 }
 
-template<typename BoxFn,typename TriangleFn>
+template<typename BoxFn,typename TriangleFn,typename CladFn>
 void EmitSurroundingLandscape(uint8_t location,bool night,
-                              BoxFn box,TriangleFn triangle) {
+                              BoxFn box,TriangleFn triangle,CladFn clad) {
     if(location>=Campaign::kLocations)return;
     const EnvironmentProfile p=EnvironmentFor(location,night);
     // Fully joined rings provide cliffs and mountain silhouettes at every
@@ -185,6 +186,9 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
             box(0,RearGroundHeight(p,0,z)+.015f,z,
                 .80f,.025f,1.55f,
                 night?.18f:.52f,night?.23f:.47f,night?.27f:.33f);
+            clad(materials::Surface::DockPlanks,0,
+                 RearGroundHeight(p,0,z)+.015f,z,
+                 .80f,.025f,1.55f);
         }
     } else if(location==1) {
         // Iron Quay: recognizable fortified concrete and supply sheds.
@@ -193,13 +197,20 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
             const float base=RearGroundHeight(p,x,7.2f);
             box(x,base+.725f,7.2f,2.3f,1.45f,3.0f,
                 p.mountain.r,p.mountain.g,p.mountain.b);
+            clad(materials::Surface::ReinforcedConcrete,
+                 x,base+.725f,7.2f,2.3f,1.45f,3.0f);
             box(x,base+1.50f,5.65f,2.65f,.19f,.32f,
                 p.distant.r,p.distant.g,p.distant.b);
+            clad(materials::Surface::CorrugatedRoof,
+                 x,base+1.50f,5.65f,2.65f,.19f,.32f);
             box(x,base+1.02f,6.0f,.85f,.33f,.10f,
                 night?.07f:.15f,night?.12f:.20f,night?.21f:.25f);
             box(x,RearGroundHeight(p,x,8.2f)+.60f,8.2f,
                 .42f,1.2f,.42f,
                 night?.12f:.37f,night?.16f:.32f,night?.21f:.27f);
+            clad(materials::Surface::RivetedBulkhead,
+                 x,RearGroundHeight(p,x,8.2f)+.60f,8.2f,
+                 .42f,1.2f,.42f);
         }
     } else {
         // Blackcap Island: tall, asymmetric basalt fingers behind the fort.
@@ -214,6 +225,12 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
                      x+.10f,y+h,z+.12f,p.hill.r,p.hill.g,p.hill.b);
         }
     }
+}
+// Source-compatible flat landscape emission for older tests and consumers.
+template<typename BoxFn,typename TriangleFn>
+void EmitSurroundingLandscape(uint8_t location,bool night,
+                              BoxFn box,TriangleFn triangle) {
+    EmitSurroundingLandscape(location,night,box,triangle,[](auto...){});
 }
 
 }} // namespace reverie::breakwater

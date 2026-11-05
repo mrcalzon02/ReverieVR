@@ -41,11 +41,12 @@ int main() {
         assert(boxes>30&&faces>=10);
         assert(minDepth<-.6f && maxDepth>2.0f);
         const int dayBoxes=boxes,dayFaces=faces;
-        int cladding=0,sandbags=0,metalwork=0,crates=0,tarps=0,roofs=0;
+        int cladding=0,sandbags=0,metalwork=0,crates=0,tarps=0,roofs=0,deck=0;
         const auto present=[&](materials::Surface surface){
             if(surface==materials::Surface::CratePlanks)++crates;
             if(surface==materials::Surface::CamoNetting)++tarps;
             if(surface==materials::Surface::CorrugatedRoof)++roofs;
+            if(surface==materials::Surface::DiamondPlate)++deck;
         };
         EmitBatteryEmplacement(location,false,
             [](auto...){},[](auto...){},
@@ -62,7 +63,7 @@ int main() {
         // Twelve real sandbags, concrete/basalt defensive works and
         // shore stakes/door/store housings all receive textured UV faces.
         assert(cladding>=34 && sandbags==12 && metalwork>=10);
-        assert(crates==2 && tarps==2 && roofs==4);
+        assert(crates==2 && tarps==2 && roofs==4 && deck==8);
         boxes=0;faces=0;
         EmitBatteryEmplacement(location,true,box,triangle);
         assert(boxes==dayBoxes && faces==dayFaces);

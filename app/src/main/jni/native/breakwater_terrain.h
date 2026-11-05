@@ -2,6 +2,7 @@
 #define REVERIE_BREAKWATER_TERRAIN_H
 
 #include "breakwater_campaign.h"
+#include "breakwater_materials.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -47,10 +48,10 @@ inline float BeachHeight(uint8_t location,float x,float z) {
 constexpr int kBeachCrossSections=24;
 constexpr int kBeachLengthSections=20;
 
-template <typename BoxFn, typename TriangleFn>
+template <typename BoxFn, typename TriangleFn, typename CladFn>
 void EmitCoastalTerrain(uint8_t location, bool night,
                         BoxFn box, TriangleFn triangle,
-                        bool emitFlatFloor=true) {
+                        bool emitFlatFloor, CladFn clad) {
     if (location >= Campaign::kLocations) return;
     const CoastPalette c = CoastColors(location, night);
     constexpr float y=-1.037f; // decorative prop baseline
@@ -133,12 +134,26 @@ void EmitCoastalTerrain(uint8_t location, bool night,
                 c.sand_r*.73f,c.sand_g*.75f,c.sand_b*.78f);
             box(sign*12.0f,-.79f,-2.26f,16.0f,.65f,.32f,
                 c.detail_r*.72f,c.detail_g*.73f,c.detail_b*.74f);
+            // Eight repeated two-metre panels per structure. Each tile
+            // retains PSX-scale detail instead of stretching over 16 m.
+            // All cladding is visual only; the old box footprint remains.
+            for(int panel=0;panel<8;++panel) {
+                const float x=sign*(5.0f+panel*2.0f);
+                clad(materials::Surface::DockPlanks,x,-1.11f,-.46f,
+                     2.0f,.32f,3.65f);
+                clad(materials::Surface::MossySeawall,x,-.79f,-2.26f,
+                     2.0f,.65f,.32f);
+            }
             for(int index=0;index<7;index++) {
                 const float x=sign*(5.05f+index*2.3f);
                 box(x,-.38f,-2.22f,.32f,.35f,.36f,
                     .30f,.30f,.29f);
+                clad(materials::Surface::Steel,x,-.38f,-2.22f,
+                     .32f,.35f,.36f);
                 box(x,-.16f,-2.22f,.46f,.14f,.48f,
                     .22f,.24f,.24f);
+                clad(materials::Surface::Steel,x,-.16f,-2.22f,
+                     .46f,.14f,.48f);
             }
             const float towerX=sign*13.6f;
             box(towerX,.68f,.22f,.24f,3.35f,.26f,
@@ -166,6 +181,10 @@ void EmitCoastalTerrain(uint8_t location, bool night,
                 box(x,y+height*.42f,.42f+(n%3)*.37f,
                     .72f,height,.75f,
                     c.detail_r*.76f,c.detail_g*.78f,c.detail_b*.80f);
+                clad(location==0?materials::Surface::PebbleGround:
+                     materials::Surface::Basalt,
+                     x,y+height*.42f,.42f+(n%3)*.37f,
+                     .72f,height,.75f);
             }
         }
     }
@@ -184,6 +203,9 @@ void EmitCoastalTerrain(uint8_t location, bool night,
         for (int side : {-1,1}) {
             box(static_cast<float>(side)*3.48f,-.975f,-1.52f,
                 .13f,.12f,.62f,.37f,.29f,.19f);
+            clad(materials::Surface::CratePlanks,
+                 static_cast<float>(side)*3.48f,-.975f,-1.52f,
+                 .13f,.12f,.62f);
         }
     } else if (location==1) {
         // Iron Quay: concrete sea wall with rusty mooring posts.
@@ -192,9 +214,13 @@ void EmitCoastalTerrain(uint8_t location, bool night,
             const float x = static_cast<float>(side)*3.53f;
             box(x,-.96f,-1.58f,.35f,.18f,1.14f,
                 c.detail_r*.78f,c.detail_g*.81f,c.detail_b*.84f);
+            clad(materials::Surface::MossySeawall,x,-.96f,-1.58f,
+                 .35f,.18f,1.14f);
             for(int n=0;n<3;n++) {
                 box(x,-.80f,-2.02f+n*.39f,.12f,.35f,.13f,
                     .39f,.26f,.18f);
+                clad(materials::Surface::Steel,x,
+                     -.80f,-2.02f+n*.39f,.12f,.35f,.13f);
             }
         }
         // Separate small masonry seams retain a PS1-style hard edge.
@@ -215,6 +241,8 @@ void EmitCoastalTerrain(uint8_t location, bool night,
                 const float h=.23f+.09f*(n%3);
                 box(x,-1.02f+h*.5f,z,.30f,h,.27f,
                     c.detail_r*.74f,c.detail_g*.76f,c.detail_b*.82f);
+                clad(materials::Surface::Basalt,x,-1.02f+h*.5f,z,
+                     .30f,h,.27f);
                 triangle(x-sign*.21f,-.99f,z-.14f,
                          x,-.98f+h,z,
                          x+sign*.22f,-.99f,z+.16f,
@@ -222,6 +250,14 @@ void EmitCoastalTerrain(uint8_t location, bool night,
             }
         }
     }
+}
+// Preserve callers that only need the original flat-color geometry.
+template <typename BoxFn,typename TriangleFn>
+void EmitCoastalTerrain(uint8_t location,bool night,
+                        BoxFn box,TriangleFn triangle,
+                        bool emitFlatFloor=true) {
+    EmitCoastalTerrain(location,night,box,triangle,emitFlatFloor,
+                      [](auto...){});
 }
 
 }} // namespace reverie::breakwater

@@ -27,6 +27,9 @@ on:
       - 'app/src/main/jni/native/breakwater_materials.h'
       - 'app/src/main/jni/native/breakwater_authored_materials.h'
       - 'app/src/main/jni/native/breakwater_emplacement.h'
+      - 'app/src/main/jni/native/breakwater_terrain.h'
+      - 'app/src/main/jni/native/breakwater_environment.h'
+      - 'app/src/test/native/breakwater_shore_cladding_test.cpp'
       - 'app/src/test/native/breakwater_campaign_test.cpp'
       - 'app/src/test/native/breakwater_materials_test.cpp'
       - 'app/src/test/native/breakwater_authored_materials_test.cpp'
@@ -100,7 +103,7 @@ jobs:
           # Strict source/material parser/UV tests operate on real 16 PNGs.
           # This is build/run correctness, not a cosmetic screenshot gate.
           for cc in g++ clang++; do
-            for check in breakwater_materials breakwater_authored_materials breakwater_emplacement; do
+            for check in breakwater_materials breakwater_authored_materials breakwater_emplacement breakwater_shore_cladding; do
               "$cc" -std=c++17 -O1 -Wall -Wextra -Wpedantic -Werror                 -Iapp/src/main/jni/native                 "app/src/test/native/${check}_test.cpp" -lz                 -o "${RUNNER_TEMP}/${cc}-${check}"
               "${RUNNER_TEMP}/${cc}-${check}"
             done
@@ -217,7 +220,10 @@ jobs:
             grep -F 'Authentic BWM1 models loaded 5/5' validation/hub/logcat.txt
             # Emulator action executes each script line as its own sh -c call.
             # Keep the five independent verified-pack assertions on ONE line.
-            for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1; do grep -F "Breakwater verified-pack asset native/shared/v1/models/psx/${MODEL}.bwm" validation/hub/logcat.txt; done
+            # Confirm the *actual installed JNI module* decoded all sixteen
+          # PNGs through host read_asset, not only that the APK ZIP lists them.
+          grep -F 'Authored Breakwater materials loaded 16/16' validation/hub/logcat.txt
+          for MODEL in concrete_block_1 wooden_crate_1 ammo_box_mp_1; do grep -F "Breakwater verified-pack asset native/shared/v1/models/psx/${MODEL}.bwm" validation/hub/logcat.txt; done
           for MODEL in owner_boat_rowboat owner_apc_armor; do grep -F "Breakwater verified-pack asset native/breakwater/beckenburg/${MODEL}.bwm" validation/hub/logcat.txt; done
             adb exec-out screencap -p > validation/hub/hub-screen.png
       - name: Enforce real GLES2 boot and framebuffer evidence for every registered game

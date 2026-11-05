@@ -156,6 +156,32 @@ public final class HubGameModulesInstrumentedTest {
         File root=new File(context().getCacheDir(),
             "verified-breakwater-"+System.nanoTime());
         assertTrue(root.mkdirs());
+        // The installed hub APK must actually carry every one of the 16
+        // reviewed 64x64 atlas tiles before its native module starts.
+        // This tests packaging, independently of the host C++ PNG decoder.
+        final String[] tiles={
+            "shingle.png","quay_concrete.png","black_basalt.png",
+            "oxidized_steel.png","sandbag_burlap.png","olive_enamel.png",
+            "dock_planks.png","mossy_seawall.png","corrugated_roof.png",
+            "camo_netting.png","diamond_plate.png","trench_soil.png",
+            "reinforced_concrete.png","crate_planks.png",
+            "riveted_bulkhead.png","pebble_ground.png"
+        };
+        for(String tile:tiles){
+            String path="native/shared/v1/materials/coastal/"+tile;
+            try(java.io.InputStream stream=context().getAssets().open(path)){
+                byte[] header=new byte[24];
+                new java.io.DataInputStream(stream).readFully(header);
+                assertEquals("PNG signature "+tile,137,header[0]&255);
+                assertEquals("PNG signature "+tile,80,header[1]&255);
+                assertEquals("PNG IHDR width "+tile,64,
+                    ((header[16]&255)<<24)|((header[17]&255)<<16)|
+                    ((header[18]&255)<<8)|(header[19]&255));
+                assertEquals("PNG IHDR height "+tile,64,
+                    ((header[20]&255)<<24)|((header[21]&255)<<16)|
+                    ((header[22]&255)<<8)|(header[23]&255));
+            }
+        }
         // Require every authentic model from the activated downloaded pack.
         final String[] paths={
             "native/shared/v1/models/psx/concrete_block_1.bwm",

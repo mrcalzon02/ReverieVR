@@ -25,7 +25,14 @@ inline void EmitBatteryEmplacement(uint8_t location,bool night,
     // slope, behind the simulated seaward soldier contact line.
     box(0.f,-1.155f,.83f,8.20f,.37f,3.03f,
         stone,stone*1.035f,stone*.94f);
-    clad(materials::Surface::DiamondPlate,0.f,-1.155f,.83f,8.20f,.37f,3.03f);
+    // Eight ~1m non-overlapping panels repeat the 64px nonslip pattern.
+    // The gun apron retains the identical solid box and collision envelope.
+    for(int panel=0;panel<8;++panel) {
+        constexpr float width=8.20f/8.f;
+        const float x=-4.10f+(panel+.5f)*width;
+        clad(materials::Surface::DiamondPlate,x,-1.155f,.83f,
+             width,.37f,3.03f);
+    }
     // Shoreward tapered ramp from height-meshed beach to gun deck.
     triangle(-1.90f,-.94f,-.28f,1.90f,-.94f,-.28f,
               1.83f,-.97f,.24f,stone*.91f,stone*.92f,stone*.88f);
