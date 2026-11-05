@@ -140,9 +140,9 @@
         2,
         1
       ],
-      "bytes": 366493,
-      "eye_frame_crc32": 3949645793,
-      "sha256": "8aab33427d2fd0d57b0e55a7a858aa3c3aa1b737104a0ffb27c473607bc99938"
+      "bytes": 366474,
+      "eye_frame_crc32": 2983813147,
+      "sha256": "3a3dac44b5f6cef50f698224f66cc2b198211ebb9628fa97405d8c70baac49a6"
     }
   },
   "ordered_ids": [
