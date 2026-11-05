@@ -1320,7 +1320,7 @@ int main() {
         float zRelative=0.0f;
         int wakeTriangles=0;
         EmitVesselSilhouette(craft,[](auto...){},
-            [&](float,float y0,float,float y1,float z1,
+            [&](float,float y0,float,float,float y1,float z1,
                 float,float y2,float,float,float,float) {
                 if(std::abs(y0+1.095f)<.0001f &&
                    std::abs(y1+1.095f)<.0001f &&
