@@ -283,3 +283,34 @@ synthetic fixture regressions, not as evidence of a site's real appearance.
 There are still no approved installed Sitka shoreline assets, landmark
 models, current-era building photos, citywide navigation/collision or device
 acceptance claims.
+
+## O'Connell Bridge — strict simple-geometry budget (2026-11-04)
+
+**Design authority: SIMPLE.** The real John O'Connell Memorial Bridge must
+retain verified alignment, deck width, grade and recognizable appearance, but
+*does not* require individually modeled girders, cable stays, rivets, trusses,
+road grooves, or large prop counts. Use source-reviewed photographic/silhouette
+art for two **single flat alpha-textured side panels** (one per side of a
+verified straight span). The **road deck** is a sequence of flat textured
+quads following sourced grade samples; the **underside** is a separate series
+of flat textured quads. No subdivided geometry for the concrete pattern.
+Plain UV repeats are cheaper and clearer.
+
+A game-private CPU-only implementation in
+`app/src/main/jni/native/sitka_bridge_planes.h` generates **2 + 2N quads**
+for N road grade segments: exactly two side sheets, N road-top planes,
+N underdeck planes. Quads have per-surface UV/material tags. Road and
+underdeck reuse the two existing approved shared concrete PNG materials:
+`quay_concrete.png` and `reinforced_concrete.png`. The O'Connell side
+alpha sprite is deliberately **not** bundled or authorized yet because its
+artwork must be checked against actual bridge images. The source-only
+`sitka_bridge_planes_test.cpp` checks counts, UVs, material splits,
+determinism and rejection of invented/bent/nonfinite input profiles.
+
+**Reality check:** this is a source-only geometry/texture contract; it has
+**not yet been connected to a runtime UV shader or placed into Sitka's
+geographic scene**. The side image, sanctioned local bridge endpoints,
+surface grade, and physical render/device acceptance are still pending.
+It must not silently reuse generic `bridge_ramp` panels as the authentic
+bridge or convert old HAER locator coordinates into fabricated pylons.
+
