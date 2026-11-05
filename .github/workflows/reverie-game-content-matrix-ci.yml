@@ -225,6 +225,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 scripts/sitka/test_build_beach_discoveries.py
           python3 scripts/sitka/test_build_boat_rough_models.py
           for compiler in g++ clang++; do
             "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \

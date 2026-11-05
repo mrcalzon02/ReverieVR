@@ -53,3 +53,24 @@ inspection. Never imply historical finds can be removed or sold.
 | `possible_shell_midden` | Possible shell midden trace | Document | Cultural | 0.100 | very_rare |
 | `possible_carved_wood` | Possible carved wooden fragment | Document | Cultural | 0.076 | very_rare |
 | `small_mottled_sea_star` | Mottled sea star | Observe | Rocky, Pool | 0.080 | uncommon |
+
+## Deterministic population from real reviewed beach zones
+
+`scripts/sitka/build_beach_discoveries.py --areas reviewed.json
+--output sitka/beach/discoveries.txt` accepts **reviewed licensed
+shoreline polygons in local EPSG:32608 metres** and produces stable
+gameplay specimens inside those approved habitats. The input format is
+`SITKA-BEACH-AREAS-1`: provenance (source ID, SHA256, source HTTPS
+URL, license, reviewed flag and CRS), origin [east,north], and an
+`areas` list with unique ID, habitat, 3–32-vertex polygon,
+`first_site_id` and `count` (1–12). Author-assigned ID ranges
+are immutable to protect the native save. Up to 64 sites are possible.
+
+**Nothing here fabricates Sitka terrain.** These generated spots are
+fictional creature representations inside genuine reviewed habitat,
+not observed animal locations. There is intentionally **no**
+protected-cultural area in this auto-populator; archaeological
+finds require independent cultural/archaeological source review and
+manual placement. No real Sitka coastline polygons are currently
+staged, so the exporter is ready but produces no actual Sitka
+discovery file until that prerequisite is met.
