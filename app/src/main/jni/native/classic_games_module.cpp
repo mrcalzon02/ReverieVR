@@ -708,10 +708,16 @@ void RebuildBoard(Module *m,bool fixed){
                  chosen?1.f:.85f,chosen?1.f:.91f,
                  chosen?.80f:.86f);
         }
+        const int moving=m->chessTween.InFlight()?
+            reverie::boardgames::State::Sign(m->chessTween.moving):0;
+        const int victim=m->chessTween.InFlight()?
+            std::abs(m->chessTween.captured):0;
         const std::string mine=reverie::chessui::CapturedLine(
-            s,s.chessHumanColor);
+            s,s.chessHumanColor,
+            moving==s.chessHumanColor?victim:0);
         const std::string cpu=reverie::chessui::CapturedLine(
-            s,s.ChessCpuColor());
+            s,s.ChessCpuColor(),
+            moving==s.ChessCpuColor()?victim:0);
         Text(m,mine.c_str(),0.f,-1.46f,.026f,.73f,.96f,.90f);
         Text(m,cpu.c_str(),0.f,-1.64f,.026f,.98f,.77f,.66f);
     }
@@ -759,6 +765,7 @@ void RebuildBoard(Module *m,bool fixed){
     }else if(!fixed){
 #if CLASSIC_GAME_KIND == 5
         const char *turnLabel=m->cpuFailed?"CPU ERROR RESTART":
+            m->chessTween.InFlight()?"MOVING PIECE":
             s.side==s.chessHumanColor?"YOUR TURN":"CPU THINKING";
         ChessPanelText(m,turnLabel,-2.22f,1.07f,.030f,
                        .95f,.95f,.78f);
@@ -857,6 +864,8 @@ void RebuildBoard(Module *m,bool fixed){
                        .25f,.42f,.34f);
         ChessPanelText(m,"NEW GAME",2.22f,1.423f,.027f,
                        .94f,1.f,.85f);
+        ChessPanelText(m,s.chessHumanColor==1?"YOU: WHITE":"YOU: BLACK",
+                       2.22f,1.085f,.024f,.86f,.92f,.82f);
         ChessPanelRect(m,2.22f,.88f,1.05f,.36f,-3.026f,
              m->chessPanelHover?.32f:.21f,
              m->chessPanelHover?.45f:.34f,.48f);
@@ -877,14 +886,14 @@ void RebuildBoard(Module *m,bool fixed){
     }
     if(!fixed && m->chessWikiOpen)ChessWikiDraw(m);
     if(!fixed && m->chessNewGameOpen) {
-        Rect(m,0.f,.04f,2.86f,1.29f,-2.725f,
+        Rect(m,0.f,.04f,2.86f,1.29f,-2.910f,
              .075f,.12f,.18f);
         Text(m,"START A NEW GAME",0.f,.49f,.041f,.95f,.97f,.87f);
-        Rect(m,-.66f,.08f,1.08f,.34f,-2.717f,.27f,.39f,.43f);
-        Rect(m,.66f,.08f,1.08f,.34f,-2.717f,.27f,.39f,.43f);
+        Rect(m,-.66f,.08f,1.08f,.34f,-2.900f,.27f,.39f,.43f);
+        Rect(m,.66f,.08f,1.08f,.34f,-2.900f,.27f,.39f,.43f);
         Text(m,"PLAY WHITE",-.66f,.073f,.028f,.98f,.98f,.93f);
         Text(m,"PLAY BLACK", .66f,.073f,.028f,.98f,.98f,.93f);
-        Rect(m,0.f,-.40f,1.08f,.26f,-2.717f,.19f,.24f,.29f);
+        Rect(m,0.f,-.40f,1.08f,.26f,-2.900f,.19f,.24f,.29f);
         Text(m,"CANCEL",0.f,-.407f,.027f,.95f,.95f,.87f);
     }
 #endif
