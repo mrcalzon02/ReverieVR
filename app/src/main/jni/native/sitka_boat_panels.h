@@ -11,6 +11,8 @@
 #include <locale>
 #include <sstream>
 #include <string>
+#include <vector>
+#include <stdexcept>
 namespace reverie { namespace sitka {
 struct BoatLabel {
     std::string text;
@@ -33,6 +35,13 @@ struct BoatPanelLayout {
         return key;
     }
 };
+// Physical dashboard glass faces -Z (toward the seated captain), so
+// mirror newly emitted Lato glyph XYZ positions, never their atlas UVs.
+inline void OrientBoatGlyphsAft(std::vector<float>& vertices,size_t first,float x){
+    if(first>vertices.size()||(vertices.size()-first)%8u)
+        throw std::invalid_argument("Sitka glyph stride invalid");
+    for(size_t i=first;i<vertices.size();i+=8u)vertices[i]=2.f*x-vertices[i];
+}
 inline std::string HelmNumber(double value,unsigned decimals=1u){
     if(!std::isfinite(value))return "NO DATA";
     std::ostringstream out;

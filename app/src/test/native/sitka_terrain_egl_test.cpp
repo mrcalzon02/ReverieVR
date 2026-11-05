@@ -381,8 +381,10 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
     Check(glyphs.Create(),"real Sitka Lato font GL initialization failed");
     for(size_t i=0;i<readings.count;++i){
         const auto& t=readings.labels[i];
+        const size_t first=glyphs.vertices.size();
         glyphs.Fit(t.text.c_str(),t.x,t.y,t.width,t.scale,
                    t.red,t.green,t.blue,t.z);
+        reverie::sitka::OrientBoatGlyphsAft(glyphs.vertices,first,t.x);
     }
     Check(!glyphs.vertices.empty(),"no actual proportional glyph triangles");
     for(int index=0;index<2;++index){

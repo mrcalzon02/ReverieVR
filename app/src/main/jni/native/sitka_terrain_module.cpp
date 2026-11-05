@@ -349,9 +349,12 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->boat_text.Clear();
                 for(size_t i=0;i<panels.count;++i){
                     const auto& label=panels.labels[i];
+                    const size_t first=state->boat_text.vertices.size();
                     state->boat_text.Fit(label.text.c_str(),
                         label.x,label.y,label.width,label.scale,
                         label.red,label.green,label.blue,label.z);
+                    reverie::sitka::OrientBoatGlyphsAft(
+                        state->boat_text.vertices,first,label.x);
                 }
                 state->last_boat_text=signature;
             }

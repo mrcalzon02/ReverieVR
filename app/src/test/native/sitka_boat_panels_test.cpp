@@ -44,5 +44,12 @@ int main(){
     weather.kind="FOG";
     assert(all.Signature()!=BuildBoatPanels(
         progress,boat,weather,procedural,.5).Signature());
+    std::vector<float> glyph={.2f,.3f,.4f,.1f,.2f,1.f,1.f,1.f,
+                              .4f,.5f,.6f,.3f,.4f,1.f,1.f,1.f};
+    OrientBoatGlyphsAft(glyph,0u,.3f);
+    assert(std::abs(glyph[0]-.4f)<1.e-6f);
+    assert(std::abs(glyph[8]-.2f)<1.e-6f);
+    assert(std::abs(glyph[1]-.3f)<1.e-6f&&
+           std::abs(glyph[3]-.1f)<1.e-6f);
     std::cout<<"PASS Sitka Lato panel data gates, no fake charts, provenance and boat state\n";
 }
