@@ -4,6 +4,7 @@
 #include "sitka_shore_geometry.h"
 #include "sitka_shore_detail.h"
 #include "sitka_shore_stream.h"
+#include "sitka_shore_deck_gl.h"
 #include "sitka_bridge_layout.h"
 #include "sitka_bridge_gl.h"
 #include "sitka_bridge_visibility.h"
@@ -38,6 +39,9 @@ struct State {
     reverie::sitka::TerrainGl gl;
     reverie::sitka::TerrainGl shore_gl; // changing waterfront overlay, not boat
     std::unique_ptr<reverie::sitka::ShoreStreamPlanner> shore_stream;
+    std::unique_ptr<reverie::sitka::ShoreDeckMesh> shore_deck_mesh;
+    reverie::omega_art::Image shore_deck_art;
+    reverie::sitka::ShoreDeckGl shore_deck_gl;
     std::unique_ptr<reverie::sitka::BridgePlaneMesh> bridge_mesh;
     std::unique_ptr<reverie::sitka::BridgeVisibility> bridge_view;
     reverie::sitka::BridgeArt bridge_art;
@@ -150,8 +154,23 @@ void* Create(const ReverieNativeHostV1* host) {
                                 reverie::sitka::kMaxShoreTextBytes)));
                 // Keep immutable source features separate from the terrain:
                 // only nearby P0/P1 shore meshes become resident GPU batches.
-                if(!shore.empty())state->shore_stream.reset(
-                    new reverie::sitka::ShoreStreamPlanner(shore));
+                if(!shore.empty()){
+                    state->shore_stream.reset(
+                        new reverie::sitka::ShoreStreamPlanner(shore));
+                    // Build flat textured float tops once from the SAME
+                    // source features. No fake rectangular piers or window art.
+                    auto deck=reverie::sitka::BuildShoreDeckPlanes(shore);
+                    if(!deck.vertices.empty()){
+                        reverie::omega_art::Image art;
+                        if(reverie::sitka::LoadShoreDeckArt(host,art)){
+                            state->shore_deck_mesh.reset(
+                                new reverie::sitka::ShoreDeckMesh(std::move(deck)));
+                            state->shore_deck_art=std::move(art);
+                        }else{
+                            Log(host,"Approved shared dock-plank texture missing; harbor tops remain P0");
+                        }
+                    }
+                }
             }
             // Optional sourced O'Connell profile; no guessed GIS coordinates.
             // All textures are decoded once during Create, not in RenderEye.
@@ -325,6 +344,16 @@ int32_t OnGlCreated(void* instance) {
         Log(state->host,error.c_str());
         return 0;
     }
+    // A SINGLE retained shared plank texture + VBO, with draw ranges for
+    // actual authored float polygons. A missing optional material cannot
+    // take down approved land, water or the boat workstream.
+    if(state->shore_deck_mesh &&
+       !state->shore_deck_gl.Create(*state->shore_deck_mesh,
+                                   state->shore_deck_art,
+                                   state->lighting.ambient_scale,&error)){
+        Log(state->host,error.c_str());
+        state->shore_deck_gl.Release();
+    }
     // Separate textured geometry: static image atlas and VBOs, shared by eyes.
     if(state->bridge_mesh &&
        !state->bridge_gl.Create(*state->bridge_mesh,state->bridge_art,
@@ -344,6 +373,7 @@ int32_t OnGlCreated(void* instance) {
             state->boat_text.Release();
             state->boat_gl.Release();
             state->bridge_gl.Release();
+            state->shore_deck_gl.Release();
             state->shore_gl.Release();
             state->water_gl.Release();
             state->gl.Release();
@@ -359,6 +389,7 @@ void ReleaseGl(void* instance) {
         static_cast<State*>(instance)->last_boat_text.clear();
         static_cast<State*>(instance)->boat_gl.Release();
         static_cast<State*>(instance)->bridge_gl.Release();
+        static_cast<State*>(instance)->shore_deck_gl.Release();
         if(static_cast<State*>(instance)->bridge_view)
             static_cast<State*>(instance)->bridge_view->Reset();
         static_cast<State*>(instance)->shore_gl.Release();
@@ -614,6 +645,14 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(!state->gl.RenderEye(eye)||!state->water_gl.RenderEye(eye))return 0;
     if(state->shore_stream && state->shore_stream->visible_count()>0u &&
        !state->shore_gl.RenderEye(eye))return 0;
+    // Reuse the very same per-feature LOD outcome for colored sides and
+    // textured top. The two eye renders never rebuild the source polygon.
+    if(state->shore_deck_gl.ready() && state->shore_stream &&
+       state->shore_stream->visible_count()>0u &&
+       !state->shore_deck_gl.RenderEye(eye,[&](size_t index){
+           return state->shore_stream->tier(index)!=
+               reverie::sitka::ShoreStreamPlanner::Hidden;
+       }))return 0;
     if(state->bridge_gl.ready() && state->bridge_view &&
        state->bridge_view->visible() &&
        !state->bridge_gl.RenderEye(eye))return 0;

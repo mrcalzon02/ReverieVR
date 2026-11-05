@@ -2,6 +2,38 @@
 
 # Sitka
 
+## Harbor deck plank texture, shared once, source outlines kept — 2026-11-04
+
+In addition to the source-shaped float massing, Sitka's
+`sitka_shore_deck_planes.h` triangulates **only the top of an explicitly
+authored pier/pontoon polygon**, using UVs that repeat every 2.4 metres
+instead of subdividing the deck into extra geometry. The 0.01 metre
+overlay is for texture visibility; it makes no separate collision,
+water buoyancy, navigable dock or building-interior claim. The existing
+irregular polygon and per-feature identity remain unmodified.
+
+The `sitka_shore_deck_gl.h` renderer now uses the APK's existing
+`native/shared/v1/materials/coastal/dock_planks.png` (64 x 64) through
+a **Sitka-only explicit catalog grant**. No copy of the texture goes into
+another asset pack. It decodes the PNG once on module creation and uploads
+**one texture + one compact vertex buffer per GL context**. The flat
+textured tops share exact feature indices and the near/far visibility
+tiers of `ShoreStreamPlanner`, so distant/hidden harbor docks issue
+no extra draw calls; both VR eyes reuse the same GPU allocations.
+
+The dedicated CPU geometry test enforces simple concave polygon
+triangulation, UV repetition, determinism and rejection of broken
+rings. The real GLES2/Mesa stereo test checks the shared texture,
+flat-top rasterization, zero draw on hidden features, host GL state
+restoration, context recreation, and invalid alpha rejection. If the
+optional texture is absent, Sitka retains untextured source-shaped P0
+harbor massing rather than inventing a dock or crashing.
+
+**Geographic status:** this is source-backed *rendering capability*;
+no claimed 2026 Crescent Harbor source polygon, float elevation,
+photographic layout or installed playable scene is substituted by
+the synthetic regression fixture. The boat workstream is untouched.
+
 ## Sitka authentic harbor polygons and bridge draw-call culling — 2026-11-04
 
 The optional `SITKA-SHORE-1` authoring now permits **real projected-metre

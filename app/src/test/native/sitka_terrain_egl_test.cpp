@@ -2,6 +2,7 @@
 // Synthetic triangle is a test fixture, NEVER approved Sitka geography.
 #include "../../main/jni/native/sitka_terrain_gl.h"
 #include "../../main/jni/native/sitka_bridge_gl.h"
+#include "../../main/jni/native/sitka_shore_deck_gl.h"
 #include "../../main/jni/native/sitka_water_gl.h"
 #include "../../main/jni/native/sitka_seafloor_mesh.h"
 #include "../../main/jni/native/sitka_boat_mesh.h"
@@ -542,6 +543,77 @@ static void Exercise(reverie::sitka::TerrainGl& terrain, int generation) {
         art.textures[0].rgba[i]=255u;
     Check(!art.Valid(),"solid bridge side art bypassed cutout gate");
 
+    // The real GLES2 dock renderer uses ONE shared texture + ONE VBO and
+    // per-source-polygon ranges. The draw filter mirrors ShoreStreamPlanner
+    // visibility. This is explicitly a synthetic geometry/art fixture.
+    auto harbor_features=reverie::sitka::ParseShoreLayout(
+        "SITKA-SHORE-1\n"
+        "P|near_sourced_pontoon|pontoon|0|0.2|-0.65,-0.65;0.65,-0.65;0.65,0.65;-0.65,0.65\n"
+        "P|far_sourced_pier|pier|0|0.2|5,5;6,5;6,6;5,6\n");
+    auto deck_mesh=reverie::sitka::BuildShoreDeckPlanes(harbor_features);
+    Check(deck_mesh.triangles()==4u && deck_mesh.by_feature.size()==2u,
+          "sourced flat harbor deck triangles/ranges incorrect");
+    reverie::omega_art::Image deck_image;
+    deck_image.width=deck_image.height=64u;
+    deck_image.rgba.assign(64u*64u*4u,255u);
+    for(size_t i=0u;i<64u*64u;++i){
+        deck_image.rgba[i*4u]=175u;
+        deck_image.rgba[i*4u+1u]=109u;
+        deck_image.rgba[i*4u+2u]=51u;
+    }
+    reverie::sitka::ShoreDeckGl deck_gl;
+    const Snapshot before_deck=Capture();
+    Check(deck_gl.Create(deck_mesh,deck_image,1.f,&error),
+          "real GLES2 sourced dock-plank layer creation failed");
+    Check(deck_gl.ready() && deck_gl.upload_count()==2u &&
+          deck_gl.float_count()==2u && deck_gl.triangles()==4u,
+          "dock texture/VBO not uploaded once per context");
+    Same(before_deck,Capture());
+    glClearColor(0.f,0.f,0.f,1.f);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot before_eye=Capture();
+        auto eye=Eye(index);
+        eye.view[5]=0.f;eye.view[9]=1.f;
+        eye.view[6]=-1.f;eye.view[10]=0.f;
+        Check(deck_gl.RenderEye(&eye,[](size_t i){return i==0u;}),
+              "sourced polygon dock deck GLES2 draw failed");
+        Same(before_eye,Capture());
+        Check(deck_gl.upload_count()==2u,
+              "per-eye dock texture/VBO was reuploaded");
+    }
+    glFinish();
+    const auto dl=Pixel(32,32),dr=Pixel(96,32);
+    Check(dl[0]>100u && dl[1]>55u && dl[0]>dl[1] &&
+          dr[0]>100u && dr[1]>55u && dr[0]>dr[1],
+          "flat plank top not visible in BOTH real stereo eye viewports");
+    Check(Pixel(4,4)[0]<20u,"sourced dock top leaked outside the footprint");
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    for(int index=0;index<2;++index){
+        glViewport(index*64,0,64,64);
+        const Snapshot before_eye=Capture();
+        auto eye=Eye(index);
+        eye.view[5]=0.f;eye.view[9]=1.f;
+        eye.view[6]=-1.f;eye.view[10]=0.f;
+        Check(deck_gl.RenderEye(&eye,[](size_t){return false;}),
+              "culled dock renderer failed");
+        Same(before_eye,Capture());
+    }
+    glFinish();
+    Check(Pixel(32,32)[0]<20u&&Pixel(96,32)[0]<20u,
+          "hidden harbor float still produced a draw call");
+    Check(deck_gl.upload_count()==2u,
+          "culling caused dock buffer rebuild");
+    deck_image.rgba[3u]=0u;
+    Check(!deck_gl.Create(deck_mesh,deck_image,1.f,&error),
+          "invalid-alpha plank art was accepted");
+    Check(deck_gl.ready(),"bad optional plank art destroyed previous GPU deck");
+    deck_gl.Release();
+    Check(!deck_gl.ready()&&deck_gl.upload_count()==0u,
+          "dock texture/VBO leaked after context release");
+    Same(before_deck,Capture());
+    
     NoGlError("water release");
     terrain.Release();
     Check(!terrain.ready() && terrain.upload_count() == 0u, "context release retained buffers");

@@ -15,7 +15,7 @@ constexpr Entry kEntries[]={
     {"native/shared/v1/materials/coastal/oxidized_steel.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/sandbag_burlap.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/olive_enamel.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
-    {"native/shared/v1/materials/coastal/dock_planks.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
+    {"native/shared/v1/materials/coastal/dock_planks.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
     {"native/shared/v1/materials/coastal/mossy_seawall.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/corrugated_roof.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/camo_netting.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},

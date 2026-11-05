@@ -42,9 +42,13 @@ int main(){
     assert(MaximumBytes("sitka",
         "native/shared/v1/materials/coastal/reinforced_concrete.png")==16384u);
     assert(MaximumBytes("sitka",
-        "native/shared/v1/materials/coastal/dock_planks.png")==0u);
+        "native/shared/v1/materials/coastal/dock_planks.png")==16384u);
     assert(MaximumBytes("sitka",
         "native/shared/v1/models/psx/wooden_crate_1.bwm")==0u);
+    assert(MaximumBytes("classic-chess",
+        "native/shared/v1/materials/coastal/dock_planks.png")==0u);
+    assert(MaximumBytes("sitka",
+        "native/shared/v1/materials/coastal/camo_netting.png")==0u);
     assert(MaximumBytes("breakwater-battery",
         "sitka/structures/oconnell_side.png")==0u);
     assert(MaximumBytes("sitka",
