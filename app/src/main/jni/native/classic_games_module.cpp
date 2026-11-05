@@ -583,6 +583,18 @@ void RebuildBoard(Module *m,bool fixed){
             Rect(m,px-a,py-a,.045f,.045f,-2.917f,.95f,.86f,.27f);
             Rect(m,px+a,py+a,.045f,.045f,-2.917f,.95f,.86f,.27f);
         }
+#if CLASSIC_GAME_KIND == 5
+        // Trace the real committed Black move: amber origin, green arrival.
+        // Rendering remains instantaneous, so never imply an invented path.
+        if(s.kind==reverie::boardgames::Kind::Chess && s.ply>=2 &&
+           s.ply%2==0 && s.side==1 && s.lastFrom>=0 &&
+           s.lastFrom<64 && s.lastTo>=0 && s.lastTo<64 &&
+           (cell==s.lastFrom || cell==s.lastTo)){
+            const bool arrived=cell==s.lastTo;
+            BoardOutline(m,px,py,gap*(arrived?.92f:.77f),
+                         arrived?.16f:.98f,arrived?.94f:.52f,.27f);
+        }
+#endif
         if(s.selected==cell)
             BoardOutline(m,px,py,gap*.96f,1.f,.99f,.20f);
 #if CLASSIC_GAME_KIND == 5
@@ -749,6 +761,8 @@ void RebuildBoard(Module *m,bool fixed){
         ChessPanelLine(m,"OPENING "+book.eco,-2.20f,.18f);
         ChessPanelExample(m,book.opening,-2.20f,-.12f);
         ChessPanelLine(m,"CLICK WING TO READ",-2.20f,-.84f);
+        const std::string cpuTrace=reverie::chessref::LastBlackMoveTrace(s);
+        if(!cpuTrace.empty())ChessPanelLine(m,cpuTrace,-2.20f,-1.18f);
         ChessPanelRect(m,2.22f,.88f,1.05f,.36f,-3.026f,
              m->chessPanelHover?.32f:.21f,
              m->chessPanelHover?.45f:.34f,.48f);
