@@ -1,4 +1,5 @@
 #include "breakwater_materials.h"
+#include "breakwater_terrain.h"
 #include <array>
 #include <cassert>
 #include <cmath>
@@ -27,13 +28,33 @@ int main() {
         std::vector<float> a;
         auto terrain=[](uint8_t,float x,float z){return -1.037f+.008f*std::sin(x+z);};
         AppendCoast(a,static_cast<uint8_t>(id),terrain);
-        assert(a.size()==static_cast<size_t>(kSectionsX*kSectionsZ*6*5));
+        constexpr size_t bankTriangles=2u*9u*2u;
+        assert(a.size()==static_cast<size_t>(
+            (kSectionsX*kSectionsZ*2u+bankTriangles)*3u*5u));
+        // Adjacent cells sample contiguous UVs within the same tile.
+        assert(std::abs(a[8]-a[33])<.000001f);
+        assert(std::abs(a[29]-a[kSectionsX*30+4])<.000001f);
+        bool leftBank=false,rightBank=false;
+        for(size_t j=kSectionsX*kSectionsZ*30u;j<a.size();j+=5) {
+            leftBank|=a[j]<-3.87f;
+            rightBank|=a[j]>3.87f;
+        }
+        assert(leftBank&&rightBank);
         for(size_t i=0;i<a.size();i+=5) {
             assert(std::isfinite(a[i]) && std::isfinite(a[i+1]) && std::isfinite(a[i+2]));
-            assert(a[i]>=-3.861f && a[i]<=3.861f);
-            assert(a[i+2]>=-2.201f && a[i+2]<=-.259f);
+            assert(a[i]>=-4.581f && a[i]<=4.581f);
+            assert(a[i+2]>=-2.231f && a[i+2]<=-.199f);
             assert(a[i+3]>=0.0f && a[i+3]<=1.0f);
             assert(a[i+4]>=0.0f && a[i+4]<=1.0f);
+        }
+    }
+    for(unsigned location=0;location<4;++location) {
+        const auto land=EnvironmentFor(static_cast<uint8_t>(location),false);
+        for(float x:{-3.86f,-2.7f,0.f,2.7f,3.86f}) {
+            const float joined=BeachHeight(location,x,-.26f);
+            const float rear=RearGroundHeight(land,x,-.26f);
+            assert(std::abs(joined-rear)<.00001f);
+            assert(std::isfinite(BeachHeight(location,x,-2.20f)));
         }
     }
     for(int id=0;id<kMaterialCount;++id) {

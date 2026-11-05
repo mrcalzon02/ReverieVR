@@ -189,11 +189,20 @@ inline void AppendCoast(std::vector<float>&mesh,uint8_t location,HeightAt height
         const float z0=surfZ+(rearZ-surfZ)*iz/kSectionsZ;
         const float z1=surfZ+(rearZ-surfZ)*(iz+1)/kSectionsZ;
         for(int ix=0;ix<kSectionsX;++ix) {
-            const int tile=static_cast<int>(CoastSurfaceAt(location,ix,iz));
-            const float u0=((tile%2)*kTile+.5f)/kAtlasWidth;
-            const float u1=((tile%2+1)*kTile-.5f)/kAtlasWidth;
-            const float v0=(kBaseY+(tile/2)*kTile+.5f)/kAtlasHeight;
-            const float v1=(kBaseY+(tile/2+1)*kTile-.5f)/kAtlasHeight;
+            // Preserve every real heightfield vertex, but share one
+            // atlas tile over a 2x4-cell patch. The old per-cell UV reset
+            // repeated a full texture every ~10 cm in the shore direction.
+            constexpr int cellsX=2,cellsZ=4;
+            const int tile=static_cast<int>(CoastSurfaceAt(
+                location,(ix/cellsX)*cellsX,(iz/cellsZ)*cellsZ));
+            const float tileU0=((tile%2)*kTile+.5f)/kAtlasWidth;
+            const float tileU1=((tile%2+1)*kTile-.5f)/kAtlasWidth;
+            const float tileV0=(kBaseY+(tile/2)*kTile+.5f)/kAtlasHeight;
+            const float tileV1=(kBaseY+(tile/2+1)*kTile-.5f)/kAtlasHeight;
+            const float u0=tileU0+(tileU1-tileU0)*(ix%cellsX)/cellsX;
+            const float u1=tileU0+(tileU1-tileU0)*((ix%cellsX)+1)/cellsX;
+            const float v0=tileV0+(tileV1-tileV0)*(iz%cellsZ)/cellsZ;
+            const float v1=tileV0+(tileV1-tileV0)*((iz%cellsZ)+1)/cellsZ;
             const float x0=minX+(maxX-minX)*ix/kSectionsX;
             const float x1=minX+(maxX-minX)*(ix+1)/kSectionsX;
             const float y00=height(location,x0,z0);
@@ -206,6 +215,25 @@ inline void AppendCoast(std::vector<float>&mesh,uint8_t location,HeightAt height
             Vertex(mesh,x0,y00,z0,u0,v0);
             Vertex(mesh,x1,y11,z1,u1,v1);
             Vertex(mesh,x0,y01,z1,u0,v1);
+        }
+    }
+    // Continue the *same* textured mesh onto each raised shore bank,
+    // using the geometry already authored by EmitCoastalTerrain.
+    // No extra atlas, draw pass, colliders, blending or per-eye work.
+    constexpr float baseline=-1.037f;
+    for(int side:{-1,1}) {
+        const float sign=static_cast<float>(side);
+        for(int n=0;n<9;++n) {
+            const float z0=-2.18f+n*.22f,z1=z0+.22f;
+            const float crestX=sign*(4.30f+.14f*((n+location)%3));
+            const float rise=(location==2?.47f:location==3?.39f:
+                              location==1?.24f:.34f)*
+                             (n<3?.70f:n>6?.82f:1.f);
+            Face(mesh,CoastSurface(location),
+                 {sign*3.86f,height(location,sign*3.86f,z0),z0},
+                 {crestX,baseline+rise,z0-.05f},
+                 {crestX,baseline+rise*.92f,z1},
+                 {sign*3.86f,height(location,sign*3.86f,z1),z1});
         }
     }
 }

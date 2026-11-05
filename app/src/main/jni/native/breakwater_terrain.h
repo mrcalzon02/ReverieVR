@@ -2,6 +2,7 @@
 #define REVERIE_BREAKWATER_TERRAIN_H
 
 #include "breakwater_campaign.h"
+#include "breakwater_environment.h"
 #include "breakwater_materials.h"
 #include <algorithm>
 #include <cmath>
@@ -65,7 +66,18 @@ inline float BeachHeight(uint8_t location,float x,float z) {
         // Distinct stepped storm-break approach to reinforced caissons.
         shoulder+=.080f*side*side+.028f*side*rear;
     }
-    return -1.037f+ripple+shoulder+.09f*rear*rear;
+    float height=-1.037f+ripple+shoulder+.09f*rear*rear;
+    // Weld the rear 44 cm of the beach onto the existing rear ground,
+    // eliminating the raised rectangular edge without moving the
+    // seaward infantry lane or introducing gameplay collision geometry.
+    const float join=std::clamp((z+.70f)/.44f,0.f,1.f);
+    if(join>0.f) {
+        const float smooth=join*join*(3.f-2.f*join);
+        const float rearEdge=RearGroundHeight(
+            EnvironmentFor(location,false),x,-.26f);
+        height+=(rearEdge-height)*smooth;
+    }
+    return height;
 }
 constexpr int kBeachCrossSections=24;
 constexpr int kBeachLengthSections=20;
@@ -110,12 +122,16 @@ void EmitCoastalTerrain(uint8_t location, bool night,
             const float crestX=sign*(4.30f+.14f*((n+location)%3));
             const float rise=(location==2?.47f:location==3?.39f:location==1?.24f:.34f)
                 *(n<3?.70f:n>6?.82f:1.f);
-            triangle(sign*3.86f,near,z0,crestX,y+rise,z0-.05f,
-                     crestX,y+rise*.92f,z1,
-                     c.detail_r*.78f,c.detail_g*.81f,c.detail_b*.77f);
-            triangle(sign*3.86f,near,z0,crestX,y+rise*.92f,z1,
-                     sign*3.86f,farHeight,z1,
-                     c.sand_r*.79f,c.sand_g*.79f,c.sand_b*.78f);
+            // Textured mode emits these exact bank triangles in the
+            // existing material VBO; avoid coplanar duplicate surfaces.
+            if(emitFlatFloor) {
+                triangle(sign*3.86f,near,z0,crestX,y+rise,z0-.05f,
+                         crestX,y+rise*.92f,z1,
+                         c.detail_r*.78f,c.detail_g*.81f,c.detail_b*.77f);
+                triangle(sign*3.86f,near,z0,crestX,y+rise*.92f,z1,
+                         sign*3.86f,farHeight,z1,
+                         c.sand_r*.79f,c.sand_g*.79f,c.sand_b*.78f);
+            }
         }
     }
     // A segmented foamy surf edge visually identifies where boats unload.
