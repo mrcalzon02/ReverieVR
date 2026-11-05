@@ -89,6 +89,9 @@ final class NativeModuleRuntime implements AutoCloseable {
     private String activeModuleId = "";
     private float shellLocomotionLimitX;
     private float shellLocomotionLimitZ;
+    private boolean sitkaTouchMoveActive;
+    private float sitkaTouchMoveX;
+    private float sitkaTouchMoveY;
 
     NativeModuleRuntime(
         File storageRoot,
@@ -253,6 +256,8 @@ final class NativeModuleRuntime implements AutoCloseable {
 
         handle = created;
         activeModuleId = safeModuleId;
+        sitkaTouchMoveActive=false;
+        sitkaTouchMoveX=sitkaTouchMoveY=0.0f;
         lastUpdateNanos =
             System.nanoTime();
 
@@ -352,6 +357,17 @@ final class NativeModuleRuntime implements AutoCloseable {
         }
     }
 
+    synchronized void setSitkaWalkTouchpad(float x,float y,boolean enabled) {
+        sitkaTouchMoveActive = enabled
+            && handle != 0L
+            && "sitka".equals(activeModuleId)
+            && Float.isFinite(x) && Float.isFinite(y);
+        sitkaTouchMoveX=sitkaTouchMoveActive?
+            Math.max(-1.0f,Math.min(1.0f,x)):0.0f;
+        sitkaTouchMoveY=sitkaTouchMoveActive?
+            Math.max(-1.0f,Math.min(1.0f,y)):0.0f;
+    }
+
     synchronized int update(int pointerKind,float[] pointerOrigin,
                             float[] pointerDirection) {
         return update(pointerKind,pointerOrigin,pointerDirection,null,null);
@@ -388,6 +404,16 @@ final class NativeModuleRuntime implements AutoCloseable {
                 inputBus.isJoystickButtonDown(0);
             secondary =
                 inputBus.isJoystickButtonDown(1);
+        }
+
+        // Sitka owns ground collision and world translation. When a
+        // connected gamepad moves, it takes precedence over Daydream pad.
+        // Never alter another module's joystick or shell locomotion.
+        if ("sitka".equals(activeModuleId)
+            && SitkaWalkTouchpadControls.useTouchpad(
+                moveX,moveY,sitkaTouchMoveActive)) {
+            moveX=sitkaTouchMoveX;
+            moveY=sitkaTouchMoveY;
         }
 
         int safePointerKind = pointerKind;
@@ -509,6 +535,8 @@ final class NativeModuleRuntime implements AutoCloseable {
         lastUpdateNanos = 0L;
         shellLocomotionLimitX = 0.0f;
         shellLocomotionLimitZ = 0.0f;
+        sitkaTouchMoveActive=false;
+        sitkaTouchMoveX=sitkaTouchMoveY=0.0f;
 
         nativePause(active);
         nativeDestroy(active);

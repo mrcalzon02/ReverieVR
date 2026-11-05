@@ -2329,6 +2329,31 @@ final class VrShellRenderer implements CardboardView.Renderer {
             );
         }
 
+        // Sitka handles its own miles-wide, source-path-constrained
+        // walking. Forward armed Daydream-pad axes into its native graph
+        // session; NEVER translate the shell's room-bounded camera here.
+        if (activeNative && "sitka".equals(moduleId)) {
+            ControllerSnapshot touch = locomotionControllerSnapshot;
+            long age = touch == null ? Long.MAX_VALUE
+                : frameNanos - touch.receivedAtNanos;
+            boolean blocked = orientationMenuVisible
+                || !controllerConnected || !controllerPoseValid
+                || touch == null || touch.receivedAtNanos <= 0L
+                || age < 0L || age > 250000000L;
+            boolean allowed = nativeLocomotionGate.allows(
+                touch != null && touch.touching,
+                touch != null && touch.touchpadPressed,
+                blocked
+            );
+            nativeModuleRuntime.setSitkaWalkTouchpad(
+                allowed ? SitkaWalkTouchpadControls.axis(touch.touchX):0.0f,
+                allowed ? SitkaWalkTouchpadControls.axis(touch.touchY):0.0f,
+                allowed
+            );
+            nativeLocomotionLastFrameNanos=frameNanos;
+            return;
+        }
+
         if (!homeTravel && !nativeModuleRuntime
                 .copyShellLocomotionBounds(
                     nativeLocomotionBounds

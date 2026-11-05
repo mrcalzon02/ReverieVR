@@ -2,6 +2,33 @@
 
 # Sitka
 
+
+## Daydream touchpad mapped to sourced footpaths — 2026-11-04
+
+The Sitka walking session's native joystick movement now has a
+**Sitka-only Daydream-controller touchpad input path**. While an approved
+Sitka module is running, `VrShellRenderer` sends its existing
+`TouchpadLocomotionGate`-validated analog pad axes into
+`NativeModuleRuntime.setSitkaWalkTouchpad`. A fresh finger release is
+required before initial movement or after click, menu block, stale BLE
+packet, module switch or controller interruption. Click remains select.
+The native module's `WalkSession` still owns all elevation/path
+constraints and actual world translation; there is **no** global
+increase of the shell's 100 m room-travel bounds or noclip path.
+
+A connected gamepad moving above the 0.2 analog threshold always has
+priority over the Daydream pad. Sitka's input override clears on
+module stop and is never applied to other games. The pure Java
+`SitkaWalkTouchpadControlsTest` checks mapping/clamping, gamepad
+precedence and touch re-arm safety; the C++ walking regression and
+existing Cardboard/native tests remain separate acceptance gates.
+
+This enables input routing **for future source-approved Sitka
+sessions**, not a playable public Sitka APK: the optional native
+module is still unregistered until real terrain, roads, waterfront
+elevations and required content are staged and physically validated.
+
+
 ## Sitka path-constrained grounded walking session — 2026-11-04
 
 `sitka_walk_session.h` now implements an actual source-graph-bound foot
