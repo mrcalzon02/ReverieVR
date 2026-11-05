@@ -1,0 +1,20 @@
+{
+  "schema": "reverievr-shared-staging-material-pack-v1",
+  "pack": "sitka_psx_materials_draft_v1",
+  "status": "draft_not_runtime_installed",
+  "archive_path": "shared-assets/staging/sitka_psx_materials_draft_v1.zip",
+  "archive_sha256": "d7ec000a76615bcada6bf0d7c1356f485e897096bad06861d84dc7c91cea923b",
+  "git_blob_sha": "6b063eb3e087d644fb7c94bc65bf0445d4e309a0",
+  "count": 28,
+  "tile_size_px": [
+    128,
+    128
+  ],
+  "original_contact_sheet_sha256": "4648e3266a1181e7f95152a9f112442e7cbe6dbe967c9d3ac61c8f8b0fffc2b5",
+  "google_drive_folder": "https://drive.google.com/drive/folders/1V5-OnZ8im7j7u9o1w9DQk3ZnHCyb8Loi",
+  "google_drive_archive": "https://drive.google.com/file/d/1aNy5hu4nK4Gyy8xKd75pFDgPmIL4GO8_/view",
+  "google_drive_original_sheet": "https://drive.google.com/file/d/1kk8p07sxnAM1cwLTYcsKUrlgigfIT0lq/view",
+  "provenance": "original AI-generated material contact sheet from Sitka source-asset conversation, November 4 2026",
+  "checks": "source file SHA-256 + individual manifest hashes; not texture-seam/device validated",
+  "runtime_integration": false
+}
