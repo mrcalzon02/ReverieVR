@@ -2,6 +2,39 @@
 
 # Sitka
 
+## Personal progression and grounded city exploration — 2026-11-05
+
+The primary gameplay circuit is to roam Sitka streets and shoreline
+between fishing sessions, find unique natural items and public landmarks,
+earn credits from fish, and spend them on equipment, training and boats.
+There is one wallet. A discovery grants unlock access, NEVER money.
+
+The fishing journal now stores five character tracks with eight bought
+levels each (40 character purchases): Walking Pace, Rod Handling, Angler
+Endurance, Explorer Awareness, and Deckwork. The first four already alter
+movement speed, reel rate/bite timing, tension, and pickup/visit reach.
+Deckwork is persisted and purchasable but is not yet wired to the
+standalone crab work-cycle prototype. Every next skill level requires
+one more unique beach site, and level three onward also requires
+increasing numbers of unique sourced city visits. All character levels
+consume fish-earned currency. The analog stick deadzone and proportional
+response are unchanged; maximum speed rises at most 40%, not a new
+control mode.
+
+The existing host-scoped save slot now uses SITKA-FISH-4, with strict
+backward compatibility for V1/V2/V3 money, equipment, hull and finds.
+An optional reviewed sitka/city/discoveries.txt asset can define up
+to 64 immutable sites with typed categories. File format:
+SITKA-CITY-1, provenance (P|source|sha256|EPSG32608|reviewed),
+origin (O|easting|northing), then D|id|harbor/heritage/public_art/
+trailhead/civic|local_x|local_z. No invented city POIs are installed.
+Coordinates must match source terrain; visiting nearby on foot records
+that location once and persists it. Without authored files advanced
+unlocks remain unavailable rather than fabricating discoveries.
+The actual character training store menu, city POI visuals, and
+complete source content are still unfinished.
+
+
 ## Approved physical-equipment concept archive — 2026-11-05
 
 Nine approved full-resolution Sitka equipment design sheets (85 visual

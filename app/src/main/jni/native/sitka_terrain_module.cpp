@@ -14,6 +14,7 @@
 #include "sitka_fishing_session.h"
 #include "sitka_fishing_spots.h"
 #include "sitka_beach_discoveries.h"
+#include "sitka_city_discoveries.h"
 #include "sitka_bathymetry.h"
 #include "sitka_bathymetry_stream.h"
 #include "sitka_procedural_seabed.h"
@@ -66,6 +67,7 @@ struct State {
     std::vector<reverie::sitka::FishingSpot> fishing_spots;
     reverie::sitka::FishingSession fishing;
     std::vector<reverie::sitka::BeachSite> beach_sites;
+    std::vector<reverie::sitka::CitySite> city_sites;
     reverie::sitka::TerrainGl beach_gl;
     bool beach_dirty=false,beach_primary_latched=false;
     reverie::sitka::BathyAtlas bathymetry; // V1 source compatibility.
@@ -346,6 +348,25 @@ void* Create(const ReverieNativeHostV1* host) {
                             "Sitka discovery anchor not on dry source land");
                 state->beach_dirty=true;
             }
+            // Public city visits are source-authorized; an absent file is
+            // valid and never implies a fabricated building or landmark.
+            const char* city_path="sitka/city/discoveries.txt";
+            uint32_t city_size=0u;
+            const int32_t city_probe=host->read_asset(
+                city_path,nullptr,0u,&city_size);
+            if(city_probe!=REVERIE_NATIVE_SAVE_NOT_FOUND){
+                if((city_probe!=REVERIE_NATIVE_SAVE_OK &&
+                    city_probe!=REVERIE_NATIVE_SAVE_BUFFER_TOO_SMALL)||
+                   city_size<100u||city_size>8192u)
+                    throw std::invalid_argument("Sitka city discovery asset size");
+                state->city_sites=reverie::sitka::ParseCitySites(
+                    ReadText(host,city_path,8192u),
+                    state->terrain.origin_east,state->terrain.origin_north);
+                for(const auto& site:state->city_sites)
+                    if(!state->walk_session->GroundAt(site.x,site.z).valid)
+                        throw std::invalid_argument(
+                            "Sitka city anchor outside dry source terrain");
+            }
             // A skiff berth must be explicitly authored in projected metres.
             // Its absence is a supported editor/fishing-only preview. A
             // malformed PRESENT berth fails closed rather than inventing a
@@ -536,6 +557,21 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     const double listener_north=listener?
         state->terrain.origin_north+foot.z+input->listener_position[2]:
         std::numeric_limits<double>::quiet_NaN();
+    // Periodic city exploration happens while free-roaming, not on
+    // an assigned pedestrian graph. Once per immutable authored site.
+    if(state->walk_session && listener && !state->city_sites.empty() &&
+       !(state->skiff&&state->skiff->Active())){
+        const auto found=reverie::sitka::FindCityVisit(
+            *state->walk_session,state->city_sites,
+            state->fishing.fishing.journal.city_sites,
+            state->fishing.fishing.journal.observation_level);
+        if(found.valid && state->fishing.DiscoverCity(found.site,found.kind)){
+            if(!state->fishing.Flush(Store(state)))
+                Log(state->host,"Sitka city visit save deferred");
+            ReverieNativeRequestFeedbackV1(
+                state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        }
+    }
     const bool boat_chord=state->skiff &&
         input->primary_down!=0u&&input->secondary_down!=0u;
     // Boat simulation advances first. This is the AUTHORITATIVE world pose
