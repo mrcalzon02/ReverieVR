@@ -178,7 +178,11 @@ final class UpdatePackageVerifier {
         if (candidateVersionCode
             <= installedVersionCode) {
             return Result.fail(
-                "Downloaded APK is not newer than the installed ReverieVR build."
+                "Downloaded APK versionCode "
+                    + candidateVersionCode
+                    + " is not newer than installed versionCode "
+                    + installedVersionCode
+                    + ". Installation was not attempted."
             );
         }
 

@@ -7,6 +7,24 @@ import org.junit.Test;
 
 public final class UpdateCheckerTest {
     @Test
+    public void androidVersionCodeNotReleaseTimeGatesTheDownload() {
+        // A newer GitHub publication or workflow run must never override
+        // Android's package version ordering.
+        assertTrue(UpdateChecker.isInstallableVersionCode(
+            215403424L, 215403423L
+        ));
+        assertFalse(UpdateChecker.isInstallableVersionCode(
+            215403423L, 215403423L
+        ));
+        assertFalse(UpdateChecker.isInstallableVersionCode(
+            215403422L, 215403423L
+        ));
+        assertFalse(UpdateChecker.isInstallableVersionCode(
+            -1L, 215403423L
+        ));
+    }
+
+    @Test
     public void perGameReleaseNeverUpdatesTheHubApk() {
         assertFalse(UpdateChecker.isHubReleaseTag("module-red-ledger-v0.3.0"));
         assertFalse(UpdateChecker.isHubReleaseTag("module-breakwater-v1.0.0"));

@@ -231,12 +231,9 @@ final class UpdateChecker implements AutoCloseable {
                 continue;
             }
 
-            if (!isReleaseNewer(
-                    release,
-                    currentVersion,
-                    currentPhoneTestRun,
-                    currentPhoneTestAttempt
-                )) {
+            // GitHub publication time and workflow run numbers are not
+            // Android install versions. Filter BEFORE downloading the APK.
+            if (!isReleaseNewer(release)) {
                 continue;
             }
 
@@ -298,7 +295,17 @@ final class UpdateChecker implements AutoCloseable {
         Release left,
         Release right
     ) {
-        // Prefer actual release chronology to resettable CI run counters.
+        // Use the same authoritative ordering as Android PackageManager.
+        // Publication times can be newer for APKs with older versionCodes.
+        long leftCode = UpdatePackageVerifier
+            .declaredPhoneTestVersionCode(left.notes);
+        long rightCode = UpdatePackageVerifier
+            .declaredPhoneTestVersionCode(right.notes);
+        if (leftCode != rightCode) {
+            return Long.compare(leftCode, rightCode);
+        }
+        // Equal APK codes are not install updates; chronology is only
+        // a deterministic secondary sort for identical code metadata.
         if (left.publishedEpochSeconds > 0
             && right.publishedEpochSeconds > 0
             && left.publishedEpochSeconds != right.publishedEpochSeconds) {
@@ -406,35 +413,29 @@ final class UpdateChecker implements AutoCloseable {
         );
     }
 
-    private static boolean isReleaseNewer(
-        Release release,
-        String currentVersion,
-        int currentPhoneTestRun,
-        int currentPhoneTestAttempt
+    // Both sides must be Android numeric install versions. The current APK
+    // uses BuildConfig.VERSION_CODE; release notes are a signed-repository
+    // claim that the downloaded APK verifier independently checks.
+    static boolean isInstallableVersionCode(
+        long candidateCode,
+        long installedCode
     ) {
-        if (release.phoneTestRun > 0
-            && BuildConfig.PHONE_TEST_BUILD_EPOCH_SECONDS > 0L) {
-            return isPublishedReleaseNewer(
-                release.phoneTestRun,
-                release.phoneTestAttempt,
-                release.publishedEpochSeconds,
-                currentPhoneTestRun,
-                currentPhoneTestAttempt,
-                BuildConfig.PHONE_TEST_BUILD_EPOCH_SECONDS
-            );
-        }
-        if (release.phoneTestRun > 0) {
-            return isPhoneTestNewer(
-                release.phoneTestRun,
-                release.phoneTestAttempt,
-                currentPhoneTestRun,
-                currentPhoneTestAttempt
-            );
-        }
+        return candidateCode > 0L
+            && installedCode > 0L
+            && candidateCode > installedCode;
+    }
 
-        return VersionUtils.isNewer(
-            release.version,
-            currentVersion
+    private static boolean isReleaseNewer(Release release) {
+        if (release.phoneTestRun <= 0) {
+            // The installer only accepts timestamp-versioned phone-test
+            // releases; do not advertise an un-installable release.
+            return false;
+        }
+        return isInstallableVersionCode(
+            UpdatePackageVerifier.declaredPhoneTestVersionCode(
+                release.notes
+            ),
+            BuildConfig.VERSION_CODE
         );
     }
 

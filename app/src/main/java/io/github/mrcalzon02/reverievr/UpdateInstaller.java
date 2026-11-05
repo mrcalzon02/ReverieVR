@@ -231,19 +231,33 @@ final class UpdateInstaller implements AutoCloseable {
             DownloadManager.Request
                 .VISIBILITY_VISIBLE_NOTIFY_COMPLETED
         );
-        request.setDestinationInExternalFilesDir(
-            activity,
-            Environment.DIRECTORY_DOWNLOADS,
-            fileName
+        request.setMimeType(
+            "application/vnd.android.package-archive"
         );
 
-        activeRelease = release;
-
         try {
-            activeDownloadId =
-                downloadManager.enqueue(
-                    request
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Public Downloads, visible in My Files and retained even
+                // when ReverieVR's app-specific storage is cleared.
+                // DownloadManager owns the file under scoped storage.
+                request.setDestinationInExternalPublicDir(
+                    Environment.DIRECTORY_DOWNLOADS,
+                    fileName
                 );
+            } else {
+                // Android 8/9 require legacy external-storage permission
+                // for public Downloads. Preserve functional downloading
+                // without requesting unrestricted storage access.
+                request.setDestinationInExternalFilesDir(
+                    activity,
+                    Environment.DIRECTORY_DOWNLOADS,
+                    fileName
+                );
+            }
+            activeRelease = release;
+            activeDownloadId = downloadManager.enqueue(
+                request
+            );
         } catch (RuntimeException exception) {
             clearActiveDownload();
             failVisible(
