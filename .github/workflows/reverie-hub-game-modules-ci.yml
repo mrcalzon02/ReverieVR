@@ -27,6 +27,9 @@ on:
       - 'app/src/main/jni/native/breakwater_materials.h'
       - 'app/src/main/jni/native/breakwater_authored_materials.h'
       - 'app/src/main/jni/native/breakwater_emplacement.h'
+      - 'app/src/main/jni/native/breakwater_defense_points.h'
+      - 'app/src/main/jni/native/breakwater_cannon_trajectory.h'
+      - 'app/src/test/native/breakwater_defense_points_test.cpp'
       - 'app/src/main/jni/native/breakwater_terrain.h'
       - 'app/src/main/jni/native/breakwater_environment.h'
       - 'app/src/test/native/breakwater_shore_cladding_test.cpp'
@@ -103,7 +106,7 @@ jobs:
           # Strict source/material parser/UV tests operate on real 16 PNGs.
           # This is build/run correctness, not a cosmetic screenshot gate.
           for cc in g++ clang++; do
-            for check in breakwater_materials breakwater_authored_materials breakwater_emplacement breakwater_shore_cladding; do
+            for check in breakwater_materials breakwater_authored_materials breakwater_emplacement breakwater_shore_cladding breakwater_defense_points; do
               "$cc" -std=c++17 -O1 -Wall -Wextra -Wpedantic -Werror                 -Iapp/src/main/jni/native                 "app/src/test/native/${check}_test.cpp" -lz                 -o "${RUNNER_TEMP}/${cc}-${check}"
               "${RUNNER_TEMP}/${cc}-${check}"
             done

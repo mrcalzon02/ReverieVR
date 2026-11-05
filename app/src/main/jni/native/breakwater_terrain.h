@@ -46,7 +46,26 @@ inline float BeachHeight(uint8_t location,float x,float z) {
     const float rear=std::clamp((z+1.02f)/.76f,0.f,1.f);
     const float ripple=.008f*std::sin(x*2.9f+z*4.3f+location*1.4f)
                       *std::sin(z*5.1f);
-    return -1.037f+ripple+.13f*side*side+.09f*rear*rear;
+    // Each theater has a genuinely different 3D shore contour. Constrain
+    // changes to the outer shoulders: live infantry feet and shell contact
+    // in the common central 5.4m battle lane keep their established heights.
+    float shoulder=.13f*side*side;
+    if(location==0) {
+        // Broad round shingle dunes, gently lifting toward the rear path.
+        shoulder+=.038f*side*side*(.4f+.6f*rear);
+    } else if(location==1) {
+        // Terraced, almost-level industrial quay with a shallow hard edge.
+        shoulder-=.053f*side*side;
+        shoulder+=.022f*side*rear;
+    } else if(location==2) {
+        // Jagged high basalt shoulder with fractured alternating ledges.
+        shoulder+=.112f*side*side*
+            (.65f+.35f*std::abs(std::sin(x*1.7f+z*2.3f)));
+    } else {
+        // Distinct stepped storm-break approach to reinforced caissons.
+        shoulder+=.080f*side*side+.028f*side*rear;
+    }
+    return -1.037f+ripple+shoulder+.09f*rear*rear;
 }
 constexpr int kBeachCrossSections=24;
 constexpr int kBeachLengthSections=20;
@@ -89,7 +108,7 @@ void EmitCoastalTerrain(uint8_t location, bool night,
             const float near=BeachHeight(location,sign*3.86f,z0);
             const float farHeight=BeachHeight(location,sign*3.86f,z1);
             const float crestX=sign*(4.30f+.14f*((n+location)%3));
-            const float rise=(location==2?.47f:location==1?.24f:.34f)
+            const float rise=(location==2?.47f:location==3?.39f:location==1?.24f:.34f)
                 *(n<3?.70f:n>6?.82f:1.f);
             triangle(sign*3.86f,near,z0,crestX,y+rise,z0-.05f,
                      crestX,y+rise*.92f,z1,
@@ -113,9 +132,12 @@ void EmitCoastalTerrain(uint8_t location, bool night,
     // These shoulders are scenery only; no new collision or troop blockers.
     for(int side : {-1,1}) {
         const float sign=static_cast<float>(side);
-        const float shoulder=location==0?4.65f:location==1?4.15f:5.10f;
-        const float crest=location==0?.32f:location==1?.14f:.54f;
-        const float color=location==0?1.05f:location==1?.77f:.63f;
+        const float shoulder=location==0?4.65f:location==1?4.15f:
+            location==3?5.00f:5.10f;
+        const float crest=location==0?.32f:location==1?.14f:
+            location==3?.39f:.54f;
+        const float color=location==0?1.05f:location==1?.77f:
+            location==3?.83f:.63f;
         triangle(sign*3.85f,y,-2.15f,
                  sign*shoulder,y+crest,-1.48f,
                  sign*3.85f,y,-.95f,

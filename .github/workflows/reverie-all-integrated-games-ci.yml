@@ -49,7 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           for cc in g++ clang++; do
-            for game_test in breakwater_campaign breakwater_aircraft_mesh breakwater_cannon_trajectory breakwater_wave_schedule breakwater_wave_threat breakwater_armor breakwater_invasion_units breakwater_shop_feedback breakwater_menu_layout; do
+            for game_test in breakwater_campaign breakwater_defense_points breakwater_aircraft_mesh breakwater_cannon_trajectory breakwater_wave_schedule breakwater_wave_threat breakwater_armor breakwater_invasion_units breakwater_shop_feedback breakwater_menu_layout; do
               echo "FUNCTIONAL TEST: $game_test via $cc"
               extra=()
               if [[ "$game_test" == breakwater_campaign ]]; then

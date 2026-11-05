@@ -17,6 +17,7 @@ on:
       - 'scripts/verify-shared-native-assets.py'
       - 'app/src/main/jni/native/breakwater_aircraft_mesh.h'
       - 'app/src/test/native/breakwater_aircraft_mesh_test.cpp'
+      - 'app/src/test/native/breakwater_defense_points_test.cpp'
       - 'scripts/modules/verify-game-identity-matrix.py'
       - 'modules/game-identity-matrix.json'
       - 'app/src/main/jni/native/reverie_native_*.h'

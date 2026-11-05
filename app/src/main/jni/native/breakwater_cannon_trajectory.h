@@ -16,14 +16,16 @@ struct ShotRay {
 // then orient the barrel from kMount to that target. The visible mesh and
 // projectile must use this SAME physical direction. Far/level shots retain
 // their old trajectory, preserving established anti-ship lead and ballistics.
-inline bool BarrelAim(WeaponKind kind,const float *sight,float *barrel) {
-    if(!barrel || !WeaponWithinTraverse(sight,kind))return false;
+inline bool BarrelAim(WeaponKind kind,const float *sight,float *barrel,
+                      float stationHeight=0.f) {
+    if(!barrel || !std::isfinite(stationHeight) ||
+       !WeaponWithinTraverse(sight,kind))return false;
     const float len=std::sqrt(sight[0]*sight[0]+
                               sight[1]*sight[1]+sight[2]*sight[2]);
     if(!std::isfinite(len) || len<.00001f)return false;
     float x=sight[0]/len,y=sight[1]/len,z=sight[2]/len;
     if(y<-.12f*(-z)) {
-        constexpr float infantryY=-.66f;
+        const float infantryY=-.66f-stationHeight;
         const float t=infantryY/y;
         const float targetX=x*t,targetZ=z*t;
         // The muzzle must stay behind the intended shoreline contact:
@@ -44,10 +46,10 @@ inline bool BarrelAim(WeaponKind kind,const float *sight,float *barrel) {
 // aim is a controller ghost sight only and cannot cause a regular gun shot.
 // SAM remains an intentionally independent, controller-directed support.
 inline bool CannonShot(WeaponKind weapon,const float* controller_direction,
-                       ShotRay* out) {
+                       ShotRay* out,float stationHeight=0.f) {
     if(!out)return false;
     float physical[3]={};
-    if(!BarrelAim(weapon,controller_direction,physical))return false;
+    if(!BarrelAim(weapon,controller_direction,physical,stationHeight))return false;
     gunmesh::Vec muzzle{};
     // A round departs the barrel at the *resting* muzzle; recoil begins
     // immediately afterward. Preview and initial shot origin therefore match

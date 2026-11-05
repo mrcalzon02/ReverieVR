@@ -20,6 +20,7 @@
 #include "breakwater_impacts.h"
 #include "breakwater_wrecks.h"
 #include "breakwater_gun_mesh.h"
+#include "breakwater_defense_points.h"
 #include "breakwater_support_turret.h"
 #include "breakwater_beckenburg_mesh.h"
 #include "breakwater_asset_composition.h"
@@ -90,6 +91,9 @@ struct State {
     AircraftHitFeedback aircraft_hit;
     CombatInputLatch combat_input;
     PointerFocusGate pointer_focus;
+    defense::Selection defense_points{};
+    uint8_t defense_map=0u;
+    bool player_local=false; // only gun, armory and combat HUD; not the world
     bool armory_page=false, sam_armed=false, ghost_on=false;
     bool slot_picker=true, reset_armed=false;
     bool round_summary=false, summary_requires_release=false;
@@ -113,6 +117,11 @@ void BattleSound(State *s,uint32_t cue) {
     ReverieNativeRequestSoundV1(s->host,cue);
 }
 void Vertex(State *s, float x,float y,float z, float r,float g,float b) {
+    if(s->player_local && s->campaign.phase()==Phase::Combat) {
+        const defense::Position p=defense::At(s->campaign.location(),
+                                             s->defense_points.current);
+        x+=p.x;y+=p.y;z+=p.z;
+    }
     auto &v=s->mesh;
     v.push_back(x);v.push_back(y);v.push_back(z);
     v.push_back(r);v.push_back(g);v.push_back(b);
@@ -149,7 +158,30 @@ void Box(State *s,float x,float y,float z,float w,float h,float d,
 }
 void Text(State *s,const char *text,float x,float y,float z,float scale,
           float r,float g,float b) {
+    if(s->player_local && s->campaign.phase()==Phase::Combat) {
+        const defense::Position p=defense::At(s->campaign.location(),
+                                             s->defense_points.current);
+        x+=p.x;y+=p.y;z+=p.z;
+    }
     font::AppendText(s->font_mesh,text,x,y,scale,r,g,b,z);
+}
+// Only the combat HUD icons are player-anchored. World pickups and impacts
+// remain in the original single 3D world; no heads-up-only duplicate atlas.
+void PlayerSprite(State *s,SpriteId id,float x,float y,float z,
+                  float w,float h) {
+    const defense::Position p=defense::At(s->campaign.location(),
+                                         s->defense_points.current);
+    AppendSprite(s->sprite_mesh,id,x+p.x,y+p.y,z+p.z,w,h);
+}
+ReverieNativeInputV1 WorldPointer(State *s,
+                                  const ReverieNativeInputV1 &local) {
+    ReverieNativeInputV1 world=local;
+    if(s->campaign.phase()==Phase::Combat) {
+        const defense::Position p=defense::At(s->campaign.location(),
+                                             s->defense_points.current);
+        defense::ShiftOrigin(world.pointer_origin,local.pointer_origin,p);
+    }
+    return world;
 }
 float AimAtPlane(const ReverieNativeInputV1 &input,float z,float *x,float *y) {
     if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE ||
@@ -440,6 +472,21 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         // the HUD. Shop START presses also remain captured across phases.
         const CombatInputRoute route = s->combat_input.Route(hud,edge);
         if(route==CombatInputRoute::NoAction)return;
+        // Same highlighted shore beacon requires two released Select presses
+        // within 440ms. Both are consumed instead of becoming gunfire.
+        if(route==CombatInputRoute::Gun && s->defense_points.hover>=0) {
+            if(!s->combat_input.CaptureOneShotPress(edge))return;
+            const auto action=s->defense_points.Press(s->defense_points.hover);
+            if(action==defense::Tap::Transferred) {
+                s->aim_ray_valid=false;s->ghost_on=false;
+                s->aircraft_aim={};s->surface_aim={};
+                s->scene_dirty=true;
+            }
+            Feedback(s,action==defense::Tap::Ignored?
+                REVERIE_NATIVE_FEEDBACK_FAILURE:
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            return;
+        }
         if(route>=CombatInputRoute::Weapon0 &&
            route<=CombatInputRoute::Weapon4) {
             const WeaponKind kind=static_cast<WeaponKind>(
@@ -504,7 +551,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             // valid launches and rejected locks so a held trigger cannot
             // launch after aim drift or spill into ordinary gunfire.
             if(!s->combat_input.CaptureOneShotPress(edge))return;
-            const int lock=CombatTarget(input,game,true);
+            const ReverieNativeInputV1 world=WorldPointer(s,input);
+            const int lock=CombatTarget(world,game,true);
             const bool valid=lock>=0 &&
                 lock<static_cast<int>(Campaign::kMaxEnemies) &&
                 game.enemies()[lock].type==UnitType::Aircraft;
@@ -528,10 +576,14 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         // Above the gun's traverse the separate hand-aligned ghost sight
         // appears, but ordinary gunfire cannot teleport to that controller ray.
         trajectory::ShotRay fired{};
+        const defense::Position post=defense::At(
+            game.location(),s->defense_points.current);
         const bool in_arc=trajectory::CannonShot(game.selected_weapon(),
-                                                input.pointer_direction,&fired);
-        ReverieNativeInputV1 cannon_input=input;
+                                                 input.pointer_direction,
+                                                 &fired,post.y);
+        ReverieNativeInputV1 cannon_input=WorldPointer(s,input);
         if(in_arc)for(int k=0;k<3;k++) {
+            fired.origin[k]+=(k==0?post.x:k==1?post.y:post.z);
             cannon_input.pointer_origin[k]=fired.origin[k];
             cannon_input.pointer_direction[k]=fired.direction[k];
         }
@@ -665,6 +717,7 @@ void BuildScene(State *s) {
     s->mesh.clear();
     s->sprite_mesh.clear();
     s->font_mesh.clear();
+    s->player_local=false;
     s->world_lighting=false;
     const bool night=game.period()==Period::Night;
     const EnvironmentProfile landscape=EnvironmentFor(game.location(),night);
@@ -722,6 +775,27 @@ void BuildScene(State *s) {
     for(const ShoreCover &barrier:game.shore_cover())
         EmitShoreCover(game.location(),barrier,night,
             [s](auto... arguments) { Box(s,arguments...); });
+    if(game.phase()==Phase::Combat) {
+        // Real elevated fighting platforms on the same authored coast.
+        // Their hit-tested beacons identify where a double press will move.
+        defense::EmitPlatforms(game.location(),s->defense_points.current,
+            s->defense_points.hover,
+            [s](auto... v){Box(s,v...);},
+            [s](auto... v){Triangle(s,v...);},
+            [s](materials::Surface material,float x,float y,float z,
+                float w,float h,float d) {
+                materials::AppendBoxCladding(s->sprite_mesh,material,
+                                              x,y,z,w,h,d);
+            });
+        for(int site=0;site<defense::kPositions;++site) {
+            if(site==s->defense_points.current)continue;
+            const auto p=defense::At(game.location(),site);
+            float marker[3];defense::Marker(p,marker);
+            const float r=site==s->defense_points.hover?1.f:.65f;
+            Text(s,p.label,marker[0],marker[1]+.53f,marker[2]-.10f,
+                 .035f,r,.90f,.83f);
+        }
+    }
 
     // Near-field gun geometry must NOT block world-space menus at z=-3.
     // The old parapet covered the credits line despite correct text/layout.
@@ -730,6 +804,7 @@ void BuildScene(State *s) {
     // with their own unlit authored base albedo.
     s->world_palette_already_lit=false;
     if(game.phase()==Phase::Combat) {
+        s->player_local=true;
         // The shore platform, breech, collars, recessed muzzle and wheel
         // meshes are one deterministic XYZRGB triangle batch per scene.
         // The old 7.8-wide shore-facing slab is removed. The bunker apron,
@@ -774,6 +849,7 @@ void BuildScene(State *s) {
         }
         Text(s,"LEFT ARMORY",gunmesh::kRackX,gunmesh::kRackTop+.28f,
              gunmesh::kRackZ+.20f,.026f,.82f,.93f,.75f);
+        s->player_local=false;
     }
     if(s->flash>0.0f) {
         const float *shot=s->shot_direction;
@@ -1295,6 +1371,7 @@ void BuildScene(State *s) {
         Text(s,summary,0,menu::kShopCreditsY,-2.967f,
              font::FittedScale(summary,3.50f,menu::kShopCreditsScale),.92f,.86f,.64f);
     } else if(game.phase()==Phase::Combat) {
+        s->player_local=true;
         char digits[32];std::snprintf(digits,sizeof(digits),"HULL %d",game.integrity());
         Text(s,digits,0,1.20f,-2.0f,.075f,.92f,.92f,.74f);
         char ammo[32];
@@ -1302,7 +1379,9 @@ void BuildScene(State *s) {
             WeaponFor(game.selected_weapon()).name,
             static_cast<unsigned>(game.magazine_left()));
         Text(s,ammo,0,.93f,-1.79f,.055f,.88f,.9f,.68f);
-        Text(s,"CLICK LEFT RACK OR PAD LEFT RIGHT",0,.29f,-1.79f,.029f,
+        Text(s,"DOUBLE CLICK SHORE BEACONS TO CHANGE POST",
+             0,.29f,-1.79f,.025f,.80f,.93f,.79f);
+        Text(s,"CLICK LEFT RACK OR PAD LEFT RIGHT",0,.16f,-1.79f,.025f,
              .75f,.87f,.76f);
         if(game.reloading()) {
             // Bounded progress bar: computed once during update, rendered
@@ -1323,19 +1402,19 @@ void BuildScene(State *s) {
         char support[24];
         std::snprintf(support,sizeof(support),"ARTY %u",
             static_cast<unsigned>(game.artillery_charges()));
-        AppendSprite(s->sprite_mesh,SpriteId::ArtillerySupport,
+        PlayerSprite(s,SpriteId::ArtillerySupport,
                      -2.99f,.97f,-1.76f,.26f,.26f);
         Text(s,support,-2.02f,.97f,-1.79f,.064f,.89f,.81f,.42f);
         std::snprintf(support,sizeof(support),"AIR %u",
             static_cast<unsigned>(game.airstrike_charges()));
-        AppendSprite(s->sprite_mesh,SpriteId::AirstrikeSupport,
+        PlayerSprite(s,SpriteId::AirstrikeSupport,
                      1.14f,.97f,-1.76f,.26f,.26f);
         Text(s,support,2.13f,.97f,-1.79f,.064f,.89f,.81f,.42f);
         std::snprintf(support,sizeof(support),"SAM %u",
             static_cast<unsigned>(game.sam_charges()));
         Panel(s,0,.97f,-1.82f,1.22f,.32f,
               s->sam_armed?.42f:.18f,s->sam_armed?.38f:.28f,.14f);
-        AppendSprite(s->sprite_mesh,SpriteId::SamSupport,
+        PlayerSprite(s,SpriteId::SamSupport,
                      -.45f,.97f,-1.76f,.19f,.19f);
         Text(s,support,.16f,.97f,-1.79f,.046f,1.0f,.90f,.63f);
         for(uint8_t id=0;id<kWeaponCount;id++) {
@@ -1473,6 +1552,7 @@ void BuildScene(State *s) {
             Text(s,hit,0,-.83f,-1.79f,.043f,.76f,1.0f,.62f);
         }
         if(s->flash>0)Panel(s,0,-.65f,-1.85f,.28f,.20f,1,.82f,.25f);
+        s->player_local=false;
     } else {
         Panel(s,0,0,-3.0f,4.2f,1.6f,.07f,.10f,.14f);
         Text(s,game.phase()==Phase::Victory?"VICTORY":"BATTERY LOST",
@@ -1666,6 +1746,7 @@ void Pause(void *instance) {
     State *s=static_cast<State *>(instance);
     if(!s)return;
     s->pointer_focus.RequireRelease();
+    s->defense_points.LostFocus();
     s->pointer_visible=false;
     s->menu_focus=-1;
     s->rack_focus=-1;
@@ -1699,6 +1780,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->held=false;
         s->secondary_held=false;
         s->combat_input.Release();
+        s->defense_points.LostFocus();
         s->infantry_flash=0.0f;
         s->infantry_firing_mask=0u;
         s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
@@ -1720,6 +1802,24 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->pointer_visible=true;
     s->rack_focus=s->campaign.phase()==Phase::Combat ?
         gunmesh::HitRack(copy.pointer_origin,copy.pointer_direction):-1;
+    if(s->campaign.location()!=s->defense_map) {
+        s->defense_points=defense::Selection{};
+        s->defense_map=s->campaign.location();
+    }
+    s->defense_points.Tick(copy.delta_seconds);
+    const ReverieNativeInputV1 selectionWorld=WorldPointer(s,copy);
+    const int priorSiteHover=s->defense_points.hover;
+    s->defense_points.hover=-1;
+    if(s->campaign.phase()==Phase::Combat && !s->slot_picker) {
+        float hudX=0.f,hudY=0.f;
+        const bool overHud=AimAtPlane(copy,-1.8f,&hudX,&hudY)>0.f &&
+            HitCombatSupportHud(hudX,hudY)!=CombatHudTarget::None;
+        if(s->rack_focus<0 && !overHud)
+            s->defense_points.hover=defense::Hit(
+                s->campaign.location(),s->defense_points.current,
+                selectionWorld.pointer_origin,selectionWorld.pointer_direction);
+    }
+    if(priorSiteHover!=s->defense_points.hover)s->scene_dirty=true;
     // Hover feedback corresponds precisely to the raycast menus, including
     // disabled armory slots. Only mark the scene dirty when focus changes.
     int next_focus=-1;
@@ -1746,7 +1846,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
        s->rack_focus<0 &&
        trajectory::BarrelAim(s->campaign.selected_weapon(),
-                             copy.pointer_direction,converged_gun)) {
+                             copy.pointer_direction,converged_gun,
+                             defense::At(s->campaign.location(),
+                                 s->defense_points.current).y)) {
         // Model follows the same physical muzzle direction as fired shots,
         // including close beach targets below the headset sight.
         for(int k=0;k<3;k++)s->gun_direction[k]=converged_gun[k];
@@ -1918,6 +2020,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     }
     // Reload takes priority if both controls are pressed on the same frame.
     if(down && !started_reload)Interact(s,copy,!s->held);
+    // A double-click can change the station inside Interact itself.
+    const ReverieNativeInputV1 worldPointer=WorldPointer(s,copy);
     if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop &&
        !s->round_summary) {
         BeginActiveWave(s,down);
@@ -1930,8 +2034,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         float physical[3]={};
         s->ghost_on=(s->sam_armed ||
             !trajectory::BarrelAim(s->campaign.selected_weapon(),
-                                   copy.pointer_direction,physical)) &&
-            GhostAimPoint(copy.pointer_origin,copy.pointer_direction,
+                                   copy.pointer_direction,physical,
+                                   defense::At(s->campaign.location(),
+                                       s->defense_points.current).y)) &&
+            GhostAimPoint(worldPointer.pointer_origin,copy.pointer_direction,
                           s->ghost_position);
     }
     s->aim_ray_valid=false;
@@ -1940,9 +2046,16 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->cover_aim_index=-1;s->armor_aim_index=-1;
     if(s->campaign.phase()==Phase::Combat &&
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
+        const auto post=defense::At(s->campaign.location(),
+                                    s->defense_points.current);
         const bool cannon_valid=trajectory::CannonShot(
             s->campaign.selected_weapon(),copy.pointer_direction,
-            &s->aim_ray);
+            &s->aim_ray,post.y);
+        if(cannon_valid) {
+            s->aim_ray.origin[0]+=post.x;
+            s->aim_ray.origin[1]+=post.y;
+            s->aim_ray.origin[2]+=post.z;
+        }
         s->aim_ray_valid=cannon_valid && !s->sam_armed;
         ReverieNativeInputV1 target_input=copy;
         if(s->aim_ray_valid)for(int k=0;k<3;k++) {
@@ -1950,7 +2063,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             target_input.pointer_direction[k]=s->aim_ray.direction[k];
         }
         const int target=s->sam_armed?
-            CombatTarget(copy,s->campaign,true):
+            CombatTarget(worldPointer,s->campaign,true):
             (s->aim_ray_valid?
                 CombatTarget(target_input,s->campaign,false):-1);
         s->cover_aim_index=target>=kCoverTargetBase &&
@@ -2013,8 +2126,12 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
                           6*sizeof(float),reinterpret_cast<void *>(0));
     glVertexAttribPointer(static_cast<GLuint>(s->color),3,GL_FLOAT,GL_FALSE,
                           6*sizeof(float),reinterpret_cast<void *>(3*sizeof(float)));
-    float vp[16];
-    ReverieNativeMat4Multiply(vp,eye->projection,eye->view);
+    float vp[16], shiftedView[16];
+    const auto vantage=s->campaign.phase()==Phase::Combat?
+        defense::At(s->campaign.location(),s->defense_points.current):
+        defense::At(0,0);
+    defense::ShiftEyeView(eye->view,vantage,shiftedView);
+    ReverieNativeMat4Multiply(vp,eye->projection,shiftedView);
     glUniformMatrix4fv(s->matrix,1,GL_FALSE,vp);
     glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->mesh.size()/6));
     if(!s->sprite_mesh.empty()) {
