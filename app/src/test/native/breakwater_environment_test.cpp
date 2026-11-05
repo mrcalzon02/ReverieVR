@@ -93,7 +93,7 @@ int main() {
             };
             EmitSurroundingLandscape(location,dark,box,tri);
             // Bounded geometry, no unbounded tessellation per stereo eye.
-            assert(triangles==(location==0?250:location==1?240:location==2?258:244));
+            assert(triangles==(location==0?274:location==1?264:location==2?282:268));
             assert(boxes==(location==0?16:location==1?8:location==2?0:12));
             assert(anchoredTrees==(location==0?10:0));
             assert(anchoredTrack==(location==0?6:0));
@@ -113,7 +113,7 @@ int main() {
         const EnvironmentLight light=KeyLightFor(isNight);
         const float angle=SkyCelestialAngle(isNight);
         const float height=SkyCelestialHeight(isNight);
-        const float radius=25.12f;
+        const float radius=kSkyBodyRadius;
         const float length=std::sqrt(radius*radius+height*height);
         assert(std::abs(light.x-radius*std::sin(angle)/length)<.003f);
         assert(std::abs(light.y-height/length)<.003f);

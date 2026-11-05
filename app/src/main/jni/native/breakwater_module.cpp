@@ -11,6 +11,7 @@
 #include "breakwater_emplacement.h"
 #include "breakwater_cover.h"
 #include "breakwater_sky.h"
+#include "breakwater_ocean.h"
 #include "breakwater_environment.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
@@ -720,24 +721,15 @@ void BuildScene(State *s) {
     s->player_local=false;
     s->world_lighting=false;
     const bool night=game.period()==Period::Night;
-    const EnvironmentProfile landscape=EnvironmentFor(game.location(),night);
     // 360-degree layered horizon: no frontal backdrop edges when head turns.
     // Fixed panorama, clouds, sun/moon and distant smoke are shared by both
     // eyes and stay farther away than every gameplay target and sea strip.
     EmitSkyPanorama(game.location(),night,
         [s](auto... arguments) { Triangle(s,arguments...); });
-    for(int z=0;z<24;z++) {
-        const float back=-2.0f-z*.92f;
-        const float shimmer=.018f*std::sin(s->elapsed*1.6f+z*.7f);
-        Triangle(s,-20,-1.10f,back,20,-1.10f,back,
-                 20,-1.10f,back-.92f,
-                 landscape.sea.r*.88f,landscape.sea.g*.88f,
-                 landscape.sea.b*.88f+shimmer);
-        Triangle(s,-20,-1.10f,back,20,-1.10f,back-.92f,
-                 -20,-1.10f,back-.92f,
-                 landscape.sea.r,landscape.sea.g,
-                 landscape.sea.b+shimmer);
-    }
+    // One low-poly 3D water mesh extends beyond the battle boats.
+    // BuildScene emits it once for the pair of stereo eyes.
+    EmitOpenSea(game.location(),night,s->elapsed,
+        [s](auto... values){Triangle(s,values...);});
     // Sun/moon directional shading is precomputed per world-space facet.
     // Landscape and beach profiles already own day/night base albedos.
     s->world_lighting=true;s->world_night=night;
@@ -942,16 +934,12 @@ void BuildScene(State *s) {
                      .94f,.80f,.34f);
         }
     }
-    // One atlas card per live enemy: the campaign continues owning all
-    // movement, world positions, hit volumes, attacks, landfall and score.
-    // Forward-facing world cards use the SAME mesh for both stereo eyes.
+    // Live vessels stay 3D from first offshore sighting to landing.
+    // Campaign still owns positions, hit volumes, landfall and score.
     for(const Enemy &e:game.enemies())if(e.active) {
-        // The owner's actual GLB boat geometry is simplified to BWM1 for
-        // close-range rowboats. Distant boats retain inexpensive atlas art.
-        // Campaign still exclusively owns travel, passengers, damage and hit
-        // spheres; model rendering must not create additional targets.
-        if(e.type==UnitType::Rowboat && e.z>-7.5f &&
-           std::fabs(e.x)<8.f &&
+        // Use the SAME imported BWM1 rowboat at every distance. If absent,
+        // use one persistent low-poly 3D fallback without morphing.
+        if(e.type==UnitType::Rowboat &&
            s->beckenburg_models[imported::OwnerRowboat].valid()) {
             s->beckenburg_models[imported::OwnerRowboat].Emit(
                 e.x,-.77f,e.z,1.18f,1.57079632679f,

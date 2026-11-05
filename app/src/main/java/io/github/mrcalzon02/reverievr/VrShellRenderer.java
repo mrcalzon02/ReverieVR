@@ -3011,6 +3011,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
                     ? 0
                     : 1;
 
+            // Only Breakwater uses the expanded sea and distant sky.
+            // Other native games retain their original depth precision.
+            float nativeFar = nativeModuleRuntime != null
+                && "breakwater-battery".equals(
+                    nativeModuleRuntime.getActiveModuleId())
+                ? 240.0f : Z_FAR;
             boolean rendered =
                 nativeModuleRuntime != null
                     && nativeSurfaceReady
@@ -3019,7 +3025,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                         tempMatrix,
                         eye.getPerspective(
                             Z_NEAR,
-                            Z_FAR
+                            nativeFar
                         )
                     );
 

@@ -29,7 +29,7 @@ public final class GameVrActivity extends Activity
     private static final String TAG="BreakwaterCompanion";
     private static final String GAME_ID="breakwater-battery";
     private static final String HUB="io.github.mrcalzon02.reverievr";
-    private static final float NEAR=.08f,FAR=200.f;
+    private static final float NEAR=.08f,FAR=240.f;
     private static final boolean NATIVE_AVAILABLE;
     static {
         boolean ready;

@@ -15,7 +15,7 @@ struct EnvironmentProfile {
     float rise, peaks;
 };
 
-// The three locations have different geology, beach approaches and rear
+// The four locations have different geology, beach approaches and rear
 // silhouettes. Day/night changes actual vertex lighting as well as the sky.
 inline EnvironmentColor Moonlight(EnvironmentColor c) {
     return {c.r*.34f,c.g*.49f,c.b*.72f};
@@ -59,7 +59,7 @@ inline EnvironmentColor IlluminateWorld(EnvironmentColor c,bool night) {
 }
 
 // Pre-normalized sun and moon vectors point toward the *visible* celestial
-// discs (SkyCelestialAngle / SkyCelestialHeight at sky radius 25.12).
+// discs (SkyCelestialAngle / SkyCelestialHeight at kSkyBodyRadius).
 // Do not use a moon vector pointing landward when the moon is seaward.
 struct EnvironmentLight { float x,y,z; };
 constexpr EnvironmentLight KeyLightFor(bool night) {
@@ -91,8 +91,8 @@ inline EnvironmentColor IlluminateFacet(EnvironmentColor c,bool night,
 }
 
 constexpr int kLandscapeSectors=48;
-constexpr float kHillRadius=17.0f;
-constexpr float kMountainRadius=22.0f;
+constexpr float kHillRadius=72.0f;
+constexpr float kMountainRadius=92.0f;
 
 inline float RidgeHeight(uint8_t location,int sector,bool farRing) {
     // Periodic index makes the closing seam identical to sector zero.
@@ -169,6 +169,22 @@ void EmitSurroundingLandscape(uint8_t location,bool night,
                      outer,flank1,farZ,c.r,c.g,c.b);
             triangle(0,y0,nearZ,outer,flank1,farZ,
                      0,y1,farZ,c.r,c.g,c.b);
+        }
+    }
+    // Extend the rear floor to the distant landscape; the first strip
+    // shares the original rear-ground y at z=16.9. Purely decorative.
+    for(int strip=0;strip<6;++strip) {
+        const float t0=strip/6.0f,t1=(strip+1)/6.0f;
+        const float z0=16.9f+(kHillRadius-16.9f)*t0;
+        const float z1=16.9f+(kHillRadius-16.9f)*t1;
+        const float y0=-1.12f+p.rise*(.80f+.20f*t0);
+        const float y1=-1.12f+p.rise*(.80f+.20f*t1);
+        for(int side:{-1,1}) {
+            const float outer=static_cast<float>(side)*9.4f;
+            triangle(0,y0,z0,outer,y0+.38f,z0,
+                     outer,y1+.38f,z1,p.earth.r,p.earth.g,p.earth.b);
+            triangle(0,y0,z0,outer,y1+.38f,z1,
+                     0,y1,z1,p.hill.r,p.hill.g,p.hill.b);
         }
     }
     if(location==0) {

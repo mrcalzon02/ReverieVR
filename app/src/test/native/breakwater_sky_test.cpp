@@ -25,12 +25,12 @@ static SkyMeshSummary Summarize(uint8_t location,bool night) {
         }
         // The apex is shared in world coordinates across every sky
         // sector and is not a head-facing per-eye billboard.
-        if(cx==0.0f && cy==40.0f && cz==0.0f) {
+        if(cx==0.0f && cy==kSkyApexY && cz==0.0f) {
             ++data.zenith_triangles;
             assert(std::abs(std::hypot(ax,az)-kSkyRadius)<.001f);
             assert(std::abs(std::hypot(bx,bz)-kSkyRadius)<.001f);
-            assert(std::abs(ay-17.0f)<.0001f);
-            assert(std::abs(by-17.0f)<.0001f);
+            assert(std::abs(ay-kSkyTopY)<.0001f);
+            assert(std::abs(by-kSkyTopY)<.0001f);
             if(data.zenith_triangles==1) {
                 data.apex_r=r;data.apex_g=g;data.apex_b=b;
             } else {
@@ -47,7 +47,9 @@ static SkyMeshSummary Summarize(uint8_t location,bool night) {
 int main() {
     static_assert(kSkySegments>=12,"VR sky too coarsely segmented");
     static_assert(kSkyBands>=5,"Day/night zenith needs stacked gradients");
-    assert(kSkyRadius>kMountainRadius); // environment skyline remains in front
+    assert(kSkyRadius>kMountainRadius);
+    assert(kSkyRadius>=120.0f);
+    assert(kSkyBodyRadius<kSkyRadius); // environment skyline remains in front
     for(uint8_t location=0;location<Campaign::kLocations;++location) {
         const SkyMeshSummary day=Summarize(location,false);
         const SkyMeshSummary night=Summarize(location,true);
