@@ -2,6 +2,30 @@
 
 # Sitka
 
+## GIS-to-native O'Connell Bridge alignment baker — 2026-11-04
+
+`scripts/sitka/build_oconnell_bridge.py` now completes the offline
+source-to-runtime handoff for the **simple-textured** O'Connell Bridge.
+It takes a licensed, reviewed GeoJSON LineString from a specific OSM way,
+a source-hashed and individually authored deck-height profile, and the
+**same checked projected terrain origin/CRS** used by the coast baker.
+Only after validating site identity, source SHA-256, existence, approval,
+line collinearity and measured grade does it write the optional
+`sitka/structures/oconnell.bridge` file consumed by the real native
+GLES2 bridge renderer. No arbitrary world coordinates, unmeasured road
+heights, or guessed bridge endpoints are inferred. The resulting text
+is bounded to 8 KiB and records complete source/provenance metadata
+in a neighboring JSON manifest.
+
+The exporter regression uses an explicitly **synthetic** three-point
+fixture; it exercises a round trip through the actual C++17
+`ParseBridgeLayout` and checks invalid CRS/terrain origin, missing
+measured grade, stale source hashes, unreviewed identity and bent axes.
+A real-source bridge layout **has not been exported yet** because an
+approved, current OpenStreetMap/engineering alignment and individual
+deck elevations have not been furnished. The module does not stage an
+invented bridge into the VR scene or use Google imagery/geometry.
+
 ## O'Connell Bridge: native 3-material GLES2 textured rendering — 2026-11-04
 
 The **simple-plane** bridge renderer is now implemented as
