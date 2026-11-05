@@ -15,6 +15,8 @@ int main(){
         assert(At(map,0).z==0.f);
         assert(At(map,1).x<-4.f && At(map,2).x>4.f);
         assert(At(map,1).y>0.f && At(map,2).y>0.f);
+        float centralMarker[3];Marker(At(map,0),centralMarker);
+        assert(centralMarker[2]<-2.f); // visible seaward, not hidden in bunker
         // The central *combat* floor retains its established height; flanking
         // beach profiles must be real per-theater geometry, not recoloring.
         assert(BeachHeight(map,0.f,-1.40f)>-1.055f);

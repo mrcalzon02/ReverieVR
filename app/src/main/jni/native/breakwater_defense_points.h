@@ -55,9 +55,11 @@ inline void ShiftEyeView(const float *view,Position station,float *result) {
 }
 inline void Marker(Position site,float* center) {
     center[0]=site.x;center[1]=site.y-.53f;
-    // The center return beacon is *behind* the current firing position,
-    // never at the cannon muzzle or in the incoming infantry sightline.
-    center[2]=site.z+(site.x==0.f?1.50f:-.86f);
+    // Return beacon sits on the seaward lip of the main fortification.
+    // From either raised flank it is visible AHEAD of the side bunker wall;
+    // unlike a rearward beacon it cannot hide *behind* opaque revetments.
+    // It is never drawn while the central gun is the active station.
+    center[2]=site.z+(site.x==0.f?-2.05f:-.86f);
 }
 // Check a genuine finite controller ray against real 3D stationary pads.
 // It must be a forward ray hit; never choose an off-screen or rear pad.
