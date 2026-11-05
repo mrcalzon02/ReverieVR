@@ -73,6 +73,8 @@ on:
       - 'scripts/sitka/*.py'
       - 'data/sitka/research/**'
       - 'app/src/main/jni/native/sitka_shore_*.h'
+      - 'app/src/main/jni/native/sitka_walk_graph.h'
+      - 'app/src/test/native/sitka_walk_graph_test.cpp'
       - 'app/src/main/jni/native/sitka_bridge_*.h'
       - 'app/src/test/native/sitka_bridge_*_test.cpp'
       - 'app/src/test/native/sitka_shore_*_test.cpp'
@@ -195,7 +197,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_name in sitka_shore_geometry_test sitka_shore_detail_test sitka_shore_stream_test sitka_shore_deck_planes_test sitka_bridge_planes_test sitka_bridge_layout_test sitka_bridge_visibility_test; do
+          for test_name in sitka_shore_geometry_test sitka_shore_detail_test sitka_shore_stream_test sitka_shore_deck_planes_test sitka_walk_graph_test sitka_bridge_planes_test sitka_bridge_layout_test sitka_bridge_visibility_test; do
             for compiler in g++ clang++; do
               "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
                 -Iapp/src/main/jni/native \
