@@ -50,6 +50,14 @@
       "companion_build_target": null
     },
     {
+      "id": "guess-the-door",
+      "content_namespace": "guess-the-door",
+      "companion_package": "io.github.mrcalzon02.reverievr.game.guessthedoor",
+      "native_library": "libreverie_module_guess_the_door.so",
+      "development_only": true,
+      "companion_build_target": null
+    },
+    {
       "id": "classic-chess",
       "content_namespace": "classic-chess",
       "companion_package": "io.github.mrcalzon02.reverievr.game.classicchess",

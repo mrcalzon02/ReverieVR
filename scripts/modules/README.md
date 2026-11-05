@@ -18,7 +18,7 @@ Target app ID: `io.github.mrcalzon02.reverievr.game.testchamber`. The Gradle mod
 
 # Independent native game releases — operator tools
 
-**Current state (2026-10-18):** signed catalog verifier, bounded game downloads, private transactional asset installer and rollback, compact game manager, and independent Test Chamber and Breakwater APKs have passed CI build/admission tests. All 15 game IDs have verified content packager support; the real Breakwater model revision was read by its native game on Android. The public signed catalog still contains no independent game releases. Galaxy S9 stereoscopic/audio/controller testing is separate.
+**Current state (2026-11-05):** signed catalog verifier, bounded game downloads, private transactional asset installer and rollback, compact game manager, and independent Test Chamber and Breakwater APKs have passed CI build/admission tests. All 16 game IDs have verified content packager support; the real Breakwater model revision was read by its native game on Android. The public signed catalog still contains no independent game releases. Galaxy S9 stereoscopic/audio/controller testing is separate.
 
 GitHub Actions is now explicitly authorized for emulator validation and signed companion-build artifacts; the release operator still verifies exact payloads and catalog signatures before publication. Continue on `main`.
 
@@ -102,7 +102,7 @@ The publish tool first validates the artifact and release tag, then reconciles e
 
 The Game Modules APK downloader now uses a unique destination per attempt (Android DownloadManager rejects an existing destination), verifies a private copy before invoking Android's package installer, and removes its downloaded staging file afterward. The Android installer still requires explicit user approval and matching signing identity. This prevents routine retries from getting stuck on an old APK filename or accumulating redundant 512 MB download files.
 
-Validation entry points: `ReverieVR all-game content package contracts` checks all 15 game identities, real native art packs, publisher preflight, catalog signing controls and rollback; `ReverieVR hub game acquisition integration` installs actual APKs on Android and checks module acquisition and native execution; `Breakwater Battery independent APK validation` verifies the signed standalone release. These are evidence of CI scope only; a successful Android emulator is not physical Daydream acceptance.
+Validation entry points: `ReverieVR all-game content package contracts` checks all 16 game identities, real native art packs, publisher preflight, catalog signing controls and rollback; `ReverieVR hub game acquisition integration` installs actual APKs on Android and checks module acquisition and native execution; `Breakwater Battery independent APK validation` verifies the signed standalone release. These are evidence of CI scope only; a successful Android emulator is not physical Daydream acceptance.
 
 ### Prepare the next catalog from a verified GitHub release
 

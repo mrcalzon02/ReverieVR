@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Ensure no registered ReverieVR native game is silently omitted by CI.
 
-Each game receives the installed Android 10 15-game JNI/GLES2 boot/capture
+Each game receives the installed Android 10 16-game JNI/GLES2 boot/capture
 gate (DownloadedNativeGameAssetsInstrumentedTest). Host functional suites
 exercise engine groups; Test Chamber has Android runtime/companion tests.
 No screenshots, pixel matches or cosmetic geometry tests block this gate.
@@ -18,6 +18,7 @@ groups = {
     "Red Ledger trade, faction and simulation": {"between-deliveries-red-ledger"},
     "Gumball Armada gameplay and route controls": {"gumball-armada"},
     "Omega Front campaign and tactics": {"omega-front"},
+    "Guess the Door deterministic clues, levers and maze gameplay": {"guess-the-door"},
     "Lantern Desk reconnaissance mission cycle": {"ministry-lantern-desk"},
     "Iron Sight patrol and debrief cycle": {"iron-sight-forward-detachment"},
     "Classic eight rules, AI, controls and Pong dynamics": {
@@ -35,7 +36,7 @@ missing = set(ids) - set(covered)
 unknown = set(covered) - set(ids)
 if missing or unknown:
     raise SystemExit(f"CI coverage mismatch: missing={sorted(missing)} unknown={sorted(unknown)}")
-assert len(ids) == 15, "Native game registry changed; update verification contract"
+assert len(ids) == 16, "Native game registry changed; update verification contract"
 for group, games in groups.items():
     print(f"FUNCTIONAL COVERAGE ({len(games)}): {group} => {', '.join(sorted(games))}")
 print(f"PASS: all {len(ids)} actual registered native games have an assigned functional/Android runtime gate")

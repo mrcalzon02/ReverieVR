@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed when the 15-game release registry drifts from real C++/Java modules.
+"""Fail closed when the 16-game release registry drifts from real C++/Java modules.
 
 This does not imply every game has a separate compiled companion APK.
 It verifies data-only content/release identities and bundled native binaries.
@@ -50,8 +50,8 @@ def check():
         if actual!=expected:
             raise ValueError("Missing or unverified independent game target: "+game)
         by_id[game]=x
-    if len(items)!=15:
-        raise ValueError("Expected 15 authoritative game identities, got "+str(len(items)))
+    if len(items)!=16:
+        raise ValueError("Expected 16 authoritative game identities, got "+str(len(items)))
 
     java=(ROOT/"app/src/main/java/io/github/mrcalzon02/reverievr/"
           "GameModuleRegistry.java").read_text("utf-8")
@@ -59,7 +59,12 @@ def check():
         r'new Entry\("([^"]+)"\s*,\s*"[^"]+"\s*,\s*"([^"]+)"\s*,'
         r'\s*"([^"]+)"\s*,\s*(true|false)\)',java)
     if len(java_rows)!=len(items):
-        raise ValueError("Java registry entry parsing/count mismatch")
+        java_ids={row[0] for row in java_rows}
+        raise ValueError(
+            "Java registry entry parsing/count mismatch: JSON=%d Java=%d "
+            "missing_from_matrix=%s missing_from_java=%s" %
+            (len(items),len(java_rows),sorted(java_ids-ids),
+             sorted(ids-java_ids)))
     for game,ns,pkg,dev in java_rows:
         if (game not in by_id or
             (by_id[game]["content_namespace"],by_id[game]["companion_package"],

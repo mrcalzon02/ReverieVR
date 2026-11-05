@@ -12,6 +12,9 @@ on:
       - 'modules/game-identity-matrix.json'
       - 'scripts/ci/verify-integrated-game-functional-coverage.py'
       - 'scripts/verify-native-vector-font.py'
+      - 'scripts/verify-guess-the-door.sh'
+      - 'app/src/test/native/guess_the_door_game_test.cpp'
+      - 'app/src/main/jni/native/guess_the_door_game.h'
       - 'app/src/main/jni/Android.mk'
       - 'scripts/verify-gumball-armada.sh'
       - 'scripts/verify-omega-front-playability.sh'
@@ -26,7 +29,7 @@ permissions:
 
 jobs:
   verify-registry:
-    name: All 15 native game IDs have real runtime or logic acceptance
+    name: All 16 native game IDs have real runtime or logic acceptance
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -101,6 +104,15 @@ jobs:
             done
           done
           echo 'PASS: Red Ledger functional patrons, trade and stock'
+
+  guess-the-door:
+    name: Guess the Door deterministic clues, levers and maze gameplay
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute the actual procedural door-game regression
+        run: bash scripts/verify-guess-the-door.sh
 
   classic-eight:
     name: Chess, Checkers, Go, Reversi, Pong, Snake, Breakout and Chutes

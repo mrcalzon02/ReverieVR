@@ -26,7 +26,7 @@ games=matrix["games"]
 
 class AllGameContentPackagesTest(unittest.TestCase):
     def test_every_registered_game_builds_independent_verified_revision(self):
-        self.assertEqual(15,len(games))
+        self.assertEqual(16,len(games))
         with tempfile.TemporaryDirectory(prefix="reverie-game-pack-matrix-") as temp:
             root=Path(temp)
             signatures=set()
