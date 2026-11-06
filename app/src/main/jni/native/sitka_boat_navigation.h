@@ -47,6 +47,18 @@ inline std::array<std::string,3> BoatSounderLabels(const DepthReading& depth){
     return {{water.str(),clearance.str()+" / "+source,disclaimer}};
 }
 
+// Physical vessel classes share the same 30Hz authority but have distinct
+// game-tuned turn, inertia, footprint and keel-clearance requirements.
+struct VesselDynamics {
+    double length_m,beam_m,min_draft_m;
+    double max_speed_mps,accel_mps2,brake_mps2,yaw_rate_rad_s;
+};
+inline constexpr std::array<VesselDynamics,4> kVesselDynamics={{
+    {2.4,1.2,.24,2.5,.65,1.70,.85},  // open dinghy
+    {6.1,2.3,.35,4.0,.80,1.50,.60},  // owned fishing skiff
+    {8.0,2.9,.65,4.9,.60,1.15,.37},  // midgame pilothouse
+    {14.4,4.8,1.10,5.2,.40,.95,.18} // commercial crab boat
+}};
 inline bool BoatInputValid(double axis){
     return std::isfinite(axis)&&axis>=-1.&&axis<=1.;
 }
@@ -54,6 +66,14 @@ class SkiffNavigation {
 public:
     BoatPose boat;
     BoatDepthFinder sounder;
+    // Tier selection is permitted only at dock; it does not teleport or
+    // transform the vessel while the player is operating it.
+    bool SetHullTier(unsigned tier){
+        if(boat.launched||tier>=kVesselDynamics.size())return false;
+        tier_=tier;dynamics_=kVesselDynamics[tier];return true;
+    }
+    unsigned HullTier()const{return tier_;}
+    const VesselDynamics& Dynamics()const{return dynamics_;}
     template<class BathySampler>
     bool Launch(double east,double north,double heading,
                 double draft_m,const BathySampler& atlas,
@@ -61,11 +81,12 @@ public:
         if(!std::isfinite(east)||!std::isfinite(north)||
            !std::isfinite(heading)||!std::isfinite(draft_m)||
            draft_m<=0.||draft_m>2.0||boat.launched)return false;
+        const double actual_draft=std::max(draft_m,dynamics_.min_draft_m);
         const DepthReading reading=FindBoatDepth(atlas,east,north,
-                surface_elevation_m,draft_m,approved_water);
+                surface_elevation_m,actual_draft,approved_water);
         if(reading.status!=DepthStatus::Safe || reading.under_keel_m<.5)
             return false;
-        boat={east,north,heading,0.,draft_m,true};
+        boat={east,north,heading,0.,actual_draft,true};
         pending_seconds_=0.;sounder.Reset();
         return true;
     }
@@ -86,26 +107,58 @@ public:
         BoatEvent event=BoatEvent::None;
         while(pending_seconds_+1.e-10>=tick){
             pending_seconds_-=tick;
-            boat.heading+=rudder*tick*.60; // no forced camera roll/yaw
-            const double goal=std::max(0.,throttle)*4.; // gentle 4m/s cap
-            const double change=(goal>boat.speed_mps?.8:1.5)*tick;
-            boat.speed_mps+=std::clamp(goal-boat.speed_mps,-change,change);
-            const double east=boat.east+std::sin(boat.heading)*boat.speed_mps*tick;
-            const double north=boat.north+std::cos(boat.heading)*boat.speed_mps*tick;
-            const bool water=check_water(east,north);
-            const DepthReading future=FindBoatDepth(atlas,east,north,
-                sea_surface_elevation_m,boat.draft_m,water);
-            if(future.status!=DepthStatus::Safe||future.under_keel_m<.5){
+            const double goal=std::max(0.,throttle)*dynamics_.max_speed_mps;
+            const double rate=(goal>boat.speed_mps?
+                dynamics_.accel_mps2:dynamics_.brake_mps2)*tick;
+            const double speed=boat.speed_mps+
+                std::clamp(goal-boat.speed_mps,-rate,rate);
+            if(speed<1.e-10){boat.speed_mps=0.;continue;}
+            // At a standstill, turning the wheel changes the rudder but
+            // cannot spin a commercial vessel around its center.
+            const double new_heading=boat.heading+rudder*tick*
+                dynamics_.yaw_rate_rad_s*std::min(1.,speed/
+                                                 dynamics_.max_speed_mps);
+            const double sine=std::sin(new_heading),cosine=std::cos(new_heading);
+            const double east=boat.east+sine*speed*tick;
+            const double north=boat.north+cosine*speed*tick;
+            // Hull footprint rather than center point: bow, stern and both
+            // beams all need approved water and under-keel depth. A large
+            // trawler must stop before its BOW crosses a sourced shoreline.
+            const std::array<std::array<double,2>,5> samples={{
+                {{0.,0.}},
+                {{0.,dynamics_.length_m*.5}},
+                {{0.,-dynamics_.length_m*.5}},
+                {{dynamics_.beam_m*.5,0.}},
+                {{-dynamics_.beam_m*.5,0.}}
+            }};
+            BoatEvent rejected=BoatEvent::None;
+            for(const auto& point:samples){
+                const double se=east+cosine*point[0]+sine*point[1];
+                const double sn=north-sine*point[0]+cosine*point[1];
+                if(!check_water(se,sn)){
+                    rejected=BoatEvent::StoppedLand;break;
+                }
+                const DepthReading reading=FindBoatDepth(
+                    atlas,se,sn,sea_surface_elevation_m,boat.draft_m,true);
+                if(reading.status!=DepthStatus::Safe||
+                   reading.under_keel_m<.5){
+                    rejected=reading.status==DepthStatus::NoCoverage?
+                        BoatEvent::StoppedNoData:
+                        (reading.status==DepthStatus::Dry||
+                         reading.status==DepthStatus::OutsideWater?
+                         BoatEvent::StoppedLand:BoatEvent::StoppedShallow);
+                    break;
+                }
+            }
+            if(rejected!=BoatEvent::None){
                 boat.speed_mps=0.;
-                pending_seconds_=0.; // Do not queue thrust against a blocked shoreline.
-                if(future.status==DepthStatus::OutsideWater||future.status==DepthStatus::Dry)
-                    event=BoatEvent::StoppedLand;
-                else if(future.status==DepthStatus::NoCoverage)
-                    event=BoatEvent::StoppedNoData;
-                else event=BoatEvent::StoppedShallow;
-                break;
+                pending_seconds_=0.; // Never build up thrust into land.
+                event=rejected;
+                break; // Preserve last safe position AND heading.
             }
             if(east!=boat.east||north!=boat.north)event=BoatEvent::Advanced;
+            boat.heading=new_heading;
+            boat.speed_mps=speed;
             boat.east=east;boat.north=north;
         }
         // Sounding is a bounded quarter-second ping, independent of eye draws.
@@ -116,6 +169,8 @@ public:
     }
 private:
     double pending_seconds_=0.;
+    unsigned tier_=1u; // prior SkiffNavigation behavior: the fishing skiff
+    VesselDynamics dynamics_=kVesselDynamics[1];
 };
 }}
 #endif

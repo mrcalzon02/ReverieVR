@@ -419,6 +419,8 @@ void* Create(const ReverieNativeHostV1* host) {
                         throw std::invalid_argument(
                             "Sitka skiff berth outside its named water footprint");
                     state->skiff.reset(new reverie::sitka::SitkaSkiffSession(spec));
+                    if(!state->skiff->SetHullTier(state->helm.hull))
+                        throw std::invalid_argument("Invalid hull tier for boat launch");
                 }
             }
         }
@@ -666,6 +668,9 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         state->helm_layout=reverie::sitka::AssembleHelm(state->helm);
         if(old.hull!=state->helm.hull||old.owned!=state->helm.owned)
             state->boat_dirty=true;
+        if(state->skiff&&!state->skiff->Active() &&
+           !state->skiff->SetHullTier(state->helm.hull))
+            Log(state->host,"Sitka purchased vessel dynamics unavailable");
         if(!state->fishing.Flush(Store(state)))
             Log(state->host,"Sitka harbor purchase save pending retry");
     }

@@ -2,6 +2,33 @@
 
 # Sitka
 
+## Vessel navigation regression expansion — 2026-11-05
+
+The source-only boat mode now selects one of four *purchased hull* motion
+profiles from the same saved helm journal: small dinghy, skiff, pilothouse
+and full commercial trawler. These profiles use distinct dimensions,
+draft, top speed, acceleration, braking and yaw response. They are
+game balance parameters, not empirical ship specifications. Purchasing
+a hull on shore changes next-launch dynamics; the boat cannot transform
+while afloat.
+
+At every 30 Hz fixed navigation step, the moving vessel checks **five
+physical footprint points** (center, bow, stern, both beams) against
+both approved water polygon and source-first bathymetry clearance.
+The boat halts before a bow/stern can pass through the coast even when
+the hull center remains offshore. Invalid/no-coverage/seabed-too-shallow
+conditions fail closed, preserving last safe heading and position.
+No render-eye camera state drives motion; the sounder remains sourced.
+
+The CI regression simulates 20 minutes of travel per hull, compares
+two different input-frame divisions against the same 30 Hz motion
+schedule, checks yaw limits and shoreline/draft constraints. Its water
+area is a **synthetic test basin**, not a Sitka sea chart.
+The separate 18-variant tier1/2/3 gallery is physical OBJ-model
+preview work: these are not 18 different purchased runtime handling
+profiles and the V1 Sitka module is not yet registered for play.
+
+
 ## Shaped Tier 2/3 working boat geometry — 2026-11-05
 
 [Refined 12-boat physical hull generator and invariant regression](sitka/equipment/BOAT_TIER_2_3.md) supersede the older boxy draft: nine station continuous outer plating, inset contour-matched decks, gunwales and bounded working-deck fittings. The [44-file full OBJ/MTL source archive](https://drive.google.com/file/d/11JI2iNGoDPz0k1mh-kDqEet_TYn0AuKp/view?usp=drivesdk) and updated review sheets are stored in Drive; **not yet integrated into the native runtime**.

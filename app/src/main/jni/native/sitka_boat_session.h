@@ -109,6 +109,9 @@ public:
             throw std::invalid_argument("invalid Sitka skiff berth");
     }
     bool Active()const{return navigation_.boat.launched;}
+    bool SetHullTier(unsigned tier){return navigation_.SetHullTier(tier);}
+    unsigned HullTier()const{return navigation_.HullTier();}
+    const VesselDynamics& Dynamics()const{return navigation_.Dynamics();}
     const BoatPose& Pose()const{return navigation_.boat;}
     const BoatDepthFinder& Sounder()const{return navigation_.sounder;}
     std::array<std::string,3> InstrumentLines()const{
@@ -166,7 +169,7 @@ public:
             // Avoid reporting NO DATA for the first quarter second after
             // an already-safe launch. Real depth still requires valid water.
             navigation_.sounder.Prime(FindBoatDepth(bottom,
-                launch_.east,launch_.north,berth->y,launch_.draft_m,true));
+                launch_.east,launch_.north,berth->y,Pose().draft_m,true));
             return SkiffSessionEvent::Launched;
         }
         if(!Active())return SkiffSessionEvent::None;

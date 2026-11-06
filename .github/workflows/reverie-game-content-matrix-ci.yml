@@ -221,6 +221,17 @@ jobs:
               "${RUNNER_TEMP}/${test_name}-${compiler}"
             done
           done
+      - name: Verify navigation across purchased Sitka hulls and bow/stern clearance
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compiler in g++ clang++; do
+            "$compiler" -std=c++17 -O2 -Wall -Wextra -Werror -pedantic \
+              -Iapp/src/main/jni/native \
+              app/src/test/native/sitka_vessel_navigation_scenarios_test.cpp \
+              -o "${RUNNER_TEMP}/sitka-vessel-navigation-${compiler}"
+            "${RUNNER_TEMP}/sitka-vessel-navigation-${compiler}"
+          done
       - name: Verify Sitka Tier 2/3 boat geometry and crabbing simulator
         shell: bash
         run: |
