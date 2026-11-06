@@ -95,3 +95,12 @@ registered game runtime or shown in headset. Build them with
 `scripts/sitka/build_boat_rough_models.py`; the shipping game mesh
 remains a distinct implementation that needs future integration and
 device acceptance.
+
+## All-class 360 degree physical vessel review — 2026-11-05
+
+The [18-vessel model gallery](BOAT_18_TURNTABLES.md) extends the old
+12-vessel development set with six genuinely generated Tier 1 skiff OBJ
+rough models. The GIF turntables are actual VTK-rendered geometry, not
+concept-image spin filters. Animated previews remain external to the APK,
+and the 18 visual variants must not be confused with the four existing
+runtime purchased hull states.

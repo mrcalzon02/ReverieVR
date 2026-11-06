@@ -1,0 +1,151 @@
+{
+  "format": "sitka-real-geometry-360-turntables/v1",
+  "source": "reproducible triangular OBJ model, not AI-generated footage",
+  "image_water": "stylized surface render, not a navigation simulation",
+  "boats": [
+    {
+      "id": "sitka.boat_tier1.00",
+      "triangles": 516,
+      "frames": 24,
+      "gif_bytes": 998951,
+      "model_id": "tier1_00",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier1.01",
+      "triangles": 540,
+      "frames": 24,
+      "gif_bytes": 964588,
+      "model_id": "tier1_01",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier1.02",
+      "triangles": 584,
+      "frames": 24,
+      "gif_bytes": 989040,
+      "model_id": "tier1_02",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier1.03",
+      "triangles": 1020,
+      "frames": 24,
+      "gif_bytes": 1029765,
+      "model_id": "tier1_03",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier1.04",
+      "triangles": 1056,
+      "frames": 24,
+      "gif_bytes": 1040812,
+      "model_id": "tier1_04",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier1.05",
+      "triangles": 1228,
+      "frames": 24,
+      "gif_bytes": 1056436,
+      "model_id": "tier1_05",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier2.00",
+      "triangles": 920,
+      "frames": 24,
+      "gif_bytes": 1022594,
+      "model_id": "tier2_00",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier2.01",
+      "triangles": 1064,
+      "frames": 24,
+      "gif_bytes": 1045477,
+      "model_id": "tier2_01",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier2.02",
+      "triangles": 1184,
+      "frames": 24,
+      "gif_bytes": 1054618,
+      "model_id": "tier2_02",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier2.03",
+      "triangles": 1130,
+      "frames": 24,
+      "gif_bytes": 1019241,
+      "model_id": "tier2_03",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier2.04",
+      "triangles": 1346,
+      "frames": 24,
+      "gif_bytes": 1051577,
+      "model_id": "tier2_04",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier2.05",
+      "triangles": 1518,
+      "frames": 24,
+      "gif_bytes": 1073347,
+      "model_id": "tier2_05",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier3.00",
+      "triangles": 1438,
+      "frames": 24,
+      "gif_bytes": 1098655,
+      "model_id": "tier3_00",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier3.01",
+      "triangles": 1570,
+      "frames": 24,
+      "gif_bytes": 1114926,
+      "model_id": "tier3_01",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier3.02",
+      "triangles": 1962,
+      "frames": 24,
+      "gif_bytes": 1111510,
+      "model_id": "tier3_02",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier3.03",
+      "triangles": 2270,
+      "frames": 24,
+      "gif_bytes": 1119657,
+      "model_id": "tier3_03",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier3.04",
+      "triangles": 2378,
+      "frames": 24,
+      "gif_bytes": 1127935,
+      "model_id": "tier3_04",
+      "draft_use": "visual_waterline_illustrative"
+    },
+    {
+      "id": "sitka.boat_tier3.05",
+      "triangles": 2590,
+      "frames": 24,
+      "gif_bytes": 1126096,
+      "model_id": "tier3_05",
+      "draft_use": "visual_waterline_illustrative"
+    }
+  ]
+}

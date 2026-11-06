@@ -7,22 +7,23 @@ import json
 import math
 from collections import Counter
 
+assert len(boats.TIER1)==6
 assert len(boats.TIER2)==6
 assert len(boats.TIER3)==6
-assert len(set(s.item_id for s in boats.ALL))==12
+assert len(set(s.item_id for s in boats.ALL))==18
 expected_2={'open_deck','console','cabin','sonar','winch','radar','crane'}
 expected_3={'steel_hull','bridge','crab_pot','buoy','handline','hand_crank','powered_hauler','hydraulic_gantry','crab_sorting','crab_crane'}
 assert expected_2.issubset(set().union(*(set(s.parts) for s in boats.TIER2)))
 assert expected_3.issubset(set().union(*(set(s.parts) for s in boats.TIER3)))
-for specs in (boats.TIER2,boats.TIER3):
+for specs in (boats.TIER1,boats.TIER2,boats.TIER3):
     for i,s in enumerate(specs):
-        assert s.variant==i and s.length>5. and s.beam>2.
+        assert s.variant==i and s.length>2. and s.beam>1.
         m=boats.build(s)
         assert 400<=m.tris()<=3500
         assert m.v and all(math.isfinite(n) for v in m.v for n in v)
         assert any(name=='walkable_deck' for name,_,_ in m.parts)
         assert any(name=='authored_hull_shell' for name,_,_ in m.parts)
-        assert len(m.parts)>=30
+        assert len(m.parts)>=20
         x,y,z=m.bounds()
         assert x[1]-x[0]>=s.beam*.5
         assert z[1]-z[0]>=s.length*.9
@@ -34,8 +35,8 @@ for specs in (boats.TIER2,boats.TIER3):
         assert sections[-1].top<sections[4].top*.25
         assert all(0<q.keel<q.chine<q.top for q in sections)
         assert all(q.keel_y<q.chine_y<q.deck_y<q.sheer_y for q in sections)
-        assert all(q.top-q.inner>=.020 for q in sections)
-        assert all(q.sheer_y-q.deck_y>=.18 for q in sections)
+        assert all(q.top-q.inner>=(.012 if s.class_name=='tier1' else .020) for q in sections)
+        assert all(q.sheer_y-q.deck_y>=(.135 if s.class_name=='tier1' else .18) for q in sections)
         exterior=[part for part in m.parts if part[0]=='authored_hull_shell']
         assert len(exterior)==1
         assert len(exterior[0][2])==92 # 8 x 5 x 2 strips + 12 transom/bow
@@ -93,7 +94,8 @@ with TemporaryDirectory() as tmp:
         assert all(1<=int(idx)<=verts for row in faces
                    for idx in row.split()[1:])
         records.append(name)
-    assert len(records)==12
+    assert len(records)==18
+    assert len(set(records))==18
     for stage in range(6):
         gear=boats.build_crab_rig(stage)
         assert 100<gear.tris()<1000
@@ -104,4 +106,4 @@ with TemporaryDirectory() as tmp:
     text=(out/(records[0]+'.obj')).read_text()
     assert 'mtllib ' in text and 'usemtl hull' in text
     assert 'o walkable_deck' in text
-print('Sitka two higher boat classes: 12 deterministic real OBJ/MTL rough meshes PASS')
+print('PASS Sitka 18 physical boats, 6 stages each across 3 classes, cross-section, deck, hull and fitting geometry')

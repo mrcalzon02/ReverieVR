@@ -41,6 +41,23 @@ class Spec:
     visual_focus: str
     parts: tuple[str, ...]
 
+# Six physical Tier 1 rough vessels reconstructed from the USER-APPROVED
+# skiff concept board. These are NEW low-poly prototypes, not preexisting
+# imported or registered native game hull meshes.
+TIER1 = (
+    Spec('sitka.boat_tier1.00', 'Shore Dinghy', 2.4, 1.2, 'tier1', 0,
+         'Bare open dinghy with planked benches, simple bow', ('open_hull','wood_benches','bow_cleat')),
+    Spec('sitka.boat_tier1.01', 'Utility Skiff', 3.6, 1.5, 'tier1', 1,
+         'Longer green utility skiff, carrying storage and bucket', ('open_hull','wood_benches','cooler')),
+    Spec('sitka.boat_tier1.02', 'Reinforced Harbor Skiff', 4.2, 1.7, 'tier1', 2,
+         'Banded aluminum hull, stern outboard and insulated crate', ('open_hull','outboard','crate','cleats')),
+    Spec('sitka.boat_tier1.03', 'Coastal Fishing Skiff', 5.2, 2.1, 'tier1', 3,
+         'Side rails, simple console, rod holders and motor', ('console','rod_holders','side_rails')),
+    Spec('sitka.boat_tier1.04', 'Deepwater Aluminum Skiff', 6.1, 2.3, 'tier1', 4,
+         'Reinforced outer hull, sonar, rod rack and outboard', ('console','sonar','rod_holders','outboard')),
+    Spec('sitka.boat_tier1.05', 'Master Angler Skiff', 6.8, 2.5, 'tier1', 5,
+         'Premium open fishing deck, T-top, sonar and extra rods', ('console','t_top','sonar','rod_holders')),
+)
 TIER2 = (
     Spec('sitka.boat_tier2.00', 'Center-Console Fisher', 6.2, 2.3, 'tier2', 0,
          'Open walkaround deck, wheel and compass, outboard', ('open_deck', 'console', 'outboard', 'rail')),
@@ -69,7 +86,7 @@ TIER3 = (
     Spec('sitka.boat_tier3.05', 'Expedition Crab Workboat', 14.4, 4.8, 'tier3', 5,
          'Automated crab crane, bait station, cold hold, five-pot rack', ('steel_hull', 'bridge', 'upper_helm', 'crab_crane', 'bait_station', 'five_pot_rack')),
 )
-ALL = TIER2 + TIER3
+ALL = TIER1 + TIER2 + TIER3
 
 @dataclass(frozen=True)
 class HullSection:
@@ -84,13 +101,13 @@ class HullSection:
     inner:float
 
 
-def hull_sections(length:float,beam:float,trawler:bool)->tuple[HullSection,...]:
+def hull_sections(length:float,beam:float,trawler:bool,skiff:bool=False)->tuple[HullSection,...]:
     """Source-independent low-poly hull shape; not naval engineering CAD.
 
     +Z is bow, -Z transom. Exterior chine steps inward to a shallow V keel.
     Nine stations approximate curvature using flat PSX-sized polygons.
     """
-    if length<=5 or beam<=2:
+    if length<=2 or beam<=1:
         raise ValueError('invalid proposed boat blockout dimensions')
     # Fractions of overall length, full half-beam, chine and keel half-beam.
     profile=(
@@ -105,8 +122,8 @@ def hull_sections(length:float,beam:float,trawler:bool)->tuple[HullSection,...]:
        ( .49,.08,.065,.025,.19),
     )
     top_base=.23 if trawler else .19
-    depth=1.58 if trawler else 1.12
-    rim_depth=.26 if trawler else .19
+    depth=1.58 if trawler else (min(.79,.52 + length*.045) if skiff else 1.12)
+    rim_depth=.26 if trawler else (.14 if skiff else .19)
     sections=[]
     for zf,wf,cf,kf,sheer in profile:
         top=beam*.5*wf
@@ -174,14 +191,14 @@ class Mesh:
         for i in range(1,sides-1):
             faces.extend([(0,i+1,i),(sides,sides+i,sides+i+1)])
         self.add(name,mat,verts,faces)
-    def hull(self,length,beam,trawler):
+    def hull(self,length,beam,trawler,skiff=False):
         """Nine fair tapered stations, framed gunwale, inner wall, and contour-fit deck.
 
         The exterior, inner rim and deck are generated from the SAME station
         profile. We do not insert a rectangular deck box into a pointed hull.
         Minimal polygons are intentional for PSX-style rendering.
         """
-        stations=hull_sections(length,beam,trawler)
+        stations=hull_sections(length,beam,trawler,skiff)
         self.sections=stations
         exterior=[]
         for sec in stations:
@@ -470,10 +487,44 @@ def build(s:Spec)->Mesh:
     m=Mesh()
     L,B=s.length,s.beam
     trawler=s.class_name=='tier3'
-    stations=m.hull(L,B,trawler)
+    skiff=s.class_name=='tier1'
+    stations=m.hull(L,B,trawler,skiff)
     deck=lambda z:section_at(stations,z).deck_y
-    rim_rail(m,stations,trawler)
-    if not trawler:
+    if skiff:
+        # All fixtures originate INSIDE the actual skiff gunwale contour.
+        # Tier 1 keeps a completely open bow; no pasted hull silhouette.
+        for zz in (-L*.19,L*.15):
+            m.deck_box('wooden_cross_bench','wood',0.,zz,B*.43,.09,L*.085)
+        if s.variant>=1:
+            m.deck_box('small_gear_box','cabin',0.,-L*.07,B*.37,.22,L*.15)
+            m.box('fishing_bucket','steel',0.,deck(-L*.31)+.11,-L*.31,
+                  min(.28,B*.2),.22,.26)
+        if s.variant>=2:
+            m.box('stern_outboard','engine',0.,.29,-L*.51,.34,.44,.33)
+            m.tube('propeller_shaft','engine',
+                (0.,.09,-L*.535),(0.,-.40,-L*.58),.06,6)
+            m.deck_box('insulated_catch_box','cabin',0.,L*.02,B*.35,.24,L*.14)
+        if s.variant>=3:
+            rim_rail(m,stations,False)
+            m.deck_box('helm_console','cabin',0.,-L*.06,B*.27,.63,.35)
+            helm(m,0.,deck(-L*.06),-L*.06)
+            rod_holders(m,(-L*.23,))
+        if s.variant>=4:
+            sonar(m,0.,deck(-L*.06)+1.22,-L*.055)
+            m.deck_box('forward_equipment_hold','steel',0.,L*.26,B*.44,.12,L*.15)
+        if s.variant>=5:
+            zz=-L*.05
+            xx=min(.36,B*.27)
+            for side in (-1,1):
+                m.tube('t_top_support','steel',
+                    (side*xx,deck(zz),zz),
+                    (side*xx,deck(zz)+1.71,zz),.035)
+            m.box('t_top_sun_cover','cabin',0.,deck(zz)+1.75,zz,
+                  min(1.32,B*.58),.08,1.03)
+            rod_holders(m,(-L*.31,-L*.12))
+    else:
+        rim_rail(m,stations,trawler)
+    if not trawler and not skiff:
         console=-L*.04
         if s.variant<3:
             # Open helm stands ON the deck; later tiers replace it with an
@@ -517,7 +568,7 @@ def build(s:Spec)->Mesh:
             crane_z=-L*.25
             crane(m,B*.30,deck(crane_z)+.01,crane_z,1.90,.92)
             m.deck_box('second_hold','steel',0.,L*.32,.76,.28,.70)
-    else:
+    elif trawler:
         # Real fore bridge keeps the stern open for handling crab pots.
         zhouse=L*.16
         cablen=L*(.29 if s.variant<5 else .34)
@@ -611,9 +662,7 @@ def main():
                     'production_status':'ROUGH_PROTOTYPE_ONLY'})
     (output/'crab_gear_manifest.json').write_text(json.dumps(rig,indent=2)+'\n',encoding='utf8')
     (output/'rough_boat_manifest.json').write_text(json.dumps(index,indent=2)+'\n',encoding='utf8')
-    print('Sitka boat models: '+str(len(index))+' vessel OBJ/MTLs + six crabbing rig OBJ/MTLs; '+str(sum(x['triangles'] for x in index))+' vessel triangles')
+    print('Sitka boat models: '+str(len(index))+' vessel OBJ/MTLs (six per three classes) + six crabbing rig OBJ/MTLs; '+str(sum(x['triangles'] for x in index))+' vessel triangles')
     return index
 
 if __name__=='__main__':main()
-
-
