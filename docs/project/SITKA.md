@@ -2,6 +2,26 @@
 
 # Sitka
 
+## Second structural refinement of actual 3D boat hulls — 2026-11-05
+
+All 18 actual OBJ/MTL vessel meshes were revised at the source level,
+not merely repainted. Class-specific **11-station hulls** give the skiffs,
+coastal fishers and commercial crabbers distinct bow/sheers/fullness.
+Wheelhouses are eight-sided and inward-tapered, with two angled forward
+windscreens, physically faceted windows and thin crowned roofs; final
+Tier 3 adds a shaped upper lookout bridge. Helms, coolers, holds and
+gear housings have bevelled, tapered eight-sided physical shapes seated
+on the continuously inset deck, and outboards use cast faceted cowls.
+Crab pots and other functional flat gear remain rectilinear where sensible.
+
+The generator, 18-part manifest, new mesh regression and incremental
+VTK/Pillow model turntable renderer are committed. [Detailed geometry
+pass](sitka/equipment/BOAT_FACETED_REFINEMENT_V2.md).
+Review images are a separate gallery publication, not in-game screenshots.
+Sitka remains a source-only unregistered native game; physical OBJ meshes
+still need actual in-game renderer/collision adoption.
+
+
 **[GitHub visual gallery: all 18 real-geometry boat turntables, Tier 1–3](../gallery/sitka/boats/2026-11-05/README.md)** — now published as 18 actual GIF files and four review sheets in GitHub, with source provenance, hash validation and [generation gallery workflow](../gallery/GALLERY_WORKFLOW.md). These are rough OBJ review renders, not in-game screenshots. Full-resolution originals remain in the Drive archive.
 
 ## 18 real geometry boat turns and navigation test project — 2026-11-05

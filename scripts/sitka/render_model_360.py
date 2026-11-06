@@ -138,13 +138,14 @@ def render_frame(win, ship, angle, spec, label_font, small_font):
     return frame
 
 
-def run(tier=None, frames_count=24, width=520,height=370):
+def run(tier=None, frames_count=24, width=520,height=370, only=None):
     OUT.mkdir(exist_ok=True)
     label_font=ImageFont.truetype(BOLD,19)
     small_font=ImageFont.truetype(FONT,13)
     stills=[]
     for spec in boats.ALL:
         if tier and spec.class_name!='tier'+str(tier):continue
+        if only and f'{spec.class_name}_{spec.variant:02d}' not in only:continue
         mesh=boats.build(spec)
         ren,win,group=scene(mesh,spec,width,height)
         frames=[]
@@ -164,13 +165,13 @@ def run(tier=None, frames_count=24, width=520,height=370):
     else:
         targets=[(t,[(s,f) for s,f in stills if s.class_name=='tier'+str(t)]) for t in (1,2,3)]
     for t,subset in targets:
-        if not subset:continue
+        if len(subset)!=6:continue
         w,h=subset[0][1].size
         sheet=Image.new('RGB',(w*3,h*2),(229,239,241))
         for i,(spec,frame) in enumerate(subset):
             sheet.paste(frame,((i%3)*w,(i//3)*h))
         sheet.save(OUT/f'tier{t}_six_level_gallery.png',optimize=True)
-    if not tier:
+    if not tier and len(stills)==18:
         w,h=stills[0][1].size
         summary=Image.new('RGB',(3*w,6*h),(229,239,241))
         for i,(spec,frame) in enumerate(stills):
@@ -181,5 +182,6 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('--tier',type=int,choices=(1,2,3))
     p.add_argument('--frames',type=int,default=24)
+    p.add_argument('--only',nargs='*',default=None,help='incremental exact model IDs e.g. tier3_05')
     args=p.parse_args()
-    run(args.tier,args.frames)
+    run(args.tier,args.frames,only=set(args.only) if args.only else None)

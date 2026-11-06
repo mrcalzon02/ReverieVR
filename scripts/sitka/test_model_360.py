@@ -33,7 +33,7 @@ for spec in boats.ALL:
     assert 'o authored_hull_shell' in obj_text
     assert 'o walkable_deck' in obj_text
     assert 'o gunwale_cap' in obj_text
-    assert len(mesh.sections)==9
+    assert len(mesh.sections)==11
     assert all(s.inner<s.top for s in mesh.sections)
     with Image.open(gif) as im:
         assert im.n_frames==24,(tag,im.n_frames)

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Sitka VR physical vessel blockouts — pure stdlib, meters, Y-up, +Z bow.
 
-Six separate rough models each for Tier 2 (coastal cabin fishing boat)
-and Tier 3 (commercial trawler).  Planning-only assets, not registered
+Six separate physical models for each of three Sitka boat tiers: skiff,
+coastal fishing boat and commercial crabber.  Planning-only assets, not registered
 runtime meshes or approved nautical engineering dimensions.
 
 Usage: python3 build_boat_rough_models.py [output-dir]
@@ -105,22 +105,38 @@ def hull_sections(length:float,beam:float,trawler:bool,skiff:bool=False)->tuple[
     """Source-independent low-poly hull shape; not naval engineering CAD.
 
     +Z is bow, -Z transom. Exterior chine steps inward to a shallow V keel.
-    Nine stations approximate curvature using flat PSX-sized polygons.
+    Eleven tailored stations approximate curvature using flat PSX-sized polygons.
     """
     if length<=2 or beam<=1:
         raise ValueError('invalid proposed boat blockout dimensions')
     # Fractions of overall length, full half-beam, chine and keel half-beam.
-    profile=(
-       (-.49,.56,.46,.24,.035),
-       (-.43,.78,.67,.30,.000),
-       (-.34,.90,.78,.33,-.025),
-       (-.18,.97,.83,.34,-.015),
-       ( .02,1.00,.85,.34,.000),
-       ( .20,.95,.79,.31,.018),
-       ( .34,.82,.66,.25,.062),
-       ( .44,.52,.37,.13,.120),
-       ( .49,.08,.065,.025,.19),
-    )
+    # The three class profiles differ; a single stretched generic box profile
+    # makes a commercial crabber look like an enlarged dinghy. The extra
+    # stations round the corners of both ends without subdivision-heavy CAD.
+    if skiff:
+        profile=(
+            (-.49,.60,.48,.26,.025),(-.465,.68,.55,.28,.010),
+            (-.42,.82,.68,.31,.000),(-.32,.94,.79,.34,-.020),
+            (-.18,.99,.84,.34,-.018),(0.,1.,.85,.33,.000),
+            (.18,.95,.79,.29,.025),(.32,.81,.64,.23,.075),
+            (.42,.52,.37,.14,.145),(.47,.26,.17,.07,.19),
+            (.497,.045,.029,.012,.235))
+    elif trawler:
+        profile=(
+            (-.49,.64,.52,.31,.035),(-.465,.75,.64,.34,.015),
+            (-.42,.87,.75,.39,-.010),(-.32,.95,.82,.41,-.020),
+            (-.18,.99,.86,.43,-.012),(0.,1.,.87,.43,.005),
+            (.18,.97,.85,.40,.030),(.32,.91,.77,.35,.080),
+            (.42,.77,.60,.29,.145),(.47,.52,.36,.17,.215),
+            (.495,.12,.070,.031,.28))
+    else:
+        profile=(
+            (-.49,.58,.47,.25,.04),(-.465,.70,.59,.30,.02),
+            (-.42,.83,.70,.34,.0),(-.32,.93,.79,.37,-.020),
+            (-.18,.99,.84,.38,-.020),(0.,1.,.86,.39,.0),
+            (.18,.97,.83,.36,.025),(.32,.87,.72,.30,.08),
+            (.42,.66,.48,.21,.145),(.47,.37,.24,.095,.21),
+            (.495,.065,.039,.018,.25))
     top_base=.23 if trawler else .19
     depth=1.58 if trawler else (min(.79,.52 + length*.045) if skiff else 1.12)
     rim_depth=.26 if trawler else (.14 if skiff else .19)
@@ -192,7 +208,7 @@ class Mesh:
             faces.extend([(0,i+1,i),(sides,sides+i,sides+i+1)])
         self.add(name,mat,verts,faces)
     def hull(self,length,beam,trawler,skiff=False):
-        """Nine fair tapered stations, framed gunwale, inner wall, and contour-fit deck.
+        """Eleven fair tapered stations, framed gunwale, inner wall, and contour-fit deck.
 
         The exterior, inner rim and deck are generated from the SAME station
         profile. We do not insert a rectangular deck box into a pointed hull.
@@ -296,56 +312,157 @@ class Mesh:
         self.add(name,mat,verts,faces)
         return ytop
 
-    def wheelhouse(self,name,mat,z,width,length,height):
-        """A single tapered physical superstructure with a raked windshield.
+    def deck_pod(self,name,mat,x,z,width,height,depth):
+        """True eight-sided tapered equipment case with bevelled corners.
 
-        Both aft/fore floor edges follow the deck, the roof leans back,
-        and the body tapers slightly toward the roof. No box piercing
-        the hull or free-floating cabin base.
+        Its lower polygon follows the deck profile rather than plunging a
+        rectangular slab through the curved topsides. Use for wheel stations,
+        holds, chests, lockers, icebox, bait preparation and machinery housing.
+        """
+        if min(width,height,depth)<=0:raise ValueError('invalid pod '+name)
+        back=z-depth*.5;front=z+depth*.5
+        crossed=[back,front]+[sec.z for sec in self.sections if back<sec.z<front]
+        if any(abs(x)+width*.5>section_at(self.sections,zz).inner-.035
+               for zz in crossed):
+            raise ValueError('pod breaches inner bulwark: '+name)
+        w=width*.5;corner=min(width,depth)*.17
+        # Point ordering is clockwise when seen from above.
+        plan=[(-w+corner,back),(w-corner,back),(w,back+corner),
+              (w,front-corner),(w-corner,front),(-w+corner,front),
+              (-w,front-corner),(-w,back+corner)]
+        ytop=max(section_at(self.sections,zz).deck_y for zz in crossed)+height
+        lower=[(x+px,section_at(self.sections,pz).deck_y,pz) for px,pz in plan]
+        upper=[(x+px*.89,ytop,pz+(z-pz)*.10-.025) for px,pz in plan]
+        verts=lower+upper+[(x,ytop+.015,z-.025)]
+        faces=[]
+        for i in range(8):
+            k=(i+1)%8
+            faces.extend(((i,k,8+k),(i,8+k,8+i),(16,8+i,8+k)))
+        # Open bottom hidden by the genuinely walkable deck.
+        self.add(name,mat,verts,faces)
+        return ytop
+
+    def canopy(self,name,mat,x,y,z,width,depth,thickness=.07):
+        """Octagonal sheer roof with a ridge and real thin edge thickness."""
+        if min(width,depth,thickness)<=0:raise ValueError(name)
+        w=width*.5;d=depth*.5;corner=min(width,depth)*.14
+        points=[(-w+corner,-d),(w-corner,-d),(w,-d+corner),
+                (w,d-corner),(w-corner,d),(-w+corner,d),
+                (-w,d-corner),(-w,-d+corner)]
+        bottom=[(x+px,y-thickness,z+pz) for px,pz in points]
+        top=[(x+px,y+.065*(1.-abs(px)/w),z+pz) for px,pz in points]
+        verts=bottom+top+[(x,y+.11,z)]
+        faces=[]
+        for i in range(8):
+            j=(i+1)%8
+            faces.extend(((i,j,8+j),(i,8+j,8+i),(16,8+i,8+j)))
+        self.add(name,mat,verts,faces)
+
+    def outboard_cowl(self,name,x,y,z,width,height,depth):
+        """Tapered eight-face cast outboard cover, not a square motor brick.
+
+        Outboards must mount beyond the real transom. Only this intentionally
+        external part is exempt from walking-deck footprint restrictions.
+        """
+        half=width*.5;d=depth*.5
+        corner=min(width,depth)*.22
+        plan=[(-half+corner,-d),(half-corner,-d),(half,-d+corner),
+              (half,d-corner),(half-corner,d),(-half+corner,d),
+              (-half,d-corner),(-half,-d+corner)]
+        lo=[(x+px*.86,y-height*.5,z+pz*.93) for px,pz in plan]
+        hi=[(x+px,y+height*.5,z+pz-.045) for px,pz in plan]
+        v=lo+hi+[(x,y+height*.58,z-.045)]
+        faces=[]
+        for i in range(8):
+            j=(i+1)%8
+            faces.extend(((i,j,8+j),(i,8+j,8+i),(16,8+i,8+j)))
+        self.add(name,'engine',v,faces)
+        # narrow real band around crown edge, not flat square panel
+        for a,b in zip(hi,hi[1:]+hi[:1]):
+            self.tube('outboard_cowl_seam','rubber',a,b,.015,5)
+
+    def wheelhouse(self,name,mat,z,width,length,height):
+        """Eight-sided, raked, faceted maritime wheelhouse; no box body.
+
+        Chamfered forward/aft shoulders, inward-sloping sidewalls, window
+        panels flush to their actual planar facets, raked glass and a
+        crowned low-poly roof. All floor points attach to the deck.
         """
         back=z-length*.5;front=z+length*.5
-        aft=section_at(self.sections,back)
-        fwd=section_at(self.sections,front)
-        sample_z=[back,front]+[sec.z for sec in self.sections
-                                 if back<sec.z<front]
-        if any(width*.5>section_at(self.sections,zz).inner-.10
-               for zz in sample_z):
-            raise ValueError('wheelhouse wider than walkable boat: '+name)
-        roof_y=max(aft.deck_y,fwd.deck_y)+height
-        base=width*.5;upper=base*.91
-        roof_back=back-.045;roof_front=front-.13
-        v=[(-base,aft.deck_y,back),(base,aft.deck_y,back),
-           (base,fwd.deck_y,front),(-base,fwd.deck_y,front),
-           (-upper,roof_y,roof_back),(upper,roof_y,roof_back),
-           (upper,roof_y,roof_front),(-upper,roof_y,roof_front)]
-        f=[(0,3,2),(0,2,1),(4,5,6),(4,6,7),
-           (0,1,5),(0,5,4),(3,7,6),(3,6,2),
-           (0,4,7),(0,7,3),(1,2,6),(1,6,5)]
-        self.add(name,mat,v,f)
-        # Three real inset-on-wall flat window panels, no cubes piercing
-        # the sloped surface. Surface samples are interpolated per height.
-        y0=roof_y-.94;y1=roof_y-.27
-        for side in (-1,1):
-            def xx(y):
-                fraction=(y-fwd.deck_y)/max(.1,roof_y-fwd.deck_y)
-                return side*(base+(upper-base)*fraction)+side*.008
-            def zz(y):
-                fraction=(y-fwd.deck_y)/max(.1,roof_y-fwd.deck_y)
-                return front+(roof_front-front)*fraction+.008
-            self.add('wheelhouse_side_window','window',
-                [(xx(y0),y0,z-length*.26),(xx(y0),y0,z+length*.19),
-                 (xx(y1),y1,z+length*.18),(xx(y1),y1,z-length*.25)],
-                [(0,1,2),(0,2,3)])
-        self.add('forward_window','window',
-            [(-upper*.82,y0,front-.125),(upper*.82,y0,front-.125),
-             (upper*.82,y1,roof_front+.018),(-upper*.82,y1,roof_front+.018)],
-            [(0,1,2),(0,2,3)])
-        # Slender overhanging roof, thicker than a billboard but not a big slab.
-        roof_width=width*1.09
-        roof_length=length+.22
-        self.box('wheelhouse_roof','steel',0.,roof_y+.05,z-.08,
-                 roof_width,.10,roof_length)
-        return roof_y
+        crossed=[back,front]+[sec.z for sec in self.sections if back<sec.z<front]
+        if any(width*.5>section_at(self.sections,zz).inner-.09 for zz in crossed):
+            raise ValueError('wheelhouse wider than deck: '+name)
+        half=width*.5;bevel=min(.23*width,.18*length)
+        outline=[(-half+bevel,back),(half-bevel,back),
+                 (half,back+bevel),(half,front-bevel),
+                 (half-bevel,front),(-half+bevel,front),
+                 (-half,front-bevel),(-half,back+bevel)]
+        roof=max(section_at(self.sections,zz).deck_y for zz in crossed)+height
+        floor=[(x,section_at(self.sections,zz).deck_y,zz) for x,zz in outline]
+        upper=[(x*.86,roof,zz-.08-.045*(zz>z)) for x,zz in outline]
+        faces=[]
+        for i in range(8):
+            j=(i+1)%8
+            faces.extend(((i,j,8+j),(i,8+j,8+i)))
+        # Eight wall facet strips + an octagonal top; *not* an 8-vertex box.
+        faces.extend((8,8+i,8+i+1) for i in range(1,7))
+        self.add(name,mat,floor+upper,faces)
+
+        def onwall(k,t):
+            a=floor[k];b=upper[k]
+            return tuple(a[j]+(b[j]-a[j])*t for j in range(3))
+        def panel(name,k,j,s0,s1,t0=.48,t1=.84):
+            def at(s,t):
+                a=onwall(k,t);b=onwall(j,t)
+                return tuple(a[i]*(1-s)+b[i]*s for i in range(3))
+            v=[at(s0,t0),at(s1,t0),at(s1,t1),at(s0,t1)]
+            # Offset outwards < 1 cm, enough to avoid z-fighting without
+            # looking like a poster flying off the hull.
+            cx=sum(q[0] for q in v)*.25
+            cz=sum(q[2] for q in v)*.25
+            nx=1. if cx>half*.2 else (-1. if cx<-half*.2 else 0.)
+            nz=1. if cz>z else (-1. if cz<z else 0.)
+            v=[(a+nx*.009,b,c+nz*.009) for a,b,c in v]
+            self.add(name,'window',v,[(0,1,2),(0,2,3)])
+        # Front window has TWO individually faceted panes, with real
+        # central pillar. Starboard/port panes follow raked side walls.
+        panel('raked_windshield_port',4,5,.06,.47)
+        panel('raked_windshield_starboard',4,5,.53,.94)
+        panel('wheelhouse_side_window',2,3,.13,.80)
+        panel('wheelhouse_side_window',6,7,.13,.80)
+        # Smaller aft windows complete a credible pilothouse silhouette.
+        panel('aft_wheelhouse_window',0,1,.19,.44,.52,.82)
+        panel('aft_wheelhouse_window',0,1,.56,.81,.52,.82)
+        self.canopy('wheelhouse_roof','steel',0.,roof+.085,z-.08,
+                    width*1.10,length+.23,.09)
+        return roof
+
+    def upper_bridge(self,x,z,roof,width,length):
+        """Faceted lookout housing sitting ON the lower bridge roof."""
+        half=width*.5
+        back=z-length*.5;front=z+length*.5
+        bevel=min(width*.16,length*.19)
+        plan=[(-half+bevel,back),(half-bevel,back),
+              (half,back+bevel),(half,front-bevel),
+              (half-bevel,front),(-half+bevel,front),
+              (-half,front-bevel),(-half,back+bevel)]
+        lower=[(x+px,roof+.13,pz) for px,pz in plan]
+        upper=[(x+px*.87,roof+.78,pz-.06) for px,pz in plan]
+        faces=[]
+        for i in range(8):
+            j=(i+1)%8
+            faces.extend(((i,j,8+j),(i,8+j,8+i)))
+        self.add('raised_bridge_faceted_shell','cabin',lower+upper,faces)
+        # Glazing on the actual raked forward face, not an extruded cube.
+        p=[lower[k] for k in (4,5)];q=[upper[k] for k in (4,5)]
+        v=[]
+        for u,t in ((.12,.38),(.88,.38),(.88,.83),(.12,.83)):
+            a=tuple(p[0][i]*(1-u)+p[1][i]*u for i in range(3))
+            b=tuple(q[0][i]*(1-u)+q[1][i]*u for i in range(3))
+            v.append(tuple(a[i]*(1-t)+b[i]*t+(0.009 if i==2 else 0.) for i in range(3)))
+        self.add('upper_bridge_raked_glazing','window',v,[(0,1,2),(0,2,3)])
+        self.canopy('raised_bridge_crown_roof','steel',x,roof+.84,z-.04,
+                    width*1.07,length+.12,.08)
 
     def write_obj(self,path:Path):
         mtl=path.with_suffix('.mtl')
@@ -494,24 +611,24 @@ def build(s:Spec)->Mesh:
         # All fixtures originate INSIDE the actual skiff gunwale contour.
         # Tier 1 keeps a completely open bow; no pasted hull silhouette.
         for zz in (-L*.19,L*.15):
-            m.deck_box('wooden_cross_bench','wood',0.,zz,B*.43,.09,L*.085)
+            m.deck_pod('wooden_cross_bench','wood',0.,zz,B*.43,.09,L*.085)
         if s.variant>=1:
-            m.deck_box('small_gear_box','cabin',0.,-L*.07,B*.37,.22,L*.15)
+            m.deck_pod('small_gear_box','cabin',0.,-L*.07,B*.37,.22,L*.15)
             m.box('fishing_bucket','steel',0.,deck(-L*.31)+.11,-L*.31,
                   min(.28,B*.2),.22,.26)
         if s.variant>=2:
-            m.box('stern_outboard','engine',0.,.29,-L*.51,.34,.44,.33)
+            m.outboard_cowl('stern_outboard_streamlined_cowl',0.,.29,-L*.51,.34,.44,.33)
             m.tube('propeller_shaft','engine',
                 (0.,.09,-L*.535),(0.,-.40,-L*.58),.06,6)
-            m.deck_box('insulated_catch_box','cabin',0.,L*.02,B*.35,.24,L*.14)
+            m.deck_pod('insulated_catch_box','cabin',0.,L*.02,B*.35,.24,L*.14)
         if s.variant>=3:
             rim_rail(m,stations,False)
-            m.deck_box('helm_console','cabin',0.,-L*.06,B*.27,.63,.35)
+            m.deck_pod('helm_console','cabin',0.,-L*.06,B*.27,.63,.35)
             helm(m,0.,deck(-L*.06),-L*.06)
             rod_holders(m,(-L*.23,))
         if s.variant>=4:
             sonar(m,0.,deck(-L*.06)+1.22,-L*.055)
-            m.deck_box('forward_equipment_hold','steel',0.,L*.26,B*.44,.12,L*.15)
+            m.deck_pod('forward_equipment_hold','steel',0.,L*.26,B*.44,.12,L*.15)
         if s.variant>=5:
             zz=-L*.05
             xx=min(.36,B*.27)
@@ -519,8 +636,8 @@ def build(s:Spec)->Mesh:
                 m.tube('t_top_support','steel',
                     (side*xx,deck(zz),zz),
                     (side*xx,deck(zz)+1.71,zz),.035)
-            m.box('t_top_sun_cover','cabin',0.,deck(zz)+1.75,zz,
-                  min(1.32,B*.58),.08,1.03)
+            m.canopy('t_top_sun_cover','cabin',0.,deck(zz)+1.75,zz,
+                     min(1.32,B*.58),1.03)
             rod_holders(m,(-L*.31,-L*.12))
     else:
         rim_rail(m,stations,trawler)
@@ -529,23 +646,23 @@ def build(s:Spec)->Mesh:
         if s.variant<3:
             # Open helm stands ON the deck; later tiers replace it with an
             # enclosed wheelhouse rather than adding a duplicate console.
-            m.deck_box('helm_console','cabin',0.,console,.76,.84,.73)
+            m.deck_pod('helm_console','cabin',0.,console,.76,.84,.73)
             helm(m,0.,deck(console)+.02,console,full=s.variant>=2)
-        m.deck_box('aft_bench','wood',0.,-L*.29,B*.56,.20,.46)
+        m.deck_pod('aft_bench','wood',0.,-L*.29,B*.56,.20,.46)
         # The propeller deliberately hangs aft of the transom and below
         # the keel: it is not a misplaced deck-mounted cargo box.
-        m.box('outboard_head','engine',0.,.46,-L*.50,.54,.63,.62)
+        m.outboard_cowl('outboard_streamlined_cowl',0.,.46,-L*.50,.54,.63,.62)
         m.tube('outboard_leg','engine',(0.,.14,-L*.53),(0.,-.64,-L*.58),.13,8)
         if s.variant>=1:
-            m.deck_box('bow_storage','cabin',0.,L*.28,B*.59,.34,.59)
-            m.deck_box('stern_cooler','cabin',-B*.23,-L*.24,.48,.38,.52)
+            m.deck_pod('bow_storage','cabin',0.,L*.28,B*.59,.34,.59)
+            m.deck_pod('stern_cooler','cabin',-B*.23,-L*.24,.48,.38,.52)
             rod_holders(m,(-L*.26,-L*.10))
         if s.variant==2:
             for side in (-1,1):
                 x=side*.46
                 m.tube('t_top_leg','steel',(x,deck(console-.26),console-.26),
                        (x,2.29,console-.26),.045)
-            m.box('light_t_top','cabin',0.,2.35,console,.99,.10,1.22)
+            m.canopy('light_t_top','cabin',0.,2.35,console,.99,1.22)
             radar(m,0.,2.38,console)
             sonar(m,.32,1.25,console-.12)
         if s.variant>=3:
@@ -558,8 +675,8 @@ def build(s:Spec)->Mesh:
             helm(m,0.,deck(z+.15)+.03,z+.15,full=True)
             sonar(m,.31,deck(z+.12)+1.31,z+.12)
         if s.variant>=4:
-            m.deck_box('fishing_cooler','cabin',B*.18,-L*.24,.58,.45,.65)
-            m.deck_box('livewell','nav',-B*.20,-L*.27,.60,.32,.62)
+            m.deck_pod('fishing_cooler','cabin',B*.18,-L*.24,.58,.45,.65)
+            m.deck_pod('livewell','nav',-B*.20,-L*.27,.60,.32,.62)
             workz=-L*.31
             winch(m,-B*.26,deck(workz)+.18,workz,.46)
             rod_holders(m,(-L*.34,-L*.16))
@@ -567,7 +684,7 @@ def build(s:Spec)->Mesh:
             radar(m,0.,roof+.07,z)
             crane_z=-L*.25
             crane(m,B*.30,deck(crane_z)+.01,crane_z,1.90,.92)
-            m.deck_box('second_hold','steel',0.,L*.32,.76,.28,.70)
+            m.deck_pod('second_hold','steel',0.,L*.32,.76,.28,.70)
     elif trawler:
         # Real fore bridge keeps the stern open for handling crab pots.
         zhouse=L*.16
@@ -583,26 +700,26 @@ def build(s:Spec)->Mesh:
         rod_holders(m,(-L*.21,-L*.07))
         radar(m,0.,roof+.06,zhouse)
         if s.variant>=1:
-            m.deck_box('forward_anchor_box','engine',0.,L*.36,B*.34,.32,.55)
+            m.deck_pod('forward_anchor_box','engine',0.,L*.36,B*.34,.32,.55)
             for side in (-1,1):
                 z=-L*.30
                 x=side*(section_at(stations,z).inner-.14)
-                m.deck_box('reinforced_rail_socket','steel',x,z,.18,.53,.39)
-            m.deck_box('aft_fish_crate','orange',-B*.26,-L*.25,.70,.51,.80)
+                m.deck_pod('reinforced_rail_socket','steel',x,z,.18,.53,.39)
+            m.deck_pod('aft_fish_crate','orange',-B*.26,-L*.25,.70,.51,.80)
         if s.variant>=2:
             rackz=-L*.34
-            m.deck_box('empty_pot_rack','steel',B*.15,rackz,.84,.29,.88)
+            m.deck_pod('empty_pot_rack','steel',B*.15,rackz,.84,.29,.88)
             crab_pot(m,B*.15,deck(rackz)+.29,rackz,.62)
         if s.variant>=3:
             rackz=-L*.33
-            m.deck_box('multiple_pot_storage','steel',-B*.20,rackz,.84,.25,.90)
+            m.deck_pod('multiple_pot_storage','steel',-B*.20,rackz,.84,.25,.90)
             crab_pot(m,-B*.20,deck(rackz)+.25,rackz-.02,.63)
-            m.deck_box('powered_buoy_line_storage','orange',-B*.31,-L*.20,
+            m.deck_pod('powered_buoy_line_storage','orange',-B*.31,-L*.20,
                        .39,.31,.49)
         if s.variant>=4:
-            m.deck_box('ice_hold_hatch','cabin',0.,-L*.05,B*.37,.25,.86)
-            m.deck_box('crab_sorting_table','steel',B*.24,-L*.30,.92,.73,1.20)
-            m.deck_box('hold_cold_box','cabin',-B*.26,-L*.37,.81,.48,.87)
+            m.deck_pod('ice_hold_hatch','cabin',0.,-L*.05,B*.37,.25,.86)
+            m.deck_pod('crab_sorting_table','steel',B*.24,-L*.30,.92,.73,1.20)
+            m.deck_pod('hold_cold_box','cabin',-B*.26,-L*.37,.81,.48,.87)
             z=-L*.38
             sct=section_at(stations,z)
             for side in (-1,1):
@@ -614,16 +731,13 @@ def build(s:Spec)->Mesh:
                    (-span,deck(z)+1.72,z),(span,deck(z)+1.72,z),.075)
         if s.variant>=5:
             # Upper bridge is an intentional step on the existing roof.
-            m.box('raised_bridge_cap','cabin',0.,roof+.30,zhouse+.15,
-                  B*.59,.60,cablen*.58)
-            m.box('upper_bridge_window','window',0.,roof+.43,
-                  zhouse+cablen*.39,B*.49,.33,.033)
+            m.upper_bridge(0.,zhouse+.15,roof,B*.59,cablen*.58)
             z=-L*.26
             crane(m,-B*.30,deck(z)+.01,z,3.22,2.24)
-            m.deck_box('extra_cold_hold','cabin',B*.24,-L*.22,.87,.52,.81)
-            m.deck_box('stacked_crab_pot_storage','steel',-B*.19,-L*.32,
+            m.deck_pod('extra_cold_hold','cabin',B*.24,-L*.22,.87,.52,.81)
+            m.deck_pod('stacked_crab_pot_storage','steel',-B*.19,-L*.32,
                        .81,.41,.81)
-            m.deck_box('bulk_bait_prep_station','cabin',B*.30,-L*.08,
+            m.deck_pod('bulk_bait_prep_station','cabin',B*.30,-L*.08,
                        .72,.50,.59)
     return m
 
@@ -649,7 +763,7 @@ def main():
                               for sec in mesh.sections),4),
                           deck_freeboard_min_metres=round(min(
                               sec.sheer_y-sec.deck_y for sec in mesh.sections),4),
-                          hull_shape_contract='continuous 9-station chine/keel/open-deck shell',
+                          hull_shape_contract='continuous class-specific 11-station chine/keel and inset deck',
                           planned_parts=spec.parts,production_status='ROUGH_RESHAPED_ONLY'))
     rig=[]
     for stage in range(6):
