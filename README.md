@@ -4,6 +4,8 @@
 
 # ReverieVR
 
+**[Development image galleries — including all 18 Sitka boat 360° turntables](docs/gallery/README.md)** · [Image publication workflow](docs/gallery/GALLERY_WORKFLOW.md)
+
 ## Unified Android game delivery
 
 ReverieVR distributes one signed, self-updating **main Android headset APK** containing the registered native-game libraries and their approved bundled assets. VR Home launches these games locally. There is no separate game download, companion-game APK install, or downloadable game-content update requirement. The 2D Bundled Game Library is a read-only inventory; its update button uses the existing full ReverieVR APK updater. The optional phone-as-controller application remains a separate controller utility, **not** an independently updated native game.

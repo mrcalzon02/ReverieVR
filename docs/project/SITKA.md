@@ -2,6 +2,8 @@
 
 # Sitka
 
+**[GitHub visual gallery: all 18 real-geometry boat turntables, Tier 1–3](../gallery/sitka/boats/2026-11-05/README.md)** — now published as 18 actual GIF files and four review sheets in GitHub, with source provenance, hash validation and [generation gallery workflow](../gallery/GALLERY_WORKFLOW.md). These are rough OBJ review renders, not in-game screenshots. Full-resolution originals remain in the Drive archive.
+
 ## 18 real geometry boat turns and navigation test project — 2026-11-05
 
 [Detailed 18-variant physical turntable catalog and navigation validation](sitka/equipment/BOAT_18_TURNTABLES.md) records 18 shaped low-poly OBJ models (six per design class), individual looping 360 GIF renders archived on Google Drive, deterministic model/repro source and actual C++ motion tests. The Tier 1 skiff OBJ rough meshes in this pass are newly modeled from the approved skiff reference. These are source-only previews, NOT registered game boats or real navigational footage.

@@ -1,0 +1,375 @@
+{
+  "format": "reverievr-development-gallery-v1",
+  "title": "Sitka: 18 boat progression models / 360 turntables",
+  "date": "2026-11-05",
+  "project": "sitka",
+  "source_commit": "798787c4b3869950a5626096ec182adede4bd179",
+  "original_archive_url": "https://drive.google.com/file/d/1CSXxI58t1009dl-52nx1tSizWPFwDWx-/view?usp=drivesdk",
+  "license": "Project-origin reference assets; check the asset registry before redistribution",
+  "source_kind": "Original procedural low-poly OBJ meshes rendered through VTK/Pillow; illustrative water, not recorded gameplay",
+  "published_format": "24-frame 360x256 web-optimized GIF (full-resolution 520x370 source GIFs in Drive)",
+  "gallery_generated_by": "scripts/sitka/render_model_360.py",
+  "model_generated_by": "scripts/sitka/build_boat_rough_models.py",
+  "assets": [
+    {
+      "file": "tier1_00_360.gif",
+      "sha256": "5300425d9ac43547babeff8f7f7dabc531546f80b19c42c223bfcc8650abc21c",
+      "bytes": 189389,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 1,
+      "level": 1,
+      "name": "Shore Dinghy",
+      "model_id": "sitka.boat_tier1.00",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier1_01_360.gif",
+      "sha256": "0b17ecc02801f5fb031e868b0a3dfa31589aad3f56e81ea6d83ed892e6167ea2",
+      "bytes": 218626,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 1,
+      "level": 2,
+      "name": "Utility Skiff",
+      "model_id": "sitka.boat_tier1.01",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier1_02_360.gif",
+      "sha256": "c8b3fe474c29258bab3d17161891134424f68d4d0ddb92db167ced3b66bfb344",
+      "bytes": 234511,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 1,
+      "level": 3,
+      "name": "Reinforced Harbor Skiff",
+      "model_id": "sitka.boat_tier1.02",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier1_03_360.gif",
+      "sha256": "d213449d28f2646ca99a678732faeea0733b8c1e67f2dfd4dd5c8464a44b5d4a",
+      "bytes": 267495,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 1,
+      "level": 4,
+      "name": "Coastal Fishing Skiff",
+      "model_id": "sitka.boat_tier1.03",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier1_04_360.gif",
+      "sha256": "31f8e3fa5e0cbc932b1ca5b59045082cbd2b66d0e241badabd95a0a6a80f3832",
+      "bytes": 270729,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 1,
+      "level": 5,
+      "name": "Deepwater Aluminum Skiff",
+      "model_id": "sitka.boat_tier1.04",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier1_05_360.gif",
+      "sha256": "231f9b7a11857fd7440a36f1e713cd9ef7cd7a16b99bc69b385faac104403d57",
+      "bytes": 270242,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 1,
+      "level": 6,
+      "name": "Master Angler Skiff",
+      "model_id": "sitka.boat_tier1.05",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier1_six_level_gallery.jpg",
+      "sha256": "24782189ec8c06607ee4b93a2ef6edef6216e9815634f005047e7c4547486239",
+      "bytes": 120523,
+      "size": [
+        1560,
+        740
+      ]
+    },
+    {
+      "file": "tier2_00_360.gif",
+      "sha256": "77362ca60a4d3bb96b06578ef61880df07dd466b8bc900777b789726d0360109",
+      "bytes": 261956,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 2,
+      "level": 1,
+      "name": "Center-Console Fisher",
+      "model_id": "sitka.boat_tier2.00",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier2_01_360.gif",
+      "sha256": "0b3bcb77b548daf539f91544de7c0729b76e1d4af9bfe86b3b4cb275379e3128",
+      "bytes": 275042,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 2,
+      "level": 2,
+      "name": "Walkaround Utility Fisher",
+      "model_id": "sitka.boat_tier2.01",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier2_02_360.gif",
+      "sha256": "c1b3340201ba8f71cd1d61b148d45ef5a4187c81a22fd3100757709e25a7053d",
+      "bytes": 283800,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 2,
+      "level": 3,
+      "name": "Weather-Shelter Fisher",
+      "model_id": "sitka.boat_tier2.02",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier2_03_360.gif",
+      "sha256": "05975c85cff1b6c403a43b05e3c86c8cf207f1fade9f932fb7b52a778d1854b5",
+      "bytes": 267763,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 2,
+      "level": 4,
+      "name": "Enclosed-Cabin Fisher",
+      "model_id": "sitka.boat_tier2.03",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier2_04_360.gif",
+      "sha256": "19ca7bac56e2e5762934aa255e8c20b4fc105a903f888383b5704c294e87a221",
+      "bytes": 276949,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 2,
+      "level": 5,
+      "name": "Extended Workdeck Fisher",
+      "model_id": "sitka.boat_tier2.04",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier2_05_360.gif",
+      "sha256": "30f4fc4146dcaa156bc96a76ccd5e9d8ef4b27ad28d988f4eb1bc5a48ea1489c",
+      "bytes": 282361,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 2,
+      "level": 6,
+      "name": "Regional Expedition Fisher",
+      "model_id": "sitka.boat_tier2.05",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier2_six_level_gallery.jpg",
+      "sha256": "d5f5f1aaaaf1406d0b0406215564df8518c21a0bd1ab4a0fdb5696fb37e9b198",
+      "bytes": 130724,
+      "size": [
+        1560,
+        740
+      ]
+    },
+    {
+      "file": "tier3_00_360.gif",
+      "sha256": "22ae364d61927769d97dd0b7b9092d0a8472a7602ef8f2ffccbb63da29525a33",
+      "bytes": 281432,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 3,
+      "level": 1,
+      "name": "Compact Commercial Trawler",
+      "model_id": "sitka.boat_tier3.00",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier3_01_360.gif",
+      "sha256": "394117761001505392c491e03968d88bffc5c56a17ef14e0d4704ac469ccd694",
+      "bytes": 283426,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 3,
+      "level": 2,
+      "name": "Reinforced Coastal Workboat",
+      "model_id": "sitka.boat_tier3.01",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier3_02_360.gif",
+      "sha256": "57b237a7f5bb48cf70c1fea5abd9995d5fd53651ab95a861a222fe3c5d95b4b9",
+      "bytes": 280433,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 3,
+      "level": 3,
+      "name": "Hydraulic Hauler Trawler",
+      "model_id": "sitka.boat_tier3.02",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier3_03_360.gif",
+      "sha256": "7c3fc518ff3f58f8fe791972c9f41371062c8ce8e74406a9c92a614e74e51cf9",
+      "bytes": 282688,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 3,
+      "level": 4,
+      "name": "Powered Pot Fleet Workboat",
+      "model_id": "sitka.boat_tier3.03",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier3_04_360.gif",
+      "sha256": "dde597a0a8df077db45130384882e9847384db8c4d0cca357f64b45a5e8b853d",
+      "bytes": 287422,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 3,
+      "level": 5,
+      "name": "Hydraulic Crab Sorting Trawler",
+      "model_id": "sitka.boat_tier3.04",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier3_05_360.gif",
+      "sha256": "579d138736cf66348e426ebe48b664cc0fc475a9f4ef35dc48e1e52bc20a28ff",
+      "bytes": 287957,
+      "frames": 24,
+      "size": [
+        360,
+        256
+      ],
+      "tier": 3,
+      "level": 6,
+      "name": "Expedition Crab Workboat",
+      "model_id": "sitka.boat_tier3.05",
+      "original_size": [
+        520,
+        370
+      ]
+    },
+    {
+      "file": "tier3_six_level_gallery.jpg",
+      "sha256": "a0393c836820c4c3dd668e85dd4ca29a15a7edeb0546c8c30cb413226f1e0638",
+      "bytes": 132253,
+      "size": [
+        1560,
+        740
+      ]
+    },
+    {
+      "file": "all_18_levels_contact_sheet.jpg",
+      "sha256": "d61501fae505fd60235521802e16468d1bb7b3c109dd1fbc18069137413dfd9e",
+      "bytes": 326035,
+      "size": [
+        1560,
+        2220
+      ]
+    }
+  ]
+}

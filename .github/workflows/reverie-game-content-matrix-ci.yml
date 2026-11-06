@@ -71,6 +71,8 @@ on:
       - 'scripts/sitka/build_bathymetry.py'
       - 'scripts/sitka/test_build_bathymetry.py'
       - 'scripts/sitka/*.py'
+      - 'docs/gallery/**'
+      - 'scripts/gallery/**'
       - 'data/sitka/research/**'
       - 'app/src/main/jni/native/sitka_shore_*.h'
       - 'app/src/main/jni/native/sitka_walk_graph.h'
@@ -114,6 +116,15 @@ permissions:
   contents: read
 
 jobs:
+  verify-generated-gallery:
+    name: Verify committed visual galleries and animation integrity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify GitHub gallery media bytes, SHA256, GIF frames and README links
+        run: python3 scripts/gallery/verify_generated_gallery.py
+
   verify-sitka-ndk-source-only:
     name: Sitka source-only GLES2 Android NDK ABI link gate
     runs-on: ubuntu-24.04
