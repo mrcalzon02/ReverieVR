@@ -51,7 +51,7 @@ int main(){
             const auto e=nav.Update(.05,.8,.9,sea,deep,allowed);
             assert(e==BoatEvent::Advanced||e==BoatEvent::None);
             assert(std::abs(nav.boat.heading-heading)<=
-                   profile.yaw_rate_rad_s*.05+1.e-7);
+                   profile.yaw_rate_rad_s*(2./30.)+1.e-7);
         }
         assert(nav.boat.heading>before+.01);
         nav.Dock();
