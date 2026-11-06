@@ -6,11 +6,15 @@
     "class_name": "tier2",
     "length_metres": 6.2,
     "beam_metres": 2.3,
-    "triangles": 628,
-    "source_vertices": 384,
+    "triangles": 920,
+    "source_vertices": 634,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -19,13 +23,21 @@
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
-      "handrail_post",
-      "handrail_post",
-      "side_safety_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
+      "handrail_post",
+      "handrail_post",
+      "side_safety_rail",
       "bow_rail",
       "helm_console",
       "steering_column",
@@ -45,26 +57,30 @@
     ],
     "bounds": [
       [
-        -1.1949458575801573,
-        1.1949458575801573
+        -1.1839868480032947,
+        1.1839868480032947
       ],
       [
-        -0.8900000000000001,
-        1.9892024754845903
+        -0.9550000000000001,
+        1.3047024754845904
       ],
       [
         -3.7168084900592855,
-        3.0614623030364996
+        3.0669917359491508
       ]
     ],
     "visual_focus": "Open walkaround deck, wheel and compass, outboard",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.0285,
+    "deck_freeboard_min_metres": 0.19,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "open_deck",
       "console",
       "outboard",
       "rail"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier2.01",
@@ -73,11 +89,15 @@
     "class_name": "tier2",
     "length_metres": 6.5,
     "beam_metres": 2.5,
-    "triangles": 772,
-    "source_vertices": 472,
+    "triangles": 1064,
+    "source_vertices": 722,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -86,13 +106,21 @@
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
-      "handrail_post",
-      "handrail_post",
-      "side_safety_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
+      "handrail_post",
+      "handrail_post",
+      "side_safety_rail",
       "bow_rail",
       "helm_console",
       "steering_column",
@@ -120,19 +148,23 @@
     ],
     "bounds": [
       [
-        -1.2949418084439377,
-        1.2949418084439377
+        -1.2839858631118142,
+        1.2839858631118142
       ],
       [
-        -0.8900000000000001,
-        1.9892024754845903
+        -0.9550000000000001,
+        1.313985976946352
       ],
       [
         -3.8899999999999997,
-        3.2090814357482693
+        3.2142715019592867
       ]
     ],
     "visual_focus": "Raised bow locker, flush rod holders, deck coolers",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.031,
+    "deck_freeboard_min_metres": 0.19,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "open_deck",
       "console",
@@ -141,7 +173,7 @@
       "cooler",
       "outboard"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier2.02",
@@ -150,11 +182,15 @@
     "class_name": "tier2",
     "length_metres": 6.7,
     "beam_metres": 2.5,
-    "triangles": 892,
-    "source_vertices": 548,
+    "triangles": 1184,
+    "source_vertices": 798,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -163,13 +199,21 @@
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
-      "handrail_post",
-      "handrail_post",
-      "side_safety_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
+      "handrail_post",
+      "handrail_post",
+      "side_safety_rail",
       "bow_rail",
       "helm_console",
       "steering_column",
@@ -205,19 +249,23 @@
     ],
     "bounds": [
       [
-        -1.294945224468168,
-        1.294945224468168
+        -1.2839866940202356,
+        1.2839866940202356
       ],
       [
-        -0.8900000000000001,
+        -0.9550000000000001,
         3.1199999999999997
       ],
       [
         -4.0054492129901025,
-        3.3065618439176268
+        3.31203765216462
       ]
     ],
     "visual_focus": "T-top over low helm, antenna, depth screen",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.031,
+    "deck_freeboard_min_metres": 0.19,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "console",
       "shelter_arch",
@@ -225,7 +273,7 @@
       "antenna",
       "outboard"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier2.03",
@@ -234,11 +282,23 @@
     "class_name": "tier2",
     "length_metres": 7.0,
     "beam_metres": 2.6,
-    "triangles": 1096,
-    "source_vertices": 676,
+    "triangles": 1130,
+    "source_vertices": 774,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -250,24 +310,11 @@
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
+      "bow_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
-      "bow_rail",
-      "helm_console",
-      "steering_column",
-      "steering_spindle",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "compass",
-      "nav_display",
       "aft_bench",
       "outboard_head",
       "outboard_leg",
@@ -280,10 +327,10 @@
       "rod_stub_2",
       "rod_holder_3",
       "wheelhouse_body",
+      "wheelhouse_side_window",
+      "wheelhouse_side_window",
+      "forward_window",
       "wheelhouse_roof",
-      "forward_windshield",
-      "side_window",
-      "side_window",
       "aft_door",
       "steering_column",
       "steering_spindle",
@@ -302,19 +349,23 @@
     ],
     "bounds": [
       [
-        -1.3449457232247009,
-        1.3449457232247009
+        -1.333986815326247,
+        1.333986815326247
       ],
       [
-        -0.8900000000000001,
-        2.065
+        -0.9550000000000001,
+        1.889
       ],
       [
         -4.178606632100711,
-        3.453483514981338
+        3.459001551239426
       ]
     ],
     "visual_focus": "Walkable weatherproof pilothouse, forward windows",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.0322,
+    "deck_freeboard_min_metres": 0.19,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "cabin",
       "windows",
@@ -322,7 +373,7 @@
       "aft_deck",
       "outboard"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier2.04",
@@ -331,11 +382,23 @@
     "class_name": "tier2",
     "length_metres": 7.6,
     "beam_metres": 2.8,
-    "triangles": 1312,
-    "source_vertices": 808,
+    "triangles": 1346,
+    "source_vertices": 906,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -347,24 +410,11 @@
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
+      "bow_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
-      "bow_rail",
-      "helm_console",
-      "steering_column",
-      "steering_spindle",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "compass",
-      "nav_display",
       "aft_bench",
       "outboard_head",
       "outboard_leg",
@@ -377,10 +427,10 @@
       "rod_stub_2",
       "rod_holder_3",
       "wheelhouse_body",
+      "wheelhouse_side_window",
+      "wheelhouse_side_window",
+      "forward_window",
       "wheelhouse_roof",
-      "forward_windshield",
-      "side_window",
-      "side_window",
       "aft_door",
       "steering_column",
       "steering_spindle",
@@ -411,19 +461,23 @@
     ],
     "bounds": [
       [
-        -1.4449465970845043,
-        1.4449465970845043
+        -1.433987027857104,
+        1.433987027857104
       ],
       [
-        -0.8900000000000001,
-        2.065
+        -0.9550000000000001,
+        1.889
       ],
       [
         -4.524868682948845,
-        3.747344691153771
+        3.7529370109058435
       ]
     ],
     "visual_focus": "Reinforced stern, pot hauler, livewell, rod rack",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.0347,
+    "deck_freeboard_min_metres": 0.19,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "cabin",
       "winch",
@@ -432,7 +486,7 @@
       "rod_holders",
       "aft_deck"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier2.05",
@@ -441,11 +495,23 @@
     "class_name": "tier2",
     "length_metres": 8.0,
     "beam_metres": 2.9,
-    "triangles": 1484,
-    "source_vertices": 912,
+    "triangles": 1518,
+    "source_vertices": 1010,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -457,24 +523,11 @@
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
+      "bow_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
-      "bow_rail",
-      "helm_console",
-      "steering_column",
-      "steering_spindle",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "wheel_rim",
-      "compass",
-      "nav_display",
       "aft_bench",
       "outboard_head",
       "outboard_leg",
@@ -487,10 +540,10 @@
       "rod_stub_2",
       "rod_holder_3",
       "wheelhouse_body",
+      "wheelhouse_side_window",
+      "wheelhouse_side_window",
+      "forward_window",
       "wheelhouse_roof",
-      "forward_windshield",
-      "side_window",
-      "side_window",
       "aft_door",
       "steering_column",
       "steering_spindle",
@@ -530,19 +583,23 @@
     ],
     "bounds": [
       [
-        -1.4949482968799015,
-        1.4949482968799015
+        -1.4839874412391167,
+        1.4839874412391167
       ],
       [
-        -0.8900000000000001,
-        2.9299999999999997
+        -0.9550000000000001,
+        2.6037142857142856
       ],
       [
         -4.755676270165655,
-        3.943068696697655
+        3.9488065478558396
       ]
     ],
     "visual_focus": "Roof radar, compact deck crane, two holds and working stern",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.036,
+    "deck_freeboard_min_metres": 0.19,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "cabin",
       "radar",
@@ -551,7 +608,7 @@
       "winch",
       "aft_deck"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier3.00",
@@ -560,11 +617,15 @@
     "class_name": "tier3",
     "length_metres": 10.8,
     "beam_metres": 3.8,
-    "triangles": 1176,
-    "source_vertices": 720,
+    "triangles": 1438,
+    "source_vertices": 958,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -573,19 +634,28 @@
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
-      "handrail_post",
-      "handrail_post",
-      "side_safety_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
+      "handrail_post",
+      "handrail_post",
+      "side_safety_rail",
       "bow_rail",
       "bridge_lower",
-      "bridge_roof",
-      "bridge_front_glass",
-      "bridge_side_glass",
-      "bridge_side_glass",
+      "wheelhouse_side_window",
+      "wheelhouse_side_window",
+      "forward_window",
+      "wheelhouse_roof",
+      "bridge_access_door",
       "steering_column",
       "steering_spindle",
       "wheel_rim",
@@ -598,7 +668,6 @@
       "wheel_rim",
       "compass",
       "nav_display",
-      "bridge_access_door",
       "workdeck_crab_workmat",
       "crab_pot_vertical_frame",
       "crab_pot_vertical_frame",
@@ -630,19 +699,23 @@
     ],
     "bounds": [
       [
-        -1.9639307162820805,
-        1.9639307162820805
+        -1.951981903740891,
+        1.951981903740891
       ],
       [
-        -1.32,
-        3.2499999999999996
+        -1.375,
+        2.961
       ],
       [
-        -5.307305565411615,
-        5.324090095846398
+        -5.3201875252104625,
+        5.33568006319869
       ]
     ],
     "visual_focus": "Displacement hull, bridge and very slow hand-haul crab pot",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.0471,
+    "deck_freeboard_min_metres": 0.26,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "steel_hull",
       "bridge",
@@ -651,7 +724,7 @@
       "crab_pot",
       "buoy"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier3.01",
@@ -660,11 +733,15 @@
     "class_name": "tier3",
     "length_metres": 11.4,
     "beam_metres": 4.0,
-    "triangles": 1308,
-    "source_vertices": 804,
+    "triangles": 1570,
+    "source_vertices": 1042,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -673,19 +750,28 @@
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
-      "handrail_post",
-      "handrail_post",
-      "side_safety_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
+      "handrail_post",
+      "handrail_post",
+      "side_safety_rail",
       "bow_rail",
       "bridge_lower",
-      "bridge_roof",
-      "bridge_front_glass",
-      "bridge_side_glass",
-      "bridge_side_glass",
+      "wheelhouse_side_window",
+      "wheelhouse_side_window",
+      "forward_window",
+      "wheelhouse_roof",
+      "bridge_access_door",
       "steering_column",
       "steering_spindle",
       "wheel_rim",
@@ -698,7 +784,6 @@
       "wheel_rim",
       "compass",
       "nav_display",
-      "bridge_access_door",
       "workdeck_crab_workmat",
       "crab_pot_vertical_frame",
       "crab_pot_vertical_frame",
@@ -739,19 +824,23 @@
     ],
     "bounds": [
       [
-        -2.063931098974979,
-        2.063931098974979
+        -2.051982003806348,
+        2.051982003806348
       ],
       [
-        -1.32,
-        3.2499999999999996
+        -1.375,
+        2.961
       ],
       [
-        -5.60126558305879,
-        5.618023482455467
+        -5.614132319430351,
+        5.629644337128392
       ]
     ],
     "visual_focus": "Manual geared puller, pot bait cabinet and safer side rail",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.0496,
+    "deck_freeboard_min_metres": 0.26,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "steel_hull",
       "bridge",
@@ -760,7 +849,7 @@
       "crab_pot",
       "buoy"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier3.02",
@@ -769,11 +858,15 @@
     "class_name": "tier3",
     "length_metres": 12.0,
     "beam_metres": 4.2,
-    "triangles": 1700,
-    "source_vertices": 1040,
+    "triangles": 1962,
+    "source_vertices": 1278,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -782,19 +875,28 @@
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
-      "handrail_post",
-      "handrail_post",
-      "side_safety_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
+      "handrail_post",
+      "handrail_post",
+      "side_safety_rail",
       "bow_rail",
       "bridge_lower",
-      "bridge_roof",
-      "bridge_front_glass",
-      "bridge_side_glass",
-      "bridge_side_glass",
+      "wheelhouse_side_window",
+      "wheelhouse_side_window",
+      "forward_window",
+      "wheelhouse_roof",
+      "bridge_access_door",
       "steering_column",
       "steering_spindle",
       "wheel_rim",
@@ -807,7 +909,6 @@
       "wheel_rim",
       "compass",
       "nav_display",
-      "bridge_access_door",
       "workdeck_crab_workmat",
       "crab_pot_vertical_frame",
       "crab_pot_vertical_frame",
@@ -868,19 +969,23 @@
     ],
     "bounds": [
       [
-        -2.1639314424968066,
-        2.1639314424968066
+        -2.1519820936284257,
+        2.1519820936284257
       ],
       [
-        -1.32,
-        3.2499999999999996
+        -1.375,
+        2.961
       ],
       [
-        -5.8952295827286845,
-        5.911963411453135
+        -5.9080825189666735,
+        5.923612003863685
       ]
     ],
     "visual_focus": "Simple line puller, folding davit, safe pot racks",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.0521,
+    "deck_freeboard_min_metres": 0.26,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "steel_hull",
       "bridge",
@@ -888,20 +993,23 @@
       "line_puller",
       "pot_racks"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
-    "id": "sitka.boat_tier3.03",
-    "name": "Powered Pot Fleet Workboat",
+    "id": "sitka.boat_tier3.03",    "name": "Powered Pot Fleet Workboat",
     "stage": 3,
     "class_name": "tier3",
     "length_metres": 12.6,
     "beam_metres": 4.3,
-    "triangles": 2008,
-    "source_vertices": 1228,
+    "triangles": 2270,
+    "source_vertices": 1466,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -910,19 +1018,28 @@
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
-      "handrail_post",
-      "handrail_post",
-      "side_safety_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
+      "handrail_post",
+      "handrail_post",
+      "side_safety_rail",
       "bow_rail",
       "bridge_lower",
-      "bridge_roof",
-      "bridge_front_glass",
-      "bridge_side_glass",
-      "bridge_side_glass",
+      "wheelhouse_side_window",
+      "wheelhouse_side_window",
+      "forward_window",
+      "wheelhouse_roof",
+      "bridge_access_door",
       "steering_column",
       "steering_spindle",
       "wheel_rim",
@@ -935,7 +1052,6 @@
       "wheel_rim",
       "compass",
       "nav_display",
-      "bridge_access_door",
       "workdeck_crab_workmat",
       "crab_pot_vertical_frame",
       "crab_pot_vertical_frame",
@@ -997,7 +1113,8 @@
       "multiple_pot_storage",
       "crab_pot_vertical_frame",
       "crab_pot_vertical_frame",
-      "crab_pot_vertical_frame",      "crab_pot_vertical_frame",
+      "crab_pot_vertical_frame",
+      "crab_pot_vertical_frame",
       "crab_pot_cross_frame",
       "crab_pot_cross_frame",
       "crab_pot_long_frame",
@@ -1012,19 +1129,23 @@
     ],
     "bounds": [
       [
-        -2.2139348147864757,
-        2.2139348147864757
+        -2.201982975342848,
+        2.201982975342848
       ],
       [
-        -1.32,
-        3.2499999999999996
+        -1.375,
+        2.961
       ],
       [
-        -6.188870462694523,
-        6.20535940533871
+        -6.2015809073692045,
+        6.217280687462125
       ]
     ],
     "visual_focus": "Powered pot hauler and three buoyed pot positions",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.0533,
+    "deck_freeboard_min_metres": 0.26,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "steel_hull",
       "bridge",
@@ -1032,7 +1153,7 @@
       "pot_racks",
       "buoys"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier3.04",
@@ -1041,11 +1162,15 @@
     "class_name": "tier3",
     "length_metres": 13.4,
     "beam_metres": 4.6,
-    "triangles": 2116,
-    "source_vertices": 1296,
+    "triangles": 2378,
+    "source_vertices": 1534,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -1054,19 +1179,28 @@
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
-      "handrail_post",
-      "handrail_post",
-      "side_safety_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
+      "handrail_post",
+      "handrail_post",
+      "side_safety_rail",
       "bow_rail",
       "bridge_lower",
-      "bridge_roof",
-      "bridge_front_glass",
-      "bridge_side_glass",
-      "bridge_side_glass",
+      "wheelhouse_side_window",
+      "wheelhouse_side_window",
+      "forward_window",
+      "wheelhouse_roof",
+      "bridge_access_door",
       "steering_column",
       "steering_spindle",
       "wheel_rim",
@@ -1079,7 +1213,6 @@
       "wheel_rim",
       "compass",
       "nav_display",
-      "bridge_access_door",
       "workdeck_crab_workmat",
       "crab_pot_vertical_frame",
       "crab_pot_vertical_frame",
@@ -1158,25 +1291,29 @@
       "ice_hold_hatch",
       "crab_sorting_table",
       "hold_cold_box",
-      "aft_gantry_crossbeam",
       "gantry_upright",
-      "gantry_upright"
+      "gantry_upright",
+      "aft_gantry_crossbeam"
     ],
     "bounds": [
       [
-        -2.36393404442855,
-        2.36393404442855
+        -2.3519827739344197,
+        2.3519827739344197
       ],
       [
-        -1.32,
-        3.2499999999999996
+        -1.375,
+        2.961
       ],
       [
-        -6.580953432369227,
-        6.597499722765669
+        -6.593697578671166,
+        6.609358674431019
       ]
     ],
     "visual_focus": "Hydraulic gantry, crab sorting deck and refrigerated hold",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.057,
+    "deck_freeboard_min_metres": 0.26,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "steel_hull",
       "bridge",
@@ -1184,7 +1321,7 @@
       "crab_sorting",
       "hydraulic_gantry"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   },
   {
     "id": "sitka.boat_tier3.05",
@@ -1193,11 +1330,15 @@
     "class_name": "tier3",
     "length_metres": 14.4,
     "beam_metres": 4.8,
-    "triangles": 2328,
-    "source_vertices": 1428,
+    "triangles": 2590,
+    "source_vertices": 1666,
     "components": [
       "authored_hull_shell",
       "walkable_deck",
+      "gunwale_cap",
+      "inner_bulwark",
+      "gunwale_cap",
+      "inner_bulwark",
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
@@ -1206,19 +1347,28 @@
       "hull_rub_rail",
       "hull_rub_rail",
       "hull_rub_rail",
-      "handrail_post",
-      "handrail_post",
-      "side_safety_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
+      "hull_rub_rail",
       "handrail_post",
       "handrail_post",
       "side_safety_rail",
       "bow_rail",
+      "handrail_post",
+      "handrail_post",
+      "side_safety_rail",
       "bow_rail",
       "bridge_lower",
-      "bridge_roof",
-      "bridge_front_glass",
-      "bridge_side_glass",
-      "bridge_side_glass",
+      "wheelhouse_side_window",
+      "wheelhouse_side_window",
+      "forward_window",
+      "wheelhouse_roof",
+      "bridge_access_door",
       "steering_column",
       "steering_spindle",
       "wheel_rim",
@@ -1231,7 +1381,6 @@
       "wheel_rim",
       "compass",
       "nav_display",
-      "bridge_access_door",
       "workdeck_crab_workmat",
       "crab_pot_vertical_frame",
       "crab_pot_vertical_frame",
@@ -1312,9 +1461,9 @@
       "ice_hold_hatch",
       "crab_sorting_table",
       "hold_cold_box",
+      "gantry_upright",
+      "gantry_upright",
       "aft_gantry_crossbeam",
-      "gantry_upright",
-      "gantry_upright",
       "raised_bridge_cap",
       "upper_bridge_window",
       "crane_base",
@@ -1329,19 +1478,23 @@
     ],
     "bounds": [
       [
-        -2.463937807036004,
-        2.463937807036004
+        -2.451983757613222,
+        2.451983757613222
       ],
       [
-        -1.32,
-        3.6825315437734663
+        -1.375,
+        3.2425315437734663
       ],
       [
-        -7.070542695398811,
-        7.086800563980334
+        -7.083115400491606,
+        7.0989638218259925
       ]
     ],
     "visual_focus": "Automated crab crane, bait station, cold hold, five-pot rack",
+    "hull_station_count": 9,
+    "deck_inset_min_metres": 0.0595,
+    "deck_freeboard_min_metres": 0.26,
+    "hull_shape_contract": "continuous 9-station chine/keel/open-deck shell",
     "planned_parts": [
       "steel_hull",
       "bridge",
@@ -1350,6 +1503,7 @@
       "bait_station",
       "five_pot_rack"
     ],
-    "production_status": "ROUGH_PROTOTYPE_ONLY"
+    "production_status": "ROUGH_RESHAPED_ONLY"
   }
 ]
+

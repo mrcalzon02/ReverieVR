@@ -67,3 +67,31 @@ hooked to the running boat Update loop, runtime gear slots, real pot
 buoy props, save transactions, boat fuel, lawful harvest checks,
 realistic bathymetry eligibility, marketplace UI, or physical loading
 animations. Do not claim crab hunting is playable in the APK.
+
+## Reshaped contiguous hulls and inset working decks — 2026-11-05
+
+**Updated source and 12 physical OBJ/MTL meshes:** [final verified 44-file ZIP](https://drive.google.com/file/d/11JI2iNGoDPz0k1mh-kDqEet_TYn0AuKp/view?usp=drivesdk).
+The final [Tier 2 review sheet](https://drive.google.com/file/d/1yR94IxJsf9O9WgpAsY3XTYBtPvoxKDsy/view?usp=drivesdk) and [Tier 3 review sheet](https://drive.google.com/file/d/1HFj-EuO7RavhIZYl348hfjoccDRKND4D/view?usp=drivesdk)
+show six increasingly equipped boats per class. Previous approved Tier 1
+skiff visual references are unchanged.
+
+Corrective pass: nine low-poly cross-section stations (rather than five
+vertical prisms), continuous bow/stern/plating/chine/keel geometry, modest
+longitudinal sheer, proper bulwark interior walls, continuous gunwale caps,
+and an **inset deck sharing the SAME cross-section profile** as the
+outside hull. Deck fixtures, cabin bases, crabbing racks and cold-storage
+chests now sample every crossed station before building: a mount with
+any part outside the available interior hull is refused instead of
+permitted to clip through the shell. Three real stern work-deck
+overhangs were corrected during testing.
+
+Source-only regression tests verify 12 connected outer shells, nine
+stations each, legal deck/bulwark location, a single open-top hull
+boundary, nondegenerate faces, OBJ index consistency, safe fitting
+placement and all six separate crab-rig exports. These are **rough,
+physical 3D source assets**: not production hull engineering, not
+verified real-world beam/draft figures, and not yet copied into the
+registered game runtime or shown in headset. Build them with
+`scripts/sitka/build_boat_rough_models.py`; the shipping game mesh
+remains a distinct implementation that needs future integration and
+device acceptance.

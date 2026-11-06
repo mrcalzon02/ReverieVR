@@ -2,6 +2,11 @@
 
 # Sitka
 
+## Shaped Tier 2/3 working boat geometry — 2026-11-05
+
+[Refined 12-boat physical hull generator and invariant regression](sitka/equipment/BOAT_TIER_2_3.md) supersede the older boxy draft: nine station continuous outer plating, inset contour-matched decks, gunwales and bounded working-deck fittings. The [44-file full OBJ/MTL source archive](https://drive.google.com/file/d/11JI2iNGoDPz0k1mh-kDqEet_TYn0AuKp/view?usp=drivesdk) and updated review sheets are stored in Drive; **not yet integrated into the native runtime**.
+
+
 ## Harbor Department boat-upgrade shop — 2026-11-05
 
 Five Sitka municipal harbors are Crescent, Sealing Cove, ANB, Thomsen
