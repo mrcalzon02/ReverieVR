@@ -34,6 +34,12 @@ public final class DoomSharewareBootstrapPlanTest {
         String config =
             DoomSharewareBootstrapPlan.doomConfig();
 
+        assertTrue(config.contains("key_up 72"));
+        assertTrue(config.contains("key_down 80"));
+        assertTrue(config.contains("key_strafeleft 51"));
+        assertTrue(config.contains("key_straferight 52"));
+        assertTrue(config.contains("key_fire 29"));
+        assertTrue(config.contains("key_use 57"));
         assertTrue(config.contains("use_mouse 1"));
         assertTrue(config.contains("snd_musicdevice 0"));
         assertTrue(config.contains("snd_sfxdevice 3"));
