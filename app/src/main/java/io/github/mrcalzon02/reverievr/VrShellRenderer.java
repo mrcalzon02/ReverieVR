@@ -79,6 +79,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         void onVolumeAdjustRequested(int direction);
         void onBrightnessAdjustRequested(int direction);
         String getActiveBindingProfileName();
+        String[] getActiveDoomControlLegendLines();
         String getActiveBindingTuningSummary();
         void onDosBindingProfileCycleRequested(
             int direction
@@ -523,6 +524,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private final FloatBuffer hudUvBuffer;
     private final FloatBuffer controlFeedVertexBuffer;
     private final FloatBuffer controlFeedUvBuffer;
+    private final FloatBuffer doomLegendVertexBuffer;
+    private final FloatBuffer doomLegendUvBuffer;
     private final ControlEventHistory controlHistory = new ControlEventHistory();
     private final String[] controlFeedLines =
         new String[ControlEventHistory.CAPACITY];
@@ -679,6 +682,12 @@ final class VrShellRenderer implements CardboardView.Renderer {
     private int texture;
     private int hudTexture;
     private int controlFeedTexture;
+    private int doomLegendTexture;
+    private Bitmap doomLegendBitmap;
+    private Canvas doomLegendCanvas;
+    private Paint doomLegendPaint;
+    private boolean doomLegendTextureAllocated;
+    private long doomLegendLastRefreshNanos;
     private Bitmap controlFeedBitmap;
     private Canvas controlFeedCanvas;
     private Paint controlFeedPaint;
@@ -973,6 +982,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
             -0.23f,  0.30f, 0f
         });
         controlFeedUvBuffer = allocate(new float[] {
+            0f, 1f, 1f, 1f, 0f, 0f, 1f, 0f
+        });
+        // Binocular/right-side Doom legend, below shell battery arcs.
+        // Screen-aligned, not a clickable surface or an obstructing modal.
+        doomLegendVertexBuffer = allocate(new float[] {
+             0.32f, -0.68f, 0f,
+             0.98f, -0.68f, 0f,
+             0.32f,  0.43f, 0f,
+             0.98f,  0.43f, 0f
+        });
+        doomLegendUvBuffer = allocate(new float[] {
             0f, 1f, 1f, 1f, 0f, 0f, 1f, 0f
         });
         // Crop the quad to the arc region: no full-eye transparent overdraw.
@@ -2846,6 +2866,11 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 deviceWarningHud.draw(program, positionHandle, uvHandle,
                     matrixHandle, textureHandle);
             }
+            if (mode == MODE_DOS && !orientationMenuVisible
+                && dosRenderer.isFullScreen()
+                && BundledDosContentInstaller.DOOM_MODULE_ID.equals(activeDosModuleId)) {
+                drawDoomBindingLegendOverlay();
+            }
             drawControlFeedOverlay();
         } catch (RuntimeException | LinkageError failure) {
             reportRendererFailure(
@@ -3434,12 +3459,15 @@ final class VrShellRenderer implements CardboardView.Renderer {
         performanceHud.onSurfaceCreated();
         deviceWarningHud.onSurfaceCreated();
 
-        int[] textures = new int[4];
-        GLES20.glGenTextures(4, textures, 0);
+        int[] textures = new int[5];
+        GLES20.glGenTextures(5, textures, 0);
         texture = textures[0];
         hudTexture = textures[1];
         keyboardTexture = textures[2];
         controlFeedTexture = textures[3];
+        doomLegendTexture = textures[4];
+        doomLegendTextureAllocated = false;
+        doomLegendLastRefreshNanos = 0L;
         controlFeedTextureAllocated = false;
         controlFeedLastRefreshNanos = 0L;
         keyboardTextureStorageInitialized = false;
@@ -3502,6 +3530,16 @@ final class VrShellRenderer implements CardboardView.Renderer {
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
             GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
 
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, doomLegendTexture);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, controlFeedTexture);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
             GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
@@ -3546,6 +3584,10 @@ final class VrShellRenderer implements CardboardView.Renderer {
             GLES20.glDeleteTextures(1, new int[] {controlFeedTexture}, 0);
             controlFeedTexture = 0;
         }
+        if (doomLegendTexture != 0) {
+            GLES20.glDeleteTextures(1, new int[] {doomLegendTexture}, 0);
+            doomLegendTexture = 0;
+        }
         if (keyboardTexture != 0) {
             GLES20.glDeleteTextures(1, new int[] {keyboardTexture}, 0);
             keyboardTexture = 0;
@@ -3574,6 +3616,13 @@ final class VrShellRenderer implements CardboardView.Renderer {
             controlFeedBitmap.recycle();
         }
         controlFeedBitmap = null;
+        if (doomLegendBitmap != null && !doomLegendBitmap.isRecycled())
+            doomLegendBitmap.recycle();
+        doomLegendBitmap = null;
+        doomLegendCanvas = null;
+        doomLegendPaint = null;
+        doomLegendTextureAllocated = false;
+        doomLegendLastRefreshNanos = 0L;
         controlFeedCanvas = null;
         controlFeedPaint = null;
         controlFeedTextureAllocated = false;
@@ -9160,6 +9209,88 @@ final class VrShellRenderer implements CardboardView.Renderer {
             labels,
             activeButtons()
         );
+    }
+
+    /**
+     * Only the bundled Doom session owns this legend. Reflect LIVE bound
+     * inputs; refresh it at most once per second, never every eye/frame.
+     * Fullscreen keeps the windowed DOS option rail unobstructed.
+     */
+    private void drawDoomBindingLegendOverlay() {
+        if (program == 0 || doomLegendTexture == 0) return;
+        long now = System.nanoTime();
+        if (doomLegendLastRefreshNanos == 0L
+            || now - doomLegendLastRefreshNanos >= 1000000000L) {
+            if (doomLegendBitmap == null || doomLegendBitmap.isRecycled()) {
+                doomLegendBitmap = Bitmap.createBitmap(
+                    544, 544, Bitmap.Config.ARGB_8888);
+                doomLegendCanvas = new Canvas(doomLegendBitmap);
+                doomLegendPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            }
+            Canvas c = doomLegendCanvas;
+            Paint p = doomLegendPaint;
+            c.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+            p.setStyle(Paint.Style.FILL);
+            p.setColor(Color.argb(170, 12, 19, 29));
+            c.drawRoundRect(3f, 3f, 541f, 541f, 17f, 17f, p);
+            p.setColor(Color.rgb(135, 223, 224));
+            p.setTypeface(android.graphics.Typeface.create(
+                android.graphics.Typeface.MONOSPACE,
+                android.graphics.Typeface.BOLD));
+            p.setTextSize(31f);
+            c.drawText("DOOM / CONTROLS", 24f, 48f, p);
+            p.setColor(Color.rgb(174, 192, 205));
+            p.setTextSize(21f);
+            String profileName = host.getActiveBindingProfileName();
+            c.drawText(shorten(profileName == null ? "UNKNOWN PROFILE"
+                : profileName, 33), 24f, 78f, p);
+            p.setColor(Color.rgb(89, 137, 154));
+            c.drawRect(24f, 91f, 520f, 94f, p);
+            p.setTypeface(android.graphics.Typeface.MONOSPACE);
+            p.setTextSize(24f);
+            String[] lines = host.getActiveDoomControlLegendLines();
+            if (lines != null) {
+                for (int i = 0; i < lines.length && i < 8; i++) {
+                    p.setColor(i == 7 ? Color.rgb(180, 190, 202)
+                                      : Color.WHITE);
+                    if (i == 7) p.setTextSize(18f);
+                    c.drawText(shorten(lines[i] == null ? "" : lines[i],
+                        i == 7 ? 43 : 35), 22f, 132f + i * 52f, p);
+                }
+            }
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, doomLegendTexture);
+            if (doomLegendTextureAllocated) {
+                GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0,
+                    doomLegendBitmap);
+            } else {
+                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0,
+                    doomLegendBitmap, 0);
+                doomLegendTextureAllocated = true;
+            }
+            doomLegendLastRefreshNanos = now;
+        }
+
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+        GLES20.glUseProgram(program);
+        doomLegendVertexBuffer.position(0);
+        GLES20.glVertexAttribPointer(positionHandle, 3,
+            GLES20.GL_FLOAT, false, 0, doomLegendVertexBuffer);
+        GLES20.glEnableVertexAttribArray(positionHandle);
+        doomLegendUvBuffer.position(0);
+        GLES20.glVertexAttribPointer(uvHandle, 2,
+            GLES20.GL_FLOAT, false, 0, doomLegendUvBuffer);
+        GLES20.glEnableVertexAttribArray(uvHandle);
+        GLES20.glUniformMatrix4fv(matrixHandle, 1, false, hudIdentity, 0);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, doomLegendTexture);
+        GLES20.glUniform1i(textureHandle, 0);
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLES20.glDisable(GLES20.GL_BLEND);
+        GLES20.glDisableVertexAttribArray(positionHandle);
+        GLES20.glDisableVertexAttribArray(uvHandle);
     }
 
     private void drawControlFeedOverlay() {
