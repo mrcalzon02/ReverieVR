@@ -2269,6 +2269,13 @@ public final class VrActivity extends Activity
     }
 
     @Override
+    public String[] getActiveDoomControlLegendLines() {
+        BindingProfile profile = inputBindingManager == null
+            ? null : inputBindingManager.getProfile();
+        return DoomBindingLegend.lines(profile);
+    }
+
+    @Override
     public String getActiveBindingTuningSummary() {
         if (inputBindingManager == null) {
             return "No active profile";
