@@ -328,44 +328,31 @@ public final class BuiltInBindingProfilesTest {
     }
 
     @Test
-    public void doomHeadTiltNavigatesMenuAndMovesWithNeutralDeadzone() {
+    public void doomHeadYawTurnsWithoutPadClickOrHeadPitchWalking() {
         VirtualInputBus bus = new VirtualInputBus();
-        InputBindingEngine engine = new InputBindingEngine(bus,
+        InputBindingEngine e = new InputBindingEngine(bus,
             BuiltInBindingProfiles.byId(
                 BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE));
-        // Up is forward and menu UP; Down is backward and menu DOWN.
-        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .18f);
+        e.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .9f);
         assertFalse(bus.isKeyDown(VirtualKey.UP));
         assertFalse(bus.isKeyDown(VirtualKey.DOWN));
-        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .27f);
-        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
+        e.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, -.9f);
         assertFalse(bus.isKeyDown(VirtualKey.DOWN));
-        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .17f);
-        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
-        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .11f);
-        assertFalse(bus.isKeyDown(VirtualKey.UP));
-        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, -.26f);
-        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.DOWN));
-        assertFalse(bus.isKeyDown(VirtualKey.UP));
-        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, 0.0f);
-        assertFalse(bus.isKeyDown(VirtualKey.DOWN));
-
-        // Touchpad and headset may hold the same key simultaneously.
-        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, .4f);
-        engine.submitAxis(BindingInput.TOUCHPAD_Y, -.8f);
-        engine.submitAxis(BindingInput.HEAD_PITCH_UP_AXIS, 0f);
-        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
-        engine.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
-        assertFalse(bus.isKeyDown(VirtualKey.UP));
-
-        // Only horizontal Doom guest turning was restored; pitch stays held.
-        engine.submitRelative(BindingInput.HEAD_YAW_DELTA, .01f);
-        assertEquals(6.5f, bus.consumeMouseRelativeX(), .001f);
+        e.submitRelative(BindingInput.HEAD_YAW_DELTA, .013f);
+        assertEquals(8.45f, bus.consumeMouseRelativeX(), .002f);
         assertEquals(0f, bus.consumeMouseRelativeY(), .001f);
+        assertFalse(bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
+        e.submitAxis(BindingInput.TOUCHPAD_Y, -.8f);
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
+        e.submitAxis(BindingInput.TOUCHPAD_Y, .8f);
+        assertFalse(bus.isKeyDown(VirtualKey.UP));
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.DOWN));
+        e.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
+        assertFalse(bus.isKeyDown(VirtualKey.DOWN));
     }
 
     @Test
-    public void doomTouchpadAndAppMouseButtonsHoldIndependently() {
+    public void doomClickFiresAndAppUsesDoorsIndependently() {
         VirtualInputBus bus = new VirtualInputBus();
         InputBindingEngine e = new InputBindingEngine(bus,
             BuiltInBindingProfiles.byId(
@@ -373,16 +360,18 @@ public final class BuiltInBindingProfilesTest {
         e.submitDigital(BindingInput.SELECT, true);
         e.submitDigital(BindingInput.DAYDREAM_APP_BUTTON, true);
         org.junit.Assert.assertTrue(bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
-        org.junit.Assert.assertTrue(bus.isMouseButtonDown(VirtualOutput.MOUSE_RIGHT));
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.CTRL));
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.SPACE));
+        assertFalse(bus.isMouseButtonDown(VirtualOutput.MOUSE_RIGHT));
         e.submitDigital(BindingInput.SELECT, false);
-        org.junit.Assert.assertFalse(bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
-        org.junit.Assert.assertTrue(bus.isMouseButtonDown(VirtualOutput.MOUSE_RIGHT));
+        assertFalse(bus.isMouseButtonDown(VirtualOutput.MOUSE_LEFT));
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.SPACE));
         e.submitDigital(BindingInput.DAYDREAM_APP_BUTTON, false);
-        org.junit.Assert.assertFalse(bus.isMouseButtonDown(VirtualOutput.MOUSE_RIGHT));
+        assertFalse(bus.isKeyDown(VirtualKey.SPACE));
     }
 
     @Test
-    public void doomTouchpadDirectionsAreHeldWhileTouched() {
+    public void doomTouchpadWalksAndStrafesRatherThanTurns() {
         VirtualInputBus bus = new VirtualInputBus();
         InputBindingEngine e = new InputBindingEngine(bus,
             BuiltInBindingProfiles.byId(
@@ -390,13 +379,17 @@ public final class BuiltInBindingProfilesTest {
         for (int i = 0; i < 3; i++) {
             e.submitAxis(BindingInput.TOUCHPAD_X, -.8f);
             e.submitAxis(BindingInput.TOUCHPAD_Y, -.8f);
-            org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.LEFT));
+            org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.COMMA));
             org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.UP));
+            assertFalse(bus.isKeyDown(VirtualKey.LEFT));
         }
+        e.submitAxis(BindingInput.TOUCHPAD_X, .8f);
+        assertFalse(bus.isKeyDown(VirtualKey.COMMA));
+        org.junit.Assert.assertTrue(bus.isKeyDown(VirtualKey.PERIOD));
         e.submitAxis(BindingInput.TOUCHPAD_X, 0f);
         e.submitAxis(BindingInput.TOUCHPAD_Y, 0f);
-        org.junit.Assert.assertFalse(bus.isKeyDown(VirtualKey.LEFT));
-        org.junit.Assert.assertFalse(bus.isKeyDown(VirtualKey.UP));
+        assertFalse(bus.isKeyDown(VirtualKey.PERIOD));
+        assertFalse(bus.isKeyDown(VirtualKey.UP));
     }
 
     @Test
@@ -442,6 +435,53 @@ public final class BuiltInBindingProfilesTest {
         }
         BindingProfile stock = BindingProfileCodec.decode(
             BindingProfileCodec.encode(current.withBindings(previous)));
+        org.junit.Assert.assertSame(current,
+            BuiltInBindingProfiles.upgradeLegacyStockHeadMouse(stock));
+        BindingProfile tuned = BindingProfileTuner.adjustAnalogScale(stock, 1.1f);
+        org.junit.Assert.assertSame(tuned,
+            BuiltInBindingProfiles.upgradeLegacyStockHeadMouse(tuned));
+    }
+
+    @Test
+    public void previousDoomStockProfileWithHeadMovementMigratesSafely() {
+        BindingProfile current = BuiltInBindingProfiles.byId(
+            BuiltInBindingProfiles.ID_DOS_DOOM_SHAREWARE);
+        java.util.List<InputBinding> prior = new java.util.ArrayList<>();
+        for (InputBinding b : current.bindings) {
+            if (b.input == BindingInput.HEAD_YAW_DELTA) {
+                prior.add(b);
+                prior.add(InputBinding.positiveThreshold(
+                    BindingInput.HEAD_PITCH_UP_AXIS,
+                    VirtualOutput.key(VirtualKey.UP), .21f));
+                prior.add(InputBinding.negativeThreshold(
+                    BindingInput.HEAD_PITCH_UP_AXIS,
+                    VirtualOutput.key(VirtualKey.DOWN), .21f));
+            } else if (b.input == BindingInput.DAYDREAM_APP_BUTTON) {
+                prior.add(InputBinding.digital(
+                    BindingInput.DAYDREAM_APP_BUTTON,
+                    VirtualOutput.mouseButton(VirtualOutput.MOUSE_RIGHT)));
+            } else if (b.input == BindingInput.TOUCHPAD_X
+                       && b.output.equals(VirtualOutput.key(VirtualKey.COMMA))) {
+                prior.add(InputBinding.negativeThreshold(
+                    BindingInput.TOUCHPAD_X,
+                    VirtualOutput.key(VirtualKey.LEFT), .35f));
+                prior.add(InputBinding.negativeThreshold(
+                    BindingInput.TOUCHPAD_X,
+                    VirtualOutput.joystickButton(6), .35f));
+            } else if (b.input == BindingInput.TOUCHPAD_X
+                       && b.output.equals(VirtualOutput.key(VirtualKey.PERIOD))) {
+                prior.add(InputBinding.positiveThreshold(
+                    BindingInput.TOUCHPAD_X,
+                    VirtualOutput.key(VirtualKey.RIGHT), .35f));
+                prior.add(InputBinding.positiveThreshold(
+                    BindingInput.TOUCHPAD_X,
+                    VirtualOutput.joystickButton(7), .35f));
+            } else {
+                prior.add(b);
+            }
+        }
+        BindingProfile stock = BindingProfileCodec.decode(
+            BindingProfileCodec.encode(current.withBindings(prior)));
         org.junit.Assert.assertSame(current,
             BuiltInBindingProfiles.upgradeLegacyStockHeadMouse(stock));
         BindingProfile tuned = BindingProfileTuner.adjustAnalogScale(stock, 1.1f);
