@@ -2,13 +2,13 @@ package io.github.mrcalzon02.reverievr;
 import static org.junit.Assert.*;
 import org.junit.Test;
 public class NativeGamesGalleryTest {
-    @Test public void fifteenRegisteredGamesHaveUniqueReachablePageSlots() {
-        assertEquals(15, GameModuleRegistry.GAMES.length);
-        assertEquals(3, NativeGamesGallery.pageCount(15));
-        for(int i=0;i<15;i++)
-            assertEquals(i,NativeGamesGallery.moduleIndex(i/6,i%6,15));
-        assertEquals(-1,NativeGamesGallery.moduleIndex(2,3,15));
-        assertEquals(-1,NativeGamesGallery.moduleIndex(3,0,15));
+    @Test public void sixteenRegisteredGamesHaveUniqueReachablePageSlots() {
+        assertEquals(16, GameModuleRegistry.GAMES.length);
+        assertEquals(3, NativeGamesGallery.pageCount(16));
+        for(int i=0;i<16;i++)
+            assertEquals(i,NativeGamesGallery.moduleIndex(i/6,i%6,16));
+        assertEquals(-1,NativeGamesGallery.moduleIndex(2,4,16));
+        assertEquals(-1,NativeGamesGallery.moduleIndex(3,0,16));
         assertEquals(-1,NativeGamesGallery.moduleIndex(-1,0,15));
         assertEquals(1,NativeGamesGallery.pageCount(0));
     }
@@ -23,18 +23,18 @@ public class NativeGamesGalleryTest {
                 assertTrue(NativeGamesGallery.order(item.id)<100);
             }
         }
-        assertEquals(7,featured);
+        assertEquals(8,featured); // Guess the Door joined the featured modules.
         assertEquals(8,classics);
     }
     @Test public void homeRoomGalleryKeepsAllGamesAndPhysicalPanelBounds() {
-        assertEquals(3,NativeGamesGallery.homePageCount(15));
-        for(int i=0;i<15;i++)
-            assertEquals(i,NativeGamesGallery.homeModuleIndex(i/7,i%7,15));
-        assertEquals(-1,NativeGamesGallery.homeModuleIndex(2,1,15));
-        assertEquals(-1,NativeGamesGallery.homeModuleIndex(3,0,15));
-        assertTrue(NativeGamesGallery.homeButtonEnabled(9,2,15));
-        assertTrue(NativeGamesGallery.homeButtonEnabled(10,2,15));
-        assertFalse(NativeGamesGallery.homeButtonEnabled(1,2,15));
+        assertEquals(3,NativeGamesGallery.homePageCount(16));
+        for(int i=0;i<16;i++)
+            assertEquals(i,NativeGamesGallery.homeModuleIndex(i/7,i%7,16));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(2,2,16));
+        assertEquals(-1,NativeGamesGallery.homeModuleIndex(3,0,16));
+        assertTrue(NativeGamesGallery.homeButtonEnabled(9,2,16));
+        assertTrue(NativeGamesGallery.homeButtonEnabled(10,2,16));
+        assertFalse(NativeGamesGallery.homeButtonEnabled(2,2,16));
         for(int i=0;i<NativeGamesGallery.HOME_BUTTONS.length;i++) {
             int[] a=NativeGamesGallery.HOME_BUTTONS[i];
             assertTrue(a[0]>=266 && a[2]<=744 && a[1]>=60 && a[3]<=710);
@@ -47,7 +47,7 @@ public class NativeGamesGalleryTest {
         }
         assertEquals(-1,NativeGamesGallery.homeButtonAtPixel(100,300));
     }
-    @Test public void everyNativeAndClassicGameHasItsOwnMenuScreenshotCell() {
+    @Test public void verifiedScreenshotCellsRemainScopedToActualCapturedGames() {
         java.util.Set<String> seen=new java.util.HashSet<>();
         String[] ids={
             "breakwater-battery","between-deliveries-red-ledger",
@@ -57,7 +57,9 @@ public class NativeGamesGalleryTest {
             "classic-snake","classic-reversi","classic-breakout",
             "classic-chutes-ladders"
         };
-        assertEquals(GameModuleRegistry.GAMES.length,ids.length);
+        // Guess the Door has been registered but has no verified screenshot.
+        // Don't fabricate an image to satisfy a count assertion.
+        assertEquals(GameModuleRegistry.GAMES.length-1,ids.length);
         assertEquals(15,NativeGamesGallery.CAPTURED_IDS.length);
         assertEquals(168,NativeGamesGallery.ATLAS_CELL_WIDTH);
         assertEquals(230,NativeGamesGallery.ATLAS_CELL_HEIGHT);
@@ -74,6 +76,11 @@ public class NativeGamesGalleryTest {
             assertTrue(seen.add(cell[0]+":"+cell[1]));
         }
         assertEquals(15,seen.size());
+        assertNotNull(GameModuleRegistry.find("guess-the-door"));
+        assertEquals(4,NativeGamesGallery.order("guess-the-door"));
+        assertNotNull(NativeGamesGallery.descriptionLines("guess-the-door"));
+        assertNull("No unverified Guess the Door capture",
+            NativeGamesGallery.atlasCell("guess-the-door"));
         assertNull(NativeGamesGallery.atlasCell("unlisted"));
     }
     @Test public void hoverPreviewProvidesGameImageAndDescriptionWithoutCoveringFocus() {
@@ -118,12 +125,13 @@ public class NativeGamesGalleryTest {
         }
     }
     @Test public void sitkaAppearsAsInspectableUnpackagedProject() {
-        assertEquals(7,NativeGamesGallery.order("sitka"));
-        assertEquals(16,GameModuleRegistry.GAMES.length+1);
-        assertEquals(3,NativeGamesGallery.homePageCount(16));
-        assertEquals(7,NativeGamesGallery.homeModuleIndex(1,0,16));
-        assertEquals(15,NativeGamesGallery.homeModuleIndex(2,1,16));
-        assertFalse(NativeGamesGallery.homeButtonEnabled(2,2,16));
+        assertEquals(8,NativeGamesGallery.order("sitka"));
+        assertEquals(17,GameModuleRegistry.GAMES.length+1);
+        assertEquals(3,NativeGamesGallery.homePageCount(17));
+        assertEquals(7,NativeGamesGallery.homeModuleIndex(1,0,17));
+        assertEquals(16,NativeGamesGallery.homeModuleIndex(2,2,17));
+        assertTrue(NativeGamesGallery.homeButtonEnabled(2,2,17));
+        assertFalse(NativeGamesGallery.homeButtonEnabled(3,2,17));
         assertNull("No fake playable Sitka native module yet",
             GameModuleRegistry.find("sitka"));
         assertNull("No fabricated georeferenced Sitka screenshot",
