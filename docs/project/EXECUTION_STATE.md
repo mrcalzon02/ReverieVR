@@ -1,3 +1,7 @@
+## 2026-11-06 — Breakwater trajectory/horizon clarity correction
+
+Implemented distance-scaled unlit 3D guide and first-contact marker; actual live-input two-eye pixel verification at all three stations passes on Mesa. Four approved 1024×512 archive horizons replace the blurred 512px runtime reductions, with crisp Breakwater sampling and exact synchronized asset/decoder/package bounds. Prior Android run 42324519157 failed on the landscape `far` loop; an indexed loop fixes that declaration and local macro-portability compilation passes. Android CI/headset validation remains pending; models remain unfinished. [Record](../records/2026-11-06-breakwater-trajectory-and-horizon-clarity.md).
+
 ## 2026-11-06 — Breakwater coastal rebuild, first implementation
 
 **Publication authorized:** the owner explicitly approved pushing the two reviewed commits. The connected GitHub account recreated source commit `066c4e5779a0da7db642b79808aa53fc331733a7` with the identical reviewed tree `00d7e04b86abe4c7903fe3a1d79d224719c6f8dc`; shell Git has no credentials. Branch readback and CI status must be verified after the authorized fast-forward. Android/APK/headset acceptance remains separate.

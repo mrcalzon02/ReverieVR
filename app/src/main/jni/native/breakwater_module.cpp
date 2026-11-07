@@ -29,6 +29,7 @@
 #include "breakwater_beckenburg_mesh.h"
 #include "breakwater_asset_composition.h"
 #include "breakwater_cannon_trajectory.h"
+#include "breakwater_trajectory_guide.h"
 #include "breakwater_menu_layout.h"
 #include "breakwater_shop_feedback.h"
 #include "breakwater_scene_refresh.h"
@@ -84,6 +85,7 @@ struct State {
     float shot_direction[3] = {0.0f,0.0f,-1.0f};
     trajectory::ShotRay aim_ray{};
     bool aim_ray_valid=false;
+    int aim_target=-1;
     ImpactEffects impacts;
     ImpactEffects world_impacts;
     WreckEffects wrecks;
@@ -862,29 +864,22 @@ void BuildScene(State *s) {
                      .98f,.72f,.25f);
         }
     }
-    // Subtle ballistic trajectory from the true muzzle. It is the same
-    // shared ray, gravity, and controller-chosen orientation used by fire,
-    // enemy targeting, cover occlusion, tracer and sea-impact prediction.
-    // Once the gun reaches its arc limit this guide disappears and ONLY
-    // the controller ghost appears; no fabricated outside-arc cannon hit.
+    // Range-scaled, unlit 3D guide from the real muzzle to the FIRST actual
+    // target or terrain/water crossing; identical world geometry in both eyes.
     if(s->aim_ray_valid && game.phase()==Phase::Combat) {
-        const auto &ray=s->aim_ray;
         const float gravity=battlefield::Gravity(game.stats().projectile_gravity);
-        for(int segment=0;segment<9;++segment) {
-            const float t=.28f+segment*32.f;
-            float first[3]={},next[3]={};
-            if(!battlefield::Position(ray.origin,ray.direction,t,gravity,first) ||
-               !battlefield::Position(ray.origin,ray.direction,t+10.f,gravity,next))break;
-            const float w=.009f;
-            Triangle(s,first[0]-w,first[1],first[2],
-                     first[0]+w,first[1],first[2],
-                     next[0]-w,next[1],next[2],
-                     .59f,.82f,.65f);
-            Triangle(s,first[0]+w,first[1],first[2],
-                     next[0]+w,next[1],next[2],
-                     next[0]-w,next[1],next[2],
-                     .59f,.82f,.65f);
-        }
+        float end=battlefield::kRange,hit=0.f;bool contact=false;
+        ReverieNativeInputV1 aim{};
+        for(int i=0;i<3;++i){aim.pointer_origin[i]=s->aim_ray.origin[i];
+            aim.pointer_direction[i]=s->aim_ray.direction[i];}
+        if(TargetDepth(aim,game,s->aim_target,gravity,&hit)){end=hit;contact=true;}
+        if(battlefield::Terrain(game.location(),aim.pointer_origin,
+            aim.pointer_direction,gravity,end,&hit)){end=hit;contact=true;}
+        const bool lighting=s->world_lighting;s->world_lighting=false;
+        guide::Emit(s->aim_ray,gravity,end,contact,
+            defense::At(game.location(),s->defense_points.current),
+            [s](auto... values){Triangle(s,values...);});
+        s->world_lighting=lighting;
     }
     if(s->ghost_on) {
         const float x=s->ghost_position[0],y=s->ghost_position[1],
@@ -1765,7 +1760,7 @@ int32_t GlCreate(void *instance) {
     // Optional predecoded 360 backgrounds; never make the game dependent
     // on a missing asset or on a second sky texture upload per stereo eye.
     std::string sky_error;
-    if(!s->horizon_gpu.Create(s->horizon_art,&sky_error) &&
+    if(!s->horizon_gpu.Create(s->horizon_art,&sky_error,true) &&
        !sky_error.empty())
         ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,
                            "BreakwaterSky",sky_error.c_str());
@@ -2089,7 +2084,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             GhostAimPoint(worldPointer.pointer_origin,copy.pointer_direction,
                           s->ghost_position);
     }
-    s->aim_ray_valid=false;
+    s->aim_ray_valid=false;s->aim_target=-1;
     s->aircraft_aim={};s->surface_aim={};
     s->heavy_ramp_seconds=-1.0f;
     s->cover_aim_index=-1;s->armor_aim_index=-1;
@@ -2108,6 +2103,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             CombatTarget(worldPointer,s->campaign,true):
             (s->aim_ray_valid?
                 CombatTarget(target_input,s->campaign,false):-1);
+        s->aim_target=target;
         s->cover_aim_index=target>=kCoverTargetBase &&
             target<kCoverTargetEnd?target-kCoverTargetBase:-1;
         s->armor_aim_index=target>=kArmorTargetBase &&

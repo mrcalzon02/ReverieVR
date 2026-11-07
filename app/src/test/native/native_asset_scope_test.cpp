@@ -95,15 +95,15 @@ int main(){
     for(const char* theater:{"shingle_bay","iron_quay",
                              "blackcap_island","stormwatch_point"}){
         const std::string path=std::string("native/shared/v1/horizons/")+
-            theater+"_skybox_512x256.png";
-        assert(MaximumBytes("breakwater-battery",path.c_str())==32768u);
-        assert(MaximumBytes("sitka",path.c_str())==32768u);
+            theater+"_skybox_1024x512.png";
+        assert(MaximumBytes("breakwater-battery",path.c_str())==131072u);
+        assert(MaximumBytes("sitka",path.c_str())==131072u);
         assert(MaximumBytes("gumball-armada",path.c_str())==0u);
     }
     assert(MaximumBytes("sitka",
-        "native/shared/v1/horizons/shingle_bay_skybox_512x256.png.bak")==0u);
+        "native/shared/v1/horizons/shingle_bay_skybox_1024x512.png.bak")==0u);
     assert(MaximumBytes("sitka",
-        "native/shared/v1/horizons/../shingle_bay_skybox_512x256.png")==0u);
+        "native/shared/v1/horizons/../shingle_bay_skybox_1024x512.png")==0u);
     assert(MaximumBytes("omega-front",
         "native/shared/v1/materials/coastal/unknown.png")==0u);
     assert(MaximumBytes("breakwater-battery",

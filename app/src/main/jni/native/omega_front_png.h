@@ -26,8 +26,9 @@ inline uint8_t Paeth(uint8_t a,uint8_t b,uint8_t c) {
     const int pc=p>int(c)?p-int(c):int(c)-p;
     return pa<=pb && pa<=pc?a:pb<=pc?b:c;
 }
-inline bool DecodePng(const uint8_t *data,size_t length,Image &out) {
+inline bool DecodePng(const uint8_t *data,size_t length,Image &out,unsigned maximumWidth=512u) {
     out=Image{};
+    if(maximumWidth==0u || maximumWidth>1024u)return false;
     static const uint8_t signature[8]={137,80,78,71,13,10,26,10};
     if(!data || length<45 || std::memcmp(data,signature,8)!=0)return false;
     size_t at=8;
@@ -47,7 +48,7 @@ inline bool DecodePng(const uint8_t *data,size_t length,Image &out) {
         if(std::memcmp(tag,"IHDR",4)==0) {
             if(header || count!=13 || at!=8)return false;
             w=Big32(chunk);h=Big32(chunk+4);
-            if(w==0 || h==0 || w>512 || h>512 ||
+            if(w==0 || h==0 || w>maximumWidth || h>512 ||
                chunk[10]!=0 || chunk[11]!=0 || chunk[12]!=0)return false;
             depth=chunk[8];kind=chunk[9];
             channels=kind==0?1:kind==2?3:kind==3?1:kind==4?2:kind==6?4:0;

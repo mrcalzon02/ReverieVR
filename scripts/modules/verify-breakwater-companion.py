@@ -23,10 +23,10 @@ TILES=("shingle.png","quay_concrete.png","black_basalt.png",
        "camo_netting.png","diamond_plate.png","trench_soil.png",
        "reinforced_concrete.png","crate_planks.png","riveted_bulkhead.png",
        "pebble_ground.png")
-HORIZONS=("shingle_bay_skybox_512x256.png",
-          "iron_quay_skybox_512x256.png",
-          "blackcap_island_skybox_512x256.png",
-          "stormwatch_point_skybox_512x256.png")
+HORIZONS=("shingle_bay_skybox_1024x512.png",
+          "iron_quay_skybox_1024x512.png",
+          "blackcap_island_skybox_1024x512.png",
+          "stormwatch_point_skybox_1024x512.png")
 SHARED_MODELS=("ammo_box_mp_1.bwm","concrete_block_1.bwm","wooden_crate_1.bwm")
 OWNER_MODELS=("owner_boat_rowboat.bwm","owner_apc_armor.bwm")
 REQUIRED_ART=(
@@ -60,7 +60,7 @@ def verify_art(z):
         if payload!=source.read_bytes():
             raise ValueError("APK asset does not match canonical source "+path)
         if path.endswith(".png"):
-            expected_dimensions=(512,256) if "/horizons/" in path else (64,64)
+            expected_dimensions=(1024,512) if "/horizons/" in path else (64,64)
             if payload[:8]!=bytes((137,80,78,71,13,10,26,10)) or (
                 len(payload)<24 or
                 struct.unpack_from(">II",payload,16)!=expected_dimensions):

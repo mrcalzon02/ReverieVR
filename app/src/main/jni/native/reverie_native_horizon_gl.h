@@ -20,12 +20,12 @@
 
 namespace reverie { namespace native { namespace horizon {
 constexpr unsigned kTheaters=4u;
-constexpr uint32_t kMaxBytes=32768u;
+constexpr uint32_t kMaxBytes=131072u;
 constexpr const char* kPaths[kTheaters]={
-    "native/shared/v1/horizons/shingle_bay_skybox_512x256.png",
-    "native/shared/v1/horizons/iron_quay_skybox_512x256.png",
-    "native/shared/v1/horizons/blackcap_island_skybox_512x256.png",
-    "native/shared/v1/horizons/stormwatch_point_skybox_512x256.png"
+    "native/shared/v1/horizons/shingle_bay_skybox_1024x512.png",
+    "native/shared/v1/horizons/iron_quay_skybox_1024x512.png",
+    "native/shared/v1/horizons/blackcap_island_skybox_1024x512.png",
+    "native/shared/v1/horizons/stormwatch_point_skybox_1024x512.png"
 };
 
 inline bool Load(const ReverieNativeHostV1* host,unsigned theater,
@@ -44,9 +44,9 @@ inline bool Load(const ReverieNativeHostV1* host,unsigned theater,
     uint32_t received=0u;
     if(host->read_asset(path,data.data(),size,&received)!=
        REVERIE_NATIVE_SAVE_OK||received!=size)return false;
-    if(!omega_art::DecodePng(data.data(),data.size(),result)||
-       result.width!=512u||result.height!=256u||
-       result.rgba.size()!=512u*256u*4u){result={};return false;}
+    if(!omega_art::DecodePng(data.data(),data.size(),result,1024u)||
+       result.width!=1024u||result.height!=512u||
+       result.rgba.size()!=1024u*512u*4u){result={};return false;}
     for(size_t k=3;k<result.rgba.size();k+=4u){
         if(result.rgba[k]!=255u){result={};return false;}
     }
@@ -64,12 +64,12 @@ public:
         unsigned n=0;for(GLuint t:textures_)n+=t!=0u;return n;
     }
     bool Create(const std::array<omega_art::Image,kTheaters>& images,
-                std::string* error=nullptr){
+                std::string* error=nullptr,bool crisp=false){
         Release();
         unsigned valid=0u;
         for(const auto& image:images)
-            if(image.width==512u&&image.height==256u&&
-               image.rgba.size()==512u*256u*4u)++valid;
+            if(((image.width==512u&&image.height==256u)||(image.width==1024u&&image.height==512u))&&
+               image.rgba.size()==size_t(image.width)*image.height*4u)++valid;
         if(!valid)return false;
         ReverieNativeGlStateV1 prior{};
         ReverieNativeGlStateCaptureV1(&prior);
@@ -102,16 +102,16 @@ public:
             mesh.size()*sizeof(Vertex)),mesh.data(),GL_STATIC_DRAW);
         for(unsigned i=0;i<kTheaters;++i){
             const auto& im=images[i];
-            if(im.width!=512u||im.height!=256u||
-               im.rgba.size()!=512u*256u*4u)continue;
+            if(!((im.width==512u&&im.height==256u)||(im.width==1024u&&im.height==512u))||
+               im.rgba.size()!=size_t(im.width)*im.height*4u)continue;
             glGenTextures(1,&textures_[i]);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D,textures_[i]);
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,crisp?GL_NEAREST:GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,crisp?GL_NEAREST:GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,512,256,0,
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,im.width,im.height,0,
                          GL_RGBA,GL_UNSIGNED_BYTE,im.rgba.data());
         }
         const GLenum gl_error=glGetError();

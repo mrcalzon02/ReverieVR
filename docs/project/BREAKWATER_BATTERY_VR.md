@@ -1,5 +1,9 @@
 # Breakwater Battery VR — canonical native game specification
 
+## Trajectory and horizon correction — 2026-11-06
+
+The trajectory preview now uses unlit crossed 3D dashes with distance-scaled width and a first-contact diamond, sharing the gun's exact ballistic path and first target/terrain intersection. It replaces the old 9mm strip that became subpixel after battlefield expansion. Live-input Mesa tests now compare guide-on/off screen pixels for BOTH eyes at all three stations; previous showcase fixtures never activated aiming and were insufficient evidence. The four exact approved 1024×512 archived panorama variants replace their 512px runtime reductions; Breakwater samples them without blur filtering. Full model/mount/UV/unloading work remains open. This source correction is not physical headset acceptance.
+
 ## Current rebuild — 2026-11-06
 
 [Actual native renderer captures](../gallery/breakwater/coastal-rebuild/2026-11-06/README.md) — GitHub publication authorized; Android/headset acceptance pending.

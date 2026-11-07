@@ -301,3 +301,5 @@ This is backlog only; do not expose a nonfunctional keyboard control.
 
 
 - RV-0640-REBUILD-01 — **First source increment, local GCC and actual Mesa GLES verified; APK/headset pending.** Physical shore/water/units and matching hit transforms, near/middle/far texture/geometry density, cached coast buffers, right-side instrument case and left-facing rack are implemented. Remaining: independently authored weapon/mount/upgrade geometry and UVs, vehicle/infantry models, continuous physical unloading, world-speed/range tuning, campaign dressing and unified APK/headset verification. [Record](../records/2026-11-06-breakwater-coastal-rebuild-foundation.md).
+
+- RV-0640-CLARITY — **source and real Mesa GLES verified; Android/headset pending:** visible range-scaled 3D ballistic dashes/contact marker, actual live-input stereo pixel checks, exact 1024px archived horizons and crisp sampling. Prior landscape-loop Android compile failure repaired in source; requires fresh CI. Weapon/model overhaul remains open. [Record](../records/2026-11-06-breakwater-trajectory-and-horizon-clarity.md).

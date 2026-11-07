@@ -55,6 +55,8 @@ int main(int argc,char **argv) {
     host.log=Log;host.read_asset=ReadAsset;
     auto *state=static_cast<State *>(Create(&host));Check(state,"game create");LoadState(state);
     Check(state->authored_materials.count==16,"all authored material PNGs must load");
+    for(const auto &image:state->horizon_art)
+        Check(image.width==1024u && image.height==512u,"full archived panorama resolution must load");
     Check(GlCreate(state),"actual Breakwater shader/resource creation");
     state->slot_picker=false;Check(state->campaign.Start(),"start campaign");
     Check(state->campaign.BeginWave(),"begin wave");
@@ -66,6 +68,13 @@ int main(int argc,char **argv) {
     for(int i=0;i<5;++i){auto &e=vessels[i];e={};e.active=true;e.type=kinds[i];
         e.x=(i-2)*.85f;e.z=-2.4f-i*.85f;e.hp=EnemyStartingHp(e.type);e.passengers=4;
         if(e.type==UnitType::Aircraft)e.aircraft_pattern=AircraftPattern::Bomber;}
+    // Real update input is essential: old capture fixtures never enabled
+    // aim_ray_valid and therefore could not prove the trajectory was visible.
+    ReverieNativeInputV1 live{};live.struct_size=sizeof(live);live.delta_seconds=.016f;
+    live.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    live.pointer_direction[1]=-.08f;live.pointer_direction[2]=-.9967949f;
+    Update(state,&live);Update(state,&live);
+    Check(state->aim_ray_valid,"live input must enable trajectory preview");
     state->scene_dirty=true;PrepareFrame(state);
     const auto coast=state->coast_mesh,textured=state->coast_sprite_mesh;
     Check(!coast.empty()&&!textured.empty(),"static coast");
@@ -78,12 +87,25 @@ int main(int argc,char **argv) {
     const std::string directory=argc>1?argv[1]:"/tmp";
     glViewport(0,0,width,height);
     for(int station=0;station<3;++station) {
-        state->defense_points.current=station;state->scene_dirty=true;PrepareFrame(state);
+        state->defense_points.current=station;Update(state,&live);
+        Check(state->aim_ray_valid,"station aim preview");
+        state->scene_dirty=true;PrepareFrame(state);
         for(int side=0;side<2;++side) {
             eye.eye_index=side;eye.view[12]=side==0?.032f:-.032f;
             glClearColor(.2f,.4f,.5f,1.f);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
             Check(Draw(state,&eye)==1,"actual stereo module render");
             Check(glGetError()==GL_NO_ERROR,"GL error");
+            std::vector<unsigned char> withGuide(width*height*4),withoutGuide(width*height*4);
+            glReadPixels(0,0,width,height,GL_RGBA,GL_UNSIGNED_BYTE,withGuide.data());
+            state->aim_ray_valid=false;state->scene_dirty=true;PrepareFrame(state);
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);Check(Draw(state,&eye)==1,"guide off render");
+            glReadPixels(0,0,width,height,GL_RGBA,GL_UNSIGNED_BYTE,withoutGuide.data());
+            size_t changed=0;for(size_t i=0;i<withGuide.size();i+=4)
+                if(withGuide[i+1]>withoutGuide[i+1]+30 && withGuide[i+2]>withoutGuide[i+2]+30)++changed;
+            Check(changed>120,"trajectory guide must visibly cover screen pixels in both eyes");
+            std::cout<<"Guide visible pixels station "<<station<<" eye "<<side<<": "<<changed<<"\n";
+            state->aim_ray_valid=true;state->scene_dirty=true;PrepareFrame(state);
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);Check(Draw(state,&eye)==1,"guide on render");
             if(side==0)Save(directory+"/breakwater-station-"+std::to_string(station)+".ppm",width,height);
         }
     }

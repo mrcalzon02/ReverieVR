@@ -43,7 +43,7 @@ WorldBudget Coast(uint8_t location,bool night,std::vector<float> &textured,
         }
     // Low polygon physical hills remain behind/alongside the coast; no
     // close landscape cylinder surrounds the gun. Far sky is separate.
-    for(bool far:{false,true})EmitLandscapeRing(location,night,far,
+    for(int ringIndex=0;ringIndex<2;++ringIndex)EmitLandscapeRing(location,night,ringIndex!=0,
         [&](float x,float y,float z,float a,float b,float c,
             float d,float e,float f,float r,float g,float blue) {
             triangle(x*22.f,y*22.f,z*22.f,a*22.f,b*22.f,c*22.f,

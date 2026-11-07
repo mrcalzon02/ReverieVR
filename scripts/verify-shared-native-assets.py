@@ -40,8 +40,8 @@ for entry in manifest["entries"]:
     if entry["id"].startswith("horizon."):
         assert entry["kind"]=="image/png"
         assert entry["logical_path"] in horizon, entry["id"]
-        assert tuple(entry["dimensions"])==(512,256)
-        assert entry["size_bytes"]<=32768
+        assert tuple(entry["dimensions"])==(1024,512)
+        assert entry["size_bytes"]<=131072
     elif entry["kind"]=="image/png":
         assert entry["logical_path"] in authored, entry["id"]
     else:

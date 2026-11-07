@@ -104,3 +104,8 @@ This keeps the eventual ReverieVR game SDK composed of proven pieces rather than
 ## Reusable licensed Lato native UI font layer (2026-10-26)
 
 The `reverie_native_lato_text.h` GLES2 helper is the shared genuine-font text utility for game-specific HUDs. It consumes the previously licensed, compressed `breakwater_font_atlas.h` Lato Semibold atlas (OFL-1.1), batches true glyph UV quads and creates one alpha texture/shader/VBO per module GL context. `LatoLayer::Clear/Text/Fit` operate during menu rebuild; `Create` and `Release` belong to context lifetime; `Draw(vp)` issues the game-font draw and restores host-owned GL and bound attribute/blend state. Only the source's texture decompression requires the Android system `-lz` library; no new data download, font binary or ABI changes. Physical S9 legibility and sustained performance require separate acceptance. This is for actual UI lettering; decorative 3D signage can remain game-specific.
+
+
+## Bounded panorama decoder opt-in — 2026-11-06
+
+The existing game-private/shared-use `omega_front_png.h::DecodePng` accepts an optional `maximumWidth` argument, default 512 and never exceeding 1024. Height remains bounded at 512; CRC validation and the 2MiB inflated-byte cap remain enforced. The exact shared panorama loader opts into 1024 for its archived indexed 1024×512 images. Existing Omega/material/sprite call sites keep the old default limit. Tests decode all four actual panorama files and reject their width under the default policy, corrupt CRCs, and overbroad opt-in requests.

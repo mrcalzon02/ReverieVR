@@ -25,11 +25,11 @@ constexpr Entry kEntries[]={
     {"native/shared/v1/materials/coastal/crate_planks.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/riveted_bulkhead.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
     {"native/shared/v1/materials/coastal/pebble_ground.png",16384u,kBreakwater|kOmega|kRedLedger|kWorkshop},
-    // Small opaque 512x256 panoramic textures. Only exact approved files.
-    {"native/shared/v1/horizons/shingle_bay_skybox_512x256.png",32768u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
-    {"native/shared/v1/horizons/iron_quay_skybox_512x256.png",32768u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
-    {"native/shared/v1/horizons/blackcap_island_skybox_512x256.png",32768u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
-    {"native/shared/v1/horizons/stormwatch_point_skybox_512x256.png",32768u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
+    // Small opaque 1024x512 panoramic textures. Only exact approved files.
+    {"native/shared/v1/horizons/shingle_bay_skybox_1024x512.png",131072u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
+    {"native/shared/v1/horizons/iron_quay_skybox_1024x512.png",131072u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
+    {"native/shared/v1/horizons/blackcap_island_skybox_1024x512.png",131072u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
+    {"native/shared/v1/horizons/stormwatch_point_skybox_1024x512.png",131072u,kBreakwater|kOmega|kRedLedger|kWorkshop|kSitka},
     {"native/shared/v1/models/psx/concrete_block_1.bwm",55304u,kBreakwater|kRedLedger|kWorkshop},
     {"native/shared/v1/models/psx/wooden_crate_1.bwm",55304u,kBreakwater|kRedLedger|kWorkshop},
     {"native/shared/v1/models/psx/ammo_box_mp_1.bwm",55304u,kBreakwater|kRedLedger|kWorkshop}

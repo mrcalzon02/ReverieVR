@@ -498,20 +498,20 @@
     {
       "id": "horizon.shingle_bay",
       "kind": "image/png",
-      "path": "app/src/main/assets/native/shared/v1/horizons/shingle_bay_skybox_512x256.png",
-      "logical_path": "native/shared/v1/horizons/shingle_bay_skybox_512x256.png",
-      "git_blob_sha1": "120e5344cc5574f878ddf6fea5676a438f244758",
-      "sha256": "2ec89df0696b0905ac78c75a68ec129591fe249eea5516b819dcfc5409032aad",
-      "size_bytes": 16906,
+      "path": "app/src/main/assets/native/shared/v1/horizons/shingle_bay_skybox_1024x512.png",
+      "logical_path": "native/shared/v1/horizons/shingle_bay_skybox_1024x512.png",
+      "git_blob_sha1": "af33acca0abc9cde46fca634b14488597bc1b00c",
+      "sha256": "7917e851ceefd738dc572b69d18ad9b86e906528a4218166b6bcef57c6412b91",
+      "size_bytes": 57480,
       "description": "Seam-corrected owner-directed PSX-inspired panoramic horizon, shingle bay",
       "dimensions": [
-        512,
-        256
+        1024,
+        512
       ],
       "rights": "owner-directed generated artwork; internal cross-game reuse approved",
       "source_original": "art/non-packaged/horizon-sources/shingle_bay_original_1774x887.png",
       "source_archive": "https://drive.google.com/drive/folders/14eKJ4EY-h3HOIL4gzokFRg6hUWueAAt0",
-      "drive_runtime_file_id": "1wTKoVtSEX0ZbZ1N_EvCYo73Iz_AWSOj7",
+      "drive_runtime_file_id": "1vhUR9IdkdsSZRtwEOqsU903vUuFUTrVx",
       "allowed_consumers": [
         "breakwater-battery",
         "sitka",
@@ -528,20 +528,20 @@
     {
       "id": "horizon.iron_quay",
       "kind": "image/png",
-      "path": "app/src/main/assets/native/shared/v1/horizons/iron_quay_skybox_512x256.png",
-      "logical_path": "native/shared/v1/horizons/iron_quay_skybox_512x256.png",
-      "git_blob_sha1": "609f592b09ed2b28778c3eda72570c02e0991383",
-      "sha256": "ac2abd6c99fa22679093b93a4f15727e885315eec306067e52243a5d5cc05139",
-      "size_bytes": 25754,
+      "path": "app/src/main/assets/native/shared/v1/horizons/iron_quay_skybox_1024x512.png",
+      "logical_path": "native/shared/v1/horizons/iron_quay_skybox_1024x512.png",
+      "git_blob_sha1": "f62867031ed7c589d3ffe3e5da4056564077cc7a",
+      "sha256": "908041b662a207992176465cebf610abc1acd07a5677b4b88a45e9f2b53a2a0d",
+      "size_bytes": 81157,
       "description": "Seam-corrected owner-directed PSX-inspired panoramic horizon, iron quay",
       "dimensions": [
-        512,
-        256
+        1024,
+        512
       ],
       "rights": "owner-directed generated artwork; internal cross-game reuse approved",
       "source_original": "art/non-packaged/horizon-sources/iron_quay_original_1774x887.png",
       "source_archive": "https://drive.google.com/drive/folders/14eKJ4EY-h3HOIL4gzokFRg6hUWueAAt0",
-      "drive_runtime_file_id": "17nDpsKWzwNQ7iPlIQNH4uumSH0oB32fN",
+      "drive_runtime_file_id": "1fHGauhH5voXT6Oa2V6JAIHrDBVz_-l4i",
       "allowed_consumers": [
         "breakwater-battery",
         "sitka",
@@ -557,20 +557,20 @@
     {
       "id": "horizon.blackcap_island",
       "kind": "image/png",
-      "path": "app/src/main/assets/native/shared/v1/horizons/blackcap_island_skybox_512x256.png",
-      "logical_path": "native/shared/v1/horizons/blackcap_island_skybox_512x256.png",
-      "git_blob_sha1": "ab65f6841318f9ad5171f30ab8dc331fd0cb93cd",
-      "sha256": "db04b24c148ff44dcecdd8926d45fa07959e1435fc9a5442c3ef8251a79af672",
-      "size_bytes": 17870,
+      "path": "app/src/main/assets/native/shared/v1/horizons/blackcap_island_skybox_1024x512.png",
+      "logical_path": "native/shared/v1/horizons/blackcap_island_skybox_1024x512.png",
+      "git_blob_sha1": "09b7eddc14685f8d759a35b85a7867815d484674",
+      "sha256": "976c5b9c340a7212dc5632da198109fbf645338e2a8d1402e50af8512578ff55",
+      "size_bytes": 58299,
       "description": "Seam-corrected owner-directed PSX-inspired panoramic horizon, blackcap island",
       "dimensions": [
-        512,
-        256
+        1024,
+        512
       ],
       "rights": "owner-directed generated artwork; internal cross-game reuse approved",
       "source_original": "art/non-packaged/horizon-sources/blackcap_island_original_1774x887.png",
       "source_archive": "https://drive.google.com/drive/folders/14eKJ4EY-h3HOIL4gzokFRg6hUWueAAt0",
-      "drive_runtime_file_id": "1SilQywGbSTxqShQvBvPleJCg7PCRHkfZ",
+      "drive_runtime_file_id": "11hAPkL3EJI_XrNoUPPi26bbFk9fCqw-u",
       "allowed_consumers": [
         "breakwater-battery",
         "sitka",
@@ -586,20 +586,20 @@
     {
       "id": "horizon.stormwatch_point",
       "kind": "image/png",
-      "path": "app/src/main/assets/native/shared/v1/horizons/stormwatch_point_skybox_512x256.png",
-      "logical_path": "native/shared/v1/horizons/stormwatch_point_skybox_512x256.png",
-      "git_blob_sha1": "6630226476f83d61d3e20f522f8d3d8ee8940d4c",
-      "sha256": "f3ba3ff905f6b726b3390c5e3a3d0db725768a0bdc83c1e7758df020b85965a5",
-      "size_bytes": 28345,
+      "path": "app/src/main/assets/native/shared/v1/horizons/stormwatch_point_skybox_1024x512.png",
+      "logical_path": "native/shared/v1/horizons/stormwatch_point_skybox_1024x512.png",
+      "git_blob_sha1": "cf735ecbc612555a44000f229d2cd45c8ae5bb14",
+      "sha256": "f4eb3b9f3f2542da4ad0815d38fbe2ca0f05cfaeae5893616698b9af61c1bab3",
+      "size_bytes": 98126,
       "description": "Seam-corrected owner-directed PSX-inspired panoramic horizon, stormwatch point",
       "dimensions": [
-        512,
-        256
+        1024,
+        512
       ],
       "rights": "owner-directed generated artwork; internal cross-game reuse approved",
       "source_original": "art/non-packaged/horizon-sources/stormwatch_point_original_1774x887.png",
       "source_archive": "https://drive.google.com/drive/folders/14eKJ4EY-h3HOIL4gzokFRg6hUWueAAt0",
-      "drive_runtime_file_id": "174rbZ6880TvW3C2wPl13eidB1BEcNnzu",
+      "drive_runtime_file_id": "1LBfhCxT754Bap5ibX0u39HCi2fTp-Vaa",
       "allowed_consumers": [
         "breakwater-battery",
         "sitka",

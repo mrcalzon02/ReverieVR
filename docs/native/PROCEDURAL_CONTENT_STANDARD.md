@@ -389,3 +389,8 @@ no claimed 2026 Crescent Harbor source polygon, float elevation,
 photographic layout or installed playable scene is substituted by
 the synthetic regression fixture. The boat workstream is untouched.
 
+
+
+## Shared horizon density correction — 2026-11-06
+
+Shared horizon paths now contain the existing archived 1024×512 indexed panoramas rather than 512×256 variants. Both native and Java allowlists remain exact-file grants with a 128KiB encoded-file ceiling. Breakwater explicitly requests crisp nearest-neighbor sampling; the shared renderer's default linear sampling for other callers remains compatible. The PNG decoder's 1024px-width support is opt-in for horizons and retains its default 512px bound for existing material/sprite consumers. CPU/GPU RGBA storage rises from 2MiB to 8MiB per four-image set; no frame-rate or thermal improvement is claimed. See SHARED_ASSETS.md for provenance, integrity and runtime validation.

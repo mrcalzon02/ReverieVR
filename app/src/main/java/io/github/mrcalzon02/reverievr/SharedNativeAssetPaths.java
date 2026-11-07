@@ -26,10 +26,10 @@ final class SharedNativeAssetPaths {
         "concrete_block_1.bwm","wooden_crate_1.bwm","ammo_box_mp_1.bwm"
     };
     private static final String[] SKYBOXES={
-        "shingle_bay_skybox_512x256.png",
-        "iron_quay_skybox_512x256.png",
-        "blackcap_island_skybox_512x256.png",
-        "stormwatch_point_skybox_512x256.png"
+        "shingle_bay_skybox_1024x512.png",
+        "iron_quay_skybox_1024x512.png",
+        "blackcap_island_skybox_1024x512.png",
+        "stormwatch_point_skybox_1024x512.png"
     };
     private SharedNativeAssetPaths(){}
     static boolean allowed(String id,String path,boolean directory){
