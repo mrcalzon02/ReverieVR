@@ -31,3 +31,7 @@ The owner approved rebuilding the coastal defense experience, retaining the work
 ## Next bounded implementation
 
 Finish separate weapon receivers, mounts, pivots, reload/recoil and authored texture mapping; replace remaining rough invasion models; make each craft's unloading route physically continuous; retune physical movement speeds/range and weapon readability; expand campaign-specific shoreline details; validate the unified ReverieVR APK and module revision on Android and then the actual headset. Keep each requirement open until its own visible behavior is observed.
+
+## Publication and resumption
+
+The owner explicitly authorized GitHub publication. Shell Git lacks credentials, so the connected GitHub account recreated source commit `066c4e5779a0da7db642b79808aa53fc331733a7`. Its tree `00d7e04b86abe4c7903fe3a1d79d224719c6f8dc` exactly matches reviewed local source commit `bab61667761e54e6fb3ab38189ce2a22ad0c6948`. The gallery preserves that capture provenance. Verify remote main and applicable CI after the authorized fast-forward; APK/headset acceptance remains independently open.

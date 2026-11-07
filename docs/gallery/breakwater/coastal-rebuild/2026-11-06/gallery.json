@@ -1,0 +1,32 @@
+{
+  "format": "reverievr-development-gallery-v1",
+  "title": "Breakwater coastal rebuild — actual native module captures",
+  "date": "2026-11-06",
+  "project": "breakwater",
+  "source_commit": "066c4e5779a0da7db642b79808aa53fc331733a7",
+  "license": "Project-origin code and approved packaged game assets; existing asset licenses retained",
+  "source_kind": "Actual native Breakwater GLES renderer on Mesa; controlled mixed-fleet fixture; not installed APK or headset captures",
+  "assets": [
+    {
+      "file": "console.png",
+      "sha256": "296054dfb9dfadbffd800f71b99bc7e4e99838568ae306f39be9059124745281",
+      "bytes": 168271
+    },
+    {
+      "file": "contact.png",
+      "sha256": "fb30c22517a3a7e206420c1555330f33e61bf1f65e4deaf2cbb2aea298148af4",
+      "bytes": 460840
+    },
+    {
+      "file": "rack.png",
+      "sha256": "59f3b89af642207faf714a2be0fe5a3dbb373c8a2385c73f39ccb86bb38b48ed",
+      "bytes": 291690
+    },
+    {
+      "file": "shore.png",
+      "sha256": "ac8abb77d96b7b021f449fd4949445fa4ba2f3e6a8be6ea2939e697d1fd5a67d",
+      "bytes": 172062
+    }
+  ],
+  "reviewed_local_source_commit": "bab61667761e54e6fb3ab38189ce2a22ad0c6948"
+}

@@ -1,5 +1,7 @@
 ## 2026-11-06 — Breakwater coastal rebuild, first implementation
 
+**Publication authorized:** the owner explicitly approved pushing the two reviewed commits. The connected GitHub account recreated source commit `066c4e5779a0da7db642b79808aa53fc331733a7` with the identical reviewed tree `00d7e04b86abe4c7903fe3a1d79d224719c6f8dc`; shell Git has no credentials. Branch readback and CI status must be verified after the authorized fast-forward. Android/APK/headset acceptance remains separate.
+
 Expanded physical stage, shared mesh/hit placements, static coast VBOs, distance texture/geometry tiers, right-side instrument case and operator-facing rack implemented from `c373bceaaff1c69bac71bc9eaf2575a57e00688f`. Local GCC visual/battlefield and full campaign suites, actual Mesa GLES game renderer (16 materials, 4 skies, 5 models, stereo/3 stations/context recreation), and native ABI contract pass. Clang unavailable. Native doc guard crash repaired; it now reports unrelated pre-existing Test Chamber shader-helper drift. Android APK/device/thermal acceptance remains open. Full weapon and landing-model rebuild is unfinished. [Record](../records/2026-11-06-breakwater-coastal-rebuild-foundation.md).
 
 ## 2026-11-04 — Sitka: skiff-authoritative depth tiles and scoped asset admission

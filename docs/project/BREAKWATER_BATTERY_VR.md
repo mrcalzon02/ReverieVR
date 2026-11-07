@@ -2,6 +2,8 @@
 
 ## Current rebuild — 2026-11-06
 
+[Actual native renderer captures](../gallery/breakwater/coastal-rebuild/2026-11-06/README.md) — GitHub publication authorized; Android/headset acceptance pending.
+
 **First implementation; actual Mesa GLES renderer checked, Android/headset pending.** The previous miniature beach descriptions below are historical. The active module now uses `breakwater_battlefield.h` and `breakwater_coastal_world.h`: a roughly 114m battery-to-waterline approach, 19m battery elevation, 3.4km animated sea, 6000m clip, independently scaled 3D units and inverse collision placements. Static coast buffers are cached across frames; the near/middle/far grid lowers texture density and geometry with distance and omits buried/deep seabed surfaces. Current campaign starts are around 600m; the 1–3km attack starts remain planned. Right-side physical instruments and the left operator-facing rack share geometry/pick transforms. This is not the completed weapon/model/unloading overhaul or a published APK. See [implementation and exact validation limits](../records/2026-11-06-breakwater-coastal-rebuild-foundation.md).
 
 

@@ -168,3 +168,8 @@ before changing screen capture or remote-input behavior.
 ## Legal and provenance boundary
 
 Do not commit or redistribute proprietary Google binaries, applications, SDK payloads, firmware, signing material, credentials, private keys, copyrighted media/assets, or other third-party material without redistribution rights. Reverse-engineering notes, independently written compatibility code, public specifications, hashes, metadata, and user-supplied local test artifacts must remain clearly separated according to provenance and license.
+
+
+### Breakwater coastal rebuild review
+
+[Actual native module captures](docs/gallery/breakwater/coastal-rebuild/2026-11-06/README.md): local Mesa GLES renders of the first physical coastal stage, operator instruments and rack. Controlled fixture; Android/headset acceptance remains pending.
