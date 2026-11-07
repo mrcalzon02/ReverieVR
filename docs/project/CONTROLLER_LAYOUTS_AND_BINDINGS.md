@@ -1,3 +1,9 @@
+## Bundled Doom shareware: default VR combat bindings (2026-11-06)
+
+For the **stock** `dos-doom-shareware` profile, independent head yaw continuously produces relative guest mouse X, and head pitch does not drive movement (vanilla Doom does not offer vertical freelook). Daydream pad up/down holds Forward/Back (guest Up/Down), left/right holds Strafe Left/Right (vanilla comma/period), pad click/hold is Fire (mouse-left/Ctrl), App/minus is Use/Open (Space), volume up/down invokes the Doom-only numeric weapon-slot cycle when the selected provider actually reports those events, and physical Home remains the shell Quick Menu/recovery button **where available**. A true system-reserved button cannot be remapped by a game. The right-of-eye binocular quick legend appears for bundled Doom fullscreen gameplay only and labels the effective saved/custom profile, rather than falsely advertising stock actions for a custom binding. The left control event ticker is retained.
+
+The former stock profile that treated vertical head tilt as walking and App/minus as mouse-right strafe is obsolete. The launcher upgrades only byte-for-byte matching historical stock bindings; custom layout/sensitivity changes remain authoritative. Both these mappings and the live legend are **source-stage, not reference-headset accepted**. Check actual no-click turning and guest relative mouse motion, app/use, volume event delivery and stereo comfort on a signed Galaxy S9 build before marking accepted.
+
 # Controller Layouts and Unified Rebinding Contract
 
 **Status:** requirements + incremental source progress; not a claim of
