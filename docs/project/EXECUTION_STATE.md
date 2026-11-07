@@ -1,3 +1,14 @@
+## 2026-11-06 — Doom Shareware Daydream input/profile and right-side control legend
+
+**Intent:** Address reported physically unplayable bundled Doom shareware input without changing the guest WAD, platform Cardboard pose math, other DOS profiles or shell Home/recovery.
+
+**Observed starting main:** Doom profile already routed head yaw to virtual mouse but also mapped head pitch to Up/Down, App to right mouse and touchpad left/right to turn arrows. Missing Use bind. A visual cursor in the DOS renderer was not evidence that Doom was receiving relative guest mouse deltas. Existing `InputBindingEngine` already implemented volume rocker numeric weapon cycle independent of profile digital entries; actual BLE/Android rocker delivery is a separate gate.
+
+**Source implementation:** on `main`, `BuiltInBindingProfiles` keeps continuous head-yaw guest mouseX and pad Y Up/Down, removes Doom-only pitch walking, changes pad X to comma/period strafe and App/minus to Space/Use, and upgrades **only unchanged prior stock** saved layouts (not tuned/custom mappings). Bundled app-private Doom `DEFAULT.CFG` now specifies explicit original DOS key scancodes and preserves mouse input. `DoomBindingLegend` renders the *effective* profile's action names through a new cached right-side stereo/eye HUD in fullscreen Doom. Existing left input event feed, menu overlay, shell recovery, battery graphics and generic game bindings remain. Added JUnit regression cases for no-click yaw, pad/Use/Fire, historical migration and legend disclosure. Ref: `docs/project/CONTROLLER_LAYOUTS_AND_BINDINGS.md` and `docs/native/RUNTIME_SERVICES.md`.
+
+**Evidence not yet established:** full Android Gradle/NDK build, actual DOOM.EXE mouse capture and position change, exact packaged/signed APK readback, and physical Galaxy S9/Daydream testing. Do not mark the user-reported turn-with-click defect fixed on device until a complete `INPUT_RAW` → `BINDING_INPUT` → `BINDING_OUTPUT` → `DosNativeRuntime.updateInput` guest mouse trace and actual yaw-without-Select gameplay pass. Test physical volume/Home limits, stop/restart, menu focus and release, saved custom profiles, both-eye legend clipping and sustained performance. No new workflows, unrelated native games or WAD modifications.
+
+
 ## 2026-11-06 — Breakwater trajectory/horizon clarity correction
 
 **Android debug evidence:** [42326583066](https://github.com/mrcalzon02/ReverieVR/actions/runs/42326583066) passed its Android ABI build and real APK payload verification for source `94b9c1e969abd59b6455b27533e460fd331a06cc`. Publisher signing was still running at this observation. Unified host APK release and physical-headset acceptance remain open.
