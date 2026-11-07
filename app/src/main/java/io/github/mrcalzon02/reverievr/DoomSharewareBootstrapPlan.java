@@ -13,6 +13,14 @@ final class DoomSharewareBootstrapPlan {
             + "sfx_volume 8\r\n"
             + "music_volume 0\r\n"
             + "show_messages 1\r\n"
+            // Explicit DOS scancodes: Up/Down, comma/period strafe,
+            // Ctrl/Fire and Space/Use. Do not rely on a phone's keyboard.
+            + "key_up 72\r\n"
+            + "key_down 80\r\n"
+            + "key_strafeleft 51\r\n"
+            + "key_straferight 52\r\n"
+            + "key_fire 29\r\n"
+            + "key_use 57\r\n"
             + "use_mouse 1\r\n"
             + "mouseb_fire 0\r\n"
             + "mouseb_strafe 1\r\n"
