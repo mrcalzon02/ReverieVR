@@ -12,7 +12,11 @@ public class GameModuleRegistryTest {
             assertTrue(ids.add(entry.id));
             assertTrue(packages.add(entry.companionPackage));
         }
-        assertEquals(15,ids.size());
+        // Guess the Door is a registered development module in addition to
+        // the previous fifteen; Sitka remains an inspectable project only.
+        assertEquals(16,ids.size());
+        assertNotNull(GameModuleRegistry.find("guess-the-door"));
+        assertNull(GameModuleRegistry.find("sitka"));
         // The game must appear in the normal VR Games shelf and pass
         // NativeModuleRuntime.start without a Development logging gate.
         assertFalse(GameModuleRegistry.find("omega-front").developmentOnly);
