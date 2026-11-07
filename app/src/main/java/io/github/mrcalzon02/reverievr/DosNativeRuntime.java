@@ -37,6 +37,8 @@ final class DosNativeRuntime implements AutoCloseable {
     private float previousAbsoluteY = 0.5f;
     private float fractionalMouseX;
     private float fractionalMouseY;
+    // Diagnostic-only, bounded evidence of actual guest mouse delivery.
+    private long lastMouseBridgeLogNanos;
 
     private long handle;
     private ByteBuffer frameBuffer;
@@ -115,6 +117,21 @@ final class DosNativeRuntime implements AutoCloseable {
         }
         previousAbsoluteX = absoluteX;
         previousAbsoluteY = absoluteY;
+
+        // The white VR reticle is not proof of guest mouse movement.
+        // Report real nonzero DOS input deltas at most twice per second
+        // in Development builds, whether Select is held or not.
+        if (ReverieLog.isDevelopment()
+            && (relativeX != 0.0f || relativeY != 0.0f)) {
+            long now = System.nanoTime();
+            if (now - lastMouseBridgeLogNanos >= 500000000L) {
+                ReverieLog.dev("DOS_MOUSE_BRIDGE",
+                    "relativeX=" + relativeX
+                    + " relativeY=" + relativeY
+                    + " leftPressed=" + inputSnapshot.mouseButtons[0]);
+                lastMouseBridgeLogNanos = now;
+            }
+        }
 
         nativeUpdateInput(
             handle,
