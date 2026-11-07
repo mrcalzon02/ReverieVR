@@ -2169,12 +2169,30 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
                            "BreakwaterRender",detail);
         return 0;
     }
+    // A successful sky draw can still leave a GLES error during its
+    // attribute/state restore. Attribute failures in the later geometry,
+    // sprite, or text pass must be attributed to the right stage.
+    // Preserve the mandatory frame-failure gate when checking each stage.
+    bool gl_failed=false;
+    const auto check_eye_gl=[&](const char *stage) {
+        const GLenum error=glGetError();
+        if(error==GL_NO_ERROR)return;
+        gl_failed=true;
+        char detail[160];
+        std::snprintf(detail,sizeof(detail),
+            "%s; GLES error=0x%04x",stage,
+            static_cast<unsigned int>(error));
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,
+                           "BreakwaterRender",detail);
+    };
+    check_eye_gl("Horizon return/state restore");
     ReverieNativeGlStateV1 prior={};
     ReverieNativeGlAttribStateV1 pa={},ca={},fa={};
     ReverieNativeGlStateCaptureV1(&prior);
     ReverieNativeGlAttribCaptureV1(&pa,static_cast<GLuint>(s->position));
     ReverieNativeGlAttribCaptureV1(&ca,static_cast<GLuint>(s->color));
     ReverieNativeGlAttribCaptureV1(&fa,static_cast<GLuint>(s->font_color));
+    check_eye_gl("Main attribute/state capture");
     glEnable(GL_DEPTH_TEST);glDisable(GL_BLEND);glDisable(GL_CULL_FACE);
     glUseProgram(s->program);
     glBindBuffer(GL_ARRAY_BUFFER,s->vbo);
@@ -2206,6 +2224,7 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
     glVertexAttribPointer(static_cast<GLuint>(s->color),3,GL_FLOAT,GL_FALSE,
         6*sizeof(float),reinterpret_cast<void *>(3*sizeof(float)));
     glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->coast_mesh.size()/6));
+    check_eye_gl("Colored/coastal geometry");
     if(!s->sprite_mesh.empty() || !s->coast_sprite_mesh.empty()) {
         glUseProgram(s->sprite_program);
         glActiveTexture(GL_TEXTURE0);
@@ -2242,6 +2261,7 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
         glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->coast_sprite_mesh.size()/5));
         s->coast_gpu_dirty=false;
     }
+    check_eye_gl("Sprite/coastal atlas draw");
     if(!s->font_mesh.empty()) {
         GLint oldSrcRgb=GL_ONE,oldDstRgb=GL_ZERO;
         GLint oldSrcAlpha=GL_ONE,oldDstAlpha=GL_ZERO;
@@ -2280,21 +2300,13 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
         glBlendFuncSeparate(oldSrcRgb,oldDstRgb,oldSrcAlpha,oldDstAlpha);
         glDepthMask(oldDepthWrite);
     }
+    check_eye_gl("Font/HUD draw");
     ReverieNativeGlAttribRestoreV1(&fa);
     ReverieNativeGlAttribRestoreV1(&ca);
     ReverieNativeGlAttribRestoreV1(&pa);
     ReverieNativeGlStateRestoreV1(&prior);
-    const GLenum error=glGetError();
-    if(error!=GL_NO_ERROR) {
-        char detail[128];
-        std::snprintf(detail,sizeof(detail),
-            "Main eye draw failed; GLES error=0x%04x",
-            static_cast<unsigned int>(error));
-        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,
-                           "BreakwaterRender",detail);
-        return 0;
-    }
-    return 1;
+    check_eye_gl("Final attribute/state restore");
+    return gl_failed?0:1;
 }
 const ReverieNativeModuleApiV1 kApi={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
