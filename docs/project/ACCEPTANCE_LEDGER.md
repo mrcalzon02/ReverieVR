@@ -1,3 +1,8 @@
+## 2026-11-06 — Bundled Doom input mapping and in-headset legend
+
+**RV-DOOM-INPUT-20261106 | Source-integrated; device-acceptance pending.** Previous/default source mapped head pitch to walk and lacked an App Use key. New stock input: head yaw guest mouse X without Select, touchpad up/down walk, left/right strafe (comma/period), Select click/hold fire, App Space/Use, BLE-reported volume weapon cycling (numeric 1–7), Home shell/recovery. Renderer adds a right-side fullscreen binocular control map from the active profile, keeping the left event ticker, and bundled runtime pins vanilla Doom 1.9 key scancodes. Unmodified saved stock mappings migrate to new defaults; custom ones remain. Host/JUnit tests authored but **not yet shown executed in an integrated Android build or tested on Galaxy S9**. Acceptance needs passing JVM, Gradle APK, correct signed package/source SHA, real no-click head yaw inside actual Doom, controller App/volume/Home test, both-eye visual proof, pause/resume and disconnected-input release. These criteria are separate from the original RV-0415 shareware installer gate.
+
+
 ## 2026-11-04 — Native chess overlays, sides and captured pieces
 
 **Source implemented; installed Android/device gate pending.**
