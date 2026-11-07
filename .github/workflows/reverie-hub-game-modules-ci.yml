@@ -202,7 +202,8 @@ jobs:
             # These are synthetic test-session files, never a player's saves.
             for NAME in omega-front-ci-tactical.png omega-front-ci-restored.png omega-front-ci-checkpoint-before.bin omega-front-ci-checkpoint-after.bin omega-front-gallery-f06.png omega-front-gallery-f10.png; do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/${NAME}" > "validation/hub/${NAME}" || rm -f "validation/hub/${NAME}"; done
             grep -F 'OK (13 tests)' validation/hub/instrumentation-output.txt
-            grep -F 'PASS all 15 registered native game initial menus captured from installed Android GLES2 implementation' validation/hub/logcat.txt
+            EXPECTED_NATIVE_GAMES=$(python3 -c 'import json; print(len(json.load(open("modules/game-identity-matrix.json"))["games"]))')
+            grep -F "PASS all ${EXPECTED_NATIVE_GAMES} registered native game initial menus captured from installed Android GLES2 implementation" validation/hub/logcat.txt
             adb exec-out run-as io.github.mrcalzon02.reverievr cat files/native-menu-capture.csv > validation/hub/native-menu-capture.csv
             for GAME in $(python3 -c 'import json; print(" ".join(g["id"] for g in json.load(open("modules/game-identity-matrix.json"))["games"]))'); do adb exec-out run-as io.github.mrcalzon02.reverievr cat "files/native-menu-${GAME}.png" > "validation/hub/native-menu-${GAME}.png"; test -s "validation/hub/native-menu-${GAME}.png"; done
             grep -F 'PASS real downloaded between-deliveries-red-ledger assets=24' validation/hub/logcat.txt
