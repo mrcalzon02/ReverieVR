@@ -173,3 +173,5 @@ Do not commit or redistribute proprietary Google binaries, applications, SDK pay
 ### Breakwater coastal rebuild review
 
 [Actual native module captures](docs/gallery/breakwater/coastal-rebuild/2026-11-06/README.md): local Mesa GLES renders of the first physical coastal stage, operator instruments and rack. Controlled fixture; Android/headset acceptance remains pending.
+
+[Breakwater trajectory/horizon correction capture](docs/gallery/breakwater/coastal-rebuild/2026-11-06-clarity/README.md) — actual native renderer with live aiming input; physical headset acceptance pending.

@@ -1,0 +1,16 @@
+{
+  "format": "reverievr-development-gallery-v1",
+  "title": "Breakwater visible trajectory and crisp horizon \u2014 actual native renderer",
+  "date": "2026-11-06",
+  "project": "breakwater",
+  "source_commit": "94b9c1e969abd59b6455b27533e460fd331a06cc",
+  "license": "Project-origin code and approved archived panorama assets; existing licenses retained",
+  "source_kind": "Actual Mesa GLES native game capture with live aiming input and a controlled mixed-fleet fixture; not an installed APK or headset capture",
+  "assets": [
+    {
+      "file": "trajectory-horizon.png",
+      "sha256": "bd704a53dd31b0205aca50579ad63051ffd877fb61fcc1fa3c207b3bccb4604f",
+      "bytes": 135964
+    }
+  ]
+}
