@@ -2233,6 +2233,7 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
         const bool night=s->campaign.period()==Period::Night;
         glUniform3f(s->sprite_tint,night?.52f:1.0f,
             night?.63f:1.0f,night?.72f:1.0f);
+        check_eye_gl("Sprite program/texture/uniforms");
         glBindBuffer(GL_ARRAY_BUFFER,s->sprite_vbo);
         if(s->sprite_gpu_dirty) {
             glBufferData(GL_ARRAY_BUFFER,
@@ -2248,8 +2249,10 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
             GL_FLOAT,GL_FALSE,5*sizeof(float),
             reinterpret_cast<void*>(3*sizeof(float)));
         glUniformMatrix4fv(s->sprite_matrix,1,GL_FALSE,vp);
+        check_eye_gl("Sprite primary VBO/attributes/matrix");
         glDrawArrays(GL_TRIANGLES,0,
             static_cast<GLsizei>(s->sprite_mesh.size()/5));
+        check_eye_gl("Sprite primary draw");
         glBindBuffer(GL_ARRAY_BUFFER,s->coast_sprite_vbo);
         if(s->coast_gpu_dirty)glBufferData(GL_ARRAY_BUFFER,
             static_cast<GLsizeiptr>(s->coast_sprite_mesh.size()*sizeof(float)),
@@ -2258,7 +2261,9 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
             5*sizeof(float),reinterpret_cast<void *>(0));
         glVertexAttribPointer(static_cast<GLuint>(s->sprite_uv),2,GL_FLOAT,GL_FALSE,
             5*sizeof(float),reinterpret_cast<void *>(3*sizeof(float)));
+        check_eye_gl("Sprite coast VBO/attributes");
         glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->coast_sprite_mesh.size()/5));
+        check_eye_gl("Sprite coast draw");
         s->coast_gpu_dirty=false;
     }
     check_eye_gl("Sprite/coastal atlas draw");
