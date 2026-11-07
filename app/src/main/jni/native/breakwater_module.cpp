@@ -2157,8 +2157,18 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
     // real 3D ships, water, cliffs and bunker keep their own depth.
     if(s->horizon_gpu.ready(s->campaign.location()) &&
        !s->horizon_gpu.RenderEye(eye,s->campaign.location(),
-                                 s->campaign.period()==Period::Night))
+                                 s->campaign.period()==Period::Night)) {
+        // Keep the failed-frame gate intact, but surface the actual GLES
+        // status: nativeGetLastError() need not contain a renderer error.
+        const GLenum error=glGetError();
+        char detail[128];
+        std::snprintf(detail,sizeof(detail),
+            "Horizon eye draw failed; GLES error=0x%04x",
+            static_cast<unsigned int>(error));
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,
+                           "BreakwaterRender",detail);
         return 0;
+    }
     ReverieNativeGlStateV1 prior={};
     ReverieNativeGlAttribStateV1 pa={},ca={},fa={};
     ReverieNativeGlStateCaptureV1(&prior);
@@ -2274,7 +2284,17 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
     ReverieNativeGlAttribRestoreV1(&ca);
     ReverieNativeGlAttribRestoreV1(&pa);
     ReverieNativeGlStateRestoreV1(&prior);
-    return glGetError()==GL_NO_ERROR?1:0;
+    const GLenum error=glGetError();
+    if(error!=GL_NO_ERROR) {
+        char detail[128];
+        std::snprintf(detail,sizeof(detail),
+            "Main eye draw failed; GLES error=0x%04x",
+            static_cast<unsigned int>(error));
+        ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,
+                           "BreakwaterRender",detail);
+        return 0;
+    }
+    return 1;
 }
 const ReverieNativeModuleApiV1 kApi={
     sizeof(ReverieNativeModuleApiV1),REVERIE_NATIVE_MODULE_ABI_VERSION,
