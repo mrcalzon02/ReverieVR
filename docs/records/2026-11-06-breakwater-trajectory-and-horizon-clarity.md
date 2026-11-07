@@ -29,3 +29,7 @@ The prior Android CI run [42324519157](https://github.com/mrcalzon02/ReverieVR/a
 - Broader native documentation guard still reports existing Test Chamber shader-helper drift. No gate was disabled or relaxed to conceal it.
 - Android CI must confirm the landscape-loop build repair. No installed APK, physical headset visibility, stereoscopic comfort or sustained phone thermal acceptance is claimed by local captures.
 - Weapon/vehicle modeling, individual mounts, UVs and unloading transitions remain open work. These fixes do not close the full rebuild.
+
+## Observed Android debug build result
+
+[Run 42326583066](https://github.com/mrcalzon02/ReverieVR/actions/runs/42326583066), source `94b9c1e969abd59b6455b27533e460fd331a06cc`: **Build Android ABIs and verify real game payload PASSED**. The debug APK built and the real executable/20 shared PNG/5 model payload check passed, confirming the previous landscape-loop compilation failure is repaired. The separate publisher-signing job was still running at this observation. This validates the independent debug package from the shared game source, not a published unified ReverieVR APK, installation or physical-headset acceptance.

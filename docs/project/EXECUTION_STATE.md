@@ -1,5 +1,7 @@
 ## 2026-11-06 — Breakwater trajectory/horizon clarity correction
 
+**Android debug evidence:** [42326583066](https://github.com/mrcalzon02/ReverieVR/actions/runs/42326583066) passed its Android ABI build and real APK payload verification for source `94b9c1e969abd59b6455b27533e460fd331a06cc`. Publisher signing was still running at this observation. Unified host APK release and physical-headset acceptance remain open.
+
 Implemented distance-scaled unlit 3D guide and first-contact marker; actual live-input two-eye pixel verification at all three stations passes on Mesa. Four approved 1024×512 archive horizons replace the blurred 512px runtime reductions, with crisp Breakwater sampling and exact synchronized asset/decoder/package bounds. Prior Android run 42324519157 failed on the landscape `far` loop; an indexed loop fixes that declaration and local macro-portability compilation passes. Android CI/headset validation remains pending; models remain unfinished. [Record](../records/2026-11-06-breakwater-trajectory-and-horizon-clarity.md).
 
 ## 2026-11-06 — Breakwater coastal rebuild, first implementation
