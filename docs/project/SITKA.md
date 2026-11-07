@@ -2,6 +2,10 @@
 
 # Sitka
 
+## Maximum helm physical primitive blockout — 2026-11-07
+
+[Editable Blender scene, static GLB, textures and source recipes](../../art/source/sitka/helm/maximum-v1/README.md) now exist for the maximum console. Four shallow cylinder gauges use animated face textures; two displays demonstrate mode changes. [Actual model render](../../art/source/sitka/helm/maximum-v1/renders/maximum_helm.jpg) and [validation record](../records/2026-11-07-sitka-maximum-helm-blockout.md). Offline asset study only: no native console wiring, vessel fit or headset acceptance is claimed.
+
 ## Second structural refinement of actual 3D boat hulls — 2026-11-05
 
 All 18 actual OBJ/MTL vessel meshes were revised at the source level,

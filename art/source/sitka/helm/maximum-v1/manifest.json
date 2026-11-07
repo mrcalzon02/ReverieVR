@@ -1,0 +1,9 @@
+{
+  "status": "physical blockout; no native integration",
+  "units": "metres",
+  "meshes": 99,
+  "triangles": 2454,
+  "gauge_animation": "24-frame 512x128 atlas, four 128px faces; no needle meshes",
+  "screen_demo": "chart/sonar alternating radar/camera",
+  "reference": "libfile_c92ddf05935481918d11566e35398077"
+}
