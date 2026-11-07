@@ -487,7 +487,8 @@ public final class DownloadedNativeGameAssetsInstrumentedTest {
             NativeGamesGallery.SITKA_PROJECT_ID,"Sitka"));
         java.util.Collections.sort(games,(a,b)->Integer.compare(
             NativeGamesGallery.order(a.id),NativeGamesGallery.order(b.id)));
-        assertEquals(16,games.size());
+        assertEquals("Home gallery must include all native games plus Sitka",
+            GameModuleRegistry.GAMES.length+1,games.size());
         final String[] names={
             "gallery-hover-native.png","gallery-hover-classic.png",
             "gallery-hover-sitka.png","gallery-sitka-project.png"
