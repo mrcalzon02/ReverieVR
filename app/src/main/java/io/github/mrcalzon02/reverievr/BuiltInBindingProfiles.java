@@ -79,7 +79,8 @@ final class BuiltInBindingProfiles {
         if (!oldHead && !oldDoom && !oldCursor) return saved;
 
         final BindingProfile current = byId(saved.id);
-        if (oldDoom && isUnchangedLegacyDoomLayout(saved, current))
+        if (oldDoom && (isUnchangedLegacyDoomLayout(saved, current)
+                || isUnchangedPreviousDoomLayout(saved, current)))
             return current;
         if (!current.displayName.equals(saved.displayName)
             || current.bindings.size() != saved.bindings.size())
@@ -141,6 +142,77 @@ final class BuiltInBindingProfiles {
             if (a.scale != b.scale && !(a.input == BindingInput.HEAD_YAW_DELTA
                 && a.output.equals(VirtualOutput.mouseRelativeX())
                 && a.scale == -b.scale)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Upgrade the two actual shipped Doom stock layouts (with head-pitch
+     * movement and right-mouse App) without resetting a player's changes.
+     * Reconstruct the previous layout exactly, including old pre-App
+     * Enter/Escape rocker behavior. Never infer "stock" from the ID alone.
+     */
+    private static boolean isUnchangedPreviousDoomLayout(
+        BindingProfile saved, BindingProfile current) {
+        if (!current.displayName.equals(saved.displayName)) return false;
+        List<InputBinding> prior = new ArrayList<>();
+        for (InputBinding binding : current.bindings) {
+            if (binding.input == BindingInput.HEAD_YAW_DELTA) {
+                prior.add(binding);
+                prior.add(InputBinding.positiveThreshold(
+                    BindingInput.HEAD_PITCH_UP_AXIS,
+                    VirtualOutput.key(VirtualKey.UP), 0.21f));
+                prior.add(InputBinding.negativeThreshold(
+                    BindingInput.HEAD_PITCH_UP_AXIS,
+                    VirtualOutput.key(VirtualKey.DOWN), 0.21f));
+            } else if (binding.input == BindingInput.DAYDREAM_APP_BUTTON) {
+                prior.add(InputBinding.digital(
+                    BindingInput.DAYDREAM_APP_BUTTON,
+                    VirtualOutput.mouseButton(VirtualOutput.MOUSE_RIGHT)));
+            } else if (binding.input == BindingInput.TOUCHPAD_X
+                    && binding.output.equals(VirtualOutput.key(VirtualKey.COMMA))) {
+                prior.add(InputBinding.negativeThreshold(
+                    BindingInput.TOUCHPAD_X, VirtualOutput.key(VirtualKey.LEFT), 0.35f));
+                prior.add(InputBinding.negativeThreshold(
+                    BindingInput.TOUCHPAD_X, VirtualOutput.joystickButton(6), 0.35f));
+            } else if (binding.input == BindingInput.TOUCHPAD_X
+                    && binding.output.equals(VirtualOutput.key(VirtualKey.PERIOD))) {
+                prior.add(InputBinding.positiveThreshold(
+                    BindingInput.TOUCHPAD_X, VirtualOutput.key(VirtualKey.RIGHT), 0.35f));
+                prior.add(InputBinding.positiveThreshold(
+                    BindingInput.TOUCHPAD_X, VirtualOutput.joystickButton(7), 0.35f));
+            } else {
+                prior.add(binding);
+            }
+        }
+        if (matchesOldDoomBindings(saved.bindings, prior)) return true;
+        List<InputBinding> oldest = new ArrayList<>();
+        for (InputBinding binding : prior) {
+            if (binding.input == BindingInput.DAYDREAM_APP_BUTTON) continue;
+            oldest.add(binding);
+            if (binding.input == BindingInput.SELECT
+                && binding.output.equals(VirtualOutput.joystickButton(0))) {
+                oldest.add(InputBinding.digital(
+                    BindingInput.VOLUME_UP, VirtualOutput.key(VirtualKey.ENTER)));
+                oldest.add(InputBinding.digital(
+                    BindingInput.VOLUME_DOWN, VirtualOutput.key(VirtualKey.ESCAPE)));
+            }
+        }
+        return matchesOldDoomBindings(saved.bindings, oldest);
+    }
+
+    private static boolean matchesOldDoomBindings(
+        List<InputBinding> saved, List<InputBinding> expected) {
+        if (saved.size() != expected.size()) return false;
+        for (int i=0; i<expected.size(); i++) {
+            InputBinding a=saved.get(i), e=expected.get(i);
+            if (a.input != e.input || !a.output.equals(e.output)
+                || a.transform != e.transform || a.deadzone != e.deadzone
+                || a.threshold != e.threshold) return false;
+            if (a.scale != e.scale
+                && !(a.input == BindingInput.HEAD_YAW_DELTA
+                    && a.output.equals(VirtualOutput.mouseRelativeX())
+                    && a.scale == -e.scale)) return false;
         }
         return true;
     }
@@ -301,8 +373,8 @@ final class BuiltInBindingProfiles {
 
         List<InputBinding> doom = new ArrayList<>();
         // Guest yaw from the same 3D head view is positive to the RIGHT.
-        // The original Doom mouse turns horizontally; vertical head tilt
-        // separately drives its Forward/Back keys.
+        // Doom 1.9 turns horizontally with the guest mouse. Head pitch
+        // must not move the player: movement belongs to the touchpad.
         doom.add(
             InputBinding.digital(
                 BindingInput.SELECT,
@@ -317,23 +389,14 @@ final class BuiltInBindingProfiles {
                 0.0f
             )
         );
-        // Original DOS Doom has NO free vertical camera pitch. Use head
-        // inclination as actual Up/Down guest keyboard controls instead:
-        // in-game Forward/Back, and UP/DOWN navigation in Doom menus.
-        // Entry at sin(12 deg)~.21; InputBindingEngine releases at 70%
-        // of that angle threshold to prevent neutral-zone chatter.
-        doom.add(InputBinding.positiveThreshold(
-            BindingInput.HEAD_PITCH_UP_AXIS,
-            VirtualOutput.key(VirtualKey.UP), 0.21f));
-        doom.add(InputBinding.negativeThreshold(
-            BindingInput.HEAD_PITCH_UP_AXIS,
-            VirtualOutput.key(VirtualKey.DOWN), 0.21f));
-        // Touchpad click = held mouse 1; physical App/minus = held mouse 2.
-        // DOOM.CFG already configures mouse button 2 for strafing.
+        // Vanilla Doom has no free vertical look. Head pitch stays visual
+        // only, while the touchpad holds actual forward/backward keys.
+        // Touchpad click = held fire; App/minus = Space/Use (doors,
+        // switches and keycard-locked doors when holding the proper key).
         doom.add(InputBinding.digital(BindingInput.SELECT,
             VirtualOutput.mouseButton(VirtualOutput.MOUSE_LEFT)));
         doom.add(InputBinding.digital(BindingInput.DAYDREAM_APP_BUTTON,
-            VirtualOutput.mouseButton(VirtualOutput.MOUSE_RIGHT)));
+            VirtualOutput.key(VirtualKey.SPACE)));
         doom.add(
             InputBinding.negativeThreshold(
                 BindingInput.TOUCHPAD_Y,
@@ -352,24 +415,11 @@ final class BuiltInBindingProfiles {
         );
         doom.add(InputBinding.positiveThreshold(BindingInput.TOUCHPAD_Y,
             VirtualOutput.joystickButton(5), 0.35f));
-        doom.add(
-            InputBinding.negativeThreshold(
-                BindingInput.TOUCHPAD_X,
-                VirtualOutput.key(VirtualKey.LEFT),
-                0.35f
-            )
-        );
+        // Vanilla Doom's independent strafe keys, not turn arrows.
         doom.add(InputBinding.negativeThreshold(BindingInput.TOUCHPAD_X,
-            VirtualOutput.joystickButton(6), 0.35f));
-        doom.add(
-            InputBinding.positiveThreshold(
-                BindingInput.TOUCHPAD_X,
-                VirtualOutput.key(VirtualKey.RIGHT),
-                0.35f
-            )
-        );
+            VirtualOutput.key(VirtualKey.COMMA), 0.35f));
         doom.add(InputBinding.positiveThreshold(BindingInput.TOUCHPAD_X,
-            VirtualOutput.joystickButton(7), 0.35f));
+            VirtualOutput.key(VirtualKey.PERIOD), 0.35f));
         // Volume +/- selects Doom weapon slots, never Enter/Escape.
         addDosMenuBindings(doom, false);
         profiles.add(
