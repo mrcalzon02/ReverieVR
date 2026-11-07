@@ -1,5 +1,10 @@
 # Breakwater Battery VR — canonical native game specification
 
+## Current rebuild — 2026-11-06
+
+**First implementation; actual Mesa GLES renderer checked, Android/headset pending.** The previous miniature beach descriptions below are historical. The active module now uses `breakwater_battlefield.h` and `breakwater_coastal_world.h`: a roughly 114m battery-to-waterline approach, 19m battery elevation, 3.4km animated sea, 6000m clip, independently scaled 3D units and inverse collision placements. Static coast buffers are cached across frames; the near/middle/far grid lowers texture density and geometry with distance and omits buried/deep seabed surfaces. Current campaign starts are around 600m; the 1–3km attack starts remain planned. Right-side physical instruments and the left operator-facing rack share geometry/pick transforms. This is not the completed weapon/model/unloading overhaul or a published APK. See [implementation and exact validation limits](../records/2026-11-06-breakwater-coastal-rebuild-foundation.md).
+
+
 ## 2026-10-28 — 3D battlefield, gun emplacements and aimed weapon identity
 
 **This is a rendering/interaction source iteration, not physical Galaxy S9 acceptance.** The earlier center beach was six coplanar strips plus distant 3D scenery, which looked like a flat projection in front of the gun. The new battle environment is a connected **24×20 heightfield** across the existing usable 7.72-unit beach; it has consistent surf-to-bunker samples, subdued relief under actual infantry positions, nonblocking raised shoulders, and location-specific shoreline materials. The **raised emplacement** adds a real bunker apron, sloped concrete cheeks around the firing embrasure, side revetments, sandbag stacks, utility alcoves, outboard pillboxes, rear bulkhead and service access. It is GPU-drawn GLES2 XYZRGB geometry, not a 2D overlay. Full collision of these newly decorative fort structures is **not** implemented and must not be claimed.

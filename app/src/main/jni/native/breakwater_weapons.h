@@ -53,9 +53,10 @@ inline bool WeaponWithinTraverse(const float *d, WeaponKind kind) {
            d[1]<=horizontal*WeaponTraverseLimit(kind);
 }
 inline bool ProjectilePosition(const float *origin,const float *direction,
-                               float t,float gravity,float *out) {
+                               float t,float gravity,float *out,
+                               float maximum=40.f) {
     if(!origin || !direction || !out || !std::isfinite(t) ||
-       !std::isfinite(gravity) || gravity<0 || t<0 || t>40) return false;
+       !std::isfinite(gravity) || gravity<0 || t<0 || !std::isfinite(maximum) || maximum<=0 || t>maximum) return false;
     for(int i=0;i<3;i++)
         if(!std::isfinite(origin[i]) || !std::isfinite(direction[i]))
             return false;
@@ -67,8 +68,9 @@ inline bool ProjectilePosition(const float *origin,const float *direction,
 // reticle ray aimed at a far boat no longer gives free damage from gunfire.
 inline bool ProjectileHitsSphere(const float *origin,const float *direction,
                                  float gravity,const float *center,float radius,
-                                 float *distance) {
+                                 float *distance,float maximum=40.f) {
     if(!origin || !direction || !center || !distance ||
+       !std::isfinite(maximum) || maximum<=0.f ||
        !std::isfinite(radius) || radius<=0.0f ||
        !std::isfinite(gravity) || gravity<0.0f) return false;
     for(int i=0;i<3;i++)
@@ -78,7 +80,7 @@ inline bool ProjectileHitsSphere(const float *origin,const float *direction,
     const double atZ=(static_cast<double>(center[2])-origin[2])/direction[2];
     const double halfWindow=static_cast<double>(radius)/-direction[2]+.18;
     const double from=std::max(.001,atZ-halfWindow);
-    const double to=std::min(40.0,atZ+halfWindow);
+    const double to=std::min(static_cast<double>(maximum),atZ+halfWindow);
     if(to<=from)return false;
     const double x=static_cast<double>(origin[0])-center[0];
     const double y=static_cast<double>(origin[1])-center[1];

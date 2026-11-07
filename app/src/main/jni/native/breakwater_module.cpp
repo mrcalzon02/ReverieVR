@@ -13,6 +13,8 @@
 #include "breakwater_sky.h"
 #include "reverie_native_horizon_gl.h"
 #include "breakwater_ocean.h"
+#include "breakwater_coastal_world.h"
+#include "breakwater_operator_space.h"
 #include "breakwater_environment.h"
 #include "breakwater_damage_feedback.h"
 #include "breakwater_aircraft_feedback.h"
@@ -55,6 +57,11 @@ struct State {
     const ReverieNativeHostV1 *host = nullptr;
     Campaign campaign{Difficulty::Regular, 1049u};
     GLuint program = 0, vbo = 0;
+    GLuint coast_vbo=0,coast_sprite_vbo=0;
+    bool coast_gpu_dirty=true;
+    int coast_key=-1;
+    std::vector<float> coast_mesh,coast_sprite_mesh;
+    const battlefield::Placement *actor=nullptr;
     GLint matrix = -1, position = -1, color = -1;
     GLuint sprite_program = 0, sprite_vbo = 0, sprite_texture = 0;
     GLuint font_program = 0, font_vbo = 0, font_texture = 0;
@@ -78,6 +85,7 @@ struct State {
     trajectory::ShotRay aim_ray{};
     bool aim_ray_valid=false;
     ImpactEffects impacts;
+    ImpactEffects world_impacts;
     WreckEffects wrecks;
     // Loaded once from packaged, owner-approved Beckenburg source conversions.
     std::array<imported::Model,imported::kAssetPaths.size()> beckenburg_models{};
@@ -97,6 +105,7 @@ struct State {
     PointerFocusGate pointer_focus;
     defense::Selection defense_points{};
     uint8_t defense_map=0u;
+    bool console=false,rack_facing=false;
     bool player_local=false; // only gun, armory and combat HUD; not the world
     bool armory_page=false, sam_armed=false, ghost_on=false;
     bool slot_picker=true, reset_armed=false;
@@ -120,15 +129,47 @@ void BattleSound(State *s,uint32_t cue) {
     // No allocations or audio callbacks during either stereo eye render.
     ReverieNativeRequestSoundV1(s->host,cue);
 }
-void Vertex(State *s, float x,float y,float z, float r,float g,float b) {
+void TransformPosition(State *s,float &x,float &y,float &z) {
+    if(s->actor)s->actor->Point(x,y,z);
+    if(s->rack_facing)gunmesh::FaceRack(x,z);
+    if(s->console)console::Point(x,y,z);
     if(s->player_local && s->campaign.phase()==Phase::Combat) {
-        const defense::Position p=defense::At(s->campaign.location(),
-                                             s->defense_points.current);
+        const auto p=defense::At(s->campaign.location(),s->defense_points.current);
         x+=p.x;y+=p.y;z+=p.z;
     }
+}
+ReverieNativeInputV1 ConsolePointer(const ReverieNativeInputV1 &input) {
+    auto ray=input;
+    console::InverseRay(input.pointer_origin,input.pointer_direction,
+                        ray.pointer_origin,ray.pointer_direction);
+    return ray;
+}
+void Vertex(State *s, float x,float y,float z, float r,float g,float b) {
+    TransformPosition(s,x,y,z);
     auto &v=s->mesh;
     v.push_back(x);v.push_back(y);v.push_back(z);
     v.push_back(r);v.push_back(g);v.push_back(b);
+}
+struct ActorScope {
+    State *s;
+    battlefield::Placement placement;
+    const battlefield::Placement *previous;
+    ActorScope(State *state,battlefield::Placement p):s(state),placement(p),previous(s->actor) {
+        s->actor=&placement;
+    }
+    ~ActorScope(){s->actor=previous;}
+};
+void WorldCannonShot(State *s,WeaponKind kind,const float *sight,
+                     trajectory::ShotRay *shot,bool *valid) {
+    const auto station=defense::At(s->campaign.location(),s->defense_points.current);
+    float direction[3]={};
+    *valid=battlefield::BarrelAim(kind,sight,direction,station,s->campaign.location());
+    gunmesh::Vec muzzle{};
+    if(!*valid || !gunmesh::Muzzle(kind,direction,0.f,&muzzle)){*valid=false;return;}
+    shot->origin[0]=muzzle.x+station.x;
+    shot->origin[1]=muzzle.y+station.y;
+    shot->origin[2]=muzzle.z+station.z;
+    for(int i=0;i<3;++i)shot->direction[i]=direction[i];
 }
 void Triangle(State *s, float x0,float y0,float z0,
               float x1,float y1,float z1,float x2,float y2,float z2,
@@ -162,21 +203,18 @@ void Box(State *s,float x,float y,float z,float w,float h,float d,
 }
 void Text(State *s,const char *text,float x,float y,float z,float scale,
           float r,float g,float b) {
-    if(s->player_local && s->campaign.phase()==Phase::Combat) {
-        const defense::Position p=defense::At(s->campaign.location(),
-                                             s->defense_points.current);
-        x+=p.x;y+=p.y;z+=p.z;
-    }
+    const size_t begin=s->font_mesh.size();
     font::AppendText(s->font_mesh,text,x,y,scale,r,g,b,z);
+    for(size_t i=begin;i<s->font_mesh.size();i+=8)
+        TransformPosition(s,s->font_mesh[i],s->font_mesh[i+1],s->font_mesh[i+2]);
 }
-// Only the combat HUD icons are player-anchored. World pickups and impacts
-// remain in the original single 3D world; no heads-up-only duplicate atlas.
-void PlayerSprite(State *s,SpriteId id,float x,float y,float z,
-                  float w,float h) {
-    const defense::Position p=defense::At(s->campaign.location(),
-                                         s->defense_points.current);
-    AppendSprite(s->sprite_mesh,id,x+p.x,y+p.y,z+p.z,w,h);
+void PlayerSprite(State *s,SpriteId id,float x,float y,float z,float w,float h) {
+    const size_t begin=s->sprite_mesh.size();
+    AppendSprite(s->sprite_mesh,id,x,y,z,w,h);
+    for(size_t i=begin;i<s->sprite_mesh.size();i+=5)
+        TransformPosition(s,s->sprite_mesh[i],s->sprite_mesh[i+1],s->sprite_mesh[i+2]);
 }
+
 ReverieNativeInputV1 WorldPointer(State *s,
                                   const ReverieNativeInputV1 &local) {
     ReverieNativeInputV1 world=local;
@@ -222,73 +260,62 @@ int ShopDisplayPrice(const State *s,int index) {
 }
 bool AimAtEnemy(const ReverieNativeInputV1 &input,const Enemy &enemy,
                 float gravity,bool ghost,float *distance) {
-    if(!enemy.active)return false;
-    const float center[]={enemy.x,
-        enemy.type==UnitType::Aircraft?1.6f:-.63f,enemy.z};
+    if(!enemy.active || (ghost && enemy.type!=UnitType::Aircraft))return false;
+    const float center[]={enemy.x,enemy.type==UnitType::Aircraft?1.6f:-.63f,enemy.z};
     const float radius=enemy.type==UnitType::Rowboat?.62f:
-         enemy.type==UnitType::ArmoredTransport?1.48f:
-         enemy.type==UnitType::LandingCraft?.82f:.78f;
-    return ghost?RaySphereSurfaceDistance(input.pointer_origin,
-        input.pointer_direction,center,radius,distance):
-        ProjectileHitsSphere(input.pointer_origin,input.pointer_direction,
-                             gravity,center,radius,distance);
+        enemy.type==UnitType::ArmoredTransport?1.48f:
+        enemy.type==UnitType::LandingCraft?.82f:.78f;
+    return battlefield::Sphere(battlefield::Vessel(enemy),input.pointer_origin,
+        input.pointer_direction,ghost?0.f:gravity,center,radius,distance);
 }
 bool GunWithinTraverse(const float *direction,WeaponKind weapon) {
     return WeaponWithinTraverse(direction,weapon);
 }
-int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game,
-                 bool ghost=false) {
+bool TargetDepth(const ReverieNativeInputV1 &input,const Campaign &game,
+                 int target,float gravity,float *depth) {
+    if(target<0)return false;
+    if(target<static_cast<int>(Campaign::kMaxEnemies))
+        return AimAtEnemy(input,game.enemies()[target],gravity,false,depth);
+    if(target<kCoverTargetBase) {
+        const auto &trooper=game.infantry_units()[target-Campaign::kMaxEnemies];
+        const float center[]={trooper.x,-.66f,trooper.z};
+        return trooper.active && battlefield::Sphere(
+            battlefield::Land(game.location(),trooper.x,trooper.z),
+            input.pointer_origin,input.pointer_direction,gravity,center,.30f,depth);
+    }
+    if(target<kCoverTargetEnd)
+        return battlefield::Cover(game.location(),game.shore_cover()[target-kCoverTargetBase],
+            input.pointer_origin,input.pointer_direction,gravity,depth);
+    if(target<kArmorTargetEnd) {
+        const auto &vehicle=game.armored_vehicles()[target-kArmorTargetBase];
+        const float center[]={vehicle.x,armor::kArmorHitY,vehicle.z};
+        return vehicle.active && battlefield::Sphere(
+            battlefield::Land(game.location(),vehicle.x,vehicle.z,3.f),
+            input.pointer_origin,input.pointer_direction,gravity,center,armor::kArmorHitRadius,depth);
+    }
+    return false;
+}
+int CombatTarget(const ReverieNativeInputV1 &input,const Campaign &game,bool ghost=false) {
     if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE ||
-       (!ghost && !GunWithinTraverse(input.pointer_direction,
-                                    game.selected_weapon())))return -1;
-    // Ghost selection is reserved for SAM. A nearer boat must not steal
-    // the aircraft lock or prevent a purchased missile from launching.
-    if(ghost)return NearestSamAircraft(game.enemies(),
-                                      input.pointer_origin,
-                                      input.pointer_direction);
-    float best=1e9f;int index=-1;
-    for(uint8_t i=0;i<game.enemies().size();i++) {
-        float depth=0;
-        if(AimAtEnemy(input,game.enemies()[i],
-                      game.stats().projectile_gravity,ghost,&depth) && depth<best){
-            best=depth; index=i;
+       (!ghost && !GunWithinTraverse(input.pointer_direction,game.selected_weapon())))return -1;
+    float best=battlefield::kRange;int selected=-1;
+    const float gravity=battlefield::Gravity(game.stats().projectile_gravity);
+    for(int target=0;target<kArmorTargetEnd;++target) {
+        float depth=0.f;
+        if(ghost) {
+            if(target>=int(Campaign::kMaxEnemies))break;
+            if(!AimAtEnemy(input,game.enemies()[target],0.f,true,&depth))continue;
+        } else {
+            if(target>=int(Campaign::kMaxEnemies) && target<kCoverTargetBase &&
+               !WeaponFor(game.selected_weapon()).anti_infantry)continue;
+            if(!TargetDepth(input,game,target,gravity,&depth))continue;
         }
+        if(depth<best){best=depth;selected=target;}
     }
-    if(WeaponFor(game.selected_weapon()).anti_infantry && !ghost)
-        for(uint8_t i=0;i<game.infantry_units().size();i++) {
-            const Infantry &trooper=game.infantry_units()[i];
-            if(!trooper.active)continue;
-            const float center[]={trooper.x,-.66f,trooper.z};
-            float depth=0;
-            if(ProjectileHitsSphere(input.pointer_origin,input.pointer_direction,
-                                    game.stats().projectile_gravity,
-                                    center,.30f,&depth) && depth<best) {
-                best=depth;
-                index=static_cast<int>(Campaign::kMaxEnemies)+i;
-            }
-        }
-    // Individual deployed armored cars are independent real ballistic
-    // targets, never the same hitbox as their already-disembarked transport.
-    if(!ghost)for(uint8_t i=0;i<game.armored_vehicles().size();++i) {
-        float depth=0.0f;
-        if(armor::Hits(game.armored_vehicles()[i],input.pointer_origin,
-                       input.pointer_direction,
-                       game.stats().projectile_gravity,&depth) &&
-           depth<best) {
-            best=depth;
-            index=kArmorTargetBase+i;
-        }
-    }
-    // Physical cover occludes only when its exact ballistic hit is closer.
-    if(!ghost) {
-        float wallDepth=0.0f;
-        const int wall=CoverTarget(game,input.pointer_origin,
-            input.pointer_direction,game.stats().projectile_gravity,
-            &wallDepth);
-        if(wall>=0 && wallDepth<best)
-            index=kCoverTargetBase+wall;
-    }
-    return index;
+    float terrain=0.f;
+    if(!ghost && battlefield::Terrain(game.location(),input.pointer_origin,
+        input.pointer_direction,gravity,best,&terrain) && terrain<best-.02f)return -1;
+    return selected;
 }
 bool ReadSlotState(State *s,uint8_t slot,Campaign *out) {
     if(!s || !out || !ReverieNativeHostSupportsSaveV1(s->host) ||
@@ -325,7 +352,7 @@ bool BeginActiveWave(State *s,bool captureSelect) {
     s->wave_credits_gained=0;s->wave_hull_lost=0;
     BattleSound(s,REVERIE_NATIVE_SOUND_WAVE_START);
     if(captureSelect)s->combat_input.CaptureUiPress();
-    s->wrecks.Clear();
+    s->wrecks.Clear();s->world_impacts=ImpactEffects{};
     s->battery_damage=BatteryDamageFeedback{};
     s->infantry_flash=0.0f;s->infantry_firing_mask=0u;
     s->gunboat_salvo_flash=0.0f;
@@ -337,21 +364,14 @@ bool BeginActiveWave(State *s,bool captureSelect) {
 }
 void BallisticWaterImpact(State *s,const ReverieNativeInputV1 &input,
                           float gravity) {
-    if(input.pointer_direction[2]>=-.0001f)return;
-    float prev[3]={},at[3]={};
-    if(!ProjectilePosition(input.pointer_origin,input.pointer_direction,
-                           .01f,gravity,prev))return;
-    for(float t=.26f;t<=39.76f;t+=.25f) {
-        if(!ProjectilePosition(input.pointer_origin,input.pointer_direction,
-                               t,gravity,at))return;
-        if(prev[1]>-1.10f && at[1]<=-1.10f) {
-            const float down[]={0.0f,-1.0f,0.0f};
-            s->impacts.RecordHit(at,down,.001f,ImpactKind::Water);
-            BattleSound(s,REVERIE_NATIVE_SOUND_WATER_SPLASH);
-            return;
-        }
-        for(int i=0;i<3;i++)prev[i]=at[i];
-    }
+    float depth=0.f,at[3]={};
+    if(!battlefield::Terrain(s->campaign.location(),input.pointer_origin,
+        input.pointer_direction,gravity,battlefield::kRange,&depth) ||
+       !battlefield::Position(input.pointer_origin,input.pointer_direction,depth,gravity,at))return;
+    const bool water=at[2]<battlefield::ShoreZ(s->campaign.location(),at[0]);
+    const float down[]={0.f,-1.f,0.f};
+    s->world_impacts.RecordHit(at,down,.001f,water?ImpactKind::Water:ImpactKind::Sand);
+    if(water)BattleSound(s,REVERIE_NATIVE_SOUND_WATER_SPLASH);
 }
 void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     Campaign &game=s->campaign;
@@ -402,7 +422,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         if(choice>=0 && choice<4) {
             game=Campaign(static_cast<Difficulty>(choice),1049u);
             s->impacts=ImpactEffects{};
-            s->wrecks.Clear();
+            s->wrecks.Clear();s->world_impacts=ImpactEffects{};
             s->battery_damage=BatteryDamageFeedback{};
             s->reload_ready_flash=0.0f;
             s->turret_flash=0.0f;
@@ -470,7 +490,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             return;
         }
         float x=0,y=0;
-        const CombatHudTarget hud = AimAtPlane(input,-1.8f,&x,&y)>0 ?
+        const CombatHudTarget hud = AimAtPlane(ConsolePointer(input),-1.8f,&x,&y)>0 ?
             HitCombatSupportHud(x,y) : CombatHudTarget::None;
         // Capture support presses until release, even if the aim drifts off
         // the HUD. Shop START presses also remain captured across phases.
@@ -580,14 +600,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         // Above the gun's traverse the separate hand-aligned ghost sight
         // appears, but ordinary gunfire cannot teleport to that controller ray.
         trajectory::ShotRay fired{};
-        const defense::Position post=defense::At(
-            game.location(),s->defense_points.current);
-        const bool in_arc=trajectory::CannonShot(game.selected_weapon(),
-                                                 input.pointer_direction,
-                                                 &fired,post.y);
+        bool in_arc=false;
+        WorldCannonShot(s,game.selected_weapon(),input.pointer_direction,&fired,&in_arc);
         ReverieNativeInputV1 cannon_input=WorldPointer(s,input);
         if(in_arc)for(int k=0;k<3;k++) {
-            fired.origin[k]+=(k==0?post.x:k==1?post.y:post.z);
             cannon_input.pointer_origin[k]=fired.origin[k];
             cannon_input.pointer_direction[k]=fired.direction[k];
         }
@@ -606,24 +622,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         const int16_t targetHp=enemyTarget?game.enemies()[target].hp:
             armorTarget?game.armored_vehicles()[target-kArmorTargetBase].hp:0;
         const Enemy enemyBefore=enemyTarget?game.enemies()[target]:Enemy{};
-        const float gravity=game.stats().projectile_gravity;
-        if(enemyTarget)
-            AimAtEnemy(cannon_input,game.enemies()[target],gravity,false,&impactDepth);
-        else if(infantryTarget) {
-            const Infantry &trooper=game.infantry_units()[
-                target-Campaign::kMaxEnemies];
-            const float center[]={trooper.x,-.66f,trooper.z};
-            ProjectileHitsSphere(cannon_input.pointer_origin,cannon_input.pointer_direction,
-                                 gravity,center,.30f,&impactDepth);
-        } else if(coverTarget) {
-            ProjectileHitsCover(cannon_input.pointer_origin,
-                cannon_input.pointer_direction,gravity,
-                game.shore_cover()[target-kCoverTargetBase],&impactDepth);
-        } else if(armorTarget) {
-            armor::Hits(game.armored_vehicles()[target-kArmorTargetBase],
-                        cannon_input.pointer_origin,
-                        cannon_input.pointer_direction,gravity,&impactDepth);
-        }
+        const float gravity=battlefield::Gravity(game.stats().projectile_gravity);
+        TargetDepth(cannon_input,game,target,gravity,&impactDepth);
         bool shot=false;
         if(target>=0 && target<static_cast<int>(Campaign::kMaxEnemies))
             shot=game.FireAt(static_cast<uint8_t>(target));
@@ -645,13 +645,13 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             }
             float hit[3]={};
             if(impactDepth>0.0f &&
-               ProjectilePosition(cannon_input.pointer_origin,cannon_input.pointer_direction,
+               battlefield::Position(cannon_input.pointer_origin,cannon_input.pointer_direction,
                                   impactDepth,missile?0.0f:gravity,hit)) {
                 const float down[]={0.0f,-1.0f,0.0f};
                 if(enemyTarget) {
                     if(game.enemies()[target].hp<targetHp) {
                         const bool destroyed=!game.enemies()[target].active;
-                        s->impacts.RecordHit(hit,down,.001f,
+                        s->world_impacts.RecordHit(hit,down,.001f,
                             destroyed?ImpactKind::Explosion:ImpactKind::Metal);
                         BattleSound(s,destroyed?
                             REVERIE_NATIVE_SOUND_BOAT_DESTROYED:
@@ -662,14 +662,14 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                         target-kArmorTargetBase];
                     const bool destroyed=!vehicle.active;
                     if(vehicle.hp<targetHp) {
-                        s->impacts.RecordHit(hit,down,.001f,
+                        s->world_impacts.RecordHit(hit,down,.001f,
                             destroyed?ImpactKind::Explosion:ImpactKind::Metal);
                         BattleSound(s,destroyed?
                             REVERIE_NATIVE_SOUND_ARMOR_DESTROYED:
                             REVERIE_NATIVE_SOUND_HULL_IMPACT);
                     }
                 } else if(infantryTarget || coverTarget)
-                    s->impacts.RecordHit(hit,down,.001f,
+                    s->world_impacts.RecordHit(hit,down,.001f,
                         coverTarget && game.location()==1u ?
                             ImpactKind::Metal:ImpactKind::Sand);
             } else if(target<0 && !missile)
@@ -702,7 +702,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->slot_exists[s->save_slot]=false;
         s->reset_armed=false;
         s->impacts=ImpactEffects{};
-        s->wrecks.Clear();
+        s->wrecks.Clear();s->world_impacts=ImpactEffects{};
         s->battery_damage=BatteryDamageFeedback{};
         s->reload_ready_flash=0.0f;
         s->turret_flash=0.0f;
@@ -724,41 +724,30 @@ void BuildScene(State *s) {
     s->player_local=false;
     s->world_lighting=false;
     const bool night=game.period()==Period::Night;
-    // 360-degree layered horizon: no frontal backdrop edges when head turns.
-    // Fixed panorama, clouds, sun/moon and distant smoke are shared by both
-    // eyes and stay farther away than every gameplay target and sea strip.
+    // Immutable coast geometry is baked once per theater/period and uploaded
+    // to separate static VBOs, never rebuilt/uploaded with moving enemies.
+    const int key=game.location()*2+(night?1:0);
+    if(s->coast_key!=key) {
+        s->world_lighting=true;s->world_night=night;
+        s->world_palette_already_lit=true;
+        battlefield::Coast(game.location(),night,s->sprite_mesh,
+            [s](auto... values){Triangle(s,values...);});
+        s->coast_mesh.swap(s->mesh);s->coast_sprite_mesh.swap(s->sprite_mesh);
+        s->mesh.clear();s->sprite_mesh.clear();
+        s->coast_key=key;s->coast_gpu_dirty=true;
+    }
     if(!s->horizon_gpu.ready(game.location()))
         EmitSkyPanorama(game.location(),night,
-            [s](auto... arguments) { Triangle(s,arguments...); });
-    // One low-poly 3D water mesh extends beyond the battle boats.
-    // BuildScene emits it once for the pair of stereo eyes.
-    EmitOpenSea(game.location(),night,s->elapsed,
+            [s](float x,float y,float z,float a,float b,float c,
+                float d,float e,float f,float r,float g,float blue) {
+                Triangle(s,x*36.f,y*36.f,z*36.f,a*36.f,b*36.f,c*36.f,
+                         d*36.f,e*36.f,f*36.f,r,g,blue);
+            });
+    s->world_lighting=false;
+    battlefield::Sea(game.location(),night,s->elapsed,
         [s](auto... values){Triangle(s,values...);});
-    // Sun/moon directional shading is precomputed per world-space facet.
-    // Landscape and beach profiles already own day/night base albedos.
     s->world_lighting=true;s->world_night=night;
-    s->world_palette_already_lit=true;
-    // 360-degree physical rear uplands and campaign-specific mountains.
-    // World-space geometry lives inside the existing sky, no extra draw pass.
-    EmitSurroundingLandscape(game.location(),night,
-        [s](auto... values){Box(s,values...);},
-        [s](auto... values){Triangle(s,values...);});
-    // World-space shore geometry is generated alongside the existing
-    // simulation mesh. The beach ends at the real transport landing line;
-    // only Campaign owns targets, collision and landfall behavior.
-    // The center floor uses the same exact height samples as the old mesh;
-    // the material is now genuinely textured, not a colored 2D backdrop.
-    // It joins the existing sprite atlas/batch and retains all battle targets.
-    static_assert(materials::kSectionsX==kBeachCrossSections &&
-                  materials::kSectionsZ==kBeachLengthSections,
-                  "Textured and collision-independent coast grids drifted");
-    EmitCoastalTerrain(game.location(),night,
-        [s](auto... arguments) { Box(s,arguments...); },
-        [s](auto... arguments) { Triangle(s,arguments...); },false);
-    materials::AppendCoast(s->sprite_mesh,game.location(),
-        [](uint8_t location,float x,float z) {
-            return BeachHeight(location,x,z);
-        });
+    s->world_palette_already_lit=false;
     if(game.phase()==Phase::Combat)
         EmitBatteryEmplacement(game.location(),night,
             [s](auto... arguments){Box(s,arguments...);},
@@ -768,9 +757,11 @@ void BuildScene(State *s) {
                 materials::AppendBoxCladding(s->sprite_mesh,surface,
                                               x,y,z,w,h,d);
             });
-    for(const ShoreCover &barrier:game.shore_cover())
+    for(const ShoreCover &barrier:game.shore_cover()) {
+        ActorScope actor(s,battlefield::Land(game.location(),barrier.x,barrier.z,3.f));
         EmitShoreCover(game.location(),barrier,night,
             [s](auto... arguments) { Box(s,arguments...); });
+    }
     if(game.phase()==Phase::Combat) {
         // Real elevated fighting platforms on the same authored coast.
         // Their hit-tested beacons identify where a double press will move.
@@ -819,6 +810,7 @@ void BuildScene(State *s) {
                            equipped,aim,s->flash);
         // Operator-facing cabinet on the left inside the bunker, behind
         // the front approach. Five real purchased miniature mesh previews.
+        s->rack_facing=true;
         const float rackMiddle=gunmesh::kRackTop-2.f*gunmesh::kRackStep;
         Box(s,gunmesh::kRackX-.54f,rackMiddle,gunmesh::kRackZ-.35f,
             .065f,1.93f,.12f,.31f,.33f,.30f);
@@ -838,13 +830,14 @@ void BuildScene(State *s) {
                 gunmesh::RackModel([s](auto... vertices){Triangle(s,vertices...);},
                                    kind);
             Text(s,owned?WeaponFor(kind).name:"LOCKED",
-                 slot.x+.21f,slot.y,slot.z+.29f,.023f,
+                 slot.x,slot.y-(owned?.09f:0.f),slot.z-.245f,.017f,
                  active?.63f:owned?.92f:.58f,
                  active?1.f:owned?.93f:.61f,
                  active?.68f:owned?.78f:.60f);
         }
         Text(s,"LEFT ARMORY",gunmesh::kRackX,gunmesh::kRackTop+.28f,
-             gunmesh::kRackZ+.20f,.026f,.82f,.93f,.75f);
+             gunmesh::kRackZ-.24f,font::FittedScale("LEFT ARMORY",1.1f,.026f),.82f,.93f,.75f);
+        s->rack_facing=false;
         s->player_local=false;
     }
     if(s->flash>0.0f) {
@@ -853,10 +846,10 @@ void BuildScene(State *s) {
         const float shotRightX=shotHorizontal>.01f?-shot[2]/shotHorizontal:1.0f;
         const float shotRightZ=shotHorizontal>.01f?shot[0]/shotHorizontal:0.0f;
         for(int segment=0;segment<9;segment++) {
-            const float t=1.2f+segment*1.3f;
+            const float t=1.2f+segment*28.f;
             float a[3]={},b[3]={};
-            if(!ProjectilePosition(s->shot_origin,shot,t,s->shot_gravity,a) ||
-               !ProjectilePosition(s->shot_origin,shot,t+1.3f,s->shot_gravity,b))
+            if(!battlefield::Position(s->shot_origin,shot,t,s->shot_gravity,a) ||
+               !battlefield::Position(s->shot_origin,shot,t+28.f,s->shot_gravity,b))
                 break;
             const float w=.018f-.001f*segment;
             Triangle(s,a[0]+shotRightX*w,a[1],a[2]+shotRightZ*w,
@@ -876,12 +869,12 @@ void BuildScene(State *s) {
     // the controller ghost appears; no fabricated outside-arc cannon hit.
     if(s->aim_ray_valid && game.phase()==Phase::Combat) {
         const auto &ray=s->aim_ray;
-        const float gravity=game.stats().projectile_gravity;
+        const float gravity=battlefield::Gravity(game.stats().projectile_gravity);
         for(int segment=0;segment<9;++segment) {
-            const float t=.28f+segment*.82f;
+            const float t=.28f+segment*32.f;
             float first[3]={},next[3]={};
-            if(!trajectory::Prediction(ray,gravity,t,first) ||
-               !trajectory::Prediction(ray,gravity,t+.33f,next))break;
+            if(!battlefield::Position(ray.origin,ray.direction,t,gravity,first) ||
+               !battlefield::Position(ray.origin,ray.direction,t+10.f,gravity,next))break;
             const float w=.009f;
             Triangle(s,first[0]-w,first[1],first[2],
                      first[0]+w,first[1],first[2],
@@ -914,7 +907,7 @@ void BuildScene(State *s) {
     if(game.stats().turret) {
         // This is the actual purchased allied battery, not a tiny symbolic
         // block or a turret spawning in response to each enemy shot.
-        support::EmitTurret(s->turret_target_x,s->turret_target_z,
+        support::EmitTurret(battlefield::X(s->turret_target_x),battlefield::Z(s->turret_target_z),
             s->turret_flash,
             [s](auto... vertices){Box(s,vertices...);},
             [s](auto... vertices){Triangle(s,vertices...);});
@@ -924,27 +917,36 @@ void BuildScene(State *s) {
         // exact enemy that was hit by the authoritative turret event.
         if(s->turret_flash>0.0f) {
             float muzzleX=0.f,muzzleY=0.f,muzzleZ=0.f;
-            support::MuzzleToward(s->turret_target_x,s->turret_target_z,
+            support::MuzzleToward(battlefield::X(s->turret_target_x),battlefield::Z(s->turret_target_z),
                                    &muzzleX,&muzzleY,&muzzleZ);
-            const float dx=s->turret_target_x-muzzleX;
-            const float dz=s->turret_target_z-muzzleZ;
+            const float dx=battlefield::X(s->turret_target_x)-muzzleX;
+            const float dz=battlefield::Z(s->turret_target_z)-muzzleZ;
             const float len=std::sqrt(dx*dx+dz*dz);
             const float ux=len>.001f?dx/len:0.f;
             const float uz=len>.001f?dz/len:-1.f;
             const float sideX=-uz*.023f,sideZ=ux*.023f;
             Triangle(s,muzzleX+sideX,muzzleY,muzzleZ+sideZ,
                      muzzleX-sideX,muzzleY,muzzleZ-sideZ,
-                     s->turret_target_x,-.64f,s->turret_target_z,
+                     battlefield::X(s->turret_target_x),battlefield::kSeaY+1.8f,battlefield::Z(s->turret_target_z),
                      .94f,.80f,.34f);
         }
     }
     // Live vessels stay 3D from first offshore sighting to landing.
     // Campaign still owns positions, hit volumes, landfall and score.
     for(const Enemy &e:game.enemies())if(e.active) {
+        const auto placement=battlefield::Vessel(e);
+        ActorScope actor(s,placement);
+        const auto detail=battlefield::DetailAt(placement.wx,placement.wz,
+            defense::At(game.location(),s->defense_points.current));
+        if(detail==battlefield::Detail::Distant) {
+            battlefield::DistantVessel(e,[s](auto... values){Triangle(s,values...);});
+            continue;
+        }
         // Use the SAME imported BWM1 rowboat at every distance. If absent,
         // use one persistent low-poly 3D fallback without morphing.
         if(e.type==UnitType::Rowboat &&
-           s->beckenburg_models[imported::OwnerRowboat].valid()) {
+           s->beckenburg_models[imported::OwnerRowboat].valid() &&
+           detail==battlefield::Detail::Full) {
             s->beckenburg_models[imported::OwnerRowboat].Emit(
                 e.x,-.77f,e.z,1.18f,1.57079632679f,
                 [s](auto... values){Triangle(s,values...);});
@@ -996,6 +998,7 @@ void BuildScene(State *s) {
     }
     for(const ArmoredVehicle &vehicle:game.armored_vehicles()) {
         if(!vehicle.active)continue;
+        ActorScope actor(s,battlefield::Land(game.location(),vehicle.x,vehicle.z,3.f));
         // Owner APC geometry remains for troop carriers; genuine tanks
         // require their visibly tracked hull, turret and larger barrel.
         // Both roles retain the existing independently simulated hit sphere.
@@ -1011,14 +1014,17 @@ void BuildScene(State *s) {
         }
     }
     // A confirmed armored-gun shot flashes at the live vehicle's muzzle.
-    if(s->armor_flash>0.0f)
+    if(s->armor_flash>0.0f) {
+        ActorScope actor(s,battlefield::Land(game.location(),s->armor_flash_x,s->armor_flash_z,3.f));
         Box(s,s->armor_flash_x,-.53f,s->armor_flash_z+.75f,
             .19f,.15f,.20f,1.0f,.79f,.32f);
+    }
     if(s->armor_aim_index>=0 &&
        s->armor_aim_index<static_cast<int>(Campaign::kMaxArmor)) {
         const ArmoredVehicle &vehicle=game.armored_vehicles()[
             static_cast<size_t>(s->armor_aim_index)];
         if(vehicle.active) {
+            ActorScope actor(s,battlefield::Land(game.location(),vehicle.x,vehicle.z,3.f));
             const float x=vehicle.x,z=vehicle.z+.04f;
             // Target bracket around the real small tracked silhouette.
             for(int side : {-1,1}) {
@@ -1034,6 +1040,9 @@ void BuildScene(State *s) {
         // Same exact CombatTarget ray as weapon damage. These small world-
         // space corner marks are UI only; they do not widen the hit sphere.
         const SurfaceAimFeedback &target=s->surface_aim;
+        Enemy proxy{};proxy.x=target.x;proxy.z=target.z;proxy.type=target.type;
+        ActorScope actor(s,target.infantry?battlefield::Land(game.location(),target.x,target.z):
+                         battlefield::Vessel(proxy));
         const float x=target.x,z=target.z+.045f;
         const float span=target.half_width;
         const float top=target.infantry?-.31f:-.20f;
@@ -1066,6 +1075,9 @@ void BuildScene(State *s) {
     if(s->aircraft_aim.visible) {
         // Four tiny world-space brackets surround only the exact ray-selected
         // moving aircraft. The bracket is NOT aim assistance or a wide hitbox.
+        Enemy proxy{};proxy.type=UnitType::Aircraft;
+        proxy.x=s->aircraft_aim.x;proxy.z=s->aircraft_aim.z;
+        ActorScope actor(s,battlefield::Vessel(proxy));
         const float x=s->aircraft_aim.x,z=s->aircraft_aim.z;
         const float span=s->aircraft_aim.pattern==AircraftPattern::Bomber?
             1.49f:1.18f;
@@ -1084,53 +1096,72 @@ void BuildScene(State *s) {
     // but its last recorded position carries a brief 3D wreck silhouette.
     // Shared scene geometry is built once, identically for both eyes.
     for(const WreckPulse &wreck:s->wrecks.pulses())
-        if(wreck.remaining>0.0f)
+        if(wreck.remaining>0.0f) {
+            Enemy proxy{};proxy.type=wreck.type;proxy.x=wreck.x;proxy.z=wreck.z;
+            ActorScope actor(s,battlefield::Vessel(proxy));
             EmitWreckFragments(wreck,[s](auto... vertices) {
                 Triangle(s,vertices...);
             });
+        }
     // Fire, shell impacts and HUD stay luminous at night, unlike solid hulls.
     s->world_lighting=false;
     // CPU-updated, fixed-capacity impact pulses render identically in both eyes.
-    for(const ImpactPulse &impact:s->impacts.pulses())if(impact.remaining>0.0f) {
-        const bool artillery=impact.kind==ImpactKind::ArtilleryBlast;
-        const bool airstrike=impact.kind==ImpactKind::AirstrikeBlast;
-        const bool support=artillery || airstrike;
-        const bool explosion=impact.kind==ImpactKind::Explosion || support;
-        const float lifetime=ImpactEffects::LifetimeFor(impact.kind);
-        const float progress=std::max(0.0f,1.0f-impact.remaining/lifetime);
-        const float size=support?.30f+.83f*progress:
-                         explosion?.19f+.54f*progress:.07f+.17f*progress;
-        const float x=impact.x,y=impact.y,z=impact.z+.035f;
-        if(explosion) {
-            // Three crossed, expanding vertex-color blast petals darken to smoke.
-            // No textures, heap particles or per-eye simulation updates.
-            const float fade=1.0f-progress;
-            // Artillery burns amber at the waterline; airstrikes flash pale
-            // around aircraft as well as ships, then fade into dark smoke.
-            const float r=.20f+(airstrike?.70f:.76f)*fade;
-            const float g=.16f+(airstrike?.69f:artillery?.48f:.46f)*fade;
-            const float b=.12f+(airstrike?.72f:artillery?.14f:.12f)*fade;
-            Triangle(s,x-size,y,z,x,y+size*.9f,z,x+size,y,z,r,g,b);
-            Triangle(s,x,y-size*.7f,z,x+size*.8f,y,z,x,y+size*.7f,z,
-                     r*.84f,g*.78f,b*.80f);
-            Triangle(s,x,y-size*.65f,z-size*.6f,x,y+size*.85f,z,
-                     x,y-size*.65f,z+size*.6f,r*.80f,g*.86f,b*.85f);
-        } else if(impact.kind==ImpactKind::Water) {
-            Triangle(s,x-size,y+.01f,z-size,x+size,y+.01f,z-size,
-                     x,y+size*1.5f,z,.67f,.85f,.96f);
-            Triangle(s,x-size*.7f,y+.01f,z+size,x+size*.7f,y+.01f,z+size,
-                     x,y+size*1.2f,z,.41f,.70f,.87f);
-        } else {
-            const bool sand=impact.kind==ImpactKind::Sand;
-            const float r=sand?.79f:1.0f,g=sand?.67f:.73f,b=sand?.46f:.24f;
-            Triangle(s,x-size,y,z,x,y+size,z,x+size,y,z,r,g,b);
-            Triangle(s,x-size*.7f,y,z,x,y-size,z,x+size*.7f,y,z,
-                     r*.75f,g*.75f,b*.75f);
+    for(int effectSpace=0;effectSpace<2;++effectSpace) {
+        const auto &pulses=effectSpace==0?s->impacts.pulses():s->world_impacts.pulses();
+        for(const ImpactPulse &impact:pulses)if(impact.remaining>0.0f) {
+            battlefield::Placement placement{};
+            if(effectSpace==0) {
+                if(impact.z>-.99f)placement={}; // actual battery impacts stay local
+                else if(impact.y>0.f) {
+                    Enemy proxy{};proxy.type=UnitType::Aircraft;proxy.x=impact.x;proxy.z=impact.z;
+                    placement=battlefield::Vessel(proxy);
+                } else if(impact.z<=-2.20f) {
+                    Enemy proxy{};proxy.x=impact.x;proxy.z=impact.z;
+                    placement=battlefield::Vessel(proxy);
+                } else placement=battlefield::Land(game.location(),impact.x,impact.z);
+            }
+            ActorScope actor(s,placement);
+            const bool artillery=impact.kind==ImpactKind::ArtilleryBlast;
+            const bool airstrike=impact.kind==ImpactKind::AirstrikeBlast;
+            const bool support=artillery || airstrike;
+            const bool explosion=impact.kind==ImpactKind::Explosion || support;
+            const float lifetime=ImpactEffects::LifetimeFor(impact.kind);
+            const float progress=std::max(0.0f,1.0f-impact.remaining/lifetime);
+            const float size=support?.30f+.83f*progress:
+                             explosion?.19f+.54f*progress:.07f+.17f*progress;
+            const float x=impact.x,y=impact.y,z=impact.z+.035f;
+            if(explosion) {
+                // Three crossed, expanding vertex-color blast petals darken to smoke.
+                // No textures, heap particles or per-eye simulation updates.
+                const float fade=1.0f-progress;
+                // Artillery burns amber at the waterline; airstrikes flash pale
+                // around aircraft as well as ships, then fade into dark smoke.
+                const float r=.20f+(airstrike?.70f:.76f)*fade;
+                const float g=.16f+(airstrike?.69f:artillery?.48f:.46f)*fade;
+                const float b=.12f+(airstrike?.72f:artillery?.14f:.12f)*fade;
+                Triangle(s,x-size,y,z,x,y+size*.9f,z,x+size,y,z,r,g,b);
+                Triangle(s,x,y-size*.7f,z,x+size*.8f,y,z,x,y+size*.7f,z,
+                         r*.84f,g*.78f,b*.80f);
+                Triangle(s,x,y-size*.65f,z-size*.6f,x,y+size*.85f,z,
+                         x,y-size*.65f,z+size*.6f,r*.80f,g*.86f,b*.85f);
+            } else if(impact.kind==ImpactKind::Water) {
+                Triangle(s,x-size,y+.01f,z-size,x+size,y+.01f,z-size,
+                         x,y+size*1.5f,z,.67f,.85f,.96f);
+                Triangle(s,x-size*.7f,y+.01f,z+size,x+size*.7f,y+.01f,z+size,
+                         x,y+size*1.2f,z,.41f,.70f,.87f);
+            } else {
+                const bool sand=impact.kind==ImpactKind::Sand;
+                const float r=sand?.79f:1.0f,g=sand?.67f:.73f,b=sand?.46f:.24f;
+                Triangle(s,x-size,y,z,x,y+size,z,x+size,y,z,r,g,b);
+                Triangle(s,x-size*.7f,y,z,x,y-size,z,x+size*.7f,y,z,
+                         r*.75f,g*.75f,b*.75f);
+            }
         }
     }
     for(size_t slot=0;slot<game.infantry_units().size();++slot) {
         const Infantry &trooper=game.infantry_units()[slot];
         if(!trooper.active)continue;
+        ActorScope actor(s,battlefield::Land(game.location(),trooper.x,trooper.z));
         // World-space 3D soldier model using existing combat positions.
         EmitInfantrySilhouette(trooper,
             [s](auto... values){Box(s,values...);},
@@ -1144,6 +1175,8 @@ void BuildScene(State *s) {
         }
     }
     if(s->gunboat_salvo_flash>0.0f) {
+        Enemy proxy{};proxy.x=s->gunboat_salvo_x;proxy.z=s->gunboat_salvo_z;
+        ActorScope actor(s,battlefield::Vessel(proxy));
         // A brief world-space tracer starts at the vessel that actually fired.
         // It persists if that vessel sinks before the next stereo render.
         const float x=s->gunboat_salvo_x,z=s->gunboat_salvo_z+.38f;
@@ -1361,17 +1394,21 @@ void BuildScene(State *s) {
         Text(s,summary,0,menu::kShopCreditsY,-2.967f,
              font::FittedScale(summary,3.50f,menu::kShopCreditsScale),.92f,.86f,.64f);
     } else if(game.phase()==Phase::Combat) {
-        s->player_local=true;
+        s->player_local=true;s->console=true;
+        // A physical instrument case on the right bunker wall. All glyphs,
+        // icons and hit tests share this transform; nothing follows head yaw.
+        Box(s,0.f,-.10f,-2.08f,7.4f,4.6f,.20f,.17f,.22f,.20f);
+        for(int side:{-1,1})Box(s,side*3.3f,-2.5f,-2.08f,.22f,.3f,.30f,.22f,.27f,.23f);
         char digits[32];std::snprintf(digits,sizeof(digits),"HULL %d",game.integrity());
-        Text(s,digits,0,1.20f,-2.0f,.075f,.92f,.92f,.74f);
+        Text(s,digits,0,1.86f,-1.79f,.055f,.92f,.92f,.74f);
         char ammo[32];
         std::snprintf(ammo,sizeof(ammo),"%s %u",
             WeaponFor(game.selected_weapon()).name,
             static_cast<unsigned>(game.magazine_left()));
-        Text(s,ammo,0,.93f,-1.79f,.055f,.88f,.9f,.68f);
-        Text(s,"DOUBLE CLICK SHORE BEACONS TO CHANGE POST",
-             0,.29f,-1.79f,.025f,.80f,.93f,.79f);
-        Text(s,"CLICK LEFT RACK OR PAD LEFT RIGHT",0,.16f,-1.79f,.025f,
+        Text(s,ammo,0,1.42f,-1.79f,.055f,.88f,.9f,.68f);
+        Text(s,"DOUBLE CLICK A SHORE POST",
+             0,-.12f,-1.79f,.025f,.80f,.93f,.79f);
+        Text(s,"WEAPONS: LEFT RACK / PAD",0,-.26f,-1.79f,.025f,
              .75f,.87f,.76f);
         if(game.reloading()) {
             // Bounded progress bar: computed once during update, rendered
@@ -1416,7 +1453,7 @@ void BuildScene(State *s) {
                   selected?.24f:.13f,selected?.44f:.22f,owned?.37f:.15f);
             // HUD reuses the very same equipment art. No HUD-only icon
             // cache, texture upload or extra draw call is necessary.
-            AppendSprite(s->sprite_mesh,WeaponSprite(weapon),
+            PlayerSprite(s,WeaponSprite(weapon),
                          x,-1.33f,-1.77f,.27f,.18f);
             Text(s,owned?WeaponFor(weapon).name:"LOCKED",
                  x,-1.54f,-1.79f,.033f,
@@ -1542,7 +1579,7 @@ void BuildScene(State *s) {
             Text(s,hit,0,-.83f,-1.79f,.043f,.76f,1.0f,.62f);
         }
         if(s->flash>0)Panel(s,0,-.65f,-1.85f,.28f,.20f,1,.82f,.25f);
-        s->player_local=false;
+        s->console=false;s->player_local=false;
     } else {
         Panel(s,0,0,-3.0f,4.2f,1.6f,.07f,.10f,.14f);
         Text(s,game.phase()==Phase::Victory?"VICTORY":"BATTERY LOST",
@@ -1562,6 +1599,9 @@ void DestroyGl(State *s) {
     s->horizon_gpu.Release();
     if(s->sprite_vbo)glDeleteBuffers(1,&s->sprite_vbo);
     if(s->sprite_program)glDeleteProgram(s->sprite_program);
+    if(s->coast_vbo)glDeleteBuffers(1,&s->coast_vbo);
+    if(s->coast_sprite_vbo)glDeleteBuffers(1,&s->coast_sprite_vbo);
+    s->coast_vbo=0;s->coast_sprite_vbo=0;s->coast_gpu_dirty=true;
     if(s->sprite_texture)glDeleteTextures(1,&s->sprite_texture);
     if(s->font_vbo)glDeleteBuffers(1,&s->font_vbo);
     if(s->font_program)glDeleteProgram(s->font_program);
@@ -1729,7 +1769,9 @@ int32_t GlCreate(void *instance) {
        !sky_error.empty())
         ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,
                            "BreakwaterSky",sky_error.c_str());
-    const bool okay=font_decoded && s->font_program && s->font_vbo &&
+    glGenBuffers(1,&s->coast_vbo);glGenBuffers(1,&s->coast_sprite_vbo);
+    s->coast_gpu_dirty=true;
+    const bool okay=s->coast_vbo && s->coast_sprite_vbo && font_decoded && s->font_program && s->font_vbo &&
         s->font_texture && s->font_position>=0 && s->font_uv>=0 &&
         s->font_color>=0 && s->font_matrix>=0 && s->font_sampler>=0 &&
         s->program && s->vbo && s->position>=0 &&
@@ -1818,7 +1860,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->defense_points.hover=-1;
     if(s->campaign.phase()==Phase::Combat && !s->slot_picker) {
         float hudX=0.f,hudY=0.f;
-        const bool overHud=AimAtPlane(copy,-1.8f,&hudX,&hudY)>0.f &&
+        const bool overHud=AimAtPlane(ConsolePointer(copy),-1.8f,&hudX,&hudY)>0.f &&
             HitCombatSupportHud(hudX,hudY)!=CombatHudTarget::None;
         if(s->rack_focus<0 && !overHud)
             s->defense_points.hover=defense::Hit(
@@ -1851,10 +1893,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     float converged_gun[3]={};
     if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
        s->rack_focus<0 &&
-       trajectory::BarrelAim(s->campaign.selected_weapon(),
+       battlefield::BarrelAim(s->campaign.selected_weapon(),
                              copy.pointer_direction,converged_gun,
                              defense::At(s->campaign.location(),
-                                 s->defense_points.current).y)) {
+                                 s->defense_points.current),s->campaign.location())) {
         // Model follows the same physical muzzle direction as fired shots,
         // including close beach targets below the headset sight.
         for(int k=0;k<3;k++)s->gun_direction[k]=converged_gun[k];
@@ -1871,6 +1913,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->battery_damage.Tick(copy.delta_seconds);
     s->aircraft_hit.Tick(copy.delta_seconds);
     s->impacts.Tick(copy.delta_seconds);
+    s->world_impacts.Tick(copy.delta_seconds);
     s->wrecks.Tick(copy.delta_seconds);
     if(s->campaign.phase()==Phase::Combat) {
         const bool was_reloading=s->campaign.reloading();
@@ -2039,10 +2082,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
         float physical[3]={};
         s->ghost_on=(s->sam_armed ||
-            !trajectory::BarrelAim(s->campaign.selected_weapon(),
+            !battlefield::BarrelAim(s->campaign.selected_weapon(),
                                    copy.pointer_direction,physical,
                                    defense::At(s->campaign.location(),
-                                       s->defense_points.current).y)) &&
+                                       s->defense_points.current),s->campaign.location())) &&
             GhostAimPoint(worldPointer.pointer_origin,copy.pointer_direction,
                           s->ghost_position);
     }
@@ -2052,16 +2095,9 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     s->cover_aim_index=-1;s->armor_aim_index=-1;
     if(s->campaign.phase()==Phase::Combat &&
        copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE) {
-        const auto post=defense::At(s->campaign.location(),
-                                    s->defense_points.current);
-        const bool cannon_valid=trajectory::CannonShot(
-            s->campaign.selected_weapon(),copy.pointer_direction,
-            &s->aim_ray,post.y);
-        if(cannon_valid) {
-            s->aim_ray.origin[0]+=post.x;
-            s->aim_ray.origin[1]+=post.y;
-            s->aim_ray.origin[2]+=post.z;
-        }
+        bool cannon_valid=false;
+        WorldCannonShot(s,s->campaign.selected_weapon(),copy.pointer_direction,
+                         &s->aim_ray,&cannon_valid);
         s->aim_ray_valid=cannon_valid && !s->sam_armed;
         ReverieNativeInputV1 target_input=copy;
         if(s->aim_ray_valid)for(int k=0;k<3;k++) {
@@ -2102,6 +2138,15 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                            ui_pressed,!pointer_was_visible))
         s->scene_dirty=true;
     s->held=down;s->secondary_held=secondary;
+}
+int32_t PrepareFrame(void *instance) {
+    State *s=static_cast<State *>(instance);
+    if(!s)return 0;
+    if(s->scene_dirty) {
+        BuildScene(s);s->scene_dirty=false;
+        s->gpu_dirty=true;s->sprite_gpu_dirty=true;s->font_gpu_dirty=true;
+    }
+    return 1;
 }
 int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
     State *s=static_cast<State *>(instance);
@@ -2146,7 +2191,16 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
     ReverieNativeMat4Multiply(vp,eye->projection,shiftedView);
     glUniformMatrix4fv(s->matrix,1,GL_FALSE,vp);
     glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->mesh.size()/6));
-    if(!s->sprite_mesh.empty()) {
+    glBindBuffer(GL_ARRAY_BUFFER,s->coast_vbo);
+    if(s->coast_gpu_dirty)glBufferData(GL_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(s->coast_mesh.size()*sizeof(float)),
+        s->coast_mesh.data(),GL_STATIC_DRAW);
+    glVertexAttribPointer(static_cast<GLuint>(s->position),3,GL_FLOAT,GL_FALSE,
+        6*sizeof(float),reinterpret_cast<void *>(0));
+    glVertexAttribPointer(static_cast<GLuint>(s->color),3,GL_FLOAT,GL_FALSE,
+        6*sizeof(float),reinterpret_cast<void *>(3*sizeof(float)));
+    glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->coast_mesh.size()/6));
+    if(!s->sprite_mesh.empty() || !s->coast_sprite_mesh.empty()) {
         glUseProgram(s->sprite_program);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D,s->sprite_texture);
@@ -2171,6 +2225,16 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
         glUniformMatrix4fv(s->sprite_matrix,1,GL_FALSE,vp);
         glDrawArrays(GL_TRIANGLES,0,
             static_cast<GLsizei>(s->sprite_mesh.size()/5));
+        glBindBuffer(GL_ARRAY_BUFFER,s->coast_sprite_vbo);
+        if(s->coast_gpu_dirty)glBufferData(GL_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(s->coast_sprite_mesh.size()*sizeof(float)),
+            s->coast_sprite_mesh.data(),GL_STATIC_DRAW);
+        glVertexAttribPointer(static_cast<GLuint>(s->sprite_position),3,GL_FLOAT,GL_FALSE,
+            5*sizeof(float),reinterpret_cast<void *>(0));
+        glVertexAttribPointer(static_cast<GLuint>(s->sprite_uv),2,GL_FLOAT,GL_FALSE,
+            5*sizeof(float),reinterpret_cast<void *>(3*sizeof(float)));
+        glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(s->coast_sprite_mesh.size()/5));
+        s->coast_gpu_dirty=false;
     }
     if(!s->font_mesh.empty()) {
         GLint oldSrcRgb=GL_ONE,oldDstRgb=GL_ZERO;
@@ -2221,7 +2285,7 @@ const ReverieNativeModuleApiV1 kApi={
     {sizeof(ReverieNativeModuleDescriptorV1),
      REVERIE_NATIVE_MODULE_ABI_VERSION,
      "breakwater-battery","Breakwater Battery VR [DEV]",2u,0u},
-    Create,Destroy,GlCreate,GlRelease,Resume,Pause,Update,Draw,nullptr
+    Create,Destroy,GlCreate,GlRelease,Resume,Pause,Update,Draw,nullptr,PrepareFrame
 };
 } // namespace
 extern "C" __attribute__((visibility("default")))

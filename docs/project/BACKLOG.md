@@ -298,3 +298,6 @@ handoff. Keep the universal Quick Menu recoverable, do not trap held
 keyboard keys and leave the simplified Doom profile unaffected.
 This is backlog only; do not expose a nonfunctional keyboard control.
 
+
+
+- RV-0640-REBUILD-01 — **First source increment, local GCC and actual Mesa GLES verified; APK/headset pending.** Physical shore/water/units and matching hit transforms, near/middle/far texture/geometry density, cached coast buffers, right-side instrument case and left-facing rack are implemented. Remaining: independently authored weapon/mount/upgrade geometry and UVs, vehicle/infantry models, continuous physical unloading, world-speed/range tuning, campaign dressing and unified APK/headset verification. [Record](../records/2026-11-06-breakwater-coastal-rebuild-foundation.md).

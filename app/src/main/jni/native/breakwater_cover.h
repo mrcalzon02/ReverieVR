@@ -61,12 +61,12 @@ inline std::array<ShoreCover,Campaign::kMaxCover> MakeShoreCover(
 // true drop at that crossing, not the controller's straight sight ray.
 inline bool ProjectileHitsCover(
     const float *origin,const float *direction,float gravity,
-    const ShoreCover &cover,float *distance
+    const ShoreCover &cover,float *distance,float maximum=40.f
 ) {
     if(!origin || !direction || !distance || cover.hp<=0 ||
        cover.max_hp<=0 || !std::isfinite(cover.x) ||
        !std::isfinite(cover.z) || !std::isfinite(gravity) ||
-       gravity<0.0f)return false;
+       gravity<0.0f || !std::isfinite(maximum) || maximum<=0.f)return false;
     for(int i=0;i<3;++i)
         if(!std::isfinite(origin[i]) || !std::isfinite(direction[i]))
             return false;
@@ -79,7 +79,7 @@ inline bool ProjectileHitsCover(
     const double rear=static_cast<double>(cover.z)-kCoverDepth*.5;
     double enter=std::max(.000001,
         (front-origin[2])/direction[2]);
-    double leave=std::min(40.0,
+    double leave=std::min(static_cast<double>(maximum),
         (rear-origin[2])/direction[2]);
     if(leave<enter || !std::isfinite(enter) ||
        !std::isfinite(leave))return false;
@@ -123,7 +123,7 @@ inline bool ProjectileHitsCover(
     };
     crossing(low);
     crossing(high);
-    if(first>40.0 || !std::isfinite(first))return false;
+    if(first>maximum || !std::isfinite(first))return false;
     *distance=static_cast<float>(first);
     return true;
 }

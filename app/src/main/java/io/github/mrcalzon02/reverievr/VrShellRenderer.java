@@ -3041,7 +3041,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
             float nativeFar = nativeModuleRuntime != null
                 && "breakwater-battery".equals(
                     nativeModuleRuntime.getActiveModuleId())
-                ? 240.0f : Z_FAR;
+                ? 6000.0f : Z_FAR;
             boolean rendered =
                 nativeModuleRuntime != null
                     && nativeSurfaceReady

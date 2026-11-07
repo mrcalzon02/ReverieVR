@@ -16,6 +16,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+SHARED_ASSET_HEADER = Path("app/src/main/jni/native/reverie_native_shared_asset_catalog.h")
+ASSET_SCOPE_HEADER = Path("app/src/main/jni/native/reverie_native_asset_scope.h")
+SHARED_ASSETS_DOC = Path("docs/native/SHARED_ASSETS.md")
+
 API_HEADER = Path("app/src/main/jni/native/reverie_native_module.h")
 SDK_HEADER = Path("app/src/main/jni/native/reverie_native_sdk.h")
 GL_STATE_HEADER = Path("app/src/main/jni/native/reverie_native_gl_state.h")

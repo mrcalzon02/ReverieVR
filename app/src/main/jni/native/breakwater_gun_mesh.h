@@ -153,18 +153,20 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
     const float r=kind==WeaponKind::DirectCannon?.36f:.32f;
     const float g=kind==WeaponKind::Flak?.41f:.36f;
     const float b=kind==WeaponKind::MissileBattery?.36f:.31f;
-    // Rear breech, fitted metal collar, tapered barrel and hollow muzzle.
-    const Vec breech=Add(rear,Scale(aim,.28f));
-    Tube(emit,rear,breech,right,up,radius*1.25f,radius*1.18f,
-         .25f,.29f,.28f,false);
-    const Vec collar=Add(rear,Scale(aim,.40f));
-    Tube(emit,breech,collar,right,up,radius*1.28f,radius*1.13f,
-         .49f,.49f,.42f,false);
     const Vec tip=Add(rear,Scale(aim,length));
-    Tube(emit,collar,tip,right,up,radius*.96f,radius*.80f,r,g,b);
-    // Muzzle reinforcement has a second observable ring.
-    Tube(emit,Add(tip,Scale(aim,-.10f)),tip,right,up,
-         radius*.97f,radius*.92f,.42f,.44f,.40f);
+    if(kind!=WeaponKind::MissileBattery) {
+        // Rear breech, fitted metal collar, tapered barrel and hollow muzzle.
+        const Vec breech=Add(rear,Scale(aim,.28f));
+        Tube(emit,rear,breech,right,up,radius*1.25f,radius*1.18f,
+             .25f,.29f,.28f,false);
+        const Vec collar=Add(rear,Scale(aim,.40f));
+        Tube(emit,breech,collar,right,up,radius*1.28f,radius*1.13f,
+             .49f,.49f,.42f,false);
+        Tube(emit,collar,tip,right,up,radius*.96f,radius*.80f,r,g,b);
+        // Muzzle reinforcement has a second observable ring.
+        Tube(emit,Add(tip,Scale(aim,-.10f)),tip,right,up,
+             radius*.97f,radius*.92f,.42f,.44f,.40f);
+    }
     // Changing weapons must visibly exchange the entire barrel assembly.
     // Every silhouette here is tied to the active WeaponKind and therefore
     // appears identically on the mounted cannon AND its miniature rack copy.
@@ -190,18 +192,16 @@ inline void Build(Emit emit,WeaponKind kind,const float *direction,
             }
             Housing(emit,Add(rear,Add(Scale(aim,.38f),Scale(up,-.23f))),
                     right,up,aim,.11f,.09f,.18f,.20f,.24f,.23f);
-            // Rotary machine gun: five exposed slender barrels and binding
-            // collars surrounding the primary, correctly aimed muzzle.
-            for(int side : {-1,1})for(int tier : {-1,1}) {
-                const Vec offset=Add(Scale(right,.115f*side),
-                                     Scale(up,.10f*tier));
-                Tube(emit,Add(rear,Add(Scale(aim,.30f),offset)),
-                     Add(tip,offset),right,up,
-                     .032f,.027f,.20f,.24f,.24f,false);
+            // One barrel, a slotted cooling shroud and spade grips. The
+            // receiver/feed silhouette carries the weapon, not more tubes.
+            Housing(emit,Add(rear,Add(Scale(aim,.67f),Scale(up,.14f))),
+                    right,up,aim,.16f,.06f,.36f,.23f,.29f,.25f);
+            for(int side:{-1,1}) {
+                Housing(emit,Add(rear,Add(Scale(right,side*.24f),Scale(aim,-.13f))),
+                        right,up,aim,.045f,.16f,.055f,.16f,.20f,.18f);
+                Housing(emit,Add(rear,Add(Scale(right,side*.16f),Scale(aim,-.07f))),
+                        right,up,aim,.13f,.035f,.045f,.31f,.36f,.29f);
             }
-            Tube(emit,Add(rear,Scale(aim,.64f)),
-                 Add(rear,Scale(aim,.78f)),right,up,
-                 .185f,.185f,.46f,.48f,.42f,false);
             // A broad feed block on the starboard side is an unambiguous
             // machine-gun feature, even from above the seated breech.
             const Vec feed=Add(rear,Add(Scale(aim,.26f),Scale(right,.26f)));
@@ -372,39 +372,34 @@ struct RackSlot {float x,y,z;};
 inline RackSlot RackLocation(uint8_t id) {
     return {kRackX,kRackTop-static_cast<float>(id)*kRackStep,kRackZ};
 }
+inline void FaceRack(float &x,float &z) {
+    const float n=std::hypot(kRackX,kRackZ);
+    const float nx=-kRackX/n,nz=-kRackZ/n;
+    const float localX=x-kRackX,localZ=z-kRackZ;
+    x=kRackX+nz*localX+nx*localZ;
+    z=kRackZ-nx*localX+nz*localZ;
+}
 // The selectable box encloses the same world-space mesh that is drawn.
 inline int HitRack(const float *origin,const float *direction) {
     if(!origin || !direction)return -1;
     for(int axis=0;axis<3;++axis)
         if(!std::isfinite(origin[axis]) || !std::isfinite(direction[axis]))
             return -1;
-    int found=-1;
-    float nearest=40.f;
-    for(uint8_t id=0;id<kWeaponCount;++id) {
-        const RackSlot slot=RackLocation(id);
-        const float center[]={slot.x,slot.y,slot.z};
-        const float half[]={kRackHalfX,kRackHalfY,kRackHalfZ};
-        float enter=0.f,exit=40.f;
-        bool valid=true;
-        for(int axis=0;axis<3;++axis) {
-            const float lo=center[axis]-half[axis];
-            const float hi=center[axis]+half[axis];
-            const float d=direction[axis],o=origin[axis];
-            if(std::abs(d)<.000001f) {
-                if(o<lo || o>hi){valid=false;break;}
-                continue;
-            }
-            float a=(lo-o)/d,b=(hi-o)/d;
-            if(a>b)std::swap(a,b);
-            enter=std::max(enter,a);
-            exit=std::min(exit,b);
-            if(enter>exit){valid=false;break;}
-        }
-        if(valid && exit>=enter && enter<nearest) {
-            nearest=enter;found=id;
-        }
-    }
-    return found;
+    // Cabinet fronts face the operator, rather than overlapping deep
+    // world-axis cuboids selecting an adjacent shelf before its centre.
+    const float n=std::hypot(kRackX,kRackZ);
+    const float nx=-kRackX/n,nz=-kRackZ/n;
+    const float denominator=direction[0]*nx+direction[2]*nz;
+    if(denominator>=-.000001f)return -1;
+    const float t=((kRackX-origin[0])*nx+(kRackZ-origin[2])*nz)/denominator;
+    if(t<=0.f || t>40.f)return -1;
+    const float x=origin[0]+direction[0]*t-kRackX;
+    const float z=origin[2]+direction[2]*t-kRackZ;
+    if(std::abs(x*nz-z*nx)>kRackHalfX)return -1;
+    const float y=origin[1]+direction[1]*t;
+    for(uint8_t id=0;id<kWeaponCount;++id)
+        if(std::abs(y-RackLocation(id).y)<=kRackHalfY)return id;
+    return -1;
 }
 template<typename Emit>
 inline void RackModel(Emit emit,WeaponKind kind) {

@@ -631,3 +631,8 @@ Red Ledger metal/door/click/drawer and victory cues are used, not
 new audio IDs or a claimed spoken quote. Mechanist closed/open
 sprite sheets remain an explicit art-import task. APK/Daydream
 runtime and thermal proof pending.
+
+
+## Breakwater coastal stage — 2026-11-06
+
+The hosted `breakwater-battery` renderer now requests a 6000m far plane only for that module. It supplies the existing optional `prepare_frame` callback to bake shared scene data before the stereo pair, with a compatible first-eye fallback on older hosts. Game-private placement and inverse collision transforms retain the campaign/save coordinate schema while expanding physical combat distances. Cached static coastal VBOs survive scene updates and are re-uploaded after GL-context recreation. Right-side instruments and left-side equipment remain station/world anchored, independently of headset yaw; shell-owned recovery remains unchanged. Actual Mesa GLES stereo/context-recreation tests pass; Android package, physical headset scale/comfort and sustained phone timing remain unverified. See `docs/records/2026-11-06-breakwater-coastal-rebuild-foundation.md` for the bounded implementation and unfinished model/collision work.
