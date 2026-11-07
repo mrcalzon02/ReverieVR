@@ -2250,8 +2250,11 @@ int32_t Draw(void *instance,const ReverieNativeEyeV1 *eye) {
             reinterpret_cast<void*>(3*sizeof(float)));
         glUniformMatrix4fv(s->sprite_matrix,1,GL_FALSE,vp);
         check_eye_gl("Sprite primary VBO/attributes/matrix");
-        glDrawArrays(GL_TRIANGLES,0,
-            static_cast<GLsizei>(s->sprite_mesh.size()/5));
+        // Slot selection has only coastal atlas geometry: do not issue a
+        // sprite draw against an empty dynamic VBO on the GLES2 emulator.
+        if(!s->sprite_mesh.empty())
+            glDrawArrays(GL_TRIANGLES,0,
+                static_cast<GLsizei>(s->sprite_mesh.size()/5));
         check_eye_gl("Sprite primary draw");
         glBindBuffer(GL_ARRAY_BUFFER,s->coast_sprite_vbo);
         if(s->coast_gpu_dirty)glBufferData(GL_ARRAY_BUFFER,
