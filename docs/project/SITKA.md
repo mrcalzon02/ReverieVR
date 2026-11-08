@@ -1,3 +1,9 @@
+## Starter gameplay loop — 2026-11-07
+
+The source now retains caught fish for harbor sale, registers finds/tokens before upgrades, supplies the requested Tier 0 kit/dinghy plus starter fish/shellfish/token, and renders live shore/fishing/office instructions. Basic bait is infinite; equipment currently has no durability loss. No old-save migration is required. The clean-start format is `SITKA-FISH-5` in the existing host slot. Four functional training tracks are offered; disconnected Deckwork training is hidden.
+
+[Gameplay audit, actual-module tests and remaining integration work](../records/2026-11-07-sitka-starter-harbor-loop.md). **Sitka is still source-only and absent from the playable APK launcher.** Synthetic walking/office and real stereo rendering tests do not establish a packaged Sitka world or headset acceptance. Dated older implementation notes below are historical where superseded by this entry.
+
 > **2026-10-30:** The internal desktop games manager now has a Sitka project selector, separate named region files, shared Beckenburg editor palette and transaction history, and direct access to the actual Sitka water/weather authoring application. The portable editor, water and weather source is bundled and version-pinned; it does **not** turn Sitka into a playable native game. See [internal game editor integration](INTERNAL_GAME_EDITOR_BECKENBURG.md).
 
 # Sitka
@@ -135,16 +141,16 @@ The fishing journal now stores five character tracks with eight bought
 levels each (40 character purchases): Walking Pace, Rod Handling, Angler
 Endurance, Explorer Awareness, and Deckwork. The first four already alter
 movement speed, reel rate/bite timing, tension, and pickup/visit reach.
-Deckwork is persisted and purchasable but is not yet wired to the
-standalone crab work-cycle prototype. Every next skill level requires
+Deckwork remains a persisted simulation track but is hidden from the harbor shop
+until the standalone crab work-cycle prototype is wired. Every next skill level requires
 one more unique beach site, and level three onward also requires
 increasing numbers of unique sourced city visits. All character levels
 consume fish-earned currency. The analog stick deadzone and proportional
 response are unchanged; maximum speed rises at most 40%, not a new
 control mode.
 
-The existing host-scoped save slot now uses SITKA-FISH-4, with strict
-backward compatibility for V1/V2/V3 money, equipment, hull and finds.
+The original implementation used SITKA-FISH-4. The current clean-start
+format is SITKA-FISH-5; old prototype save migration is not required.
 An optional reviewed sitka/city/discoveries.txt asset can define up
 to 64 immutable sites with typed categories. File format:
 SITKA-CITY-1, provenance (P|source|sha256|EPSG32608|reviewed),
@@ -153,8 +159,8 @@ trailhead/civic|local_x|local_z. No invented city POIs are installed.
 Coordinates must match source terrain; visiting nearby on foot records
 that location once and persists it. Without authored files advanced
 unlocks remain unavailable rather than fabricating discoveries.
-The actual character training store menu, city POI visuals, and
-complete source content are still unfinished.
+Four functional character training tracks now use the harbor menu. City POI
+visuals and complete source content remain unfinished.
 
 
 ## Approved physical-equipment concept archive — 2026-11-05

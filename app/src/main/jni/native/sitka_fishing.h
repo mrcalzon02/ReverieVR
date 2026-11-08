@@ -67,12 +67,33 @@ struct Journal {
     uint32_t observation_level=0,deckhand_level=0;
     uint64_t city_sites=0; // author-assigned, public, sourced landmarks
     uint32_t city_discoveries=0; // categories encountered, no credits
+    std::array<uint32_t,4> fish_inventory={{0,0,0,0}};
+    uint32_t shellfish_inventory=0;
+    uint64_t submitted_beach_sites=0;
+    uint32_t starter_tokens=0,submitted_starter_tokens=0;
+    uint32_t submitted_discoveries=0;
 };
 inline uint32_t BeachSiteCount(uint64_t bits){
     uint32_t count=0;
     while(bits){bits&=(bits-1u);++count;}
     return count;
 }
+// Starter supplies are granted only for a genuinely absent save, never migration.
+// No invented geographic discovery ID is reserved for the supplied token.
+inline Journal StarterJournal(){
+    Journal j;
+    j.fish_inventory[unsigned(Fish::Coho)]=1u;
+    j.shellfish_inventory=1u;
+    j.starter_tokens=1u;
+    return j;
+}
+inline uint32_t RegisteredFindCount(const Journal& j){
+    return BeachSiteCount(j.submitted_beach_sites)+j.submitted_starter_tokens;
+}
+// The Tier 0 pole, reel/spool, line, bait and shore kit cannot wear out.
+// Basic bait is always available; Cast never consumes bait or starter gear.
+inline constexpr bool kStarterGearInfiniteDurability=true;
+inline constexpr bool kBasicBaitInfinite=true;
 inline uint32_t EquipmentLevel(const Journal& j,Equipment item){
     switch(item){
         case Equipment::Rod:return j.gear;
@@ -109,8 +130,8 @@ inline EquipmentOffer NextEquipment(const Journal& j,Equipment item){
     result.credits=kEquipmentBasePrice[index]*next*(next+1u)/2u;
     result.required_sites=next; // unique finds along authentic shoreline
     result.required_kinds=FindPrerequisites(next);
-    result.unlocked=BeachSiteCount(j.beach_sites)>=result.required_sites &&
-        (j.discoveries&result.required_kinds)==result.required_kinds;
+    result.unlocked=RegisteredFindCount(j)>=result.required_sites &&
+        (j.submitted_discoveries&result.required_kinds)==result.required_kinds;
     result.affordable=j.credits>=result.credits;
     return result;
 }
@@ -146,9 +167,9 @@ inline CharacterOffer NextCharacter(const Journal& j,CharacterSkill skill){
     // Return to the city for advanced training, not every character level.
     o.required_city=o.next_level>2u?o.next_level-2u:0u;
     o.required_beach_kinds=FindPrerequisites(o.next_level);
-    o.unlocked=BeachSiteCount(j.beach_sites)>=o.required_beach &&
+    o.unlocked=RegisteredFindCount(j)>=o.required_beach &&
        BeachSiteCount(j.city_sites)>=o.required_city &&
-       (j.discoveries&o.required_beach_kinds)==o.required_beach_kinds;
+       (j.submitted_discoveries&o.required_beach_kinds)==o.required_beach_kinds;
     o.affordable=j.credits>=o.credits;
     return o;
 }
@@ -210,10 +231,10 @@ struct Fishing {
                 if(reel>=1.f){
                     const unsigned id=unsigned(hooked);
                     if(id<journal.caught.size()&&journal.total<1000000u&&
-                       journal.caught[id]<1000000u){
+                       journal.caught[id]<1000000u&&
+                       journal.fish_inventory[id]<1000000u){
                         ++journal.caught[id];++journal.total;
-                        journal.credits=std::min(1000000u,
-                            journal.credits+kFishCreditAwards[id]);
+                        ++journal.fish_inventory[id];
                     }
                     phase=FishingPhase::Landed;
                 }
@@ -224,6 +245,32 @@ struct Fishing {
     bool AcknowledgeCatch(){
         if(phase!=FishingPhase::Landed)return false;
         phase=FishingPhase::Ready;time=reel=tension=0.f;return true;
+    }
+    bool SellFish(){
+        if(phase!=FishingPhase::Ready)return false;
+        for(unsigned id=0;id<journal.fish_inventory.size();++id){
+            if(!journal.fish_inventory[id])continue;
+            if(journal.credits>1000000u-kFishCreditAwards[id])return false;
+            --journal.fish_inventory[id];journal.credits+=kFishCreditAwards[id];
+            return true;
+        }
+        return false;
+    }
+    bool SellShellfish(){
+        constexpr uint32_t value=25u;
+        if(phase!=FishingPhase::Ready||!journal.shellfish_inventory||
+           journal.credits>1000000u-value)return false;
+        --journal.shellfish_inventory;journal.credits+=value;return true;
+    }
+    bool SubmitFinds(){
+        if(phase!=FishingPhase::Ready)return false;
+        if(journal.submitted_beach_sites==journal.beach_sites&&
+           !journal.starter_tokens)return false;
+        journal.submitted_beach_sites=journal.beach_sites;
+        journal.submitted_discoveries=journal.discoveries;
+        journal.submitted_starter_tokens+=journal.starter_tokens;
+        journal.starter_tokens=0u;
+        return true; // registration unlocks purchases, never grants money
     }
     bool Discover(uint32_t site,BeachFind kind){
         if(phase!=FishingPhase::Ready||site>=64u||
@@ -273,34 +320,31 @@ struct Fishing {
     }
     bool UpgradeTackle(){return Purchase(Equipment::Rod);}
 };
-// V4 extends the SAME save slot with five character skills and city visits.
-// V1/V2/V3 records migrate without losing money, hulls or equipment.
+// V5 retains inventory and office registrations in the SAME save slot.
+// Clean-start development format; old prototype versions are not migrated.
 inline std::string SaveJournal(const Journal& j){
-    std::string out="SITKA-FISH-4\n";
-    const std::array<uint64_t,23> fields={{
+    std::string out="SITKA-FISH-5\n";
+    const std::array<uint64_t,32> fields={{
         j.seed,j.credits,j.gear,j.total,j.caught[0],j.caught[1],
         j.caught[2],j.caught[3],j.helm_upgrades,j.hull_tier,
         j.reel_level,j.line_level,j.lure_level,j.shore_kit_level,
         j.discoveries,j.beach_sites,j.stride_level,
         j.rod_handling_level,j.endurance_level,j.observation_level,
-        j.deckhand_level,j.city_sites,j.city_discoveries
+        j.deckhand_level,j.city_sites,j.city_discoveries,
+        j.fish_inventory[0],j.fish_inventory[1],j.fish_inventory[2],
+        j.fish_inventory[3],j.shellfish_inventory,j.submitted_beach_sites,
+        j.starter_tokens,j.submitted_starter_tokens,j.submitted_discoveries
     }};
     for(uint64_t n:fields)out+=std::to_string(n)+"\n";
     return out;
 }
 inline bool LoadJournal(std::string_view bytes,Journal& out){
-    constexpr std::string_view v1="SITKA-FISH-1\n";
-    constexpr std::string_view v2="SITKA-FISH-2\n";
-    constexpr std::string_view v3="SITKA-FISH-3\n";
-    constexpr std::string_view v4="SITKA-FISH-4\n";
-    unsigned fields=0;
-    if(bytes.substr(0,v1.size())==v1){bytes.remove_prefix(v1.size());fields=8;}
-    else if(bytes.substr(0,v2.size())==v2){bytes.remove_prefix(v2.size());fields=10;}
-    else if(bytes.substr(0,v3.size())==v3){bytes.remove_prefix(v3.size());fields=16;}
-    else if(bytes.substr(0,v4.size())==v4){bytes.remove_prefix(v4.size());fields=23;}
-    else return false;
-    if(bytes.size()>384u)return false;
-    std::array<uint64_t,23> n{};
+    constexpr std::string_view version="SITKA-FISH-5\n";
+    if(bytes.substr(0,version.size())!=version)return false;
+    bytes.remove_prefix(version.size());
+    constexpr unsigned fields=32u;
+    if(bytes.size()>512u)return false;
+    std::array<uint64_t,32> n{};
     for(unsigned i=0;i<fields;++i){
         const auto end=bytes.find('\n');
         if(end==std::string_view::npos||end==0u||end>20u)return false;
@@ -327,6 +371,12 @@ inline bool LoadJournal(std::string_view bytes,Journal& out){
         sum+=n[i];
     }
     if(sum!=n[3])return false;
+    {
+        for(unsigned i=23u;i<=27u;++i)if(n[i]>1000000u)return false;
+        if((n[28]&~n[15])!=0u||n[29]>1u||n[30]>1u||n[29]+n[30]>1u||
+           n[31]>=(uint32_t(1)<<unsigned(BeachFind::Count))||
+           (n[31]&~n[14])!=0u||(n[28]!=0u&&n[31]==0u))return false;
+    }
     Journal j;
     j.seed=static_cast<uint32_t>(n[0]);
     j.credits=static_cast<uint32_t>(n[1]);
@@ -348,6 +398,14 @@ inline bool LoadJournal(std::string_view bytes,Journal& out){
     j.deckhand_level=static_cast<uint32_t>(n[20]);
     j.city_sites=n[21];
     j.city_discoveries=static_cast<uint32_t>(n[22]);
+    {
+        for(unsigned i=0u;i<4u;++i)j.fish_inventory[i]=static_cast<uint32_t>(n[23u+i]);
+        j.shellfish_inventory=static_cast<uint32_t>(n[27]);
+        j.submitted_beach_sites=n[28];
+        j.starter_tokens=static_cast<uint32_t>(n[29]);
+        j.submitted_starter_tokens=static_cast<uint32_t>(n[30]);
+        j.submitted_discoveries=static_cast<uint32_t>(n[31]);
+    }
     out=j;return true;
 }
 }} // namespace reverie::sitka

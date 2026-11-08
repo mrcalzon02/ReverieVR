@@ -29,16 +29,21 @@ int main() {
     uint32_t expected_credits=0u;
     for(unsigned k=0;k<4;++k)expected_credits+=
         f.journal.caught[k]*kFishCreditAwards[k];
+    assert(f.journal.credits==0u);
+    while(f.SellFish()){}
     assert(f.journal.credits==expected_credits);
     assert(!f.UpgradeTackle()); // fish credits alone never unlock a shop tier
     assert(f.Discover(0u,BeachFind::Shell));
     assert(!f.Discover(0u,BeachFind::Shell));
+    assert(!NextEquipment(f.journal,Equipment::Rod).unlocked);
+    assert(f.SubmitFinds());
     const auto offer=NextEquipment(f.journal,Equipment::Rod);
     assert(offer.available&&offer.unlocked&&offer.required_sites==1u);
     assert(f.UpgradeTackle()&&f.journal.gear==1u&&
            f.journal.credits==expected_credits-offer.credits);
     assert(!f.UpgradeTackle()); // another unique beach discovery needed
     assert(f.Discover(1u,BeachFind::Crab));
+    assert(f.SubmitFinds());
     const auto line=NextEquipment(f.journal,Equipment::Line);
     assert(line.unlocked && f.Purchase(Equipment::Line));
     assert(f.journal.line_level==1u);

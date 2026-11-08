@@ -4,7 +4,7 @@
 // Harbor Department office at Thomsen Harbor is independently confirmed;
 // other authorized harbors may offer *in-game service desks* at real
 // verified waterfront features, never fabricated real-world offices.
-// One wallet and the existing V4 boat/rod/skill save transaction.
+// One wallet and the V5 boat/rod/skill/inventory transaction.
 #include "sitka_helm.h"
 #include "sitka_free_roam.h"
 #include "sitka_beach_discoveries.h"
@@ -27,7 +27,11 @@ inline constexpr std::array<const char*,5> kMunicipalHarbors={{
 inline constexpr std::array<const char*,4> kHullLabels={{
     "Dinghy","Fishing skiff","Pilothouse","Commercial trawler"
 }};
-inline constexpr size_t kShopItems=1u+16u+5u+5u;
+// Deckwork's pot simulation is not connected to this module yet. Do not
+// charge the player for an inert fifth training track.
+inline constexpr size_t kShopTrainingItems=4u;
+inline constexpr size_t kPurchaseItems=1u+kParts.size()+kEquipmentMax.size()+kShopTrainingItems;
+inline constexpr size_t kShopItems=kPurchaseItems+3u;
 enum class HarborLocationKind : uint8_t { RealOffice, ServiceDesk };
 struct HarborShopSite {
     std::string harbor;
@@ -194,7 +198,7 @@ inline TerrainMesh HarborShopPanelMesh(){
     return m;
 }
 enum class ShopEvent : uint8_t {
-    None,Open,Close,Next,Previous,Purchased,Denied
+    None,Open,Close,Next,Previous,Purchased,Denied,Sold,Submitted
 };
 inline uint32_t HullPrice(unsigned hull){
     constexpr uint32_t costs[]={300u,1400u,4200u};
@@ -207,11 +211,11 @@ inline unsigned RequiredShopCity(unsigned hull){
     return hull<2u?0u:hull==2u?2u:4u;
 }
 inline bool HarborShopUnlocked(const Journal& journal,unsigned tier){
-    return BeachSiteCount(journal.beach_sites)>=RequiredShopBeach(tier) &&
+    return RegisteredFindCount(journal)>=RequiredShopBeach(tier) &&
            BeachSiteCount(journal.city_sites)>=RequiredShopCity(tier);
 }
 struct ShopOffer{
-    std::string title;
+    std::string title,requirements;
     uint32_t price=0u;
     bool available=false,owned=false,unlocked=false,affordable=false;
 };
@@ -226,6 +230,8 @@ inline ShopOffer HarborOffer(const Journal& journal,unsigned index){
         o.owned=!o.available;
         o.price=HullPrice(progress.hull);
         o.unlocked=o.available&&HarborShopUnlocked(journal,progress.hull);
+        o.requirements="REGISTER "+std::to_string(RequiredShopBeach(progress.hull))+
+            " FINDS / CITY "+std::to_string(RequiredShopCity(progress.hull));
     }else if(index<=kParts.size()){
         const unsigned id=index-1u;
         const auto& part=kParts[id];
@@ -236,30 +242,58 @@ inline ShopOffer HarborOffer(const Journal& journal,unsigned index){
         o.unlocked=progress.hull>=part.hull &&
             (progress.owned&part.requires_bits)==part.requires_bits &&
             HarborShopUnlocked(journal,part.hull);
+        o.requirements=progress.hull<part.hull?"NEEDS LARGER HULL":
+            (progress.owned&part.requires_bits)!=part.requires_bits?
+            "NEEDS PRIOR FITTING":"REGISTER FINDS / EXPLORE CITY";
     }else if(index<=kParts.size()+kEquipmentMax.size()){
         const unsigned id=index-1u-unsigned(kParts.size());
         const auto offer=NextEquipment(journal,Equipment(id));
-        o.title=std::string("Gear: ")+kEquipmentNames[id];
+        o.title=std::string("Gear: ")+kEquipmentNames[id]+" L"+
+            std::to_string(offer.next_level);
+        o.requirements="REGISTER "+std::to_string(offer.required_sites)+
+            " FINDS + REQUIRED KINDS";
         o.price=offer.credits;
         o.available=offer.available;
         o.owned=!o.available;
         o.unlocked=offer.unlocked;
-    }else if(index<kShopItems){
+    }else if(index<kPurchaseItems){
         const unsigned id=index-1u-unsigned(kParts.size())-
                           unsigned(kEquipmentMax.size());
         const auto offer=NextCharacter(journal,CharacterSkill(id));
-        o.title=std::string("Training: ")+kCharacterSkillNames[id];
+        o.title=std::string("Training: ")+kCharacterSkillNames[id]+" L"+
+            std::to_string(offer.next_level);
+        o.requirements="REGISTER "+std::to_string(offer.required_beach)+
+            " FINDS / CITY "+std::to_string(offer.required_city);
         o.price=offer.credits;
         o.available=offer.available;
         o.owned=!o.available;
         o.unlocked=offer.unlocked;
+    }else if(index==kPurchaseItems){
+        for(unsigned id=0u;id<journal.fish_inventory.size();++id){
+            if(!journal.fish_inventory[id])continue;
+            o.title=std::string("Sell ")+kFishNames[id]+" ("+
+                std::to_string(journal.fish_inventory[id])+") +"+
+                std::to_string(kFishCreditAwards[id])+" CR";
+            o.available=true;o.unlocked=true;
+            o.affordable=journal.credits<=1000000u-kFishCreditAwards[id];return o;
+        }
+        o.title="Sell fish: inventory empty";return o;
+    }else if(index==kPurchaseItems+1u){
+        o.title="Sell shellfish ("+std::to_string(journal.shellfish_inventory)+") +25 CR";
+        o.available=journal.shellfish_inventory>0u;o.unlocked=true;
+        o.affordable=journal.credits<=999975u;return o;
+    }else if(index==kPurchaseItems+2u){
+        const auto pending=BeachSiteCount(journal.beach_sites&~journal.submitted_beach_sites)+
+            journal.starter_tokens;
+        o.title="Register finds/tokens ("+std::to_string(pending)+")";
+        o.available=pending>0u;o.unlocked=true;o.affordable=true;return o;
     }else return o;
     o.affordable=o.available&&journal.credits>=o.price;
     return o;
 }
 inline std::string HarborOfferStatus(const ShopOffer& offer){
     if(offer.owned)return "MAX / OWNED";
-    if(!offer.unlocked)return "LOCKED: EXPLORE";
+    if(!offer.unlocked)return "LOCKED: "+offer.requirements;
     if(!offer.affordable)return "NEED CREDITS";
     return std::to_string(offer.price)+" CR - SELECT";
 }
@@ -284,7 +318,7 @@ public:
         if(!open_){
             if(press&&aimed_site>=0&&
                fishing.fishing.phase==FishingPhase::Ready){
-                open_=true;site_=aimed_site;selected_=0u;
+                open_=true;site_=aimed_site;selected_=unsigned(kPurchaseItems);
                 consumed_primary_=true;return ShopEvent::Open;
             }
             return ShopEvent::None;
@@ -307,6 +341,12 @@ public:
         const auto offer=HarborOffer(fishing.fishing.journal,selected_);
         if(!offer.available||!offer.unlocked||!offer.affordable)
             return ShopEvent::Denied;
+        if(selected_==kPurchaseItems)
+            return fishing.SellFish()?ShopEvent::Sold:ShopEvent::Denied;
+        if(selected_==kPurchaseItems+1u)
+            return fishing.SellShellfish()?ShopEvent::Sold:ShopEvent::Denied;
+        if(selected_==kPurchaseItems+2u)
+            return fishing.SubmitFinds()?ShopEvent::Submitted:ShopEvent::Denied;
         bool purchased=false;
         if(selected_==0u)purchased=PurchaseHull(fishing);
         else if(selected_<=kParts.size())
@@ -328,15 +368,47 @@ inline std::array<std::string,6> HarborShopPanel(
     const HarborShopSession& shop,const FishingSession& fishing){
     std::array<std::string,6> lines{};
     const Journal& j=fishing.fishing.journal;
-    lines[0]="HARBOR DEPARTMENT / BOAT UPGRADES";
+    lines[0]="HARBOR OFFICE / SELL / REGISTER / UPGRADE";
     lines[1]="CREDITS "+std::to_string(j.credits)+
              "  HULL "+std::string(kHullLabels[std::min(3u,j.hull_tier)]);
-    lines[2]="ITEM "+std::to_string(shop.selected()+1u)+"/"+
-             std::to_string(kShopItems);
+    lines[2]="REGISTERED "+std::to_string(RegisteredFindCount(j))+
+        "  T0 GEAR/BASIC BAIT: INFINITE";
     const ShopOffer offer=HarborOffer(j,shop.selected());
     lines[3]=offer.title;
-    lines[4]=HarborOfferStatus(offer);
-    lines[5]="STICK: BROWSE  SELECT: BUY  BACK: CLOSE";
+    lines[4]=shop.selected()>=kPurchaseItems?
+        (offer.available?(offer.affordable?"SELECT: CONFIRM":"WALLET FULL"):
+                         "NOTHING TO HAND IN"):HarborOfferStatus(offer);
+    if(fishing.write_failed)lines[4]="SAVE FAILED - RETRY ON PAUSE/EXIT";
+    lines[5]="STICK: BROWSE  SELECT: CONFIRM  BACK: CLOSE";
+    return lines;
+}
+// Compact live instructions use the same cached panel/font as the office.
+inline std::array<std::string,6> ShoreGameplayPanel(const FishingSession& session,
+                                                 bool office_focused){
+    const auto& f=session.fishing;
+    const auto& j=f.journal;
+    uint32_t fish=0u;for(auto n:j.fish_inventory)fish+=n;
+    std::array<std::string,6> lines={{
+        "SITKA / SHORE", "CREDITS "+std::to_string(j.credits)+
+        "  FISH "+std::to_string(fish)+"  SHELLFISH "+std::to_string(j.shellfish_inventory),
+        "ROD "+std::to_string(j.gear)+" REEL "+std::to_string(j.reel_level)+
+        " LINE "+std::to_string(j.line_level),
+        "", "T0 KIT: NO WEAR / BASIC BAIT: INFINITE", ""
+    }};
+    switch(f.phase){
+        case FishingPhase::Ready:lines[3]="POINT AT WATER: SELECT TO CAST";break;
+        case FishingPhase::Waiting:lines[3]="WAITING FOR A BITE / BACK: CANCEL";break;
+        case FishingPhase::Bite:lines[3]="BITE! SELECT TO HOOK";break;
+        case FishingPhase::Reeling:
+            lines[3]="HOLD: REEL "+std::to_string(unsigned(f.reel*100.f))+"%";
+            lines[4]="TENSION "+std::to_string(unsigned(f.tension*100.f))+"% / RELEASE TO REST";break;
+        case FishingPhase::Landed:
+            lines[3]=std::string("LANDED: ")+kFishNames[unsigned(f.hooked)];
+            lines[4]="SELECT: STOW / SELL AT HARBOR OFFICE";break;
+    }
+    lines[5]=office_focused?"HARBOR OFFICE: SELECT FOR SERVICES":
+        "STICK: WALK / OFFICE: SELL, REGISTER, UPGRADE";
+    if(session.write_failed)lines[5]="SAVE FAILED - RETRY ON PAUSE/EXIT";
     return lines;
 }
 }} // namespace reverie::sitka

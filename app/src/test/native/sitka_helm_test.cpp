@@ -50,10 +50,6 @@ int main(){
     assert(recovered.helm_upgrades==save.fishing.journal.helm_upgrades);
     assert(recovered.credits==save.fishing.journal.credits);
     assert(recovered.hull_tier==1u);
-    Journal legacy;
-    assert(LoadJournal("SITKA-FISH-1\n123\n900\n1\n1\n1\n0\n0\n0\n",legacy));
-    assert(legacy.credits==900u&&legacy.gear==1u);
-    assert(legacy.hull_tier==0u&&legacy.helm_upgrades==0u);
     assert(!LoadJournal(version2+"corrupt",recovered));
     assert(recovered.helm_upgrades==save.fishing.journal.helm_upgrades);
     HelmWheel wheel;

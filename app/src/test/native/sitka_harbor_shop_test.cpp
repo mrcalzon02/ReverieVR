@@ -16,7 +16,7 @@ static TerrainMesh Flat(){
     t.indices={0u,1u,2u,0u,2u,3u};return t;
 }
 int main(){
-    assert(kShopItems==27u);
+    assert(kShopItems==29u);
     const std::string source="SITKA-HARBOR-SHOPS-1\nP|reviewed_harbor|"+
         std::string(64,'a')+"|EPSG32608|reviewed\nO|480000|6300000\n";
     const std::string data=source+
@@ -69,11 +69,17 @@ int main(){
     assert(shop.Update(true,false,0.f,0,journal,false)==ShopEvent::Open);
     assert(shop.open()&&shop.consumes_primary());
     assert(shop.Update(true,false,0.f,0,journal,false)==ShopEvent::None);
+    // Shops open at the sale rows; browse three steps forward to hull upgrade.
+    for(int i=0;i<3;++i){
+        shop.Update(false,false,0.f,-1,journal,false);
+        shop.Update(false,false,-1.f,-1,journal,false);
+    }
     shop.Update(false,false,0.f,-1,journal,false);
     assert(shop.Update(true,false,0.f,-1,journal,false)==ShopEvent::Denied);
     assert(j.hull_tier==0u&&j.credits==10000u);
     shop.Update(false,false,0.f,-1,journal,false);
     assert(journal.Discover(0u,BeachFind::Shell));
+    assert(journal.SubmitFinds());
     assert(shop.Update(true,false,0.f,-1,journal,false)==ShopEvent::Purchased);
     assert(j.hull_tier==1u&&j.credits==9700u);
     assert(journal.dirty);
@@ -82,7 +88,13 @@ int main(){
     assert(shop.Update(true,true,0.f,0,journal,true)==ShopEvent::None);
     shop.Update(false,false,0.f,-1,journal,false);
     assert(shop.Update(true,false,0.f,1,journal,false)==ShopEvent::Open);
-    // Same persistent wallet from another harbor.
+    // Same persistent wallet from another harbor. Opening starts on sales.
+    for(int i=0;i<3;++i){
+        shop.Update(false,false,0.f,-1,journal,false);
+        shop.Update(false,false,-1.f,-1,journal,false);
+    }
+    shop.Update(false,false,0.f,-1,journal,false);
+    // Select fitting row 1 after a complete wrap from services.
     assert(shop.Update(false,false,-1.f,-1,journal,false)==ShopEvent::Next);
     assert(shop.selected()==1u);
     assert(shop.Update(false,false,-1.f,-1,journal,false)==ShopEvent::None);
@@ -98,7 +110,7 @@ int main(){
     assert(LoadJournal(save,replay)&&
            replay.hull_tier==1u&&
            (replay.helm_upgrades&HelmMask(HelmItem::Battery)));
-    // Browse all 27 rows and buy an existing reel from a real shop.
+    // Browse purchase rows and buy an existing reel from a real shop.
     for(int i=0;i<16;++i){
         shop.Update(false,false,0.f,-1,journal,false);
         shop.Update(false,false,-1.f,-1,journal,false);

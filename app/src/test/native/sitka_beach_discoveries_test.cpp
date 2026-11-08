@@ -58,6 +58,7 @@ int main(){
     f.journal.credits=200000u;
     assert(!f.Purchase(Equipment::Rod));
     assert(f.Discover(found.site,found.kind));
+    assert(f.SubmitFinds());
     assert(f.Purchase(Equipment::Rod));
     assert(f.journal.gear==1u);
     assert(f.journal.credits<200000u);
@@ -72,12 +73,14 @@ int main(){
     markers=BeachMarkerMesh(sites,f.journal,roam,near);
     assert(markers.vertices.empty()&&markers.indices.empty());
     for(uint32_t i=10u;i<20u;++i)assert(f.Discover(i,BeachFind::Shell));
+    assert(f.SubmitFinds());
     while(f.journal.gear<4u)assert(f.Purchase(Equipment::Rod));
     assert(!f.Purchase(Equipment::Rod)); // crab required from level five
     assert(f.Discover(3u,BeachFind::Crab));
     assert(f.Discover(4u,BeachFind::Rock));
     assert(f.Discover(7u,BeachFind::SeaGlass));
     assert(f.Discover(9u,BeachFind::Driftwood));
+    assert(f.SubmitFinds());
     // There are 12 named rod levels and 48 purchasable equipment stages.
     assert(kRodNames.size()==13u);
     unsigned stages=0;
@@ -92,11 +95,6 @@ int main(){
     assert(LoadJournal(save,again)&&SaveJournal(again)==save);
     assert(again.beach_sites==f.journal.beach_sites);
     assert(again.discoveries==f.journal.discoveries);
-    Journal old;
-    assert(LoadJournal("SITKA-FISH-1\n123\n900\n1\n1\n1\n0\n0\n0\n",old));
-    assert(old.gear==1u&&old.beach_sites==0u&&old.credits==900u);
-    assert(LoadJournal("SITKA-FISH-2\n123\n900\n1\n1\n1\n0\n0\n0\n3\n2\n",old));
-    assert(old.helm_upgrades==3u&&old.hull_tier==2u);
     assert(!LoadJournal(save+"junk",again));
     assert(SaveJournal(again)==save);
     return 0;

@@ -1,3 +1,11 @@
+## 2026-11-07 — Sitka starter harbor gameplay iteration
+
+**Intent:** implement and audit the shore gameplay loop before boat acceptance, from main `c10ddd72`. Retained fish inventory and explicit fish/shellfish sales, pending-find registration, clean-start V5 journal, Tier 0 fallback supplies/dinghy, starter fish/shellfish/token, live fishing/office Lato prompts and removal of disconnected Deckwork training from the paid shop. No old-save migration per owner direction.
+
+**Local evidence:** 37-program Sitka GCC C++17 suite includes actual module Update walking/sale/registration/upgrade/save-failure-retry and actual Mesa two-eye shore/office/sale text plus GL-resource recreation. Native ABI passes; native-doc guard still reports pre-existing Test Chamber shader-helper drift. See [scope and full audit](../records/2026-11-07-sitka-starter-harbor-loop.md). Android build, remote CI and device acceptance are separate and not asserted by local checks.
+
+**Next:** assemble the approved terrain/harbor slice, register/package the existing module, then exercise startup, actual harbor routes, character representation and boat embark/handling/docking. Refined boat model and pot-crabbing runtime integration remain unfinished. No APK publication is claimed.
+
 ## 2026-11-07 — Doom controller simulation CI and signed APK recovered
 
 **Verified final source:** `1c5736ceb66e92edc88c19f4a17814024e972d6f` on `main`; previous marker-only runs [#1958](https://github.com/mrcalzon02/ReverieVR/actions/runs/42345729352) and [#1959](https://github.com/mrcalzon02/ReverieVR/actions/runs/42346680292) both executed but failed at `:app:testDebugUnitTest`: 486 unit tests, five failures unrelated to the Doom tests. One stale test expected 15 entries in `GameModuleRegistry`, and four stale `NativeGamesGalleryTest` cases expected the prior 7-featured/15-total registry without the newly added `guess-the-door`. Real registry is 16 playable/dev entries (8 featured, 8 classics), plus a separate inspectable non-playable Sitka project. The screenshot atlas still contains 15 *verified* captures, not an invented Guess the Door capture. Corrected assertions committed at `f386f5854bed6565486da94b00bbac4e54f1702c` and `1c5736ceb66e92edc88c19f4a17814024e972d6f`, maintaining uniqueness, reachability, exact image identity, and Sitka non-playable guards. No tests bypassed.

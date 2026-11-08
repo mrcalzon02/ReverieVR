@@ -11,6 +11,8 @@ int main(){
     j.credits=200000u;
     assert(!session.PurchaseCharacter(CharacterSkill::Stride));
     assert(session.Discover(0u,BeachFind::Shell));
+    assert(!NextCharacter(j,CharacterSkill::Stride).unlocked);
+    assert(session.SubmitFinds());
     const auto first=NextCharacter(j,CharacterSkill::Stride);
     assert(first.available&&first.unlocked&&first.affordable);
     assert(first.required_beach==1u&&first.required_city==0u);
@@ -18,10 +20,12 @@ int main(){
     assert(j.stride_level==1u&&j.credits==200000u-first.credits);
     assert(!session.PurchaseCharacter(CharacterSkill::Stride));
     assert(session.Discover(1u,BeachFind::Crab));
+    assert(session.SubmitFinds());
     assert(session.PurchaseCharacter(CharacterSkill::Stride));
     assert(!session.PurchaseCharacter(CharacterSkill::Stride));
     assert(session.Discover(2u,BeachFind::Rock));
     assert(!NextCharacter(j,CharacterSkill::Stride).unlocked);
+    assert(session.SubmitFinds());
     assert(session.DiscoverCity(0u,CityFind::Harbor));
     assert(NextCharacter(j,CharacterSkill::Stride).unlocked);
     assert(session.PurchaseCharacter(CharacterSkill::Stride));
@@ -33,6 +37,7 @@ int main(){
     assert(session.DiscoverCity(5u,CityFind::Harbor));
     for(unsigned i=3u;i<8u;++i)
         assert(session.Discover(i,BeachFind::SeaGlass));
+    assert(session.SubmitFinds());
     while(j.stride_level<8u)assert(session.PurchaseCharacter(CharacterSkill::Stride));
     assert(!session.PurchaseCharacter(CharacterSkill::Stride));
     assert(std::abs(CharacterWalkScale(j)-1.4f)<1.e-5f);
@@ -53,12 +58,6 @@ int main(){
     const auto before=SaveJournal(restored);
     assert(!LoadJournal(saved+"garbage",restored));
     assert(SaveJournal(restored)==before);
-    const std::string v3="SITKA-FISH-3\n123\n400\n1\n1\n1\n0\n0\n0\n"
-                         "3\n2\n2\n2\n2\n2\n1\n1\n";
-    Journal legacy;
-    assert(LoadJournal(v3,legacy));
-    assert(legacy.credits==400u&&legacy.hull_tier==2u);
-    assert(legacy.stride_level==0u&&legacy.city_sites==0u);
     TerrainMesh terrain;
     terrain.vertices={
         {-30.f,0.f,-30.f,0,0,0},{30.f,0.f,-30.f,0,0,0},

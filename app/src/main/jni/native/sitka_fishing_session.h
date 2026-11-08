@@ -32,7 +32,12 @@ public:
         if (!store.read || !store.write) return FishingLoad::Unavailable;
         std::string contents;
         const int result = store.read(store.user, contents);
-        if (result == 0) return FishingLoad::Fresh;
+        if (result == 0) {
+            fishing=Fishing{};fishing.journal=StarterJournal();
+            dirty=true;write_failed=false;
+            primary_held_=secondary_held_=false;
+            return FishingLoad::Fresh;
+        }
         if (result != 1) return FishingLoad::IoError;
         Journal parsed;
         if (!LoadJournal(contents, parsed)) return FishingLoad::Invalid;
@@ -75,6 +80,9 @@ public:
         if (result.journal_changed) dirty = true;
         return result;
     }
+    bool SellFish(){if(!fishing.SellFish())return false;dirty=true;return true;}
+    bool SellShellfish(){if(!fishing.SellShellfish())return false;dirty=true;return true;}
+    bool SubmitFinds(){if(!fishing.SubmitFinds())return false;dirty=true;return true;}
     bool Discover(uint32_t site, BeachFind kind) {
         if (!fishing.Discover(site,kind)) return false;
         dirty = true;

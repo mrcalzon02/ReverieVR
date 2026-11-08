@@ -219,7 +219,7 @@ jobs:
               "${RUNNER_TEMP}/${test_name}-${compiler}"
             done
           done
-      - name: Verify Sitka earned fishing economy, beach finds and save migration
+      - name: Verify Sitka fishing inventory, beach finds and clean-start saves
         shell: bash
         run: |
           set -euo pipefail
@@ -292,6 +292,13 @@ jobs:
             app/src/test/native/sitka_terrain_egl_test.cpp \
             -o "${RUNNER_TEMP}/sitka-real-egl" -lEGL -lGLESv2 -lz
           "${RUNNER_TEMP}/sitka-real-egl"
+          for test_name in sitka_starter_loop_test sitka_starter_loop_egl_test; do
+            g++ -std=c++17 -Wall -Wextra -Werror -Wpedantic \
+              -Iapp/src/main/jni/native \
+              "app/src/test/native/${test_name}.cpp" \
+              -o "${RUNNER_TEMP}/${test_name}" -lEGL -lGLESv2 -lz
+            "${RUNNER_TEMP}/${test_name}"
+          done
 
   verify-gumball-map-input:
     name: Gumball real chart selection functional gate

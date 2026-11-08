@@ -24,6 +24,9 @@ int main(){
     Store s;
     FishingSession f;
     assert(f.Load(s.Port())==FishingLoad::Fresh);
+    assert(f.dirty&&f.Flush(s.Port())&&s.writes==1);
+    s.writes=0; // following assertions count gameplay writes
+
     assert(f.Update(.016f,true,false,false,4.f).event==FishingEvent::CastRejected);
     assert(!f.dirty && !f.Update(.016f,true,false,true,4.f).journal_changed);
     f.Update(.016f,false,false,false,4.f); // release to rearm

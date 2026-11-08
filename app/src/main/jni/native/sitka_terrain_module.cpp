@@ -64,6 +64,7 @@ struct State {
     std::vector<reverie::sitka::HarborShopSite> harbor_sites;
     reverie::sitka::HarborShopSession harbor_shop;
     std::string harbor_last_text;
+    int last_aimed_shop=-1;
     float shop_rx=1.f,shop_rz=0.f,shop_y=1.5f;
     bool boat_dirty=false;
     reverie::nativetext::LatoLayer boat_text; // real licensed glyph atlas
@@ -115,8 +116,8 @@ int ReadFishingSave(void* user,std::string& content) {
     uint32_t size=0u;
     const int32_t code=state->host->read_save("sitka-fishing-v1.sav",nullptr,0u,&size);
     if(code==REVERIE_NATIVE_SAVE_NOT_FOUND)return 0;
-    if(code!=REVERIE_NATIVE_SAVE_OK||size==0u||size>384u)return -1;
-    std::array<char,384> bytes{};
+    if(code!=REVERIE_NATIVE_SAVE_OK||size==0u||size>512u)return -1;
+    std::array<char,512> bytes{};
     uint32_t actual=0u;
     if(state->host->read_save("sitka-fishing-v1.sav",bytes.data(),
        static_cast<uint32_t>(bytes.size()),&actual)!=REVERIE_NATIVE_SAVE_OK||
@@ -125,7 +126,7 @@ int ReadFishingSave(void* user,std::string& content) {
 }
 bool WriteFishingSave(void* user,const std::string& text) {
     auto* state=static_cast<State*>(user);
-    return text.size()<=384u &&
+    return text.size()<=512u &&
         state->host->write_save("sitka-fishing-v1.sav",text.data(),
           static_cast<uint32_t>(text.size()))==REVERIE_NATIVE_SAVE_OK;
 }
@@ -331,6 +332,9 @@ void* Create(const ReverieNativeHostV1* host) {
             const auto loaded=state->fishing.Load(Store(state));
             state->helm=reverie::sitka::HelmFromJournal(state->fishing.fishing.journal);
             state->helm_layout=reverie::sitka::AssembleHelm(state->helm);
+            if(loaded==reverie::sitka::FishingLoad::Fresh&&
+               !state->fishing.Flush(Store(state)))
+                Log(host,"Sitka starter inventory save pending retry");
             if(loaded!=reverie::sitka::FishingLoad::Fresh &&
                loaded!=reverie::sitka::FishingLoad::Restored)
                 throw std::invalid_argument(
@@ -484,10 +488,12 @@ int32_t OnGlCreated(void* instance) {
         Log(state->host,error.c_str());
         return 0;
     }
-    if(!state->harbor_sites.empty()){
-        const auto signs=reverie::sitka::HarborShopSigns(
-            state->harbor_sites,*state->walk_session);
-        if(!state->harbor_gl.Create(signs,state->lighting,&error)||
+    {
+        const auto signs=state->walk_session?
+            reverie::sitka::HarborShopSigns(state->harbor_sites,*state->walk_session):
+            reverie::sitka::TerrainMesh{};
+        if((!state->harbor_sites.empty()&&
+            !state->harbor_gl.Create(signs,state->lighting,&error))||
            !state->harbor_panel_gl.Create(
                 reverie::sitka::HarborShopPanelMesh(),
                 state->lighting,&error)||
@@ -674,37 +680,26 @@ void Update(void* instance,const ReverieNativeInputV1* input){
         if(!state->fishing.Flush(Store(state)))
             Log(state->host,"Sitka harbor purchase save pending retry");
     }
+    if(shop_event==reverie::sitka::ShopEvent::Sold||
+       shop_event==reverie::sitka::ShopEvent::Submitted){
+        if(!state->fishing.Flush(Store(state)))
+            Log(state->host,"Sitka harbor transaction save pending retry");
+    }
+    if(aimed_shop>=0&&aimed_shop!=state->last_aimed_shop&&!state->harbor_shop.open())
+        ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_FOCUS);
+    state->last_aimed_shop=aimed_shop;
     if(shop_event==reverie::sitka::ShopEvent::Denied)
         ReverieNativeRequestFeedbackV1(
             state->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
     else if(shop_event==reverie::sitka::ShopEvent::Purchased||
+            shop_event==reverie::sitka::ShopEvent::Sold||
+            shop_event==reverie::sitka::ShopEvent::Submitted||
+            shop_event==reverie::sitka::ShopEvent::Next||
+            shop_event==reverie::sitka::ShopEvent::Previous||
             shop_event==reverie::sitka::ShopEvent::Open||
             shop_event==reverie::sitka::ShopEvent::Close)
         ReverieNativeRequestFeedbackV1(
             state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
-    if(state->harbor_shop.open()){
-        state->shop_rx=input->listener_right[0];
-        state->shop_rz=input->listener_right[2];
-        state->shop_y=foot.ground_y+
-            std::clamp(input->listener_position[1],.8f,2.f);
-        const auto lines=reverie::sitka::HarborShopPanel(
-            state->harbor_shop,state->fishing);
-        std::string signature;
-        for(const auto& line:lines){signature+=line;signature+='\n';}
-        if(signature!=state->harbor_last_text){
-            state->harbor_text.Clear();
-            for(size_t i=0;i<lines.size();++i)
-                state->harbor_text.Fit(
-                    lines[i].c_str(),-.69f,.37f-float(i)*.135f,
-                    1.40f,.019f,
-                    i==3u?1.f:.84f,
-                    i==4u?.90f:.94f,
-                    i==4u?.58f:.91f,.015f);
-            state->harbor_last_text=signature;
-        }
-    }else if(!state->harbor_last_text.empty()){
-        state->harbor_text.Clear();state->harbor_last_text.clear();
-    }
     const bool boat_chord=state->skiff &&
         !state->harbor_shop.open()&&
         !state->harbor_shop.consumes_primary()&&
@@ -876,6 +871,31 @@ void Update(void* instance,const ReverieNativeInputV1* input){
     else if(event.event==reverie::sitka::FishingEvent::Cast ||
             event.event==reverie::sitka::FishingEvent::Landed)
         ReverieNativeRequestFeedbackV1(state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+    if(listener && !(state->skiff&&state->skiff->Active())){
+        state->shop_rx=input->listener_right[0];
+        state->shop_rz=input->listener_right[2];
+        state->shop_y=foot.ground_y+
+            std::clamp(input->listener_position[1],.8f,2.f);
+        const auto lines=state->harbor_shop.open()?
+            reverie::sitka::HarborShopPanel(state->harbor_shop,state->fishing):
+            reverie::sitka::ShoreGameplayPanel(state->fishing,aimed_shop>=0);
+        std::string signature;
+        for(const auto& line:lines){signature+=line;signature+='\n';}
+        if(signature!=state->harbor_last_text){
+            state->harbor_text.Clear();
+            for(size_t i=0;i<lines.size();++i)
+                state->harbor_text.Fit(
+                    lines[i].c_str(),-.69f,.37f-float(i)*.135f,
+                    1.40f,.019f,
+                    i==3u?1.f:.84f,
+                    i==4u?.90f:.94f,
+                    i==4u?.58f:.91f,.015f);
+            state->harbor_last_text=signature;
+        }
+    }else if(!state->harbor_last_text.empty()){
+        state->harbor_text.Clear();state->harbor_last_text.clear();
+    }
+
 }
 bool WaterAt(const State* state,double east,double north){
     if(!state||!std::isfinite(east)||!std::isfinite(north)||
@@ -1032,7 +1052,8 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
     if(state->bridge_gl.ready() && state->bridge_view &&
        state->bridge_view->visible() &&
        !state->bridge_gl.RenderEye(world_eye))return 0;
-    if(state->harbor_shop.open()&&state->harbor_panel_gl.ready()){
+    if(state->walk_session && !(state->skiff&&state->skiff->Active())&&
+       state->harbor_panel_gl.ready()&&!state->harbor_last_text.empty()){
         const float length=std::hypot(state->shop_rx,state->shop_rz);
         if(length>.01f){
             const float x=state->shop_rx/length,z=state->shop_rz/length;
@@ -1040,8 +1061,9 @@ int32_t RenderEye(void* instance, const ReverieNativeEyeV1* eye) {
             const float mat[16]={
                 x,0.f,z,0.f, 0.f,1.f,0.f,0.f,
                 -z,0.f,x,0.f,
-                body.x+z*1.55f,state->shop_y,
-                body.z-x*1.55f,1.f
+                body.x+z*1.85f+(state->harbor_shop.open()?0.f:x*1.1f),
+                state->shop_y-(state->harbor_shop.open()?0.f:.40f),
+                body.z-x*1.85f+(state->harbor_shop.open()?0.f:z*1.1f),1.f
             };
             if(!state->harbor_panel_gl.RenderEye(world_eye,mat))return 0;
             float vp[16],mvp[16];
