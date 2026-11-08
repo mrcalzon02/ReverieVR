@@ -13,14 +13,21 @@ JUnit policy tests, the full existing campaign regression, native ABI and
 independent PCM/hash/loop/mapping checks pass. The complete bank
 and manifest reproduced byte-for-byte. The native documentation guard retains
 the pre-existing Test Chamber shader-helper mismatch. Exact evidence and
-subsequent Android/release results belong in
+Android/release results are recorded in
 [the execution record](../records/2026-11-08-breakwater-sound-overhaul.md).
 
-**Acceptance boundary:** source/local tests do not prove Galaxy S9 audio
-latency, speaker/headphone balance or sustained thermal performance. Complete
-the existing unified signed phone-test build and inspect its actual WAV bytes;
-then listen on the reference handset. No standalone Breakwater APK is part of
-this change.
+**Remote/build/package verified:** source `e66c30b4ff9908cd8430ba95effe19e68ef0a14e`,
+marker `b2365addfa824a34bf35f5f1e9ae46bc6edefa5f`, and successful
+[run #1973](https://github.com/mrcalzon02/ReverieVR/actions/runs/42513256694).
+Published [phone-test-1973-1](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-1973-1)
+targets that exact marker. Downloaded APK versionCode `216328330`, established
+certificate, source DEX and both ARM ABIs verify. All 46 stored WAVs match the
+reviewed bank byte-for-byte; every release payload checksum passes.
+
+**Next acceptance:** listen on Galaxy S9/Daydream for latency, stereo balance,
+music coexistence, loop joins, interrupted-output recovery and sustained
+thermal behavior. The unified APK is published and independently checked;
+physical device acceptance remains open.
 
 ## 2026-11-07 — Sitka starter harbor gameplay iteration
 

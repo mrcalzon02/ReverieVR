@@ -136,10 +136,51 @@ unrelated implementation is not changed or waived here. The guard's separate
 same-change documentation mapping passes for this change. The existing
 23-shared-asset format/hash/scope/package check also passes.
 
-Android/package evidence is recorded after its actual build and archive
-inspection. Physical Galaxy S9/Daydream listening, Bluetooth output latency,
+Physical Galaxy S9/Daydream listening, Bluetooth output latency,
 subjective balance with music and sustained thermal performance remain
 device acceptance gates. No local stub test is described as handset audio.
+
+## Published Android package and independent readback
+
+Source commit [`e66c30b4`](https://github.com/mrcalzon02/ReverieVR/commit/e66c30b4ff9908cd8430ba95effe19e68ef0a14e)
+has the exact reviewed tree `f5837dbbc1d288ba5c7a142fef0d5d3c6f832bad`.
+It was fast-forwarded to `main` with expected-parent checking, then independently
+read back. A separate marker-only commit
+`b2365addfa824a34bf35f5f1e9ae46bc6edefa5f` requested the existing unified release
+workflow. No new workflow or standalone Breakwater companion build was added.
+
+[Run #1973](https://github.com/mrcalzon02/ReverieVR/actions/runs/42513256694)
+**succeeded**. Java 17.0.21 ran both app/controller JVM test tasks, full unsigned
+Android/NDK assembly, persistent signing setup, signed phone-test assembly,
+ELF/package/signature/version verification and publication. The non-draft
+[phone-test-1973-1 prerelease](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-1973-1)
+was published at 2026-11-08 19:18 UTC; its tag independently resolves to the
+marker commit above.
+
+The actual published APK was downloaded and inspected independently of CI:
+
+| Check | Observed result |
+|---|---|
+| Headset APK | `ReverieVR-phone-test-1973-b2365ad.apk` |
+| Bytes | 160,024,835 |
+| SHA-256 | `5198575b4cdf21e578016196116965bed8b4a4d2abf406e886e30cbe3fe943a2` |
+| Application ID | `io.github.mrcalzon02.reverievr` |
+| Android versionCode | `216328330` |
+| Minimum / target SDK | 26 / 36 |
+| Debuggable | False |
+| Embedded source | Full `b2365addfa824a34bf35f5f1e9ae46bc6edefa5f` found in DEX |
+| Audio implementation | Both `BreakwaterAudio` and `BreakwaterAudioPolicy` present in DEX |
+| Native modules | 34 host/module ELF objects, 16 games in both ARM ABIs |
+| Audio payload | All 46 WAVs byte-identical and uncompressed, 2,608,902 bytes |
+| Sound-bank integrity | PCM, peak/RMS, loop seams, mappings, source/output hashes and rights records pass |
+| APK signature | One signer; APK Signature Scheme v2 verifies |
+| Distribution certificate SHA-256 | `464dc2d100c3bb14deac1da680d29418cc22e60e1857852cb54541f7d7787f7c` |
+
+All five published files match their GitHub asset SHA-256 digests, and every
+payload listed in `SHA256SUMS.txt` passes its downloaded checksum. The release
+also contains the existing controller utility, GPL corresponding source and
+third-party notices. These are build/distribution results, not physical
+Galaxy S9/Daydream audio acceptance.
 
 ## Reproduce the focused checks
 

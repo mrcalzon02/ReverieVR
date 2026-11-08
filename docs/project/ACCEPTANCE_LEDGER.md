@@ -1,14 +1,18 @@
 ## 2026-11-08 — Breakwater sound overhaul
 
-**RV-0640-AUDIO-20261108 | Source/local checks implemented; Android/package and
-physical listening are separate gates.** Approved shared-library recordings
+**RV-0640-AUDIO-20261108 | Source, local tests, full Android build and signed
+package verified; physical listening remains open.** Approved shared-library recordings
 and identified first-party derivatives produce 46 normalized runtime WAVs;
 controls, actual combat and seven environmental layers are wired to the game.
 The actual Update, bounded event queues, policy, lifecycle routing and real
 PCM/provenance checks are documented in the
 [execution record](../records/2026-11-08-breakwater-sound-overhaul.md).
-Accept the package only after checking the unified signed APK's exact WAV
-bytes; accept reference-device sound only after listening to controls, combat,
+[Run #1973](https://github.com/mrcalzon02/ReverieVR/actions/runs/42513256694) and
+[release phone-test-1973-1](https://github.com/mrcalzon02/ReverieVR/releases/tag/phone-test-1973-1)
+pass at marker `b2365addfa824a34bf35f5f1e9ae46bc6edefa5f`. The downloaded
+versionCode `216328330` APK has the established certificate, both ARM ABIs,
+matching embedded source and all 46 exact uncompressed WAVs. Accept
+reference-device sound only after listening to controls, combat,
 night/boat/aircraft loops, music coexistence, Quick Menu, controller loss,
 focus/output interruption and resume. Device latency/thermal proof is open.
 
