@@ -672,6 +672,691 @@
       "source_master": "BetweenDeliveries_UnrealExports/products/101/101draft/texture/101draft_texture_0.png (owner Drive export)",
       "notes": "Original 1024x1024 RGBA texture",
       "distribution": "native Red Ledger Android APK"
+    },
+    "assets/native/breakwater/audio/ui_focus.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "f50e68c9439cea698baad760d8e9523b4f972f390cc932724328c6f46d08b24b",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click2"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/ui_activate.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "1232e720ee4fc4f39e8463c082c0348ef85704826818f72f847805790ed10a24",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/ui_failure.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "74655ee7e510749fa8e1345485274e013f989b443fd3e2d2c6039bdf3ded48c5",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click2"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/equip.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "3e56220a5fdee0210cdd7801b4d2585894a102cf57aeb334b1cde1855e73935a",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "handle",
+        "latch"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/reload_start.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "ae1d1a5b11631b9efee4184c903a3cd20ad2441dc1ac8681491bf142581f1d76",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "handle",
+        "metal"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/reload_ready.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "8241807f0935fceebb9327d6af6030e8dab638c719b6696c8771aa3a06b4aed2",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click",
+        "latch"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/menu_open.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "96f3544330d080b6d06aac2ecd5470a9fbb0b8a8ddde28f6f86d46d625de442a",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click2",
+        "handle"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/menu_back.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "de83765b7bec1ec76b2b527d4aa5e23710d13ad06528a9beb6738251c5608c74",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click",
+        "click2"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/station_move.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND LicenseRef-Owner-Original-Assets",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "d0bc1282c7e56b60ca188ad8a53f46f6d140149a65c2b3d27eadbeac20b93559",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "latch",
+        "metal_drag"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/support_arm.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "3a0ee9f57407d83da7a4a0850345f4aa6966d9272869baebaf10700168ddf7b2",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click",
+        "click2"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/support_disarm.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "6bacdbc606c95922ac01e05ab7f8d751c48bdef7f5613dddfb237730365e1c6f",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click2"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/dry_fire.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "fb8390c75951275f290ce57fedace9b97620168c5e29ed6d9f174369bb7c54d5",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "latch"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/aim_limit.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "f7ae1abbbbbb93ffc63c828f0dfa5ad240b7c0b70729eca1e0cadeb30a5db7e7",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click2"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/cooldown.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "2021924e258dabdf110083378bedb73548969b4133a154e21c015a0033a09fc2",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click2"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/support_unavailable.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "d88d08ab6322aa0e1ce2f32ec1c53dbe27a087f7db38c85c59efa48917e279a5",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click2"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/surf_loop.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "784f196fa981ebbae74d2aefd77b989e6a59e213edf63b045bf56f70c876f193",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "surf"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/wind_loop.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "ca4a85dec2cbecc290c6fa5a49995af5e9fecfd9c1d1f80a21c353bbb48cf5b7",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "wind"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/night_loop.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "4b0a4fa27aa666440c2bbfaed3fe4cc5694d363d25296a179fed9b3e16451a2a",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "night"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/boat_loop.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "0801799914ec00729cacc05f3507ae47cfdbb6b35b4f19d31045b87e51e15261",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "engine"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/rowing_loop.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "71e4a227e02bca6949be2fe8c112fa208fed3731b2a092eab403a23150aec1bc",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "surf",
+        "water_walk_a",
+        "water_walk_b"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/aircraft_loop.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "749c8b47c09ecfc2ac6a7e9331a05c285f5dd688b62c8210ef732fadc4b5f01c",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "aircraft_engine",
+        "wind"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/traverse_loop.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "0f34f1fade57fd3aa554b9160d8c89881b1829cb72a787e71ba441618f77c5d2",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "traverse_motor"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/weapon_machine.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "33dc3112eaed4c871dfe394f2a7fbb69bc2d0e2566030e06763300157d725a96",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "metal_thwak",
+        "synth_5"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/weapon_heavy.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "272e3f05a7517e10ae69b77d54c251e4fe97e0efb378d16b76cbed137d8fd33a",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_6"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/weapon_flak.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "bda0771b89bae81ada180ff5ec1609cbece05df803715a887368d077e7f5fe59",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_7"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/weapon_missile.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND MIT",
+      "rights": "approved",
+      "required": true,
+      "sha256": "cc27aa9a255c12045264d5f924c8b5ecafa137955fae7e03cccd7187f019e4e5",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "synth_8",
+        "wind"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/weapon_cannon.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "71fcf9290f9f87b71a254a19584727a2e7b574352a010a299ee2400be2b270a7",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_9"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/impact_hull.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "e3241c1b92d2c5b14dbeddc997359d1e8af2a85eb5f6718f4d6e8a591692651c",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "metal_thwak",
+        "synth_10"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/impact_water.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0",
+      "rights": "approved",
+      "required": true,
+      "sha256": "5122ab573a0ca115431b9fa26b6c8ff288040ba59479702aecae5f7b1c7f6484",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "splash"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/boat_destroyed.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "a0792220e1b36e6d88d71605179b02f1dc59d782e894d69aaf80eb9dc5d7c906",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "splash",
+        "synth_12"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/gunboat_salvo.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "a85de8e912b964196ae3ba694a85c3059dc917962bf073c748f9073ddf8fdbde",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_13"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/infantry_volley.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "ada23bf5a01a1fa9684763b937293158a9275dbe8df183855e4bc02e17f55a60",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "metal_thwak",
+        "synth_14"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/aircraft_bomb.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "47d53bf7ef8c37de10d97b145ea66d08ec6e3bc3feb62b7635f56a63d964bf95",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "splash",
+        "synth_15"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/aircraft_strafe.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "468df518846d91c18a3fe87cb5d816c9bf762bacab9347783c84746128dc7cb7",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "metal_thwak",
+        "synth_16"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/sam_launch.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND MIT",
+      "rights": "approved",
+      "required": true,
+      "sha256": "fb80435e87f7998ce70db670b26da7ed8618a38c41ddfd6a5373c246723859ab",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "synth_17",
+        "wind"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/wave_start.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND MIT",
+      "rights": "approved",
+      "required": true,
+      "sha256": "5ed5345ae694b509bf9a6311438bc3bd36b1c0c95bcf9fc4ea76bc31f4975553",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click",
+        "synth_18"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/shore_collision.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "a6b02c89462e74363598c4ef4a3cae02d4726a3fd57a1a5bb1514b1ea2b3571e",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "metal_thwak",
+        "synth_19",
+        "water_walk_a"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/shop_purchase.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND MIT",
+      "rights": "approved",
+      "required": true,
+      "sha256": "dc5dcdab852beacc7c7b0357f1e60c4f08b66e9c2a4be2845770dec16c63e00f",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click",
+        "synth_20"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/wave_clear.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND MIT",
+      "rights": "approved",
+      "required": true,
+      "sha256": "29145733efd27abbf4cfda7fd87e659cb7db925ce46492fd13ba95b46e16e555",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click",
+        "synth_21"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/victory.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND MIT",
+      "rights": "approved",
+      "required": true,
+      "sha256": "bbb4c877489d94b8af2054b8cb3b561760d0ff388814497368b227fc754c000d",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click",
+        "synth_22"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/defeat.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "CC0-1.0 AND MIT",
+      "rights": "approved",
+      "required": true,
+      "sha256": "950b175809dc595a1856cc614617a0aeaf86aa9463128700bd3af4696355d77a",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "click",
+        "synth_23"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/armored_gun.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "1f0b2f954a00c297730a45cf70b90eacb493800622cc0ce85a727911d96b735c",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_24"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/armor_destroyed.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "ed08d2d178b4757c42c72eca53f1fda1f968b8634713bc2a906de2ced25f70b3",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_25"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/sand_impact.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "MIT",
+      "rights": "approved",
+      "required": true,
+      "sha256": "68a74002ea3fe629764e39b5809f097fd4ce5c3a1c78b4bf097720b22495a255",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "synth_11"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/artillery.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "43c474d5367f1bb29bc5a9aa8a8bada7dbfc5df374f866f6cb24c66c343a268e",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "synth_3"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
+    },
+    "assets/native/breakwater/audio/airstrike.wav": {
+      "component": "breakwater-normalized-audio",
+      "license": "LicenseRef-Owner-Original-Assets AND MIT",
+      "rights": "owner-granted",
+      "required": true,
+      "sha256": "87e2beb8b64ecf9f1f22a8f97c10d171856f02c9a091d0ff09c6f0a15b66c270",
+      "record": "docs/project/BREAKWATER_SOUND_SOURCES.md",
+      "manifest": "art/breakwater/audio_manifest.json",
+      "source_keys": [
+        "explosion",
+        "synth_4"
+      ],
+      "project": "breakwater-battery",
+      "distribution": "owner-authorized ReverieVR APK and source repository"
     }
   },
   "native_libraries": {

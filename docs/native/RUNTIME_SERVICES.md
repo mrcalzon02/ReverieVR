@@ -288,16 +288,15 @@ secondary input remains reload. Other native modules keep their own profiles.
 No SDK ABI, global shell bindings, Android permissions or Home navigation
 were changed.
 
-The existing ABI-v1 ordered native sound requests remain enqueued/drained by
-the host; `VrActivity` forwards the entire supported 1–27 cue range, not just
-1–15. The UI-thread bank retries creation of unavailable static `AudioTrack`
-voices on lifecycle resume or a bounded missing-voice retry, and failures are
-logged. While Breakwater is hosted, its original beach ambience remains active
-without per-eye audio calls, alongside the authorized staged owner soundtrack
-and the separate music-only volume/mute policy. Missing game soundtrack IDs
-fall back to available packaged lobby music rather than silently disabling all
-native-game music. Actual Galaxy S9 sound-route and mix acceptance still
-requires physical testing.
+The ABI-v1 ordered native sound requests remain enqueued/drained by the host.
+The 2026-11-08 sound overhaul extends the range to 1–47 without changing the
+old IDs. Breakwater now owns a compact recorded bank and leased coastal,
+night, vehicle, rowing, aircraft and traverse layers; Home ambience is no
+longer used as a substitute. Playback is shell-owned and runs off the GL
+thread. The independent owner soundtrack and music-only volume/mute policy
+remain in `ShellMenuMusic`. See the current audio contract below. Physical
+Galaxy S9 sound-route, latency, audibility and sustained-cost testing remain
+separate from source, host tests and APK assembly.
 
 
 
@@ -494,34 +493,58 @@ The shell/runtime chooses the module-private storage root; the native host valid
 
 Native modules may request focus/activation/failure and the five fixed gameplay cues (weapon fire, reload start, reload ready, artillery, airstrike) through the optional `ReverieNativeHostV1.request_feedback` tail.
 
-Requests made during a native update are sanitized/coalesced by flag and returned through `NativeModuleRuntime`; `VrShellRenderer` forwards them to the activity for `UiFeedback.focus()`, `activation()`, `failure()`, `weaponFire()`, `reloadStart()`, `reloadReady()`, `artilleryStrike()`, and `airstrike()`. The five gameplay cues use reusable deterministic static AudioTracks, stopped on pause, with no per-eye sound synthesis. This provides no general PCM or MIDI interface.
+Requests made during a native update are sanitized/coalesced by flag and returned through `NativeModuleRuntime`. `VrShellRenderer` forwards the whole mask to the activity and `UiFeedback`; Breakwater routes it into its normalized bank, giving failure precedence over activation/focus. Other games retain the existing reusable procedural AudioTracks. Playback stops on pause, with no per-eye sound synthesis. This provides no general PCM or MIDI interface.
 
 Test Chamber requests an activation cue when its tint toggle changes. Red Ledger requests activation for completed targeted actions and failure for a targeted action that cannot complete.
 
-The service remains event-level. It does not accept module PCM, sound files, positional audio buffers, arbitrary tones, or mixer controls. It provides only named one-shot cues. Haptics are also not implemented by this path.
+The service remains event-level. It does not accept module PCM, arbitrary sound files, positional audio buffers or tones. Named one-shots and seven fixed Breakwater loop leases are supported; their audio data and bounded mix remain shell-owned. Haptics are also not implemented by this path.
 
 **2026-10-16 Breakwater extension:** IDs 1–5 still mean machine, heavy, flak, missile and cannon. IDs 6–15 add hull impact, water splash, boat destruction, offshore gunboat salvo, infantry volley, bomber/strafer attack, SAM launch, actual wave start and shoreline collision. IDs 16–19 extend this set with successful shop purchase, wave completion, victory and defeat, and IDs 20–21 identify deployed armored-car cannon fire and confirmed armor destruction. Events come from authoritative game transitions and positive-damage simulation events using the original eight-cue JNI packet and preloaded PCM sound bank, with no native host ABI structure change. The owner-original offline background song **Mars des Souvenirs** remains the independent music-volume-controlled ShellMenuMusic loop. APK and headset mix remain unverified.
 
-### Ordered first-party gameplay sound cues (2026-10-15, expanded 2026-10-16)
+### Ordered and spatial gameplay cues — current 2026-11-08 contract
 
-The optional `request_sound(uint32_t cue_id)` host tail supports 21 fixed
-named one-shot events; its first five IDs remain weapon reports. Breakwater chooses the ID from its
-actual `WeaponKind` on a successful shot; old hosts receive the
-unchanged generic `WEAPON_FIRE` bit instead. The host stores up to
-eight ordered cue bytes without allocating or losing duplicates,
-drains at most once per native update through a packed JNI `long`,
-and clears on pause/stop. `VrShellRenderer` forwards each cue through
-`VrActivity.onNativeModuleSoundCueRequested` to `UiFeedback` and
-`NativeCombatSound`, which preload five additional original
-22,050-Hz mono PCM16 reports (machine, heavy, flak, missile, cannon).
-The existing generic shot, reload/ready, artillery and airstrike
-sounds remain as fallbacks; no secondary music playback is changed.
+`request_sound(uint32_t cue_id)` accepts IDs 1–47 and retains its eight
+ordered byte slots. IDs 1–21 keep their weapon/battle/progression meanings;
+22–27 remain Red Ledger; 28–40 add Breakwater-specific control outcomes.
+Successful player weapon reports are submitted before related impacts.
+`request_spatial_sound` retains two packed cue/gain slots and accepts 1–21
+plus the seven fixed loop IDs 41–47. Breakwater fairly rotates these leases
+through the two slots, so changing seven layers cannot overflow the packet.
+No rendering callback mutates audio state.
 
-This is not a streaming/spatial mixer and it contains **no externally
-sourced recorded SFX**. NPC volleys, hull impacts, aircraft and ambient
-loops are future separately typed cues. Complete Android/NDK build,
-signed APK and S9 latency/stereo/thermal tests remain unverified.
-See `docs/project/BREAKWATER_SOUND_SOURCES.md`.
+`BreakwaterAudio` loads the normalized library recordings asynchronously
+when the hosted game starts. Three separate SoundPools reserve two control,
+four combat and seven environmental voices: gunfire cannot evict the surf
+loop or consume the two UI voices. Control and combat voices have bounded
+priority/age replacement; repeated focus/rejection events are rate limited.
+Loops follow live scene/nearest-source intent with listener-relative gains,
+short gain ramps and a 900 ms refresh lease. Controller loss, Quick Menu,
+Activity pause and game exit stop the current bank; recovery requires fresh
+state, so stale gunshots and loop callbacks cannot resume themselves.
+
+Breakwater owns its cues exclusively: unavailable recordings do not fall back
+to louder legacy tones or unbounded combat voices. Failed loading/playback
+retries are bounded, and a broken pool is released before its replacement is
+created. Quick Menu shell controls share the same normalized control budget
+while game playback is suspended. Audio-focus loss also stops those controls.
+An explicit Quick Menu Resume action retries focus after permanent loss or an
+output-route interruption; ordinary controller tracking recovery does not
+take focus back from another application.
+
+The offline preparation tool trims and DC-centres samples, measures active
+RMS, applies category gain and peak ceilings, and crossfades loop seams.
+The shipped format is canonical 22,050 Hz mono PCM16 WAV, each decoded
+sample below SoundPool's 1 MB limit. Peaks are limited to -9 dBFS combat,
+-12 dBFS controls and -18 dBFS loops. Fixed runtime gains and voice counts
+bound the bank's worst-case sample peak below 0.50; the independent music
+player's maximum gain remains 0.50. This is a digital headroom bound, not a
+measurement of headphone loudness or device acoustics.
+
+Sources, derivations, hashes and actual measurements are in
+`docs/project/BREAKWATER_SOUND_SOURCES.md` and the bank manifest. Recorded
+NOX ambience/Foley and owner-original effects are used; the aircraft texture
+is a documented engine-derived treatment, and synthesized weapon components
+are identified explicitly. APK/headset evidence is recorded separately.
 
 ## Current limitations and next API candidates
 

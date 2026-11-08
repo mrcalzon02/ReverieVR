@@ -21,6 +21,7 @@
 #include "breakwater_surface_aim.h"
 #include "breakwater_combat_input.h"
 #include "breakwater_pointer_focus.h"
+#include "breakwater_audio.h"
 #include "breakwater_impacts.h"
 #include "breakwater_wrecks.h"
 #include "breakwater_gun_mesh.h"
@@ -105,6 +106,10 @@ struct State {
     AircraftHitFeedback aircraft_hit;
     CombatInputLatch combat_input;
     PointerFocusGate pointer_focus;
+    audio::Frame audio_frame;
+    audio::Focus audio_focus;
+    audio::Loops audio_loops;
+    float traverse_audio_hold=0.f;
     defense::Selection defense_points{};
     uint8_t defense_map=0u;
     bool console=false,rack_facing=false;
@@ -125,11 +130,22 @@ struct State {
     std::vector<float> font_mesh;
 };
 void Feedback(State *s, uint32_t code) {
-    ReverieNativeRequestFeedbackV1(s->host, code);
+    s->audio_frame.Feedback(code);
 }
 void BattleSound(State *s,uint32_t cue) {
     // No allocations or audio callbacks during either stereo eye render.
-    ReverieNativeRequestSoundV1(s->host,cue);
+    s->audio_frame.Cue(cue);
+}
+void ControlSound(State *s,uint32_t cue,uint32_t fallback) {
+    s->audio_frame.Cue(cue,fallback);
+}
+void EquipSound(State *s,bool accepted) {
+    if(accepted)ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_WEAPON_EQUIP,
+                            REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+    else if(s->campaign.reloading())
+        ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_COOLDOWN,
+                     REVERIE_NATIVE_FEEDBACK_FAILURE);
+    else Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
 }
 void TransformPosition(State *s,float &x,float &y,float &z) {
     if(s->actor)s->actor->Point(x,y,z);
@@ -341,6 +357,15 @@ bool SaveState(State *s) {
     if(saved)s->slot_exists[s->save_slot]=true;
     return saved;
 }
+bool SaveControlState(State *s) {
+    // Persistence is optional in ABI v1. A missing service must not turn a
+    // successful legacy-host control into an error; a rejected real write must.
+    if(!ReverieNativeHostSupportsSaveV1(s->host) || SaveState(s))return true;
+    Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+    ReverieNativeLogV1(s->host,REVERIE_NATIVE_LOG_WARN,"BreakwaterSave",
+        "Checkpoint write failed; the current session remains active.");
+    return false;
+}
 void LoadState(State *s) {
     Campaign snapshot;
     if(ReadSlotState(s,s->save_slot,&snapshot))
@@ -352,7 +377,8 @@ bool BeginActiveWave(State *s,bool captureSelect) {
     s->wave_credits_before=s->campaign.credits();
     s->wave_hull_before=s->campaign.integrity();
     s->wave_credits_gained=0;s->wave_hull_lost=0;
-    BattleSound(s,REVERIE_NATIVE_SOUND_WAVE_START);
+    ControlSound(s,REVERIE_NATIVE_SOUND_WAVE_START,
+                 REVERIE_NATIVE_FEEDBACK_ACTIVATION);
     if(captureSelect)s->combat_input.CaptureUiPress();
     s->wrecks.Clear();s->world_impacts=ImpactEffects{};
     s->battery_damage=BatteryDamageFeedback{};
@@ -373,7 +399,8 @@ void BallisticWaterImpact(State *s,const ReverieNativeInputV1 &input,
     const bool water=at[2]<battlefield::ShoreZ(s->campaign.location(),at[0]);
     const float down[]={0.f,-1.f,0.f};
     s->world_impacts.RecordHit(at,down,.001f,water?ImpactKind::Water:ImpactKind::Sand);
-    if(water)BattleSound(s,REVERIE_NATIVE_SOUND_WATER_SPLASH);
+    BattleSound(s,water?REVERIE_NATIVE_SOUND_WATER_SPLASH:
+                       REVERIE_NATIVE_SOUND_BREAKWATER_SAND_IMPACT);
 }
 void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
     Campaign &game=s->campaign;
@@ -408,14 +435,16 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
-        SaveState(s);
+        const bool saved=SaveControlState(s);
         s->round_summary=false;s->menu_focus=-1;
         if(action==1 && !BeginActiveWave(s,true)) {
             s->round_summary=true;
             Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
-        Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        if(action==0 && saved)
+            ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_MENU_BACK,
+                         REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         return;
     }
     if(game.phase()==Phase::Briefing) {
@@ -433,8 +462,9 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             s->aircraft_hit=AircraftHitFeedback{};
             s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
             game.Start();
-            SaveState(s);
-            Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            if(SaveControlState(s))
+                ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_DIFFICULTY_SELECT,
+                             REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         } else Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(game.phase()==Phase::Shop) {
         if(!edge)return;
@@ -442,7 +472,8 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         if(target==10) {
             if(!s->reset_armed) {
                 s->reset_armed=true;
-                Feedback(s,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+                ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN,
+                             REVERIE_NATIVE_FEEDBACK_ACTIVATION);
             } else {
                 const bool cleared=!ReverieNativeHostSupportsSaveV1(s->host) ||
                     ClearCheckpoint(s->host,s->save_slot);
@@ -452,16 +483,23 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                     s->reset_armed=false;s->armory_page=false;
                     s->menu_focus=-1;
                 }
-                Feedback(s,cleared?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
-                                   REVERIE_NATIVE_FEEDBACK_FAILURE);
+                if(cleared)ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_RESTART,
+                                        REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+                else Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
             }
             return;
         }
         s->reset_armed=false;
         bool done=false;
+        bool saved=true;
+        const int32_t credits_before=game.credits();
         if(target==9) {
             s->armory_page=!s->armory_page;
             done=true;
+            ControlSound(s,s->armory_page?
+                REVERIE_NATIVE_SOUND_BREAKWATER_MENU_OPEN:
+                REVERIE_NATIVE_SOUND_BREAKWATER_MENU_BACK,
+                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
         } else if(target==8) {
             done=BeginActiveWave(s,true);
         }
@@ -473,11 +511,18 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             } else done=game.Purchase(static_cast<Upgrade>(target));
         }
         if(done && game.phase()==Phase::Shop) {
-            SaveState(s);
-            if(target>=0 && target<8)
-                BattleSound(s,REVERIE_NATIVE_SOUND_SHOP_PURCHASE);
+            saved=SaveControlState(s);
+            if(saved && target>=0 && target<8) {
+                // Owned armory cards equip for free; never imply a second
+                // purchase when the campaign did not actually spend credits.
+                ControlSound(s,game.credits()<credits_before?
+                    REVERIE_NATIVE_SOUND_SHOP_PURCHASE:
+                    REVERIE_NATIVE_SOUND_BREAKWATER_WEAPON_EQUIP,
+                    REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            }
         }
-        Feedback(s,done?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
+        Feedback(s,done && saved?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
+                                REVERIE_NATIVE_FEEDBACK_FAILURE);
     } else if(game.phase()==Phase::Combat) {
         // Physical left rack takes priority over a gunshot. Capture the
         // entire press even if it is locked/reloading; no drag-to-fire.
@@ -487,8 +532,7 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             if(!s->combat_input.CaptureOneShotPress(edge))return;
             const bool ok=game.SelectWeapon(static_cast<WeaponKind>(rackTarget));
             if(ok)s->sam_armed=false;
-            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
-                          REVERIE_NATIVE_FEEDBACK_FAILURE);
+            EquipSound(s,ok);
             return;
         }
         float x=0,y=0;
@@ -508,9 +552,12 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->aircraft_aim={};s->surface_aim={};
                 s->scene_dirty=true;
             }
-            Feedback(s,action==defense::Tap::Ignored?
-                REVERIE_NATIVE_FEEDBACK_FAILURE:
-                REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            if(action==defense::Tap::Transferred)
+                ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_STATION_MOVE,
+                             REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+            else Feedback(s,action==defense::Tap::Ignored?
+                          REVERIE_NATIVE_FEEDBACK_FAILURE:
+                          REVERIE_NATIVE_FEEDBACK_ACTIVATION);
             return;
         }
         if(route>=CombatInputRoute::Weapon0 &&
@@ -519,15 +566,17 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 static_cast<uint8_t>(route)-static_cast<uint8_t>(CombatInputRoute::Weapon0));
             const bool ok=game.SelectWeapon(kind);
             if(ok)s->sam_armed=false;
-            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
-                          REVERIE_NATIVE_FEEDBACK_FAILURE);
+            EquipSound(s,ok);
             return;
         }
         if(route==CombatInputRoute::Sam) {
             const bool ok=game.sam_charges()>0 || s->sam_armed;
             if(ok)s->sam_armed=!s->sam_armed;
-            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
-                          REVERIE_NATIVE_FEEDBACK_FAILURE);
+            ControlSound(s,ok?(s->sam_armed?
+                REVERIE_NATIVE_SOUND_BREAKWATER_SUPPORT_ARM:
+                REVERIE_NATIVE_SOUND_BREAKWATER_SUPPORT_DISARM):
+                REVERIE_NATIVE_SOUND_BREAKWATER_SUPPORT_UNAVAILABLE,
+                ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
         if(route==CombatInputRoute::Artillery){
@@ -548,7 +597,9 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                         BattleSound(s,REVERIE_NATIVE_SOUND_ARMOR_DESTROYED);
                     }
             }
-            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ARTILLERY:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            if(ok)Feedback(s,REVERIE_NATIVE_FEEDBACK_ARTILLERY);
+            else ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_SUPPORT_UNAVAILABLE,
+                              REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
         if(route==CombatInputRoute::Airstrike){
@@ -569,7 +620,9 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                         BattleSound(s,REVERIE_NATIVE_SOUND_ARMOR_DESTROYED);
                     }
             }
-            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_AIRSTRIKE:REVERIE_NATIVE_FEEDBACK_FAILURE);
+            if(ok)Feedback(s,REVERIE_NATIVE_FEEDBACK_AIRSTRIKE);
+            else ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_SUPPORT_UNAVAILABLE,
+                              REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
         if(s->sam_armed) {
@@ -590,11 +643,12 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                 s->impacts.RecordHit(origin,down,.001f,ImpactKind::AirstrikeBlast);
                 s->aircraft_hit.Record(source,game.enemies()[lock],true);
                 s->wrecks.RecordDestroyed(source,game.enemies()[lock]);
-                BattleSound(s,REVERIE_NATIVE_SOUND_SAM_LAUNCH);
+                ControlSound(s,REVERIE_NATIVE_SOUND_SAM_LAUNCH,
+                             REVERIE_NATIVE_FEEDBACK_ACTIVATION);
                 s->sam_armed=false;
             }
-            Feedback(s,ok?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
-                          REVERIE_NATIVE_FEEDBACK_FAILURE);
+            if(!ok)ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_SUPPORT_UNAVAILABLE,
+                                REVERIE_NATIVE_FEEDBACK_FAILURE);
             return;
         }
         // All standard mounted weapons (including the unguided launch
@@ -641,6 +695,11 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         else if(in_arc)
             shot=game.FireMiss();
         if(shot){
+            // Protect the actual weapon report from the bounded host queue:
+            // it precedes lower-priority hits, even during a busy salvo frame.
+            ControlSound(s,REVERIE_NATIVE_SOUND_WEAPON_MACHINE+
+                static_cast<uint32_t>(game.selected_weapon()),
+                REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE);
             if(enemyTarget) {
                 s->aircraft_hit.Record(enemyBefore,game.enemies()[target],true);
                 s->wrecks.RecordDestroyed(enemyBefore,game.enemies()[target]);
@@ -670,10 +729,13 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
                             REVERIE_NATIVE_SOUND_ARMOR_DESTROYED:
                             REVERIE_NATIVE_SOUND_HULL_IMPACT);
                     }
-                } else if(infantryTarget || coverTarget)
+                } else if(infantryTarget || coverTarget) {
+                    const bool metal=coverTarget && game.location()==1u;
                     s->world_impacts.RecordHit(hit,down,.001f,
-                        coverTarget && game.location()==1u ?
-                            ImpactKind::Metal:ImpactKind::Sand);
+                        metal?ImpactKind::Metal:ImpactKind::Sand);
+                    BattleSound(s,metal?REVERIE_NATIVE_SOUND_HULL_IMPACT:
+                                      REVERIE_NATIVE_SOUND_BREAKWATER_SAND_IMPACT);
+                }
             } else if(target<0 && !missile)
                 BallisticWaterImpact(s,cannon_input,gravity);
             for(int k=0;k<3;k++) {
@@ -682,15 +744,21 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
             }
             s->shot_gravity=missile?0.0f:gravity;
             s->flash=.09f;
-            // A successful shot emits exactly one typed, ordered audio
-            // event. Older ABI-v1 hosts continue using the original report.
-            const uint32_t cue=REVERIE_NATIVE_SOUND_WEAPON_MACHINE+
-                static_cast<uint32_t>(game.selected_weapon());
-            if(!ReverieNativeRequestSoundV1(s->host,cue))
-                Feedback(s,REVERIE_NATIVE_FEEDBACK_WEAPON_FIRE);
             if(game.reloading())
                 Feedback(s,REVERIE_NATIVE_FEEDBACK_RELOAD_START);
-        } else if(edge)Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
+        } else if(edge) {
+            // One rejection per fresh press. Continuous automatic fire stays
+            // silent during ordinary cadence/reload gaps while held.
+            const uint32_t rejection=!in_arc?
+                REVERIE_NATIVE_SOUND_BREAKWATER_AIM_LIMIT:
+                game.magazine_left()==0?
+                REVERIE_NATIVE_SOUND_BREAKWATER_DRY_FIRE:
+                ((missile && target<0) ||
+                 (infantryTarget && !WeaponFor(game.selected_weapon()).anti_infantry))?
+                REVERIE_NATIVE_SOUND_BREAKWATER_SUPPORT_UNAVAILABLE:
+                REVERIE_NATIVE_SOUND_BREAKWATER_COOLDOWN;
+            ControlSound(s,rejection,REVERIE_NATIVE_FEEDBACK_FAILURE);
+        }
     } else if(edge && (game.phase()==Phase::Defeat || game.phase()==Phase::Victory)) {
         // A restart must not resurrect the old shop checkpoint after app exit.
         // Keep the in-memory restart usable on hosts without save support.
@@ -714,8 +782,10 @@ void Interact(State *s,const ReverieNativeInputV1 &input,bool edge) {
         s->aircraft_aim={};s->surface_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
         s->aircraft_hit=AircraftHitFeedback{};
         s->sam_armed=false;s->armory_page=false;s->ghost_on=false;
-        Feedback(s,checkpoint_cleared?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
-                          REVERIE_NATIVE_FEEDBACK_FAILURE);
+        if(checkpoint_cleared)
+            ControlSound(s,REVERIE_NATIVE_SOUND_BREAKWATER_RESTART,
+                         REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+        else Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
 }
 void BuildScene(State *s) {
@@ -1784,6 +1854,50 @@ int32_t GlCreate(void *instance) {
 void GlRelease(void *instance) {
     State *s=static_cast<State *>(instance);if(s)DestroyGl(s);
 }
+void UpdateSoundscape(State *s,const ReverieNativeInputV1 &input) {
+    auto &loops=s->audio_loops;
+    loops.ClearDesired();
+    const Campaign &game=s->campaign;
+    const bool combat=game.phase()==Phase::Combat && !s->slot_picker;
+    const bool night=game.period()==Period::Night && !s->slot_picker;
+    const float surf=combat?.26f:.17f;
+    const float wind=(combat?.13f:.09f)+game.location()*.018f;
+    loops.Set(audio::Surf,{surf,surf});
+    loops.Set(audio::Wind,{wind,wind});
+    if(night)loops.Set(audio::Night,{.13f,.13f});
+    if(combat) {
+        const auto station=defense::At(game.location(),s->defense_points.current);
+        float listener[]={station.x,station.y,station.z};
+        const float *right=nullptr;
+        if(input.listener_valid) {
+            for(int i=0;i<3;++i)listener[i]+=input.listener_position[i];
+            right=input.listener_right;
+        }
+        // Follow actual placed actors, including the heavy transport's shore
+        // offset. Controller aim is never substituted for headset orientation.
+        float nearest[3]={1.e30f,1.e30f,1.e30f};
+        for(const Enemy &enemy:game.enemies()) {
+            if(!enemy.active || enemy.landed)continue;
+            const bool aircraft=enemy.type==UnitType::Aircraft;
+            const bool rowing=enemy.type==UnitType::Rowboat;
+            const unsigned kind=aircraft?2u:rowing?1u:0u;
+            const auto placement=battlefield::Vessel(enemy);
+            const float dx=placement.wx-listener[0];
+            const float dy=placement.wy-listener[1];
+            const float dz=placement.wz-listener[2];
+            const float distance2=dx*dx+dy*dy+dz*dz;
+            if(!std::isfinite(distance2) || distance2>=nearest[kind])continue;
+            nearest[kind]=distance2;
+            loops.Set(aircraft?audio::Aircraft:rowing?audio::Rowing:audio::Boat,
+                audio::At(placement.wx,placement.wy,placement.wz,listener,right,
+                          aircraft?.32f:rowing?.23f:.36f,
+                          aircraft?360.f:rowing?180.f:230.f));
+        }
+        if(s->traverse_audio_hold>0.f)
+            loops.Set(audio::Traverse,{.16f,.16f});
+    }
+    loops.Flush(s->host,input.delta_seconds);
+}
 void Resume(void *) {}
 void Pause(void *instance) {
     State *s=static_cast<State *>(instance);
@@ -1802,14 +1916,22 @@ void Pause(void *instance) {
     s->infantry_flash=0.0f;
     s->infantry_firing_mask=0u;
     s->surface_aim={};s->aircraft_aim={};s->cover_aim_index=-1;s->armor_aim_index=-1;
+    s->audio_frame.Begin();
+    s->audio_focus.Reset();
+    s->audio_loops.Reset();
+    s->traverse_audio_hold=0.f;
     s->scene_dirty=true;
 }
 void Update(void *instance,const ReverieNativeInputV1 *input) {
     State *s=static_cast<State *>(instance);
     if(!s || !ReverieNativeInputHasPointerV1(input))return;
-    ReverieNativeInputV1 copy=*input;
+    // A pointer-prefix v1 host need not allocate the optional listener tail.
+    ReverieNativeInputV1 copy{};
+    std::memcpy(&copy,input,std::min<size_t>(input->struct_size,sizeof(copy)));
     ReverieNativeSanitizeBaseInputV1(&copy);
     ReverieNativeSanitizePointerV1(&copy);
+    ReverieNativeSanitizeListenerV1(&copy);
+    s->audio_frame.Begin();
     bool down=copy.primary_down!=0;
     bool secondary=copy.secondary_down!=0;
     const Phase phase_before=s->campaign.phase();
@@ -1837,6 +1959,10 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         // must not rebake the entire scene.
         if(previous_focus!=-1 || previous_rack_focus!=-1 || pointer_was_visible)
             s->scene_dirty=true;
+        s->audio_focus.Reset();
+        s->traverse_audio_hold=0.f;
+        s->audio_loops.ClearDesired();
+        s->audio_loops.Flush(s->host,copy.delta_seconds);
         return;
     }
     // Only fresh post-focus button presses can enter any game action.
@@ -1853,11 +1979,12 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     const ReverieNativeInputV1 selectionWorld=WorldPointer(s,copy);
     const int priorSiteHover=s->defense_points.hover;
     s->defense_points.hover=-1;
+    CombatHudTarget hud_focus=CombatHudTarget::None;
     if(s->campaign.phase()==Phase::Combat && !s->slot_picker) {
         float hudX=0.f,hudY=0.f;
-        const bool overHud=AimAtPlane(ConsolePointer(copy),-1.8f,&hudX,&hudY)>0.f &&
-            HitCombatSupportHud(hudX,hudY)!=CombatHudTarget::None;
-        if(s->rack_focus<0 && !overHud)
+        if(AimAtPlane(ConsolePointer(copy),-1.8f,&hudX,&hudY)>0.f)
+            hud_focus=HitCombatSupportHud(hudX,hudY);
+        if(s->rack_focus<0 && hud_focus==CombatHudTarget::None)
             s->defense_points.hover=defense::Hit(
                 s->campaign.location(),s->defense_points.current,
                 selectionWorld.pointer_origin,selectionWorld.pointer_direction);
@@ -1883,9 +2010,24 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
         s->menu_focus=next_focus;
         s->scene_dirty=true;
     }
+    int focus=-1;
+    if(next_focus>=0) {
+        const int page=s->slot_picker?10:s->round_summary?80:
+            s->campaign.phase()==Phase::Briefing?20:s->armory_page?60:40;
+        focus=page+next_focus;
+    } else if(s->campaign.phase()==Phase::Combat) {
+        if(s->rack_focus>=0)focus=100+s->rack_focus;
+        else if(hud_focus!=CombatHudTarget::None)
+            focus=120+static_cast<int>(hud_focus);
+        else if(s->defense_points.hover>=0)focus=140+s->defense_points.hover;
+    } else if(s->campaign.phase()==Phase::Victory ||
+              s->campaign.phase()==Phase::Defeat)focus=160;
+    if(s->audio_focus.Update(focus,copy.delta_seconds,down || secondary))
+        Feedback(s,REVERIE_NATIVE_FEEDBACK_FOCUS);
     // All mounted guns, including the missile pod, follow permitted
     // aim. Ghost sights are independent only when outside the mount arc.
     float converged_gun[3]={};
+    s->traverse_audio_hold=std::max(0.f,s->traverse_audio_hold-copy.delta_seconds);
     if(copy.pointer_kind!=REVERIE_NATIVE_POINTER_NONE &&
        s->rack_focus<0 &&
        battlefield::BarrelAim(s->campaign.selected_weapon(),
@@ -1894,8 +2036,20 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                                  s->defense_points.current),s->campaign.location())) {
         // Model follows the same physical muzzle direction as fired shots,
         // including close beach targets below the headset sight.
-        for(int k=0;k<3;k++)s->gun_direction[k]=converged_gun[k];
+        float movement2=0.f;
+        for(int k=0;k<3;k++) {
+            const float movement=s->gun_direction[k]-converged_gun[k];
+            movement2+=movement*movement;
+            s->gun_direction[k]=converged_gun[k];
+        }
+        const float intentional=copy.delta_seconds*.18f;
+        if(s->campaign.phase()==Phase::Combat && !s->slot_picker &&
+           !s->sam_armed && hud_focus==CombatHudTarget::None &&
+           s->defense_points.hover<0 &&
+           movement2>std::max(.000001f,intentional*intentional))
+            s->traverse_audio_hold=.16f;
     }
+    if(focus>=0 || s->sam_armed)s->traverse_audio_hold=0.f;
     s->elapsed+=copy.delta_seconds;
     s->flash=std::max(0.0f,s->flash-copy.delta_seconds);
     s->reload_ready_flash=std::max(0.0f,
@@ -1963,6 +2117,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
             s->turret_target_x=turret.x;
             s->turret_target_z=turret.z;
             s->turret_flash=.16f;
+            s->audio_frame.Cue(REVERIE_NATIVE_SOUND_WEAPON_HEAVY,
+                               audio::Priority::Threat);
             BattleSound(s,turret.destroyed?
                 REVERIE_NATIVE_SOUND_BOAT_DESTROYED:
                 REVERIE_NATIVE_SOUND_HULL_IMPACT);
@@ -2045,8 +2201,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                     changed=true;s->sam_armed=false;break;
                 }
             }
-            Feedback(s,changed?REVERIE_NATIVE_FEEDBACK_ACTIVATION:
-                               REVERIE_NATIVE_FEEDBACK_FAILURE);
+            EquipSound(s,changed);
         }
     } else s->weapon_axis_latched=false;
     bool started_reload=false;
@@ -2054,8 +2209,13 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
        s->campaign.phase()==Phase::Combat) {
         started_reload=s->campaign.RequestReload();
         if(started_reload)s->reload_ready_flash=0.0f;
-        Feedback(s,started_reload?REVERIE_NATIVE_FEEDBACK_RELOAD_START:
-                  REVERIE_NATIVE_FEEDBACK_FAILURE);
+        if(started_reload)Feedback(s,REVERIE_NATIVE_FEEDBACK_RELOAD_START);
+        else if(s->campaign.reloading())
+            ControlSound(s,s->campaign.magazine_left()==0?
+                REVERIE_NATIVE_SOUND_BREAKWATER_DRY_FIRE:
+                REVERIE_NATIVE_SOUND_BREAKWATER_COOLDOWN,
+                REVERIE_NATIVE_FEEDBACK_FAILURE);
+        else Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
     // The firing press must be released before it can acknowledge results.
     if(!down) {
@@ -2068,7 +2228,7 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
     const ReverieNativeInputV1 worldPointer=WorldPointer(s,copy);
     if(secondary&&!s->secondary_held && s->campaign.phase()==Phase::Shop &&
        !s->round_summary) {
-        BeginActiveWave(s,down);
+        if(!BeginActiveWave(s,down))Feedback(s,REVERIE_NATIVE_FEEDBACK_FAILURE);
     }
     // The phantom sight follows the controller rather than a barrel that
     // can no longer physically elevate to the target.
@@ -2134,6 +2294,8 @@ void Update(void *instance,const ReverieNativeInputV1 *input) {
                            ui_pressed,!pointer_was_visible))
         s->scene_dirty=true;
     s->held=down;s->secondary_held=secondary;
+    s->audio_frame.Flush(s->host);
+    UpdateSoundscape(s,copy);
 }
 int32_t PrepareFrame(void *instance) {
     State *s=static_cast<State *>(instance);

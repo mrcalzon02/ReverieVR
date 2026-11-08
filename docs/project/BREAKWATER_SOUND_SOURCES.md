@@ -2,11 +2,57 @@
 
 **Role:** PROJECT MANAGEMENT / SOURCE README  
 **Parent:** [Breakwater implementation plan](BREAKWATER_BATTERY_VR.md) · [RV-0640 backlog](BACKLOG.md) · [Licensing policy](PUBLIC_DISTRIBUTION_AND_LICENSES.md)  
-**Checked:** 2026-10-15 (official source/artist listing and published license pages)  
-**Status:** **Linked CC0/third-party candidates only. No external sample recordings from this register have been selected, downloaded, hashed, imported or released.** The game uses sixteen additional deterministic **original synthesized** one-shot effects (ten confirmed earlier battle events, four progression cues, and two new armored-car combat events). Breakwater's already packaged original-owner song `Mars des Souvenirs` is licensed separately and is not a third-party SFX candidate.  
+**Checked:** 2026-11-08 (actual shared-library bytes and the NOX pack's original license README)
+
+**Status:** **46 normalized runtime WAVs imported from the approved shared library and documented first-party derivatives.** Current hashes, measured levels and recipes are in [the bank manifest](../../art/breakwater/audio_manifest.json). The earlier web candidates below remain historical candidates, not imported sources. Device listening and source-aligned APK evidence are tracked separately in the [execution record](../records/2026-11-08-breakwater-sound-overhaul.md). Breakwater's original-owner song `Mars des Souvenirs` remains separate.
 **Art direction:** Generic late-1990s/early-2000s Western military arcade sounds; punchy, legible, low-latency, inexpensive on Galaxy S9. Prefer authentic mechanical impact and modest environmental reverb over cinematic sci-fi or excessive bass.
 
-## Linked source candidates
+## Imported shared-library bank — 2026-11-08
+
+The current bank is **2,608,902 bytes** across 46 canonical PCM16 mono WAVs
+at 22,050 Hz. Seven environmental loops are six seconds each, with a
+250 ms circular crossfade; the largest decoded sample is 264,600 bytes.
+Only selected runtime derivatives are packaged. Original purchased/exported
+masters remain in the owner's shared collection.
+
+Sources are NOX SOUND Essentials nature, vehicle and water Foley recordings,
+owner-original Between Deliveries grenade/metal exports, and the existing
+first-party `NativeCombatWaveform` recipes. The NOX README explicitly states
+CC0; its original bytes are preserved as
+[license evidence](../licensing/sources/nox-essentials-readme.pdf). Owner
+exports follow [the existing grant](../licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md).
+The [public source catalog](../../tools/breakwater/audio/source_catalog.json)
+pins every admitted original's filename, byte size, SHA-256 and rights.
+Private storage IDs are excluded from the public records.
+
+| Family | Runtime coverage | Peak ceiling | Active RMS target |
+|---|---|---:|---:|
+| Controls/progression | Focus, activation, rejection, equipment, reload start/ready, menu open/back, difficulty/restart, support arm/disarm, station move, empty gun, aim limit, cooldown, unavailable support, purchase/wave/results | -12 dBFS | -22 dBFS |
+| Combat | Five distinct weapons, hull/water/sand impacts, boat/armor destruction, incoming fire, SAM, artillery and airstrike | -9 dBFS | -18 dBFS |
+| Environment | Surf, wind, night, boat machinery, rowing texture, approaching aircraft, gun traverse | -18 dBFS | -24 dBFS |
+
+These are per-category measured PCM targets, not equal loudness for every
+kind of action. The offline tool trims source silence, removes source DC,
+applies deterministic filters/edits and smooth-knee peak compression, then
+remeasures the actual quantized output. The manifest identifies every
+layer and transformation. Boat/aircraft engines are deliberate treatments
+of recorded vehicle machinery; rowing is constructed from recorded water
+movement. No authentic boat, oar, aircraft or firearm field recording is
+claimed where none was found. Synthesized weapon components remain paired
+with recorded accents; the sand cue is explicitly first-party procedural.
+
+The shell reserves two control, four combat and seven loop voices. Fixed
+gains bound the bank's simultaneous sample peak below 0.50, leaving room
+for the existing music player's maximum 0.50 gain. Loops follow the actual
+scene and nearest active sources; 900 ms leases, explicit pause/exit stops,
+audio-focus handling and stale-callback invalidation prevent orphan audio.
+The game still runs inside the one ReverieVR APK.
+
+Reproduction instructions and tool: [tools/breakwater/audio](../../tools/breakwater/audio/README.md).
+Validation entry point: `python3 scripts/verify-breakwater-audio-assets.py`
+(optionally `--apk <signed.apk>` to inspect the actual packaged bytes).
+
+## Historical linked source candidates
 
 Each link goes to an original asset/download page, **not an unverified mirror**. The license shown is the publisher's declaration on that page, not proof that every asset in a downloaded ZIP has been individually audited. CC0 license terms: https://creativecommons.org/publicdomain/zero/1.0/. **Candidate** means approved for audition and per-file due diligence, not approved for ingestion without the intake record below.
 
@@ -30,7 +76,7 @@ Each link goes to an original asset/download page, **not an unverified mirror**.
 - [Sonniss GDC Game Audio bundles](https://sonniss.com/gameaudiogdc/) — royalty-free **within synchronized finished productions**, but **not CC0**; [version 2.0 of the license](https://sonniss.com/gdc-bundle-license/) effective 2026-08-27 prohibits distributing the recordings as a standalone sound-effect collection, sample pack, or reusable project asset. **Do not commit its raw or transformed clips** to public `main`. May only be considered in a separate distribution approach after confirming the exact license and intended distribution.
 - Any individual file without a verified source URL or license, including CC-BY-only, NC, SA, proprietary game extracts, unknown mirror uploads, and voice lines falsely advertised as public domain. Avoid recognizable third-party games' signature sound designs.
 
-## Armored landing cue integration (2026-10-16)
+## Historical armored landing cue integration (2026-10-16)
 
 In addition to `Mars des Souvenirs` (the existing owner-original,
 packaged/looped Breakwater passive theme), two new original synthesized
@@ -47,7 +93,7 @@ No external CC0 sample has been imported, and the owner soundtrack
 remains separate under its original license. Android/headset mix and
 loop continuity are still unverified.
 
-## Immediate per-cue sourcing priorities
+## Historical per-cue sourcing priorities (before shared-library intake)
 
 | Sequence | Cue IDs | Candidate IDs | What constitutes acceptance |
 |---|---|---|---|

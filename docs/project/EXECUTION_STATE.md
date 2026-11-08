@@ -1,3 +1,27 @@
+## 2026-11-08 — Breakwater shared-library sound overhaul
+
+**Intent and source:** overhaul the hosted Breakwater game's control, combat
+and environmental sound from `main` at
+`12d4018c90e56a3767b8ffc58a2e5394440caec1`. The source contains 46 normalized
+runtime clips with source/output hashes and rights evidence; game-side typed
+control events, actual combat reports, seven scene-driven loops, and a bounded
+shell playback/lifecycle/focus path. The existing soundtrack remains separate.
+
+**Executed local evidence:** 2,247 actual native Update assertions pass on GCC
+and ASan/UBSan, 226 actual playback-backend checks, 18 routing checks, seven
+JUnit policy tests, the full existing campaign regression, native ABI and
+independent PCM/hash/loop/mapping checks pass. The complete bank
+and manifest reproduced byte-for-byte. The native documentation guard retains
+the pre-existing Test Chamber shader-helper mismatch. Exact evidence and
+subsequent Android/release results belong in
+[the execution record](../records/2026-11-08-breakwater-sound-overhaul.md).
+
+**Acceptance boundary:** source/local tests do not prove Galaxy S9 audio
+latency, speaker/headphone balance or sustained thermal performance. Complete
+the existing unified signed phone-test build and inspect its actual WAV bytes;
+then listen on the reference handset. No standalone Breakwater APK is part of
+this change.
+
 ## 2026-11-07 — Sitka starter harbor gameplay iteration
 
 **Intent:** implement and audit the shore gameplay loop before boat acceptance, from main `c10ddd72`. Retained fish inventory and explicit fish/shellfish sales, pending-find registration, clean-start V5 journal, Tier 0 fallback supplies/dinghy, starter fish/shellfish/token, live fishing/office Lato prompts and removal of disconnected Deckwork training from the paid shop. No old-save migration per owner direction.

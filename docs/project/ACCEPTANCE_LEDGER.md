@@ -1,3 +1,17 @@
+## 2026-11-08 — Breakwater sound overhaul
+
+**RV-0640-AUDIO-20261108 | Source/local checks implemented; Android/package and
+physical listening are separate gates.** Approved shared-library recordings
+and identified first-party derivatives produce 46 normalized runtime WAVs;
+controls, actual combat and seven environmental layers are wired to the game.
+The actual Update, bounded event queues, policy, lifecycle routing and real
+PCM/provenance checks are documented in the
+[execution record](../records/2026-11-08-breakwater-sound-overhaul.md).
+Accept the package only after checking the unified signed APK's exact WAV
+bytes; accept reference-device sound only after listening to controls, combat,
+night/boat/aircraft loops, music coexistence, Quick Menu, controller loss,
+focus/output interruption and resume. Device latency/thermal proof is open.
+
 ## 2026-11-07 — Sitka starter harbor loop
 
 **Locally exercised source, not packaged/device accepted.** Fresh Tier 0 equipment/dinghy, retained starter and caught fish inventory, explicit fish/shellfish sales, unique find/token registration, gear purchases, live fishing/office instructions and save-error retry. The actual module Update and both eye renders use synthetic fixtures; 37 local Sitka programs and native ABI pass. No old-save migration required. Existing unrelated Test Chamber doc-guard mismatch remains. [Detailed audited gaps and next acceptance steps](../records/2026-11-07-sitka-starter-harbor-loop.md). Playable registration, actual world/harbor routes, visible characters, boat/model/pot integration and headset evidence remain open.

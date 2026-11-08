@@ -2,6 +2,7 @@
 #include "reverie_native_avatar_geometry.h"
 #include "reverie_native_avatar_wardrobe.h"
 #include "reverie_native_sound_queue.h"
+#include "reverie_native_spatial_sound_queue.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -16,6 +17,7 @@ int captured_log_count = 0;
 uint32_t captured_feedback_flags = 0u;
 uint32_t captured_sound_cue = 0u;
 unsigned captured_sound_calls = 0u;
+unsigned captured_spatial_calls = 0u;
 
 void Check(bool condition, const char *message) {
     if (!condition) {
@@ -58,6 +60,7 @@ void DummySound(uint32_t cue_id) {
     captured_sound_cue=cue_id;
     ++captured_sound_calls;
 }
+void DummySpatialSound(uint32_t,float,float) { ++captured_spatial_calls; }
 
 int32_t DummyReadAvatar(ReverieNativeAvatarV1 *out,uint32_t capacity) {
     if(out==nullptr ||capacity<sizeof(ReverieNativeAvatarV1))return -1;
@@ -225,6 +228,35 @@ int main() {
     ordered.Push(2u);
     ordered.Clear();
     Check(ordered.Drain()==0u,"pause clears unplayed requests");
+
+    // Loop intents use the existing spatial tail, never widen a stale prefix.
+    host.request_spatial_sound=DummySpatialSound;
+    Check(!ReverieNativeRequestSpatialSoundV1(&host,41u,1.f,1.f),
+          "short host cannot receive loop intents");
+    host.struct_size=sizeof(host);
+    for(uint32_t cue=41u;cue<=47u;++cue)
+        Check(ReverieNativeRequestSpatialSoundV1(&host,cue,.25f,.75f),
+              "all seven loop intents reach the spatial service");
+    Check(captured_spatial_calls==7u,"one callback per loop refresh");
+    Check(!ReverieNativeRequestSpatialSoundV1(&host,22u,1.f,1.f) &&
+          !ReverieNativeRequestSpatialSoundV1(&host,40u,1.f,1.f) &&
+          !ReverieNativeRequestSpatialSoundV1(&host,48u,1.f,1.f) &&
+          !ReverieNativeRequestSpatialSoundV1(&host,41u,-.1f,1.f) &&
+          !ReverieNativeRequestSpatialSoundV1(&host,41u,
+              std::numeric_limits<float>::quiet_NaN(),1.f),
+          "unknown positional IDs and malformed gains are rejected");
+    host.abi_version=999u;
+    Check(!ReverieNativeRequestSpatialSoundV1(&host,41u,1.f,1.f),
+          "incompatible ABI cannot call spatial service");
+    host.abi_version=REVERIE_NATIVE_MODULE_ABI_VERSION;
+    ReverieNativeSpatialSoundQueue spatial;
+    Check(spatial.Push(41u,.25f,.75f) && spatial.Push(47u,0.f,0.f),
+          "bounded packet accepts a loop refresh and explicit stop");
+    Check(!spatial.Push(42u,1.f,1.f),"spatial packet remains two events");
+    const uint64_t spatial_packet=spatial.Drain();
+    Check((spatial_packet & 255u)==41u &&
+          ((spatial_packet>>24u)&255u)==47u && spatial.Drain()==0u,
+          "spatial loop order and drain clearing survive extension");
 
     ReverieNativeModuleDescriptorV1 descriptor = {};
     descriptor.struct_size =

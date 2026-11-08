@@ -1,0 +1,1 @@
+package android.widget; public class Button extends android.view.View {public void setSoundEffectsEnabled(boolean v){} public void setOnTouchListener(OnTouchListener l){} public void setOnClickListener(OnClickListener l){}}

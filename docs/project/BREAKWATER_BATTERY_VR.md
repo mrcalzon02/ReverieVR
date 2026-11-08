@@ -1,5 +1,25 @@
 # Breakwater Battery VR — canonical native game specification
 
+## Shared-library sound overhaul — 2026-11-08
+
+The current audio path uses 46 normalized PCM clips prepared from the approved
+shared NOX/owner sound collection and documented first-party derivatives.
+Contextual control feedback covers stable focus, equipment, reloads, rejected
+actions, support selection, shop/menu navigation and defense-station movement;
+actual simulation events select the weapon, impact, incoming-fire and result
+sounds. Seven leased environmental layers provide surf, wind, night, boat,
+rowing, aircraft and gun-traverse audio, with actor position and headset-based
+stereo placement. The existing owner soundtrack remains separate.
+
+The shell reserves two control, four combat and seven loop voices, normalizes
+each category to its stated peak/RMS target, rejects stale queued callbacks,
+and stops on Quick Menu, controller loss, lifecycle, focus loss and exit. The
+existing Quick Menu Resume action explicitly retries interrupted audio focus.
+Current implementation, provenance, tests and device gates are recorded in
+[the sound-overhaul record](../records/2026-11-08-breakwater-sound-overhaul.md)
+and [source register](BREAKWATER_SOUND_SOURCES.md). Earlier dated AudioTrack and
+candidate-only statements below describe the historical implementation.
+
 ## Trajectory and horizon correction — 2026-11-06
 
 [Actual renderer capture with the trajectory enabled](../gallery/breakwater/coastal-rebuild/2026-11-06-clarity/README.md).

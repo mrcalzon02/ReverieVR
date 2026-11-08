@@ -114,8 +114,12 @@ static inline int ReverieNativeHostSupportsSoundV1(
 static inline int ReverieNativeRequestSpatialSoundV1(
     const ReverieNativeHostV1* host,uint32_t cue,float left,float right
 ) {
-    if(host==NULL||host->struct_size<REVERIE_NATIVE_HOST_V1_SPATIAL_MIN_SIZE||
-       host->request_spatial_sound==NULL||cue<1u||cue>21u||
+    if(host==NULL||host->abi_version!=REVERIE_NATIVE_MODULE_ABI_VERSION||
+       host->struct_size<REVERIE_NATIVE_HOST_V1_SPATIAL_MIN_SIZE||
+       host->request_spatial_sound==NULL||
+       !((cue>=1u&&cue<=21u)||
+         (cue>=REVERIE_NATIVE_SOUND_BREAKWATER_AMBIENCE_SURF&&
+          cue<=REVERIE_NATIVE_SOUND_BREAKWATER_GUN_TRAVERSE))||
        !(left>=0.f&&left<=1.f)||!(right>=0.f&&right<=1.f))return 0;
     host->request_spatial_sound(cue,left,right);
     return 1;

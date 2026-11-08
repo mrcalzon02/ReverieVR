@@ -1157,7 +1157,7 @@ Java_io_github_mrcalzon02_reverievr_NativeModuleRuntime_nativeUpdate(
         std::lock_guard<std::mutex> guard(session->sound_mutex);
         if(input.pointer_kind==REVERIE_NATIVE_POINTER_NONE)
             session->pending_sounds.Clear();
-        if(!input.listener_valid)session->pending_spatial_sounds.Clear();
+        session->pending_spatial_sounds.Clear();
     }
 
     return static_cast<jint>(

@@ -255,4 +255,17 @@ When an implementation is removed, renamed, promoted, or downgraded, update its 
 
 ## Cross-game shared authored assets — 2026-11-04
 
+### Breakwater library audio — 2026-11-08
+
+**Game-specific shell service, source implementation; device acceptance
+pending:** `BreakwaterAudio.java` and `BreakwaterAudioPolicy.java` consume
+the normalized bank in `native/breakwater/audio/`, derived from the shared
+NOX/owner sound library. Fixed voices, category headroom, priority, control
+feedback precedence, leased ambient layers and lifecycle cancellation are
+documented in `RUNTIME_SERVICES.md`. The existing ordered/spatial ABI tails
+carry named events only; no arbitrary PCM/file API or general game mixer is
+promoted. Sources and reproduction: `docs/project/BREAKWATER_SOUND_SOURCES.md`.
+
+### Shared visual asset catalog
+
 **Implemented (source integration; device proof pending):** `reverie_native_shared_asset_catalog.h` provides host-scoped exact grants for nineteen `native/shared/v1/` assets, sixteen 64×64 coastal textures and three BWM1 compiled prop models. Breakwater reads them through existing PNG and BWM parsers; Omega Front reuses shared concrete and steel in its existing texture renderer, eliminating the old duplicate packaged files. `shared-assets/catalog-v1.json` and `scripts/verify-shared-native-assets.py` provide a versioned cross-repository source manifest and source-byte regression. See [shared assets](SHARED_ASSETS.md) (source: `docs/native/SHARED_ASSETS.md`). This is *not* a networked/shared-package cache and does not grant arbitrary native games reads.

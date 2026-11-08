@@ -1,0 +1,818 @@
+{
+  "schema": 1,
+  "description": "Selected source records for reproducible Breakwater bank preparation; no private storage IDs or download credentials.",
+  "sources": [
+    {
+      "key": "surf",
+      "filename": "Ambiance_Sea_Loop_Stereo.wav",
+      "sha256": "79c1d039beafd379a09590eae0b0175f940f3714b2d28934ed645564e7dffd1f",
+      "bytes": 8639230,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Nature_Essentials_NOX_SOUND",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "wind",
+      "filename": "Ambiance_Wind_Calm_Loop_Stereo.wav",
+      "sha256": "5ccce3e44482edb3ae65e6cf1662e208e90a182181664f7ac6b05778e8671baa",
+      "bytes": 8598184,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Nature_Essentials_NOX_SOUND",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "night",
+      "filename": "Ambiance_Night_Loop_Stereo.wav",
+      "sha256": "b34338db0da03c8802fab38d550c40dca04e358e2f18034eaf8c3a9fa401b580",
+      "bytes": 8600376,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Nature_Essentials_NOX_SOUND",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "engine",
+      "filename": "Vehicle_Truck_Drive_Exterior_Loop_Stereo_01.wav",
+      "sha256": "a98e6eed94af8c96b6e815701906677ce0a3cb71f7e1025626f50bce0a604d99",
+      "bytes": 2304760,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "click",
+      "filename": "Vehicle_Truck_Buttons_Interior_Mono_01.wav",
+      "sha256": "cc0706e11e2da652454eaaaf154ccc1812965ec77e846ec82c3381d3630a7b8a",
+      "bytes": 98024,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "click2",
+      "filename": "Vehicle_Truck_Buttons_Interior_Mono_02.wav",
+      "sha256": "33d02a34ab4d8f77887d54df5057919240037e85332ccec0698588d4c9e0c002",
+      "bytes": 89002,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "latch",
+      "filename": "Vehicle_Truck_Seat_Belt_Mono_01.wav",
+      "sha256": "31f2e349a06dc9735e45be26fceb1ac28b614d13ea39a9d565482a0ce68bee41",
+      "bytes": 56944,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "handle",
+      "filename": "Household_Closet_Key_Insertion_Stereo.wav",
+      "sha256": "d70a9a54e9788065daf6c33a2c70053503fce0e77e31727a17d7d365f30cc78a",
+      "bytes": 165958,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Sample_A_Sound_Effect",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "metal",
+      "filename": "Vehicle_Truck_Back_Door_Closing_Exterior_Mono_01.wav",
+      "sha256": "b5fddda5ddc98ef7714db6769df5ed74b001955550542677a4bcb10d853c286a",
+      "bytes": 98986,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "water_walk_a",
+      "filename": "Footsteps_WaterV1_Walk_01.wav",
+      "sha256": "3e46819574ac259547da70a8cc6374767561298e2d3a1765d5448ba65195d579",
+      "bytes": 92284,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Footsteps_Essentials_NOX_SOUND/Footsteps_Water",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "water_walk_b",
+      "filename": "Footsteps_WaterV1_Walk_02.wav",
+      "sha256": "6fd9de088303d7d4a476f97c66adc7553a9b996d66de3ec2e594cdd6a675aa4d",
+      "bytes": 122208,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Footsteps_Essentials_NOX_SOUND/Footsteps_Water",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "splash",
+      "filename": "Footsteps_Water_Jump_Big_01.wav",
+      "sha256": "bc7d69fa4e08e609d1c2033f830cb87fad89c7501760421463ef15e1d3b8b78c",
+      "bytes": 677996,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Footsteps_Essentials_NOX_SOUND/Footsteps_Water",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "traverse_motor",
+      "filename": "Vehicle_Car_Electric_Window_Opening_Mono.wav",
+      "sha256": "219f715e5ed0649211cf341a15b549a10ad75b4baaf94112e463214ce22abc87",
+      "bytes": 580542,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Car",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "aircraft_engine",
+      "filename": "Vehicle_Car_Engine_2000_RPM_Front_Exterior_Loop_Mono.wav",
+      "sha256": "8de0f8c78385b5c38669e0b5ba5a640283138ed975d806f3fe65a9192b7ec59b",
+      "bytes": 2880550,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Car",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "explosion",
+      "filename": "Granade.wav",
+      "sha256": "8ac02fb98809bdf94b79e36ca3a9f884736b927d8752bb5d057c0fa4ac32f0b1",
+      "bytes": 258092,
+      "pack": "Between Deliveries owner-original SoundWave exports",
+      "category": "BetweenDeliveries_UnrealExports/audio/ui",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "attribution": "Christopher Michael Vardeman; used with owner authorization",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/main/docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "rights_evidence": {
+        "statement": "Owner-confirmed original audio; extraction, adaptation and inclusion in ReverieVR authorized. No open-content sublicense is asserted.",
+        "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+        "source_unreal_object": "/Game/Sounds/Ui/Granade.Granade",
+        "original_export_sha256": "8ac02fb98809bdf94b79e36ca3a9f884736b927d8752bb5d057c0fa4ac32f0b1",
+        "export_manifest_sha256": "7ade636661a582b6b8e7c3ef9ba70301b0519c6918a931fce453bf60529bcbed"
+      }
+    },
+    {
+      "key": "metal_thwak",
+      "filename": "Metal_thwak.wav",
+      "sha256": "64974af3f01e182b5523563d2abfd8f4a0a98fc9d857daf8712d000084b65bda",
+      "bytes": 57388,
+      "pack": "Between Deliveries owner-original SoundWave exports",
+      "category": "BetweenDeliveries_UnrealExports/audio/ui",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "attribution": "Christopher Michael Vardeman; used with owner authorization",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/main/docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "rights_evidence": {
+        "statement": "Owner-confirmed original audio; extraction, adaptation and inclusion in ReverieVR authorized. No open-content sublicense is asserted.",
+        "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+        "source_unreal_object": "/Game/Sounds/Ui/Metal_thwak.Metal_thwak",
+        "original_export_sha256": "64974af3f01e182b5523563d2abfd8f4a0a98fc9d857daf8712d000084b65bda",
+        "export_manifest_sha256": "7ade636661a582b6b8e7c3ef9ba70301b0519c6918a931fce453bf60529bcbed"
+      }
+    },
+    {
+      "key": "metal_drag",
+      "filename": "Metal_drag.wav",
+      "sha256": "bc50067f1e5621a52525b896cbb8587ccae52c97a518d8b20b2b3955aa66e108",
+      "bytes": 234100,
+      "pack": "Between Deliveries owner-original SoundWave exports",
+      "category": "BetweenDeliveries_UnrealExports/audio/ui",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "attribution": "Christopher Michael Vardeman; used with owner authorization",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/main/docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "rights_evidence": {
+        "statement": "Owner-confirmed original audio; extraction, adaptation and inclusion in ReverieVR authorized. No open-content sublicense is asserted.",
+        "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+        "source_unreal_object": "/Game/Sounds/Ui/Metal_drag.Metal_drag",
+        "original_export_sha256": "bc50067f1e5621a52525b896cbb8587ccae52c97a518d8b20b2b3955aa66e108",
+        "export_manifest_sha256": "7ade636661a582b6b8e7c3ef9ba70301b0519c6918a931fce453bf60529bcbed"
+      }
+    },
+    {
+      "key": "synth_0",
+      "filename": "cue_0.wav",
+      "location": "synth",
+      "sha256": "74f1535e800d1ca46a7b83cbf4728547acb4cec5dfd02ce75baf40fc3897cce8",
+      "bytes": 7982,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 0,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_1",
+      "filename": "cue_1.wav",
+      "location": "synth",
+      "sha256": "f957e718ef6073f15a2d60eb06cacdfff6e2159fcca833cd777250b59b8bbf5b",
+      "bytes": 10186,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 1,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_2",
+      "filename": "cue_2.wav",
+      "location": "synth",
+      "sha256": "19ca2d5b908af1c2e199b1c3fc840297947b720372f2101db369d2237e49520c",
+      "bytes": 4454,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 2,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_3",
+      "filename": "cue_3.wav",
+      "location": "synth",
+      "sha256": "98c244af140ce27ddbd2f5d53bb55ebd8d1e492fe68c70edf2a6a62f12f01e84",
+      "bytes": 22976,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 3,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_4",
+      "filename": "cue_4.wav",
+      "location": "synth",
+      "sha256": "d99e1bbdf43d5e1e4232f72dbbad16ad0b6a4e5de30ff3b0e85d043fb9aa08d1",
+      "bytes": 28708,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 4,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_5",
+      "filename": "cue_5.wav",
+      "location": "synth",
+      "sha256": "8d78c45083e0ed6694ad172f076ef0b6d113bc588ad7891d0789afd41b009a2f",
+      "bytes": 7540,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 5,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_6",
+      "filename": "cue_6.wav",
+      "location": "synth",
+      "sha256": "94c97c6932b2de106ca433904b7d18012dc243af64a4239a6ce396297f19168b",
+      "bytes": 10628,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 6,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_7",
+      "filename": "cue_7.wav",
+      "location": "synth",
+      "sha256": "19344c6043362c0f488650d83c26f653632648abba9a34c229864f5801f225ca",
+      "bytes": 11950,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 7,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_8",
+      "filename": "cue_8.wav",
+      "location": "synth",
+      "sha256": "2137c19b35e2e7248bc59c3636672fe112e2adeba288d2c18ea1507153400b78",
+      "bytes": 17242,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 8,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_9",
+      "filename": "cue_9.wav",
+      "location": "synth",
+      "sha256": "fa196972899f99402702719e22f36b4acdb23fc9e118ab789f381a6197cbf92e",
+      "bytes": 15920,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 9,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_10",
+      "filename": "cue_10.wav",
+      "location": "synth",
+      "sha256": "a5a6f569b3472d49b0f44584f9697e4b0ee51661278096864f9b2e0caaab66e5",
+      "bytes": 10186,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 10,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_11",
+      "filename": "cue_11.wav",
+      "location": "synth",
+      "sha256": "92a071461ebf7fd903cb4566a9e7920370df818625f1a811db846362c2107da9",
+      "bytes": 15038,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 11,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_12",
+      "filename": "cue_12.wav",
+      "location": "synth",
+      "sha256": "7cdefbca8162966f945822bab682f945a27d16c083018af85a72f953b4777521",
+      "bytes": 25180,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 12,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_13",
+      "filename": "cue_13.wav",
+      "location": "synth",
+      "sha256": "df9e91431a3b2ad76199d99ab327791266316008ed7e20cf24cf1a646e7798ad",
+      "bytes": 18124,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 13,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_14",
+      "filename": "cue_14.wav",
+      "location": "synth",
+      "sha256": "0fe7e4fe6589a41ce957d9a78be65410df424c1c76ac6ae18bd771af6f189134",
+      "bytes": 13052,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 14,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_15",
+      "filename": "cue_15.wav",
+      "location": "synth",
+      "sha256": "9bf8ddbd486a346ecf40f767b257481743f6c7aee535dcca52c5c210530ceb52",
+      "bytes": 26944,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 15,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_16",
+      "filename": "cue_16.wav",
+      "location": "synth",
+      "sha256": "62b264cda1b0af08c7fcdc1125055acaf5694ef2cf570ee56bf7d33e6c080b72",
+      "bytes": 15038,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 16,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_17",
+      "filename": "cue_17.wav",
+      "location": "synth",
+      "sha256": "aa3140b0bba41fa0c8c957a6b467d7f292de17da646ad0457f7b31663e1f15f7",
+      "bytes": 20330,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 17,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_18",
+      "filename": "cue_18.wav",
+      "location": "synth",
+      "sha256": "a5b4922de44e1a3ea9d89c8ebd69a061a23179f1810f9e5f131755597d109ea2",
+      "bytes": 17242,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 18,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_19",
+      "filename": "cue_19.wav",
+      "location": "synth",
+      "sha256": "c5d57a9aa17ba3384abe6f73d153de5e1a532fb37b2a2e55e53cb08f496fd805",
+      "bytes": 21652,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 19,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_20",
+      "filename": "cue_20.wav",
+      "location": "synth",
+      "sha256": "23a5156f43c41e989b24811d55269ad8ebffac5d0e71d8875272afe295b897c6",
+      "bytes": 6878,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 20,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_21",
+      "filename": "cue_21.wav",
+      "location": "synth",
+      "sha256": "56453bf5d22fe0fee26eef1951291cd1f3bdbda9e34ddb9f6d69a13179bac6e8",
+      "bytes": 52082,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 21,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_22",
+      "filename": "cue_22.wav",
+      "location": "synth",
+      "sha256": "a02f2ac1d2507f1fbb869da1f7cabec6c5ed4cce10951f089c8b8f09d6a06d03",
+      "bytes": 34000,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 22,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_23",
+      "filename": "cue_23.wav",
+      "location": "synth",
+      "sha256": "c0df6855d754a01e09e46c75ed751ffeaccd8296f2998f2e4607b3aefaea5c63",
+      "bytes": 30472,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 23,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_24",
+      "filename": "cue_24.wav",
+      "location": "synth",
+      "sha256": "c3008e737ab4a644a82fe04383eb9ac43aa46329c75bcc21a6dc8ecac11babe9",
+      "bytes": 18566,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 24,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_25",
+      "filename": "cue_25.wav",
+      "location": "synth",
+      "sha256": "9655b6f5736eb7963c8f75d18239b902cb4d24710e92af7b3664773cadf274b1",
+      "bytes": 27826,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 25,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    }
+  ]
+}

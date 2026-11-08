@@ -16,6 +16,8 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.hardware.input.InputManager;
 import android.media.AudioManager;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -75,9 +77,27 @@ public final class VrActivity extends Activity
     private ReveriePreferences preferences;
     private UiFeedback uiFeedback;
     private ShellMenuMusic menuMusic;
-    // Keeps coastal ambience active while the native battery is hosted.
-    private volatile boolean breakwaterHosted;
     private HomeAmbientAudio homeAmbientAudio;
+    private AudioManager breakwaterAudioManager;
+    private AudioFocusRequest breakwaterAudioFocusRequest;
+    private boolean activityResumed;
+    private boolean breakwaterAudioFocusSession;
+    private boolean breakwaterAudioFocusHeld;
+    private boolean breakwaterAudioRouteInterrupted;
+    private boolean breakwaterAudioReceiverRegistered;
+    private int breakwaterAudioFocusGeneration;
+    private final AtomicInteger nativeAudioSessionEpoch = new AtomicInteger();
+    private final BroadcastReceiver breakwaterAudioRouteReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (intent == null || !AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())
+                || !breakwaterAudioFocusSession) return;
+            breakwaterAudioRouteInterrupted = true;
+            abandonBreakwaterAudioFocus();
+            Toast.makeText(VrActivity.this,
+                "Sound paused. Choose Quick Menu > Resume to retry audio.",
+                Toast.LENGTH_SHORT).show();
+        }
+    };
     private LocalVideoPlayer videoPlayer;
     private final java.util.concurrent.ExecutorService calibratedMediaExecutor =
         java.util.concurrent.Executors.newSingleThreadExecutor();
@@ -277,6 +297,11 @@ public final class VrActivity extends Activity
             return;
         }
 
+        activityResumed = true;
+        if (breakwaterAudioFocusSession) {
+            breakwaterAudioRouteInterrupted = false;
+            requestBreakwaterAudioFocus();
+        }
         registerInputDeviceListener();
         refreshKeyboardTwinStatus();
         registerHeadMotionSensor();
@@ -290,9 +315,15 @@ public final class VrActivity extends Activity
             uiFeedback.resumeForLifecycle();
         }
         if (menuMusic != null) {
-            menuMusic.resumeForLifecycle();
+            if (!breakwaterAudioFocusSession || breakwaterAudioFocusHeld)
+                menuMusic.resumeForLifecycle();
+            else menuMusic.pauseForLifecycle();
         }
-        if (homeAmbientAudio != null) homeAmbientAudio.resumeForLifecycle();
+        if (homeAmbientAudio != null) {
+            if (!breakwaterAudioFocusSession || breakwaterAudioFocusHeld)
+                homeAmbientAudio.resumeForLifecycle();
+            else homeAmbientAudio.pauseForLifecycle();
+        }
         if (renderer != null) {
             renderer.setPhoneBattery(readPhoneBattery());
         }
@@ -312,6 +343,8 @@ public final class VrActivity extends Activity
 
     @Override
     protected void onPause() {
+        activityResumed = false;
+        if (breakwaterAudioFocusSession) abandonBreakwaterAudioFocus();
         if (renderer != null) renderer.setPhysicalKeyboardAttached(false);
         unregisterInputDeviceListener();
         unregisterHeadMotionSensor();
@@ -348,6 +381,8 @@ public final class VrActivity extends Activity
 
     @Override
     protected void onDestroy() {
+        activityResumed = false;
+        setBreakwaterAudioFocusSession(false);
         calibratedMediaEpoch.incrementAndGet();
         calibratedMediaExecutor.shutdownNow();
         emulatorSourceExecutor.shutdownNow();
@@ -1771,83 +1806,158 @@ public final class VrActivity extends Activity
 
     @Override
     public void onUiFocusChanged() {
-        runOnUiThread(() -> uiFeedback.focus());
+        if (uiFeedback != null) uiFeedback.focus();
     }
 
     @Override
     public void onUiActionRejected() {
-        runOnUiThread(() -> uiFeedback.failure());
+        if (uiFeedback != null) uiFeedback.failure();
     }
 
     @Override
     public void onNativeModuleSoundCueRequested(int cueId) {
-        // Preserve the entire ABI-v1 sound range, including Breakwater's
-        // purchase/wave/armor cues 16..21 and Red Ledger's cues 22..27.
-        if(uiFeedback==null || cueId<1 ||
-           cueId>RedLedgerSound.LAST_CUE)return;
-        runOnUiThread(() -> uiFeedback.nativeSoundCue(cueId));
+        if (uiFeedback == null || cueId < 1
+            || cueId > BreakwaterAudioPolicy.LAST_NATIVE_CUE) return;
+        // UiFeedback captures its session generation here, before the UI hop.
+        uiFeedback.nativeSoundCue(cueId);
     }
 
     @Override
-    public void onNativeModuleSpatialSoundCueRequested(int cueId,float left,float right){
-        if(uiFeedback==null||cueId<1||cueId>21||
-           !Float.isFinite(left)||!Float.isFinite(right)||
-           left<0f||left>1f||right<0f||right>1f)return;
-        runOnUiThread(()->uiFeedback.nativeSpatialSoundCue(cueId,left,right));
+    public void onNativeModuleSpatialSoundCueRequested(int cueId, float left, float right) {
+        if (uiFeedback == null || !BreakwaterAudioPolicy.isSpatialCue(cueId)
+            || !Float.isFinite(left) || !Float.isFinite(right)
+            || left < 0f || left > 1f || right < 0f || right > 1f) return;
+        uiFeedback.nativeSpatialSoundCue(cueId, left, right);
+    }
+
+    private void setBreakwaterAudioFocusSession(boolean active) {
+        if (!active && !breakwaterAudioFocusSession) return;
+        if (active && breakwaterAudioFocusSession) abandonBreakwaterAudioFocus();
+        breakwaterAudioFocusSession = active;
+        breakwaterAudioRouteInterrupted = false;
+        if (active) {
+            if (activityResumed) requestBreakwaterAudioFocus();
+            else applyBreakwaterAudioFocus(false);
+        } else {
+            abandonBreakwaterAudioFocus();
+            if (uiFeedback != null) uiFeedback.setAudioFocusAllowed(true);
+            if (activityResumed) {
+                if (menuMusic != null) menuMusic.resumeForLifecycle();
+                if (homeAmbientAudio != null) homeAmbientAudio.resumeForLifecycle();
+            }
+        }
+    }
+
+    private void requestBreakwaterAudioFocus() {
+        if (!activityResumed || !breakwaterAudioFocusSession
+            || breakwaterAudioRouteInterrupted || breakwaterAudioFocusHeld) return;
+        if (breakwaterAudioManager == null)
+            breakwaterAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (breakwaterAudioManager == null) {
+            applyBreakwaterAudioFocus(false);
+            return;
+        }
+        // Every request gets its own generation: late callbacks from an
+        // abandoned session cannot restart the bank or soundtrack.
+        abandonBreakwaterAudioFocus();
+        final int generation = ++breakwaterAudioFocusGeneration;
+        breakwaterAudioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+            .setAcceptsDelayedFocusGain(false)
+            .setWillPauseWhenDucked(true)
+            .setOnAudioFocusChangeListener(change -> {
+                if (generation != breakwaterAudioFocusGeneration || !activityResumed
+                    || !breakwaterAudioFocusSession || breakwaterAudioRouteInterrupted) return;
+                if (change == AudioManager.AUDIOFOCUS_GAIN) {
+                    applyBreakwaterAudioFocus(true);
+                } else {
+                    applyBreakwaterAudioFocus(false);
+                    if (change == AudioManager.AUDIOFOCUS_LOSS) abandonBreakwaterAudioFocus();
+                }
+            }).build();
+        boolean granted = false;
+        try {
+            granted = breakwaterAudioManager.requestAudioFocus(breakwaterAudioFocusRequest)
+                == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        } catch (RuntimeException error) {
+            ReverieLog.error("BREAKWATER_AUDIO", "Could not request game audio focus", error);
+        }
+        applyBreakwaterAudioFocus(granted);
+        if (!breakwaterAudioReceiverRegistered) {
+            try {
+                IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+                if (Build.VERSION.SDK_INT >= 33)
+                    registerReceiver(breakwaterAudioRouteReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+                else registerReceiver(breakwaterAudioRouteReceiver, filter);
+                breakwaterAudioReceiverRegistered = true;
+            } catch (RuntimeException error) {
+                ReverieLog.error("BREAKWATER_AUDIO", "Could not watch audio output changes", error);
+            }
+        }
+    }
+
+    private void applyBreakwaterAudioFocus(boolean allowed) {
+        breakwaterAudioFocusHeld = allowed && activityResumed && breakwaterAudioFocusSession;
+        if (uiFeedback != null) uiFeedback.setAudioFocusAllowed(breakwaterAudioFocusHeld);
+        if (breakwaterAudioFocusHeld) {
+            if (menuMusic != null) menuMusic.resumeForLifecycle();
+        } else if (menuMusic != null) menuMusic.pauseForLifecycle();
+        // Home ambience is not an extra coastal layer while a game is hosted.
+        if (homeAmbientAudio != null && breakwaterAudioFocusSession)
+            homeAmbientAudio.pauseForLifecycle();
+    }
+
+    private void abandonBreakwaterAudioFocus() {
+        breakwaterAudioFocusGeneration++;
+        AudioFocusRequest request = breakwaterAudioFocusRequest;
+        breakwaterAudioFocusRequest = null;
+        if (request != null && breakwaterAudioManager != null) {
+            try { breakwaterAudioManager.abandonAudioFocusRequest(request); }
+            catch (RuntimeException error) {
+                ReverieLog.error("BREAKWATER_AUDIO", "Could not release game audio focus", error);
+            }
+        }
+        if (breakwaterAudioReceiverRegistered) {
+            try { unregisterReceiver(breakwaterAudioRouteReceiver); }
+            catch (IllegalArgumentException ignored) { }
+            breakwaterAudioReceiverRegistered = false;
+        }
+        applyBreakwaterAudioFocus(false);
     }
 
     @Override
-    public void onNativeModuleFeedbackRequested(
-        int feedbackFlags
-    ) {
-        if (uiFeedback == null) {
-            return;
-        }
+    public void onNativeModuleAudioSuspended(boolean suspended) {
+        if (uiFeedback != null) uiFeedback.setNativeAudioSuspended(suspended);
+    }
 
-        final int safeFlags =
-            feedbackFlags
-                & NativeModuleRuntime.FEEDBACK_ALL;
-        if (safeFlags == 0) {
-            return;
-        }
-
+    @Override
+    public void onNativeModuleAudioResumeRequested() {
+        final int sessionEpoch = nativeAudioSessionEpoch.get();
         runOnUiThread(() -> {
-            if ((safeFlags
-                    & NativeModuleRuntime.FEEDBACK_FOCUS)
-                != 0) {
-                uiFeedback.focus();
-            }
-            if ((safeFlags
-                    & NativeModuleRuntime.FEEDBACK_ACTIVATION)
-                != 0) {
-                uiFeedback.activation();
-            }
-            if ((safeFlags
-                    & NativeModuleRuntime.FEEDBACK_FAILURE)
-                != 0) {
-                uiFeedback.failure();
-            }
-            if ((safeFlags & NativeModuleRuntime.FEEDBACK_WEAPON_FIRE) != 0) {
-                uiFeedback.weaponFire();
-            }
-            if ((safeFlags & NativeModuleRuntime.FEEDBACK_RELOAD_START) != 0) {
-                uiFeedback.reloadStart();
-            }
-            if ((safeFlags & NativeModuleRuntime.FEEDBACK_RELOAD_READY) != 0) {
-                uiFeedback.reloadReady();
-            }
-            if ((safeFlags & NativeModuleRuntime.FEEDBACK_ARTILLERY) != 0) {
-                uiFeedback.artilleryStrike();
-            }
-            if ((safeFlags & NativeModuleRuntime.FEEDBACK_AIRSTRIKE) != 0) {
-                uiFeedback.airstrike();
+            if (sessionEpoch != nativeAudioSessionEpoch.get()
+                || !activityResumed || !breakwaterAudioFocusSession) return;
+            // Only an explicit Quick Menu dismissal retries focus. A tracking
+            // recovery or renderer frame must not take it from another app.
+            breakwaterAudioRouteInterrupted = false;
+            requestBreakwaterAudioFocus();
+            if (!breakwaterAudioFocusHeld) {
+                Toast.makeText(this,
+                    "Audio is unavailable. Use Quick Menu > Resume to retry.",
+                    Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     @Override
+    public void onNativeModuleFeedbackRequested(int feedbackFlags) {
+        if (uiFeedback != null) uiFeedback.nativeFeedback(feedbackFlags);
+    }
+
+    @Override
     public void onControllerSpringRecenterRequested() {
-        runOnUiThread(() -> uiFeedback.springRecenter());
+        if (uiFeedback != null) uiFeedback.springRecenter();
     }
 
     @Override
@@ -1944,9 +2054,7 @@ public final class VrActivity extends Activity
         // Never create/pause/release Android AudioTrack on Cardboard's GL thread.
         runOnUiThread(() -> {
             if(homeAmbientAudio != null)
-                homeAmbientAudio.setEnvironment(
-                    breakwaterHosted?HomeEnvironment.DUNE_BEACH:environment,
-                    homeActive || breakwaterHosted);
+                homeAmbientAudio.setEnvironment(environment, homeActive);
         });
     }
 
@@ -2041,7 +2149,14 @@ public final class VrActivity extends Activity
             hostedProfileId
         );
 
+        // Invalidate queued cues from a previously hosted guest immediately.
+        final int audioEpoch = nativeAudioSessionEpoch.incrementAndGet();
+        if (uiFeedback != null) uiFeedback.setNativeModuleSession(null);
         if (!nativeModuleRuntime.start(moduleId)) {
+            runOnUiThread(() -> {
+                if (audioEpoch == nativeAudioSessionEpoch.get())
+                    setBreakwaterAudioFocusSession(false);
+            });
             inputBindingManager.endHostedProfile();
             String message =
                 nativeModuleRuntime.getLastError();
@@ -2057,12 +2172,14 @@ public final class VrActivity extends Activity
             return false;
         }
 
-        breakwaterHosted = "breakwater-battery".equals(moduleId);
+        if (uiFeedback != null) uiFeedback.setNativeModuleSession(moduleId);
         runOnUiThread(() -> {
-            if (menuMusic != null)
-                menuMusic.setHostedNativeModule(moduleId);
-            if (homeAmbientAudio != null && breakwaterHosted)
-                homeAmbientAudio.setEnvironment(HomeEnvironment.DUNE_BEACH,true);
+            if (audioEpoch != nativeAudioSessionEpoch.get()) return;
+            setBreakwaterAudioFocusSession("breakwater-battery".equals(moduleId));
+            if (menuMusic != null) menuMusic.setHostedNativeModule(moduleId);
+            // The hosted Breakwater bank owns its recorded environmental loops.
+            if (homeAmbientAudio != null && preferences != null)
+                homeAmbientAudio.setEnvironment(preferences.getHomeEnvironment(), false);
         });
         ReverieLog.milestone(
             "NATIVE_MODULE",
@@ -2076,8 +2193,11 @@ public final class VrActivity extends Activity
 
     @Override
     public void onNativeModuleStopRequested() {
-        breakwaterHosted = false;
+        final int audioEpoch = nativeAudioSessionEpoch.incrementAndGet();
+        if (uiFeedback != null) uiFeedback.setNativeModuleSession(null);
         runOnUiThread(() -> {
+            if (audioEpoch != nativeAudioSessionEpoch.get()) return;
+            setBreakwaterAudioFocusSession(false);
             if(homeAmbientAudio!=null && preferences!=null)
                 homeAmbientAudio.setEnvironment(
                     preferences.getHomeEnvironment(),false);

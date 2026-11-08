@@ -1,5 +1,14 @@
 # Changelog
 
+- Breakwater audio overhaul: import 46 normalized sounds from the approved
+  shared library and first-party derivatives; add contextual control feedback,
+  actual impact/support reports, and seven scene-driven environmental layers.
+  Bound playback to 2 control / 4 combat / 7 loop voices, expire stale loops,
+  and stop queued/active audio across Quick Menu, controller loss, lifecycle,
+  focus loss and exit. Keep the existing soundtrack separate and restore audio
+  focus through Quick Menu Resume. Source, provenance and executed evidence:
+  `docs/records/2026-11-08-breakwater-sound-overhaul.md`; S9 listening remains open.
+
 - SteamVR Link S1a: original optional Windows Laptop Link now contains
   a consented, temporary TLS host with USB/ADB reverse or private
   Wi-Fi/USB tether listener, 128-bit one-shot token, printed SHA-256

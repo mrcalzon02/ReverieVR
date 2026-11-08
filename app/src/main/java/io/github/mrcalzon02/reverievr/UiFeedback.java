@@ -18,15 +18,27 @@ final class UiFeedback implements AutoCloseable {
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final AudioManager audioManager;
+    private final Context audioContext;
     private final ControllerSpringSound controllerSpringSound =
         new ControllerSpringSound();
     private final NativeCombatSound combatSound = new NativeCombatSound();
     private final RedLedgerSound redLedgerSound;
-    private boolean lifecycleActive = true;
+    private BreakwaterAudio breakwaterAudio;
+    private volatile boolean lifecycleActive = true;
+    private volatile boolean nativeSessionActive;
+    private volatile boolean breakwaterSessionActive;
+    private volatile boolean nativeAudioSuspended = true;
+    private volatile boolean audioFocusAllowed = true;
+    private volatile boolean closed;
+    private volatile long audioGeneration;
+    private long nativeSessionGeneration;
+    private long appliedNativeSessionGeneration = -1L;
     private ToneGenerator toneGenerator;
     private long lastFocusSoundMillis;
 
     UiFeedback(Context context) {
+        Context application = context == null ? null : context.getApplicationContext();
+        audioContext = application == null ? context : application;
         redLedgerSound = new RedLedgerSound(context);
         audioManager =
             context == null
@@ -71,95 +83,207 @@ final class UiFeedback implements AutoCloseable {
         );
     }
 
-    void focus() {
-        mainHandler.post(() -> {
-            long now =
-                android.os.SystemClock.uptimeMillis();
-            if (now - lastFocusSoundMillis
-                < FOCUS_SOUND_MIN_INTERVAL_MILLIS) {
-                return;
-            }
-            lastFocusSoundMillis = now;
+    /** Publish the session boundary before posting any native audio work. */
+    synchronized void setNativeModuleSession(String moduleId) {
+        if (closed) return;
+        nativeSessionActive = moduleId != null && !moduleId.isEmpty();
+        breakwaterSessionActive = "breakwater-battery".equals(moduleId);
+        audioFocusAllowed = !breakwaterSessionActive;
+        // A new guest waits for a fresh validated interaction/listener frame.
+        nativeAudioSuspended = true;
+        nativeSessionGeneration++;
+        audioGeneration++;
+        mainHandler.post(this::syncNativeAudioState);
+    }
 
-            playSystemEffect(
-                SoundEffectConstants.NAVIGATION_UP,
-                0.18f
-            );
+    /** Safe to call each renderer frame: only transitions post to the UI thread. */
+    synchronized void setNativeAudioSuspended(boolean suspended) {
+        if (closed || !nativeSessionActive || nativeAudioSuspended == suspended)
+            return;
+        nativeAudioSuspended = suspended;
+        audioGeneration++;
+        mainHandler.post(this::syncNativeAudioState);
+    }
+
+    synchronized void setAudioFocusAllowed(boolean allowed) {
+        if (closed || audioFocusAllowed == allowed) return;
+        audioFocusAllowed = allowed;
+        audioGeneration++;
+        mainHandler.post(this::syncNativeAudioState);
+    }
+
+    private void syncNativeAudioState() {
+        final boolean breakwater;
+        final boolean suspended;
+        final boolean active;
+        final boolean focusAllowed;
+        final long sessionGeneration;
+        synchronized (this) {
+            if (closed) return;
+            breakwater = breakwaterSessionActive;
+            suspended = nativeAudioSuspended;
+            active = lifecycleActive;
+            focusAllowed = audioFocusAllowed;
+            sessionGeneration = nativeSessionGeneration;
+        }
+        if (appliedNativeSessionGeneration != sessionGeneration) {
+            // Even a stop/start collapsed into one UI turn resets old voices.
+            controllerSpringSound.stop();
+            combatSound.stop();
+            stopTone();
+            if (breakwaterAudio != null) breakwaterAudio.setSessionActive(false);
+            appliedNativeSessionGeneration = sessionGeneration;
+        } else if (suspended || !active || !focusAllowed) {
+            combatSound.stop();
+            stopTone();
+        }
+        if (breakwater && breakwaterAudio == null)
+            breakwaterAudio = new BreakwaterAudio(audioContext);
+        if (breakwaterAudio != null) {
+            breakwaterAudio.setSessionActive(breakwater);
+            breakwaterAudio.setSuspended(suspended || !focusAllowed);
+            if (active && focusAllowed) breakwaterAudio.resumeForLifecycle();
+            else breakwaterAudio.pauseForLifecycle();
+        }
+    }
+
+    /** One queue hop; obsolete session/pause callbacks cannot revive voices. */
+    private synchronized void postAudio(boolean nativeOnly, Runnable action) {
+        if (closed || !lifecycleActive || !audioFocusAllowed
+            || (nativeOnly && (!nativeSessionActive || nativeAudioSuspended)))
+            return;
+        final long generation = audioGeneration;
+        mainHandler.post(() -> {
+            if (closed || !lifecycleActive || !audioFocusAllowed
+                || generation != audioGeneration
+                || (nativeOnly && (!nativeSessionActive || nativeAudioSuspended)))
+                return;
+            action.run();
         });
+    }
+
+    private boolean playBreakwaterFeedback(int flags) {
+        if (!breakwaterSessionActive) return false;
+        // Breakwater owns its normalized control voice budget even in Quick Menu.
+        // Unready/recovering recordings stay quiet instead of using louder legacy tones.
+        if (breakwaterAudio != null) breakwaterAudio.playShellFeedback(flags);
+        return true;
+    }
+
+    void focus() {
+        postAudio(false, this::playFocusNow);
+    }
+
+    private void playFocusNow() {
+        long now = android.os.SystemClock.uptimeMillis();
+        if (now - lastFocusSoundMillis < FOCUS_SOUND_MIN_INTERVAL_MILLIS) return;
+        lastFocusSoundMillis = now;
+        if (!playBreakwaterFeedback(NativeModuleRuntime.FEEDBACK_FOCUS))
+            playSystemEffect(SoundEffectConstants.NAVIGATION_UP, 0.18f);
     }
 
     void activation() {
-        mainHandler.post(this::playActivationNow);
+        postAudio(false, this::playActivationNow);
     }
 
     void springRecenter() {
-        mainHandler.post(() -> {
-            if (lifecycleActive) {
+        postAudio(false, () -> {
+            if (!playBreakwaterFeedback(NativeModuleRuntime.FEEDBACK_ACTIVATION))
                 controllerSpringSound.play();
+        });
+    }
+
+    void nativeFeedback(int feedbackFlags) {
+        final int flags = feedbackFlags & NativeModuleRuntime.FEEDBACK_ALL;
+        if (flags == 0) return;
+        postAudio(true, () -> {
+            // Preserve the complete native result so failure takes precedence
+            // over activation/focus instead of creating overlapping UI tones.
+            if (breakwaterSessionActive) {
+                if (breakwaterAudio != null) breakwaterAudio.playFeedback(flags);
+                return;
+            }
+            if ((flags & NativeModuleRuntime.FEEDBACK_FAILURE) != 0) {
+                playFailureNow();
+                return;
+            }
+            if ((flags & NativeModuleRuntime.FEEDBACK_ACTIVATION) != 0)
+                playActivationNow();
+            else if ((flags & NativeModuleRuntime.FEEDBACK_FOCUS) != 0)
+                playFocusNow();
+            if ((flags & NativeModuleRuntime.FEEDBACK_WEAPON_FIRE) != 0)
+                combatSound.play(NativeCombatWaveform.FIRE);
+            if ((flags & NativeModuleRuntime.FEEDBACK_RELOAD_START) != 0)
+                combatSound.play(NativeCombatWaveform.RELOAD);
+            if ((flags & NativeModuleRuntime.FEEDBACK_RELOAD_READY) != 0)
+                combatSound.play(NativeCombatWaveform.READY);
+            if ((flags & NativeModuleRuntime.FEEDBACK_ARTILLERY) != 0)
+                combatSound.play(NativeCombatWaveform.ARTILLERY);
+            if ((flags & NativeModuleRuntime.FEEDBACK_AIRSTRIKE) != 0)
+                combatSound.play(NativeCombatWaveform.AIRSTRIKE);
+        });
+    }
+
+    void weaponFire() { nativeFeedback(NativeModuleRuntime.FEEDBACK_WEAPON_FIRE); }
+    void reloadStart() { nativeFeedback(NativeModuleRuntime.FEEDBACK_RELOAD_START); }
+    void reloadReady() { nativeFeedback(NativeModuleRuntime.FEEDBACK_RELOAD_READY); }
+    void artilleryStrike() { nativeFeedback(NativeModuleRuntime.FEEDBACK_ARTILLERY); }
+    void airstrike() { nativeFeedback(NativeModuleRuntime.FEEDBACK_AIRSTRIKE); }
+
+    void nativeSoundCue(int cueId) {
+        if (cueId < 1 || cueId > BreakwaterAudioPolicy.LAST_NATIVE_CUE) return;
+        postAudio(true, () -> {
+            if (breakwaterSessionActive) {
+                if (breakwaterAudio != null) breakwaterAudio.playNativeCue(cueId, 1f, 1f);
+            } else if (cueId >= RedLedgerSound.FIRST_CUE && cueId <= RedLedgerSound.LAST_CUE) {
+                redLedgerSound.playCue(cueId);
+            } else if (cueId <= 21) {
+                combatSound.playNativeCue(cueId);
             }
         });
     }
 
-    void weaponFire() {
-        mainHandler.post(() -> {
-            if (lifecycleActive) combatSound.play(NativeCombatWaveform.FIRE);
+    void nativeSpatialSoundCue(int cueId, float left, float right) {
+        if (!BreakwaterAudioPolicy.isSpatialCue(cueId)
+            || !Float.isFinite(left) || !Float.isFinite(right)
+            || left < 0f || left > 1f || right < 0f || right > 1f) return;
+        postAudio(true, () -> {
+            if (breakwaterSessionActive) {
+                if (breakwaterAudio != null) breakwaterAudio.playNativeCue(cueId, left, right);
+            } else if (cueId <= 21) {
+                combatSound.playNativeCueSpatial(cueId, left, right);
+            }
         });
     }
 
-    void nativeSoundCue(int cueId) {
-        if (cueId < 1 || cueId > RedLedgerSound.LAST_CUE) return;
-        mainHandler.post(() -> {
-            if (!lifecycleActive) return;
-            if (cueId >= RedLedgerSound.FIRST_CUE)
-                redLedgerSound.playCue(cueId);
-            else combatSound.playNativeCue(cueId);
-        });
-    }
-
-    void nativeSpatialSoundCue(int cueId,float left,float right){
-        if(cueId<1||cueId>21||!Float.isFinite(left)||!Float.isFinite(right)||
-           left<0f||left>1f||right<0f||right>1f)return;
-        mainHandler.post(()->{
-            if(lifecycleActive)combatSound.playNativeCueSpatial(cueId,left,right);
-        });
-    }
-
-    void reloadStart() {
-        mainHandler.post(() -> {
-            if (lifecycleActive) combatSound.play(NativeCombatWaveform.RELOAD);
-        });
-    }
-
-    void reloadReady() {
-        mainHandler.post(() -> {
-            if (lifecycleActive) combatSound.play(NativeCombatWaveform.READY);
-        });
-    }
-
-    void artilleryStrike() {
-        mainHandler.post(() -> {
-            if (lifecycleActive) combatSound.play(NativeCombatWaveform.ARTILLERY);
-        });
-    }
-
-    void airstrike() {
-        mainHandler.post(() -> {
-            if (lifecycleActive) combatSound.play(NativeCombatWaveform.AIRSTRIKE);
-        });
-    }
-
-    void pauseForLifecycle() {
+    synchronized void pauseForLifecycle() {
         lifecycleActive = false;
+        nativeAudioSuspended = true;
+        audioGeneration++;
         controllerSpringSound.stop();
         combatSound.stop();
+        stopTone();
+        if (breakwaterAudio != null) breakwaterAudio.pauseForLifecycle();
     }
 
-    void resumeForLifecycle() {
+    synchronized void resumeForLifecycle() {
+        if (closed) return;
         lifecycleActive = true;
+        nativeAudioSuspended = true;
+        audioGeneration++;
         combatSound.resumeForLifecycle();
+        syncNativeAudioState();
+    }
+
+    private void stopTone() {
+        if (toneGenerator != null) {
+            try { toneGenerator.stopTone(); }
+            catch (RuntimeException ignored) { }
+        }
     }
 
     private void playActivationNow() {
+        if (playBreakwaterFeedback(NativeModuleRuntime.FEEDBACK_ACTIVATION)) return;
         if (toneGenerator != null) {
             try {
                 toneGenerator.startTone(
@@ -183,36 +307,25 @@ final class UiFeedback implements AutoCloseable {
     }
 
     void failure(View source) {
-        mainHandler.post(
-            () -> {
-                if (toneGenerator != null) {
-                    try {
-                        toneGenerator.startTone(
-                            ToneGenerator.TONE_PROP_NACK,
-                            140
-                        );
-                    } catch (RuntimeException ignored) {
-                        playSystemEffect(
-                            SoundEffectConstants.NAVIGATION_DOWN,
-                            0.70f
-                        );
-                    }
-                } else {
-                    playSystemEffect(
-                        SoundEffectConstants.NAVIGATION_DOWN,
-                        0.70f
-                    );
-                }
-
-                if (source != null) {
-                    source.setActivated(true);
-                    mainHandler.postDelayed(
-                        () -> source.setActivated(false),
-                        FAILURE_FLASH_MILLIS
-                    );
-                }
+        postAudio(false, () -> {
+            playFailureNow();
+            if (source != null) {
+                source.setActivated(true);
+                mainHandler.postDelayed(() -> source.setActivated(false),
+                    FAILURE_FLASH_MILLIS);
             }
-        );
+        });
+    }
+
+    private void playFailureNow() {
+        if (playBreakwaterFeedback(NativeModuleRuntime.FEEDBACK_FAILURE)) return;
+        if (toneGenerator != null) {
+            try {
+                toneGenerator.startTone(ToneGenerator.TONE_PROP_NACK, 140);
+                return;
+            } catch (RuntimeException ignored) { }
+        }
+        playSystemEffect(SoundEffectConstants.NAVIGATION_DOWN, 0.70f);
     }
 
     private void animatePressState(
@@ -273,11 +386,18 @@ final class UiFeedback implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
+        if (closed) return;
+        closed = true;
+        nativeSessionActive = false;
+        breakwaterSessionActive = false;
+        nativeAudioSuspended = true;
+        audioGeneration++;
         mainHandler.removeCallbacksAndMessages(null);
         controllerSpringSound.close();
         combatSound.close();
         redLedgerSound.close();
+        if (breakwaterAudio != null) breakwaterAudio.close();
         if (toneGenerator != null) {
             toneGenerator.release();
             toneGenerator = null;

@@ -192,20 +192,38 @@ Save slots are scoped by the host to the active packaged module. A module does n
 
 ### Ordered sound cues (optional latest ABI-v1 tail)
 
-`request_sound(cue_id)` requests one shell-owned, validated sound per
-successful action. It is **not** a bitmask and cannot accept PCM, paths,
-loop sources or arbitrary cue IDs. IDs `REVERIE_NATIVE_SOUND_WEAPON_MACHINE` through `REVERIE_NATIVE_SOUND_WEAPON_CANNON` (1–5) retain the five Breakwater weapon reports. IDs 6–15 provide hull impact, water splash, boat destruction, gunboat salvo, infantry volley, bomber, strafer, SAM launch, wave start, and shoreline collision. IDs 16–19 are successful shop purchase, completed wave, campaign victory and battery defeat; IDs 20–21 are confirmed deployed-armored-car cannon fire and armored-car destruction. All use the same eight-entry ordered byte queue and preloaded phone PCM16 bank; no additional ABI struct fields, arbitrary files, paths or per-eye sound callbacks. Breakwater's passive song remains the separate owner-original MP3 `Mars des Souvenirs`, looped by `ShellMenuMusic`. Device mix verification is pending. Host-side `ReverieNativeSoundQueueV1` bounds each
-packet to eight ordered one-byte IDs; the shell drains once per native
-update using `NativeModuleRuntime.nativeDrainSoundCues()`, forwarding
-each ID to the same reusable `NativeCombatSound` mixer. Pause clears
-outstanding events. The callback is appended **after**
-`request_feedback`, capability gated by
-`REVERIE_NATIVE_HOST_V1_SOUND_MIN_SIZE`; older hosts continue
-receiving legacy `WEAPON_FIRE` fallback from modules that call
-`ReverieNativeRequestSoundV1`. It does not change the mandatory
-module API descriptor, callback positions or the ABI version.
-These five first-party synthesized fallback reports are **not**
-downloaded CC0 samples; the P0 recorded sound intake is still open.
+`request_sound(cue_id)` requests a shell-owned, validated named event.
+It is **not** a bitmask and cannot accept PCM, paths, external loop sources,
+or arbitrary cue IDs. The eight-entry ordered byte packet is unchanged.
+IDs 1–5 are the five mounted weapons; 6–21 are battle/progression events;
+22–27 are the owner-original Red Ledger effects. Breakwater controls append
+28–40 (equipment, empty magazine, aim limit, support arm/disarm, station,
+sand impact, menu open/back, difficulty, restart, cooldown, unavailable
+support). Fixed environment leases append 41–47 (surf, wind, night, boat,
+rowing, aircraft and gun traverse). Existing numeric meanings and all ABI
+struct fields remain unchanged.
+
+Breakwater consumes the shared recorded audio bank through shell-owned
+`BreakwaterAudio`, with category-normalized PCM16 WAV assets and bounded
+SoundPools. Other games retain `NativeCombatSound`/`RedLedgerSound`.
+The original synthesized weapon signatures remain components of explicitly
+documented mixes where the shared collection has no appropriate firearm
+recording; they are not claimed as authentic field recordings. The passive
+owner-original song `Mars des Souvenirs` stays in `ShellMenuMusic` with its
+independent music volume and mute.
+
+`request_spatial_sound(cue_id,left,right)` accepts 1–21 or 41–47 with finite
+gains in `[0,1]`. Its unchanged two-event queue carries a fair rotation of
+loop leases, never seven requests in one frame. A zero-gain lease stops a
+layer; no refresh expires it after 900 ms, followed by a short gain fade.
+Host suspension and exit stop immediately. The shell drains both packets
+once per native update, never per eye. SoundPool loading is asynchronous;
+stale load callbacks cannot restart an exited session.
+
+The ordered callback remains after `request_feedback`, gated by
+`REVERIE_NATIVE_HOST_V1_SOUND_MIN_SIZE`. A missing callback uses legacy
+feedback fallback; an older host that has the callback may ignore unknown
+new IDs. Speaker output and headset mix require physical validation.
 
 ### Shell feedback cues
 
@@ -224,9 +242,9 @@ This append-only host tail accepts a bitmask of implemented shell cue requests:
 
 Use `ReverieNativeHostSupportsFeedbackV1` / `ReverieNativeRequestFeedbackV1` so an older v1 host that ends at the save-service prefix remains safe.
 
-The host coalesces flags during each native update and returns them through the existing JNI path. Android maps the original three flags to the same `UiFeedback` cues, and the weapon/reload and artillery/airstrike flags to distinct procedural static-AudioTrack PCM16 one-shots (22,050 Hz mono). The shell generates samples only at initialization, stops playback on Activity pause, and releases tracks on close. Device latency, audible mix, and playback remain hardware validation gates.
+The host coalesces flags during each native update and returns them through the existing JNI path. `UiFeedback` routes Breakwater focus, activation, rejection, reload and support feedback into its recorded bank. Rejection wins over activation/focus in a compound control result. Other modules retain their existing playback paths. Breakwater stops on Activity pause and releases its pools on game exit/close. Device latency, audible mix, and playback remain hardware validation gates.
 
-This is **not** an arbitrary audio submission/mixing API and does **not** provide haptics. Modules must not describe either capability as implemented through this service.
+This is not an arbitrary audio submission/mixing API and does **not** provide haptics. Modules must not describe either capability as implemented through this service.
 
 Slot names are simple filenames. The host owns directory isolation and path validation.
 

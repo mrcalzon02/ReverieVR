@@ -1,0 +1,4902 @@
+{
+  "schema": 1,
+  "bank": "Breakwater normalized recorded/procedural bank",
+  "format": "RIFF WAV, PCM signed 16-bit little-endian, mono, 22050 Hz",
+  "preparation_script_sha256": "fc77d170ddb39129db0d4fe13e64cd048ba3c5982f9ff33381b1f8521680b78d",
+  "input_catalog_sha256": "5d8953373de3e5dad7eba2069dc31fa49b1e21ffbff92f3835e6f726057e3069",
+  "toolchain": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers"
+  },
+  "normalization_groups": {
+    "control": {
+      "peak_dbfs": -12.0,
+      "active_rms_dbfs": -22.0
+    },
+    "combat": {
+      "peak_dbfs": -9.0,
+      "active_rms_dbfs": -18.0
+    },
+    "loop": {
+      "peak_dbfs": -18.0,
+      "active_rms_dbfs": -24.0
+    }
+  },
+  "loop_seconds": 6.0,
+  "loop_crossfade_seconds": 0.25,
+  "total_wav_bytes": 2608902,
+  "sources": [
+    {
+      "key": "surf",
+      "filename": "Ambiance_Sea_Loop_Stereo.wav",
+      "sha256": "79c1d039beafd379a09590eae0b0175f940f3714b2d28934ed645564e7dffd1f",
+      "bytes": 8639230,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Nature_Essentials_NOX_SOUND",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "wind",
+      "filename": "Ambiance_Wind_Calm_Loop_Stereo.wav",
+      "sha256": "5ccce3e44482edb3ae65e6cf1662e208e90a182181664f7ac6b05778e8671baa",
+      "bytes": 8598184,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Nature_Essentials_NOX_SOUND",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "night",
+      "filename": "Ambiance_Night_Loop_Stereo.wav",
+      "sha256": "b34338db0da03c8802fab38d550c40dca04e358e2f18034eaf8c3a9fa401b580",
+      "bytes": 8600376,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Nature_Essentials_NOX_SOUND",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "engine",
+      "filename": "Vehicle_Truck_Drive_Exterior_Loop_Stereo_01.wav",
+      "sha256": "a98e6eed94af8c96b6e815701906677ce0a3cb71f7e1025626f50bce0a604d99",
+      "bytes": 2304760,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "click",
+      "filename": "Vehicle_Truck_Buttons_Interior_Mono_01.wav",
+      "sha256": "cc0706e11e2da652454eaaaf154ccc1812965ec77e846ec82c3381d3630a7b8a",
+      "bytes": 98024,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "click2",
+      "filename": "Vehicle_Truck_Buttons_Interior_Mono_02.wav",
+      "sha256": "33d02a34ab4d8f77887d54df5057919240037e85332ccec0698588d4c9e0c002",
+      "bytes": 89002,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "latch",
+      "filename": "Vehicle_Truck_Seat_Belt_Mono_01.wav",
+      "sha256": "31f2e349a06dc9735e45be26fceb1ac28b614d13ea39a9d565482a0ce68bee41",
+      "bytes": 56944,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "handle",
+      "filename": "Household_Closet_Key_Insertion_Stereo.wav",
+      "sha256": "d70a9a54e9788065daf6c33a2c70053503fce0e77e31727a17d7d365f30cc78a",
+      "bytes": 165958,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Sample_A_Sound_Effect",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "metal",
+      "filename": "Vehicle_Truck_Back_Door_Closing_Exterior_Mono_01.wav",
+      "sha256": "b5fddda5ddc98ef7714db6769df5ed74b001955550542677a4bcb10d853c286a",
+      "bytes": 98986,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Truck",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "water_walk_a",
+      "filename": "Footsteps_WaterV1_Walk_01.wav",
+      "sha256": "3e46819574ac259547da70a8cc6374767561298e2d3a1765d5448ba65195d579",
+      "bytes": 92284,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Footsteps_Essentials_NOX_SOUND/Footsteps_Water",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "water_walk_b",
+      "filename": "Footsteps_WaterV1_Walk_02.wav",
+      "sha256": "6fd9de088303d7d4a476f97c66adc7553a9b996d66de3ec2e594cdd6a675aa4d",
+      "bytes": 122208,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Footsteps_Essentials_NOX_SOUND/Footsteps_Water",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "splash",
+      "filename": "Footsteps_Water_Jump_Big_01.wav",
+      "sha256": "bc7d69fa4e08e609d1c2033f830cb87fad89c7501760421463ef15e1d3b8b78c",
+      "bytes": 677996,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Footsteps_Essentials_NOX_SOUND/Footsteps_Water",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "traverse_motor",
+      "filename": "Vehicle_Car_Electric_Window_Opening_Mono.wav",
+      "sha256": "219f715e5ed0649211cf341a15b549a10ad75b4baaf94112e463214ce22abc87",
+      "bytes": 580542,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Car",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "aircraft_engine",
+      "filename": "Vehicle_Car_Engine_2000_RPM_Front_Exterior_Loop_Mono.wav",
+      "sha256": "8de0f8c78385b5c38669e0b5ba5a640283138ed975d806f3fe65a9192b7ec59b",
+      "bytes": 2880550,
+      "pack": "NOX SOUND Essentials Series",
+      "category": "Vehicle_Essentials_NOX_SOUND/Vehicle_Essential_Car",
+      "license": "CC0-1.0",
+      "attribution": "NOX SOUND; CC0 1.0",
+      "official_source": "https://www.asoundeffect.com/sounddesigner/nox-sound/",
+      "rights_evidence": {
+        "statement": "All these sounds are under CC0 license.",
+        "document": "Essentials_Series_README.pdf",
+        "document_sha256": "c1a46c29dfe5a03dcf0f033396aa5ec6cb1761300ff3bde1212a53247a5cba84",
+        "official_creator_profile": "https://freesound.org/people/Nox_Sound/"
+      }
+    },
+    {
+      "key": "explosion",
+      "filename": "Granade.wav",
+      "sha256": "8ac02fb98809bdf94b79e36ca3a9f884736b927d8752bb5d057c0fa4ac32f0b1",
+      "bytes": 258092,
+      "pack": "Between Deliveries owner-original SoundWave exports",
+      "category": "BetweenDeliveries_UnrealExports/audio/ui",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "attribution": "Christopher Michael Vardeman; used with owner authorization",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/main/docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "rights_evidence": {
+        "statement": "Owner-confirmed original audio; extraction, adaptation and inclusion in ReverieVR authorized. No open-content sublicense is asserted.",
+        "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+        "source_unreal_object": "/Game/Sounds/Ui/Granade.Granade",
+        "original_export_sha256": "8ac02fb98809bdf94b79e36ca3a9f884736b927d8752bb5d057c0fa4ac32f0b1",
+        "export_manifest_sha256": "7ade636661a582b6b8e7c3ef9ba70301b0519c6918a931fce453bf60529bcbed"
+      }
+    },
+    {
+      "key": "metal_thwak",
+      "filename": "Metal_thwak.wav",
+      "sha256": "64974af3f01e182b5523563d2abfd8f4a0a98fc9d857daf8712d000084b65bda",
+      "bytes": 57388,
+      "pack": "Between Deliveries owner-original SoundWave exports",
+      "category": "BetweenDeliveries_UnrealExports/audio/ui",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "attribution": "Christopher Michael Vardeman; used with owner authorization",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/main/docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "rights_evidence": {
+        "statement": "Owner-confirmed original audio; extraction, adaptation and inclusion in ReverieVR authorized. No open-content sublicense is asserted.",
+        "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+        "source_unreal_object": "/Game/Sounds/Ui/Metal_thwak.Metal_thwak",
+        "original_export_sha256": "64974af3f01e182b5523563d2abfd8f4a0a98fc9d857daf8712d000084b65bda",
+        "export_manifest_sha256": "7ade636661a582b6b8e7c3ef9ba70301b0519c6918a931fce453bf60529bcbed"
+      }
+    },
+    {
+      "key": "metal_drag",
+      "filename": "Metal_drag.wav",
+      "sha256": "bc50067f1e5621a52525b896cbb8587ccae52c97a518d8b20b2b3955aa66e108",
+      "bytes": 234100,
+      "pack": "Between Deliveries owner-original SoundWave exports",
+      "category": "BetweenDeliveries_UnrealExports/audio/ui",
+      "license": "LicenseRef-Owner-Original-Assets",
+      "attribution": "Christopher Michael Vardeman; used with owner authorization",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/main/docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+      "rights_evidence": {
+        "statement": "Owner-confirmed original audio; extraction, adaptation and inclusion in ReverieVR authorized. No open-content sublicense is asserted.",
+        "record": "docs/licensing/OWNER_ORIGINAL_BETWEEN_DELIVERIES.md",
+        "source_unreal_object": "/Game/Sounds/Ui/Metal_drag.Metal_drag",
+        "original_export_sha256": "bc50067f1e5621a52525b896cbb8587ccae52c97a518d8b20b2b3955aa66e108",
+        "export_manifest_sha256": "7ade636661a582b6b8e7c3ef9ba70301b0519c6918a931fce453bf60529bcbed"
+      }
+    },
+    {
+      "key": "synth_3",
+      "filename": "cue_3.wav",
+      "location": "synth",
+      "sha256": "98c244af140ce27ddbd2f5d53bb55ebd8d1e492fe68c70edf2a6a62f12f01e84",
+      "bytes": 22976,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 3,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_4",
+      "filename": "cue_4.wav",
+      "location": "synth",
+      "sha256": "d99e1bbdf43d5e1e4232f72dbbad16ad0b6a4e5de30ff3b0e85d043fb9aa08d1",
+      "bytes": 28708,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 4,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_5",
+      "filename": "cue_5.wav",
+      "location": "synth",
+      "sha256": "8d78c45083e0ed6694ad172f076ef0b6d113bc588ad7891d0789afd41b009a2f",
+      "bytes": 7540,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 5,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_6",
+      "filename": "cue_6.wav",
+      "location": "synth",
+      "sha256": "94c97c6932b2de106ca433904b7d18012dc243af64a4239a6ce396297f19168b",
+      "bytes": 10628,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 6,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_7",
+      "filename": "cue_7.wav",
+      "location": "synth",
+      "sha256": "19344c6043362c0f488650d83c26f653632648abba9a34c229864f5801f225ca",
+      "bytes": 11950,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 7,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_8",
+      "filename": "cue_8.wav",
+      "location": "synth",
+      "sha256": "2137c19b35e2e7248bc59c3636672fe112e2adeba288d2c18ea1507153400b78",
+      "bytes": 17242,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 8,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_9",
+      "filename": "cue_9.wav",
+      "location": "synth",
+      "sha256": "fa196972899f99402702719e22f36b4acdb23fc9e118ab789f381a6197cbf92e",
+      "bytes": 15920,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 9,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_10",
+      "filename": "cue_10.wav",
+      "location": "synth",
+      "sha256": "a5a6f569b3472d49b0f44584f9697e4b0ee51661278096864f9b2e0caaab66e5",
+      "bytes": 10186,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 10,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_11",
+      "filename": "cue_11.wav",
+      "location": "synth",
+      "sha256": "92a071461ebf7fd903cb4566a9e7920370df818625f1a811db846362c2107da9",
+      "bytes": 15038,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 11,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_12",
+      "filename": "cue_12.wav",
+      "location": "synth",
+      "sha256": "7cdefbca8162966f945822bab682f945a27d16c083018af85a72f953b4777521",
+      "bytes": 25180,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 12,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_13",
+      "filename": "cue_13.wav",
+      "location": "synth",
+      "sha256": "df9e91431a3b2ad76199d99ab327791266316008ed7e20cf24cf1a646e7798ad",
+      "bytes": 18124,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 13,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_14",
+      "filename": "cue_14.wav",
+      "location": "synth",
+      "sha256": "0fe7e4fe6589a41ce957d9a78be65410df424c1c76ac6ae18bd771af6f189134",
+      "bytes": 13052,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 14,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_15",
+      "filename": "cue_15.wav",
+      "location": "synth",
+      "sha256": "9bf8ddbd486a346ecf40f767b257481743f6c7aee535dcca52c5c210530ceb52",
+      "bytes": 26944,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 15,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_16",
+      "filename": "cue_16.wav",
+      "location": "synth",
+      "sha256": "62b264cda1b0af08c7fcdc1125055acaf5694ef2cf570ee56bf7d33e6c080b72",
+      "bytes": 15038,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 16,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_17",
+      "filename": "cue_17.wav",
+      "location": "synth",
+      "sha256": "aa3140b0bba41fa0c8c957a6b467d7f292de17da646ad0457f7b31663e1f15f7",
+      "bytes": 20330,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 17,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_18",
+      "filename": "cue_18.wav",
+      "location": "synth",
+      "sha256": "a5b4922de44e1a3ea9d89c8ebd69a061a23179f1810f9e5f131755597d109ea2",
+      "bytes": 17242,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 18,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_19",
+      "filename": "cue_19.wav",
+      "location": "synth",
+      "sha256": "c5d57a9aa17ba3384abe6f73d153de5e1a532fb37b2a2e55e53cb08f496fd805",
+      "bytes": 21652,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 19,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_20",
+      "filename": "cue_20.wav",
+      "location": "synth",
+      "sha256": "23a5156f43c41e989b24811d55269ad8ebffac5d0e71d8875272afe295b897c6",
+      "bytes": 6878,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 20,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_21",
+      "filename": "cue_21.wav",
+      "location": "synth",
+      "sha256": "56453bf5d22fe0fee26eef1951291cd1f3bdbda9e34ddb9f6d69a13179bac6e8",
+      "bytes": 52082,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 21,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_22",
+      "filename": "cue_22.wav",
+      "location": "synth",
+      "sha256": "a02f2ac1d2507f1fbb869da1f7cabec6c5ed4cce10951f089c8b8f09d6a06d03",
+      "bytes": 34000,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 22,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_23",
+      "filename": "cue_23.wav",
+      "location": "synth",
+      "sha256": "c0df6855d754a01e09e46c75ed751ffeaccd8296f2998f2e4607b3aefaea5c63",
+      "bytes": 30472,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 23,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_24",
+      "filename": "cue_24.wav",
+      "location": "synth",
+      "sha256": "c3008e737ab4a644a82fe04383eb9ac43aa46329c75bcc21a6dc8ecac11babe9",
+      "bytes": 18566,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 24,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    },
+    {
+      "key": "synth_25",
+      "filename": "cue_25.wav",
+      "location": "synth",
+      "sha256": "9655b6f5736eb7963c8f75d18239b902cb4d24710e92af7b3664773cadf274b1",
+      "bytes": 27826,
+      "pack": "ReverieVR authored combat synthesizer",
+      "category": "NativeCombatWaveform",
+      "license": "MIT",
+      "attribution": "ReverieVR contributors",
+      "official_source": "https://github.com/mrcalzon02/ReverieVR/blob/12d4018c90e56a3767b8ffc58a2e5394440caec1/app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+      "rights_evidence": {
+        "record": "LICENSE",
+        "source_path": "app/src/main/java/io/github/mrcalzon02/reverievr/NativeCombatWaveform.java",
+        "source_java_sha256": "5842d01b7d7b068646d5ce30a83f2727599aa8e3bf139a32bb12b577accc0221",
+        "native_waveform_cue": 25,
+        "note": "First-party procedural sound; not an authentic firearm field recording.",
+        "source_commit": "12d4018c90e56a3767b8ffc58a2e5394440caec1"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "file": "ui_focus.wav",
+      "group": "control",
+      "description": "Short recorded physical switch tick for target focus.",
+      "source_keys": [
+        "click2"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "f50e68c9439cea698baad760d8e9523b4f972f390cc932724328c6f46d08b24b",
+      "bytes": 3792,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 1874,
+      "decoded_bytes": 3748,
+      "duration_seconds": 0.084989,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "source",
+        "key": "click2",
+        "start_seconds": 0.0,
+        "varispeed": 1.0,
+        "duration_limit_seconds": null,
+        "peak_focus_seconds": 0.085,
+        "lowpass_hz": 6500,
+        "highpass_hz": 200,
+        "trim_db_below_peak": -45,
+        "edge_fades_ms": [
+          3,
+          15
+        ],
+        "exponential_decay_per_second": null,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -2.9039,
+        "maximum_limiter_reduction_db": 9.0982,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0031,
+        "rms_dbfs": -22.2628,
+        "active_rms_dbfs": -22.0001,
+        "dc_offset": -0.001516613,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "ui_activate.wav",
+      "group": "control",
+      "description": "Recorded physical switch confirmation.",
+      "source_keys": [
+        "click"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "1232e720ee4fc4f39e8463c082c0348ef85704826818f72f847805790ed10a24",
+      "bytes": 5116,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 2536,
+      "decoded_bytes": 5072,
+      "duration_seconds": 0.115011,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "source",
+        "key": "click",
+        "start_seconds": 0.0,
+        "varispeed": 1.0,
+        "duration_limit_seconds": null,
+        "peak_focus_seconds": 0.115,
+        "lowpass_hz": 7000,
+        "highpass_hz": 100,
+        "trim_db_below_peak": -45,
+        "edge_fades_ms": [
+          3,
+          15
+        ],
+        "exponential_decay_per_second": null,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": 2.5059,
+        "maximum_limiter_reduction_db": 14.508,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 7,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -22.5986,
+        "active_rms_dbfs": -21.992,
+        "dc_offset": 0.000483023,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "ui_failure.wav",
+      "group": "control",
+      "description": "Two low recorded switch knocks distinguish rejected activation.",
+      "source_keys": [
+        "click2"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "74655ee7e510749fa8e1345485274e013f989b443fd3e2d2c6039bdf3ded48c5",
+      "bytes": 11068,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 5512,
+      "decoded_bytes": 11024,
+      "duration_seconds": 0.249977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 0.76,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.125,
+              "lowpass_hz": 2800,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.125,
+            "gain": 0.8,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 0.76,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.125,
+              "lowpass_hz": 2800,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -0.4232,
+        "maximum_limiter_reduction_db": 11.5789,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 5,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -22.1788,
+        "active_rms_dbfs": -22.002,
+        "dc_offset": -0.0014613,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "equip.wav",
+      "group": "control",
+      "description": "Key and latch equipment handling.",
+      "source_keys": [
+        "handle",
+        "latch"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "3e56220a5fdee0210cdd7801b4d2585894a102cf57aeb334b1cde1855e73935a",
+      "bytes": 16804,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 8380,
+      "decoded_bytes": 16760,
+      "duration_seconds": 0.380045,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.65,
+            "input": {
+              "op": "source",
+              "key": "handle",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.24,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 5500,
+              "highpass_hz": 120,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.11,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "latch",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.27,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": 6.7658,
+        "maximum_limiter_reduction_db": 18.6395,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 7,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -23.3047,
+        "active_rms_dbfs": -21.9906,
+        "dc_offset": -0.000293988,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "reload_start.wav",
+      "group": "control",
+      "description": "Recorded hardware unlock and breech handling.",
+      "source_keys": [
+        "handle",
+        "metal"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "ae1d1a5b11631b9efee4184c903a3cd20ad2441dc1ac8681491bf142581f1d76",
+      "bytes": 14596,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 7276,
+      "decoded_bytes": 14552,
+      "duration_seconds": 0.329977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.6,
+            "input": {
+              "op": "source",
+              "key": "metal",
+              "start_seconds": 0.0,
+              "varispeed": 0.88,
+              "duration_limit_seconds": 0.24,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 4500,
+              "highpass_hz": null,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.09,
+            "gain": 0.8,
+            "input": {
+              "op": "source",
+              "key": "handle",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.24,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 5500,
+              "highpass_hz": 120,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -0.3173,
+        "maximum_limiter_reduction_db": 9.7466,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 10,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -22.2703,
+        "active_rms_dbfs": -22.0005,
+        "dc_offset": 0.000393021,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "reload_ready.wav",
+      "group": "control",
+      "description": "Recorded latch seats and confirms ready.",
+      "source_keys": [
+        "click",
+        "latch"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "8241807f0935fceebb9327d6af6030e8dab638c719b6696c8771aa3a06b4aed2",
+      "bytes": 11952,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 5954,
+      "decoded_bytes": 11908,
+      "duration_seconds": 0.270023,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "latch",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.27,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.13,
+            "gain": 0.6,
+            "input": {
+              "op": "source",
+              "key": "click",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.115,
+              "lowpass_hz": 7000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": 5.4651,
+        "maximum_limiter_reduction_db": 17.4672,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 7,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -23.755,
+        "active_rms_dbfs": -22.0031,
+        "dc_offset": -5.5725e-05,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "menu_open.wav",
+      "group": "control",
+      "description": "Two rising hardware gestures for opening the command panel.",
+      "source_keys": [
+        "click2",
+        "handle"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "96f3544330d080b6d06aac2ecd5470a9fbb0b8a8ddde28f6f86d46d625de442a",
+      "bytes": 10628,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 5292,
+      "decoded_bytes": 10584,
+      "duration_seconds": 0.24,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.6,
+            "input": {
+              "op": "source",
+              "key": "handle",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.24,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 5500,
+              "highpass_hz": 120,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.09,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 1.25,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.09,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": 2.2471,
+        "maximum_limiter_reduction_db": 14.164,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 6,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -22.7888,
+        "active_rms_dbfs": -21.9989,
+        "dc_offset": -0.001235316,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "menu_back.wav",
+      "group": "control",
+      "description": "Descending pair for return/back.",
+      "source_keys": [
+        "click",
+        "click2"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "de83765b7bec1ec76b2b527d4aa5e23710d13ad06528a9beb6738251c5608c74",
+      "bytes": 9304,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 4630,
+      "decoded_bytes": 9260,
+      "duration_seconds": 0.209977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.7,
+            "input": {
+              "op": "source",
+              "key": "click",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.115,
+              "lowpass_hz": 7000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.085,
+            "gain": 0.9,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 0.76,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.125,
+              "lowpass_hz": 2800,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": 1.2577,
+        "maximum_limiter_reduction_db": 12.4042,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 6,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -22.206,
+        "active_rms_dbfs": -21.9948,
+        "dc_offset": -0.000892082,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "station_move.wav",
+      "group": "control",
+      "description": "Owner metal handling plus latch for station movement.",
+      "source_keys": [
+        "latch",
+        "metal_drag"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "LicenseRef-Owner-Original-Assets"
+      ],
+      "sha256": "d0bc1282c7e56b60ca188ad8a53f46f6d140149a65c2b3d27eadbeac20b93559",
+      "bytes": 17244,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 8600,
+      "decoded_bytes": 17200,
+      "duration_seconds": 0.390023,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.65,
+            "input": {
+              "op": "source",
+              "key": "metal_drag",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.33,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 4000,
+              "highpass_hz": 120,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.12,
+            "gain": 0.4,
+            "input": {
+              "op": "source",
+              "key": "latch",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.27,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -5.546,
+        "maximum_limiter_reduction_db": 2.74,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.2646,
+        "rms_dbfs": -24.0876,
+        "active_rms_dbfs": -21.9907,
+        "dc_offset": 5.3895e-05,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "support_arm.wav",
+      "group": "control",
+      "description": "Ascending double switch confirms support targeting armed.",
+      "source_keys": [
+        "click",
+        "click2"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "3a0ee9f57407d83da7a4a0850345f4aa6966d9272869baebaf10700168ddf7b2",
+      "bytes": 9304,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 4630,
+      "decoded_bytes": 9260,
+      "duration_seconds": 0.209977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "click",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.115,
+              "lowpass_hz": 7000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.12,
+            "gain": 0.85,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 1.4,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.09,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": 1.29,
+        "maximum_limiter_reduction_db": 13.292,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -22.6672,
+        "active_rms_dbfs": -21.9998,
+        "dc_offset": -0.000557707,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "support_disarm.wav",
+      "group": "control",
+      "description": "Descending double switch confirms support targeting cancelled.",
+      "source_keys": [
+        "click2"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "6bacdbc606c95922ac01e05ab7f8d751c48bdef7f5613dddfb237730365e1c6f",
+      "bytes": 11288,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 5622,
+      "decoded_bytes": 11244,
+      "duration_seconds": 0.254966,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.8,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.085,
+              "lowpass_hz": 6500,
+              "highpass_hz": 200,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.13,
+            "gain": 0.85,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 0.76,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.125,
+              "lowpass_hz": 2800,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -2.06,
+        "maximum_limiter_reduction_db": 8.5304,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0031,
+        "rms_dbfs": -24.0032,
+        "active_rms_dbfs": -21.9923,
+        "dc_offset": -0.001079661,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "dry_fire.wav",
+      "group": "control",
+      "description": "Recorded latch dry click.",
+      "source_keys": [
+        "latch"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "fb8390c75951275f290ce57fedace9b97620168c5e29ed6d9f174369bb7c54d5",
+      "bytes": 5116,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 2536,
+      "decoded_bytes": 5072,
+      "duration_seconds": 0.115011,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "source",
+        "key": "latch",
+        "start_seconds": 0.0,
+        "varispeed": 1.0,
+        "duration_limit_seconds": null,
+        "peak_focus_seconds": 0.115,
+        "lowpass_hz": 6500,
+        "highpass_hz": 220,
+        "trim_db_below_peak": -45,
+        "edge_fades_ms": [
+          3,
+          15
+        ],
+        "exponential_decay_per_second": null,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": 1.989,
+        "maximum_limiter_reduction_db": 13.9911,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -24.8198,
+        "active_rms_dbfs": -21.9978,
+        "dc_offset": -0.000545514,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "aim_limit.wav",
+      "group": "control",
+      "description": "Brief paired stop-detent ticks.",
+      "source_keys": [
+        "click2"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "f7ae1abbbbbb93ffc63c828f0dfa5ad240b7c0b70729eca1e0cadeb30a5db7e7",
+      "bytes": 6658,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 3307,
+      "decoded_bytes": 6614,
+      "duration_seconds": 0.149977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.8,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.085,
+              "lowpass_hz": 6500,
+              "highpass_hz": 200,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.065,
+            "gain": 0.45,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.085,
+              "lowpass_hz": 6500,
+              "highpass_hz": 200,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -0.8713,
+        "maximum_limiter_reduction_db": 9.1926,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0031,
+        "rms_dbfs": -22.9702,
+        "active_rms_dbfs": -22.0065,
+        "dc_offset": -0.001175014,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "cooldown.wav",
+      "group": "control",
+      "description": "Spaced low ticks for a cooling weapon.",
+      "source_keys": [
+        "click2"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "2021924e258dabdf110083378bedb73548969b4133a154e21c015a0033a09fc2",
+      "bytes": 14376,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 7166,
+      "decoded_bytes": 14332,
+      "duration_seconds": 0.324989,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.7,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 0.76,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.125,
+              "lowpass_hz": 2800,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.2,
+            "gain": 0.65,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 0.76,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.125,
+              "lowpass_hz": 2800,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": 2.0461,
+        "maximum_limiter_reduction_db": 10.9501,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 7,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -23.3244,
+        "active_rms_dbfs": -22.0078,
+        "dc_offset": -0.001143225,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "support_unavailable.wav",
+      "group": "control",
+      "description": "Three descending knocks for unavailable support.",
+      "source_keys": [
+        "click2"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "d88d08ab6322aa0e1ce2f32ec1c53dbe27a087f7db38c85c59efa48917e279a5",
+      "bytes": 17022,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 8489,
+      "decoded_bytes": 16978,
+      "duration_seconds": 0.384989,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.9,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 0.76,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.125,
+              "lowpass_hz": 2800,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.13,
+            "gain": 0.7,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 0.76,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.125,
+              "lowpass_hz": 2800,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.26,
+            "gain": 0.5,
+            "input": {
+              "op": "source",
+              "key": "click2",
+              "start_seconds": 0.0,
+              "varispeed": 0.76,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.125,
+              "lowpass_hz": 2800,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": 0.8839,
+        "maximum_limiter_reduction_db": 11.9708,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.0021,
+        "rms_dbfs": -22.7976,
+        "active_rms_dbfs": -21.9997,
+        "dc_offset": -0.001276454,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "surf_loop.wav",
+      "group": "loop",
+      "description": "NOX recorded coastal sea ambience.",
+      "source_keys": [
+        "surf"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "784f196fa981ebbae74d2aefd77b989e6a59e213edf63b045bf56f70c876f193",
+      "bytes": 264644,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 132300,
+      "decoded_bytes": 264600,
+      "duration_seconds": 6.0,
+      "loop": true,
+      "circular_crossfade_seconds": 0.25,
+      "circular_crossfade_frames": 5512,
+      "recipe": {
+        "op": "source",
+        "key": "surf",
+        "start_seconds": 3,
+        "varispeed": 1.0,
+        "duration_limit_seconds": null,
+        "peak_focus_seconds": null,
+        "lowpass_hz": 7500,
+        "highpass_hz": 60,
+        "trim_db_below_peak": null,
+        "edge_fades_ms": null,
+        "exponential_decay_per_second": null,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -24.0,
+        "peak_ceiling_dbfs": -18.0,
+        "pregain_db": -0.0871,
+        "maximum_limiter_reduction_db": 14.1737,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 7,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -18.0026,
+        "rms_dbfs": -24.002,
+        "active_rms_dbfs": -24.002,
+        "dc_offset": -0.000250759,
+        "clipped_samples": 0,
+        "loop_boundary_step_dbfs": -34.2399,
+        "adjacent_step_p99_dbfs": -19.6718
+      }
+    },
+    {
+      "file": "wind_loop.wav",
+      "group": "loop",
+      "description": "NOX recorded calm wind ambience.",
+      "source_keys": [
+        "wind"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "ca4a85dec2cbecc290c6fa5a49995af5e9fecfd9c1d1f80a21c353bbb48cf5b7",
+      "bytes": 264644,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 132300,
+      "decoded_bytes": 264600,
+      "duration_seconds": 6.0,
+      "loop": true,
+      "circular_crossfade_seconds": 0.25,
+      "circular_crossfade_frames": 5512,
+      "recipe": {
+        "op": "source",
+        "key": "wind",
+        "start_seconds": 3,
+        "varispeed": 1.0,
+        "duration_limit_seconds": null,
+        "peak_focus_seconds": null,
+        "lowpass_hz": 5500,
+        "highpass_hz": 60,
+        "trim_db_below_peak": null,
+        "edge_fades_ms": null,
+        "exponential_decay_per_second": null,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -24.0,
+        "peak_ceiling_dbfs": -18.0,
+        "pregain_db": -7.4652,
+        "maximum_limiter_reduction_db": 8.4451,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -18.0047,
+        "rms_dbfs": -23.9904,
+        "active_rms_dbfs": -23.9904,
+        "dc_offset": 7.7347e-05,
+        "clipped_samples": 0,
+        "loop_boundary_step_dbfs": -62.7048,
+        "adjacent_step_p99_dbfs": -31.8753
+      }
+    },
+    {
+      "file": "night_loop.wav",
+      "group": "loop",
+      "description": "NOX recorded night ambience.",
+      "source_keys": [
+        "night"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "4b0a4fa27aa666440c2bbfaed3fe4cc5694d363d25296a179fed9b3e16451a2a",
+      "bytes": 264644,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 132300,
+      "decoded_bytes": 264600,
+      "duration_seconds": 6.0,
+      "loop": true,
+      "circular_crossfade_seconds": 0.25,
+      "circular_crossfade_frames": 5512,
+      "recipe": {
+        "op": "source",
+        "key": "night",
+        "start_seconds": 3,
+        "varispeed": 1.0,
+        "duration_limit_seconds": null,
+        "peak_focus_seconds": null,
+        "lowpass_hz": 7500,
+        "highpass_hz": 100,
+        "trim_db_below_peak": null,
+        "edge_fades_ms": null,
+        "exponential_decay_per_second": null,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -24.0,
+        "peak_ceiling_dbfs": -18.0,
+        "pregain_db": -8.4848,
+        "maximum_limiter_reduction_db": 9.5178,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -18.0026,
+        "rms_dbfs": -23.9914,
+        "active_rms_dbfs": -23.9914,
+        "dc_offset": -5.2342e-05,
+        "clipped_samples": 0,
+        "loop_boundary_step_dbfs": -27.524,
+        "adjacent_step_p99_dbfs": -19.8835
+      }
+    },
+    {
+      "file": "boat_loop.wav",
+      "group": "loop",
+      "description": "Boat machinery treatment derived from a NOX truck recording; not a boat field recording.",
+      "source_keys": [
+        "engine"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "0801799914ec00729cacc05f3507ae47cfdbb6b35b4f19d31045b87e51e15261",
+      "bytes": 264644,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 132300,
+      "decoded_bytes": 264600,
+      "duration_seconds": 6.0,
+      "loop": true,
+      "circular_crossfade_seconds": 0.25,
+      "circular_crossfade_frames": 5512,
+      "recipe": {
+        "op": "source",
+        "key": "engine",
+        "start_seconds": 0.4,
+        "varispeed": 0.76,
+        "duration_limit_seconds": null,
+        "peak_focus_seconds": null,
+        "lowpass_hz": 1800,
+        "highpass_hz": 45,
+        "trim_db_below_peak": null,
+        "edge_fades_ms": null,
+        "exponential_decay_per_second": null,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -24.0,
+        "peak_ceiling_dbfs": -18.0,
+        "pregain_db": -6.7683,
+        "maximum_limiter_reduction_db": 9.1137,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -18.0026,
+        "rms_dbfs": -23.9905,
+        "active_rms_dbfs": -23.9905,
+        "dc_offset": -0.000125699,
+        "clipped_samples": 0,
+        "loop_boundary_step_dbfs": -57.0538,
+        "adjacent_step_p99_dbfs": -32.7616
+      }
+    },
+    {
+      "file": "rowing_loop.wav",
+      "group": "loop",
+      "description": "Rhythmic water displacement assembled from NOX water footsteps and quiet surf; not an oar field recording.",
+      "source_keys": [
+        "surf",
+        "water_walk_a",
+        "water_walk_b"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "71e4a227e02bca6949be2fe8c112fa208fed3731b2a092eab403a23150aec1bc",
+      "bytes": 264644,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 132300,
+      "decoded_bytes": 264600,
+      "duration_seconds": 6.0,
+      "loop": true,
+      "circular_crossfade_seconds": 0.25,
+      "circular_crossfade_frames": 5512,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": 6.25,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.5,
+            "input": {
+              "op": "source",
+              "key": "surf",
+              "start_seconds": 8,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 6.25,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 4500,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.0,
+            "gain": 0.3,
+            "input": {
+              "op": "source",
+              "key": "water_walk_a",
+              "start_seconds": 0.0,
+              "varispeed": 0.85,
+              "duration_limit_seconds": 0.55,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 1.5,
+            "gain": 0.3,
+            "input": {
+              "op": "source",
+              "key": "water_walk_b",
+              "start_seconds": 0.0,
+              "varispeed": 0.9,
+              "duration_limit_seconds": 0.55,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 3.0,
+            "gain": 0.3,
+            "input": {
+              "op": "source",
+              "key": "water_walk_a",
+              "start_seconds": 0.0,
+              "varispeed": 0.85,
+              "duration_limit_seconds": 0.55,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 4.5,
+            "gain": 0.3,
+            "input": {
+              "op": "source",
+              "key": "water_walk_b",
+              "start_seconds": 0.0,
+              "varispeed": 0.9,
+              "duration_limit_seconds": 0.55,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 6.0,
+            "gain": 0.3,
+            "input": {
+              "op": "source",
+              "key": "water_walk_a",
+              "start_seconds": 0.0,
+              "varispeed": 0.85,
+              "duration_limit_seconds": 0.55,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -24.0,
+        "peak_ceiling_dbfs": -18.0,
+        "pregain_db": 0.6315,
+        "maximum_limiter_reduction_db": 12.6135,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 6,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -18.0026,
+        "rms_dbfs": -24.0064,
+        "active_rms_dbfs": -24.0064,
+        "dc_offset": -0.000149796,
+        "clipped_samples": 0,
+        "loop_boundary_step_dbfs": -41.4594,
+        "adjacent_step_p99_dbfs": -21.8506
+      }
+    },
+    {
+      "file": "aircraft_loop.wav",
+      "group": "loop",
+      "description": "Propeller-like treatment derived from NOX car engine and wind; not an aircraft field recording.",
+      "source_keys": [
+        "aircraft_engine",
+        "wind"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "749c8b47c09ecfc2ac6a7e9331a05c285f5dd688b62c8210ef732fadc4b5f01c",
+      "bytes": 264644,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 132300,
+      "decoded_bytes": 264600,
+      "duration_seconds": 6.0,
+      "loop": true,
+      "circular_crossfade_seconds": 0.25,
+      "circular_crossfade_frames": 5512,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "amplitude_modulate",
+              "hz": 14,
+              "offset": 0.78,
+              "depth": 0.22,
+              "input": {
+                "op": "source",
+                "key": "aircraft_engine",
+                "start_seconds": 1,
+                "varispeed": 1.18,
+                "duration_limit_seconds": null,
+                "peak_focus_seconds": null,
+                "lowpass_hz": 2800,
+                "highpass_hz": 55,
+                "trim_db_below_peak": null,
+                "edge_fades_ms": null,
+                "exponential_decay_per_second": null,
+                "component_peak_normalized": true
+              }
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.12,
+            "input": {
+              "op": "source",
+              "key": "wind",
+              "start_seconds": 6,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 8,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 4500,
+              "highpass_hz": 400,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -24.0,
+        "peak_ceiling_dbfs": -18.0,
+        "pregain_db": -7.5099,
+        "maximum_limiter_reduction_db": 10.5275,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -18.0026,
+        "rms_dbfs": -24.0048,
+        "active_rms_dbfs": -24.0048,
+        "dc_offset": -7.7193e-05,
+        "clipped_samples": 0,
+        "loop_boundary_step_dbfs": -58.4877,
+        "adjacent_step_p99_dbfs": -23.4605
+      }
+    },
+    {
+      "file": "traverse_loop.wav",
+      "group": "loop",
+      "description": "Turret traverse motor treatment derived from NOX electric-window machinery.",
+      "source_keys": [
+        "traverse_motor"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "0f34f1fade57fd3aa554b9160d8c89881b1829cb72a787e71ba441618f77c5d2",
+      "bytes": 264644,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 132300,
+      "decoded_bytes": 264600,
+      "duration_seconds": 6.0,
+      "loop": true,
+      "circular_crossfade_seconds": 0.25,
+      "circular_crossfade_frames": 5512,
+      "recipe": {
+        "op": "source",
+        "key": "traverse_motor",
+        "start_seconds": 0.5,
+        "varispeed": 0.88,
+        "duration_limit_seconds": 2.8,
+        "peak_focus_seconds": null,
+        "lowpass_hz": 3500,
+        "highpass_hz": 110,
+        "trim_db_below_peak": null,
+        "edge_fades_ms": null,
+        "exponential_decay_per_second": null,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -24.0,
+        "peak_ceiling_dbfs": -18.0,
+        "pregain_db": -0.6246,
+        "maximum_limiter_reduction_db": 6.9209,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 7,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -18.0111,
+        "rms_dbfs": -23.9994,
+        "active_rms_dbfs": -23.9994,
+        "dc_offset": -0.000138391,
+        "clipped_samples": 0,
+        "loop_boundary_step_dbfs": -35.1308,
+        "adjacent_step_p99_dbfs": -27.5051
+      }
+    },
+    {
+      "file": "weapon_machine.wav",
+      "group": "combat",
+      "description": "Authored machine-gun signature plus owner metal accent; designed firearm effect.",
+      "source_keys": [
+        "metal_thwak",
+        "synth_5"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "33dc3112eaed4c871dfe394f2a7fbb69bc2d0e2566030e06763300157d725a96",
+      "bytes": 9526,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 4741,
+      "decoded_bytes": 9482,
+      "duration_seconds": 0.215011,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_5",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.015,
+            "gain": 0.16,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": -3.4055,
+        "maximum_limiter_reduction_db": 5.1966,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0453,
+        "rms_dbfs": -21.316,
+        "active_rms_dbfs": -17.9968,
+        "dc_offset": -0.000164805,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "weapon_heavy.wav",
+      "group": "combat",
+      "description": "Authored heavy-gun signature plus owner grenade and metal layers; designed firearm effect.",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_6"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "272e3f05a7517e10ae69b77d54c251e4fe97e0efb378d16b76cbed137d8fd33a",
+      "bytes": 16140,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 8048,
+      "decoded_bytes": 16096,
+      "duration_seconds": 0.364989,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_6",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.025,
+            "gain": 0.28,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.3,
+              "duration_limit_seconds": 0.34,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 3000,
+              "highpass_hz": 50,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.01,
+            "gain": 0.12,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 1.1902,
+        "maximum_limiter_reduction_db": 9.2465,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 6,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0019,
+        "rms_dbfs": -19.4568,
+        "active_rms_dbfs": -17.9993,
+        "dc_offset": -0.000684875,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "weapon_flak.wav",
+      "group": "combat",
+      "description": "Authored flak signature plus owner mechanical and blast layers.",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_7"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "bda0771b89bae81ada180ff5ec1609cbece05df803715a887368d077e7f5fe59",
+      "bytes": 16140,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 8048,
+      "decoded_bytes": 16096,
+      "duration_seconds": 0.364989,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_7",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.01,
+            "gain": 0.22,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.025,
+            "gain": 0.2,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.3,
+              "duration_limit_seconds": 0.34,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 3000,
+              "highpass_hz": 50,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 9.1146,
+        "maximum_limiter_reduction_db": 17.2881,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -18.06,
+        "active_rms_dbfs": -18.0002,
+        "dc_offset": 0.000350869,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "weapon_missile.wav",
+      "group": "combat",
+      "description": "Authored missile exhaust with a short recorded wind texture.",
+      "source_keys": [
+        "synth_8",
+        "wind"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "MIT"
+      ],
+      "sha256": "cc27aa9a255c12045264d5f924c8b5ecafa137955fae7e03cccd7187f019e4e5",
+      "bytes": 18566,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 9261,
+      "decoded_bytes": 18522,
+      "duration_seconds": 0.42,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_8",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.22,
+            "input": {
+              "op": "source",
+              "key": "wind",
+              "start_seconds": 8,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.42,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 5500,
+              "highpass_hz": 200,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": 4,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": -0.8975,
+        "maximum_limiter_reduction_db": 8.8101,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0019,
+        "rms_dbfs": -18.6625,
+        "active_rms_dbfs": -17.9995,
+        "dc_offset": 0.000531024,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "weapon_cannon.wav",
+      "group": "combat",
+      "description": "Authored cannon signature plus owner grenade and breech metal; designed firearm effect.",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_9"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "71fcf9290f9f87b71a254a19584727a2e7b574352a010a299ee2400be2b270a7",
+      "bytes": 31576,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 15766,
+      "decoded_bytes": 31532,
+      "duration_seconds": 0.715011,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_9",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.015,
+            "gain": 0.45,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.7,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 4500,
+              "highpass_hz": 40,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.025,
+            "gain": 0.15,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 4.0947,
+        "maximum_limiter_reduction_db": 13.6774,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -19.2009,
+        "active_rms_dbfs": -17.9954,
+        "dc_offset": -0.000271776,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "impact_hull.wav",
+      "group": "combat",
+      "description": "Authored hull hit with recorded owner metal strike.",
+      "source_keys": [
+        "metal_thwak",
+        "synth_10"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "e3241c1b92d2c5b14dbeddc997359d1e8af2a85eb5f6718f4d6e8a591692651c",
+      "bytes": 10186,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 5071,
+      "decoded_bytes": 10142,
+      "duration_seconds": 0.229977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.7,
+            "input": {
+              "op": "source",
+              "key": "synth_10",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.8,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": -5.2594,
+        "maximum_limiter_reduction_db": 6.7266,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0124,
+        "rms_dbfs": -20.8111,
+        "active_rms_dbfs": -17.9908,
+        "dc_offset": -2.1497e-05,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "impact_water.wav",
+      "group": "combat",
+      "description": "Real NOX water splash cut from a large water footstep/jump.",
+      "source_keys": [
+        "splash"
+      ],
+      "licenses": [
+        "CC0-1.0"
+      ],
+      "sha256": "5122ab573a0ca115431b9fa26b6c8ff288040ba59479702aecae5f7b1c7f6484",
+      "bytes": 37528,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 18742,
+      "decoded_bytes": 37484,
+      "duration_seconds": 0.849977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "source",
+        "key": "splash",
+        "start_seconds": 0.0,
+        "varispeed": 1.0,
+        "duration_limit_seconds": null,
+        "peak_focus_seconds": 0.85,
+        "lowpass_hz": 6500,
+        "highpass_hz": 100,
+        "trim_db_below_peak": -45,
+        "edge_fades_ms": [
+          3,
+          15
+        ],
+        "exponential_decay_per_second": null,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 0.4491,
+        "maximum_limiter_reduction_db": 9.4502,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0019,
+        "rms_dbfs": -18.0021,
+        "active_rms_dbfs": -18.0021,
+        "dc_offset": 0.000252043,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "boat_destroyed.wav",
+      "group": "combat",
+      "description": "Boat destruction composite: authored blast, owner grenade and NOX water splash.",
+      "source_keys": [
+        "explosion",
+        "splash",
+        "synth_12"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "a0792220e1b36e6d88d71605179b02f1dc59d782e894d69aaf80eb9dc5d7c906",
+      "bytes": 41940,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 20948,
+      "decoded_bytes": 41896,
+      "duration_seconds": 0.950023,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": 0.95,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.75,
+            "input": {
+              "op": "source",
+              "key": "synth_12",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.85,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.7,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 4500,
+              "highpass_hz": 40,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.12,
+            "gain": 0.4,
+            "input": {
+              "op": "source",
+              "key": "splash",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.85,
+              "lowpass_hz": 6500,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 4.2849,
+        "maximum_limiter_reduction_db": 16.5175,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -18.0015,
+        "active_rms_dbfs": -18.0015,
+        "dc_offset": -0.000185109,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "gunboat_salvo.wav",
+      "group": "combat",
+      "description": "Authored offshore gun report with admitted blast and mechanical layers.",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_13"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "a85de8e912b964196ae3ba694a85c3059dc917962bf073c748f9073ddf8fdbde",
+      "bytes": 18124,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 9040,
+      "decoded_bytes": 18080,
+      "duration_seconds": 0.409977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_13",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.025,
+            "gain": 0.3,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.3,
+              "duration_limit_seconds": 0.34,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 3000,
+              "highpass_hz": 50,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.02,
+            "gain": 0.15,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 2.1841,
+        "maximum_limiter_reduction_db": 10.7546,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 7,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -19.0651,
+        "active_rms_dbfs": -17.9944,
+        "dc_offset": -0.000120065,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "infantry_volley.wav",
+      "group": "combat",
+      "description": "Authored burst with a restrained recorded metal transient.",
+      "source_keys": [
+        "metal_thwak",
+        "synth_14"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "ada23bf5a01a1fa9684763b937293158a9275dbe8df183855e4bc02e17f55a60",
+      "bytes": 13052,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 6504,
+      "decoded_bytes": 13008,
+      "duration_seconds": 0.294966,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_14",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.02,
+            "gain": 0.1,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 2.757,
+        "maximum_limiter_reduction_db": 9.7013,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -19.6834,
+        "active_rms_dbfs": -18.0016,
+        "dc_offset": -0.001175926,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "aircraft_bomb.wav",
+      "group": "combat",
+      "description": "Bomb impact composite using authored report, owner grenade and NOX water.",
+      "source_keys": [
+        "explosion",
+        "splash",
+        "synth_15"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "47d53bf7ef8c37de10d97b145ea66d08ec6e3bc3feb62b7635f56a63d964bf95",
+      "bytes": 41940,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 20948,
+      "decoded_bytes": 41896,
+      "duration_seconds": 0.950023,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": 0.95,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.8,
+            "input": {
+              "op": "source",
+              "key": "synth_15",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.9,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.7,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 4500,
+              "highpass_hz": 40,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.1,
+            "gain": 0.22,
+            "input": {
+              "op": "source",
+              "key": "splash",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.85,
+              "lowpass_hz": 6500,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 4.8973,
+        "maximum_limiter_reduction_db": 17.0734,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -18.0393,
+        "active_rms_dbfs": -17.9934,
+        "dc_offset": -0.000702886,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "aircraft_strafe.wav",
+      "group": "combat",
+      "description": "Authored strafing burst with a restrained metal accent.",
+      "source_keys": [
+        "metal_thwak",
+        "synth_16"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "468df518846d91c18a3fe87cb5d816c9bf762bacab9347783c84746128dc7cb7",
+      "bytes": 15038,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 7497,
+      "decoded_bytes": 14994,
+      "duration_seconds": 0.34,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_16",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.015,
+            "gain": 0.1,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 3.6531,
+        "maximum_limiter_reduction_db": 11.7206,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -20.297,
+        "active_rms_dbfs": -17.9995,
+        "dc_offset": -0.000964416,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "sam_launch.wav",
+      "group": "combat",
+      "description": "Authored SAM exhaust with recorded wind texture.",
+      "source_keys": [
+        "synth_17",
+        "wind"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "MIT"
+      ],
+      "sha256": "fb80435e87f7998ce70db670b26da7ed8618a38c41ddfd6a5373c246723859ab",
+      "bytes": 20330,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 10143,
+      "decoded_bytes": 20286,
+      "duration_seconds": 0.46,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_17",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.2,
+            "input": {
+              "op": "source",
+              "key": "wind",
+              "start_seconds": 11,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.46,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6000,
+              "highpass_hz": 300,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": 4,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": -0.9353,
+        "maximum_limiter_reduction_db": 7.8521,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 7,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0041,
+        "rms_dbfs": -18.8254,
+        "active_rms_dbfs": -18.0021,
+        "dc_offset": -0.000483705,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "wave_start.wav",
+      "group": "control",
+      "description": "Authored wave-start signal with mechanical attack.",
+      "source_keys": [
+        "click",
+        "synth_18"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "MIT"
+      ],
+      "sha256": "5ed5345ae694b509bf9a6311438bc3bd36b1c0c95bcf9fc4ea76bc31f4975553",
+      "bytes": 17242,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 8599,
+      "decoded_bytes": 17198,
+      "duration_seconds": 0.389977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_18",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.15,
+            "input": {
+              "op": "source",
+              "key": "click",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.115,
+              "lowpass_hz": 7000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -12.9274,
+        "maximum_limiter_reduction_db": 0.0,
+        "method": "linear gain",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 1,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.9573,
+        "rms_dbfs": -23.4351,
+        "active_rms_dbfs": -22.0,
+        "dc_offset": 2.3221e-05,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "shore_collision.wav",
+      "group": "combat",
+      "description": "Shore collision composite using authored impact, owner metal and NOX water.",
+      "source_keys": [
+        "metal_thwak",
+        "synth_19",
+        "water_walk_a"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "a6b02c89462e74363598c4ef4a3cae02d4726a3fd57a1a5bb1514b1ea2b3571e",
+      "bytes": 26504,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 13230,
+      "decoded_bytes": 26460,
+      "duration_seconds": 0.6,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": 0.6,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.8,
+            "input": {
+              "op": "source",
+              "key": "synth_19",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.7,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.09,
+            "gain": 0.5,
+            "input": {
+              "op": "source",
+              "key": "water_walk_a",
+              "start_seconds": 0.0,
+              "varispeed": 0.85,
+              "duration_limit_seconds": 0.55,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 0.1458,
+        "maximum_limiter_reduction_db": 11.772,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -20.7286,
+        "active_rms_dbfs": -18.0095,
+        "dc_offset": -0.00016056,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "shop_purchase.wav",
+      "group": "control",
+      "description": "Successful purchase: preserved authored notification with recorded switch transient.",
+      "source_keys": [
+        "click",
+        "synth_20"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "MIT"
+      ],
+      "sha256": "dc5dcdab852beacc7c7b0357f1e60c4f08b66e9c2a4be2845770dec16c63e00f",
+      "bytes": 6878,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 3417,
+      "decoded_bytes": 6834,
+      "duration_seconds": 0.154966,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_20",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.1,
+            "input": {
+              "op": "source",
+              "key": "click",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.115,
+              "lowpass_hz": 7000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -10.3779,
+        "maximum_limiter_reduction_db": 0.8311,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.7547,
+        "rms_dbfs": -23.1025,
+        "active_rms_dbfs": -21.9931,
+        "dc_offset": 7.2726e-05,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "wave_clear.wav",
+      "group": "control",
+      "description": "Wave cleared: preserved authored notification with recorded switch transient.",
+      "source_keys": [
+        "click",
+        "synth_21"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "MIT"
+      ],
+      "sha256": "29145733efd27abbf4cfda7fd87e659cb7db925ce46492fd13ba95b46e16e555",
+      "bytes": 52082,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 26019,
+      "decoded_bytes": 52038,
+      "duration_seconds": 1.18,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_21",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.1,
+            "input": {
+              "op": "source",
+              "key": "click",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.115,
+              "lowpass_hz": 7000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -15.0888,
+        "maximum_limiter_reduction_db": 0.0,
+        "method": "linear gain",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 1,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -15.0885,
+        "rms_dbfs": -22.074,
+        "active_rms_dbfs": -22.0,
+        "dc_offset": 7.7e-08,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "victory.wav",
+      "group": "control",
+      "description": "Campaign victory: preserved authored notification with recorded switch transient.",
+      "source_keys": [
+        "click",
+        "synth_22"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "MIT"
+      ],
+      "sha256": "bbb4c877489d94b8af2054b8cb3b561760d0ff388814497368b227fc754c000d",
+      "bytes": 34000,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 16978,
+      "decoded_bytes": 33956,
+      "duration_seconds": 0.769977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_22",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.1,
+            "input": {
+              "op": "source",
+              "key": "click",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.115,
+              "lowpass_hz": 7000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -11.5103,
+        "maximum_limiter_reduction_db": 0.4641,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.8986,
+        "rms_dbfs": -23.3763,
+        "active_rms_dbfs": -21.9965,
+        "dc_offset": -3.1979e-05,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "defeat.wav",
+      "group": "control",
+      "description": "Battery defeat: preserved authored notification with recorded switch transient.",
+      "source_keys": [
+        "click",
+        "synth_23"
+      ],
+      "licenses": [
+        "CC0-1.0",
+        "MIT"
+      ],
+      "sha256": "950b175809dc595a1856cc614617a0aeaf86aa9463128700bd3af4696355d77a",
+      "bytes": 30472,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 15214,
+      "decoded_bytes": 30428,
+      "duration_seconds": 0.689977,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_23",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.1,
+            "input": {
+              "op": "source",
+              "key": "click",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": 0.115,
+              "lowpass_hz": 7000,
+              "highpass_hz": 100,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -22.0,
+        "peak_ceiling_dbfs": -12.0,
+        "pregain_db": -10.1024,
+        "maximum_limiter_reduction_db": 1.9202,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 10,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -12.4282,
+        "rms_dbfs": -23.4001,
+        "active_rms_dbfs": -22.0046,
+        "dc_offset": -0.000205066,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "armored_gun.wav",
+      "group": "combat",
+      "description": "Authored armored-gun signature plus owner blast/metal layers.",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_24"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "1f0b2f954a00c297730a45cf70b90eacb493800622cc0ce85a727911d96b735c",
+      "bytes": 18566,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 9261,
+      "decoded_bytes": 18522,
+      "duration_seconds": 0.42,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_24",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.02,
+            "gain": 0.32,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.3,
+              "duration_limit_seconds": 0.34,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 3000,
+              "highpass_hz": 50,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.02,
+            "gain": 0.15,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": -0.2611,
+        "maximum_limiter_reduction_db": 8.6943,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 9,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0026,
+        "rms_dbfs": -19.4534,
+        "active_rms_dbfs": -17.998,
+        "dc_offset": -0.001037934,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "armor_destroyed.wav",
+      "group": "combat",
+      "description": "Authored armor rupture plus owner grenade and metal fragments.",
+      "source_keys": [
+        "explosion",
+        "metal_thwak",
+        "synth_25"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "ed08d2d178b4757c42c72eca53f1fda1f968b8634713bc2a906de2ced25f70b3",
+      "bytes": 30914,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 15435,
+      "decoded_bytes": 30870,
+      "duration_seconds": 0.7,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 0.85,
+            "input": {
+              "op": "source",
+              "key": "synth_25",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0,
+            "gain": 0.85,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.7,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 4500,
+              "highpass_hz": 40,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.12,
+            "gain": 0.5,
+            "input": {
+              "op": "source",
+              "key": "metal_thwak",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.2,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 6500,
+              "highpass_hz": 130,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 1.3086,
+        "maximum_limiter_reduction_db": 12.4082,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 6,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -18.3799,
+        "active_rms_dbfs": -17.9946,
+        "dc_offset": -0.000643489,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "sand_impact.wav",
+      "group": "combat",
+      "description": "Short filtered first-party procedural impact texture; no sand recording was available in the inspected library folders.",
+      "source_keys": [
+        "synth_11"
+      ],
+      "licenses": [
+        "MIT"
+      ],
+      "sha256": "68a74002ea3fe629764e39b5809f097fd4ce5c3a1c78b4bf097720b22495a255",
+      "bytes": 8558,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 4257,
+      "decoded_bytes": 8514,
+      "duration_seconds": 0.193061,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "source",
+        "key": "synth_11",
+        "start_seconds": 0.0,
+        "varispeed": 1.5,
+        "duration_limit_seconds": 0.22,
+        "peak_focus_seconds": null,
+        "lowpass_hz": 4300,
+        "highpass_hz": 250,
+        "trim_db_below_peak": -45,
+        "edge_fades_ms": [
+          3,
+          15
+        ],
+        "exponential_decay_per_second": 12,
+        "component_peak_normalized": true
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": -1.0466,
+        "maximum_limiter_reduction_db": 7.9545,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0041,
+        "rms_dbfs": -20.8494,
+        "active_rms_dbfs": -17.9955,
+        "dc_offset": 7.5344e-05,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "artillery.wav",
+      "group": "combat",
+      "description": "Authored artillery impact layered with the owner's grenade recording.",
+      "source_keys": [
+        "explosion",
+        "synth_3"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "43c474d5367f1bb29bc5a9aa8a8bada7dbfc5df374f866f6cb24c66c343a268e",
+      "bytes": 32238,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 16097,
+      "decoded_bytes": 32194,
+      "duration_seconds": 0.730023,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_3",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.03,
+            "gain": 0.85,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": 0.7,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 4500,
+              "highpass_hz": 40,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": 5.0424,
+        "maximum_limiter_reduction_db": 14.0435,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 7,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0011,
+        "rms_dbfs": -18.0694,
+        "active_rms_dbfs": -18.0095,
+        "dc_offset": -0.001219924,
+        "clipped_samples": 0
+      }
+    },
+    {
+      "file": "airstrike.wav",
+      "group": "combat",
+      "description": "Authored support airstrike with three staggered owner-recorded blast accents.",
+      "source_keys": [
+        "explosion",
+        "synth_4"
+      ],
+      "licenses": [
+        "LicenseRef-Owner-Original-Assets",
+        "MIT"
+      ],
+      "sha256": "87e2beb8b64ecf9f1f22a8f97c10d171856f02c9a091d0ff09c6f0a15b66c270",
+      "bytes": 44586,
+      "sample_rate_hz": 22050,
+      "channels": 1,
+      "bits_per_sample": 16,
+      "frames": 22271,
+      "decoded_bytes": 44542,
+      "duration_seconds": 1.010023,
+      "loop": false,
+      "circular_crossfade_seconds": null,
+      "circular_crossfade_frames": null,
+      "recipe": {
+        "op": "mix",
+        "duration_seconds": null,
+        "layers": [
+          {
+            "at_seconds": 0,
+            "gain": 1,
+            "input": {
+              "op": "source",
+              "key": "synth_4",
+              "start_seconds": 0.0,
+              "varispeed": 1.0,
+              "duration_limit_seconds": null,
+              "peak_focus_seconds": null,
+              "lowpass_hz": null,
+              "highpass_hz": null,
+              "trim_db_below_peak": null,
+              "edge_fades_ms": null,
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.05,
+            "gain": 0.75,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.3,
+              "duration_limit_seconds": 0.34,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 3000,
+              "highpass_hz": 50,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.34,
+            "gain": 0.65,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.3,
+              "duration_limit_seconds": 0.34,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 3000,
+              "highpass_hz": 50,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          },
+          {
+            "at_seconds": 0.67,
+            "gain": 0.55,
+            "input": {
+              "op": "source",
+              "key": "explosion",
+              "start_seconds": 0.0,
+              "varispeed": 1.3,
+              "duration_limit_seconds": 0.34,
+              "peak_focus_seconds": null,
+              "lowpass_hz": 3000,
+              "highpass_hz": 50,
+              "trim_db_below_peak": -45,
+              "edge_fades_ms": [
+                3,
+                15
+              ],
+              "exponential_decay_per_second": null,
+              "component_peak_normalized": true
+            }
+          }
+        ]
+      },
+      "normalization": {
+        "active_rms_definition": "20 ms blocks within 25 dB of the loudest block",
+        "target_active_rms_dbfs": -18.0,
+        "peak_ceiling_dbfs": -9.0,
+        "pregain_db": -4.5651,
+        "maximum_limiter_reduction_db": 6.7506,
+        "method": "linear gain with smooth-knee peak compression",
+        "limiter": "linear below half the ceiling; continuous-slope tanh knee above it; no hard clipping",
+        "knee_db_below_ceiling": -6.0206,
+        "normalization_iterations": 8,
+        "target_reached": true
+      },
+      "metrics": {
+        "sample_peak_dbfs": -9.0116,
+        "rms_dbfs": -18.8924,
+        "active_rms_dbfs": -17.9964,
+        "dc_offset": 3.5568e-05,
+        "clipped_samples": 0
+      }
+    }
+  ]
+}

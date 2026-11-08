@@ -94,11 +94,25 @@ feedback-only hosts must return false without reading the tail.
 
 Requests exactly one named ordered sound ID in the range
 `REVERIE_NATIVE_SOUND_WEAPON_MACHINE` through
-`REVERIE_NATIVE_SOUND_WEAPON_CANNON`. Returns false on old hosts,
+`REVERIE_NATIVE_SOUND_MAX_V1` (currently 1–47). Existing IDs 1–27 retain
+their meanings; 28–40 are Breakwater controls, and 41–47 name its fixed
+environment loop leases. Returns false on hosts lacking the callback,
 invalid IDs or null callbacks, allowing the original feedback
 sound to play as fallback. It is not a raw PCM transport or a flag
 bitmask. The host separately bounds ordered event delivery to eight
 requests per update.
+
+### `ReverieNativeRequestSpatialSoundV1`
+
+Checks ABI version, the spatial callback's complete host prefix, and finite
+gains in `[0,1]`. Accepts existing positional one-shots 1–21 and the seven
+Breakwater loop IDs 41–47; Red Ledger and control-only IDs remain rejected
+on this path. The two-event packed queue is unchanged. Breakwater rotates
+its desired loop state through those two slots; the Android shell expires
+an unrefreshed loop after 900 ms and explicitly stops playback at host
+pause, controller loss, Quick Menu, lifecycle pause, and session exit.
+The helper return value confirms callback submission, not speaker playback
+or an older host's knowledge of a newly added ID.
 
 ### `ReverieNativeDescriptorHasMandatoryV1`
 

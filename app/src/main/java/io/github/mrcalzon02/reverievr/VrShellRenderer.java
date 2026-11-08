@@ -52,6 +52,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
         );
         void onNativeModuleSoundCueRequested(int cueId);
         void onNativeModuleSpatialSoundCueRequested(int cueId,float left,float right);
+        void onNativeModuleAudioSuspended(boolean suspended);
+        void onNativeModuleAudioResumeRequested();
         void onControllerSpringRecenterRequested();
         void onHomeAtmosphereChanged(HomeEnvironment environment, boolean active);
         PerformanceEnvironmentSnapshot
@@ -1162,6 +1164,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
         selectRequested.set(false);
         backRequested.set(false);
         if (opening) {
+            if (mode == MODE_NATIVE) host.onNativeModuleAudioSuspended(true);
             // The universal Quick Menu may be invoked by the controller
             // OR by headset-only recovery; both must release DOS guest input
             // before the shell starts consuming Select and navigation.
@@ -1175,7 +1178,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
              * zeroed headForward vector and silently fall back to shell yaw 0.
              */
             lastQuickMenuStatusRefreshNanos = 0L;
-        }
+        } else resumeNativeAudioFromQuickMenu();
         textureDirty = true;
     }
 
@@ -2088,6 +2091,8 @@ final class VrShellRenderer implements CardboardView.Renderer {
             textureDirty=true;
         }
         if (orientationMenuVisible) {
+            // Reassert after a lifecycle resume while Quick Menu remains open.
+            if (mode == MODE_NATIVE) host.onNativeModuleAudioSuspended(true);
             if (lastQuickMenuStatusRefreshNanos == 0L
                 || frameNanos
                     - lastQuickMenuStatusRefreshNanos
@@ -2492,6 +2497,9 @@ final class VrShellRenderer implements CardboardView.Renderer {
         nativeListenerRight[1]=0f;
         nativeListenerRight[2]=validListener?
             adjustedHeadForward[0]/horizontal:0f;
+        // Stop loops/voices on lost interaction or listener immediately. The
+        // host deduplicates this state, and fresh lease packets restart loops.
+        host.onNativeModuleAudioSuspended(!usingControllerPointer || !validListener);
         int feedbackFlags =
             nativeModuleRuntime.update(
                 usingControllerPointer
@@ -5585,7 +5593,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 if (recenterOnHeadset(
                         System.nanoTime()
                     )) {
-                    closeOrientationMenu();
+                    resumeFromOrientationMenu();
                 } else {
                     host.onUiActionRejected();
                 }
@@ -5595,7 +5603,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 if (recenterOnController(
                         System.nanoTime()
                     )) {
-                    closeOrientationMenu();
+                    resumeFromOrientationMenu();
                 } else {
                     host.onUiActionRejected();
                 }
@@ -5645,7 +5653,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 8:
-                closeOrientationMenu();
+                resumeFromOrientationMenu();
                 break;
 
             default:
@@ -5717,7 +5725,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 break;
 
             case 9:
-                closeOrientationMenu();
+                resumeFromOrientationMenu();
                 return;
 
             case 10:
@@ -5794,6 +5802,17 @@ final class VrShellRenderer implements CardboardView.Renderer {
         hoveredButton = -1;
         selectRequested.set(false);
         textureDirty = true;
+    }
+
+    private void resumeFromOrientationMenu() {
+        closeOrientationMenu();
+        resumeNativeAudioFromQuickMenu();
+    }
+
+    private void resumeNativeAudioFromQuickMenu() {
+        if (mode == MODE_NATIVE && nativeModuleRuntime != null
+            && nativeModuleRuntime.isRunning())
+            host.onNativeModuleAudioResumeRequested();
     }
 
     private void handleEmulatorCatalogSelection(int button) {
@@ -6546,7 +6565,7 @@ final class VrShellRenderer implements CardboardView.Renderer {
                 hoveredButton = -1;
                 textureDirty = true;
             } else {
-                closeOrientationMenu();
+                resumeFromOrientationMenu();
             }
             return;
         }

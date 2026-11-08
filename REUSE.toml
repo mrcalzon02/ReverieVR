@@ -93,3 +93,55 @@ path = ["app/src/main/assets/native/red-ledger/models/*.fbx", "app/src/main/asse
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Between Deliveries asset owner"
 SPDX-License-Identifier = "LicenseRef-Owner-Original-Assets"
+
+# Breakwater compact derivatives; original recordings retain their documented rights.
+
+# Original upstream license notice retained as evidence. Its CC0 statement
+# covers the sounds; no separate license for this PDF is asserted.
+[[annotations]]
+path = ["docs/licensing/sources/nox-essentials-readme.pdf"]
+precedence = "override"
+SPDX-FileCopyrightText = "NOASSERTION"
+SPDX-License-Identifier = "NOASSERTION"
+
+[[annotations]]
+path = ["tools/breakwater/audio/*.py", "tools/breakwater/audio/*.java"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 ReverieVR contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["app/src/main/assets/native/breakwater/audio/ui_focus.wav", "app/src/main/assets/native/breakwater/audio/ui_activate.wav", "app/src/main/assets/native/breakwater/audio/ui_failure.wav", "app/src/main/assets/native/breakwater/audio/equip.wav", "app/src/main/assets/native/breakwater/audio/reload_start.wav", "app/src/main/assets/native/breakwater/audio/reload_ready.wav", "app/src/main/assets/native/breakwater/audio/menu_open.wav", "app/src/main/assets/native/breakwater/audio/menu_back.wav", "app/src/main/assets/native/breakwater/audio/support_arm.wav", "app/src/main/assets/native/breakwater/audio/support_disarm.wav", "app/src/main/assets/native/breakwater/audio/dry_fire.wav", "app/src/main/assets/native/breakwater/audio/aim_limit.wav", "app/src/main/assets/native/breakwater/audio/cooldown.wav", "app/src/main/assets/native/breakwater/audio/support_unavailable.wav", "app/src/main/assets/native/breakwater/audio/surf_loop.wav", "app/src/main/assets/native/breakwater/audio/wind_loop.wav", "app/src/main/assets/native/breakwater/audio/night_loop.wav", "app/src/main/assets/native/breakwater/audio/boat_loop.wav", "app/src/main/assets/native/breakwater/audio/rowing_loop.wav", "app/src/main/assets/native/breakwater/audio/aircraft_loop.wav", "app/src/main/assets/native/breakwater/audio/traverse_loop.wav", "app/src/main/assets/native/breakwater/audio/impact_water.wav"]
+precedence = "override"
+SPDX-FileCopyrightText = ["NOX SOUND", "2026 Between Deliveries asset owner", "2026 ReverieVR contributors"]
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ["app/src/main/assets/native/breakwater/audio/station_move.wav"]
+precedence = "override"
+SPDX-FileCopyrightText = ["NOX SOUND", "2026 Between Deliveries asset owner", "2026 ReverieVR contributors"]
+SPDX-License-Identifier = "CC0-1.0 AND LicenseRef-Owner-Original-Assets"
+
+[[annotations]]
+path = ["app/src/main/assets/native/breakwater/audio/boat_destroyed.wav", "app/src/main/assets/native/breakwater/audio/aircraft_bomb.wav", "app/src/main/assets/native/breakwater/audio/shore_collision.wav"]
+precedence = "override"
+SPDX-FileCopyrightText = ["NOX SOUND", "2026 Between Deliveries asset owner", "2026 ReverieVR contributors"]
+SPDX-License-Identifier = "CC0-1.0 AND LicenseRef-Owner-Original-Assets AND MIT"
+
+[[annotations]]
+path = ["app/src/main/assets/native/breakwater/audio/weapon_missile.wav", "app/src/main/assets/native/breakwater/audio/sam_launch.wav", "app/src/main/assets/native/breakwater/audio/wave_start.wav", "app/src/main/assets/native/breakwater/audio/shop_purchase.wav", "app/src/main/assets/native/breakwater/audio/wave_clear.wav", "app/src/main/assets/native/breakwater/audio/victory.wav", "app/src/main/assets/native/breakwater/audio/defeat.wav"]
+precedence = "override"
+SPDX-FileCopyrightText = ["NOX SOUND", "2026 Between Deliveries asset owner", "2026 ReverieVR contributors"]
+SPDX-License-Identifier = "CC0-1.0 AND MIT"
+
+[[annotations]]
+path = ["app/src/main/assets/native/breakwater/audio/weapon_machine.wav", "app/src/main/assets/native/breakwater/audio/weapon_heavy.wav", "app/src/main/assets/native/breakwater/audio/weapon_flak.wav", "app/src/main/assets/native/breakwater/audio/weapon_cannon.wav", "app/src/main/assets/native/breakwater/audio/impact_hull.wav", "app/src/main/assets/native/breakwater/audio/gunboat_salvo.wav", "app/src/main/assets/native/breakwater/audio/infantry_volley.wav", "app/src/main/assets/native/breakwater/audio/aircraft_strafe.wav", "app/src/main/assets/native/breakwater/audio/armored_gun.wav", "app/src/main/assets/native/breakwater/audio/armor_destroyed.wav", "app/src/main/assets/native/breakwater/audio/artillery.wav", "app/src/main/assets/native/breakwater/audio/airstrike.wav"]
+precedence = "override"
+SPDX-FileCopyrightText = ["NOX SOUND", "2026 Between Deliveries asset owner", "2026 ReverieVR contributors"]
+SPDX-License-Identifier = "LicenseRef-Owner-Original-Assets AND MIT"
+
+[[annotations]]
+path = ["app/src/main/assets/native/breakwater/audio/sand_impact.wav"]
+precedence = "override"
+SPDX-FileCopyrightText = ["NOX SOUND", "2026 Between Deliveries asset owner", "2026 ReverieVR contributors"]
+SPDX-License-Identifier = "MIT"
