@@ -1,0 +1,9 @@
+{
+  "source_commit": "da52843a8d0bfcacb7b9bbba040cd23deab88f1e",
+  "expected_parent": "e96cb94695ab930b271a140f26f9cb6f7c3515f9",
+  "verified_tree": "18abfd71e87bef489d62ffcc59d3e348457c8bf8",
+  "local_equivalent_commit": "cce9d16fa0422b13f6ff7c22389b15c2292be84c",
+  "force": false,
+  "ref_readback": "confirmed",
+  "ci": "No workflow dispatched; push commit carries [skip ci]."
+}

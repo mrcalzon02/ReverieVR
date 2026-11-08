@@ -119,3 +119,15 @@ listening, sustained frame/thermal behavior, real storage interruption, and
 each project's remaining intended content/full-run acceptance. Earlier
 Android and the concurrent audio-only release do not certify this revision.
 No completed-game, new APK release or physical acceptance is claimed.
+
+## Publication readback
+
+Published source: `da52843a8d0bfcacb7b9bbba040cd23deab88f1e` on `main`, parent
+`e96cb94695ab930b271a140f26f9cb6f7c3515f9`. Remote tree
+`18abfd71e87bef489d62ffcc59d3e348457c8bf8` exactly matches reviewed local
+checkpoint `cce9d16fa0422b13f6ff7c22389b15c2292be84c`. The update used an
+expected-head lease and no force. Binary blob hashes, intermediate tree
+receipts and final ref readback were preserved. No new Actions workflow was
+dispatched; the source commit carries `[skip ci]`. This is source publication,
+not an APK release. The local and connector-created commit identifiers differ
+because their commit metadata/parents differ; their reviewed file trees match.

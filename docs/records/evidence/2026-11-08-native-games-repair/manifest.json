@@ -200,8 +200,13 @@
     },
     {
       "path": "repair-release-matrix.json",
-      "bytes": 79591,
-      "sha256": "599ccd2c3e6e69c6b90527bd7f4a6102ccf96efb66fcf51044c9c130a72d1730"
+      "bytes": 79733,
+      "sha256": "71498040f42d469c3e9676814392b76ce024c864ea33a0ffe722e0b936c068c6"
+    },
+    {
+      "path": "source-publication.json",
+      "bytes": 382,
+      "sha256": "c1c49d9a45a0dec966d866b4c8e7c40da6c480404c327d5bbf4149e64979841f"
     },
     {
       "path": "test-chamber-before-after.png",
@@ -215,5 +220,6 @@
     "Real GLES means Mesa software-rendered module framebuffers; Java platform and audio harnesses use explicitly named doubles.",
     "Breakwater checkpoints wave boundaries; Guess restores deterministic choice outcomes. Neither claims live animation/combat restoration.",
     "All original intended-scope completion tracks remain open unless explicitly demonstrated by current tests."
-  ]
+  ],
+  "published_source_commit": "da52843a8d0bfcacb7b9bbba040cd23deab88f1e"
 }

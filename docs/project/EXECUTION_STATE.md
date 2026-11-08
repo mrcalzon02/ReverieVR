@@ -1,4 +1,4 @@
-## 2026-11-08 — Native-game repair integration completed locally
+## 2026-11-08 — Native-game repairs published; device gates open
 
 **Source checkpoint:** `9bf1aeb453a1a07d4f7b84a31ae06ce379b4b66c`, following
 `3af395812fc062505e6afa05ff3a06063198189d`. All sixteen registered modules
@@ -17,8 +17,13 @@ certify this broader repair checkpoint. [Repair record](../records/2026-11-08-na
 and [hashed evidence](../records/evidence/2026-11-08-native-games-repair/README.md)
 retain exact layers, failed/fixed probes and all original completion tracks.
 
-**Next:** publish the concrete source checkpoint when authorized; execute
-one authorized current-source Android/installed-hub validation, then physical
+**Remote proof:** source published at `da52843a8d0bfcacb7b9bbba040cd23deab88f1e`;
+main readback and tree `18abfd71e87bef489d62ffcc59d3e348457c8bf8` match the
+reviewed local checkpoint exactly. No force update or new workflow dispatch.
+[Publication receipt](../records/evidence/2026-11-08-native-games-repair/source-publication.json).
+
+**Next:** execute one authorized current-source Android/installed-hub
+validation, then physical
 S9/Daydream save/menu/input/audio and sustained performance acceptance.
 No new workflow, repaired-source APK release or conservatively completed game
 is claimed. Existing development admission and publication policy remain.

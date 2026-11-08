@@ -6,7 +6,7 @@
   "first_repair_commit": "3af395812fc062505e6afa05ff3a06063198189d",
   "concurrent_audio_parent": "b2365addfa824a34bf35f5f1e9ae46bc6edefa5f",
   "final_source_commit": "9bf1aeb453a1a07d4f7b84a31ae06ce379b4b66c",
-  "publication": "Local source committed; remote publication recorded separately.",
+  "publication": "Published on main at da52843a8d0bfcacb7b9bbba040cd23deab88f1e",
   "registered_modules": 16,
   "source_only_projects": 1,
   "games": [
@@ -1382,5 +1382,7 @@
     "Breakwater checkpoints wave boundaries; Guess restores deterministic choice outcomes. Neither claims live animation/combat restoration.",
     "All original intended-scope completion tracks remain open unless explicitly demonstrated by current tests."
   ],
-  "incorporated_remote_documentation": "e96cb94695ab930b271a140f26f9cb6f7c3515f9"
+  "incorporated_remote_documentation": "e96cb94695ab930b271a140f26f9cb6f7c3515f9",
+  "published_source_commit": "da52843a8d0bfcacb7b9bbba040cd23deab88f1e",
+  "published_source_tree": "18abfd71e87bef489d62ffcc59d3e348457c8bf8"
 }
