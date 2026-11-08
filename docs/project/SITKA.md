@@ -1,3 +1,30 @@
+## Authored shellfish-bundle pickup and harbor sale — 2026-11-08
+
+The **source-only** Sitka Update path can now take a game-authored inert
+shellfish bundle from a reviewed dry-ground beach site with the real native
+pointer, record that site exactly once, add one sale item to the existing
+`SITKA-FISH-5` inventory and persist it to the host save slot. A separate
+Select at the existing harbor-shop sale row exchanges that stock for the
+established 25 gameplay credits. Full (1,000,000) inventory and duplicate
+site IDs refuse collection without modifying stock or the discovery bit.
+Collecting/denied interactions latch the pressed control, preventing a held
+pickup from triggering a fishing cast.
+
+A bundle must be **explicitly authored**, with
+`D|id|shellfish_bundle|local_x|local_z|gravel` (or `wrack`),
+inside the existing verified `SITKA-BEACH-1` source/provenance and terrain
+gates. It reuses the existing small bivalve marker as temporary game
+geometry. Ordinary empty shells and living crabs/mollusks **do not** yield
+sale inventory; protected wildlife remains observation-only. No real
+wildlife-harvest permit or location is inferred.
+
+The added native `sitka_starter_loop_test.cpp` exercises pickup through
+module `Update`, hold/duplicate/overflow refusal, walking to the shop,
+sale, and save/reopen using a **synthetic shore/desk fixture**. Real
+geographic assets, actual packaged Sitka launcher admission and headset
+acceptance remain outstanding. This note describes the source behavior;
+it is not a claim of new CI or hardware test success.
+
 ## Starter gameplay loop — 2026-11-07
 
 The source now retains caught fish for harbor sale, registers finds/tokens before upgrades, supplies the requested Tier 0 kit/dinghy plus starter fish/shellfish/token, and renders live shore/fishing/office instructions. Basic bait is infinite; equipment currently has no durability loss. No old-save migration is required. The clean-start format is `SITKA-FISH-5` in the existing host slot. Four functional training tracks are offered; disconnected Deckwork training is hidden.

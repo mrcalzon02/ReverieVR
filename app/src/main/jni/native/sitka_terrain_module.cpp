@@ -823,14 +823,24 @@ void Update(void* instance,const ReverieNativeInputV1* input){
                 state->fishing.fishing.journal.beach_sites,
                 state->fishing.fishing.journal.shore_kit_level,
                 state->fishing.fishing.journal.observation_level);
-            if(found.valid &&
-               state->fishing.Discover(found.site,found.kind)){
+            if(found.valid){
+                // The same world ray supports an explicitly authored,
+                // sellable shellfish bundle. Live animal observations and
+                // ordinary beach finds remain discovery-only.
                 state->beach_primary_latched=true;
-                state->beach_dirty=true;
-                if(!state->fishing.Flush(Store(state)))
-                    Log(state->host,"Sitka beach discovery save deferred");
-                ReverieNativeRequestFeedbackV1(
-                    state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+                const bool collected=found.shellfish_bundle?
+                    state->fishing.CollectShellfishBundle(found.site):
+                    state->fishing.Discover(found.site,found.kind);
+                if(collected){
+                    state->beach_dirty=true;
+                    if(!state->fishing.Flush(Store(state)))
+                        Log(state->host,"Sitka beach pickup save deferred");
+                    ReverieNativeRequestFeedbackV1(
+                        state->host,REVERIE_NATIVE_FEEDBACK_ACTIVATION);
+                }else{
+                    ReverieNativeRequestFeedbackV1(
+                        state->host,REVERIE_NATIVE_FEEDBACK_FAILURE);
+                }
             }
         }
     }

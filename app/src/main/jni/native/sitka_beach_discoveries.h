@@ -23,6 +23,7 @@ struct BeachSite {
     float x=0.f,z=0.f;
     ShoreSpecimen specimen=ShoreSpecimen::EmptyClamShell;
     unsigned zone=unsigned(ShoreZone::Gravel);
+    bool shellfish_bundle=false; // authored inert sale cache, not living wildlife
 };
 struct BeachTarget {
     bool valid=false;
@@ -30,6 +31,7 @@ struct BeachTarget {
     BeachFind kind=BeachFind::Shell;
     ShoreSpecimen specimen=ShoreSpecimen::EmptyClamShell;
     ShoreAction action=ShoreAction::Collect;
+    bool shellfish_bundle=false;
 };
 inline constexpr size_t kMaxBeachAssetBytes=8192u;
 inline bool BeachId(const std::string& id){
@@ -97,7 +99,15 @@ inline std::vector<BeachSite> ParseBeachSites(
                 throw std::invalid_argument("Sitka beach duplicate ID");
             ShoreSpecimen type=ShoreSpecimen::EmptyClamShell;
             bool old_tag=true;
-            if(f[2]=="shell")type=ShoreSpecimen::EmptyClamShell;
+            bool shellfish_bundle=false;
+            if(f[2]=="shellfish_bundle"){
+                // Opt-in authored shoreline supply, not a claim of wild
+                // harvesting. Reuse the existing bivalve marker geometry.
+                type=ShoreSpecimen::EmptyClamShell;
+                old_tag=false;
+                shellfish_bundle=true;
+            }
+            else if(f[2]=="shell")type=ShoreSpecimen::EmptyClamShell;
             else if(f[2]=="crab")type=ShoreSpecimen::PurpleShoreCrab;
             else if(f[2]=="rock")type=ShoreSpecimen::BeachPebble;
             else if(f[2]=="sea_glass")type=ShoreSpecimen::SeaGlass;
@@ -118,7 +128,7 @@ inline std::vector<BeachSite> ParseBeachSites(
             result.push_back({id,def.category,
                 static_cast<float>(BeachNumber(f[3],-100000.,100000.)),
                 static_cast<float>(BeachNumber(f[4],-100000.,100000.)),
-                type,zone});
+                type,zone,shellfish_bundle});
         }else throw std::invalid_argument("Sitka beach unsupported record");
     }
     if(!provenance||!origin||result.empty())
@@ -177,7 +187,7 @@ inline BeachTarget FindBeachTarget(const float origin[3],
                            .08*std::min(8u,observation_level);
     double nearest=max_reach+1.;
     for(const auto& site:sites){
-        if((collected&(uint64_t(1)<<site.id))!=0u)continue;
+        if(site.id>=64u||(collected&(uint64_t(1)<<site.id))!=0u)continue;
         const GroundHit ground=roam.GroundAt(site.x,site.z);
         if(!ground.valid)continue;
         const double dx=double(site.x)-origin[0];
@@ -192,7 +202,8 @@ inline BeachTarget FindBeachTarget(const float origin[3],
         if(off2>.038)continue; // deliberate, fine VR pointer precision
         nearest=along;
         const auto& spec=Specimen(site.specimen);
-        best={true,site.id,site.kind,site.specimen,spec.action};
+        best={true,site.id,site.kind,site.specimen,spec.action,
+              site.shellfish_bundle};
     }
     return best;
 }

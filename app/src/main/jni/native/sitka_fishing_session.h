@@ -88,6 +88,18 @@ public:
         dirty = true;
         return true;
     }
+    bool CollectShellfishBundle(uint32_t site) {
+        // One atomic journal transaction: record the unique reviewed site
+        // and add one sale item. A full hold changes neither value.
+        const auto& journal=fishing.journal;
+        if(fishing.phase!=FishingPhase::Ready||site>=64u||
+           (journal.beach_sites&(uint64_t(1)<<site))!=0u||
+           journal.shellfish_inventory>=1000000u)return false;
+        if(!fishing.Discover(site,BeachFind::Shell))return false;
+        ++fishing.journal.shellfish_inventory;
+        dirty=true;
+        return true;
+    }
     bool Purchase(Equipment item) {
         if (!fishing.Purchase(item)) return false;
         dirty = true;

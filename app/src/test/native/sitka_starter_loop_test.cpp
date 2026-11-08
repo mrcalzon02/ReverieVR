@@ -97,5 +97,69 @@ int main(){
     auto corrupt=SaveJournal(check);corrupt+="1\n";
     const auto unchanged=SaveJournal(check);
     assert(!LoadJournal(corrupt,check)&&SaveJournal(check)==unchanged);
-    std::cout<<"PASS actual Sitka Update: walk/office/sale/register/upgrade/save/retry\n";
+    // Separate fully native Update route: an authored inert shellfish bundle,
+    // aimed once on grounded shore, enters the same saved inventory and can
+    // then be sold at the existing shop. No made-up world source is shipped.
+    State harvest;harvest.host=&host;harvest.terrain=world.terrain;
+    harvest.walk_session.reset(new FreeRoamSession(
+        harvest.terrain,harvest.waters,harvest.shore_colliders,true,0.,0.));
+    harvest.harbor_sites=world.harbor_sites;
+    harvest.beach_sites=ParseBeachSites(
+        std::string("SITKA-BEACH-1\nP|fixture|")+std::string(64,'a')+
+        "|EPSG32608|reviewed\nO|0|0\n"
+        "D|2|shellfish_bundle|1|0|gravel\n"
+        "D|3|shellfish_bundle|1.3|0|gravel\n",0.,0.);
+    assert(harvest.fishing.Load(Store(&harvest))==FishingLoad::Restored);
+    auto& haul=harvest.fishing.fishing.journal;
+    assert(haul.credits==90u&&haul.shellfish_inventory==0u);
+    ReverieNativeInputV1 hand{};
+    hand.struct_size=sizeof(hand);hand.delta_seconds=.05f;
+    hand.listener_valid=1u;hand.listener_position[1]=1.4f;
+    hand.listener_right[0]=1.f;
+    hand.pointer_kind=REVERIE_NATIVE_POINTER_TRACKED_CONTROLLER;
+    hand.pointer_origin[1]=1.25f;
+    hand.pointer_direction[0]=.637f;hand.pointer_direction[1]=-.771f;
+    hand.primary_down=1u;Update(&harvest,&hand);
+    assert(haul.shellfish_inventory==1u);
+    assert((haul.beach_sites&(uint64_t(1)<<2u))!=0u);
+    assert(!harvest.fishing.dirty);
+    Update(&harvest,&hand); // held Select cannot duplicate pickup
+    assert(haul.shellfish_inventory==1u);
+    hand.primary_down=0u;Update(&harvest,&hand);
+    hand.primary_down=1u;Update(&harvest,&hand); // fresh Select at old site
+    assert(haul.shellfish_inventory==1u);
+    // A second valid aimed cache must NOT be consumed at inventory cap.
+    haul.shellfish_inventory=1000000u;
+    hand.primary_down=0u;Update(&harvest,&hand);
+    hand.pointer_direction[0]=.732f;hand.pointer_direction[1]=-.681f;
+    hand.primary_down=1u;Update(&harvest,&hand);
+    assert(haul.shellfish_inventory==1000000u);
+    assert((haul.beach_sites&(uint64_t(1)<<3u))==0u);
+    haul.shellfish_inventory=1u; // restore saved value after cap probe
+    hand.primary_down=0u;Update(&harvest,&hand);
+    hand.pointer_direction[0]=1.f;hand.pointer_direction[1]=0.f;
+    hand.move_x=1.f;
+    for(int n=0;n<30;++n)Update(&harvest,&hand);
+    hand.move_x=0.f;
+    assert(harvest.walk_session->pose().x>4.f);
+    hand.primary_down=1u;Update(&harvest,&hand);
+    assert(harvest.harbor_shop.open());
+    hand.primary_down=0u;Update(&harvest,&hand);
+    hand.move_y=-1.f;Update(&harvest,&hand);
+    hand.move_y=0.f;Update(&harvest,&hand);
+    assert(harvest.harbor_shop.selected()==kPurchaseItems+1u);
+    hand.primary_down=1u;Update(&harvest,&hand);
+    assert(haul.shellfish_inventory==0u&&haul.credits==115u);
+    assert(!harvest.fishing.dirty);
+    Journal persisted;
+    assert(LoadJournal(saved,persisted));
+    assert(persisted.credits==115u&&persisted.shellfish_inventory==0u);
+    assert((persisted.beach_sites&(uint64_t(1)<<2u))!=0u);
+    FishingSession reopened;
+    assert(reopened.Load(Store(&harvest))==FishingLoad::Restored);
+    assert(reopened.fishing.journal.credits==115u);
+    assert(reopened.fishing.journal.shellfish_inventory==0u);
+    assert(!reopened.CollectShellfishBundle(2u)); // duplicate after reopen
+    assert(!reopened.dirty);
+    std::cout<<"PASS actual Sitka Update: walk/office/sale/register/upgrade/save/retry/shellfish bundle\n";
 }

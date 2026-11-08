@@ -30,6 +30,19 @@ int main(){
     auto sites=ParseBeachSites(records,480000.125,6300000.625);
     assert(sites.size()==5u&&sites[0].id==0u);
     assert(sites[1].kind==BeachFind::Crab);
+    // Only an explicit six-field authored supply cache can yield sale stock.
+    const auto supplies=ParseBeachSites(
+        prefix+"D|2|shellfish_bundle|1|0|gravel\n",
+        480000.125,6300000.625);
+    assert(supplies.size()==1u&&supplies[0].shellfish_bundle);
+    assert(supplies[0].specimen==ShoreSpecimen::EmptyClamShell);
+    assert(!sites[0].shellfish_bundle);
+    assert(Rejects([&]{ParseBeachSites(
+        prefix+"D|2|shellfish_bundle|1|0\n",
+        480000.125,6300000.625);}));
+    assert(Rejects([&]{ParseBeachSites(
+        prefix+"D|2|shellfish_bundle|1|0|rocky\n",
+        480000.125,6300000.625);}));
     assert(Rejects([&]{ParseBeachSites(records,0.,0.);}));
     assert(Rejects([&]{ParseBeachSites(prefix+"D|0|shell|1|0\nD|0|crab|2|0\n",
                                     480000.125,6300000.625);}));
